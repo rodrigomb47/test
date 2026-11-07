@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "factionclash:block/world_map_board",
+    "south": "factionclash:block/world_map_board",
+    "east": "factionclash:block/world_map_board",
+    "west": "factionclash:block/world_map_board",
+    "up": "factionclash:block/world_map_board_side",
+    "down": "factionclash:block/world_map_board_side",
+    "particle": "factionclash:block/world_map_board_side"
+  }
+}

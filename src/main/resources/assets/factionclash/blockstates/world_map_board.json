@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "factionclash:block/world_map_board"
+    }
+  }
+}

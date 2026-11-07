@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "factionclash:block/reporting_station_top",
+    "bottom": "factionclash:block/reporting_station_side",
+    "side": "factionclash:block/reporting_station_side"
+  }
+}

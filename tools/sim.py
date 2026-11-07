@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Drives a Faction Clash dedicated-server simulation over RCON and summarises the campaign state.
+
+  python3 tools/sim.py <server_dir> summary          # dump + print summary
+  python3 tools/sim.py <server_dir> sprint <ticks>    # /tick sprint and wait for completion, then summary
+"""
+import json
+import os
+import re
+import sys
+import time
+from collections import Counter
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import rcon  # noqa: E402
+
+
+def log_path(sv):
+    return os.path.join(sv, "logs", "latest.log")
+
+
+def wait_for(sv, pattern, start_size, timeout=3600):
+    rx = re.compile(pattern)
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        with open(log_path(sv), "r", errors="replace") as f:
+            f.seek(start_size)
+            data = f.read()
+        m = rx.search(data)
+        if m:
+            return m.group(0)
+        time.sleep(2)
+    raise TimeoutError(pattern)
+
+
+def dump(sv):
+    rcon.run(["fc admin dump"])
+    with open(os.path.join(sv, "world", "factionclash_dump.json")) as f:
+        return json.load(f)
+
+
+def summary(d):
+    print(f"== gameTime {d['gameTime']} (day {d['gameTime'] / 24000:.2f}) travellers {d['travellers']} winner {d.get('winner')}")
+    for f in d["factions"]:
+        alive = sum(1 for r in f["roster"] if r["alive"])
+        dead = sum(1 for r in f["roster"] if not r["alive"])
+        roles = Counter(r["role"] for r in f["roster"] if r["alive"])
+        print(f"  {f['faction']:15s} alive={f['alive']} npcs={alive} dead={dead} reports={f['reportsDelivered']} map={f['knowledge']} "
+              f"explored={f['explored']} raids={f['raidsLaunched']} raidTarget={f['raidTarget']} destroyed={f['basesDestroyed']} {dict(roles)}")
+    for b in d["bases"]:
+        line = f"  base {b['id']} {b['faction']:15s} {b['kind']:10s} {b['center']:>16s} destroyed={b['destroyed']}"
+        if b["kind"] == "SETTLEMENT":
+            st = b["stock"]
+            keys = ["cobblestone", "coal", "raw_iron", "iron_ingot", "diamond", "oak_log", "oak_planks", "wheat", "bread",
+                    "baked_potato", "torch", "stone_pickaxe", "iron_pickaxe", "iron_sword", "bedroll"]
+            line += f" station={b['stationPresent']} beds={b['beds']} repairs={b['pendingRepairs']} food={b['foodValue']} projects={b['projects']}"
+            print(line)
+            print("      stock " + ", ".join(f"{k}={st.get(k, 0)}" for k in keys))
+            for w in b["workplaces"]:
+                print(f"      {w['type']:9s} tier={w['tier']} output={w['output']} upgradeStep={w['upgradeStep']}")
+            print(f"      recruit: {b['recruitNote'][:160]}")
+        else:
+            print(line + f" mobs={b['lairMobs']}/{b['lairCap']}")
+    st = Counter()
+    for n in d["npcs"]:
+        st[(n["faction"][:6], n["role"], re.sub(r"[-\d,() ]+%?", " ", n["status"])[:55].strip())] += 1
+    for k, v in sorted(st.items()):
+        print(f"    {v} x {k}")
+    worn = [n for n in d["npcs"] if n["toolDamage"] > 0]
+    print(f"  npcs loaded={len(d['npcs'])} with damaged tools={len(worn)} max level={max([n['level'] for n in d['npcs']] or [0])} "
+          f"recoveries={sum(n['recoveries'] for n in d['npcs'])}")
+
+
+if __name__ == "__main__":
+    sv = sys.argv[1]
+    cmd = sys.argv[2]
+    if cmd == "sprint":
+        size = os.path.getsize(log_path(sv))
+        rcon.run([f"tick sprint {sys.argv[3]}"])
+        print(wait_for(sv, r"Sprint completed[^\n]*", size))
+    summary(dump(sv))
