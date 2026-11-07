@@ -48,6 +48,12 @@ public final class WorkplaceState {
     /** Mines: extra floors dug below tier 4 (free), and progress through the current level's tunnel plan. */
     public int subLevel;
     public int progress;
+    /**
+     * Mines, once every level is dug: how many times the branch mines were lengthened (each round adds another
+     * stretch of main tunnel with branches on every regular level), and the level being lengthened now (0 = none).
+     */
+    public int reach;
+    public int revisit;
     /** Caves: waypoints the explorer walked (index 0 = entrance) and each waypoint's parent (-1 for the root). */
     public long[] route = new long[0];
     public int[] parent = new int[0];
@@ -80,6 +86,10 @@ public final class WorkplaceState {
         t.putLong("output", totalOutput);
         t.putInt("subLevel", subLevel);
         t.putInt("progress", progress);
+        if (type == Type.MINE) {
+            t.putInt("reach", reach);
+            t.putInt("revisit", revisit);
+        }
         if (type == Type.CAVE) {
             t.putLongArray("route", route);
             t.putIntArray("parent", parent);
@@ -111,6 +121,10 @@ public final class WorkplaceState {
         w.totalOutput = t.getLong("output");
         w.subLevel = t.getInt("subLevel");
         w.progress = t.getInt("progress");
+        if (w.type == Type.MINE) {
+            w.reach = t.getInt("reach");
+            w.revisit = t.getInt("revisit");
+        }
         if (w.type == Type.CAVE) {
             w.route = t.getLongArray("route");
             w.parent = t.getIntArray("parent");

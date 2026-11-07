@@ -30,6 +30,9 @@ public abstract class Job {
     private int waitTicks;
     private long lastEquipCheck = -100000;
     private int routeFailures;
+    /** Steps left while digging out of a dead end (sealed cave, ravine, canopy) and ticks until the next one. */
+    private int digSteps, digWait;
+    private static final int MAX_DIG_STEPS = 64, DIG_STEP_TICKS = 20;
 
     protected Job(FactionNpc npc) {
         this.npc = npc;
@@ -108,6 +111,9 @@ public abstract class Job {
         if (pos == null) {
             return false;
         }
+        if (digSteps > 0) {
+            return digOut(pos, label);
+        }
         NpcNavigator.Result r = npc.navigator().travel(pos, reach, speed);
         switch (r) {
             case ARRIVED:
@@ -117,8 +123,16 @@ public abstract class Job {
                 status("Walking to " + label, "Travelling");
                 return false;
             default:
-                // repeated total failure: dig a step toward the destination instead of waiting forever
-                if (++routeFailures >= 2 && com.factionclash.npc.DigOut.step(npc, pos)) {
+                // repeated total failure: dig toward the destination instead of waiting forever. Shut in (cave,
+                // canopy, the floor of a pit or ravine) it keeps digging until it is out or a route exists, since
+                // walking the partial path would only lead back to the same dead end.
+                if (++routeFailures >= 2 && com.factionclash.npc.DigOut.shutIn(npc, npc.navigator().routeTarget(pos))) {
+                    digSteps = MAX_DIG_STEPS;
+                    digWait = 0;
+                    npc.navigator().reset();
+                    return digOut(pos, label);
+                }
+                if (routeFailures >= 2 && com.factionclash.npc.DigOut.step(npc, npc.navigator().routeTarget(pos))) {
                     status("Digging a way out toward " + label, "Digging");
                     npc.navigator().reset();
                     return false;
@@ -128,6 +142,30 @@ public abstract class Job {
                 waitFor(100);
                 return false;
         }
+    }
+
+    private boolean digOut(BlockPos pos, String label) {
+        status("Digging a way out toward " + label, "Digging");
+        if (--digWait > 0) {
+            return false;
+        }
+        digWait = DIG_STEP_TICKS;
+        BlockPos toward = npc.navigator().routeTarget(pos);
+        boolean done = !com.factionclash.npc.DigOut.shutIn(npc, toward) || --digSteps <= 0;
+        if (!done && digSteps % 4 == 0) {
+            done = npc.navigator().canWalkToward(pos); // the staircase met a passage or slope that leads there
+        }
+        if (!done && !com.factionclash.npc.DigOut.step(npc, toward)) {
+            digSteps = 0;
+            status("Cannot dig a way out toward " + label + ", will retry", "Blocked");
+            waitFor(100);
+            return false;
+        }
+        if (done) {
+            digSteps = 0;
+            npc.navigator().reset();
+        }
+        return false;
     }
 
     protected boolean atStorage() {

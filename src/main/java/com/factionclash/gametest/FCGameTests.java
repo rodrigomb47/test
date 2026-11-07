@@ -286,6 +286,103 @@ public final class FCGameTests {
         });
     }
 
+    /** Shut in rock with no route at all, an NPC digs a staircase up, step by step, until it is out on top. */
+    @GameTest(template = "platform", timeoutTicks = 200)
+    public static void sealedNpcDigsItselfOut(GameTestHelper h) {
+        // (the test area has a barrier ceiling, so "out in the open" here means standing on top of the rock)
+        for (BlockPos p : BlockPos.betweenClosed(3, 2, 3, 8, 4, 8)) {
+            h.setBlock(p, Blocks.STONE);
+        }
+        h.setBlock(new BlockPos(5, 2, 5), Blocks.AIR);
+        h.setBlock(new BlockPos(5, 3, 5), Blocks.AIR);
+        FactionNpc n = npc(h, 5, 5, FactionType.GROVE_COVENANT, NpcRole.SCOUT);
+        BlockPos goal = h.absolutePos(new BlockPos(16, 7, 5)); // somewhere up the hill
+        int top = h.absolutePos(new BlockPos(5, 5, 5)).getY();
+        int[] steps = {0};
+        h.onEachTick(() -> {
+            if (h.getTick() % 5 != 0 || !n.onGround()) {
+                return;
+            }
+            if (n.getBlockY() >= top) {
+                h.assertTrue(steps[0] >= 3 && steps[0] <= 8, "unexpected number of dig steps: " + steps[0]);
+                h.assertTrue(com.factionclash.npc.NpcNavigator.isSafeStandingSpot(h.getLevel(), n, n.blockPosition()), "unsafe spot");
+                h.succeed();
+                return;
+            }
+            h.assertFalse(com.factionclash.npc.DigOut.free(n), "inside the rock should count as shut in");
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "no step could be dug at " + n.blockPosition());
+            steps[0]++;
+        });
+    }
+
+    /** Stranded on a tree canopy, an NPC breaks the leaves underfoot and drops down, as a player would. */
+    @GameTest(template = "platform", timeoutTicks = 60)
+    public static void npcOnCanopyDropsDown(GameTestHelper h) {
+        var leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, true);
+        for (BlockPos p : BlockPos.betweenClosed(11, 4, 11, 13, 4, 13)) {
+            h.setBlock(p, leaves);
+        }
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(12, 5, 12));
+        n.faction(FactionType.GROVE_COVENANT);
+        n.role(NpcRole.SCOUT);
+        h.runAfterDelay(5, () -> {
+            h.assertFalse(com.factionclash.npc.DigOut.free(n), "standing on leaves should count as stranded");
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, h.absolutePos(new BlockPos(2, 2, 2))), "no way down was dug");
+            h.assertTrue(h.getBlockState(new BlockPos(12, 4, 12)).isAir(), "the leaves underfoot are still there");
+        });
+        h.runAfterDelay(30, () -> {
+            h.assertTrue(n.getY() < h.absolutePos(new BlockPos(12, 4, 12)).getY(), "it did not drop down: y=" + n.getY());
+            h.succeed();
+        });
+    }
+
+    /** On top of a tall trunk (too far to jump down), an NPC chops the log underfoot and comes down with the wood. */
+    @GameTest(template = "platform", timeoutTicks = 80)
+    public static void npcOnTallTrunkChopsItsWayDown(GameTestHelper h) {
+        for (int y = 2; y <= 5; y++) {
+            h.setBlock(new BlockPos(12, y, 12), Blocks.OAK_LOG);
+        }
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(12, 6, 12));
+        n.faction(FactionType.STONEGUARD);
+        n.role(NpcRole.WOODCUTTER);
+        BlockPos goal = h.absolutePos(new BlockPos(2, 2, 2));
+        h.runAfterDelay(5, () -> {
+            h.assertTrue(com.factionclash.npc.DigOut.perched(h.getLevel(), n.blockPosition()), "on top of a 4-log trunk should count as stranded");
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "nothing was chopped");
+            h.assertTrue(h.getBlockState(new BlockPos(12, 5, 12)).isAir(), "the log underfoot is still there");
+            h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.OAK_LOG)) == 1, "the log did not go into the backpack");
+        });
+        h.runAfterDelay(25, () -> {
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "nothing was chopped the second time");
+        });
+        h.runAfterDelay(50, () -> {
+            // (the test area's barrier ceiling makes everything here count as "under cover", so check the perch)
+            h.assertFalse(com.factionclash.npc.DigOut.perched(h.getLevel(), n.blockPosition()), "still stranded at y=" + n.getY());
+            h.assertTrue(n.getBlockY() == h.absolutePos(new BlockPos(12, 4, 12)).getY(), "it should stand two logs lower, y=" + n.getY());
+            h.succeed();
+        });
+    }
+
+    /** Shut in just above where it needs to be (a pocket over a mine tunnel), an NPC digs down toward it, not up. */
+    @GameTest(template = "platform", timeoutTicks = 100)
+    public static void sealedNpcDigsDownTowardALowerGoal(GameTestHelper h) {
+        for (BlockPos p : BlockPos.betweenClosed(3, 2, 3, 8, 6, 8)) {
+            h.setBlock(p, Blocks.STONE);
+        }
+        h.setBlock(new BlockPos(5, 5, 5), Blocks.AIR);
+        h.setBlock(new BlockPos(5, 6, 5), Blocks.AIR);
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(5, 5, 5));
+        n.faction(FactionType.TIDE_ALLIANCE);
+        n.role(NpcRole.MINER);
+        BlockPos goal = h.absolutePos(new BlockPos(8, 2, 5));
+        int startY = h.absolutePos(new BlockPos(5, 5, 5)).getY();
+        h.runAfterDelay(5, () -> {
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "no step could be dug");
+            h.assertTrue(n.getBlockY() == startY - 1, "it should step down toward the goal, y=" + n.getBlockY());
+            h.succeed();
+        });
+    }
+
     /** Spec 14: NPCs jump backward from a priming creeper onto a safe spot. */
     @GameTest(template = "platform", timeoutTicks = 60)
     public static void npcJumpsBackFromCreeper(GameTestHelper h) {

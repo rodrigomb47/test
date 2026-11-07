@@ -42,17 +42,20 @@ public final class SpiralMine {
      * level would be below the world's mining floor.
      */
     public static int landingSteps(int surfaceY, int level) {
-        List<Integer> regular = regularLandings(surfaceY);
         if (level <= 0) {
             return 0;
         }
-        if (level <= regular.size()) {
-            return regular.get(level - 1);
-        }
-        List<Integer> infill = infillLandings(regular);
-        int i = level - regular.size() - 1;
-        return i < infill.size() ? infill.get(i) : -1;
+        int[] all = ALL_LANDINGS.computeIfAbsent(surfaceY, y -> {
+            List<Integer> regular = regularLandings(y);
+            List<Integer> list = new ArrayList<>(regular);
+            list.addAll(infillLandings(regular));
+            return list.stream().mapToInt(Integer::intValue).toArray();
+        });
+        return level <= all.length ? all[level - 1] : -1;
     }
+
+    /** Landing steps of every level (regular then infill) by surface height: the same for every call, so cached. */
+    private static final java.util.Map<Integer, int[]> ALL_LANDINGS = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** Landing steps of the levels dug downward: tiers 1-4, then a floor every 6 blocks down to the mining floor. */
     static List<Integer> regularLandings(int surfaceY) {
@@ -112,6 +115,23 @@ public final class SpiralMine {
         return level <= regularLandings(surfaceY).size();
     }
 
+    /** Size of a level's plan after {@code rounds} lengthenings (the same for either landing side). */
+    public static int planSize(int rounds) {
+        return tunnelPlan(0, rounds).size();
+    }
+
+    /** Number of regular levels (tiers 1-4 and the floors below them, not the infill levels in between). */
+    public static int regularLevels(int surfaceY) {
+        return regularLandings(surfaceY).size();
+    }
+
+    private static final java.util.Map<Integer, List<Cell>> PLANS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Cached, read-only {@link #tunnelPlan(int, int)}: plans are rebuilt often and only depend on these two numbers. */
+    public static List<Cell> cachedPlan(int landingSide, int rounds) {
+        return PLANS.computeIfAbsent(landingSide * 64 + rounds, k -> java.util.Collections.unmodifiableList(tunnelPlan(landingSide, rounds)));
+    }
+
     /** Absolute Y of a level's tunnels, or Integer.MIN_VALUE if the level does not exist. */
     public static int levelY(int surfaceY, int level) {
         int n = landingSteps(surfaceY, level);
@@ -127,8 +147,16 @@ public final class SpiralMine {
      * first; torches stand on the tunnel floor every 8 blocks of main tunnel and in each branch.
      */
     public static List<Cell> tunnelPlan(int landingSide) {
+        return tunnelPlan(landingSide, 0);
+    }
+
+    /**
+     * The plan lengthened {@code rounds} times: each round continues the main tunnel another {@link #MAIN_LENGTH}
+     * blocks out, with its branches. Earlier cells keep their order, so progress through a shorter plan stays valid.
+     */
+    public static List<Cell> tunnelPlan(int landingSide, int rounds) {
         List<Cell> out = new ArrayList<>();
-        for (int f = MAIN_START; f < MAIN_START + MAIN_LENGTH; f++) {
+        for (int f = MAIN_START; f < MAIN_START + MAIN_LENGTH * (rounds + 1); f++) {
             out.add(new Cell(f, landingSide, 1, false));
             out.add(new Cell(f, landingSide, 0, false));
             if ((f - MAIN_START) % 8 == 4) {

@@ -39,8 +39,13 @@ public final class MineLayout {
         return d.getX() * side.getStepX() + d.getZ() * side.getStepZ();
     }
 
-    /** Current working level (tier, plus free extra floors beyond tier 4). */
+    /** The level being worked: normally the deepest one, or the level being lengthened in a later round. */
     public static int level(WorkplaceState wp) {
+        return wp.revisit > 0 ? wp.revisit : deepest(wp);
+    }
+
+    /** The deepest level the shaft reaches. */
+    public static int deepest(WorkplaceState wp) {
         return wp.tier + wp.subLevel;
     }
 
@@ -66,7 +71,7 @@ public final class MineLayout {
     }
 
     public static List<SpiralMine.Cell> tunnelPlan(WorkplaceState wp) {
-        return SpiralMine.tunnelPlan(landingSide(wp, level(wp)));
+        return SpiralMine.cachedPlan(landingSide(wp, level(wp)), wp.revisit > 0 ? wp.reach : 0);
     }
 
     /** World position of a tunnel-plan cell of the current level. */
@@ -101,7 +106,7 @@ public final class MineLayout {
         if (f < SpiralMine.MAIN_START) {
             return 0;
         }
-        for (int lv = 1; lv <= level(wp); lv++) {
+        for (int lv = 1; lv <= deepest(wp); lv++) {
             int y = SpiralMine.levelY(wp.origin.getY(), lv);
             if (y != Integer.MIN_VALUE && Math.abs(p.getY() - y) <= 1) {
                 return lv;
@@ -120,7 +125,7 @@ public final class MineLayout {
             return lv;
         }
         int best = 0, bestD = 5;
-        for (int l = 1; l <= level(wp); l++) {
+        for (int l = 1; l <= deepest(wp); l++) {
             int y = SpiralMine.levelY(wp.origin.getY(), l);
             if (y != Integer.MIN_VALUE && Math.abs(p.getY() - y) < bestD) {
                 bestD = Math.abs(p.getY() - y);

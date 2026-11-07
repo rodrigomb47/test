@@ -108,4 +108,23 @@ class SpiralMineTest {
         // the main tunnel starts right next to the landing cell (f = 2)
         assertEquals(SpiralMine.MAIN_START, plan.get(0).f());
     }
+
+    @Test
+    void lengtheningKeepsTheDugPartAndAddsMoreTunnel() {
+        for (int sd = 0; sd <= 1; sd++) {
+            final int side = sd;
+            java.util.List<SpiralMine.Cell> first = SpiralMine.tunnelPlan(side, 0), longer = SpiralMine.tunnelPlan(side, 1);
+            // progress through the shorter plan stays valid: the longer plan starts with exactly the same cells
+            assertEquals(first, longer.subList(0, first.size()));
+            assertEquals(SpiralMine.planSize(1), longer.size());
+            assertEquals(SpiralMine.tunnelPlan(side), first);
+            int maxF = longer.stream().mapToInt(SpiralMine.Cell::f).max().orElse(0);
+            assertEquals(SpiralMine.MAIN_START + 2 * SpiralMine.MAIN_LENGTH - 1, maxF);
+            // the added stretch has its own branches, like the first one
+            long added = longer.subList(first.size(), longer.size()).stream().filter(c -> c.s() != side).count();
+            org.junit.jupiter.api.Assertions.assertTrue(added > 0, "the lengthened tunnel has no branches");
+        }
+        org.junit.jupiter.api.Assertions.assertTrue(SpiralMine.regularLevels(70) >= 4);
+        org.junit.jupiter.api.Assertions.assertSame(SpiralMine.cachedPlan(1, 2), SpiralMine.cachedPlan(1, 2));
+    }
 }

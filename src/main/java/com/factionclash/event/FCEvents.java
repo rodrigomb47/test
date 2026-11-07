@@ -46,6 +46,9 @@ public final class FCEvents {
         if (!data.started && FCConfig.AUTO_START.get()) {
             CampaignManager.start(event.getServer(), FCConfig.MAP_RADIUS.get());
         }
+        if (data.started) {
+            com.factionclash.util.ChunkLoading.restoreTravellers(event.getServer().overworld());
+        }
     }
 
     /** Vanilla hostiles hunt faction NPCs under their normal species behaviour; Hollow mobs keep to their lair. */

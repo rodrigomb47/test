@@ -19,19 +19,27 @@ import java.util.UUID;
 
 /**
  * Bounded background simulation (spec 20): base areas keep ticking chunk tickets, and NPCs travelling away from
- * home carry a 3x3 chunk ticket with them. Nothing else is force-loaded, so the map is not kept loaded as a whole.
+ * home carry a ticking 3x3 chunk ticket with them. Nothing else is force-loaded, so the map is not kept loaded as a
+ * whole.
  */
 public final class ChunkLoading {
     public static final TicketController CONTROLLER = new TicketController(
             ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "faction_areas"),
             (level, helper) -> {
                 CampaignData data = CampaignData.get(level.getServer());
-                // Drop traveller tickets of NPCs that are no longer alive in the roster.
-                for (UUID owner : Map.copyOf(helper.getEntityTickets()).keySet()) {
+                // Drop traveller tickets of NPCs that are no longer alive in the roster, and old non-ticking ones
+                // (they kept chunks loaded without updating the NPCs in them); living NPCs away from home get a
+                // ticking area again when the server has started (see restoreTravellers).
+                for (Map.Entry<UUID, net.neoforged.neoforge.common.world.chunk.TicketSet> e : Map.copyOf(helper.getEntityTickets()).entrySet()) {
+                    UUID owner = e.getKey();
                     NpcRecord r = data.record(owner);
                     boolean lairMob = data.bases.values().stream().anyMatch(b -> b.lairMobs.contains(owner));
                     if ((r == null || !r.alive) && !lairMob) {
                         helper.removeAllTickets(owner);
+                    } else {
+                        for (long chunk : e.getValue().nonTicking().toLongArray()) {
+                            helper.removeTicket(owner, chunk, false);
+                        }
                     }
                 }
             });
@@ -95,7 +103,7 @@ public final class ChunkLoading {
                 for (int dz = -1; dz <= 1; dz++) {
                     int x = o.x + dx, z = o.z + dz;
                     if (Math.abs(x - n.x) > 1 || Math.abs(z - n.z) > 1) {
-                        CONTROLLER.forceChunk(level, mob.getUUID(), x, z, false, false);
+                        CONTROLLER.forceChunk(level, mob.getUUID(), x, z, false, true);
                     }
                 }
             }
@@ -116,7 +124,33 @@ public final class ChunkLoading {
         ChunkPos c = new ChunkPos(chunk);
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                CONTROLLER.forceChunk(level, owner, c.x + dx, c.z + dz, add, false);
+                // ticking: the NPC (and what it works on) must actually be updated, not just kept in memory
+                CONTROLLER.forceChunk(level, owner, c.x + dx, c.z + dz, add, true);
+            }
+        }
+    }
+
+    /**
+     * After a restart, living NPCs whose last known position is away from their base get their 3x3 ticking area
+     * back, so they wake up and carry on (an unloaded or frozen NPC could never re-register it itself).
+     */
+    public static void restoreTravellers(ServerLevel level) {
+        if (!enabled()) {
+            return;
+        }
+        CampaignData data = CampaignData.get(level.getServer());
+        for (com.factionclash.campaign.FactionState f : data.factions.values()) {
+            for (NpcRecord r : f.roster.values()) {
+                if (!r.alive || r.lastPos == null) {
+                    continue;
+                }
+                BaseState home = data.base(r.baseId);
+                if (home != null && !home.destroyed && home.deepInside(r.lastPos)) {
+                    continue;
+                }
+                long chunk = ChunkPos.asLong(r.lastPos);
+                setArea(level, r.uuid, chunk, true);
+                TRAVELLER_CHUNK.put(r.uuid, chunk);
             }
         }
     }

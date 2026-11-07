@@ -181,7 +181,7 @@ public class WoodcutterJob extends Job {
             state = State.STORAGE;
             return;
         }
-        if (wp.upgrading()) {
+        if (wp.upgrading() && now() >= upgradeBlockedUntil) {
             state = State.UPGRADE;
             return;
         }
@@ -394,7 +394,7 @@ public class WoodcutterJob extends Job {
                         + " enlargement to tier " + (wp.tier + 1) + " started by " + npc.npcName()));
             }
         }
-        if (wp.upgrading()) {
+        if (wp.upgrading() && now() >= upgradeBlockedUntil) {
             int have = Inv.count(npc.inventory(), s -> s.is(Items.OAK_FENCE));
             int need = fenceNet(wp) - have;
             if (need > 0) {
@@ -421,6 +421,9 @@ public class WoodcutterJob extends Job {
         }
         state = State.CHECK;
     }
+
+    /** Until when the plot enlargement waits because the fences could not be made (game time). */
+    private long upgradeBlockedUntil;
 
     private int fenceNet(WorkplaceState wp) {
         Set<BlockPos> oldRing = new HashSet<>(TreePlotLayout.fence(wp, wp.tier));
@@ -453,10 +456,12 @@ public class WoodcutterJob extends Job {
             npc.swing(InteractionHand.MAIN_HAND);
             return;
         }
-        state = need > 0 ? State.STORAGE : State.UPGRADE;
+        state = need > 0 ? State.CHECK : State.UPGRADE;
         if (need > 0) {
-            status("Not enough wood for fences (" + need + " missing)", "Waiting");
-            waitFor(600);
+            // the wood went elsewhere since the enlargement started: go and cut some, and finish the fence later
+            // (waiting at the storehouse for wood that only this woodcutter brings in would never end)
+            status("Not enough wood for fences (" + need + " missing) - cutting more first", "Chopping");
+            upgradeBlockedUntil = now() + 2400;
         }
     }
 
@@ -513,6 +518,18 @@ public class WoodcutterJob extends Job {
                 npc.navigator().reset();
                 state = State.CHECK;
                 return;
+            }
+            if (!wild && !inPlot(wp) && npc.navigator().ticksWithoutProgress() > 200) {
+                viaOpening = true; // stuck outside its own fence (a hill beside it): round to the opening, like a player
+            }
+            if (viaOpening) {
+                BlockPos gap = TreePlotLayout.local(wp, 0, 0);
+                if (wild || inPlot(wp) && com.factionclash.npc.NpcNavigator.within(npc, gap, 2.0)) {
+                    viaOpening = false;
+                } else {
+                    goTo(gap, 1.2, "the way into plot #" + wp.id);
+                    return;
+                }
             }
             if (!goTo(spot, 2.5, wild ? "a wild tree" : "a tree in plot #" + wp.id)) {
                 return;
@@ -573,8 +590,25 @@ public class WoodcutterJob extends Job {
     }
 
     /** A leaf block within reach, at foot or head height, between the woodcutter and the trunk. */
+    private boolean viaOpening;
+
+    /** Within the plot's fence, its opening included. */
+    private boolean inPlot(WorkplaceState wp) {
+        BlockPos d = npc.blockPosition().subtract(wp.origin);
+        net.minecraft.core.Direction side = wp.facing.getClockWise();
+        int f = d.getX() * wp.facing.getStepX() + d.getZ() * wp.facing.getStepZ();
+        int sd = d.getX() * side.getStepX() + d.getZ() * side.getStepZ();
+        return f >= 0 && f <= TreePlotLayout.depth(wp.tier) && Math.abs(sd) <= TreePlotLayout.half(wp.tier);
+    }
+
     private BlockPos leafInTheWay() {
-        if (spot == null || npc.blockPosition().distSqr(spot) > 8 * 8) {
+        if (spot == null) {
+            return null;
+        }
+        // near the tree, or deeper in a plot so overgrown that walking gets no closer: cut through
+        WorkplaceState wp = wp();
+        boolean overgrown = !wild && wp != null && inPlot(wp) && npc.navigator().ticksWithoutProgress() > 100;
+        if (npc.blockPosition().distSqr(spot) > 8 * 8 && !overgrown) {
             return null;
         }
         double own = npc.blockPosition().distSqr(spot);

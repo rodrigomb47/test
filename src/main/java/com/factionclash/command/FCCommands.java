@@ -470,6 +470,9 @@ public final class FCCommands {
                 o.addProperty("recoveries", n.navigator().recoveries);
                 BlockPos dest = n.navigator().target();
                 o.addProperty("dest", dest == null ? "" : dest.toShortString());
+                o.addProperty("surface", n.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                        n.getBlockX(), n.getBlockZ()));
+                o.addProperty("problem", n.navigator().lastProblem());
                 o.addProperty("target", n.getTarget() == null ? "" : n.getTarget().getType().toShortString() + "@" + n.getTarget().blockPosition().toShortString());
                 o.addProperty("goals", String.join(",", n.goalSelector.getAvailableGoals().stream().filter(g -> g.isRunning())
                         .map(g -> g.getGoal().getClass().getSimpleName()).toList()));

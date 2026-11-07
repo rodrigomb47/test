@@ -32,6 +32,13 @@ public final class NpcNavigator {
     private int progressTimer;
     private int stuckChecks;
     private int failures;
+    /** Where the current run of failures began: switching destinations while stuck there keeps the count. */
+    private BlockPos failAnchor;
+    /** Watchdog: where the NPC has been travelling without getting 3 blocks away, and for how many ticks. */
+    private BlockPos stallAnchor;
+    private int stallTicks;
+    /** PROPOSED: travelling this long without leaving a 3-block radius, whatever the destinations, is a failure. */
+    private static final int STALL_TICKS = 600;
     private Vec3 lastCheck = Vec3.ZERO;
     public int recoveries;
     private String lastProblem = "";
@@ -39,6 +46,7 @@ public final class NpcNavigator {
     /** Closest distance to the target reached so far, and ticks since it last improved (progress, not motion). */
     private double bestDist;
     private int sinceBest;
+    private int lastTeleport = -1000;
     /** PROPOSED: ticks without getting at least a block closer before the trip counts as failing (pacing back and forth). */
     private static final int NO_PROGRESS_TICKS = 300;
 
@@ -54,9 +62,15 @@ public final class NpcNavigator {
         return lastProblem;
     }
 
+    /** Ticks of the current trip without getting at least a block closer to the destination. */
+    public int ticksWithoutProgress() {
+        return target == null ? 0 : sinceBest;
+    }
+
     public void reset() {
         target = null;
         failures = 0;
+        failAnchor = null;
         stuckChecks = 0;
         repathTimer = 0;
         npc.getNavigation().stop();
@@ -75,7 +89,12 @@ public final class NpcNavigator {
         if (target == null || !target.equals(pos)) {
             target = pos.immutable();
             this.reach = reach;
-            failures = 0;
+            if (failAnchor == null || !npc.blockPosition().closerThan(failAnchor, 3)) {
+                // a fresh start somewhere else; but a job flipping between destinations (stairs, tunnel face) while
+                // the NPC stays stuck in the same spot must not wipe the count, or it never gives up and digs out
+                failures = 0;
+                failAnchor = null;
+            }
             stuckChecks = 0;
             repathTimer = 0;
             lastCheck = npc.position();
@@ -85,23 +104,38 @@ public final class NpcNavigator {
         }
         if (within(npc, target, this.reach)) {
             npc.getNavigation().stop();
+            stallTicks = 0;
             return Result.ARRIVED;
         }
         if (failures >= MAX_FAILURES) {
+            return Result.FAILED;
+        }
+        if (stallAnchor == null || !npc.blockPosition().closerThan(stallAnchor, 3)) {
+            stallAnchor = npc.blockPosition();
+            stallTicks = 0;
+        } else if (++stallTicks >= STALL_TICKS) {
+            // swinging between destinations at a boundary (stairs / tunnel, gate / yard): every leg looks fine, but
+            // the NPC gets nowhere. Treat it as a dead end so the job digs or reroutes.
+            stallTicks = 0;
+            fail(MAX_FAILURES);
+            lastProblem = "going back and forth";
             return Result.FAILED;
         }
         if (npc.getNavigation().isDone() || --repathTimer <= 0) {
             repath(speed);
         }
         double dist = npc.position().distanceTo(Vec3.atBottomCenterOf(target));
-        if (dist < bestDist - 1.0) {
+        if (dist < bestDist - 1.0 && npc.tickCount - lastTeleport > 40) {
             bestDist = dist;
             sinceBest = 0;
+        } else if (dist < bestDist - 1.0) {
+            bestDist = dist; // a recovery hop is not walking progress: an NPC teleported back and forth stays "stuck"
+            sinceBest++;
         } else if (++sinceBest >= NO_PROGRESS_TICKS) {
             // moving, but not getting any closer (partial path to a cliff edge, pacing between two dead ends)
             sinceBest = 0;
             bestDist = dist;
-            failures += 2;
+            fail(2);
             lastProblem = "no progress";
             repath(speed);
         }
@@ -116,7 +150,7 @@ public final class NpcNavigator {
                 } else if (stuckChecks >= 3) {
                     stuckChecks = 0;
                     if (!tryRecoveryTeleport()) {
-                        failures++;
+                        fail(1);
                         lastProblem = "no route";
                     }
                     repath(speed);
@@ -129,16 +163,24 @@ public final class NpcNavigator {
     }
 
     /**
-     * Coming home from outside the walls (or from a cave under the base), the way in is through a gate: head for
-     * the nearest gate first, then on to the destination inside.
+     * The way in and out of a settlement is through a gate. Coming home from outside the walls (or from a cave
+     * under the base), head for the nearest gate first, then on to the destination inside; leaving for somewhere
+     * outside, head for the gate that fits the trip best rather than into the wall facing the destination.
      */
     private BlockPos viaGate(BlockPos dest) {
         com.factionclash.campaign.BaseState home = npc.base();
-        if (home == null || home.destroyed || !home.isSettlement() || !insideWalls(home, dest) || insideWalls(home, npc.blockPosition())) {
+        if (home == null || home.destroyed || !home.isSettlement()) {
+            return dest;
+        }
+        boolean destIn = insideWalls(home, dest), npcIn = insideWalls(home, npc.blockPosition());
+        // leaving only counts for a destination beyond the walls, not one below the base (the mine, a cave)
+        boolean destBeyond = Math.abs(dest.getX() - home.center.getX()) > com.factionclash.structure.BaseLayout.HALF
+                || Math.abs(dest.getZ() - home.center.getZ()) > com.factionclash.structure.BaseLayout.HALF;
+        if (!(destIn && !npcIn) && !(npcIn && destBeyond)) {
             return dest;
         }
         BlockPos best = null;
-        double bestD = Double.MAX_VALUE;
+        double bestD = Double.MAX_VALUE, bestHere = Double.MAX_VALUE;
         for (String key : new String[]{com.factionclash.campaign.BaseState.GATE_WEST, com.factionclash.campaign.BaseState.GATE_EAST,
                 com.factionclash.campaign.BaseState.GATE_SOUTH}) {
             BlockPos g = home.point(key);
@@ -146,13 +188,21 @@ public final class NpcNavigator {
                 continue;
             }
             BlockPos out = g.offset(Integer.signum(g.getX() - home.center.getX()) * 2, 0, Integer.signum(g.getZ() - home.center.getZ()) * 2);
-            double d = out.distSqr(npc.blockPosition());
+            double here = out.distSqr(npc.blockPosition());
+            // coming in: the nearest gate; going out: the shortest walk through a gate to the destination
+            double d = destIn ? here : Math.sqrt(here) + Math.sqrt(out.distSqr(dest));
             if (d < bestD) {
                 bestD = d;
                 best = out;
+                bestHere = here;
             }
         }
-        return best == null || bestD <= 4 ? dest : best;
+        return best == null || bestHere <= 4 ? dest : best;
+    }
+
+    /** Where travelling to {@code dest} really heads first (the nearest gate when coming home from outside). */
+    public BlockPos routeTarget(BlockPos dest) {
+        return viaGate(dest);
     }
 
     private static boolean insideWalls(com.factionclash.campaign.BaseState b, BlockPos p) {
@@ -167,15 +217,10 @@ public final class NpcNavigator {
         int surface = npc.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, npc.getBlockX(), npc.getBlockZ());
         boolean underground = npc.getY() < surface - 3;
         if (hd > LONG_TRIP && !underground) {
-            double f = WAYPOINT_STEP / hd;
-            int wx = Mth.floor(npc.getX() + (dest.getX() + 0.5 - npc.getX()) * f);
-            int wz = Mth.floor(npc.getZ() + (dest.getZ() + 0.5 - npc.getZ()) * f);
-            // Heightmaps of unloaded chunks read as the world floor, so load (or generate) the waypoint's chunk first.
-            npc.level().getChunk(wx >> 4, wz >> 4);
-            goal = npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(wx, 0, wz));
+            goal = waypoint(dest, hd);
         }
         Path path = npc.getNavigation().createPath(goal, 1);
-        if ((path == null || !path.canReach()) && underground && hd > 16 && npc.tickCount >= nextExitSearch) {
+        if ((path == null || !path.canReach()) && underground && (hd > 16 || dest.getY() - npc.getY() > 8) && npc.tickCount >= nextExitSearch) {
             nextExitSearch = npc.tickCount + 200; // path searches are expensive: bounded per NPC
             // No route from down here (lost in a cave or ravine): climb out first, toward the nearest reachable
             // surface point. A miner in its own tunnels has a full route and never takes this detour.
@@ -188,13 +233,49 @@ public final class NpcNavigator {
             }
         }
         if (path == null) {
-            failures++;
+            fail(1);
             lastProblem = "no path";
             repathTimer = 20;
             return;
         }
         npc.getNavigation().moveTo(path, speed);
         repathTimer = 100;
+    }
+
+    private BlockPos waypoint(BlockPos dest, double hd) {
+        double ux = (dest.getX() + 0.5 - npc.getX()) / hd, uz = (dest.getZ() + 0.5 - npc.getZ()) / hd;
+        com.factionclash.campaign.BaseState home = npc.base();
+        boolean avoid = home != null && !home.destroyed && home.isSettlement() && !insideWalls(home, npc.blockPosition())
+                && !insideWalls(home, dest);
+        int wx = 0, wz = 0;
+        // passing by its own settlement, the waypoint goes around the walls rather than back in through a gate
+        for (double turn : new double[]{0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5}) {
+            double c = Math.cos(turn), sn = Math.sin(turn);
+            wx = Mth.floor(npc.getX() + (ux * c - uz * sn) * WAYPOINT_STEP);
+            wz = Mth.floor(npc.getZ() + (ux * sn + uz * c) * WAYPOINT_STEP);
+            if (!avoid || Math.abs(wx - home.center.getX()) > com.factionclash.structure.BaseLayout.HALF + 2
+                    || Math.abs(wz - home.center.getZ()) > com.factionclash.structure.BaseLayout.HALF + 2) {
+                break;
+            }
+        }
+        // Heightmaps of unloaded chunks read as the world floor, so load (or generate) the waypoint's chunk first.
+        npc.level().getChunk(wx >> 4, wz >> 4);
+        return npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(wx, 0, wz));
+    }
+
+    private void fail(int n) {
+        if (failures == 0) {
+            failAnchor = npc.blockPosition();
+        }
+        failures += n;
+    }
+
+    /** Whether a walking route toward {@code dest} exists from here (its first surface waypoint on long trips). */
+    public boolean canWalkToward(BlockPos dest) {
+        BlockPos d = viaGate(dest);
+        double hd = Math.sqrt(Mth.square(d.getX() + 0.5 - npc.getX()) + Mth.square(d.getZ() + 0.5 - npc.getZ()));
+        Path p = npc.getNavigation().createPath(hd > LONG_TRIP ? waypoint(d, hd) : d, 1);
+        return p != null && p.canReach();
     }
 
     /** Finds a surface position near an underground NPC (toward its target first) that a path can reach. */
@@ -240,6 +321,7 @@ public final class NpcNavigator {
         npc.getNavigation().stop();
         npc.teleportTo(spot.x() + 0.5, spot.y(), spot.z() + 0.5);
         recoveries++;
+        lastTeleport = npc.tickCount;
         return true;
     }
 
@@ -249,8 +331,8 @@ public final class NpcNavigator {
         }
         BlockState below = level.getBlockState(feet.below());
         if (below.getCollisionShape(level, feet.below()).isEmpty() || isDangerous(below) || !below.getFluidState().isEmpty()
-                || below.is(BlockTags.LEAVES)) {
-            return false; // never onto a tree canopy: nobody walks down from there
+                || below.is(BlockTags.LEAVES) || DigOut.perched(level, feet)) {
+            return false; // never onto a tree canopy or a tall trunk: nobody walks down from there
         }
         for (int dy = 0; dy < 2; dy++) {
             BlockPos p = feet.above(dy);
