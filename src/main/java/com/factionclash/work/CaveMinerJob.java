@@ -196,6 +196,16 @@ public class CaveMinerJob extends Job {
         via.addAll(CaveSurvey.treePath(w.parent, at, k));
     }
 
+    /** Breaks a block at player speed; its drops go straight into the backpack and count as the cave's output. */
+    private boolean dig(WorkplaceState w, BlockPos pos) {
+        if (!breaker.tick(npc, pos)) {
+            return false;
+        }
+        w.totalOutput += breaker.lastGained();
+        data().setDirty();
+        return true;
+    }
+
     /** The nearest marked ore that is still there; marks whose ore has gone are dropped. */
     private BlockPos nextMark(WorkplaceState w) {
         BlockPos best = null;
@@ -275,11 +285,11 @@ public class CaveMinerJob extends Job {
                 return;
             }
             status("Mining " + CaveWork.oreName(s) + " ore in cave #" + w.id + " (" + w.marks.size() + " marked)", "Mining");
-            if (breaker.tick(npc, t)) {
+            if (dig(w, t)) {
                 if (BlockWork.canHarvest(s, npc.getMainHandItem())) {
                     npc.awardXp(MinerJob.oreXp(s));
                     if (level().random.nextDouble() < npc.affix(Affix.PROSPECTOR)) {
-                        BlockWork.dropExtra(npc, s, t);
+                        w.totalOutput += BlockWork.dropExtra(npc, s, t);
                     }
                 }
                 noticeOres(w, t);
@@ -333,7 +343,7 @@ public class CaveMinerJob extends Job {
                 return;
             }
             status("Tunnelling toward marked ore (cave #" + w.id + ")", "Mining");
-            if (breaker.tick(npc, c)) {
+            if (dig(w, c)) {
                 tunnelled++;
                 if (MinerJob.isOre(cs)) {
                     npc.awardXp(MinerJob.oreXp(cs));
@@ -437,7 +447,7 @@ public class CaveMinerJob extends Job {
             return;
         }
         status("Prospecting from cave #" + w.id + " (" + d.getName() + ", " + (k + 1) + "/" + PROSPECT_LENGTH + ")", "Mining");
-        if (breaker.tick(npc, cell)) {
+        if (dig(w, cell)) {
             if (MinerJob.isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
                 npc.awardXp(MinerJob.oreXp(s));
             }

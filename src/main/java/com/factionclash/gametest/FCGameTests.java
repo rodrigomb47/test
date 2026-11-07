@@ -193,6 +193,24 @@ public final class FCGameTests {
         });
     }
 
+    /** A badly hurt NPC in a fight eats its golden apple like a player (32 ticks) and gets the apple's effects. */
+    @GameTest(template = "platform", timeoutTicks = 120)
+    public static void hurtSoldierEatsGoldenApple(GameTestHelper h) {
+        FactionNpc s = npc(h, 3, 3, FactionType.GROVE_COVENANT, NpcRole.SWORDSMAN);
+        s.inventory().setItem(0, new ItemStack(Items.GOLDEN_APPLE, 1));
+        Zombie z = h.spawn(EntityType.ZOMBIE, new BlockPos(13, 2, 13));
+        z.setNoAi(true);
+        s.setTarget(z);
+        s.setHealth(6.0F);
+        h.runAfterDelay(20, () -> h.assertTrue(com.factionclash.work.Inv.count(s.inventory(), x -> x.is(Items.GOLDEN_APPLE)) == 1,
+                "the apple must take a player's eating time, not be instant"));
+        h.succeedWhen(() -> {
+            h.assertTrue(s.hasEffect(net.minecraft.world.effect.MobEffects.ABSORPTION), "no absorption");
+            h.assertTrue(s.hasEffect(net.minecraft.world.effect.MobEffects.REGENERATION), "no regeneration");
+            h.assertTrue(com.factionclash.work.Inv.count(s.inventory(), x -> x.is(Items.GOLDEN_APPLE)) == 0, "apple not used up");
+        });
+    }
+
     /** Weapons set the attack speed exactly as for a player: sword 1.6, iron axe 0.9, bare hands 4.0. */
     @GameTest(template = "platform", timeoutTicks = 20)
     public static void weaponsSetPlayerAttackSpeed(GameTestHelper h) {
@@ -255,8 +273,9 @@ public final class FCGameTests {
             var r = n.navigator().travel(goal, 1.5, 1.0);
             if (n.navigator().recoveries > before) {
                 net.minecraft.world.phys.Vec3 to = n.position();
-                h.assertTrue(Math.abs(Math.floor(to.x) - Math.floor(from.x)) <= 2 && Math.abs(Math.floor(to.z) - Math.floor(from.z)) <= 2
-                        && Math.abs(Math.floor(to.y) - Math.floor(from.y)) <= 1, "recovery hop too large: " + from + " -> " + to);
+                int maxH = com.factionclash.config.FCConfig.UNSTUCK_HORIZONTAL.get(), maxV = com.factionclash.config.FCConfig.UNSTUCK_VERTICAL.get();
+                h.assertTrue(Math.abs(Math.floor(to.x) - Math.floor(from.x)) <= maxH && Math.abs(Math.floor(to.z) - Math.floor(from.z)) <= maxH
+                        && Math.abs(Math.floor(to.y) - Math.floor(from.y)) <= maxV, "recovery hop too large: " + from + " -> " + to);
                 h.assertTrue(com.factionclash.npc.NpcNavigator.isSafeStandingSpot(h.getLevel(), n, n.blockPosition()),
                         "recovery landed on an unsafe spot");
             }
@@ -342,9 +361,12 @@ public final class FCGameTests {
         });
     }
 
-    /** Mining an ore over time drops its real loot only with the right pickaxe, and the NPC picks it up. */
+    /**
+     * Real mining: the block's own drop goes straight into the miner's backpack, as a player's does - and only with
+     * a pickaxe that can harvest it (a wooden pickaxe gets nothing from iron ore). Nothing is left on the ground.
+     */
     @GameTest(template = "platform", timeoutTicks = 200)
-    public static void realMiningDropsAndPickup(GameTestHelper h) {
+    public static void realMiningDropsIntoBackpack(GameTestHelper h) {
         BlockPos good = new BlockPos(6, 2, 5), bad = new BlockPos(6, 2, 12);
         h.setBlock(good, Blocks.IRON_ORE);
         h.setBlock(bad, Blocks.IRON_ORE);
@@ -356,30 +378,22 @@ public final class FCGameTests {
         var b2 = new com.factionclash.work.BlockWork.Breaker();
         BlockPos g = h.absolutePos(good), w = h.absolutePos(bad);
         boolean[] done = {false, false};
-        long[] brokeAt = {-1};
         h.onEachTick(() -> {
             if (!done[0] && b1.tick(stone, g)) {
                 done[0] = true;
-                brokeAt[0] = h.getTick();
+                h.assertTrue(b1.lastGained() >= 1, "the breaker should report the raw iron gained");
             }
             if (!done[1] && b2.tick(wood, w)) {
                 done[1] = true;
             }
-            com.factionclash.work.BlockWork.pickUp(stone, x -> true);
-            com.factionclash.work.BlockWork.pickUp(wood, x -> true);
-            if (done[0]) {
-                // the drop pops out at random like a player's: walk over to it, as the jobs do
-                var item = com.factionclash.work.BlockWork.nearestItem(stone, new net.minecraft.world.phys.AABB(g).inflate(3), x -> true);
-                if (item != null) {
-                    stone.getNavigation().moveTo(item, 1.0);
-                }
-            }
-            if (done[0] && done[1] && h.getTick() > brokeAt[0] + 60) {
+            if (done[0] && done[1]) {
                 h.assertTrue(com.factionclash.work.Inv.count(stone.inventory(), x -> x.is(Items.RAW_IRON)) >= 1,
-                        "stone-pickaxe miner did not get raw iron");
+                        "stone-pickaxe miner did not get raw iron in its backpack");
                 h.assertTrue(com.factionclash.work.Inv.count(wood.inventory(), x -> x.is(Items.RAW_IRON)) == 0,
                         "wooden-pickaxe miner got raw iron");
                 h.assertTrue(h.getLevel().getBlockState(g).isAir() && h.getLevel().getBlockState(w).isAir(), "ore not removed");
+                h.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                        new AABB(g).inflate(4)).isEmpty(), "drops were left on the ground");
                 h.succeed();
             }
         });

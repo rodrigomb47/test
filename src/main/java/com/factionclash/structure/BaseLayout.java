@@ -15,6 +15,9 @@ import net.minecraft.world.level.block.AnvilBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.SmokerBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.block.state.properties.DoorHingeSide;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.util.RandomSource;
 
 /**
@@ -62,6 +65,18 @@ public final class BaseLayout {
                 bp.set(-HALF, y, z, Blocks.AIR.defaultBlockState());
                 bp.set(HALF, y, z, Blocks.AIR.defaultBlockState());
             }
+        }
+        // wooden double doors in both gates: players and NPCs open them to go in and out, monsters cannot
+        for (int side : new int[]{-1, 1}) {
+            int x = side * HALF;
+            for (int y = 0; y <= 2; y++) {
+                bp.set(x, y, 1, perim);
+            }
+            bp.set(x, 2, -1, perim);
+            bp.set(x, 2, 0, perim);
+            Direction facing = side < 0 ? Direction.EAST : Direction.WEST;
+            gateDoor(bp, x, -1, facing, side < 0 ? DoorHingeSide.LEFT : DoorHingeSide.RIGHT);
+            gateDoor(bp, x, 0, facing, side < 0 ? DoorHingeSide.RIGHT : DoorHingeSide.LEFT);
         }
         bp.mark(BaseState.GATE_WEST, -HALF, 0, 0);
         bp.mark(BaseState.GATE_EAST, HALF, 0, 0);
@@ -286,5 +301,12 @@ public final class BaseLayout {
         bp.wallTorch(x1 + 4, 2, z1 + 1, Direction.SOUTH);
         bp.set(x1 + 7, 0, z1 + 1, Blocks.CHEST.defaultBlockState()
                 .setValue(net.minecraft.world.level.block.ChestBlock.FACING, Direction.WEST));
+    }
+
+    private static void gateDoor(Blueprint bp, int x, int z, Direction facing, DoorHingeSide hinge) {
+        BlockState lower = Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.FACING, facing)
+                .setValue(DoorBlock.HINGE, hinge).setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER);
+        bp.set(x, 0, z, lower);
+        bp.set(x, 1, z, lower.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
     }
 }

@@ -6,6 +6,12 @@ watchable pace. Most are configurable in `config/factionclash-common.toml` (crea
 `config` folder on first launch; defaults in [docs/factionclash-common.toml](docs/factionclash-common.toml)); the rest are constants named in the
 source.
 
+## Movement (config `movement`)
+| Value | Default | Effect |
+|---|---|---|
+| `unstuckHorizontal` | 4 (1–8) | How far across the stuck-recovery teleport may move an NPC to a safe spot closer to its goal. |
+| `unstuckVertical` | 2 (1–4) | How far up or down it may move it. |
+
 ## Campaign (config `campaign`)
 | Value | Default | Effect |
 |---|---|---|
@@ -17,8 +23,9 @@ source.
 * Break time per tick = tool speed (+ Efficiency, Haste/Mining Fatigue, ×0.2 underwater without Aqua Affinity,
   ×0.2 when not on the ground, × (1 + Diligence)) ÷ hardness ÷ 30 with a tool that can harvest the block (÷ 100
   without). This is the vanilla player formula: stone with a stone pickaxe 12 ticks, with an iron pickaxe 8.
-* Drops come from the block's own loot table, only with a tool that can harvest it. Item pickup box: the NPC's
-  box grown by 1 × 0.5 × 1 blocks, like a player's.
+* Drops come from the block's own loot table, only with a tool that can harvest it, and go straight into the
+  breaking worker's backpack (overflow drops at its feet). Item pickup box for things lying around: the NPC's
+  box grown by 1 x 0.5 x 1 blocks, like a player's.
 * Reach: 4.5 blocks for mining, 7.5 for a tree trunk from the ground (tall trunks), 5.5 for leaves.
 
 ## Mines (`SpiralMine`, `MineLayout`, `MinerJob`)
@@ -33,11 +40,13 @@ source.
 * Shaft: 2×2 spiral staircase, one block down per step, a landing every 4 steps, wall torch every 8 steps.
 * Branch mine per level: main tunnel 40 blocks long and 2 high from the landing, side branches of 10 blocks every
   4 blocks on both sides, torches every 8 blocks.
+* After the deepest level, "infill" branch mines are dug in the middle of every gap of 12+ blocks between levels
+  (deepest first), reached through the existing spiral; no pickaxe payment.
 * The miner digs down to the next level once 60% of the current level's plan is dug and the payment pickaxe is in
   storage; when the level is completely dug and no payment is available, it digs down without one (it still
   needs an iron pickaxe in hand for tier 3 and deeper).
-* Junk: cobblestone, cobbled deepslate, dirt, gravel and similar are not picked up once storage holds 512 of that
-  item and the miner carries 64 (the miner keeps 64 sealing blocks and 32 torches for itself).
+* Junk: once storage holds 512 cobblestone, cobbled deepslate, dirt, gravel or similar, the miner keeps at most 64
+  of that item in its backpack and tosses the rest it digs (the miner keeps 64 sealing blocks and 32 torches).
 * Ore XP: coal/copper 2, redstone 3, iron/lapis 4, gold 6, diamond 10, emerald 12; ordinary stone 0.
 
 ## Tree plots (`TreePlotLayout`, `WoodcutterJob`)
@@ -69,7 +78,7 @@ source.
   per block of distance), so the pads' edges are slopes, not cliffs or trenches.
 * Site choice also scores the ground over the mine's first level (50 blocks east of the base): +6 per sample with
   water over the tunnels, +3 where the ground dips toward the tunnel depth.
-* Woodcutters fell wild trees within 40 blocks of their plot when the plot has nothing to do.
+* Woodcutters fell wild trees within 64 blocks of their plot when the plot has nothing to do.
 
 ## Animals and fishing (`AnimalCarerJob`, `ButcherJob`, `FishermanJob`)
 * Breeding: one food item per adult (vanilla `isFood`), only adults that are ready (age 0); vanilla handles the
@@ -99,6 +108,12 @@ source.
 * Garrison mix: 40% ranged; every third ranged recruit is a crossbowman when a crossbow is stored or 2 iron
   ingots + 2 string are; every third melee recruit (beyond the 3 home swordsmen) is an axe fighter. A crossbow
   paid from materials costs 4 sticks, 2 string, 2 iron ingots and 1 plank (crossbow + tripwire hook).
+
+## Golden apples
+* Soldiers take one golden apple from storage when one is stored. Any NPC carrying one eats it when its health
+  drops below 40% while it has a target: 32 ticks of eating (as a player), then the apple's vanilla effects
+  (Regeneration II 5 s, Absorption 2 min); 10 s before another. The blacksmith crafts one (8 gold ingots + 1
+  apple) while fewer than one per two soldiers are stored.
 
 ## War (config `war`)
 * Scouts: range 160 (+Pathfinder), at least 96 blocks out, 4 sectors per expedition, overdue after 24000 ticks.

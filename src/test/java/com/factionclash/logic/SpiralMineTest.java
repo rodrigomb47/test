@@ -57,7 +57,33 @@ class SpiralMineTest {
         assertTrue(SpiralMine.levelY(surface, 2) <= 32);
         assertTrue(SpiralMine.levelY(surface, 3) <= 0);
         assertTrue(SpiralMine.levelY(surface, 4) <= -48 && SpiralMine.levelY(surface, 4) >= SpiralMine.MIN_Y);
-        assertEquals(-1, SpiralMine.landingSteps(surface, 40), "no levels below the mining floor");
+        assertEquals(-1, SpiralMine.landingSteps(surface, 60), "no levels below the mining floor, nor endless infill");
+    }
+
+    @Test
+    void infillLevelsFitBetweenExistingOnesOnceTheBottomIsReached() {
+        int surface = 70;
+        java.util.List<Integer> all = new java.util.ArrayList<>();
+        int level = 1;
+        for (int n = SpiralMine.landingSteps(surface, level); n > 0; n = SpiralMine.landingSteps(surface, ++level)) {
+            assertEquals(2, SpiralMine.cell(n)[0], "every landing faces the tunnels");
+            assertTrue(surface - n >= SpiralMine.MIN_Y);
+            all.add(n);
+        }
+        int regular = 0;
+        while (SpiralMine.isRegular(surface, regular + 1)) {
+            regular++;
+        }
+        assertTrue(all.size() > regular, "infill levels exist after the bottom");
+        int deepest = all.subList(0, regular).stream().mapToInt(Integer::intValue).max().orElseThrow();
+        for (int i = regular; i < all.size(); i++) {
+            assertTrue(all.get(i) < deepest, "infill levels lie above the bottom, inside the dug shaft");
+        }
+        java.util.List<Integer> sorted = new java.util.ArrayList<>(all);
+        sorted.sort(null);
+        for (int i = 1; i < sorted.size(); i++) {
+            assertTrue(sorted.get(i) - sorted.get(i - 1) >= 6, "levels at least 6 apart: " + sorted);
+        }
     }
 
     @Test

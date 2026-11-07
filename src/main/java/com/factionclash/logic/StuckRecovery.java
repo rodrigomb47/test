@@ -1,12 +1,13 @@
 package com.factionclash.logic;
 
 /**
- * Picks the destination of the small stuck-recovery teleport (spec 13): at most 2 blocks horizontally and
- * 1 block up or down, to a validated safe spot, preferring the one closest to where the NPC is heading.
+ * Picks the destination of the stuck-recovery teleport (spec 13): a validated safe spot within a few blocks
+ * (default 4 across, 2 up or down; configurable), preferring the one closest to where the NPC is heading.
  */
 public final class StuckRecovery {
-    public static final int MAX_HORIZONTAL = 2;
-    public static final int MAX_VERTICAL = 1;
+    /** Defaults (config `movement`): blocks across and up/down a recovery may move an NPC. */
+    public static final int MAX_HORIZONTAL = 4;
+    public static final int MAX_VERTICAL = 2;
 
     private StuckRecovery() {
     }
@@ -24,12 +25,16 @@ public final class StuckRecovery {
      * @return the best safe spot that is closer to the goal than the current position, or null if none.
      */
     public static Spot choose(int x, int y, int z, double goalX, double goalY, double goalZ, SafetyCheck check) {
+        return choose(x, y, z, goalX, goalY, goalZ, MAX_HORIZONTAL, MAX_VERTICAL, check);
+    }
+
+    public static Spot choose(int x, int y, int z, double goalX, double goalY, double goalZ, int maxH, int maxV, SafetyCheck check) {
         double here = dist2(x + 0.5, y, z + 0.5, goalX, goalY, goalZ);
         Spot best = null;
         double bestD = here;
-        for (int dy = -MAX_VERTICAL; dy <= MAX_VERTICAL; dy++) {
-            for (int dx = -MAX_HORIZONTAL; dx <= MAX_HORIZONTAL; dx++) {
-                for (int dz = -MAX_HORIZONTAL; dz <= MAX_HORIZONTAL; dz++) {
+        for (int dy = -maxV; dy <= maxV; dy++) {
+            for (int dx = -maxH; dx <= maxH; dx++) {
+                for (int dz = -maxH; dz <= maxH; dz++) {
                     if (dx == 0 && dz == 0) {
                         continue;
                     }

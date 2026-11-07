@@ -59,6 +59,8 @@ Players respawn at their nearest surviving allied base when they have no bed.
 
 ## How the simulation works
 
+* **Gates with doors**: each base wall has a west and an east gate with wooden double doors that players and NPCs
+  open to go in and out (monsters cannot open them). NPCs coming home from outside head for the nearest gate.
 * **Starting bases** are placed on dry, gentle land: each faction searches its own map sector on real generated
   terrain, widens to the whole map (and a 1.5× map) if needed, and levels the footprint including the mine and
   tree-plot pads. Every base starts with a finished reporting station, map board, faction heart, categorised
@@ -74,9 +76,11 @@ Players respawn at their nearest surviving allied base when they have no bed.
 * **Workers work like players.** Nothing is produced by a timer or a loot roll: every item comes from a block a
   worker really broke, an animal it really bred or killed, or a vanilla loot table a player would also roll.
   * Breaking uses the player formula (tool speed, Efficiency, Haste, underwater and in-air penalties, ×30 with the
-    right tool, ×100 without), shows the crack animation, and drops the block's own loot only when the tool can
-    harvest it (a wooden pickaxe gets nothing from iron ore). Drops land in the world and the worker walks over
-    and picks them up.
+    right tool, ×100 without), shows the crack animation, and gives the block's own loot only when the tool can
+    harvest it (a wooden pickaxe gets nothing from iron ore). What a miner, woodcutter or farmer breaks goes
+    straight into its backpack, as a player's mined blocks go into the inventory; only what does not fit (or junk
+    a miner no longer wants) drops at its feet. Things that fall on their own (decaying leaves, eggs, wool) are
+    walked over and picked up.
   * Output goes into the worker's backpack and is carried to storage; full storage pauses work without deleting
     anything.
 * **Mines** are dug by the miner: a roofed hut over a 2×2 spiral staircase (one step down per block, a landing
@@ -84,14 +88,16 @@ Players respawn at their nearest surviving allied base when they have no bed.
   4 blocks, torches every 8 blocks). Levels: tier 1 ≈ 6 below the surface, tier 2 at y=32 (iron), tier 3 at y=0
   (diamonds), tier 4 at y=−48, then more levels 6 deeper down to y=−56. When ~60% of a level is mined, the miner
   digs the spiral down to the next one; tiers 2–4 are paid with a pickaxe, and tier 3+ needs an iron pickaxe in
-  hand. Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through
+  hand. When the bottom is reached, more branch mines are dug between levels that are 12+ blocks apart, so a
+  miner keeps finding new rock; a fully worked-out mine sends its miner to a surveyed cave if there is one.
+  Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through
   falling sand like a player), bridge cave holes in the tunnel floor, stop a branch where it breaks out of a
   hillside, and stop collecting cobblestone-type junk once storage holds 512 of it.
 * **Tree plots** grow from 4 to 9 to 16 trees. Woodcutters fell trees log by log with their axe, break the
   canopy (the leaves' own loot drops saplings, sticks and apples), collect what fell, replant, and let saplings
   grow naturally — they only speed growth up with real bone meal (made by the blacksmith from bones). While the
-  plot's saplings grow they fell wild trees within 40 blocks of the plot (never in a base or another plot) and
-  replant a sapling where each one stood.
+  plot's saplings grow they also cut trees outside their plot: wild trees within 64 blocks (never in a base or
+  another faction's plot), replanting a sapling where each one stood.
 * **Cave explorers** go to cave entrances the scouts reported, find the way in, and explore the cave on foot:
   they light dark spots with real torches, note every ore they can actually see (an exposed face and a clear
   line of sight — nothing behind rock), and build steps with placed cobblestone or dirt down drops of two blocks
@@ -170,13 +176,13 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §7 Natural cave mining | Implemented (surveyed by explorers, mined by miners; depletion is real ore running out) | U, G, S |
 | §8 Tree plots + upgrades, farm, chef | Implemented (player-like woodcutting and farming) | S |
 | §8 Pens/breeding/butchering, fishing | Implemented | G, S |
-| §9 Golden apples used by NPCs | ✗ | — |
+| §9 Golden apples used by NPCs | Implemented (soldiers carry one; eaten when badly hurt in a fight; blacksmith crafts them) | G |
 | §10 Categorised storage, blacksmith batches, soldier armour priority | Implemented (no hauler role) | G (storage), S |
 | §11 Builder projects, staging chest + signs, repairs, player-edit preservation | Implemented (houses, storage expansion) | S |
 | §11 Perimeter expansion, outposts, procedural building variety | ✗ | — |
 | §12 Scouts, reports, map board, stale sightings, retreat, overdue follow-up | Implemented (chat-based map) | S |
 | §12 Radio / communication tower | ✗ | — |
-| §13 Player-equivalent speed, allies pass through each other, ≤2/≤1 stuck recovery, day/night continuity | Implemented | G (4.25 blocks/s; recovery), S |
+| §13 Player-equivalent speed, allies pass through each other, stuck recovery (default ≤4 across / ≤2 up-down, configurable), day/night continuity | Implemented | G (4.25 blocks/s; recovery), U, S |
 | §14 Mob targeting, half undead damage, civilian flee, creeper jump-back, raids, defence alarm | Implemented | G, S |
 | §14 Field medics, potions | ✗ | — |
 | §15 Overworld/Nether dungeons, Nether expeditions, TNT, rails | ✗ (Hollow lairs are the only monster bases) | — |

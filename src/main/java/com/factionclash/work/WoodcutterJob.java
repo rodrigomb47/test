@@ -152,6 +152,18 @@ public class WoodcutterJob extends Job {
         }
     }
 
+    /** Breaks a block at player speed; logs, saplings, sticks and apples go straight into the backpack. */
+    private boolean chopBlock(WorkplaceState wp, BlockPos pos) {
+        if (!breaker.tick(npc, pos)) {
+            return false;
+        }
+        if (breaker.lastGained() > 0) {
+            wp.totalOutput += breaker.lastGained();
+            data().setDirty();
+        }
+        return true;
+    }
+
     private boolean isTree(BlockPos p) {
         return level().getBlockState(p).is(BlockTags.LOGS);
     }
@@ -216,6 +228,7 @@ public class WoodcutterJob extends Job {
         if (tree != null) {
             spot = tree;
             wild = true;
+            wildWalk = 0;
             logs.clear();
             state = State.CHOP;
             return;
@@ -225,10 +238,12 @@ public class WoodcutterJob extends Job {
     }
 
     /** PROPOSED: wild trees are felled within this many blocks of the plot entrance. */
-    public static final int WILD_RANGE = 40;
+    public static final int WILD_RANGE = 64;
     private boolean wild;
     private long nextWildScan;
     private BlockPos wildCache;
+    private int wildWalk;
+    private final Set<Long> badWild = new HashSet<>();
 
     /**
      * The nearest natural tree around the plot (a trunk standing on dirt with natural leaves), outside every base
@@ -261,7 +276,7 @@ public class WoodcutterJob extends Job {
                 while (level().getBlockState(base.below()).is(BlockTags.LOGS) && top.getY() - base.getY() < 30) {
                     base = base.below();
                 }
-                if (top.getY() - base.getY() < 2 || !level().getBlockState(base.below()).is(BlockTags.DIRT)
+                if (top.getY() - base.getY() < 2 || !level().getBlockState(base.below()).is(BlockTags.DIRT) || badWild.contains(base.asLong())
                         || !naturalLeavesNear(top) || protectedSpot(base)) {
                     continue;
                 }
@@ -477,13 +492,26 @@ public class WoodcutterJob extends Job {
             BlockPos leaf = leafInTheWay();
             if (leaf != null) {
                 status("Cutting through leaves to reach a tree in plot #" + wp.id, "Chopping");
-                breaker.tick(npc, leaf);
+                chopBlock(wp, leaf);
+                return;
+            }
+            if (wild && ++wildWalk > 400) {
+                // cannot get to this wild tree (cliff, water, fenced in): leave it and look for another
+                badWild.add(spot.asLong());
+                if (badWild.size() > 128) {
+                    badWild.clear();
+                }
+                wildCache = null;
+                wild = false;
+                npc.navigator().reset();
+                state = State.CHECK;
                 return;
             }
             if (!goTo(spot, 2.5, wild ? "a wild tree" : "a tree in plot #" + wp.id)) {
                 return;
             }
         }
+        wildWalk = 0;
         if (logs.isEmpty()) {
             collectLogs();
             if (logs.isEmpty()) {
@@ -498,7 +526,7 @@ public class WoodcutterJob extends Job {
             return;
         }
         status("Felling " + (wild ? "a wild tree" : "a tree in plot #" + wp.id) + " (" + logs.size() + " logs left)", "Chopping");
-        if (breaker.tick(npc, log)) {
+        if (chopBlock(wp, log)) {
             npc.awardXp(1);
             logs.remove(0);
             if (logs.isEmpty()) {
@@ -532,7 +560,7 @@ public class WoodcutterJob extends Job {
             return;
         }
         status("Clearing the canopy (" + leaves.size() + " leaves)", "Chopping");
-        if (breaker.tick(npc, leaves.get(0))) {
+        if (chopBlock(wp, leaves.get(0))) {
             leaves.remove(0);
         }
     }

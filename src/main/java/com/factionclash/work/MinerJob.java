@@ -82,7 +82,12 @@ public class MinerJob extends Job {
      */
     private WorkplaceState caveWork() {
         WorkplaceState cave = Workplaces.held(npc, WorkplaceState.Type.CAVE);
-        if (cave != null || Workplaces.held(npc, WorkplaceState.Type.MINE) != null) {
+        WorkplaceState mine = Workplaces.held(npc, WorkplaceState.Type.MINE);
+        if (cave == null && mine != null && exhausted(mine)) {
+            // nothing left to dig in the constructed mine: a surveyed cave with ore is the next best work
+            return Workplaces.claim(npc, WorkplaceState.Type.CAVE, w -> !w.workedOut && !w.marks.isEmpty());
+        }
+        if (cave != null || mine != null) {
             return cave;
         }
         if (Workplaces.claim(npc, WorkplaceState.Type.MINE) != null) {
@@ -106,6 +111,12 @@ public class MinerJob extends Job {
                 + MineLayout.tunnelPlan(wp).size() + (wp.upgrading() ? ", digging deeper (step " + wp.upgradeStep + ")" : "");
     }
 
+    /** Every level the mine can have (down to the mining floor, plus the infill levels) is dug out. */
+    static boolean exhausted(WorkplaceState wp) {
+        int lv = MineLayout.level(wp);
+        return !wp.upgrading() && wp.progress >= MineLayout.tunnelPlan(wp).size() && MineLayout.landingSteps(wp, lv + 1) < 0;
+    }
+
     private int pickTier() {
         return ToolKind.PICKAXE.matches(npc.tool()) ? ToolKind.tierOf(npc.tool()) : -1;
     }
@@ -122,6 +133,18 @@ public class MinerJob extends Job {
             return 8;
         }
         return 0;
+    }
+
+    /** Breaks a block at player speed; its drops go straight into the backpack (junk it does not want is tossed). */
+    private boolean dig(WorkplaceState wp, BlockPos pos) {
+        if (!breaker.tick(npc, pos, this::wanted)) {
+            return false;
+        }
+        if (wp != null && breaker.lastGained() > 0) {
+            wp.totalOutput += breaker.lastGained();
+            data().setDirty();
+        }
+        return true;
     }
 
     /** Pick-up filter: everything except surplus junk the warehouse is already full of. */
@@ -151,6 +174,18 @@ public class MinerJob extends Job {
             return;
         }
         WorkplaceState wp = wp();
+        if (wp != null && exhausted(wp) && state != State.STORAGE) {
+            if (hasCargo()) {
+                state = State.STORAGE; // bring the last load home first
+                return;
+            }
+            if (!leaveMine(wp)) {
+                return;
+            }
+            status("Mine #" + wp.id + " is fully worked out: every level is dug", "Idle");
+            waitFor(1200);
+            return;
+        }
         if (wp == null) {
             status("No free mine to work", "Idle");
             waitFor(200);
@@ -443,7 +478,7 @@ public class MinerJob extends Job {
             return;
         }
         if (s.getFluidState().isEmpty()) {
-            if (breaker.tick(npc, cell)) {
+            if (dig(wp, cell)) {
                 blocked.poll();
             }
         } else {
@@ -516,7 +551,7 @@ public class MinerJob extends Job {
                 return;
             }
             status("Mining a " + os.getBlock().getName().getString() + " vein (mine #" + wp.id + ")", "Mining");
-            if (breaker.tick(npc, ore)) {
+            if (dig(wp, ore)) {
                 if (BlockWork.canHarvest(os, npc.getMainHandItem())) {
                     npc.awardXp(oreXp(os));
                     prospect(os, ore);
@@ -596,7 +631,7 @@ public class MinerJob extends Job {
             return;
         }
         status("Branch mining at y=" + pos.getY() + " (mine #" + wp.id + ", " + wp.progress + "/" + plan.size() + ")", "Mining");
-        if (breaker.tick(npc, pos)) {
+        if (dig(wp, pos)) {
             if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
                 npc.awardXp(oreXp(s));
                 prospect(s, pos);
@@ -613,7 +648,7 @@ public class MinerJob extends Job {
     /** Prospector affix: a chance that the ore just mined drops its loot a second time. */
     private void prospect(BlockState ore, BlockPos pos) {
         if (level().random.nextDouble() < npc.affix(com.factionclash.logic.Affix.PROSPECTOR)) {
-            BlockWork.dropExtra(npc, ore, pos);
+            wp().totalOutput += BlockWork.dropExtra(npc, ore, pos);
         }
     }
 
@@ -671,9 +706,10 @@ public class MinerJob extends Job {
             wp.progress = 0;
             data().setDirty();
             npc.awardXp(20);
-            Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + " reached tier " + wp.tier
-                    + (wp.subLevel > 0 ? " +" + wp.subLevel : "") + " at y=" + SpiralMine.levelY(wp.origin.getY(), MineLayout.level(wp))
-                    + " (" + npc.npcName() + ")"));
+            boolean infill = !SpiralMine.isRegular(wp.origin.getY(), MineLayout.level(wp));
+            Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id
+                    + (infill ? " starts another branch mine between its levels" : " reached tier " + wp.tier + (wp.subLevel > 0 ? " +" + wp.subLevel : ""))
+                    + " at y=" + SpiralMine.levelY(wp.origin.getY(), MineLayout.level(wp)) + " (" + npc.npcName() + ")"));
             state = State.TRAVEL;
             return;
         }
@@ -707,7 +743,7 @@ public class MinerJob extends Job {
             return;
         }
         status("Digging the shaft down to tier " + (wp.tier < 4 ? wp.tier + 1 : wp.tier) + " (y=" + pos.getY() + ")", "Digging");
-        if (breaker.tick(npc, pos)) {
+        if (dig(wp, pos)) {
             if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
                 npc.awardXp(oreXp(s));
                 prospect(s, pos);

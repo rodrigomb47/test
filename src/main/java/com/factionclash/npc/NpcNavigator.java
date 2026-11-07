@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * Reliable point-to-point travel: long trips are split into surface waypoints, lack of progress triggers a
- * repath and then the small stuck-recovery teleport (max 2 blocks across, 1 up/down, validated safe spot),
+ * repath and then the stuck-recovery teleport (by default up to 4 blocks across, 2 up/down, to a validated safe spot),
  * and repeated failure is reported instead of resetting forever (spec 13).
  */
 public final class NpcNavigator {
@@ -213,7 +213,7 @@ public final class NpcNavigator {
         return null;
     }
 
-    /** Local unstick: move to a validated safe spot within 2 blocks horizontally and 1 vertically. */
+    /** Local unstick: move to a validated safe spot within the configured range (default 4 across, 2 up/down). */
     public boolean tryRecoveryTeleport() {
         if (!(npc.level() instanceof ServerLevel level)) {
             return false;
@@ -230,6 +230,7 @@ public final class NpcNavigator {
         }
         BlockPos here = npc.blockPosition();
         StuckRecovery.Spot spot = StuckRecovery.choose(here.getX(), here.getY(), here.getZ(), goal.x, goal.y, goal.z,
+                com.factionclash.config.FCConfig.UNSTUCK_HORIZONTAL.get(), com.factionclash.config.FCConfig.UNSTUCK_VERTICAL.get(),
                 (x, y, z) -> isSafeStandingSpot(level, npc, new BlockPos(x, y, z)));
         if (spot == null) {
             return false;

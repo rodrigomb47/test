@@ -100,8 +100,21 @@ public final class BlockWork {
          * Continues breaking {@code target} with the NPC's main-hand item. Returns true on the tick the block breaks
          * (drops spawned, block removed). Unbreakable blocks never finish.
          */
+        private int gained;
+
+        /** Items that went into the backpack from the last block this breaker broke. */
+        public int lastGained() {
+            return gained;
+        }
+
         public boolean tick(FactionNpc npc, BlockPos target) {
+            return tick(npc, target, s -> true);
+        }
+
+        /** As {@link #tick(FactionNpc, BlockPos)}; drops failing {@code keep} are tossed on the ground instead. */
+        public boolean tick(FactionNpc npc, BlockPos target, Predicate<ItemStack> keep) {
             ServerLevel level = (ServerLevel) npc.level();
+            gained = 0;
             if (!target.equals(pos)) {
                 reset(npc);
                 pos = target.immutable();
@@ -120,22 +133,47 @@ public final class BlockWork {
                 level.destroyBlockProgress(npc.getId(), pos, Math.min(9, (int) (progress * 10)));
                 return false;
             }
-            breakNow(npc, pos);
+            gained = breakNow(npc, pos, keep);
             reset(npc);
             return true;
         }
     }
 
-    /** Breaks a block as a player would: real drops only with the correct tool, block removed with effects. */
     /**
      * A level affix (Prospector, Green Thumb) paying off: the block's own loot is rolled once more, with the same
      * tool, so the extra is exactly what that block can drop.
      */
-    public static void dropExtra(FactionNpc npc, BlockState state, BlockPos pos) {
+    public static int dropExtra(FactionNpc npc, BlockState state, BlockPos pos) {
         ItemStack tool = npc.getMainHandItem();
-        if (canHarvest(state, tool)) {
-            Block.dropResources(state, npc.level(), pos, null, npc, tool);
+        if (canHarvest(state, tool) && npc.level() instanceof ServerLevel level) {
+            return give(npc, Block.getDrops(state, level, pos, null, npc, tool), s -> true);
         }
+        return 0;
+    }
+
+    /**
+     * Puts drops straight into the worker's backpack, as a player's mined blocks go straight into the inventory.
+     * What does not fit, or what the worker does not want (junk it would throw away), lands at its feet.
+     */
+    static int give(FactionNpc npc, java.util.List<ItemStack> drops, Predicate<ItemStack> keep) {
+        int n = 0;
+        for (ItemStack d : drops) {
+            if (d.isEmpty()) {
+                continue;
+            }
+            if (!keep.test(d)) {
+                npc.spawnAtLocation(d);
+                continue;
+            }
+            int before = d.getCount();
+            ItemStack rest = Crafting.addAll(npc.inventory(), d);
+            n += before - rest.getCount();
+            if (!rest.isEmpty()) {
+                npc.spawnAtLocation(rest);
+            }
+        }
+        npc.inventory().setChanged();
+        return n;
     }
 
     /**
@@ -151,20 +189,30 @@ public final class BlockWork {
         return !level.getEntities(self, box, e -> e.isAlive() && e.blocksBuilding).isEmpty();
     }
 
-    public static void breakNow(FactionNpc npc, BlockPos pos) {
+    public static int breakNow(FactionNpc npc, BlockPos pos) {
+        return breakNow(npc, pos, s -> true);
+    }
+
+    /**
+     * Breaks a block as a player would: the block's own loot only with a tool that can harvest it, straight into
+     * the backpack (experience orbs and the like still appear in the world). Returns the items gained.
+     */
+    public static int breakNow(FactionNpc npc, BlockPos pos, Predicate<ItemStack> keep) {
         ServerLevel level = (ServerLevel) npc.level();
         BlockState state = level.getBlockState(pos);
         if (state.isAir()) {
-            return;
+            return 0;
         }
         ItemStack tool = npc.getMainHandItem();
         BlockEntity be = level.getBlockEntity(pos);
-        if (canHarvest(state, tool)) {
-            Block.dropResources(state, level, pos, be, npc, tool);
-        }
+        java.util.List<ItemStack> drops = canHarvest(state, tool) ? Block.getDrops(state, level, pos, be, npc, tool) : java.util.List.of();
         level.levelEvent(2001, pos, Block.getId(state));
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        if (canHarvest(state, tool)) {
+            state.spawnAfterBreak(level, pos, tool, true);
+        }
         npc.swing(InteractionHand.MAIN_HAND);
+        return give(npc, drops, keep);
     }
 
     /**

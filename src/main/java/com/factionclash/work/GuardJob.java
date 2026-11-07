@@ -70,6 +70,9 @@ public class GuardJob extends Job {
                 }
                 unloadNow();
                 upgradeEquipment();
+                if (Inv.count(npc.inventory(), x -> x.is(net.minecraft.world.item.Items.GOLDEN_APPLE)) == 0) {
+                    takeFromStorage(x -> x.is(net.minecraft.world.item.Items.GOLDEN_APPLE), 1); // for a bad fight
+                }
                 lastStorage = now();
                 state = State.PATROL;
                 post = null;
@@ -89,6 +92,11 @@ public class GuardJob extends Job {
                 state = State.PATROL;
             }
         }
+    }
+
+    @Override
+    protected int keep(net.minecraft.world.item.ItemStack stack) {
+        return stack.is(net.minecraft.world.item.Items.GOLDEN_APPLE) ? 1 : 0;
     }
 
     private void patrol(BaseState home) {

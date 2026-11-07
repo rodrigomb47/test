@@ -17,6 +17,17 @@
 	#Keep bases, workplaces and travelling NPCs' chunks ticking so factions progress away from players.
 	keepFactionAreasLoaded = true
 
+#NPC movement (PROPOSED defaults)
+[movement]
+	#How far across (blocks) the stuck-recovery teleport may move an NPC to a safe spot nearer its goal.
+	# Default: 4
+	# Range: 1 ~ 8
+	unstuckHorizontal = 4
+	#How far up or down (blocks) the stuck-recovery teleport may move an NPC.
+	# Default: 2
+	# Range: 1 ~ 4
+	unstuckVertical = 2
+
 #Recruitment (PROPOSED defaults)
 [recruitment]
 	#Hunger points of food consumed per recruit (bread=5, cooked beef=8, ...).

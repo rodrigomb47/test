@@ -264,6 +264,14 @@ public class BlacksmithJob extends Job {
         if (FactionStorage.count(level, base, s -> s.is(Items.TORCH)) < 16 && coal >= 2 && sticksAvail >= 2) {
             out.add(new Order(Crafting.TORCHES, Math.min(4, coal / 2), "torch stock"));
         }
+        // 6c. Golden apples for soldiers' worst fights (8 gold ingots + 1 apple), one per two soldiers.
+        long soldiers = members.stream().filter(n -> n.getRole().combatant).count();
+        int gold = FactionStorage.count(level, base, s -> s.is(Items.GOLD_INGOT));
+        if (gold >= 8 && FactionStorage.count(level, base, s -> s.is(Items.APPLE)) > 0
+                && FactionStorage.count(level, base, s -> s.is(Items.GOLDEN_APPLE)) < soldiers / 2) {
+            out.add(new Order(new Crafting.Recipe("golden apple", List.of(Crafting.of(Items.GOLD_INGOT, 8), Crafting.of(Items.APPLE, 1)),
+                    Items.GOLDEN_APPLE, 1), 1, "golden apples for soldiers"));
+        }
         // 7. Diamond swords once diamonds accumulate.
         long nonDiamond = members.stream().filter(n -> n.getRole() == NpcRole.SWORDSMAN && ToolKind.tierOf(n.tool()) < 3).count()
                 - FactionStorage.count(level, base, s -> s.is(Items.DIAMOND_SWORD));

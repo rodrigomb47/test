@@ -468,6 +468,8 @@ public final class FCCommands {
                 o.addProperty("ammo", n.ammo().isEmpty() ? "" : n.ammo().getHoverName().getString());
                 o.addProperty("items", com.factionclash.work.Inv.totalItems(n.inventory()));
                 o.addProperty("recoveries", n.navigator().recoveries);
+                BlockPos dest = n.navigator().target();
+                o.addProperty("dest", dest == null ? "" : dest.toShortString());
                 o.addProperty("target", n.getTarget() == null ? "" : n.getTarget().getType().toShortString() + "@" + n.getTarget().blockPosition().toShortString());
                 o.addProperty("goals", String.join(",", n.goalSelector.getAvailableGoals().stream().filter(g -> g.isRunning())
                         .map(g -> g.getGoal().getClass().getSimpleName()).toList()));

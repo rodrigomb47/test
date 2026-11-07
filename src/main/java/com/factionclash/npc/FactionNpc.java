@@ -436,6 +436,45 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     // ---------------------------------------------------------------- ticking
 
+    /** Ticks left of eating a golden apple (-1: not eating). */
+    private int eatingApple = -1;
+    private int appleCooldown;
+
+    /**
+     * Golden apples (spec 9): badly hurt in a fight, an NPC carrying one eats it like a player - 32 ticks of
+     * eating, then the apple's own effects (regeneration, absorption) - and the apple is used up.
+     */
+    private void goldenApple() {
+        if (appleCooldown > 0) {
+            appleCooldown--;
+        }
+        if (eatingApple > 0) {
+            if (--eatingApple % 4 == 0) {
+                playSound(SoundEvents.GENERIC_EAT, 0.5F, 1.0F + (getRandom().nextFloat() - getRandom().nextFloat()) * 0.4F);
+            }
+            if (eatingApple == 0) {
+                eatingApple = -1;
+                ItemStack apple = com.factionclash.work.Inv.first(inventory, x -> x.is(net.minecraft.world.item.Items.GOLDEN_APPLE));
+                if (!apple.isEmpty()) {
+                    eat(level(), apple.split(1), apple.getItem().getFoodProperties(new ItemStack(net.minecraft.world.item.Items.GOLDEN_APPLE), this));
+                    inventory.setChanged();
+                    playSound(SoundEvents.PLAYER_BURP, 0.5F, 1.0F);
+                }
+                appleCooldown = 200;
+            }
+            return;
+        }
+        if (appleCooldown == 0 && getTarget() != null && getHealth() < getMaxHealth() * 0.4F
+                && com.factionclash.work.Inv.count(inventory, x -> x.is(net.minecraft.world.item.Items.GOLDEN_APPLE)) > 0) {
+            eatingApple = 32;
+            setStatus("Eating a golden apple", "Eating");
+        }
+    }
+
+    public boolean eatingGoldenApple() {
+        return eatingApple > 0;
+    }
+
     @Override
     public void aiStep() {
         this.updateSwingTime();
@@ -448,6 +487,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (level().isClientSide || !isAlive()) {
             return;
         }
+        goldenApple();
         // Slow natural regeneration replaces the player's hunger-based healing (NPCs have no hunger).
         if (getHealth() < getMaxHealth() && tickCount - lastHurtTime > 200 && ++regenTimer >= 80) {
             regenTimer = 0;

@@ -26,6 +26,8 @@ public final class FCConfig {
     public static final ModConfigSpec.IntValue LAIR_RAID_INTERVAL_TICKS;
     public static final ModConfigSpec.BooleanValue KEEP_FACTION_AREAS_LOADED;
     public static final ModConfigSpec.BooleanValue AUTO_START;
+    public static final ModConfigSpec.IntValue UNSTUCK_HORIZONTAL;
+    public static final ModConfigSpec.IntValue UNSTUCK_VERTICAL;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -40,6 +42,13 @@ public final class FCConfig {
                 .define("autoStart", false);
         KEEP_FACTION_AREAS_LOADED = b.comment("Keep bases, workplaces and travelling NPCs' chunks ticking so factions progress away from players.")
                 .define("keepFactionAreasLoaded", true);
+        b.pop();
+
+        b.comment("NPC movement (PROPOSED defaults)").push("movement");
+        UNSTUCK_HORIZONTAL = b.comment("How far across (blocks) the stuck-recovery teleport may move an NPC to a safe spot nearer its goal.")
+                .defineInRange("unstuckHorizontal", 4, 1, 8);
+        UNSTUCK_VERTICAL = b.comment("How far up or down (blocks) the stuck-recovery teleport may move an NPC.")
+                .defineInRange("unstuckVertical", 2, 1, 4);
         b.pop();
 
         b.comment("Recruitment (PROPOSED defaults)").push("recruitment");

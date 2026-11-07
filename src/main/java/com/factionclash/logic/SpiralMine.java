@@ -42,19 +42,74 @@ public final class SpiralMine {
      * level would be below the world's mining floor.
      */
     public static int landingSteps(int surfaceY, int level) {
+        List<Integer> regular = regularLandings(surfaceY);
+        if (level <= 0) {
+            return 0;
+        }
+        if (level <= regular.size()) {
+            return regular.get(level - 1);
+        }
+        List<Integer> infill = infillLandings(regular);
+        int i = level - regular.size() - 1;
+        return i < infill.size() ? infill.get(i) : -1;
+    }
+
+    /** Landing steps of the levels dug downward: tiers 1-4, then a floor every 6 blocks down to the mining floor. */
+    static List<Integer> regularLandings(int surfaceY) {
+        List<Integer> out = new ArrayList<>();
         int prev = 0;
-        for (int t = 1; t <= level; t++) {
+        for (int t = 1; t < 64; t++) {
             int target = t == 1 ? surfaceY - 6 : (t <= 4 ? TIER_TARGET_Y[t] : surfaceY - prev - 6);
-            int n = Math.max(prev + 6, surfaceY - target);
-            while (Math.floorMod(n - 1, 4) != 1 && Math.floorMod(n - 1, 4) != 2) {
-                n++;
-            }
+            int n = landingAtOrBelow(Math.max(prev + 6, surfaceY - target));
             if (surfaceY - n < MIN_Y) {
-                return -1;
+                break;
             }
+            out.add(n);
             prev = n;
         }
-        return prev;
+        return out;
+    }
+
+    /**
+     * Once the shaft is at the bottom, more branch mines fit between levels that are far apart: one in the middle
+     * of every gap of 12 or more blocks, deepest first, until no such gap remains. The spiral already passes
+     * these depths, so they need no digging down. PROPOSED.
+     */
+    static List<Integer> infillLandings(List<Integer> regular) {
+        List<Integer> all = new ArrayList<>(regular);
+        List<Integer> added = new ArrayList<>();
+        boolean changed = true;
+        while (changed && added.size() < 32) {
+            changed = false;
+            all.sort(null);
+            for (int i = all.size() - 1; i > 0; i--) {
+                int upper = all.get(i - 1), lower = all.get(i);
+                if (lower - upper < 12) {
+                    continue;
+                }
+                int mid = landingAtOrBelow((upper + lower) / 2);
+                if (mid - upper >= 6 && lower - mid >= 6) {
+                    all.add(mid);
+                    added.add(mid);
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        return added;
+    }
+
+    /** The first landing step (cell facing the tunnels) at or below step n. */
+    private static int landingAtOrBelow(int n) {
+        while (Math.floorMod(n - 1, 4) != 1 && Math.floorMod(n - 1, 4) != 2) {
+            n++;
+        }
+        return n;
+    }
+
+    /** True if a level is dug downward (the spiral must be extended to reach it) rather than an infill level. */
+    public static boolean isRegular(int surfaceY, int level) {
+        return level <= regularLandings(surfaceY).size();
     }
 
     /** Absolute Y of a level's tunnels, or Integer.MIN_VALUE if the level does not exist. */
