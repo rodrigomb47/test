@@ -434,6 +434,35 @@ public final class FCGameTests {
         return b;
     }
 
+    /**
+     * The hauler tidies the storehouse like a player: bread left in the overflow chest is carried to the food chest,
+     * by walking to the chest, taking it out and putting it away.
+     */
+    @GameTest(template = "platform", timeoutTicks = 400)
+    public static void haulerSortsMisplacedStacks(GameTestHelper h) {
+        CampaignData data = CampaignData.get(h.getLevel().getServer());
+        BaseState b = fakeBase(h, FactionType.STONEGUARD);
+        b.points.put(BaseState.STORAGE_STAND, h.absolutePos(new BlockPos(4, 2, 4)));
+        b.points.put(BaseState.MIN, h.absolutePos(new BlockPos(0, 1, 0)));
+        b.points.put(BaseState.MAX, h.absolutePos(new BlockPos(15, 4, 15)));
+        data.bases.put(b.id, b);
+        BlockPos food = b.storage(StorageCategory.FOOD).get(0), general = b.storage(StorageCategory.GENERAL).get(1);
+        net.minecraft.world.Container g = FactionStorage.container(h.getLevel(), general);
+        g.setItem(5, new ItemStack(Items.BREAD, 7));
+        FactionNpc hauler = npc(h, 8, 8, FactionType.STONEGUARD, NpcRole.HAULER);
+        hauler.setBaseId(b.id);
+        Recruitment.register(data, hauler, b);
+        h.onEachTick(() -> {
+            net.minecraft.world.Container f = FactionStorage.container(h.getLevel(), food);
+            int inFood = com.factionclash.work.Inv.count(f, x -> x.is(Items.BREAD));
+            if (inFood == 7 && com.factionclash.work.Inv.count(g, x -> x.is(Items.BREAD)) == 0) {
+                data.bases.remove(b.id);
+                data.faction(b.faction).roster.remove(hauler.getUUID());
+                h.succeed();
+            }
+        });
+    }
+
     /** Spec 5/10: a full warehouse never deletes cargo; the remainder is returned to the carrier. */
     @GameTest(template = "platform", timeoutTicks = 60)
     public static void fullStorageNeverDeletesItems(GameTestHelper h) {

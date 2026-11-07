@@ -93,6 +93,9 @@ public final class BaseInfo {
             NpcRecord worker = w.assigned == null ? null : f.roster.get(w.assigned);
             String who = worker == null ? "none" : worker.name + (worker.alive ? "" : " (dead)");
             if (w.type == WorkplaceState.Type.CAVE) {
+                if (w.workedOut && w.totalOutput == 0) {
+                    continue; // surveyed, nothing worth mining: not worth a line
+                }
                 out.add("Surveyed cave #" + w.id + " at " + w.origin.toShortString() + ": " + (w.workedOut ? "worked out" : w.marks.size() + " marked ores")
                         + ", miner " + who + ", output " + w.totalOutput + " - " + w.note);
                 continue;
@@ -122,9 +125,38 @@ public final class BaseInfo {
             return;
         }
         List<String> lines = baseLines(p.serverLevel(), CampaignData.get(p.server), b);
-        for (int i = 0; i < lines.size(); i++) {
-            line(p, lines.get(i), i == 0 ? b.faction.color : ChatFormatting.WHITE);
+        String title = lines.isEmpty() ? b.name : lines.get(0).replace("==", "").trim();
+        List<String> body = lines.size() > 1 ? lines.subList(1, lines.size()) : List.of();
+        List<Integer> colors = new ArrayList<>();
+        for (String l : body) {
+            colors.add(lineColor(l));
         }
+        com.factionclash.net.FCNetwork.sendInfo(p, title, colorOf(b.faction), new ArrayList<>(body), colors);
+    }
+
+    static int colorOf(FactionType f) {
+        Integer c = f.color.getColor();
+        return c == null ? 0xFFFFFF : c;
+    }
+
+    /** Colour coding for the station screen. */
+    static int lineColor(String l) {
+        if (l.startsWith("Surveyed cave")) {
+            return 0x26C6DA;
+        }
+        if (l.startsWith("Raid")) {
+            return 0xE57373;
+        }
+        if (l.startsWith("Recruitment")) {
+            return 0xFFD54F;
+        }
+        if (l.startsWith("Construction") || l.startsWith("Repairs")) {
+            return 0xA5D6A7;
+        }
+        if (l.startsWith("Population") || l.startsWith("Food") || l.startsWith("Stock")) {
+            return 0xFFFFFF;
+        }
+        return 0xC8CCD0;
     }
 
     public static List<String> mapLines(CampaignData data, FactionType f, long now) {
@@ -134,7 +166,7 @@ public final class BaseInfo {
         for (BaseState b : data.livingBasesOf(f)) {
             for (int id : b.workplaces) {
                 WorkplaceState w = data.workplace(id);
-                if (w != null && w.type == WorkplaceState.Type.CAVE) {
+                if (w != null && w.type == WorkplaceState.Type.CAVE && !(w.workedOut && w.totalOutput == 0)) {
                     out.add("Surveyed cave #" + w.id + " (entrance " + w.origin.toShortString() + "): "
                             + (w.workedOut ? "worked out" : w.marks.size() + " marked ores") + " - " + w.note);
                 }
@@ -156,14 +188,40 @@ public final class BaseInfo {
             line(p, "This map belongs to " + f.displayName + ".", ChatFormatting.GRAY);
             return;
         }
-        List<String> lines = mapLines(CampaignData.get(p.server), f, p.serverLevel().getGameTime());
-        int shown = 0;
-        for (String l : lines) {
-            if (shown++ > 30) {
-                line(p, "... " + (lines.size() - 31) + " more", ChatFormatting.GRAY);
-                break;
+        CampaignData data = CampaignData.get(p.server);
+        long now = p.serverLevel().getGameTime();
+        List<String> lines = mapLines(data, f, now);
+        String title = lines.isEmpty() ? f.displayName + " world map" : lines.get(0).replace("==", "").trim();
+        List<String> body = lines.size() > 1 ? new ArrayList<>(lines.subList(1, lines.size())) : new ArrayList<>();
+        FactionState fs = data.faction(f);
+        List<com.factionclash.net.MapPayload.Marker> markers = new ArrayList<>();
+        for (BaseState b : data.livingBasesOf(f)) {
+            markers.add(new com.factionclash.net.MapPayload.Marker(b.center.getX(), b.center.getZ(),
+                    com.factionclash.net.MapPayload.OWN_BASE, b.name));
+            for (int id : b.workplaces) {
+                WorkplaceState w = data.workplace(id);
+                if (w != null && w.type == WorkplaceState.Type.CAVE && !w.workedOut) {
+                    markers.add(new com.factionclash.net.MapPayload.Marker(w.origin.getX(), w.origin.getZ(),
+                            com.factionclash.net.MapPayload.SURVEYED_CAVE, "Surveyed cave #" + w.id + ": " + w.marks.size()
+                            + " marked ores - " + w.note));
+                }
             }
-            line(p, l, shown == 1 ? f.color : ChatFormatting.WHITE);
         }
+        for (Report r : fs.knowledge) {
+            int kind = switch (r.kind) {
+                case ENEMY_BASE -> com.factionclash.net.MapPayload.ENEMY_BASE;
+                case LAIR -> com.factionclash.net.MapPayload.LAIR;
+                case HOSTILES -> com.factionclash.net.MapPayload.HOSTILES;
+                case CAVE -> com.factionclash.net.MapPayload.CAVE;
+                case ORE -> com.factionclash.net.MapPayload.ORE;
+            };
+            boolean stale = r.kind.canGoStale && now - r.observedAt > FCConfig.REPORT_STALE_TICKS.get();
+            markers.add(new com.factionclash.net.MapPayload.Marker(r.pos.getX(), r.pos.getZ(),
+                    kind | (stale ? com.factionclash.net.MapPayload.STALE : 0),
+                    r.kind.label + (r.subject != null ? " [" + r.subject.displayName + "]" : "") + ": " + r.note
+                            + " (seen " + (now - r.observedAt) / 20 + "s ago by " + r.by + (stale ? ", stale" : "") + ")"));
+        }
+        com.factionclash.net.FCNetwork.sendMap(p, new com.factionclash.net.MapPayload(title, colorOf(f),
+                List.of(data.center.getX(), data.center.getZ(), data.radius), markers, new ArrayList<>(fs.explored), body));
     }
 }

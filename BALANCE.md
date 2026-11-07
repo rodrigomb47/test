@@ -47,6 +47,30 @@ source.
   turns bones into bone meal (1 → 3) while fewer than 16 are stored.
 * Leaves drop by their own loot table (vanilla oak: sapling 1/20, apple 1/200, sticks).
 
+## Caves (`CaveSurvey`, `CaveExplorerJob`, `CaveMinerJob`, `CaveWork`)
+* Scouts report a cave only where they can see a way in (a mouth, pit or ravine opening); caves within 128 blocks
+  of a base, outside the base and its own mine, are surveyed.
+* Explorer: sees ore up to 10 blocks from its eyes with a clear line of sight to an exposed face; survey spots at
+  least 7 blocks apart, each 6–24 walking steps from the last; at most 48 spots, 64 blocks from the entrance,
+  half a day (12000 ticks) and 32 placed step blocks per trip; turns back when out of torches, wounded (below 60%
+  health) or with 2+ monsters close. It takes 32 torches (crafted in hand from coal and sticks if needed) and 32
+  cobblestone/dirt for steps. A worked-out cave is surveyed again after two days.
+* Cave mining: at most 2 cave miners per base; a marked ore is reached from a standing spot within 4.5 blocks
+  or by tunnelling at most 12 blocks toward it; then 4 prospecting tunnels, 16 blocks long and 2 high, from the
+  cave wall nearest the deepest explored spot, torches every 8 blocks.
+
+## Hauler (`HaulerJob`)
+* Recruited once a base has 12 NPCs. Picks up items that have lain inside the walls for 10 seconds (not in the
+  farm or pen, whose workers collect their own), and moves stacks out of the overflow chest or a wrong chest into
+  their category's chests when those have room.
+
+## Terrain and sites
+* Around the levelled base, mine and plot pads the ground is blended over 5 blocks (at most one block of height
+  per block of distance), so the pads' edges are slopes, not cliffs or trenches.
+* Site choice also scores the ground over the mine's first level (50 blocks east of the base): +6 per sample with
+  water over the tunnels, +3 where the ground dips toward the tunnel depth.
+* Woodcutters fell wild trees within 40 blocks of their plot when the plot has nothing to do.
+
 ## Animals and fishing (`AnimalCarerJob`, `ButcherJob`, `FishermanJob`)
 * Breeding: one food item per adult (vanilla `isFood`), only adults that are ready (age 0); vanilla handles the
   baby and the 5-minute cooldown. At most 8 animals per species per pen.

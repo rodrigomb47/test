@@ -30,6 +30,7 @@ public final class FactionClash {
         container.registerConfig(ModConfig.Type.COMMON, FCConfig.SPEC);
         modBus.addListener(FactionClash::onAttributes);
         modBus.addListener(FactionClash::onTickets);
+        modBus.addListener(com.factionclash.net.FCNetwork::register);
         NeoForge.EVENT_BUS.register(new FCEvents());
     }
 

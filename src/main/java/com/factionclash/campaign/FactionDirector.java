@@ -184,6 +184,9 @@ public final class FactionDirector {
         if (living(f, b, NpcRole.CAVE_EXPLORER) == 0 && unsurveyedCave(data, f, b)) {
             out.add(new Need(NpcRole.CAVE_EXPLORER, "caves the scouts reported are unexplored"));
         }
+        if (living(f, b, NpcRole.HAULER) == 0 && livingAll(f, b) >= HAULER_POPULATION) {
+            out.add(new Need(NpcRole.HAULER, "a growing base needs its storehouse kept in order"));
+        }
         int soldiers = sw + ar;
         int pop = livingAll(f, b);
         if (soldiers < 12 && pop < b.beds.size() - 1
@@ -198,6 +201,9 @@ public final class FactionDirector {
         }
         return out;
     }
+
+    /** PROPOSED: a base takes on a hauler once it has this many NPCs. */
+    public static final int HAULER_POPULATION = 12;
 
     /** PROPOSED: at most this many miners work surveyed caves for one base at a time. */
     public static final int MAX_CAVE_MINERS = 2;

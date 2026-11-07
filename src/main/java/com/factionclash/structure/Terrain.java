@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.List;
+
 /** Ground preparation: levels an area to a walking height, fills gaps with dirt and keeps water out. */
 public final class Terrain {
     private Terrain() {
@@ -39,6 +41,63 @@ public final class Terrain {
             }
         }
         sealRing(level, x1 - 1, z1 - 1, x2 + 1, z2 + 1, y0);
+    }
+
+    /**
+     * Blends the ground around levelled pads into the landscape: within {@code width} blocks of the nearest pad,
+     * a column may lie at most d blocks above or below the pads' surface at distance d, so the edge becomes a
+     * walkable slope of one block per block instead of a cliff or a trench (NPCs could get trapped in those).
+     * Columns inside a pad, and columns holding water, are left alone.
+     */
+    public static void skirt(ServerLevel level, List<int[]> pads, int surfaceY, int width, BlockState surface) {
+        int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        for (int[] r : pads) {
+            minX = Math.min(minX, Math.min(r[0], r[2]));
+            maxX = Math.max(maxX, Math.max(r[0], r[2]));
+            minZ = Math.min(minZ, Math.min(r[1], r[3]));
+            maxZ = Math.max(maxZ, Math.max(r[1], r[3]));
+        }
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        for (int x = minX - width; x <= maxX + width; x++) {
+            for (int z = minZ - width; z <= maxZ + width; z++) {
+                int d = com.factionclash.logic.Pads.distance(pads, x, z);
+                if (d <= 0 || d > width) {
+                    continue;
+                }
+                int top = Integer.MIN_VALUE;
+                boolean wet = false;
+                for (int y = surfaceY + 48; y >= surfaceY - width - 14; y--) {
+                    m.set(x, y, z);
+                    BlockState s = level.getBlockState(m);
+                    if (!s.getFluidState().isEmpty()) {
+                        wet = true;
+                        break;
+                    }
+                    if (isSolidGround(s)) {
+                        top = y;
+                        break;
+                    }
+                }
+                if (wet || top == Integer.MIN_VALUE) {
+                    continue;
+                }
+                int lo = surfaceY - d, hi = surfaceY + d;
+                if (top < lo) {
+                    for (int y = top + 1; y < lo; y++) {
+                        level.setBlock(m.set(x, y, z), Blocks.DIRT.defaultBlockState(), Block.UPDATE_CLIENTS);
+                    }
+                    level.setBlock(m.set(x, lo, z), surface, Block.UPDATE_CLIENTS);
+                } else if (top > hi) {
+                    for (int y = hi + 1; y <= top + 2; y++) {
+                        m.set(x, y, z);
+                        if (!level.getBlockState(m).isAir()) {
+                            level.setBlock(m, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+                        }
+                    }
+                    level.setBlock(m.set(x, hi, z), surface, Block.UPDATE_CLIENTS);
+                }
+            }
+        }
     }
 
     /** Replaces fluids in the ring around a levelled area so water or lava cannot flow in. */

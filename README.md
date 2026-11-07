@@ -41,12 +41,16 @@ No other mods are required. Build from source with `./gradlew build` (jar in `bu
 | `/fc admin dump\|npcs\|info <f>\|spawn <f> <role>\|recruit <f> <role>\|probe <x> <z>\|mine <id>\|blocks <from> <to>\|destroy <id>` | op | Diagnostics, kept separate from player commands |
 
 In the world:
-* **Reporting Station** (right-click): population, stock, recruitment decision, workspaces and tiers, projects,
-  repairs, delivered reports, raids. Only members (and ops) see their own faction's records.
-* **World Map Board**: every report your scouts physically delivered, with age; moving things go *stale*.
-* **NPCs** (right-click): identity, job, equipment, backpack, current task, destination, workplace, level,
-  affixes. Sneak + right-click with a better tool, weapon, armour piece or arrow to hand it over — the replaced
-  item disappears.
+* **Reporting Station** (right-click): opens a scrollable screen with population, stock, recruitment decision,
+  workspaces and tiers, surveyed caves, projects, repairs, delivered reports and raids. Only members (and ops) see
+  their own faction's records.
+* **World Map Board** (right-click): opens a drawn map of the campaign area — explored sectors shaded, your
+  bases, and every report your scouts physically delivered as a marker (enemy settlements, lairs, monsters, cave
+  entrances, exposed ore, surveyed caves; hover a marker for details; moving things fade when *stale*), your own
+  position, a legend and the written report list.
+* **NPCs** (right-click): a screen with identity, job, equipment, backpack, current task, destination, workplace,
+  level and affixes. Sneak + right-click with a better tool, weapon, armour piece or arrow to hand it over — the
+  replaced item disappears.
 * **Construction sign** next to the staging chest lists what the current project still needs.
 * **Faction Heart**: destroy it and the base falls. Members' deliberate edits inside their own base are
   preserved by builders; damage from mobs, explosions or enemies is repaired.
@@ -63,7 +67,8 @@ Players respawn at their nearest surviving allied base when they have no bed.
   gates, lighting, and outside the walls a tier-1 constructed mine and a fenced tree plot. Starter supplies are
   finite and granted once (saved flag).
 * **Ten starting NPCs**: builder, miner, farmer, woodcutter, blacksmith, chef, scout and three swordsmen. Animal
-  carers, butchers, smelters and fishermen are recruited when the base needs them and has a bed free.
+  carers, butchers, smelters, fishermen, cave explorers, extra miners for caves and haulers are recruited when
+  the base needs them and has a bed free.
 * **No hunger, no wear**: NPCs never eat or starve; equipped gear never loses durability; archers hold one arrow
   that is never used up (tipped/spectral effects apply to every shot, and shots cannot be picked up).
 * **Workers work like players.** Nothing is produced by a timer or a loot roll: every item comes from a block a
@@ -84,7 +89,21 @@ Players respawn at their nearest surviving allied base when they have no bed.
   hillside, and stop collecting cobblestone-type junk once storage holds 512 of it.
 * **Tree plots** grow from 4 to 9 to 16 trees. Woodcutters fell trees log by log with their axe, break the
   canopy (the leaves' own loot drops saplings, sticks and apples), collect what fell, replant, and let saplings
-  grow naturally — they only speed growth up with real bone meal (made by the blacksmith from bones).
+  grow naturally — they only speed growth up with real bone meal (made by the blacksmith from bones). While the
+  plot's saplings grow they fell wild trees within 40 blocks of the plot (never in a base or another plot) and
+  replant a sapling where each one stood.
+* **Cave explorers** go to cave entrances the scouts reported, find the way in, and explore the cave on foot:
+  they light dark spots with real torches, note every ore they can actually see (an exposed face and a clear
+  line of sight — nothing behind rock), and build steps with placed cobblestone or dirt down drops of two blocks
+  or more so the way stays walkable both ways. They never mine. They turn back when out of torches, wounded,
+  attacked or done, and hand the survey (the route walked and the ores seen) in at the reporting station.
+* **Cave mining**: a miner without the constructed mine works a surveyed cave. It walks the explorer's route,
+  mines the marked ores and every ore it uncovers, tunnels a short way to ores it cannot otherwise reach, then
+  digs prospecting tunnels from the deepest spot into the cave walls. There is no artificial supply limit — the
+  cave holds exactly the ore that is really in it; when it is worked out the miner hands it back. Bases take on
+  up to two cave miners.
+* **Haulers** (from 12 NPCs on) keep the base tidy: they pick up items lying around inside the walls and re-sort
+  the storehouse, carrying stacks from the overflow chest or a wrong chest to the chests of their category.
 * **Farmers** harvest ripe crops by breaking them, collect the drops, till, and replant; the first row of the
   farm is a carrot row so the pigs can be bred.
 * **Animal carers** go into the pen through the gate (waiting for the animals to move away from it and closing
@@ -106,8 +125,8 @@ Players respawn at their nearest surviving allied base when they have no bed.
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
 * **Scouts** explore unexplored map sectors, record only what they see and what is worth a trip (enemy
-  settlements, lairs, monsters, caves, exposed ore — not trees or water, which are easy to find), retreat home on
-  danger along a fixed route, and publish by reaching the station.
+  settlements, lairs, monsters, cave entrances they can see a way into, exposed ore — not trees or water, which
+  are easy to find), retreat home on danger along a fixed route, and publish by reaching the station.
 * **War**: guards patrol, pick up loot and answer a base defence alarm; hostile vanilla mobs hunt NPCs; zombies
   and skeletons do half damage to NPCs; wounded civilians flee and call guards; NPCs jump back from priming
   creepers. Factions raid targets their scouts reported, keeping home defenders; raiders travel physically, break
@@ -140,9 +159,10 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §3 Safe starting bases, roster, supplies once, animals, enchanting setup | Implemented | S (incl. save/reload) |
 | §4 Roles: builder, miner, farmer, woodcutter, blacksmith, chef, smelter, scout, swordsman, archer | Implemented | S |
 | §4 Roles: animal carer, butcher, fisherman | Implemented (player-like) | G (breeding, culling rules), S |
-| §4 Roles: enchanter, quartermaster/hauler, cave explorer, axe fighter, crossbowman, field medic, TNT expert, rail engineer | ✗ not implemented | — |
+| §4 Roles: cave explorer, hauler/quartermaster | Implemented | U (survey rules), G (ore sight, torches, sorting), S |
+| §4 Roles: enchanter, axe fighter, crossbowman, field medic, TNT expert, rail engineer | ✗ not implemented | — |
 | §5–6 Workspaces, mines dug by the miner (spiral shaft, branch mine, tier levels, pickaxe-gated drops) | Implemented (player-like) | U (geometry), G (break times, drops), S |
-| §7 Natural cave mining with depletion | ✗ (scouts report caves only) | — |
+| §7 Natural cave mining | Implemented (surveyed by explorers, mined by miners; depletion is real ore running out) | U, G, S |
 | §8 Tree plots + upgrades, farm, chef | Implemented (player-like woodcutting and farming) | S |
 | §8 Pens/breeding/butchering, fishing | Implemented | G, S |
 | §9 Golden apples used by NPCs | ✗ | — |
@@ -157,15 +177,21 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §15 Overworld/Nether dungeons, Nether expeditions, TNT, rails | ✗ (Hollow lairs are the only monster bases) | — |
 | §17 Boss reward chests and hero tokens | ✗ | — |
 | §18 Work XP, levels, random capped affixes, no re-stacking | Implemented | U, G, S |
-| §19 Inspection, station/map info, signs | Implemented (chat output, no GUI screens) | S |
+| §19 Inspection, station/map info, signs | Implemented (station, map board and NPC screens) | S; screens checked in a real client |
 | §20 Persistence, bounded background simulation, no duplication on reload | Implemented | G, S (restart comparison) |
 
 Graphical check: a real 1.21.1 client (software OpenGL on a virtual display) joined the test server with the
-mod and rendered the bases, blocks, NPC skins, armour and held items (screenshots below). No interactive play
-session (clicking blocks, GUIs, combat by a human player) was performed.
+mod and rendered the bases, blocks, NPC skins, armour and held items, and opened the station and map board
+screens (screenshots below; the screens were opened with `/fc info` and `/fc map`, which send the same screens
+as right-clicking the blocks). No interactive play session by a human player was performed.
 
 ![Ember Legion base](docs/screenshots/ember_legion_base.png)
 ![NPCs in the plaza](docs/screenshots/ember_legion_plaza_npcs.png)
+
+The reporting station and world map board screens, captured in the same real client:
+
+![Reporting station screen](docs/screenshots/station_screen.png)
+![World map board screen](docs/screenshots/map_board_screen.png)
 
 ## Testing
 

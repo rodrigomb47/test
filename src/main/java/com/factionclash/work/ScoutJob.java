@@ -49,6 +49,7 @@ public class ScoutJob extends Job {
     private boolean retreating;
     private String retreatReason = "";
     private int timer;
+    private final Set<Long> caveChecked = new HashSet<>();
 
     public ScoutJob(FactionNpc npc) {
         super(npc);
@@ -144,6 +145,7 @@ public class ScoutJob extends Job {
             return;
         }
         departedAt = now();
+        caveChecked.clear();
         sectorsVisited = 0;
         failedTargets = 0;
         retreating = false;
@@ -311,7 +313,8 @@ public class ScoutJob extends Job {
             }
             BlockPos top = level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(x, 0, z)).below();
             BlockPos cave = findCave(x, z);
-            if (cave != null && !CaveWork.ownWorkings(data, home, cave)) {
+            // looking for a cave's way in takes a while: once per 32x32 sector per expedition is enough
+            if (cave != null && caveChecked.add(FactionState.sector(x, z)) && !CaveWork.ownWorkings(data, home, cave)) {
                 // a scout only reports a cave it can see a way into: its mouth, pit or ravine opening
                 BlockPos mouth = CaveWork.findEntrance(level(), cave, here, 6000);
                 if (mouth != null && mouth.closerThan(here, 48)) {

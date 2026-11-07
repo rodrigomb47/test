@@ -69,9 +69,17 @@ public final class NpcInspector {
     public static void inspect(FactionNpc npc, ServerPlayer p) {
         boolean member = CampaignData.get(p.server).players.get(p.getUUID()) == npc.getFaction() || p.hasPermissions(2);
         List<String> lines = lines(npc, member);
-        for (int i = 0; i < lines.size(); i++) {
-            p.sendSystemMessage(Component.literal(lines.get(i)).withStyle(i == 0 ? npc.getFaction().color : ChatFormatting.GRAY));
+        if (!member) {
+            p.sendSystemMessage(Component.literal(lines.get(0)).withStyle(npc.getFaction().color));
+            return;
         }
+        List<Integer> colors = new ArrayList<>();
+        for (int i = 1; i < lines.size(); i++) {
+            String l = lines.get(i);
+            colors.add(l.startsWith("Status") ? 0xFFFFFF : l.startsWith("Affixes") ? 0xFFD54F : l.startsWith("Workplace") ? 0x80DEEA : 0xC8CCD0);
+        }
+        Integer c = npc.getFaction().color.getColor();
+        com.factionclash.net.FCNetwork.sendInfo(p, lines.get(0), c == null ? 0xFFFFFF : c, new ArrayList<>(lines.subList(1, lines.size())), colors);
     }
 
     /** A member can hand an NPC better gear; the replaced item disappears (no return-and-resell loop). */

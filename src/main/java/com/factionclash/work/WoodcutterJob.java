@@ -157,6 +157,7 @@ public class WoodcutterJob extends Job {
     }
 
     private void decide(WorkplaceState wp) {
+        wild = false;
         if (!hasAxe() || cargo() >= CARGO_LIMIT || Inv.freeSlots(npc.inventory()) == 0) {
             state = State.STORAGE;
             return;
@@ -210,8 +211,93 @@ public class WoodcutterJob extends Job {
                 }
             }
         }
+        // nothing to do in the plot while its saplings grow: fell a wild tree nearby, as a player would
+        BlockPos tree = wildTree(wp);
+        if (tree != null) {
+            spot = tree;
+            wild = true;
+            logs.clear();
+            state = State.CHOP;
+            return;
+        }
         status("Saplings are growing" + (Inv.count(npc.inventory(), x -> x.is(Items.BONE_MEAL)) == 0 ? " (no bone meal)" : ""), "Waiting");
         waitFor(100);
+    }
+
+    /** PROPOSED: wild trees are felled within this many blocks of the plot entrance. */
+    public static final int WILD_RANGE = 40;
+    private boolean wild;
+    private long nextWildScan;
+    private BlockPos wildCache;
+
+    /**
+     * The nearest natural tree around the plot (a trunk standing on dirt with natural leaves), outside every base
+     * and tree plot, or null. Scanned at most every 30 seconds.
+     */
+    private BlockPos wildTree(WorkplaceState wp) {
+        if (wildCache != null && level().getBlockState(wildCache).is(BlockTags.LOGS)) {
+            return wildCache;
+        }
+        wildCache = null;
+        if (now() < nextWildScan) {
+            return null;
+        }
+        nextWildScan = now() + 600;
+        double bestD = Double.MAX_VALUE;
+        for (int dx = -WILD_RANGE; dx <= WILD_RANGE; dx += 2) {
+            for (int dz = -WILD_RANGE; dz <= WILD_RANGE; dz += 2) {
+                if (dx * dx + dz * dz > WILD_RANGE * WILD_RANGE) {
+                    continue;
+                }
+                int x = wp.origin.getX() + dx, z = wp.origin.getZ() + dz;
+                if (!level().isLoaded(new BlockPos(x, 0, z))) {
+                    continue;
+                }
+                BlockPos top = new BlockPos(x, level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1, z);
+                if (!level().getBlockState(top).is(BlockTags.LOGS)) {
+                    continue;
+                }
+                BlockPos base = top;
+                while (level().getBlockState(base.below()).is(BlockTags.LOGS) && top.getY() - base.getY() < 30) {
+                    base = base.below();
+                }
+                if (top.getY() - base.getY() < 2 || !level().getBlockState(base.below()).is(BlockTags.DIRT)
+                        || !naturalLeavesNear(top) || protectedSpot(base)) {
+                    continue;
+                }
+                double d = base.distSqr(npc.blockPosition());
+                if (d < bestD) {
+                    bestD = d;
+                    wildCache = base.immutable();
+                }
+            }
+        }
+        return wildCache;
+    }
+
+    private boolean naturalLeavesNear(BlockPos top) {
+        for (BlockPos p : BlockPos.betweenClosed(top.offset(-2, -1, -2), top.offset(2, 2, 2))) {
+            BlockState s = level().getBlockState(p);
+            if (s.is(BlockTags.LEAVES) && s.hasProperty(LeavesBlock.PERSISTENT) && !s.getValue(LeavesBlock.PERSISTENT)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Inside a base or any faction's tree plot: not a wild tree. */
+    private boolean protectedSpot(BlockPos p) {
+        for (com.factionclash.campaign.BaseState b : data().bases.values()) {
+            if (!b.destroyed && b.contains(p, 3)) {
+                return true;
+            }
+        }
+        for (WorkplaceState w : data().workplaces.values()) {
+            if (w.type == WorkplaceState.Type.TREE_PLOT && TreePlotLayout.insideInner(w, w.tier + 1, p)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Trees standing inside the plot but off the current planting grid (e.g. after an enlargement). */
@@ -394,7 +480,7 @@ public class WoodcutterJob extends Job {
                 breaker.tick(npc, leaf);
                 return;
             }
-            if (!goTo(spot, 2.5, "a tree in plot #" + wp.id)) {
+            if (!goTo(spot, 2.5, wild ? "a wild tree" : "a tree in plot #" + wp.id)) {
                 return;
             }
         }
@@ -411,7 +497,7 @@ public class WoodcutterJob extends Job {
             logs.remove(0);
             return;
         }
-        status("Felling a tree in plot #" + wp.id + " (" + logs.size() + " logs left)", "Chopping");
+        status("Felling " + (wild ? "a wild tree" : "a tree in plot #" + wp.id) + " (" + logs.size() + " logs left)", "Chopping");
         if (breaker.tick(npc, log)) {
             npc.awardXp(1);
             logs.remove(0);
@@ -478,7 +564,9 @@ public class WoodcutterJob extends Job {
 
     /** The nearest dropped item in the plot that can be walked to (not resting on leaves, not given up on). */
     private net.minecraft.world.entity.item.ItemEntity collectable(WorkplaceState wp) {
-        return BlockWork.nearestItem(npc, plotArea(wp), x -> true, e ->
+        net.minecraft.world.phys.AABB area = wild && spot != null
+                ? new net.minecraft.world.phys.AABB(spot).inflate(6, 2, 6).expandTowards(0, 10, 0) : plotArea(wp);
+        return BlockWork.nearestItem(npc, area, x -> true, e ->
                 !unreachableItems.contains(e.getUUID()) && !level().getBlockState(e.blockPosition().below()).is(BlockTags.LEAVES)
                         && !level().getBlockState(e.blockPosition()).is(BlockTags.LEAVES));
     }
@@ -522,6 +610,20 @@ public class WoodcutterJob extends Job {
 
     private void plant(WorkplaceState wp) {
         if (!goTo(spot, 3.0, "a planting spot")) {
+            return;
+        }
+        if (wild) {
+            // replant where the wild tree stood, if a sapling will grow there; the ground is left as it is
+            ItemStack s = Inv.first(npc.inventory(), x -> x.is(ItemTags.SAPLINGS));
+            if (!s.isEmpty() && s.getItem() instanceof BlockItem sb && level().getBlockState(spot).isAir()
+                    && sb.getBlock().defaultBlockState().canSurvive(level(), spot)) {
+                level().setBlock(spot, sb.getBlock().defaultBlockState(), Block.UPDATE_ALL);
+                s.shrink(1);
+                npc.inventory().setChanged();
+                npc.swing(InteractionHand.MAIN_HAND);
+            }
+            wild = false;
+            state = State.CHECK;
             return;
         }
         ItemStack sap = Inv.first(npc.inventory(), s -> s.is(Items.OAK_SAPLING));

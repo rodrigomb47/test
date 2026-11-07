@@ -84,7 +84,36 @@ public final class SiteFinder {
         if (median < level.getSeaLevel() - 1) {
             score += 40;
         }
+        if (fp.equals(settlement())) {
+            score += mineAreaPenalty(level, cx, cz, median);
+        }
         return new Site(new BlockPos(cx, median + 1, cz), score, water);
+    }
+
+    /**
+     * The mine's first level runs about 6 blocks under the surface for some 50 blocks east of the base: water
+     * above it (a lake or river) or ground dipping toward that depth (tunnels breaking out of a hillside) make a
+     * poor mine, so such sites score worse.
+     */
+    static double mineAreaPenalty(ServerLevel level, int cx, int cz, int median) {
+        double penalty = 0;
+        for (int x = cx + BaseLayout.MINE_ORIGIN_X + 3; x <= cx + BaseLayout.MINE_ORIGIN_X + 48; x += 6) {
+            for (int z = cz - 12; z <= cz + 12; z += 6) {
+                ChunkAccess chunk = level.getChunkSource().getChunk(x >> 4, z >> 4, ChunkStatus.SURFACE, true);
+                if (chunk == null) {
+                    continue;
+                }
+                int floor = chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, x & 15, z & 15);
+                int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x & 15, z & 15);
+                if (surface > floor) {
+                    penalty += 6; // water over the tunnels
+                }
+                if (floor < median - 3) {
+                    penalty += 3; // the ground dips toward the tunnel level
+                }
+            }
+        }
+        return penalty;
     }
 
     public static boolean insideMap(BlockPos center, Footprint fp, BlockPos mapCenter, int radius) {
