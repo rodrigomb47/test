@@ -344,6 +344,48 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * Cave explorers note only ore they can really see: an ore in the corridor ceiling counts; an ore buried in the
+     * rock, and an ore exposed in a sealed pocket behind a wall, do not.
+     */
+    @GameTest(template = "platform", timeoutTicks = 60)
+    public static void explorerSeesOnlyVisibleOre(GameTestHelper h) {
+        for (BlockPos p : BlockPos.betweenClosed(1, 2, 1, 10, 5, 5)) {
+            h.setBlock(p, Blocks.STONE);
+        }
+        for (int x = 2; x <= 9; x++) {
+            h.setBlock(new BlockPos(x, 2, 2), Blocks.AIR);
+            h.setBlock(new BlockPos(x, 3, 2), Blocks.AIR);
+        }
+        BlockPos visible = new BlockPos(6, 4, 2), buried = new BlockPos(6, 2, 4), sealed = new BlockPos(8, 2, 4);
+        h.setBlock(visible, Blocks.IRON_ORE);
+        h.setBlock(buried, Blocks.COAL_ORE);
+        h.setBlock(sealed, Blocks.DIAMOND_ORE);
+        h.setBlock(new BlockPos(8, 3, 4), Blocks.AIR); // a pocket above the diamond, walled off from the corridor
+        FactionNpc explorer = npc(h, 2, 2, FactionType.STONEGUARD, NpcRole.CAVE_EXPLORER);
+        h.runAfterDelay(5, () -> {
+            List<BlockPos> seen = com.factionclash.work.CaveWork.visibleOres(h.getLevel(), explorer);
+            h.assertTrue(seen.contains(h.absolutePos(visible)), "the ore in plain sight was not noticed: " + seen);
+            h.assertFalse(seen.contains(h.absolutePos(buried)), "an ore buried in rock was noticed");
+            h.assertFalse(seen.contains(h.absolutePos(sealed)), "an ore behind a wall was noticed");
+            h.succeed();
+        });
+    }
+
+    /** Explorers light caves with torches from their backpack: one torch per placement, only where it can stand. */
+    @GameTest(template = "platform", timeoutTicks = 40)
+    public static void explorerPlacesRealTorches(GameTestHelper h) {
+        FactionNpc explorer = npc(h, 3, 3, FactionType.TIDE_ALLIANCE, NpcRole.CAVE_EXPLORER);
+        explorer.inventory().setItem(0, new ItemStack(Items.TORCH, 2));
+        BlockPos floor = h.absolutePos(new BlockPos(5, 2, 5));
+        h.assertTrue(com.factionclash.work.CaveWork.placeTorch(explorer, floor), "torch not placed on solid floor");
+        h.assertTrue(h.getLevel().getBlockState(floor).is(Blocks.TORCH), "no torch block in the world");
+        h.assertFalse(com.factionclash.work.CaveWork.placeTorch(explorer, floor.above()), "a torch was placed in mid-air");
+        h.assertTrue(com.factionclash.work.Inv.count(explorer.inventory(), x -> x.is(Items.TORCH)) == 1,
+                "exactly one torch should have been used");
+        h.succeed();
+    }
+
     /** Feeding two adult cows wheat like a player makes them breed a real calf; babies cannot be fed to breed. */
     @GameTest(template = "platform", timeoutTicks = 400)
     public static void carerBreedsAnimalsWithFood(GameTestHelper h) {

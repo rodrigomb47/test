@@ -311,8 +311,13 @@ public class ScoutJob extends Job {
             }
             BlockPos top = level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(x, 0, z)).below();
             BlockPos cave = findCave(x, z);
-            if (cave != null) {
-                addPending(new Report(Report.Kind.CAVE, cave, now, null, 1, "underground cavity at y=" + cave.getY()));
+            if (cave != null && !CaveWork.ownWorkings(data, home, cave)) {
+                // a scout only reports a cave it can see a way into: its mouth, pit or ravine opening
+                BlockPos mouth = CaveWork.findEntrance(level(), cave, here, 6000);
+                if (mouth != null && mouth.closerThan(here, 48)) {
+                    addPending(new Report(Report.Kind.CAVE, mouth, now, null, 1, "cave entrance at y=" + mouth.getY()
+                            + ", cave down to y=" + cave.getY()));
+                }
             }
             BlockPos ore = findExposedOre(top);
             if (ore != null) {

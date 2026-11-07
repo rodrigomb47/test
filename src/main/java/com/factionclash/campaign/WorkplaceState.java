@@ -15,7 +15,12 @@ public final class WorkplaceState {
         /** origin = pen centre (inside), extent = the pen's fence gate. */
         PEN("Animal pen", 1),
         /** origin = the water block fished, extent = where the fisherman stands. */
-        FISHERY("Fishing spot", 1);
+        FISHERY("Fishing spot", 1),
+        /**
+         * A natural cave surveyed by a cave explorer: origin = the entrance, extent = the cavity the scouts reported,
+         * {@link #route}/{@link #parent} = the explorer's walked waypoints, {@link #marks} = ores it saw.
+         */
+        CAVE("Surveyed cave", 1);
 
         public final String label;
         public final int maxTier;
@@ -43,6 +48,17 @@ public final class WorkplaceState {
     /** Mines: extra floors dug below tier 4 (free), and progress through the current level's tunnel plan. */
     public int subLevel;
     public int progress;
+    /** Caves: waypoints the explorer walked (index 0 = entrance) and each waypoint's parent (-1 for the root). */
+    public long[] route = new long[0];
+    public int[] parent = new int[0];
+    /** Caves: ore blocks seen and not yet mined (packed positions). */
+    public final java.util.LinkedHashSet<Long> marks = new java.util.LinkedHashSet<>();
+    /** Caves: when the last survey was delivered, a summary of it, and whether miners have worked it out. */
+    public long surveyedAt;
+    public String note = "";
+    public boolean workedOut;
+    /** Caves: where each prospecting tunnel meets rock (packed; Long.MIN_VALUE = no tunnel that way). */
+    public long[] faces = new long[0];
 
     public boolean upgrading() {
         return upgradeStep >= 0;
@@ -64,6 +80,15 @@ public final class WorkplaceState {
         t.putLong("output", totalOutput);
         t.putInt("subLevel", subLevel);
         t.putInt("progress", progress);
+        if (type == Type.CAVE) {
+            t.putLongArray("route", route);
+            t.putIntArray("parent", parent);
+            t.putLongArray("marks", marks.stream().mapToLong(Long::longValue).toArray());
+            t.putLong("surveyedAt", surveyedAt);
+            t.putString("note", note);
+            t.putBoolean("workedOut", workedOut);
+            t.putLongArray("faces", faces);
+        }
         return t;
     }
 
@@ -86,6 +111,23 @@ public final class WorkplaceState {
         w.totalOutput = t.getLong("output");
         w.subLevel = t.getInt("subLevel");
         w.progress = t.getInt("progress");
+        if (w.type == Type.CAVE) {
+            w.route = t.getLongArray("route");
+            w.parent = t.getIntArray("parent");
+            if (w.parent.length != w.route.length) {
+                w.parent = new int[w.route.length];
+                for (int i = 0; i < w.parent.length; i++) {
+                    w.parent[i] = i - 1; // a broken tree degrades to a chain
+                }
+            }
+            for (long m : t.getLongArray("marks")) {
+                w.marks.add(m);
+            }
+            w.surveyedAt = t.getLong("surveyedAt");
+            w.note = t.getString("note");
+            w.workedOut = t.getBoolean("workedOut");
+            w.faces = t.getLongArray("faces");
+        }
         return w;
     }
 }

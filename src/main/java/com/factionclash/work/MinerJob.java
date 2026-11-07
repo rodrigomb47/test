@@ -45,9 +45,9 @@ import java.util.function.Predicate;
 public class MinerJob extends Job {
     enum State { CHECK, STORAGE, CRAFT, TRAVEL, MINE, EXTEND, CLEAR }
 
-    private static final Predicate<ItemStack> TORCH = s -> s.is(Items.TORCH);
+    static final Predicate<ItemStack> TORCH = s -> s.is(Items.TORCH);
     /** Solid, non-falling blocks a miner may use to plug water, lava or sand. */
-    private static final Predicate<ItemStack> SEAL = s -> s.is(Items.COBBLESTONE) || s.is(Items.COBBLED_DEEPSLATE) || s.is(Items.STONE)
+    static final Predicate<ItemStack> SEAL = s -> s.is(Items.COBBLESTONE) || s.is(Items.COBBLED_DEEPSLATE) || s.is(Items.STONE)
             || s.is(Items.DIRT) || s.is(Items.ANDESITE) || s.is(Items.DIORITE) || s.is(Items.GRANITE) || s.is(Items.TUFF)
             || s.is(Items.DEEPSLATE) || s.is(Items.COARSE_DIRT) || s.is(Items.NETHERRACK);
     /** Common blocks a player stops collecting once the warehouse has plenty. */
@@ -64,16 +64,38 @@ public class MinerJob extends Job {
     private long nextIntegrityCheck;
     private int craftTimer;
 
+    /** Miners without the constructed mine work a cave a cave explorer surveyed. */
+    private final CaveMinerJob caveJob;
+
     public MinerJob(FactionNpc npc) {
         super(npc);
+        caveJob = new CaveMinerJob(npc);
     }
 
     private WorkplaceState wp() {
         return Workplaces.claim(npc, WorkplaceState.Type.MINE);
     }
 
+    /**
+     * The surveyed cave this miner works, if any: its own one, or - when it has no constructed mine and none is
+     * free - a cave with marked ore that nobody works.
+     */
+    private WorkplaceState caveWork() {
+        WorkplaceState cave = Workplaces.held(npc, WorkplaceState.Type.CAVE);
+        if (cave != null || Workplaces.held(npc, WorkplaceState.Type.MINE) != null) {
+            return cave;
+        }
+        if (Workplaces.claim(npc, WorkplaceState.Type.MINE) != null) {
+            return null;
+        }
+        return Workplaces.claim(npc, WorkplaceState.Type.CAVE, w -> !w.workedOut && !w.marks.isEmpty());
+    }
+
     @Override
     public String workplaceInfo() {
+        if (Workplaces.held(npc, WorkplaceState.Type.CAVE) != null) {
+            return caveJob.workplaceInfo();
+        }
         WorkplaceState wp = wp();
         if (wp == null) {
             return "no mine";
@@ -124,6 +146,10 @@ public class MinerJob extends Job {
 
     @Override
     protected void run() {
+        if (caveWork() != null) {
+            caveJob.tick();
+            return;
+        }
         WorkplaceState wp = wp();
         if (wp == null) {
             status("No free mine to work", "Idle");
@@ -428,7 +454,7 @@ public class MinerJob extends Job {
 
     // ------------------------------------------------------------------ branch mining
 
-    private static boolean isOre(BlockState s) {
+    static boolean isOre(BlockState s) {
         return s.is(BlockTags.COAL_ORES) || s.is(BlockTags.IRON_ORES) || s.is(BlockTags.COPPER_ORES) || s.is(BlockTags.GOLD_ORES)
                 || s.is(BlockTags.REDSTONE_ORES) || s.is(BlockTags.LAPIS_ORES) || s.is(BlockTags.DIAMOND_ORES)
                 || s.is(BlockTags.EMERALD_ORES);
@@ -779,6 +805,7 @@ public class MinerJob extends Job {
     @Override
     public void onPause() {
         super.onPause();
+        caveJob.onPause();
         breaker.reset(npc);
         if (state == State.MINE || state == State.EXTEND || state == State.CLEAR || state == State.CRAFT) {
             state = State.TRAVEL;
@@ -788,6 +815,9 @@ public class MinerJob extends Job {
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putString("state", state.name());
+        CompoundTag cave = new CompoundTag();
+        caveJob.save(cave, provider);
+        tag.put("cave", cave);
     }
 
     @Override
@@ -800,5 +830,6 @@ public class MinerJob extends Job {
         if (state == State.MINE || state == State.EXTEND || state == State.CLEAR || state == State.CRAFT) {
             state = State.TRAVEL;
         }
+        caveJob.load(tag.getCompound("cave"), provider);
     }
 }

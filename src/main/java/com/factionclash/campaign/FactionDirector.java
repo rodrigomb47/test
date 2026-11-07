@@ -156,6 +156,34 @@ public final class FactionDirector {
                 && Recruitment.storedFoodValue(level, b) < FCConfig.RECRUIT_FOOD_VALUE.get() * 15) {
             out.add(new Need(NpcRole.FISHERMAN, "more food"));
         }
+        // mines and caves: every workplace a miner can work should have one
+        int cavesToMine = 0, caveMiners = 0;
+        boolean mineUnworked = false;
+        for (int id : b.workplaces) {
+            WorkplaceState w = data.workplace(id);
+            if (w == null) {
+                continue;
+            }
+            boolean unworked = com.factionclash.work.Workplaces.unworked(data, w);
+            if (w.type == WorkplaceState.Type.MINE && unworked) {
+                mineUnworked = true;
+            } else if (w.type == WorkplaceState.Type.CAVE && !w.workedOut && !w.marks.isEmpty()) {
+                if (unworked) {
+                    cavesToMine++;
+                } else {
+                    caveMiners++;
+                }
+            }
+        }
+        if (mineUnworked && living(f, b, NpcRole.MINER) > 0) {
+            out.add(new Need(NpcRole.MINER, "the constructed mine has no miner"));
+        }
+        if (cavesToMine > 0 && caveMiners < MAX_CAVE_MINERS) {
+            out.add(new Need(NpcRole.MINER, "a surveyed cave with ore to mine"));
+        }
+        if (living(f, b, NpcRole.CAVE_EXPLORER) == 0 && unsurveyedCave(data, f, b)) {
+            out.add(new Need(NpcRole.CAVE_EXPLORER, "caves the scouts reported are unexplored"));
+        }
         int soldiers = sw + ar;
         int pop = livingAll(f, b);
         if (soldiers < 12 && pop < b.beds.size() - 1
@@ -169,6 +197,35 @@ public final class FactionDirector {
             }
         }
         return out;
+    }
+
+    /** PROPOSED: at most this many miners work surveyed caves for one base at a time. */
+    public static final int MAX_CAVE_MINERS = 2;
+
+    /** True if the faction knows of a cave within reach of this base that the base has no survey of yet. */
+    private static boolean unsurveyedCave(CampaignData data, FactionState f, BaseState b) {
+        for (Report r : f.knowledge) {
+            if (r.kind != Report.Kind.CAVE) {
+                continue;
+            }
+            double dx = r.pos.getX() - b.center.getX(), dz = r.pos.getZ() - b.center.getZ();
+            if (dx * dx + dz * dz > (double) com.factionclash.work.CaveWork.MAX_CAVE_DISTANCE * com.factionclash.work.CaveWork.MAX_CAVE_DISTANCE
+                    || com.factionclash.work.CaveWork.ownWorkings(data, b, r.pos)) {
+                continue;
+            }
+            boolean known = false;
+            for (int id : b.workplaces) {
+                WorkplaceState w = data.workplace(id);
+                if (w != null && w.type == WorkplaceState.Type.CAVE && w.extent.closerThan(r.pos, 32)) {
+                    known = true;
+                    break;
+                }
+            }
+            if (!known) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** [animals in the pen, adults of the most numerous species]. */

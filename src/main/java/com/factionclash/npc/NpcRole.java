@@ -3,8 +3,8 @@ package com.factionclash.npc;
 import com.factionclash.logic.Affix;
 
 /**
- * Roles implemented in this build. Other professions from the design (enchanter, quartermaster, cave explorer,
- * axe fighter, crossbowman, field medic, TNT expert, rail engineer) are not implemented yet; see README "Status".
+ * Roles implemented in this build. Other professions from the design (enchanter, quartermaster, axe fighter,
+ * crossbowman, field medic, TNT expert, rail engineer) are not implemented yet; see README "Status".
  * New values are only ever appended: saves store the id, the network sync uses the ordinal.
  */
 public enum NpcRole {
@@ -20,7 +20,8 @@ public enum NpcRole {
     ARCHER("archer", "Archer", true, true, ToolKind.BOW, Affix.Job.ARCHER),
     ANIMAL_CARER("animal_carer", "Animal Carer", false, false, ToolKind.NONE, Affix.Job.OTHER),
     BUTCHER("butcher", "Butcher", false, false, ToolKind.SWORD, Affix.Job.OTHER),
-    FISHERMAN("fisherman", "Fisherman", false, false, ToolKind.ROD, Affix.Job.OTHER);
+    FISHERMAN("fisherman", "Fisherman", false, false, ToolKind.ROD, Affix.Job.OTHER),
+    CAVE_EXPLORER("cave_explorer", "Cave Explorer", false, false, ToolKind.SWORD, Affix.Job.SCOUT);
 
     public final String id;
     public final String displayName;

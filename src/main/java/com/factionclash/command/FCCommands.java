@@ -393,6 +393,14 @@ public final class FCCommands {
                     wo.addProperty("tier", w.tier);
                     wo.addProperty("upgradeStep", w.upgradeStep);
                     wo.addProperty("output", w.totalOutput);
+                    if (w.type == WorkplaceState.Type.CAVE) {
+                        wo.addProperty("marks", w.marks.size());
+                        wo.addProperty("route", w.route.length);
+                        wo.addProperty("progress", w.progress);
+                        wo.addProperty("workedOut", w.workedOut);
+                        wo.addProperty("note", w.note);
+                        wo.addProperty("origin", w.origin.toShortString());
+                    }
                     wo.addProperty("assigned", w.assigned == null ? null : w.assigned.toString());
                     wps.add(wo);
                 }

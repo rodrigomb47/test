@@ -91,8 +91,14 @@ public final class BaseInfo {
                 continue;
             }
             NpcRecord worker = w.assigned == null ? null : f.roster.get(w.assigned);
+            String who = worker == null ? "none" : worker.name + (worker.alive ? "" : " (dead)");
+            if (w.type == WorkplaceState.Type.CAVE) {
+                out.add("Surveyed cave #" + w.id + " at " + w.origin.toShortString() + ": " + (w.workedOut ? "worked out" : w.marks.size() + " marked ores")
+                        + ", miner " + who + ", output " + w.totalOutput + " - " + w.note);
+                continue;
+            }
             out.add(w.type.label + " #" + w.id + ": tier " + w.tier + "/" + w.type.maxTier + (w.upgrading() ? " (upgrading, step " + w.upgradeStep + ")" : "")
-                    + ", worker " + (worker == null ? "none" : worker.name + (worker.alive ? "" : " (dead)")) + ", output " + w.totalOutput);
+                    + ", worker " + who + ", output " + w.totalOutput);
         }
         if (b.projects.isEmpty()) {
             out.add("Construction: none queued; " + b.expansionLots.size() + " house lots free");
@@ -125,6 +131,15 @@ public final class BaseInfo {
         List<String> out = new ArrayList<>();
         FactionState fs = data.faction(f);
         out.add("== " + f.displayName + " world map: " + fs.knowledge.size() + " delivered reports ==");
+        for (BaseState b : data.livingBasesOf(f)) {
+            for (int id : b.workplaces) {
+                WorkplaceState w = data.workplace(id);
+                if (w != null && w.type == WorkplaceState.Type.CAVE) {
+                    out.add("Surveyed cave #" + w.id + " (entrance " + w.origin.toShortString() + "): "
+                            + (w.workedOut ? "worked out" : w.marks.size() + " marked ores") + " - " + w.note);
+                }
+            }
+        }
         List<Report> sorted = new ArrayList<>(fs.knowledge);
         sorted.sort(Comparator.comparing((Report r) -> r.kind).thenComparingLong(r -> -r.deliveredAt));
         for (Report r : sorted) {
