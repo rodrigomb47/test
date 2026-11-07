@@ -23,6 +23,9 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   structures, a settlement's walls and floor band, any mine's spiral stairs, containers, unbreakable blocks and
   anything touching a fluid. Up a tree it breaks the leaves or log underfoot (the wood goes into its backpack).
 * Recovery teleports never land on leaves or on top of a tall trunk.
+* Bridging: where the step toward the destination has no floor, an NPC places a block of stone, cobblestone,
+  deepslate, dirt, andesite, diorite, granite or tuff from its backpack and steps onto it (rising one block per
+  step when the destination is above); never inside protected ground.
 * Leaving a settlement, NPCs head for the gate with the shortest walk to the destination; long trips past their own
   base put their waypoints around the walls.
 
@@ -60,6 +63,10 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   miner revisits the regular levels from the deepest up and continues each main tunnel another 40 blocks out, with
   its branches (so main tunnels reach 200 blocks after 4 rounds). No payment.
 * Stairs: a spiral step whose floor is gone is repaired with a stone block from the miner's backpack.
+* A plan cell not done after 1200 ticks near it (2400 while still more than 10 blocks away; vein mining excluded)
+  is given up: a cut main tunnel ends the level, a cut branch moves on to the next branch.
+* Retraining: a miner with no mine or cave to work for 12000 ticks (half a day) takes up the base's most needed
+  role instead of a new recruit.
 * The miner digs down to the next level once 60% of the current level's plan is dug and the payment pickaxe is in
   storage; when the level is completely dug and no payment is available, it digs down without one (it still
   needs an iron pickaxe in hand for tier 3 and deeper).
@@ -72,8 +79,9 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * Upgrade: only with a wood surplus (≥ net fences + 96 plank-equivalents), ≥ 64 logs produced and no project waiting.
   If the fences cannot be made when the work starts (the wood went elsewhere), the woodcutter cuts trees for
   2400 ticks, keeping up to 64 logs and planks for the fence, and tries again.
-* An overgrown plot: when walking gets no closer for 100 ticks inside the plot, the woodcutter cuts through the
-  leaves toward its tree; stuck outside the fence for 200 ticks, it goes round to the opening.
+* An overgrown plot: when walking gets no closer for 100 ticks inside the plot (or 200 ticks of trying), the
+  woodcutter cuts through the leaves toward its tree; stuck outside the fence for 300 ticks, it goes round to the
+  opening and steps in; a tree it cannot reach in 600 ticks is left alone for 6000 ticks.
 * Saplings grow naturally; the woodcutter uses bone meal (vanilla growth step) when it has some. The blacksmith
   turns bones into bone meal (1 → 3) while fewer than 16 are stored.
 * Leaves drop by their own loot table (vanilla oak: sapling 1/20, apple 1/200, sticks).
@@ -89,6 +97,27 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * Cave mining: at most 2 cave miners per base; a marked ore is reached from a standing spot within 4.5 blocks
   or by tunnelling at most 12 blocks toward it; then 4 prospecting tunnels, 16 blocks long and 2 high, from the
   cave wall nearest the deepest explored spot, torches every 8 blocks.
+
+## Experience and enchanting (`EnchanterJob`, `XpLevels`)
+* Experience is real orbs, picked up by any faction NPC within 2 blocks into the faction's experience: ores mined
+  with a tool that harvests them (vanilla amounts, e.g. diamond 3–7, coal 0–2), furnace and smoker output taken
+  (vanilla recipe experience), animals bred (1–7).
+* Hiring (PROPOSED): when the enchanting table stands, the faction has at least level 10 worth of experience
+  (160 points), 6+ lapis and at least one unenchanted good item in storage.
+* The enchanter takes all of the faction's experience as its own points (vanilla level curve) and works only from
+  level 5 (PROPOSED), spending 60 ticks at the table per item. Each enchantment is the vanilla table's: power from
+  the bookshelves (10 in the starting workshop), three random offers, the best affordable one taken, paid with
+  1–3 levels and 1–3 lapis.
+* Gear worth enchanting: iron, diamond and netherite weapons, tools and armour, chainmail, bows and crossbows
+  (soldiers' gear first, then pickaxes).
+* Gear choice everywhere: material first, then the total enchantment level; a Silk Touch tool scores below a plain
+  one of its material.
+
+## Cooking stations (`CookingJob`)
+* One station with items waiting, cold and without fuel is enough to send the worker for fuel.
+* Fuel order: coal or charcoal (6), a coal block, then logs (keeping 8 in storage), then planks (keeping 16).
+* With nothing to burn and no station busy, the worker waits at the storehouse (600 ticks) with a clear status;
+  items a station cannot cook are taken out of it.
 
 ## Hauler (`HaulerJob`)
 * Recruited once a base has 12 NPCs. Picks up items that have lain inside the walls for 10 seconds (not in the

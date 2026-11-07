@@ -111,6 +111,7 @@ public final class BaseInfo {
         }
         out.add("Repairs pending: " + b.pendingRepairs.size() + "  Player edits preserved: " + b.playerEdits.size());
         out.add("Reports delivered: " + f.reportsDelivered + " (" + f.knowledge.size() + " on the map), sectors explored " + f.explored.size());
+        out.add("Experience gathered for enchanting: " + f.xpBank + " points (level " + com.factionclash.logic.XpLevels.levelFor(f.xpBank) + ")");
         if (f.raidTarget >= 0) {
             BaseState t = data.base(f.raidTarget);
             out.add("Raid in progress on " + (t == null ? "?" : t.faction.displayName) + " with " + f.raiders.size() + " soldiers");

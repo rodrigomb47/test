@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `a81ba868c3617648f496d4ad4a84fb1bbe8d29b7fd15fe075f02c8ba22de2bf0`
+SHA-256: `e5eb9cf0717daeddbf42f093d083590e7e69fec84ae9e24c27d00c5ad1c4ab24`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -66,9 +66,10 @@ Players respawn at their nearest surviving allied base when they have no bed.
 * **Getting unstuck like a player**: an NPC first gets a small validated hop (≤ 4 across / ≤ 2 up-down by
   default, configurable). If it truly has no way (a sealed cave pocket, the floor of a ravine or pit, a tree
   canopy or the top of a tall trunk) it **digs its own way out**, a staircase step by step toward its
-  destination's height (or chops the leaves/log it stands on), until it can walk again. It never digs faction
-  structures, walls, mine stairs, containers or anything next to water or lava. A watchdog also catches NPCs that
-  "walk" for 30 s without leaving the same spot.
+  destination's height (or chops the leaves/log it stands on), until it can walk again. Where the floor is missing
+  (a ravine between it and home) it **builds a bridge** with stone or dirt from its backpack, one block per step,
+  rising toward a higher destination. It never digs faction structures, walls, mine stairs, containers or anything
+  next to water or lava. A watchdog also catches NPCs that "walk" for 30 s without leaving the same spot.
 * **Starting bases** are placed on dry, gentle land: each faction searches its own map sector on real generated
   terrain, widens to the whole map (and a 1.5× map) if needed, and levels the footprint including the mine and
   tree-plot pads. Every base starts with a finished reporting station, map board, faction heart, categorised
@@ -77,8 +78,9 @@ Players respawn at their nearest surviving allied base when they have no bed.
   gates, lighting, and outside the walls a tier-1 constructed mine and a fenced tree plot. Starter supplies are
   finite and granted once (saved flag).
 * **Ten starting NPCs**: builder, miner, farmer, woodcutter, blacksmith, chef, scout and three swordsmen. Animal
-  carers, butchers, smelters, fishermen, cave explorers, extra miners for caves and haulers are recruited when
-  the base needs them and has a bed free.
+  carers, butchers, smelters, fishermen, cave explorers, extra miners for caves, haulers and an enchanter are
+  recruited when the base needs them and has a bed free. A miner left with no mine or cave to work for half a day
+  takes up the job the base needs most instead of a new recruit (keeping its level and traits).
 * **No hunger, no wear**: NPCs never eat or starve; equipped gear never loses durability; archers hold one arrow
   that is never used up (tipped/spectral effects apply to every shot, and shots cannot be picked up).
 * **Workers work like players.** Nothing is produced by a timer or a loot roll: every item comes from a block a
@@ -135,7 +137,15 @@ Players respawn at their nearest surviving allied base when they have no bed.
   bobber entity.
 * **Farmer, chef, smelter, blacksmith** use the real farm, smoker, furnaces and crafting recipes. The blacksmith
   crafts batches from real needs: mine-upgrade pickaxes, better worker tools, iron swords and armour for soldiers
-  first, bows, torches, sticks, diamond gear when diamonds exist.
+  first, bows, torches, sticks, diamond gear when diamonds exist. Furnace and smoker workers fetch fuel as soon as
+  any station runs dry (coal, charcoal, a coal block, then logs and planks beyond a building reserve); with nothing
+  to burn they wait at the storehouse and say so.
+* **Experience and the enchanter**: NPCs pick up experience orbs like players: from ores they mine, from furnaces
+  when the output is taken, from animals they breed. The faction's experience goes to its **enchanter**, who works
+  the workshop's enchanting table (10 bookshelves) exactly like the vanilla screen: three random offers set by the
+  bookshelves, paid with experience levels and 1–3 lapis lazuli. It enchants the best unenchanted iron, diamond or
+  netherite weapons, armour and pickaxes and bows in the storehouse (soldiers' gear first); everyone then prefers
+  enchanted gear of the same material. Silk Touch tools are kept aside (ore would come out as ore blocks).
 * **Recruitment** replaces missing workers and grows the garrison (40% archers by default) up to the number of
   beds; it charges food by normal hunger value plus exactly one equipment payment route.
 * **Builders** queue houses (with straw bedrolls made from wheat) and storage expansions, carry materials to the
@@ -182,13 +192,14 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §4 Roles: animal carer, butcher, fisherman | Implemented (player-like) | G (breeding, culling rules), S |
 | §4 Roles: cave explorer, hauler/quartermaster | Implemented | U (survey rules), G (ore sight, torches, sorting), S |
 | §4 Roles: crossbowman, axe fighter | Implemented | G (crossbow fire, weapon attack speed) |
-| §4 Roles: enchanter, field medic, TNT expert, rail engineer | ✗ not implemented | — |
+| §4 Roles: enchanter | Implemented (vanilla table, real experience from orbs, lapis) | G (table, levels and lapis paid; ore experience reaches the faction; gear choice), S |
+| §4 Roles: field medic, TNT expert, rail engineer | ✗ not implemented | — |
 | §5–6 Workspaces, mines dug by the miner (spiral shaft, branch mine, tier levels, pickaxe-gated drops) | Implemented (player-like) | U (geometry), G (break times, drops), S |
 | §7 Natural cave mining | Implemented (surveyed by explorers, mined by miners; depletion is real ore running out) | U, G, S |
 | §8 Tree plots + upgrades, farm, chef | Implemented (player-like woodcutting and farming) | S |
 | §8 Pens/breeding/butchering, fishing | Implemented | G, S |
 | §9 Golden apples used by NPCs | Implemented (soldiers carry one; eaten when badly hurt in a fight; blacksmith crafts them) | G |
-| §10 Categorised storage, blacksmith batches, soldier armour priority | Implemented (no hauler role) | G (storage), S |
+| §10 Categorised storage, blacksmith batches, soldier armour priority, hauler | Implemented | G (storage, hauler), S |
 | §11 Builder projects, staging chest + signs, repairs, player-edit preservation | Implemented (houses, storage expansion) | S |
 | §11 Perimeter expansion, outposts, procedural building variety | ✗ | — |
 | §12 Scouts, reports, map board, stale sightings, retreat, overdue follow-up | Implemented (chat-based map) | S |
@@ -217,11 +228,14 @@ The reporting station and world map board screens, captured in the same real cli
 
 ## Testing
 
-* `./gradlew test` — 32 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
-  levels, cave survey walk graph, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 27 GameTests on a real headless server, including **digging out** (sealed in
+* `./gradlew test` — 34 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
+  levels, cave survey walk graph, vanilla experience levels, food payment, affix caps, XP curve, stuck-recovery
+  selection, scout rules).
+* `./gradlew runGameTestServer` — 32 GameTests on a real headless server, including **digging out** (sealed in
   rock it climbs out by a staircase; on a canopy or a tall trunk it chops its way down; just above its goal it digs
-  down), cave explorers seeing only visible ore and placing real torches, haulers sorting the storehouse,
+  down; a gap is bridged with exactly one block per step), the **enchanter** at a real table (levels and lapis paid,
+  nothing without experience), **ore experience** reaching the faction, enchanted-gear choice (Silk Touch loses),
+  a cold furnace sending its worker for fuel, cave explorers seeing only visible ore and placing real torches, haulers sorting the storehouse,
   crossbow charging, player attack speeds, golden apples and mined blocks going into the backpack, plus: walking speed, no gear wear, half
   undead damage only, no friendly fire, one-arrow ranged attacks with effects, save/reload without affix
   stacking, local stuck recovery, creeper jump-back, mob targeting, full storage never deletes items,
@@ -253,10 +267,22 @@ server restarts (each one also tested save/reload) while fixes were rolled in:
   out within one in-game hour and went back to work.
 * No equipped tool or armour piece lost durability; max NPC level 14.
 
-Known rough edges (from this run): NPCs do not build bridges, so a few that end up on the far side of a ravine
-next to their base dig around for a long time; a woodcutter stuck on a hill outside its plot's fence can stay
-there; extra miners idle when there is no cave to work (the mine has one miner); animals can still slip out of the
-pen occasionally; fishing has no visible bobber.
+**The same world continued to day 33** with bridging, miner retraining, the fuel fix and the enchanter:
+* The four NPCs of Grove stuck on the far side of a ravine bridged it and got home within a few hundred ticks.
+* Idle extra miners took up other jobs (one Ember miner became a swordsman, one Grove miner the missing farmer);
+  every base kept exactly the miners it can use.
+* Smelters and chefs no longer stood at the workshop when a furnace ran dry; Stoneguard, out of coal and wood for
+  a while, showed "No fuel in the storehouse" until its woodcutter (also unstuck in this round) brought logs again.
+* All four factions hired an enchanter once the table, lapis and experience were there. In one in-game day they
+  enchanted the bases' good gear with vanilla results, for example a Diamond Sword with Sharpness II, an Iron
+  Pickaxe with Efficiency III and Unbreaking III, an Iron Chestplate with Protection II and Unbreaking III, a Bow
+  with Power II; 18 NPCs were carrying enchanted weapons or tools, none with Silk Touch.
+* The war went on: Ember launched 18 raids and Grove 9 (Grove's first ones from day 21); no human faction has
+  fallen yet (24–27 NPCs each).
+
+Known rough edges: a few NPCs still need minutes of digging and bridging in very broken terrain; animals can still
+slip out of the pen occasionally; fishing has no visible bobber; the enchanter has nothing to do once all good gear
+is enchanted (it waits for new gear).
 
 **Mines from campaigns started with the first version are not compatible** with the new mine design — start a
 new campaign (`/fc start`) after updating.

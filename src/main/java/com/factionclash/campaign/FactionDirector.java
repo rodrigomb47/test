@@ -184,6 +184,9 @@ public final class FactionDirector {
         if (living(f, b, NpcRole.CAVE_EXPLORER) == 0 && unsurveyedCave(data, f, b)) {
             out.add(new Need(NpcRole.CAVE_EXPLORER, "caves the scouts reported are unexplored"));
         }
+        if (living(f, b, NpcRole.ENCHANTER) == 0 && enchantingWorthwhile(level, data, f, b)) {
+            out.add(new Need(NpcRole.ENCHANTER, "gear, lapis and experience for the enchanting table"));
+        }
         if (living(f, b, NpcRole.HAULER) == 0 && livingAll(f, b) >= HAULER_POPULATION) {
             out.add(new Need(NpcRole.HAULER, "a growing base needs its storehouse kept in order"));
         }
@@ -205,6 +208,18 @@ public final class FactionDirector {
             }
         }
         return out;
+    }
+
+    /**
+     * PROPOSED: an enchanter is worth taking on once the table stands, there is lapis and unenchanted good gear in
+     * the storehouse, and the faction has picked up enough experience for a few enchantments (level 10).
+     */
+    private static boolean enchantingWorthwhile(ServerLevel level, CampaignData data, FactionState f, BaseState b) {
+        BlockPos table = b.point(BaseState.ENCHANTING);
+        return table != null && level.getBlockState(table).is(net.minecraft.world.level.block.Blocks.ENCHANTING_TABLE)
+                && f.xpBank >= com.factionclash.logic.XpLevels.pointsFor(10)
+                && FactionStorage.count(level, b, s -> s.is(Items.LAPIS_LAZULI)) >= 6
+                && FactionStorage.count(level, b, com.factionclash.work.EnchanterJob::candidate) > 0;
     }
 
     /** PROPOSED: a base takes on a hauler once it has this many NPCs. */

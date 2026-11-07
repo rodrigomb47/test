@@ -430,6 +430,7 @@ public final class FCCommands {
             o.addProperty("alive", f.alive);
             o.addProperty("knowledge", f.knowledge.size());
             o.addProperty("reportsDelivered", f.reportsDelivered);
+            o.addProperty("xpBank", f.xpBank);
             o.addProperty("explored", f.explored.size());
             o.addProperty("raidsLaunched", f.raidsLaunched);
             o.addProperty("raidTarget", f.raidTarget);
@@ -465,6 +466,9 @@ public final class FCCommands {
                 o.addProperty("status", n.status());
                 o.addProperty("tool", n.getMainHandItem().getHoverName().getString());
                 o.addProperty("toolDamage", n.getMainHandItem().getDamageValue());
+                o.addProperty("toolEnch", n.getMainHandItem().getEnchantments().keySet().stream()
+                        .map(h -> net.minecraft.world.item.enchantment.Enchantment.getFullname(h, n.getMainHandItem().getEnchantments().getLevel(h)).getString())
+                        .collect(java.util.stream.Collectors.joining(", ")));
                 o.addProperty("ammo", n.ammo().isEmpty() ? "" : n.ammo().getHoverName().getString());
                 o.addProperty("items", com.factionclash.work.Inv.totalItems(n.inventory()));
                 o.addProperty("recoveries", n.navigator().recoveries);

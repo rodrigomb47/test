@@ -184,7 +184,7 @@ public final class DigOut {
     private static BaseState settlementOver(ServerLevel level, BlockPos p) {
         for (BaseState b : CampaignData.get(level.getServer()).bases.values()) {
             int half = com.factionclash.structure.BaseLayout.HALF + 2;
-            if (!b.destroyed && b.isSettlement() && Math.abs(p.getX() - b.center.getX()) <= half
+            if (!b.destroyed && b.isSettlement() && !b.planIndex().isEmpty() && Math.abs(p.getX() - b.center.getX()) <= half
                     && Math.abs(p.getZ() - b.center.getZ()) <= half && p.getY() < b.center.getY() - 4 && p.getY() >= b.center.getY() - 12) {
                 return b;
             }
@@ -247,7 +247,7 @@ public final class DigOut {
                 return true; // faction structures are never dug
             }
             int half = (b.isSettlement() ? com.factionclash.structure.BaseLayout.HALF : com.factionclash.structure.LairLayout.HALF) + 1;
-            if (Math.abs(c.getX() - b.center.getX()) <= half && Math.abs(c.getZ() - b.center.getZ()) <= half
+            if (!b.planIndex().isEmpty() && Math.abs(c.getX() - b.center.getX()) <= half && Math.abs(c.getZ() - b.center.getZ()) <= half
                     && c.getY() >= b.center.getY() - 4 && c.getY() <= b.center.getY() + 8) {
                 return true; // never through a settlement's walls or floor (deep caves below it are fine)
             }

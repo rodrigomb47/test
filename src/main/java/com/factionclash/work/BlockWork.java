@@ -206,10 +206,15 @@ public final class BlockWork {
         ItemStack tool = npc.getMainHandItem();
         BlockEntity be = level.getBlockEntity(pos);
         java.util.List<ItemStack> drops = canHarvest(state, tool) ? Block.getDrops(state, level, pos, be, npc, tool) : java.util.List.of();
+        // the experience a player would get (ores: coal, diamond, lapis, redstone...), worked out before the block goes
+        int xp = canHarvest(state, tool) ? state.getExpDrop(level, pos, be, npc, tool) : 0;
         level.levelEvent(2001, pos, Block.getId(state));
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         if (canHarvest(state, tool)) {
             state.spawnAfterBreak(level, pos, tool, true);
+            if (xp > 0) {
+                state.getBlock().popExperience(level, pos, xp); // real orbs, picked up like a player would
+            }
         }
         npc.swing(InteractionHand.MAIN_HAND);
         return give(npc, drops, keep);

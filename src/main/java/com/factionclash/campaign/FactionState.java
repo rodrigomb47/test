@@ -32,6 +32,8 @@ public final class FactionState {
     /** 32x32 map sectors covered by delivered scout reports. */
     public final java.util.Set<Long> explored = new java.util.HashSet<>();
     public int reportsDelivered;
+    /** Experience the faction's NPCs picked up as orbs (mined ores, smelting, breeding), for enchanting. */
+    public long xpBank;
 
     public FactionState() {
     }
@@ -105,6 +107,7 @@ public final class FactionState {
         t.putInt("basesDestroyed", basesDestroyed);
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
         t.putInt("reportsDelivered", reportsDelivered);
+        t.putLong("xpBank", xpBank);
         return t;
     }
 
@@ -138,6 +141,7 @@ public final class FactionState {
         f.raidStartedAt = t.getLong("raidStarted");
         f.raidsLaunched = t.getInt("raidsLaunched");
         f.basesDestroyed = t.getInt("basesDestroyed");
+        f.xpBank = t.getLong("xpBank");
         for (long l : t.getLongArray("explored")) {
             f.explored.add(l);
         }

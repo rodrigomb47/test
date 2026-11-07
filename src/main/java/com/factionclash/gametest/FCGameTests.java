@@ -337,6 +337,72 @@ public final class FCGameTests {
     }
 
     /**
+     * The enchanter at a real table with bookshelves: it pays levels and lapis the vanilla way and gets vanilla
+     * enchantments on the sword; without enough levels nothing happens.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void enchanterUsesTheTableWithLevelsAndLapis(GameTestHelper h) {
+        BlockPos table = new BlockPos(8, 2, 8);
+        h.setBlock(table, Blocks.ENCHANTING_TABLE);
+        for (int x = 6; x <= 10; x++) {
+            h.setBlock(new BlockPos(x, 2, 6), Blocks.BOOKSHELF);
+            h.setBlock(new BlockPos(x, 3, 6), Blocks.BOOKSHELF);
+        }
+        BlockPos abs = h.absolutePos(table);
+        h.assertTrue(com.factionclash.work.EnchanterJob.bookshelves(h.getLevel(), abs) == 10, "expected 10 bookshelves of power");
+        FactionNpc n = npc(h, 8, 10, FactionType.EMBER_LEGION, NpcRole.ENCHANTER);
+        n.inventory().setItem(0, new ItemStack(Items.LAPIS_LAZULI, 10));
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        long[] xp = {com.factionclash.logic.XpLevels.pointsFor(2)};
+        // level 2 is below every offer a 10-bookshelf table makes for the third slot, but it may afford the first
+        int poorSlot = com.factionclash.work.EnchanterJob.enchantOnce(h.getLevel(), abs, sword.copy(), n.inventory(), new long[]{0}, n.getRandom());
+        h.assertTrue(poorSlot == -1, "enchanted with no experience at all");
+        xp[0] = com.factionclash.logic.XpLevels.pointsFor(30);
+        int used = com.factionclash.work.EnchanterJob.enchantOnce(h.getLevel(), abs, sword, n.inventory(), xp, n.getRandom());
+        h.assertTrue(used >= 0, "no offer was taken at level 30");
+        h.assertTrue(sword.isEnchanted(), "the sword is not enchanted");
+        h.assertTrue(n.inventory().getItem(0).getCount() == 10 - (used + 1), "lapis paid: " + (10 - n.inventory().getItem(0).getCount()));
+        h.assertTrue(com.factionclash.logic.XpLevels.levelFor(xp[0]) == 30 - (used + 1), "levels paid wrong: now " + com.factionclash.logic.XpLevels.levelFor(xp[0]));
+        h.assertFalse(com.factionclash.work.EnchanterJob.candidate(sword), "an enchanted sword is not enchanted again");
+        h.succeed();
+    }
+
+    /** Gear choice: enchanted beats plain at the same material, better material beats enchantments, Silk Touch loses. */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void enchantedGearIsPreferredExceptSilkTouch(GameTestHelper h) {
+        var reg = h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        ItemStack plain = new ItemStack(Items.IRON_PICKAXE), eff = new ItemStack(Items.IRON_PICKAXE), silk = new ItemStack(Items.IRON_PICKAXE);
+        eff.enchant(reg.getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.EFFICIENCY), 3);
+        silk.enchant(reg.getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), 1);
+        ItemStack diamond = new ItemStack(Items.DIAMOND_PICKAXE);
+        int t = com.factionclash.npc.ToolKind.tierOf(plain);
+        h.assertTrue(com.factionclash.work.Job.gearScore(eff, t) > com.factionclash.work.Job.gearScore(plain, t), "Efficiency should beat plain");
+        h.assertTrue(com.factionclash.work.Job.gearScore(silk, t) < com.factionclash.work.Job.gearScore(plain, t), "Silk Touch should lose to plain");
+        h.assertTrue(com.factionclash.work.Job.gearScore(diamond, com.factionclash.npc.ToolKind.tierOf(diamond)) > com.factionclash.work.Job.gearScore(eff, t),
+                "a plain diamond pickaxe should beat an enchanted iron one");
+        h.succeed();
+    }
+
+    /** Ores an NPC mines give real experience orbs, and NPCs pick them up into their faction's experience. */
+    @GameTest(template = "platform", timeoutTicks = 80)
+    public static void minedOreExperienceGoesToTheFaction(GameTestHelper h) {
+        FactionNpc n = npc(h, 5, 5, FactionType.TIDE_ALLIANCE, NpcRole.MINER);
+        n.equip(new ItemStack(Items.IRON_PICKAXE));
+        com.factionclash.campaign.FactionState f = com.factionclash.campaign.CampaignData.get(h.getLevel().getServer()).faction(FactionType.TIDE_ALLIANCE);
+        long before = f.xpBank;
+        BlockPos ore = new BlockPos(6, 2, 5);
+        h.setBlock(ore, Blocks.DIAMOND_ORE);
+        com.factionclash.work.BlockWork.breakNow(n, h.absolutePos(ore), s -> true);
+        h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.DIAMOND)) == 1, "no diamond in the backpack");
+        h.runAfterDelay(40, () -> {
+            h.assertTrue(f.xpBank >= before + 3, "diamond ore gives 3-7 experience; the faction got " + (f.xpBank - before));
+            h.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class,
+                    new net.minecraft.world.phys.AABB(h.absolutePos(ore)).inflate(4)).isEmpty(), "orbs were left lying around");
+            h.succeed();
+        });
+    }
+
+    /**
      * Cooking stations: one furnace out of fuel with ore waiting is enough to send the worker for fuel, even when the
      * other furnace is empty (it used to stand at the workshop forever).
      */

@@ -23,6 +23,7 @@ public final class Jobs {
             case FISHERMAN -> new FishermanJob(npc);
             case CAVE_EXPLORER -> new CaveExplorerJob(npc);
             case HAULER -> new HaulerJob(npc);
+            case ENCHANTER -> new EnchanterJob(npc);
         };
     }
 }

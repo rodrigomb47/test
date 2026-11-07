@@ -180,6 +180,8 @@ public abstract class CookingJob extends Job {
             lookAt(f.getBlockPos());
             if (FurnaceWork.collect(f, npc.inventory()) > 0) {
                 npc.swing(InteractionHand.MAIN_HAND);
+                // taking the output releases the smelting experience, as for a player
+                f.getRecipesToAwardAndPopExperience(level(), npc.position());
             }
             ItemStack stuck = f.getItem(0);
             if (!stuck.isEmpty() && !FurnaceWork.cookable(level(), recipeType(), stuck)) {

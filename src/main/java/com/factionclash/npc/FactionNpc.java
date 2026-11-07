@@ -488,6 +488,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             return;
         }
         goldenApple();
+        if (tickCount % 10 == 0) {
+            pickUpExperience();
+        }
         // Slow natural regeneration replaces the player's hunger-based healing (NPCs have no hunger).
         if (getHealth() < getMaxHealth() && tickCount - lastHurtTime > 200 && ++regenTimer >= 80) {
             regenTimer = 0;
@@ -516,6 +519,30 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     }
 
     private long targetSetAt;
+
+    /**
+     * Experience orbs within reach drift to an NPC as they would to a player (ores it mined, a furnace it emptied,
+     * animals it bred). What it picks up goes to its faction's experience, which the enchanter spends.
+     */
+    private void pickUpExperience() {
+        java.util.List<net.minecraft.world.entity.ExperienceOrb> orbs = level().getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class,
+                getBoundingBox().inflate(2.0, 1.0, 2.0), net.minecraft.world.entity.Entity::isAlive);
+        if (orbs.isEmpty() || level().getServer() == null) {
+            return;
+        }
+        com.factionclash.campaign.CampaignData data = CampaignData.get(level().getServer());
+        com.factionclash.campaign.FactionState f = data.faction(getFaction());
+        int total = 0;
+        for (net.minecraft.world.entity.ExperienceOrb orb : orbs) {
+            CompoundTag t = orb.saveWithoutId(new CompoundTag()); // merged orbs carry a count
+            total += orb.getValue() * Math.max(1, t.getInt("Count"));
+            orb.discard();
+        }
+        f.xpBank += total;
+        data.setDirty();
+        level().playSound(null, blockPosition(), net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP,
+                net.minecraft.sounds.SoundSource.NEUTRAL, 0.1F, 0.55F + random.nextFloat() * 0.7F);
+    }
 
     @Override
     public void setTarget(LivingEntity target) {

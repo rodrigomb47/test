@@ -243,6 +243,22 @@ public abstract class Job {
     }
 
     /** At the storehouse: swap in better tools/armour; replaced equipment disappears (spec 9). */
+    /**
+     * Material rank first, then the total of its enchantment levels. Silk Touch counts against a tool, as a player
+     * keeps such a pickaxe aside: ore would come out as ore blocks with no experience, leaves without saplings.
+     */
+    public static int gearScore(ItemStack s, int rank) {
+        var ench = s.getEnchantments();
+        int levels = 0;
+        for (var h : ench.keySet()) {
+            if (h.is(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH)) {
+                return rank * 100 - 150;
+            }
+            levels += ench.getLevel(h);
+        }
+        return rank * 100 + levels;
+    }
+
     protected void upgradeEquipment() {
         if (now() - lastEquipCheck < 1200) {
             return;
@@ -251,9 +267,10 @@ public abstract class Job {
         NpcRole role = npc.getRole();
         BaseState b = base();
         if (role.tool != ToolKind.NONE) {
-            int cur = role.tool.matches(npc.tool()) ? ToolKind.tierOf(npc.tool()) : -1;
-            ItemStack best = FactionStorage.findBest(level(), b, role.tool::matches, ToolKind::tierOf);
-            if (!best.isEmpty() && ToolKind.tierOf(best) > cur) {
+            // better material first; at the same material, the enchanted one
+            int cur = role.tool.matches(npc.tool()) ? gearScore(npc.tool(), ToolKind.tierOf(npc.tool())) : -1;
+            ItemStack best = FactionStorage.findBest(level(), b, role.tool::matches, s -> gearScore(s, ToolKind.tierOf(s)));
+            if (!best.isEmpty() && gearScore(best, ToolKind.tierOf(best)) > cur) {
                 ItemStack got = FactionStorage.extractExact(level(), b, best);
                 if (!got.isEmpty()) {
                     npc.equip(got);
@@ -272,10 +289,10 @@ public abstract class Job {
         }
         for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
             ItemStack cur = npc.getItemBySlot(slot);
-            int curDef = cur.getItem() instanceof ArmorItem a ? a.getDefense() : -1;
+            int curDef = cur.getItem() instanceof ArmorItem a ? gearScore(cur, a.getDefense()) : -1;
             Predicate<ItemStack> fits = s -> s.getItem() instanceof ArmorItem a && a.getEquipmentSlot() == slot;
-            ItemStack best = FactionStorage.findBest(level(), b, fits, s -> ((ArmorItem) s.getItem()).getDefense());
-            if (best.isEmpty() || ((ArmorItem) best.getItem()).getDefense() <= curDef) {
+            ItemStack best = FactionStorage.findBest(level(), b, fits, s -> gearScore(s, ((ArmorItem) s.getItem()).getDefense()));
+            if (best.isEmpty() || gearScore(best, ((ArmorItem) best.getItem()).getDefense()) <= curDef) {
                 continue;
             }
             // Soldiers get scarce armour first: civilians only take a piece when a spare remains for soldiers.
