@@ -84,7 +84,14 @@ Players respawn at their nearest surviving allied base when they have no bed.
   progress away from players without loading the whole map.
 
 All numbers that the spec left open are documented as proposals in [BALANCE.md](BALANCE.md) and most are
-configurable in `config/factionclash-common.toml`.
+configurable.
+
+### Config file
+
+The config is **not** part of this repository: NeoForge creates `config/factionclash-common.toml` inside your
+Minecraft instance (or server) folder the first time the game starts with the mod. Edit that file while the game
+is closed. A copy with the default values is in [docs/factionclash-common.toml](docs/factionclash-common.toml)
+for reference; you can also place it in your `config` folder before the first launch.
 
 ## Status
 

@@ -2,7 +2,8 @@
 
 The original project's numbers (map size, loot tables, upgrade bills, recruitment prices, affix caps, …) were
 not available, so every value below is a **PROPOSED** default, chosen to make the simulation progress at a
-watchable pace. Most are configurable in `config/factionclash-common.toml`; the rest are constants named in the
+watchable pace. Most are configurable in `config/factionclash-common.toml` (created in your Minecraft or server
+`config` folder on first launch; defaults in [docs/factionclash-common.toml](docs/factionclash-common.toml)); the rest are constants named in the
 source.
 
 ## Campaign (config `campaign`)

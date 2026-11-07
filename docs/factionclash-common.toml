@@ -1,0 +1,87 @@
+#Campaign layout (PROPOSED defaults)
+[campaign]
+	#Half-width in blocks of the square campaign map centred on world spawn.
+	# Default: 320
+	# Range: 160 ~ 4096
+	mapRadius = 320
+	#Number of human factions (Ember Legion, Grove Covenant, Tide Alliance, Stoneguard).
+	# Default: 4
+	# Range: 2 ~ 4
+	humanFactions = 4
+	#Number of The Hollow monster lairs.
+	# Default: 2
+	# Range: 0 ~ 4
+	monsterLairs = 2
+	#Start a campaign automatically when a world without one loads.
+	autoStart = false
+	#Keep bases, workplaces and travelling NPCs' chunks ticking so factions progress away from players.
+	keepFactionAreasLoaded = true
+
+#Workspace production (PROPOSED defaults)
+[work]
+	#Base ticks per mine output with a wooden pickaxe; better pickaxes are faster.
+	# Default: 140
+	# Range: 20 ~ 2400
+	mineCycleTicks = 140
+	#Ticks to chop one log in a tree plot.
+	# Default: 24
+	# Range: 5 ~ 400
+	chopTicksPerLog = 24
+	#Ticks per tending action on a sapling (each action advances growth like bone meal).
+	# Default: 120
+	# Range: 20 ~ 2400
+	tendTicks = 120
+
+#Recruitment (PROPOSED defaults)
+[recruitment]
+	#Hunger points of food consumed per recruit (bread=5, cooked beef=8, ...).
+	# Default: 20
+	# Range: 0 ~ 400
+	foodValue = 20
+	#Minimum ticks between recruitments at one base.
+	# Default: 1200
+	# Range: 100 ~ 72000
+	intervalTicks = 1200
+	#Desired share of soldiers that are archers.
+	# Default: 0.4
+	# Range: 0.0 ~ 1.0
+	rangedShare = 0.4
+
+#Scouting and war (PROPOSED defaults)
+[war]
+	#Maximum distance from home a scout explores.
+	# Default: 160
+	# Range: 32 ~ 2048
+	scoutRange = 160
+	#A scout away longer than this is presumed lost and replaced.
+	# Default: 24000
+	# Range: 1200 ~ 240000
+	scoutOverdueTicks = 24000
+	#Enemy sightings older than this are shown as stale.
+	# Default: 24000
+	# Range: 1200 ~ 480000
+	reportStaleTicks = 24000
+	#Soldiers a faction always keeps at home.
+	# Default: 3
+	# Range: 0 ~ 20
+	homeDefenders = 3
+	#Soldiers sent on a raid.
+	# Default: 3
+	# Range: 1 ~ 20
+	raidPartySize = 3
+	#Minimum ticks between raids launched by one faction.
+	# Default: 36000
+	# Range: 1200 ~ 480000
+	raidIntervalTicks = 36000
+	#Monsters a Hollow lair keeps at the start.
+	# Default: 5
+	# Range: 0 ~ 40
+	lairBaseCap = 5
+	#Monsters a Hollow lair grows to over time.
+	# Default: 12
+	# Range: 0 ~ 80
+	lairMaxCap = 12
+	#Minimum ticks between Hollow raids from one lair.
+	# Default: 30000
+	# Range: 1200 ~ 480000
+	lairRaidIntervalTicks = 30000
