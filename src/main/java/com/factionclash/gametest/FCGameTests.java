@@ -250,6 +250,35 @@ public final class FCGameTests {
         h.succeedWhen(() -> h.assertTrue(z.getTarget() == n, "zombie has not targeted the NPC"));
     }
 
+    /** Guards engage enemy faction NPCs on sight. */
+    @GameTest(template = "platform", timeoutTicks = 200)
+    public static void guardsEngageEnemyNpcs(GameTestHelper h) {
+        FactionNpc guard = npc(h, 3, 3, FactionType.GROVE_COVENANT, NpcRole.SWORDSMAN);
+        guard.equip(new ItemStack(Items.IRON_SWORD));
+        FactionNpc raider = npc(h, 14, 14, FactionType.TIDE_ALLIANCE, NpcRole.FARMER);
+        h.succeedWhen(() -> h.assertTrue(guard.getTarget() == raider || !raider.isAlive(), "guard ignored an enemy NPC"));
+    }
+
+    /** The defence alarm sends guards at intruders they cannot see (e.g. raiders inside the heart's hall). */
+    @GameTest(template = "platform", timeoutTicks = 100)
+    public static void defenceAlarmAssignsGuardsWithoutSight(GameTestHelper h) {
+        for (int x = 8; x <= 16; x++) {
+            for (int y = 2; y <= 5; y++) {
+                h.setBlock(new BlockPos(x, y, 8), Blocks.STONE); // wall blocking line of sight
+            }
+        }
+        FactionNpc guard = npc(h, 12, 4, FactionType.STONEGUARD, NpcRole.SWORDSMAN);
+        FactionNpc raider = npc(h, 12, 14, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
+        raider.setNoAi(true);
+        BaseState b = new BaseState();
+        b.faction = FactionType.STONEGUARD;
+        b.center = h.absolutePos(new BlockPos(12, 2, 12));
+        b.points.put(BaseState.HEART, h.absolutePos(new BlockPos(12, 2, 14)));
+        int n = com.factionclash.campaign.FactionDirector.defenceAlarm(h.getLevel(), b);
+        h.assertTrue(n >= 1 && guard.getTarget() == raider, "alarm did not assign the guard (assigned " + n + ")");
+        h.succeed();
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

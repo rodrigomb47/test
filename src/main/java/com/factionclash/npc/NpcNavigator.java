@@ -109,7 +109,9 @@ public final class NpcNavigator {
     private void repath(double speed) {
         BlockPos goal = target;
         double hd = Math.sqrt(Mth.square(target.getX() + 0.5 - npc.getX()) + Mth.square(target.getZ() + 0.5 - npc.getZ()));
-        if (hd > LONG_TRIP) {
+        int surface = npc.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, npc.getBlockX(), npc.getBlockZ());
+        boolean underground = npc.getY() < surface - 3;
+        if (hd > LONG_TRIP && !underground) {
             double f = WAYPOINT_STEP / hd;
             int wx = Mth.floor(npc.getX() + (target.getX() + 0.5 - npc.getX()) * f);
             int wz = Mth.floor(npc.getZ() + (target.getZ() + 0.5 - npc.getZ()) * f);

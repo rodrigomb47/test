@@ -46,6 +46,27 @@ public class MinerJob extends Job {
             || s.is(Items.STONE_BRICK_STAIRS) || s.is(Items.COBBLED_DEEPSLATE_STAIRS);
     private static final Predicate<ItemStack> COBBLE = s -> s.is(Items.COBBLESTONE);
     private static final Predicate<ItemStack> TORCH = s -> s.is(Items.TORCH);
+    /** Solid, non-falling blocks a miner may use to plug water, lava, sand or cave openings. */
+    private static final Predicate<ItemStack> SEAL = s -> s.is(Items.COBBLESTONE) || s.is(Items.COBBLED_DEEPSLATE) || s.is(Items.STONE)
+            || s.is(Items.DIRT) || s.is(Items.ANDESITE) || s.is(Items.DIORITE) || s.is(Items.GRANITE) || s.is(Items.TUFF)
+            || s.is(Items.DEEPSLATE) || s.is(Items.COARSE_DIRT) || s.is(Items.NETHERRACK);
+
+    private static boolean unsafeNeighbour(BlockState ns) {
+        return ns.isAir() || !ns.getFluidState().isEmpty() || ns.getBlock() instanceof FallingBlock
+                || ns.canBeReplaced();
+    }
+
+    /** Places one seal block from the backpack at {@code n}; false when the miner carries nothing suitable. */
+    private boolean placeSeal(BlockPos n) {
+        ItemStack mat = Inv.first(npc.inventory(), SEAL);
+        if (mat.isEmpty() || !(mat.getItem() instanceof net.minecraft.world.item.BlockItem bi)) {
+            return false;
+        }
+        mat.shrink(1);
+        npc.inventory().setChanged();
+        level().setBlock(n, bi.getBlock().defaultBlockState(), Block.UPDATE_ALL);
+        return true;
+    }
 
     private State state = State.CHECK;
     private int progress;
@@ -97,7 +118,7 @@ public class MinerJob extends Job {
             if (STAIRS.test(s)) {
                 return 16;
             }
-            if (COBBLE.test(s)) {
+            if (SEAL.test(s)) {
                 return MineLayout.UPGRADE_COBBLE + 16;
             }
             if (s.is(Items.COAL) || s.is(Items.STICK)) {
@@ -143,7 +164,7 @@ public class MinerJob extends Job {
                     }
                 }
                 BlockPos target = MineLayout.workPos(wp);
-                if (goTo(target, 1.3, "mine #" + wp.id)) {
+                if (enterMine(wp)) {
                     state = wp.upgrading() && hasExcavationSupplies(wp) ? State.EXCAVATE : State.WORK;
                 } else if (npc.navigator().target() == null) {
                     nextIntegrityCheck = 0; // route failed: check the mine for cave-ins next time
@@ -155,7 +176,58 @@ public class MinerJob extends Job {
         }
     }
 
+    /**
+     * Walks into the mine through its entrance and each tier's chamber in turn (short, reliable legs), finishing at
+     * the work position. Returns true once there.
+     */
+    private boolean enterMine(WorkplaceState wp) {
+        BlockPos work = MineLayout.workPos(wp);
+        int seg = MineLayout.segmentAt(wp, npc.blockPosition(), wp.tier);
+        if (seg == 0) {
+            if (npc.blockPosition().closerThan(MineLayout.local(wp, 0, 0, 0), 3.5)) {
+                return goTo(MineLayout.chamberCenter(wp, 1), 2.0, "mine #" + wp.id) && wp.tier == 1 && goTo(work, 1.3, "mine #" + wp.id);
+            }
+            BlockPos inside = MineLayout.local(wp, 0, 0, 0);
+            goTo(com.factionclash.npc.NpcNavigator.within(npc, MineLayout.entrance(wp), 2.0) ? inside : MineLayout.entrance(wp),
+                    1.5, "mine #" + wp.id);
+            return false;
+        }
+        if (seg >= wp.tier) {
+            return goTo(work, 1.3, "mine #" + wp.id);
+        }
+        BlockPos c = MineLayout.chamberCenter(wp, seg);
+        if (com.factionclash.npc.NpcNavigator.within(npc, c, 2.5) || MineLayout.forwardOf(wp, npc.blockPosition()) > MineLayout.forwardOf(wp, c)) {
+            goTo(MineLayout.chamberCenter(wp, seg + 1), 2.0, "mine #" + wp.id);
+        } else {
+            goTo(c, 2.0, "mine #" + wp.id);
+        }
+        return false;
+    }
+
+    /** Walks out of the mine the same way (chamber by chamber, then the hut door). True once outside. */
+    private boolean leaveMine(WorkplaceState wp) {
+        int seg = MineLayout.segmentAt(wp, npc.blockPosition(), wp.tier + (wp.upgrading() ? 1 : 0));
+        if (seg == 0) {
+            if (MineLayout.forwardOf(wp, npc.blockPosition()) > MineLayout.HUT_BACK - 1
+                    && MineLayout.forwardOf(wp, npc.blockPosition()) <= MineLayout.HUT_FRONT
+                    && npc.blockPosition().closerThan(wp.origin, 6)) {
+                return goTo(MineLayout.entrance(wp), 1.5, "the mine exit");
+            }
+            return true;
+        }
+        // from the first segment walk straight out through the hut door; deeper, step back one chamber at a time
+        BlockPos target = seg <= 1 ? MineLayout.entrance(wp) : MineLayout.chamberCenter(wp, seg - 1);
+        if (seg >= 2 && com.factionclash.npc.NpcNavigator.within(npc, target, 2.5)) {
+            target = seg - 2 >= 1 ? MineLayout.chamberCenter(wp, seg - 2) : MineLayout.entrance(wp);
+        }
+        goTo(target, 2.0, "the mine exit");
+        return false;
+    }
+
     private void storage(WorkplaceState wp) {
+        if (!leaveMine(wp)) {
+            return;
+        }
         if (!atStorage()) {
             return;
         }
@@ -242,14 +314,14 @@ public class MinerJob extends Job {
 
     private boolean hasExcavationSupplies(WorkplaceState wp) {
         return Inv.count(npc.inventory(), TORCH) >= needTorches(wp) && Inv.count(npc.inventory(), STAIRS) >= needStairs(wp)
-                && Inv.count(npc.inventory(), COBBLE) >= Math.min(8, MineLayout.UPGRADE_COBBLE);
+                && Inv.count(npc.inventory(), SEAL) >= Math.min(8, MineLayout.UPGRADE_COBBLE);
     }
 
     private String missingSupplies(WorkplaceState wp) {
         StringBuilder sb = new StringBuilder();
         int t = needTorches(wp) - Inv.count(npc.inventory(), TORCH);
         int s = needStairs(wp) - Inv.count(npc.inventory(), STAIRS);
-        int c = 8 - Inv.count(npc.inventory(), COBBLE);
+        int c = 8 - Inv.count(npc.inventory(), SEAL);
         if (t > 0) {
             sb.append(t).append(" torches ");
         }
@@ -257,7 +329,7 @@ public class MinerJob extends Job {
             sb.append(s).append(" stairs ");
         }
         if (c > 0) {
-            sb.append(c).append(" cobblestone");
+            sb.append(c).append(" sealing blocks");
         }
         return sb.toString().trim();
     }
@@ -283,7 +355,10 @@ public class MinerJob extends Job {
         }
         int cobbleWanted = MineLayout.UPGRADE_COBBLE + Math.max(0, (st + 3) / 4) * 6 - Inv.count(npc.inventory(), COBBLE);
         if (cobbleWanted > 0) {
-            takeFromStorage(COBBLE, cobbleWanted);
+            int got = takeFromStorage(COBBLE, cobbleWanted);
+            if (got < cobbleWanted) {
+                takeFromStorage(SEAL, cobbleWanted - got);
+            }
         }
     }
 
@@ -295,6 +370,9 @@ public class MinerJob extends Job {
 
     /** NPCs craft the stairs and torches the excavation needs at the workshop crafting table (spec 6). */
     private void craft(WorkplaceState wp) {
+        if (!leaveMine(wp)) {
+            return;
+        }
         if (!goTo(base().point(com.factionclash.campaign.BaseState.WORKSHOP_STAND), 2.0, "the crafting table")) {
             return;
         }
@@ -406,6 +484,12 @@ public class MinerJob extends Job {
         }
         actionTimer = 0;
         if (a.isDig()) {
+            // seal water, lava and loose blocks around the cell BEFORE opening it, so the tunnel cannot flood
+            if (!preSeal(wp, a.pos())) {
+                status("Need blocks to seal the excavation (water or loose ground ahead)", "Waiting");
+                state = State.STORAGE;
+                return;
+            }
             BlockState s = level().getBlockState(a.pos());
             if (!s.isAir() && !s.is(Blocks.WALL_TORCH)) {
                 BlockEntity be = level().getBlockEntity(a.pos());
@@ -494,11 +578,16 @@ public class MinerJob extends Job {
             }
         }
         lookAt(cell);
-        status("Clearing a cave-in in mine #" + wp.id + " (" + blocked.size() + " cells)", "Digging");
+        status("Clearing a cave-in or flood in mine #" + wp.id + " (" + blocked.size() + " cells)", "Digging");
         if (++actionTimer < 10) {
             return;
         }
         actionTimer = 0;
+        if (!preSeal(wp, cell)) {
+            status("Mine #" + wp.id + " needs blocks to seal a flood", "Waiting");
+            state = State.STORAGE;
+            return;
+        }
         List<ItemStack> drops = s.getFluidState().isEmpty() ? Block.getDrops(s, level(), cell, level().getBlockEntity(cell), npc, npc.tool()) : List.of();
         level().setBlock(cell, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         level().levelEvent(2001, cell, Block.getId(s));
@@ -514,17 +603,13 @@ public class MinerJob extends Job {
         blocked.poll();
     }
 
-    /** Seals unsafe neighbours with cobblestone when the miner carries some (best effort while clearing). */
+    /** Seals unsafe neighbours with carried blocks (best effort while clearing). */
     private void sealAround(WorkplaceState wp, BlockPos dug, Set<BlockPos> open) {
         for (Direction d : Direction.values()) {
             BlockPos n = dug.relative(d);
-            if (open.contains(n)) {
-                continue;
-            }
             BlockState ns = level().getBlockState(n);
-            if ((ns.isAir() || !ns.getFluidState().isEmpty() || ns.getBlock() instanceof FallingBlock)
-                    && Inv.consume(npc.inventory(), COBBLE, 1)) {
-                level().setBlock(n, Blocks.COBBLESTONE.defaultBlockState(), Block.UPDATE_ALL);
+            if (!ns.getFluidState().isEmpty() || (!open.contains(n) && unsafeNeighbour(ns))) {
+                placeSeal(n);
             }
         }
     }
@@ -541,21 +626,40 @@ public class MinerJob extends Job {
         return MineLayout.workPos(wp);
     }
 
-    /** Keeps the excavation safe: fluids, falling blocks and cave openings next to new cells become cobblestone. */
+    /**
+     * Seals the non-tunnel neighbours of a cell that hold fluid or loose blocks. Requires enough sealing blocks
+     * for all of them first, so a cell is never opened half-sealed.
+     */
+    private boolean preSeal(WorkplaceState wp, BlockPos cell) {
+        Set<BlockPos> open = openCells(wp);
+        List<BlockPos> todo = new java.util.ArrayList<>();
+        for (Direction d : Direction.values()) {
+            BlockPos n = cell.relative(d);
+            BlockState ns = level().getBlockState(n);
+            // Fluids are plugged even inside the planned tunnel: an undug future cell full of aquifer water would
+            // otherwise drain into the finished part. The plug is dug out later, once its own neighbours are sealed.
+            if (!ns.getFluidState().isEmpty() || (!open.contains(n) && ns.getBlock() instanceof FallingBlock)) {
+                todo.add(n);
+            }
+        }
+        if (Inv.count(npc.inventory(), SEAL) < todo.size()) {
+            return false;
+        }
+        for (BlockPos n : todo) {
+            placeSeal(n);
+        }
+        return true;
+    }
+
+    /** After digging: cave openings and gaps next to the new cell are closed so mobs and fluids stay out. */
     private boolean seal(WorkplaceState wp, BlockPos dug) {
         Set<BlockPos> open = openCells(wp);
         for (Direction d : Direction.values()) {
             BlockPos n = dug.relative(d);
-            if (open.contains(n)) {
-                continue;
-            }
             BlockState ns = level().getBlockState(n);
-            boolean unsafe = ns.isAir() || !ns.getFluidState().isEmpty() || ns.getBlock() instanceof FallingBlock;
-            if (unsafe) {
-                if (!Inv.consume(npc.inventory(), COBBLE, 1)) {
-                    return false;
-                }
-                level().setBlock(n, Blocks.COBBLESTONE.defaultBlockState(), Block.UPDATE_ALL);
+            boolean fluid = !ns.getFluidState().isEmpty();
+            if ((fluid || (!open.contains(n) && unsafeNeighbour(ns))) && !placeSeal(n)) {
+                return false;
             }
         }
         return true;

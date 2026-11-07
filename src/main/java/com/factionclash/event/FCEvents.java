@@ -61,10 +61,17 @@ public final class FCEvents {
         }
         if (mob.getPersistentData().contains(BaseBuilder.LAIR_TAG) && mob instanceof PathfinderMob pm) {
             pm.goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(pm, 1.0));
-            if (!pm.hasRestriction() && event.getLevel().getServer() != null) {
-                BaseState lair = CampaignData.get(event.getLevel().getServer()).base(mob.getPersistentData().getInt(BaseBuilder.LAIR_TAG));
-                if (lair != null) {
-                    pm.restrictTo(lair.center, 10);
+            if (event.getLevel().getServer() != null) {
+                CampaignData data = CampaignData.get(event.getLevel().getServer());
+                BaseState lair = data.base(mob.getPersistentData().getInt(BaseBuilder.LAIR_TAG));
+                if (lair != null && !lair.destroyed) {
+                    // re-adopt on load so a reload never leaves a live monster untracked
+                    if (lair.lairMobs.add(mob.getUUID())) {
+                        data.setDirty();
+                    }
+                    if (!pm.hasRestriction()) {
+                        pm.restrictTo(lair.center, 10);
+                    }
                 }
             }
         }

@@ -65,6 +65,33 @@ public final class MineLayout {
         return local(wp, g.chamberEnd(), -3, g.chamberY() + 1);
     }
 
+    /** Centre of the chamber of the given tier: the waypoint miners walk through on the way in and out. */
+    public static BlockPos chamberCenter(WorkplaceState wp, int tier) {
+        Segment g = segment(tier);
+        return local(wp, (g.chamberStart() + g.chamberEnd()) / 2, 0, g.chamberY());
+    }
+
+    /** Local forward coordinate of a world position relative to the mine origin. */
+    public static int forwardOf(WorkplaceState wp, BlockPos p) {
+        BlockPos d = p.subtract(wp.origin);
+        return d.getX() * wp.facing.getStepX() + d.getZ() * wp.facing.getStepZ();
+    }
+
+    /** Which segment (tier) of the mine a position lies in, or 0 when it is outside / in the surface hut. */
+    public static int segmentAt(WorkplaceState wp, BlockPos p, int tier) {
+        if (p.getY() >= wp.origin.getY() - 1) {
+            return 0;
+        }
+        int f = forwardOf(wp, p);
+        for (int t = 1; t <= tier; t++) {
+            Segment g = segment(t);
+            if (f <= g.chamberEnd()) {
+                return t;
+            }
+        }
+        return tier;
+    }
+
     public static BlockPos entrance(WorkplaceState wp) {
         return local(wp, HUT_BACK - 1, 0, 0);
     }

@@ -40,12 +40,20 @@ public final class FactionDirector {
     private static final int REPAIR_SCAN_BUDGET = 384;
     /** Last recruitment decision per base, for the station's information panel. */
     public static final Map<Integer, String> LAST_RECRUIT_NOTE = new HashMap<>();
+    private static final Map<UUID, Long> MISSING_SINCE = new HashMap<>();
 
     private FactionDirector() {
     }
 
     public static void tick(MinecraftServer server, CampaignData data, long t) {
         ServerLevel level = server.overworld();
+        if (t % 20 == 0) {
+            for (BaseState b : data.bases.values()) {
+                if (!b.destroyed && b.isSettlement() && level.isLoaded(b.center)) {
+                    defenceAlarm(level, b);
+                }
+            }
+        }
         for (BaseState b : List.copyOf(data.bases.values())) {
             if (b.destroyed || (t + b.id * 17L) % PERIOD != 0 || !level.isLoaded(b.center)) {
                 continue;
@@ -170,6 +178,45 @@ public final class FactionDirector {
         if (!r.ok()) {
             b.lastRecruitAt = t - FCConfig.RECRUIT_INTERVAL_TICKS.get() / 2; // retry sooner, but not every run
         }
+    }
+
+    /**
+     * Base defence: intruders inside the walls (enemy NPCs, enemy players, hostile raiders) are assigned to the
+     * nearest free guards even without line of sight, and anything at the heart draws every guard (spec 14).
+     */
+    public static int defenceAlarm(ServerLevel level, BaseState b) {
+        BlockPos heart = b.point(BaseState.HEART);
+        AABB walls = new AABB(b.center).inflate(com.factionclash.structure.BaseLayout.HALF + 4, 12, com.factionclash.structure.BaseLayout.HALF + 4);
+        List<net.minecraft.world.entity.LivingEntity> intruders = level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, walls,
+                e -> e.isAlive() && ((e instanceof FactionNpc n && n.getFaction() != b.faction)
+                        || (e instanceof net.minecraft.world.entity.monster.Monster m && com.factionclash.combat.CombatRules.isHostileMonster(m))
+                        || (e instanceof net.minecraft.server.level.ServerPlayer p && !p.isCreative() && !p.isSpectator()
+                        && CampaignData.get(level.getServer()).players.get(p.getUUID()) != null
+                        && CampaignData.get(level.getServer()).players.get(p.getUUID()) != b.faction)));
+        if (intruders.isEmpty()) {
+            return 0;
+        }
+        List<FactionNpc> guards = level.getEntitiesOfClass(FactionNpc.class, walls.inflate(24, 8, 24),
+                g -> g.isAlive() && g.getFaction() == b.faction && g.getRole().combatant);
+        int assigned = 0;
+        for (net.minecraft.world.entity.LivingEntity intruder : intruders) {
+            boolean atHeart = heart != null && intruder.blockPosition().closerThan(heart, 8);
+            guards.sort(Comparator.comparingDouble(g -> g.distanceToSqr(intruder)));
+            int want = atHeart ? guards.size() : 2;
+            for (FactionNpc g : guards) {
+                if (want <= 0) {
+                    break;
+                }
+                net.minecraft.world.entity.LivingEntity cur = g.getTarget();
+                boolean busy = cur != null && cur.isAlive() && !(atHeart && !cur.blockPosition().closerThan(heart, 8));
+                if (!busy) {
+                    g.setTarget(intruder);
+                    assigned++;
+                }
+                want--;
+            }
+        }
+        return assigned;
     }
 
     // ------------------------------------------------------------------ construction
@@ -350,17 +397,28 @@ public final class FactionDirector {
             Entity e = level.getEntity(u);
             if (e instanceof Mob m && m.isAlive()) {
                 mobs.add(m);
-            } else {
-                lair.lairMobs.remove(u);
+                MISSING_SINCE.remove(u);
+            } else if (e != null) {
+                lair.lairMobs.remove(u); // present but dead
                 data.setDirty();
+            } else {
+                // Entities load asynchronously after a restart: only forget a monster after a long absence,
+                // otherwise the lair would respawn monsters that still exist (duplication on reload).
+                long since = MISSING_SINCE.computeIfAbsent(u, k -> t);
+                if (t - since > 6000) {
+                    lair.lairMobs.remove(u);
+                    MISSING_SINCE.remove(u);
+                    data.setDirty();
+                }
             }
         }
+        int tracked = lair.lairMobs.size();
         if (t - lair.lastLairGrowth >= 24000) {
             lair.lastLairGrowth = t;
             lair.lairCap = Math.min(FCConfig.LAIR_MAX_CAP.get(), lair.lairCap + 1);
             data.setDirty();
         }
-        if (mobs.size() < lair.lairCap && (t / PERIOD) % 4 == 0) {
+        if (tracked < lair.lairCap && (t / PERIOD) % 4 == 0) {
             Mob m = BaseBuilder.spawnLairMob(level, data, lair);
             if (m != null) {
                 mobs.add(m);

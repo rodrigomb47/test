@@ -195,6 +195,7 @@ public class WoodcutterJob extends Job {
     }
 
     private BlockPos orphanCache;
+    private int stepFailures;
     private long nextOrphanScan;
 
     private void storage(WorkplaceState wp) {
@@ -449,8 +450,17 @@ public class WoodcutterJob extends Job {
             state = State.CHOP;
             return;
         }
+        if (!at.isAir() && !at.canBeReplaced() && !at.hasBlockEntity() && TreePlotLayout.insideInner(wp, wp.tier, spot)) {
+            ItemStack debris = new ItemStack(at.getBlock().asItem());
+            if (!debris.isEmpty()) {
+                Crafting.addAll(npc.inventory(), debris);
+            }
+            level().setBlock(spot, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            npc.swing(InteractionHand.MAIN_HAND);
+            return;
+        }
         if (!at.isAir() && !at.canBeReplaced()) {
-            status("Planting spot is blocked", "Blocked");
+            status("Planting spot " + spot.toShortString() + " is blocked by " + at.getBlock().getName().getString(), "Blocked");
             state = State.CHECK;
             waitFor(100);
             return;
@@ -529,9 +539,18 @@ public class WoodcutterJob extends Job {
         }
         BlockPos[] step = steps.get(wp.upgradeStep);
         BlockPos target = step[0] != null ? step[0] : step[1];
-        if (!goTo(target, 3.5, "the plot fence")) {
+        boolean close = npc.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(target)) <= 6.0;
+        if (!close && !goTo(target, 3.5, "the plot fence")) {
+            if (npc.navigator().target() == null && ++stepFailures >= 3) {
+                // unreachable fence post (cliff, water): leave the gap rather than wander indefinitely
+                com.factionclash.FactionClash.LOGGER.info("Plot #{} skips unreachable fence step {} at {}", wp.id, wp.upgradeStep, target.toShortString());
+                stepFailures = 0;
+                wp.upgradeStep++;
+                data().setDirty();
+            }
             return;
         }
+        stepFailures = 0;
         status("Enlarging tree plot #" + wp.id + " (" + (wp.upgradeStep + 1) + "/" + steps.size() + ")", "Building");
         if (++progress < 8) {
             return;
@@ -587,6 +606,9 @@ public class WoodcutterJob extends Job {
         for (int f = 1; f <= d; f++) {
             for (int s = -h; s <= h; s++) {
                 BlockPos p = TreePlotLayout.local(wp, f, s);
+                if (level().getBlockState(p).is(BlockTags.FENCES)) {
+                    level().setBlock(p, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL); // inner area holds no fences
+                }
                 if (!TreePlotLayout.insideInner(wp, wp.tier, p)) {
                     prepareColumn(p);
                     BlockState below = level().getBlockState(p.below());

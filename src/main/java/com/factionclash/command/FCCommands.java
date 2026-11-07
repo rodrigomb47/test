@@ -416,6 +416,9 @@ public final class FCCommands {
                 o.addProperty("ammo", n.ammo().isEmpty() ? "" : n.ammo().getHoverName().getString());
                 o.addProperty("items", com.factionclash.work.Inv.totalItems(n.inventory()));
                 o.addProperty("recoveries", n.navigator().recoveries);
+                o.addProperty("target", n.getTarget() == null ? "" : n.getTarget().getType().toShortString() + "@" + n.getTarget().blockPosition().toShortString());
+                o.addProperty("goals", String.join(",", n.goalSelector.getAvailableGoals().stream().filter(g -> g.isRunning())
+                        .map(g -> g.getGoal().getClass().getSimpleName()).toList()));
                 JsonObject af = new JsonObject();
                 n.affixes().forEach((k, v) -> af.addProperty(k.name(), v));
                 o.add("affixes", af);

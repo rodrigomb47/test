@@ -94,6 +94,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     private int regenTimer;
     private int recordTimer;
     private long lastHurtTime;
+    private long lastAttackTime;
 
     public FactionNpc(EntityType<? extends FactionNpc> type, Level level) {
         super(type, level);
@@ -250,6 +251,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         arrow.shoot(dx, dy + d * 0.2F, dz, 1.6F, 4.0F);
         playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
         level().addFreshEntity(arrow);
+        lastAttackTime = tickCount;
     }
 
     public boolean isAiming() {
@@ -438,6 +440,16 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             regenTimer = 0;
             heal(1.0F);
         }
+        // Stale targets must not freeze work: civilians only defend at close range, and anyone gives up on a
+        // target after 10 s without trading blows (e.g. a visible but unreachable mob).
+        LivingEntity t = getTarget();
+        if (t != null) {
+            boolean stale = tickCount - Math.max(lastHurtTime, lastAttackTime) > 200 && tickCount - targetSetAt > 200;
+            boolean farForCivilian = getRole().isCivilian() && distanceToSqr(t) > 100;
+            if (!t.isAlive() || stale || farForCivilian) {
+                setTarget(null);
+            }
+        }
         if (++recordTimer >= 40) {
             recordTimer = 0;
             NpcRecord rec = record();
@@ -448,6 +460,25 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             }
             ChunkLoading.updateTraveler(this);
         }
+    }
+
+    private long targetSetAt;
+
+    @Override
+    public void setTarget(LivingEntity target) {
+        if (target != getTarget()) {
+            targetSetAt = tickCount;
+        }
+        super.setTarget(target);
+    }
+
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        boolean r = super.doHurtTarget(target);
+        if (r) {
+            lastAttackTime = tickCount;
+        }
+        return r;
     }
 
     @Override
