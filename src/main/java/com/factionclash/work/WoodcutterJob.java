@@ -38,12 +38,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Tree-plot woodcutter (spec 8): fells grown trees in its fenced plot (real logs into the backpack), clears the
- * canopy (saplings and, for oak, apples), replants, and tends saplings with the vanilla growth step. Upgrades
- * enlarge the fence so the plot holds more trees and yields more apples.
+ * Tree-plot woodcutter that works like a player (spec 8, reworked): it fells grown trees in its fenced plot with
+ * its axe at real break speed, breaks the canopy so the leaves' own loot tables drop saplings, sticks and apples,
+ * walks around collecting everything that dropped, replants, and speeds saplings up only with real bone meal
+ * (otherwise they grow naturally). Upgrades enlarge the fence so the plot holds more trees.
  */
 public class WoodcutterJob extends Job {
-    enum State { CHECK, STORAGE, CRAFT, CHOP, PLANT, TEND, UPGRADE }
+    enum State { CHECK, STORAGE, CRAFT, CHOP, LEAVES, COLLECT, PLANT, BONEMEAL, UPGRADE }
 
     private static final int CARGO_LIMIT = 48;
     private State state = State.CHECK;
@@ -52,6 +53,11 @@ public class WoodcutterJob extends Job {
     private int tendCursor;
     private long nextUpgradeCheck;
     private final List<BlockPos> logs = new ArrayList<>();
+    private final List<BlockPos> leaves = new ArrayList<>();
+    private final BlockWork.Breaker breaker = new BlockWork.Breaker();
+    private int collectTicks;
+    /** Reach used for tall trunks: a player would climb or pillar; NPCs reach a little higher instead (PROPOSED). */
+    private static final double TRUNK_REACH = 7.5;
 
     public WoodcutterJob(FactionNpc npc) {
         super(npc);
@@ -73,6 +79,9 @@ public class WoodcutterJob extends Job {
         if (s.is(ItemTags.SAPLINGS)) {
             return 8;
         }
+        if (s.is(Items.BONE_MEAL)) {
+            return 16;
+        }
         WorkplaceState wp = wp();
         if (wp != null && wp.upgrading()) {
             if (s.is(Items.OAK_FENCE) || s.is(ItemTags.FENCES)) {
@@ -92,6 +101,29 @@ public class WoodcutterJob extends Job {
         return Inv.count(npc.inventory(), s -> s.is(ItemTags.LOGS) || s.is(Items.APPLE) || s.is(Items.STICK));
     }
 
+    private void collect(WorkplaceState wp) {
+        int n = BlockWork.pickUp(npc, x -> true);
+        if (n > 0) {
+            wp.totalOutput += n;
+            data().setDirty();
+        }
+    }
+
+    private net.minecraft.world.phys.AABB plotArea(WorkplaceState wp) {
+        BlockPos a = TreePlotLayout.local(wp, 0, -TreePlotLayout.half(wp.tier) - 1);
+        BlockPos b = TreePlotLayout.local(wp, TreePlotLayout.depth(wp.tier) + 1, TreePlotLayout.half(wp.tier) + 1);
+        // the fenced area only: items that rolled out over the fence (onto a slope or hill) are left where they are
+        return new net.minecraft.world.phys.AABB(Vec3Min(a, b), Vec3Max(a, b)).expandTowards(0, 12, 0).move(0, -1, 0);
+    }
+
+    private static net.minecraft.world.phys.Vec3 Vec3Min(BlockPos a, BlockPos b) {
+        return new net.minecraft.world.phys.Vec3(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+    }
+
+    private static net.minecraft.world.phys.Vec3 Vec3Max(BlockPos a, BlockPos b) {
+        return new net.minecraft.world.phys.Vec3(Math.max(a.getX(), b.getX()) + 1, Math.max(a.getY(), b.getY()) + 1, Math.max(a.getZ(), b.getZ()) + 1);
+    }
+
     private boolean hasAxe() {
         return ToolKind.AXE.matches(npc.tool());
     }
@@ -104,13 +136,18 @@ public class WoodcutterJob extends Job {
             waitFor(200);
             return;
         }
+        if (state != State.STORAGE && state != State.CRAFT) {
+            collect(wp);
+        }
         switch (state) {
             case CHECK -> decide(wp);
             case STORAGE -> storage(wp);
             case CRAFT -> craftFences(wp);
             case CHOP -> chop(wp);
+            case LEAVES -> breakLeaves(wp);
+            case COLLECT -> collectDrops(wp);
             case PLANT -> plant(wp);
-            case TEND -> tend(wp);
+            case BONEMEAL -> boneMeal(wp);
             case UPGRADE -> upgrade(wp);
         }
     }
@@ -156,17 +193,24 @@ public class WoodcutterJob extends Job {
                 return;
             }
         }
-        for (int i = 0; i < spots.size(); i++) {
-            BlockPos s = spots.get((tendCursor + i) % spots.size());
-            if (level().getBlockState(s).getBlock() instanceof SaplingBlock) {
-                tendCursor = (tendCursor + i + 1) % spots.size();
-                spot = s;
-                progress = 0;
-                state = State.TEND;
-                return;
+        if (collectable(wp) != null) {
+            collectTicks = 0;
+            state = State.COLLECT;
+            return;
+        }
+        if (Inv.count(npc.inventory(), x -> x.is(Items.BONE_MEAL)) > 0) {
+            for (int i = 0; i < spots.size(); i++) {
+                BlockPos s = spots.get((tendCursor + i) % spots.size());
+                if (level().getBlockState(s).getBlock() instanceof SaplingBlock) {
+                    tendCursor = (tendCursor + i + 1) % spots.size();
+                    spot = s;
+                    progress = 0;
+                    state = State.BONEMEAL;
+                    return;
+                }
             }
         }
-        status("Plot is fully planted; waiting", "Waiting");
+        status("Saplings are growing" + (Inv.count(npc.inventory(), x -> x.is(Items.BONE_MEAL)) == 0 ? " (no bone meal)" : ""), "Waiting");
         waitFor(100);
     }
 
@@ -221,6 +265,10 @@ public class WoodcutterJob extends Job {
             if (saplings < 2) {
                 takeFromStorage(s -> s.is(ItemTags.SAPLINGS), 6 - saplings);
             }
+        }
+        int boneMeal = Inv.count(npc.inventory(), x -> x.is(Items.BONE_MEAL));
+        if (boneMeal < 8) {
+            takeFromStorage(x -> x.is(Items.BONE_MEAL), 16 - boneMeal);
         }
         if (!wp.upgrading() && now() >= nextUpgradeCheck && wp.tier < WorkplaceState.Type.TREE_PLOT.maxTier) {
             nextUpgradeCheck = now() + 3600;
@@ -333,81 +381,127 @@ public class WoodcutterJob extends Job {
     }
 
     private void chop(WorkplaceState wp) {
-        if (!goTo(spot, 4.0, "a tree in plot #" + wp.id)) {
+        if (Inv.freeSlots(npc.inventory()) == 0) {
+            breaker.reset(npc);
+            state = State.STORAGE;
             return;
+        }
+        if (!BlockWork.inReach(npc, spot, 4.0)) {
+            // low leaves at head height block the way to the trunk: a player cuts through them
+            BlockPos leaf = leafInTheWay();
+            if (leaf != null) {
+                status("Cutting through leaves to reach a tree in plot #" + wp.id, "Chopping");
+                breaker.tick(npc, leaf);
+                return;
+            }
+            if (!goTo(spot, 2.5, "a tree in plot #" + wp.id)) {
+                return;
+            }
         }
         if (logs.isEmpty()) {
             collectLogs();
             if (logs.isEmpty()) {
-                clearCanopy(wp);
-                state = State.PLANT;
+                findLeaves();
+                state = State.LEAVES;
                 return;
             }
         }
         BlockPos log = logs.get(0);
-        if (!level().getBlockState(log).is(BlockTags.LOGS)) {
+        if (!level().getBlockState(log).is(BlockTags.LOGS) || !BlockWork.inReach(npc, log, TRUNK_REACH)) {
             logs.remove(0);
             return;
         }
-        lookAt(log);
-        int axeTier = Math.max(0, ToolKind.tierOf(npc.tool()));
-        int ticks = (int) Math.max(6, FCConfig.CHOP_TICKS_PER_LOG.get() / ((1.0 + 0.2 * axeTier) * (1.0 + npc.affix(Affix.DILIGENCE))));
-        progress++;
-        level().destroyBlockProgress(npc.getId(), log, Math.min(9, progress * 10 / ticks));
         status("Felling a tree in plot #" + wp.id + " (" + logs.size() + " logs left)", "Chopping");
-        if (progress < ticks) {
-            return;
-        }
-        BlockState s = level().getBlockState(log);
-        ItemStack item = new ItemStack(s.getBlock().asItem());
-        if (!Inv.fits(npc.inventory(), item)) {
-            state = State.STORAGE;
-            return;
-        }
-        progress = 0;
-        level().destroyBlockProgress(npc.getId(), log, -1);
-        level().setBlock(log, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        level().levelEvent(2001, log, Block.getId(s));
-        Crafting.addAll(npc.inventory(), item);
-        npc.swing(InteractionHand.MAIN_HAND);
-        npc.awardXp(1);
-        wp.totalOutput++;
-        data().setDirty();
-        logs.remove(0);
-        if (logs.isEmpty()) {
-            clearCanopy(wp);
-            state = State.PLANT;
+        if (breaker.tick(npc, log)) {
+            npc.awardXp(1);
+            logs.remove(0);
+            if (logs.isEmpty()) {
+                findLeaves();
+                state = State.LEAVES;
+            }
         }
     }
 
-    /** Clears the felled tree's leaves, rolling vanilla-like sapling and (oak) apple chances into the backpack. */
-    private void clearCanopy(WorkplaceState wp) {
-        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
-        for (int dx = -3; dx <= 3; dx++) {
-            for (int dz = -3; dz <= 3; dz++) {
-                for (int dy = 0; dy <= 14; dy++) {
-                    m.set(spot.getX() + dx, spot.getY() + dy, spot.getZ() + dz);
-                    BlockState s = level().getBlockState(m);
-                    if (!s.is(BlockTags.LEAVES) || (s.hasProperty(LeavesBlock.PERSISTENT) && s.getValue(LeavesBlock.PERSISTENT))) {
-                        continue;
-                    }
-                    level().setBlock(m, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
-                    if (level().random.nextDouble() < TreePlotLayout.SAPLING_CHANCE) {
-                        net.minecraft.world.item.Item sap = saplingFor(s);
-                        if (sap != null) {
-                            Crafting.addAll(npc.inventory(), new ItemStack(sap));
-                        }
-                    }
-                    if ((s.is(Blocks.OAK_LEAVES) || s.is(Blocks.DARK_OAK_LEAVES)) && level().random.nextDouble() < TreePlotLayout.appleChance(wp.tier)) {
-                        ItemStack apple = new ItemStack(Items.APPLE);
-                        if (Inv.fits(npc.inventory(), apple)) {
-                            Crafting.addAll(npc.inventory(), apple);
-                        }
-                    }
+    /** The felled tree's canopy within a player's reach of the stump. */
+    private void findLeaves() {
+        leaves.clear();
+        for (BlockPos p : BlockPos.betweenClosed(spot.offset(-3, 0, -3), spot.offset(3, 12, 3))) {
+            BlockState s = level().getBlockState(p);
+            if (s.is(BlockTags.LEAVES) && !(s.hasProperty(LeavesBlock.PERSISTENT) && s.getValue(LeavesBlock.PERSISTENT))) {
+                leaves.add(p.immutable());
+            }
+        }
+        leaves.sort(Comparator.comparingDouble(p -> p.distSqr(npc.blockPosition())));
+    }
+
+    /** Breaks the reachable leaves by hand; their loot tables drop saplings, sticks and apples. */
+    private void breakLeaves(WorkplaceState wp) {
+        while (!leaves.isEmpty() && (!level().getBlockState(leaves.get(0)).is(BlockTags.LEAVES)
+                || !BlockWork.inReach(npc, leaves.get(0), 5.5))) {
+            leaves.remove(0);
+        }
+        if (leaves.isEmpty()) {
+            collectTicks = 0;
+            state = State.COLLECT;
+            return;
+        }
+        status("Clearing the canopy (" + leaves.size() + " leaves)", "Chopping");
+        if (breaker.tick(npc, leaves.get(0))) {
+            leaves.remove(0);
+        }
+    }
+
+    /** A leaf block within reach, at foot or head height, between the woodcutter and the trunk. */
+    private BlockPos leafInTheWay() {
+        if (spot == null || npc.blockPosition().distSqr(spot) > 8 * 8) {
+            return null;
+        }
+        double own = npc.blockPosition().distSqr(spot);
+        BlockPos best = null;
+        double bestD = Double.MAX_VALUE;
+        for (BlockPos p : BlockPos.betweenClosed(npc.blockPosition().offset(-3, 0, -3), npc.blockPosition().offset(3, 1, 3))) {
+            if (level().getBlockState(p).is(BlockTags.LEAVES) && p.distSqr(spot) < own && BlockWork.inReach(npc, p, 4.5)) {
+                double d = p.distSqr(npc.blockPosition());
+                if (d < bestD) {
+                    bestD = d;
+                    best = p.immutable();
                 }
             }
         }
-        level().playSound(null, spot, SoundEvents.GRASS_BREAK, SoundSource.BLOCKS, 1.0F, 0.8F);
+        return best;
+    }
+
+    /** Items the woodcutter could not get to (on a fence post, on top of leaves); left for later. */
+    private final Set<java.util.UUID> unreachableItems = new HashSet<>();
+    private java.util.UUID chasing;
+    private int chaseTicks;
+
+    /** The nearest dropped item in the plot that can be walked to (not resting on leaves, not given up on). */
+    private net.minecraft.world.entity.item.ItemEntity collectable(WorkplaceState wp) {
+        return BlockWork.nearestItem(npc, plotArea(wp), x -> true, e ->
+                !unreachableItems.contains(e.getUUID()) && !level().getBlockState(e.blockPosition().below()).is(BlockTags.LEAVES)
+                        && !level().getBlockState(e.blockPosition()).is(BlockTags.LEAVES));
+    }
+
+    /** Walks over to the logs, saplings and apples lying in the plot and picks them up. */
+    private void collectDrops(WorkplaceState wp) {
+        net.minecraft.world.entity.item.ItemEntity item = collectable(wp);
+        if (item == null || ++collectTicks > 400 || Inv.freeSlots(npc.inventory()) == 0) {
+            state = Inv.freeSlots(npc.inventory()) == 0 ? State.STORAGE : (spot != null && !isTree(spot) ? State.PLANT : State.CHECK);
+            if (unreachableItems.size() > 64) {
+                unreachableItems.clear();
+            }
+            return;
+        }
+        if (!item.getUUID().equals(chasing)) {
+            chasing = item.getUUID();
+            chaseTicks = 0;
+        } else if (++chaseTicks > 160) {
+            unreachableItems.add(chasing); // could not get to it: a player would leave it for later too
+            return;
+        }
+        status("Collecting dropped wood and saplings", "Collecting");
+        goTo(item.blockPosition(), 0.8, "dropped items");
     }
 
     private static net.minecraft.world.item.Item saplingFor(BlockState leaves) {
@@ -488,9 +582,11 @@ public class WoodcutterJob extends Job {
         }
     }
 
-    private void tend(WorkplaceState wp) {
+    /** Uses real bone meal on a sapling (vanilla 45% chance to advance each use). */
+    private void boneMeal(WorkplaceState wp) {
         BlockState s = level().getBlockState(spot);
-        if (!(s.getBlock() instanceof SaplingBlock)) {
+        ItemStack meal = Inv.first(npc.inventory(), x -> x.is(Items.BONE_MEAL));
+        if (!(s.getBlock() instanceof SaplingBlock) || meal.isEmpty()) {
             state = State.CHECK;
             return;
         }
@@ -498,14 +594,15 @@ public class WoodcutterJob extends Job {
             return;
         }
         lookAt(spot);
-        status("Tending saplings in plot #" + wp.id, "Tending");
-        int ticks = (int) Math.max(20, FCConfig.TEND_TICKS.get() / (1.0 + npc.affix(Affix.DILIGENCE)));
-        if (++progress < ticks) {
+        status("Using bone meal on saplings in plot #" + wp.id, "Tending");
+        if (++progress < 10) {
             return;
         }
         progress = 0;
-        growNow(spot, 1);
-        level().levelEvent(1505, spot, 0);
+        if (net.minecraft.world.item.BoneMealItem.growCrop(meal, level(), spot)) {
+            level().levelEvent(1505, spot, 15);
+        }
+        npc.inventory().setChanged();
         npc.swing(InteractionHand.MAIN_HAND);
         state = State.CHECK;
     }
@@ -631,9 +728,7 @@ public class WoodcutterJob extends Job {
     @Override
     public void onPause() {
         super.onPause();
-        if (spot != null && npc.level() instanceof ServerLevel sl && !logs.isEmpty()) {
-            sl.destroyBlockProgress(npc.getId(), logs.get(0), -1);
-        }
+        breaker.reset(npc);
     }
 
     @Override

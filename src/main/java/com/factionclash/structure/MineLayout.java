@@ -2,23 +2,18 @@ package com.factionclash.structure;
 
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.faction.FactionType;
+import com.factionclash.logic.SpiralMine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.WallTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
- * Geometry of a constructed mine (spec 6). A surface hut holds the stairwell; each tier adds a staircase going
- * further down and forward plus a lit 5x5 chamber. The miner works at the end of the deepest chamber.
- *
- * <p>Local coordinates: f = forward (away from the base), s = sideways, y = relative to the hut floor level.
+ * World positions of a player-style mine (geometry in {@link SpiralMine}): a surface hut over a 2x2 spiral shaft,
+ * and at each level a branch mine dug block by block by the miner.
  */
 public final class MineLayout {
     public static final int HUT_BACK = -2;
@@ -27,144 +22,129 @@ public final class MineLayout {
     private MineLayout() {
     }
 
-    public record Segment(int startF, int startY, int steps, int chamberStart, int chamberEnd, int chamberY) {
-    }
-
-    public static Segment segment(int tier) {
-        int startF = 0, startY = 0;
-        Segment seg = null;
-        for (int t = 1; t <= tier; t++) {
-            int n = t == 1 ? 4 : 6;
-            int cs = startF + n + 1;
-            int ce = startF + n + 5;
-            int cy = startY - n;
-            seg = new Segment(startF, startY, n, cs, ce, cy);
-            startF = ce;
-            startY = cy;
-        }
-        return seg;
-    }
-
     public static BlockPos local(WorkplaceState wp, int f, int s, int y) {
         Direction fw = wp.facing;
         Direction side = fw.getClockWise();
         return wp.origin.relative(fw, f).relative(side, s).above(y);
     }
 
-    /**
-     * The miner works the chamber's side wall, so production never blocks (or is blocked by) the next tier's
-     * staircase, which continues straight ahead from the chamber end.
-     */
-    public static BlockPos workPos(WorkplaceState wp) {
-        Segment g = segment(wp.tier);
-        return local(wp, g.chamberEnd(), -2, g.chamberY());
-    }
-
-    public static BlockPos facePos(WorkplaceState wp) {
-        Segment g = segment(wp.tier);
-        return local(wp, g.chamberEnd(), -3, g.chamberY() + 1);
-    }
-
-    /** Centre of the chamber of the given tier: the waypoint miners walk through on the way in and out. */
-    public static BlockPos chamberCenter(WorkplaceState wp, int tier) {
-        Segment g = segment(tier);
-        return local(wp, (g.chamberStart() + g.chamberEnd()) / 2, 0, g.chamberY());
-    }
-
-    /** Local forward coordinate of a world position relative to the mine origin. */
     public static int forwardOf(WorkplaceState wp, BlockPos p) {
         BlockPos d = p.subtract(wp.origin);
         return d.getX() * wp.facing.getStepX() + d.getZ() * wp.facing.getStepZ();
     }
 
-    /** Which segment (tier) of the mine a position lies in, or 0 when it is outside / in the surface hut. */
-    public static int segmentAt(WorkplaceState wp, BlockPos p, int tier) {
-        if (p.getY() >= wp.origin.getY() - 1) {
+    public static int sideOf(WorkplaceState wp, BlockPos p) {
+        Direction side = wp.facing.getClockWise();
+        BlockPos d = p.subtract(wp.origin);
+        return d.getX() * side.getStepX() + d.getZ() * side.getStepZ();
+    }
+
+    /** Current working level (tier, plus free extra floors beyond tier 4). */
+    public static int level(WorkplaceState wp) {
+        return wp.tier + wp.subLevel;
+    }
+
+    public static int landingSteps(WorkplaceState wp, int level) {
+        return SpiralMine.landingSteps(wp.origin.getY(), level);
+    }
+
+    /** Standing position of spiral step k. */
+    public static BlockPos stand(WorkplaceState wp, int k) {
+        if (k <= 0) {
+            return local(wp, 0, 0, 0);
+        }
+        int[] c = SpiralMine.cell(k);
+        return local(wp, c[0], c[1], SpiralMine.standY(k));
+    }
+
+    public static BlockPos landing(WorkplaceState wp, int level) {
+        return stand(wp, landingSteps(wp, level));
+    }
+
+    public static int landingSide(WorkplaceState wp, int level) {
+        return SpiralMine.cell(landingSteps(wp, level))[1];
+    }
+
+    public static List<SpiralMine.Cell> tunnelPlan(WorkplaceState wp) {
+        return SpiralMine.tunnelPlan(landingSide(wp, level(wp)));
+    }
+
+    /** World position of a tunnel-plan cell of the current level. */
+    public static BlockPos tunnelPos(WorkplaceState wp, SpiralMine.Cell c) {
+        BlockPos landing = landing(wp, level(wp));
+        int y = landing.getY() - wp.origin.getY();
+        return local(wp, c.f(), c.s(), y + c.dy());
+    }
+
+    /** World position of a spiral-plan cell (dy is relative to the hut floor). */
+    public static BlockPos spiralPos(WorkplaceState wp, SpiralMine.Cell c) {
+        return local(wp, c.f(), c.s(), c.dy());
+    }
+
+    public static boolean inShaft(WorkplaceState wp, BlockPos p, int steps) {
+        return SpiralMine.inShaft(forwardOf(wp, p), sideOf(wp, p), p.getY() - wp.origin.getY(), steps);
+    }
+
+    /** Spiral step an NPC standing at {@code p} is on, 0 when at or above the hut floor or outside the shaft. */
+    public static int stepAt(WorkplaceState wp, BlockPos p) {
+        int f = forwardOf(wp, p), s = sideOf(wp, p);
+        int dy = p.getY() - wp.origin.getY();
+        if (dy >= 0 || f < 1 || f > 2 || s < 0 || s > 1) {
             return 0;
         }
+        return -dy;
+    }
+
+    /** The level whose tunnels contain {@code p}, or 0. */
+    public static int tunnelLevelAt(WorkplaceState wp, BlockPos p) {
         int f = forwardOf(wp, p);
-        for (int t = 1; t <= tier; t++) {
-            Segment g = segment(t);
-            if (f <= g.chamberEnd()) {
-                return t;
+        if (f < SpiralMine.MAIN_START) {
+            return 0;
+        }
+        for (int lv = 1; lv <= level(wp); lv++) {
+            int y = SpiralMine.levelY(wp.origin.getY(), lv);
+            if (y != Integer.MIN_VALUE && Math.abs(p.getY() - y) <= 1) {
+                return lv;
             }
         }
-        return tier;
+        return 0;
+    }
+
+    /**
+     * Like {@link #tunnelLevelAt} but also for a miner that dropped into a cave hole just under (or climbed just
+     * above) its tunnels: the level within 4 blocks of its height, or 0.
+     */
+    public static int nearLevelAt(WorkplaceState wp, BlockPos p) {
+        int lv = tunnelLevelAt(wp, p);
+        if (lv > 0 || forwardOf(wp, p) < SpiralMine.MAIN_START || p.getY() >= wp.origin.getY() - 2) {
+            return lv;
+        }
+        int best = 0, bestD = 5;
+        for (int l = 1; l <= level(wp); l++) {
+            int y = SpiralMine.levelY(wp.origin.getY(), l);
+            if (y != Integer.MIN_VALUE && Math.abs(p.getY() - y) < bestD) {
+                bestD = Math.abs(p.getY() - y);
+                best = l;
+            }
+        }
+        return best;
     }
 
     public static BlockPos entrance(WorkplaceState wp) {
         return local(wp, HUT_BACK - 1, 0, 0);
     }
 
-    /** One excavation step: dig a cell (null place) or place a block. */
-    public record Action(BlockPos pos, BlockState place) {
-        public boolean isDig() {
-            return place == null;
-        }
-    }
-
-    /** Ordered steps that turn a tier-1 mine into one of {@code tier}: dig corridor/chamber, stairs, torches, face. */
-    public static List<Action> segmentActions(WorkplaceState wp, int tier) {
-        Segment g = segment(tier);
-        Direction back = wp.facing.getOpposite();
+    public static BlockState wallTorchFor(WorkplaceState wp, int s) {
         Direction side = wp.facing.getClockWise();
-        List<Action> out = new ArrayList<>();
-        BlockState stair = Blocks.COBBLESTONE_STAIRS.defaultBlockState().setValue(StairBlock.FACING, back);
-        for (int k = 1; k <= g.steps(); k++) {
-            int f = g.startF() + k;
-            int y = g.startY() - k;
-            // dig each column top-down so sand or gravel above is sealed before the cell below opens
-            for (int dy = 2; dy >= 0; dy--) {
-                out.add(new Action(local(wp, f, 0, y + dy), null));
-            }
-            out.add(new Action(local(wp, f, 0, y - 1), stair));
-            if (k % 3 == 0) {
-                out.add(new Action(local(wp, f, 0, y + 1),
-                        Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side)));
-            }
-        }
-        for (int f = g.chamberStart(); f <= g.chamberEnd(); f++) {
-            for (int s = -2; s <= 2; s++) {
-                for (int dy = 2; dy >= 0; dy--) {
-                    out.add(new Action(local(wp, f, s, g.chamberY() + dy), null));
-                }
-            }
-        }
-        int tf = g.chamberStart() + 2;
-        out.add(new Action(local(wp, tf, -2, g.chamberY() + 1),
-                Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side)));
-        out.add(new Action(local(wp, tf, 2, g.chamberY() + 1),
-                Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side.getOpposite())));
-        return out;
+        // torch hangs on the shaft's outer wall: s=0 cells use the wall at s=-1, s=1 cells the wall at s=2
+        return Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, s == 0 ? side : side.getOpposite());
     }
 
-    /** Every cell that must be air in a mine of {@code tier} (used for sealing checks). */
-    public static Set<BlockPos> openCells(WorkplaceState wp, int tier) {
-        Set<BlockPos> open = new LinkedHashSet<>();
-        for (int t = 1; t <= tier; t++) {
-            for (Action a : segmentActions(wp, t)) {
-                if (a.isDig() || a.place().is(Blocks.WALL_TORCH)) {
-                    open.add(a.pos());
-                }
-            }
-        }
-        // hut interior and the stairwell mouth
-        for (int f = HUT_BACK + 1; f < HUT_FRONT; f++) {
-            for (int s = -1; s <= 1; s++) {
-                for (int y = 0; y <= 2; y++) {
-                    open.add(local(wp, f, s, y));
-                }
-            }
-        }
-        return open;
-    }
-
-    /** Builds the surface hut and the complete tier-1 excavation into a blueprint (used at campaign start). */
+    /** Surface hut plus the first spiral steps down to level 1 (the rest is dug by the miner). */
     public static void buildInitial(Blueprint bp, WorkplaceState wp, FactionType faction) {
-        FactionType.Style st = faction.style;
         BlockState wall = Blocks.COBBLESTONE.defaultBlockState();
-        BlockState frame = st.frame().defaultBlockState();
-        BlockState roof = st.floor().defaultBlockState();
+        BlockState frame = faction.style.frame().defaultBlockState();
+        BlockState roof = faction.style.floor().defaultBlockState();
         for (int f = HUT_BACK; f <= HUT_FRONT; f++) {
             for (int s = -2; s <= 2; s++) {
                 bp.setAbs(local(wp, f, s, -1), Blocks.COBBLESTONE.defaultBlockState());
@@ -176,28 +156,22 @@ public final class MineLayout {
                 bp.setAbs(local(wp, f, s, 3), roof);
             }
         }
-        // door opening facing the base
         bp.setAbs(local(wp, HUT_BACK, 0, 0), Blocks.AIR.defaultBlockState());
         bp.setAbs(local(wp, HUT_BACK, 0, 1), Blocks.AIR.defaultBlockState());
         Direction side = wp.facing.getClockWise();
-        bp.setAbs(local(wp, 0, -1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side));
-        bp.setAbs(local(wp, 0, 1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side.getOpposite()));
-        bp.markers.put("mine_sign_" + wp.id, local(wp, HUT_BACK - 1, 1, 1));
-        for (Action a : segmentActions(wp, 1)) {
-            bp.setAbs(a.pos(), a.isDig() ? Blocks.AIR.defaultBlockState() : a.place());
+        bp.setAbs(local(wp, -1, -1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side));
+        bp.setAbs(local(wp, 4, 1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side.getOpposite()));
+        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, landingSteps(wp, 1))) {
+            bp.setAbs(spiralPos(wp, c), c.torch() ? wallTorchFor(wp, c.s()) : Blocks.AIR.defaultBlockState());
         }
+        BlockPos landing = landing(wp, 1);
+        bp.setAbs(landing.above(), wallTorchFor(wp, landingSide(wp, 1)));
     }
 
-    /** Pickaxe tier the upgrade to {@code nextTier} consumes (PROPOSED: stone, iron, diamond). */
+    /** Pickaxe consumed to open the next tier (PROPOSED: stone for tier 2, iron for tiers 3 and 4). */
     public static int upgradePickTier(int nextTier) {
-        return switch (nextTier) {
-            case 2 -> 1;
-            case 3 -> 2;
-            default -> 3;
-        };
+        return nextTier <= 2 ? 1 : 2;
     }
 
-    public static final int UPGRADE_TORCHES = 6;
-    public static final int UPGRADE_STAIRS = 6;
-    public static final int UPGRADE_COBBLE = 24;
+    public static final int UPGRADE_TORCHES_PER_8_STEPS = 1;
 }

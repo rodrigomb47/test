@@ -12,9 +12,6 @@ public final class FCConfig {
     public static final ModConfigSpec.IntValue MAP_RADIUS;
     public static final ModConfigSpec.IntValue HUMAN_FACTIONS;
     public static final ModConfigSpec.IntValue MONSTER_LAIRS;
-    public static final ModConfigSpec.IntValue MINE_CYCLE_TICKS;
-    public static final ModConfigSpec.IntValue CHOP_TICKS_PER_LOG;
-    public static final ModConfigSpec.IntValue TEND_TICKS;
     public static final ModConfigSpec.IntValue RECRUIT_FOOD_VALUE;
     public static final ModConfigSpec.IntValue RECRUIT_INTERVAL_TICKS;
     public static final ModConfigSpec.IntValue SCOUT_RANGE;
@@ -43,15 +40,6 @@ public final class FCConfig {
                 .define("autoStart", false);
         KEEP_FACTION_AREAS_LOADED = b.comment("Keep bases, workplaces and travelling NPCs' chunks ticking so factions progress away from players.")
                 .define("keepFactionAreasLoaded", true);
-        b.pop();
-
-        b.comment("Workspace production (PROPOSED defaults)").push("work");
-        MINE_CYCLE_TICKS = b.comment("Base ticks per mine output with a wooden pickaxe; better pickaxes are faster.")
-                .defineInRange("mineCycleTicks", 140, 20, 2400);
-        CHOP_TICKS_PER_LOG = b.comment("Ticks to chop one log in a tree plot.")
-                .defineInRange("chopTicksPerLog", 24, 5, 400);
-        TEND_TICKS = b.comment("Ticks per tending action on a sapling (each action advances growth like bone meal).")
-                .defineInRange("tendTicks", 120, 20, 2400);
         b.pop();
 
         b.comment("Recruitment (PROPOSED defaults)").push("recruitment");

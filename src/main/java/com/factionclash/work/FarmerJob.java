@@ -21,16 +21,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 /**
- * Farmer (spec 8): maintains the base farm, harvests ripe crops with their real loot drops, replants from the
- * harvest, re-tills trampled soil and carries the produce to storage.
+ * Farmer that farms like a player (spec 8): breaks ripe crops so their real loot drops into the world, picks the
+ * drops up, replants from the harvest, re-tills trampled soil with its hoe and carries the produce to storage.
  */
 public class FarmerJob extends Job {
-    enum State { CHECK, STORAGE, WORK }
+    enum State { CHECK, STORAGE, WORK, COLLECT }
 
     private State state = State.CHECK;
     private int cursor;
     private BlockPos cell;
     private int timer;
+    private int collectTicks;
 
     public FarmerJob(FactionNpc npc) {
         super(npc);
@@ -61,7 +62,7 @@ public class FarmerJob extends Job {
             return 24;
         }
         if (s.is(Items.CARROT) || s.is(Items.POTATO) || s.is(Items.BEETROOT_SEEDS)) {
-            return 12;
+            return 6;
         }
         return 0;
     }
@@ -79,10 +80,19 @@ public class FarmerJob extends Job {
             waitFor(200);
             return;
         }
+        if (state != State.STORAGE) {
+            BlockWork.pickUp(npc, x -> true);
+        }
         switch (state) {
             case CHECK -> {
                 if (Inv.freeSlots(npc.inventory()) <= 1 || produce() >= 96) {
                     state = State.STORAGE;
+                    return;
+                }
+                if (BlockWork.nearestItem(npc, new net.minecraft.world.phys.AABB(wp.origin).minmax(new net.minecraft.world.phys.AABB(wp.extent))
+                        .inflate(2, 2, 2), x -> true) != null && Inv.freeSlots(npc.inventory()) > 0) {
+                    collectTicks = 0;
+                    state = State.COLLECT;
                     return;
                 }
                 cell = findWork(wp);
@@ -111,9 +121,23 @@ public class FarmerJob extends Job {
                 if (Inv.count(npc.inventory(), s -> s.is(Items.WHEAT_SEEDS)) < 8) {
                     takeFromStorage(s -> s.is(Items.WHEAT_SEEDS), 16);
                 }
+                // a few carrots are planted too, so the pigs have something to be bred with
+                if (Inv.count(npc.inventory(), s -> s.is(Items.CARROT)) < 2) {
+                    takeFromStorage(s -> s.is(Items.CARROT), 4);
+                }
                 state = State.CHECK;
             }
             case WORK -> work(wp);
+            case COLLECT -> {
+                net.minecraft.world.entity.item.ItemEntity item = BlockWork.nearestItem(npc,
+                        new net.minecraft.world.phys.AABB(wp.origin).minmax(new net.minecraft.world.phys.AABB(wp.extent)).inflate(2, 2, 2), x -> true);
+                if (item == null || ++collectTicks > 200 || Inv.freeSlots(npc.inventory()) == 0) {
+                    state = State.CHECK;
+                    return;
+                }
+                status("Picking up the harvest", "Collecting");
+                goTo(item.blockPosition(), 0.8, "the harvest");
+            }
         }
     }
 
@@ -138,6 +162,10 @@ public class FarmerJob extends Job {
 
     /** Replant the crop grown in neighbouring cells, falling back to whatever seed the farmer carries. */
     private Item seedFor(WorkplaceState wp, BlockPos soil) {
+        // the first row is the carrot row (feed for the pigs) whenever the farmer has carrots to plant
+        if (soil.getZ() == wp.origin.getZ() && Inv.count(npc.inventory(), s -> s.is(Items.CARROT)) > 0) {
+            return Items.CARROT;
+        }
         for (BlockPos n : List.of(soil.north().above(), soil.south().above(), soil.east().above(), soil.west().above())) {
             Item seed = seedOf(level().getBlockState(n));
             if (seed != null && Inv.count(npc.inventory(), s -> s.is(seed)) > 0) {
@@ -196,22 +224,15 @@ public class FarmerJob extends Job {
         BlockState c = level().getBlockState(crop);
         Item replant = seedOf(c);
         if (c.getBlock() instanceof CropBlock cb && cb.isMaxAge(c)) {
-            List<ItemStack> drops = Block.getDrops(c, level(), crop, null);
-            for (ItemStack d : drops) {
-                if (!Inv.fits(npc.inventory(), d)) {
-                    state = State.STORAGE;
-                    return;
-                }
+            if (Inv.freeSlots(npc.inventory()) == 0) {
+                state = State.STORAGE;
+                return;
             }
-            level().setBlock(crop, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-            level().levelEvent(2001, crop, Block.getId(c));
-            for (ItemStack d : drops) {
-                Crafting.addAll(npc.inventory(), d);
+            // broken like a player breaks it: the crop's own loot table drops into the world
+            BlockWork.breakNow(npc, crop);
+            if (level().random.nextDouble() < npc.affix(com.factionclash.logic.Affix.GREEN_THUMB)) {
+                BlockWork.dropExtra(npc, c, crop);
             }
-            if (level().random.nextDouble() < npc.affix(Affix.GREEN_THUMB) && !drops.isEmpty()) {
-                Crafting.addAll(npc.inventory(), drops.get(0).copyWithCount(1));
-            }
-            npc.swing(InteractionHand.MAIN_HAND);
             npc.awardXp(1);
             wp.totalOutput++;
             data().setDirty();

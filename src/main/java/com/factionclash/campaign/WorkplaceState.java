@@ -11,7 +11,11 @@ public final class WorkplaceState {
     public enum Type {
         MINE("Constructed mine", 4),
         TREE_PLOT("Tree plot", 3),
-        FARM("Farm", 1);
+        FARM("Farm", 1),
+        /** origin = pen centre (inside), extent = the pen's fence gate. */
+        PEN("Animal pen", 1),
+        /** origin = the water block fished, extent = where the fisherman stands. */
+        FISHERY("Fishing spot", 1);
 
         public final String label;
         public final int maxTier;
@@ -36,6 +40,9 @@ public final class WorkplaceState {
     /** Upgrade in progress: next build/dig step index; -1 when idle. */
     public int upgradeStep = -1;
     public long totalOutput;
+    /** Mines: extra floors dug below tier 4 (free), and progress through the current level's tunnel plan. */
+    public int subLevel;
+    public int progress;
 
     public boolean upgrading() {
         return upgradeStep >= 0;
@@ -55,6 +62,8 @@ public final class WorkplaceState {
         }
         t.putInt("upgradeStep", upgradeStep);
         t.putLong("output", totalOutput);
+        t.putInt("subLevel", subLevel);
+        t.putInt("progress", progress);
         return t;
     }
 
@@ -75,6 +84,8 @@ public final class WorkplaceState {
         w.assigned = t.hasUUID("assigned") ? t.getUUID("assigned") : null;
         w.upgradeStep = t.contains("upgradeStep") ? t.getInt("upgradeStep") : -1;
         w.totalOutput = t.getLong("output");
+        w.subLevel = t.getInt("subLevel");
+        w.progress = t.getInt("progress");
         return w;
     }
 }

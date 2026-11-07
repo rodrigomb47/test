@@ -20,7 +20,8 @@ public enum ToolKind {
     HOE,
     SHOVEL,
     SWORD,
-    BOW;
+    BOW,
+    ROD;
 
     /** One ingredient line of a material payment. */
     public record Cost(Item item, int count) {
@@ -38,6 +39,7 @@ public enum ToolKind {
             case SHOVEL -> stack.is(ItemTags.SHOVELS);
             case SWORD -> stack.is(ItemTags.SWORDS);
             case BOW -> stack.getItem() instanceof BowItem;
+            case ROD -> stack.getItem() instanceof net.minecraft.world.item.FishingRodItem;
         };
     }
 
@@ -49,7 +51,7 @@ public enum ToolKind {
         if (stack.getItem() instanceof TieredItem tiered) {
             return tierRank(tiered.getTier());
         }
-        if (stack.getItem() instanceof BowItem) {
+        if (stack.getItem() instanceof BowItem || stack.getItem() instanceof net.minecraft.world.item.FishingRodItem) {
             return 1;
         }
         return -1;
@@ -81,6 +83,7 @@ public enum ToolKind {
             case SHOVEL -> new ItemStack(Items.STONE_SHOVEL);
             case SWORD -> new ItemStack(Items.STONE_SWORD);
             case BOW -> new ItemStack(Items.BOW);
+            case ROD -> new ItemStack(Items.FISHING_ROD);
         };
     }
 
@@ -93,6 +96,7 @@ public enum ToolKind {
             case SHOVEL -> List.of(new Cost(Items.COBBLESTONE, 1), new Cost(Items.STICK, 2));
             case SWORD -> List.of(new Cost(Items.COBBLESTONE, 2), new Cost(Items.STICK, 1));
             case BOW -> List.of(new Cost(Items.STICK, 3), new Cost(Items.STRING, 3));
+            case ROD -> List.of(new Cost(Items.STICK, 3), new Cost(Items.STRING, 2));
         };
     }
 

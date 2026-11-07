@@ -8,3 +8,4 @@ out/
 .vscode/
 bin/
 logs/
+__pycache__/

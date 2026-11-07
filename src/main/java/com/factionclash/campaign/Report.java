@@ -11,8 +11,6 @@ public final class Report {
         LAIR("Monster lair", 12, true),
         HOSTILES("Hostile group", 4, true),
         CAVE("Cave entrance", 8, false),
-        FOREST("Forest", 3, false),
-        WATER("Water", 2, false),
         ORE("Exposed ore", 6, false);
 
         public final String label;

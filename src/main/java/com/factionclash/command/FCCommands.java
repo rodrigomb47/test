@@ -77,6 +77,8 @@ public final class FCCommands {
                         .then(Commands.literal("probe").then(Commands.argument("x", IntegerArgumentType.integer()).then(Commands.argument("z", IntegerArgumentType.integer())
                                 .executes(FCCommands::probe))))
                         .then(Commands.literal("mine").then(Commands.argument("id", IntegerArgumentType.integer(1)).executes(FCCommands::mineDump)))
+                        .then(Commands.literal("blocks").then(Commands.argument("from", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos())
+                                .then(Commands.argument("to", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos()).executes(FCCommands::blockDump))))
                         .then(Commands.literal("destroy").then(Commands.argument("baseId", IntegerArgumentType.integer(1)).executes(FCCommands::destroy)))));
     }
 
@@ -265,6 +267,31 @@ public final class FCCommands {
         return 1;
     }
 
+    /** Diagnostics: logs a box of blocks layer by layer (first letters of each block id), at most 32x8x32. */
+    private static int blockDump(CommandContext<CommandSourceStack> c) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerLevel level = c.getSource().getServer().overworld();
+        BlockPos a = net.minecraft.commands.arguments.coordinates.BlockPosArgument.getLoadedBlockPos(c, "from");
+        BlockPos b = net.minecraft.commands.arguments.coordinates.BlockPosArgument.getLoadedBlockPos(c, "to");
+        BlockPos min = new BlockPos(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ()));
+        BlockPos max = new BlockPos(Math.min(Math.max(a.getX(), b.getX()), min.getX() + 31), Math.min(Math.max(a.getY(), b.getY()), min.getY() + 7),
+                Math.min(Math.max(a.getZ(), b.getZ()), min.getZ() + 31));
+        StringBuilder sb = new StringBuilder("blocks " + min.toShortString() + " .. " + max.toShortString() + "\n");
+        for (int y = min.getY(); y <= max.getY(); y++) {
+            sb.append("y=").append(y).append("\n");
+            for (int z = min.getZ(); z <= max.getZ(); z++) {
+                sb.append(String.format("%5d ", z));
+                for (int x = min.getX(); x <= max.getX(); x++) {
+                    String id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(new BlockPos(x, y, z)).getBlock()).getPath();
+                    sb.append(id.equals("air") ? ".." : id.length() >= 2 ? id.substring(0, 2) : id).append(' ');
+                }
+                sb.append("\n");
+            }
+        }
+        FactionClash.LOGGER.info(sb.toString());
+        c.getSource().sendSuccess(() -> Component.literal("logged"), false);
+        return 1;
+    }
+
     /** Diagnostics: logs every planned excavation cell of a mine's next tier and its current block. */
     private static int mineDump(CommandContext<CommandSourceStack> c) {
         ServerLevel level = c.getSource().getServer().overworld();
@@ -272,12 +299,16 @@ public final class FCCommands {
         if (w == null || w.type != WorkplaceState.Type.MINE) {
             return 0;
         }
-        var actions = com.factionclash.structure.MineLayout.segmentActions(w, Math.min(4, w.tier + (w.upgrading() ? 1 : 0)));
-        StringBuilder sb = new StringBuilder("mine " + w.id + " tier " + w.tier + " step " + w.upgradeStep + " work " + com.factionclash.structure.MineLayout.workPos(w).toShortString() + "\n");
-        for (int i = 0; i < actions.size(); i++) {
-            var a = actions.get(i);
-            sb.append(i).append(i == w.upgradeStep ? " >" : "  ").append(a.isDig() ? "DIG " : "PUT ").append(a.pos().toShortString())
-                    .append(" now=").append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(a.pos()).getBlock()).getPath()).append("\n");
+        int lv = com.factionclash.structure.MineLayout.level(w);
+        var plan = com.factionclash.structure.MineLayout.tunnelPlan(w);
+        StringBuilder sb = new StringBuilder("mine " + w.id + " tier " + w.tier + " +" + w.subLevel + " level y="
+                + com.factionclash.logic.SpiralMine.levelY(w.origin.getY(), lv) + " shaftStep " + w.upgradeStep
+                + " tunnel " + w.progress + "/" + plan.size() + "\n");
+        for (int i = Math.max(0, w.progress - 6); i < Math.min(plan.size(), w.progress + 6); i++) {
+            var cell = plan.get(i);
+            BlockPos p = com.factionclash.structure.MineLayout.tunnelPos(w, cell);
+            sb.append(i).append(i == w.progress ? " >" : "  ").append(cell.torch() ? "TORCH " : "DIG ").append(p.toShortString())
+                    .append(" now=").append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(p).getBlock()).getPath()).append("\n");
         }
         FactionClash.LOGGER.info(sb.toString());
         c.getSource().sendSuccess(() -> Component.literal("logged"), false);
@@ -367,6 +398,19 @@ public final class FCCommands {
                 }
                 o.add("workplaces", wps);
                 o.addProperty("recruitNote", com.factionclash.campaign.FactionDirector.LAST_RECRUIT_NOTE.getOrDefault(b.id, ""));
+                BlockPos penC = b.point("pen");
+                if (penC != null) {
+                    JsonObject pen = new JsonObject();
+                    for (com.factionclash.work.PenJob.Species sp : com.factionclash.work.PenJob.SPECIES) {
+                        var list = level.getEntities(sp.type(), new net.minecraft.world.phys.AABB(penC).inflate(5, 2, 3),
+                                net.minecraft.world.entity.LivingEntity::isAlive);
+                        if (!list.isEmpty()) {
+                            pen.addProperty(sp.name(), list.stream().filter(x -> !x.isBaby()).count() + " adults + "
+                                    + list.stream().filter(x -> x.isBaby()).count() + " young");
+                        }
+                    }
+                    o.add("pen", pen);
+                }
             }
             bases.add(o);
         }

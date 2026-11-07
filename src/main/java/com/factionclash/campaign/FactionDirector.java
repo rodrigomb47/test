@@ -73,6 +73,7 @@ public final class FactionDirector {
         if (!f.alive) {
             return;
         }
+        BaseBuilder.ensureAnimalAndFishingWorkplaces(data, b);
         rosterUpkeep(level, data, f, b, t);
         recruitment(level, data, f, b, t);
         projects(level, data, b, t);
@@ -141,8 +142,19 @@ public final class FactionDirector {
         if (sw < 3) {
             out.add(new Need(NpcRole.SWORDSMAN, "home defence"));
         }
+        int[] pen = penCounts(level, data, b);
+        if (living(f, b, NpcRole.ANIMAL_CARER) == 0 && pen[0] >= 2) {
+            out.add(new Need(NpcRole.ANIMAL_CARER, "animals in the pen need breeding and care"));
+        }
+        if (living(f, b, NpcRole.BUTCHER) == 0 && pen[1] > com.factionclash.work.ButcherJob.BREEDING_STOCK + 1) {
+            out.add(new Need(NpcRole.BUTCHER, "surplus livestock"));
+        }
         if (living(f, b, NpcRole.SMELTER) == 0 && FactionStorage.count(level, b, SmelterJob::isOre) >= 16) {
             out.add(new Need(NpcRole.SMELTER, "raw ore backlog"));
+        }
+        if (living(f, b, NpcRole.FISHERMAN) == 0
+                && Recruitment.storedFoodValue(level, b) < FCConfig.RECRUIT_FOOD_VALUE.get() * 15) {
+            out.add(new Need(NpcRole.FISHERMAN, "more food"));
         }
         int soldiers = sw + ar;
         int pop = livingAll(f, b);
@@ -157,6 +169,22 @@ public final class FactionDirector {
             }
         }
         return out;
+    }
+
+    /** [animals in the pen, adults of the most numerous species]. */
+    private static int[] penCounts(ServerLevel level, CampaignData data, BaseState b) {
+        BlockPos c = b.point("pen");
+        if (c == null) {
+            return new int[]{0, 0};
+        }
+        AABB box = new AABB(c).inflate(5, 2, 3);
+        int total = 0, maxAdults = 0;
+        for (com.factionclash.work.PenJob.Species sp : com.factionclash.work.PenJob.SPECIES) {
+            var list = level.getEntities(sp.type(), box, net.minecraft.world.entity.LivingEntity::isAlive);
+            total += list.size();
+            maxAdults = Math.max(maxAdults, (int) list.stream().filter(a -> !a.isBaby()).count());
+        }
+        return new int[]{total, maxAdults};
     }
 
     private static void recruitment(ServerLevel level, CampaignData data, FactionState f, BaseState b, long t) {

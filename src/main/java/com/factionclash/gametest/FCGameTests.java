@@ -279,6 +279,105 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /** Player-equivalent break times and harvest rules. */
+    @GameTest(template = "platform", timeoutTicks = 60)
+    public static void breakTimesMatchPlayerFormula(GameTestHelper h) {
+        FactionNpc n = npc(h, 5, 5, FactionType.EMBER_LEGION, NpcRole.MINER);
+        BlockPos p = h.absolutePos(new BlockPos(6, 2, 5));
+        h.runAfterDelay(5, () -> {
+            var stone = Blocks.STONE.defaultBlockState();
+            int stonePick = com.factionclash.work.BlockWork.ticksToBreak(n, stone, p, new ItemStack(Items.STONE_PICKAXE));
+            int bareHand = com.factionclash.work.BlockWork.ticksToBreak(n, stone, p, ItemStack.EMPTY);
+            int ironPick = com.factionclash.work.BlockWork.ticksToBreak(n, stone, p, new ItemStack(Items.IRON_PICKAXE));
+            // player (Minecraft wiki): stone takes 0.6 s with a stone pickaxe, 0.4 s with iron, 7.5 s by hand
+            h.assertTrue(stonePick == 12, "stone pickaxe on stone took " + stonePick + " ticks (player: 12)");
+            h.assertTrue(ironPick == 8, "iron pickaxe on stone took " + ironPick + " ticks (player: 8)");
+            h.assertTrue(bareHand == 150, "bare hand on stone took " + bareHand + " ticks (player: 150)");
+            h.assertTrue(!com.factionclash.work.BlockWork.canHarvest(Blocks.IRON_ORE.defaultBlockState(), new ItemStack(Items.WOODEN_PICKAXE)),
+                    "a wooden pickaxe must not harvest iron ore");
+            h.assertTrue(com.factionclash.work.BlockWork.canHarvest(Blocks.IRON_ORE.defaultBlockState(), new ItemStack(Items.STONE_PICKAXE)),
+                    "a stone pickaxe harvests iron ore");
+            h.succeed();
+        });
+    }
+
+    /** Mining an ore over time drops its real loot only with the right pickaxe, and the NPC picks it up. */
+    @GameTest(template = "platform", timeoutTicks = 200)
+    public static void realMiningDropsAndPickup(GameTestHelper h) {
+        BlockPos good = new BlockPos(6, 2, 5), bad = new BlockPos(6, 2, 12);
+        h.setBlock(good, Blocks.IRON_ORE);
+        h.setBlock(bad, Blocks.IRON_ORE);
+        FactionNpc stone = npc(h, 5, 5, FactionType.EMBER_LEGION, NpcRole.MINER);
+        stone.equip(new ItemStack(Items.STONE_PICKAXE));
+        FactionNpc wood = npc(h, 5, 12, FactionType.EMBER_LEGION, NpcRole.MINER);
+        wood.equip(new ItemStack(Items.WOODEN_PICKAXE));
+        var b1 = new com.factionclash.work.BlockWork.Breaker();
+        var b2 = new com.factionclash.work.BlockWork.Breaker();
+        BlockPos g = h.absolutePos(good), w = h.absolutePos(bad);
+        boolean[] done = {false, false};
+        long[] brokeAt = {-1};
+        h.onEachTick(() -> {
+            if (!done[0] && b1.tick(stone, g)) {
+                done[0] = true;
+                brokeAt[0] = h.getTick();
+            }
+            if (!done[1] && b2.tick(wood, w)) {
+                done[1] = true;
+            }
+            com.factionclash.work.BlockWork.pickUp(stone, x -> true);
+            com.factionclash.work.BlockWork.pickUp(wood, x -> true);
+            if (done[0]) {
+                // the drop pops out at random like a player's: walk over to it, as the jobs do
+                var item = com.factionclash.work.BlockWork.nearestItem(stone, new net.minecraft.world.phys.AABB(g).inflate(3), x -> true);
+                if (item != null) {
+                    stone.getNavigation().moveTo(item, 1.0);
+                }
+            }
+            if (done[0] && done[1] && h.getTick() > brokeAt[0] + 60) {
+                h.assertTrue(com.factionclash.work.Inv.count(stone.inventory(), x -> x.is(Items.RAW_IRON)) >= 1,
+                        "stone-pickaxe miner did not get raw iron");
+                h.assertTrue(com.factionclash.work.Inv.count(wood.inventory(), x -> x.is(Items.RAW_IRON)) == 0,
+                        "wooden-pickaxe miner got raw iron");
+                h.assertTrue(h.getLevel().getBlockState(g).isAir() && h.getLevel().getBlockState(w).isAir(), "ore not removed");
+                h.succeed();
+            }
+        });
+    }
+
+    /** Feeding two adult cows wheat like a player makes them breed a real calf; babies cannot be fed to breed. */
+    @GameTest(template = "platform", timeoutTicks = 400)
+    public static void carerBreedsAnimalsWithFood(GameTestHelper h) {
+        FactionNpc carer = npc(h, 3, 3, FactionType.GROVE_COVENANT, NpcRole.ANIMAL_CARER);
+        carer.inventory().setItem(0, new ItemStack(Items.WHEAT, 4));
+        net.minecraft.world.entity.animal.Cow a = h.spawn(EntityType.COW, new BlockPos(10, 2, 10));
+        net.minecraft.world.entity.animal.Cow b = h.spawn(EntityType.COW, new BlockPos(11, 2, 10));
+        net.minecraft.world.entity.animal.Cow calf = h.spawn(EntityType.COW, new BlockPos(13, 2, 10));
+        calf.setAge(-24000);
+        h.assertTrue(!com.factionclash.work.AnimalCarerJob.feedLikePlayer(carer, calf), "fed a calf to breed");
+        h.assertTrue(com.factionclash.work.AnimalCarerJob.feedLikePlayer(carer, a), "could not feed adult cow");
+        h.assertTrue(com.factionclash.work.AnimalCarerJob.feedLikePlayer(carer, b), "could not feed second cow");
+        h.assertTrue(com.factionclash.work.Inv.count(carer.inventory(), x -> x.is(Items.WHEAT)) == 2, "wheat not consumed");
+        AABB box = new AABB(h.absolutePos(BlockPos.ZERO)).inflate(30);
+        h.succeedWhen(() -> h.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.animal.Cow.class, box,
+                c -> c.isBaby() && c != calf).size() >= 1, "no calf was born"));
+    }
+
+    /** The butcher never culls babies, breeding animals, or below the breeding stock. */
+    @GameTest(template = "platform", timeoutTicks = 60)
+    public static void butcherSparesBabiesAndBreedingStock(GameTestHelper h) {
+        net.minecraft.world.entity.animal.Cow adult = h.spawn(EntityType.COW, new BlockPos(5, 2, 5));
+        net.minecraft.world.entity.animal.Cow baby = h.spawn(EntityType.COW, new BlockPos(7, 2, 5));
+        net.minecraft.world.entity.animal.Cow inLove = h.spawn(EntityType.COW, new BlockPos(9, 2, 5));
+        baby.setAge(-24000);
+        inLove.setInLove(null);
+        int stock = com.factionclash.work.ButcherJob.BREEDING_STOCK;
+        h.assertTrue(com.factionclash.work.ButcherJob.canCull(adult, stock + 1), "surplus adult should be cullable");
+        h.assertTrue(!com.factionclash.work.ButcherJob.canCull(adult, stock), "culled into the breeding stock");
+        h.assertTrue(!com.factionclash.work.ButcherJob.canCull(baby, stock + 5), "a baby was cullable");
+        h.assertTrue(!com.factionclash.work.ButcherJob.canCull(inLove, stock + 5), "a breeding animal was cullable");
+        h.succeed();
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

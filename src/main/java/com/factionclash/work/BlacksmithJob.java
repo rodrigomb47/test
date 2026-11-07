@@ -253,6 +253,12 @@ public class BlacksmithJob extends Job {
                 && FactionStorage.count(level, base, s -> s.is(ItemTags.LOGS)) >= 4) {
             out.add(new Order(Crafting.STICKS, 6, "stick stock"));
         }
+        // 6b. Bone meal from bones (skeleton loot) for the woodcutter's saplings.
+        int bones = FactionStorage.count(level, base, s -> s.is(Items.BONE));
+        if (bones > 0 && FactionStorage.count(level, base, s -> s.is(Items.BONE_MEAL)) < 16) {
+            out.add(new Order(new Crafting.Recipe("bone meal", List.of(Crafting.of(Items.BONE, 1)), Items.BONE_MEAL, 3),
+                    Math.min(bones, 6), "bone meal for saplings"));
+        }
         // 6. Torches for mines and lighting.
         int coal = FactionStorage.count(level, base, Crafting.FUEL_COAL);
         if (FactionStorage.count(level, base, s -> s.is(Items.TORCH)) < 16 && coal >= 2 && sticksAvail >= 2) {

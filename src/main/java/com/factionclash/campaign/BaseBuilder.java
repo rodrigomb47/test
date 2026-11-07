@@ -101,6 +101,7 @@ public final class BaseBuilder {
         }
 
         base.points.putAll(bp.markers);
+        ensureAnimalAndFishingWorkplaces(data, base);
         bp.chests.forEach((cat, list) -> base.storage(cat).addAll(list));
         base.beds.addAll(bp.beds);
         base.expansionLots.addAll(bp.lots);
@@ -125,6 +126,39 @@ public final class BaseBuilder {
         return base;
     }
 
+    /**
+     * Registers the pen (centre + gate) and the fishing spot (farm water channel) as workplaces. Also used to
+     * upgrade bases from older saves that predate these roles.
+     */
+    public static void ensureAnimalAndFishingWorkplaces(CampaignData data, BaseState base) {
+        boolean hasPen = false, hasFishery = false;
+        for (int id : base.workplaces) {
+            WorkplaceState w = data.workplace(id);
+            if (w != null && w.type == WorkplaceState.Type.PEN) {
+                hasPen = true;
+            }
+            if (w != null && w.type == WorkplaceState.Type.FISHERY) {
+                hasFishery = true;
+            }
+        }
+        BlockPos penCentre = base.point("pen");
+        if (!hasPen && penCentre != null) {
+            WorkplaceState pen = new WorkplaceState();
+            pen.type = WorkplaceState.Type.PEN;
+            pen.origin = penCentre;
+            pen.extent = penCentre.offset(0, 0, -3); // the fence gate on the pen's north side
+            data.addWorkplace(base, pen);
+        }
+        BlockPos fmin = base.point("farm_min"), fmax = base.point("farm_max");
+        if (!hasFishery && fmin != null && fmax != null) {
+            WorkplaceState fish = new WorkplaceState();
+            fish.type = WorkplaceState.Type.FISHERY;
+            fish.origin = new BlockPos((fmin.getX() + fmax.getX()) / 2, fmax.getY(), fmax.getZ()); // water channel end
+            fish.extent = fish.origin.offset(0, 1, 1);                                            // path beside it
+            data.addWorkplace(base, fish);
+        }
+    }
+
     /** Plan blocks that builders keep repaired: buildings, walls, paths. Crops, soil and water are excluded. */
     private static Map<BlockPos, BlockState> repairablePart(Blueprint bp) {
         Map<BlockPos, BlockState> out = new LinkedHashMap<>();
@@ -138,17 +172,18 @@ public final class BaseBuilder {
         return out;
     }
 
+    /** Plugs water, lava, sand and cave holes around the starting spiral steps so the first descent is safe. */
     public static void sealMine(ServerLevel level, WorkplaceState mine) {
-        Set<BlockPos> open = MineLayout.openCells(mine, mine.tier);
-        for (BlockPos p : open) {
+        int steps = MineLayout.landingSteps(mine, 1);
+        for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, steps)) {
+            BlockPos p = MineLayout.spiralPos(mine, c);
             for (Direction d : Direction.values()) {
                 BlockPos n = p.relative(d);
-                if (open.contains(n)) {
+                if (MineLayout.inShaft(mine, n, steps) || n.getY() >= mine.origin.getY() - 1) {
                     continue;
                 }
                 BlockState s = level.getBlockState(n);
-                if (n.getY() < mine.origin.getY() - 1 && (s.isAir() || !s.getFluidState().isEmpty()
-                        || s.getBlock() instanceof net.minecraft.world.level.block.FallingBlock)) {
+                if (s.isAir() || !s.getFluidState().isEmpty() || s.getBlock() instanceof net.minecraft.world.level.block.FallingBlock) {
                     level.setBlock(n, Blocks.COBBLESTONE.defaultBlockState(), Block.UPDATE_ALL);
                 }
             }

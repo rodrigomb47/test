@@ -18,6 +18,9 @@ public final class Jobs {
             case BUILDER -> new BuilderJob(npc);
             case SCOUT -> new ScoutJob(npc);
             case SWORDSMAN, ARCHER -> new GuardJob(npc);
+            case ANIMAL_CARER -> new AnimalCarerJob(npc);
+            case BUTCHER -> new ButcherJob(npc);
+            case FISHERMAN -> new FishermanJob(npc);
         };
     }
 }

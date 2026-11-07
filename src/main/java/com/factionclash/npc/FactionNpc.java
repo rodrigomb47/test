@@ -115,7 +115,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 .add(Attributes.MOVEMENT_SPEED, 0.1)
                 .add(Attributes.ATTACK_DAMAGE, 1.0)
                 .add(Attributes.FOLLOW_RANGE, 48.0)
-                .add(Attributes.ARMOR, 0.0);
+                .add(Attributes.ARMOR, 0.0)
+                // player mining attributes, so tools, Efficiency and Haste behave exactly as for players
+                .add(Attributes.BLOCK_BREAK_SPEED)
+                .add(Attributes.MINING_EFFICIENCY)
+                .add(Attributes.SUBMERGED_MINING_SPEED);
     }
 
     public static FactionNpc create(ServerLevel level, FactionType faction, NpcRole role, BaseState base, BlockPos at) {

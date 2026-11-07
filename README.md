@@ -60,17 +60,41 @@ Players respawn at their nearest surviving allied base when they have no bed.
   smoker, anvil, enchanting table with bookshelves), 10 beds, a farm, a pen with 2 cows and 2 pigs, walls with
   gates, lighting, and outside the walls a tier-1 constructed mine and a fenced tree plot. Starter supplies are
   finite and granted once (saved flag).
-* **Ten starting NPCs**: builder, miner, farmer, woodcutter, blacksmith, chef, scout and three swordsmen.
+* **Ten starting NPCs**: builder, miner, farmer, woodcutter, blacksmith, chef, scout and three swordsmen. Animal
+  carers, butchers, smelters and fishermen are recruited when the base needs them and has a bed free.
 * **No hunger, no wear**: NPCs never eat or starve; equipped gear never loses durability; archers hold one arrow
   that is never used up (tipped/spectral effects apply to every shot, and shots cannot be picked up).
-* **Workspaces**: every production worker has a personal, saved workplace and cycle; output becomes real items in
-  the worker's backpack and is carried to storage; full storage pauses work without deleting anything.
-* **Constructed mines**: one output per completed cycle with exactly one swing, crack progress on the face
-  during the cycle. Output depends on mine tier **and** pickaxe tier. Upgrades are paid with a real pickaxe plus
-  torches, stairs (which NPCs craft) and sealing blocks, and are dug out step by step downward; water, lava and
-  sand are sealed before cells are opened, and cave-ins or floods are cleared.
-* **Tree plots** grow from 4 to 9 to 16 trees; woodcutters fell real trees, clear canopies (saplings, apples),
-  replant and tend saplings with the vanilla growth step.
+* **Workers work like players.** Nothing is produced by a timer or a loot roll: every item comes from a block a
+  worker really broke, an animal it really bred or killed, or a vanilla loot table a player would also roll.
+  * Breaking uses the player formula (tool speed, Efficiency, Haste, underwater and in-air penalties, ×30 with the
+    right tool, ×100 without), shows the crack animation, and drops the block's own loot only when the tool can
+    harvest it (a wooden pickaxe gets nothing from iron ore). Drops land in the world and the worker walks over
+    and picks them up.
+  * Output goes into the worker's backpack and is carried to storage; full storage pauses work without deleting
+    anything.
+* **Mines** are dug by the miner: a roofed hut over a 2×2 spiral staircase (one step down per block, a landing
+  every 4 steps), then a **branch mine** on each level (a 40-block main tunnel with 10-block side branches every
+  4 blocks, torches every 8 blocks). Levels: tier 1 ≈ 6 below the surface, tier 2 at y=32 (iron), tier 3 at y=0
+  (diamonds), tier 4 at y=−48, then more levels 6 deeper down to y=−56. When ~60% of a level is mined, the miner
+  digs the spiral down to the next one; tiers 2–4 are paid with a pickaxe, and tier 3+ needs an iron pickaxe in
+  hand. Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through
+  falling sand like a player), bridge cave holes in the tunnel floor, stop a branch where it breaks out of a
+  hillside, and stop collecting cobblestone-type junk once storage holds 512 of it.
+* **Tree plots** grow from 4 to 9 to 16 trees. Woodcutters fell trees log by log with their axe, break the
+  canopy (the leaves' own loot drops saplings, sticks and apples), collect what fell, replant, and let saplings
+  grow naturally — they only speed growth up with real bone meal (made by the blacksmith from bones).
+* **Farmers** harvest ripe crops by breaking them, collect the drops, till, and replant; the first row of the
+  farm is a carrot row so the pigs can be bred.
+* **Animal carers** go into the pen through the gate (waiting for the animals to move away from it and closing
+  it behind them), feed two adults the food their species eats (wheat for cows and sheep, carrots, potatoes or
+  beetroot for pigs, seeds for chickens) so vanilla breeding makes a real baby, shear sheep, milk cows with
+  buckets, pick up eggs and wool, and lure animals that got out back into the pen by holding their food. Pens
+  stop breeding at 8 animals per species.
+* **Butchers** kill only surplus adults with real sword hits — never babies, never animals that are breeding,
+  and never below 4 breeding adults per species — and collect the meat and leather.
+* **Fishermen** stand at the farm's water channel and fish with a rod: vanilla bite timing (100–600 ticks plus
+  20–80, shortened by Lure) and the vanilla fishing loot table (Luck of the Sea applies). There is no visible
+  bobber entity.
 * **Farmer, chef, smelter, blacksmith** use the real farm, smoker, furnaces and crafting recipes. The blacksmith
   crafts batches from real needs: mine-upgrade pickaxes, better worker tools, iron swords and armour for soldiers
   first, bows, torches, sticks, diamond gear when diamonds exist.
@@ -79,14 +103,15 @@ Players respawn at their nearest surviving allied base when they have no bed.
 * **Builders** queue houses (with straw bedrolls made from wheat) and storage expansions, carry materials to the
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
-* **Scouts** explore unexplored map sectors, record only what they see (settlements, lairs, monsters, caves,
-  forests, water, exposed ore), retreat home on danger along a fixed route, and publish by reaching the station.
+* **Scouts** explore unexplored map sectors, record only what they see and what is worth a trip (enemy
+  settlements, lairs, monsters, caves, exposed ore — not trees or water, which are easy to find), retreat home on
+  danger along a fixed route, and publish by reaching the station.
 * **War**: guards patrol, pick up loot and answer a base defence alarm; hostile vanilla mobs hunt NPCs; zombies
   and skeletons do half damage to NPCs; wounded civilians flee and call guards; NPCs jump back from priming
   creepers. Factions raid targets their scouts reported, keeping home defenders; raiders travel physically, break
   the target's heart, loot its storage and carry it home. Hollow lairs grow and raid nearby settlements.
-* **Levels**: completed work earns XP for the NPC that did it; every level grants one capped affix (e.g. extra
-  ore, instant sapling regrowth); reloads never re-stack bonuses.
+* **Levels**: completed work earns XP for the NPC that did it; every level grants one capped affix (e.g. faster
+  digging, instant sapling regrowth); reloads never re-stack bonuses.
 * **Background simulation** is bounded: base areas and travelling NPCs hold ticking chunk tickets, so factions
   progress away from players without loading the whole map.
 
@@ -112,11 +137,12 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §2/§16 Great People (HSR/ZZZ characters), starter hero, 10-minute revival | ✗ not implemented | — |
 | §3 Safe starting bases, roster, supplies once, animals, enchanting setup | Implemented | S (incl. save/reload) |
 | §4 Roles: builder, miner, farmer, woodcutter, blacksmith, chef, smelter, scout, swordsman, archer | Implemented | S |
-| §4 Roles: animal carer, butcher, fisherman, enchanter, quartermaster/hauler, cave explorer, axe fighter, crossbowman, field medic, TNT expert, rail engineer | ✗ not implemented | — |
-| §5–6 Workspaces, constructed mines, tiers, pickaxe-gated loot, staircase upgrades | Implemented | U, S (mines reached tier 4) |
+| §4 Roles: animal carer, butcher, fisherman | Implemented (player-like) | G (breeding, culling rules), S |
+| §4 Roles: enchanter, quartermaster/hauler, cave explorer, axe fighter, crossbowman, field medic, TNT expert, rail engineer | ✗ not implemented | — |
+| §5–6 Workspaces, mines dug by the miner (spiral shaft, branch mine, tier levels, pickaxe-gated drops) | Implemented (player-like) | U (geometry), G (break times, drops), S |
 | §7 Natural cave mining with depletion | ✗ (scouts report caves only) | — |
-| §8 Tree plots + upgrades, farm, chef | Implemented | S |
-| §8 Pens/breeding/butchering, fishing | ✗ | — |
+| §8 Tree plots + upgrades, farm, chef | Implemented (player-like woodcutting and farming) | S |
+| §8 Pens/breeding/butchering, fishing | Implemented | G, S |
 | §9 Golden apples used by NPCs | ✗ | — |
 | §10 Categorised storage, blacksmith batches, soldier armour priority | Implemented (no hauler role) | G (storage), S |
 | §11 Builder projects, staging chest + signs, repairs, player-edit preservation | Implemented (houses, storage expansion) | S |
@@ -141,12 +167,15 @@ session (clicking blocks, GUIs, combat by a human player) was performed.
 
 ## Testing
 
-* `./gradlew test` — 21 JUnit tests for the pure rules (mine loot gating and odds, food payment, affix caps, XP
-  curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 13 GameTests on a real headless server: walking speed, no gear wear, half
+* `./gradlew test` — 18 JUnit tests for the pure rules (spiral mine and branch-mine geometry, food payment,
+  affix caps, XP curve, stuck-recovery selection, scout rules).
+* `./gradlew runGameTestServer` — 17 GameTests on a real headless server: walking speed, no gear wear, half
   undead damage only, no friendly fire, one-arrow ranged attacks with effects, save/reload without affix
   stacking, local stuck recovery, creeper jump-back, mob targeting, full storage never deletes items,
-  recruitment payment routes, guards engaging enemies, defence alarm.
+  recruitment payment routes, guards engaging enemies, defence alarm, **player break times** (stone pickaxe on
+  stone 12 ticks, iron 8, bare hand 150), **real drops and pickup** (a wooden pickaxe gets nothing from iron
+  ore), **breeding by feeding** (two fed cows make a calf; babies can't be fed to breed) and **butcher rules**
+  (babies and the breeding stock are spared).
 * `tools/sim.py` + `tools/rcon.py` drive a real NeoForge dedicated server over RCON (`/tick sprint`) and print a
   per-day summary of every faction (see the source for usage).
 

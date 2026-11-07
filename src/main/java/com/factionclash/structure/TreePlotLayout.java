@@ -73,14 +73,4 @@ public final class TreePlotLayout {
         return f >= 1 && f <= depth(tier) && Math.abs(s) <= half(tier);
     }
 
-    /** Apple chance per cleared oak leaf block (PROPOSED: 1/200, 1/120, 1/80 by tier). */
-    public static double appleChance(int tier) {
-        return switch (tier) {
-            case 2 -> 1.0 / 120;
-            case 3 -> 1.0 / 80;
-            default -> 1.0 / 200;
-        };
-    }
-
-    public static final double SAPLING_CHANCE = 1.0 / 20;
 }

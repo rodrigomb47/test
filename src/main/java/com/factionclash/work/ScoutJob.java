@@ -301,7 +301,8 @@ public class ScoutJob extends Job {
         if (hostiles >= 3) {
             addPending(new Report(Report.Kind.HOSTILES, here, now, null, hostiles, hostiles + " monsters"));
         }
-        int leafy = 0, water = 0;
+        // Only things worth a trip are reported: caves and exposed ore. Trees and water are easy to find and are
+        // not reported.
         for (int i = 0; i < 10; i++) {
             int x = here.getX() + level().random.nextInt(33) - 16;
             int z = here.getZ() + level().random.nextInt(33) - 16;
@@ -309,13 +310,6 @@ public class ScoutJob extends Job {
                 continue;
             }
             BlockPos top = level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, new BlockPos(x, 0, z)).below();
-            BlockState s = level().getBlockState(top);
-            if (s.is(BlockTags.LEAVES) || s.is(BlockTags.LOGS)) {
-                leafy++;
-            }
-            if (!s.getFluidState().isEmpty() && s.getFluidState().is(net.minecraft.tags.FluidTags.WATER)) {
-                water++;
-            }
             BlockPos cave = findCave(x, z);
             if (cave != null) {
                 addPending(new Report(Report.Kind.CAVE, cave, now, null, 1, "underground cavity at y=" + cave.getY()));
@@ -325,12 +319,6 @@ public class ScoutJob extends Job {
                 addPending(new Report(Report.Kind.ORE, ore, now, null, 1,
                         level().getBlockState(ore).getBlock().getName().getString()));
             }
-        }
-        if (leafy >= 5) {
-            addPending(new Report(Report.Kind.FOREST, here, now, null, leafy, "dense trees"));
-        }
-        if (water >= 4) {
-            addPending(new Report(Report.Kind.WATER, here, now, null, water, "lake or river"));
         }
     }
 

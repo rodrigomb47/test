@@ -3,9 +3,9 @@ package com.factionclash.npc;
 import com.factionclash.logic.Affix;
 
 /**
- * Roles implemented in this build. Other professions from the design (animal carer, butcher, fisherman,
- * enchanter, quartermaster, cave explorer, axe fighter, field medic, TNT expert, rail engineer) are not
- * implemented yet; see README "Status".
+ * Roles implemented in this build. Other professions from the design (enchanter, quartermaster, cave explorer,
+ * axe fighter, crossbowman, field medic, TNT expert, rail engineer) are not implemented yet; see README "Status".
+ * New values are only ever appended: saves store the id, the network sync uses the ordinal.
  */
 public enum NpcRole {
     BUILDER("builder", "Builder", false, false, ToolKind.SHOVEL, Affix.Job.BUILDER),
@@ -17,7 +17,10 @@ public enum NpcRole {
     SMELTER("smelter", "Smelter", false, false, ToolKind.NONE, Affix.Job.OTHER),
     SCOUT("scout", "Scout", false, false, ToolKind.SWORD, Affix.Job.SCOUT),
     SWORDSMAN("swordsman", "Swordsman", true, false, ToolKind.SWORD, Affix.Job.OTHER),
-    ARCHER("archer", "Archer", true, true, ToolKind.BOW, Affix.Job.ARCHER);
+    ARCHER("archer", "Archer", true, true, ToolKind.BOW, Affix.Job.ARCHER),
+    ANIMAL_CARER("animal_carer", "Animal Carer", false, false, ToolKind.NONE, Affix.Job.OTHER),
+    BUTCHER("butcher", "Butcher", false, false, ToolKind.SWORD, Affix.Job.OTHER),
+    FISHERMAN("fisherman", "Fisherman", false, false, ToolKind.ROD, Affix.Job.OTHER);
 
     public final String id;
     public final String displayName;

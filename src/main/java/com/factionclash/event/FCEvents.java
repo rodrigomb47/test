@@ -95,6 +95,14 @@ public final class FCEvents {
 
     @SubscribeEvent
     public void onDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof net.minecraft.world.entity.animal.Animal a && a.level() instanceof ServerLevel lv
+                && baseAt(CampaignData.get(lv.getServer()), a.blockPosition()) != null) {
+            // livestock losses are worth a line in the log (who or what killed the base's animals)
+            net.minecraft.world.entity.Entity killer = event.getSource().getEntity();
+            com.factionclash.FactionClash.LOGGER.info("Livestock death: {} at {} by {} ({})", a.getType().getDescription().getString(),
+                    a.blockPosition().toShortString(), event.getSource().getMsgId(),
+                    killer == null ? "-" : killer.getName().getString());
+        }
         if (event.getEntity().level() instanceof ServerLevel level && event.getEntity().getPersistentData().contains(BaseBuilder.LAIR_TAG)) {
             CampaignData data = CampaignData.get(level.getServer());
             BaseState lair = data.base(event.getEntity().getPersistentData().getInt(BaseBuilder.LAIR_TAG));

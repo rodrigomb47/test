@@ -36,6 +36,11 @@ public final class NpcNavigator {
     public int recoveries;
     private String lastProblem = "";
     private int nextExitSearch;
+    /** Closest distance to the target reached so far, and ticks since it last improved (progress, not motion). */
+    private double bestDist;
+    private int sinceBest;
+    /** PROPOSED: ticks without getting at least a block closer before the trip counts as failing (pacing back and forth). */
+    private static final int NO_PROGRESS_TICKS = 300;
 
     public NpcNavigator(FactionNpc npc) {
         this.npc = npc;
@@ -73,6 +78,8 @@ public final class NpcNavigator {
             repathTimer = 0;
             lastCheck = npc.position();
             progressTimer = 0;
+            bestDist = Double.MAX_VALUE;
+            sinceBest = 0;
         }
         if (within(npc, target, this.reach)) {
             npc.getNavigation().stop();
@@ -82,6 +89,18 @@ public final class NpcNavigator {
             return Result.FAILED;
         }
         if (npc.getNavigation().isDone() || --repathTimer <= 0) {
+            repath(speed);
+        }
+        double dist = npc.position().distanceTo(Vec3.atBottomCenterOf(target));
+        if (dist < bestDist - 1.0) {
+            bestDist = dist;
+            sinceBest = 0;
+        } else if (++sinceBest >= NO_PROGRESS_TICKS) {
+            // moving, but not getting any closer (partial path to a cliff edge, pacing between two dead ends)
+            sinceBest = 0;
+            bestDist = dist;
+            failures += 2;
+            lastProblem = "no progress";
             repath(speed);
         }
         if (++progressTimer >= 20) {
@@ -120,15 +139,19 @@ public final class NpcNavigator {
             npc.level().getChunk(wx >> 4, wz >> 4);
             goal = npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(wx, 0, wz));
         }
-        if (underground && hd > 16 && npc.tickCount >= nextExitSearch) {
+        Path path = npc.getNavigation().createPath(goal, 1);
+        if ((path == null || !path.canReach()) && underground && hd > 16 && npc.tickCount >= nextExitSearch) {
             nextExitSearch = npc.tickCount + 200; // path searches are expensive: bounded per NPC
-            // Lost in a cave or ravine: climb out first, toward the nearest reachable surface point.
+            // No route from down here (lost in a cave or ravine): climb out first, toward the nearest reachable
+            // surface point. A miner in its own tunnels has a full route and never takes this detour.
             BlockPos exit = surfaceExit(hd);
             if (exit != null) {
-                goal = exit;
+                Path out = npc.getNavigation().createPath(exit, 1);
+                if (out != null) {
+                    path = out;
+                }
             }
         }
-        Path path = npc.getNavigation().createPath(goal, 1);
         if (path == null) {
             failures++;
             lastProblem = "no path";

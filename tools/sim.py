@@ -51,14 +51,17 @@ def summary(d):
         line = f"  base {b['id']} {b['faction']:15s} {b['kind']:10s} {b['center']:>16s} destroyed={b['destroyed']}"
         if b["kind"] == "SETTLEMENT":
             st = b["stock"]
-            keys = ["cobblestone", "coal", "raw_iron", "iron_ingot", "diamond", "oak_log", "oak_planks", "wheat", "bread",
-                    "baked_potato", "torch", "stone_pickaxe", "iron_pickaxe", "iron_sword", "bedroll"]
+            keys = ["cobblestone", "cobbled_deepslate", "coal", "raw_iron", "raw_copper", "raw_gold", "redstone", "lapis_lazuli",
+                    "diamond", "iron_ingot", "oak_log", "oak_sapling", "apple", "wheat", "bread", "beef", "porkchop",
+                    "cooked_beef", "cod", "salmon", "torch", "iron_pickaxe"]
             line += f" station={b['stationPresent']} beds={b['beds']} repairs={b['pendingRepairs']} food={b['foodValue']} projects={b['projects']}"
             print(line)
             print("      stock " + ", ".join(f"{k}={st.get(k, 0)}" for k in keys))
             for w in b["workplaces"]:
                 print(f"      {w['type']:9s} tier={w['tier']} output={w['output']} upgradeStep={w['upgradeStep']}")
             print(f"      recruit: {b['recruitNote'][:160]}")
+            if b.get("pen"):
+                print(f"      pen: {b['pen']}")
         else:
             print(line + f" mobs={b['lairMobs']}/{b['lairCap']}")
     st = Counter()

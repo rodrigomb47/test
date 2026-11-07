@@ -196,7 +196,7 @@ public final class BaseLayout {
             bp.set(-10, 0, z, fence);
         }
         bp.set(-15, 0, 3, Blocks.OAK_FENCE_GATE.defaultBlockState().setValue(FenceGateBlock.FACING, Direction.NORTH));
-        bp.set(-19, 0, 8, Blocks.HAY_BLOCK);
+        // no hay bale or other step next to the fence: animals would jump onto it and over the fence
         bp.mark("pen", -15, 0, 6);
 
         // --- farm (south-east): farmland rows around a water channel

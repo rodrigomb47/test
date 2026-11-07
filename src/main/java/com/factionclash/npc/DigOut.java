@@ -38,12 +38,17 @@ public final class DigOut {
         double tx = target.getX() - p.getX(), tz = target.getZ() - p.getZ();
         dirs.sort(Comparator.comparingDouble(d -> -(d.getStepX() * tx + d.getStepZ() * tz)));
         for (Direction d : dirs) {
-            // underground: climb (step up); on the surface: tunnel level first
-            for (int dy : underground ? new int[]{1, 0} : new int[]{0, 1}) {
+            // destination well below (e.g. stuck on a cliff top): dig a staircase down; underground: climb (step
+            // up); on the surface: tunnel level first
+            boolean below = target.getY() < p.getY() - 1;
+            int[] order = below ? new int[]{-1, 0} : underground ? new int[]{1, 0} : new int[]{0, 1};
+            for (int dy : order) {
                 BlockPos q = p.relative(d).above(dy);
                 List<BlockPos> clear = new ArrayList<>(List.of(q, q.above()));
                 if (dy == 1) {
                     clear.add(p.above(2));
+                } else if (dy == -1) {
+                    clear.add(q.above(2));
                 }
                 if (!level.getBlockState(q.below()).isFaceSturdy(level, q.below(), Direction.UP) || !allDiggable(level, clear)) {
                     continue;

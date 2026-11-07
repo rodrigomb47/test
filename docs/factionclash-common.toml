@@ -17,21 +17,6 @@
 	#Keep bases, workplaces and travelling NPCs' chunks ticking so factions progress away from players.
 	keepFactionAreasLoaded = true
 
-#Workspace production (PROPOSED defaults)
-[work]
-	#Base ticks per mine output with a wooden pickaxe; better pickaxes are faster.
-	# Default: 140
-	# Range: 20 ~ 2400
-	mineCycleTicks = 140
-	#Ticks to chop one log in a tree plot.
-	# Default: 24
-	# Range: 5 ~ 400
-	chopTicksPerLog = 24
-	#Ticks per tending action on a sapling (each action advances growth like bone meal).
-	# Default: 120
-	# Range: 20 ~ 2400
-	tendTicks = 120
-
 #Recruitment (PROPOSED defaults)
 [recruitment]
 	#Hunger points of food consumed per recruit (bread=5, cooked beef=8, ...).

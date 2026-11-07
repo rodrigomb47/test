@@ -1,11 +1,10 @@
 package com.factionclash.work;
 
+import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.WorkplaceState;
-import com.factionclash.config.FCConfig;
-import com.factionclash.logic.Affix;
-import com.factionclash.logic.MineLootTable;
-import com.factionclash.logic.MineResource;
+import com.factionclash.logic.SpiralMine;
 import com.factionclash.npc.FactionNpc;
+import com.factionclash.npc.NpcNavigator;
 import com.factionclash.npc.ToolKind;
 import com.factionclash.storage.FactionStorage;
 import com.factionclash.structure.MineLayout;
@@ -20,63 +19,50 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Constructed-mine miner (spec 6). Each completed cycle generates one real item into the miner's backpack and
- * triggers exactly one swing; the face block shows crack progress during the cycle. Output depends on mine
- * tier AND pickaxe tier. Upgrades consume a real pickaxe plus torches, stairs and cobblestone and are dug out
- * step by step, so the mine visibly extends downward.
+ * Miner that mines like a player (spec 6, reworked): it walks down a spiral shaft to its mine level and digs a
+ * branch mine block by block, with real break times for its pickaxe and the block's hardness. Everything it gets is
+ * what is really in the ground and drops by the vanilla rules (an iron ore broken with a wooden pickaxe drops
+ * nothing). Exposed ore veins are followed, torches are placed, fluids and loose blocks are plugged before a cell
+ * is opened, and it digs the shaft deeper to reach the next tier.
  */
 public class MinerJob extends Job {
-    enum State { CHECK, STORAGE, CRAFT, TRAVEL, WORK, EXCAVATE, CLEAR }
+    enum State { CHECK, STORAGE, CRAFT, TRAVEL, MINE, EXTEND, CLEAR }
 
-    private static final int CARGO_LIMIT = 64;
-    private static final Predicate<ItemStack> STAIRS = s -> s.is(Items.COBBLESTONE_STAIRS) || s.is(Items.STONE_STAIRS)
-            || s.is(Items.STONE_BRICK_STAIRS) || s.is(Items.COBBLED_DEEPSLATE_STAIRS);
-    private static final Predicate<ItemStack> COBBLE = s -> s.is(Items.COBBLESTONE);
     private static final Predicate<ItemStack> TORCH = s -> s.is(Items.TORCH);
-    /** Solid, non-falling blocks a miner may use to plug water, lava, sand or cave openings. */
+    /** Solid, non-falling blocks a miner may use to plug water, lava or sand. */
     private static final Predicate<ItemStack> SEAL = s -> s.is(Items.COBBLESTONE) || s.is(Items.COBBLED_DEEPSLATE) || s.is(Items.STONE)
             || s.is(Items.DIRT) || s.is(Items.ANDESITE) || s.is(Items.DIORITE) || s.is(Items.GRANITE) || s.is(Items.TUFF)
             || s.is(Items.DEEPSLATE) || s.is(Items.COARSE_DIRT) || s.is(Items.NETHERRACK);
-
-    private static boolean unsafeNeighbour(BlockState ns) {
-        return ns.isAir() || !ns.getFluidState().isEmpty() || ns.getBlock() instanceof FallingBlock
-                || ns.canBeReplaced();
-    }
-
-    /** Places one seal block from the backpack at {@code n}; false when the miner carries nothing suitable. */
-    private boolean placeSeal(BlockPos n) {
-        ItemStack mat = Inv.first(npc.inventory(), SEAL);
-        if (mat.isEmpty() || !(mat.getItem() instanceof net.minecraft.world.item.BlockItem bi)) {
-            return false;
-        }
-        mat.shrink(1);
-        npc.inventory().setChanged();
-        level().setBlock(n, bi.getBlock().defaultBlockState(), Block.UPDATE_ALL);
-        return true;
-    }
+    /** Common blocks a player stops collecting once the warehouse has plenty. */
+    private static final Set<Item> JUNK = Set.of(Items.COBBLESTONE, Items.COBBLED_DEEPSLATE, Items.DIRT, Items.GRAVEL,
+            Items.ANDESITE, Items.DIORITE, Items.GRANITE, Items.TUFF, Items.CALCITE, Items.SAND, Items.DEEPSLATE);
+    private static final int JUNK_STOCK_LIMIT = 512;
+    private static final int MAX_VEIN = 24;
 
     private State state = State.CHECK;
-    private int progress;
-    private int actionTimer;
-    private long nextUpgradeCheck;
+    private final BlockWork.Breaker breaker = new BlockWork.Breaker();
+    private final Deque<BlockPos> vein = new ArrayDeque<>();
+    private final Deque<BlockPos> blocked = new ArrayDeque<>();
+    private final Set<Item> junkFull = new HashSet<>();
     private long nextIntegrityCheck;
-    private long nextSupplyCheck;
-    private final java.util.ArrayDeque<BlockPos> blocked = new java.util.ArrayDeque<>();
-    private Set<BlockPos> openCache;
-    private int openCacheTier = -1;
+    private int craftTimer;
 
     public MinerJob(FactionNpc npc) {
         super(npc);
@@ -92,152 +78,125 @@ public class MinerJob extends Job {
         if (wp == null) {
             return "no mine";
         }
-        return "Mine #" + wp.id + " tier " + wp.tier + (wp.upgrading() ? " (upgrading to " + (wp.tier + 1) + ")" : "")
-                + " at " + wp.origin.toShortString() + ", cycle " + progress + "/" + cycleTicks();
-    }
-
-    public int progress() {
-        return progress;
+        int lv = MineLayout.level(wp);
+        return "Mine #" + wp.id + " tier " + wp.tier + (wp.subLevel > 0 ? " (+" + wp.subLevel + " floors)" : "")
+                + ", level y=" + SpiralMine.levelY(wp.origin.getY(), lv) + ", branch mine " + wp.progress + "/"
+                + MineLayout.tunnelPlan(wp).size() + (wp.upgrading() ? ", digging deeper (step " + wp.upgradeStep + ")" : "");
     }
 
     private int pickTier() {
         return ToolKind.PICKAXE.matches(npc.tool()) ? ToolKind.tierOf(npc.tool()) : -1;
     }
 
-    private int cycleTicks() {
-        return MineLootTable.cycleTicks(FCConfig.MINE_CYCLE_TICKS.get(), Math.max(0, pickTier()), npc.affix(Affix.DILIGENCE));
-    }
-
     @Override
     protected int keep(ItemStack s) {
-        WorkplaceState wp = wp();
-        if (wp != null && wp.upgrading()) {
-            if (TORCH.test(s)) {
-                return 16;
-            }
-            if (STAIRS.test(s)) {
-                return 16;
-            }
-            if (SEAL.test(s)) {
-                return MineLayout.UPGRADE_COBBLE + 16;
-            }
-            if (s.is(Items.COAL) || s.is(Items.STICK)) {
-                return 8;
-            }
+        if (TORCH.test(s)) {
+            return 32;
+        }
+        if (SEAL.test(s)) {
+            return 64;
+        }
+        if (s.is(Items.STICK)) {
+            return 8;
         }
         return 0;
     }
 
-    private int cargo() {
-        return Inv.count(npc.inventory(), MineItems::isMineOutput);
+    /** Pick-up filter: everything except surplus junk the warehouse is already full of. */
+    private boolean wanted(ItemStack s) {
+        if (JUNK.contains(s.getItem()) && junkFull.contains(s.getItem())) {
+            return Inv.count(npc.inventory(), x -> x.is(s.getItem())) < 64;
+        }
+        return true;
+    }
+
+    private int collect() {
+        int n = BlockWork.pickUp(npc, this::wanted);
+        if (n > 0) {
+            WorkplaceState wp = wp();
+            if (wp != null) {
+                wp.totalOutput += n;
+                data().setDirty();
+            }
+        }
+        return n;
     }
 
     @Override
     protected void run() {
         WorkplaceState wp = wp();
         if (wp == null) {
-            status("No free mine to work (a builder must provide one)", "Idle");
+            status("No free mine to work", "Idle");
             waitFor(200);
             return;
         }
+        collect();
         switch (state) {
-            case CHECK -> {
-                if (pickTier() < 0) {
-                    state = State.STORAGE;
-                } else if (Inv.freeSlots(npc.inventory()) == 0 || cargo() >= CARGO_LIMIT) {
-                    state = State.STORAGE;
-                } else if (wp.upgrading() && !hasExcavationSupplies(wp) && now() >= nextSupplyCheck) {
-                    nextSupplyCheck = now() + 1200;
-                    state = State.STORAGE;
-                } else {
-                    state = State.TRAVEL;
-                }
-            }
+            case CHECK -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 ? State.STORAGE : State.TRAVEL;
             case STORAGE -> storage(wp);
-            case CRAFT -> craft(wp);
-            case TRAVEL -> {
-                if (now() >= nextIntegrityCheck) {
-                    nextIntegrityCheck = now() + 1200;
-                    if (findBlockedCells(wp)) {
-                        state = State.CLEAR;
-                        return;
-                    }
-                }
-                BlockPos target = MineLayout.workPos(wp);
-                if (enterMine(wp)) {
-                    state = wp.upgrading() && hasExcavationSupplies(wp) ? State.EXCAVATE : State.WORK;
-                } else if (npc.navigator().target() == null) {
-                    nextIntegrityCheck = 0; // route failed: check the mine for cave-ins next time
-                }
-            }
+            case CRAFT -> craftTorches(wp);
+            case TRAVEL -> travel(wp);
+            case MINE -> mine(wp);
+            case EXTEND -> extend(wp);
             case CLEAR -> clear(wp);
-            case WORK -> work(wp);
-            case EXCAVATE -> excavate(wp);
         }
     }
+
+    // ------------------------------------------------------------------ moving through the mine
 
     /**
-     * Walks into the mine through its entrance and each tier's chamber in turn (short, reliable legs), finishing at
-     * the work position. Returns true once there.
+     * Walks to {@code dest} through the mine in short legs: along a tunnel to its landing, up or down the spiral six
+     * steps at a time, then to the destination. {@code destStep} is the spiral step of the destination's level
+     * (0 = surface). Returns true once at {@code dest}.
      */
-    private boolean enterMine(WorkplaceState wp) {
-        BlockPos work = MineLayout.workPos(wp);
-        int seg = MineLayout.segmentAt(wp, npc.blockPosition(), wp.tier);
-        if (seg == 0) {
-            if (npc.blockPosition().closerThan(MineLayout.local(wp, 0, 0, 0), 3.5)) {
-                return goTo(MineLayout.chamberCenter(wp, 1), 2.0, "mine #" + wp.id) && wp.tier == 1 && goTo(work, 1.3, "mine #" + wp.id);
+    private boolean walkInMine(WorkplaceState wp, BlockPos dest, int destStep, double reach, String label) {
+        BlockPos p = npc.blockPosition();
+        int lv = MineLayout.nearLevelAt(wp, p);
+        int cur;
+        if (lv > 0) {
+            int lk = MineLayout.landingSteps(wp, lv);
+            if (lk == destStep) {
+                return goTo(dest, reach, label);
             }
-            BlockPos inside = MineLayout.local(wp, 0, 0, 0);
-            goTo(com.factionclash.npc.NpcNavigator.within(npc, MineLayout.entrance(wp), 2.0) ? inside : MineLayout.entrance(wp),
-                    1.5, "mine #" + wp.id);
-            return false;
-        }
-        if (seg >= wp.tier) {
-            return goTo(work, 1.3, "mine #" + wp.id);
-        }
-        BlockPos c = MineLayout.chamberCenter(wp, seg);
-        if (com.factionclash.npc.NpcNavigator.within(npc, c, 2.5) || MineLayout.forwardOf(wp, npc.blockPosition()) > MineLayout.forwardOf(wp, c)) {
-            goTo(MineLayout.chamberCenter(wp, seg + 1), 2.0, "mine #" + wp.id);
+            BlockPos landing = MineLayout.stand(wp, lk);
+            if (!NpcNavigator.within(npc, landing, 1.2)) {
+                goTo(landing, 1.2, "the mine shaft");
+                return false;
+            }
+            cur = lk;
         } else {
-            goTo(c, 2.0, "mine #" + wp.id);
+            cur = MineLayout.stepAt(wp, p);
         }
+        if (cur == destStep || (destStep == 0 && cur == 0)) {
+            return goTo(dest, reach, label);
+        }
+        int next = cur < destStep ? Math.min(cur + 6, destStep) : Math.max(cur - 6, destStep);
+        // spiral steps are diagonal neighbours: arrive precisely, or the next leg would be "reached" without moving
+        goTo(MineLayout.stand(wp, next), 0.45, label);
         return false;
     }
 
-    /** Walks out of the mine the same way (chamber by chamber, then the hut door). True once outside. */
     private boolean leaveMine(WorkplaceState wp) {
-        int seg = MineLayout.segmentAt(wp, npc.blockPosition(), wp.tier + (wp.upgrading() ? 1 : 0));
-        if (seg == 0) {
-            if (MineLayout.forwardOf(wp, npc.blockPosition()) > MineLayout.HUT_BACK - 1
-                    && MineLayout.forwardOf(wp, npc.blockPosition()) <= MineLayout.HUT_FRONT
-                    && npc.blockPosition().closerThan(wp.origin, 6)) {
-                return goTo(MineLayout.entrance(wp), 1.5, "the mine exit");
-            }
+        boolean underground = npc.getBlockY() < wp.origin.getY() - 1 && npc.blockPosition().closerThan(wp.origin, 64);
+        boolean inHut = MineLayout.forwardOf(wp, npc.blockPosition()) > MineLayout.HUT_BACK - 1
+                && MineLayout.forwardOf(wp, npc.blockPosition()) <= MineLayout.HUT_FRONT
+                && Math.abs(MineLayout.sideOf(wp, npc.blockPosition())) <= 2 && npc.blockPosition().closerThan(wp.origin, 7);
+        if (!underground && !inHut) {
             return true;
         }
-        // from the first segment walk straight out through the hut door; deeper, step back one chamber at a time
-        BlockPos target = seg <= 1 ? MineLayout.entrance(wp) : MineLayout.chamberCenter(wp, seg - 1);
-        if (seg >= 2 && com.factionclash.npc.NpcNavigator.within(npc, target, 2.5)) {
-            target = seg - 2 >= 1 ? MineLayout.chamberCenter(wp, seg - 2) : MineLayout.entrance(wp);
-        }
-        goTo(target, 2.0, "the mine exit");
-        return false;
+        return walkInMine(wp, MineLayout.entrance(wp), 0, 1.5, "the mine exit");
     }
 
+    // ------------------------------------------------------------------ storehouse
+
     private void storage(WorkplaceState wp) {
-        if (!leaveMine(wp)) {
+        breaker.reset(npc);
+        if (!leaveMine(wp) || !atStorage()) {
             return;
         }
-        if (!atStorage()) {
-            return;
-        }
-        if (unloadNow() == Unload.PARTIAL_FULL) {
-            status("Storehouse full - holding cargo", "Waiting");
-            if (Inv.freeSlots(npc.inventory()) >= 3) {
-                state = State.TRAVEL; // keep producing into the backpack until it is full
-            } else {
-                waitFor(200);
-            }
+        if (unloadNow() == Unload.PARTIAL_FULL && Inv.freeSlots(npc.inventory()) < 3) {
+            status("Storehouse full - holding the mine's output", "Waiting");
+            waitFor(200);
             return;
         }
         upgradeEquipment();
@@ -246,447 +205,533 @@ public class MinerJob extends Job {
             waitFor(300);
             return;
         }
-        if (!wp.upgrading() && now() >= nextUpgradeCheck) {
-            nextUpgradeCheck = now() + 2400;
-            tryStartUpgrade(wp);
-        }
-        if (wp.upgrading()) {
-            gatherExcavationSupplies(wp);
-            if (needsCrafting(wp)) {
-                state = State.CRAFT;
-                return;
+        junkFull.clear();
+        for (Item junk : JUNK) {
+            if (FactionStorage.count(level(), base(), s -> s.is(junk)) >= JUNK_STOCK_LIMIT) {
+                junkFull.add(junk);
             }
-            if (!hasExcavationSupplies(wp)) {
-                // never stall: keep producing (cobblestone, coal) until the upgrade can be supplied
-                status("Mining to supply the upgrade (missing " + missingSupplies(wp) + ")", "Mining");
-                state = State.TRAVEL;
+        }
+        int torches = Inv.count(npc.inventory(), TORCH);
+        if (torches < 16) {
+            takeFromStorage(TORCH, 24 - torches);
+        }
+        if (Inv.count(npc.inventory(), SEAL) < 24) {
+            takeFromStorage(SEAL, 32);
+        }
+        noSealBlocks = Inv.count(npc.inventory(), SEAL) == 0;
+        if (!wp.upgrading()) {
+            considerGoingDeeper(wp);
+        }
+        if (Inv.count(npc.inventory(), TORCH) < 8) {
+            takeFromStorage(Crafting.FUEL_COAL, 4);
+            takeFromStorage(s -> s.is(Items.STICK), 4);
+            if (Inv.count(npc.inventory(), s -> s.is(Items.STICK)) < 2) {
+                takeFromStorage(s -> s.is(ItemTags.PLANKS), 2);
+            }
+            if (Inv.count(npc.inventory(), Crafting.FUEL_COAL) > 0) {
+                state = State.CRAFT;
                 return;
             }
         }
         state = State.TRAVEL;
     }
 
-    /** Upgrade when it helps (pickaxe can use deeper odds), it is affordable, and a qualifying pickaxe exists. */
-    private void tryStartUpgrade(WorkplaceState wp) {
-        if (wp.tier >= MineLootTable.MAX_MINE_TIER || pickTier() < 1) {
+    /**
+     * Goes deeper when the current level is mostly worked out and the next level is worth it: a tier upgrade costs a
+     * real pickaxe (PROPOSED: stone for tier 2, iron for 3 and 4) plus torches; floors below tier 4 cost torches only.
+     * Tiers 3+ need an iron pickaxe, otherwise their ores would not drop.
+     */
+    private void considerGoingDeeper(WorkplaceState wp) {
+        int lv = MineLayout.level(wp);
+        if (MineLayout.landingSteps(wp, lv + 1) < 0) {
             return;
         }
-        int next = wp.tier + 1;
-        int needTier = MineLayout.upgradePickTier(next);
-        Predicate<ItemStack> payPick = s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= needTier;
-        int torches = FactionStorage.count(level(), base(), TORCH);
-        int coal = FactionStorage.count(level(), base(), Crafting.FUEL_COAL);
-        int stairs = FactionStorage.count(level(), base(), STAIRS);
-        int cobble = FactionStorage.count(level(), base(), COBBLE);
-        boolean torchesOk = torches >= MineLayout.UPGRADE_TORCHES || (torches + coal * 4 >= MineLayout.UPGRADE_TORCHES
-                && FactionStorage.count(level(), base(), s -> s.is(Items.STICK) || s.is(ItemTags.PLANKS) || s.is(ItemTags.LOGS)) >= 2);
-        int cobbleNeed = MineLayout.UPGRADE_COBBLE + (stairs >= MineLayout.UPGRADE_STAIRS ? 0 : 12);
-        if (!torchesOk || cobble < cobbleNeed) {
+        double done = wp.progress / (double) Math.max(1, MineLayout.tunnelPlan(wp).size());
+        if (done < 0.6) {
             return;
         }
-        ItemStack pick = FactionStorage.findBest(level(), base(), payPick, s -> -ToolKind.tierOf(s));
-        if (pick.isEmpty()) {
-            return;
+        int nextTier = wp.tier + 1;
+        if (wp.tier < WorkplaceState.Type.MINE.maxTier) {
+            int needPick = MineLayout.upgradePickTier(nextTier);
+            if (nextTier >= 3 && pickTier() < 2) {
+                return;
+            }
+            Predicate<ItemStack> pay = s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= needPick;
+            ItemStack pick = FactionStorage.findBest(level(), base(), pay, s -> -ToolKind.tierOf(s));
+            ItemStack paid = pick.isEmpty() ? ItemStack.EMPTY : FactionStorage.extractExact(level(), base(), pick);
+            if (paid.isEmpty()) {
+                if (done < 1.0) {
+                    return; // going down early needs the upgrade payment
+                }
+                // the level is worked out: rather than stand idle, the miner digs on with its own pickaxe
+                Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": level worked out, "
+                        + npc.npcName() + " digs down to tier " + nextTier));
+            } else {
+                Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": " + npc.npcName()
+                        + " starts digging down to tier " + nextTier + " (paid " + paid.getHoverName().getString() + ")"));
+            }
         }
-        ItemStack paid = FactionStorage.extractExact(level(), base(), pick);
-        if (paid.isEmpty()) {
-            return;
-        }
-        // The pickaxe is the excavation payment: it is consumed now (equipped tools never wear out).
         wp.upgradeStep = 0;
         data().setDirty();
-        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + " upgrade to tier " + next
-                + " started by " + npc.npcName() + " (paid " + paid.getHoverName().getString() + ")"));
     }
 
-    private List<MineLayout.Action> remainingActions(WorkplaceState wp) {
-        List<MineLayout.Action> all = MineLayout.segmentActions(wp, wp.tier + 1);
-        return all.subList(Math.min(all.size(), Math.max(0, wp.upgradeStep)), all.size());
-    }
-
-    private int needTorches(WorkplaceState wp) {
-        return (int) remainingActions(wp).stream().filter(a -> !a.isDig() && a.place().is(Blocks.WALL_TORCH)).count();
-    }
-
-    private int needStairs(WorkplaceState wp) {
-        return (int) remainingActions(wp).stream().filter(a -> !a.isDig() && a.place().is(BlockTags.STAIRS)).count();
-    }
-
-    private boolean hasExcavationSupplies(WorkplaceState wp) {
-        return Inv.count(npc.inventory(), TORCH) >= needTorches(wp) && Inv.count(npc.inventory(), STAIRS) >= needStairs(wp)
-                && Inv.count(npc.inventory(), SEAL) >= Math.min(8, MineLayout.UPGRADE_COBBLE);
-    }
-
-    private String missingSupplies(WorkplaceState wp) {
-        StringBuilder sb = new StringBuilder();
-        int t = needTorches(wp) - Inv.count(npc.inventory(), TORCH);
-        int s = needStairs(wp) - Inv.count(npc.inventory(), STAIRS);
-        int c = 8 - Inv.count(npc.inventory(), SEAL);
-        if (t > 0) {
-            sb.append(t).append(" torches ");
-        }
-        if (s > 0) {
-            sb.append(s).append(" stairs ");
-        }
-        if (c > 0) {
-            sb.append(c).append(" sealing blocks");
-        }
-        return sb.toString().trim();
-    }
-
-    private void gatherExcavationSupplies(WorkplaceState wp) {
-        int t = needTorches(wp) - Inv.count(npc.inventory(), TORCH);
-        if (t > 0) {
-            t -= takeFromStorage(TORCH, t);
-            if (t > 0) {
-                takeFromStorage(Crafting.FUEL_COAL, (t + 3) / 4);
-                if (Inv.count(npc.inventory(), s -> s.is(Items.STICK)) < (t + 3) / 4) {
-                    takeFromStorage(s -> s.is(Items.STICK), (t + 3) / 4);
-                    if (Inv.count(npc.inventory(), s -> s.is(Items.STICK)) < (t + 3) / 4) {
-                        takeFromStorage(s -> s.is(ItemTags.PLANKS), 2);
-                        takeFromStorage(s -> s.is(ItemTags.LOGS), 1);
-                    }
-                }
-            }
-        }
-        int st = needStairs(wp) - Inv.count(npc.inventory(), STAIRS);
-        if (st > 0) {
-            st -= takeFromStorage(STAIRS, st);
-        }
-        int cobbleWanted = MineLayout.UPGRADE_COBBLE + Math.max(0, (st + 3) / 4) * 6 - Inv.count(npc.inventory(), COBBLE);
-        if (cobbleWanted > 0) {
-            int got = takeFromStorage(COBBLE, cobbleWanted);
-            if (got < cobbleWanted) {
-                takeFromStorage(SEAL, cobbleWanted - got);
-            }
-        }
-    }
-
-    private boolean needsCrafting(WorkplaceState wp) {
-        boolean torches = Inv.count(npc.inventory(), TORCH) < needTorches(wp) && Inv.count(npc.inventory(), Crafting.FUEL_COAL) > 0;
-        boolean stairs = Inv.count(npc.inventory(), STAIRS) < needStairs(wp) && Inv.count(npc.inventory(), COBBLE) >= 6;
-        return torches || stairs;
-    }
-
-    /** NPCs craft the stairs and torches the excavation needs at the workshop crafting table (spec 6). */
-    private void craft(WorkplaceState wp) {
-        if (!leaveMine(wp)) {
+    private void craftTorches(WorkplaceState wp) {
+        BaseState b = base();
+        if (!goTo(b.point(BaseState.WORKSHOP_STAND), 2.0, "the crafting table")) {
             return;
         }
-        if (!goTo(base().point(com.factionclash.campaign.BaseState.WORKSHOP_STAND), 2.0, "the crafting table")) {
+        lookAt(b.point(BaseState.CRAFTING));
+        status("Crafting torches", "Crafting");
+        if (++craftTimer < 20) {
             return;
         }
-        lookAt(base().point(com.factionclash.campaign.BaseState.CRAFTING));
-        if (++actionTimer < 30) {
-            status("Crafting excavation supplies", "Crafting");
-            return;
-        }
-        actionTimer = 0;
-        int st = needStairs(wp) - Inv.count(npc.inventory(), STAIRS);
-        if (st > 0 && Crafting.craft(npc.inventory(), Crafting.COBBLE_STAIRS, 1) > 0) {
+        craftTimer = 0;
+        Crafting.ensureSticks(npc.inventory(), 1);
+        if (Inv.count(npc.inventory(), TORCH) < 32 && Crafting.craft(npc.inventory(), Crafting.TORCHES, 1) > 0) {
             npc.swing(InteractionHand.MAIN_HAND);
             return;
         }
-        int t = needTorches(wp) - Inv.count(npc.inventory(), TORCH);
-        if (t > 0) {
-            Crafting.ensureSticks(npc.inventory(), 1);
-            if (Crafting.craft(npc.inventory(), Crafting.TORCHES, 1) > 0) {
-                npc.swing(InteractionHand.MAIN_HAND);
-                return;
-            }
-        }
-        state = hasExcavationSupplies(wp) ? State.TRAVEL : State.STORAGE;
-        if (state == State.STORAGE) {
-            waitFor(200);
-        }
+        state = State.TRAVEL;
     }
 
-    private void work(WorkplaceState wp) {
-        BlockPos stand = MineLayout.workPos(wp);
-        BlockPos face = MineLayout.facePos(wp);
-        if (!com.factionclash.npc.NpcNavigator.within(npc, stand, 1.8)) {
-            state = State.TRAVEL;
-            return;
-        }
-        if (wp.upgrading() && hasExcavationSupplies(wp)) {
-            state = State.EXCAVATE;
-            return;
-        }
-        BlockState faceState = level().getBlockState(face);
-        if (faceState.isAir() || !faceState.getFluidState().isEmpty()) {
-            level().setBlock(face, Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
-        }
-        lookAt(face);
-        int cycle = cycleTicks();
-        progress = Math.min(cycle, progress + 1);
-        int stage = Math.min(9, progress * 10 / cycle);
-        level().destroyBlockProgress(npc.getId(), face, stage);
-        status("Mining at mine #" + wp.id + " (tier " + wp.tier + (wp.upgrading() ? ", gathering upgrade supplies" : "") + "), "
-                + (progress * 100 / cycle) + "%", "Mining");
-        if (progress < cycle) {
-            return;
-        }
-        MineResource res = MineLootTable.roll(wp.tier, Math.max(0, pickTier()), new java.util.SplittableRandom(level().random.nextLong()));
-        ItemStack out = new ItemStack(MineItems.item(res));
-        if (!Inv.fits(npc.inventory(), out)) {
-            // keep the completed cycle; it is delivered once the backpack has room
+    // ------------------------------------------------------------------ travel and integrity
+
+    private void travel(WorkplaceState wp) {
+        if (Inv.freeSlots(npc.inventory()) <= 1) {
             state = State.STORAGE;
             return;
         }
-        Crafting.addAll(npc.inventory(), out);
-        int produced = 1;
-        if (res.isOre() && level().random.nextDouble() < npc.affix(Affix.PROSPECTOR)) {
-            ItemStack extra = new ItemStack(MineItems.item(res));
-            if (Inv.fits(npc.inventory(), extra)) {
-                Crafting.addAll(npc.inventory(), extra);
-                produced++;
-            }
-        }
-        npc.swing(InteractionHand.MAIN_HAND);
-        level().levelEvent(2001, face, Block.getId(MineItems.faceBlock(res).defaultBlockState()));
-        level().destroyBlockProgress(npc.getId(), face, -1);
-        npc.awardXp(res.xp * produced);
-        wp.totalOutput += produced;
-        data().setDirty();
-        progress = 0;
-        if (cargo() >= CARGO_LIMIT || Inv.freeSlots(npc.inventory()) == 0) {
-            state = State.STORAGE;
-        }
-    }
-
-    private Set<BlockPos> openCells(WorkplaceState wp) {
-        if (openCache == null || openCacheTier != wp.tier + 1) {
-            openCache = MineLayout.openCells(wp, wp.tier + 1);
-            openCacheTier = wp.tier + 1;
-        }
-        return openCache;
-    }
-
-    private void excavate(WorkplaceState wp) {
-        List<MineLayout.Action> all = MineLayout.segmentActions(wp, wp.tier + 1);
-        if (wp.upgradeStep >= all.size()) {
-            finishUpgrade(wp);
-            return;
-        }
-        MineLayout.Action a = all.get(wp.upgradeStep);
-        double dist = npc.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(a.pos()));
-        if (dist > 4.5) {
-            BlockPos approach = lastOpenBefore(wp, all, wp.upgradeStep);
-            if (!goTo(approach, 1.5, "the excavation face")) {
+        if (now() >= nextIntegrityCheck) {
+            nextIntegrityCheck = now() + 1200;
+            if (findBlocked(wp)) {
+                state = State.CLEAR;
                 return;
             }
         }
-        lookAt(a.pos());
-        status("Extending mine #" + wp.id + " to tier " + (wp.tier + 1) + " (step " + (wp.upgradeStep + 1) + "/" + all.size() + ")", "Digging");
-        int speed = (int) Math.max(4, 12 / (1 + npc.affix(Affix.DILIGENCE)));
-        if (++actionTimer < speed) {
-            return;
-        }
-        actionTimer = 0;
-        if (a.isDig()) {
-            // seal water, lava and loose blocks around the cell BEFORE opening it, so the tunnel cannot flood
-            if (!preSeal(wp, a.pos())) {
-                status("Need blocks to seal the excavation (water or loose ground ahead)", "Waiting");
-                state = State.STORAGE;
-                return;
-            }
-            BlockState s = level().getBlockState(a.pos());
-            if (!s.isAir() && !s.is(Blocks.WALL_TORCH)) {
-                BlockEntity be = level().getBlockEntity(a.pos());
-                List<ItemStack> drops = s.getFluidState().isEmpty() ? Block.getDrops(s, level(), a.pos(), be, npc, npc.tool()) : List.of();
-                level().setBlock(a.pos(), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-                level().levelEvent(2001, a.pos(), Block.getId(s));
-                for (ItemStack d : drops) {
-                    ItemStack rest = Crafting.addAll(npc.inventory(), d);
-                    if (!rest.isEmpty()) {
-                        npc.spawnAtLocation(rest);
-                    }
-                }
-                npc.swing(InteractionHand.MAIN_HAND);
-            }
-            if (!seal(wp, a.pos())) {
-                state = State.STORAGE;
-                return;
-            }
-        } else {
-            boolean torch = a.place().is(Blocks.WALL_TORCH);
-            Predicate<ItemStack> need = torch ? TORCH : STAIRS;
-            if (!Inv.consume(npc.inventory(), need, 1)) {
-                state = State.STORAGE;
-                return;
-            }
-            level().setBlock(a.pos(), a.place(), Block.UPDATE_ALL);
-            level().playSound(null, a.pos(), torch ? SoundEvents.WOOD_PLACE : SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
-            npc.swing(InteractionHand.MAIN_HAND);
-        }
-        wp.upgradeStep++;
-        data().setDirty();
-    }
-
-    /** All excavation steps already completed for this mine, in dig order. */
-    private List<MineLayout.Action> completedActions(WorkplaceState wp) {
-        List<MineLayout.Action> out = new java.util.ArrayList<>();
-        for (int t = 1; t <= wp.tier; t++) {
-            out.addAll(MineLayout.segmentActions(wp, t));
-        }
+        int lv = MineLayout.level(wp);
         if (wp.upgrading()) {
-            List<MineLayout.Action> next = MineLayout.segmentActions(wp, wp.tier + 1);
-            out.addAll(next.subList(0, Math.min(next.size(), wp.upgradeStep)));
+            if (walkInMine(wp, MineLayout.landing(wp, lv), MineLayout.landingSteps(wp, lv), 1.2, "mine #" + wp.id)) {
+                state = State.EXTEND;
+            }
+            return;
         }
-        return out;
+        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
+        BlockPos dest = wp.progress >= plan.size() ? MineLayout.landing(wp, lv) : approach(wp, plan, wp.progress);
+        if (walkInMine(wp, dest, MineLayout.landingSteps(wp, lv), 1.2, "mine #" + wp.id)) {
+            state = State.MINE;
+        }
     }
 
-    /** Finds dug cells that have been refilled (falling sand, cave-ins, mobs, players). */
-    private boolean findBlockedCells(WorkplaceState wp) {
+    /**
+     * Where to stand to dig plan cell i: the already-dug, walkable floor cell nearest to it (e.g. the junction when a
+     * new branch starts), else the level's landing.
+     */
+    private BlockPos approach(WorkplaceState wp, List<SpiralMine.Cell> plan, int i) {
+        BlockPos target = MineLayout.tunnelPos(wp, plan.get(Math.min(i, plan.size() - 1)));
+        BlockPos best = MineLayout.landing(wp, MineLayout.level(wp));
+        double bestD = best.distSqr(target);
+        for (int j = Math.min(i, plan.size()) - 1; j >= 0; j--) {
+            SpiralMine.Cell c = plan.get(j);
+            if (c.torch() || c.dy() != 0) {
+                continue;
+            }
+            BlockPos p = MineLayout.tunnelPos(wp, c);
+            double d = p.distSqr(target);
+            if (d >= bestD) {
+                continue;
+            }
+            BlockState s = level().getBlockState(p);
+            if ((s.isAir() || s.is(Blocks.TORCH)) && level().getBlockState(p.above()).isAir() && !level().canSeeSky(p)
+                    && !level().getBlockState(p.below()).getCollisionShape(level(), p.below()).isEmpty()) {
+                best = p;
+                bestD = d;
+            }
+        }
+        return best;
+    }
+
+    /** Dug cells that have been refilled (falling gravel, cave-ins, flooding). */
+    private boolean findBlocked(WorkplaceState wp) {
         blocked.clear();
-        for (MineLayout.Action a : completedActions(wp)) {
-            if (a.isDig()) {
-                BlockState s = level().getBlockState(a.pos());
-                if (!s.isAir() && !s.is(Blocks.WALL_TORCH) && !s.is(Blocks.TORCH)) {
-                    blocked.add(a.pos());
-                }
+        int steps = MineLayout.landingSteps(wp, MineLayout.level(wp));
+        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, steps)) {
+            BlockPos p = MineLayout.spiralPos(wp, c);
+            if (!c.torch() && !passable(level().getBlockState(p))) {
+                blocked.add(p);
+            }
+        }
+        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
+        for (int i = 0; i < Math.min(wp.progress, plan.size()); i++) {
+            SpiralMine.Cell c = plan.get(i);
+            BlockPos p = MineLayout.tunnelPos(wp, c);
+            if (!c.torch() && !passable(level().getBlockState(p))) {
+                blocked.add(p);
             }
         }
         return !blocked.isEmpty();
     }
 
-    /** Clears blocked cells from the entrance inward so the staircase and return route stay navigable. */
+    private static boolean passable(BlockState s) {
+        return s.isAir() || s.is(Blocks.TORCH) || s.is(Blocks.WALL_TORCH);
+    }
+
     private void clear(WorkplaceState wp) {
-        if (blocked.isEmpty()) {
+        BlockPos cell = blocked.peek();
+        if (cell == null) {
             state = State.TRAVEL;
             return;
         }
-        BlockPos cell = blocked.peek();
         BlockState s = level().getBlockState(cell);
-        if (s.isAir() || s.is(Blocks.WALL_TORCH)) {
+        if (passable(s)) {
             blocked.poll();
             return;
         }
-        List<MineLayout.Action> done = completedActions(wp);
-        int idx = 0;
-        for (int i = 0; i < done.size(); i++) {
-            if (done.get(i).pos().equals(cell)) {
-                idx = i;
-                break;
+        if (!BlockWork.inReach(npc, cell, 4.5)) {
+            int step = MineLayout.stepAt(wp, cell.above(0));
+            BlockPos stand;
+            int destStep;
+            if (step > 0 || MineLayout.forwardOf(wp, cell) < SpiralMine.MAIN_START) {
+                int k = Math.max(0, Math.min(MineLayout.landingSteps(wp, MineLayout.level(wp)),
+                        wp.origin.getY() - cell.getY() - 1));
+                stand = MineLayout.stand(wp, k);
+                destStep = k;
+            } else {
+                stand = MineLayout.landing(wp, MineLayout.level(wp));
+                destStep = MineLayout.landingSteps(wp, MineLayout.level(wp));
             }
-        }
-        double dist = npc.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(cell));
-        if (dist > 4.5) {
-            BlockPos approach = idx == 0 ? MineLayout.entrance(wp) : lastOpenBefore(wp, done, idx);
-            if (!goTo(approach, 1.5, "a blocked passage in mine #" + wp.id)) {
+            if (!walkInMine(wp, stand, destStep, 1.2, "a blocked passage in mine #" + wp.id)) {
+                return;
+            }
+            if (!BlockWork.inReach(npc, cell, 5.0)) {
+                blocked.poll(); // cannot reach from the route; try again on the next inspection
                 return;
             }
         }
-        lookAt(cell);
-        status("Clearing a cave-in or flood in mine #" + wp.id + " (" + blocked.size() + " cells)", "Digging");
-        if (++actionTimer < 10) {
-            return;
-        }
-        actionTimer = 0;
-        if (!preSeal(wp, cell)) {
-            status("Mine #" + wp.id + " needs blocks to seal a flood", "Waiting");
+        status("Clearing a cave-in in mine #" + wp.id + " (" + blocked.size() + " cells)", "Digging");
+        if (!preSeal(cell, MineLayout.landingSteps(wp, MineLayout.level(wp)))) {
             state = State.STORAGE;
             return;
         }
-        List<ItemStack> drops = s.getFluidState().isEmpty() ? Block.getDrops(s, level(), cell, level().getBlockEntity(cell), npc, npc.tool()) : List.of();
-        level().setBlock(cell, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        level().levelEvent(2001, cell, Block.getId(s));
-        for (ItemStack d : drops) {
-            ItemStack rest = Crafting.addAll(npc.inventory(), d);
-            if (!rest.isEmpty()) {
-                npc.spawnAtLocation(rest);
+        if (s.getFluidState().isEmpty()) {
+            if (breaker.tick(npc, cell)) {
+                blocked.poll();
             }
+        } else {
+            level().setBlock(cell, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            blocked.poll();
         }
-        npc.swing(InteractionHand.MAIN_HAND);
-        openCache = null;
-        sealAround(wp, cell, MineLayout.openCells(wp, wp.tier + (wp.upgrading() ? 1 : 0)));
-        blocked.poll();
     }
 
-    /** Seals unsafe neighbours with carried blocks (best effort while clearing). */
-    private void sealAround(WorkplaceState wp, BlockPos dug, Set<BlockPos> open) {
+    // ------------------------------------------------------------------ branch mining
+
+    private static boolean isOre(BlockState s) {
+        return s.is(BlockTags.COAL_ORES) || s.is(BlockTags.IRON_ORES) || s.is(BlockTags.COPPER_ORES) || s.is(BlockTags.GOLD_ORES)
+                || s.is(BlockTags.REDSTONE_ORES) || s.is(BlockTags.LAPIS_ORES) || s.is(BlockTags.DIAMOND_ORES)
+                || s.is(BlockTags.EMERALD_ORES);
+    }
+
+    /** Experience for the miner per ore block it broke and could harvest (cobblestone and stone give none). */
+    public static int oreXp(BlockState s) {
+        if (s.is(BlockTags.EMERALD_ORES)) {
+            return 12;
+        }
+        if (s.is(BlockTags.DIAMOND_ORES)) {
+            return 10;
+        }
+        if (s.is(BlockTags.GOLD_ORES)) {
+            return 6;
+        }
+        if (s.is(BlockTags.IRON_ORES) || s.is(BlockTags.LAPIS_ORES)) {
+            return 4;
+        }
+        if (s.is(BlockTags.REDSTONE_ORES)) {
+            return 3;
+        }
+        if (s.is(BlockTags.COAL_ORES) || s.is(BlockTags.COPPER_ORES)) {
+            return 2;
+        }
+        return 0;
+    }
+
+    private void noticeOres(BlockPos opened) {
         for (Direction d : Direction.values()) {
-            BlockPos n = dug.relative(d);
-            BlockState ns = level().getBlockState(n);
-            if (!ns.getFluidState().isEmpty() || (!open.contains(n) && unsafeNeighbour(ns))) {
-                placeSeal(n);
+            BlockPos n = opened.relative(d);
+            if (vein.size() < MAX_VEIN && !vein.contains(n) && isOre(level().getBlockState(n))) {
+                vein.add(n);
             }
         }
     }
 
-    /** The newest already-open cell before step i, to stand next to the face being dug. */
-    private BlockPos lastOpenBefore(WorkplaceState wp, List<MineLayout.Action> all, int i) {
-        for (int j = i - 1; j >= 0; j--) {
-            MineLayout.Action a = all.get(j);
-            if (a.isDig() && level().getBlockState(a.pos()).isAir() && level().getBlockState(a.pos().above()).isAir()
-                    && !level().getBlockState(a.pos().below()).isAir()) {
-                return a.pos();
+    private int unreachable;
+    /** Set at the storehouse when neither the miner nor storage has any block to plug water with. */
+    private boolean noSealBlocks;
+
+    private void mine(WorkplaceState wp) {
+        if (Inv.freeSlots(npc.inventory()) <= 1) {
+            breaker.reset(npc);
+            state = State.STORAGE;
+            return;
+        }
+        int landingStep = MineLayout.landingSteps(wp, MineLayout.level(wp));
+        // a player mines the ore it just uncovered before moving on
+        if (!vein.isEmpty()) {
+            BlockPos ore = vein.peek();
+            BlockState os = level().getBlockState(ore);
+            if (!isOre(os) || !BlockWork.inReach(npc, ore, 5.0)) {
+                vein.poll();
+                return;
+            }
+            if (!preSeal(ore, landingStep)) {
+                vein.poll();
+                return;
+            }
+            status("Mining a " + os.getBlock().getName().getString() + " vein (mine #" + wp.id + ")", "Mining");
+            if (breaker.tick(npc, ore)) {
+                if (BlockWork.canHarvest(os, npc.getMainHandItem())) {
+                    npc.awardXp(oreXp(os));
+                    prospect(os, ore);
+                }
+                vein.poll();
+                noticeOres(ore);
+            }
+            return;
+        }
+        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
+        if (wp.progress >= plan.size()) {
+            status("Mine level worked out - going to prepare the next level", "Waiting");
+            state = State.STORAGE;
+            waitFor(100);
+            return;
+        }
+        SpiralMine.Cell c = plan.get(wp.progress);
+        BlockPos pos = MineLayout.tunnelPos(wp, c);
+        BlockState s = level().getBlockState(pos);
+        if (c.torch()) {
+            if (s.isAir() && Inv.consume(npc.inventory(), TORCH, 1)) {
+                level().setBlock(pos, Blocks.TORCH.defaultBlockState(), Block.UPDATE_ALL);
+                level().playSound(null, pos, SoundEvents.WOOD_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
+                npc.swing(InteractionHand.MAIN_HAND);
+            }
+            wp.progress++;
+            data().setDirty();
+            return;
+        }
+        if (level().canSeeSky(pos) || level().canSeeSky(pos.above())) {
+            // the tunnel came out of a hillside: a player stops the branch there instead of opening the mine to the
+            // surface (and to mobs)
+            wp.progress++;
+            data().setDirty();
+            return;
+        }
+        if (passable(s)) {
+            if (c.dy() == 0 && BlockWork.inReach(npc, pos.below(), 4.5)) {
+                bridgeFloor(pos);
+            }
+            wp.progress++;
+            data().setDirty();
+            noticeOres(pos);
+            return;
+        }
+        if (!BlockWork.inReach(npc, pos, 4.5)) {
+            BlockPos stand = approach(wp, plan, wp.progress);
+            if (walkInMine(wp, stand, landingStep, 1.0, "the tunnel face") && ++unreachable > 60) {
+                // standing at the closest dug cell and still out of reach (e.g. a cave gap without floor): skip it
+                unreachable = 0;
+                wp.progress++;
+                data().setDirty();
+            }
+            return;
+        }
+        unreachable = 0;
+        if (!preSeal(pos, landingStep)) {
+            if (noSealBlocks) {
+                // nothing to plug the water with and the storehouse had nothing either: leave this cell as a wall
+                wp.progress++;
+                data().setDirty();
+                return;
+            }
+            status("Need blocks to plug water in mine #" + wp.id, "Waiting");
+            breaker.reset(npc);
+            state = State.STORAGE;
+            return;
+        }
+        status("Branch mining at y=" + pos.getY() + " (mine #" + wp.id + ", " + wp.progress + "/" + plan.size() + ")", "Mining");
+        if (breaker.tick(npc, pos)) {
+            if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
+                npc.awardXp(oreXp(s));
+                prospect(s, pos);
+            }
+            if (c.dy() == 0) {
+                bridgeFloor(pos);
+            }
+            wp.progress++;
+            data().setDirty();
+            noticeOres(pos);
+        }
+    }
+
+    /** Prospector affix: a chance that the ore just mined drops its loot a second time. */
+    private void prospect(BlockState ore, BlockPos pos) {
+        if (level().random.nextDouble() < npc.affix(com.factionclash.logic.Affix.PROSPECTOR)) {
+            BlockWork.dropExtra(npc, ore, pos);
+        }
+    }
+
+    /** A player branch-mining over a cave places a block so the tunnel floor stays walkable. */
+    private void bridgeFloor(BlockPos foot) {
+        BlockPos floor = foot.below();
+        BlockState fs = level().getBlockState(floor);
+        if (fs.getCollisionShape(level(), floor).isEmpty() && !NpcNavigator.isDangerous(fs) && !fs.is(Blocks.TORCH)) {
+            placeSeal(floor);
+        }
+    }
+
+    // ------------------------------------------------------------------ digging deeper
+
+    private void extend(WorkplaceState wp) {
+        int lv = MineLayout.level(wp);
+        int from = MineLayout.landingSteps(wp, lv);
+        int to = MineLayout.landingSteps(wp, lv + 1);
+        if (to < 0) {
+            wp.upgradeStep = -1;
+            data().setDirty();
+            state = State.TRAVEL;
+            return;
+        }
+        List<SpiralMine.Cell> plan = SpiralMine.spiralPlan(from, to);
+        if (wp.upgradeStep >= plan.size()) {
+            if (wp.tier < WorkplaceState.Type.MINE.maxTier) {
+                wp.tier++;
+            } else {
+                wp.subLevel++;
+            }
+            wp.upgradeStep = -1;
+            wp.progress = 0;
+            data().setDirty();
+            npc.awardXp(20);
+            Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + " reached tier " + wp.tier
+                    + (wp.subLevel > 0 ? " +" + wp.subLevel : "") + " at y=" + SpiralMine.levelY(wp.origin.getY(), MineLayout.level(wp))
+                    + " (" + npc.npcName() + ")"));
+            state = State.TRAVEL;
+            return;
+        }
+        SpiralMine.Cell c = plan.get(wp.upgradeStep);
+        BlockPos pos = MineLayout.spiralPos(wp, c);
+        int step = stepOfCell(c);
+        if (c.torch()) {
+            if (level().getBlockState(pos).isAir() && Inv.consume(npc.inventory(), TORCH, 1)) {
+                level().setBlock(pos, MineLayout.wallTorchFor(wp, c.s()), Block.UPDATE_ALL);
+                npc.swing(InteractionHand.MAIN_HAND);
+            }
+            wp.upgradeStep++;
+            data().setDirty();
+            return;
+        }
+        BlockState s = level().getBlockState(pos);
+        if (passable(s)) {
+            sealShaft(wp, pos, to);
+            wp.upgradeStep++;
+            data().setDirty();
+            return;
+        }
+        if (!BlockWork.inReach(npc, pos, 4.5)) {
+            walkInMine(wp, MineLayout.stand(wp, step - 1), step - 1, 1.0, "the bottom of the shaft");
+            return;
+        }
+        if (!preSeal(pos, to)) {
+            status("Need blocks to plug water in the shaft", "Waiting");
+            breaker.reset(npc);
+            state = State.STORAGE;
+            return;
+        }
+        status("Digging the shaft down to tier " + (wp.tier < 4 ? wp.tier + 1 : wp.tier) + " (y=" + pos.getY() + ")", "Digging");
+        if (breaker.tick(npc, pos)) {
+            if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
+                npc.awardXp(oreXp(s));
+                prospect(s, pos);
+            }
+            noticeOres(pos);
+            if (!sealShaft(wp, pos, to)) {
+                state = State.STORAGE;
+                return;
+            }
+            wp.upgradeStep++;
+            data().setDirty();
+        }
+    }
+
+    /** The spiral step a planned shaft cell belongs to. */
+    private static int stepOfCell(SpiralMine.Cell c) {
+        for (int k = -c.dy(); k <= -c.dy() + 2; k++) {
+            int[] cell = SpiralMine.cell(k);
+            if (k > 0 && cell[0] == c.f() && cell[1] == c.s()) {
+                return k;
             }
         }
-        return MineLayout.workPos(wp);
+        return Math.max(1, -c.dy());
+    }
+
+    // ------------------------------------------------------------------ sealing
+
+    private boolean placeSeal(BlockPos n) {
+        ItemStack mat = Inv.first(npc.inventory(), SEAL);
+        if (mat.isEmpty() && !level().getBlockState(n.below()).getCollisionShape(level(), n.below()).isEmpty()) {
+            // a resting block of sand or gravel plugs a hole just as well
+            mat = Inv.first(npc.inventory(), x -> x.is(Items.SAND) || x.is(Items.RED_SAND) || x.is(Items.GRAVEL)
+                    || x.is(Items.SANDSTONE) || x.is(Items.RED_SANDSTONE));
+        }
+        if (mat.isEmpty() || !(mat.getItem() instanceof BlockItem bi)) {
+            return false;
+        }
+        mat.shrink(1);
+        npc.inventory().setChanged();
+        level().setBlock(n, bi.getBlock().defaultBlockState(), Block.UPDATE_ALL);
+        npc.swing(InteractionHand.MAIN_HAND);
+        return true;
     }
 
     /**
-     * Seals the non-tunnel neighbours of a cell that hold fluid or loose blocks. Requires enough sealing blocks
-     * for all of them first, so a cell is never opened half-sealed.
+     * Before opening a cell: plug neighbouring water, lava and loose blocks (sand, gravel) so nothing pours in, as a
+     * careful player would. Returns false when the miner has nothing to plug with.
      */
-    private boolean preSeal(WorkplaceState wp, BlockPos cell) {
-        Set<BlockPos> open = openCells(wp);
-        List<BlockPos> todo = new java.util.ArrayList<>();
+    private boolean preSeal(BlockPos cell, int shaftSteps) {
+        WorkplaceState wp = wp();
         for (Direction d : Direction.values()) {
             BlockPos n = cell.relative(d);
             BlockState ns = level().getBlockState(n);
-            // Fluids are plugged even inside the planned tunnel: an undug future cell full of aquifer water would
-            // otherwise drain into the finished part. The plug is dug out later, once its own neighbours are sealed.
-            if (!ns.getFluidState().isEmpty() || (!open.contains(n) && ns.getBlock() instanceof FallingBlock)) {
-                todo.add(n);
+            boolean fluid = !ns.getFluidState().isEmpty();
+            boolean loose = ns.getBlock() instanceof FallingBlock && d == Direction.UP;
+            if ((fluid || loose) && !(wp != null && MineLayout.inShaft(wp, n, shaftSteps) && !fluid)) {
+                // no block to prop sand/gravel with: dig through it as it falls, like a player would
+                if (!placeSeal(n) && fluid) {
+                    return false;
+                }
             }
-        }
-        if (Inv.count(npc.inventory(), SEAL) < todo.size()) {
-            return false;
-        }
-        for (BlockPos n : todo) {
-            placeSeal(n);
         }
         return true;
     }
 
-    /** After digging: cave openings and gaps next to the new cell are closed so mobs and fluids stay out. */
-    private boolean seal(WorkplaceState wp, BlockPos dug) {
-        Set<BlockPos> open = openCells(wp);
+    /** After digging a shaft cell: close cave holes around the spiral so it stays a safe staircase. */
+    private boolean sealShaft(WorkplaceState wp, BlockPos dug, int steps) {
         for (Direction d : Direction.values()) {
             BlockPos n = dug.relative(d);
+            if (MineLayout.inShaft(wp, n, steps) || n.getY() >= wp.origin.getY() - 1
+                    || MineLayout.forwardOf(wp, n) >= SpiralMine.MAIN_START) {
+                continue;
+            }
             BlockState ns = level().getBlockState(n);
-            boolean fluid = !ns.getFluidState().isEmpty();
-            if ((fluid || (!open.contains(n) && unsafeNeighbour(ns))) && !placeSeal(n)) {
+            if ((ns.isAir() || !ns.getFluidState().isEmpty() || ns.getBlock() instanceof FallingBlock) && !placeSeal(n)) {
                 return false;
             }
         }
         return true;
     }
 
-    private void finishUpgrade(WorkplaceState wp) {
-        wp.tier++;
-        wp.upgradeStep = -1;
-        progress = 0;
-        openCache = null;
-        data().setDirty();
-        npc.awardXp(20);
-        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + " reached tier " + wp.tier
-                + " (" + npc.npcName() + ")"));
-        state = State.TRAVEL;
-    }
-
     @Override
     public void onPause() {
         super.onPause();
-        if (npc.level() instanceof net.minecraft.server.level.ServerLevel sl) {
-            WorkplaceState wp = wp();
-            if (wp != null) {
-                sl.destroyBlockProgress(npc.getId(), MineLayout.facePos(wp), -1);
-            }
-        }
-        if (state == State.WORK || state == State.EXCAVATE || state == State.CLEAR) {
+        breaker.reset(npc);
+        if (state == State.MINE || state == State.EXTEND || state == State.CLEAR || state == State.CRAFT) {
             state = State.TRAVEL;
         }
     }
@@ -694,8 +739,6 @@ public class MinerJob extends Job {
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putString("state", state.name());
-        tag.putInt("progress", progress);
-        tag.putLong("nextUpgrade", nextUpgradeCheck);
     }
 
     @Override
@@ -705,10 +748,8 @@ public class MinerJob extends Job {
         } catch (IllegalArgumentException e) {
             state = State.CHECK;
         }
-        if (state == State.WORK || state == State.EXCAVATE || state == State.CRAFT || state == State.CLEAR) {
+        if (state == State.MINE || state == State.EXTEND || state == State.CLEAR || state == State.CRAFT) {
             state = State.TRAVEL;
         }
-        progress = tag.getInt("progress");
-        nextUpgradeCheck = tag.getLong("nextUpgrade");
     }
 }
