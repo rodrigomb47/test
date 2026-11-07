@@ -118,6 +118,12 @@ public class MinerJob extends Job {
         return !wp.upgrading() && wp.revisit == 0 && wp.progress >= MineLayout.tunnelPlan(wp).size() && MineLayout.landingSteps(wp, lv + 1) < 0;
     }
 
+    /** Watchdog for the current plan cell: which one, and how long the miner has been at it. */
+    private int faceProgress = -1, faceTicks;
+    /** PROPOSED: ticks spent on one plan cell (vein mining excluded) before it is given up as unreachable (or
+     *  twice as long while the miner is still more than 10 blocks from it). */
+    static final int FACE_GIVE_UP_TICKS = 1200;
+
     /** PROPOSED: how many times a worked-out mine's branch mines are lengthened (another 40 blocks out each time). */
     static final int MAX_REACH = 4;
 
@@ -671,6 +677,31 @@ public class MinerJob extends Job {
             return;
         }
         List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
+        if (wp.progress != faceProgress) {
+            faceProgress = wp.progress;
+            faceTicks = 0;
+        } else if (wp.progress < plan.size() && ++faceTicks > (npc.blockPosition()
+                .closerThan(MineLayout.tunnelPos(wp, plan.get(wp.progress)), 10) ? FACE_GIVE_UP_TICKS : 2 * FACE_GIVE_UP_TICKS)) {
+            // a full minute on one cell of the plan without getting it done (it cannot be reached from any floor the
+            // miner can walk to, e.g. across a cavern): leave it, as a player would, and what lies beyond it
+            faceTicks = 0;
+            SpiralMine.Cell lost = plan.get(wp.progress);
+            int side = MineLayout.landingSide(wp, MineLayout.level(wp));
+            if (lost.s() == side) {
+                // the main tunnel is cut (a cavern too wide to bridge): everything further out lies beyond the gap
+                wp.progress = plan.size();
+            } else {
+                // a side branch cut off: on to the next branch
+                int dir = Integer.signum(lost.s() - side);
+                while (wp.progress < plan.size() && plan.get(wp.progress).f() == lost.f()
+                        && Integer.signum(plan.get(wp.progress).s() - side) == dir) {
+                    wp.progress++;
+                }
+            }
+            data().setDirty();
+            npc.navigator().reset();
+            return;
+        }
         if (wp.progress >= plan.size() && wp.revisit > 0) {
             nextLengthening(wp);
             state = State.STORAGE;

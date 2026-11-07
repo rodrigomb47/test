@@ -336,6 +336,26 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * Cooking stations: one furnace out of fuel with ore waiting is enough to send the worker for fuel, even when the
+     * other furnace is empty (it used to stand at the workshop forever).
+     */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void oneColdFurnaceNeedsFuel(GameTestHelper h) {
+        h.setBlock(new BlockPos(3, 2, 3), Blocks.FURNACE);
+        h.setBlock(new BlockPos(5, 2, 3), Blocks.FURNACE);
+        var a = (net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity) h.getBlockEntity(new BlockPos(3, 2, 3));
+        var b = (net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity) h.getBlockEntity(new BlockPos(5, 2, 3));
+        List<net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity> both = List.of(a, b);
+        h.assertFalse(com.factionclash.work.CookingJob.needsFuel(both, false), "two empty furnaces need no fuel");
+        a.setItem(0, new ItemStack(Items.RAW_IRON, 8));
+        h.assertTrue(com.factionclash.work.CookingJob.needsFuel(both, false), "ore waiting in a cold furnace needs fuel");
+        h.assertFalse(com.factionclash.work.CookingJob.needsFuel(both, true), "the worker can refuel it from its backpack");
+        a.setItem(1, new ItemStack(Items.COAL, 2));
+        h.assertFalse(com.factionclash.work.CookingJob.needsFuel(both, false), "a furnace with fuel in its slot is fine");
+        h.succeed();
+    }
+
     /** A gap between an NPC and its goal: it bridges across with blocks from its backpack, one block per step. */
     @GameTest(template = "platform", timeoutTicks = 120)
     public static void npcBridgesAGap(GameTestHelper h) {

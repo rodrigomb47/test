@@ -104,16 +104,23 @@ public abstract class CookingJob extends Job {
         }
         upgradeEquipment();
         int inputs = takeFromStorage(s -> wantsInput(s) && FurnaceWork.cookable(level(), recipeType(), s), 32);
-        boolean stationsBusy = stations().stream().anyMatch(f -> !f.getItem(0).isEmpty() || !f.getItem(2).isEmpty());
+        List<AbstractFurnaceBlockEntity> list = stations();
+        boolean stationsBusy = list.stream().anyMatch(f -> !f.getItem(0).isEmpty() || !f.getItem(2).isEmpty());
         if (inputs > 0 || stationsBusy) {
-            if (Inv.count(npc.inventory(), fuel()) < 4) {
-                int got = takeFromStorage(s -> s.is(Items.COAL) || s.is(Items.CHARCOAL), 6);
-                if (got == 0 && FactionStorage.count(level(), base(), s -> s.is(ItemTags.LOGS)) > 24) {
-                    takeFromStorage(s -> s.is(ItemTags.LOGS), 4);
-                }
-            }
+            fetchFuel();
         }
         fetchExtras();
+        if (Inv.count(npc.inventory(), fuel()) == 0 && needsFuel(list, false) && !hasExtras()
+                && list.stream().noneMatch(f -> FurnaceWork.lit(f) || !f.getItem(2).isEmpty())) {
+            // items wait in a cold station and there is nothing to burn: say so and check the storehouse again
+            // later, rather than stand at the station with empty hands
+            status("No fuel in the storehouse for the " + verb().toLowerCase() + " station - waiting for coal or wood", "Waiting");
+            waitFor(600);
+            return;
+        }
+        if (Inv.count(npc.inventory(), fuel()) == 0 && needsFuel(list, false)) {
+            waitFor(200); // another station is still busy: collect from it now and then, without pacing back and forth
+        }
         if (inputs == 0 && !stationsBusy && !hasExtras() && Inv.count(npc.inventory(), s -> wantsInput(s)) == 0) {
             status("Nothing to " + noun() + " - waiting for ingredients", "Idle");
             waitFor(400);
@@ -121,6 +128,36 @@ public abstract class CookingJob extends Job {
         }
         state = State.STATION;
         timer = 0;
+    }
+
+    /** PROPOSED: wood kept back for building and crafting before logs or planks are burnt as fuel. */
+    private static final int LOG_RESERVE = 8, PLANK_RESERVE = 16;
+
+    /** Coal or charcoal first, then a coal block, then logs and planks beyond what building needs. */
+    private void fetchFuel() {
+        if (Inv.count(npc.inventory(), fuel()) >= 4) {
+            return;
+        }
+        if (takeFromStorage(s -> s.is(Items.COAL) || s.is(Items.CHARCOAL), 6) > 0
+                || takeFromStorage(s -> s.is(Items.COAL_BLOCK), 1) > 0) {
+            return;
+        }
+        int logs = FactionStorage.count(level(), base(), s -> s.is(ItemTags.LOGS));
+        if (logs > LOG_RESERVE && takeFromStorage(s -> s.is(ItemTags.LOGS), Math.min(4, logs - LOG_RESERVE)) > 0) {
+            return;
+        }
+        int planks = FactionStorage.count(level(), base(), s -> s.is(ItemTags.PLANKS));
+        if (planks > PLANK_RESERVE) {
+            takeFromStorage(s -> s.is(ItemTags.PLANKS), Math.min(8, planks - PLANK_RESERVE));
+        }
+    }
+
+    /**
+     * True when some station has something waiting to cook but is cold with an empty fuel slot, and the worker has
+     * nothing to put in it ({@code hasFuel}). One starved station is enough: the others may be empty or busy.
+     */
+    public static boolean needsFuel(List<AbstractFurnaceBlockEntity> list, boolean hasFuel) {
+        return !hasFuel && list.stream().anyMatch(f -> !f.getItem(0).isEmpty() && f.getItem(1).isEmpty() && !FurnaceWork.lit(f));
     }
 
     private void station() {
@@ -144,6 +181,15 @@ public abstract class CookingJob extends Job {
             if (FurnaceWork.collect(f, npc.inventory()) > 0) {
                 npc.swing(InteractionHand.MAIN_HAND);
             }
+            ItemStack stuck = f.getItem(0);
+            if (!stuck.isEmpty() && !FurnaceWork.cookable(level(), recipeType(), stuck)) {
+                // something this station cannot cook (left there by someone): take it out, it would block forever
+                ItemStack rest = Crafting.addAll(npc.inventory(), f.removeItem(0, stuck.getCount()));
+                if (!rest.isEmpty()) {
+                    f.setItem(0, rest);
+                }
+                f.setChanged();
+            }
             FurnaceWork.loadInput(f, npc.inventory(), s -> wantsInput(s) && FurnaceWork.cookable(level(), recipeType(), s));
             if (!f.getItem(0).isEmpty() && f.getItem(1).isEmpty() && !FurnaceWork.lit(f)) {
                 if (FurnaceWork.loadFuel(f, npc.inventory(), fuel(), 4) == 0) {
@@ -164,10 +210,10 @@ public abstract class CookingJob extends Job {
         if (Inv.freeSlots(npc.inventory()) == 0) {
             state = State.STORAGE;
         }
-        if (pending && list.stream().allMatch(f -> !FurnaceWork.lit(f) && f.getItem(1).isEmpty() && !f.getItem(0).isEmpty())
-                && Inv.count(npc.inventory(), fuel()) == 0) {
+        if (needsFuel(list, Inv.count(npc.inventory(), fuel()) > 0)) {
+            // a station ran out of fuel (even if another is still busy or empty): go and get more
+            status(verb() + " station out of fuel - fetching more", "Travelling");
             state = State.STORAGE;
-            waitFor(200);
         }
     }
 

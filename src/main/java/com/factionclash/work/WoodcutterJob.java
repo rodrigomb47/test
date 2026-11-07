@@ -187,7 +187,7 @@ public class WoodcutterJob extends Job {
         }
         List<BlockPos> spots = TreePlotLayout.spots(wp);
         for (BlockPos s : spots) {
-            if (isTree(s)) {
+            if (isTree(s) && skipUntil.getOrDefault(s.asLong(), 0L) <= now()) {
                 spot = s;
                 logs.clear();
                 state = State.CHOP;
@@ -519,15 +519,27 @@ public class WoodcutterJob extends Job {
                 state = State.CHECK;
                 return;
             }
-            if (!wild && !inPlot(wp) && npc.navigator().ticksWithoutProgress() > 200) {
+            if (!wild && ++plotWalk > 600) {
+                // this tree cannot be reached (walled in by low leaves, fence, slope): leave it for a while and
+                // fell another one, as a player would
+                skipUntil.put(spot.asLong(), now() + 6000);
+                plotWalk = 0;
+                viaOpening = false;
+                npc.navigator().reset();
+                state = State.CHECK;
+                return;
+            }
+            if (!wild && !inPlot(wp) && plotWalk > 300) {
                 viaOpening = true; // stuck outside its own fence (a hill beside it): round to the opening, like a player
             }
             if (viaOpening) {
-                BlockPos gap = TreePlotLayout.local(wp, 0, 0);
-                if (wild || inPlot(wp) && com.factionclash.npc.NpcNavigator.within(npc, gap, 2.0)) {
+                if (wild || TreePlotLayout.insideInner(wp, wp.tier, npc.blockPosition())) {
                     viaOpening = false;
                 } else {
-                    goTo(gap, 1.2, "the way into plot #" + wp.id);
+                    // to the opening, then one step through it into the plot
+                    BlockPos gap = TreePlotLayout.local(wp, 0, 0);
+                    BlockPos target = com.factionclash.npc.NpcNavigator.within(npc, gap, 1.5) ? TreePlotLayout.local(wp, 1, 0) : gap;
+                    goTo(target, 0.9, "the way into plot #" + wp.id);
                     return;
                 }
             }
@@ -536,6 +548,7 @@ public class WoodcutterJob extends Job {
             }
         }
         wildWalk = 0;
+        plotWalk = 0;
         if (logs.isEmpty()) {
             collectLogs();
             if (logs.isEmpty()) {
@@ -591,6 +604,10 @@ public class WoodcutterJob extends Job {
 
     /** A leaf block within reach, at foot or head height, between the woodcutter and the trunk. */
     private boolean viaOpening;
+    /** Plot trees given up on for now (unreachable), until a game time. */
+    private final java.util.Map<Long, Long> skipUntil = new java.util.HashMap<>();
+    /** Ticks spent trying to get within reach of the current plot tree (failed trips included). */
+    private int plotWalk;
 
     /** Within the plot's fence, its opening included. */
     private boolean inPlot(WorkplaceState wp) {
@@ -607,7 +624,8 @@ public class WoodcutterJob extends Job {
         }
         // near the tree, or deeper in a plot so overgrown that walking gets no closer: cut through
         WorkplaceState wp = wp();
-        boolean overgrown = !wild && wp != null && inPlot(wp) && npc.navigator().ticksWithoutProgress() > 100;
+        boolean overgrown = !wild && wp != null && inPlot(wp)
+                && (npc.navigator().ticksWithoutProgress() > 100 || plotWalk > 200);
         if (npc.blockPosition().distSqr(spot) > 8 * 8 && !overgrown) {
             return null;
         }
