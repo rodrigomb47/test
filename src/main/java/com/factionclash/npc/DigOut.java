@@ -21,9 +21,9 @@ import java.util.List;
 /**
  * Last-resort recovery for an NPC with no route at all (sealed cave pocket, ravine floor, cliff, tree canopy): it
  * digs a staircase toward its destination like a player would, one step at a time, moving onto each validated spot
- * (at most one block across and one up or down). Jobs keep digging until the NPC is out in the open or a route
- * exists again. Faction plan blocks, containers, unbreakable blocks and anything touching a fluid are
- * never dug.
+ * (at most one block across and one up or down), and bridges gaps with blocks from its backpack. Jobs keep
+ * digging until the NPC is out in the open or a route exists again. Faction plan blocks, containers, unbreakable
+ * blocks and anything touching a fluid are never dug.
  */
 public final class DigOut {
     private DigOut() {
@@ -93,6 +93,9 @@ public final class DigOut {
         boolean below = target.getY() < p.getY() - 1;
         boolean climb = target.getY() > p.getY() + 1;
         int[] order = climb ? new int[]{1, 0} : below ? new int[]{-1, 0} : new int[]{0, 1};
+        if (!below && bridge(level, npc, p, dirs.get(0), climb)) {
+            return true;
+        }
         for (int dy : order) {
             for (Direction d : dirs) {
                 BlockPos q = p.relative(d).above(dy);
@@ -115,6 +118,63 @@ public final class DigOut {
                     npc.navigator().recoveries++;
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    /** Blocks an NPC may build a bridge or a step with: plain stone and earth it dug up itself. */
+    private static final java.util.Set<net.minecraft.world.item.Item> BRIDGE = java.util.Set.of(
+            net.minecraft.world.item.Items.COBBLESTONE, net.minecraft.world.item.Items.COBBLED_DEEPSLATE,
+            net.minecraft.world.item.Items.STONE, net.minecraft.world.item.Items.DIRT, net.minecraft.world.item.Items.ANDESITE,
+            net.minecraft.world.item.Items.DIORITE, net.minecraft.world.item.Items.GRANITE, net.minecraft.world.item.Items.TUFF,
+            net.minecraft.world.item.Items.DEEPSLATE, net.minecraft.world.item.Items.NETHERRACK, net.minecraft.world.item.Items.COARSE_DIRT);
+
+    /**
+     * A gap toward the destination (a ravine between the NPC and home, a drop off a ledge): like a player, it places
+     * a block from its backpack where the floor is missing and steps onto it, one block higher each step when the
+     * destination is above. Only where digging cannot help, and never inside protected ground.
+     */
+    private static boolean bridge(ServerLevel level, FactionNpc npc, BlockPos p, Direction d, boolean climb) {
+        int slot = -1;
+        for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
+            if (BRIDGE.contains(npc.inventory().getItem(i).getItem())) {
+                slot = i;
+                break;
+            }
+        }
+        if (slot < 0) {
+            return false;
+        }
+        for (int dy : climb ? new int[]{1, 0} : new int[]{0}) {
+            BlockPos q = p.relative(d).above(dy);
+            BlockPos floor = q.below();
+            BlockState fs = level.getBlockState(floor);
+            if (fs.isFaceSturdy(level, floor, Direction.UP) || !fs.canBeReplaced() || isProtected(level, floor)) {
+                continue; // solid ground ahead is the digging loop's business
+            }
+            List<BlockPos> clear = new ArrayList<>(List.of(q, q.above()));
+            if (dy == 1) {
+                clear.add(p.above(2));
+            }
+            if (!allDiggable(level, clear)) {
+                continue;
+            }
+            ItemStack block = npc.inventory().getItem(slot);
+            BlockState place = ((net.minecraft.world.item.BlockItem) block.getItem()).getBlock().defaultBlockState();
+            level.setBlock(floor, place, Block.UPDATE_ALL);
+            level.playSound(null, floor, place.getSoundType().getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+            block.shrink(1);
+            npc.inventory().setChanged();
+            for (BlockPos c : clear) {
+                dig(level, npc, c);
+            }
+            if (NpcNavigator.isSafeStandingSpot(level, npc, q)) {
+                npc.swing(InteractionHand.MAIN_HAND);
+                npc.getNavigation().stop();
+                npc.teleportTo(q.getX() + 0.5, q.getY(), q.getZ() + 0.5);
+                npc.navigator().recoveries++;
+                return true;
             }
         }
         return false;
@@ -148,7 +208,6 @@ public final class DigOut {
     }
 
     private static boolean allDiggable(ServerLevel level, List<BlockPos> cells) {
-        CampaignData data = CampaignData.get(level.getServer());
         for (BlockPos c : cells) {
             BlockState s = level.getBlockState(c);
             if (s.isAir()) {
@@ -162,28 +221,37 @@ public final class DigOut {
                     return false; // never open a path for water or lava
                 }
             }
-            for (com.factionclash.campaign.WorkplaceState w : data.workplaces.values()) {
-                if (w.type == com.factionclash.campaign.WorkplaceState.Type.MINE && c.getY() < w.origin.getY()) {
-                    int f = com.factionclash.structure.MineLayout.forwardOf(w, c), sd = com.factionclash.structure.MineLayout.sideOf(w, c);
-                    if (f >= 0 && f <= 3 && sd >= -1 && sd <= 2) {
-                        return false; // a mine's spiral stairs and the rock around them: its floors hold the stairs up
-                    }
-                }
-            }
-            for (BaseState b : data.bases.values()) {
-                if (b.destroyed) {
-                    continue;
-                }
-                if (b.planIndex().containsKey(c.asLong())) {
-                    return false; // faction structures are never dug
-                }
-                int half = (b.isSettlement() ? com.factionclash.structure.BaseLayout.HALF : com.factionclash.structure.LairLayout.HALF) + 1;
-                if (Math.abs(c.getX() - b.center.getX()) <= half && Math.abs(c.getZ() - b.center.getZ()) <= half
-                        && c.getY() >= b.center.getY() - 4 && c.getY() <= b.center.getY() + 8) {
-                    return false; // never through a settlement's walls or floor (deep caves below it are fine)
-                }
+            if (isProtected(level, c)) {
+                return false;
             }
         }
         return true;
+    }
+
+    /** Faction structures, a settlement's walls and floor band, and every mine's spiral stairs. */
+    private static boolean isProtected(ServerLevel level, BlockPos c) {
+        CampaignData data = CampaignData.get(level.getServer());
+        for (com.factionclash.campaign.WorkplaceState w : data.workplaces.values()) {
+            if (w.type == com.factionclash.campaign.WorkplaceState.Type.MINE && c.getY() < w.origin.getY()) {
+                int f = com.factionclash.structure.MineLayout.forwardOf(w, c), sd = com.factionclash.structure.MineLayout.sideOf(w, c);
+                if (f >= 0 && f <= 3 && sd >= -1 && sd <= 2) {
+                    return true; // a mine's spiral stairs and the rock around them: its floors hold the stairs up
+                }
+            }
+        }
+        for (BaseState b : data.bases.values()) {
+            if (b.destroyed) {
+                continue;
+            }
+            if (b.planIndex().containsKey(c.asLong())) {
+                return true; // faction structures are never dug
+            }
+            int half = (b.isSettlement() ? com.factionclash.structure.BaseLayout.HALF : com.factionclash.structure.LairLayout.HALF) + 1;
+            if (Math.abs(c.getX() - b.center.getX()) <= half && Math.abs(c.getZ() - b.center.getZ()) <= half
+                    && c.getY() >= b.center.getY() - 4 && c.getY() <= b.center.getY() + 8) {
+                return true; // never through a settlement's walls or floor (deep caves below it are fine)
+            }
+        }
+        return false;
     }
 }

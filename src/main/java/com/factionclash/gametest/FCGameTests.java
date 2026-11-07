@@ -336,6 +336,40 @@ public final class FCGameTests {
         });
     }
 
+    /** A gap between an NPC and its goal: it bridges across with blocks from its backpack, one block per step. */
+    @GameTest(template = "platform", timeoutTicks = 120)
+    public static void npcBridgesAGap(GameTestHelper h) {
+        for (int x = 2; x <= 4; x++) {
+            h.setBlock(new BlockPos(x, 2, 5), Blocks.STONE);
+        }
+        for (int x = 9; x <= 11; x++) {
+            h.setBlock(new BlockPos(x, 2, 5), Blocks.STONE);
+        }
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(4, 3, 5));
+        n.faction(FactionType.GROVE_COVENANT);
+        n.role(NpcRole.SCOUT);
+        n.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 10));
+        BlockPos goal = h.absolutePos(new BlockPos(10, 3, 5));
+        int ledgeY = h.absolutePos(new BlockPos(4, 3, 5)).getY();
+        int[] steps = {0};
+        h.onEachTick(() -> {
+            if (h.getTick() % 5 != 0 || !n.onGround()) {
+                return;
+            }
+            if (n.getBlockX() >= h.absolutePos(new BlockPos(9, 3, 5)).getX()) {
+                for (int x = 5; x <= 8; x++) {
+                    h.assertTrue(h.getBlockState(new BlockPos(x, 2, 5)).is(Blocks.COBBLESTONE), "no bridge block at x=" + x);
+                }
+                h.assertTrue(n.inventory().getItem(0).getCount() == 6, "expected 4 blocks used, left " + n.inventory().getItem(0).getCount());
+                h.assertTrue(n.getBlockY() == ledgeY, "the bridge should stay level, y=" + n.getBlockY());
+                h.succeed();
+                return;
+            }
+            h.assertTrue(++steps[0] <= 8, "too many steps");
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "no step at " + n.blockPosition());
+        });
+    }
+
     /** On top of a tall trunk (too far to jump down), an NPC chops the log underfoot and comes down with the wood. */
     @GameTest(template = "platform", timeoutTicks = 80)
     public static void npcOnTallTrunkChopsItsWayDown(GameTestHelper h) {

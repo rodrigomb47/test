@@ -265,6 +265,10 @@ public final class FactionDirector {
             return;
         }
         Need top = needs.get(0);
+        if (top.role() != NpcRole.MINER && retrainIdleMiner(level, data, f, b, top)) {
+            b.lastRecruitAt = t;
+            return;
+        }
         if (livingAll(f, b) >= b.beds.size()) {
             LAST_RECRUIT_NOTE.put(b.id, "Want " + top.role().displayName + " (" + top.reason() + ") but housing is full");
             return;
@@ -274,6 +278,32 @@ public final class FactionDirector {
         if (!r.ok()) {
             b.lastRecruitAt = t - FCConfig.RECRUIT_INTERVAL_TICKS.get() / 2; // retry sooner, but not every run
         }
+    }
+
+    /** PROPOSED: a miner with no mine or cave to work for this long takes up the faction's most needed role. */
+    public static final long RETRAIN_IDLE_TICKS = 12000;
+
+    /**
+     * Instead of recruiting, a miner who has had nothing to dig for half a day (no free mine, no surveyed cave)
+     * takes up the job the base needs most, keeping its level and traits - like a player switching jobs.
+     */
+    private static boolean retrainIdleMiner(ServerLevel level, CampaignData data, FactionState f, BaseState b, Need top) {
+        for (NpcRecord r : f.roster.values()) {
+            if (!r.alive || r.baseId != b.id || r.role != NpcRole.MINER) {
+                continue;
+            }
+            if (level.getEntity(r.uuid) instanceof FactionNpc n && n.job() instanceof com.factionclash.work.MinerJob mj
+                    && mj.idleFor(RETRAIN_IDLE_TICKS)) {
+                r.role = top.role();
+                n.role(top.role());
+                data.setDirty();
+                LAST_RECRUIT_NOTE.put(b.id, n.npcName() + " retrained as " + top.role().displayName + " (" + top.reason() + ")");
+                Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (Miner) has had no mine or cave to work"
+                        + " for half a day and becomes a " + top.role().displayName + " (" + top.reason() + ")"));
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

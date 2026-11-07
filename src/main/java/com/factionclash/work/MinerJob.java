@@ -198,9 +198,18 @@ public class MinerJob extends Job {
         return n;
     }
 
+    /** Since when this miner has had nothing to dig (no free mine, no cave, its mine done for good); -1 = busy. */
+    private long idleSince = -1;
+
+    /** True when the miner has had no mine or cave to work for at least {@code ticks}. */
+    public boolean idleFor(long ticks) {
+        return idleSince >= 0 && now() - idleSince >= ticks;
+    }
+
     @Override
     protected void run() {
         if (caveWork() != null) {
+            idleSince = -1;
             caveJob.tick();
             return;
         }
@@ -217,14 +226,21 @@ public class MinerJob extends Job {
                 return;
             }
             status("Mine #" + wp.id + " is fully worked out: every level is dug", "Idle");
+            if (idleSince < 0) {
+                idleSince = now();
+            }
             waitFor(1200);
             return;
         }
         if (wp == null) {
+            if (idleSince < 0) {
+                idleSince = now();
+            }
             status("No free mine to work", "Idle");
             waitFor(200);
             return;
         }
+        idleSince = -1;
         collect();
         switch (state) {
             case CHECK -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 ? State.STORAGE : State.TRAVEL;
@@ -690,8 +706,12 @@ public class MinerJob extends Job {
             if (c.dy() == 0 && floorMissing(pos) && !noSealBlocks) {
                 // an open cave cell: walk up and bridge its floor before going on, so the tunnel stays walkable
                 if (!BlockWork.inReach(npc, pos.below(), 4.5)) {
-                    if (!bridgeNearbyHoles(wp, plan)) {
-                        walkInMine(wp, approach(wp, plan, wp.progress), landingStep, 1.0, "the tunnel face");
+                    if (!bridgeNearbyHoles(wp, plan)
+                            && walkInMine(wp, approach(wp, plan, wp.progress), landingStep, 1.0, "the tunnel face") && ++unreachable > 60) {
+                        // at the last cell with a floor and the gap is still out of reach (a wide cavern): leave it open
+                        unreachable = 0;
+                        wp.progress++;
+                        data().setDirty();
                     }
                     return;
                 }
