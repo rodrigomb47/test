@@ -11,7 +11,8 @@ public class WorkGoal extends Goal {
 
     public WorkGoal(FactionNpc npc) {
         this.npc = npc;
-        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK, Flag.JUMP));
+        // no JUMP flag: the vanilla FloatGoal holds JUMP while swimming and must not freeze the job
+        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
     private boolean free() {

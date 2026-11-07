@@ -35,6 +35,7 @@ public final class NpcNavigator {
     private Vec3 lastCheck = Vec3.ZERO;
     public int recoveries;
     private String lastProblem = "";
+    private int nextExitSearch;
 
     public NpcNavigator(FactionNpc npc) {
         this.npc = npc;
@@ -119,6 +120,14 @@ public final class NpcNavigator {
             npc.level().getChunk(wx >> 4, wz >> 4);
             goal = npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(wx, 0, wz));
         }
+        if (underground && hd > 16 && npc.tickCount >= nextExitSearch) {
+            nextExitSearch = npc.tickCount + 200; // path searches are expensive: bounded per NPC
+            // Lost in a cave or ravine: climb out first, toward the nearest reachable surface point.
+            BlockPos exit = surfaceExit(hd);
+            if (exit != null) {
+                goal = exit;
+            }
+        }
         Path path = npc.getNavigation().createPath(goal, 1);
         if (path == null) {
             failures++;
@@ -128,6 +137,24 @@ public final class NpcNavigator {
         }
         npc.getNavigation().moveTo(path, speed);
         repathTimer = 100;
+    }
+
+    /** Finds a surface position near an underground NPC (toward its target first) that a path can reach. */
+    private BlockPos surfaceExit(double hd) {
+        double tx = (target.getX() + 0.5 - npc.getX()) / hd, tz = (target.getZ() + 0.5 - npc.getZ()) / hd;
+        double[][] dirs = {{tx, tz}, {-tz, tx}, {tz, -tx}, {-tx, -tz}};
+        for (int dist : new int[]{8, 16, 28}) {
+            for (double[] d : dirs) {
+                int x = Mth.floor(npc.getX() + d[0] * dist), z = Mth.floor(npc.getZ() + d[1] * dist);
+                npc.level().getChunk(x >> 4, z >> 4);
+                BlockPos top = npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
+                Path p = npc.getNavigation().createPath(top, 1);
+                if (p != null && p.canReach()) {
+                    return top;
+                }
+            }
+        }
+        return null;
     }
 
     /** Local unstick: move to a validated safe spot within 2 blocks horizontally and 1 vertically. */

@@ -29,6 +29,7 @@ public abstract class Job {
     protected final FactionNpc npc;
     private int waitTicks;
     private long lastEquipCheck = -100000;
+    private int routeFailures;
 
     protected Job(FactionNpc npc) {
         this.npc = npc;
@@ -110,11 +111,18 @@ public abstract class Job {
         NpcNavigator.Result r = npc.navigator().travel(pos, reach, speed);
         switch (r) {
             case ARRIVED:
+                routeFailures = 0;
                 return true;
             case MOVING:
                 status("Walking to " + label, "Travelling");
                 return false;
             default:
+                // repeated total failure: dig a step toward the destination instead of waiting forever
+                if (++routeFailures >= 2 && com.factionclash.npc.DigOut.step(npc, pos)) {
+                    status("Digging a way out toward " + label, "Digging");
+                    npc.navigator().reset();
+                    return false;
+                }
                 status("Cannot reach " + label + " (" + npc.navigator().lastProblem() + "), will retry", "Blocked");
                 npc.navigator().reset();
                 waitFor(100);

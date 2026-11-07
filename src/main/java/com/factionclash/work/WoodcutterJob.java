@@ -196,6 +196,7 @@ public class WoodcutterJob extends Job {
 
     private BlockPos orphanCache;
     private int stepFailures;
+    private boolean groundPrepared;
     private long nextOrphanScan;
 
     private void storage(WorkplaceState wp) {
@@ -526,8 +527,15 @@ public class WoodcutterJob extends Job {
 
     private void upgrade(WorkplaceState wp) {
         List<BlockPos[]> steps = upgradeSteps(wp);
+        if (wp.upgradeStep == 0 && !groundPrepared) {
+            // prepare the enlarged area first, so every new fence post stands on reachable, levelled ground
+            levelNewGround(wp);
+            groundPrepared = true;
+            npc.swing(InteractionHand.MAIN_HAND);
+        }
         if (wp.upgradeStep >= steps.size()) {
             levelNewGround(wp);
+            groundPrepared = false;
             wp.tier++;
             wp.upgradeStep = -1;
             data().setDirty();
