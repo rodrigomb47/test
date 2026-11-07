@@ -670,6 +670,10 @@ public class WoodcutterJob extends Job {
             BlockPos p = step[1];
             prepareColumn(p);
             if (!level().getBlockState(p).is(BlockTags.FENCES)) {
+                if (BlockWork.obstructed(level(), p, Blocks.OAK_FENCE.defaultBlockState(), npc)) {
+                    status("Waiting for the way to clear to place a fence", "Building");
+                    return;
+                }
                 if (!Inv.consume(npc.inventory(), s -> s.is(Items.OAK_FENCE), 1)) {
                     state = State.STORAGE;
                     return;

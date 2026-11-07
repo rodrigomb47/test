@@ -10,12 +10,14 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `c7670ef1c8d745aec38b2bd7ec7c7991073dd26fb7c22a87fdb9c5d28b992ea4`
+SHA-256: `3d1d1d59025b773813779e6809d98ca112f5bff6bc842507922ffb23cb963ba6`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
-construction, scouting, combat, levels and raids. Several later systems from the spec are not built yet — see
-[Status](#status) for an honest breakdown.
+construction, scouting, combat, levels and raids. **Workers do their jobs like players** — miners really dig,
+woodcutters really chop, farmers harvest, animal carers breed by feeding, butchers and fishermen work with real
+weapons and rods. Several later systems from the spec are not built yet — see [Status](#status) for an honest
+breakdown.
 
 ## Install
 
@@ -36,7 +38,7 @@ No other mods are required. Build from source with `./gradlew build` (jar in `bu
 | `/fc join <faction>` / `/fc leave` | all | Join or leave a human faction |
 | `/fc base` | member | Teleport to your faction's base (the player teleport; NPCs always travel physically) |
 | `/fc info`, `/fc map` | member | Base report and your faction's delivered map knowledge |
-| `/fc admin dump\|npcs\|info <f>\|spawn <f> <role>\|recruit <f> <role>\|probe <x> <z>\|mine <id>\|destroy <id>` | op | Diagnostics, kept separate from player commands |
+| `/fc admin dump\|npcs\|info <f>\|spawn <f> <role>\|recruit <f> <role>\|probe <x> <z>\|mine <id>\|blocks <from> <to>\|destroy <id>` | op | Diagnostics, kept separate from player commands |
 
 In the world:
 * **Reporting Station** (right-click): population, stock, recruitment decision, workspaces and tiers, projects,
@@ -181,24 +183,34 @@ session (clicking blocks, GUIs, combat by a human player) was performed.
 
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
 
-Observed in an 8-day campaign on a fresh world (after the fixes listed in the git history):
-* All six sites placed on dry land (the search widened the map from radius 320 to 480 because the spawn area of
-  this seed is largely ocean); every base started with a working station, storage, workshop and 10 NPCs.
-* Mines reached tier 4 in three factions (≈ 900 outputs each), including upgrades paid with stone, iron and a
-  blacksmith-crafted diamond pickaxe; the fourth (coastal) mine flooded, drained itself and resumed upgrading.
-* Tree plots reached tier 3; farms, chefs, smelters and blacksmiths kept running (iron armour and swords were
-  forged and equipped); houses grew housing from 10 to 26 beds; populations grew to ~21 NPCs per faction.
-* Scouts delivered 11–152 reports per faction; raids destroyed both Hollow lairs (The Hollow was eliminated);
-  in an earlier run a raid destroyed a human settlement and eliminated that faction.
-* No equipped tool or armour piece lost durability; NPCs reached level 15 with capped affixes.
-* Server restart: all 87 roster entries and 81 NPCs came back with identical identities, levels and affixes, no
-  duplicates, starter supplies not re-granted, storage unchanged.
-* Victory: destroying the remaining rival bases produced the "last faction standing" winner announcement.
-* Sprint speed with ~80 NPCs and 14 travelling chunk areas: 25–300 ticks per second (real time needs 20).
+**Player-like workers (this version)** — 3-day campaign on a fresh world, nothing spawned by hand, with a server
+restart after day 2:
+* Mines are real holes in the world: three of the four miners dug their spiral and branch mines down to tier 4
+  (y = −48) within two days, mining 1,650–1,900 real blocks each; storage filled with the actual drops (cobbled
+  deepslate, redstone, lapis, raw iron, copper, and 3 diamonds at one base). The fourth mine lies under a lake in
+  sand and progresses slowly, as the miner has to plug water with what it has.
+* Builders added a house at every base (10 → 14 beds), which let every base recruit its own animal carer, plus
+  smelters. Carers bred the pigs from 2 to 8 per pen and bred a calf; no pen lost an animal.
+* In earlier runs with butchers and fishermen added by admin command: butchers culled only surplus pigs (each
+  death is logged with its cause), and a fisherman caught ~60 items per in-game day from the vanilla fishing loot
+  table.
+* Woodcutters felled and replanted naturally growing trees (≈ 100–130 logs per plot in 3 days).
+* No equipped tool or armour piece lost durability.
+* Restart: all 53 roster entries and 52 NPCs came back with identical identities, levels and affixes, no
+  duplicates, starter supplies not re-granted, storage and pens unchanged.
 
-Known rough edges seen in the simulation: some scouts get trapped in caves or on coastal terrain and need the
-dig-out recovery (which can take a while); a woodcutter may leave a gap in a plot fence where the ground is
-unreachable; one of four factions stays far behind when its mine floods early.
+Because everything is produced the way a player would produce it, the economy is **much slower than in the
+first version** — wood in particular (trees grow at vanilla speed), so recruits that need sticks or a stone sword
+can wait for the woodcutter.
+
+Known rough edges: scouts sometimes get trapped in caves or on coastal terrain and need the dig-out recovery
+(which can take a while); a mine dug under a lake or through sand progresses slowly; animals can still slip out
+of the pen occasionally (carers lure cows and pigs back with their food when they have it); fishing has no
+visible bobber; the earlier 8-day results (raids destroying lairs, victory announcement) were measured with the
+first version and were not re-run for this one.
+
+**Mines from campaigns started with the first version are not compatible** with the new mine design — start a
+new campaign (`/fc start`) after updating.
 
 The original project's source, saves and balance numbers were not available, so this is a fresh implementation;
 existing old-mod saves are not compatible with it.

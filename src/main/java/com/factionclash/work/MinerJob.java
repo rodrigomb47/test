@@ -151,7 +151,9 @@ public class MinerJob extends Job {
      */
     private boolean walkInMine(WorkplaceState wp, BlockPos dest, int destStep, double reach, String label) {
         BlockPos p = npc.blockPosition();
-        int lv = MineLayout.nearLevelAt(wp, p);
+        // swimming (a flooded cell or a lake above the tunnels): only a real tunnel position counts, otherwise the
+        // way back is through the mine entrance
+        int lv = npc.isInWater() ? MineLayout.tunnelLevelAt(wp, p) : MineLayout.nearLevelAt(wp, p);
         int cur;
         if (lv > 0) {
             int lk = MineLayout.landingSteps(wp, lv);
@@ -317,7 +319,9 @@ public class MinerJob extends Job {
         }
         List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
         BlockPos dest = wp.progress >= plan.size() ? MineLayout.landing(wp, lv) : approach(wp, plan, wp.progress);
-        if (walkInMine(wp, dest, MineLayout.landingSteps(wp, lv), 1.2, "mine #" + wp.id)) {
+        // already down in this level's tunnels: start working from here (mining handles walking, reach and bridging)
+        boolean inLevel = !npc.isInWater() && MineLayout.nearLevelAt(wp, npc.blockPosition()) == lv && wp.progress < plan.size();
+        if (inLevel || walkInMine(wp, dest, MineLayout.landingSteps(wp, lv), 1.2, "mine #" + wp.id)) {
             state = State.MINE;
         }
     }
@@ -524,7 +528,14 @@ public class MinerJob extends Job {
             return;
         }
         if (passable(s)) {
-            if (c.dy() == 0 && BlockWork.inReach(npc, pos.below(), 4.5)) {
+            if (c.dy() == 0 && floorMissing(pos) && !noSealBlocks) {
+                // an open cave cell: walk up and bridge its floor before going on, so the tunnel stays walkable
+                if (!BlockWork.inReach(npc, pos.below(), 4.5)) {
+                    if (!bridgeNearbyHoles(wp, plan)) {
+                        walkInMine(wp, approach(wp, plan, wp.progress), landingStep, 1.0, "the tunnel face");
+                    }
+                    return;
+                }
                 bridgeFloor(pos);
             }
             wp.progress++;
@@ -533,6 +544,9 @@ public class MinerJob extends Job {
             return;
         }
         if (!BlockWork.inReach(npc, pos, 4.5)) {
+            if (bridgeNearbyHoles(wp, plan)) {
+                return;
+            }
             BlockPos stand = approach(wp, plan, wp.progress);
             if (walkInMine(wp, stand, landingStep, 1.0, "the tunnel face") && ++unreachable > 60) {
                 // standing at the closest dug cell and still out of reach (e.g. a cave gap without floor): skip it
@@ -578,12 +592,34 @@ public class MinerJob extends Job {
     }
 
     /** A player branch-mining over a cave places a block so the tunnel floor stays walkable. */
-    private void bridgeFloor(BlockPos foot) {
+    private boolean bridgeFloor(BlockPos foot) {
+        return floorMissing(foot) && placeSeal(foot.below());
+    }
+
+    private boolean floorMissing(BlockPos foot) {
         BlockPos floor = foot.below();
         BlockState fs = level().getBlockState(floor);
-        if (fs.getCollisionShape(level(), floor).isEmpty() && !NpcNavigator.isDangerous(fs) && !fs.is(Blocks.TORCH)) {
-            placeSeal(floor);
+        return fs.getCollisionShape(level(), floor).isEmpty() && !fs.is(Blocks.TORCH) && !fs.is(Blocks.WALL_TORCH);
+    }
+
+    /** Bridges one hole in the floor of the already-dug tunnel cells within reach (cave gaps found earlier). */
+    private boolean bridgeNearbyHoles(WorkplaceState wp, List<SpiralMine.Cell> plan) {
+        if (noSealBlocks) {
+            return false;
         }
+        for (int j = Math.max(0, wp.progress - 48); j < Math.min(wp.progress, plan.size()); j++) {
+            SpiralMine.Cell c = plan.get(j);
+            if (c.dy() != 0 || c.torch()) {
+                continue;
+            }
+            BlockPos foot = MineLayout.tunnelPos(wp, c);
+            if (passable(level().getBlockState(foot)) && floorMissing(foot) && !level().canSeeSky(foot)
+                    && BlockWork.inReach(npc, foot.below(), 4.5) && bridgeFloor(foot)) {
+                status("Bridging a cave hole in the tunnel floor (mine #" + wp.id + ")", "Mining");
+                return true;
+            }
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ digging deeper
@@ -683,6 +719,9 @@ public class MinerJob extends Job {
         if (mat.isEmpty() || !(mat.getItem() instanceof BlockItem bi)) {
             return false;
         }
+        if (BlockWork.obstructed(level(), n, bi.getBlock().defaultBlockState(), npc)) {
+            return false;
+        }
         mat.shrink(1);
         npc.inventory().setChanged();
         level().setBlock(n, bi.getBlock().defaultBlockState(), Block.UPDATE_ALL);
@@ -699,8 +738,9 @@ public class MinerJob extends Job {
         for (Direction d : Direction.values()) {
             BlockPos n = cell.relative(d);
             BlockState ns = level().getBlockState(n);
-            boolean fluid = !ns.getFluidState().isEmpty();
             boolean loose = ns.getBlock() instanceof FallingBlock && d == Direction.UP;
+            // sand or gravel holding back water (a lake bottom) is as dangerous as the water itself
+            boolean fluid = !ns.getFluidState().isEmpty() || (loose && touchesFluid(n));
             if ((fluid || loose) && !(wp != null && MineLayout.inShaft(wp, n, shaftSteps) && !fluid)) {
                 // no block to prop sand/gravel with: dig through it as it falls, like a player would
                 if (!placeSeal(n) && fluid) {
@@ -709,6 +749,15 @@ public class MinerJob extends Job {
             }
         }
         return true;
+    }
+
+    private boolean touchesFluid(BlockPos p) {
+        for (Direction d : Direction.values()) {
+            if (d != Direction.DOWN && !level().getFluidState(p.relative(d)).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** After digging a shaft cell: close cave holes around the spiral so it stays a safe staircase. */

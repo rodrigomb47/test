@@ -138,6 +138,19 @@ public final class BlockWork {
         }
     }
 
+    /**
+     * True if a living entity other than {@code self} stands where {@code state} would be placed — a player cannot
+     * place a block inside a mob either, and doing so would suffocate it.
+     */
+    public static boolean obstructed(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, net.minecraft.world.entity.Entity self) {
+        net.minecraft.world.phys.shapes.VoxelShape shape = state.getCollisionShape(level, pos);
+        if (shape.isEmpty()) {
+            return false;
+        }
+        AABB box = shape.bounds().move(pos);
+        return !level.getEntities(self, box, e -> e.isAlive() && e.blocksBuilding).isEmpty();
+    }
+
     public static void breakNow(FactionNpc npc, BlockPos pos) {
         ServerLevel level = (ServerLevel) npc.level();
         BlockState state = level.getBlockState(pos);

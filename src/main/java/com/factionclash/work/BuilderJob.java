@@ -247,6 +247,10 @@ public class BuilderJob extends Job {
             }
         }
         BlockState place = MaterialRules.placedState(planned, used);
+        if (BlockWork.obstructed(level(), pos, place, npc)) {
+            repairBatch.remove(0); // someone is standing there: stays pending, retried later
+            return;
+        }
         if (!used.isEmpty()) {
             used.shrink(n.count());
             npc.inventory().setChanged();
@@ -583,6 +587,10 @@ public class BuilderJob extends Job {
             level().setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         }
         BlockState place = MaterialRules.placedState(e.getValue(), used);
+        if (BlockWork.obstructed(level(), pos, place, npc)) {
+            status("Waiting for the way to clear to place a block", "Building");
+            return; // an animal or someone stands there: wait for it to move instead of walling it in
+        }
         if (!used.isEmpty()) {
             used.shrink(n.count());
             npc.inventory().setChanged();

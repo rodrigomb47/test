@@ -115,7 +115,16 @@ public abstract class PenJob extends Job {
             return false;
         }
         boolean through = insidePen(pen) == wantInside && !npc.getBoundingBox().intersects(new AABB(pen.extent));
-        boolean arrived = through || goTo(far, 0.7, "the pen gate");
+        boolean arrived = through;
+        if (!arrived) {
+            // two blocks in a straight line: just walk through, like a player, no path search needed
+            npc.getNavigation().stop();
+            npc.getMoveControl().setWantedPosition(far.getX() + 0.5, far.getY(), far.getZ() + 0.5, 1.0);
+            status("Walking through the pen gate", "Travelling");
+            if (gateTicks > 40) {
+                arrived = goTo(far, 0.7, "the pen gate");
+            }
+        }
         if (arrived || ++gateTicks > 100) {
             if (npc.getBoundingBox().intersects(new AABB(pen.extent)) || (animalInGate(pen) && gateTicks < 200)) {
                 return false; // never shut the gate on itself or on an animal standing in it

@@ -107,10 +107,15 @@ public class AnimalCarerJob extends PenJob {
     /** A pen-species animal that wandered out (or a stray of one) near the pen that the carer has food for. */
     private Animal findStray(WorkplaceState pen) {
         AABB in = interior(pen).inflate(0.5);
-        return level().getEntitiesOfClass(Animal.class, new AABB(pen.origin).inflate(20, 6, 20), a -> {
+        return level().getEntitiesOfClass(Animal.class, new AABB(pen.origin).inflate(32, 8, 32), a -> {
             Species sp = speciesOf(a);
+            // only species the pen keeps - the starting cows and pigs, or whatever else lives in it - so the carer
+            // does not chase every wild chicken around the base
+            int kept = sp == null ? 0 : animals(pen, sp.type()).size();
+            boolean penSpecies = kept > 0 || a.getType() == net.minecraft.world.entity.EntityType.COW
+                    || a.getType() == net.minecraft.world.entity.EntityType.PIG;
             return sp != null && a.isAlive() && !a.isLeashed() && !in.contains(a.position()) && hasFoodFor(sp)
-                    && animals(pen, sp.type()).size() < SPECIES_CAP
+                    && penSpecies && kept < SPECIES_CAP
                     && now() - gaveUpOn.getOrDefault(a.getUUID(), -100000L) > 6000;
         }).stream().min(java.util.Comparator.comparingDouble(a -> a.distanceToSqr(Vec3.atCenterOf(pen.origin)))).orElse(null);
     }
@@ -120,8 +125,8 @@ public class AnimalCarerJob extends PenJob {
      * tempting), walks to the gate, opens it, walks in with the animal behind, and closes the gate once it is in.
      */
     private void retrieve(WorkplaceState pen) {
-        boolean giveUp = stray == null || !stray.isAlive() || ++strayTicks > 2400
-                || stray.distanceToSqr(Vec3.atCenterOf(pen.origin)) > 30 * 30;
+        boolean giveUp = stray == null || !stray.isAlive() || ++strayTicks > 1200
+                || stray.distanceToSqr(Vec3.atCenterOf(pen.origin)) > 40 * 40;
         if (!giveUp && interior(pen).inflate(0.5).contains(stray.position()) && strayPhase < 2) {
             stray = null; // it found its own way back
             state = insidePen(pen) ? State.WORK : State.STORAGE;
