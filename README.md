@@ -5,6 +5,13 @@ from scratch from the Faction Clash master specification. Four human factions �
 Covenant, Tide Alliance, Stoneguard** — and the monster faction **The Hollow** build, mine, farm, scout, recruit,
 repair and raid on a bounded campaign map without the player having to manage them.
 
+## Download
+
+**[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
+(NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
+
+SHA-256: `c7670ef1c8d745aec38b2bd7ec7c7991073dd26fb7c22a87fdb9c5d28b992ea4`
+
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
 construction, scouting, combat, levels and raids. Several later systems from the spec are not built yet — see
