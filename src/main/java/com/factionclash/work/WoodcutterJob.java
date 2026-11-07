@@ -139,6 +139,13 @@ public class WoodcutterJob extends Job {
         if (state != State.STORAGE && state != State.CRAFT) {
             collect(wp);
         }
+        BlockPos under = npc.blockPosition().below();
+        if (npc.onGround() && level().getBlockState(under).is(BlockTags.LEAVES)) {
+            // standing on a tree canopy: a player breaks the leaves underfoot and drops down
+            status("Breaking the leaves underfoot to get down", "Chopping");
+            chopBlock(wp, under);
+            return;
+        }
         switch (state) {
             case CHECK -> decide(wp);
             case STORAGE -> storage(wp);

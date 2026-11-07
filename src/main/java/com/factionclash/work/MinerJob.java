@@ -229,11 +229,42 @@ public class MinerJob extends Job {
             cur = lk;
         } else {
             cur = MineLayout.stepAt(wp, p);
+            int depth = wp.origin.getY() - p.getY();
+            double hx = p.getX() - wp.origin.getX(), hz = p.getZ() - wp.origin.getZ();
+            if (cur == 0 && depth > 3 && hx * hx + hz * hz < 14 * 14) {
+                // underground beside the shaft (a side pocket, a cave): first get onto the stair at this height
+                int k = Math.min(depth, Math.max(1, MineLayout.landingSteps(wp, MineLayout.level(wp))));
+                if (!goTo(MineLayout.stand(wp, k), 1.2, "the mine stairs")) {
+                    return false;
+                }
+                cur = k;
+            }
         }
         if (cur == destStep || (destStep == 0 && cur == 0)) {
             return goTo(dest, reach, label);
         }
         int next = cur < destStep ? Math.min(cur + 6, destStep) : Math.max(cur - 6, destStep);
+        // the next stair must be open: a cave-in, falling sand or a block plugged against water fills it, and a
+        // player clears it before walking on (digging from where it stands)
+        int dir = destStep > cur ? 1 : -1;
+        BlockPos step = MineLayout.stand(wp, cur + dir);
+        BlockPos[] clearance = dir > 0 ? new BlockPos[]{step.above(), step}
+                : new BlockPos[]{MineLayout.stand(wp, cur).above(2), step.above(), step};
+        for (BlockPos q : clearance) {
+            if (cur + dir > 0 && !passable(level().getBlockState(q)) && BlockWork.inReach(npc, q, 4.5)) {
+                status("Clearing the mine stairs (mine #" + wp.id + ")", "Digging");
+                if (!preSeal(q, MineLayout.landingSteps(wp, MineLayout.level(wp)))) {
+                    state = State.STORAGE;
+                    return false;
+                }
+                if (!level().getBlockState(q).getFluidState().isEmpty()) {
+                    level().setBlock(q, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                } else {
+                    dig(wp, q);
+                }
+                return false;
+            }
+        }
         // spiral steps are diagonal neighbours: arrive precisely, or the next leg would be "reached" without moving
         goTo(MineLayout.stand(wp, next), 0.45, label);
         return false;
@@ -803,7 +834,14 @@ public class MinerJob extends Job {
             boolean loose = ns.getBlock() instanceof FallingBlock && d == Direction.UP;
             // sand or gravel holding back water (a lake bottom) is as dangerous as the water itself
             boolean fluid = !ns.getFluidState().isEmpty() || (loose && touchesFluid(n));
-            if ((fluid || loose) && !(wp != null && MineLayout.inShaft(wp, n, shaftSteps) && !fluid)) {
+            boolean inShaft = wp != null && MineLayout.inShaft(wp, n, shaftSteps);
+            if (fluid && inShaft && !level().getFluidState(n).isEmpty()) {
+                // water or lava that ran into the stairs themselves: clear it out (a player places a block there
+                // and breaks it again) rather than plugging the stairs shut
+                level().setBlock(n, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                continue;
+            }
+            if ((fluid || loose) && !(inShaft && !fluid)) {
                 // no block to prop sand/gravel with: dig through it as it falls, like a player would
                 if (!placeSeal(n) && fluid) {
                     return false;

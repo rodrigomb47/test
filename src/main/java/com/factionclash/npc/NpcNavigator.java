@@ -66,7 +66,9 @@ public final class NpcNavigator {
         double dx = npc.getX() - (pos.getX() + 0.5);
         double dy = npc.getY() - pos.getY();
         double dz = npc.getZ() - (pos.getZ() + 0.5);
-        return dx * dx + dz * dz <= reach * reach && Math.abs(dy) <= Math.max(2.5, reach);
+        // a precise target (a stair, a gate cell) is only reached on its own level, not from the block above it
+        double vertical = reach < 0.8 ? 0.6 : Math.max(2.5, reach);
+        return dx * dx + dz * dz <= reach * reach && Math.abs(dy) <= vertical;
     }
 
     public Result travel(BlockPos pos, double reach, double speed) {
@@ -246,8 +248,9 @@ public final class NpcNavigator {
             return false;
         }
         BlockState below = level.getBlockState(feet.below());
-        if (below.getCollisionShape(level, feet.below()).isEmpty() || isDangerous(below) || !below.getFluidState().isEmpty()) {
-            return false;
+        if (below.getCollisionShape(level, feet.below()).isEmpty() || isDangerous(below) || !below.getFluidState().isEmpty()
+                || below.is(BlockTags.LEAVES)) {
+            return false; // never onto a tree canopy: nobody walks down from there
         }
         for (int dy = 0; dy < 2; dy++) {
             BlockPos p = feet.above(dy);
