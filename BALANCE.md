@@ -12,6 +12,20 @@ source.
 | `unstuckHorizontal` | 4 (1–8) | How far across the stuck-recovery teleport may move an NPC to a safe spot closer to its goal. |
 | `unstuckVertical` | 2 (1–4) | How far up or down it may move it. |
 
+Not configurable (`NpcNavigator`, `DigOut`, `Job`):
+* A trip fails after repeated trouble: no path, no progress for 300 ticks (getting no closer), or 600 ticks of
+  travelling without leaving a 3-block radius (flipping between destinations). Switching destinations while stuck
+  in the same spot keeps the count.
+* After two failed trips an NPC digs. Shut in (under cover, up a tree on 3+ blocks of wood or leaves, or more than
+  4 blocks below its destination) it keeps digging a staircase, one step per 20 ticks and at most 64 steps: up if
+  the destination is above, down if below, otherwise level. It stops when it is out or a walking route exists
+  (checked every 4 steps). Under a settlement's edge it first heads out from under the walls. Never dug: faction
+  structures, a settlement's walls and floor band, any mine's spiral stairs, containers, unbreakable blocks and
+  anything touching a fluid. Up a tree it breaks the leaves or log underfoot (the wood goes into its backpack).
+* Recovery teleports never land on leaves or on top of a tall trunk.
+* Leaving a settlement, NPCs head for the gate with the shortest walk to the destination; long trips past their own
+  base put their waypoints around the walls.
+
 ## Campaign (config `campaign`)
 | Value | Default | Effect |
 |---|---|---|
@@ -42,6 +56,10 @@ source.
   4 blocks on both sides, torches every 8 blocks.
 * After the deepest level, "infill" branch mines are dug in the middle of every gap of 12+ blocks between levels
   (deepest first), reached through the existing spiral; no pickaxe payment.
+* Lengthening: once every level (regular and infill) is dug, the mine is lengthened up to 4 times. Each round the
+  miner revisits the regular levels from the deepest up and continues each main tunnel another 40 blocks out, with
+  its branches (so main tunnels reach 200 blocks after 4 rounds). No payment.
+* Stairs: a spiral step whose floor is gone is repaired with a stone block from the miner's backpack.
 * The miner digs down to the next level once 60% of the current level's plan is dug and the payment pickaxe is in
   storage; when the level is completely dug and no payment is available, it digs down without one (it still
   needs an iron pickaxe in hand for tier 3 and deeper).
@@ -52,6 +70,10 @@ source.
 ## Tree plots (`TreePlotLayout`, `WoodcutterJob`)
 * Tier 1/2/3: 2×2 / 3×3 / 4×4 trees, spaced 6 blocks; fence grows away from the base.
 * Upgrade: only with a wood surplus (≥ net fences + 96 plank-equivalents), ≥ 64 logs produced and no project waiting.
+  If the fences cannot be made when the work starts (the wood went elsewhere), the woodcutter cuts trees for
+  2400 ticks, keeping up to 64 logs and planks for the fence, and tries again.
+* An overgrown plot: when walking gets no closer for 100 ticks inside the plot, the woodcutter cuts through the
+  leaves toward its tree; stuck outside the fence for 200 ticks, it goes round to the opening.
 * Saplings grow naturally; the woodcutter uses bone meal (vanilla growth step) when it has some. The blacksmith
   turns bones into bone meal (1 → 3) while fewer than 16 are stored.
 * Leaves drop by their own loot table (vanilla oak: sapling 1/20, apple 1/200, sticks).

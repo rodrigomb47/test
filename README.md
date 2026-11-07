@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `3d1d1d59025b773813779e6809d98ca112f5bff6bc842507922ffb23cb963ba6`
+SHA-256: `a81ba868c3617648f496d4ad4a84fb1bbe8d29b7fd15fe075f02c8ba22de2bf0`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -60,7 +60,15 @@ Players respawn at their nearest surviving allied base when they have no bed.
 ## How the simulation works
 
 * **Gates with doors**: each base wall has a west and an east gate with wooden double doors that players and NPCs
-  open to go in and out (monsters cannot open them). NPCs coming home from outside head for the nearest gate.
+  open to go in and out (monsters cannot open them). NPCs coming home from outside head for the nearest gate;
+  NPCs leaving take the gate with the shortest walk to where they are going, and long trips past their own base
+  go around its walls.
+* **Getting unstuck like a player**: an NPC first gets a small validated hop (≤ 4 across / ≤ 2 up-down by
+  default, configurable). If it truly has no way (a sealed cave pocket, the floor of a ravine or pit, a tree
+  canopy or the top of a tall trunk) it **digs its own way out**, a staircase step by step toward its
+  destination's height (or chops the leaves/log it stands on), until it can walk again. It never digs faction
+  structures, walls, mine stairs, containers or anything next to water or lava. A watchdog also catches NPCs that
+  "walk" for 30 s without leaving the same spot.
 * **Starting bases** are placed on dry, gentle land: each faction searches its own map sector on real generated
   terrain, widens to the whole map (and a 1.5× map) if needed, and levels the footprint including the mine and
   tree-plot pads. Every base starts with a finished reporting station, map board, faction heart, categorised
@@ -89,7 +97,10 @@ Players respawn at their nearest surviving allied base when they have no bed.
   (diamonds), tier 4 at y=−48, then more levels 6 deeper down to y=−56. When ~60% of a level is mined, the miner
   digs the spiral down to the next one; tiers 2–4 are paid with a pickaxe, and tier 3+ needs an iron pickaxe in
   hand. When the bottom is reached, more branch mines are dug between levels that are 12+ blocks apart, so a
-  miner keeps finding new rock; a fully worked-out mine sends its miner to a surveyed cave if there is one.
+  miner keeps finding new rock. A fully worked-out mine sends its miner to a surveyed cave if there is one;
+  otherwise the miner **lengthens its branch mines** like a player would: it goes back to each regular level
+  (deepest first) and continues the main tunnel 40 blocks further with new branches (up to 4 rounds). Stair
+  steps whose floor was dug away are repaired with stone from the miner's backpack.
   Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through
   falling sand like a player), bridge cave holes in the tunnel floor, stop a branch where it breaks out of a
   hillside, and stop collecting cobblestone-type junk once storage holds 512 of it.
@@ -206,9 +217,12 @@ The reporting station and world map board screens, captured in the same real cli
 
 ## Testing
 
-* `./gradlew test` — 18 JUnit tests for the pure rules (spiral mine and branch-mine geometry, food payment,
-  affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 17 GameTests on a real headless server: walking speed, no gear wear, half
+* `./gradlew test` — 32 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
+  levels, cave survey walk graph, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
+* `./gradlew runGameTestServer` — 27 GameTests on a real headless server, including **digging out** (sealed in
+  rock it climbs out by a staircase; on a canopy or a tall trunk it chops its way down; just above its goal it digs
+  down), cave explorers seeing only visible ore and placing real torches, haulers sorting the storehouse,
+  crossbow charging, player attack speeds, golden apples and mined blocks going into the backpack, plus: walking speed, no gear wear, half
   undead damage only, no friendly fire, one-arrow ranged attacks with effects, save/reload without affix
   stacking, local stuck recovery, creeper jump-back, mob targeting, full storage never deletes items,
   recruitment payment routes, guards engaging enemies, defence alarm, **player break times** (stone pickaxe on
@@ -220,31 +234,29 @@ The reporting station and world map board screens, captured in the same real cli
 
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
 
-**Player-like workers (this version)** — 3-day campaign on a fresh world, nothing spawned by hand, with a server
-restart after day 2:
-* Mines are real holes in the world: three of the four miners dug their spiral and branch mines down to tier 4
-  (y = −48) within two days, mining 1,650–1,900 real blocks each; storage filled with the actual drops (cobbled
-  deepslate, redstone, lapis, raw iron, copper, and 3 diamonds at one base). The fourth mine lies under a lake in
-  sand and progresses slowly, as the miner has to plug water with what it has.
-* Builders added a house at every base (10 → 14 beds), which let every base recruit its own animal carer, plus
-  smelters. Carers bred the pigs from 2 to 8 per pen and bred a calf; no pen lost an animal.
-* In earlier runs with butchers and fishermen added by admin command: butchers culled only surplus pigs (each
-  death is logged with its cause), and a fisherman caught ~60 items per in-game day from the vanilla fishing loot
-  table.
-* Woodcutters felled and replanted naturally growing trees (≈ 100–130 logs per plot in 3 days).
-* No equipped tool or armour piece lost durability.
-* Restart: all 53 roster entries and 52 NPCs came back with identical identities, levels and affixes, no
-  duplicates, starter supplies not re-granted, storage and pens unchanged.
+**Long campaign with this version** — one world, nothing spawned by hand, run to **day 21.6** with about a dozen
+server restarts (each one also tested save/reload) while fixes were rolled in:
+* **War**: Ember Legion raided The Hollow from day 5; both monster lairs were destroyed by day 11, eliminating The
+  Hollow. Ember went on to raid Grove Covenant (11 raids in all). Grove launched its first raid on day ~21. No
+  winner yet: the four human factions were all alive with 14–28 NPCs each.
+* **Mines**: every faction's mine reached tier 4 (y = −48) and all its infill levels. Once fully worked out (around
+  day 12), miners started **lengthening** the branch mines and found new deepslate diamond and iron veins (Grove
+  went from 3 to 24 diamonds in two days). Mine output by day 21: Tide 9,600 blocks, Ember 6,700, Stoneguard 5,000
+  (its mine lies under a lake and was stuck for 11 days until the dig-out fix, then reached tier 4 and 45 diamonds
+  in four days), Grove 4,800.
+* **Caves**: explorers surveyed 47 caves (most had no visible ore); cave miners worked 13 of them, mining about
+  1,900 blocks, and handed each back once worked out.
+* **Wood**: Ember's tree plot reached tier 3 with 3,400 logs, Tide's 1,300. Grove's woodcutter was stuck for 15 days
+  waiting for fence wood that only it could bring (fixed: it now cuts more first), then enlarged its plot.
+* **Stuck NPCs**: before the dig-out fix a Grove explorer, two scouts and an Ember swordsman stayed frozen for days
+  (cave ledge under the base, ravine floor, tree canopy, pocket under the gate). With it, all of them dug their way
+  out within one in-game hour and went back to work.
+* No equipped tool or armour piece lost durability; max NPC level 14.
 
-Because everything is produced the way a player would produce it, the economy is **much slower than in the
-first version** — wood in particular (trees grow at vanilla speed), so recruits that need sticks or a stone sword
-can wait for the woodcutter.
-
-Known rough edges: scouts sometimes get trapped in caves or on coastal terrain and need the dig-out recovery
-(which can take a while); a mine dug under a lake or through sand progresses slowly; animals can still slip out
-of the pen occasionally (carers lure cows and pigs back with their food when they have it); fishing has no
-visible bobber; the earlier 8-day results (raids destroying lairs, victory announcement) were measured with the
-first version and were not re-run for this one.
+Known rough edges (from this run): NPCs do not build bridges, so a few that end up on the far side of a ravine
+next to their base dig around for a long time; a woodcutter stuck on a hill outside its plot's fence can stay
+there; extra miners idle when there is no cave to work (the mine has one miner); animals can still slip out of the
+pen occasionally; fishing has no visible bobber.
 
 **Mines from campaigns started with the first version are not compatible** with the new mine design — start a
 new campaign (`/fc start`) after updating.
