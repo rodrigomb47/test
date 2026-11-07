@@ -127,6 +127,10 @@ Players respawn at their nearest surviving allied base when they have no bed.
 * **Scouts** explore unexplored map sectors, record only what they see and what is worth a trip (enemy
   settlements, lairs, monsters, cave entrances they can see a way into, exposed ore — not trees or water, which
   are easy to find), retreat home on danger along a fixed route, and publish by reaching the station.
+* **Soldiers**: swordsmen, axe fighters, archers and crossbowmen. Melee timing follows the held weapon's real
+  attack speed (a sword about every 12 ticks, an axe every 20–25 but harder, and axes knock shields down);
+  crossbows charge for their real charge time and fire faster, straighter bolts a little farther than bows.
+  Every third melee recruit carries an axe, and every third ranged recruit a crossbow when one can be paid for.
 * **War**: guards patrol, pick up loot and answer a base defence alarm; hostile vanilla mobs hunt NPCs; zombies
   and skeletons do half damage to NPCs; wounded civilians flee and call guards; NPCs jump back from priming
   creepers. Factions raid targets their scouts reported, keeping home defenders; raiders travel physically, break
@@ -160,7 +164,8 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §4 Roles: builder, miner, farmer, woodcutter, blacksmith, chef, smelter, scout, swordsman, archer | Implemented | S |
 | §4 Roles: animal carer, butcher, fisherman | Implemented (player-like) | G (breeding, culling rules), S |
 | §4 Roles: cave explorer, hauler/quartermaster | Implemented | U (survey rules), G (ore sight, torches, sorting), S |
-| §4 Roles: enchanter, axe fighter, crossbowman, field medic, TNT expert, rail engineer | ✗ not implemented | — |
+| §4 Roles: crossbowman, axe fighter | Implemented | G (crossbow fire, weapon attack speed) |
+| §4 Roles: enchanter, field medic, TNT expert, rail engineer | ✗ not implemented | — |
 | §5–6 Workspaces, mines dug by the miner (spiral shaft, branch mine, tier levels, pickaxe-gated drops) | Implemented (player-like) | U (geometry), G (break times, drops), S |
 | §7 Natural cave mining | Implemented (surveyed by explorers, mined by miners; depletion is real ore running out) | U, G, S |
 | §8 Tree plots + upgrades, farm, chef | Implemented (player-like woodcutting and farming) | S |

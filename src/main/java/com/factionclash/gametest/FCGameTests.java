@@ -172,6 +172,47 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /**
+     * A crossbowman charges and fires on its own at a target, with its one arrow never used up; bolts fly faster
+     * than a bow's arrows.
+     */
+    @GameTest(template = "platform", timeoutTicks = 200)
+    public static void crossbowmanChargesAndFires(GameTestHelper h) {
+        FactionNpc xbow = npc(h, 3, 3, FactionType.TIDE_ALLIANCE, NpcRole.CROSSBOWMAN);
+        xbow.equip(new ItemStack(Items.CROSSBOW));
+        xbow.setAmmo(new ItemStack(Items.ARROW));
+        Zombie z = h.spawn(EntityType.ZOMBIE, new BlockPos(12, 2, 12));
+        z.setNoAi(true);
+        xbow.setTarget(z);
+        h.succeedWhen(() -> {
+            AABB box = new AABB(h.absolutePos(BlockPos.ZERO)).inflate(30);
+            List<AbstractArrow> arrows = h.getLevel().getEntitiesOfClass(AbstractArrow.class, box);
+            h.assertTrue(!arrows.isEmpty(), "no bolt fired yet");
+            h.assertTrue(xbow.ammo().getCount() == 1, "the arrow was used up");
+            h.assertTrue(arrows.get(0).getOwner() == xbow, "bolt not fired by the crossbowman");
+        });
+    }
+
+    /** Weapons set the attack speed exactly as for a player: sword 1.6, iron axe 0.9, bare hands 4.0. */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void weaponsSetPlayerAttackSpeed(GameTestHelper h) {
+        FactionNpc sword = npc(h, 3, 3, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
+        FactionNpc axe = npc(h, 6, 3, FactionType.EMBER_LEGION, NpcRole.AXE_FIGHTER);
+        FactionNpc bare = npc(h, 9, 3, FactionType.EMBER_LEGION, NpcRole.CHEF);
+        sword.equip(new ItemStack(Items.IRON_SWORD));
+        axe.equip(new ItemStack(Items.IRON_AXE));
+        h.runAfterDelay(2, () -> {
+            double s = sword.getAttributeValue(Attributes.ATTACK_SPEED), a = axe.getAttributeValue(Attributes.ATTACK_SPEED);
+            double b = bare.getAttributeValue(Attributes.ATTACK_SPEED);
+            h.assertTrue(Math.abs(s - 1.6) < 0.01, "sword attack speed " + s);
+            h.assertTrue(Math.abs(a - 0.9) < 0.01, "iron axe attack speed " + a);
+            h.assertTrue(Math.abs(b - 4.0) < 0.01, "bare-hand attack speed " + b);
+            h.assertTrue(axe.getAttributeValue(Attributes.ATTACK_DAMAGE) > sword.getAttributeValue(Attributes.ATTACK_DAMAGE),
+                    "an axe should hit harder than a sword");
+            h.succeed();
+        });
+    }
+
     /** Reloads restore identity, inventory, ammo and affixes without stacking affix bonuses (spec 18, 20). */
     @GameTest(template = "platform", timeoutTicks = 100)
     public static void saveReloadKeepsIdentityWithoutStacking(GameTestHelper h) {

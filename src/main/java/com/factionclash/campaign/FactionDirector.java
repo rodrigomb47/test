@@ -137,9 +137,9 @@ public final class FactionDirector {
                 }
             }
         }
-        int sw = living(f, b, NpcRole.SWORDSMAN);
-        int ar = living(f, b, NpcRole.ARCHER);
-        if (sw < 3) {
+        int sw = living(f, b, NpcRole.SWORDSMAN) + living(f, b, NpcRole.AXE_FIGHTER);
+        int ar = living(f, b, NpcRole.ARCHER) + living(f, b, NpcRole.CROSSBOWMAN);
+        if (living(f, b, NpcRole.SWORDSMAN) < 3) {
             out.add(new Need(NpcRole.SWORDSMAN, "home defence"));
         }
         int[] pen = penCounts(level, data, b);
@@ -193,10 +193,15 @@ public final class FactionDirector {
                 && Recruitment.storedFoodValue(level, b) >= FCConfig.RECRUIT_FOOD_VALUE.get() * 3) {
             boolean bowAvailable = FactionStorage.count(level, b, s -> s.getItem() instanceof BowItem) > 0
                     || FactionStorage.count(level, b, s -> s.is(Items.STRING)) >= 3;
-            if (ar < Math.round(FCConfig.RANGED_SHARE.get() * (soldiers + 1)) && bowAvailable) {
-                out.add(new Need(NpcRole.ARCHER, "ranged support"));
+            // every third ranged soldier carries a crossbow when one can be paid for, every third melee one an axe
+            boolean crossbowAvailable = FactionStorage.count(level, b, s -> s.is(Items.CROSSBOW)) > 0
+                    || (FactionStorage.count(level, b, s -> s.is(Items.IRON_INGOT)) >= 2 && FactionStorage.count(level, b, s -> s.is(Items.STRING)) >= 2);
+            if (ar < Math.round(FCConfig.RANGED_SHARE.get() * (soldiers + 1)) && (bowAvailable || crossbowAvailable)) {
+                boolean crossbow = crossbowAvailable && (living(f, b, NpcRole.CROSSBOWMAN) + 1) * 3 <= ar + 1 || !bowAvailable;
+                out.add(new Need(crossbow ? NpcRole.CROSSBOWMAN : NpcRole.ARCHER, "ranged support"));
             } else {
-                out.add(new Need(NpcRole.SWORDSMAN, "garrison growth"));
+                boolean axe = (living(f, b, NpcRole.AXE_FIGHTER) + 1) * 3 <= sw + 1;
+                out.add(new Need(axe ? NpcRole.AXE_FIGHTER : NpcRole.SWORDSMAN, "garrison growth"));
             }
         }
         return out;

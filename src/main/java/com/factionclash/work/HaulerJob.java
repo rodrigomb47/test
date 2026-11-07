@@ -91,8 +91,14 @@ public class HaulerJob extends Job {
             return null;
         }
         AABB walls = new AABB(min.getX(), min.getY() - 4, min.getZ(), max.getX() + 1, max.getY() + 12, max.getZ() + 1);
-        return BlockWork.nearestItem(npc, walls, s -> true, e -> e.getAge() > 200 && !inWorkArea(b, e.blockPosition()));
+        return BlockWork.nearestItem(npc, walls, s -> true, e -> e.getAge() > 200 && !unreachable.contains(e.getUUID())
+                && !inWorkArea(b, e.blockPosition()));
     }
+
+    /** Items it could not get to (on a roof, a wall top, behind a fence): left alone, like a player would. */
+    private final java.util.Set<java.util.UUID> unreachable = new java.util.HashSet<>();
+    private java.util.UUID chasing;
+    private int chaseTicks;
 
     private boolean inWorkArea(BaseState b, BlockPos p) {
         for (int id : b.workplaces) {
@@ -115,6 +121,17 @@ public class HaulerJob extends Job {
         ItemEntity item = looseItem(b);
         if (item == null || Inv.freeSlots(npc.inventory()) <= 2 || ++pickupTicks > 1200) {
             state = Inv.totalItems(npc.inventory()) > 0 ? State.STORE : State.CHECK;
+            return;
+        }
+        if (!item.getUUID().equals(chasing)) {
+            chasing = item.getUUID();
+            chaseTicks = 0;
+        } else if (++chaseTicks > 200) {
+            unreachable.add(chasing);
+            if (unreachable.size() > 128) {
+                unreachable.clear();
+            }
+            npc.navigator().reset();
             return;
         }
         status("Picking up " + item.getItem().getHoverName().getString() + " lying around the base", "Hauling");

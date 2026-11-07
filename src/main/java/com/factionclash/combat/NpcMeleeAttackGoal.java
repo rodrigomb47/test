@@ -22,7 +22,8 @@ public class NpcMeleeAttackGoal extends MeleeAttackGoal {
     }
 
     private boolean ranged() {
-        return npc.getRole().ranged && npc.getMainHandItem().getItem() instanceof BowItem && !npc.ammo().isEmpty();
+        return npc.getRole().ranged && (npc.getMainHandItem().getItem() instanceof BowItem
+                || npc.getMainHandItem().getItem() instanceof net.minecraft.world.item.CrossbowItem) && !npc.ammo().isEmpty();
     }
 
     private boolean leashed() {
@@ -38,6 +39,17 @@ public class NpcMeleeAttackGoal extends MeleeAttackGoal {
             return false;
         }
         return Math.sqrt(t.distanceToSqr(b.center.getX(), t.getY(), b.center.getZ())) > LEASH;
+    }
+
+    /**
+     * Time between hits from the held weapon's attack speed, as for a player at full strength: a sword (1.6/s)
+     * about every 12 ticks, an axe (0.8-1.0/s) every 20-25 ticks, at least half a second bare-handed.
+     */
+    @Override
+    protected int getAttackInterval() {
+        double speed = npc.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_SPEED);
+        int ticks = (int) Math.round(20.0 / Math.max(0.25, speed));
+        return this.adjustedTickDelay(net.minecraft.util.Mth.clamp(ticks, 10, 40));
     }
 
     @Override

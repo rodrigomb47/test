@@ -126,15 +126,48 @@ public final class NpcNavigator {
         return Result.MOVING;
     }
 
+    /**
+     * Coming home from outside the walls (or from a cave under the base), the way in is through a gate: head for
+     * the nearest gate first, then on to the destination inside.
+     */
+    private BlockPos viaGate(BlockPos dest) {
+        com.factionclash.campaign.BaseState home = npc.base();
+        if (home == null || home.destroyed || !home.isSettlement() || !insideWalls(home, dest) || insideWalls(home, npc.blockPosition())) {
+            return dest;
+        }
+        BlockPos best = null;
+        double bestD = Double.MAX_VALUE;
+        for (String key : new String[]{com.factionclash.campaign.BaseState.GATE_WEST, com.factionclash.campaign.BaseState.GATE_EAST,
+                com.factionclash.campaign.BaseState.GATE_SOUTH}) {
+            BlockPos g = home.point(key);
+            if (g == null) {
+                continue;
+            }
+            BlockPos out = g.offset(Integer.signum(g.getX() - home.center.getX()) * 2, 0, Integer.signum(g.getZ() - home.center.getZ()) * 2);
+            double d = out.distSqr(npc.blockPosition());
+            if (d < bestD) {
+                bestD = d;
+                best = out;
+            }
+        }
+        return best == null || bestD <= 4 ? dest : best;
+    }
+
+    private static boolean insideWalls(com.factionclash.campaign.BaseState b, BlockPos p) {
+        int h = com.factionclash.structure.BaseLayout.HALF - 1;
+        return Math.abs(p.getX() - b.center.getX()) <= h && Math.abs(p.getZ() - b.center.getZ()) <= h && p.getY() >= b.center.getY() - 3;
+    }
+
     private void repath(double speed) {
-        BlockPos goal = target;
-        double hd = Math.sqrt(Mth.square(target.getX() + 0.5 - npc.getX()) + Mth.square(target.getZ() + 0.5 - npc.getZ()));
+        BlockPos dest = viaGate(target);
+        BlockPos goal = dest;
+        double hd = Math.sqrt(Mth.square(dest.getX() + 0.5 - npc.getX()) + Mth.square(dest.getZ() + 0.5 - npc.getZ()));
         int surface = npc.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, npc.getBlockX(), npc.getBlockZ());
         boolean underground = npc.getY() < surface - 3;
         if (hd > LONG_TRIP && !underground) {
             double f = WAYPOINT_STEP / hd;
-            int wx = Mth.floor(npc.getX() + (target.getX() + 0.5 - npc.getX()) * f);
-            int wz = Mth.floor(npc.getZ() + (target.getZ() + 0.5 - npc.getZ()) * f);
+            int wx = Mth.floor(npc.getX() + (dest.getX() + 0.5 - npc.getX()) * f);
+            int wz = Mth.floor(npc.getZ() + (dest.getZ() + 0.5 - npc.getZ()) * f);
             // Heightmaps of unloaded chunks read as the world floor, so load (or generate) the waypoint's chunk first.
             npc.level().getChunk(wx >> 4, wz >> 4);
             goal = npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(wx, 0, wz));
@@ -144,7 +177,7 @@ public final class NpcNavigator {
             nextExitSearch = npc.tickCount + 200; // path searches are expensive: bounded per NPC
             // No route from down here (lost in a cave or ravine): climb out first, toward the nearest reachable
             // surface point. A miner in its own tunnels has a full route and never takes this detour.
-            BlockPos exit = surfaceExit(hd);
+            BlockPos exit = surfaceExit(dest, hd);
             if (exit != null) {
                 Path out = npc.getNavigation().createPath(exit, 1);
                 if (out != null) {
@@ -163,8 +196,8 @@ public final class NpcNavigator {
     }
 
     /** Finds a surface position near an underground NPC (toward its target first) that a path can reach. */
-    private BlockPos surfaceExit(double hd) {
-        double tx = (target.getX() + 0.5 - npc.getX()) / hd, tz = (target.getZ() + 0.5 - npc.getZ()) / hd;
+    private BlockPos surfaceExit(BlockPos dest, double hd) {
+        double tx = (dest.getX() + 0.5 - npc.getX()) / hd, tz = (dest.getZ() + 0.5 - npc.getZ()) / hd;
         double[][] dirs = {{tx, tz}, {-tz, tx}, {tz, -tx}, {-tx, -tz}};
         for (int dist : new int[]{8, 16, 28}) {
             for (double[] d : dirs) {

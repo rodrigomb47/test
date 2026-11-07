@@ -114,6 +114,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 .add(Attributes.MAX_HEALTH, 20.0)
                 .add(Attributes.MOVEMENT_SPEED, 0.1)
                 .add(Attributes.ATTACK_DAMAGE, 1.0)
+                // the player's attack speed (4.0 bare-handed): held weapons change it exactly as for players
+                .add(Attributes.ATTACK_SPEED, 4.0)
                 .add(Attributes.FOLLOW_RANGE, 48.0)
                 .add(Attributes.ARMOR, 0.0)
                 // player mining attributes, so tools, Efficiency and Haste behave exactly as for players
@@ -232,13 +234,14 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     @Override
     public boolean canFireProjectileWeapon(ProjectileWeaponItem weapon) {
-        return weapon instanceof BowItem;
+        return weapon instanceof BowItem || weapon instanceof net.minecraft.world.item.CrossbowItem;
     }
 
     @Override
     public void performRangedAttack(LivingEntity target, float velocity) {
         ItemStack bow = getMainHandItem();
-        if (!(bow.getItem() instanceof BowItem) || ammo.isEmpty()) {
+        boolean crossbow = bow.getItem() instanceof net.minecraft.world.item.CrossbowItem;
+        if (!(bow.getItem() instanceof BowItem) && !crossbow || ammo.isEmpty()) {
             return;
         }
         ItemStack shot = ammo.copyWithCount(1);
@@ -252,8 +255,14 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         double dy = target.getY(0.3333333333333333) - arrow.getY();
         double dz = target.getZ() - getZ();
         double d = Math.sqrt(dx * dx + dz * dz);
-        arrow.shoot(dx, dy + d * 0.2F, dz, 1.6F, 4.0F);
-        playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
+        if (crossbow) {
+            // a crossbow bolt flies faster and straighter, so it hits harder (arrow damage scales with speed)
+            arrow.shoot(dx, dy + d * 0.15F, dz, 2.2F, 2.0F);
+            playSound(SoundEvents.CROSSBOW_SHOOT, 1.0F, 1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
+        } else {
+            arrow.shoot(dx, dy + d * 0.2F, dz, 1.6F, 4.0F);
+            playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
+        }
         level().addFreshEntity(arrow);
         lastAttackTime = tickCount;
     }
