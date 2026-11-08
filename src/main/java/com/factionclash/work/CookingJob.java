@@ -148,7 +148,8 @@ public abstract class CookingJob extends Job {
             return;
         }
         int logs = FactionStorage.count(level(), base(), s -> s.is(ItemTags.LOGS));
-        int got = logs > LOG_RESERVE ? takeFromStorage(s -> s.is(ItemTags.LOGS), Math.min(2, logs - LOG_RESERVE)) : 0;
+        int reserve = woodReserve();
+        int got = logs > reserve ? takeFromStorage(s -> s.is(ItemTags.LOGS), Math.min(2, logs - reserve)) : 0;
         if (got > 0) {
             // a log burns for 1.5 items, its four planks for 6: craft them first, as a player would
             Crafting.craft(npc.inventory(), Crafting.PLANKS, got);
@@ -158,6 +159,20 @@ public abstract class CookingJob extends Job {
         if (planks > PLANK_RESERVE) {
             takeFromStorage(s -> s.is(ItemTags.PLANKS), Math.min(8, planks - PLANK_RESERVE));
         }
+    }
+
+    /**
+     * Logs kept out of the furnaces: more while a tree plot still has to be enlarged (its fences need a stock of
+     * wood that burning every spare log would never let build up), unless the faction is rationing food.
+     */
+    private int woodReserve() {
+        BaseState b = base();
+        if (b == null || com.factionclash.campaign.Logistics.rationing(b)) {
+            return LOG_RESERVE;
+        }
+        boolean plotToEnlarge = data().workplaces.values().stream().anyMatch(w -> w.baseId == b.id
+                && w.type == com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT && w.tier < w.type.maxTier);
+        return plotToEnlarge ? LOG_RESERVE * 4 : LOG_RESERVE; // the enlargement starts at about 56 logs
     }
 
     /**

@@ -239,6 +239,7 @@ public final class FCGameTests {
     @GameTest(template = "platform", timeoutTicks = 40)
     public static void criticalHitsAndSwordSweeps(GameTestHelper h) {
         FactionNpc n = npc(h, 5, 5, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
+        n.setNoAi(true); // only the scripted hits below: its own AI would swing first and leave the target invulnerable
         n.equip(new ItemStack(Items.IRON_SWORD));
         Zombie a = h.spawn(EntityType.ZOMBIE, new BlockPos(6, 2, 5));
         Zombie b = h.spawn(EntityType.ZOMBIE, new BlockPos(7, 2, 5));
@@ -248,6 +249,7 @@ public final class FCGameTests {
         }
         h.runAfterDelay(3, () -> {
             float before = a.getHealth();
+            a.invulnerableTime = 0;
             n.setOnGround(true);
             n.fallDistance = 0;
             n.doHurtTarget(a);

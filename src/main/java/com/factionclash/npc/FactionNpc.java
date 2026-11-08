@@ -566,7 +566,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
      */
     private void pickUpExperience() {
         java.util.List<net.minecraft.world.entity.ExperienceOrb> orbs = level().getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class,
-                getBoundingBox().inflate(2.0, 1.0, 2.0), net.minecraft.world.entity.Entity::isAlive);
+                getBoundingBox().inflate(4.0, 2.0, 4.0), net.minecraft.world.entity.Entity::isAlive);
         if (orbs.isEmpty() || level().getServer() == null) {
             return;
         }
