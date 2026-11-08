@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `cd19629a6332d1166c084d68ad435749a9990684f8da3789420e89671397b1a2`
+SHA-256: `0fb28761227e9cf6269e0bf1438964bbee85e6a1c89eee4ac68bbf0280560f3c`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -38,6 +38,7 @@ No other mods are required. Build from source with `./gradlew build` (jar in `bu
 | `/fc join <faction>` / `/fc leave` | all | Join or leave a human faction |
 | `/fc base` | member | Teleport to your faction's base (the player teleport; NPCs always travel physically) |
 | `/fc info`, `/fc map` | member | Base report and your faction's delivered map knowledge |
+| `/fc achievements [faction]` | anyone | The vanilla advancements a faction has made (day, who) and its progress on the long ones |
 | `/fc admin dump\|npcs\|info <f>\|spawn <f> <role>\|recruit <f> <role>\|probe <x> <z>\|mine <id>\|blocks <from> <to>\|destroy <id>` | op | Diagnostics, kept separate from player commands |
 
 In the world:
@@ -89,6 +90,28 @@ Players respawn at their nearest surviving allied base when they have no bed.
   storehouse (3 for soldiers, scouts and explorers who go far), eat the best-fitting safe food below 18 (1.6 s,
   shown in the off hand; rotten flesh only when starving) and go home to eat when out of food. Golden apples stay
   for fights. With hunger off, NPCs regenerate slowly as before.
+* **Faction achievements**: each faction makes the **vanilla advancements** (the game's own names, descriptions
+  and requirements) through what its NPCs do the way a player would: Stone Age, Getting an Upgrade, Acquire
+  Hardware, Suit Up, Isn't It Iron Pick, Diamonds!, Cover Me with Diamonds, Enchanter, Not Today, Thank You (a
+  shield stopping an arrow), Husbandry and A Balanced Diet (what they eat), A Seedy Place, The Parrots and the Bats
+  and Two by Two (breeding in the pen), Fishy Business, Adventure, Monster Hunter, Monsters Hunted, Take Aim, Ol'
+  Betsy, Sniper Duel, Adventuring Time (biomes its NPCs reach) and more. A faction player's own advancements count
+  for the faction too. Each one is announced in chat in the vanilla wording ("Ember Legion has made the advancement
+  [Diamonds!]", with the hover text) and who made it. Config `[achievements]`: `enabled`, `announce`, and
+  `grantToFactionPlayers` (off by default) to also hand the faction's advancements to its players.
+* **Logistics**: each base's quartermaster samples food, wood, stone, iron, fuel and diamonds every minute and keeps
+  the trend per day and how long each lasts (station screen). The faction is told in chat when food, wood or fuel
+  runs short and when it recovers. Short of food (under a day's meals for its people, or gone within 1.5 days) a
+  base **rations**: one meal carried each and only food producers recruited, until it has 1.5 days again; and
+  recruitment always keeps a day's meals for the people already there. The hauler keeps the workshop furnaces and
+  smoker stocked with coal or charcoal.
+* **Combat behaviour**: melee soldiers jump and strike on the way down for a player's **critical hit** (×1.5); a
+  sword hit on the ground **sweeps** enemies next to the target (Sweeping Edge applies; never allies or animals).
+  Swordsmen carry a **shield**, raised while closing on archers and between swings, lowered to strike; it wears,
+  and an axe knocks it aside for 5 s. Archers **back away** from melee enemies and **focus** the enemy closest to
+  falling. A badly wounded soldier with no golden apple **falls back** toward home, eats, and returns when healed.
+  Raids **muster** at a rally point outside the target and go in together; a party that loses more than half
+  **retreats**.
 * **Gear wears like a player's** (config `survival.toolWear`, on by default): tools lose durability per block
   (swords 2), weapons per hit (tools 2), bows and crossbows per shot, armour per hit taken, rods per catch, hoes
   per till; Unbreaking works; items break. Workers swap worn gear (under 25%) for fresh at the storehouse, miners
@@ -244,10 +267,13 @@ The reporting station and world map board screens, captured in the same real cli
 
 ## Testing
 
-* `./gradlew test` — 38 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
-  levels, cave survey walk graph, vanilla experience levels, the vanilla food bar, food payment, affix caps, XP curve, stuck-recovery
+* `./gradlew test` — 40 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
+  levels, cave survey walk graph, vanilla experience levels, the vanilla food bar, the logistics ledger, food payment, affix caps, XP curve, stuck-recovery
   selection, scout rules).
-* `./gradlew runGameTestServer` — 35 GameTests on a real headless server, including **gear wear** (sword per hit,
+* `./gradlew runGameTestServer` — 40 GameTests on a real headless server, including **faction advancements**
+  (single, any-of and all-of requirements; an NPC's diamond makes Diamonds!), **rationing** on and off,
+  **critical hits and sweeps**, **shields** (up against an archer, an axe knocks it aside), **wounded withdrawal and
+  archer kiting**, **gear wear** (sword per hit,
   armour per hit taken, pickaxe per block, a used-up pickaxe breaking), **hunger** (a hungry NPC eats its bread, not
   rotten flesh, unless starving; only a fed NPC heals), **anvil repair rules**, **digging out** (sealed in
   rock it climbs out by a staircase; on a canopy or a tall trunk it chops its way down; just above its goal it digs
@@ -284,6 +310,15 @@ server restarts (each one also tested save/reload) while fixes were rolled in:
   (cave ledge under the base, ravine floor, tree canopy, pocket under the gate). With it, all of them dug their way
   out within one in-game hour and went back to work.
 * No equipped tool or armour piece lost durability; max NPC level 14.
+
+**The new campaign continued to day 18 with achievements, logistics and combat behaviour** (same world):
+* The factions made their advancements in chat as they went, credited to the NPC that did it ("Grove Covenant has
+  made the advancement [Isn't It Iron Pick] (Orla Oakes)", "Ember Legion has made the advancement [Enchanter]
+  (Kael Grey)"); Ember had 10 after two days, with A Balanced Diet at 7/40 and Adventuring Time at 6/53.
+* Logistics: Stoneguard was told it was out of wood and fuel; Grove went on rationing when its food fell under a
+  day's meals and came off it when it recovered (hysteresis keeps that to a change or two a day).
+* Ember's raids on Grove mustered at a rally point ("The raid party (3 of 3) has gathered - assault on Grove
+  Covenant!") and fell back when beaten ("...beaten back - 1 of 3 soldiers retreat home").
 
 **A new campaign with hunger and tool wear from the start** (fresh world, same seed, Normal difficulty, ten days so
 far). This is where locks would show if the systems could deadlock, and the first run found exactly those; they

@@ -149,6 +149,36 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * With nothing to burn and no station busy, the worker waits at the storehouse (600 ticks) with a clear status;
   items a station cannot cook are taken out of it.
 
+## Achievements (`FactionAchievements`)
+* Criteria and requirements come from the vanilla advancement data; a faction meets a criterion through its NPCs
+  (items reaching its backpacks or storehouse, meals, crops planted, animals bred in its pen, fish caught, kills,
+  arrow hits, crossbow shots, enchanting, shield blocks, biomes reached - checked every 200 ticks) or through a
+  member player's own advancement (all criteria at once). Announced only if vanilla announces it.
+
+## Logistics (`Logistics`, `Ledger`)
+* One sample a minute (1200 ticks) of food (hunger points), wood (logs + planks/4), stone, iron (ingots + raw),
+  fuel (coal + charcoal + 9 per coal block) and diamonds; 32 samples kept; trend over the last day (at least a
+  tenth of a day of samples needed).
+* Food need (PROPOSED): 8 hunger points per NPC per day. Rationing starts under 1 day of meals in store or under 1.5
+  days left at the current rate, and ends at 1.5 days in store and not falling fast. Recruitment keeps 1 day's meals
+  in reserve. Wood alert under 8 logs (not rising), cleared at 16; fuel alert with no coal/charcoal and under 24 logs.
+* Hauler fuel rounds: any workshop furnace or smoker with fewer than 4 coal/charcoal is topped up to 8.
+
+## Combat behaviour
+* Critical: a melee NPC jumps when its swing is 1-7 ticks from ready (60% of the time, not in water) and hits
+  while falling for x1.5 (vanilla crit rule: falling, not on the ground, a ladder or in water).
+* Sweep (swords, on the ground, not a critical): enemies within 1 block of the target and 3 of the NPC take
+  1 + Sweeping Edge ratio x attack damage and 0.4 knockback.
+* Shield (swordsmen): raised against a ranged attacker more than 3.5 blocks away, and within 8 ticks after its own
+  swing at close range; lowered to strike. Wear: 1 + damage for blocked hits of 3+. An axe hit disables it for
+  100 ticks. Blacksmith: 6 planks + 1 iron per shield, up to 2 per plan.
+* Archers: back away (10 blocks) from a melee enemy within 6; every 2 s switch to a visible enemy in range with
+  at least 2 health less than the current target.
+* Withdrawal: under 30% health with no golden apple, fall back toward the storehouse (or 12 blocks away from the
+  attacker near home) until over 60% or for at most 1200 ticks.
+* Raids: rally point 28 blocks short of the target toward home; the assault starts when 70% of the living raiders
+  are within 12 blocks of it or after 6000 ticks; a raid that has lost more than half its party is called off.
+
 ## Hauler (`HaulerJob`)
 * Recruited once a base has 12 NPCs. Picks up items that have lain inside the walls for 10 seconds (not in the
   farm or pen, whose workers collect their own), and moves stacks out of the overflow chest or a wrong chest into

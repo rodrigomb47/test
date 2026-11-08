@@ -42,6 +42,16 @@
 	# Range: 0.0 ~ 400.0
 	workExhaustionPerDay = 30.0
 
+[achievements]
+	#Factions make the vanilla advancements through what their NPCs do the way a player would,
+	#and through their players' own advancements.
+	enabled = true
+	#Announce a faction's advancements in chat, like a player's (only those vanilla announces).
+	announce = true
+	#Also give the faction's advancements to its players as real advancements
+	#(on joining, logging in, and whenever the faction makes a new one).
+	grantToFactionPlayers = false
+
 [recruitment]
 	#Hunger points of food consumed per recruit (bread=5, cooked beef=8, ...).
 	# Default: 20
