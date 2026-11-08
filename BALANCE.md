@@ -193,8 +193,21 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   attacker near home) until over 60% or for at most 1200 ticks.
 * War council (PROPOSED): target = the reported, still-standing base with the fewest soldiers at home (lair: its
   monsters), then the nearest. Party = every soldier beyond max(`homeDefenders`, a third of the garrison), at
-  least `raidPartySize`. A raid goes when the interval has passed and the party is at least 2/3 of the defenders;
-  a counter-attack may go after a quarter of the interval when the party is at least 3/2 of the defenders.
+  least `raidPartySize`. Strength is power, not heads: a soldier counts 1 + armour/20 (at most 1) + weapon material
+  tier/4 (wood 0 … diamond 0.75, netherite 1); a faction's average power is noted whenever its garrison is home, and
+  rivals judge its defenders by it (a lair's monsters count 1 each). A raid goes when the interval has passed and
+  the party's power is at least 2/3 of the defence; a counter-attack may go after a quarter of the interval at 3/2.
+* Pacts (config `war.pacts`, on): after a conquest of a human faction by a human faction, the other surviving human
+  factions (2+) are allied until the conqueror falls or fewer than 2 members remain. Members learn the
+  conqueror's bases, target only it, and join a member's raid on the same base when their combined power is at
+  least 2/3 of the defence (after a quarter of the interval).
+* Traders (PROPOSED): hired with 14+ people and a reported village within 320 blocks; one trip per 12000 ticks, by
+  day (setting out between 23500 and 9000 day time), abandoned after 24000 ticks. Packs up to 8 kinds × 64 of
+  surplus above the reserves (wheat, potatoes, carrots 64; beetroot 32; sticks 64; string, leather 16; feathers,
+  flint, cod, salmon 32; stone 64; granite, andesite, diorite 128; coal 96; white wool 8; pumpkins, melons, rotten
+  flesh, paper, clay, rabbit hide 0; no food while rationing) and up to 192 emeralds. Buys only gear of iron or
+  better (or a bow/crossbow) when the storehouse has none of that kind at that rank or better, at most 2 per kind
+  per trip; bread only while rationing. One trade per second.
 * Raids: rally point 28 blocks short of the target toward home; the assault starts when 70% of the living raiders
   are within 12 blocks of it or after 6000 ticks; a raid that has lost more than half its party is called off.
 
@@ -226,7 +239,7 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 
 ## Levels and affixes (`AffixRoller`, `Affix`)
 * Level n → n+1 costs 40 + 30n XP; max level 30; one affix roll per level; job affixes weighted ×2.
-* Caps: Vitality +2 HP ×5, Swiftness +3% ×5, Might +1 ×5, Toughness +1 ×5, Diligence +6% dig/build speed ×5, Prospector +5% chance an ore drops twice ×5, Regrowth +8% instant growth ×5, Green Thumb +10% chance a crop drops twice ×5, Pathfinder +16 range ×4, Mason +10% build speed ×5, Marksman +10% arrow damage ×5.
+* Caps: Vitality +2 HP ×5, Swiftness +3% ×5, Might +1 ×5, Toughness +1 ×5, Diligence +6% dig/build speed ×5, Prospector +5% chance an ore drops twice ×5, Regrowth +8% instant growth ×5, Green Thumb +10% chance a crop drops twice ×5, Pathfinder +16 range ×4, Mason +10% build speed ×5, Marksman +10% arrow damage ×5, Thrifty 8% chance a wear event is skipped ×4, Hardy −8% exhaustion ×4, Duelist +10% critical damage (×1.5 → ×2.0 at 5) ×5 (swordsmen, axe fighters), Angler 8% chance the fishing loot is rolled twice ×5 (fishermen), Haggler −5% emerald prices ×4 (traders).
 * XP: ore XP above (stone 0); 1 per log/harvest/breeding feed; 2 per butchered animal; 20 per new mine level; 1 per repaired block; 25 + blocks/20 per project; scouts: report base value (enemy base 12, lair 12, cave 8, ore 6, hostiles 4) + 1 per 32 blocks from home. Trees and water are not reported.
 
 ## Soldiers (`NpcMeleeAttackGoal`, `NpcRangedAttackGoal`)

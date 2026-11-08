@@ -121,8 +121,25 @@ Players respawn at their nearest surviving allied base when they have no bed.
   Raids **muster** at a rally point outside the target and go in together; a party that loses more than half
   **retreats**. A **war council** picks the target: of the bases its scouts reported, the weakest garrison first,
   then the nearest. The raid party is every soldier beyond a third of the garrison (at least `raidPartySize`), and
-  it only goes when it is at least two thirds of the defenders; a beaten enemy outnumbered 3 to 2 is
-  **counter-attacked** sooner.
+  it only goes when it is at least two thirds of the defenders' strength, weighed by arms and armour (a soldier in
+  diamond with a diamond sword counts almost three times one in leather with a stone sword); a beaten enemy
+  outnumbered 3 to 2 is **counter-attacked** sooner.
+* **Pacts against a conqueror** (config `war.pacts`): when a human faction conquers another and two or more human
+  factions survive besides it, they swear a pact against the conqueror (announced in chat). Members stop fighting
+  each other (no targeting, sweeps, friendly fire or base alarms between them; raids between them are called off),
+  the fallen faction's survivors tell them where the conqueror's bases are, they raid only the conqueror, and a
+  member joins an offensive another member has launched when their parties together are strong enough. The pact
+  ends when the conqueror falls or fewer than two members are left; the next conquest can raise a new one. Shown in
+  `/fc status` and the base information screen.
+* **Traders and villages**: scouts report villages (two or more villagers with a trade). A base of 14 or more people
+  with a village within 320 blocks hires a **trader**. By day, at most every half day, it packs the base's surplus
+  (crops, sticks, string, leather, rotten flesh, stone, coal above the reserves — after the first visit, only what
+  that village buys) and the stored emeralds, walks to the village and trades with each villager **as a player
+  does**: the villager's own offers, prices (with demand) and stock, paid from its backpack. It sells for emeralds
+  first, then buys iron or better armour, weapons, tools, bows and crossbows that beat the storehouse's best of that
+  kind (bread when the base is rationing), and brings everything home with a summary in chat. Villagers gain trading
+  experience and unlock their next offers; their orbs go to the faction's experience. The first trade makes **What
+  a Deal!**.
 * **Gear wears like a player's** (config `survival.toolWear`, on by default): tools lose durability per block
   they actually speed up (swords 2; like a player switching to an empty hand, an axe is not worn on leaves nor a
   sword on stone), weapons per hit (tools 2), bows and crossbows per shot, armour per hit taken, rods per catch, hoes
@@ -216,7 +233,9 @@ Players respawn at their nearest surviving allied base when they have no bed.
   creepers. Factions raid targets their scouts reported, keeping home defenders; raiders travel physically, break
   the target's heart, loot its storage and carry it home. Hollow lairs grow and raid nearby settlements.
 * **Levels**: completed work earns XP for the NPC that did it; every level grants one capped affix (e.g. faster
-  digging, instant sapling regrowth); reloads never re-stack bonuses.
+  digging, instant sapling regrowth); reloads never re-stack bonuses. Affixes for the newer systems: **Thrifty**
+  (gear wears less), **Hardy** (hunger drains slower), **Duelist** (stronger critical hits, melee soldiers),
+  **Angler** (a second catch, fishermen) and **Haggler** (lower villager prices, traders).
 * **Background simulation** is bounded: base areas and travelling NPCs hold ticking chunk tickets, so factions
   progress away from players without loading the whole map.
 
