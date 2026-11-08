@@ -113,9 +113,39 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * Gear choice everywhere: material first, then the total enchantment level; a Silk Touch tool scores below a plain
   one of its material.
 
+## Hunger (config `survival`, `NpcHunger`)
+* The vanilla food bar: 20 food, saturation up to the food level, 4 exhaustion = 1 saturation (or food) point.
+  Regeneration: every 10 ticks while saturated at 20 food (heals saturation/6, costs as much exhaustion), else
+  every 80 ticks at 18+ (1 health, 6 exhaustion). At 0 food: 1 damage every 80 ticks while health > 10 (Easy),
+  > 1 (Normal), always (Hard). Peaceful refills food and health. Natural regeneration gamerule respected.
+* Exhaustion: vanilla action costs (block broken 0.005, attack 0.1, damage taken by source, jump 0.05, swimming
+  0.01/m) plus `workExhaustionPerDay` (default 30, spread over the day).
+* Meals (PROPOSED): 2 carried (3 for soldiers, scouts, explorers), the most filling ones kept when unloading; raw
+  meat, fish and potatoes stay for the chef; golden apples are for fights. Eating below 18 food when the meal fits
+  (or below 13 anyway), harmful food only at 6 or less. At 6 with no meal: a trip home, retried every 30 s; with
+  nothing at home, work goes on (checked again after 2 minutes).
+
+## Tool wear and repairs (config `survival.toolWear`)
+* Vanilla wear (Unbreaking applies): see the README. Gear under 25% durability counts below a fresh one of its
+  material, so it is swapped at the storehouse (and returned there); miners carry one spare pickaxe.
+* Errand for a tool when the work cannot be done by hand (miners, fishermen, soldiers, scouts, explorers,
+  butchers): retried every 1200 ticks; after 12000 ticks without one, a civilian is retrained.
+* Blacksmith replacements, one per tool kind per plan: iron if there is enough, else stone, else wooden. A miner
+  with a wooden pickaxe gets a stone one as soon as there are 3 cobblestone.
+* Anvil (vanilla): each material unit repairs a quarter; cost = units + prior work; prior work becomes
+  2 × prior + 1; "Too Expensive" from 40 levels. Repaired only when worth it (PROPOSED): enchanted, or iron,
+  diamond, netherite or chainmail gear needing fewer units than its recipe (pickaxe/axe 3, sword/hoe 2, shovel 1,
+  helmet 5, chestplate 8, leggings 7, boots 4). Levels paid from the faction's experience (the enchanter keeps at
+  most level 30 of it). 12% chance per use to damage the anvil; a broken anvil is re-forged from 31 iron.
+
+## Wood and fuel
+* Woodcutters with nothing to fell near the plot walk 72 blocks out (a different direction each time) and look
+  for wild trees within 40 blocks there; after 8 tries in vain they rest for 6000 ticks.
+* Smelters make charcoal from logs when the storehouse has fewer than 8 coal/charcoal and more than 24 logs.
+
 ## Cooking stations (`CookingJob`)
 * One station with items waiting, cold and without fuel is enough to send the worker for fuel.
-* Fuel order: coal or charcoal (6), a coal block, then logs (keeping 8 in storage), then planks (keeping 16).
+* Fuel order: coal or charcoal (6), a coal block, then logs (keeping 16 in storage), then planks (keeping 16).
 * With nothing to burn and no station busy, the worker waits at the storehouse (600 ticks) with a clear status;
   items a station cannot cook are taken out of it.
 

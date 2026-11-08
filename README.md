@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `e5eb9cf0717daeddbf42f093d083590e7e69fec84ae9e24c27d00c5ad1c4ab24`
+SHA-256: `cd19629a6332d1166c084d68ad435749a9990684f8da3789420e89671397b1a2`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -81,8 +81,24 @@ Players respawn at their nearest surviving allied base when they have no bed.
   carers, butchers, smelters, fishermen, cave explorers, extra miners for caves, haulers and an enchanter are
   recruited when the base needs them and has a bed free. A miner left with no mine or cave to work for half a day
   takes up the job the base needs most instead of a new recruit (keeping its level and traits).
-* **No hunger, no wear**: NPCs never eat or starve; equipped gear never loses durability; archers hold one arrow
-  that is never used up (tipped/spectral effects apply to every shot, and shots cannot be picked up).
+* **Hunger like a player's** (config `survival.hunger`, on by default): every NPC has the vanilla food bar (food,
+  saturation, exhaustion). Actions cost what they cost a player (blocks broken, attacks, damage taken, jumps,
+  swimming) plus a working day's metabolism (`survival.workExhaustionPerDay`, 30 = about 1.5 bread a day, since
+  walking costs a player nothing). NPCs heal only when fed (18+, paid in exhaustion), so wounds after a fight cost
+  food; at 0 they starve down to 10 health on Easy, 1 on Normal, and die on Hard. They pack 2 meals at the
+  storehouse (3 for soldiers, scouts and explorers who go far), eat the best-fitting safe food below 18 (1.6 s,
+  shown in the off hand; rotten flesh only when starving) and go home to eat when out of food. Golden apples stay
+  for fights. With hunger off, NPCs regenerate slowly as before.
+* **Gear wears like a player's** (config `survival.toolWear`, on by default): tools lose durability per block
+  (swords 2), weapons per hit (tools 2), bows and crossbows per shot, armour per hit taken, rods per catch, hoes
+  per till; Unbreaking works; items break. Workers swap worn gear (under 25%) for fresh at the storehouse, miners
+  carry a spare pickaxe, and a worker whose tool broke takes a spare or fetches a new one; woodcutters, farmers and
+  builders work by hand meanwhile (a woodcutter with no axe punches trees, which is how the wood for an axe comes).
+  The blacksmith makes replacements (iron, else stone, else wood, so a base is never locked out) and repairs good
+  gear at the **anvil with the vanilla rules** (a quarter per material unit, levels = units + prior work, "Too
+  Expensive" at 40), paid from the faction's experience; the anvil chips and breaks and a new one is forged.
+  Archers hold one arrow that is never used up (tipped/spectral effects apply to every shot, and shots cannot be
+  picked up).
 * **Workers work like players.** Nothing is produced by a timer or a loot roll: every item comes from a block a
   worker really broke, an animal it really bred or killed, or a vanilla loot table a player would also roll.
   * Breaking uses the player formula (tool speed, Efficiency, Haste, underwater and in-air penalties, ×30 with the
@@ -228,10 +244,12 @@ The reporting station and world map board screens, captured in the same real cli
 
 ## Testing
 
-* `./gradlew test` — 34 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
-  levels, cave survey walk graph, vanilla experience levels, food payment, affix caps, XP curve, stuck-recovery
+* `./gradlew test` — 38 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
+  levels, cave survey walk graph, vanilla experience levels, the vanilla food bar, food payment, affix caps, XP curve, stuck-recovery
   selection, scout rules).
-* `./gradlew runGameTestServer` — 32 GameTests on a real headless server, including **digging out** (sealed in
+* `./gradlew runGameTestServer` — 35 GameTests on a real headless server, including **gear wear** (sword per hit,
+  armour per hit taken, pickaxe per block, a used-up pickaxe breaking), **hunger** (a hungry NPC eats its bread, not
+  rotten flesh, unless starving; only a fed NPC heals), **anvil repair rules**, **digging out** (sealed in
   rock it climbs out by a staircase; on a canopy or a tall trunk it chops its way down; just above its goal it digs
   down; a gap is bridged with exactly one block per step), the **enchanter** at a real table (levels and lapis paid,
   nothing without experience), **ore experience** reaching the faction, enchanted-gear choice (Silk Touch loses),
@@ -266,6 +284,20 @@ server restarts (each one also tested save/reload) while fixes were rolled in:
   (cave ledge under the base, ravine floor, tree canopy, pocket under the gate). With it, all of them dug their way
   out within one in-game hour and went back to work.
 * No equipped tool or armour piece lost durability; max NPC level 14.
+
+**A new campaign with hunger and tool wear from the start** (fresh world, same seed, Normal difficulty, ten days so
+far). This is where locks would show if the systems could deadlock, and the first run found exactly those; they
+are fixed and the run went on with them:
+* A woodcutter whose axe broke waited for one that needed its own wood → it now fells trees by hand. A miner with
+  no pickaxe in a base without cobblestone → the blacksmith falls back to a wooden pickaxe. A wooden pickaxe
+  yields no iron ore, so no iron pickaxe, so no tier 3 → wooden pickaxes are upgraded to stone at once, and a
+  miner that cannot go deeper lengthens the levels it has. Woodcutters whose plots were still growing waited →
+  they walk out to find wild trees. Smelters burnt logs one by one → they make charcoal (8 smelts per log
+  instead of 1.5). Fishermen whose rod broke with no string left → retrained like idle miners.
+* With those fixes, days 7–10: nobody hungry (average food 18–19, never below 8), food stocks growing
+  (Ember 619 → 1,052, Tide 145 → 775, Stoneguard 654 → 854 hunger points), 34–38 NPCs at a time with visible wear
+  and broken tools replaced within the day, wood up from 0 at Grove to 319 logs, all four mines producing
+  (Stoneguard's, stuck at tier 2 for days, reached tier 3), retraining of idle miners and rodless fishermen.
 
 **The same world continued to day 33** with bridging, miner retraining, the fuel fix and the enchanter:
 * The four NPCs of Grove stuck on the far side of a ravine bridged it and got home within a few hundred ticks.

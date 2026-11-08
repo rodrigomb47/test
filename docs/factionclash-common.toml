@@ -29,6 +29,19 @@
 	unstuckVertical = 2
 
 #Recruitment (PROPOSED defaults)
+[survival]
+	#NPCs have a food bar like a player's (food, saturation, exhaustion): they eat from what they carry,
+	#regenerate only when fed and starve when empty (down to 10 health on Easy, 1 on Normal, death on Hard).
+	hunger = true
+	#Tools, weapons, bows and armour lose durability as a player's do and break when used up.
+	#The blacksmith repairs good gear at the anvil and crafts replacements.
+	toolWear = true
+	#Exhaustion a working NPC builds up per in-game day on top of what its actions cost the vanilla way
+	#(walking costs a player nothing). 4 exhaustion = 1 food or saturation point. PROPOSED: 30 (~1.5 bread a day).
+	# Default: 30.0
+	# Range: 0.0 ~ 400.0
+	workExhaustionPerDay = 30.0
+
 [recruitment]
 	#Hunger points of food consumed per recruit (bread=5, cooked beef=8, ...).
 	# Default: 20
