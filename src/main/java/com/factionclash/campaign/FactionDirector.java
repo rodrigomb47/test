@@ -534,11 +534,16 @@ public final class FactionDirector {
         // homeDefenders at home) - small parties against a full garrison only feed an endless war of attrition
         int keep = Math.max(FCConfig.HOME_DEFENDERS.get(), (soldiers.size() + 2) / 3);
         int party = Math.max(FCConfig.RAID_PARTY_SIZE.get(), soldiers.size() - keep);
+        if (!soldiers.isEmpty()) {
+            // how well armed the garrison is, as the war councils of other factions will judge it
+            f.soldierPower = (float) soldiers.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
+        }
         if (soldiers.size() < FCConfig.HOME_DEFENDERS.get() + party) {
             return;
         }
         // war council: of the bases the scouts reported, the weakest garrison first (then the nearest); attack when
-        // the party is at least two thirds of its defenders, or - sooner - when it outnumbers a beaten enemy 3 to 2
+        // the party is at least two thirds of its defenders, or - sooner - when it outnumbers a beaten enemy 3 to 2.
+        // Strength is weighed by arms and armour, not only heads: eight soldiers in leather do not storm diamond.
         BaseState target = null;
         double best = Double.MAX_VALUE;
         int targetDefence = 0;
@@ -564,22 +569,24 @@ public final class FactionDirector {
         if (target == null) {
             return;
         }
-        boolean counter = !intervalOver && party * 2 >= targetDefence * 3;
+        soldiers.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
+        double partyPower = soldiers.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
+        double defencePower = targetDefence * (target.isSettlement() ? data.faction(target.faction).soldierPower : 1.0);
+        boolean counter = !intervalOver && partyPower * 2 >= defencePower * 3;
         // a pact offensive: allies already marching on the same base count toward the strength needed
-        int alliedRaiders = 0;
+        double alliedPower = 0;
         if (sworn != null) {
             for (FactionType m : data.pactMembers) {
                 FactionState ally = data.faction(m);
                 if (m != f.type && ally.raidTarget == target.id) {
-                    alliedRaiders += ally.raiders.size();
+                    alliedPower += ally.raiders.size() * ally.soldierPower;
                 }
             }
         }
-        boolean joint = alliedRaiders > 0 && (party + alliedRaiders) * 3 >= targetDefence * 2;
-        if (!joint && !counter && (!intervalOver || party * 3 < targetDefence * 2)) {
+        boolean joint = alliedPower > 0 && (partyPower + alliedPower) * 3 >= defencePower * 2;
+        if (!joint && !counter && (!intervalOver || partyPower * 3 < defencePower * 2)) {
             return; // not yet, or not strong enough for that garrison
         }
-        soldiers.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
         f.raiders.clear();
         for (int i = 0; i < party; i++) {
             f.raiders.add(soldiers.get(i).getUUID());
@@ -600,6 +607,15 @@ public final class FactionDirector {
                 + "Launching a raid with " + party
                 + " soldiers (against about " + targetDefence + " defenders) on the "
                 + target.faction.displayName + (target.isSettlement() ? " settlement" : " lair") + " reported at " + target.center.toShortString()));
+    }
+
+    /**
+     * One soldier's fighting power (PROPOSED): 1, plus up to 1 for armour (20 points = full diamond) and up to 1 for
+     * the weapon's material (diamond 0.75, netherite 1).
+     */
+    static double power(FactionNpc n) {
+        int tier = com.factionclash.npc.ToolKind.tierOf(n.getMainHandItem());
+        return 1.0 + Math.min(20, n.getArmorValue()) / 20.0 + Math.max(0, tier) / 4.0;
     }
 
     /** Fighting strength at a base: its living soldiers at home (a lair: its monsters). */

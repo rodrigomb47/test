@@ -33,6 +33,8 @@ public final class FactionState {
     public long raidRally = Long.MIN_VALUE;
     public long raidMusteredAt;
     public int basesDestroyed;
+    /** Average fighting power of the faction's soldiers at home (1 = bare-handed and unarmoured, up to 3), last seen. */
+    public float soldierPower = 1.0F;
     /** 32x32 map sectors covered by delivered scout reports. */
     public final java.util.Set<Long> explored = new java.util.HashSet<>();
     /** How much further than the configured scout range the scouts now go (grows while no rival has been found). */
@@ -121,6 +123,7 @@ public final class FactionState {
         t.putLong("raidRally", raidRally);
         t.putLong("raidMusteredAt", raidMusteredAt);
         t.putInt("basesDestroyed", basesDestroyed);
+        t.putFloat("soldierPower", soldierPower);
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
         t.putInt("reportsDelivered", reportsDelivered);
         t.putInt("scoutReach", scoutReach);
@@ -177,6 +180,7 @@ public final class FactionState {
         f.raidRally = t.contains("raidRally") ? t.getLong("raidRally") : Long.MIN_VALUE;
         f.raidMusteredAt = t.getLong("raidMusteredAt");
         f.basesDestroyed = t.getInt("basesDestroyed");
+        f.soldierPower = t.contains("soldierPower") ? t.getFloat("soldierPower") : 1.0F;
         f.xpBank = t.getLong("xpBank");
         ListTag ach = t.getList("achievements", Tag.TAG_COMPOUND);
         for (int i = 0; i < ach.size(); i++) {
