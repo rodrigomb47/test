@@ -424,6 +424,91 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /** The newer affixes: Hardy cuts exhaustion, Duelist strengthens critical hits, Thrifty spares gear some of the time. */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void hardyDuelistAndThriftyAffixes(GameTestHelper h) {
+        FactionNpc n = npc(h, 5, 5, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
+        n.setNoAi(true);
+        n.hunger().set(20, 0, 0);
+        n.affixes().put(com.factionclash.logic.Affix.HARDY, 4);
+        n.exhaust(1.0F);
+        h.assertTrue(Math.abs(n.hunger().exhaustion() - 0.68F) < 0.001F, "Hardy x4 should feel 68% of the exhaustion: " + n.hunger().exhaustion());
+
+        n.equip(new ItemStack(Items.IRON_SWORD));
+        Zombie z = h.spawn(EntityType.ZOMBIE, new BlockPos(6, 2, 5));
+        z.setNoAi(true);
+        float[] crit = new float[2];
+        for (int i = 0; i < 2; i++) {
+            if (i == 1) {
+                n.affixes().put(com.factionclash.logic.Affix.DUELIST, 5);
+            }
+            z.setHealth(z.getMaxHealth());
+            z.invulnerableTime = 0;
+            n.setOnGround(false);
+            n.fallDistance = 1.0F;
+            n.doHurtTarget(z);
+            crit[i] = z.getMaxHealth() - z.getHealth();
+        }
+        h.assertTrue(crit[1] > crit[0] * 1.25F, "Duelist x5 should make a critical hit x2 instead of x1.5: " + crit[0] + " -> " + crit[1]);
+
+        ItemStack pick = new ItemStack(Items.IRON_PICKAXE);
+        n.equip(pick);
+        n.affixes().put(com.factionclash.logic.Affix.THRIFTY, 4);
+        for (int i = 0; i < 200; i++) {
+            com.factionclash.work.BlockWork.wear(n, n.getMainHandItem(), h.getLevel(), Blocks.STONE.defaultBlockState(), h.absolutePos(new BlockPos(9, 2, 9)));
+        }
+        int worn = n.getMainHandItem().getDamageValue();
+        h.assertTrue(worn >= 110 && worn <= 160, "Thrifty x4 should spare about a third of 200 wear points, worn " + worn);
+        h.succeed();
+    }
+
+    /**
+     * A trader trades with a villager like a player: the villager's offers, prices and stock, paid from the backpack.
+     * It sells its wheat for emeralds first, then buys the iron helmet once it can pay; the villager earns its
+     * trading experience. Gear no better than the storehouse's is not bought.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void traderTradesWithAVillagerLikeAPlayer(GameTestHelper h) {
+        FactionNpc n = npc(h, 5, 5, FactionType.STONEGUARD, NpcRole.TRADER);
+        n.setNoAi(true);
+        net.minecraft.world.entity.npc.Villager v = h.spawn(EntityType.VILLAGER, new BlockPos(6, 2, 5));
+        v.setNoAi(true);
+        v.setVillagerData(v.getVillagerData().setProfession(net.minecraft.world.entity.npc.VillagerProfession.ARMORER));
+        net.minecraft.world.item.trading.MerchantOffers offers = new net.minecraft.world.item.trading.MerchantOffers();
+        offers.add(new net.minecraft.world.item.trading.MerchantOffer(new net.minecraft.world.item.trading.ItemCost(Items.WHEAT, 20),
+                new ItemStack(Items.EMERALD), 16, 2, 0.05F));
+        offers.add(new net.minecraft.world.item.trading.MerchantOffer(new net.minecraft.world.item.trading.ItemCost(Items.EMERALD, 5),
+                new ItemStack(Items.IRON_HELMET), 12, 1, 0.2F));
+        v.setOffers(offers);
+        h.assertTrue(com.factionclash.work.TraderJob.trades(v), "an armorer should count as a villager with trades");
+        n.inventory().setItem(0, new ItemStack(Items.WHEAT, 64));
+        n.inventory().setItem(1, new ItemStack(Items.EMERALD, 2));
+        List<String> done = new java.util.ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            String d = com.factionclash.work.TraderJob.tradeOnce(n, v, x -> x.is(Items.WHEAT), x -> x.is(Items.IRON_HELMET));
+            if (d == null) {
+                break;
+            }
+            done.add(d);
+        }
+        h.assertTrue(done.size() == 4 && done.get(0).startsWith("sold 20x") && done.get(3).equals("bought Iron Helmet"),
+                "expected three sales then the helmet, got " + done);
+        h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.WHEAT)) == 4, "wheat left "
+                + com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.WHEAT)));
+        h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.EMERALD)) == 0, "the emeralds should be spent");
+        h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.IRON_HELMET)) == 1, "no helmet in the backpack");
+        h.assertTrue(offers.get(0).getUses() == 3 && offers.get(1).getUses() == 1, "the villager's stock was not used");
+        h.assertTrue(v.getVillagerXp() == 7, "the villager should gain its trading experience, got " + v.getVillagerXp());
+        // a diamond helmet in store: an iron one is no improvement
+        h.assertFalse(com.factionclash.work.TraderJob.betterThanStock(new ItemStack(Items.IRON_HELMET), pred -> new ItemStack(Items.DIAMOND_HELMET), pred -> 0),
+                "bought worse gear than the storehouse has");
+        h.assertTrue(com.factionclash.work.TraderJob.betterThanStock(new ItemStack(Items.IRON_CHESTPLATE), pred -> ItemStack.EMPTY, pred -> 0),
+                "an iron chestplate for a base with none is worth buying");
+        h.assertFalse(com.factionclash.work.TraderJob.betterThanStock(new ItemStack(Items.STONE_SWORD), pred -> ItemStack.EMPTY, pred -> 0),
+                "stone gear is not worth emeralds");
+        h.succeed();
+    }
+
     /** Healing comes from food: a fed NPC regenerates, a hungry one (below 18) does not. */
     @GameTest(template = "platform", timeoutTicks = 260)
     public static void onlyFedNpcsHeal(GameTestHelper h) {

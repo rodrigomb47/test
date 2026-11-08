@@ -16,16 +16,17 @@ public enum NpcRole {
     CHEF("chef", "Chef", false, false, ToolKind.NONE, Affix.Job.OTHER),
     SMELTER("smelter", "Smelter", false, false, ToolKind.NONE, Affix.Job.OTHER),
     SCOUT("scout", "Scout", false, false, ToolKind.SWORD, Affix.Job.SCOUT),
-    SWORDSMAN("swordsman", "Swordsman", true, false, ToolKind.SWORD, Affix.Job.OTHER),
+    SWORDSMAN("swordsman", "Swordsman", true, false, ToolKind.SWORD, Affix.Job.MELEE),
     ARCHER("archer", "Archer", true, true, ToolKind.BOW, Affix.Job.ARCHER),
     ANIMAL_CARER("animal_carer", "Animal Carer", false, false, ToolKind.NONE, Affix.Job.OTHER),
     BUTCHER("butcher", "Butcher", false, false, ToolKind.SWORD, Affix.Job.OTHER),
-    FISHERMAN("fisherman", "Fisherman", false, false, ToolKind.ROD, Affix.Job.OTHER),
+    FISHERMAN("fisherman", "Fisherman", false, false, ToolKind.ROD, Affix.Job.FISHER),
     CAVE_EXPLORER("cave_explorer", "Cave Explorer", false, false, ToolKind.SWORD, Affix.Job.SCOUT),
     HAULER("hauler", "Hauler", false, false, ToolKind.NONE, Affix.Job.OTHER),
     CROSSBOWMAN("crossbowman", "Crossbowman", true, true, ToolKind.CROSSBOW, Affix.Job.ARCHER),
-    AXE_FIGHTER("axe_fighter", "Axe Fighter", true, false, ToolKind.AXE, Affix.Job.OTHER),
-    ENCHANTER("enchanter", "Enchanter", false, false, ToolKind.NONE, Affix.Job.OTHER);
+    AXE_FIGHTER("axe_fighter", "Axe Fighter", true, false, ToolKind.AXE, Affix.Job.MELEE),
+    ENCHANTER("enchanter", "Enchanter", false, false, ToolKind.NONE, Affix.Job.OTHER),
+    TRADER("trader", "Trader", false, false, ToolKind.NONE, Affix.Job.TRADER);
 
     public final String id;
     public final String displayName;

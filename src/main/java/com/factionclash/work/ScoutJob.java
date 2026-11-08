@@ -329,6 +329,20 @@ public class ScoutJob extends Job {
         if (hostiles >= 3) {
             addPending(new Report(Report.Kind.HOSTILES, here, now, null, hostiles, hostiles + " monsters"));
         }
+        // a village: villagers with a trade, worth a trader's trip (reported where they gather)
+        List<net.minecraft.world.entity.npc.Villager> villagers = level().getEntitiesOfClass(net.minecraft.world.entity.npc.Villager.class,
+                npc.getBoundingBox().inflate(32, 12, 32), com.factionclash.work.TraderJob::trades);
+        if (villagers.size() >= 2) {
+            double vx = 0, vz = 0;
+            for (var v : villagers) {
+                vx += v.getX();
+                vz += v.getZ();
+            }
+            BlockPos at = new BlockPos((int) Math.floor(vx / villagers.size()), villagers.get(0).getBlockY(), (int) Math.floor(vz / villagers.size()));
+            String jobs = villagers.stream().map(v -> net.minecraft.core.registries.BuiltInRegistries.VILLAGER_PROFESSION
+                    .getKey(v.getVillagerData().getProfession()).getPath()).distinct().sorted().collect(java.util.stream.Collectors.joining(", "));
+            addPending(new Report(Report.Kind.VILLAGE, at, now, null, villagers.size(), villagers.size() + " villagers with trades (" + jobs + ")"));
+        }
         // Only things worth a trip are reported: caves and exposed ore. Trees and water are easy to find and are
         // not reported.
         for (int i = 0; i < 10; i++) {

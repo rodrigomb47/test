@@ -192,6 +192,9 @@ public final class FactionDirector {
         if (living(f, b, NpcRole.ENCHANTER) == 0 && enchantingWorthwhile(level, data, f, b)) {
             out.add(new Need(NpcRole.ENCHANTER, "gear, lapis and experience for the enchanting table"));
         }
+        if (living(f, b, NpcRole.TRADER) == 0 && livingAll(f, b) >= TRADER_POPULATION && villageInReach(f, b)) {
+            out.add(new Need(NpcRole.TRADER, "a village within reach to trade surplus with"));
+        }
         if (living(f, b, NpcRole.HAULER) == 0 && livingAll(f, b) >= HAULER_POPULATION) {
             out.add(new Need(NpcRole.HAULER, "a growing base needs its storehouse kept in order"));
         }
@@ -213,6 +216,15 @@ public final class FactionDirector {
             }
         }
         return out;
+    }
+
+    /** PROPOSED: a base hires a trader once it has this many people (its surplus is worth a trip). */
+    private static final int TRADER_POPULATION = 14;
+
+    /** A village the scouts reported within a trader's reach of the base. */
+    private static boolean villageInReach(FactionState f, BaseState b) {
+        double r = com.factionclash.work.TraderJob.TRADE_RANGE;
+        return f.knowledge.stream().anyMatch(rep -> rep.kind == Report.Kind.VILLAGE && rep.pos.distSqr(b.center) <= r * r);
     }
 
     /**

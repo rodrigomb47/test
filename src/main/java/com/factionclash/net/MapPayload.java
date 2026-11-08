@@ -18,7 +18,7 @@ public record MapPayload(String title, int titleColor, List<Integer> frame, List
     public static final Type<MapPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "map"));
 
     /** Marker kinds drawn on the map. */
-    public static final int OWN_BASE = 0, ENEMY_BASE = 1, LAIR = 2, HOSTILES = 3, CAVE = 4, ORE = 5, SURVEYED_CAVE = 6, STALE = 16;
+    public static final int OWN_BASE = 0, ENEMY_BASE = 1, LAIR = 2, HOSTILES = 3, CAVE = 4, ORE = 5, SURVEYED_CAVE = 6, VILLAGE = 7, STALE = 16;
 
     public record Marker(int x, int z, int kind, String label) {
         public static final StreamCodec<ByteBuf, Marker> CODEC = StreamCodec.composite(

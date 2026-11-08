@@ -18,10 +18,15 @@ public enum Affix {
     GREEN_THUMB("Green Thumb", "+10% chance of an extra crop", 0.10, 5, Set.of(Job.FARMER)),
     PATHFINDER("Pathfinder", "+16 blocks scouting range", 16.0, 4, Set.of(Job.SCOUT)),
     MASON("Mason", "+10% building speed", 0.10, 5, Set.of(Job.BUILDER)),
-    MARKSMAN("Marksman", "+10% arrow damage", 0.10, 5, Set.of(Job.ARCHER));
+    MARKSMAN("Marksman", "+10% arrow damage", 0.10, 5, Set.of(Job.ARCHER)),
+    THRIFTY("Thrifty", "-8% gear wear", 0.08, 4, null),
+    HARDY("Hardy", "-8% hunger", 0.08, 4, null),
+    DUELIST("Duelist", "+10% critical-hit damage", 0.10, 5, Set.of(Job.MELEE)),
+    ANGLER("Angler", "+8% chance of a second catch", 0.08, 5, Set.of(Job.FISHER)),
+    HAGGLER("Haggler", "-5% villager prices (like a good reputation)", 0.05, 4, Set.of(Job.TRADER));
 
     /** Coarse job groups used for job-specific affixes (kept separate from the entity role enum). */
-    public enum Job { MINER, WOODCUTTER, FARMER, SCOUT, BUILDER, ARCHER, OTHER }
+    public enum Job { MINER, WOODCUTTER, FARMER, SCOUT, BUILDER, ARCHER, OTHER, MELEE, FISHER, TRADER }
 
     public final String displayName;
     public final String description;

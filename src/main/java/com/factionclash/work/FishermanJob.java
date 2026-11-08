@@ -119,7 +119,11 @@ public class FishermanJob extends Job {
                 .withLuck(EnchantmentHelper.getFishingLuckBonus(level(), rod, npc))
                 .create(LootContextParamSets.FISHING);
         LootTable table = level().getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
-        for (ItemStack caught : table.getRandomItems(params)) {
+        java.util.List<ItemStack> catches = new java.util.ArrayList<>(table.getRandomItems(params));
+        if (level().random.nextDouble() < npc.affix(com.factionclash.logic.Affix.ANGLER)) {
+            catches.addAll(table.getRandomItems(params)); // Angler: the loot table is rolled once more
+        }
+        for (ItemStack caught : catches) {
             // the catch is pulled out of the water toward the fisherman, like a reeled-in item
             ItemEntity e = new ItemEntity(level(), at.x, at.y, at.z, caught);
             double dx = npc.getX() - at.x, dy = npc.getY() - at.y, dz = npc.getZ() - at.z;
@@ -130,7 +134,7 @@ public class FishermanJob extends Job {
                     net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(caught.getItem()).getPath(), npc.npcName());
         }
         // reeling in a catch costs the rod 1 durability (vanilla), and fishing pays experience (1-6) like a player's
-        if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !npc.sparesGear()) {
             rod.hurtAndBreak(1, npc, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
         }
         level().addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(level(), npc.getX(), npc.getY() + 0.5, npc.getZ(),

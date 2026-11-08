@@ -221,14 +221,20 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     @Override
     protected void doHurtEquipment(DamageSource source, float amount, EquipmentSlot... slots) {
-        if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !sparesGear()) {
             super.doHurtEquipment(source, amount, slots);
         }
     }
 
+    /** The Thrifty affix: this time the gear takes no wear (rolled once per wearing event). */
+    public boolean sparesGear() {
+        double c = affix(Affix.THRIFTY);
+        return c > 0 && random.nextDouble() < c;
+    }
+
     /** One durability for a bow or crossbow shot, as for a player. */
     private void wearWeapon(int amount) {
-        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !getMainHandItem().isEmpty()) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !getMainHandItem().isEmpty() && !sparesGear()) {
             getMainHandItem().hurtAndBreak(amount, this, EquipmentSlot.MAINHAND);
         }
     }
@@ -609,7 +615,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         var dmg = getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
         if (crit && dmg != null) {
             dmg.removeModifier(CRIT_ID);
-            dmg.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(CRIT_ID, 0.5,
+            dmg.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(CRIT_ID, 0.5 + affix(Affix.DUELIST),
                     net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         }
         boolean r;
@@ -632,7 +638,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             exhaust(0.1F); // a player's attack costs 0.1 exhaustion
             // the weapon wears like a player's: a sword 1 per hit, a tool used as a weapon 2
             if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && target instanceof LivingEntity victim && !weapon.isEmpty()
-                    && weapon == getMainHandItem() && weapon.getItem().hurtEnemy(weapon, victim, this)) {
+                    && weapon == getMainHandItem() && weapon.getItem().hurtEnemy(weapon, victim, this) && !sparesGear()) {
                 weapon.getItem().postHurtEnemy(weapon, victim, this);
             }
         }
@@ -685,7 +691,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     @Override
     protected void hurtCurrentlyUsedShield(float amount) {
         if (!com.factionclash.config.FCConfig.TOOL_WEAR.get() || !getUseItem().canPerformAction(net.neoforged.neoforge.common.ItemAbilities.SHIELD_BLOCK)
-                || amount < 3.0F) {
+                || amount < 3.0F || sparesGear()) {
             return;
         }
         InteractionHand hand = getUsedItemHand();
@@ -757,8 +763,13 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     public void exhaust(float amount) {
         if (!level().isClientSide && com.factionclash.config.FCConfig.HUNGER.get()) {
-            hunger.exhaust(amount);
+            hunger.exhaust(amount * hardy());
         }
+    }
+
+    /** The Hardy affix: a share of all exhaustion is never felt. */
+    private float hardy() {
+        return (float) Math.max(0.0, 1.0 - affix(Affix.HARDY));
     }
 
     /** Eating anything (a meal, a golden apple) fills the food bar as for a player. */
@@ -801,10 +812,10 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             }
             return;
         }
-        hunger.exhaust((float) (com.factionclash.config.FCConfig.WORK_EXHAUSTION_PER_DAY.get() / 24000.0));
+        hunger.exhaust((float) (com.factionclash.config.FCConfig.WORK_EXHAUSTION_PER_DAY.get() / 24000.0) * hardy());
         if (isInWater()) {
             if (lastSwimPos != null) {
-                hunger.exhaust((float) (0.01 * position().distanceTo(lastSwimPos))); // swimming: 0.01 per metre
+                hunger.exhaust((float) (0.01 * position().distanceTo(lastSwimPos)) * hardy()); // swimming: 0.01 per metre
             }
             lastSwimPos = position();
         } else {

@@ -26,9 +26,11 @@ public class MapScreen extends Screen {
             0xFB8C00, // hostiles
             0x9E9E9E, // cave entrance
             0xFFD54F, // exposed ore
-            0x26C6DA  // surveyed cave
+            0x26C6DA, // surveyed cave
+            0x66BB6A  // village
     };
-    private static final String[] NAMES = {"Our base", "Enemy settlement", "Monster lair", "Hostiles", "Cave entrance", "Exposed ore", "Surveyed cave"};
+    private static final String[] NAMES = {"Our base", "Enemy settlement", "Monster lair", "Hostiles", "Cave entrance", "Exposed ore", "Surveyed cave",
+            "Village"};
 
     private final MapPayload data;
     private final List<FormattedCharSequence> rows = new ArrayList<>();

@@ -183,7 +183,7 @@ public final class BlockWork {
      * pickaxe on them, so the NPC spares its tool the same way.
      */
     public static void wear(FactionNpc npc, ItemStack tool, ServerLevel level, BlockState state, BlockPos pos) {
-        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !tool.isEmpty() && tool.getDestroySpeed(state) > 1.0F) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !tool.isEmpty() && tool.getDestroySpeed(state) > 1.0F && !npc.sparesGear()) {
             tool.getItem().mineBlock(tool, level, state, pos, npc);
         }
     }

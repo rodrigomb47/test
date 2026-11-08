@@ -235,6 +235,7 @@ public final class BaseInfo {
                 case HOSTILES -> com.factionclash.net.MapPayload.HOSTILES;
                 case CAVE -> com.factionclash.net.MapPayload.CAVE;
                 case ORE -> com.factionclash.net.MapPayload.ORE;
+                case VILLAGE -> com.factionclash.net.MapPayload.VILLAGE;
             };
             boolean stale = r.kind.canGoStale && now - r.observedAt > FCConfig.REPORT_STALE_TICKS.get();
             markers.add(new com.factionclash.net.MapPayload.Marker(r.pos.getX(), r.pos.getZ(),
