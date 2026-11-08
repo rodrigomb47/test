@@ -132,6 +132,9 @@ public abstract class Job {
     /** PROPOSED: meals carried, enough for a day's work (soldiers, scouts and explorers who go far take one more). */
     private int provisionTarget() {
         NpcRole r = npc.getRole();
+        if (com.factionclash.campaign.Logistics.rationing(base())) {
+            return 1; // rationing: one meal each, the rest stays in the storehouse for everyone
+        }
         return r.combatant || r == NpcRole.SCOUT || r == NpcRole.CAVE_EXPLORER ? 3 : 2;
     }
 

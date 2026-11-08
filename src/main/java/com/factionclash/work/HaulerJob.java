@@ -12,13 +12,15 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 
+import java.util.List;
+
 /**
  * Hauler / quartermaster: keeps the base tidy the way a player tidies a storehouse. It picks up items lying
  * around inside the walls (loot from fights, things dropped and forgotten) and re-sorts the storehouse, carrying
  * stacks that ended up in the overflow chest or the wrong chest to the chests of their own category.
  */
 public class HaulerJob extends Job {
-    enum State { CHECK, PICKUP, SORT, STORE }
+    enum State { CHECK, PICKUP, SORT, STORE, FUEL }
 
     private State state = State.CHECK;
     private BlockPos chest;
@@ -33,6 +35,7 @@ public class HaulerJob extends Job {
     public String workplaceInfo() {
         return switch (state) {
             case CHECK -> "Looking for work around the storehouse";
+            case FUEL -> "Carrying fuel to the workshop furnaces";
             case PICKUP -> "Picking up items lying around the base";
             case SORT -> "Re-sorting the storehouse" + (chest == null ? "" : " (chest at " + chest.toShortString() + ")");
             case STORE -> "Carrying things to the storehouse";
@@ -51,6 +54,7 @@ public class HaulerJob extends Job {
             case CHECK -> check(b);
             case PICKUP -> pickup(b);
             case SORT -> sort(b);
+            case FUEL -> fuelRound(b);
             case STORE -> {
                 if (!atStorage()) {
                     return;
@@ -76,6 +80,10 @@ public class HaulerJob extends Job {
         }
         if (findMisplaced(b)) {
             state = State.SORT;
+            return;
+        }
+        if (stationsNeedFuel(b) && FactionStorage.count(level(), b, HaulerJob::coalLike) > 0) {
+            state = State.FUEL;
             return;
         }
         status("The storehouse is in order", "Idle");
@@ -138,6 +146,56 @@ public class HaulerJob extends Job {
         if (goTo(item.blockPosition(), 0.8, "an item lying around")) {
             BlockWork.pickUp(npc, s -> true);
         }
+    }
+
+    // ------------------------------------------------------------------ supply rounds
+
+    private static boolean coalLike(ItemStack s) {
+        return s.is(net.minecraft.world.item.Items.COAL) || s.is(net.minecraft.world.item.Items.CHARCOAL);
+    }
+
+    private List<net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity> stations(BaseState b) {
+        List<net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity> out = new java.util.ArrayList<>();
+        for (String k : new String[]{BaseState.FURNACE, BaseState.FURNACE_2, BaseState.SMOKER}) {
+            var f = FurnaceWork.furnace(level(), b.point(k));
+            if (f != null) {
+                out.add(f);
+            }
+        }
+        return out;
+    }
+
+    /** A workshop furnace or the smoker with fewer than 4 coal in its fuel slot (or none). */
+    private boolean stationsNeedFuel(BaseState b) {
+        return stations(b).stream().anyMatch(f -> f.getItem(1).isEmpty() || coalLike(f.getItem(1)) && f.getItem(1).getCount() < 4);
+    }
+
+    /**
+     * Logistics: like a quartermaster, the hauler keeps the workshop's furnaces and smoker stocked with coal or
+     * charcoal from the storehouse, so the smelter and the chef never stand at a cold station while fuel is stored.
+     */
+    private void fuelRound(BaseState b) {
+        if (Inv.count(npc.inventory(), HaulerJob::coalLike) == 0) {
+            if (!atStorage()) {
+                return;
+            }
+            if (takeFromStorage(HaulerJob::coalLike, 16) == 0) {
+                state = State.CHECK;
+                return;
+            }
+        }
+        if (!goTo(b.point(BaseState.WORKSHOP_STAND), 2.0, "the workshop")) {
+            return;
+        }
+        status("Stocking the furnaces and the smoker with fuel", "Hauling");
+        for (var f : stations(b)) {
+            lookAt(f.getBlockPos());
+            int want = 8 - (coalLike(f.getItem(1)) ? f.getItem(1).getCount() : f.getItem(1).isEmpty() ? 0 : 8);
+            if (want > 0 && FurnaceWork.loadFuel(f, npc.inventory(), HaulerJob::coalLike, want) > 0) {
+                npc.swing(InteractionHand.MAIN_HAND);
+            }
+        }
+        state = State.STORE; // leftover fuel goes back
     }
 
     // ------------------------------------------------------------------ sorting

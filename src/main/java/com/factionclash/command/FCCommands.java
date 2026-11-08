@@ -409,6 +409,15 @@ public final class FCCommands {
                 stock.forEach(st::addProperty);
                 o.add("stock", st);
                 o.addProperty("foodValue", Recruitment.storedFoodValue(level, b));
+                o.addProperty("shortages", String.join(",", b.shortages));
+                JsonObject lg = new JsonObject();
+                for (var r : com.factionclash.campaign.Logistics.Resource.values()) {
+                    var l = com.factionclash.campaign.Logistics.ledger(b, r);
+                    if (l.size() > 0) {
+                        lg.addProperty(r.name().toLowerCase(), l.latest() + " (" + com.factionclash.campaign.Logistics.forecast(l) + ")");
+                    }
+                }
+                o.add("logistics", lg);
                 JsonArray wps = new JsonArray();
                 for (int id : b.workplaces) {
                     WorkplaceState w = data.workplace(id);

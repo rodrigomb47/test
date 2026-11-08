@@ -116,6 +116,11 @@ public final class BaseInfo {
             out.add("Advancements made: " + f.achievements.size() + " (latest: " + com.factionclash.achieve.FactionAchievements.title(level.getServer(), last)
                     + ") - /fc achievements for the list");
         }
+        List<String> stock = com.factionclash.campaign.Logistics.report(b);
+        if (!stock.isEmpty()) {
+            out.add("Logistics" + (com.factionclash.campaign.Logistics.rationing(b) ? " - RATIONING" : "") + ":");
+            out.addAll(stock);
+        }
         out.add("Experience gathered for enchanting: " + f.xpBank + " points (level " + com.factionclash.logic.XpLevels.levelFor(f.xpBank) + ")");
         if (f.raidTarget >= 0) {
             BaseState t = data.base(f.raidTarget);
@@ -147,6 +152,12 @@ public final class BaseInfo {
 
     /** Colour coding for the station screen. */
     static int lineColor(String l) {
+        if (l.startsWith("! ")) {
+            return 0xFF8A65; // a resource that is short
+        }
+        if (l.startsWith("Logistics")) {
+            return 0xFFD54F;
+        }
         if (l.startsWith("Surveyed cave")) {
             return 0x26C6DA;
         }

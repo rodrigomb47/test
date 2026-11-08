@@ -134,6 +134,11 @@ public final class Recruitment {
         if (food == null) {
             missing.add("food (" + storedFoodValue(level, base) + "/" + needFood + " hunger points)");
         }
+        int reserve = Logistics.foodReserve(data, base);
+        if (food != null && reserve > 0 && storedFoodValue(level, base) - needFood < reserve) {
+            // the food already promised: a day's meals for everyone living at the base
+            missing.add("food beyond the reserve (" + storedFoodValue(level, base) + " stored, " + reserve + " kept for a day's meals)");
+        }
         GearPlan gear = planGear(level, base, role, missing);
         if (!missing.isEmpty()) {
             return new Result(null, "Cannot recruit " + role.displayName + ": missing " + String.join(", ", missing));

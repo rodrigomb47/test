@@ -77,6 +77,7 @@ public final class FactionDirector {
         // "Minecraft": the workshop's crafting table is the faction's from the start
         com.factionclash.achieve.FactionAchievements.criterion(level.getServer(), b.faction, "story/root", "crafting_table", null);
         rosterUpkeep(level, data, f, b, t);
+        Logistics.tick(level, data, b, t);
         recruitment(level, data, f, b, t);
         projects(level, data, b, t);
         repairScan(level, data, b);
@@ -284,6 +285,15 @@ public final class FactionDirector {
             return;
         }
         Need top = needs.get(0);
+        if (Logistics.rationing(b)) {
+            // short of food: every new mouth makes it worse - only those who bring food in are taken on
+            Need food = needs.stream().filter(n -> Logistics.producesFood(n.role())).findFirst().orElse(null);
+            if (food == null) {
+                LAST_RECRUIT_NOTE.put(b.id, "Rationing: no recruitment until food recovers (only food producers are taken on)");
+                return;
+            }
+            top = food;
+        }
         if (top.role() != NpcRole.MINER && retrainIdleWorker(level, data, f, b, top)) {
             b.lastRecruitAt = t;
             return;

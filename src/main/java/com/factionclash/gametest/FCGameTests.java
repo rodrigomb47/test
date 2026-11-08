@@ -195,6 +195,46 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /**
+     * Logistics: the quartermaster samples the storehouse, keeps the trend, and puts a base on rationing when its food
+     * falls below a day's meals for its people; recruitment keeps that day's meals in reserve.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40)
+    public static void logisticsRationsFoodWhenShort(GameTestHelper h) {
+        CampaignData data = CampaignData.get(h.getLevel().getServer());
+        BaseState b = fakeBase(h, FactionType.GROVE_COVENANT);
+        data.bases.put(b.id, b);
+        var roster = data.faction(FactionType.GROVE_COVENANT).roster;
+        List<java.util.UUID> people = new java.util.ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            com.factionclash.campaign.NpcRecord r = new com.factionclash.campaign.NpcRecord();
+            r.uuid = java.util.UUID.randomUUID();
+            r.role = NpcRole.FARMER;
+            r.baseId = b.id;
+            roster.put(r.uuid, r);
+            people.add(r.uuid);
+        }
+        try {
+            net.minecraft.world.Container food = FactionStorage.container(h.getLevel(), b.storage(StorageCategory.FOOD).get(0));
+            food.setItem(0, new ItemStack(Items.BREAD, 20)); // 100 hunger points for 5 people needing 40 a day
+            com.factionclash.campaign.Logistics.tick(h.getLevel(), data, b, 100_000);
+            h.assertFalse(com.factionclash.campaign.Logistics.rationing(b), "rationing with 2.5 days of food in store");
+            h.assertTrue(com.factionclash.campaign.Logistics.foodReserve(data, b) == 40, "reserve should be a day's meals for 5");
+            food.setItem(0, new ItemStack(Items.BREAD, 6)); // 30 points: less than a day
+            com.factionclash.campaign.Logistics.tick(h.getLevel(), data, b, 103_000);
+            h.assertTrue(com.factionclash.campaign.Logistics.rationing(b), "no rationing below a day's food");
+            var l = com.factionclash.campaign.Logistics.ledger(b, com.factionclash.campaign.Logistics.Resource.FOOD);
+            h.assertTrue(l.latest() == 30 && l.perDay() < 0, "the ledger should show the fall: " + l.latest() + " " + l.perDay());
+            food.setItem(0, new ItemStack(Items.BREAD, 40));
+            com.factionclash.campaign.Logistics.tick(h.getLevel(), data, b, 106_000);
+            h.assertFalse(com.factionclash.campaign.Logistics.rationing(b), "rationing should end when food is back");
+        } finally {
+            data.bases.remove(b.id);
+            people.forEach(roster::remove);
+        }
+        h.succeed();
+    }
+
     /** A hungry NPC eats the best-fitting safe food it carries, like a player; rotten flesh only when starving. */
     @GameTest(template = "platform", timeoutTicks = 200)
     public static void hungryNpcEatsFromItsBackpack(GameTestHelper h) {
@@ -908,7 +948,7 @@ public final class FCGameTests {
         FactionStorage.insert(level, b, new ItemStack(Items.IRON_PICKAXE));
         FactionStorage.insert(level, b, new ItemStack(Items.COBBLESTONE, 3));
         FactionStorage.insert(level, b, new ItemStack(Items.STICK, 2));
-        FactionStorage.insert(level, b, new ItemStack(Items.BREAD, 4));
+        FactionStorage.insert(level, b, new ItemStack(Items.BREAD, 6)); // the bill, plus a day's meals for the first recruit (reserve)
         Recruitment.Result r2 = Recruitment.recruit(level, data, b, NpcRole.MINER, "test");
         h.assertTrue(r2.ok(), "second recruit failed: " + r2.message());
         h.assertTrue(r2.npc().getMainHandItem().is(Items.IRON_PICKAXE), "better stored gear not supplied");

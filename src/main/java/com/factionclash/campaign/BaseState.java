@@ -63,6 +63,9 @@ public final class BaseState {
     public final Set<Long> playerEdits = new HashSet<>();
     /** Known damaged plan positions waiting for a builder. */
     public final LinkedHashSet<Long> pendingRepairs = new LinkedHashSet<>();
+    /** Logistics: stock of each tracked resource over time, and the resources currently short. */
+    public final java.util.Map<String, com.factionclash.logic.Ledger> ledgers = new java.util.LinkedHashMap<>();
+    public final java.util.Set<String> shortages = new java.util.LinkedHashSet<>();
     public final List<Project> projects = new ArrayList<>();
     public int repairStructure;
     public int repairIndex;
@@ -186,6 +189,15 @@ public final class BaseState {
         t.putLong("lastLairGrowth", lastLairGrowth);
         t.putInt("lairRaidTarget", lairRaidTarget);
         t.putInt("lairRaidProgress", lairRaidProgress);
+        CompoundTag led = new CompoundTag();
+        ledgers.forEach((k, l) -> {
+            CompoundTag e = new CompoundTag();
+            e.putLongArray("t", l.times());
+            e.putIntArray("v", l.values());
+            led.put(k, e);
+        });
+        t.put("ledgers", led);
+        t.putString("shortages", String.join(",", shortages));
         return t;
     }
 
@@ -256,6 +268,15 @@ public final class BaseState {
         b.lastLairGrowth = t.getLong("lastLairGrowth");
         b.lairRaidTarget = t.contains("lairRaidTarget") ? t.getInt("lairRaidTarget") : -1;
         b.lairRaidProgress = t.getInt("lairRaidProgress");
+        CompoundTag led = t.getCompound("ledgers");
+        for (String k : led.getAllKeys()) {
+            b.ledgers.put(k, com.factionclash.logic.Ledger.of(led.getCompound(k).getLongArray("t"), led.getCompound(k).getIntArray("v")));
+        }
+        for (String s : t.getString("shortages").split(",")) {
+            if (!s.isEmpty()) {
+                b.shortages.add(s);
+            }
+        }
         return b;
     }
 
