@@ -243,6 +243,9 @@ public class FarmerJob extends Job {
                 level().setBlock(cell, Blocks.FARMLAND.defaultBlockState(), Block.UPDATE_ALL);
                 level().playSound(null, cell, SoundEvents.HOE_TILL, SoundSource.BLOCKS, 1.0F, 1.0F);
                 npc.swing(InteractionHand.MAIN_HAND);
+                if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+                    npc.tool().hurtAndBreak(1, npc, net.minecraft.world.entity.EquipmentSlot.MAINHAND); // a hoe wears per till
+                }
                 soil = level().getBlockState(cell);
             }
         }

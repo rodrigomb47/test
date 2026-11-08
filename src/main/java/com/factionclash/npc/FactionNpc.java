@@ -92,6 +92,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     private String activity = "";
     private final NpcNavigator navigator = new NpcNavigator(this);
     private int regenTimer;
+    private final com.factionclash.logic.NpcHunger hunger = new com.factionclash.logic.NpcHunger();
+    /** Ticks left of the meal being eaten (-1 none), and what is being eaten. */
+    private int eatingFood = -1;
+    private ItemStack meal = ItemStack.EMPTY;
+    private net.minecraft.world.phys.Vec3 lastSwimPos;
     private int recordTimer;
     private long lastHurtTime;
     private long lastAttackTime;
@@ -200,9 +205,29 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     // ---------------------------------------------------------------- equipment
 
-    /** NPC gear does not wear out from ordinary use (spec 9). */
+    /**
+     * Armour wears when the NPC is hit, as a player's does (a mob's armour does not in vanilla). With tool wear off
+     * in the config, gear never wears (the original rule).
+     */
+    @Override
+    protected void hurtArmor(DamageSource source, float amount) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+            doHurtEquipment(source, amount, EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD);
+        }
+    }
+
     @Override
     protected void doHurtEquipment(DamageSource source, float amount, EquipmentSlot... slots) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+            super.doHurtEquipment(source, amount, slots);
+        }
+    }
+
+    /** One durability for a bow or crossbow shot, as for a player. */
+    private void wearWeapon(int amount) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !getMainHandItem().isEmpty()) {
+            getMainHandItem().hurtAndBreak(amount, this, EquipmentSlot.MAINHAND);
+        }
     }
 
     public SimpleContainer inventory() {
@@ -218,12 +243,19 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.ammo = arrow.isEmpty() ? ItemStack.EMPTY : arrow.copyWithCount(1);
     }
 
-    /** Equips an item into its slot; whatever it replaces disappears (spec 9). */
+    /** Equips an item into its slot; what it replaces goes into the backpack (and from there to the storehouse). */
     public void equip(ItemStack stack) {
         if (stack.isEmpty()) {
             return;
         }
         EquipmentSlot slot = stack.getItem() instanceof ArmorItem armor ? armor.getEquipmentSlot() : EquipmentSlot.MAINHAND;
+        ItemStack old = getItemBySlot(slot);
+        if (!old.isEmpty() && !level().isClientSide) {
+            ItemStack rest = com.factionclash.work.Crafting.addAll(inventory, old.copy());
+            if (!rest.isEmpty()) {
+                spawnAtLocation(rest);
+            }
+        }
         this.setItemSlot(slot, stack.copyWithCount(1));
         this.setDropChance(slot, 2.0F);
     }
@@ -265,6 +297,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         }
         level().addFreshEntity(arrow);
         lastAttackTime = tickCount;
+        wearWeapon(1);
     }
 
     public boolean isAiming() {
@@ -491,11 +524,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (tickCount % 10 == 0) {
             pickUpExperience();
         }
-        // Slow natural regeneration replaces the player's hunger-based healing (NPCs have no hunger).
-        if (getHealth() < getMaxHealth() && tickCount - lastHurtTime > 200 && ++regenTimer >= 80) {
-            regenTimer = 0;
-            heal(1.0F);
-        }
+        hungerTick();
         // Stale targets must not freeze work: civilians only defend at close range, and anyone gives up on a
         // target after 10 s without trading blows (e.g. a visible but unreachable mob).
         LivingEntity t = getTarget();
@@ -554,9 +583,16 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     @Override
     public boolean doHurtTarget(Entity target) {
+        ItemStack weapon = getMainHandItem();
         boolean r = super.doHurtTarget(target);
         if (r) {
             lastAttackTime = tickCount;
+            exhaust(0.1F); // a player's attack costs 0.1 exhaustion
+            // the weapon wears like a player's: a sword 1 per hit, a tool used as a weapon 2
+            if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && target instanceof LivingEntity victim && !weapon.isEmpty()
+                    && weapon == getMainHandItem() && weapon.getItem().hurtEnemy(weapon, victim, this)) {
+                weapon.getItem().postHurtEnemy(weapon, victim, this);
+            }
         }
         return r;
     }
@@ -566,8 +602,140 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         boolean r = super.hurt(source, amount);
         if (r) {
             lastHurtTime = tickCount;
+            exhaust(source.getFoodExhaustion());
         }
         return r;
+    }
+
+    @Override
+    public void jumpFromGround() {
+        super.jumpFromGround();
+        exhaust(0.05F); // a player's jump
+    }
+
+    // ---------------------------------------------------------------- hunger
+
+    public com.factionclash.logic.NpcHunger hunger() {
+        return hunger;
+    }
+
+    public void exhaust(float amount) {
+        if (!level().isClientSide && com.factionclash.config.FCConfig.HUNGER.get()) {
+            hunger.exhaust(amount);
+        }
+    }
+
+    /** Eating anything (a meal, a golden apple) fills the food bar as for a player. */
+    @Override
+    public ItemStack eat(net.minecraft.world.level.Level level, ItemStack stack, net.minecraft.world.food.FoodProperties food) {
+        hunger.eat(food.nutrition(), food.saturation());
+        return super.eat(level, stack, food);
+    }
+
+    public boolean isEatingMeal() {
+        return eatingFood > 0;
+    }
+
+    /** Food a worker eats from its backpack: anything edible except golden apples (kept for fights). */
+    public static boolean isMeal(ItemStack s, LivingEntity eater) {
+        return !s.isEmpty() && s.getFoodProperties(eater) != null && !s.is(net.minecraft.world.item.Items.GOLDEN_APPLE)
+                && !s.is(net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE);
+    }
+
+    /** Food with a harmful effect (rotten flesh, spider eye, poisonous potato, raw chicken, pufferfish...). */
+    public static boolean isHarmfulFood(ItemStack s, LivingEntity eater) {
+        net.minecraft.world.food.FoodProperties f = s.getFoodProperties(eater);
+        return f == null || f.effects().stream().anyMatch(e -> !e.effect().getEffect().value().isBeneficial())
+                || s.is(net.minecraft.world.item.Items.SUSPICIOUS_STEW);
+    }
+
+    /**
+     * Eats like a player: when the food bar has dropped below 18 (where healing stops) and there is room for the
+     * meal, or any time it is low; the best-fitting safe food first, harmful food only when starving. A meal takes
+     * 1.6 s, shown in the off hand; work goes on meanwhile.
+     */
+    private void hungerTick() {
+        if (!com.factionclash.config.FCConfig.HUNGER.get()) {
+            if (getHealth() < getMaxHealth() && tickCount - lastHurtTime > 200 && ++regenTimer >= 80) {
+                regenTimer = 0;
+                heal(1.0F); // without hunger: the original slow regeneration
+            }
+            return;
+        }
+        hunger.exhaust((float) (com.factionclash.config.FCConfig.WORK_EXHAUSTION_PER_DAY.get() / 24000.0));
+        if (isInWater()) {
+            if (lastSwimPos != null) {
+                hunger.exhaust((float) (0.01 * position().distanceTo(lastSwimPos))); // swimming: 0.01 per metre
+            }
+            lastSwimPos = position();
+        } else {
+            lastSwimPos = null;
+        }
+        float change = hunger.tick(getHealth(), getMaxHealth(), level().getDifficulty().getId(),
+                level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_NATURAL_REGENERATION));
+        if (change > 0) {
+            heal(change);
+        } else if (change < 0) {
+            hurt(damageSources().starve(), -change);
+        }
+        if (eatingFood > 0) {
+            if (--eatingFood % 4 == 0 && level() instanceof ServerLevel sl) {
+                playSound(SoundEvents.GENERIC_EAT, 0.5F, 1.0F + (getRandom().nextFloat() - getRandom().nextFloat()) * 0.4F);
+                sl.sendParticles(new net.minecraft.core.particles.ItemParticleOption(net.minecraft.core.particles.ParticleTypes.ITEM, meal),
+                        getX(), getEyeY() - 0.2, getZ(), 4, 0.15, 0.1, 0.15, 0.05);
+            }
+            if (eatingFood == 0) {
+                eatingFood = -1;
+                ItemStack food = com.factionclash.work.Inv.first(inventory, x -> ItemStack.isSameItemSameComponents(x, meal));
+                if (!food.isEmpty()) {
+                    net.minecraft.world.food.FoodProperties props = food.getFoodProperties(this);
+                    ItemStack one = food.split(1);
+                    inventory.setChanged();
+                    if (props != null) {
+                        eat(level(), one, props);
+                    }
+                }
+                meal = ItemStack.EMPTY;
+                setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+            }
+            return;
+        }
+        if (tickCount % 20 != 0 || eatingApple > 0) {
+            return;
+        }
+        int food = hunger.foodLevel();
+        boolean starving = food <= 6;
+        if (food >= 18 || getTarget() != null && !starving) {
+            return;
+        }
+        ItemStack best = ItemStack.EMPTY;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack s = inventory.getItem(i);
+            if (!isMeal(s, this)) {
+                continue;
+            }
+            net.minecraft.world.food.FoodProperties f = s.getFoodProperties(this);
+            boolean harmful = isHarmfulFood(s, this);
+            if (harmful && !starving) {
+                continue;
+            }
+            boolean fits = hunger.hasRoomFor(f.nutrition());
+            if (!fits && food > 12) {
+                continue; // would waste most of it: wait a little
+            }
+            // fitting food first, then the most filling; harmful food last
+            double score = (fits ? 100 : 0) + f.saturation() + f.nutrition() - (harmful ? 1000 : 0);
+            if (score > bestScore) {
+                bestScore = score;
+                best = s;
+            }
+        }
+        if (!best.isEmpty()) {
+            meal = best.copyWithCount(1);
+            eatingFood = best.getUseDuration(this) > 0 ? best.getUseDuration(this) : 32;
+            setItemSlot(EquipmentSlot.OFFHAND, meal.copy());
+        }
     }
 
     @Override
@@ -655,6 +823,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         }
         tag.put("FcJob", jt);
         tag.putString("FcStatus", status);
+        CompoundTag hg = new CompoundTag();
+        hg.putInt("food", hunger.foodLevel());
+        hg.putFloat("saturation", hunger.saturation());
+        hg.putFloat("exhaustion", hunger.exhaustion());
+        tag.put("FcHunger", hg);
     }
 
     @Override
@@ -687,6 +860,10 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         job = null;
         pendingJobTag = tag.getCompound("FcJob");
         status = tag.getString("FcStatus");
+        if (tag.contains("FcHunger")) {
+            CompoundTag hg = tag.getCompound("FcHunger");
+            hunger.set(hg.getInt("food"), hg.getFloat("saturation"), hg.getFloat("exhaustion"));
+        }
         reapplyAffixes();
     }
 }

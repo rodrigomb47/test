@@ -210,6 +210,10 @@ public final class BlockWork {
         int xp = canHarvest(state, tool) ? state.getExpDrop(level, pos, be, npc, tool) : 0;
         level.levelEvent(2001, pos, Block.getId(state));
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !tool.isEmpty()) {
+            tool.getItem().mineBlock(tool, level, state, pos, npc); // vanilla wear: 1 per block for a tool, 2 for a sword
+        }
+        npc.exhaust(0.005F); // a player's block break
         if (canHarvest(state, tool)) {
             state.spawnAfterBreak(level, pos, tool, true);
             if (xp > 0) {

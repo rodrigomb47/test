@@ -35,7 +35,7 @@ import java.util.function.Predicate;
  * Without a smelter it also smelts raw ore.
  */
 public class BlacksmithJob extends Job {
-    enum State { PLAN, FORGE, SMELT }
+    enum State { PLAN, FORGE, SMELT, REPAIR }
 
     public record Order(Crafting.Recipe recipe, int times, String reason) {
     }
@@ -67,6 +67,7 @@ public class BlacksmithJob extends Job {
         switch (state) {
             case PLAN -> plan();
             case FORGE -> forge();
+            case REPAIR -> repair();
             case SMELT -> {
                 smelting.run();
                 if (smelting.state == CookingJob.State.STATION) {
@@ -97,6 +98,14 @@ public class BlacksmithJob extends Job {
             state = State.FORGE;
             timer = 0;
             return;
+        }
+        if (startRepair()) {
+            state = State.REPAIR;
+            timer = 0;
+            return;
+        }
+        if (state == State.FORGE) {
+            return; // the anvil broke: forging a new one
         }
         boolean smelterAlive = data().faction(npc.getFaction()).living(NpcRole.SMELTER) > 0;
         if (!smelterAlive && FactionStorage.count(level(), base(), SmelterJob::isOre) > 0) {
@@ -173,6 +182,39 @@ public class BlacksmithJob extends Job {
                 + FactionStorage.count(level, base, s -> s.is(ItemTags.PLANKS)) * 2
                 + FactionStorage.count(level, base, s -> s.is(ItemTags.LOGS)) * 8;
 
+        List<FactionNpc> crew = membersNearBase();
+        // 0. Replacements for broken and nearly used-up gear (with tool wear on): one new tool of each kind a worker
+        //    lacks a fresh one of, unless the storehouse already has one. Iron when there is iron, else stone (the
+        //    miners always bring cobblestone), so work never waits on scarce iron.
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+            java.util.Map<ToolKind, Integer> lacking = new java.util.EnumMap<>(ToolKind.class);
+            for (FactionNpc n : crew) {
+                ToolKind k = n.getRole().tool;
+                if (k != ToolKind.NONE && (!k.matches(n.tool()) || worn(n.tool()))) {
+                    lacking.merge(k, 1, Integer::sum);
+                }
+            }
+            for (var e : lacking.entrySet()) {
+                ToolKind k = e.getKey();
+                if (e.getValue() <= FactionStorage.count(level, base, x -> k.matches(x) && !worn(x))) {
+                    continue;
+                }
+                Crafting.Recipe r = replacement(k, iron, cobble, sticksAvail, FactionStorage.count(level, base, x -> x.is(Items.STRING)));
+                if (r != null) {
+                    out.add(new Order(r, 1, "replacing a worn-out " + k.name().toLowerCase()));
+                    for (Crafting.Input in : r.inputs()) {
+                        if (in.filter().test(new ItemStack(Items.IRON_INGOT))) {
+                            iron -= in.count();
+                        } else if (in.filter().test(new ItemStack(Items.COBBLESTONE))) {
+                            cobble -= in.count();
+                        } else if (in.filter().test(new ItemStack(Items.STICK))) {
+                            sticksAvail -= in.count();
+                        }
+                    }
+                }
+            }
+        }
+
         // 1. Pickaxe needed to pay for the next mine upgrade.
         for (int id : base.workplaces) {
             WorkplaceState wp = data.workplace(id);
@@ -198,8 +240,16 @@ public class BlacksmithJob extends Job {
             }
         }
 
-        List<FactionNpc> members = membersNearBase();
-        // 2. Worker tool upgrades (miners first: better pickaxes unlock better ore).
+        List<FactionNpc> members = crew;
+        // 2. Worker tool upgrades (miners first: better pickaxes unlock better ore). A wooden pickaxe harvests no
+        //    iron ore, so it is replaced with stone as soon as there is cobblestone.
+        long woodenMiners = members.stream().filter(n -> n.getRole() == NpcRole.MINER && ToolKind.tierOf(n.tool()) < 1).count();
+        if (woodenMiners > 0 && cobble >= 3 && sticksAvail >= 2
+                && FactionStorage.count(level, base, s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= 1) == 0) {
+            out.add(new Order(Crafting.tool("stone pickaxe", Items.COBBLESTONE, 3, 2, Items.STONE_PICKAXE), 1, "miner upgrade (iron ore needs stone)"));
+            cobble -= 3;
+            sticksAvail -= 2;
+        }
         long weakMiners = members.stream().filter(n -> n.getRole() == NpcRole.MINER && ToolKind.tierOf(n.tool()) < 2).count();
         if (weakMiners > 0 && iron >= 3 && sticksAvail >= 2
                 && FactionStorage.count(level, base, s -> s.is(Items.IRON_PICKAXE)) == 0) {
@@ -281,6 +331,239 @@ public class BlacksmithJob extends Job {
         return out;
     }
 
+    // ------------------------------------------------------------------ anvil repairs (vanilla rules)
+
+    /** PROPOSED: the anvil is a 31-iron forging (3 iron blocks and 4 ingots), made again when it breaks. */
+    static final Crafting.Recipe ANVIL = new Crafting.Recipe("anvil", List.of(Crafting.of(Items.IRON_INGOT, 31)), Items.ANVIL, 1);
+
+    /**
+     * Worth a trip to the anvil: at least a quarter worn, still repairable (vanilla "Too Expensive" at 40 levels),
+     * and either enchanted or iron/diamond/netherite gear whose repair takes less material than making a new one.
+     */
+    public static boolean worthRepairing(ItemStack s) {
+        if (!s.isDamageableItem() || s.getDamageValue() < s.getMaxDamage() / 4 || s.getMaxDamage() < 4) {
+            return false;
+        }
+        int units = unitsToRepair(s);
+        if (s.getOrDefault(net.minecraft.core.component.DataComponents.REPAIR_COST, 0) + units >= 40) {
+            return false;
+        }
+        if (s.isEnchanted()) {
+            return true;
+        }
+        int craftCost = craftCost(s);
+        return craftCost > 0 && units < craftCost;
+    }
+
+    /** Material units vanilla needs to fully repair it (each one restores a quarter of the durability). */
+    static int unitsToRepair(ItemStack s) {
+        int damage = s.getDamageValue(), quarter = Math.max(1, s.getMaxDamage() / 4), units = 0;
+        while (damage > 0) {
+            damage -= Math.min(damage, quarter);
+            units++;
+        }
+        return units;
+    }
+
+    /** Material units in the item's recipe (iron, diamond or netherite gear and chainmail); 0 for anything else. */
+    static int craftCost(ItemStack s) {
+        Item i = s.getItem();
+        boolean good = i instanceof net.minecraft.world.item.TieredItem t
+                && (t.getTier() == net.minecraft.world.item.Tiers.IRON || t.getTier() == net.minecraft.world.item.Tiers.DIAMOND
+                || t.getTier() == net.minecraft.world.item.Tiers.NETHERITE)
+                || i instanceof ArmorItem a && (a.getMaterial().is(net.minecraft.world.item.ArmorMaterials.IRON)
+                || a.getMaterial().is(net.minecraft.world.item.ArmorMaterials.DIAMOND)
+                || a.getMaterial().is(net.minecraft.world.item.ArmorMaterials.NETHERITE)
+                || a.getMaterial().is(net.minecraft.world.item.ArmorMaterials.CHAIN));
+        if (!good) {
+            return 0;
+        }
+        if (i instanceof ArmorItem a) {
+            return switch (a.getEquipmentSlot()) {
+                case HEAD -> 5;
+                case CHEST -> 8;
+                case LEGS -> 7;
+                default -> 4;
+            };
+        }
+        if (s.is(ItemTags.PICKAXES) || s.is(ItemTags.AXES)) {
+            return 3;
+        }
+        if (s.is(ItemTags.SWORDS) || s.is(ItemTags.HOES)) {
+            return 2;
+        }
+        return 1;
+    }
+
+    /**
+     * Takes a worn item and its repair material from the storehouse when the faction can pay the levels (from the
+     * experience its NPCs gathered). With the anvil gone, it forges a new one instead (the builder puts it back).
+     */
+    private boolean startRepair() {
+        if (!com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+            return false;
+        }
+        BaseState b = base();
+        BlockPos anvil = b.point(BaseState.ANVIL);
+        if (anvil == null) {
+            return false;
+        }
+        if (!(level().getBlockState(anvil).getBlock() instanceof net.minecraft.world.level.block.AnvilBlock)) {
+            if (level().getBlockState(anvil).isAir() && FactionStorage.count(level(), b, x -> x.is(Items.ANVIL)) == 0
+                    && FactionStorage.count(level(), b, x -> x.is(Items.IRON_INGOT)) >= 31) {
+                orders.add(new Order(ANVIL, 1, "the anvil broke"));
+                gather(orders.get(0));
+                state = State.FORGE;
+                timer = 0;
+            }
+            return false;
+        }
+        ItemStack worn = FactionStorage.findBest(level(), b, BlacksmithJob::worthRepairing, ItemStack::getDamageValue);
+        if (worn.isEmpty()) {
+            return false;
+        }
+        ItemStack material = FactionStorage.findBest(level(), b, m -> worn.getItem().isValidRepairItem(worn, m), m -> 0);
+        if (material.isEmpty()) {
+            return false;
+        }
+        int units = unitsToRepair(worn);
+        int cost = worn.getOrDefault(net.minecraft.core.component.DataComponents.REPAIR_COST, 0) + units;
+        FactionState f = data().faction(npc.getFaction());
+        if (com.factionclash.logic.XpLevels.levelFor(f.xpBank) < cost) {
+            return false;
+        }
+        ItemStack got = FactionStorage.extractExact(level(), b, worn);
+        if (got.isEmpty()) {
+            return false;
+        }
+        Crafting.addAll(npc.inventory(), got);
+        takeFromStorage(m -> ItemStack.isSameItemSameComponents(m, material), units);
+        return true;
+    }
+
+    /** At the anvil: the vanilla material repair, paid in levels, with the vanilla 12% chance to damage the anvil. */
+    private void repair() {
+        BaseState b = base();
+        BlockPos anvil = b.point(BaseState.ANVIL);
+        if (!goTo(b.point(BaseState.WORKSHOP_STAND), 2.0, "the anvil")) {
+            return;
+        }
+        lookAt(anvil);
+        ItemStack item = Inv.first(npc.inventory(), BlacksmithJob::worthRepairing);
+        if (item.isEmpty() || !(level().getBlockState(anvil).getBlock() instanceof net.minecraft.world.level.block.AnvilBlock)) {
+            state = State.PLAN; // whatever it carries goes back at the storehouse
+            return;
+        }
+        status("Repairing " + item.getHoverName().getString() + " at the anvil", "Smithing");
+        if (++timer < 40) {
+            return;
+        }
+        timer = 0;
+        FactionState f = data().faction(npc.getFaction());
+        int[] used = {0};
+        repairWithMaterial(item, npc.inventory(), used);
+        int prior = item.getOrDefault(net.minecraft.core.component.DataComponents.REPAIR_COST, 0);
+        int cost = prior + used[0];
+        if (used[0] > 0 && com.factionclash.logic.XpLevels.levelFor(f.xpBank) >= cost) {
+            f.xpBank = com.factionclash.logic.XpLevels.spend(f.xpBank, cost);
+            item.set(net.minecraft.core.component.DataComponents.REPAIR_COST, net.minecraft.world.inventory.AnvilMenu.calculateIncreasedRepairCost(prior));
+            data().setDirty();
+            npc.swing(InteractionHand.MAIN_HAND);
+            npc.awardXp(2);
+            net.minecraft.world.level.block.state.BlockState st = level().getBlockState(anvil);
+            if (npc.getRandom().nextFloat() < 0.12F) {
+                net.minecraft.world.level.block.state.BlockState worse = net.minecraft.world.level.block.AnvilBlock.damage(st);
+                if (worse == null) {
+                    level().removeBlock(anvil, false);
+                    level().levelEvent(1029, anvil, 0); // the anvil breaks
+                } else {
+                    level().setBlock(anvil, worse, 2);
+                    level().levelEvent(1030, anvil, 0);
+                }
+            } else {
+                level().levelEvent(1030, anvil, 0);
+            }
+        }
+        state = State.PLAN;
+    }
+
+    /**
+     * Vanilla anvil material repair: each unit of the repair material restores a quarter of the durability. Uses
+     * the material from {@code inv}; returns the item (repaired in place), with the units used in {@code used[0]}.
+     */
+    public static ItemStack repairWithMaterial(ItemStack item, net.minecraft.world.Container inv, int[] used) {
+        int quarter = Math.min(item.getDamageValue(), item.getMaxDamage() / 4);
+        while (quarter > 0) {
+            ItemStack mat = Inv.first(inv, m -> item.getItem().isValidRepairItem(item, m));
+            if (mat.isEmpty()) {
+                break;
+            }
+            mat.shrink(1);
+            item.setDamageValue(item.getDamageValue() - quarter);
+            used[0]++;
+            quarter = Math.min(item.getDamageValue(), item.getMaxDamage() / 4);
+        }
+        inv.setChanged();
+        return item;
+    }
+
+    /** Under a quarter of its durability left. */
+    static boolean worn(ItemStack s) {
+        return s.isDamageableItem() && s.getMaxDamage() - s.getDamageValue() < s.getMaxDamage() / 4;
+    }
+
+    /**
+     * The recipe for a new tool of this kind: iron if affordable, else stone, else wood (planks: the way out when a
+     * base has no cobblestone yet and its miner no pickaxe to get any); bows, crossbows and rods from string.
+     */
+    static Crafting.Recipe replacement(ToolKind k, int iron, int cobble, int sticks, int string) {
+        int mat = switch (k) {
+            case PICKAXE, AXE -> 3;
+            case HOE, SWORD -> 2;
+            case SHOVEL -> 1;
+            default -> 0;
+        };
+        int stickCount = k == ToolKind.SWORD || k == ToolKind.SHOVEL ? (k == ToolKind.SWORD ? 1 : 2) : 2;
+        if (mat > 0) {
+            if (sticks < stickCount) {
+                return null;
+            }
+            boolean useIron = iron >= mat;
+            if (!useIron && cobble < mat) {
+                // wooden: planks for the head (the gather step turns logs into planks), sticks for the handle
+                if (sticks < stickCount + mat * 2) {
+                    return null;
+                }
+                Item wood = switch (k) {
+                    case PICKAXE -> Items.WOODEN_PICKAXE;
+                    case AXE -> Items.WOODEN_AXE;
+                    case HOE -> Items.WOODEN_HOE;
+                    case SWORD -> Items.WOODEN_SWORD;
+                    default -> Items.WOODEN_SHOVEL;
+                };
+                return new Crafting.Recipe("wooden " + k.name().toLowerCase(),
+                        List.of(Crafting.of(ItemTags.PLANKS, mat, "Planks"), Crafting.of(Items.STICK, stickCount)), wood, 1);
+            }
+            Item out = switch (k) {
+                case PICKAXE -> useIron ? Items.IRON_PICKAXE : Items.STONE_PICKAXE;
+                case AXE -> useIron ? Items.IRON_AXE : Items.STONE_AXE;
+                case HOE -> useIron ? Items.IRON_HOE : Items.STONE_HOE;
+                case SWORD -> useIron ? Items.IRON_SWORD : Items.STONE_SWORD;
+                default -> useIron ? Items.IRON_SHOVEL : Items.STONE_SHOVEL;
+            };
+            return Crafting.tool((useIron ? "iron " : "stone ") + k.name().toLowerCase(), useIron ? Items.IRON_INGOT : Items.COBBLESTONE,
+                    mat, stickCount, out);
+        }
+        return switch (k) {
+            case BOW -> string >= 3 && sticks >= 3 ? Crafting.BOW : null;
+            case ROD -> string >= 2 && sticks >= 3 ? new Crafting.Recipe("fishing rod",
+                    List.of(Crafting.of(Items.STICK, 3), Crafting.of(Items.STRING, 2)), Items.FISHING_ROD, 1) : null;
+            case CROSSBOW -> string >= 2 && sticks >= 3 && iron >= 2 ? new Crafting.Recipe("crossbow",
+                    List.of(Crafting.of(Items.STICK, 3), Crafting.of(Items.STRING, 2), Crafting.of(Items.IRON_INGOT, 2)), Items.CROSSBOW, 1) : null;
+            default -> null;
+        };
+    }
+
     private static int armorDefense(FactionNpc n, EquipmentSlot slot) {
         ItemStack s = n.getItemBySlot(slot);
         return s.getItem() instanceof ArmorItem a ? a.getDefense() : 0;
@@ -302,7 +585,7 @@ public class BlacksmithJob extends Job {
 
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
-        tag.putString("state", state == State.FORGE ? State.PLAN.name() : state.name());
+        tag.putString("state", state == State.FORGE || state == State.REPAIR ? State.PLAN.name() : state.name());
         CompoundTag sm = new CompoundTag();
         smelting.save(sm, provider);
         tag.put("smelting", sm);

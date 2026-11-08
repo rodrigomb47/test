@@ -42,11 +42,124 @@ public abstract class Job {
         if (!(npc.level() instanceof ServerLevel)) {
             return;
         }
+        if (survival()) {
+            return;
+        }
         if (waitTicks > 0) {
             waitTicks--;
             return;
         }
         run();
+    }
+
+    private long nextMealTrip, nextToolTrip, lastPack = -100000;
+
+    /**
+     * Errands a player would not put off: a spare tool from the backpack when the one in hand broke, a trip to the
+     * storehouse for a new one when the work cannot be done by hand, and a trip home for food when hungry with an
+     * empty backpack. Each gives up for a while when the storehouse has nothing, so work never stalls on it.
+     */
+    private boolean survival() {
+        BaseState b = base();
+        if (b == null) {
+            return false;
+        }
+        NpcRole role = npc.getRole();
+        if (role.tool != ToolKind.NONE && !role.tool.matches(npc.tool())) {
+            for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
+                if (role.tool.matches(npc.inventory().getItem(i))) {
+                    npc.equip(npc.inventory().removeItem(i, 1)); // the spare it carries
+                    npc.inventory().setChanged();
+                    return false;
+                }
+            }
+            if (needsToolToWork(role) && now() >= nextToolTrip) {
+                waitTicks = 0;
+                status("Going to the storehouse for a new " + role.tool.name().toLowerCase(), "Travelling");
+                if (!atStorage()) {
+                    return true;
+                }
+                lastEquipCheck = -100000;
+                upgradeEquipment();
+                if (!role.tool.matches(npc.tool())) {
+                    status("No " + role.tool.name().toLowerCase() + " in the storehouse - waiting for the blacksmith", "Waiting");
+                    nextToolTrip = now() + 1200;
+                    if (toolMissingSince < 0) {
+                        toolMissingSince = now();
+                    }
+                } else {
+                    toolMissingSince = -1;
+                }
+                return true;
+            }
+        }
+        if (com.factionclash.config.FCConfig.HUNGER.get() && npc.hunger().foodLevel() <= 6 && now() >= nextMealTrip
+                && Inv.count(npc.inventory(), Job::isProvision) == 0 && !npc.isEatingMeal()) {
+            if (FactionStorage.count(level(), b, Job::isProvision) == 0) {
+                nextMealTrip = now() + 2400; // nothing to eat at home either: work on, and look again later
+                return false;
+            }
+            waitTicks = 0;
+            status("Hungry - going to the storehouse for food", "Travelling");
+            if (!atStorage()) {
+                return true;
+            }
+            nextMealTrip = now() + 600;
+            return true;
+        }
+        return false;
+    }
+
+    /** Roles whose work cannot be done by hand (stone gives nothing without a pickaxe; no fishing without a rod;
+     *  soldiers and scouts need their weapon). Woodcutters, farmers and builders can work bare-handed meanwhile. */
+    private static boolean needsToolToWork(NpcRole role) {
+        return role == NpcRole.MINER || role == NpcRole.FISHERMAN || role.combatant || role == NpcRole.SCOUT
+                || role == NpcRole.CAVE_EXPLORER || role == NpcRole.BUTCHER;
+    }
+
+    /** Food worth packing: edible, harmless, and not raw meat, fish or potatoes the chef will cook. */
+    public static boolean isProvision(ItemStack s) {
+        if (s.isEmpty() || s.getFoodProperties(null) == null || s.is(Items.GOLDEN_APPLE) || s.is(Items.ENCHANTED_GOLDEN_APPLE)) {
+            return false;
+        }
+        if (s.is(Items.BEEF) || s.is(Items.PORKCHOP) || s.is(Items.MUTTON) || s.is(Items.CHICKEN) || s.is(Items.RABBIT)
+                || s.is(Items.COD) || s.is(Items.SALMON) || s.is(Items.POTATO)) {
+            return false;
+        }
+        return !FactionNpc.isHarmfulFood(s, null);
+    }
+
+    /** PROPOSED: meals carried, enough for a day's work (soldiers, scouts and explorers who go far take one more). */
+    private int provisionTarget() {
+        NpcRole r = npc.getRole();
+        return r.combatant || r == NpcRole.SCOUT || r == NpcRole.CAVE_EXPLORER ? 3 : 2;
+    }
+
+    /** Since when the storehouse had no tool for this worker (-1: it has one, or has not looked yet). */
+    private long toolMissingSince = -1;
+
+    /** True when this worker has been unable to get its tool for at least {@code ticks}. */
+    public boolean missingToolFor(long ticks) {
+        return toolMissingSince >= 0 && now() - toolMissingSince >= ticks;
+    }
+
+    /** At the storehouse: tops up the meals carried, the most filling food first. */
+    private void packFood() {
+        int need = provisionTarget() - Inv.count(npc.inventory(), Job::isProvision);
+        for (int guard = 0; need > 0 && guard < 6; guard++) {
+            ItemStack best = FactionStorage.findBest(level(), base(), Job::isProvision, s -> {
+                var f = s.getFoodProperties(null);
+                return f == null ? 0 : Math.round(f.saturation() * 10 + f.nutrition());
+            });
+            if (best.isEmpty()) {
+                return;
+            }
+            int got = takeFromStorage(x -> ItemStack.isSameItemSameComponents(x, best), need);
+            if (got <= 0) {
+                return;
+            }
+            need -= got;
+        }
     }
 
     protected abstract void run();
@@ -170,7 +283,12 @@ public abstract class Job {
 
     protected boolean atStorage() {
         BaseState b = base();
-        return b != null && goTo(b.point(BaseState.STORAGE_STAND), 2.0, "the storehouse");
+        boolean at = b != null && goTo(b.point(BaseState.STORAGE_STAND), 2.0, "the storehouse");
+        if (at && com.factionclash.config.FCConfig.HUNGER.get() && now() - lastPack > 100) {
+            lastPack = now();
+            packFood(); // like a player heading out: a few meals in the backpack
+        }
+        return at;
     }
 
     /** How many of this item the NPC keeps when unloading (job consumables such as seeds or saplings). */
@@ -179,20 +297,63 @@ public abstract class Job {
     }
 
     protected boolean hasCargo() {
-        Map<net.minecraft.world.item.Item, Integer> kept = new HashMap<>();
+        return cargoCount() > 0;
+    }
+
+    /** Items in the backpack that are cargo: everything except what stays with the NPC (see {@link #keptPerSlot}). */
+    protected int cargoCount() {
+        int[] kept = keptPerSlot();
+        int n = 0;
         for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
+            n += npc.inventory().getItem(i).getCount() - kept[i];
+        }
+        return n;
+    }
+
+    /**
+     * How many of each backpack slot stay with the NPC when it unloads: what the job keeps ({@link #keep}), the
+     * packed meals (the most nourishing ones, up to the provision target) and a miner's spare pickaxe.
+     */
+    private int[] keptPerSlot() {
+        int size = npc.inventory().getContainerSize();
+        int[] out = new int[size];
+        Map<Integer, Integer> mealKeep = new HashMap<>();
+        if (com.factionclash.config.FCConfig.HUNGER.get()) {
+            List<Integer> slots = new java.util.ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                if (isProvision(npc.inventory().getItem(i))) {
+                    slots.add(i);
+                }
+            }
+            slots.sort(java.util.Comparator.comparingDouble(i -> -npc.inventory().getItem(i).getFoodProperties(null).saturation()));
+            int left = provisionTarget();
+            for (int i : slots) {
+                int k = Math.min(left, npc.inventory().getItem(i).getCount());
+                mealKeep.put(i, k);
+                left -= k;
+            }
+        }
+        Map<net.minecraft.world.item.Item, Integer> kept = new HashMap<>();
+        boolean spareKept = false;
+        for (int i = 0; i < size; i++) {
             ItemStack s = npc.inventory().getItem(i);
             if (s.isEmpty()) {
                 continue;
             }
-            int k = keep(s);
             int already = kept.getOrDefault(s.getItem(), 0);
-            if (s.getCount() + already > k) {
-                return true;
+            int k = keep(s);
+            if (npc.getRole() == NpcRole.MINER && npc.getRole().tool.matches(s) && !spareKept) {
+                spareKept = true;
+                k = Math.max(k, already + 1);
             }
-            kept.put(s.getItem(), already + s.getCount());
+            if (mealKeep.containsKey(i)) {
+                k = Math.max(k, already + mealKeep.get(i));
+            }
+            int keepHere = Math.max(0, Math.min(s.getCount(), k - already));
+            kept.put(s.getItem(), already + keepHere);
+            out[i] = keepHere;
         }
-        return false;
+        return out;
     }
 
     public enum Unload { DONE, PARTIAL_FULL }
@@ -200,19 +361,12 @@ public abstract class Job {
     /** Deposits cargo into faction storage. Must be at the storehouse. Never deletes items. */
     protected Unload unloadNow() {
         BaseState b = base();
-        Map<net.minecraft.world.item.Item, Integer> kept = new HashMap<>();
         boolean full = false;
+        int[] kept = keptPerSlot();
         for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
             ItemStack s = npc.inventory().getItem(i);
-            if (s.isEmpty()) {
-                continue;
-            }
-            int k = keep(s);
-            int already = kept.getOrDefault(s.getItem(), 0);
-            int keepHere = Math.max(0, Math.min(s.getCount(), k - already));
-            kept.put(s.getItem(), already + keepHere);
-            int deposit = s.getCount() - keepHere;
-            if (deposit <= 0) {
+            int deposit = s.getCount() - kept[i];
+            if (s.isEmpty() || deposit <= 0) {
                 continue;
             }
             ItemStack out = s.split(deposit);
@@ -256,7 +410,9 @@ public abstract class Job {
             }
             levels += ench.getLevel(h);
         }
-        return rank * 100 + levels;
+        // nearly used up (under a quarter left): any fresh one of the same material is better
+        boolean worn = s.isDamageableItem() && s.getMaxDamage() - s.getDamageValue() < s.getMaxDamage() / 4;
+        return rank * 100 + levels - (worn ? 50 : 0);
     }
 
     protected void upgradeEquipment() {
@@ -274,6 +430,18 @@ public abstract class Job {
                 ItemStack got = FactionStorage.extractExact(level(), b, best);
                 if (!got.isEmpty()) {
                     npc.equip(got);
+                }
+            }
+        }
+        if (role == NpcRole.MINER && role.tool.matches(npc.tool())
+                && Inv.count(npc.inventory(), role.tool::matches) == 0) {
+            // a spare pickaxe in the backpack: a break deep in the mine does not mean a walk home
+            ItemStack spare = FactionStorage.findBest(level(), b, role.tool::matches, s -> gearScore(s, ToolKind.tierOf(s)));
+            if (!spare.isEmpty() && ToolKind.tierOf(spare) >= 1) {
+                ItemStack got = FactionStorage.extractExact(level(), b, spare);
+                ItemStack rest = Crafting.addAll(npc.inventory(), got);
+                if (!rest.isEmpty()) {
+                    FactionStorage.insert(level(), b, rest);
                 }
             }
         }

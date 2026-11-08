@@ -133,7 +133,7 @@ public class MinerJob extends Job {
      */
     private void startLengthening(WorkplaceState wp) {
         wp.reach++;
-        wp.revisit = SpiralMine.regularLevels(wp.origin.getY());
+        wp.revisit = Math.min(SpiralMine.regularLevels(wp.origin.getY()), MineLayout.deepest(wp)); // only levels already dug
         wp.progress = SpiralMine.planSize(wp.reach - 1);
         data().setDirty();
         state = State.STORAGE;
@@ -152,6 +152,18 @@ public class MinerJob extends Job {
         }
         data().setDirty();
         npc.awardXp(20);
+    }
+
+    /**
+     * The current bottom is dug out but the next level needs an iron pickaxe in hand and the faction has none: like a
+     * player without iron gear, branch-mine further out on the levels already reached (where the iron is) meanwhile.
+     */
+    private boolean blockedDeeper(WorkplaceState wp) {
+        int lv = MineLayout.deepest(wp);
+        return !wp.upgrading() && wp.revisit == 0 && wp.progress >= MineLayout.tunnelPlan(wp).size()
+                && MineLayout.landingSteps(wp, lv + 1) >= 0 && wp.tier + 1 >= 3 && wp.tier < WorkplaceState.Type.MINE.maxTier
+                && pickTier() < 2 && base() != null
+                && FactionStorage.count(level(), base(), s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= 2) == 0;
     }
 
     private int pickTier() {
@@ -220,7 +232,7 @@ public class MinerJob extends Job {
             return;
         }
         WorkplaceState wp = wp();
-        if (wp != null && exhausted(wp) && wp.reach < MAX_REACH) {
+        if (wp != null && (exhausted(wp) || blockedDeeper(wp)) && wp.reach < MAX_REACH) {
             startLengthening(wp);
         }
         if (wp != null && exhausted(wp) && state != State.STORAGE) {

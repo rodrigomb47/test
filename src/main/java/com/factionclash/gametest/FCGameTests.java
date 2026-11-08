@@ -87,8 +87,12 @@ public final class FCGameTests {
     }
 
     /** Acceptance 7: equipped NPC gear never loses durability, while a vanilla mob's armour does. */
+    /**
+     * Gear wears like a player's: a sword loses 1 per hit, armour 1 per piece per hit (damage / 4, at least 1), a
+     * pickaxe 1 per block mined and a sword 2 per block, a bow 1 per shot; what an equip replaces goes to the backpack.
+     */
     @GameTest(template = "platform", timeoutTicks = 100)
-    public static void npcGearDoesNotWear(GameTestHelper h) {
+    public static void npcGearWearsLikeAPlayers(GameTestHelper h) {
         FactionNpc n = npc(h, 5, 5, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
         n.equip(new ItemStack(Items.IRON_CHESTPLATE));
         n.equip(new ItemStack(Items.IRON_SWORD));
@@ -102,9 +106,95 @@ public final class FCGameTests {
             n.doHurtTarget(z);
             z.setHealth(z.getMaxHealth());
         }
-        h.assertTrue(n.getItemBySlot(EquipmentSlot.CHEST).getDamageValue() == 0, "NPC chestplate lost durability");
-        h.assertTrue(n.getMainHandItem().getDamageValue() == 0, "NPC sword lost durability");
+        h.assertTrue(n.getItemBySlot(EquipmentSlot.CHEST).getDamageValue() == 10, "chestplate wear " + n.getItemBySlot(EquipmentSlot.CHEST).getDamageValue() + " (player: 10)");
+        h.assertTrue(n.getMainHandItem().getDamageValue() == 10, "sword wear " + n.getMainHandItem().getDamageValue() + " (player: 10)");
+        BlockPos stone = new BlockPos(7, 2, 7);
+        h.setBlock(stone, Blocks.STONE);
+        com.factionclash.work.BlockWork.breakNow(n, h.absolutePos(stone), x -> true);
+        h.assertTrue(n.getMainHandItem().getDamageValue() == 12, "a sword mining a block should lose 2, wear " + n.getMainHandItem().getDamageValue());
+        n.equip(new ItemStack(Items.IRON_PICKAXE));
+        h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.IRON_SWORD)) == 1, "the replaced sword went missing");
+        h.setBlock(stone, Blocks.STONE);
+        com.factionclash.work.BlockWork.breakNow(n, h.absolutePos(stone), x -> true);
+        h.assertTrue(n.getMainHandItem().getDamageValue() == 1, "a pickaxe should lose 1 per block, wear " + n.getMainHandItem().getDamageValue());
+        ItemStack almost = new ItemStack(Items.STONE_PICKAXE);
+        almost.setDamageValue(almost.getMaxDamage() - 1);
+        n.equip(almost);
+        h.setBlock(stone, Blocks.STONE);
+        com.factionclash.work.BlockWork.breakNow(n, h.absolutePos(stone), x -> true);
+        h.assertTrue(n.getMainHandItem().isEmpty(), "a used-up pickaxe should break");
         h.succeed();
+    }
+
+    /**
+     * Anvil repair with the vanilla rules: each unit of material restores a quarter of the durability; only gear worth
+     * it is repaired (enchanted, or iron/diamond gear needing less material than a new one).
+     */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void anvilRepairFollowsVanillaRules(GameTestHelper h) {
+        ItemStack pick = new ItemStack(Items.DIAMOND_PICKAXE);
+        int quarter = pick.getMaxDamage() / 4;
+        pick.setDamageValue(quarter * 2 + 10); // a bit over half used up: three units of diamond
+        net.minecraft.world.SimpleContainer inv = new net.minecraft.world.SimpleContainer(4);
+        inv.setItem(0, new ItemStack(Items.DIAMOND, 5));
+        int[] used = {0};
+        com.factionclash.work.BlacksmithJob.repairWithMaterial(pick, inv, used);
+        h.assertTrue(used[0] == 3, "expected 3 diamonds, used " + used[0]);
+        h.assertTrue(pick.getDamageValue() == 0, "not fully repaired: " + pick.getDamageValue());
+        h.assertTrue(inv.getItem(0).getCount() == 2, "diamonds left " + inv.getItem(0).getCount());
+        ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE);
+        chest.setDamageValue(chest.getMaxDamage() / 2);
+        h.assertTrue(com.factionclash.work.BlacksmithJob.worthRepairing(chest), "a half-worn iron chestplate (2 ingots vs 8) is worth it");
+        ItemStack plainPick = new ItemStack(Items.IRON_PICKAXE);
+        plainPick.setDamageValue(plainPick.getMaxDamage() - 5);
+        h.assertFalse(com.factionclash.work.BlacksmithJob.worthRepairing(plainPick), "4 ingots to repair a plain iron pickaxe that costs 3");
+        ItemStack stone = new ItemStack(Items.STONE_PICKAXE);
+        stone.setDamageValue(stone.getMaxDamage() / 2);
+        h.assertFalse(com.factionclash.work.BlacksmithJob.worthRepairing(stone), "stone tools are not worth the anvil");
+        ItemStack tooExpensive = new ItemStack(Items.IRON_CHESTPLATE);
+        tooExpensive.setDamageValue(tooExpensive.getMaxDamage() / 2);
+        tooExpensive.set(net.minecraft.core.component.DataComponents.REPAIR_COST, 39);
+        h.assertFalse(com.factionclash.work.BlacksmithJob.worthRepairing(tooExpensive), "past 40 levels it is Too Expensive");
+        h.succeed();
+    }
+
+    /** A hungry NPC eats the best-fitting safe food it carries, like a player; rotten flesh only when starving. */
+    @GameTest(template = "platform", timeoutTicks = 200)
+    public static void hungryNpcEatsFromItsBackpack(GameTestHelper h) {
+        FactionNpc n = npc(h, 5, 5, FactionType.GROVE_COVENANT, NpcRole.FARMER);
+        n.hunger().set(10, 0, 0);
+        n.inventory().setItem(0, new ItemStack(Items.ROTTEN_FLESH, 3));
+        n.inventory().setItem(1, new ItemStack(Items.BREAD, 2));
+        FactionNpc starving = npc(h, 9, 9, FactionType.GROVE_COVENANT, NpcRole.FARMER);
+        starving.hunger().set(3, 0, 0);
+        starving.inventory().setItem(0, new ItemStack(Items.ROTTEN_FLESH, 3));
+        FactionNpc picky = npc(h, 12, 12, FactionType.GROVE_COVENANT, NpcRole.FARMER);
+        picky.hunger().set(10, 0, 0);
+        picky.inventory().setItem(0, new ItemStack(Items.ROTTEN_FLESH, 3));
+        h.runAfterDelay(80, () -> {
+            h.assertTrue(n.hunger().foodLevel() == 15, "bread should bring 10 to 15, food " + n.hunger().foodLevel());
+            h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.BREAD)) == 1, "one bread eaten");
+            h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.ROTTEN_FLESH)) == 3, "rotten flesh eaten while bread was there");
+            h.assertTrue(starving.hunger().foodLevel() > 3, "a starving NPC eats rotten flesh when it is all it has");
+            h.assertTrue(picky.hunger().foodLevel() == 10, "rotten flesh eaten without need");
+            h.succeed();
+        });
+    }
+
+    /** Healing comes from food: a fed NPC regenerates, a hungry one (below 18) does not. */
+    @GameTest(template = "platform", timeoutTicks = 260)
+    public static void onlyFedNpcsHeal(GameTestHelper h) {
+        FactionNpc fed = npc(h, 5, 5, FactionType.TIDE_ALLIANCE, NpcRole.BUILDER);
+        FactionNpc hungry = npc(h, 9, 5, FactionType.TIDE_ALLIANCE, NpcRole.BUILDER);
+        fed.hunger().set(20, 10, 0);
+        hungry.hunger().set(12, 0, 0);
+        fed.setHealth(10);
+        hungry.setHealth(10);
+        h.runAfterDelay(220, () -> {
+            h.assertTrue(fed.getHealth() > 14, "a fed NPC should heal, health " + fed.getHealth());
+            h.assertTrue(hungry.getHealth() <= 10.01F, "a hungry NPC healed, health " + hungry.getHealth());
+            h.succeed();
+        });
     }
 
     /** Acceptance 12: zombies, skeletons and variants deal half damage to NPCs; other sources do not. */
@@ -722,6 +812,7 @@ public final class FCGameTests {
         net.minecraft.world.Container g = FactionStorage.container(h.getLevel(), general);
         g.setItem(5, new ItemStack(Items.BREAD, 7));
         FactionNpc hauler = npc(h, 8, 8, FactionType.STONEGUARD, NpcRole.HAULER);
+        hauler.inventory().setItem(8, new ItemStack(Items.COOKED_BEEF, 4)); // its own meals, so it does not pack the bread
         hauler.setBaseId(b.id);
         Recruitment.register(data, hauler, b);
         h.onEachTick(() -> {

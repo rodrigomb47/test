@@ -124,6 +124,8 @@ public class WoodcutterJob extends Job {
         return new net.minecraft.world.phys.Vec3(Math.max(a.getX(), b.getX()) + 1, Math.max(a.getY(), b.getY()) + 1, Math.max(a.getZ(), b.getZ()) + 1);
     }
 
+    private long nextAxeCheck;
+
     private boolean hasAxe() {
         return ToolKind.AXE.matches(npc.tool());
     }
@@ -177,7 +179,7 @@ public class WoodcutterJob extends Job {
 
     private void decide(WorkplaceState wp) {
         wild = false;
-        if (!hasAxe() || cargo() >= CARGO_LIMIT || Inv.freeSlots(npc.inventory()) == 0) {
+        if (!hasAxe() && now() >= nextAxeCheck || cargo() >= CARGO_LIMIT || Inv.freeSlots(npc.inventory()) == 0) {
             state = State.STORAGE;
             return;
         }
@@ -240,8 +242,51 @@ public class WoodcutterJob extends Job {
             state = State.CHOP;
             return;
         }
+        if (forage(wp)) {
+            return;
+        }
         status("Saplings are growing" + (Inv.count(npc.inventory(), x -> x.is(Items.BONE_MEAL)) == 0 ? " (no bone meal)" : ""), "Waiting");
         waitFor(100);
+    }
+
+    private BlockPos forageTarget;
+    private int forageDir = -1, forageFails;
+    private long forageStart, nextForage;
+
+    /**
+     * No wild tree near the plot either: like a player looking for a forest, walk out about 70 blocks in one
+     * direction (a different one each time) and look around there. After a full round with nothing found it rests.
+     */
+    private boolean forage(WorkplaceState wp) {
+        if (forageTarget == null) {
+            if (now() < nextForage) {
+                return false;
+            }
+            forageDir = (forageDir + 1) % 8;
+            double a = forageDir * Math.PI / 4;
+            forageTarget = new BlockPos(wp.origin.getX() + (int) Math.round(Math.cos(a) * 72), wp.origin.getY(),
+                    wp.origin.getZ() + (int) Math.round(Math.sin(a) * 72));
+            forageStart = now();
+        }
+        BlockPos t = level().isLoaded(forageTarget)
+                ? level().getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, forageTarget) : forageTarget;
+        status("Looking for trees further out (" + t.toShortString() + ")", "Travelling");
+        if (goTo(t, 8.0, "trees further out") || now() - forageStart > 2400) {
+            forageTarget = null;
+            BlockPos tree = wildTreeAround(npc.blockPosition(), 40);
+            if (tree != null) {
+                forageFails = 0;
+                spot = tree;
+                wild = true;
+                wildWalk = 0;
+                logs.clear();
+                state = State.CHOP;
+            } else if (++forageFails >= 8) {
+                forageFails = 0;
+                nextForage = now() + 6000;
+            }
+        }
+        return true;
     }
 
     /** PROPOSED: wild trees are felled within this many blocks of the plot entrance. */
@@ -265,13 +310,20 @@ public class WoodcutterJob extends Job {
             return null;
         }
         nextWildScan = now() + 600;
+        wildCache = wildTreeAround(wp.origin, WILD_RANGE);
+        return wildCache;
+    }
+
+    /** The natural tree nearest the woodcutter within {@code range} of {@code center} (loaded ground only). */
+    private BlockPos wildTreeAround(BlockPos center, int range) {
+        BlockPos found = null;
         double bestD = Double.MAX_VALUE;
-        for (int dx = -WILD_RANGE; dx <= WILD_RANGE; dx += 2) {
-            for (int dz = -WILD_RANGE; dz <= WILD_RANGE; dz += 2) {
-                if (dx * dx + dz * dz > WILD_RANGE * WILD_RANGE) {
+        for (int dx = -range; dx <= range; dx += 2) {
+            for (int dz = -range; dz <= range; dz += 2) {
+                if (dx * dx + dz * dz > range * range) {
                     continue;
                 }
-                int x = wp.origin.getX() + dx, z = wp.origin.getZ() + dz;
+                int x = center.getX() + dx, z = center.getZ() + dz;
                 if (!level().isLoaded(new BlockPos(x, 0, z))) {
                     continue;
                 }
@@ -290,11 +342,11 @@ public class WoodcutterJob extends Job {
                 double d = base.distSqr(npc.blockPosition());
                 if (d < bestD) {
                     bestD = d;
-                    wildCache = base.immutable();
+                    found = base.immutable();
                 }
             }
         }
-        return wildCache;
+        return found;
     }
 
     private boolean naturalLeavesNear(BlockPos top) {
@@ -362,9 +414,10 @@ public class WoodcutterJob extends Job {
         }
         upgradeEquipment();
         if (!hasAxe()) {
-            status("No axe in storage - waiting", "Waiting");
-            waitFor(300);
-            return;
+            // like a player at the very start: no axe, so punch the trees (slower, the logs drop all the same) -
+            // those logs are what the blacksmith needs to make one
+            status("No axe in the storehouse - felling trees by hand", "Chopping");
+            nextAxeCheck = now() + 2400;
         }
         int saplings = Inv.count(npc.inventory(), s -> s.is(ItemTags.SAPLINGS));
         if (saplings < 4) {

@@ -72,7 +72,7 @@ public class FishermanJob extends Job {
             waitTicks = -1;
             return;
         }
-        if (Inv.freeSlots(npc.inventory()) <= 1 || Inv.totalItems(npc.inventory()) >= 32) {
+        if (Inv.freeSlots(npc.inventory()) <= 1 || cargoCount() >= 32) {
             state = State.STORAGE;
             return;
         }
@@ -127,6 +127,12 @@ public class FishermanJob extends Job {
             level().addFreshEntity(e);
             w.totalOutput += caught.getCount();
         }
+        // reeling in a catch costs the rod 1 durability (vanilla), and fishing pays experience (1-6) like a player's
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {
+            rod.hurtAndBreak(1, npc, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+        }
+        level().addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(level(), npc.getX(), npc.getY() + 0.5, npc.getZ(),
+                npc.getRandom().nextInt(6) + 1));
         npc.swing(InteractionHand.MAIN_HAND);
         npc.awardXp(1);
         data().setDirty();

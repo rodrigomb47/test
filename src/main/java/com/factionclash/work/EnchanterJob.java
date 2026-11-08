@@ -36,7 +36,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Enchanter: works the workshop's enchanting table the way a player does. It spends experience levels and lapis
+ * Enchanter: works the workshop's enchanting table the way a player does. It spends experience levels (taking up
+ * to level 30 from the faction's experience and leaving the rest for the blacksmith's anvil repairs) and lapis
  * lazuli on the faction's best unenchanted gear (soldiers' weapons and armour first, then pickaxes). The
  * experience is real: the orbs the faction's NPCs picked up from mined ores, emptied furnaces and bred animals.
  * Which enchantments come out is decided by the vanilla table (bookshelves around it, random costs).
@@ -95,9 +96,11 @@ public class EnchanterJob extends Job {
         }
         unloadNow(); // the gear enchanted last time goes back where the soldiers and miners take it from
         FactionState f = data().faction(npc.getFaction());
-        if (f.xpBank > 0) {
-            xpPoints += f.xpBank;
-            f.xpBank = 0;
+        long room = XpLevels.pointsFor(30) - xpPoints; // level 30 pays for any table offer; the rest stays for anvil repairs
+        if (f.xpBank > 0 && room > 0) {
+            long take = Math.min(room, f.xpBank);
+            xpPoints += take;
+            f.xpBank -= take;
             data().setDirty();
         }
         int lapis = Inv.count(npc.inventory(), x -> x.is(Items.LAPIS_LAZULI));

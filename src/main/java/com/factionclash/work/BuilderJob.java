@@ -115,7 +115,7 @@ public class BuilderJob extends Job {
         }
         Project p = activeProject();
         if (p == null) {
-            if (Inv.totalItems(npc.inventory()) > 0) {
+            if (cargoCount() > 0) {
                 if (atStorage()) {
                     unloadNow();
                     upgradeEquipment();
@@ -382,7 +382,7 @@ public class BuilderJob extends Job {
                 break;
             }
         }
-        boolean carrying = Inv.totalItems(npc.inventory()) > 0;
+        boolean carrying = cargoCount() > 0;
         if (craftNeeded) {
             state = State.CRAFT;
         } else if (carrying) {
@@ -443,7 +443,7 @@ public class BuilderJob extends Job {
                 return;
             }
         }
-        state = Inv.totalItems(npc.inventory()) > 0 ? State.DELIVER : State.CHECK;
+        state = cargoCount() > 0 ? State.DELIVER : State.CHECK;
     }
 
     private void deliver(BaseState b) {

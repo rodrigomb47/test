@@ -154,7 +154,9 @@ public final class FactionDirector {
         }
         if (living(f, b, NpcRole.FISHERMAN) == 0
                 && Recruitment.storedFoodValue(level, b) < FCConfig.RECRUIT_FOOD_VALUE.get() * 15) {
-            out.add(new Need(NpcRole.FISHERMAN, "more food"));
+            if (FactionStorage.count(level, b, s -> s.is(Items.FISHING_ROD)) > 0 || FactionStorage.count(level, b, s -> s.is(Items.STRING)) >= 2) {
+                out.add(new Need(NpcRole.FISHERMAN, "more food")); // only with a rod, or the string for one
+            }
         }
         // mines and caves: every workplace a miner can work should have one
         int cavesToMine = 0, caveMiners = 0;
@@ -280,7 +282,7 @@ public final class FactionDirector {
             return;
         }
         Need top = needs.get(0);
-        if (top.role() != NpcRole.MINER && retrainIdleMiner(level, data, f, b, top)) {
+        if (top.role() != NpcRole.MINER && retrainIdleWorker(level, data, f, b, top)) {
             b.lastRecruitAt = t;
             return;
         }
@@ -302,19 +304,25 @@ public final class FactionDirector {
      * Instead of recruiting, a miner who has had nothing to dig for half a day (no free mine, no surveyed cave)
      * takes up the job the base needs most, keeping its level and traits - like a player switching jobs.
      */
-    private static boolean retrainIdleMiner(ServerLevel level, CampaignData data, FactionState f, BaseState b, Need top) {
+    private static boolean retrainIdleWorker(ServerLevel level, CampaignData data, FactionState f, BaseState b, Need top) {
         for (NpcRecord r : f.roster.values()) {
-            if (!r.alive || r.baseId != b.id || r.role != NpcRole.MINER) {
+            if (!r.alive || r.baseId != b.id || r.role == top.role() || r.role.combatant) {
                 continue;
             }
-            if (level.getEntity(r.uuid) instanceof FactionNpc n && n.job() instanceof com.factionclash.work.MinerJob mj
-                    && mj.idleFor(RETRAIN_IDLE_TICKS)) {
+            boolean idleMiner = level.getEntity(r.uuid) instanceof FactionNpc m && m.job() instanceof com.factionclash.work.MinerJob mj
+                    && mj.idleFor(RETRAIN_IDLE_TICKS);
+            // a fisherman, butcher or miner who has not been able to get its tool for half a day (no string for a
+            // rod, nothing to make it from) does something useful instead
+            boolean toolless = level.getEntity(r.uuid) instanceof FactionNpc t && t.job() != null && t.job().missingToolFor(RETRAIN_IDLE_TICKS);
+            if ((idleMiner || toolless) && level.getEntity(r.uuid) instanceof FactionNpc n) {
+                String was = r.role.displayName;
                 r.role = top.role();
                 n.role(top.role());
                 data.setDirty();
                 LAST_RECRUIT_NOTE.put(b.id, n.npcName() + " retrained as " + top.role().displayName + " (" + top.reason() + ")");
-                Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (Miner) has had no mine or cave to work"
-                        + " for half a day and becomes a " + top.role().displayName + " (" + top.reason() + ")"));
+                Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (" + was + ") has had "
+                        + (idleMiner ? "no mine or cave to work" : "no tool for the job") + " for half a day and becomes a "
+                        + top.role().displayName + " (" + top.reason() + ")"));
                 return true;
             }
         }

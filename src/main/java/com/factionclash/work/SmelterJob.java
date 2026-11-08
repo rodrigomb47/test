@@ -33,6 +33,36 @@ public class SmelterJob extends CookingJob {
         return isOre(s);
     }
 
+    private boolean charcoal;
+
+    /**
+     * Out of coal with wood to spare: smelt logs into charcoal first, as a player would - one log burnt directly
+     * smelts 1.5 items, one charcoal smelts 8. The charcoal goes to the storehouse and fuels the furnaces and smoker.
+     */
+    @Override
+    protected void fetchExtras() {
+        int fuelStock = com.factionclash.storage.FactionStorage.count(level(), base(), x -> x.is(Items.COAL) || x.is(Items.CHARCOAL));
+        int logs = com.factionclash.storage.FactionStorage.count(level(), base(), x -> x.is(net.minecraft.tags.ItemTags.LOGS));
+        charcoal = fuelStock < 8 && logs > CHARCOAL_LOG_RESERVE;
+        int have = Inv.count(npc.inventory(), x -> x.is(net.minecraft.tags.ItemTags.LOGS));
+        if (charcoal && have < 8) {
+            takeFromStorage(x -> x.is(net.minecraft.tags.ItemTags.LOGS), Math.min(8 - have, logs - CHARCOAL_LOG_RESERVE));
+        }
+    }
+
+    /** PROPOSED: logs left for building and tools before any are made into charcoal. */
+    static final int CHARCOAL_LOG_RESERVE = 24;
+
+    @Override
+    protected boolean hasExtras() {
+        return charcoal && Inv.count(npc.inventory(), x -> x.is(net.minecraft.tags.ItemTags.LOGS)) > 0;
+    }
+
+    @Override
+    protected boolean extraInput(ItemStack s) {
+        return charcoal && s.is(net.minecraft.tags.ItemTags.LOGS);
+    }
+
     @Override
     protected String verb() {
         return "Smelting";

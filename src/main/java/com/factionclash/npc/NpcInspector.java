@@ -37,12 +37,17 @@ public final class NpcInspector {
             BlockPos d = job.destination();
             out.add("Destination: " + (d == null ? "none" : d.toShortString()));
         }
+        if (com.factionclash.config.FCConfig.HUNGER.get()) {
+            var h = npc.hunger();
+            out.add(String.format("Food %d/20, saturation %.1f%s", h.foodLevel(), h.saturation(),
+                    h.foodLevel() <= 6 ? " - hungry" : h.foodLevel() < 18 ? " - not healing" : ""));
+        }
         StringBuilder eq = new StringBuilder("Equipment: ");
-        eq.append(npc.getMainHandItem().isEmpty() ? "bare hands" : npc.getMainHandItem().getHoverName().getString());
+        eq.append(npc.getMainHandItem().isEmpty() ? "bare hands" : npc.getMainHandItem().getHoverName().getString() + durability(npc.getMainHandItem()));
         for (EquipmentSlot s : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
             ItemStack a = npc.getItemBySlot(s);
             if (!a.isEmpty()) {
-                eq.append(", ").append(a.getHoverName().getString());
+                eq.append(", ").append(a.getHoverName().getString()).append(durability(a));
             }
         }
         if (!npc.ammo().isEmpty()) {
@@ -111,5 +116,9 @@ public final class NpcInspector {
             }
         }
         return false;
+    }
+
+    private static String durability(ItemStack s) {
+        return s.isDamageableItem() ? " (" + (s.getMaxDamage() - s.getDamageValue()) + "/" + s.getMaxDamage() + ")" : "";
     }
 }

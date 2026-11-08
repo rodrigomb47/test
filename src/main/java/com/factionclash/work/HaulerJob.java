@@ -65,7 +65,7 @@ public class HaulerJob extends Job {
     }
 
     private void check(BaseState b) {
-        if (Inv.totalItems(npc.inventory()) > 0) {
+        if (cargoCount() > 0) {
             state = State.STORE;
             return;
         }
@@ -120,7 +120,7 @@ public class HaulerJob extends Job {
     private void pickup(BaseState b) {
         ItemEntity item = looseItem(b);
         if (item == null || Inv.freeSlots(npc.inventory()) <= 2 || ++pickupTicks > 1200) {
-            state = Inv.totalItems(npc.inventory()) > 0 ? State.STORE : State.CHECK;
+            state = cargoCount() > 0 ? State.STORE : State.CHECK;
             return;
         }
         if (!item.getUUID().equals(chasing)) {

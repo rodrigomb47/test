@@ -55,6 +55,11 @@ public abstract class CookingJob extends Job {
         return false;
     }
 
+    /** Extra things this station processes besides its normal input (the smelter's charcoal logs). */
+    protected boolean extraInput(ItemStack s) {
+        return false;
+    }
+
     protected List<AbstractFurnaceBlockEntity> stations() {
         List<AbstractFurnaceBlockEntity> out = new ArrayList<>();
         BaseState b = base();
@@ -106,10 +111,10 @@ public abstract class CookingJob extends Job {
         int inputs = takeFromStorage(s -> wantsInput(s) && FurnaceWork.cookable(level(), recipeType(), s), 32);
         List<AbstractFurnaceBlockEntity> list = stations();
         boolean stationsBusy = list.stream().anyMatch(f -> !f.getItem(0).isEmpty() || !f.getItem(2).isEmpty());
-        if (inputs > 0 || stationsBusy) {
+        fetchExtras();
+        if (inputs > 0 || stationsBusy || hasExtras()) {
             fetchFuel();
         }
-        fetchExtras();
         if (Inv.count(npc.inventory(), fuel()) == 0 && needsFuel(list, false) && !hasExtras()
                 && list.stream().noneMatch(f -> FurnaceWork.lit(f) || !f.getItem(2).isEmpty())) {
             // items wait in a cold station and there is nothing to burn: say so and check the storehouse again
@@ -131,7 +136,7 @@ public abstract class CookingJob extends Job {
     }
 
     /** PROPOSED: wood kept back for building and crafting before logs or planks are burnt as fuel. */
-    private static final int LOG_RESERVE = 8, PLANK_RESERVE = 16;
+    private static final int LOG_RESERVE = 16, PLANK_RESERVE = 16;
 
     /** Coal or charcoal first, then a coal block, then logs and planks beyond what building needs. */
     private void fetchFuel() {
@@ -192,7 +197,7 @@ public abstract class CookingJob extends Job {
                 }
                 f.setChanged();
             }
-            FurnaceWork.loadInput(f, npc.inventory(), s -> wantsInput(s) && FurnaceWork.cookable(level(), recipeType(), s));
+            FurnaceWork.loadInput(f, npc.inventory(), s -> (wantsInput(s) || extraInput(s)) && FurnaceWork.cookable(level(), recipeType(), s));
             if (!f.getItem(0).isEmpty() && f.getItem(1).isEmpty() && !FurnaceWork.lit(f)) {
                 if (FurnaceWork.loadFuel(f, npc.inventory(), fuel(), 4) == 0) {
                     status(verb() + " station needs fuel", "Waiting");

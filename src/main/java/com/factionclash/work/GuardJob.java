@@ -100,7 +100,7 @@ public class GuardJob extends Job {
     }
 
     private void patrol(BaseState home) {
-        if (now() - lastStorage > 6000 || (Inv.totalItems(npc.inventory()) > 0 && Inv.freeSlots(npc.inventory()) < 6)) {
+        if (now() - lastStorage > 6000 || (cargoCount() > 0 && Inv.freeSlots(npc.inventory()) < 6)) {
             state = State.STORAGE;
             return;
         }

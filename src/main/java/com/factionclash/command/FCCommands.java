@@ -466,6 +466,10 @@ public final class FCCommands {
                 o.addProperty("status", n.status());
                 o.addProperty("tool", n.getMainHandItem().getHoverName().getString());
                 o.addProperty("toolDamage", n.getMainHandItem().getDamageValue());
+                o.addProperty("toolMax", n.getMainHandItem().getMaxDamage());
+                o.addProperty("food", n.hunger().foodLevel());
+                o.addProperty("saturation", n.hunger().saturation());
+                o.addProperty("meals", com.factionclash.work.Inv.count(n.inventory(), com.factionclash.work.Job::isProvision));
                 o.addProperty("toolEnch", n.getMainHandItem().getEnchantments().keySet().stream()
                         .map(h -> net.minecraft.world.item.enchantment.Enchantment.getFullname(h, n.getMainHandItem().getEnchantments().getLevel(h)).getString())
                         .collect(java.util.stream.Collectors.joining(", ")));

@@ -28,6 +28,9 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue AUTO_START;
     public static final ModConfigSpec.IntValue UNSTUCK_HORIZONTAL;
     public static final ModConfigSpec.IntValue UNSTUCK_VERTICAL;
+    public static final ModConfigSpec.BooleanValue HUNGER;
+    public static final ModConfigSpec.BooleanValue TOOL_WEAR;
+    public static final ModConfigSpec.DoubleValue WORK_EXHAUSTION_PER_DAY;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -49,6 +52,17 @@ public final class FCConfig {
                 .defineInRange("unstuckHorizontal", 4, 1, 8);
         UNSTUCK_VERTICAL = b.comment("How far up or down (blocks) the stuck-recovery teleport may move an NPC.")
                 .defineInRange("unstuckVertical", 2, 1, 4);
+        b.pop();
+        b.comment("Survival: NPCs get hungry and their gear wears out like a player's").push("survival");
+        HUNGER = b.comment("NPCs have a food bar like a player's (food, saturation, exhaustion): they eat from what they carry,",
+                        "regenerate only when fed and starve when empty (down to 10 health on Easy, 1 on Normal, death on Hard).")
+                .define("hunger", true);
+        TOOL_WEAR = b.comment("Tools, weapons, bows and armour lose durability as a player's do and break when used up.",
+                        "The blacksmith repairs good gear at the anvil and crafts replacements.")
+                .define("toolWear", true);
+        WORK_EXHAUSTION_PER_DAY = b.comment("Exhaustion a working NPC builds up per in-game day on top of what its actions cost the vanilla way",
+                        "(walking costs a player nothing). 4 exhaustion = 1 food or saturation point. PROPOSED: 30 (~1.5 bread a day).")
+                .defineInRange("workExhaustionPerDay", 30.0, 0.0, 400.0);
         b.pop();
 
         b.comment("Recruitment (PROPOSED defaults)").push("recruitment");
