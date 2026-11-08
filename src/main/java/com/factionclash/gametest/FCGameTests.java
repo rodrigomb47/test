@@ -111,7 +111,16 @@ public final class FCGameTests {
         BlockPos stone = new BlockPos(7, 2, 7);
         h.setBlock(stone, Blocks.STONE);
         com.factionclash.work.BlockWork.breakNow(n, h.absolutePos(stone), x -> true);
-        h.assertTrue(n.getMainHandItem().getDamageValue() == 12, "a sword mining a block should lose 2, wear " + n.getMainHandItem().getDamageValue());
+        // a sword does not help on stone: like a player, the NPC digs it with an empty hand rather than spend the sword
+        h.assertTrue(n.getMainHandItem().getDamageValue() == 10, "a sword should be spared on stone, wear " + n.getMainHandItem().getDamageValue());
+        n.equip(new ItemStack(Items.IRON_AXE));
+        BlockPos leaf = new BlockPos(8, 2, 8);
+        h.setBlock(leaf, Blocks.OAK_LEAVES.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, true));
+        com.factionclash.work.BlockWork.breakNow(n, h.absolutePos(leaf), x -> true);
+        h.assertTrue(n.getMainHandItem().getDamageValue() == 0, "clearing leaves wore the axe: " + n.getMainHandItem().getDamageValue());
+        h.setBlock(leaf, Blocks.OAK_LOG);
+        com.factionclash.work.BlockWork.breakNow(n, h.absolutePos(leaf), x -> true);
+        h.assertTrue(n.getMainHandItem().getDamageValue() == 1, "an axe should lose 1 per log, wear " + n.getMainHandItem().getDamageValue());
         n.equip(new ItemStack(Items.IRON_PICKAXE));
         h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.IRON_SWORD)) == 1, "the replaced sword went missing");
         h.setBlock(stone, Blocks.STONE);

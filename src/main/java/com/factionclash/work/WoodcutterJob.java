@@ -602,6 +602,10 @@ public class WoodcutterJob extends Job {
         }
         wildWalk = 0;
         plotWalk = 0;
+        if (!npc.getNavigation().isDone()) {
+            // close enough to chop: stop here, or the rest of the walking path carries it out of reach again
+            npc.getNavigation().stop();
+        }
         if (logs.isEmpty()) {
             collectLogs();
             if (logs.isEmpty()) {

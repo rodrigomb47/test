@@ -166,11 +166,14 @@ public abstract class CookingJob extends Job {
      * wood that burning every spare log would never let build up), unless the faction is rationing food.
      */
     private int woodReserve() {
-        BaseState b = base();
+        return woodReserve(data(), base());
+    }
+
+    static int woodReserve(com.factionclash.campaign.CampaignData data, BaseState b) {
         if (b == null || com.factionclash.campaign.Logistics.rationing(b)) {
             return LOG_RESERVE;
         }
-        boolean plotToEnlarge = data().workplaces.values().stream().anyMatch(w -> w.baseId == b.id
+        boolean plotToEnlarge = data.workplaces.values().stream().anyMatch(w -> w.baseId == b.id
                 && w.type == com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT && w.tier < w.type.maxTier);
         return plotToEnlarge ? LOG_RESERVE * 4 : LOG_RESERVE; // the enlargement starts at about 56 logs
     }

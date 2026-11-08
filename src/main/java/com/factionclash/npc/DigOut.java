@@ -339,10 +339,7 @@ public final class DigOut {
                 npc.spawnAtLocation(rest);
             }
         }
-        ItemStack tool = npc.getMainHandItem();
-        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !tool.isEmpty()) {
-            tool.getItem().mineBlock(tool, level, s, c, npc);
-        }
+        com.factionclash.work.BlockWork.wear(npc, npc.getMainHandItem(), level, s, c);
         npc.exhaust(0.005F);
         level.setBlock(c, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         level.levelEvent(2001, c, Block.getId(s));

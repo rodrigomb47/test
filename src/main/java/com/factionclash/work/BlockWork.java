@@ -178,6 +178,17 @@ public final class BlockWork {
     }
 
     /**
+     * Vanilla tool wear for a broken block (1 per block for a tool, 2 for a sword) - but only when the tool actually
+     * helps with that block: a player clears leaves or digs dirt with an empty hand rather than wear out an axe or a
+     * pickaxe on them, so the NPC spares its tool the same way.
+     */
+    public static void wear(FactionNpc npc, ItemStack tool, ServerLevel level, BlockState state, BlockPos pos) {
+        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !tool.isEmpty() && tool.getDestroySpeed(state) > 1.0F) {
+            tool.getItem().mineBlock(tool, level, state, pos, npc);
+        }
+    }
+
+    /**
      * True if a living entity other than {@code self} stands where {@code state} would be placed — a player cannot
      * place a block inside a mob either, and doing so would suffocate it.
      */
@@ -211,9 +222,7 @@ public final class BlockWork {
         int xp = canHarvest(state, tool) ? state.getExpDrop(level, pos, be, npc, tool) : 0;
         level.levelEvent(2001, pos, Block.getId(state));
         level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && !tool.isEmpty()) {
-            tool.getItem().mineBlock(tool, level, state, pos, npc); // vanilla wear: 1 per block for a tool, 2 for a sword
-        }
+        wear(npc, tool, level, state, pos);
         npc.exhaust(0.005F); // a player's block break
         if (canHarvest(state, tool)) {
             state.spawnAfterBreak(level, pos, tool, true);
