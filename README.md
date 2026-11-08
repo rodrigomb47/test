@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `0fb28761227e9cf6269e0bf1438964bbee85e6a1c89eee4ac68bbf0280560f3c`
+SHA-256: `328deb996a6580a82b4d206b6a0394010ddc413ec7eeb592480cf69b676ef54d`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -68,9 +68,14 @@ Players respawn at their nearest surviving allied base when they have no bed.
   default, configurable). If it truly has no way (a sealed cave pocket, the floor of a ravine or pit, a tree
   canopy or the top of a tall trunk) it **digs its own way out**, a staircase step by step toward its
   destination's height (or chops the leaves/log it stands on), until it can walk again. Where the floor is missing
-  (a ravine between it and home) it **builds a bridge** with stone or dirt from its backpack, one block per step,
-  rising toward a higher destination. It never digs faction structures, walls, mine stairs, containers or anything
-  next to water or lava. A watchdog also catches NPCs that "walk" for 30 s without leaving the same spot.
+  (a ravine between it and home) it **builds a bridge** with stone or dirt from its backpack (any solid block it
+  carries, such as logs, when it has none), one block per step, rising toward a higher destination; where nothing
+  can be dug or bridged (a pit under a settlement's path) it **pillars up**. Out of blocks on the tip of its own
+  bridge, it **walks back** to firm ground (the tip is remembered as a dead end) and digs its way up through the
+  rock instead, and it never paces back onto a spot it just left. In a mine stairwell with a step mined away it
+  climbs the spiral and **puts the missing stair floor back**. It never digs faction structures, walls, mine stairs,
+  containers or anything next to water or lava. A watchdog also catches NPCs that "walk" for 30 s without leaving
+  the same spot.
 * **Starting bases** are placed on dry, gentle land: each faction searches its own map sector on real generated
   terrain, widens to the whole map (and a 1.5× map) if needed, and levels the footprint including the mine and
   tree-plot pads. Every base starts with a finished reporting station, map board, faction heart, categorised
@@ -88,8 +93,9 @@ Players respawn at their nearest surviving allied base when they have no bed.
   walking costs a player nothing). NPCs heal only when fed (18+, paid in exhaustion), so wounds after a fight cost
   food; at 0 they starve down to 10 health on Easy, 1 on Normal, and die on Hard. They pack 2 meals at the
   storehouse (3 for soldiers, scouts and explorers who go far), eat the best-fitting safe food below 18 (1.6 s,
-  shown in the off hand; rotten flesh only when starving) and go home to eat when out of food. Golden apples stay
-  for fights. With hunger off, NPCs regenerate slowly as before.
+  shown in the off hand; rotten flesh only when starving) and go home to eat when out of food. Badly hurt, they
+  eat even a meal that does not fit and fetch food (two extra meals) to get back over 18 and heal before working on.
+  Golden apples stay for fights. With hunger off, NPCs regenerate slowly as before.
 * **Faction achievements**: each faction makes the **vanilla advancements** (the game's own names, descriptions
   and requirements) through what its NPCs do the way a player would: Stone Age, Getting an Upgrade, Acquire
   Hardware, Suit Up, Isn't It Iron Pick, Diamonds!, Cover Me with Diamonds, Enchanter, Not Today, Thank You (a
@@ -104,16 +110,22 @@ Players respawn at their nearest surviving allied base when they have no bed.
   runs short and when it recovers. Short of food (under a day's meals for its people, or gone within 1.5 days) a
   base **rations**: one meal carried each and only food producers recruited, until it has 1.5 days again; and
   recruitment always keeps a day's meals for the people already there. The hauler keeps the workshop furnaces and
-  smoker stocked with coal or charcoal.
+  smoker stocked with coal or charcoal. Cooks with no coal craft logs into planks before burning them (four times
+  the smelting per log), and cooks and the charcoal-making smelter keep 64 logs back while a tree plot can still be
+  enlarged (16 when rationing), so a coal-less base can still save up for its fences.
 * **Combat behaviour**: melee soldiers jump and strike on the way down for a player's **critical hit** (×1.5); a
   sword hit on the ground **sweeps** enemies next to the target (Sweeping Edge applies; never allies or animals).
   Swordsmen carry a **shield**, raised while closing on archers and between swings, lowered to strike; it wears,
   and an axe knocks it aside for 5 s. Archers **back away** from melee enemies and **focus** the enemy closest to
   falling. A badly wounded soldier with no golden apple **falls back** toward home, eats, and returns when healed.
   Raids **muster** at a rally point outside the target and go in together; a party that loses more than half
-  **retreats**.
+  **retreats**. A **war council** picks the target: of the bases its scouts reported, the weakest garrison first,
+  then the nearest. The raid party is every soldier beyond a third of the garrison (at least `raidPartySize`), and
+  it only goes when it is at least two thirds of the defenders; a beaten enemy outnumbered 3 to 2 is
+  **counter-attacked** sooner.
 * **Gear wears like a player's** (config `survival.toolWear`, on by default): tools lose durability per block
-  (swords 2), weapons per hit (tools 2), bows and crossbows per shot, armour per hit taken, rods per catch, hoes
+  they actually speed up (swords 2; like a player switching to an empty hand, an axe is not worn on leaves nor a
+  sword on stone), weapons per hit (tools 2), bows and crossbows per shot, armour per hit taken, rods per catch, hoes
   per till; Unbreaking works; items break. Workers swap worn gear (under 25%) for fresh at the storehouse, miners
   carry a spare pickaxe, and a worker whose tool broke takes a spare or fetches a new one; woodcutters, farmers and
   builders work by hand meanwhile (a woodcutter with no axe punches trees, which is how the wood for an axe comes).
@@ -192,7 +204,9 @@ Players respawn at their nearest surviving allied base when they have no bed.
   damaged plan block.
 * **Scouts** explore unexplored map sectors, record only what they see and what is worth a trip (enemy
   settlements, lairs, monsters, cave entrances they can see a way into, exposed ore — not trees or water, which
-  are easy to find), retreat home on danger along a fixed route, and publish by reaching the station.
+  are easy to find), retreat home on danger along a fixed route, and publish by reaching the station. Once
+  everything within `scoutRange` is explored and no living rival settlement is known, they push the frontier out
+  64 blocks at a time, up to the edge of the map, so distant factions find each other.
 * **Soldiers**: swordsmen, axe fighters, archers and crossbowmen. Melee timing follows the held weapon's real
   attack speed (a sword about every 12 ticks, an axe every 20–25 but harder, and axes knock shields down);
   crossbows charge for their real charge time and fire faster, straighter bolts a little farther than bows.
@@ -346,6 +360,24 @@ are fixed and the run went on with them:
   with Power II; 18 NPCs were carrying enchanted weapons or tools, none with Silk Touch.
 * The war went on: Ember launched 18 raids and Grove 9 (Grove's first ones from day 21); no human faction has
   fallen yet (24–27 NPCs each).
+
+**The hunger-and-wear world continued to day 55** with the war council, scout frontier and the dig-out and fuel
+fixes below:
+* **The war was decided.** On day ~33 Ember and Grove raided each other at the same time; Ember's 8 soldiers took
+  the Grove settlement while Grove's army was away, and Grove was eliminated. Tide and Stoneguard, 320–375 blocks
+  from anyone, had never found a rival (scouts stopped at 160 blocks and then re-scouted the same ground), so the
+  war stopped. With the scout frontier, Ember's scouts reached 288 blocks on day 44 and found Tide; one raid with
+  enchanted diamond swords eliminated Tide (which never had iron). Ember then found Stoneguard; Stoneguard beat
+  back its first two raids (Ember lost 22 NPCs to Stoneguard's 10). Two factions left at day 55.
+* **Stuck NPCs fixed in this round:** a woodcutter stranded on top of a staircase it had bridged into a ravine
+  (out of blocks) walked back and dug up through the cliff; two miners pacing for days in a pit under their base's
+  path (which may not be dug) got out; a woodcutter that paced around one wild tree for days (its leftover path
+  kept carrying it out of reach) now stops to chop. Recovery hops fell from about 3,700 to about 200 a day.
+* **Wood and tools:** woodcutters wore out a stone axe in minutes on leaves and mostly worked bare-handed; now no
+  worker is without its tool. Stoneguard, with no coal, burnt every log above 16 and kept a tier-1 plot for 40
+  days; with plank fuel and the wood reserve its logs rose from 16 to 55 in a day.
+* Food average 18.6, nobody starving; a hurt woodcutter that went back to work at 1 HP and fell to its death led to
+  the "eat to heal" rule.
 
 Known rough edges: a few NPCs still need minutes of digging and bridging in very broken terrain; animals can still
 slip out of the pen occasionally; fishing has no visible bobber; the enchanter has nothing to do once all good gear

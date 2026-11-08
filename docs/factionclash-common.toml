@@ -84,7 +84,8 @@
 	# Default: 3
 	# Range: 0 ~ 20
 	homeDefenders = 3
-	#Soldiers sent on a raid.
+	#Smallest raid party. A faction sends every soldier beyond a third of its garrison (keeping at
+	#least homeDefenders at home), so with 12 soldiers it raids with 8.
 	# Default: 3
 	# Range: 1 ~ 20
 	raidPartySize = 3

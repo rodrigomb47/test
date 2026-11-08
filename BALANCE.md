@@ -24,8 +24,16 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   anything touching a fluid. Up a tree it breaks the leaves or log underfoot (the wood goes into its backpack).
 * Recovery teleports never land on leaves or on top of a tall trunk.
 * Bridging: where the step toward the destination has no floor, an NPC places a block of stone, cobblestone,
-  deepslate, dirt, andesite, diorite, granite or tuff from its backpack and steps onto it (rising one block per
-  step when the destination is above); never inside protected ground.
+  deepslate, dirt, andesite, diorite, granite or tuff from its backpack (else any full solid block it carries:
+  logs, planks...) and steps onto it (rising one block per step when the destination is above); never inside
+  protected ground.
+* Climbing, in order: a dug step up toward the destination, a level step, a bridge step in any other direction, a
+  pillar (a block placed underfoot, the cell two above must be clear), and last a step back down. Stepping away
+  from the destination or back down marks the spot left as a dead end it will not return to; it also never steps
+  back onto one of the last 6 spots it left. Both are forgotten on arrival or 12000 ticks after the last step.
+* In a mine stairwell (the 2x2 spiral column below the hut floor) it climbs the spiral one step at a time and puts
+  back a missing stair floor with a block from its backpack. Miners do not follow ore veins into the stairs or the
+  rock ring around them.
 * Leaving a settlement, NPCs head for the gate with the shortest walk to the destination; long trips past their own
   base put their waypoints around the walls.
 
@@ -99,7 +107,7 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   cave wall nearest the deepest explored spot, torches every 8 blocks.
 
 ## Experience and enchanting (`EnchanterJob`, `XpLevels`)
-* Experience is real orbs, picked up by any faction NPC within 2 blocks into the faction's experience: ores mined
+* Experience is real orbs, picked up by any faction NPC within 4 blocks into the faction's experience: ores mined
   with a tool that harvests them (vanilla amounts, e.g. diamond 3–7, coal 0–2), furnace and smoker output taken
   (vanilla recipe experience), animals bred (1–7).
 * Hiring (PROPOSED): when the enchanting table stands, the faction has at least level 10 worth of experience
@@ -124,9 +132,12 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   meat, fish and potatoes stay for the chef; golden apples are for fights. Eating below 18 food when the meal fits
   (or below 13 anyway), harmful food only at 6 or less. At 6 with no meal: a trip home, retried every 30 s; with
   nothing at home, work goes on (checked again after 2 minutes).
+* Hurt (PROPOSED): at 75% health or less below 18 food a meal is eaten even if part of it is wasted; at 50% or less
+  two extra meals are packed; at 30% or less below 18 food with no meal, a trip home for food.
 
 ## Tool wear and repairs (config `survival.toolWear`)
-* Vanilla wear (Unbreaking applies): see the README. Gear under 25% durability counts below a fresh one of its
+* Vanilla wear (Unbreaking applies): see the README. A block only wears the held tool when that tool mines it
+  faster than a hand (an axe on leaves, a pickaxe on dirt or a sword on stone wear nothing). Gear under 25% durability counts below a fresh one of its
   material, so it is swapped at the storehouse (and returned there); miners carry one spare pickaxe.
 * Errand for a tool when the work cannot be done by hand (miners, fishermen, soldiers, scouts, explorers,
   butchers): retried every 1200 ticks; after 12000 ticks without one, a civilian is retrained.
@@ -141,11 +152,15 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 ## Wood and fuel
 * Woodcutters with nothing to fell near the plot walk 72 blocks out (a different direction each time) and look
   for wild trees within 40 blocks there; after 8 tries in vain they rest for 6000 ticks.
-* Smelters make charcoal from logs when the storehouse has fewer than 8 coal/charcoal and more than 24 logs.
+* Smelters make charcoal from logs when the storehouse has fewer than 8 coal/charcoal and more logs than the wood
+  reserve (at least 24).
+* Wood reserve (PROPOSED): 64 logs while one of the base's tree plots is below tier 3 (its enlargement starts at
+  about 56 logs), else 16; 16 whenever the base is rationing food.
 
 ## Cooking stations (`CookingJob`)
 * One station with items waiting, cold and without fuel is enough to send the worker for fuel.
-* Fuel order: coal or charcoal (6), a coal block, then logs (keeping 16 in storage), then planks (keeping 16).
+* Fuel order: coal or charcoal (6), a coal block, then logs (keeping the wood reserve; 2 at a time, crafted into
+  8 planks first: 6 smelts per log instead of 1.5), then planks (keeping 16).
 * With nothing to burn and no station busy, the worker waits at the storehouse (600 ticks) with a clear status;
   items a station cannot cook are taken out of it.
 
@@ -176,6 +191,10 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   at least 2 health less than the current target.
 * Withdrawal: under 30% health with no golden apple, fall back toward the storehouse (or 12 blocks away from the
   attacker near home) until over 60% or for at most 1200 ticks.
+* War council (PROPOSED): target = the reported, still-standing base with the fewest soldiers at home (lair: its
+  monsters), then the nearest. Party = every soldier beyond max(`homeDefenders`, a third of the garrison), at
+  least `raidPartySize`. A raid goes when the interval has passed and the party is at least 2/3 of the defenders;
+  a counter-attack may go after a quarter of the interval when the party is at least 3/2 of the defenders.
 * Raids: rally point 28 blocks short of the target toward home; the assault starts when 70% of the living raiders
   are within 12 blocks of it or after 6000 ticks; a raid that has lost more than half its party is called off.
 
@@ -228,7 +247,9 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 
 ## War (config `war`)
 * Scouts: range 160 (+Pathfinder), at least 96 blocks out, 4 sectors per expedition, overdue after 24000 ticks.
-* Raids: interval 36000 ticks, party 3, 3 home defenders kept; assault takes 400 ticks at the target heart.
+  When every sector in range is explored and no living rival settlement is known, the faction's range grows by 64
+  (saved, up to the far edge of the map); otherwise the explored sectors are forgotten and scouted again.
+* Raids: interval 36000 ticks, party at least 3 (see the war council above), 3 home defenders kept; assault takes 400 ticks at the target heart.
 * Hollow lairs: start with 5 monsters, +1 per day up to 12; raid every 30000 ticks on the nearest settlement within 300 blocks.
 * Damage: zombies, skeletons and variants deal ×0.5 to NPCs; NPCs regenerate 1 HP per 4 s out of combat (they have no hunger).
 * Victory rule (proposed): a base falls when its **Faction Heart** is destroyed; a faction with no standing bases is eliminated; the last faction standing (The Hollow included) wins. The reporting station is not the defeat core.
