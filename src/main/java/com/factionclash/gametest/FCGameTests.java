@@ -355,6 +355,75 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * The pact: when Ember conquers Grove, Tide and Stoneguard swear a pact against Ember. They learn where Ember
+     * lives, their NPCs stop fighting each other (no sweep, no friendly fire, not enemies) and Ember stays the enemy.
+     * Its own batch: the pact is campaign-wide and would change the other tests' fights.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "diplomacy")
+    public static void conquestRaisesAPactAgainstTheConqueror(GameTestHelper h) {
+        var data = com.factionclash.campaign.CampaignData.get(h.getLevel().getServer());
+        List<com.factionclash.campaign.BaseState> made = new java.util.ArrayList<>();
+        int i = 0;
+        for (FactionType t : List.of(FactionType.EMBER_LEGION, FactionType.GROVE_COVENANT, FactionType.TIDE_ALLIANCE, FactionType.STONEGUARD)) {
+            com.factionclash.campaign.BaseState b = new com.factionclash.campaign.BaseState();
+            b.faction = t;
+            b.kind = com.factionclash.campaign.BaseState.Kind.SETTLEMENT;
+            b.center = new BlockPos(900_000 + 400 * i++, 70, 900_000);
+            b.name = t.displayName + " test keep";
+            made.add(data.addBase(b));
+        }
+        Runnable cleanup = () -> {
+            for (var b : made) {
+                data.bases.remove(b.id);
+            }
+            data.pactAgainst = null;
+            data.pactMembers.clear();
+            data.faction(FactionType.GROVE_COVENANT).alive = true;
+            for (FactionType t : List.of(FactionType.TIDE_ALLIANCE, FactionType.STONEGUARD)) {
+                data.faction(t).knowledge.removeIf(r -> r.pos.getX() >= 900_000);
+            }
+        };
+        try {
+            made.get(1).destroyed = true;
+            data.faction(FactionType.GROVE_COVENANT).alive = false;
+            com.factionclash.campaign.Diplomacy.onElimination(h.getLevel(), data, FactionType.GROVE_COVENANT, FactionType.EMBER_LEGION);
+            h.assertTrue(data.pactAgainst == FactionType.EMBER_LEGION, "no pact against the conqueror: " + data.pactAgainst);
+            h.assertTrue(data.pactMembers.equals(java.util.EnumSet.of(FactionType.TIDE_ALLIANCE, FactionType.STONEGUARD)), "members " + data.pactMembers);
+            h.assertTrue(data.faction(FactionType.STONEGUARD).knowledge.stream().anyMatch(r -> r.subject == FactionType.EMBER_LEGION
+                    && r.pos.equals(made.get(0).center)), "the allies were not told where Ember lives");
+            FactionNpc tide = npc(h, 5, 5, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN);
+            FactionNpc stone = npc(h, 6, 6, FactionType.STONEGUARD, NpcRole.SWORDSMAN);
+            FactionNpc ember = npc(h, 6, 5, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
+            FactionNpc ember2 = npc(h, 7, 5, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
+            for (FactionNpc n : List.of(tide, stone, ember, ember2)) {
+                n.setNoAi(true);
+            }
+            h.assertFalse(tide.isEnemy(stone), "pact members are still enemies");
+            h.assertTrue(tide.isEnemy(ember) && stone.isEnemy(ember), "the conqueror should stay the enemy");
+            h.assertTrue(ember.isEnemy(tide), "the conqueror should still fight the pact");
+            tide.equip(new ItemStack(Items.IRON_SWORD));
+            tide.setOnGround(true);
+            tide.fallDistance = 0;
+            tide.doHurtTarget(ember);
+            h.assertTrue(ember2.getHealth() < ember2.getMaxHealth(), "the sweep should hit the second Ember soldier");
+            h.assertTrue(stone.getHealth() == stone.getMaxHealth(), "the sweep hit an ally");
+            stone.invulnerableTime = 0;
+            stone.hurt(h.getLevel().damageSources().mobAttack(tide), 5.0F);
+            h.assertTrue(stone.getHealth() == stone.getMaxHealth(), "friendly fire between allies");
+            // Ember falls: the pact is over and the two allies are rivals again
+            made.get(0).destroyed = true;
+            data.faction(FactionType.EMBER_LEGION).alive = false;
+            com.factionclash.campaign.Diplomacy.onElimination(h.getLevel(), data, FactionType.EMBER_LEGION, FactionType.TIDE_ALLIANCE);
+            data.faction(FactionType.EMBER_LEGION).alive = true;
+            h.assertTrue(data.pactAgainst == null, "the pact should end with the conqueror");
+            h.assertTrue(tide.isEnemy(stone), "without the pact they are rivals again");
+        } finally {
+            cleanup.run();
+        }
+        h.succeed();
+    }
+
     /** Healing comes from food: a fed NPC regenerates, a hungry one (below 18) does not. */
     @GameTest(template = "platform", timeoutTicks = 260)
     public static void onlyFedNpcsHeal(GameTestHelper h) {

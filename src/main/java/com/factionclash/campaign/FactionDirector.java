@@ -349,11 +349,11 @@ public final class FactionDirector {
         BlockPos heart = b.point(BaseState.HEART);
         AABB walls = new AABB(b.center).inflate(com.factionclash.structure.BaseLayout.HALF + 4, 12, com.factionclash.structure.BaseLayout.HALF + 4);
         List<net.minecraft.world.entity.LivingEntity> intruders = level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, walls,
-                e -> e.isAlive() && ((e instanceof FactionNpc n && n.getFaction() != b.faction)
+                e -> e.isAlive() && ((e instanceof FactionNpc n && Diplomacy.hostile(level.getServer(), n.getFaction(), b.faction))
                         || (e instanceof net.minecraft.world.entity.monster.Monster m && com.factionclash.combat.CombatRules.isHostileMonster(m))
                         || (e instanceof net.minecraft.server.level.ServerPlayer p && !p.isCreative() && !p.isSpectator()
                         && CampaignData.get(level.getServer()).players.get(p.getUUID()) != null
-                        && CampaignData.get(level.getServer()).players.get(p.getUUID()) != b.faction)));
+                        && Diplomacy.hostile(level.getServer(), CampaignData.get(level.getServer()).players.get(p.getUUID()), b.faction))));
         if (intruders.isEmpty()) {
             return 0;
         }
@@ -530,8 +530,11 @@ public final class FactionDirector {
         BaseState target = null;
         double best = Double.MAX_VALUE;
         int targetDefence = 0;
+        // in a pact: only the conqueror, never an ally
+        FactionType sworn = Diplomacy.swornEnemy(data, f.type);
         for (Report r : f.knowledge) {
-            if (r.kind != Report.Kind.ENEMY_BASE && r.kind != Report.Kind.LAIR) {
+            if (r.kind != Report.Kind.ENEMY_BASE && r.kind != Report.Kind.LAIR || Diplomacy.allied(data, f.type, r.subject)
+                    || sworn != null && r.subject != sworn) {
                 continue;
             }
             for (BaseState b : data.bases.values()) {
@@ -550,7 +553,18 @@ public final class FactionDirector {
             return;
         }
         boolean counter = !intervalOver && party * 2 >= targetDefence * 3;
-        if (!counter && (!intervalOver || party * 3 < targetDefence * 2)) {
+        // a pact offensive: allies already marching on the same base count toward the strength needed
+        int alliedRaiders = 0;
+        if (sworn != null) {
+            for (FactionType m : data.pactMembers) {
+                FactionState ally = data.faction(m);
+                if (m != f.type && ally.raidTarget == target.id) {
+                    alliedRaiders += ally.raiders.size();
+                }
+            }
+        }
+        boolean joint = alliedRaiders > 0 && (party + alliedRaiders) * 3 >= targetDefence * 2;
+        if (!joint && !counter && (!intervalOver || party * 3 < targetDefence * 2)) {
             return; // not yet, or not strong enough for that garrison
         }
         soldiers.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
@@ -570,7 +584,8 @@ public final class FactionDirector {
         f.lastRaidAt = t;
         f.raidsLaunched++;
         data.setDirty();
-        Messages.toFaction(level.getServer(), f.type, Component.literal((counter ? "Counter-attack! " : "") + "Launching a raid with " + party
+        Messages.toFaction(level.getServer(), f.type, Component.literal((joint ? "Joining the pact's offensive! " : counter ? "Counter-attack! " : "")
+                + "Launching a raid with " + party
                 + " soldiers (against about " + targetDefence + " defenders) on the "
                 + target.faction.displayName + (target.isSettlement() ? " settlement" : " lair") + " reported at " + target.center.toShortString()));
     }

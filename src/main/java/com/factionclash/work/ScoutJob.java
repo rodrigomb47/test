@@ -107,6 +107,7 @@ public class ScoutJob extends Job {
         CampaignData data = data();
         FactionState f = data.faction(npc.getFaction());
         boolean rivalKnown = f.knowledge.stream().anyMatch(r -> r.kind == com.factionclash.campaign.Report.Kind.ENEMY_BASE
+                && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), r.subject)
                 && data.bases.values().stream().anyMatch(o -> o.faction == r.subject && !o.destroyed && o.center.distSqr(r.pos) < 32 * 32));
         int dx = Math.abs(b.center.getX() - data.center.getX()) + data.radius, dz = Math.abs(b.center.getZ() - data.center.getZ()) + data.radius;
         int maxReach = (int) Math.sqrt((double) dx * dx + dz * dz) - FCConfig.SCOUT_RANGE.get();
@@ -284,7 +285,8 @@ public class ScoutJob extends Job {
         AABB box = npc.getBoundingBox().inflate(10);
         List<LivingEntity> threats = level().getEntitiesOfClass(LivingEntity.class, box, e -> e.isAlive()
                 && ((e instanceof Monster m && CombatRules.isHostileMonster(m))
-                || (e instanceof FactionNpc o && o.getFaction() != npc.getFaction() && o.getRole().combatant)));
+                || (e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), o.getFaction())
+                && o.getRole().combatant)));
         boolean hurt = npc.getHealth() < npc.getMaxHealth() * 0.6F;
         if (threats.size() >= 2 || (!threats.isEmpty() && hurt)) {
             LivingEntity t = threats.get(0);

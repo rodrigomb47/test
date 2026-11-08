@@ -105,6 +105,7 @@ public final class CampaignManager {
                 .withStyle(ChatFormatting.GOLD));
         if (data.livingBasesOf(base.faction).isEmpty()) {
             eliminate(level, data, base.faction);
+            Diplomacy.onElimination(level, data, base.faction, by);
         }
     }
 

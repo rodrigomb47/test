@@ -111,6 +111,10 @@ public final class BaseInfo {
         }
         out.add("Repairs pending: " + b.pendingRepairs.size() + "  Player edits preserved: " + b.playerEdits.size());
         out.add("Reports delivered: " + f.reportsDelivered + " (" + f.knowledge.size() + " on the map), sectors explored " + f.explored.size());
+        com.factionclash.campaign.CampaignData cd = com.factionclash.campaign.CampaignData.get(level.getServer());
+        if (cd.pactAgainst != null && (cd.pactMembers.contains(b.faction) || cd.pactAgainst == b.faction)) {
+            out.add(com.factionclash.campaign.Diplomacy.describe(cd));
+        }
         if (!f.achievements.isEmpty()) {
             String last = f.achievements.keySet().stream().reduce((a, x) -> x).orElse("");
             out.add("Advancements made: " + f.achievements.size() + " (latest: " + com.factionclash.achieve.FactionAchievements.title(level.getServer(), last)

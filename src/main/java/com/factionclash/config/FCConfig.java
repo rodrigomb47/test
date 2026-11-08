@@ -19,6 +19,7 @@ public final class FCConfig {
     public static final ModConfigSpec.IntValue REPORT_STALE_TICKS;
     public static final ModConfigSpec.DoubleValue RANGED_SHARE;
     public static final ModConfigSpec.IntValue HOME_DEFENDERS;
+    public static final ModConfigSpec.BooleanValue PACTS;
     public static final ModConfigSpec.IntValue RAID_PARTY_SIZE;
     public static final ModConfigSpec.IntValue RAID_INTERVAL_TICKS;
     public static final ModConfigSpec.IntValue LAIR_BASE_CAP;
@@ -94,6 +95,9 @@ public final class FCConfig {
                 .defineInRange("scoutOverdueTicks", 24000, 1200, 240000);
         REPORT_STALE_TICKS = b.comment("Enemy sightings older than this are shown as stale.")
                 .defineInRange("reportStaleTicks", 24000, 1200, 480000);
+        PACTS = b.comment("When a human faction conquers another, the surviving factions (two or more) swear a pact against",
+                        "the conqueror: no fighting between them, the conqueror's bases revealed, joint raids on it.")
+                .define("pacts", true);
         HOME_DEFENDERS = b.comment("Soldiers a faction always keeps at home.")
                 .defineInRange("homeDefenders", 3, 0, 20);
         RAID_PARTY_SIZE = b.comment("Smallest raid party. A faction sends every soldier beyond a third of its garrison (keeping at",

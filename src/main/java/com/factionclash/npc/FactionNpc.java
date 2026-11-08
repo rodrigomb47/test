@@ -169,7 +169,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
                 e -> isGuardDuty() && CombatRules.isHostileMonster(e)));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, FactionNpc.class, 10, true, false,
-                e -> isGuardDuty() && e instanceof FactionNpc o && o.getFaction() != getFaction()));
+                e -> isGuardDuty() && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), o.getFaction())));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
                 e -> isGuardDuty() && e instanceof ServerPlayer p && CombatRules.isEnemyPlayer(this, p)));
     }
@@ -665,7 +665,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     /** Hostile monsters, other factions' NPCs and enemy players: what a sweep may hit. */
     public boolean isEnemy(LivingEntity e) {
         if (e instanceof FactionNpc o) {
-            return o.getFaction() != getFaction();
+            return com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), o.getFaction());
         }
         if (e instanceof net.minecraft.server.level.ServerPlayer p) {
             return com.factionclash.combat.CombatRules.isEnemyPlayer(this, p);
