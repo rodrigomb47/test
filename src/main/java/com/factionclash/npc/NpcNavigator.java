@@ -70,9 +70,25 @@ public final class NpcNavigator {
         deadEndAt = npc.tickCount;
     }
 
+    /** The last few spots a digging-out NPC stepped off (it does not pace back onto them). */
+    private final java.util.ArrayDeque<BlockPos> recentSpots = new java.util.ArrayDeque<>();
+
+    public void leftSpot(BlockPos p) {
+        if (recentSpots.size() >= 6) {
+            recentSpots.removeFirst();
+        }
+        recentSpots.addLast(p.immutable());
+        deadEndAt = npc.tickCount;
+    }
+
+    public boolean recentlyLeft(BlockPos p) {
+        return recentSpots.contains(p);
+    }
+
     public boolean isDeadEnd(BlockPos p) {
-        if (!deadEnds.isEmpty() && npc.tickCount - deadEndAt > 12000) {
+        if (npc.tickCount - deadEndAt > 12000) {
             deadEnds.clear();
+            recentSpots.clear();
         }
         return deadEnds.contains(p);
     }
@@ -129,6 +145,7 @@ public final class NpcNavigator {
             npc.getNavigation().stop();
             stallTicks = 0;
             deadEnds.clear();
+            recentSpots.clear();
             return Result.ARRIVED;
         }
         if (failures >= MAX_FAILURES) {

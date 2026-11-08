@@ -646,8 +646,12 @@ public class MinerJob extends Job {
     }
 
     private void noticeOres(BlockPos opened) {
+        var mines = com.factionclash.campaign.CampaignData.get(npc.getServer()).workplaces.values();
         for (Direction d : Direction.values()) {
             BlockPos n = opened.relative(d);
+            if (mines.stream().anyMatch(w -> w.type == WorkplaceState.Type.MINE && MineLayout.nearStairs(w, n))) {
+                continue; // ore in a stair floor or the rock holding the stairs stays: mining it breaks the way down
+            }
             if (vein.size() < MAX_VEIN && !vein.contains(n) && isOre(level().getBlockState(n))) {
                 vein.add(n);
             }

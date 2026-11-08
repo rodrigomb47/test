@@ -93,7 +93,9 @@ public abstract class Job {
                 return true;
             }
         }
-        if (com.factionclash.config.FCConfig.HUNGER.get() && npc.hunger().foodLevel() <= 6 && now() >= nextMealTrip
+        // hungry, or badly hurt without the 18 food that lets it heal: fetch food like a player would
+        boolean needsFood = npc.hunger().foodLevel() <= 6 || npc.getHealth() <= npc.getMaxHealth() * 0.3F && npc.hunger().foodLevel() < 18;
+        if (com.factionclash.config.FCConfig.HUNGER.get() && needsFood && now() >= nextMealTrip
                 && Inv.count(npc.inventory(), Job::isProvision) == 0 && !npc.isEatingMeal()) {
             if (FactionStorage.count(level(), b, Job::isProvision) == 0) {
                 nextMealTrip = now() + 2400; // nothing to eat at home either: work on, and look again later
@@ -135,7 +137,9 @@ public abstract class Job {
         if (com.factionclash.campaign.Logistics.rationing(base())) {
             return 1; // rationing: one meal each, the rest stays in the storehouse for everyone
         }
-        return r.combatant || r == NpcRole.SCOUT || r == NpcRole.CAVE_EXPLORER ? 3 : 2;
+        // hurt: two more, eaten on the spot to get back over 18 food and heal
+        int hurt = npc.getHealth() <= npc.getMaxHealth() * 0.5F ? 2 : 0;
+        return (r.combatant || r == NpcRole.SCOUT || r == NpcRole.CAVE_EXPLORER ? 3 : 2) + hurt;
     }
 
     /** Since when the storehouse had no tool for this worker (-1: it has one, or has not looked yet). */

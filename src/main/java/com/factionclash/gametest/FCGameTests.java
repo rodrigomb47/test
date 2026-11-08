@@ -751,6 +751,98 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * In a mine's stairwell with two steps gone (mined out from under it), where the stairs may not be dug: the NPC
+     * climbs the spiral, putting each missing stair floor back with a block from its backpack.
+     */
+    @GameTest(template = "platform", timeoutTicks = 120)
+    public static void npcClimbsABrokenMineStairwell(GameTestHelper h) {
+        for (BlockPos p : BlockPos.betweenClosed(3, 2, 3, 9, 4, 8)) {
+            h.setBlock(p, Blocks.STONE);
+        }
+        com.factionclash.campaign.WorkplaceState mine = new com.factionclash.campaign.WorkplaceState();
+        mine.id = 990_001;
+        mine.type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+        mine.origin = h.absolutePos(new BlockPos(4, 5, 5));
+        mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+        var data = com.factionclash.campaign.CampaignData.get(h.getLevel().getServer());
+        data.workplaces.put(mine.id, mine);
+        for (int k = 1; k <= 3; k++) {
+            BlockPos st = com.factionclash.structure.MineLayout.stand(mine, k);
+            for (int y = 0; y < 3; y++) {
+                h.getLevel().setBlockAndUpdate(st.above(y), Blocks.AIR.defaultBlockState());
+            }
+        }
+        BlockPos floor2 = com.factionclash.structure.MineLayout.stand(mine, 2).below();
+        BlockPos floor1 = com.factionclash.structure.MineLayout.stand(mine, 1).below();
+        h.getLevel().setBlockAndUpdate(floor2, Blocks.AIR.defaultBlockState()); // steps 1 and 2 have lost their floors
+        h.getLevel().setBlockAndUpdate(floor1, Blocks.AIR.defaultBlockState());
+        BlockPos start = com.factionclash.structure.MineLayout.stand(mine, 3);
+        h.assertTrue(start.equals(h.absolutePos(new BlockPos(6, 2, 6))), "step 3 should be at (6, 2, 6)");
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(6, 2, 6));
+        n.faction(FactionType.TIDE_ALLIANCE);
+        n.role(NpcRole.SCOUT); // (a miner's own job would claim the test mine and walk back down)
+        n.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 5));
+        BlockPos goal = h.absolutePos(new BlockPos(14, 6, 5));
+        int[] steps = {0};
+        h.onEachTick(() -> {
+            if (h.getTick() % 5 != 0 || !n.onGround()) {
+                return;
+            }
+            if (n.getBlockY() >= mine.origin.getY()) {
+                data.workplaces.remove(mine.id);
+                h.assertTrue(steps[0] == 3, "expected 3 steps up the spiral, took " + steps[0]);
+                h.assertTrue(h.getLevel().getBlockState(floor1).is(Blocks.COBBLESTONE) && h.getLevel().getBlockState(floor2).is(Blocks.COBBLESTONE),
+                        "the missing stair floors were not put back");
+                h.assertTrue(n.inventory().getItem(0).getCount() == 3, "two blocks should be used");
+                h.succeed();
+                return;
+            }
+            if (++steps[0] > 6) {
+                data.workplaces.remove(mine.id);
+                h.fail("too many steps, at " + n.blockPosition());
+            }
+            if (!com.factionclash.npc.DigOut.step(n, goal)) {
+                data.workplaces.remove(mine.id);
+                h.fail("no step at " + n.blockPosition());
+            }
+        });
+    }
+
+    /** At the bottom of a narrow well with walls it cannot dig: the NPC pillars up with blocks from its backpack. */
+    @GameTest(template = "platform", timeoutTicks = 100)
+    public static void npcPillarsOutOfAWell(GameTestHelper h) {
+        for (BlockPos p : BlockPos.betweenClosed(4, 2, 4, 6, 4, 6)) {
+            h.setBlock(p, Blocks.BEDROCK);
+        }
+        for (int y = 2; y <= 4; y++) {
+            h.setBlock(new BlockPos(5, y, 5), Blocks.AIR);
+        }
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(5, 2, 5));
+        n.faction(FactionType.STONEGUARD);
+        n.role(NpcRole.SCOUT);
+        n.inventory().setItem(0, new ItemStack(Items.DIRT, 5));
+        BlockPos goal = h.absolutePos(new BlockPos(5, 7, 14));
+        int top = h.absolutePos(new BlockPos(5, 5, 5)).getY();
+        int[] steps = {0};
+        h.onEachTick(() -> {
+            if (h.getTick() % 5 != 0 || !n.onGround()) {
+                return;
+            }
+            if (n.getBlockY() >= top) {
+                // two blocks pillared, then a plain step up onto the rim
+                h.assertTrue(steps[0] == 3, "expected 3 steps, took " + steps[0]);
+                h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.DIRT)) == 3, "two blocks should be used, dirt left "
+                        + com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.DIRT)));
+                h.assertTrue(h.getBlockState(new BlockPos(5, 2, 5)).is(Blocks.DIRT) && h.getBlockState(new BlockPos(5, 3, 5)).is(Blocks.DIRT), "no pillar under it");
+                h.succeed();
+                return;
+            }
+            h.assertTrue(++steps[0] <= 5, "too many steps");
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "no step at " + n.blockPosition());
+        });
+    }
+
     /** On top of a tall trunk (too far to jump down), an NPC chops the log underfoot and comes down with the wood. */
     @GameTest(template = "platform", timeoutTicks = 80)
     public static void npcOnTallTrunkChopsItsWayDown(GameTestHelper h) {

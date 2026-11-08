@@ -75,6 +75,9 @@ public final class DigOut {
             npc.navigator().recoveries++;
             return true;
         }
+        if (target.getY() > p.getY() + 1 && climbStairs(level, npc, p)) {
+            return true;
+        }
         int surface = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, p.getX(), p.getZ());
         boolean underground = p.getY() < surface - 2;
         List<Direction> dirs = new ArrayList<>(Direction.Plane.HORIZONTAL.stream().toList());
@@ -87,54 +90,169 @@ public final class DigOut {
         }
         final double fx = tx, fz = tz;
         dirs.sort(Comparator.comparingDouble(d -> -(d.getStepX() * fx + d.getStepZ() * fz)));
-        // destination above: climb (a step up in any direction beats walking along a ledge back to the same dead
-        // end); destination well below (a cliff top, a pocket over the mine tunnels): dig a staircase down;
-        // otherwise tunnel level toward it
         boolean below = target.getY() < p.getY() - 1;
         boolean climb = target.getY() > p.getY() + 1;
-        int[] order = climb ? new int[]{1, 0} : below ? new int[]{-1, 0} : new int[]{0, 1};
         if (!below && bridge(level, npc, p, dirs.get(0), climb)) {
             return true;
         }
-        // last of all, a step back down: out on a bridge with no blocks left, or on a ledge with no way on, it walks
-        // back (the spot it leaves is a dead end it will not return to) toward ground it can dig its way through
-        int[] tries = below ? order : java.util.Arrays.copyOf(order, order.length + 1);
-        if (!below) {
-            tries[order.length] = -1;
+        // destination above: climb (a step up in any direction beats walking along a ledge back to the same dead
+        // end); destination well below (a cliff top, a pocket over the mine tunnels): dig a staircase down;
+        // otherwise tunnel level toward it
+        for (int dy : climb ? new int[]{1, 0} : below ? new int[]{-1, 0} : new int[]{0, 1}) {
+            if (move(level, npc, p, dirs, dy, fx, fz, false)) {
+                return true;
+            }
         }
-        for (int i = 0; i < tries.length; i++) {
-            int dy = tries[i];
-            boolean retreat = i == order.length;
-            for (Direction d : dirs) {
-                BlockPos q = p.relative(d).above(dy);
-                if (npc.navigator().isDeadEnd(q)) {
-                    continue;
-                }
-                List<BlockPos> clear = new ArrayList<>(List.of(q, q.above()));
-                if (dy == 1) {
-                    clear.add(p.above(2));
-                } else if (dy == -1) {
-                    clear.add(q.above(2));
-                }
-                if (!level.getBlockState(q.below()).isFaceSturdy(level, q.below(), Direction.UP) || !allDiggable(level, clear)) {
-                    continue;
-                }
-                for (BlockPos c : clear) {
-                    dig(level, npc, c);
-                }
-                if (NpcNavigator.isSafeStandingSpot(level, npc, q)) {
-                    if (retreat || d.getStepX() * fx + d.getStepZ() * fz < 0) {
-                        npc.navigator().deadEnd(p); // turning back: no way on from here
-                    }
-                    npc.swing(InteractionHand.MAIN_HAND);
-                    npc.getNavigation().stop();
-                    npc.teleportTo(q.getX() + 0.5, q.getY(), q.getZ() + 0.5);
-                    npc.navigator().recoveries++;
+        if (climb) {
+            // nothing to dig a step into and nowhere new to go (open air, or ground that may not be dug, such as a
+            // settlement's path overhead): build up instead - a block to step onto, or one underfoot to pillar up
+            for (Direction d : dirs.subList(1, dirs.size())) {
+                if (bridge(level, npc, p, d, true)) {
                     return true;
                 }
             }
+            if (pillar(level, npc, p)) {
+                return true;
+            }
+        }
+        // last of all, a step back down: out on a bridge with no blocks left, or on a ledge with no way on, it walks
+        // back (the spot it leaves is a dead end it will not return to) toward ground it can dig its way through
+        return !below && move(level, npc, p, dirs, -1, fx, fz, true);
+    }
+
+    /**
+     * One step (dy = 1 up, 0 level, -1 down) in the first direction that works: digs the way clear and moves onto
+     * the spot. Never back onto a spot it just left (pacing between two cells gets nowhere) unless retreating, and
+     * never onto a dead end.
+     */
+    private static boolean move(ServerLevel level, FactionNpc npc, BlockPos p, List<Direction> dirs, int dy, double fx, double fz, boolean retreat) {
+        for (Direction d : dirs) {
+            BlockPos q = p.relative(d).above(dy);
+            if (npc.navigator().isDeadEnd(q) || !retreat && npc.navigator().recentlyLeft(q)) {
+                continue;
+            }
+            List<BlockPos> clear = new ArrayList<>(List.of(q, q.above()));
+            if (dy == 1) {
+                clear.add(p.above(2));
+            } else if (dy == -1) {
+                clear.add(q.above(2));
+            }
+            if (!level.getBlockState(q.below()).isFaceSturdy(level, q.below(), Direction.UP) || !allDiggable(level, clear)) {
+                continue;
+            }
+            for (BlockPos c : clear) {
+                dig(level, npc, c);
+            }
+            if (NpcNavigator.isSafeStandingSpot(level, npc, q)) {
+                if (retreat || d.getStepX() * fx + d.getStepZ() * fz < 0) {
+                    npc.navigator().deadEnd(p); // turning back: no way on from here
+                }
+                stepTo(npc, p, q);
+                return true;
+            }
         }
         return false;
+    }
+
+    private static void stepTo(FactionNpc npc, BlockPos from, BlockPos to) {
+        npc.swing(InteractionHand.MAIN_HAND);
+        npc.getNavigation().stop();
+        npc.navigator().leftSpot(from);
+        npc.teleportTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5);
+        npc.navigator().recoveries++;
+    }
+
+    /** Pillars up one block, as a player would: a block from the backpack placed underfoot with a jump. */
+    private static boolean pillar(ServerLevel level, FactionNpc npc, BlockPos p) {
+        int slot = blockSlot(level, npc);
+        BlockPos head = p.above(2);
+        BlockState hs = level.getBlockState(head);
+        if (slot < 0 || !hs.isAir() && !allDiggable(level, List.of(head)) || !level.getBlockState(p).canBeReplaced()
+                || !level.getBlockState(p).getFluidState().isEmpty() || isProtected(level, p)) {
+            return false;
+        }
+        dig(level, npc, head);
+        BlockPos up = p.above();
+        npc.teleportTo(up.getX() + 0.5, up.getY(), up.getZ() + 0.5);
+        ItemStack block = npc.inventory().getItem(slot);
+        BlockState place = ((net.minecraft.world.item.BlockItem) block.getItem()).getBlock().defaultBlockState();
+        level.setBlock(p, place, Block.UPDATE_ALL);
+        level.playSound(null, p, place.getSoundType().getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+        block.shrink(1);
+        npc.inventory().setChanged();
+        npc.swing(InteractionHand.MAIN_HAND);
+        npc.getNavigation().stop();
+        npc.navigator().leftSpot(p);
+        npc.navigator().recoveries++;
+        return true;
+    }
+
+    /**
+     * In a mine's stairwell with a step missing (its floor mined out or washed away), where the stairs may not be
+     * dug: climb the spiral one step, putting the missing floor back with a block from the backpack first, as a
+     * player would. Stair cells hold nothing but air and step floors, so this only ever restores the stairs.
+     */
+    private static boolean climbStairs(ServerLevel level, FactionNpc npc, BlockPos p) {
+        com.factionclash.campaign.WorkplaceState wp = null;
+        for (com.factionclash.campaign.WorkplaceState w : CampaignData.get(level.getServer()).workplaces.values()) {
+            if (w.type == com.factionclash.campaign.WorkplaceState.Type.MINE && com.factionclash.structure.MineLayout.inStairwell(w, p)) {
+                wp = w;
+                break;
+            }
+        }
+        if (wp == null) {
+            return false;
+        }
+        int k = wp.origin.getY() - p.getY();
+        BlockPos here = com.factionclash.structure.MineLayout.stand(wp, k);
+        // on the step for this height: one up the spiral; beside it (the other cells of the stairwell): onto it
+        BlockPos next = here.equals(p) ? com.factionclash.structure.MineLayout.stand(wp, k - 1) : here;
+        if (Math.abs(next.getX() - p.getX()) > 1 || Math.abs(next.getZ() - p.getZ()) > 1 || next.getY() - p.getY() > 1) {
+            return false;
+        }
+        BlockPos floor = next.below();
+        BlockState fs = level.getBlockState(floor);
+        if (!fs.isFaceSturdy(level, floor, Direction.UP)) {
+            int slot = blockSlot(level, npc);
+            if (!fs.canBeReplaced() || !fs.getFluidState().isEmpty() || slot < 0) {
+                return false;
+            }
+            ItemStack block = npc.inventory().getItem(slot);
+            BlockState place = ((net.minecraft.world.item.BlockItem) block.getItem()).getBlock().defaultBlockState();
+            level.setBlock(floor, place, Block.UPDATE_ALL);
+            level.playSound(null, floor, place.getSoundType().getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+            block.shrink(1);
+            npc.inventory().setChanged();
+        }
+        for (BlockPos c : List.of(next, next.above(), p.above(2))) {
+            BlockState s = level.getBlockState(c);
+            if (!s.isAir() && (s.getDestroySpeed(level, c) < 0 || s.hasBlockEntity() || !s.getFluidState().isEmpty())) {
+                return false;
+            }
+            if (!s.isAir() && !s.getCollisionShape(level, c).isEmpty()) {
+                dig(level, npc, c); // rubble in the stairwell (a cave-in, gravel): the stairs are open space
+            }
+        }
+        if (!NpcNavigator.isSafeStandingSpot(level, npc, next)) {
+            return false;
+        }
+        stepTo(npc, p, next);
+        return true;
+    }
+
+    /** Backpack slot of a block to build with: stone or earth first, else any full solid block. */
+    private static int blockSlot(ServerLevel level, FactionNpc npc) {
+        for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
+            if (BRIDGE.contains(npc.inventory().getItem(i).getItem())) {
+                return i;
+            }
+        }
+        for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
+            if (solidBlock(level, npc.inventory().getItem(i))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /** Blocks an NPC may build a bridge or a step with: plain stone and earth it dug up itself. */
@@ -150,18 +268,7 @@ public final class DigOut {
      * destination is above. Only where digging cannot help, and never inside protected ground.
      */
     private static boolean bridge(ServerLevel level, FactionNpc npc, BlockPos p, Direction d, boolean climb) {
-        int slot = -1;
-        for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
-            if (BRIDGE.contains(npc.inventory().getItem(i).getItem())) {
-                slot = i;
-                break;
-            }
-        }
-        for (int i = 0; slot < 0 && i < npc.inventory().getContainerSize(); i++) {
-            if (solidBlock(level, npc.inventory().getItem(i))) {
-                slot = i; // no stone or dirt: any solid block it carries (logs, planks...), as a player would
-            }
-        }
+        int slot = blockSlot(level, npc); // stone or dirt, else any solid block it carries (logs, planks...)
         if (slot < 0) {
             return false;
         }
@@ -192,10 +299,7 @@ public final class DigOut {
                 dig(level, npc, c);
             }
             if (NpcNavigator.isSafeStandingSpot(level, npc, q)) {
-                npc.swing(InteractionHand.MAIN_HAND);
-                npc.getNavigation().stop();
-                npc.teleportTo(q.getX() + 0.5, q.getY(), q.getZ() + 0.5);
-                npc.navigator().recoveries++;
+                stepTo(npc, p, q);
                 return true;
             }
         }
@@ -269,11 +373,8 @@ public final class DigOut {
     private static boolean isProtected(ServerLevel level, BlockPos c) {
         CampaignData data = CampaignData.get(level.getServer());
         for (com.factionclash.campaign.WorkplaceState w : data.workplaces.values()) {
-            if (w.type == com.factionclash.campaign.WorkplaceState.Type.MINE && c.getY() < w.origin.getY()) {
-                int f = com.factionclash.structure.MineLayout.forwardOf(w, c), sd = com.factionclash.structure.MineLayout.sideOf(w, c);
-                if (f >= 0 && f <= 3 && sd >= -1 && sd <= 2) {
-                    return true; // a mine's spiral stairs and the rock around them: its floors hold the stairs up
-                }
+            if (w.type == com.factionclash.campaign.WorkplaceState.Type.MINE && com.factionclash.structure.MineLayout.nearStairs(w, c)) {
+                return true; // a mine's spiral stairs and the rock around them: its floors hold the stairs up
             }
         }
         for (BaseState b : data.bases.values()) {

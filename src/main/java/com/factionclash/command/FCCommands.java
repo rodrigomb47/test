@@ -329,7 +329,7 @@ public final class FCCommands {
         }
         int lv = com.factionclash.structure.MineLayout.level(w);
         var plan = com.factionclash.structure.MineLayout.tunnelPlan(w);
-        StringBuilder sb = new StringBuilder("mine " + w.id + " tier " + w.tier + " +" + w.subLevel + " level y="
+        StringBuilder sb = new StringBuilder("mine " + w.id + " origin " + w.origin.toShortString() + " facing " + w.facing + " tier " + w.tier + " +" + w.subLevel + " level y="
                 + com.factionclash.logic.SpiralMine.levelY(w.origin.getY(), lv) + " shaftStep " + w.upgradeStep
                 + " tunnel " + w.progress + "/" + plan.size() + "\n");
         for (int i = Math.max(0, w.progress - 6); i < Math.min(plan.size(), w.progress + 6); i++) {

@@ -86,6 +86,24 @@ public final class MineLayout {
         return local(wp, c.f(), c.s(), c.dy());
     }
 
+    /** The spiral stairs and the rock around them (below the hut floor): kept as they are, never dug for ore. */
+    public static boolean nearStairs(WorkplaceState wp, BlockPos p) {
+        if (p.getY() >= wp.origin.getY()) {
+            return false;
+        }
+        int f = forwardOf(wp, p), s = sideOf(wp, p);
+        return f >= 0 && f <= 3 && s >= -1 && s <= 2;
+    }
+
+    /** Inside the stairwell itself (the 2x2 column the spiral winds down), below the hut floor. */
+    public static boolean inStairwell(WorkplaceState wp, BlockPos p) {
+        if (p.getY() >= wp.origin.getY()) {
+            return false;
+        }
+        int f = forwardOf(wp, p), s = sideOf(wp, p);
+        return f >= 1 && f <= 2 && s >= 0 && s <= 1;
+    }
+
     public static boolean inShaft(WorkplaceState wp, BlockPos p, int steps) {
         return SpiralMine.inShaft(forwardOf(wp, p), sideOf(wp, p), p.getY() - wp.origin.getY(), steps);
     }
