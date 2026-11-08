@@ -96,7 +96,8 @@ public final class FCConfig {
                 .defineInRange("reportStaleTicks", 24000, 1200, 480000);
         HOME_DEFENDERS = b.comment("Soldiers a faction always keeps at home.")
                 .defineInRange("homeDefenders", 3, 0, 20);
-        RAID_PARTY_SIZE = b.comment("Soldiers sent on a raid.")
+        RAID_PARTY_SIZE = b.comment("Smallest raid party. A faction sends every soldier beyond a third of its garrison (keeping at",
+                        "least homeDefenders at home), so with 12 soldiers it raids with 8.")
                 .defineInRange("raidPartySize", 3, 1, 20);
         RAID_INTERVAL_TICKS = b.comment("Minimum ticks between raids launched by one faction.")
                 .defineInRange("raidIntervalTicks", 36000, 1200, 480000);

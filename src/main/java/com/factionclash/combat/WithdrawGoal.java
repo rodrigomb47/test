@@ -56,7 +56,14 @@ public class WithdrawGoal extends Goal {
         if (home != null && npc.blockPosition().distSqr(home.center) > 12 * 12) {
             dest = Vec3.atBottomCenterOf(home.point(BaseState.STORAGE_STAND) != null ? home.point(BaseState.STORAGE_STAND) : home.center);
         } else if (t != null) {
-            dest = DefaultRandomPos.getPosAway(npc, 12, 5, t.position());
+            // straight away from the attacker, 10 blocks (a random spot away from it if that way is blocked)
+            Vec3 away = npc.position().subtract(t.position()).multiply(1, 0, 1);
+            if (away.lengthSqr() > 1.0E-4) {
+                dest = npc.position().add(away.normalize().scale(10));
+            }
+            if (dest == null || npc.getNavigation().createPath(net.minecraft.core.BlockPos.containing(dest), 1) == null) {
+                dest = DefaultRandomPos.getPosAway(npc, 12, 5, t.position());
+            }
         }
         if (dest != null) {
             npc.getNavigation().moveTo(dest.x, dest.y, dest.z, 1.25);

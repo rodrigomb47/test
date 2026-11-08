@@ -50,8 +50,31 @@ public final class NpcNavigator {
     /** PROPOSED: ticks without getting at least a block closer before the trip counts as failing (pacing back and forth). */
     private static final int NO_PROGRESS_TICKS = 300;
 
+    /**
+     * Spots a digging-out NPC retreated from (the tip of a bridge it ran out of blocks on, a ledge with no way on):
+     * it does not step back onto them, so it walks back to firm ground instead of pacing to the same tip. Forgotten
+     * on arrival or a while after the last one.
+     */
+    private final java.util.Set<BlockPos> deadEnds = new java.util.HashSet<>();
+    private int deadEndAt;
+
     public NpcNavigator(FactionNpc npc) {
         this.npc = npc;
+    }
+
+    public void deadEnd(BlockPos p) {
+        if (deadEnds.size() >= 64) {
+            deadEnds.clear();
+        }
+        deadEnds.add(p.immutable());
+        deadEndAt = npc.tickCount;
+    }
+
+    public boolean isDeadEnd(BlockPos p) {
+        if (!deadEnds.isEmpty() && npc.tickCount - deadEndAt > 12000) {
+            deadEnds.clear();
+        }
+        return deadEnds.contains(p);
     }
 
     public BlockPos target() {
@@ -105,6 +128,7 @@ public final class NpcNavigator {
         if (within(npc, target, this.reach)) {
             npc.getNavigation().stop();
             stallTicks = 0;
+            deadEnds.clear();
             return Result.ARRIVED;
         }
         if (failures >= MAX_FAILURES) {

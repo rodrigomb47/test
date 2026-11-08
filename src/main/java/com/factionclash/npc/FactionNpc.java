@@ -846,6 +846,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         }
         int food = hunger.foodLevel();
         boolean starving = food <= 6;
+        // badly hurt below 18 food: no natural healing, so it eats even if part of the meal is wasted, as a player would
+        boolean hurt = getHealth() <= getMaxHealth() * 0.75F;
         if (food >= 18 || getTarget() != null && !starving) {
             return;
         }
@@ -862,7 +864,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 continue;
             }
             boolean fits = hunger.hasRoomFor(f.nutrition());
-            if (!fits && food > 12) {
+            if (!fits && food > 12 && !hurt) {
                 continue; // would waste most of it: wait a little
             }
             // fitting food first, then the most filling; harmful food last

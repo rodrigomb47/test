@@ -508,35 +508,50 @@ public final class FactionDirector {
             }
             return;
         }
-        if (t - f.lastRaidAt < FCConfig.RAID_INTERVAL_TICKS.get() || t - data.startedAt < FCConfig.RAID_INTERVAL_TICKS.get()) {
+        int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+        // a counter-attack may go out sooner (a quarter of the interval) - but only into a weakened enemy, below
+        if (t - f.lastRaidAt < interval / 4 || t - data.startedAt < interval) {
             return;
         }
+        boolean intervalOver = t - f.lastRaidAt >= interval;
         BlockPos min = home.point(BaseState.MIN), max = home.point(BaseState.MAX);
         AABB area = new AABB(min.getX(), min.getY() - 40, min.getZ(), max.getX() + 1, max.getY() + 40, max.getZ() + 1);
         List<FactionNpc> soldiers = level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == f.type
                 && n.getRole().combatant && n.baseId() == home.id);
-        int party = FCConfig.RAID_PARTY_SIZE.get();
+        // a real attack: every soldier beyond a third of the garrison (never fewer than raidPartySize, always leaving
+        // homeDefenders at home) - small parties against a full garrison only feed an endless war of attrition
+        int keep = Math.max(FCConfig.HOME_DEFENDERS.get(), (soldiers.size() + 2) / 3);
+        int party = Math.max(FCConfig.RAID_PARTY_SIZE.get(), soldiers.size() - keep);
         if (soldiers.size() < FCConfig.HOME_DEFENDERS.get() + party) {
             return;
         }
+        // war council: of the bases the scouts reported, the weakest garrison first (then the nearest); attack when
+        // the party is at least two thirds of its defenders, or - sooner - when it outnumbers a beaten enemy 3 to 2
         BaseState target = null;
         double best = Double.MAX_VALUE;
+        int targetDefence = 0;
         for (Report r : f.knowledge) {
             if (r.kind != Report.Kind.ENEMY_BASE && r.kind != Report.Kind.LAIR) {
                 continue;
             }
             for (BaseState b : data.bases.values()) {
                 if (b.faction == r.subject && !b.destroyed && b.center.distSqr(r.pos) < 32 * 32) {
-                    double d = b.center.distSqr(home.center);
-                    if (d < best) {
-                        best = d;
+                    int defence = defenders(data, b);
+                    double score = defence * 1000.0 + Math.sqrt(b.center.distSqr(home.center));
+                    if (score < best) {
+                        best = score;
                         target = b;
+                        targetDefence = defence;
                     }
                 }
             }
         }
         if (target == null) {
             return;
+        }
+        boolean counter = !intervalOver && party * 2 >= targetDefence * 3;
+        if (!counter && (!intervalOver || party * 3 < targetDefence * 2)) {
+            return; // not yet, or not strong enough for that garrison
         }
         soldiers.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
         f.raiders.clear();
@@ -555,8 +570,24 @@ public final class FactionDirector {
         f.lastRaidAt = t;
         f.raidsLaunched++;
         data.setDirty();
-        Messages.toFaction(level.getServer(), f.type, Component.literal("Launching a raid with " + party + " soldiers on the "
+        Messages.toFaction(level.getServer(), f.type, Component.literal((counter ? "Counter-attack! " : "") + "Launching a raid with " + party
+                + " soldiers (against about " + targetDefence + " defenders) on the "
                 + target.faction.displayName + (target.isSettlement() ? " settlement" : " lair") + " reported at " + target.center.toShortString()));
+    }
+
+    /** Fighting strength at a base: its living soldiers at home (a lair: its monsters). */
+    private static int defenders(CampaignData data, BaseState b) {
+        if (!b.isSettlement()) {
+            return b.lairMobs.size();
+        }
+        FactionState f = data.faction(b.faction);
+        int n = 0;
+        for (NpcRecord r : f.roster.values()) {
+            if (r.alive && r.baseId == b.id && r.role.combatant && !f.raiders.contains(r.uuid)) {
+                n++;
+            }
+        }
+        return n;
     }
 
     // ------------------------------------------------------------------ Hollow lairs

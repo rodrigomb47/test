@@ -96,9 +96,20 @@ public final class DigOut {
         if (!below && bridge(level, npc, p, dirs.get(0), climb)) {
             return true;
         }
-        for (int dy : order) {
+        // last of all, a step back down: out on a bridge with no blocks left, or on a ledge with no way on, it walks
+        // back (the spot it leaves is a dead end it will not return to) toward ground it can dig its way through
+        int[] tries = below ? order : java.util.Arrays.copyOf(order, order.length + 1);
+        if (!below) {
+            tries[order.length] = -1;
+        }
+        for (int i = 0; i < tries.length; i++) {
+            int dy = tries[i];
+            boolean retreat = i == order.length;
             for (Direction d : dirs) {
                 BlockPos q = p.relative(d).above(dy);
+                if (npc.navigator().isDeadEnd(q)) {
+                    continue;
+                }
                 List<BlockPos> clear = new ArrayList<>(List.of(q, q.above()));
                 if (dy == 1) {
                     clear.add(p.above(2));
@@ -112,6 +123,9 @@ public final class DigOut {
                     dig(level, npc, c);
                 }
                 if (NpcNavigator.isSafeStandingSpot(level, npc, q)) {
+                    if (retreat || d.getStepX() * fx + d.getStepZ() * fz < 0) {
+                        npc.navigator().deadEnd(p); // turning back: no way on from here
+                    }
                     npc.swing(InteractionHand.MAIN_HAND);
                     npc.getNavigation().stop();
                     npc.teleportTo(q.getX() + 0.5, q.getY(), q.getZ() + 0.5);
@@ -143,6 +157,11 @@ public final class DigOut {
                 break;
             }
         }
+        for (int i = 0; slot < 0 && i < npc.inventory().getContainerSize(); i++) {
+            if (solidBlock(level, npc.inventory().getItem(i))) {
+                slot = i; // no stone or dirt: any solid block it carries (logs, planks...), as a player would
+            }
+        }
         if (slot < 0) {
             return false;
         }
@@ -150,6 +169,9 @@ public final class DigOut {
             BlockPos q = p.relative(d).above(dy);
             BlockPos floor = q.below();
             BlockState fs = level.getBlockState(floor);
+            if (npc.navigator().isDeadEnd(q)) {
+                continue;
+            }
             if (fs.isFaceSturdy(level, floor, Direction.UP) || !fs.canBeReplaced() || isProtected(level, floor)) {
                 continue; // solid ground ahead is the digging loop's business
             }
@@ -180,12 +202,22 @@ public final class DigOut {
         return false;
     }
 
+    /** A full, solid, non-falling block with no block entity (not leaves, saplings, sand or chests). */
+    private static boolean solidBlock(ServerLevel level, ItemStack s) {
+        if (!(s.getItem() instanceof net.minecraft.world.item.BlockItem bi)) {
+            return false;
+        }
+        BlockState st = bi.getBlock().defaultBlockState();
+        return !(bi.getBlock() instanceof net.minecraft.world.level.block.FallingBlock) && !st.hasBlockEntity()
+                && !st.is(BlockTags.LEAVES) && st.isCollisionShapeFullBlock(level, BlockPos.ZERO);
+    }
+
     /** The settlement whose protected floor band lies right above this underground spot, if any. */
     private static BaseState settlementOver(ServerLevel level, BlockPos p) {
         for (BaseState b : CampaignData.get(level.getServer()).bases.values()) {
             int half = com.factionclash.structure.BaseLayout.HALF + 2;
             if (!b.destroyed && b.isSettlement() && !b.planIndex().isEmpty() && Math.abs(p.getX() - b.center.getX()) <= half
-                    && Math.abs(p.getZ() - b.center.getZ()) <= half && p.getY() < b.center.getY() - 4 && p.getY() >= b.center.getY() - 12) {
+                    && Math.abs(p.getZ() - b.center.getZ()) <= half && p.getY() < b.center.getY() - 1 && p.getY() >= b.center.getY() - 12) {
                 return b;
             }
         }
@@ -253,8 +285,10 @@ public final class DigOut {
             }
             int half = (b.isSettlement() ? com.factionclash.structure.BaseLayout.HALF : com.factionclash.structure.LairLayout.HALF) + 1;
             if (!b.planIndex().isEmpty() && Math.abs(c.getX() - b.center.getX()) <= half && Math.abs(c.getZ() - b.center.getZ()) <= half
-                    && c.getY() >= b.center.getY() - 4 && c.getY() <= b.center.getY() + 8) {
-                return true; // never through a settlement's walls or floor (deep caves below it are fine)
+                    && c.getY() >= b.center.getY() - 1 && c.getY() <= b.center.getY() + 8) {
+                // never through a settlement's walls or floor; the rock under the floor is fine (the floor itself and
+                // the walls are blueprint blocks and stay), so nobody is trapped just beneath a base
+                return true;
             }
         }
         return false;

@@ -325,7 +325,16 @@ public final class FCGameTests {
         FactionNpc picky = npc(h, 12, 12, FactionType.GROVE_COVENANT, NpcRole.FARMER);
         picky.hunger().set(10, 0, 0);
         picky.inventory().setItem(0, new ItemStack(Items.ROTTEN_FLESH, 3));
+        FactionNpc wounded = npc(h, 16, 5, FactionType.GROVE_COVENANT, NpcRole.FARMER);
+        wounded.hunger().set(16, 0, 0);
+        wounded.setHealth(2);
+        wounded.inventory().setItem(0, new ItemStack(Items.COOKED_BEEF, 2));
+        FactionNpc unhurt = npc(h, 16, 12, FactionType.GROVE_COVENANT, NpcRole.FARMER);
+        unhurt.hunger().set(16, 0, 0);
+        unhurt.inventory().setItem(0, new ItemStack(Items.COOKED_BEEF, 2));
         h.runAfterDelay(80, () -> {
+            h.assertTrue(wounded.hunger().foodLevel() == 20, "a badly hurt NPC eats to heal again, food " + wounded.hunger().foodLevel());
+            h.assertTrue(unhurt.hunger().foodLevel() == 16, "a healthy NPC wasted a steak at 16 food");
             h.assertTrue(n.hunger().foodLevel() == 15, "bread should bring 10 to 15, food " + n.hunger().foodLevel());
             h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.BREAD)) == 1, "one bread eaten");
             h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.ROTTEN_FLESH)) == 3, "rotten flesh eaten while bread was there");
@@ -692,6 +701,48 @@ public final class FCGameTests {
                 }
                 h.assertTrue(n.inventory().getItem(0).getCount() == 6, "expected 4 blocks used, left " + n.inventory().getItem(0).getCount());
                 h.assertTrue(n.getBlockY() == ledgeY, "the bridge should stay level, y=" + n.getBlockY());
+                h.succeed();
+                return;
+            }
+            h.assertTrue(++steps[0] <= 8, "too many steps");
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "no step at " + n.blockPosition());
+        });
+    }
+
+    /**
+     * Out on the tip of a staircase it bridged into the open and out of blocks: the NPC walks back down its own
+     * steps (never back up to the tip) and digs its way up through the cliff instead.
+     */
+    @GameTest(template = "platform", timeoutTicks = 160)
+    public static void npcOutOfBlocksWalksBackOffItsBridge(GameTestHelper h) {
+        for (BlockPos p : BlockPos.betweenClosed(1, 2, 1, 4, 5, 10)) {
+            h.setBlock(p, Blocks.STONE); // the cliff
+        }
+        for (BlockPos p : BlockPos.betweenClosed(5, 1, 1, 12, 1, 12)) {
+            h.setBlock(p, Blocks.MAGMA_BLOCK); // the pit below: nowhere to stand
+        }
+        h.setBlock(new BlockPos(5, 1, 5), Blocks.STONE); // the cliff's foot, where the steps start
+        h.setBlock(new BlockPos(6, 2, 5), Blocks.GRANITE); // the steps it built out into the air
+        h.setBlock(new BlockPos(7, 3, 5), Blocks.GRANITE);
+        h.setBlock(new BlockPos(8, 4, 5), Blocks.GRANITE);
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(8, 5, 5));
+        n.faction(FactionType.GROVE_COVENANT);
+        n.role(NpcRole.WOODCUTTER);
+        n.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(Items.STONE_AXE));
+        BlockPos goal = h.absolutePos(new BlockPos(8, 7, 20)); // home, above and beyond
+        int cliffX = h.absolutePos(new BlockPos(4, 0, 0)).getX();
+        BlockPos tip = h.absolutePos(new BlockPos(8, 5, 5));
+        int[] steps = {0};
+        h.onEachTick(() -> {
+            if (h.getTick() % 5 != 0 || !n.onGround()) {
+                return;
+            }
+            if (steps[0] > 0) {
+                h.assertFalse(n.blockPosition().equals(tip), "it went back up to the tip of its bridge");
+            }
+            if (n.getBlockX() <= cliffX) {
+                h.assertTrue(steps[0] >= 4 && steps[0] <= 6, "unexpected number of steps: " + steps[0]);
+                h.assertTrue(h.getBlockState(new BlockPos(6, 2, 5)).is(Blocks.GRANITE), "its steps were dug away");
                 h.succeed();
                 return;
             }
