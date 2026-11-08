@@ -28,6 +28,10 @@ public final class FactionState {
     public final List<UUID> raiders = new ArrayList<>();
     public long raidStartedAt;
     public int raidsLaunched;
+    /** Raid muster: party size at launch, rally point outside the target, and when the party set off together (0 = gathering). */
+    public int raidParty;
+    public long raidRally = Long.MIN_VALUE;
+    public long raidMusteredAt;
     public int basesDestroyed;
     /** 32x32 map sectors covered by delivered scout reports. */
     public final java.util.Set<Long> explored = new java.util.HashSet<>();
@@ -111,6 +115,9 @@ public final class FactionState {
         t.put("raiders", rd);
         t.putLong("raidStarted", raidStartedAt);
         t.putInt("raidsLaunched", raidsLaunched);
+        t.putInt("raidParty", raidParty);
+        t.putLong("raidRally", raidRally);
+        t.putLong("raidMusteredAt", raidMusteredAt);
         t.putInt("basesDestroyed", basesDestroyed);
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
         t.putInt("reportsDelivered", reportsDelivered);
@@ -163,6 +170,9 @@ public final class FactionState {
         }
         f.raidStartedAt = t.getLong("raidStarted");
         f.raidsLaunched = t.getInt("raidsLaunched");
+        f.raidParty = t.getInt("raidParty");
+        f.raidRally = t.contains("raidRally") ? t.getLong("raidRally") : Long.MIN_VALUE;
+        f.raidMusteredAt = t.getLong("raidMusteredAt");
         f.basesDestroyed = t.getInt("basesDestroyed");
         f.xpBank = t.getLong("xpBank");
         ListTag ach = t.getList("achievements", Tag.TAG_COMPOUND);

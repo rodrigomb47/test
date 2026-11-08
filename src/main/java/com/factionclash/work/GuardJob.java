@@ -167,6 +167,32 @@ public class GuardJob extends Job {
             state = State.RAID_RETURN;
             return;
         }
+        if (f.raidMusteredAt == 0 && f.raidRally != Long.MIN_VALUE) {
+            // muster: gather at the rally point and go in together, not one by one
+            BlockPos rally = BlockPos.of(f.raidRally);
+            if (level().isLoaded(rally)) {
+                rally = level().getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, rally);
+            }
+            if (!goTo(rally, 6.0, "the rally point")) {
+                status("Marching to the rally point before " + target.faction.displayName, "Raiding");
+                return;
+            }
+            int here = 0;
+            for (java.util.UUID u : f.raiders) {
+                if (level().getEntity(u) instanceof FactionNpc r && r.blockPosition().closerThan(rally, 12)) {
+                    here++;
+                }
+            }
+            if (here * 10 >= f.raiders.size() * 7 || now() - f.raidStartedAt > 6000) {
+                f.raidMusteredAt = now();
+                data().setDirty();
+                com.factionclash.util.Messages.toFaction(level().getServer(), npc.getFaction(), net.minecraft.network.chat.Component.literal(
+                        "The raid party (" + here + " of " + f.raiders.size() + ") has gathered - assault on " + target.faction.displayName + "!"));
+            } else {
+                status("At the rally point, waiting for the raid party (" + here + "/" + f.raiders.size() + ")", "Raiding");
+                return;
+            }
+        }
         if (goTo(target.point(BaseState.HEART), 3.5, "the raid target")) {
             state = State.RAID_ASSAULT;
             assault = 0;

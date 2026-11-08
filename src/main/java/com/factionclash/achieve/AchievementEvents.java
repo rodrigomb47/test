@@ -86,6 +86,15 @@ public final class AchievementEvents {
         }
     }
 
+    /** Not Today, Thank You: a faction soldier's shield stopped an arrow. */
+    @SubscribeEvent
+    public void onShieldBlock(net.neoforged.neoforge.event.entity.living.LivingShieldBlockEvent event) {
+        if (event.getEntity() instanceof FactionNpc npc && event.getBlocked() && npc.getServer() != null
+                && event.getDamageSource().getDirectEntity() instanceof net.minecraft.world.entity.projectile.Projectile) {
+            FactionAchievements.criterion(npc.getServer(), npc.getFaction(), "story/deflect_arrow", "deflected_projectile", npc.npcName());
+        }
+    }
+
     /** The Parrots and the Bats, Two by Two: animals bred in a faction's pen. */
     @SubscribeEvent
     public void onBreed(BabyEntitySpawnEvent event) {

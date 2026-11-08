@@ -52,6 +52,23 @@ public class NpcMeleeAttackGoal extends MeleeAttackGoal {
         return this.adjustedTickDelay(net.minecraft.util.Mth.clamp(ticks, 10, 40));
     }
 
+    /**
+     * Fights like a player: just before the next swing is ready it jumps, and strikes on the way down for a critical
+     * hit (half as much again). Not from water, a ladder or while holding the shield up in front.
+     */
+    @Override
+    protected void checkAndPerformAttack(LivingEntity target) {
+        int wait = getTicksUntilNextAttack();
+        if (npc.onGround() && !npc.isInWater() && wait > 0 && wait <= 7 && npc.isWithinMeleeAttackRange(target)
+                && npc.getRandom().nextFloat() < 0.6F) {
+            npc.getJumpControl().jump();
+        }
+        if (!npc.onGround() && npc.getDeltaMovement().y > 0.05 && canPerformAttack(target)) {
+            return; // still rising: strike on the way down
+        }
+        super.checkAndPerformAttack(target);
+    }
+
     @Override
     public boolean canUse() {
         if (ranged() || npc.job() != null && npc.job().ignoresCombat()) {

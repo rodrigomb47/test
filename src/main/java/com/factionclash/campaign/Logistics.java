@@ -76,7 +76,9 @@ public final class Logistics {
                         ledger(b, Resource.FOOD).latest(), forecast(ledger(b, Resource.FOOD))),
                 "food supply recovered - rationing ends");
         Ledger wood = ledger(b, Resource.WOOD);
-        check(level, b, "WOOD", wood.latest() < 8 && !(wood.perDay() > 0),
+        // hysteresis: short below 8 logs, recovered only from 16, so a stock hovering at the edge does not flap
+        boolean woodShort = b.shortages.contains("WOOD") ? wood.latest() < 16 : wood.latest() < 8 && !(wood.perDay() > 0);
+        check(level, b, "WOOD", woodShort,
                 () -> "out of wood (" + wood.latest() + " logs) - no sticks for tools until the woodcutter brings more",
                 "wood supply recovered");
         Ledger fuel = ledger(b, Resource.FUEL);
@@ -85,11 +87,18 @@ public final class Logistics {
                 "fuel available again");
     }
 
-    /** Short of food: less than a day's meals for everyone in store, or at this rate gone within a day and a half. */
+    /**
+     * Short of food: less than a day's meals for everyone in store, or at this rate gone within a day and a half.
+     * Rationing then lasts until there is a day and a half of meals in store and the stock is not falling fast, so
+     * a stock hovering at the limit does not switch it on and off.
+     */
     private static boolean foodShort(BaseState b, int pop) {
         Ledger food = ledger(b, Resource.FOOD);
         if (!FCConfig.HUNGER.get() || pop == 0) {
             return false;
+        }
+        if (b.shortages.contains("FOOD")) {
+            return food.latest() < pop * FOOD_PER_NPC_DAY * 3 / 2 || food.daysLeft() < 1.5;
         }
         return food.latest() < pop * FOOD_PER_NPC_DAY || food.daysLeft() < 1.5;
     }

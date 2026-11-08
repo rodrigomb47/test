@@ -291,6 +291,16 @@ public class BlacksmithJob extends Job {
                 iron -= n * p.cost();
             }
         }
+        // 4b. Shields for swordsmen (6 planks and an iron ingot, as in vanilla).
+        long shieldless = members.stream().filter(n -> n.getRole() == NpcRole.SWORDSMAN && !n.hasShield()).count()
+                - FactionStorage.count(level, base, s -> s.getItem() instanceof net.minecraft.world.item.ShieldItem);
+        if (shieldless > 0 && iron >= 1 && sticksAvail >= 12) {
+            int n = (int) Math.min(shieldless, Math.min(iron, 2));
+            out.add(new Order(new Crafting.Recipe("shield", List.of(Crafting.of(ItemTags.PLANKS, 6, "Planks"), Crafting.of(Items.IRON_INGOT, 1)),
+                    Items.SHIELD, 1), n, "swordsmen's shields"));
+            iron -= n;
+            sticksAvail -= n * 12;
+        }
         // 5. Bows for archers that lack one.
         long bowless = members.stream().filter(n -> n.getRole() == NpcRole.ARCHER && !(n.tool().getItem() instanceof BowItem)).count()
                 - FactionStorage.count(level, base, s -> s.getItem() instanceof BowItem);

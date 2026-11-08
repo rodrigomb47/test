@@ -448,6 +448,16 @@ public abstract class Job {
                 }
             }
         }
+        if (role == NpcRole.SWORDSMAN && (!npc.hasShield() || gearScore(npc.getOffhandItem(), 1) < 100)) {
+            // a swordsman fights sword and board: a shield in the off hand (a fresh one when it is nearly broken)
+            ItemStack shield = FactionStorage.findBest(level(), b, s -> s.getItem() instanceof net.minecraft.world.item.ShieldItem, s -> gearScore(s, 1));
+            if (!shield.isEmpty() && gearScore(shield, 1) >= 100) {
+                ItemStack got = FactionStorage.extractExact(level(), b, shield);
+                if (!got.isEmpty()) {
+                    npc.equip(got);
+                }
+            }
+        }
         if (role.ranged) {
             ItemStack bestArrow = FactionStorage.findBest(level(), b, ToolKind::isArrow, s -> s.is(Items.ARROW) ? 0 : 1);
             int cur = npc.ammo().isEmpty() ? -1 : (npc.ammo().is(Items.ARROW) ? 0 : 1);

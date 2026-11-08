@@ -31,6 +31,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
@@ -122,6 +123,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 // the player's attack speed (4.0 bare-handed): held weapons change it exactly as for players
                 .add(Attributes.ATTACK_SPEED, 4.0)
                 .add(Attributes.FOLLOW_RANGE, 48.0)
+                .add(Attributes.SWEEPING_DAMAGE_RATIO) // Sweeping Edge on a sword works for NPCs as for players
                 .add(Attributes.ARMOR, 0.0)
                 // player mining attributes, so tools, Efficiency and Haste behave exactly as for players
                 .add(Attributes.BLOCK_BREAK_SPEED)
@@ -155,6 +157,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new CreeperEvadeGoal(this));
         this.goalSelector.addGoal(2, new CivilianFleeGoal(this));
+        this.goalSelector.addGoal(2, new com.factionclash.combat.WithdrawGoal(this));
         this.goalSelector.addGoal(3, new NpcRangedAttackGoal(this));
         this.goalSelector.addGoal(3, new NpcMeleeAttackGoal(this));
         this.goalSelector.addGoal(4, new OpenDoorGoal(this, true));
@@ -248,7 +251,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (stack.isEmpty()) {
             return;
         }
-        EquipmentSlot slot = stack.getItem() instanceof ArmorItem armor ? armor.getEquipmentSlot() : EquipmentSlot.MAINHAND;
+        EquipmentSlot slot = stack.getItem() instanceof ArmorItem armor ? armor.getEquipmentSlot()
+                : stack.getItem() instanceof net.minecraft.world.item.ShieldItem ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
         ItemStack old = getItemBySlot(slot);
         if (!old.isEmpty() && !level().isClientSide) {
             ItemStack rest = com.factionclash.work.Crafting.addAll(inventory, old.copy());
@@ -522,6 +526,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             return;
         }
         goldenApple();
+        shieldTick();
         if (tickCount % 10 == 0) {
             pickUpExperience();
         }
@@ -587,10 +592,41 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         super.setTarget(target);
     }
 
+    private static final net.minecraft.resources.ResourceLocation CRIT_ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("factionclash", "critical_hit");
+
+    /** A player's critical hit: attacking while falling (not on the ground, a ladder or in water). */
+    public boolean critical() {
+        return fallDistance > 0.0F && !onGround() && !onClimbable() && !isInWater() && !isPassenger();
+    }
+
     @Override
     public boolean doHurtTarget(Entity target) {
         ItemStack weapon = getMainHandItem();
-        boolean r = super.doHurtTarget(target);
+        if (isUsingItem() && getUsedItemHand() == InteractionHand.OFF_HAND) {
+            stopUsingItem(); // the shield comes down for the swing
+        }
+        boolean crit = critical() && target instanceof LivingEntity;
+        var dmg = getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+        if (crit && dmg != null) {
+            dmg.removeModifier(CRIT_ID);
+            dmg.addTransientModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(CRIT_ID, 0.5,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+        boolean r;
+        try {
+            r = super.doHurtTarget(target);
+        } finally {
+            if (dmg != null) {
+                dmg.removeModifier(CRIT_ID);
+            }
+        }
+        if (r && crit && level() instanceof ServerLevel sl) {
+            level().playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_ATTACK_CRIT, getSoundSource(), 1.0F, 1.0F);
+            sl.getChunkSource().broadcastAndSend(this, new net.minecraft.network.protocol.game.ClientboundAnimatePacket(target,
+                    net.minecraft.network.protocol.game.ClientboundAnimatePacket.CRITICAL_HIT));
+        } else if (r && !crit && onGround() && weapon.is(net.minecraft.tags.ItemTags.SWORDS) && target instanceof LivingEntity victim) {
+            sweep(victim);
+        }
         if (r) {
             lastAttackTime = tickCount;
             exhaust(0.1F); // a player's attack costs 0.1 exhaustion
@@ -601,6 +637,100 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             }
         }
         return r;
+    }
+
+    /**
+     * A player's sword sweep: a hit on the ground also catches enemies right next to the target for 1 damage plus the
+     * Sweeping Edge share of the hit. Only enemies: never allies, animals or bystanders.
+     */
+    private void sweep(LivingEntity target) {
+        float dmg = (float) getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+        float sweep = 1.0F + (float) getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.SWEEPING_DAMAGE_RATIO) * dmg;
+        boolean any = false;
+        for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class, target.getBoundingBox().inflate(1.0, 0.25, 1.0))) {
+            if (e == this || e == target || !e.isAlive() || distanceToSqr(e) >= 9.0 || !isEnemy(e)) {
+                continue;
+            }
+            e.knockback(0.4, Mth.sin(getYRot() * Mth.DEG_TO_RAD), -Mth.cos(getYRot() * Mth.DEG_TO_RAD));
+            e.hurt(damageSources().mobAttack(this), sweep);
+            any = true;
+        }
+        level().playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, getSoundSource(), 1.0F, 1.0F);
+        if (any && level() instanceof ServerLevel sl) {
+            double dx = -Mth.sin(getYRot() * Mth.DEG_TO_RAD), dz = Mth.cos(getYRot() * Mth.DEG_TO_RAD);
+            sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SWEEP_ATTACK, getX() + dx, getY(0.5), getZ() + dz, 0, dx, 0.0, dz, 0.0);
+        }
+    }
+
+    /** Hostile monsters, other factions' NPCs and enemy players: what a sweep may hit. */
+    public boolean isEnemy(LivingEntity e) {
+        if (e instanceof FactionNpc o) {
+            return o.getFaction() != getFaction();
+        }
+        if (e instanceof net.minecraft.server.level.ServerPlayer p) {
+            return com.factionclash.combat.CombatRules.isEnemyPlayer(this, p);
+        }
+        return e instanceof net.minecraft.world.entity.monster.Enemy || e == getTarget();
+    }
+
+    // ---------------------------------------------------------------- shield
+
+    private int shieldCooldown;
+
+    public boolean hasShield() {
+        return getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem;
+    }
+
+    /** Shields wear when they stop a hit of 3 or more, as a player's do. */
+    @Override
+    protected void hurtCurrentlyUsedShield(float amount) {
+        if (!com.factionclash.config.FCConfig.TOOL_WEAR.get() || !getUseItem().canPerformAction(net.neoforged.neoforge.common.ItemAbilities.SHIELD_BLOCK)
+                || amount < 3.0F) {
+            return;
+        }
+        InteractionHand hand = getUsedItemHand();
+        getUseItem().hurtAndBreak(1 + Mth.floor(amount), this, hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+        if (getUseItem().isEmpty()) {
+            stopUsingItem();
+        }
+    }
+
+    /** An axe knocks the shield aside for 5 seconds, as it does a player's. */
+    @Override
+    protected void blockUsingShield(LivingEntity attacker) {
+        super.blockUsingShield(attacker);
+        if (attacker.canDisableShield()) {
+            shieldCooldown = 100;
+            stopUsingItem();
+            playSound(SoundEvents.SHIELD_BREAK, 0.8F, 0.8F + level().random.nextFloat() * 0.4F);
+        }
+    }
+
+    /**
+     * Shield work for a soldier: up while closing on an archer or between its own swings, down to strike, to shoot
+     * or when there is no fight.
+     */
+    private void shieldTick() {
+        if (shieldCooldown > 0) {
+            shieldCooldown--;
+        }
+        if (!hasShield() || isEatingMeal() || eatingApple > 0) {
+            return;
+        }
+        LivingEntity t = getTarget();
+        boolean raise = false;
+        if (shieldCooldown == 0 && t != null && t.isAlive() && getRole().combatant && !getRole().ranged) {
+            double d = distanceTo(t);
+            boolean shooter = t instanceof net.minecraft.world.entity.monster.RangedAttackMob
+                    || t instanceof FactionNpc o && o.getRole().ranged;
+            raise = shooter && d > 3.5 || d < 3.5 && tickCount - lastAttackTime < 8;
+        }
+        boolean up = isUsingItem() && getUsedItemHand() == InteractionHand.OFF_HAND;
+        if (raise && !up && !isUsingItem()) {
+            startUsingItem(InteractionHand.OFF_HAND);
+        } else if (!raise && up) {
+            stopUsingItem();
+        }
     }
 
     @Override
@@ -704,8 +834,10 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                         eat(level(), one, props);
                     }
                 }
+                if (ItemStack.isSameItemSameComponents(getOffhandItem(), meal)) {
+                    setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY); // the meal shown in hand (never a shield)
+                }
                 meal = ItemStack.EMPTY;
-                setItemSlot(EquipmentSlot.OFFHAND, ItemStack.EMPTY);
             }
             return;
         }
@@ -743,7 +875,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (!best.isEmpty()) {
             meal = best.copyWithCount(1);
             eatingFood = best.getUseDuration(this) > 0 ? best.getUseDuration(this) : 32;
-            setItemSlot(EquipmentSlot.OFFHAND, meal.copy());
+            if (getOffhandItem().isEmpty()) {
+                setItemSlot(EquipmentSlot.OFFHAND, meal.copy());
+            }
         }
     }
 

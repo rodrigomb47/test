@@ -235,6 +235,83 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /** Melee like a player's: a hit while falling is a critical (x1.5), a sword hit on the ground sweeps enemies but not animals. */
+    @GameTest(template = "platform", timeoutTicks = 40)
+    public static void criticalHitsAndSwordSweeps(GameTestHelper h) {
+        FactionNpc n = npc(h, 5, 5, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
+        n.equip(new ItemStack(Items.IRON_SWORD));
+        Zombie a = h.spawn(EntityType.ZOMBIE, new BlockPos(6, 2, 5));
+        Zombie b = h.spawn(EntityType.ZOMBIE, new BlockPos(7, 2, 5));
+        Cow cow = h.spawn(EntityType.COW, new BlockPos(6, 2, 6));
+        for (var m : List.of(a, b, cow)) {
+            m.setNoAi(true);
+        }
+        h.runAfterDelay(3, () -> {
+            float before = a.getHealth();
+            n.setOnGround(true);
+            n.fallDistance = 0;
+            n.doHurtTarget(a);
+            float ground = before - a.getHealth();
+            h.assertTrue(b.getHealth() < b.getMaxHealth(), "the sweep missed the zombie next to the target");
+            h.assertTrue(cow.getHealth() == cow.getMaxHealth(), "the sweep hit the cow");
+            a.setHealth(a.getMaxHealth());
+            a.invulnerableTime = 0;
+            n.setOnGround(false);
+            n.fallDistance = 1.0F;
+            n.doHurtTarget(a);
+            float crit = a.getMaxHealth() - a.getHealth();
+            h.assertTrue(crit > ground * 1.4F, "a falling hit should be a critical: ground " + ground + ", falling " + crit);
+            h.succeed();
+        });
+    }
+
+    /** A swordsman raises its shield against an archer; an axe knocks it aside for a while. */
+    @GameTest(template = "platform", timeoutTicks = 80)
+    public static void swordsmanBlocksWithShieldAndAxeDisablesIt(GameTestHelper h) {
+        FactionNpc n = npc(h, 4, 10, FactionType.STONEGUARD, NpcRole.SWORDSMAN);
+        n.equip(new ItemStack(Items.IRON_SWORD));
+        n.equip(new ItemStack(Items.SHIELD));
+        h.assertTrue(n.hasShield() && n.getMainHandItem().is(Items.IRON_SWORD), "sword and shield not both held");
+        Skeleton archer = h.spawn(EntityType.SKELETON, new BlockPos(16, 2, 10));
+        archer.setNoAi(true);
+        n.setTarget(archer);
+        h.runAfterDelay(15, () -> {
+            h.assertTrue(n.isBlocking(), "the shield should be up against an archer");
+            Zombie axeman = h.spawn(EntityType.ZOMBIE, h.absolutePos(new BlockPos(4, 2, 10)).offset(0, 0, 0).east(1).east(0).subtract(h.absolutePos(BlockPos.ZERO)));
+            axeman.setNoAi(true);
+            axeman.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+            n.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, axeman.position());
+            n.setYBodyRot(n.getYHeadRot());
+            float hp = n.getHealth();
+            axeman.doHurtTarget(n);
+            h.assertTrue(n.getHealth() == hp, "the shield did not stop the blow");
+            h.assertFalse(n.isUsingItem(), "an axe should knock the shield aside");
+            h.succeed();
+        });
+    }
+
+    /** A badly hurt soldier with no golden apple falls back from its attacker; an archer backs away from a melee enemy. */
+    @GameTest(template = "platform", timeoutTicks = 120)
+    public static void woundedSoldiersFallBackAndArchersKite(GameTestHelper h) {
+        FactionNpc wounded = npc(h, 8, 4, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN);
+        Zombie z1 = h.spawn(EntityType.ZOMBIE, new BlockPos(8, 2, 2));
+        z1.setNoAi(true);
+        wounded.setHealth(4.0F);
+        wounded.setTarget(z1);
+        FactionNpc archer = npc(h, 16, 16, FactionType.TIDE_ALLIANCE, NpcRole.ARCHER);
+        archer.equip(new ItemStack(Items.BOW));
+        archer.setAmmo(new ItemStack(Items.ARROW));
+        Zombie z2 = h.spawn(EntityType.ZOMBIE, new BlockPos(16, 2, 13));
+        z2.setNoAi(true);
+        archer.setTarget(z2);
+        double w0 = wounded.distanceTo(z1), a0 = archer.distanceTo(z2);
+        h.runAfterDelay(100, () -> {
+            h.assertTrue(wounded.distanceTo(z1) > w0 + 3, "the wounded soldier did not fall back: " + w0 + " -> " + wounded.distanceTo(z1));
+            h.assertTrue(archer.distanceTo(z2) > a0 + 2, "the archer did not back away: " + a0 + " -> " + archer.distanceTo(z2));
+            h.succeed();
+        });
+    }
+
     /** A hungry NPC eats the best-fitting safe food it carries, like a player; rotten flesh only when starving. */
     @GameTest(template = "platform", timeoutTicks = 200)
     public static void hungryNpcEatsFromItsBackpack(GameTestHelper h) {

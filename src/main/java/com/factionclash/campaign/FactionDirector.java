@@ -491,6 +491,12 @@ public final class FactionDirector {
                 return r == null || !r.alive;
             });
             BaseState target = data.base(f.raidTarget);
+            if (!f.raiders.isEmpty() && f.raidParty > 0 && f.raiders.size() * 2 < f.raidParty && target != null && !target.destroyed) {
+                // more than half the party is down: the survivors fall back rather than die one by one
+                Messages.toFaction(level.getServer(), f.type, Component.literal("The raid on " + target.faction.displayName
+                        + " is beaten back - " + f.raiders.size() + " of " + f.raidParty + " soldiers retreat home"));
+                f.raiders.clear();
+            }
             if (f.raiders.isEmpty() || t - f.raidStartedAt > 72000) {
                 Messages.toFaction(level.getServer(), f.type, Component.literal("Raid on " + (target == null ? "?" : target.faction.displayName)
                         + " has ended" + (target != null && target.destroyed ? " in victory" : "")));
@@ -538,6 +544,13 @@ public final class FactionDirector {
             f.raiders.add(soldiers.get(i).getUUID());
         }
         f.raidTarget = target.id;
+        f.raidParty = party;
+        f.raidMusteredAt = 0;
+        // the party gathers 28 blocks short of the target, on the home side, before going in together
+        double dx = home.center.getX() - target.center.getX(), dz = home.center.getZ() - target.center.getZ();
+        double len = Math.max(1, Math.sqrt(dx * dx + dz * dz));
+        int rx = target.center.getX() + (int) Math.round(dx / len * 28), rz = target.center.getZ() + (int) Math.round(dz / len * 28);
+        f.raidRally = new BlockPos(rx, target.center.getY(), rz).asLong();
         f.raidStartedAt = t;
         f.lastRaidAt = t;
         f.raidsLaunched++;

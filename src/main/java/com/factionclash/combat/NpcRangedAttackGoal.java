@@ -19,6 +19,38 @@ public class NpcRangedAttackGoal extends Goal {
     private final FactionNpc npc;
     private int seeTime;
     private int cooldown;
+    private int retarget;
+
+    /** An enemy that has come within {@code dist} (a melee attacker closing in). */
+    private LivingEntity nearestThreat(double dist) {
+        LivingEntity best = null;
+        double bestD = dist * dist;
+        for (LivingEntity e : npc.level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(dist))) {
+            if (e != npc && e.isAlive() && npc.isEnemy(e) && !(e instanceof FactionNpc o && o.getRole().ranged)
+                    && !(e instanceof net.minecraft.world.entity.monster.RangedAttackMob) && npc.distanceToSqr(e) < bestD) {
+                bestD = npc.distanceToSqr(e);
+                best = e;
+            }
+        }
+        return best;
+    }
+
+    /** Focus fire: the visible enemy in range closest to falling (fewest health points) gets the next arrows. */
+    private LivingEntity focus(LivingEntity current, double range) {
+        LivingEntity best = current;
+        float bestHp = current.getHealth();
+        for (LivingEntity e : npc.level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(range))) {
+            if (e != npc && e.isAlive() && npc.isEnemy(e) && e.getHealth() < bestHp - 2.0F && npc.distanceToSqr(e) <= range * range
+                    && npc.getSensing().hasLineOfSight(e)) {
+                bestHp = e.getHealth();
+                best = e;
+            }
+        }
+        if (best != current) {
+            npc.setTarget(best);
+        }
+        return best;
+    }
 
     public NpcRangedAttackGoal(FactionNpc npc) {
         this.npc = npc;
@@ -62,15 +94,27 @@ public class NpcRangedAttackGoal extends Goal {
         if (t == null) {
             return;
         }
-        double d2 = npc.distanceToSqr(t);
         double range = crossbow() ? CROSSBOW_RANGE : RANGE;
+        if (++retarget >= 40) {
+            retarget = 0;
+            t = focus(t, range);
+        }
+        double d2 = npc.distanceToSqr(t);
         boolean sees = npc.getSensing().hasLineOfSight(t);
         seeTime = sees ? seeTime + 1 : 0;
-        if (d2 > range * range || seeTime < 5) {
+        LivingEntity close = nearestThreat(6.0);
+        if (close != null) {
+            // kiting: someone got close - back away to shooting distance, like an archer player
+            if (npc.getNavigation().isDone() || npc.tickCount % 20 == 0) {
+                net.minecraft.world.phys.Vec3 away = net.minecraft.world.entity.ai.util.DefaultRandomPos.getPosAway(npc, 10, 4, close.position());
+                if (away != null) {
+                    npc.getNavigation().moveTo(away.x, away.y, away.z, 1.25);
+                } else {
+                    npc.getMoveControl().strafe(-0.5F, 0.0F);
+                }
+            }
+        } else if (d2 > range * range || seeTime < 5) {
             npc.getNavigation().moveTo(t, 1.0);
-        } else if (d2 < 16) {
-            // too close: step back while keeping aim
-            npc.getMoveControl().strafe(-0.5F, 0.0F);
         } else {
             npc.getNavigation().stop();
         }
