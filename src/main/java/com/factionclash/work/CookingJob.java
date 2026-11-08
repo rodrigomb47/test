@@ -148,7 +148,10 @@ public abstract class CookingJob extends Job {
             return;
         }
         int logs = FactionStorage.count(level(), base(), s -> s.is(ItemTags.LOGS));
-        if (logs > LOG_RESERVE && takeFromStorage(s -> s.is(ItemTags.LOGS), Math.min(4, logs - LOG_RESERVE)) > 0) {
+        int got = logs > LOG_RESERVE ? takeFromStorage(s -> s.is(ItemTags.LOGS), Math.min(2, logs - LOG_RESERVE)) : 0;
+        if (got > 0) {
+            // a log burns for 1.5 items, its four planks for 6: craft them first, as a player would
+            Crafting.craft(npc.inventory(), Crafting.PLANKS, got);
             return;
         }
         int planks = FactionStorage.count(level(), base(), s -> s.is(ItemTags.PLANKS));

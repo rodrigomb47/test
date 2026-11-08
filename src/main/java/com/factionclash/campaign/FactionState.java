@@ -35,6 +35,8 @@ public final class FactionState {
     public int basesDestroyed;
     /** 32x32 map sectors covered by delivered scout reports. */
     public final java.util.Set<Long> explored = new java.util.HashSet<>();
+    /** How much further than the configured scout range the scouts now go (grows while no rival has been found). */
+    public int scoutReach;
     public int reportsDelivered;
     /** Experience the faction's NPCs picked up as orbs (mined ores, smelting, breeding), for enchanting. */
     public long xpBank;
@@ -121,6 +123,7 @@ public final class FactionState {
         t.putInt("basesDestroyed", basesDestroyed);
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
         t.putInt("reportsDelivered", reportsDelivered);
+        t.putInt("scoutReach", scoutReach);
         t.putLong("xpBank", xpBank);
         ListTag ach = new ListTag();
         achievements.forEach((id, a) -> {
@@ -193,6 +196,7 @@ public final class FactionState {
             f.explored.add(l);
         }
         f.reportsDelivered = t.getInt("reportsDelivered");
+        f.scoutReach = t.getInt("scoutReach");
         return f;
     }
 }

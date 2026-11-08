@@ -96,7 +96,28 @@ public class ScoutJob extends Job {
     }
 
     private int range() {
-        return FCConfig.SCOUT_RANGE.get() + (int) npc.affix(Affix.PATHFINDER);
+        return FCConfig.SCOUT_RANGE.get() + data().faction(npc.getFaction()).scoutReach + (int) npc.affix(Affix.PATHFINDER);
+    }
+
+    /**
+     * Everything in range is explored. While no living rival settlement is known, the scouts push the frontier out
+     * (64 blocks at a time, up to the edge of the campaign map) instead of going over the same ground again.
+     */
+    private boolean extendReach(BaseState b) {
+        CampaignData data = data();
+        FactionState f = data.faction(npc.getFaction());
+        boolean rivalKnown = f.knowledge.stream().anyMatch(r -> r.kind == com.factionclash.campaign.Report.Kind.ENEMY_BASE
+                && data.bases.values().stream().anyMatch(o -> o.faction == r.subject && !o.destroyed && o.center.distSqr(r.pos) < 32 * 32));
+        int dx = Math.abs(b.center.getX() - data.center.getX()) + data.radius, dz = Math.abs(b.center.getZ() - data.center.getZ()) + data.radius;
+        int maxReach = (int) Math.sqrt((double) dx * dx + dz * dz) - FCConfig.SCOUT_RANGE.get();
+        if (rivalKnown || f.scoutReach >= maxReach) {
+            return false;
+        }
+        f.scoutReach = Math.min(maxReach, f.scoutReach + 64);
+        data.setDirty();
+        com.factionclash.FactionClash.LOGGER.info("[{}] No rival settlement found within reach: scouts now range up to {} blocks from home",
+                npc.getFaction().displayName, range());
+        return true;
     }
 
     @Override
@@ -138,6 +159,9 @@ public class ScoutJob extends Job {
             return;
         }
         target = pickTarget(b);
+        if (target == null && extendReach(b)) {
+            target = pickTarget(b);
+        }
         if (target == null) {
             status("Everything in range explored; waiting to re-scout", "Idle");
             data().faction(npc.getFaction()).explored.clear();
