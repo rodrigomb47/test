@@ -96,7 +96,8 @@ public class TraderJob extends Job {
     private long tripStarted;
     /** What this village's villagers bought last time: only those are packed (everything sellable on a first trip). */
     private final Set<Item> villageBuys = new HashSet<>();
-    private final List<String> sold = new ArrayList<>(), bought = new ArrayList<>();
+    /** This trip's totals by item name: goods sold and goods bought. */
+    private final Map<String, Integer> sold = new LinkedHashMap<>(), bought = new LinkedHashMap<>();
 
     public TraderJob(FactionNpc npc) {
         super(npc);
@@ -256,14 +257,16 @@ public class TraderJob extends Job {
         if (++timer % TRADE_TICKS != 0) {
             return;
         }
-        String done = tradeOnce(npc, v, TraderJob::forSale, s -> wanted(s));
+        Trade done = tradeOnce(npc, v, TraderJob::forSale, s -> wanted(s));
         if (done == null) {
             visited.add(v.getUUID());
             return;
         }
-        (done.startsWith("sold") ? sold : bought).add(done.substring(done.indexOf(' ') + 1));
-        if (done.startsWith("sold")) {
-            villageBuys.add(lastSoldItem);
+        if (done.selling()) {
+            sold.merge(done.paid().getHoverName().getString(), done.paid().getCount(), Integer::sum);
+            villageBuys.add(done.paid().getItem());
+        } else {
+            bought.merge(done.got().getHoverName().getString(), done.got().getCount(), Integer::sum);
         }
         com.factionclash.achieve.FactionAchievements.criterion(level().getServer(), npc.getFaction(), "adventure/trade", "traded", npc.npcName());
         npc.awardXp(1);
@@ -283,13 +286,9 @@ public class TraderJob extends Job {
         data().setDirty();
     }
 
-    private static String summary(List<String> lines) {
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        for (String l : lines) {
-            counts.merge(l, 1, Integer::sum);
-        }
+    private static String summary(Map<String, Integer> totals) {
         List<String> out = new ArrayList<>();
-        counts.forEach((k, n) -> out.add(n > 1 ? n + "x " + k : k));
+        totals.forEach((k, n) -> out.add(n > 1 ? n + " " + k : k));
         return String.join(", ", out);
     }
 
@@ -369,15 +368,16 @@ public class TraderJob extends Job {
         return t >= 2 || t == 1 && !(s.getItem() instanceof net.minecraft.world.item.TieredItem) ? t : -1;
     }
 
-    private Item lastSoldItem;
-
     /**
      * One trade with a villager, as a player makes it from the trading screen: an offer still in stock whose price the
      * NPC can pay from its backpack - selling first (goods for emeralds), then buying what is wanted. The villager
-     * gains its trading experience (and drops the orb a player would get). Returns what was done ("sold 20x Wheat",
-     * "bought Iron Helmet"), or null when nothing more can be traded with it.
+     * gains its trading experience (and drops the orb a player would get). Returns the trade (what was paid, what was
+     * got, and a line such as "sold 20x Wheat" or "bought Iron Helmet"), or null when nothing more can be traded.
      */
-    public static String tradeOnce(FactionNpc npc, AbstractVillager v, Predicate<ItemStack> forSale, Predicate<ItemStack> wanted) {
+    public record Trade(boolean selling, ItemStack paid, ItemStack got, String text) {
+    }
+
+    public static Trade tradeOnce(FactionNpc npc, AbstractVillager v, Predicate<ItemStack> forSale, Predicate<ItemStack> wanted) {
         MerchantOffer pick = null;
         boolean selling = false;
         for (MerchantOffer o : v.getOffers()) {
@@ -405,11 +405,10 @@ public class TraderJob extends Job {
         int price = price(npc, pick);
         Inv.remove(npc.inventory(), pick.getItemCostA()::test, price);
         ItemStack result = pick.assemble();
-        String what = (selling ? "sold " + price + "x " + pick.getCostA().getHoverName().getString()
+        ItemStack paid = pick.getCostA().copyWithCount(price);
+        String what = (selling ? "sold " + price + "x " + paid.getHoverName().getString()
                 : "bought " + (result.getCount() > 1 ? result.getCount() + "x " : "") + result.getHoverName().getString());
-        if (npc.job() instanceof TraderJob t && selling) {
-            t.lastSoldItem = pick.getCostA().getItem();
-        }
+        Trade trade = new Trade(selling, paid, result.copy(), what);
         ItemStack rest = Crafting.addAll(npc.inventory(), result);
         if (!rest.isEmpty()) {
             npc.spawnAtLocation(rest);
@@ -418,7 +417,7 @@ public class TraderJob extends Job {
         v.notifyTrade(pick);
         v.playSound(SoundEvents.VILLAGER_YES, 1.0F, 1.0F);
         npc.swing(InteractionHand.MAIN_HAND);
-        return what;
+        return trade;
     }
 
     /** The offer's price after demand and the Haggler affix (a good reputation lowers prices the same way). */

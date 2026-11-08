@@ -485,11 +485,11 @@ public final class FCGameTests {
         n.inventory().setItem(1, new ItemStack(Items.EMERALD, 2));
         List<String> done = new java.util.ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            String d = com.factionclash.work.TraderJob.tradeOnce(n, v, x -> x.is(Items.WHEAT), x -> x.is(Items.IRON_HELMET));
+            var d = com.factionclash.work.TraderJob.tradeOnce(n, v, x -> x.is(Items.WHEAT), x -> x.is(Items.IRON_HELMET));
             if (d == null) {
                 break;
             }
-            done.add(d);
+            done.add(d.text());
         }
         h.assertTrue(done.size() == 4 && done.get(0).startsWith("sold 20x") && done.get(3).equals("bought Iron Helmet"),
                 "expected three sales then the helmet, got " + done);

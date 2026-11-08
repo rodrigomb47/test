@@ -273,6 +273,12 @@ public final class NpcNavigator {
                 }
             }
         }
+        if (path == null && !npc.onGround() && !npc.isInLiquid()) {
+            // vanilla plans no path in mid-air (each step down a staircase is a small drop): not a failure, look
+            // again as soon as it lands
+            repathTimer = 2;
+            return;
+        }
         if (path == null) {
             fail(1);
             lastProblem = "no path";
