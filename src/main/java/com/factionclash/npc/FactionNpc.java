@@ -288,6 +288,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         double dz = target.getZ() - getZ();
         double d = Math.sqrt(dx * dx + dz * dz);
         if (crossbow) {
+            com.factionclash.achieve.FactionAchievements.criterion(getServer(), getFaction(), "adventure/ol_betsy", "shot_crossbow", npcName);
             // a crossbow bolt flies faster and straighter, so it hits harder (arrow damage scales with speed)
             arrow.shoot(dx, dy + d * 0.15F, dz, 2.2F, 2.0F);
             playSound(SoundEvents.CROSSBOW_SHOOT, 1.0F, 1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
@@ -524,6 +525,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (tickCount % 10 == 0) {
             pickUpExperience();
         }
+        if (tickCount % 200 == 0) {
+            // Adventuring Time: every biome the faction's NPCs set foot in
+            level().getBiome(blockPosition()).unwrapKey().ifPresent(k ->
+                    com.factionclash.achieve.FactionAchievements.criterion(getServer(), getFaction(), "adventure/adventuring_time", k.location().toString(), npcName));
+        }
         hungerTick();
         // Stale targets must not freeze work: civilians only defend at close range, and anyone gives up on a
         // target after 10 s without trading blows (e.g. a visible but unreachable mob).
@@ -629,6 +635,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     @Override
     public ItemStack eat(net.minecraft.world.level.Level level, ItemStack stack, net.minecraft.world.food.FoodProperties food) {
         hunger.eat(food.nutrition(), food.saturation());
+        if (!level.isClientSide) {
+            com.factionclash.achieve.FactionAchievements.ate(getServer(), getFaction(), stack, npcName); // Husbandry, A Balanced Diet
+        }
         return super.eat(level, stack, food);
     }
 

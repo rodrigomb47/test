@@ -34,6 +34,13 @@ public final class FactionState {
     public int reportsDelivered;
     /** Experience the faction's NPCs picked up as orbs (mined ores, smelting, breeding), for enchanting. */
     public long xpBank;
+    /** Vanilla advancements the faction has made (id -> when and by whom), in the order they were made. */
+    public final Map<String, Achieved> achievements = new LinkedHashMap<>();
+    /** Criteria met so far of advancements not yet made (id -> criterion names). */
+    public final Map<String, java.util.Set<String>> advancementProgress = new java.util.HashMap<>();
+
+    public record Achieved(long time, String by) {
+    }
 
     public FactionState() {
     }
@@ -108,6 +115,22 @@ public final class FactionState {
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
         t.putInt("reportsDelivered", reportsDelivered);
         t.putLong("xpBank", xpBank);
+        ListTag ach = new ListTag();
+        achievements.forEach((id, a) -> {
+            CompoundTag e = new CompoundTag();
+            e.putString("id", id);
+            e.putLong("time", a.time());
+            e.putString("by", a.by());
+            ach.add(e);
+        });
+        t.put("achievements", ach);
+        CompoundTag prog = new CompoundTag();
+        advancementProgress.forEach((id, set) -> {
+            ListTag l = new ListTag();
+            set.forEach(c -> l.add(net.minecraft.nbt.StringTag.valueOf(c)));
+            prog.put(id, l);
+        });
+        t.put("advancementProgress", prog);
         return t;
     }
 
@@ -142,6 +165,20 @@ public final class FactionState {
         f.raidsLaunched = t.getInt("raidsLaunched");
         f.basesDestroyed = t.getInt("basesDestroyed");
         f.xpBank = t.getLong("xpBank");
+        ListTag ach = t.getList("achievements", Tag.TAG_COMPOUND);
+        for (int i = 0; i < ach.size(); i++) {
+            CompoundTag e = ach.getCompound(i);
+            f.achievements.put(e.getString("id"), new Achieved(e.getLong("time"), e.getString("by")));
+        }
+        CompoundTag prog = t.getCompound("advancementProgress");
+        for (String id : prog.getAllKeys()) {
+            java.util.Set<String> set = new java.util.HashSet<>();
+            ListTag l = prog.getList(id, Tag.TAG_STRING);
+            for (int i = 0; i < l.size(); i++) {
+                set.add(l.getString(i));
+            }
+            f.advancementProgress.put(id, set);
+        }
         for (long l : t.getLongArray("explored")) {
             f.explored.add(l);
         }

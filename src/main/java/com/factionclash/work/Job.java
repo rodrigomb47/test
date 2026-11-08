@@ -370,7 +370,7 @@ public abstract class Job {
                 continue;
             }
             ItemStack out = s.split(deposit);
-            ItemStack rest = FactionStorage.insert(level(), b, out);
+            ItemStack rest = FactionStorage.insert(level(), b, out, npc.npcName());
             if (!rest.isEmpty()) {
                 s.grow(rest.getCount());
                 full = true;

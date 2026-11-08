@@ -66,6 +66,9 @@ public final class FCCommands {
                 .then(Commands.literal("base").executes(FCCommands::teleportBase))
                 .then(Commands.literal("info").executes(FCCommands::info))
                 .then(Commands.literal("map").executes(FCCommands::map))
+                .then(Commands.literal("achievements").executes(c -> achievements(c, null))
+                        .then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS)
+                                .executes(c -> achievements(c, StringArgumentType.getString(c, "faction")))))
                 .then(Commands.literal("admin").requires(s -> s.hasPermission(2))
                         .then(Commands.literal("dump").executes(FCCommands::dump))
                         .then(Commands.literal("npcs").executes(FCCommands::npcs))
@@ -80,6 +83,30 @@ public final class FCCommands {
                         .then(Commands.literal("blocks").then(Commands.argument("from", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos())
                                 .then(Commands.argument("to", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos()).executes(FCCommands::blockDump))))
                         .then(Commands.literal("destroy").then(Commands.argument("baseId", IntegerArgumentType.integer(1)).executes(FCCommands::destroy)))));
+    }
+
+    /** The advancements a faction has made, who made them and when, and its progress on the long ones. */
+    private static int achievements(CommandContext<CommandSourceStack> c, String factionId) {
+        net.minecraft.server.MinecraftServer server = c.getSource().getServer();
+        CampaignData data = CampaignData.get(server);
+        FactionType f = factionId != null ? FactionType.byId(factionId)
+                : c.getSource().getEntity() instanceof ServerPlayer p ? data.players.get(p.getUUID()) : null;
+        if (f == null || !f.human) {
+            c.getSource().sendFailure(Component.literal("Name a faction: /fc achievements <faction>"));
+            return 0;
+        }
+        FactionState fs = data.faction(f);
+        c.getSource().sendSuccess(() -> Component.literal(f.displayName + ": " + fs.achievements.size() + " advancements").withStyle(f.color), false);
+        fs.achievements.forEach((id, a) -> c.getSource().sendSuccess(() -> Component.literal(String.format(" - %s (day %.1f%s)",
+                com.factionclash.achieve.FactionAchievements.title(server, id), a.time() / 24000.0, a.by().isEmpty() ? "" : ", " + a.by())), false));
+        fs.advancementProgress.forEach((id, met) -> {
+            int total = com.factionclash.achieve.FactionAchievements.criteriaCount(server, id);
+            if (total > 1) {
+                c.getSource().sendSuccess(() -> Component.literal(" ... " + com.factionclash.achieve.FactionAchievements.title(server, id) + ": " + met.size() + "/" + total)
+                        .withStyle(net.minecraft.ChatFormatting.GRAY), false);
+            }
+        });
+        return 1;
     }
 
     private static int start(CommandContext<CommandSourceStack> c, int radius) {
@@ -123,6 +150,7 @@ public final class FCCommands {
         data.players.put(p.getUUID(), f);
         data.setDirty();
         c.getSource().sendSuccess(() -> Component.literal("You joined " + f.displayName + ". Use /fc base to travel home.").withStyle(f.color), false);
+        com.factionclash.achieve.FactionAchievements.grantAll(p, f);
         return 1;
     }
 

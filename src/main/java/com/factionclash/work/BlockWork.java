@@ -166,6 +166,7 @@ public final class BlockWork {
                 continue;
             }
             int before = d.getCount();
+            com.factionclash.achieve.FactionAchievements.obtained(npc.getServer(), npc.getFaction(), d, npc.npcName());
             ItemStack rest = Crafting.addAll(npc.inventory(), d);
             n += before - rest.getCount();
             if (!rest.isEmpty()) {

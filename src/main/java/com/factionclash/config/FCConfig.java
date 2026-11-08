@@ -31,6 +31,9 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HUNGER;
     public static final ModConfigSpec.BooleanValue TOOL_WEAR;
     public static final ModConfigSpec.DoubleValue WORK_EXHAUSTION_PER_DAY;
+    public static final ModConfigSpec.BooleanValue ACHIEVEMENTS;
+    public static final ModConfigSpec.BooleanValue ANNOUNCE_ACHIEVEMENTS;
+    public static final ModConfigSpec.BooleanValue GRANT_ACHIEVEMENTS_TO_PLAYERS;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -63,6 +66,16 @@ public final class FCConfig {
         WORK_EXHAUSTION_PER_DAY = b.comment("Exhaustion a working NPC builds up per in-game day on top of what its actions cost the vanilla way",
                         "(walking costs a player nothing). 4 exhaustion = 1 food or saturation point. PROPOSED: 30 (~1.5 bread a day).")
                 .defineInRange("workExhaustionPerDay", 30.0, 0.0, 400.0);
+        b.pop();
+        b.comment("Faction achievements: the vanilla advancements, made by a faction").push("achievements");
+        ACHIEVEMENTS = b.comment("Factions make the vanilla advancements through what their NPCs do the way a player would,",
+                        "and through their players' own advancements.")
+                .define("enabled", true);
+        ANNOUNCE_ACHIEVEMENTS = b.comment("Announce a faction's advancements in chat, like a player's (only those vanilla announces).")
+                .define("announce", true);
+        GRANT_ACHIEVEMENTS_TO_PLAYERS = b.comment("Also give the faction's advancements to its players as real advancements",
+                        "(on joining, logging in, and whenever the faction makes a new one).")
+                .define("grantToFactionPlayers", false);
         b.pop();
 
         b.comment("Recruitment (PROPOSED defaults)").push("recruitment");

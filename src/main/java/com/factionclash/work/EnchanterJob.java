@@ -166,6 +166,7 @@ public class EnchanterJob extends Job {
             ItemStack done = npc.inventory().getItem(slot);
             lastResult = done.getHoverName().getString() + " " + describe(done);
             npc.awardXp(4 + 2 * used);
+            com.factionclash.achieve.FactionAchievements.criterion(level().getServer(), npc.getFaction(), "story/enchant_item", "enchanted_item", npc.npcName());
             npc.swing(InteractionHand.MAIN_HAND);
             com.factionclash.FactionClash.LOGGER.info("[{}] {} enchanted {} {} (slot {}, now level {})", npc.getFaction().displayName,
                     npc.npcName(), done.getHoverName().getString(), describe(done), used + 1, XpLevels.levelFor(xpPoints));

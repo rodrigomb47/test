@@ -158,6 +158,43 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /**
+     * Faction advancements follow the game's own advancements: one criterion is enough for "Stone Age", any one iron
+     * piece for "Suit Up", but "A Balanced Diet" needs every food; a diamond mined by an NPC makes "Diamonds!".
+     */
+    @GameTest(template = "platform", timeoutTicks = 40)
+    public static void factionAdvancementsFollowVanillaRequirements(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        com.factionclash.campaign.CampaignData data = com.factionclash.campaign.CampaignData.get(server);
+        boolean wasStarted = data.started;
+        data.started = true;
+        try {
+            com.factionclash.campaign.FactionState f = data.faction(FactionType.TIDE_ALLIANCE);
+            f.achievements.clear();
+            f.advancementProgress.clear();
+            com.factionclash.achieve.FactionAchievements.obtained(server, FactionType.TIDE_ALLIANCE, new ItemStack(Items.COBBLESTONE), "Tester");
+            h.assertTrue(f.achievements.containsKey("minecraft:story/mine_stone"), "Stone Age not made");
+            h.assertTrue(f.achievements.get("minecraft:story/mine_stone").by().equals("Tester"), "who made it is not recorded");
+            com.factionclash.achieve.FactionAchievements.obtained(server, FactionType.TIDE_ALLIANCE, new ItemStack(Items.IRON_BOOTS), "Tester");
+            h.assertTrue(f.achievements.containsKey("minecraft:story/obtain_armor"), "one iron piece should make Suit Up");
+            com.factionclash.achieve.FactionAchievements.ate(server, FactionType.TIDE_ALLIANCE, new ItemStack(Items.BREAD), "Tester");
+            h.assertTrue(f.achievements.containsKey("minecraft:husbandry/root"), "eating should make Husbandry");
+            h.assertFalse(f.achievements.containsKey("minecraft:husbandry/balanced_diet"), "one bread is not a balanced diet");
+            h.assertTrue(f.advancementProgress.get("minecraft:husbandry/balanced_diet").contains("bread"), "diet progress not kept");
+            FactionNpc miner = npc(h, 5, 5, FactionType.TIDE_ALLIANCE, NpcRole.MINER);
+            miner.equip(new ItemStack(Items.IRON_PICKAXE));
+            h.setBlock(new BlockPos(6, 2, 5), Blocks.DIAMOND_ORE);
+            com.factionclash.work.BlockWork.breakNow(miner, h.absolutePos(new BlockPos(6, 2, 5)), x -> true);
+            h.assertTrue(f.achievements.containsKey("minecraft:story/mine_diamond"), "an NPC's diamond should make Diamonds!");
+            h.assertTrue(f.achievements.get("minecraft:story/mine_diamond").by().equals(miner.npcName()), "the miner should be credited");
+            f.achievements.clear();
+            f.advancementProgress.clear();
+        } finally {
+            data.started = wasStarted;
+        }
+        h.succeed();
+    }
+
     /** A hungry NPC eats the best-fitting safe food it carries, like a player; rotten flesh only when starving. */
     @GameTest(template = "platform", timeoutTicks = 200)
     public static void hungryNpcEatsFromItsBackpack(GameTestHelper h) {

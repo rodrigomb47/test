@@ -126,6 +126,8 @@ public class FishermanJob extends Job {
             e.setDeltaMovement(dx * 0.1, dy * 0.1 + Math.sqrt(Math.sqrt(dx * dx + dy * dy + dz * dz)) * 0.08, dz * 0.1);
             level().addFreshEntity(e);
             w.totalOutput += caught.getCount();
+            com.factionclash.achieve.FactionAchievements.criterion(level().getServer(), npc.getFaction(), "husbandry/fishy_business",
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(caught.getItem()).getPath(), npc.npcName());
         }
         // reeling in a catch costs the rod 1 durability (vanilla), and fishing pays experience (1-6) like a player's
         if (com.factionclash.config.FCConfig.TOOL_WEAR.get()) {

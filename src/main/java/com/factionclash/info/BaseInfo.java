@@ -111,6 +111,11 @@ public final class BaseInfo {
         }
         out.add("Repairs pending: " + b.pendingRepairs.size() + "  Player edits preserved: " + b.playerEdits.size());
         out.add("Reports delivered: " + f.reportsDelivered + " (" + f.knowledge.size() + " on the map), sectors explored " + f.explored.size());
+        if (!f.achievements.isEmpty()) {
+            String last = f.achievements.keySet().stream().reduce((a, x) -> x).orElse("");
+            out.add("Advancements made: " + f.achievements.size() + " (latest: " + com.factionclash.achieve.FactionAchievements.title(level.getServer(), last)
+                    + ") - /fc achievements for the list");
+        }
         out.add("Experience gathered for enchanting: " + f.xpBank + " points (level " + com.factionclash.logic.XpLevels.levelFor(f.xpBank) + ")");
         if (f.raidTarget >= 0) {
             BaseState t = data.base(f.raidTarget);

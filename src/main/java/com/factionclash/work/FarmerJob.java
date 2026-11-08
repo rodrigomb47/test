@@ -254,6 +254,8 @@ public class FarmerJob extends Job {
             if (seed != null && Inv.consume(npc.inventory(), s -> s.is(seed), 1)) {
                 level().setBlock(crop, cropOf(seed).defaultBlockState(), Block.UPDATE_ALL);
                 level().playSound(null, crop, SoundEvents.CROP_PLANTED, SoundSource.BLOCKS, 1.0F, 1.0F);
+                com.factionclash.achieve.FactionAchievements.criterion(level().getServer(), npc.getFaction(), "husbandry/plant_seed",
+                        net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(cropOf(seed)).getPath(), npc.npcName()); // A Seedy Place
                 npc.swing(InteractionHand.MAIN_HAND);
             }
         }

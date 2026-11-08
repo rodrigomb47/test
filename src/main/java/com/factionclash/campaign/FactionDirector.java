@@ -74,6 +74,8 @@ public final class FactionDirector {
             return;
         }
         BaseBuilder.ensureAnimalAndFishingWorkplaces(data, b);
+        // "Minecraft": the workshop's crafting table is the faction's from the start
+        com.factionclash.achieve.FactionAchievements.criterion(level.getServer(), b.faction, "story/root", "crafting_table", null);
         rosterUpkeep(level, data, f, b, t);
         recruitment(level, data, f, b, t);
         projects(level, data, b, t);

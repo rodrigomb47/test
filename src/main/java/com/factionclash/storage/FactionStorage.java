@@ -107,9 +107,15 @@ public final class FactionStorage {
      * @return what did not fit (empty when fully stored). Nothing is ever deleted.
      */
     public static ItemStack insert(ServerLevel level, BaseState base, ItemStack stack) {
+        return insert(level, base, stack, null);
+    }
+
+    /** As {@link #insert(ServerLevel, BaseState, ItemStack)}, crediting {@code by} with what reaches the faction. */
+    public static ItemStack insert(ServerLevel level, BaseState base, ItemStack stack, String by) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
+        com.factionclash.achieve.FactionAchievements.obtained(level.getServer(), base.faction, stack, by);
         ItemStack rest = stack.copy();
         StorageCategory cat = StorageCategory.classify(rest);
         rest = insertInto(containers(level, base.storage(cat)), rest);
