@@ -43,8 +43,11 @@ No other mods are required. Build from source with `./gradlew build` (jar in `bu
 
 In the world:
 * **Reporting Station** (right-click): opens a scrollable screen with population, stock, recruitment decision,
-  workspaces and tiers, surveyed caves, projects, repairs, delivered reports and raids. Only members (and ops) see
-  their own faction's records.
+  the mines (each layer's ore, height, progress and lengthening, how deep the shaft goes; worked-out, given-up and
+  resting mines), the woodland (trees felled, saplings growing, stumps to replant), the fishing spot (where, open
+  or still water, catches - or that water is being looked for or is not within reach), surveyed caves, projects,
+  repairs, delivered reports, the villages, outposts and mansions the scouts found, and raids. Only members (and
+  ops) see their own faction's records.
 * **World Map Board** (right-click): opens a drawn map of the campaign area — explored sectors shaded, your
   bases, and every report your scouts physically delivered as a marker (enemy settlements, lairs, monsters, cave
   entrances, exposed ore, surveyed caves, villages, pillager outposts, woodland mansions; hover a marker for
@@ -77,16 +80,23 @@ Players respawn at their nearest surviving allied base when they have no bed.
   containers or anything next to water or lava. A watchdog also catches NPCs that "walk" for 30 s without leaving
   the same spot.
 * **Starting bases** are placed on dry, gentle land: each faction searches its own map sector on real generated
-  terrain, widens to the whole map (and a 1.5× map) if needed, and levels the footprint including the mine and
-  tree-plot pads. Every base starts with a finished reporting station, map board, faction heart, categorised
-  storage (food, raw, building, tools, weapons, armour, special, general), workshop (crafting table, 2 furnaces,
-  smoker, anvil, enchanting table with bookshelves), 10 beds, a farm, a pen with 2 cows and 2 pigs, walls with
-  gates, lighting, and outside the walls a tier-1 constructed mine and a fenced tree plot. Starter supplies are
-  finite and granted once (saved flag).
+  terrain, widens to the whole map (and a 1.5× map) if needed, and levels the footprint: the walled base, a grove
+  pad outside the west gate and a 10-block landing with a path outside the east gate, all sloped into the ground
+  around them. Every base starts with a finished reporting station, map board, faction heart, categorised storage
+  (food, raw, building, tools, weapons, armour, special, general), workshop (crafting table, 2 furnaces, smoker,
+  anvil, enchanting table with bookshelves), 10 beds, a farm, a pen with 2 cows and 2 pigs, walls with gates,
+  lighting, and four oak saplings on the grove pad, two of them already grown. No mine and no fence are built: the
+  miner chooses its own mine site and the woodcutter fells the trees around the base. A belt of ground beside the
+  walls (out to 58 blocks west and 78 east of the centre) is kept loaded and ticking, so the grove grows and nearby
+  mines keep working without players. Starter supplies are finite and granted once (saved flag).
 * **Ten starting NPCs**: builder, miner, farmer, woodcutter, blacksmith, chef, scout and three swordsmen. Animal
   carers, butchers, smelters, fishermen, cave explorers, extra miners for caves, haulers and an enchanter are
-  recruited when the base needs them and has a bed free. A miner left with no mine or cave to work for half a day
-  takes up the job the base needs most instead of a new recruit (keeping its level and traits).
+  recruited when the base needs them and has a bed free. A worker left with nothing to do for half a day (a miner
+  with no place to dig a mine, a woodcutter with no trees or saplings, a fisherman with no fishing water) or without
+  the tool for its job takes up the job the base needs most instead of a new recruit (keeping its level and traits)
+  and hands back its workplace; the faction is told why ("Elsa Wells (Fisherman) has had no fishing rod for half a
+  day and becomes a Miner (...)"). When none of a role's workers had anything to do, the base does not hire into
+  that role again for two days.
 * **Hunger like a player's** (config `survival.hunger`, on by default): every NPC has the vanilla food bar (food,
   saturation, exhaustion). Actions cost what they cost a player (blocks broken, attacks, damage taken, jumps,
   swimming) plus a working day's metabolism (`survival.workExhaustionPerDay`, 30 = about 1.5 bread a day, since
@@ -111,8 +121,7 @@ Players respawn at their nearest surviving allied base when they have no bed.
   base **rations**: one meal carried each and only food producers recruited, until it has 1.5 days again; and
   recruitment always keeps a day's meals for the people already there. The hauler keeps the workshop furnaces and
   smoker stocked with coal or charcoal. Cooks with no coal craft logs into planks before burning them (four times
-  the smelting per log), and cooks and the charcoal-making smelter keep 64 logs back while a tree plot can still be
-  enlarged (16 when rationing), so a coal-less base can still save up for its fences.
+  the smelting per log); cooks keep 16 logs back for building and crafting, and the charcoal-making smelter 24.
 * **Combat behaviour**: melee soldiers jump and strike on the way down for a player's **critical hit** (×1.5); a
   sword hit on the ground **sweeps** enemies next to the target (Sweeping Edge applies; never allies or animals).
   Swordsmen carry a **shield**, raised while closing on archers and between swings, lowered to strike; it wears,
@@ -163,34 +172,64 @@ Players respawn at their nearest surviving allied base when they have no bed.
     walked over and picked up.
   * Output goes into the worker's backpack and is carried to storage; full storage pauses work without deleting
     anything.
-* **Mines** are dug by the miner: a roofed hut over a 2×2 spiral staircase (one step down per block, a landing
-  every 4 steps), then a **branch mine** on each level (a 40-block main tunnel with 10-block side branches every
-  4 blocks, torches every 8 blocks). Levels: tier 1 ≈ 6 below the surface, tier 2 at y=32 (iron), tier 3 at y=0
-  (diamonds), tier 4 at y=−48, then more levels 6 deeper down to y=−56. When ~60% of a level is mined, the miner
-  digs the spiral down to the next one; tiers 2–4 are paid with a pickaxe, and tier 3+ needs an iron pickaxe in
-  hand. When the bottom is reached, more branch mines are dug between levels that are 12+ blocks apart, so a
-  miner keeps finding new rock. A fully worked-out mine sends its miner to a surveyed cave if there is one;
-  otherwise the miner **lengthens its branch mines** like a player would: it goes back to each regular level
-  (deepest first) and continues the main tunnel 40 blocks further with new branches (up to 4 rounds). Stair
-  steps whose floor was dug away are repaired with stone from the miner's backpack.
-  Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through
-  falling sand like a player), bridge cave holes in the tunnel floor, stop a branch where it breaks out of a
-  hillside, and stop collecting cobblestone-type junk once storage holds 512 of it.
-* **Tree plots** grow from 4 to 9 to 16 trees. Woodcutters fell trees log by log with their axe, break the
-  canopy (the leaves' own loot drops saplings, sticks and apples), collect what fell, replant, and let saplings
-  grow naturally — they only speed growth up with real bone meal (made by the blacksmith from bones). While the
-  plot's saplings grow they also cut trees outside their plot: wild trees within 64 blocks (never in a base or
-  another faction's plot), replanting a sapling where each one stood.
+* **Mines** are sited and dug by the miners, as a player would. A miner with no open mine of its base to work and
+  no surveyed cave looks for a place to dig one within `mineSiteRadius` (64) of the base centre, on ground already
+  loaded: 8 or more blocks beyond every base's walls, out of other factions' land, 48 blocks from the villages,
+  pillager outposts and woodland mansions its scouts reported and 24 from every other mine's mouth; firm, nearly
+  level ground deep enough for a mine, with no water, lava or built blocks around the mouth; and room for the
+  tunnels to run away from the base without coming near walls, other bases, lairs, other mines' tunnels or the map
+  edge. Of those it takes the shortest walk from a gate, weighed against water over the tunnels, ground dipping
+  toward them, uneven or sandy ground at the mouth and less room to lengthen the tunnels. Finding nothing, it walks
+  out to four points around the base to look there, then looks again every few minutes. A base works at most
+  `maxOpenMines` (3) mines at once. There is no hut: the miner sets a torch by the mouth, plugs the ground around
+  it and digs an open 2×2 spiral staircase (one step down per block, a torch every 8 steps), plugging water, lava
+  and loose sand beside each step and digging on through aquifers.
+* **Mine layers** follow what the base needs and the pickaxe in hand, at the heights where vanilla ore is richest:
+  coal 6 blocks under the surface (any pickaxe), iron at y=16 and lapis at y=0 (stone or better), gold at y=−16 and
+  diamonds and redstone at y=−56 (iron or better). Iron comes first when the storehouse is nearly out, then
+  diamonds, then more iron, coal while fuel or wood runs short, gold, and lapis once there is an enchanting table.
+  The miner finishes a layer before it switches, uses a layer already near the wanted height, and opens a new one
+  at least 6 steps from every other, digging the spiral down to it first. Each layer is a **branch mine** (a
+  40-block main tunnel with 10-block side branches every 4 blocks, torches every 8 blocks); a finished layer is
+  lengthened 40 blocks further, up to 4 times, where its tunnels have room, and a mine with little room digs more
+  layers of the same ore a little above or below instead. When only a better pickaxe would help, the mine
+  **rests** until the blacksmith has made one (the miner fetches it, or looks for another site meanwhile); when
+  every layer it can reach is dug, the mine is **worked out** and its miner moves on to a cave or a new site.
+  Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through falling
+  sand like a player), clear flooded tunnel cells, bridge cave holes in the tunnel floor, stop a branch where it
+  breaks out of a hillside, and stop collecting cobblestone-type junk once storage holds 512 of it. They never dig
+  block entities, built blocks (bricks, polished and tiled stone: dungeons, strongholds, trial chambers, ancient
+  cities), another mine's stairs, the deep dark, the ground under a base or other factions' land: a tunnel that
+  meets one ends there, and a shaft that meets one (or stays stuck) stops above it. A mine whose mouth cannot be
+  reached, whose stairs stay blocked or whose shaft cannot get 6 steps down is given up, and its miner never picks
+  that site again. Stair steps whose floor was dug away are repaired with stone from the miner's backpack.
+* **Woodland**: there is no tree plot and no fence. Woodcutters fell the natural trees within `forestRadius` (64)
+  of the base centre (oak, birch, spruce, jungle, acacia, dark oak and cherry, 2×2 trunks too) log by log with
+  their axe from the top down, cutting high branch ends from the ground under them, break the canopy (the leaves'
+  own loot drops saplings, sticks and apples), collect what fell and **replant the same species** at the stump
+  (four saplings for a dark oak; a stump still waiting for its sapling after half a day gets another species if one
+  is at hand, and after two days it is forgotten). They fell only what a player could fell whole from the ground: a
+  trunk of 3–9 logs on dirt with natural leaves, no log more than 8 blocks over the stump, touching no built block,
+  bee nest or other tree; never by the walls, in other factions' land, by a lair, within 32 blocks of a known
+  village or 48 of a known outpost or mansion. Mega spruces, tall jungle trees, some fancy oaks and mangroves are
+  left standing. Each base also keeps a **grove** of `groveSize` (16) saplings growing on a lattice in its
+  always-ticking belt (birch first, then spruce, oak, cherry, acacia; twice as many while the base is short of
+  wood), fetching the saplings from the storehouse and first picking any flowers beside an oak, birch or cherry
+  sapling so no bee nest grows. Saplings grow naturally — woodcutters only speed growth up with real bone meal
+  (made by the blacksmith from bones). With nothing to fell near home a woodcutter walks 72 blocks out, in one of
+  eight directions in turn, to look for trees. Old tree-plot fences are taken down into storage. Between dusk and
+  dawn woodcutters and fishermen do not work more than 16 blocks outside the walls (config
+  `remoteWorkInDaylightOnly`).
 * **Cave explorers** go to cave entrances the scouts reported, find the way in, and explore the cave on foot:
   they light dark spots with real torches, note every ore they can actually see (an exposed face and a clear
   line of sight — nothing behind rock), and build steps with placed cobblestone or dirt down drops of two blocks
   or more so the way stays walkable both ways. They never mine. They turn back when out of torches, wounded,
   attacked or done, and hand the survey (the route walked and the ores seen) in at the reporting station.
-* **Cave mining**: a miner without the constructed mine works a surveyed cave. It walks the explorer's route,
-  mines the marked ores and every ore it uncovers, tunnels a short way to ores it cannot otherwise reach, then
-  digs prospecting tunnels from the deepest spot into the cave walls. There is no artificial supply limit — the
-  cave holds exactly the ore that is really in it; when it is worked out the miner hands it back. Bases take on
-  up to two cave miners.
+* **Cave mining**: a miner with no open mine of its base to work takes a surveyed cave before it looks for a new
+  mine site. It walks the explorer's route, mines the marked ores and every ore it uncovers, tunnels a short way to
+  ores it cannot otherwise reach, then digs prospecting tunnels from the deepest spot into the cave walls. There is
+  no artificial supply limit — the cave holds exactly the ore that is really in it; when it is worked out the miner
+  hands it back. Bases take on up to two cave miners.
 * **Haulers** (from 12 NPCs on) keep the base tidy: they pick up items lying around inside the walls and re-sort
   the storehouse, carrying stacks from the overflow chest or a wrong chest to the chests of their category.
 * **Farmers** harvest ripe crops by breaking them, collect the drops, till, and replant; the first row of the
@@ -202,14 +241,25 @@ Players respawn at their nearest surviving allied base when they have no bed.
   stop breeding at 8 animals per species.
 * **Butchers** kill only surplus adults with real sword hits — never babies, never animals that are breeding,
   and never below 4 breeding adults per species — and collect the meat and leather.
-* **Fishermen** stand at the farm's water channel and fish with a rod: vanilla bite timing (100–600 ticks plus
-  20–80, shortened by Lure) and the vanilla fishing loot table (Luck of the Sea applies). There is no visible
-  bobber entity.
+* **Fishermen** fish real water outside the walls with a rod (a pond, lake, river or the sea), never the farm's
+  irrigation or any water within 5 blocks of farmland. The fisherman, and the base every few minutes, look within
+  `fishingRadius` (64) of the base centre for water at least 2 deep under open sky with at least 25 blocks of
+  surface, beyond every base's walls, out of other factions' land and away from lairs and known outposts and
+  mansions, with a dry stand on the bank 2–5 blocks from the bobber and 1–2 above the water; open water first, then
+  the shortest walk from a gate. The fisherman climbs out onto the stand before it casts and checks the water with
+  every cast; when the water is gone or the stand cannot be reached it remembers the spot as unfit and looks for
+  other water. With none near the base it walks 72 blocks out in one of eight directions in turn; when a whole
+  round finds nothing, the base remembers for two days that it has no fishing water (no fisherman is hired
+  meanwhile) and the fisherman waits at the storehouse, to be retrained after half a day. Bites follow vanilla
+  timing (100–600 ticks plus 20–80, shortened by Lure, sooner when it rains on the water) and the vanilla fishing
+  loot table (Luck of the Sea applies); in open water (vanilla's 5×5, 2-deep, open-sky test) the treasure catches
+  can come up as for a player (config `fishingTreasure`). There is no visible bobber entity.
 * **Farmer, chef, smelter, blacksmith** use the real farm, smoker, furnaces and crafting recipes. The blacksmith
-  crafts batches from real needs: mine-upgrade pickaxes, better worker tools, iron swords and armour for soldiers
-  first, bows, torches, sticks, diamond gear when diamonds exist. Furnace and smoker workers fetch fuel as soon as
-  any station runs dry (coal, charcoal, a coal block, then logs and planks beyond a building reserve); with nothing
-  to burn they wait at the storehouse and say so.
+  crafts batches from real needs of every worker of its base: replacements for worn-out tools, better pickaxes for
+  the miners (stone at once, then iron and diamond, which open the deeper layers), iron swords, armour and shields
+  for soldiers, bows, sticks, bone meal, torches, golden apples, diamond swords when diamonds exist. Furnace and
+  smoker workers fetch fuel as soon as any station runs dry (coal, charcoal, a coal block, then logs and planks
+  beyond a building reserve); with nothing to burn they wait at the storehouse and say so.
 * **Experience and the enchanter**: NPCs pick up experience orbs like players: from ores they mine, from furnaces
   when the output is taken, from animals they breed. The faction's experience goes to its **enchanter**, who works
   the workshop's enchanting table (10 bookshelves) exactly like the vanilla screen: three random offers set by the
@@ -217,7 +267,10 @@ Players respawn at their nearest surviving allied base when they have no bed.
   netherite weapons, armour and pickaxes and bows in the storehouse (soldiers' gear first); everyone then prefers
   enchanted gear of the same material. Silk Touch tools are kept aside (ore would come out as ore blocks).
 * **Recruitment** replaces missing workers and grows the garrison (40% archers by default) up to the number of
-  beds; it charges food by normal hunger value plus exactly one equipment payment route.
+  beds; it charges food by normal hunger value plus exactly one equipment payment route. A fisherman is hired only
+  where the base has found fishing water or has not looked yet (or last looked two days ago), no miner is hired for
+  an open mine or a surveyed cave while one of the base's miners is free to take it up, and a role found barren is
+  not hired again for two days.
 * **Builders** queue houses (with straw bedrolls made from wheat) and storage expansions, carry materials to the
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
@@ -273,15 +326,15 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §4 Roles: crossbowman, axe fighter | Implemented | G (crossbow fire, weapon attack speed) |
 | §4 Roles: enchanter | Implemented (vanilla table, real experience from orbs, lapis) | G (table, levels and lapis paid; ore experience reaches the faction; gear choice), S |
 | §4 Roles: field medic, TNT expert, rail engineer | ✗ not implemented | — |
-| §5–6 Workspaces, mines dug by the miner (spiral shaft, branch mine, tier levels, pickaxe-gated drops) | Implemented (player-like) | U (geometry), G (break times, drops), S |
+| §5–6 Workspaces, mines dug by the miner (spiral shaft, branch mine, tier levels, pickaxe-gated drops) | Implemented (player-like; instead of a fixed hut mine with tiers, each miner chooses its own site and its layers by need and pickaxe) | U (geometry, layer planner, site rules, old-mine migration), G (break times, drops, own shaft and ground ring, aquifers, protected blocks, resting and given-up mines), S |
 | §7 Natural cave mining | Implemented (surveyed by explorers, mined by miners; depletion is real ore running out) | U, G, S |
-| §8 Tree plots + upgrades, farm, chef | Implemented (player-like woodcutting and farming) | S |
-| §8 Pens/breeding/butchering, fishing | Implemented | G, S |
+| §8 Tree plots + upgrades, farm, chef | Implemented differently: no plot, fence or upgrades - woodcutters fell and replant the natural trees around the base and keep a grove (player-like woodcutting and farming) | U (tree shape, replanting, grove rules), G (felling and replanting, protected wood, old fences, reloads, grove), S |
+| §8 Pens/breeding/butchering, fishing | Implemented (fishing on real water outside the walls, never the farm's irrigation) | U (water and stand rules), G, S |
 | §9 Golden apples used by NPCs | Implemented (soldiers carry one; eaten when badly hurt in a fight; blacksmith crafts them) | G |
 | §10 Categorised storage, blacksmith batches, soldier armour priority, hauler | Implemented | G (storage, hauler), S |
 | §11 Builder projects, staging chest + signs, repairs, player-edit preservation | Implemented (houses, storage expansion) | S |
 | §11 Perimeter expansion, outposts, procedural building variety | ✗ | — |
-| §12 Scouts, reports, map board, stale sightings, retreat, overdue follow-up | Implemented (chat-based map) | S |
+| §12 Scouts, reports, map board, stale sightings, retreat, overdue follow-up | Implemented (chat-based map; villages, pillager outposts and woodland mansions; scouts step aside from monsters, retreating home only when badly hurt or unable to shake them, and from enemy soldiers) | U (escape routes, structure rules), G (stepping aside, retreats, structure sightings), S (before villages, outposts, mansions and stepping aside) |
 | §12 Radio / communication tower | ✗ | — |
 | §13 Player-equivalent speed, allies pass through each other, stuck recovery (default ≤4 across / ≤2 up-down, configurable), day/night continuity | Implemented | G (4.25 blocks/s; recovery), U, S |
 | §14 Mob targeting, half undead damage, civilian flee, creeper jump-back, raids, defence alarm | Implemented | G, S |
@@ -290,7 +343,7 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §17 Boss reward chests and hero tokens | ✗ | — |
 | §18 Work XP, levels, random capped affixes, no re-stacking | Implemented | U, G, S |
 | §19 Inspection, station/map info, signs | Implemented (station, map board and NPC screens) | S; screens checked in a real client |
-| §20 Persistence, bounded background simulation, no duplication on reload | Implemented | G, S (restart comparison) |
+| §20 Persistence, bounded background simulation, no duplication on reload | Implemented (campaigns saved by earlier versions load and convert) | G (incl. old-format mines, tree plots and fishing spots), S (restart comparison) |
 
 Graphical check: a real 1.21.1 client (software OpenGL on a virtual display) joined the test server with the
 mod and rendered the bases, blocks, NPC skins, armour and held items, and opened the station and map board
@@ -307,10 +360,23 @@ The reporting station and world map board screens, captured in the same real cli
 
 ## Testing
 
-* `./gradlew test` — 40 JUnit tests for the pure rules (spiral mine, branch-mine and lengthening geometry, infill
-  levels, cave survey walk graph, vanilla experience levels, the vanilla food bar, the logistics ledger, food payment, affix caps, XP curve, stuck-recovery
-  selection, scout rules).
-* `./gradlew runGameTestServer` — 40 GameTests on a real headless server, including **faction advancements**
+* `./gradlew test` — 139 JUnit tests for the pure rules (spiral mine and branch-mine geometry, the mine layer
+  planner, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule,
+  replanting and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
+  escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
+  the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
+* `./gradlew runGameTestServer` — 91 GameTests on a real headless server, including **miners** (digs its own
+  shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
+  down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
+  a resting mine; a mine set aside keeps only the ground it dug), **woodcutters** (fells a tree and replants the same
+  species, leaves built and protected wood alone, takes down an old fence, resumes a tree after a reload, cuts a
+  branch end from below, leaves an unreachable tree for a while, fills the grove from the storehouse and picks the
+  flowers first), **fishermen** (never picks farm irrigation, catches at a pond, leaves when the water is gone,
+  climbs onto the bank before casting, treasure only in open water, no fisherman hired without water),
+  **retraining** (frees the workplace, barren roles, a worker with its tool again is not toolless), **old saves**
+  (old mines, tree plots and fishing spots load and convert), **scouts** (step aside from zombies and keep
+  exploring, walk on past a monster that cannot see them, retreat when badly hurt or from enemy soldiers, find
+  villages and outposts through loaded chunks only), **faction advancements**
   (single, any-of and all-of requirements; an NPC's diamond makes Diamonds!), **rationing** on and off,
   **critical hits and sweeps**, **shields** (up against an archer, an axe knocks it aside), **wounded withdrawal and
   archer kiting**, **gear wear** (sword per hit,
@@ -332,7 +398,28 @@ The reporting station and world map board screens, captured in the same real cli
 
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
 
-**Long campaign with this version** — one world, nothing spawned by hand, run to **day 21.6** with about a dozen
+**A fresh campaign with the worker redesign** (same seed, ten days, run before the last round of review fixes,
+which came out of it):
+* **Mines**: every faction's miners chose their own sites outside the walls and dug their own shafts. Ember Legion
+  (six miners by day 10) opened five mines with layers at about y=58 to 69 (coal), 14 to 16 (iron), −2 to 0
+  (lapis), −16 to −18 (gold) and −54 to −56 (diamonds), worked two of them out, and had 118 diamonds, 389 raw iron
+  and 1,092 redstone in store. One of Grove Covenant's shafts stopped at y=42 in an aquifer (fixed: miners now dig
+  on through aquifers).
+* **Wood**: Ember's woodcutter felled 422 trees (2,063 logs in store on day 10), Tide's 175. Grove's felled only 25
+  and its logs ran out: foraging far out, it gave up its own grove trees as unreachable and never fetched the grove
+  saplings waiting in storage (fixed: such trees are walked back to and only left for a while, the grove is filled
+  from the storehouse, and the grove default went from 8 to 16 saplings).
+* **Fishing**: every base found real water beyond its walls (three of the four in open water), none within 8
+  blocks of farmland; Tide's fisherman made 160 catches, Ember's 128.
+* **Stuck NPCs**: Stoneguard's east gate opened onto a one-block ledge four blocks above a lake, where four NPCs
+  were stuck for days (fixed: new bases level a landing outside the east gate).
+* **War**: by day 10 both Hollow lairs were destroyed and Tide Alliance and Stoneguard had fallen.
+
+The runs below are **historical**: they used the old layout (a hut mine with fixed tiers, a fenced tree plot,
+fishermen at the farm's water channel), which new campaigns no longer have, so the same seed does not reproduce
+them.
+
+**Long campaign with an earlier version** — one world, nothing spawned by hand, run to **day 21.6** with about a dozen
 server restarts (each one also tested save/reload) while fixes were rolled in:
 * **War**: Ember Legion raided The Hollow from day 5; both monster lairs were destroyed by day 11, eliminating The
   Hollow. Ember went on to raid Grove Covenant (11 raids in all). Grove launched its first raid on day ~21. No
@@ -407,10 +494,13 @@ fixes below:
 
 Known rough edges: a few NPCs still need minutes of digging and bridging in very broken terrain; animals can still
 slip out of the pen occasionally; fishing has no visible bobber; the enchanter has nothing to do once all good gear
-is enchanted (it waits for new gear).
+is enchanted (it waits for new gear); trees too tall to fell whole from the ground (mega spruces, tall jungle trees,
+some fancy oaks) are left standing; a base with no ground deep enough for a mine, or no fishing water, within reach
+keeps only a trial miner or fisherman, hired again two days after the last one was retrained.
 
-**Mines from campaigns started with the first version are not compatible** with the new mine design — start a
-new campaign (`/fc start`) after updating.
+**Old campaigns load and continue:** the hut mine is migrated (its levels become layers) and keeps being worked,
+old tree-plot fences are taken down into storage, and fishermen leave the farm for real water. Documented
+fixed-seed results came from the old layout and are historical.
 
 The original project's source, saves and balance numbers were not available, so this is a fresh implementation;
 existing old-mod saves are not compatible with it.

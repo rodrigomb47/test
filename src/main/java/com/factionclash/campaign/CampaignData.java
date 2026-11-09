@@ -20,8 +20,12 @@ import java.util.UUID;
 /** World-saved campaign state, stored with the overworld. Single authoritative record of every faction. */
 public final class CampaignData extends SavedData {
     public static final String NAME = "factionclash_campaign";
-    /** Bumped when the save layout changes incompatibly. */
-    public static final int FORMAT = 1;
+    /**
+     * The save layout's version, written with every save. 2: mines, woodlands and fishing spots carry their own
+     * per-record versions (mineV, woodV, fishV) and convert older records themselves on load (WorkplaceState.load), so
+     * format 1 campaigns load and keep playing. It is read back only to be logged, never used as a gate.
+     */
+    public static final int FORMAT = 2;
 
     public boolean started;
     public BlockPos center = BlockPos.ZERO;
@@ -40,6 +44,8 @@ public final class CampaignData extends SavedData {
     public int nextBaseId = 1;
     public int nextWorkplaceId = 1;
     public int nextProjectId = 1;
+    /** The format the campaign was saved with (0 before the format was written); only logged, never a gate. */
+    public int loadedFormat = FORMAT;
 
     public static CampaignData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(
@@ -164,6 +170,12 @@ public final class CampaignData extends SavedData {
 
     public static CampaignData load(CompoundTag t, HolderLookup.Provider provider) {
         CampaignData d = new CampaignData();
+        d.loadedFormat = t.getInt("format");
+        if (d.loadedFormat < FORMAT) {
+            // older records convert themselves as they load (WorkplaceState.load): hut mine kept, old fences taken down,
+            // fishing spots moved off the farm to real water
+            com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} - migrating workplaces to format {}", d.loadedFormat, FORMAT);
+        }
         d.started = t.getBoolean("started");
         d.center = BlockPos.of(t.getLong("center"));
         d.radius = t.getInt("radius");
