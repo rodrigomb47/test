@@ -43,50 +43,6 @@ class SpiralMineTest {
     }
 
     @Test
-    void levelsReachOreBandsAndFaceTheTunnels() {
-        int surface = 66;
-        int prevY = surface;
-        for (int level = 1; level <= 4; level++) {
-            int n = SpiralMine.landingSteps(surface, level);
-            assertTrue(n > 0);
-            assertEquals(2, SpiralMine.cell(n)[0], "landing must be on the tunnel side of the shaft");
-            int y = SpiralMine.levelY(surface, level);
-            assertTrue(y <= prevY - 6, "each level is at least 6 deeper");
-            prevY = y;
-        }
-        assertTrue(SpiralMine.levelY(surface, 2) <= 32);
-        assertTrue(SpiralMine.levelY(surface, 3) <= 0);
-        assertTrue(SpiralMine.levelY(surface, 4) <= -48 && SpiralMine.levelY(surface, 4) >= SpiralMine.MIN_Y);
-        assertEquals(-1, SpiralMine.landingSteps(surface, 60), "no levels below the mining floor, nor endless infill");
-    }
-
-    @Test
-    void infillLevelsFitBetweenExistingOnesOnceTheBottomIsReached() {
-        int surface = 70;
-        java.util.List<Integer> all = new java.util.ArrayList<>();
-        int level = 1;
-        for (int n = SpiralMine.landingSteps(surface, level); n > 0; n = SpiralMine.landingSteps(surface, ++level)) {
-            assertEquals(2, SpiralMine.cell(n)[0], "every landing faces the tunnels");
-            assertTrue(surface - n >= SpiralMine.MIN_Y);
-            all.add(n);
-        }
-        int regular = 0;
-        while (SpiralMine.isRegular(surface, regular + 1)) {
-            regular++;
-        }
-        assertTrue(all.size() > regular, "infill levels exist after the bottom");
-        int deepest = all.subList(0, regular).stream().mapToInt(Integer::intValue).max().orElseThrow();
-        for (int i = regular; i < all.size(); i++) {
-            assertTrue(all.get(i) < deepest, "infill levels lie above the bottom, inside the dug shaft");
-        }
-        java.util.List<Integer> sorted = new java.util.ArrayList<>(all);
-        sorted.sort(null);
-        for (int i = 1; i < sorted.size(); i++) {
-            assertTrue(sorted.get(i) - sorted.get(i - 1) >= 6, "levels at least 6 apart: " + sorted);
-        }
-    }
-
-    @Test
     void branchMineIsTwoHighAndCoversBranchesEveryFourBlocks() {
         List<SpiralMine.Cell> plan = SpiralMine.tunnelPlan(0);
         Set<String> seen = new HashSet<>();
@@ -124,7 +80,25 @@ class SpiralMineTest {
             long added = longer.subList(first.size(), longer.size()).stream().filter(c -> c.s() != side).count();
             org.junit.jupiter.api.Assertions.assertTrue(added > 0, "the lengthened tunnel has no branches");
         }
-        org.junit.jupiter.api.Assertions.assertTrue(SpiralMine.regularLevels(70) >= 4);
         org.junit.jupiter.api.Assertions.assertSame(SpiralMine.cachedPlan(1, 2), SpiralMine.cachedPlan(1, 2));
+    }
+
+    @Test
+    void landingHelpersFaceTheTunnels() {
+        for (int n = 1; n <= 300; n++) {
+            int below = SpiralMine.landingAtOrBelow(n), above = SpiralMine.landingAtOrAbove(n);
+            assertTrue(Math.floorMod(below - 1, 4) == 1 || Math.floorMod(below - 1, 4) == 2, "landing at or below " + n + ": " + below);
+            assertTrue(Math.floorMod(above - 1, 4) == 1 || Math.floorMod(above - 1, 4) == 2, "landing at or above " + n + ": " + above);
+            assertTrue(below >= n && above <= n, "below is as deep or deeper, above as shallow or shallower: " + n);
+            for (int k = n; k < below; k++) {
+                assertFalse(SpiralMine.isLanding(k), "a nearer landing below " + n + " at " + k);
+            }
+            for (int k = above + 1; k <= n; k++) {
+                assertFalse(SpiralMine.isLanding(k), "a nearer landing above " + n + " at " + k);
+            }
+            if (n >= 2) {
+                assertEquals(2, SpiralMine.cell(below)[0], "a landing's cell faces the tunnels");
+            }
+        }
     }
 }

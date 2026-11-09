@@ -72,6 +72,16 @@ public final class BaseBuilder {
         mine.type = WorkplaceState.Type.MINE;
         mine.origin = center.offset(BaseLayout.MINE_ORIGIN_X, 0, 0);
         mine.facing = Direction.EAST;
+        mine.hut = true;
+        mine.maxRounds = com.factionclash.logic.MinePlanner.MAX_REACH;
+        mine.opened = level.getGameTime();
+        // the hut's stairs come dug down to the first old level; the miner chooses its layers from there
+        com.factionclash.logic.LegacyMine.Migrated first = com.factionclash.logic.LegacyMine.migrate(y0, 1, 0, 0, 0, 0, -1);
+        for (com.factionclash.logic.LegacyMine.Level l : first.levels()) {
+            mine.levels.add(new WorkplaceState.MineLevel(l.step(), l.progress(), l.rounds(), -1));
+        }
+        mine.bottom = first.bottom();
+        mine.cur = first.cur();
         data.addWorkplace(base, mine);
         MineLayout.buildInitial(bp, mine, faction);
 
@@ -188,7 +198,7 @@ public final class BaseBuilder {
 
     /** Plugs water, lava, sand and cave holes around the starting spiral steps so the first descent is safe. */
     public static void sealMine(ServerLevel level, WorkplaceState mine) {
-        int steps = MineLayout.landingSteps(mine, 1);
+        int steps = com.factionclash.logic.LegacyMine.landingSteps(mine.origin.getY(), 1);
         for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, steps)) {
             BlockPos p = MineLayout.spiralPos(mine, c);
             for (Direction d : Direction.values()) {

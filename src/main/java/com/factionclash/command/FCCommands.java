@@ -324,23 +324,34 @@ public final class FCCommands {
         return 1;
     }
 
-    /** Diagnostics: logs every planned excavation cell of a mine's next tier and its current block. */
+    /** Diagnostics: logs a mine's levels and the stretch of the current level's plan around its progress, with each cell's block. */
     private static int mineDump(CommandContext<CommandSourceStack> c) {
         ServerLevel level = c.getSource().getServer().overworld();
         WorkplaceState w = CampaignData.get(c.getSource().getServer()).workplace(IntegerArgumentType.getInteger(c, "id"));
         if (w == null || w.type != WorkplaceState.Type.MINE) {
             return 0;
         }
-        int lv = com.factionclash.structure.MineLayout.level(w);
-        var plan = com.factionclash.structure.MineLayout.tunnelPlan(w);
-        StringBuilder sb = new StringBuilder("mine " + w.id + " origin " + w.origin.toShortString() + " facing " + w.facing + " tier " + w.tier + " +" + w.subLevel + " level y="
-                + com.factionclash.logic.SpiralMine.levelY(w.origin.getY(), lv) + " shaftStep " + w.upgradeStep
-                + " tunnel " + w.progress + "/" + plan.size() + "\n");
-        for (int i = Math.max(0, w.progress - 6); i < Math.min(plan.size(), w.progress + 6); i++) {
-            var cell = plan.get(i);
-            BlockPos p = com.factionclash.structure.MineLayout.tunnelPos(w, cell);
-            sb.append(i).append(i == w.progress ? " >" : "  ").append(cell.torch() ? "TORCH " : "DIG ").append(p.toShortString())
-                    .append(" now=").append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(p).getBlock()).getPath()).append("\n");
+        int y0 = w.origin.getY();
+        StringBuilder sb = new StringBuilder("mine " + w.id + " origin " + w.origin.toShortString() + " facing " + w.facing
+                + (w.hut ? " (hut)" : "") + " bottom " + w.bottom + " (y=" + (y0 - w.bottom) + ") shaftLimit " + w.shaftLimit
+                + " maxRounds " + w.maxRounds + " cur " + w.cur + " shaftStep " + w.upgradeStep + " restTier " + w.restTier
+                + (w.workedOut ? " WORKED OUT (" + w.note + ")" : "") + "\n");
+        for (int i = 0; i < w.levels.size(); i++) {
+            WorkplaceState.MineLevel lv = w.levels.get(i);
+            sb.append(i == w.cur ? " > " : "   ").append("level ").append(i).append(" step ").append(lv.step).append(" y=").append(y0 - lv.step)
+                    .append(" ").append(com.factionclash.work.MineSites.bandOf(w, lv, level.getMinBuildHeight()).label)
+                    .append(" tunnel ").append(lv.progress).append("/").append(com.factionclash.structure.MineLayout.tunnelPlan(lv).size())
+                    .append(" rounds ").append(lv.rounds).append(lv.cut ? " cut" : "").append("\n");
+        }
+        WorkplaceState.MineLevel cur = com.factionclash.structure.MineLayout.current(w);
+        if (cur != null) {
+            var plan = com.factionclash.structure.MineLayout.tunnelPlan(cur);
+            for (int i = Math.max(0, cur.progress - 6); i < Math.min(plan.size(), cur.progress + 6); i++) {
+                var cell = plan.get(i);
+                BlockPos p = com.factionclash.structure.MineLayout.tunnelPos(w, cur, cell);
+                sb.append(i).append(i == cur.progress ? " >" : "  ").append(cell.torch() ? "TORCH " : "DIG ").append(p.toShortString())
+                        .append(" now=").append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(p).getBlock()).getPath()).append("\n");
+            }
         }
         FactionClash.LOGGER.info(sb.toString());
         c.getSource().sendSuccess(() -> Component.literal("logged"), false);
@@ -443,6 +454,31 @@ public final class FCCommands {
                         wo.addProperty("workedOut", w.workedOut);
                         wo.addProperty("note", w.note);
                         wo.addProperty("origin", w.origin.toShortString());
+                    }
+                    if (w.type == WorkplaceState.Type.MINE) {
+                        wo.addProperty("tier", w.levels.size());
+                        wo.addProperty("origin", w.origin.toShortString());
+                        wo.addProperty("facing", w.facing.getSerializedName());
+                        wo.addProperty("hut", w.hut);
+                        wo.addProperty("bottom", w.bottom);
+                        wo.addProperty("shaftLimit", w.shaftLimit);
+                        wo.addProperty("maxRounds", w.maxRounds);
+                        wo.addProperty("cur", w.cur);
+                        wo.addProperty("restTier", w.restTier);
+                        wo.addProperty("workedOut", w.workedOut);
+                        wo.addProperty("note", w.note);
+                        JsonArray lvs = new JsonArray();
+                        for (WorkplaceState.MineLevel lv : w.levels) {
+                            JsonObject lo = new JsonObject();
+                            lo.addProperty("y", w.origin.getY() - lv.step);
+                            lo.addProperty("band", com.factionclash.work.MineSites.bandOf(w, lv, level.getMinBuildHeight()).name());
+                            lo.addProperty("progress", lv.progress);
+                            lo.addProperty("size", com.factionclash.structure.MineLayout.tunnelPlan(lv).size());
+                            lo.addProperty("rounds", lv.rounds);
+                            lo.addProperty("cut", lv.cut);
+                            lvs.add(lo);
+                        }
+                        wo.add("levels", lvs);
                     }
                     if (w.type == WorkplaceState.Type.FISHERY) {
                         wo.addProperty("origin", w.origin.toShortString());

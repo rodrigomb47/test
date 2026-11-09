@@ -1,9 +1,13 @@
 package com.factionclash.campaign;
 
 import com.factionclash.logic.FishingWater;
+import com.factionclash.logic.LegacyMine;
+import com.factionclash.logic.MinePlanner;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +16,12 @@ import java.util.UUID;
 /** A personal, persistent workspace (spec 5): assigned worker, tier and upgrade progress. */
 public final class WorkplaceState {
     public enum Type {
-        MINE("Constructed mine", 4),
+        /**
+         * One mine site: origin = the surface cell in front of the spiral shaft (where the miner steps in), facing =
+         * the way the tunnels run, {@link #levels} = the branch-mine levels opened so far. Old saves' mines, built
+         * with the base, have a hut over the shaft ({@link #hut}).
+         */
+        MINE("Mine", 1),
         TREE_PLOT("Tree plot", 3),
         FARM("Farm", 1),
         /** origin = pen centre (inside), extent = the pen's fence gate. */
@@ -49,18 +58,30 @@ public final class WorkplaceState {
     /** Farm: max corner. */
     public BlockPos extent = BlockPos.ZERO;
     public UUID assigned;
-    /** Upgrade in progress: next build/dig step index; -1 when idle. */
+    /**
+     * Upgrade in progress: next build/dig step index; -1 when idle. Mines: the step of
+     * {@code SpiralMine.spiralPlan(bottom, levels[cur].step)} while the shaft is dug down to the current level.
+     */
     public int upgradeStep = -1;
     public long totalOutput;
-    /** Mines: extra floors dug below tier 4 (free), and progress through the current level's tunnel plan. */
-    public int subLevel;
+    /** Caves: progress through the prospecting tunnels. (Mines keep their progress per level.) */
     public int progress;
-    /**
-     * Mines, once every level is dug: how many times the branch mines were lengthened (each round adds another
-     * stretch of main tunnel with branches on every regular level), and the level being lengthened now (0 = none).
-     */
-    public int reach;
-    public int revisit;
+    /** Mines: an old hut mine, built with the base: the way in and out is the hut's door. */
+    public boolean hut;
+    /** Mines: the deepest spiral step dug; steps 1 to bottom are all dug. */
+    public int bottom;
+    /** Mines: index in {@link #levels} of the level being worked, -1 when none is planned. */
+    public int cur = -1;
+    /** Mines: 0, or the deepest step the shaft may go to (below it lay something the miner may not dig). */
+    public int shaftLimit;
+    /** Mines: how many lengthening rounds fit this site's reserved corridor (0 to {@link MinePlanner#MAX_REACH}). */
+    public int maxRounds;
+    /** Mines: 0 when not resting, otherwise the pickaxe tier a miner needs to take the mine up again. */
+    public int restTier;
+    /** Mines: when the mine was opened (game time; 0 for old saves). */
+    public long opened;
+    /** Mines: every level opened, in the order they were opened. */
+    public final List<MineLevel> levels = new ArrayList<>();
     /** Caves: waypoints the explorer walked (index 0 = entrance) and each waypoint's parent (-1 for the root). */
     public long[] route = new long[0];
     public int[] parent = new int[0];
@@ -99,6 +120,31 @@ public final class WorkplaceState {
         return upgradeStep >= 0;
     }
 
+    /** Mines: still being worked, neither worked out nor resting until a better pickaxe comes. */
+    public boolean active() {
+        return !workedOut && restTier == 0;
+    }
+
+    /**
+     * One level of a mine: the spiral step of its landing, progress through its branch-mine plan, how often the plan
+     * was lengthened, the band it was opened for ({@link MinePlanner.Band} ordinal, -1 for a level of an old mine),
+     * and whether its main tunnel was cut short (it met something nobody may dig): then it is done for good.
+     */
+    public static final class MineLevel {
+        public int step;
+        public int progress;
+        public int rounds;
+        public int band;
+        public boolean cut;
+
+        public MineLevel(int step, int progress, int rounds, int band) {
+            this.step = step;
+            this.progress = progress;
+            this.rounds = rounds;
+            this.band = band;
+        }
+    }
+
     public CompoundTag save() {
         CompoundTag t = new CompoundTag();
         t.putInt("id", id);
@@ -113,11 +159,29 @@ public final class WorkplaceState {
         }
         t.putInt("upgradeStep", upgradeStep);
         t.putLong("output", totalOutput);
-        t.putInt("subLevel", subLevel);
-        t.putInt("progress", progress);
+        t.putInt("progress", type == Type.MINE ? 0 : progress);
         if (type == Type.MINE) {
-            t.putInt("reach", reach);
-            t.putInt("revisit", revisit);
+            t.putInt("mineV", 1);
+            t.putBoolean("hut", hut);
+            t.putInt("bottom", bottom);
+            t.putInt("cur", cur);
+            t.putInt("shaftLimit", shaftLimit);
+            t.putInt("maxRounds", maxRounds);
+            t.putInt("restTier", restTier);
+            t.putLong("opened", opened);
+            ListTag list = new ListTag();
+            for (MineLevel lv : levels) {
+                CompoundTag l = new CompoundTag();
+                l.putInt("step", lv.step);
+                l.putInt("prog", lv.progress);
+                l.putInt("rounds", lv.rounds);
+                l.putInt("band", lv.band);
+                l.putBoolean("cut", lv.cut);
+                list.add(l);
+            }
+            t.put("levels", list);
+            t.putBoolean("workedOut", workedOut);
+            t.putString("note", note);
         }
         if (type == Type.CAVE) {
             t.putLongArray("route", route);
@@ -155,11 +219,9 @@ public final class WorkplaceState {
         w.assigned = t.hasUUID("assigned") ? t.getUUID("assigned") : null;
         w.upgradeStep = t.contains("upgradeStep") ? t.getInt("upgradeStep") : -1;
         w.totalOutput = t.getLong("output");
-        w.subLevel = t.getInt("subLevel");
         w.progress = t.getInt("progress");
         if (w.type == Type.MINE) {
-            w.reach = t.getInt("reach");
-            w.revisit = t.getInt("revisit");
+            loadMine(w, t);
         }
         if (w.type == Type.CAVE) {
             w.route = t.getLongArray("route");
@@ -197,5 +259,70 @@ public final class WorkplaceState {
             }
         }
         return w;
+    }
+
+    /**
+     * The mine's own fields. A record without 'mineV' comes from an older version: a hut mine built with the base,
+     * dug in fixed tiers. Its levels are rebuilt from the old tier, floor, lengthening and progress numbers (see
+     * {@link LegacyMine#migrate}), so they match the tunnels already dug; those old numbers are not saved again.
+     */
+    private static void loadMine(WorkplaceState w, CompoundTag t) {
+        if (t.contains("mineV")) {
+            w.hut = t.getBoolean("hut");
+            w.bottom = t.getInt("bottom");
+            w.cur = t.contains("cur") ? t.getInt("cur") : -1;
+            w.shaftLimit = t.getInt("shaftLimit");
+            w.maxRounds = t.getInt("maxRounds");
+            w.restTier = t.getInt("restTier");
+            w.opened = t.getLong("opened");
+            w.workedOut = t.getBoolean("workedOut");
+            w.note = t.getString("note");
+            ListTag list = t.getList("levels", Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag l = list.getCompound(i);
+                MineLevel lv = new MineLevel(l.getInt("step"), l.getInt("prog"), l.getInt("rounds"), l.contains("band") ? l.getInt("band") : -1);
+                lv.cut = l.getBoolean("cut");
+                w.levels.add(lv);
+            }
+        } else {
+            LegacyMine.Migrated m = LegacyMine.migrate(w.origin.getY(), t.getInt("tier"), t.getInt("subLevel"), t.getInt("progress"),
+                    t.getInt("reach"), t.getInt("revisit"), w.upgradeStep);
+            for (LegacyMine.Level l : m.levels()) {
+                w.levels.add(new MineLevel(l.step(), l.progress(), l.rounds(), -1));
+            }
+            w.bottom = m.bottom();
+            w.cur = m.cur();
+            w.upgradeStep = m.upgradeStep();
+            w.hut = true;
+            w.maxRounds = MinePlanner.MAX_REACH;
+            w.workedOut = false;
+        }
+        w.tier = 1;
+        w.progress = 0;
+        // levels that cannot exist are dropped (the current one with them); cur must point at a real level
+        int keptCur = -1;
+        List<MineLevel> kept = new ArrayList<>();
+        for (int i = 0; i < w.levels.size(); i++) {
+            MineLevel lv = w.levels.get(i);
+            if (lv.step <= 0) {
+                continue;
+            }
+            if (i == w.cur) {
+                keptCur = kept.size();
+            }
+            lv.progress = Math.max(0, lv.progress);
+            lv.rounds = Math.max(0, Math.min(MinePlanner.MAX_REACH, lv.rounds));
+            kept.add(lv);
+        }
+        w.levels.clear();
+        w.levels.addAll(kept);
+        w.cur = keptCur;
+        w.bottom = Math.max(0, w.bottom);
+        w.shaftLimit = Math.max(0, w.shaftLimit);
+        w.restTier = Math.max(0, w.restTier);
+        w.maxRounds = Math.max(0, Math.min(MinePlanner.MAX_REACH, w.maxRounds));
+        if (w.cur < 0) {
+            w.upgradeStep = -1;
+        }
     }
 }

@@ -174,8 +174,8 @@ public final class FactionDirector {
                 continue;
             }
             boolean unworked = com.factionclash.work.Workplaces.unworked(data, w);
-            if (w.type == WorkplaceState.Type.MINE && unworked) {
-                mineUnworked = true;
+            if (w.type == WorkplaceState.Type.MINE && w.active() && unworked) {
+                mineUnworked = true; // an open mine (neither worked out nor resting) that nobody works
             } else if (w.type == WorkplaceState.Type.CAVE && !w.workedOut && !w.marks.isEmpty()) {
                 if (unworked) {
                     cavesToMine++;
@@ -185,7 +185,7 @@ public final class FactionDirector {
             }
         }
         if (mineUnworked && living(f, b, NpcRole.MINER) > 0) {
-            out.add(new Need(NpcRole.MINER, "the constructed mine has no miner"));
+            out.add(new Need(NpcRole.MINER, "an open mine has no miner"));
         }
         if (cavesToMine > 0 && caveMiners < MAX_CAVE_MINERS) {
             out.add(new Need(NpcRole.MINER, "a surveyed cave with ore to mine"));

@@ -8,7 +8,6 @@ import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
 import com.factionclash.npc.ToolKind;
 import com.factionclash.storage.FactionStorage;
-import com.factionclash.structure.MineLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -210,31 +209,6 @@ public class BlacksmithJob extends Job {
                             sticksAvail -= in.count();
                         }
                     }
-                }
-            }
-        }
-
-        // 1. Pickaxe needed to pay for the next mine upgrade.
-        for (int id : base.workplaces) {
-            WorkplaceState wp = data.workplace(id);
-            if (wp == null || wp.type != WorkplaceState.Type.MINE || wp.tier >= 4 || wp.upgrading()) {
-                continue;
-            }
-            int need = MineLayout.upgradePickTier(wp.tier + 1);
-            Predicate<ItemStack> ok = s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= need;
-            if (FactionStorage.count(level, base, ok) == 0 && sticksAvail >= 2) {
-                if (need <= 1 && cobble >= 3) {
-                    out.add(new Order(Crafting.tool("stone pickaxe", Items.COBBLESTONE, 3, 2, Items.STONE_PICKAXE), 1, "mine upgrade payment"));
-                    cobble -= 3;
-                    sticksAvail -= 2;
-                } else if (need == 2 && iron >= 3) {
-                    out.add(new Order(Crafting.tool("iron pickaxe", Items.IRON_INGOT, 3, 2, Items.IRON_PICKAXE), 1, "mine upgrade payment"));
-                    iron -= 3;
-                    sticksAvail -= 2;
-                } else if (need == 3 && diamonds >= 3) {
-                    out.add(new Order(Crafting.tool("diamond pickaxe", Items.DIAMOND, 3, 2, Items.DIAMOND_PICKAXE), 1, "mine upgrade payment"));
-                    diamonds -= 3;
-                    sticksAvail -= 2;
                 }
             }
         }

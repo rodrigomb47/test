@@ -62,18 +62,30 @@ def summary(d):
         if b["kind"] == "SETTLEMENT":
             st = b["stock"]
             keys = ["cobblestone", "cobbled_deepslate", "coal", "raw_iron", "raw_copper", "raw_gold", "redstone", "lapis_lazuli",
-                    "diamond", "iron_ingot", "oak_log", "oak_sapling", "apple", "wheat", "bread", "beef", "porkchop",
+                    "diamond", "iron_ingot", "gold_ingot", "oak_log", "oak_sapling", "apple", "wheat", "bread", "beef", "porkchop",
                     "cooked_beef", "cod", "salmon", "torch", "iron_pickaxe"]
             line += f" station={b['stationPresent']} beds={b['beds']} repairs={b['pendingRepairs']} food={b['foodValue']} projects={b['projects']}"
             print(line)
             print("      stock " + ", ".join(f"{k}={st.get(k, 0)}" for k in keys))
             for w in b["workplaces"]:
                 extra = ""
+                if w["type"] == "MINE":
+                    extra = (f" origin={w.get('origin')} facing={w.get('facing')} hut={w.get('hut')} bottom={w.get('bottom')}"
+                             f" shaftLimit={w.get('shaftLimit')} maxRounds={w.get('maxRounds')} cur={w.get('cur')}")
+                    if w.get("restTier"):
+                        extra += f" resting(tier {w.get('restTier')})"
+                    if w.get("workedOut"):
+                        extra += f" WORKED-OUT({w.get('note')})"
                 if w["type"] == "FISHERY":
                     extra = f" spot={w.get('spot')} origin={w.get('origin')} stand={w.get('extent')} open={w.get('open')}"
                     if w.get("spot") == "NONE":
                         extra += f" searched={w.get('searched')}"
                 print(f"      {w['type']:9s} tier={w['tier']} output={w['output']} upgradeStep={w['upgradeStep']}{extra}")
+                if w["type"] == "MINE":
+                    for i, lv in enumerate(w.get("levels", [])):
+                        mark = ">" if i == w.get("cur") else " "
+                        print(f"        {mark} y={lv['y']:4d} {lv['band']:5s} {lv['progress']}/{lv['size']} rounds={lv['rounds']}"
+                              + (" cut" if lv.get("cut") else ""))
                 if w["type"] == "FISHERY" and w.get("spot") == "VALID" and w.get("origin"):
                     # a fishing spot lies 4 or more beyond every settlement's walls: never the farm's irrigation
                     for o in d["bases"]:

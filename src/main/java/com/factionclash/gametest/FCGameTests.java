@@ -974,6 +974,65 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * A miner digs the spiral down from the surface to the level it chose, step by step, and the stairs it dug are
+     * open. Back at the storehouse it plans the next layer: in the flat test world no layer is deep enough, so the
+     * mine is given up as worked out and handed back, and the miner, with no other mine or cave, is idle.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1200, batch = "mine_plan", skyAccess = true)
+    public static void minerDigsDownToItsLevelThenRetiresAShallowMine(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 1200, new BlockPos(12, 2, 16));
+        FactionNpc miner;
+        com.factionclash.campaign.WorkplaceState mine = new com.factionclash.campaign.WorkplaceState();
+        try {
+            for (BlockPos p : BlockPos.betweenClosed(3, 2, 3, 9, 4, 8)) {
+                h.setBlock(p, Blocks.STONE);
+            }
+            mine.type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+            mine.origin = h.absolutePos(new BlockPos(4, 5, 5));
+            mine.extent = mine.origin;
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            mine.maxRounds = 4;
+            // a finished coal level 3 steps down that the shaft does not reach yet: the miner digs down to it first
+            mine.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(3, com.factionclash.logic.SpiralMine.planSize(4), 4,
+                    com.factionclash.logic.MinePlanner.Band.COAL.ordinal()));
+            mine.cur = 0;
+            mine.bottom = 0;
+            mine.upgradeStep = 0;
+            t.addWorkplace(mine);
+            miner = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(4, 5, 5));
+            miner.faction(FactionType.STONEGUARD);
+            miner.role(NpcRole.MINER);
+            t.register(miner);
+            miner.equip(new ItemStack(Items.STONE_PICKAXE));
+            miner.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 16));
+            mine.assigned = miner.getUUID();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        boolean[] reached = {false};
+        FactionNpc m = miner;
+        t.onEachTick(() -> {
+            if (!reached[0] && mine.bottom == 3) {
+                reached[0] = true;
+                for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, 3)) {
+                    BlockPos p = com.factionclash.structure.MineLayout.spiralPos(mine, c);
+                    net.minecraft.world.level.block.state.BlockState s = h.getLevel().getBlockState(p);
+                    h.assertTrue(s.isAir() || s.is(Blocks.TORCH) || s.is(Blocks.WALL_TORCH), "stair cell " + p + " should be dug, is " + s);
+                }
+                h.assertTrue(mine.upgradeStep == -1 && !mine.workedOut, "the shaft is done and the mine still open");
+            }
+            if (mine.workedOut) {
+                h.assertTrue(reached[0], "the mine was given up before the shaft reached its level");
+                h.assertTrue(mine.assigned == null && mine.note.contains("every layer"), "a worked-out mine is handed back: " + mine.note);
+                if (m.job() != null && m.job().idleReason().contains("no mine")) {
+                    t.succeed();
+                }
+            }
+        });
+    }
+
     /** At the bottom of a narrow well with walls it cannot dig: the NPC pillars up with blocks from its backpack. */
     @GameTest(template = "platform", timeoutTicks = 100)
     public static void npcPillarsOutOfAWell(GameTestHelper h) {
@@ -1808,7 +1867,8 @@ public final class FCGameTests {
     /**
      * Workplace records saved by older versions load and save again: a fishing spot from before real-water fishing
      * (its spot on the farm channel) loads as not searched, keeping its id, worker, catch total and place until the
-     * upkeep moves it; an unknown workplace type is skipped. (The mine and tree plot parts come with their changes.)
+     * upkeep moves it; a hut mine dug in fixed tiers becomes its list of levels at the old depths, still digging down
+     * to the next one; an unknown workplace type is skipped. (The tree plot part comes with its change.)
      */
     @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
     public static void legacyWorkplacesLoad(GameTestHelper h) {
@@ -1837,7 +1897,54 @@ public final class FCGameTests {
             h.assertTrue(saved.getInt("fishV") == 1, "a saved fishing spot carries its format marker");
             w = com.factionclash.campaign.WorkplaceState.load(saved);
         }
-        // step 3: an old hut MINE (tier 3, subLevel 1, upgradeStep 5, origin y 66) migrates to its level list
+        // an old hut mine, dug in fixed tiers (tier 3 plus one extra floor, digging down: shaft step 5), becomes
+        // its level list at the old landings, keeping the level being dug down to and the shaft step
+        CompoundTag oldMine = new CompoundTag();
+        oldMine.putInt("id", 8);
+        oldMine.putInt("base", 3);
+        oldMine.putString("type", "MINE");
+        oldMine.putInt("tier", 3);
+        BlockPos mineOrigin = new BlockPos(132, 66, 0);
+        oldMine.putLong("origin", mineOrigin.asLong());
+        oldMine.putString("facing", "east");
+        oldMine.putLong("extent", 0L);
+        oldMine.putUUID("assigned", worker);
+        oldMine.putInt("upgradeStep", 5);
+        oldMine.putLong("output", 640);
+        oldMine.putInt("subLevel", 1);
+        oldMine.putInt("progress", 120);
+        oldMine.putInt("reach", 0);
+        oldMine.putInt("revisit", 0);
+        var m = com.factionclash.campaign.WorkplaceState.load(oldMine);
+        for (int round = 0; round < 2; round++) {
+            String r = " (round " + round + ")";
+            h.assertTrue(m != null && m.type == com.factionclash.campaign.WorkplaceState.Type.MINE && m.id == 8 && m.baseId == 3
+                    && worker.equals(m.assigned) && m.totalOutput == 640 && m.origin.equals(mineOrigin), "an old mine keeps id, worker and output" + r);
+            java.util.List<Integer> steps = m.levels.stream().map(l -> l.step).toList();
+            h.assertTrue(steps.equals(java.util.List.of(6, 34, 66, 114, 122)), "levels at the old landings, then the one dug down to: " + steps + r);
+            h.assertTrue(m.hut && m.bottom == 114 && m.cur == 4 && m.upgradeStep == 5 && m.maxRounds == 4 && m.tier == 1 && !m.workedOut,
+                    "hut " + m.hut + ", bottom " + m.bottom + ", cur " + m.cur + ", shaft step " + m.upgradeStep + r);
+            h.assertTrue(m.levels.get(3).progress == 120 && m.levels.stream().filter(l -> l.progress > 0).count() == 1
+                    && m.levels.stream().allMatch(l -> l.band == -1 && l.rounds == 0 && !l.cut), "only the old deepest level keeps its progress" + r);
+            CompoundTag saved = m.save();
+            h.assertTrue(saved.getInt("mineV") == 1 && !saved.contains("reach") && !saved.contains("revisit") && saved.getInt("progress") == 0,
+                    "a saved mine carries its format marker and none of the old tier numbers" + r);
+            m = com.factionclash.campaign.WorkplaceState.load(saved);
+        }
+        // a mine in the new format keeps every field; a level that cannot exist is dropped and the current index follows
+        m.levels.add(1, new com.factionclash.campaign.WorkplaceState.MineLevel(0, 9, 0, 1));
+        m.cur = 5;
+        m.levels.get(2).cut = true;
+        m.levels.get(2).band = com.factionclash.logic.MinePlanner.Band.LAPIS.ordinal();
+        m.shaftLimit = 118;
+        m.restTier = 2;
+        m.workedOut = true;
+        m.note = "every layer it can reach is dug";
+        m.opened = 4321;
+        var back2 = com.factionclash.campaign.WorkplaceState.load(m.save());
+        h.assertTrue(back2.levels.size() == 5 && back2.cur == 4 && back2.levels.get(1).cut && back2.levels.get(1).band == 2
+                && back2.shaftLimit == 118 && back2.restTier == 2 && back2.workedOut && back2.note.equals(m.note) && back2.opened == 4321
+                && back2.upgradeStep == 5 && back2.bottom == 114, "mine fields survive a save; levels " + back2.levels.size() + ", cur " + back2.cur);
         // step 6: an old TREE_PLOT (tier 2, upgradeStep 3) loads with legacyFence, upgradeStep -1 and its old grid as planted
         var v = com.factionclash.campaign.WorkplaceState.load(fish);
         v.spot = com.factionclash.logic.FishingWater.NONE;

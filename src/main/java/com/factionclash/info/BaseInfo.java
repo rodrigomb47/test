@@ -85,15 +85,19 @@ public final class BaseInfo {
         }
         out.add(res.toString());
         out.add("Recruitment: " + FactionDirector.LAST_RECRUIT_NOTE.getOrDefault(b.id, "pending evaluation"));
-        for (int id : b.workplaces) {
-            WorkplaceState w = data.workplace(id);
-            if (w == null) {
-                continue;
-            }
+        java.util.function.Function<WorkplaceState, String> whoWorks = w -> {
             NpcRecord worker = w.assigned == null ? null : f.roster.get(w.assigned);
             // a holder who died or took up another job no longer works it (the next worker may claim it)
-            String who = worker == null ? "none" : worker.name + (!worker.alive ? " (dead)"
+            return worker == null ? "none" : worker.name + (!worker.alive ? " (dead)"
                     : com.factionclash.work.Workplaces.holderValid(data, w) ? "" : " (now a " + worker.role.displayName.toLowerCase() + ", free)");
+        };
+        out.addAll(com.factionclash.work.MineSites.describe(data, b, level.getMinBuildHeight(), whoWorks));
+        for (int id : b.workplaces) {
+            WorkplaceState w = data.workplace(id);
+            if (w == null || w.type == WorkplaceState.Type.MINE) {
+                continue;
+            }
+            String who = whoWorks.apply(w);
             if (w.type == WorkplaceState.Type.CAVE) {
                 if (w.workedOut && w.totalOutput == 0) {
                     continue; // surveyed, nothing worth mining: not worth a line

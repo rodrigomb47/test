@@ -1,7 +1,11 @@
 package com.factionclash.work;
 
 import com.factionclash.campaign.BaseState;
+import com.factionclash.campaign.Logistics;
 import com.factionclash.campaign.WorkplaceState;
+import com.factionclash.campaign.WorkplaceState.MineLevel;
+import com.factionclash.config.FCConfig;
+import com.factionclash.logic.MinePlanner;
 import com.factionclash.logic.SpiralMine;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcNavigator;
@@ -29,6 +33,7 @@ import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +45,9 @@ import java.util.function.Predicate;
  * branch mine block by block, with real break times for its pickaxe and the block's hardness. Everything it gets is
  * what is really in the ground and drops by the vanilla rules (an iron ore broken with a wooden pickaxe drops
  * nothing). Exposed ore veins are followed, torches are placed, fluids and loose blocks are plugged before a cell
- * is opened, and it digs the shaft deeper to reach the next tier.
+ * is opened. Which layer it works is its own choice ({@link MinePlanner}): the ore the storehouse lacks and its
+ * pickaxe can harvest, at the height vanilla generation puts it; it digs the shaft deeper when that layer lies below,
+ * lengthens a finished layer, lets the mine rest until a better pickaxe comes, or gives up a worked-out mine.
  */
 public class MinerJob extends Job {
     enum State { CHECK, STORAGE, CRAFT, TRAVEL, MINE, EXTEND, CLEAR }
@@ -64,33 +71,71 @@ public class MinerJob extends Job {
     private long nextIntegrityCheck;
     private int craftTimer;
 
-    /** Miners without the constructed mine work a cave a cave explorer surveyed. */
+    /** Miners without a mine of their own work a cave a cave explorer surveyed. */
     private final CaveMinerJob caveJob;
+
+    /** PROPOSED: ticks on the same shaft cell (counted while digging down) before the descent is given up. */
+    static final int STUCK_STEP_TICKS = 2400;
+    /** PROPOSED: failed plugs in a row, with nothing to plug with at home either, before the descent is given up. */
+    static final int SEAL_FAILURES = 3;
+    /** PROPOSED: how often the miner checks that its pickaxe can still harvest the ore of its level. */
+    static final int TIER_CHECK_TICKS = 2400;
+    /** PROPOSED: ticks the stairs may stay blocked by a block nobody may dig before the mine is given up. */
+    static final int STAIRS_BLOCKED_TICKS = 600;
+    /**
+     * PROPOSED: ticks climbing out of a mine without getting any closer to the way out before plain walking (and
+     * digging out) takes over.
+     */
+    static final int LEAVE_BUDGET_TICKS = 1200;
+    /** PROPOSED: experience for the miner per layer reached or opened, and per lengthening. */
+    static final int LEVEL_XP = 20;
+
+    /** Shaft watchdog: the shaft cell being dug and how long, failed plugs in a row, the next pickaxe check. */
+    private int extendStep = -1, extendTicks, sealFailures;
+    private long nextTierCheck;
+    /** Ticks in a row the stairs were blocked by a block nobody may dig. */
+    private int stairBlockedTicks;
+    /**
+     * The mine being climbed out of, for how many ticks without getting any closer to the way out (see
+     * {@link #LEAVE_BUDGET_TICKS}), and the closest it got so far.
+     */
+    private int leaveMineId = -1, leaveTicks;
+    private double leaveBest;
 
     public MinerJob(FactionNpc npc) {
         super(npc);
         caveJob = new CaveMinerJob(npc);
     }
 
+    /**
+     * The mine this miner works: its own one while it is active, else a free one that is active, or resting until a
+     * pickaxe no better than the one in hand. Taking up a resting mine ends its rest.
+     */
     private WorkplaceState wp() {
-        return Workplaces.claim(npc, WorkplaceState.Type.MINE);
+        int tier = pickTier();
+        WorkplaceState w = Workplaces.claim(npc, WorkplaceState.Type.MINE, m -> !m.workedOut && (m.restTier == 0 || m.restTier <= tier));
+        if (w != null && w.restTier != 0) {
+            w.restTier = 0;
+            data().setDirty();
+        }
+        return w;
     }
 
     /**
-     * The surveyed cave this miner works, if any: its own one, or - when it has no constructed mine and none is
-     * free - a cave with marked ore that nobody works.
+     * The surveyed cave this miner works, if any: its own one; otherwise, when it has no active mine and none can be
+     * claimed, a cave with marked ore that nobody works. A miner whose mine is worked out therefore works a cave
+     * before anything else.
      */
     private WorkplaceState caveWork() {
         WorkplaceState cave = Workplaces.held(npc, WorkplaceState.Type.CAVE);
-        WorkplaceState mine = Workplaces.held(npc, WorkplaceState.Type.MINE);
-        if (cave == null && mine != null && exhausted(mine)) {
-            // nothing left to dig in the constructed mine: a surveyed cave with ore is the next best work
-            return Workplaces.claim(npc, WorkplaceState.Type.CAVE, w -> !w.workedOut && !w.marks.isEmpty());
-        }
-        if (cave != null || mine != null) {
+        if (cave != null) {
             return cave;
         }
-        if (Workplaces.claim(npc, WorkplaceState.Type.MINE) != null) {
+        WorkplaceState mine = Workplaces.held(npc, WorkplaceState.Type.MINE);
+        if (mine != null && mine.active()) {
+            return null;
+        }
+        if (wp() != null) {
             return null;
         }
         return Workplaces.claim(npc, WorkplaceState.Type.CAVE, w -> !w.workedOut && !w.marks.isEmpty());
@@ -105,69 +150,37 @@ public class MinerJob extends Job {
         if (wp == null) {
             return "no mine";
         }
-        int lv = MineLayout.level(wp);
-        return "Mine #" + wp.id + " tier " + wp.tier + (wp.subLevel > 0 ? " (+" + wp.subLevel + " floors)" : "")
-                + (wp.revisit > 0 ? ", lengthening round " + wp.reach : wp.reach > 0 ? ", lengthened " + wp.reach + "x" : "")
-                + ", level y=" + SpiralMine.levelY(wp.origin.getY(), lv) + ", branch mine " + wp.progress + "/"
-                + MineLayout.tunnelPlan(wp).size() + (wp.upgrading() ? ", digging deeper (step " + wp.upgradeStep + ")" : "");
-    }
-
-    /** Every level the mine can have (down to the mining floor, plus the infill levels) is dug out. */
-    static boolean exhausted(WorkplaceState wp) {
-        int lv = MineLayout.deepest(wp);
-        return !wp.upgrading() && wp.revisit == 0 && wp.progress >= MineLayout.tunnelPlan(wp).size() && MineLayout.landingSteps(wp, lv + 1) < 0;
+        int y0 = wp.origin.getY();
+        MineLevel lv = MineLayout.current(wp);
+        StringBuilder sb = new StringBuilder("Mine #" + wp.id + " (" + wp.levels.size() + " levels, shaft to y=" + (y0 - wp.bottom) + ")");
+        if (lv == null) {
+            return sb.append(", next level not chosen yet").toString();
+        }
+        sb.append(", level y=").append(y0 - lv.step).append(" for ").append(bandOf(wp, lv).label);
+        if (wp.upgrading()) {
+            return sb.append(", digging down to it (step ").append(wp.upgradeStep).append(")").toString();
+        }
+        sb.append(", branch mine ").append(lv.progress).append("/").append(MineLayout.tunnelPlan(lv).size());
+        if (lv.rounds > 0) {
+            sb.append(", lengthened ").append(lv.rounds).append("x");
+        }
+        return sb.toString();
     }
 
     /** Watchdog for the current plan cell: which one, and how long the miner has been at it. */
     private int faceProgress = -1, faceTicks;
+    private MineLevel faceLevel;
     /** PROPOSED: ticks spent on one plan cell (vein mining excluded) before it is given up as unreachable (or
      *  twice as long while the miner is still more than 10 blocks from it). */
     static final int FACE_GIVE_UP_TICKS = 1200;
 
-    /** PROPOSED: how many times a worked-out mine's branch mines are lengthened (another 40 blocks out each time). */
-    static final int MAX_REACH = 4;
-
-    /**
-     * Every level is dug: like a player lengthening a branch mine, the miner goes back to the regular levels (tiers
-     * 1-4 and the floors below) from the deepest up and continues each main tunnel further out, with its branches.
-     */
-    private void startLengthening(WorkplaceState wp) {
-        wp.reach++;
-        wp.revisit = Math.min(SpiralMine.regularLevels(wp.origin.getY()), MineLayout.deepest(wp)); // only levels already dug
-        wp.progress = SpiralMine.planSize(wp.reach - 1);
-        data().setDirty();
-        state = State.STORAGE;
-        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": every level is dug - "
-                + npc.npcName() + " lengthens the branch mines, starting at y=" + SpiralMine.levelY(wp.origin.getY(), wp.revisit)));
-    }
-
-    /** The level being lengthened is done: on to the next regular level up, or back to normal once all are. */
-    private void nextLengthening(WorkplaceState wp) {
-        wp.revisit--;
-        if (wp.revisit <= 0) {
-            wp.revisit = 0;
-            wp.progress = SpiralMine.planSize(0); // the deepest level stays as it was: worked out
-        } else {
-            wp.progress = SpiralMine.planSize(wp.reach - 1);
-        }
-        data().setDirty();
-        npc.awardXp(20);
-    }
-
-    /**
-     * The current bottom is dug out but the next level needs an iron pickaxe in hand and the faction has none: like a
-     * player without iron gear, branch-mine further out on the levels already reached (where the iron is) meanwhile.
-     */
-    private boolean blockedDeeper(WorkplaceState wp) {
-        int lv = MineLayout.deepest(wp);
-        return !wp.upgrading() && wp.revisit == 0 && wp.progress >= MineLayout.tunnelPlan(wp).size()
-                && MineLayout.landingSteps(wp, lv + 1) >= 0 && wp.tier + 1 >= 3 && wp.tier < WorkplaceState.Type.MINE.maxTier
-                && pickTier() < 2 && base() != null
-                && FactionStorage.count(level(), base(), s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= 2) == 0;
-    }
-
     private int pickTier() {
         return ToolKind.PICKAXE.matches(npc.tool()) ? ToolKind.tierOf(npc.tool()) : -1;
+    }
+
+    /** The band a level was opened for; for a level of an old mine, the band whose height it is nearest to. */
+    private MinePlanner.Band bandOf(WorkplaceState wp, MineLevel lv) {
+        return MineSites.bandOf(wp, lv, level().getMinBuildHeight());
     }
 
     @Override
@@ -204,52 +217,39 @@ public class MinerJob extends Job {
         return true;
     }
 
-    private int collect() {
+    private int collect(WorkplaceState wp) {
         int n = BlockWork.pickUp(npc, this::wanted);
         if (n > 0) {
-            WorkplaceState wp = wp();
-            if (wp != null) {
-                wp.totalOutput += n;
-                data().setDirty();
-            }
+            wp.totalOutput += n;
+            data().setDirty();
         }
         return n;
     }
 
     @Override
     protected void run() {
+        BaseState b = base();
+        if (b == null) {
+            status("No home base", "Idle");
+            markIdle("no home base");
+            waitFor(200);
+            return;
+        }
         if (caveWork() != null) {
             markBusy();
             caveJob.tick();
             return;
         }
         WorkplaceState wp = wp();
-        if (wp != null && (exhausted(wp) || blockedDeeper(wp)) && wp.reach < MAX_REACH) {
-            startLengthening(wp);
-        }
-        if (wp != null && exhausted(wp) && state != State.STORAGE) {
-            if (hasCargo()) {
-                state = State.STORAGE; // bring the last load home first
-                return;
-            }
-            if (!leaveMine(wp)) {
-                return;
-            }
-            status("Mine #" + wp.id + " is fully worked out: every level is dug", "Idle");
-            markIdle("nothing left to dig in mine #" + wp.id + " and no cave to work");
-            waitFor(1200);
-            return;
-        }
         if (wp == null) {
-            markIdle("no mine or cave to work");
-            status("No free mine to work", "Idle");
-            waitFor(200);
+            noMine(b);
             return;
         }
         markBusy();
-        collect();
+        collect(wp);
         switch (state) {
-            case CHECK -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 ? State.STORAGE : State.TRAVEL;
+            case CHECK -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 || MineLayout.current(wp) == null
+                    ? State.STORAGE : State.TRAVEL;
             case STORAGE -> storage(wp);
             case CRAFT -> craftTorches(wp);
             case TRAVEL -> travel(wp);
@@ -259,21 +259,60 @@ public class MinerJob extends Job {
         }
     }
 
+    /**
+     * No mine and no cave to work: out of the mine it was in (one just given up, say), the last load home, then
+     * idle. When the base already works as many mines as it may, that is the reason; otherwise there is no mine.
+     */
+    private void noMine(BaseState b) {
+        breaker.reset(npc);
+        state = State.CHECK;
+        WorkplaceState in = MineSites.mineAt(level(), data(), b, npc.blockPosition());
+        if (in != null && !leaveMine(in)) {
+            return;
+        }
+        if (hasCargo()) {
+            if (!atStorage()) {
+                return;
+            }
+            unloadNow(); // what does not fit stays in the backpack until the next try
+        }
+        // step 4: a miner without a mine looks for a place to dig its own (state SITE)
+        if (MineSites.openMines(data(), b) >= FCConfig.MAX_OPEN_MINES.get()) {
+            markIdle("every mine site of the base is taken");
+            status("Every mine site of the base is taken", "Idle");
+        } else {
+            markIdle("no mine or cave to work");
+            status("No free mine to work", "Idle");
+        }
+        waitFor(200);
+    }
+
+    /** A survival errand (food, a new pickaxe) from inside a mine climbs out the way the miner came in first. */
+    @Override
+    protected boolean beforeErrand() {
+        BaseState b = base();
+        if (b == null) {
+            return true;
+        }
+        WorkplaceState w = MineSites.mineAt(level(), data(), b, npc.blockPosition());
+        return w == null || leaveMine(w);
+    }
+
     // ------------------------------------------------------------------ moving through the mine
 
     /**
-     * Walks to {@code dest} through the mine in short legs: along a tunnel to its landing, up or down the spiral six
-     * steps at a time, then to the destination. {@code destStep} is the spiral step of the destination's level
-     * (0 = surface). Returns true once at {@code dest}.
+     * Walks to {@code dest} through the mine in short legs: to the mouth of the shaft first when coming from the
+     * surface, along a tunnel to its landing, up or down the spiral six steps at a time, then to the destination.
+     * {@code destStep} is the spiral step of the destination's level (0 = surface). Returns true once at {@code dest}.
      */
     private boolean walkInMine(WorkplaceState wp, BlockPos dest, int destStep, double reach, String label) {
         BlockPos p = npc.blockPosition();
         // swimming (a flooded cell or a lake above the tunnels): only a real tunnel position counts, otherwise the
         // way back is through the mine entrance
-        int lv = npc.isInWater() ? MineLayout.tunnelLevelAt(wp, p) : MineLayout.nearLevelAt(wp, p);
+        MineLevel lv = npc.isInWater() ? MineLayout.tunnelLevelAt(wp, p) : MineLayout.nearLevelAt(wp, p);
         int cur;
-        if (lv > 0) {
-            int lk = MineLayout.landingSteps(wp, lv);
+        if (lv != null) {
+            int lk = lv.step;
             if (lk == destStep) {
                 return goTo(dest, reach, label);
             }
@@ -287,13 +326,16 @@ public class MinerJob extends Job {
             cur = MineLayout.stepAt(wp, p);
             int depth = wp.origin.getY() - p.getY();
             double hx = p.getX() - wp.origin.getX(), hz = p.getZ() - wp.origin.getZ();
-            if (cur == 0 && depth > 3 && hx * hx + hz * hz < 14 * 14) {
+            // on the surface (level with the mouth, or lower ground open to the sky)
+            boolean surface = cur == 0 && (depth <= 1 || level().canSeeSky(p));
+            if (surface && destStep > 0 && !NpcNavigator.within(npc, MineLayout.stand(wp, 0), 3.0)) {
+                // to the mouth of the shaft first, then down the stairs
+                goTo(MineLayout.stand(wp, 0), 1.2, "the mine entrance");
+                return false;
+            }
+            if (!surface && cur == 0 && depth > 3 && hx * hx + hz * hz < 14 * 14) {
                 // underground beside the shaft (a side pocket, a cave): first get onto the stair at this height
-                int deepestDug = MineLayout.landingSteps(wp, MineLayout.deepest(wp) + (wp.upgrading() ? 1 : 0));
-                if (deepestDug < 0) {
-                    deepestDug = MineLayout.landingSteps(wp, MineLayout.deepest(wp));
-                }
-                int k = Math.min(depth, Math.max(1, deepestDug));
+                int k = Math.min(depth, Math.max(1, MineLayout.shaftSteps(wp)));
                 if (!goTo(MineLayout.stand(wp, k), 1.2, "the mine stairs")) {
                     return false;
                 }
@@ -307,6 +349,7 @@ public class MinerJob extends Job {
         // the next stair must be open: a cave-in, falling sand or a block plugged against water fills it, and a
         // player clears it before walking on (digging from where it stands)
         int dir = destStep > cur ? 1 : -1;
+        boolean refused = false;
         for (int k = cur + dir; k > 0 && (dir > 0 ? k <= next : k >= next); k += dir) {
             BlockPos step = MineLayout.stand(wp, k);
             if (floorMissing(step) && !noSealBlocks && Inv.count(npc.inventory(), SEAL) > 0) {
@@ -325,8 +368,14 @@ public class MinerJob extends Job {
             BlockPos[] clearance = dir > 0 ? new BlockPos[]{step.above(), step}
                     : new BlockPos[]{MineLayout.stand(wp, k - dir).above(2), step.above(), step};
             for (BlockPos q : clearance) {
-                if (passable(level().getBlockState(q)) || !mayDig(wp, q)) {
-                    continue; // open, or a block nobody may dig (it is left as it is)
+                BlockState qs = level().getBlockState(q);
+                if (passable(qs)) {
+                    continue;
+                }
+                if (!mayDig(wp, q)) {
+                    // a block nobody may dig is left as it is; if it is in the way, the stairs are blocked
+                    refused |= !qs.getCollisionShape(level(), q).isEmpty();
+                    continue;
                 }
                 if (!BlockWork.inReach(npc, q, 4.5)) {
                     // walk down (or up) to the stair just before the blocked one, then clear it from there
@@ -334,7 +383,7 @@ public class MinerJob extends Job {
                     return false;
                 }
                 status("Clearing the mine stairs (mine #" + wp.id + ")", "Digging");
-                if (!preSeal(q, MineLayout.landingSteps(wp, MineLayout.deepest(wp)))) {
+                if (!preSeal(wp, q, MineLayout.shaftSteps(wp))) {
                     state = State.STORAGE;
                     return false;
                 }
@@ -346,17 +395,51 @@ public class MinerJob extends Job {
                 return false;
             }
         }
+        if (!refused) {
+            stairBlockedTicks = 0;
+        } else if (++stairBlockedTicks > STAIRS_BLOCKED_TICKS) {
+            // the stairs stay blocked by something nobody may dig: the mine is given up, and the miner finds its
+            // own way out (plain walking, or digging out)
+            stairBlockedTicks = 0;
+            leaveMineId = wp.id;
+            leaveTicks = LEAVE_BUDGET_TICKS + 1;
+            leaveBest = Double.NEGATIVE_INFINITY;
+            MineSites.retire(level(), data(), wp, "its stairs are blocked");
+            state = State.CHECK;
+            return false;
+        }
         // spiral steps are diagonal neighbours: arrive precisely, or the next leg would be "reached" without moving
         goTo(MineLayout.stand(wp, next), 0.45, label);
         return false;
     }
 
+    /**
+     * Climbs out of the mine (through the hut door of an old hut mine). True once out, or when the climb has gone
+     * {@link #LEAVE_BUDGET_TICKS} without getting any closer to the way out: then plain walking takes over, and
+     * digging out if it must.
+     */
     private boolean leaveMine(WorkplaceState wp) {
-        boolean underground = npc.getBlockY() < wp.origin.getY() - 1 && npc.blockPosition().closerThan(wp.origin, 64);
-        boolean inHut = MineLayout.forwardOf(wp, npc.blockPosition()) > MineLayout.HUT_BACK - 1
-                && MineLayout.forwardOf(wp, npc.blockPosition()) <= MineLayout.HUT_FRONT
-                && Math.abs(MineLayout.sideOf(wp, npc.blockPosition())) <= 2 && npc.blockPosition().closerThan(wp.origin, 7);
-        if (!underground && !inHut) {
+        BlockPos p = npc.blockPosition();
+        if (!MineSites.inside(level(), wp, p)) {
+            if (leaveMineId == wp.id) {
+                leaveMineId = -1;
+                leaveTicks = 0;
+            }
+            return true;
+        }
+        // how far from the way out: along the tunnels back to the shaft, and up the stairs
+        double left = Math.sqrt(p.distToCenterSqr(wp.origin.getX() + 0.5, p.getY() + 0.5, wp.origin.getZ() + 0.5))
+                + 2.0 * Math.max(0, wp.origin.getY() - p.getY());
+        if (leaveMineId != wp.id) {
+            leaveMineId = wp.id;
+            leaveTicks = 0;
+            leaveBest = left;
+        }
+        if (left < leaveBest - 0.5) {
+            leaveBest = left;
+            leaveTicks = 0;
+        }
+        if (++leaveTicks > LEAVE_BUDGET_TICKS) {
             return true;
         }
         return walkInMine(wp, MineLayout.entrance(wp), 0, 1.5, "the mine exit");
@@ -395,7 +478,11 @@ public class MinerJob extends Job {
         }
         noSealBlocks = Inv.count(npc.inventory(), SEAL) == 0;
         if (!wp.upgrading()) {
-            considerGoingDeeper(wp);
+            plan(wp);
+            if (!wp.active() || !npc.getUUID().equals(wp.assigned)) {
+                state = State.CHECK; // the mine rests or is worked out: on to another mine, a cave, or nothing
+                return;
+            }
         }
         if (Inv.count(npc.inventory(), TORCH) < 8) {
             takeFromStorage(Crafting.FUEL_COAL, 4);
@@ -412,45 +499,87 @@ public class MinerJob extends Job {
     }
 
     /**
-     * Goes deeper when the current level is mostly worked out and the next level is worth it: a tier upgrade costs a
-     * real pickaxe (PROPOSED: stone for tier 2, iron for 3 and 4) plus torches; floors below tier 4 cost torches only.
-     * Tiers 3+ need an iron pickaxe, otherwise their ores would not drop.
+     * Chooses the level to work next, like a player deciding where to dig ({@link MinePlanner}): the current level
+     * until its branch mine is done; then the ore the storehouse lacks most that the pickaxe in hand can harvest,
+     * on a level already near that ore's height (lengthened when it is done), or on a new level - dug down to first
+     * when it lies below the shaft. When only a better pickaxe would help the mine rests; when nothing it can reach is
+     * left it is worked out.
      */
-    private void considerGoingDeeper(WorkplaceState wp) {
-        if (wp.revisit > 0) {
-            return; // lengthening the upper levels: the shaft is already at the bottom
-        }
-        int lv = MineLayout.deepest(wp);
-        if (MineLayout.landingSteps(wp, lv + 1) < 0) {
-            return;
-        }
-        double done = wp.progress / (double) Math.max(1, MineLayout.tunnelPlan(wp).size());
-        if (done < 0.6) {
-            return;
-        }
-        int nextTier = wp.tier + 1;
-        if (wp.tier < WorkplaceState.Type.MINE.maxTier) {
-            int needPick = MineLayout.upgradePickTier(nextTier);
-            if (nextTier >= 3 && pickTier() < 2) {
-                return;
+    private void plan(WorkplaceState wp) {
+        BaseState b = base();
+        int y0 = wp.origin.getY(), minY = level().getMinBuildHeight();
+        List<MinePlanner.Band> wanted = MinePlanner.wanted(stock(b));
+        for (int guard = 0; guard < 16; guard++) {
+            List<MinePlanner.Level> levels = new ArrayList<>();
+            for (MineLevel lv : wp.levels) {
+                levels.add(new MinePlanner.Level(lv.step, lv.progress, lv.rounds, lv.cut, bandOf(wp, lv)));
             }
-            Predicate<ItemStack> pay = s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= needPick;
-            ItemStack pick = FactionStorage.findBest(level(), base(), pay, s -> -ToolKind.tierOf(s));
-            ItemStack paid = pick.isEmpty() ? ItemStack.EMPTY : FactionStorage.extractExact(level(), base(), pick);
-            if (paid.isEmpty()) {
-                if (done < 1.0) {
-                    return; // going down early needs the upgrade payment
+            MinePlanner.Decision d = MinePlanner.next(y0, minY, levels, wp.cur, wp.bottom, wp.shaftLimit, pickTier(), wanted, wp.maxRounds);
+            switch (d.kind()) {
+                case WORK -> choose(wp, d);
+                case LENGTHEN -> {
+                    MineLevel lv = wp.levels.get(d.level());
+                    if (!MineSites.corridorClear(level(), data(), wp, lv.rounds + 1)) {
+                        // something now lies where the next stretch would go: the corridor ends at this length
+                        wp.maxRounds = lv.rounds;
+                        data().setDirty();
+                        continue;
+                    }
+                    lv.rounds++;
+                    choose(wp, d);
+                    npc.awardXp(LEVEL_XP);
+                    Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": " + npc.npcName()
+                            + " lengthens the y=" + (y0 - lv.step) + " branch mine (round " + lv.rounds + ")"));
                 }
-                // the level is worked out: rather than stand idle, the miner digs on with its own pickaxe
-                Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": level worked out, "
-                        + npc.npcName() + " digs down to tier " + nextTier));
-            } else {
-                Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": " + npc.npcName()
-                        + " starts digging down to tier " + nextTier + " (paid " + paid.getHoverName().getString() + ")"));
+                case NEW_LAYER -> {
+                    wp.levels.add(new MineLevel(d.step(), 0, 0, d.band().ordinal()));
+                    wp.cur = wp.levels.size() - 1;
+                    if (d.step() > wp.bottom) {
+                        wp.upgradeStep = 0; // dig the shaft down to it first
+                    } else {
+                        // a height the stairs already pass: the branch mine starts at once
+                        npc.awardXp(LEVEL_XP);
+                        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": " + npc.npcName()
+                                + " opens a branch mine at y=" + (y0 - d.step()) + " for " + d.band().label));
+                    }
+                }
+                case REST -> MineSites.rest(level(), data(), wp, d.needTier());
+                case WORKED_OUT -> MineSites.retire(level(), data(), wp, "every layer it can reach is dug");
             }
+            data().setDirty();
+            return;
         }
-        wp.upgradeStep = 0;
-        data().setDirty();
+    }
+
+    /**
+     * Makes the decision's level the current one. A level worked for an ore that needs a weaker pickaxe than the one
+     * it was opened for (coal just above an iron level, say) is from now on counted as that ore's, so the pickaxe
+     * check does not send the miner home for nothing. A level below the shaft is dug down to first.
+     */
+    private void choose(WorkplaceState wp, MinePlanner.Decision d) {
+        wp.cur = d.level();
+        MineLevel lv = wp.levels.get(d.level());
+        MinePlanner.Band have = bandOf(wp, lv);
+        if (d.band() != null && d.band() != have && have.pickTier > d.band().pickTier) {
+            lv.band = d.band().ordinal();
+        }
+        if (lv.step > wp.bottom && !wp.upgrading()) {
+            wp.upgradeStep = 0;
+        }
+    }
+
+    /** What the storehouse holds that matters for choosing a layer. */
+    private MinePlanner.Stock stock(BaseState b) {
+        var l = level();
+        int iron = Logistics.measure(l, b, Logistics.Resource.IRON);
+        int diamonds = Logistics.measure(l, b, Logistics.Resource.DIAMOND);
+        int fuel = Logistics.measure(l, b, Logistics.Resource.FUEL);
+        int gold = FactionStorage.count(l, b, s -> s.is(Items.RAW_GOLD) || s.is(Items.GOLD_INGOT));
+        int lapis = FactionStorage.count(l, b, s -> s.is(Items.LAPIS_LAZULI));
+        BlockPos table = b.point(BaseState.ENCHANTING);
+        boolean hasTable = table != null && l.isLoaded(table) && l.getBlockState(table).is(Blocks.ENCHANTING_TABLE);
+        boolean short_ = b.shortages.contains(Logistics.Resource.FUEL.name()) || b.shortages.contains(Logistics.Resource.WOOD.name());
+        return new MinePlanner.Stock(iron, diamonds, gold, lapis, fuel, hasTable, short_);
     }
 
     private void craftTorches(WorkplaceState wp) {
@@ -479,6 +608,11 @@ public class MinerJob extends Job {
             state = State.STORAGE;
             return;
         }
+        MineLevel lv = MineLayout.current(wp);
+        if (lv == null) {
+            state = State.STORAGE; // no level chosen yet: the storehouse trip plans one
+            return;
+        }
         if (now() >= nextIntegrityCheck) {
             nextIntegrityCheck = now() + 1200;
             if (findBlocked(wp)) {
@@ -486,36 +620,53 @@ public class MinerJob extends Job {
                 return;
             }
         }
-        int lv = MineLayout.level(wp);
         if (wp.upgrading()) {
-            if (walkInMine(wp, MineLayout.landing(wp, lv), MineLayout.landingSteps(wp, lv), 1.2, "mine #" + wp.id)) {
+            // step 4: a fresh site whose mouth cannot be reached is given up here (unreachable after 2400 ticks)
+            if (walkInMine(wp, MineLayout.stand(wp, wp.bottom), wp.bottom, 1.2, "mine #" + wp.id)) {
                 state = State.EXTEND;
             }
             return;
         }
-        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
-        BlockPos dest = wp.progress >= plan.size() ? MineLayout.landing(wp, lv) : approach(wp, plan, wp.progress);
+        if (pickTooWeak(wp, lv)) {
+            state = State.STORAGE;
+            return;
+        }
+        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(lv);
+        BlockPos dest = lv.progress >= plan.size() ? MineLayout.landing(wp, lv) : approach(wp, lv, plan, lv.progress);
         // already down in this level's tunnels: start working from here (mining handles walking, reach and bridging)
-        boolean inLevel = !npc.isInWater() && MineLayout.nearLevelAt(wp, npc.blockPosition()) == lv && wp.progress < plan.size();
-        if (inLevel || walkInMine(wp, dest, MineLayout.landingSteps(wp, lv), 1.2, "mine #" + wp.id)) {
+        boolean inLevel = !npc.isInWater() && MineLayout.nearLevelAt(wp, npc.blockPosition()) == lv && lv.progress < plan.size();
+        if (inLevel || walkInMine(wp, dest, lv.step, 1.2, "mine #" + wp.id)) {
             state = State.MINE;
         }
+    }
+
+    /**
+     * Every {@link #TIER_CHECK_TICKS}: true if the pickaxe in hand cannot harvest the ore of the level (a better one
+     * broke and a spare took its place, say). The storehouse trip then fetches a better one, or the planner moves the
+     * miner to a level its pickaxe suits.
+     */
+    private boolean pickTooWeak(WorkplaceState wp, MineLevel lv) {
+        if (now() < nextTierCheck) {
+            return false;
+        }
+        nextTierCheck = now() + TIER_CHECK_TICKS;
+        return pickTier() < bandOf(wp, lv).pickTier;
     }
 
     /**
      * Where to stand to dig plan cell i: the already-dug, walkable floor cell nearest to it (e.g. the junction when a
      * new branch starts), else the level's landing.
      */
-    private BlockPos approach(WorkplaceState wp, List<SpiralMine.Cell> plan, int i) {
-        BlockPos target = MineLayout.tunnelPos(wp, plan.get(Math.min(i, plan.size() - 1)));
-        BlockPos best = MineLayout.landing(wp, MineLayout.level(wp));
+    private BlockPos approach(WorkplaceState wp, MineLevel lv, List<SpiralMine.Cell> plan, int i) {
+        BlockPos target = MineLayout.tunnelPos(wp, lv, plan.get(Math.min(i, plan.size() - 1)));
+        BlockPos best = MineLayout.landing(wp, lv);
         double bestD = best.distSqr(target);
         for (int j = Math.min(i, plan.size()) - 1; j >= 0; j--) {
             SpiralMine.Cell c = plan.get(j);
             if (c.torch() || c.dy() != 0) {
                 continue;
             }
-            BlockPos p = MineLayout.tunnelPos(wp, c);
+            BlockPos p = MineLayout.tunnelPos(wp, lv, c);
             double d = p.distSqr(target);
             if (d >= bestD) {
                 continue;
@@ -530,22 +681,24 @@ public class MinerJob extends Job {
         return best;
     }
 
-    /** Dug cells that have been refilled (falling gravel, cave-ins, flooding). */
+    /** Dug cells that have been refilled (falling gravel, cave-ins, flooding): the stairs, and the current level. */
     private boolean findBlocked(WorkplaceState wp) {
         blocked.clear();
-        int steps = MineLayout.landingSteps(wp, MineLayout.level(wp));
-        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, steps)) {
+        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, wp.bottom)) {
             BlockPos p = MineLayout.spiralPos(wp, c);
             if (!c.torch() && !passable(level().getBlockState(p)) && mayDig(wp, p)) {
                 blocked.add(p);
             }
         }
-        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
-        for (int i = 0; i < Math.min(wp.progress, plan.size()); i++) {
-            SpiralMine.Cell c = plan.get(i);
-            BlockPos p = MineLayout.tunnelPos(wp, c);
-            if (!c.torch() && !passable(level().getBlockState(p)) && mayDig(wp, p)) {
-                blocked.add(p);
+        MineLevel lv = MineLayout.current(wp);
+        if (lv != null && lv.step <= wp.bottom) {
+            List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(lv);
+            for (int i = 0; i < Math.min(lv.progress, plan.size()); i++) {
+                SpiralMine.Cell c = plan.get(i);
+                BlockPos p = MineLayout.tunnelPos(wp, lv, c);
+                if (!c.torch() && !passable(level().getBlockState(p)) && mayDig(wp, p)) {
+                    blocked.add(p);
+                }
             }
         }
         return !blocked.isEmpty();
@@ -567,17 +720,17 @@ public class MinerJob extends Job {
             return;
         }
         if (!BlockWork.inReach(npc, cell, 4.5)) {
+            MineLevel lv = MineLayout.current(wp);
             int step = MineLayout.stepAt(wp, cell.above(0));
             BlockPos stand;
             int destStep;
-            if (step > 0 || MineLayout.forwardOf(wp, cell) < SpiralMine.MAIN_START) {
-                int k = Math.max(0, Math.min(MineLayout.landingSteps(wp, MineLayout.level(wp)),
-                        wp.origin.getY() - cell.getY() - 1));
+            if (lv == null || step > 0 || MineLayout.forwardOf(wp, cell) < SpiralMine.MAIN_START) {
+                int k = Math.max(0, Math.min(wp.bottom, wp.origin.getY() - cell.getY() - 1));
                 stand = MineLayout.stand(wp, k);
                 destStep = k;
             } else {
-                stand = MineLayout.landing(wp, MineLayout.level(wp));
-                destStep = MineLayout.landingSteps(wp, MineLayout.level(wp));
+                stand = MineLayout.landing(wp, lv);
+                destStep = lv.step;
             }
             if (!walkInMine(wp, stand, destStep, 1.2, "a blocked passage in mine #" + wp.id)) {
                 return;
@@ -588,7 +741,7 @@ public class MinerJob extends Job {
             }
         }
         status("Clearing a cave-in in mine #" + wp.id + " (" + blocked.size() + " cells)", "Digging");
-        if (!preSeal(cell, MineLayout.landingSteps(wp, MineLayout.deepest(wp)))) {
+        if (!preSeal(wp, cell, MineLayout.shaftSteps(wp))) {
             state = State.STORAGE;
             return;
         }
@@ -656,7 +809,19 @@ public class MinerJob extends Job {
             state = State.STORAGE;
             return;
         }
-        int landingStep = MineLayout.landingSteps(wp, MineLayout.level(wp));
+        MineLevel lv = MineLayout.current(wp);
+        if (lv == null || wp.upgrading()) {
+            breaker.reset(npc);
+            state = lv == null ? State.STORAGE : State.TRAVEL;
+            return;
+        }
+        if (pickTooWeak(wp, lv)) {
+            breaker.reset(npc);
+            state = State.STORAGE;
+            return;
+        }
+        int landingStep = lv.step;
+        int shaft = MineLayout.shaftSteps(wp);
         // a player mines the ore it just uncovered before moving on
         if (!vein.isEmpty()) {
             BlockPos ore = vein.peek();
@@ -665,7 +830,7 @@ public class MinerJob extends Job {
                 vein.poll();
                 return;
             }
-            if (!preSeal(ore, landingStep)) {
+            if (!preSeal(wp, ore, shaft)) {
                 vein.poll();
                 return;
             }
@@ -673,39 +838,35 @@ public class MinerJob extends Job {
             if (dig(wp, ore)) {
                 if (BlockWork.canHarvest(os, npc.getMainHandItem())) {
                     npc.awardXp(oreXp(os));
-                    prospect(os, ore);
+                    prospect(wp, os, ore);
                 }
                 vein.poll();
                 noticeOres(ore);
             }
             return;
         }
-        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(wp);
-        if (wp.progress != faceProgress) {
-            faceProgress = wp.progress;
+        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(lv);
+        if (lv.progress != faceProgress || lv != faceLevel) {
+            faceProgress = lv.progress;
+            faceLevel = lv;
             faceTicks = 0;
-        } else if (wp.progress < plan.size() && ++faceTicks > (npc.blockPosition()
-                .closerThan(MineLayout.tunnelPos(wp, plan.get(wp.progress)), 10) ? FACE_GIVE_UP_TICKS : 2 * FACE_GIVE_UP_TICKS)) {
+        } else if (lv.progress < plan.size() && ++faceTicks > (npc.blockPosition()
+                .closerThan(MineLayout.tunnelPos(wp, lv, plan.get(lv.progress)), 10) ? FACE_GIVE_UP_TICKS : 2 * FACE_GIVE_UP_TICKS)) {
             // a full minute on one cell of the plan without getting it done (it cannot be reached from any floor the
             // miner can walk to, e.g. across a cavern): leave it, as a player would, and what lies beyond it
             faceTicks = 0;
-            cutPlan(wp, plan);
+            cutPlan(lv, plan);
             npc.navigator().reset();
             return;
         }
-        if (wp.progress >= plan.size() && wp.revisit > 0) {
-            nextLengthening(wp);
-            state = State.STORAGE;
-            return;
-        }
-        if (wp.progress >= plan.size()) {
-            status("Mine level worked out - going to prepare the next level", "Waiting");
+        if (lv.progress >= plan.size()) {
+            status("Mine level worked out - going to choose the next one", "Waiting");
             state = State.STORAGE;
             waitFor(100);
             return;
         }
-        SpiralMine.Cell c = plan.get(wp.progress);
-        BlockPos pos = MineLayout.tunnelPos(wp, c);
+        SpiralMine.Cell c = plan.get(lv.progress);
+        BlockPos pos = MineLayout.tunnelPos(wp, lv, c);
         BlockState s = level().getBlockState(pos);
         if (c.torch()) {
             if (s.isAir() && Inv.consume(npc.inventory(), TORCH, 1)) {
@@ -713,14 +874,14 @@ public class MinerJob extends Job {
                 level().playSound(null, pos, SoundEvents.WOOD_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
                 npc.swing(InteractionHand.MAIN_HAND);
             }
-            wp.progress++;
+            lv.progress++;
             data().setDirty();
             return;
         }
         if (level().canSeeSky(pos) || level().canSeeSky(pos.above())) {
             // the tunnel came out of a hillside: a player stops the branch there instead of opening the mine to the
             // surface (and to mobs)
-            wp.progress++;
+            lv.progress++;
             data().setDirty();
             return;
         }
@@ -728,18 +889,18 @@ public class MinerJob extends Job {
             if (c.dy() == 0 && floorMissing(pos) && !noSealBlocks) {
                 // an open cave cell: walk up and bridge its floor before going on, so the tunnel stays walkable
                 if (!BlockWork.inReach(npc, pos.below(), 4.5)) {
-                    if (!bridgeNearbyHoles(wp, plan)
-                            && walkInMine(wp, approach(wp, plan, wp.progress), landingStep, 1.0, "the tunnel face") && ++unreachable > 60) {
+                    if (!bridgeNearbyHoles(wp, lv, plan)
+                            && walkInMine(wp, approach(wp, lv, plan, lv.progress), landingStep, 1.0, "the tunnel face") && ++unreachable > 60) {
                         // at the last cell with a floor and the gap is still out of reach (a wide cavern): leave it open
                         unreachable = 0;
-                        wp.progress++;
+                        lv.progress++;
                         data().setDirty();
                     }
                     return;
                 }
                 bridgeFloor(pos);
             }
-            wp.progress++;
+            lv.progress++;
             data().setDirty();
             noticeOres(pos);
             return;
@@ -748,27 +909,27 @@ public class MinerJob extends Job {
             // a block nobody may dig (a structure of the world, another mine's stairs, a base or its land, the deep
             // dark): like a player, the miner ends this branch there (or the level, for the main tunnel)
             breaker.reset(npc);
-            cutPlan(wp, plan);
+            cutPlan(lv, plan);
             return;
         }
         if (!BlockWork.inReach(npc, pos, 4.5)) {
-            if (bridgeNearbyHoles(wp, plan)) {
+            if (bridgeNearbyHoles(wp, lv, plan)) {
                 return;
             }
-            BlockPos stand = approach(wp, plan, wp.progress);
+            BlockPos stand = approach(wp, lv, plan, lv.progress);
             if (walkInMine(wp, stand, landingStep, 1.0, "the tunnel face") && ++unreachable > 60) {
                 // standing at the closest dug cell and still out of reach (e.g. a cave gap without floor): skip it
                 unreachable = 0;
-                wp.progress++;
+                lv.progress++;
                 data().setDirty();
             }
             return;
         }
         unreachable = 0;
-        if (!preSeal(pos, landingStep)) {
+        if (!preSeal(wp, pos, shaft)) {
             if (noSealBlocks) {
                 // nothing to plug the water with and the storehouse had nothing either: leave this cell as a wall
-                wp.progress++;
+                lv.progress++;
                 data().setDirty();
                 return;
             }
@@ -777,36 +938,37 @@ public class MinerJob extends Job {
             state = State.STORAGE;
             return;
         }
-        status("Branch mining at y=" + pos.getY() + " (mine #" + wp.id + ", " + wp.progress + "/" + plan.size() + ")", "Mining");
+        status("Branch mining at y=" + pos.getY() + " (mine #" + wp.id + ", " + lv.progress + "/" + plan.size() + ")", "Mining");
         if (dig(wp, pos)) {
             if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
                 npc.awardXp(oreXp(s));
-                prospect(s, pos);
+                prospect(wp, s, pos);
             }
             if (c.dy() == 0) {
                 bridgeFloor(pos);
             }
-            wp.progress++;
+            lv.progress++;
             data().setDirty();
             noticeOres(pos);
         }
     }
 
     /**
-     * Gives up plan cell {@code wp.progress} and what lies beyond it: a cut main tunnel ends the level (everything
-     * further out is past the gap), a cut side branch goes on to the next branch.
+     * Gives up plan cell {@code lv.progress} and what lies beyond it: a cut main tunnel ends the level for good
+     * (everything further out is past the gap, so it is never lengthened either), a cut side branch goes on to the
+     * next branch.
      */
-    private void cutPlan(WorkplaceState wp, List<SpiralMine.Cell> plan) {
-        SpiralMine.Cell lost = plan.get(wp.progress);
-        int side = MineLayout.landingSide(wp, MineLayout.level(wp));
+    private void cutPlan(MineLevel lv, List<SpiralMine.Cell> plan) {
+        SpiralMine.Cell lost = plan.get(lv.progress);
+        int side = MineLayout.landingSide(lv);
         if (lost.s() == side) {
-            // step 3: also mark the level as cut, so it is never lengthened
-            wp.progress = plan.size();
+            lv.cut = true;
+            lv.progress = plan.size();
         } else {
             int dir = Integer.signum(lost.s() - side);
-            while (wp.progress < plan.size() && plan.get(wp.progress).f() == lost.f()
-                    && Integer.signum(plan.get(wp.progress).s() - side) == dir) {
-                wp.progress++;
+            while (lv.progress < plan.size() && plan.get(lv.progress).f() == lost.f()
+                    && Integer.signum(plan.get(lv.progress).s() - side) == dir) {
+                lv.progress++;
             }
         }
         data().setDirty();
@@ -831,9 +993,10 @@ public class MinerJob extends Job {
     }
 
     /** Prospector affix: a chance that the ore just mined drops its loot a second time. */
-    private void prospect(BlockState ore, BlockPos pos) {
+    private void prospect(WorkplaceState wp, BlockState ore, BlockPos pos) {
         if (level().random.nextDouble() < npc.affix(com.factionclash.logic.Affix.PROSPECTOR)) {
-            wp().totalOutput += BlockWork.dropExtra(npc, ore, pos);
+            wp.totalOutput += BlockWork.dropExtra(npc, ore, pos);
+            data().setDirty();
         }
     }
 
@@ -849,16 +1012,16 @@ public class MinerJob extends Job {
     }
 
     /** Bridges one hole in the floor of the already-dug tunnel cells within reach (cave gaps found earlier). */
-    private boolean bridgeNearbyHoles(WorkplaceState wp, List<SpiralMine.Cell> plan) {
+    private boolean bridgeNearbyHoles(WorkplaceState wp, MineLevel lv, List<SpiralMine.Cell> plan) {
         if (noSealBlocks) {
             return false;
         }
-        for (int j = Math.max(0, wp.progress - 48); j < Math.min(wp.progress, plan.size()); j++) {
+        for (int j = Math.max(0, lv.progress - 48); j < Math.min(lv.progress, plan.size()); j++) {
             SpiralMine.Cell c = plan.get(j);
             if (c.dy() != 0 || c.torch()) {
                 continue;
             }
-            BlockPos foot = MineLayout.tunnelPos(wp, c);
+            BlockPos foot = MineLayout.tunnelPos(wp, lv, c);
             if (passable(level().getBlockState(foot)) && floorMissing(foot) && !level().canSeeSky(foot)
                     && BlockWork.inReach(npc, foot.below(), 4.5) && bridgeFloor(foot)) {
                 status("Bridging a cave hole in the tunnel floor (mine #" + wp.id + ")", "Mining");
@@ -870,11 +1033,15 @@ public class MinerJob extends Job {
 
     // ------------------------------------------------------------------ digging deeper
 
+    /**
+     * Digs the spiral down from the bottom to the current level's landing, step by step. The descent is given up
+     * (see {@link #abandonDescent}) at a block nobody may dig, after {@link #STUCK_STEP_TICKS} on one cell, or after
+     * {@link #SEAL_FAILURES} failed plugs in a row with nothing to plug with.
+     */
     private void extend(WorkplaceState wp) {
-        int lv = MineLayout.deepest(wp);
-        int from = MineLayout.landingSteps(wp, lv);
-        int to = MineLayout.landingSteps(wp, lv + 1);
-        if (to < 0) {
+        MineLevel lv = MineLayout.current(wp);
+        int from = wp.bottom, to = lv == null ? -1 : lv.step;
+        if (lv == null || to <= from) {
             wp.upgradeStep = -1;
             data().setDirty();
             state = State.TRAVEL;
@@ -882,25 +1049,26 @@ public class MinerJob extends Job {
         }
         List<SpiralMine.Cell> plan = SpiralMine.spiralPlan(from, to);
         if (wp.upgradeStep >= plan.size()) {
-            if (wp.tier < WorkplaceState.Type.MINE.maxTier) {
-                wp.tier++;
-            } else {
-                wp.subLevel++;
-            }
+            wp.bottom = to;
             wp.upgradeStep = -1;
-            wp.progress = 0;
+            extendStep = -1;
             data().setDirty();
-            npc.awardXp(20);
-            boolean infill = !SpiralMine.isRegular(wp.origin.getY(), MineLayout.deepest(wp));
-            Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id
-                    + (infill ? " starts another branch mine between its levels" : " reached tier " + wp.tier + (wp.subLevel > 0 ? " +" + wp.subLevel : ""))
-                    + " at y=" + SpiralMine.levelY(wp.origin.getY(), MineLayout.deepest(wp)) + " (" + npc.npcName() + ")"));
+            npc.awardXp(LEVEL_XP);
+            Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + " reaches y="
+                    + (wp.origin.getY() - to) + " for " + bandOf(wp, lv).label + " (" + npc.npcName() + ")"));
             state = State.TRAVEL;
             return;
         }
         SpiralMine.Cell c = plan.get(wp.upgradeStep);
         BlockPos pos = MineLayout.spiralPos(wp, c);
         int step = stepOfCell(c);
+        if (wp.upgradeStep != extendStep) {
+            extendStep = wp.upgradeStep;
+            extendTicks = 0;
+        } else if (++extendTicks > STUCK_STEP_TICKS) {
+            abandonDescent(wp, c, "the shaft could not be dug further");
+            return;
+        }
         if (c.torch()) {
             if (level().getBlockState(pos).isAir() && Inv.consume(npc.inventory(), TORCH, 1)) {
                 level().setBlock(pos, MineLayout.wallTorchFor(wp, c.s()), Block.UPDATE_ALL);
@@ -917,21 +1085,31 @@ public class MinerJob extends Job {
             data().setDirty();
             return;
         }
+        if (!mayDig(wp, pos)) {
+            // a block nobody may dig (a structure, a block entity, the deep dark): the shaft stops above it
+            abandonDescent(wp, c, "it met " + s.getBlock().getName().getString() + " that may not be dug");
+            return;
+        }
         if (!BlockWork.inReach(npc, pos, 4.5)) {
             walkInMine(wp, MineLayout.stand(wp, step - 1), step - 1, 1.0, "the bottom of the shaft");
             return;
         }
-        if (!preSeal(pos, to)) {
+        if (!preSeal(wp, pos, to)) {
+            if (noSealBlocks && ++sealFailures >= SEAL_FAILURES) {
+                abandonDescent(wp, c, "water or lava there, and nothing to plug it with");
+                return;
+            }
             status("Need blocks to plug water in the shaft", "Waiting");
             breaker.reset(npc);
             state = State.STORAGE;
             return;
         }
-        status("Digging the shaft down to tier " + (wp.tier < 4 ? wp.tier + 1 : wp.tier) + " (y=" + pos.getY() + ")", "Digging");
+        sealFailures = 0;
+        status("Digging the shaft down to y=" + (wp.origin.getY() - to) + " for " + bandOf(wp, lv).label + " (y=" + pos.getY() + ")", "Digging");
         if (dig(wp, pos)) {
             if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
                 npc.awardXp(oreXp(s));
-                prospect(s, pos);
+                prospect(wp, s, pos);
             }
             noticeOres(pos);
             if (!sealShaft(wp, pos, to)) {
@@ -940,6 +1118,34 @@ public class MinerJob extends Job {
             }
             wp.upgradeStep++;
             data().setDirty();
+        }
+    }
+
+    /**
+     * The shaft cannot go below the step of {@code cell}: the steps above it, all dug, become the bottom and the
+     * deepest the shaft may ever go, the level it was dug for is dropped, and the next storehouse trip plans a level
+     * within reach. A mine whose shaft stops before it is {@link MinePlanner#MIN_DEPTH} deep is given up.
+     */
+    private void abandonDescent(WorkplaceState wp, SpiralMine.Cell cell, String why) {
+        int k = stepOfCell(cell);
+        MineLevel lv = MineLayout.current(wp);
+        wp.bottom = Math.max(wp.bottom, k - 1);
+        wp.shaftLimit = wp.shaftLimit > 0 ? Math.min(wp.shaftLimit, k - 1) : k - 1;
+        if (lv != null && lv.step > wp.bottom) {
+            wp.levels.remove(lv);
+        }
+        wp.cur = -1;
+        wp.upgradeStep = -1;
+        data().setDirty();
+        extendStep = -1;
+        sealFailures = 0;
+        breaker.reset(npc);
+        state = State.STORAGE;
+        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": the shaft stops at y="
+                + (wp.origin.getY() - wp.bottom) + " (" + why + ")"));
+        if (wp.bottom < MinePlanner.MIN_DEPTH) {
+            // step 4: the site also joins the miner's bad sites
+            MineSites.retire(level(), data(), wp, "the ground below is unsafe");
         }
     }
 
@@ -980,8 +1186,7 @@ public class MinerJob extends Job {
      * Before opening a cell: plug neighbouring water, lava and loose blocks (sand, gravel) so nothing pours in, as a
      * careful player would. Returns false when the miner has nothing to plug with.
      */
-    private boolean preSeal(BlockPos cell, int shaftSteps) {
-        WorkplaceState wp = wp();
+    private boolean preSeal(WorkplaceState wp, BlockPos cell, int shaftSteps) {
         for (Direction d : Direction.values()) {
             BlockPos n = cell.relative(d);
             BlockState ns = level().getBlockState(n);
@@ -1016,6 +1221,7 @@ public class MinerJob extends Job {
 
     /** After digging a shaft cell: close cave holes around the spiral so it stays a safe staircase. */
     private boolean sealShaft(WorkplaceState wp, BlockPos dug, int steps) {
+        // step 4: a mine without a hut also plugs the ground ring at origin.y-1 around its first steps
         for (Direction d : Direction.values()) {
             BlockPos n = dug.relative(d);
             if (MineLayout.inShaft(wp, n, steps) || n.getY() >= wp.origin.getY() - 1

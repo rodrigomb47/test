@@ -1,7 +1,10 @@
 package com.factionclash.structure;
 
 import com.factionclash.campaign.WorkplaceState;
+import com.factionclash.campaign.WorkplaceState.MineLevel;
 import com.factionclash.faction.FactionType;
+import com.factionclash.logic.LegacyMine;
+import com.factionclash.logic.MineSiteRules;
 import com.factionclash.logic.SpiralMine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,8 +15,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 /**
- * World positions of a player-style mine (geometry in {@link SpiralMine}): a surface hut over a 2x2 spiral shaft,
- * and at each level a branch mine dug block by block by the miner.
+ * World positions of a player-style mine (geometry in {@link SpiralMine}): a 2x2 spiral shaft (under a surface hut
+ * in mines built by older versions), and on each of the mine's levels a branch mine dug block by block by the miner.
  */
 public final class MineLayout {
     public static final int HUT_BACK = -2;
@@ -39,18 +42,9 @@ public final class MineLayout {
         return d.getX() * side.getStepX() + d.getZ() * side.getStepZ();
     }
 
-    /** The level being worked: normally the deepest one, or the level being lengthened in a later round. */
-    public static int level(WorkplaceState wp) {
-        return wp.revisit > 0 ? wp.revisit : deepest(wp);
-    }
-
-    /** The deepest level the shaft reaches. */
-    public static int deepest(WorkplaceState wp) {
-        return wp.tier + wp.subLevel;
-    }
-
-    public static int landingSteps(WorkplaceState wp, int level) {
-        return SpiralMine.landingSteps(wp.origin.getY(), level);
+    /** The level being worked, or null when none is planned. */
+    public static MineLevel current(WorkplaceState wp) {
+        return wp.cur >= 0 && wp.cur < wp.levels.size() ? wp.levels.get(wp.cur) : null;
     }
 
     /** Standing position of spiral step k. */
@@ -62,23 +56,42 @@ public final class MineLayout {
         return local(wp, c[0], c[1], SpiralMine.standY(k));
     }
 
-    public static BlockPos landing(WorkplaceState wp, int level) {
-        return stand(wp, landingSteps(wp, level));
+    /** Where a miner stands at the landing of a level, the start of its tunnels. */
+    public static BlockPos landing(WorkplaceState wp, MineLevel lv) {
+        return stand(wp, lv.step);
     }
 
-    public static int landingSide(WorkplaceState wp, int level) {
-        return SpiralMine.cell(landingSteps(wp, level))[1];
+    /** The side cell (0 or 1) of a level's landing: its main tunnel runs out from there. */
+    public static int landingSide(MineLevel lv) {
+        return SpiralMine.cell(lv.step)[1];
     }
 
-    public static List<SpiralMine.Cell> tunnelPlan(WorkplaceState wp) {
-        return SpiralMine.cachedPlan(landingSide(wp, level(wp)), wp.revisit > 0 ? wp.reach : 0);
+    /** The level's branch-mine plan at its current length. */
+    public static List<SpiralMine.Cell> tunnelPlan(MineLevel lv) {
+        return SpiralMine.cachedPlan(landingSide(lv), lv.rounds);
     }
 
-    /** World position of a tunnel-plan cell of the current level. */
-    public static BlockPos tunnelPos(WorkplaceState wp, SpiralMine.Cell c) {
-        BlockPos landing = landing(wp, level(wp));
-        int y = landing.getY() - wp.origin.getY();
-        return local(wp, c.f(), c.s(), y + c.dy());
+    /** World position of a tunnel-plan cell of a level. */
+    public static BlockPos tunnelPos(WorkplaceState wp, MineLevel lv, SpiralMine.Cell c) {
+        return local(wp, c.f(), c.s(), -lv.step + c.dy());
+    }
+
+    /**
+     * How far down the spiral is dug or being dug: the bottom, or the current level's landing while the shaft is dug
+     * down to it.
+     */
+    public static int shaftSteps(WorkplaceState wp) {
+        MineLevel lv = current(wp);
+        return wp.upgrading() && lv != null ? Math.max(wp.bottom, lv.step) : wp.bottom;
+    }
+
+    /** How many lengthening rounds the mine's tunnels may reach: the corridor's, or more if a level was lengthened before. */
+    public static int reachRounds(WorkplaceState wp) {
+        int r = wp.maxRounds;
+        for (MineLevel lv : wp.levels) {
+            r = Math.max(r, lv.rounds);
+        }
+        return r;
     }
 
     /** World position of a spiral-plan cell (dy is relative to the hut floor). */
@@ -118,34 +131,35 @@ public final class MineLayout {
         return -dy;
     }
 
-    /** The level whose tunnels contain {@code p}, or 0. */
-    public static int tunnelLevelAt(WorkplaceState wp, BlockPos p) {
+    /** The level whose tunnels contain {@code p} (only levels the shaft reaches), or null. */
+    public static MineLevel tunnelLevelAt(WorkplaceState wp, BlockPos p) {
         int f = forwardOf(wp, p);
         if (f < SpiralMine.MAIN_START) {
-            return 0;
+            return null;
         }
-        for (int lv = 1; lv <= deepest(wp); lv++) {
-            int y = SpiralMine.levelY(wp.origin.getY(), lv);
-            if (y != Integer.MIN_VALUE && Math.abs(p.getY() - y) <= 1) {
+        for (MineLevel lv : wp.levels) {
+            int y = wp.origin.getY() - lv.step;
+            if (lv.step <= wp.bottom && Math.abs(p.getY() - y) <= 1) {
                 return lv;
             }
         }
-        return 0;
+        return null;
     }
 
     /**
      * Like {@link #tunnelLevelAt} but also for a miner that dropped into a cave hole just under (or climbed just
-     * above) its tunnels: the level within 4 blocks of its height, or 0.
+     * above) its tunnels: the level within 4 blocks of its height, or null.
      */
-    public static int nearLevelAt(WorkplaceState wp, BlockPos p) {
-        int lv = tunnelLevelAt(wp, p);
-        if (lv > 0 || forwardOf(wp, p) < SpiralMine.MAIN_START || p.getY() >= wp.origin.getY() - 2) {
+    public static MineLevel nearLevelAt(WorkplaceState wp, BlockPos p) {
+        MineLevel lv = tunnelLevelAt(wp, p);
+        if (lv != null || forwardOf(wp, p) < SpiralMine.MAIN_START || p.getY() >= wp.origin.getY() - 2) {
             return lv;
         }
-        int best = 0, bestD = 5;
-        for (int l = 1; l <= deepest(wp); l++) {
-            int y = SpiralMine.levelY(wp.origin.getY(), l);
-            if (y != Integer.MIN_VALUE && Math.abs(p.getY() - y) < bestD) {
+        MineLevel best = null;
+        int bestD = 5;
+        for (MineLevel l : wp.levels) {
+            int y = wp.origin.getY() - l.step;
+            if (l.step <= wp.bottom && Math.abs(p.getY() - y) < bestD) {
                 bestD = Math.abs(p.getY() - y);
                 best = l;
             }
@@ -153,8 +167,33 @@ public final class MineLayout {
         return best;
     }
 
+    /** Where a miner steps in and out: the hut's door for an old hut mine, else the surface cell by the shaft. */
     public static BlockPos entrance(WorkplaceState wp) {
-        return local(wp, HUT_BACK - 1, 0, 0);
+        return wp.hut ? local(wp, HUT_BACK - 1, 0, 0) : local(wp, 0, 0, 0);
+    }
+
+    /**
+     * True if {@code p} is underground in the mine: below the surface, no deeper than a few blocks under the shaft's
+     * bottom, and within the mine's corridor (from just behind the shaft to the end of its longest tunnels, and as
+     * wide as the branches).
+     */
+    public static boolean inMine(WorkplaceState wp, BlockPos p) {
+        int y0 = wp.origin.getY();
+        if (p.getY() >= y0 - 1 || p.getY() < y0 - shaftSteps(wp) - 4) {
+            return false;
+        }
+        int f = forwardOf(wp, p), s = sideOf(wp, p);
+        return f >= MineSiteRules.CORRIDOR_BACK && f <= MineSiteRules.corridorEnd(reachRounds(wp))
+                && s >= MineSiteRules.CORRIDOR_SIDE_MIN && s <= MineSiteRules.CORRIDOR_SIDE_MAX;
+    }
+
+    /** True if {@code p} is inside an old mine's surface hut. */
+    public static boolean inHut(WorkplaceState wp, BlockPos p) {
+        if (!wp.hut) {
+            return false;
+        }
+        int f = forwardOf(wp, p);
+        return f > HUT_BACK - 1 && f <= HUT_FRONT && Math.abs(sideOf(wp, p)) <= 2 && p.closerThan(wp.origin, 7);
     }
 
     public static BlockState wallTorchFor(WorkplaceState wp, int s) {
@@ -184,17 +223,10 @@ public final class MineLayout {
         Direction side = wp.facing.getClockWise();
         bp.setAbs(local(wp, -1, -1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side));
         bp.setAbs(local(wp, 4, 1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side.getOpposite()));
-        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, landingSteps(wp, 1))) {
+        int first = LegacyMine.landingSteps(wp.origin.getY(), 1);
+        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, first)) {
             bp.setAbs(spiralPos(wp, c), c.torch() ? wallTorchFor(wp, c.s()) : Blocks.AIR.defaultBlockState());
         }
-        BlockPos landing = landing(wp, 1);
-        bp.setAbs(landing.above(), wallTorchFor(wp, landingSide(wp, 1)));
+        bp.setAbs(stand(wp, first).above(), wallTorchFor(wp, SpiralMine.cell(first)[1]));
     }
-
-    /** Pickaxe consumed to open the next tier (PROPOSED: stone for tier 2, iron for tiers 3 and 4). */
-    public static int upgradePickTier(int nextTier) {
-        return nextTier <= 2 ? 1 : 2;
-    }
-
-    public static final int UPGRADE_TORCHES_PER_8_STEPS = 1;
 }
