@@ -176,9 +176,9 @@ public class BuilderJob extends Job {
         boolean gotAny = wanted.isEmpty();
         for (Map.Entry<String, Integer> e : wanted.entrySet()) {
             MaterialRules.Need n = needs.get(e.getKey());
-            int got = takeFromStorage(s -> s.is(n.exact()), e.getValue());
+            int got = takeKeeping(s -> s.is(n.exact()), e.getValue());
             if (got < e.getValue()) {
-                got += takeFromStorage(MaterialRules.accepts(n), e.getValue() - got);
+                got += takeKeeping(MaterialRules.accepts(n), e.getValue() - got);
             }
             if (got < e.getValue() && n.group() == MaterialRules.Group.PLANKS) {
                 takeFromStorage(s -> s.is(ItemTags.LOGS), (e.getValue() - got + 3) / 4);
@@ -353,9 +353,9 @@ public class BuilderJob extends Job {
         for (Map.Entry<String, Integer> e : missing.entrySet()) {
             MaterialRules.Need n = lastNeeds.get(e.getKey());
             int want = Math.min(e.getValue(), 64 * 3);
-            int got = takeFromStorage(s -> s.is(n.exact()), want);
+            int got = takeKeeping(s -> s.is(n.exact()), want);
             if (got < want) {
-                got += takeFromStorage(MaterialRules.accepts(n), want - got);
+                got += takeKeeping(MaterialRules.accepts(n), want - got);
             }
             if (got < want) {
                 Crafting.Recipe r = MaterialRules.craftFor(n.group());
@@ -364,7 +364,7 @@ public class BuilderJob extends Job {
                     int taken = 0;
                     for (Crafting.Input in : r.inputs()) {
                         int amount = in.count() * batches;
-                        int t = takeFromStorage(in.filter(), amount);
+                        int t = takeKeeping(in.filter(), amount);
                         if (t < amount && (in.label().equals("Planks") || in.label().equals(Items.STICK.getDescription().getString()))) {
                             takeFromStorage(s -> s.is(ItemTags.LOGS), (amount - t + 3) / 4 + 1);
                         }
@@ -394,6 +394,31 @@ public class BuilderJob extends Job {
             waitFor(600);
             state = State.CHECK;
         }
+    }
+
+    /**
+     * PROPOSED: cobblestone, cobbled deepslate and blackstone (the stones stone tools are made of) that building never
+     * takes from the storehouse, so the blacksmith can always make a stone pickaxe, axe or sword. Without it, a base
+     * that builds houses could use its last cobblestone, after which its miners cannot dig the stone layers that would
+     * bring more (seen in a campaign: the mine rested for good).
+     */
+    public static final int TOOL_STONE_RESERVE = 24;
+
+    /**
+     * Takes building material from the storehouse like {@link #takeFromStorage}, other stones first, and the stones
+     * tools are made of only down to {@link #TOOL_STONE_RESERVE}.
+     */
+    public int takeKeeping(java.util.function.Predicate<ItemStack> filter, int amount) {
+        java.util.function.Predicate<ItemStack> toolStone = s -> s.is(ItemTags.STONE_TOOL_MATERIALS);
+        int got = takeFromStorage(s -> filter.test(s) && !toolStone.test(s), amount);
+        if (got >= amount) {
+            return got;
+        }
+        int spare = FactionStorage.count(level(), base(), toolStone) - TOOL_STONE_RESERVE;
+        if (spare > 0) {
+            got += takeFromStorage(s -> filter.test(s) && toolStone.test(s), Math.min(spare, amount - got));
+        }
+        return got;
     }
 
     private void unloadUnrelated(Project p) {

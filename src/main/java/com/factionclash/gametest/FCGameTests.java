@@ -1244,6 +1244,35 @@ public final class FCGameTests {
      * waiting in the storehouse and takes the mine up again (in the flat test world its planning then finds nothing
      * to dig, so the mine is given up, but only after it was taken up).
      */
+    /**
+     * Building never takes the last cobblestone: the builder uses other stones first, and leaves the stones stone tools
+     * are made of down to its reserve, so the blacksmith can still make a stone pickaxe.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void builderLeavesCobblestoneForTools(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.COBBLESTONE, 30));
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.ANDESITE, 10));
+            FactionNpc b = t.npc(6, 6, NpcRole.BUILDER);
+            if (!(b.job() instanceof com.factionclash.work.BuilderJob job)) {
+                throw new net.minecraft.gametest.framework.GameTestAssertException("not a builder job");
+            }
+            int got = job.takeKeeping(s -> s.is(Items.COBBLESTONE) || s.is(Items.ANDESITE), 40);
+            int cobbleLeft = FactionStorage.count(h.getLevel(), t.base, s -> s.is(Items.COBBLESTONE));
+            int andesiteLeft = FactionStorage.count(h.getLevel(), t.base, s -> s.is(Items.ANDESITE));
+            t.assertTrue(andesiteLeft == 0, "other stone is used first, " + andesiteLeft + " andesite left");
+            t.assertTrue(cobbleLeft == com.factionclash.work.BuilderJob.TOOL_STONE_RESERVE,
+                    "the tool reserve stays in the storehouse, " + cobbleLeft + " cobblestone left");
+            t.assertTrue(got == 16, "took 10 andesite and 6 cobblestone, got " + got);
+            t.assertTrue(job.takeKeeping(s -> s.is(Items.COBBLESTONE), 10) == 0, "nothing below the reserve");
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
     @GameTest(template = "platform", timeoutTicks = 400, batch = "mine_rest")
     public static void minerFetchesABetterPickaxeForARestingMine(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 400);
