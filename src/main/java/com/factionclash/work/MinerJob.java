@@ -915,12 +915,16 @@ public class MinerJob extends Job {
         return best;
     }
 
-    /** Dug cells that have been refilled (falling gravel, cave-ins, flooding): the stairs, and the current level. */
+    /**
+     * Dug cells that have been refilled (falling gravel or sand, flooding): the stairs, and the current level. Only a
+     * refill counts: a cell of plain rock behind the progress mark was never dug (a branch the face watchdog cut short,
+     * a skipped vein, an old save's level), and clearing it is not repairing the passage.
+     */
     private boolean findBlocked(WorkplaceState wp) {
         blocked.clear();
         for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, wp.bottom)) {
             BlockPos p = MineLayout.spiralPos(wp, c);
-            if (!c.torch() && !passable(level().getBlockState(p)) && mayDig(wp, p)) {
+            if (!c.torch() && refilled(level().getBlockState(p)) && mayDig(wp, p)) {
                 blocked.add(p);
             }
         }
@@ -930,12 +934,17 @@ public class MinerJob extends Job {
             for (int i = 0; i < Math.min(lv.progress, plan.size()); i++) {
                 SpiralMine.Cell c = plan.get(i);
                 BlockPos p = MineLayout.tunnelPos(wp, lv, c);
-                if (!c.torch() && !passable(level().getBlockState(p)) && mayDig(wp, p)) {
+                if (!c.torch() && refilled(level().getBlockState(p)) && mayDig(wp, p)) {
                     blocked.add(p);
                 }
             }
         }
         return !blocked.isEmpty();
+    }
+
+    /** What can fill a dug passage again by itself: falling blocks (gravel, sand) and fluids. */
+    static boolean refilled(BlockState s) {
+        return !passable(s) && (s.getBlock() instanceof FallingBlock || !s.getFluidState().isEmpty());
     }
 
     private static boolean passable(BlockState s) {
@@ -946,6 +955,7 @@ public class MinerJob extends Job {
         BlockPos cell = blocked.peek();
         if (cell == null) {
             state = State.TRAVEL;
+            nextIntegrityCheck = now() + 1200; // the next inspection counts from the end of this one
             return;
         }
         BlockState s = level().getBlockState(cell);
