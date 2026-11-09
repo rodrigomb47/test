@@ -23,6 +23,11 @@ public final class EscapeRoute {
     public static final double PASS_GAP = 4.0;
     /** Clearance beyond a monster's keep-away distance is worth this much at most: past that, the route side decides. */
     static final double CLEARANCE_CAP = 4.0;
+    /**
+     * A point is clear this far beyond every monster's keep-away distance: the scout stops within 1.5 blocks of it, and
+     * a point right at the keep-away distance would leave it standing just inside it (a failed escape).
+     */
+    public static final double CLEAR_MARGIN = 2.0;
     /** Weight of the route side (dot product with the way to the target), of running away from the monsters' centre, and of reversing the last escape. */
     static final double TARGET_WEIGHT = 8.0, AWAY_WEIGHT = 1.0, REVERSE_WEIGHT = 6.0;
 
@@ -32,11 +37,12 @@ public final class EscapeRoute {
 
     /**
      * A candidate escape point (block x, z), the unit direction of the run, its margin (the least distance to a
-     * monster minus that monster's keep-away distance; clear when at least 0) and its score (higher is better).
+     * monster minus that monster's keep-away distance; clear when at least {@link #CLEAR_MARGIN}) and its score
+     * (higher is better).
      */
     public record Option(int x, int z, double dirX, double dirZ, double margin, double score) {
         public boolean clear() {
-            return margin >= 0;
+            return margin >= CLEAR_MARGIN;
         }
     }
 

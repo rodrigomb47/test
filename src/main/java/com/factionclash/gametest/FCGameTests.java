@@ -32,6 +32,11 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -2673,7 +2678,8 @@ public final class FCGameTests {
 
     /**
      * Zombies next to a scout on its way to far-off land do not send it home: it runs to a point clear of them, on
-     * the side of where it is going, and goes on exploring - it never turns back, and ends well away from them.
+     * the side of where it is going, and goes on exploring - it never turns back, ends well away from them, and then
+     * walks on toward its target.
      */
     @GameTest(template = "platform", timeoutTicks = 400, batch = "scout_evade", skyAccess = true)
     public static void scoutStepsAsideFromZombiesAndKeepsExploring(GameTestHelper h) {
@@ -2691,16 +2697,22 @@ public final class FCGameTests {
             throw e;
         }
         double start = nearest(n, zombies);
+        double[] clearAt = {Double.NaN};
         t.onEachTick(() -> {
             t.assertTrue(!job.stateName().equals("RETURN") && !job.isRetreating(), "the scout turned back: " + job.workplaceInfo()
                     + " / " + n.status());
             t.assertTrue(n.getTarget() == null || !(n.getTarget() instanceof Zombie), "the scout took up a fight with a zombie");
-            if (job.evasions() >= 1 && !job.isEvading() && job.stateName().equals("OUTBOUND")) {
+            if (Double.isNaN(clearAt[0]) && job.evasions() >= 1 && !job.isEvading() && job.stateName().equals("OUTBOUND")) {
                 double d = nearest(n, zombies);
                 t.assertTrue(d > 12 && d > start + 6, "should have got clear of the zombies: " + String.format("%.1f", d)
                         + " blocks (started " + String.format("%.1f", start) + ")");
                 FactionClash.LOGGER.info("GAMETEST scout stepped aside {} time(s) by tick {}: {} -> {} blocks from the zombies, now at {} ({})",
                         job.evasions(), h.getTick(), String.format("%.1f", start), String.format("%.1f", d), h.relativePos(n.blockPosition()), n.status());
+                clearAt[0] = n.getZ();
+            }
+            // then on toward the target, 400 blocks to the south: exploring, not standing about or circling back
+            if (!Double.isNaN(clearAt[0]) && n.getZ() >= clearAt[0] + 8) {
+                t.assertTrue(job.stateName().equals("OUTBOUND") && !job.isEvading(), "should be exploring again: " + job.workplaceInfo());
                 t.succeed();
             }
         });
@@ -2863,6 +2875,16 @@ public final class FCGameTests {
         f.addReport(new com.factionclash.campaign.Report(com.factionclash.campaign.Report.Kind.WOODLAND_MANSION, new BlockPos(5000, 70, 5000), 300, null, 0, "no illagers seen"));
         h.assertTrue(com.factionclash.campaign.BaseZones.nearKnownDanger(f, new BlockPos(4960, 0, 5030), com.factionclash.campaign.BaseZones.DANGER_RADIUS),
                 "by the mansion is dangerous ground");
+        // a long campaign's flood of reports forgets old ore and monsters first, never the places on the map
+        for (int i = 0; i < com.factionclash.campaign.FactionState.MAX_REPORTS + 20; i++) {
+            f.addReport(new com.factionclash.campaign.Report(com.factionclash.campaign.Report.Kind.ORE, new BlockPos(10_000 + i * 100, 40, 0),
+                    600 + i, null, 1, "Iron Ore"));
+        }
+        h.assertTrue(f.knowledge.size() == com.factionclash.campaign.FactionState.MAX_REPORTS, "the report cap holds: " + f.knowledge.size());
+        long places = f.knowledge.stream().filter(r -> r.kind.structure()).count();
+        h.assertTrue(places == 4, "both villages, the outpost and the mansion should still be known, not " + places);
+        h.assertTrue(com.factionclash.campaign.BaseZones.nearKnownDanger(f, new BlockPos(3040, 0, 3040), com.factionclash.campaign.BaseZones.DANGER_RADIUS),
+                "the outpost is still dangerous ground after the flood");
         for (var kind : new com.factionclash.campaign.Report.Kind[]{com.factionclash.campaign.Report.Kind.PILLAGER_OUTPOST,
                 com.factionclash.campaign.Report.Kind.WOODLAND_MANSION}) {
             h.assertTrue(!kind.canGoStale && kind.structure() && kind.dangerousGround(), kind + " should be a structure that never goes stale");
@@ -2876,6 +2898,117 @@ public final class FCGameTests {
         h.assertTrue(java.util.Arrays.stream(kinds).distinct().count() == kinds.length
                         && java.util.Arrays.stream(kinds).allMatch(k -> k >= 0 && k < com.factionclash.net.MapPayload.STALE),
                 "map marker kinds must be distinct and below the STALE flag");
+        h.succeed();
+    }
+
+    /** A structure piece with these bounds and nothing to build, for structure starts written into a test's chunks. */
+    private static net.minecraft.world.level.levelgen.structure.StructurePiece testPiece(BoundingBox box) {
+        return new net.minecraft.world.level.levelgen.structure.StructurePiece(
+                net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType.JIGSAW, 0, box) {
+            @Override
+            protected void addAdditionalSaveData(net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext context,
+                                                 CompoundTag tag) {
+            }
+
+            @Override
+            public void postProcess(net.minecraft.world.level.WorldGenLevel level, net.minecraft.world.level.StructureManager structures,
+                                    net.minecraft.world.level.chunk.ChunkGenerator generator, net.minecraft.util.RandomSource random,
+                                    BoundingBox area, ChunkPos chunk, BlockPos pivot) {
+            }
+        };
+    }
+
+    /**
+     * Structure detection as it runs in the world, on a desert village and a pillager outpost whose starts and
+     * references are written into the test's own (loaded) chunks for one tick and then restored: the village is
+     * found through the reference in the scout's chunk, reported at its town centre (its first piece) with the
+     * villagers with trades counted (none: not a trading village; two: a trading one), and left out once seen on
+     * this trip; the outpost is in sight only from 30 blocks further west (its built bounds within 48 blocks); a
+     * reference to a start chunk that is not
+     * loaded is passed over and that chunk is not loaded or generated by looking.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void scoutSeesStructuresThroughLoadedChunksOnly(GameTestHelper h) {
+        net.minecraft.server.level.ServerLevel level = h.getLevel();
+        var registry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE);
+        Structure village = registry.getOrThrow(net.minecraft.world.level.levelgen.structure.BuiltinStructures.VILLAGE_DESERT);
+        Structure outpost = registry.getOrThrow(net.minecraft.world.level.levelgen.structure.BuiltinStructures.PILLAGER_OUTPOST);
+        BlockPos eye = h.absolutePos(new BlockPos(12, 2, 12));
+        ChunkPos hc = new ChunkPos(eye);
+        LevelChunk here = level.getChunkSource().getChunkNow(hc.x, hc.z);
+        ChunkPos oc = new ChunkPos(hc.x - 1, hc.z);
+        LevelChunk beside = level.getChunkSource().getChunkNow(oc.x, oc.z);
+        h.assertTrue(here != null && beside != null, "the test's chunks should be loaded");
+        ChunkPos far = new ChunkPos(hc.x + 400, hc.z + 400);
+        h.assertTrue(!level.hasChunk(far.x, far.z), "the far chunk should not be loaded to begin with");
+        java.util.Map<LevelChunk, java.util.Map<Structure, StructureStart>> starts = new java.util.HashMap<>();
+        java.util.Map<LevelChunk, java.util.Map<Structure, it.unimi.dsi.fastutil.longs.LongSet>> refs = new java.util.HashMap<>();
+        for (LevelChunk c : List.of(here, beside)) {
+            starts.put(c, new java.util.HashMap<>(c.getAllStarts()));
+            java.util.Map<Structure, it.unimi.dsi.fastutil.longs.LongSet> copy = new java.util.HashMap<>();
+            c.getAllReferences().forEach((k, v) -> copy.put(k, new it.unimi.dsi.fastutil.longs.LongOpenHashSet(v)));
+            refs.put(c, copy);
+        }
+        List<net.minecraft.world.entity.npc.Villager> villagers = new java.util.ArrayList<>();
+        try {
+            // the village: its town centre 30 blocks east, a street running back toward the scout
+            BlockPos c = eye.offset(30, 0, 0);
+            StructureStart vs = new StructureStart(village, hc, 0, new net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer(List.of(
+                    testPiece(new BoundingBox(c.getX() - 4, c.getY() - 1, c.getZ() - 4, c.getX() + 4, c.getY() + 6, c.getZ() + 4)),
+                    testPiece(new BoundingBox(eye.getX() + 14, c.getY() - 1, c.getZ() - 2, c.getX() + 40, c.getY() + 3, c.getZ() + 2)))));
+            here.setStartForStructure(village, vs);
+            here.addReferenceForStructure(village, hc.toLong());
+            // the outpost: 75-85 blocks west (its start's own box reaches 12 further, which does not count as built),
+            // its start in the next chunk, referenced from the scout's chunk
+            StructureStart os = new StructureStart(outpost, oc, 0, new net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer(List.of(
+                    testPiece(new BoundingBox(eye.getX() - 85, eye.getY() - 1, eye.getZ() - 5, eye.getX() - 75, eye.getY() + 20, eye.getZ() + 5)))));
+            beside.setStartForStructure(outpost, os);
+            here.addReferenceForStructure(outpost, oc.toLong());
+            // and a reference to an outpost whose start chunk is far away and not loaded
+            here.addReferenceForStructure(outpost, far.toLong());
+
+            var seen = com.factionclash.work.StructureSightings.look(level, eye, java.util.Set.of());
+            h.assertTrue(!level.hasChunk(far.x, far.z), "looking must not load the far start chunk");
+            h.assertTrue(seen.size() == 1 && seen.get(0).kind() == com.factionclash.campaign.Report.Kind.VILLAGE,
+                    "only the village should be in sight, saw " + seen);
+            var v = seen.get(0);
+            h.assertTrue(v.start() == hc.toLong() && v.name().equals("desert village"), "wrong village sighting: " + v);
+            h.assertTrue(v.pos().getX() == c.getX() && v.pos().getZ() == c.getZ(), "a village is reported at its town centre "
+                    + c.toShortString() + ", not " + v.pos().toShortString());
+            var empty = com.factionclash.work.StructureSightings.report(level, eye, v, 100);
+            h.assertTrue(empty.count == 0 && !empty.tradingVillage() && empty.note.contains("no villagers with trades"),
+                    "no villagers seen: not a trading village (" + empty.count + ", " + empty.note + ")");
+            for (var prof : List.of(net.minecraft.world.entity.npc.VillagerProfession.FARMER,
+                    net.minecraft.world.entity.npc.VillagerProfession.LIBRARIAN)) {
+                var vil = h.spawn(EntityType.VILLAGER, new BlockPos(24 + villagers.size(), 2, 12));
+                vil.setVillagerData(vil.getVillagerData().setProfession(prof));
+                villagers.add(vil);
+            }
+            var traders = com.factionclash.work.StructureSightings.report(level, eye, v, 140);
+            h.assertTrue(traders.count == 2 && traders.tradingVillage() && traders.note.startsWith("desert village, 2 villagers with trades"),
+                    "two villagers with trades should be counted: " + traders.count + ", " + traders.note);
+            h.assertTrue(empty.sameSubject(traders), "two looks at one village are one subject");
+            h.assertTrue(com.factionclash.work.StructureSightings.look(level, eye, java.util.Set.of(hc.toLong())).isEmpty(),
+                    "a structure seen on this trip is not seen again");
+
+            h.assertTrue(com.factionclash.work.StructureSightings.look(level, eye.offset(-15, 0, 0), java.util.Set.of(hc.toLong())).isEmpty(),
+                    "the outpost's own bounding box reaches within 48 blocks from 15 west, but what is built does not");
+            BlockPos west = eye.offset(-30, 0, 0);
+            var fromWest = com.factionclash.work.StructureSightings.look(level, west, java.util.Set.of(hc.toLong()));
+            h.assertTrue(fromWest.size() == 1 && fromWest.get(0).kind() == com.factionclash.campaign.Report.Kind.PILLAGER_OUTPOST
+                    && fromWest.get(0).start() == oc.toLong(), "the outpost should be in sight 30 blocks further west: " + fromWest);
+            BoundingBox ob = os.getBoundingBox();
+            BlockPos op = fromWest.get(0).pos();
+            h.assertTrue(op.getX() == (ob.minX() + ob.maxX()) >> 1 && op.getZ() == (ob.minZ() + ob.maxZ()) >> 1,
+                    "an outpost is reported at the middle of its bounds, not " + op.toShortString());
+            h.assertTrue(!level.hasChunk(far.x, far.z), "looking must not load the far start chunk");
+        } finally {
+            villagers.forEach(net.minecraft.world.entity.Entity::discard);
+            for (LevelChunk ch : List.of(here, beside)) {
+                ch.setAllStarts(starts.get(ch));
+                ch.setAllReferences(refs.get(ch));
+            }
+        }
         h.succeed();
     }
 }

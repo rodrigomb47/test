@@ -154,7 +154,8 @@ public final class BaseInfo {
 
     /**
      * The structures the scouts reported, nearest first: "Known places: village 140 blocks NE (4 traders), village
-     * 260 blocks S (no traders seen), pillager outpost 210 blocks W (keep away)". Empty when none are known.
+     * 260 blocks S (no traders seen), pillager outpost 210 blocks W (keep away)", at most 6 named ("... and 3 more").
+     * Empty when none are known.
      */
     static String knownPlaces(FactionState f, BaseState b) {
         List<Report> places = new ArrayList<>();
@@ -168,7 +169,7 @@ public final class BaseInfo {
         }
         places.sort(Comparator.comparingDouble(r -> r.pos.distSqr(b.center)));
         List<String> parts = new ArrayList<>();
-        for (Report r : places) {
+        for (Report r : places.subList(0, Math.min(KNOWN_PLACES_SHOWN, places.size()))) {
             int dx = r.pos.getX() - b.center.getX(), dz = r.pos.getZ() - b.center.getZ();
             String where = Math.round(Math.sqrt((double) dx * dx + dz * dz)) + " blocks " + compass(dx, dz);
             parts.add(switch (r.kind) {
@@ -178,8 +179,12 @@ public final class BaseInfo {
                 default -> "woodland mansion " + where + " (keep away)";
             });
         }
-        return "Known places: " + String.join(", ", parts);
+        int more = places.size() - parts.size();
+        return "Known places: " + String.join(", ", parts) + (more > 0 ? " and " + more + " more (see the map)" : "");
     }
+
+    /** The structures named on the station's "Known places" line; the map board lists them all. */
+    static final int KNOWN_PLACES_SHOWN = 6;
 
     /** "N", "NE", ... for a horizontal offset (north is -z). */
     static String compass(int dx, int dz) {

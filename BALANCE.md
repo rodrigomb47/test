@@ -263,19 +263,21 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   When every sector in range is explored and no living rival settlement is known, the faction's range grows by 64
   (saved, up to the far edge of the map); otherwise the explored sectors are forgotten and scouted again.
 * Scouts and structures (PROPOSED): a village (village tag), pillager outpost or woodland mansion is reported once
-  per trip when its bounds come within 48 blocks (loaded chunks within 3 of the scout only); villages at their town
-  centre, others at the middle of their bounds. Reports of one structure merge within 64 blocks; a look that saw no
-  traders keeps the traders seen before. No exploration target, mine site, tree, fishing spot, forage leg or travel
-  waypoint within 48 blocks (Chebyshev) of a known outpost or mansion.
+  per trip when its built bounds (its pieces) come within 48 blocks (loaded chunks within 3 of the scout only);
+  villages at their town centre, others at the middle of their bounds. Reports of one structure merge within 64
+  blocks; a look that saw no traders keeps the traders seen before. Over the 160-report cap the oldest report that is
+  not a structure is forgotten first. No exploration target, mine site, tree, fishing spot, forage leg or travel
+  waypoint within 48 blocks (Chebyshev) of a known outpost or mansion (a travel detour stays on the campaign map).
 * Scouts and monsters (PROPOSED): checked every 10 ticks; a monster counts within 6 blocks, or within its keep-away
   distance (12; creepers 16; skeletons, pillagers, witches 18) when seen or hunting the scout (+4). The scout runs at
-  1.3x to a point 16/20/12 blocks out in one of 16 directions, clear of every monster, passing none closer than 4,
-  scored by clearance (up to 4 over the keep-away) + 8 x the target side + 1 x away from the group - 6 x reversing
-  the last escape; firm dry ground in a loaded chunk, 8 inside the map edge, with a walking route (4 path searches at
-  most). A run lasts at most 160 ticks. It retreats home when under 40% health with monsters about, after 3 monster
-  hits in one encounter, or after 4 escapes in a row that did not shake them; cornered with a monster within 3.5
-  blocks it fights back for 100 ticks while over half health. An encounter ends after 100 quiet ticks. Enemy
-  soldiers: retreat home as before (2 threats, or 1 under 60% health).
+  1.3x to a point 16/20/12 blocks out in one of 16 directions, clear of every monster (2 beyond its keep-away
+  distance), passing none closer than 4, scored by clearance (up to 4 over the keep-away) + 8 x the target side + 1 x
+  away from the group - 6 x reversing the last escape; firm dry ground in a loaded chunk, 8 inside the map edge, with
+  a walking route (4 path searches at most). A monster within 6 counts only on about the scout's level (3 up or
+  down) or in sight. A run lasts at most 160 ticks. It retreats home when under 40% health with monsters about,
+  after 3 monster hits in one encounter, after 4 escapes in a row that did not shake them, or after 10 escapes in one
+  encounter; cornered with a monster within 3.5 blocks it fights back for 100 ticks while over half health. An
+  encounter ends after 100 quiet ticks. Enemy soldiers: retreat home as before (2 threats, or 1 under 60% health).
 * Raids: interval 36000 ticks, party at least 3 (see the war council above), 3 home defenders kept; assault takes 400 ticks at the target heart.
 * Hollow lairs: start with 5 monsters, +1 per day up to 12; raid every 30000 ticks on the nearest settlement within 300 blocks.
 * Damage: zombies, skeletons and variants deal ×0.5 to NPCs; NPCs regenerate 1 HP per 4 s out of combat (they have no hunger).

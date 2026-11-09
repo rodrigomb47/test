@@ -89,16 +89,24 @@ public final class BaseZones {
 
     /** Within {@code r} blocks (Chebyshev) of a pillager outpost or woodland mansion the faction's scouts have reported. */
     public static boolean nearKnownDanger(FactionState f, BlockPos p, int r) {
+        return dangerGap(f, p.getX(), p.getZ()) <= r;
+    }
+
+    /**
+     * How far (Chebyshev) (x, z) is from the nearest pillager outpost or woodland mansion the faction's scouts have
+     * reported; {@link Integer#MAX_VALUE} when none is known.
+     */
+    public static int dangerGap(FactionState f, int x, int z) {
+        int gap = Integer.MAX_VALUE;
         if (f == null) {
-            return false;
+            return gap;
         }
         for (Report rep : f.knowledge) {
-            if (rep.kind.dangerousGround() && rep.pos != null
-                    && Zones.chebyshev(p.getX(), p.getZ(), rep.pos.getX(), rep.pos.getZ()) <= r) {
-                return true;
+            if (rep.kind.dangerousGround() && rep.pos != null) {
+                gap = Math.min(gap, Zones.chebyshev(x, z, rep.pos.getX(), rep.pos.getZ()));
             }
         }
-        return false;
+        return gap;
     }
 
     /** How far from the centre the base's workers look for work: a GameTest base's own radius, else the configured one. */

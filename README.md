@@ -226,7 +226,7 @@ Players respawn at their nearest surviving allied base when they have no bed.
   and woodland mansions — not trees or water, which are easy to find), and publish by reaching the station.
   Monsters do not end a trip: the scout steps aside to firm ground 12-20 blocks away, clear of them and on the
   side of where it is going, and carries on; it retreats home along a fixed route from enemy soldiers, or from
-  monsters only when badly hurt, hit again and again or unable to shake them. Known pillager outposts and
+  monsters only when badly hurt, hit again and again or unable to shake or get past them. Known pillager outposts and
   woodland mansions are dangerous ground: no exploration target, mine, tree, fishing spot or travel waypoint lies
   within 48 blocks of one. Once
   everything within `scoutRange` is explored and no living rival settlement is known, they push the frontier out

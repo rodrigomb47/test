@@ -22,6 +22,7 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.AABB;
 
@@ -36,8 +37,8 @@ import java.util.stream.Collectors;
 
 /**
  * What a scout can see of the world's structures from where it stands ({@link StructureRules}): villages (every kind
- * in the village tag, abandoned ones included), pillager outposts and woodland mansions whose bounds come within 48
- * blocks. Only chunks already in memory are read: the structure references of the fully loaded chunks within 3 chunks
+ * in the village tag, abandoned ones included), pillager outposts and woodland mansions whose built bounds (their
+ * pieces) come within 48 blocks. Only chunks already in memory are read: the structure references of the fully loaded chunks within 3 chunks
  * of the scout, then the start of each referenced structure from its start chunk - fully loaded, or held in memory
  * past the structure stage of its generation. Looking never loads or generates a chunk; a structure whose start chunk
  * is not in memory is looked at again later.
@@ -88,7 +89,7 @@ public final class StructureSightings {
                         if (st == null || !st.isValid()) {
                             continue;
                         }
-                        BoundingBox box = st.getBoundingBox();
+                        BoundingBox box = builtBounds(st);
                         if (!StructureRules.inSight(eye.getX() + 0.5, eye.getZ() + 0.5, box.minX(), box.minZ(), box.maxX(), box.maxZ())) {
                             continue;
                         }
@@ -115,15 +116,21 @@ public final class StructureSightings {
         return kind.label;
     }
 
-    /** The structure's start, read from its start chunk only if that chunk is already in memory (never loaded here). */
+    /**
+     * The structure's start, read from its start chunk only if that chunk is already in memory (never loaded here).
+     * The start chunk lies within 8 chunks of every chunk the structure reaches into, so with the scout's own chunk
+     * ticket (fully loaded 3 chunks around it, held in memory at falling generation stages some 10 chunks further) it
+     * is in memory whenever a structure in sight is referenced from the chunks looked at; when it is not, the
+     * structure is looked at again on the next round.
+     */
     private static StructureStart startOf(ServerLevel level, long chunk, Structure s) {
         ChunkPos cp = new ChunkPos(chunk);
         ChunkAccess c = level.getChunkSource().getChunkNow(cp.x, cp.z);
         if (c == null) {
             ChunkHolder holder = level.getChunkSource().chunkMap.getVisibleChunkIfPresent(chunk);
             c = holder == null ? null : holder.getLatestChunk();
-            // still being generated: its starts are settled once the structure stage is behind it
-            if (c != null && !c.getPersistedStatus().isOrAfter(ChunkStatus.STRUCTURE_REFERENCES)) {
+            // still being generated: its starts are settled once the structure-starts stage is done
+            if (c != null && !c.getPersistedStatus().isOrAfter(ChunkStatus.STRUCTURE_STARTS)) {
                 c = null;
             }
         }
@@ -131,11 +138,19 @@ public final class StructureSightings {
     }
 
     /**
+     * The bounds of what the structure has built: its pieces. A start's own bounding box reaches 12 blocks further for
+     * the structures that reshape the terrain around them (villages, outposts), which no scout would call in sight.
+     */
+    static BoundingBox builtBounds(StructureStart st) {
+        return st.getPieces().isEmpty() ? st.getBoundingBox() : StructurePiece.createBoundingBox(st.getPieces().stream());
+    }
+
+    /**
      * Where a structure is reported: a village at its town centre (the first piece, around the bell), anything else at
      * the middle of its bounds; at the surface there when that column is loaded, else at the scout's own height.
      */
     static BlockPos reportPos(ServerLevel level, Report.Kind kind, StructureStart st, int fallbackY) {
-        BoundingBox b = kind == Report.Kind.VILLAGE && !st.getPieces().isEmpty() ? st.getPieces().get(0).getBoundingBox() : st.getBoundingBox();
+        BoundingBox b = kind == Report.Kind.VILLAGE && !st.getPieces().isEmpty() ? st.getPieces().get(0).getBoundingBox() : builtBounds(st);
         int x = (b.minX() + b.maxX()) >> 1, z = (b.minZ() + b.maxZ()) >> 1;
         LevelChunk c = level.getChunkSource().getChunkNow(x >> 4, z >> 4);
         int y = c == null ? fallbackY : c.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) + 1;

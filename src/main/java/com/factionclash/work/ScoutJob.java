@@ -77,8 +77,11 @@ public class ScoutJob extends Job {
     /** How clear of the monsters the escape point was when chosen (below 0 when nothing better than a gain was found). */
     private double escapeMargin;
     private double lastDirX, lastDirZ;
-    /** In this encounter: escapes that left monsters within reach, hits taken, the last monster seen, a cornered fight. */
-    private int failedEvasions, hits, lastHurtStamp;
+    /**
+     * In this encounter: escapes that left monsters within reach, hits taken, escapes started (successful or not), the
+     * last monster seen, a cornered fight.
+     */
+    private int failedEvasions, hits, lastHurtStamp, encounterEscapes;
     private long lastThreatAt = Long.MIN_VALUE / 2, defendUntil;
     private String evadeInfo = "", escapedFrom = "";
     /** Times this trip the scout stepped aside from monsters (saved, for its report). */
@@ -90,6 +93,12 @@ public class ScoutJob extends Job {
     static final float WOUNDED = 0.6F;
     /** PROPOSED: escapes in a row that did not shake the monsters, and hits taken in one encounter, before it retreats. */
     static final int MAX_FAILED_EVASIONS = 4, MAX_HITS = 3;
+    /**
+     * PROPOSED: escapes in one encounter (it ends after 100 quiet ticks) before the scout gives up and retreats home,
+     * even when each one shook the monsters for a moment: a monster that keeps standing in the way home, or a stream
+     * of them, must not keep it stepping aside forever (on the way home there is no overdue check to stop it).
+     */
+    static final int MAX_ENCOUNTER_ESCAPES = 10;
     /** PROPOSED: the longest run to one escape point, and how long without a monster in reach ends an encounter. */
     static final int ESCAPE_TICKS = 160, QUIET_TICKS = 100;
     /** PROPOSED: monsters are looked for this far around (8 up or down); this close they count even unseen. */
@@ -400,7 +409,8 @@ public class ScoutJob extends Job {
      * retreat home as before: two threats near, or one while under 60% health; once announced the home destination is
      * fixed and later threats do not change it. Monsters do not end the trip: the scout steps aside from them
      * ({@link #startEscape}, {@link #evade}) and goes on. It retreats home from monsters only when badly hurt (under
-     * 40%), when it keeps being hit (3 hits in one encounter) or when stepping aside has failed 4 times in a row.
+     * 40%), when it keeps being hit (3 hits in one encounter), when stepping aside has failed 4 times in a row, or
+     * after 10 escapes in one encounter.
      * Returns true when a retreat began.
      */
     private boolean dangerCheck(BaseState b, BlockPos goal) {
@@ -486,15 +496,20 @@ public class ScoutJob extends Job {
     /**
      * Picks an escape point ({@link EscapeRoute}) and starts running there. Cornered - nowhere clear to run - with a
      * monster in melee reach, a scout over half health fights back for a while; otherwise the failed attempt counts
-     * and, after 4 in a row, it retreats home.
+     * and, after 4 in a row, it retreats home. After 10 escapes in one encounter it retreats home instead.
      */
     private void startEscape(List<Monster> around, List<Monster> threats, BlockPos goal) {
+        if (encounterEscapes >= MAX_ENCOUNTER_ESCAPES) {
+            retreatFrom(threats, "could not get past " + evadeInfo);
+            return;
+        }
         BlockPos to = pickEscape(toThreats(clearanceSet(around, threats)), goal);
         if (to != null) {
             escape = to;
             escapeTicks = 0;
             escapedFrom = evadeInfo;
             evasions++;
+            encounterEscapes++;
             npc.setTarget(null);
             npc.navigator().reset();
             status("Evading " + evadeInfo, "Evading");
@@ -629,6 +644,7 @@ public class ScoutJob extends Job {
     private void endEncounter() {
         escape = null;
         failedEvasions = 0;
+        encounterEscapes = 0;
         hits = 0;
         lastHurtStamp = 0;
         lastDirX = 0;
@@ -661,15 +677,16 @@ public class ScoutJob extends Job {
     }
 
     /**
-     * The monsters to get away from: any within 6 blocks, one hunting the scout within its keep-away distance plus 4,
-     * and any other within its keep-away distance that the scout can see. A monster behind a hill or down in a cave
-     * does not count, and archers only shoot what they can see.
+     * The monsters to get away from: any within 6 blocks on about the scout's level (or in sight), one hunting the
+     * scout within its keep-away distance plus 4, and any other within its keep-away distance that the scout can see.
+     * A monster behind a hill or down in a cave under its feet does not count, and archers only shoot what they can see.
      */
     private List<Monster> threatening(List<Monster> around) {
         List<Monster> out = new ArrayList<>();
         for (Monster m : around) {
             double d = npc.distanceTo(m), keep = keepAway(m);
-            if (d <= CLOSE || m.getTarget() == npc && d <= keep + 4 || d <= keep && npc.hasLineOfSight(m)) {
+            boolean close = d <= CLOSE && (Math.abs(m.getY() - npc.getY()) <= 3 || npc.hasLineOfSight(m));
+            if (close || m.getTarget() == npc && d <= keep + 4 || d <= keep && npc.hasLineOfSight(m)) {
                 out.add(m);
             }
         }
@@ -890,14 +907,14 @@ public class ScoutJob extends Job {
         npc.swing(InteractionHand.MAIN_HAND);
         FactionState f = data().faction(npc.getFaction());
         int fresh = 0, xp = 0;
-        List<String> places = new ArrayList<>();
+        Map<String, Integer> places = new LinkedHashMap<>();
         for (Report r : pending) {
             r.deliveredAt = now();
             r.by = npc.npcName();
             if (f.addReport(r)) {
                 fresh++;
                 if (r.kind.structure()) {
-                    places.add(r.kind.label.toLowerCase(Locale.ROOT));
+                    places.merge(r.kind.label.toLowerCase(Locale.ROOT), 1, Integer::sum);
                 }
             }
             xp += ScoutRules.reportXp(r.kind.xpValue, Math.sqrt(r.pos.distSqr(b.center)));
@@ -908,8 +925,8 @@ public class ScoutJob extends Job {
         npc.awardXp(xp);
         Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Scout " + npc.npcName() + " returned"
                 + (retreating ? " after retreating (" + retreatReason + ")" : "") + " and reported " + pending.size()
-                + " observations (" + fresh + " new)" + (places.isEmpty() ? "" : "; new on the map: " + String.join(", ", places))
-                + (evasions > 0 ? "; slipped past monsters " + evasions + (evasions == 1 ? " time" : " times") : "") + "."));
+                + " observations (" + fresh + " new)" + (places.isEmpty() ? "" : "; new on the map: " + placesText(places))
+                + (evasions > 0 ? "; stepped aside from monsters " + evasions + (evasions == 1 ? " time" : " times") : "") + "."));
         pending.clear();
         pendingSectors.clear();
         NpcRecord rec = npc.record();
@@ -921,6 +938,13 @@ public class ScoutJob extends Job {
         evasions = 0;
         state = State.HOME;
         waitFor(200);
+    }
+
+    /** "village, 2 pillager outposts": the new places on the map by kind. */
+    static String placesText(Map<String, Integer> places) {
+        List<String> parts = new ArrayList<>();
+        places.forEach((label, n) -> parts.add(n == 1 ? label : n + " " + label + "s"));
+        return String.join(", ", parts);
     }
 
     @Override

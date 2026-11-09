@@ -296,12 +296,13 @@ public final class NpcNavigator {
                 && !insideWalls(home, dest);
         // and a trip that neither starts nor ends at a pillager outpost or woodland mansion the faction knows of
         // goes around it rather than straight through
-        com.factionclash.campaign.FactionState known = npc.getServer() == null ? null
-                : com.factionclash.campaign.CampaignData.get(npc.getServer()).factions.get(npc.getFaction());
+        com.factionclash.campaign.CampaignData cd = npc.getServer() == null ? null : com.factionclash.campaign.CampaignData.get(npc.getServer());
+        com.factionclash.campaign.FactionState known = cd == null ? null : cd.factions.get(npc.getFaction());
         int danger = com.factionclash.campaign.BaseZones.DANGER_RADIUS;
         boolean shun = known != null && !com.factionclash.campaign.BaseZones.nearKnownDanger(known, dest, danger)
                 && !com.factionclash.campaign.BaseZones.nearKnownDanger(known, npc.blockPosition(), danger);
-        int wx = 0, wz = 0;
+        int wx = 0, wz = 0, bx = 0, bz = 0, bestGap = -1;
+        boolean found = false;
         // passing by its own settlement, the waypoint goes around the walls rather than back in through a gate
         for (double turn : new double[]{0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5}) {
             double c = Math.cos(turn), sn = Math.sin(turn);
@@ -309,9 +310,30 @@ public final class NpcNavigator {
             wz = Mth.floor(npc.getZ() + (ux * sn + uz * c) * WAYPOINT_STEP);
             boolean walls = !avoid || Math.abs(wx - home.center.getX()) > com.factionclash.structure.BaseLayout.HALF + 2
                     || Math.abs(wz - home.center.getZ()) > com.factionclash.structure.BaseLayout.HALF + 2;
-            if (walls && (!shun || !com.factionclash.campaign.BaseZones.nearKnownDanger(known, new BlockPos(wx, 0, wz), danger))) {
+            if (!walls) {
+                continue;
+            }
+            if (!shun) {
+                found = true;
                 break;
             }
+            // a detour around dangerous ground stays on the campaign map: walking to the waypoint generates its chunk
+            boolean onMap = turn == 0 || com.factionclash.campaign.MapBounds.inside(cd, wx, wz, 0);
+            int gap = com.factionclash.campaign.BaseZones.dangerGap(known, wx, wz);
+            if (onMap && gap > danger) {
+                found = true;
+                break;
+            }
+            if (onMap && gap > bestGap) {
+                bestGap = gap;
+                bx = wx;
+                bz = wz;
+            }
+        }
+        if (!found && bestGap >= 0) {
+            // no turn keeps out of the dangerous ground: the one that stays farthest from it (still clear of the walls)
+            wx = bx;
+            wz = bz;
         }
         // Heightmaps of unloaded chunks read as the world floor, so load (or generate) the waypoint's chunk first.
         npc.level().getChunk(wx >> 4, wz >> 4);

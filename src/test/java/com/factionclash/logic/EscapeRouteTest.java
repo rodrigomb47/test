@@ -36,7 +36,20 @@ class EscapeRouteTest {
         assertTrue(o.dirX() > 0.3, "should still gain ground toward the target, went " + o.dirX() + ", " + o.dirZ());
         assertTrue(Math.abs(o.dirZ()) > 0.5, "should step to one side, not run through them");
         for (EscapeRoute.Threat t : ahead) {
-            assertTrue(dist(o, t.x(), t.z()) >= t.keepAway(), "escape point too close to a monster");
+            assertTrue(dist(o, t.x(), t.z()) >= t.keepAway() + EscapeRoute.CLEAR_MARGIN, "escape point too close to a monster");
+        }
+    }
+
+    @Test
+    void aPointRightAtTheKeepAwayDistanceIsNotClear() {
+        // the scout stops within 1.5 blocks of its escape point: one barely at the keep-away distance would leave it
+        // standing inside it, so it does not count as clear
+        assertFalse(new EscapeRoute.Option(0, 0, 1, 0, 0.5, 10).clear());
+        assertTrue(new EscapeRoute.Option(0, 0, 1, 0, EscapeRoute.CLEAR_MARGIN, 10).clear());
+        for (EscapeRoute.Option o : EscapeRoute.rank(0.5, 0.5, List.of(zombie(5.5, 0.5)), 200, 0.5, true, 0, 0)) {
+            if (o.clear()) {
+                assertTrue(dist(o, 5.5, 0.5) >= 12 + EscapeRoute.CLEAR_MARGIN - 1.0E-9, "a clear point within reach of the zombie");
+            }
         }
     }
 

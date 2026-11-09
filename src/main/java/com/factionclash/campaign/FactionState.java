@@ -79,7 +79,9 @@ public final class FactionState {
 
     /**
      * Adds or refreshes a delivered report: a newer observation of the same subject replaces the older one (see
-     * {@link Report#merge}: a village seen without traders keeps the traders seen before).
+     * {@link Report#merge}: a village seen without traders keeps the traders seen before). Over {@link #MAX_REPORTS}
+     * the oldest report is forgotten - the oldest that is not a village, pillager outpost or woodland mansion, which
+     * stay where they are and which traders and the workers' dangerous-ground rules rely on.
      */
     public boolean addReport(Report r) {
         for (int i = 0; i < knowledge.size(); i++) {
@@ -91,7 +93,14 @@ public final class FactionState {
         }
         knowledge.add(r);
         while (knowledge.size() > MAX_REPORTS) {
-            knowledge.remove(0);
+            int drop = 0;
+            for (int i = 0; i < knowledge.size(); i++) {
+                if (!knowledge.get(i).kind.structure()) {
+                    drop = i;
+                    break;
+                }
+            }
+            knowledge.remove(drop);
         }
         return true;
     }
