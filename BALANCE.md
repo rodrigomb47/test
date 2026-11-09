@@ -16,8 +16,9 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * A trip fails after repeated trouble: no path, no progress for 300 ticks (getting no closer), or 600 ticks of
   travelling without leaving a 3-block radius (flipping between destinations). Switching destinations while stuck
   in the same spot keeps the count.
-* After two failed trips an NPC digs. Shut in (under cover, up a tree on 3+ blocks of wood or leaves, or more than
-  1 block below its destination: a pit, a ravine floor, the foot of a cliff) it keeps digging (or building) its way,
+* After two failed trips an NPC digs. Shut in (under cover, up a tree on 3+ blocks of wood or leaves, on top of a bare
+  pillar (no side to step off within 3 down and a longer drop on two sides or more, as on a woodcutter's scaffold its
+  job no longer looks after), or more than 1 block below its destination: a pit, a ravine floor, the foot of a cliff) it keeps digging (or building) its way,
   one step per 20 ticks and at most 64 steps per round: up if the destination is above, down if below, otherwise
   level. Only a walking route ends the digging (looked for after every step in the open, every 4th under cover,
   never before a round's first step): being out in the open is not enough, a pit a few blocks below the
@@ -26,9 +27,10 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   then the other side, then straight away, then toward the destination again (PROPOSED), always to the
   destination's height; arriving anywhere resets this. Under a settlement's edge it first heads out from under the
   walls. Never dug: faction structures, a settlement's walls and floor band, any mine's spiral stairs, containers,
-  unbreakable blocks and anything touching a fluid. Up a tree it breaks the leaves or log underfoot (the wood goes
-  into its backpack).
-* Recovery teleports never land on leaves or on top of a tall trunk.
+  unbreakable blocks and anything touching a fluid. Up a tree or a bare pillar it breaks the leaves, log or block
+  underfoot (it goes into its backpack), a block every 20 ticks, until a drop of 3 or less is left; on a pillar it is
+  building itself up toward a destination above, it goes on building.
+* Recovery teleports never land on leaves, on top of a tall trunk or on a bare pillar.
 * Bridging: where the step toward the destination has no floor, an NPC places a block of stone, cobblestone,
   deepslate, dirt, andesite, diorite, granite or tuff from its backpack (else any full solid block it carries:
   logs, planks...) and steps onto it (rising one block per step when the destination is above); never inside
@@ -213,24 +215,49 @@ Shaft and mine watchdogs (PROPOSED, `MinerJob`):
 There is no tree plot, fence or upgrade (see [Historical values](#historical-values-before-the-worker-redesign)):
 woodcutters fell the natural trees around the base, replant them, and keep a grove.
 * What is felled (PROPOSED, `TreeShape`): from the stump, logs of the same block are followed up and sideways (at
-  most ±7 sideways, +24 up and 96 logs; wood running past those bounds is TOO_BIG and left whole, never cut in
-  part). A tree is felled only with 3 or more logs (MIN_LOGS), no log more than 8 above the stump (MAX_FELL_DY;
-  with the 7.5 reach, every log can then be cut from the ground), natural (not persistent) leaves within 2 of its
-  top, the stump on dirt, and no built block (planks, cobblestone, fences, glass, wool, torches, signs, rails, any
-  structural block), block entity (a bee nest) or log of another species touching it. Species: oak, birch, spruce,
-  jungle, acacia, dark oak and cherry; not mangrove, nether stems, stripped logs or other mods' logs. Mega spruces,
-  tall jungle trees and fancy oaks with a 12–14 trunk (about 2.5% of oak saplings) are left standing: felling them
-  would need pillaring along the crown, which was left out on purpose.
+  most ±7 sideways, +32 up and 192 logs: a giant jungle tree is up to 31 tall with about 150 logs, a mega spruce up to
+  29 with about 115; wood running past those bounds is TOO_BIG and left whole, never cut in part). A tree is felled
+  only with 3 or more logs (MIN_LOGS), natural (not persistent) leaves within 2 of its top, the stump on dirt, and no
+  built block (planks, cobblestone, fences, glass, wool, torches, signs, rails, any structural block), block entity
+  (a bee nest) or log of another species touching it. Its top log may be at most 8 above the stump (MAX_FELL_DY;
+  with the 7.5 reach, every log can then be cut from the ground), or up to 32 (MAX_TALL_DY) when the woodcutter has
+  the dirt for a scaffold (below). Species: oak, birch, spruce, jungle, acacia, dark oak and cherry; not mangrove,
+  nether stems, stripped logs or other mods' logs.
+* Scaffold (PROPOSED, `TreeShape.pillarSpot`, `Scaffold`, `WoodcutterJob`): a tree with a log the ground does not
+  reach (higher than 8, or a branch end neither the stump's column nor the ground under it reaches) is felled from a
+  pillar of dirt or coarse dirt (only earth: stone, cobblestone and netherrack drop nothing without a pickaxe, and the
+  builders' tool-stone reserve is never touched). The pillar stands in one of the columns beside the trunk (8
+  around a 1x1 trunk, 12 around a 2x2) on firm ground at the stump's level, with every cell above it clear (air,
+  plants, natural leaves or the tree's own logs) for its height + 2, no part of a plan and not protected wood; from
+  it every such log must be within 7.25 (PILLAR_REACH, the 7.5 reach less a quarter block) of the eyes at some
+  height on the way down; the lowest such pillar wins, then the one reaching most logs, then one straight beside the
+  trunk. No column reaching them all: the tree is left whole (a giant jungle tree's branch ends, from -2 to +5 of its
+  north-west corner, are all reached from the south-east corner column). Height at most 28 (MAX_PILLAR); blocks
+  needed: height + 2 (PILLAR_SPARE). Before walking to a tall tree the woodcutter carries at least
+  `scaffoldNeed(top)` blocks (the worst column's height + 2), else fetches up to 32 (Scaffold.CARRY, kept in the
+  backpack when unloading) at most every 2400 ticks; with too few in store the tree is skipped for 12000 ticks.
+  Without at least 4 blocks carried or stored, no tree taller than 8 is even looked for. Building: it stands over
+  the column's middle, cuts natural leaves or the tree's logs in the cell above its head, jumps, and places a block
+  in the cell its feet left once they are above it (vanilla jump: about 9 ticks a block); 6 jumps without a block
+  (MAX_MISSES) end the climb. On the pillar: the highest log within 7.5 first, then natural leaves of the crown
+  (within 5/6 of the stump) within 5.5; nothing left in reach, it breaks the block underfoot at player speed (dirt by
+  hand: 15 ticks) and drops one block. A block missing below is put back first. On the ground the rest is felled as
+  for any tree. It comes down early (without cutting) when hurt, at 1 free backpack slot (then unloads), at nightfall
+  far out, when the tree is claimed by another, for a meal errand, or when its base or woodland is gone; the tree is
+  resumed later with a new pillar (3 cut-short climbs per tree at most, MAX_PILLARS_PER_TREE). Up there it ignores
+  fights, does not flee or dodge creepers and takes no knockback. Scaffold blocks left standing (it was moved off
+  its pillar) are taken down from beside, from a pillar of its own when out of reach (3 tries, MAX_STRAY_TRIES).
+  The pillar (column, height, phase) is saved with the job.
 * Protected wood (`WorkSafety.protectedWood`): any base's plan, 2 around a settlement's walls (its own included),
   other bases' land + 8 (lairs + 16), outside the map, within 32 of a village or 48 of a pillager outpost or
   woodland mansion the faction knows.
 * Search (`ForestScan`): every second column (one of 4 rotating patterns per scan) in a circle of `forestRadius`
   around the base centre, loaded chunks only; a column counts when its top block (leaves aside) is a known log whose
-  trunk of 3–9 logs of the same block stands on dirt, with natural leaves near the top; a 2x2 trunk is found at
-  its north-west corner. Best: distance from the centre + 0.5 × distance from the woodcutter. Scans run at most
+  trunk of 3–9 logs of the same block (up to 33 with dirt for a scaffold) stands on dirt, with natural leaves near the
+  top; a 2x2 trunk is found at its north-west corner. Best: distance from the centre + 0.5 × distance from the woodcutter. Scans run at most
   every 600 ticks (RESCAN_TICKS); after an empty one the next pattern follows 20 ticks later, and only a whole empty
   round of 4 sends the woodcutter foraging. A tree another woodcutter claimed is skipped (claims last 1200 ticks).
-* Felling (PROPOSED): the walk ends within 4.0 of the stump (2.5 approach); logs are cut top-down from where it
+* Felling from the ground (PROPOSED): the walk ends within 4.0 of the stump (2.5 approach); logs are cut top-down from where it
   stands within 7.5 (TRUNK_REACH); at the first log out of reach it steps within 1.5 of the stump (200 ticks at
   most); logs still out of reach are cut at the end standing in the stump's column (0.3, 200 ticks per log) or, a
   branch end, standing within 1.0 of the ground under it (UNDER_BRANCH). Leaves: natural ones within ±3 (±5 for a
@@ -241,8 +268,9 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   spot for 2400 (SPOT_RETRY_TICKS). Only what a tree is (its survey) leaves it standing for good: 128 such trees are
   remembered (oldest first out), and one of them is surveyed again every 200 ticks (RECHECK_TICKS) in case it
   changed.
-* Replanting (`ForestRules.replant`): the same species at the stump, 1 sapling (big spruces and jungle trees too);
-  a dark oak gets 4 as a 2x2, only when 4 are carried. A stump waiting 12000 ticks (REPLANT_PATIENCE) for its own
+* Replanting (`ForestRules.replant`): the same species at the stump, 1 sapling; a dark oak gets 4 as a 2x2, only
+  when 4 are carried; a 2x2 spruce or jungle tree gets 4 as a 2x2 when 4 are carried (so a mega spruce or giant
+  jungle tree grows back), else, after 2400 ticks (HUGE_PATIENCE) of waiting for them, 1 at its north-west corner. A stump waiting 12000 ticks (REPLANT_PATIENCE) for its own
   sapling gets a substitute when one is spare (birch, spruce, oak, cherry, acacia, then jungle; never dark oak);
   after 48000 (REPLANT_GIVE_UP) it is forgotten. At most one storehouse trip for a stump's sapling every 2400 ticks;
   the storehouse is looked into for it at most every 200.

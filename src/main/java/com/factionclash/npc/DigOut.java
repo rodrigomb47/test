@@ -37,10 +37,17 @@ public final class DigOut {
     }
 
     /**
-     * Up a tree: on its canopy, or on top of a trunk (3 or more blocks of wood and leaves below, often with a
-     * canopy all around). Walking cannot get it down; chopping what is underfoot can.
+     * Up a tree or a pillar: on a canopy, on top of a trunk (3 or more blocks of wood and leaves below, often with a
+     * canopy all around), or on top of a narrow column with no way off but a fall of more than 3 ({@link #onPillar}:
+     * a woodcutter's scaffold its job no longer looks after). Walking cannot get it down; breaking what is underfoot,
+     * a block at a time, can.
      */
     public static boolean perched(net.minecraft.world.level.Level level, BlockPos p) {
+        return perchedOnTree(level, p) || onPillar(level, p);
+    }
+
+    /** On a tree canopy, or on top of 3 or more blocks of wood and leaves. */
+    private static boolean perchedOnTree(net.minecraft.world.level.Level level, BlockPos p) {
         BlockState below = level.getBlockState(p.below());
         if (below.is(BlockTags.LEAVES)) {
             return true;
@@ -50,6 +57,42 @@ public final class DigOut {
             wood++;
         }
         return wood >= 3;
+    }
+
+    /**
+     * On top of a narrow pillar (feet at {@code p}): standing on something solid with no cell beside it to step onto
+     * (level, or a drop of at most 3, onto anything but leaves), and a longer drop on at least two sides; a side may
+     * be walled (the trunk a woodcutter's scaffold stands against). A pit's floor, a ledge or plain ground is not.
+     */
+    public static boolean onPillar(net.minecraft.world.level.Level level, BlockPos p) {
+        BlockPos under = p.below();
+        if (level.getBlockState(under).getCollisionShape(level, under).isEmpty()) {
+            return false;
+        }
+        int drops = 0;
+        for (Direction d : Direction.Plane.HORIZONTAL) {
+            BlockPos n = p.relative(d);
+            if (!open(level, n) || !open(level, n.above())) {
+                continue; // walled on that side: neither a way off nor a drop
+            }
+            for (int k = 1; k <= 4; k++) {
+                BlockPos f = n.below(k);
+                BlockState fs = level.getBlockState(f);
+                if (!fs.getCollisionShape(level, f).isEmpty()) {
+                    if (!fs.is(BlockTags.LEAVES)) {
+                        return false; // ground beside it, at most 3 down: a way off
+                    }
+                    break;
+                }
+            }
+            drops++;
+        }
+        return drops >= 2;
+    }
+
+    private static boolean open(net.minecraft.world.level.Level level, BlockPos c) {
+        BlockState s = level.getBlockState(c);
+        return s.getCollisionShape(level, c).isEmpty() && s.getFluidState().isEmpty();
     }
 
     /**
@@ -104,8 +147,10 @@ public final class DigOut {
             return false;
         }
         BlockPos p = npc.blockPosition();
-        if (perched(level, p) && allDiggable(level, List.of(p.below()))) {
-            // stranded up a tree: break the leaves or log underfoot and drop down, as a player would
+        // (on a pillar it is building itself up toward a destination above, it keeps building)
+        boolean down = perched(level, p) && !(target.getY() > p.getY() + 1 && onPillar(level, p) && !perchedOnTree(level, p));
+        if (down && allDiggable(level, List.of(p.below()))) {
+            // stranded up a tree or on a pillar: break the leaves, log or block underfoot and drop down, as a player would
             dig(level, npc, p.below());
             npc.swing(InteractionHand.MAIN_HAND);
             npc.getNavigation().stop();

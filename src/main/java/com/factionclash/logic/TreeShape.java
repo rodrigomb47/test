@@ -12,18 +12,22 @@ import java.util.Set;
  * Pure shape check of a tree before a woodcutter fells it (no Minecraft classes, unit-tested). From the stump it
  * follows the logs of the stump's own kind, the way the old flood did (sideways, diagonally and one up at a time),
  * and decides whether this is a natural tree the woodcutter can take down whole: no built block or log of another
- * kind touching it, no log higher than it can reach from the ground, not so big that the flood had to stop short of
- * it, at least a few logs, natural leaves near the top and soil under the stump. Anything else is left standing before
- * the first cut, so no floating logs remain. It also says where the woodcutter stands to cut a log at the end
- * ({@link #fromStumpColumn}): in the cut stump's column, or right under a log that sticks out too far sideways.
+ * kind touching it, no log higher than it can reach (from the ground, or from a scaffold pillar when it carries the
+ * blocks for one), not so big that the flood had to stop short of it, at least a few logs, natural leaves near the
+ * top and soil under the stump. Anything else is left standing before the first cut, so no floating logs remain. It
+ * also says where the woodcutter stands to cut a log at the end ({@link #fromStumpColumn}): in the cut stump's
+ * column, or right under a log that sticks out too far sideways; and, for a tree too tall for that, which column
+ * beside the trunk it builds its scaffold pillar in and how high ({@link #pillarSpot}), so that every log comes
+ * within reach on the way down.
  */
 public final class TreeShape {
     /** What a block is, as far as felling a tree goes. SAME_LOG is the stump's exact block, in any axis. */
     public enum Kind { AIR, SAME_LOG, OTHER_LOG, NATURAL_LEAVES, PERSISTENT_LEAVES, GROUND, STRUCTURE, OTHER }
 
     /**
-     * The survey's answer. TOO_BIG: the same log runs on past the flood's bounds (7 sideways, 24 up or 96 logs), as in
-     * a square of dark oaks grown into each other, so only part of it was seen and none of it is cut.
+     * The survey's answer. TOO_BIG: the same log runs on past the flood's bounds (7 sideways, 32 up or 192 logs), as in
+     * a square of dark oaks grown into each other, so only part of it was seen and none of it is cut. TOO_TALL: a log
+     * higher than the woodcutter can reach this time (8 above the stump from the ground, 32 from a scaffold).
      */
     public enum Verdict { OK, TOO_SMALL, NOT_NATURAL, TOUCHES_STRUCTURE, TOO_TALL, TOO_BIG }
 
@@ -50,8 +54,25 @@ public final class TreeShape {
     public static final double REACH = 7.5, EYE = 1.62, STOP = 0.45;
     /** PROPOSED: fewer logs than this is not a tree (a stump, a fence-post log). */
     public static final int MIN_LOGS = 3;
-    /** Flood bounds, as before: 7 blocks sideways, 24 up, 96 logs. The same log going on past them makes the tree TOO_BIG. */
-    public static final int MAX_SPREAD = 7, MAX_RISE = 24, MAX_LOGS = 96;
+    /**
+     * Flood bounds: 7 blocks sideways, 32 up, 192 logs (a giant jungle tree is up to 31 tall with about 150 logs, a mega
+     * spruce up to 29 with about 115). The same log going on past them makes the tree TOO_BIG.
+     */
+    public static final int MAX_SPREAD = 7, MAX_RISE = 32, MAX_LOGS = 192;
+    /**
+     * PROPOSED: the highest log of a tree felled from a scaffold pillar, above the stump (mega spruces reach 28, giant
+     * jungle trees 30).
+     */
+    public static final int MAX_TALL_DY = MAX_RISE;
+    /** PROPOSED: the tallest scaffold pillar (blocks); a top log 32 up needs at most 25 from any column beside the trunk. */
+    public static final int MAX_PILLAR = 28;
+    /** PROPOSED: scaffold blocks carried beyond the pillar's height, to mend it if a block below goes missing. */
+    public static final int PILLAR_SPARE = 2;
+    /**
+     * PROPOSED: the reach counted on from the pillar (eyes to a block's centre): {@link #REACH} less a quarter block,
+     * since the woodcutter may stand that far from its column's centre.
+     */
+    public static final double PILLAR_REACH = REACH - 0.25;
     /** Natural leaves must lie within this many blocks sideways of the top log (from 1 below to 2 above it). */
     public static final int LEAF_RADIUS = 2;
 
@@ -61,11 +82,20 @@ public final class TreeShape {
     }
 
     /**
-     * Surveys the tree whose stump is at (x, y, z). With {@code resume} (a tree this woodcutter has started to fell)
-     * the size, leaf and soil rules are skipped, since the top is already gone; the bounds, contact and height rules
-     * stay.
+     * Surveys the tree whose stump is at (x, y, z) for a woodcutter felling from the ground: no log more than
+     * {@link #MAX_FELL_DY} up. See {@link #survey(Cells, int, int, int, boolean, int)}.
      */
     public static Tree survey(Cells cells, int x, int y, int z, boolean resume) {
+        return survey(cells, x, y, z, resume, MAX_FELL_DY);
+    }
+
+    /**
+     * Surveys the tree whose stump is at (x, y, z), for a woodcutter that reaches logs up to {@code maxDy} above the
+     * stump ({@link #MAX_FELL_DY} from the ground, up to {@link #MAX_TALL_DY} with blocks for a scaffold). With
+     * {@code resume} (a tree this woodcutter has started to fell) the size, leaf and soil rules are skipped, since the
+     * top is already gone; the bounds, contact and height rules stay.
+     */
+    public static Tree survey(Cells cells, int x, int y, int z, boolean resume, int maxDy) {
         List<int[]> logs = new ArrayList<>();
         if (cells.at(x, y, z) != Kind.SAME_LOG) {
             return new Tree(resume ? Verdict.OK : Verdict.TOO_SMALL, logs, false, 0);
@@ -111,7 +141,7 @@ public final class TreeShape {
                 }
             }
         }
-        if (topDy > MAX_FELL_DY) {
+        if (topDy > maxDy) {
             return new Tree(Verdict.TOO_TALL, logs, big, topDy);
         }
         if (!resume) {
@@ -144,6 +174,124 @@ public final class TreeShape {
     public static boolean fromBelow(int dy) {
         double v = dy + 0.5 - EYE;
         return Math.sqrt(1.0 + v * v) <= REACH;
+    }
+
+    /**
+     * True when a log {@code dy} above the stump (and dx, dz from it) is cut from the ground: up to
+     * {@link #MAX_FELL_DY}, from the stump's column or right under it ({@link #fromStumpColumn}, {@link #fromBelow}).
+     * Every log of a tree no taller than that is; anything else needs a scaffold.
+     */
+    public static boolean fromGround(int dx, int dy, int dz) {
+        return dy <= MAX_FELL_DY && (fromStumpColumn(dx, dy, dz) || fromBelow(dy));
+    }
+
+    /** Where a scaffold pillar stands and how high it is built (blocks; the woodcutter's feet end up that far up). */
+    public record Pillar(int x, int z, int height) {
+    }
+
+    /** The world beside a trunk, as the pillar choice sees it. */
+    @FunctionalInterface
+    public interface Room {
+        /**
+         * The highest pillar that can be built in column (x, z) from the stump's level: firm ground under it and the
+         * cells above clear (air, plants, natural leaves or the tree's own logs, which are cut on the way up) for its
+         * height plus two (the woodcutter's body and its jump). Negative where no pillar may stand.
+         */
+        int at(int x, int z);
+    }
+
+    /**
+     * The pillar heights (blocks under the woodcutter's feet) from which the centre of the log at (lx, ly, lz) is
+     * within {@link #PILLAR_REACH} of the eyes, standing in column (cx, cz) on a pillar rising from level {@code sy}:
+     * {lowest, highest}, or null when it is never in reach from that column.
+     */
+    public static int[] standRange(int cx, int cz, int sy, int lx, int ly, int lz) {
+        double d2 = (double) (lx - cx) * (lx - cx) + (double) (lz - cz) * (lz - cz);
+        double r2 = PILLAR_REACH * PILLAR_REACH;
+        if (d2 > r2) {
+            return null;
+        }
+        double w = Math.sqrt(r2 - d2), mid = ly - sy + 0.5 - EYE;
+        int lo = (int) Math.ceil(mid - w), hi = (int) Math.floor(mid + w);
+        return lo <= hi ? new int[]{lo, hi} : null;
+    }
+
+    /** The columns beside a trunk where a pillar may stand: the 8 around a 1x1 trunk, the 12 around a 2x2 one. */
+    public static List<int[]> besideTrunk(int sx, int sz, boolean big) {
+        int size = big ? 2 : 1;
+        List<int[]> out = new ArrayList<>();
+        for (int dx = -1; dx <= size; dx++) {
+            for (int dz = -1; dz <= size; dz++) {
+                if (dx < 0 || dz < 0 || dx >= size || dz >= size) {
+                    out.add(new int[]{sx + dx, sz + dz});
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Where to build the scaffold pillar for a tree too tall to fell from the ground (stump at sx, sy, sz, its logs
+     * absolute {x, y, z}): among the columns beside the trunk ({@link #besideTrunk}) that {@code room} allows, one from
+     * which every log is in reach at some height on the way down from the pillar's top to the ground, except the logs
+     * {@link #fromGround} reaches (with {@code groundToo}), which are cut afterwards from the ground as for any tree.
+     * The pillar is as low as that allows; of equal ones, the column that reaches the most logs itself wins, then one
+     * straight beside the trunk rather than at a corner. Null when no column reaches them all (wide branches on every side, or no room): the tree is left standing
+     * whole. With {@code groundToo} false every log must come within reach from the pillar (scaffold blocks left
+     * standing are taken down this way, standing beside them).
+     */
+    public static Pillar pillarSpot(List<int[]> logs, int sx, int sy, int sz, boolean big, Room room, boolean groundToo) {
+        Pillar best = null;
+        int bestCovered = -1;
+        boolean bestCorner = true;
+        int size = big ? 2 : 1;
+        for (int[] c : besideTrunk(sx, sz, big)) {
+            boolean corner = (c[0] < sx || c[0] >= sx + size) && (c[1] < sz || c[1] >= sz + size);
+            int max = Math.min(MAX_PILLAR, room.at(c[0], c[1]));
+            if (max < 0) {
+                continue;
+            }
+            int need = 0, covered = 0;
+            boolean all = true;
+            for (int[] p : logs) {
+                int[] r = standRange(c[0], c[1], sy, p[0], p[1], p[2]);
+                boolean pillar = r != null && r[1] >= 0 && r[0] <= max;
+                if (pillar) {
+                    covered++;
+                }
+                if (groundToo && fromGround(p[0] - sx, p[1] - sy, p[2] - sz)) {
+                    continue;
+                }
+                if (!pillar) {
+                    all = false;
+                    break;
+                }
+                need = Math.max(need, Math.max(0, r[0]));
+            }
+            if (!all || need > max) {
+                continue;
+            }
+            if (best == null || need < best.height() || need == best.height()
+                    && (covered > bestCovered || covered == bestCovered && bestCorner && !corner)) {
+                best = new Pillar(c[0], c[1], need);
+                bestCovered = covered;
+                bestCorner = corner;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * The scaffold blocks to carry before walking to a tree whose top log is {@code topDy} above the stump: the pillar
+     * the farthest column beside a 2x2 trunk would need (a diagonal corner, 3 across from the far trunk column), plus
+     * {@link #PILLAR_SPARE}; 0 for a tree felled from the ground. The survey on arrival works out the real height.
+     */
+    public static int scaffoldNeed(int topDy) {
+        if (topDy <= MAX_FELL_DY) {
+            return 0;
+        }
+        double w = Math.sqrt(PILLAR_REACH * PILLAR_REACH - 8.0);
+        return Math.max(1, (int) Math.ceil(topDy + 0.5 - EYE - w)) + PILLAR_SPARE;
     }
 
     /**

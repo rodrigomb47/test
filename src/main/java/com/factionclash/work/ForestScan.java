@@ -49,11 +49,14 @@ public final class ForestScan {
     static final int STEP = 2;
     /** The number of column patterns: scans {@code scan}, {@code scan+1}, ... {@code scan+PATTERNS-1} read every column once. */
     public static final int PATTERNS = STEP * STEP;
-    /** A trunk is followed down at most this far. */
-    static final int MAX_TRUNK_WALK = 30;
+    /** A trunk is followed down at most this far (past the tallest tree a scaffold reaches). */
+    static final int MAX_TRUNK_WALK = TreeShape.MAX_TALL_DY + 2;
 
-    /** A tree found: its stump (the north-west corner of a 2x2 trunk), whether the trunk is 2x2, and its species. */
-    public record Found(BlockPos stump, boolean big, ForestRules.Species species) {
+    /**
+     * A tree found: its stump (the north-west corner of a 2x2 trunk), whether the trunk is 2x2, its species, and how
+     * far above the stump the top of the column it was found by lies.
+     */
+    public record Found(BlockPos stump, boolean big, ForestRules.Species species, int topDy) {
     }
 
     /** The species of the log block in {@code s}, or null when it is not a log a woodcutter fells. */
@@ -83,8 +86,9 @@ public final class ForestScan {
      * The best natural tree to fell within {@code radius} of {@code around} (a circle), or null. Columns are read every
      * second block, the pattern shifting with {@code scan} so that every column is read once in four scans; only
      * loaded chunks inside the campaign map are read. A column holds a tree when its top block (leaves not counted) is
-     * a log of a species the woodcutter fells, the same log runs down at least 3 blocks and at most 8 below the top,
-     * the trunk stands on soil, and natural leaves grow around the top. Trees the woodcutter gave up on
+     * a log of a species the woodcutter fells, the same log runs down at least 3 blocks and at most {@code maxDy} below
+     * the top (8 for a woodcutter felling from the ground, up to 32 with blocks for a scaffold), the trunk stands on
+     * soil, and natural leaves grow around the top. Trees the woodcutter gave up on
      * ({@code badWild}), trees another woodcutter is felling, wood that is not the faction's to fell
      * ({@link WorkSafety#protectedWood}) and spots {@code skip} rejects (too far out at night, or not to be got to for
      * now) are passed over. A trunk that is one corner of a 2x2 square is found as the square's north-west corner. The
@@ -92,7 +96,7 @@ public final class ForestScan {
      * to the walls go first.
      */
     public static Found findTree(ServerLevel level, CampaignData data, BaseState base, FactionNpc npc, BlockPos around, int radius,
-                                 Set<Long> badWild, int scan, Predicate<BlockPos> skip) {
+                                 Set<Long> badWild, int scan, Predicate<BlockPos> skip, int maxDy) {
         Loaded w = new Loaded(level);
         int phase = Math.floorMod(scan, PATTERNS);
         int px = phase == 1 || phase == 2 ? 1 : 0, pz = phase == 1 || phase == 3 ? 1 : 0;
@@ -109,7 +113,7 @@ public final class ForestScan {
                 if (dx * dx + dz * dz > (long) radius * radius || !MapBounds.inside(data, x, z, 0)) {
                     continue;
                 }
-                Found f = column(w, x, z);
+                Found f = column(w, x, z, maxDy);
                 if (f == null || !seen.add(f.stump().asLong())) {
                     continue;
                 }
@@ -132,7 +136,7 @@ public final class ForestScan {
     }
 
     /** The tree whose trunk reaches the top of column (x, z), by the cheap column rule, or null. */
-    private static Found column(Loaded w, int x, int z) {
+    private static Found column(Loaded w, int x, int z, int maxDy) {
         int top = w.top(x, z);
         if (top == Integer.MIN_VALUE) {
             return null;
@@ -147,8 +151,8 @@ public final class ForestScan {
             base--;
         }
         int dy = top - base;
-        if (dy < TreeShape.MIN_LOGS - 1 || dy > TreeShape.MAX_FELL_DY) {
-            return null; // a stump or post, or too tall to fell whole from the ground
+        if (dy < TreeShape.MIN_LOGS - 1 || dy > maxDy) {
+            return null; // a stump or post, or too tall to fell whole (from the ground, or from a scaffold)
         }
         BlockState ground = w.state(x, base - 1, z);
         if (ground == null || !ground.is(BlockTags.DIRT) || !naturalLeavesNear(w, x, top, z)) {
@@ -165,11 +169,11 @@ public final class ForestScan {
                     }
                 }
                 if (all) {
-                    return new Found(new BlockPos(x + ox, base, z + oz), true, sp);
+                    return new Found(new BlockPos(x + ox, base, z + oz), true, sp, dy);
                 }
             }
         }
-        return new Found(new BlockPos(x, base, z), false, sp);
+        return new Found(new BlockPos(x, base, z), false, sp, dy);
     }
 
     private static boolean sameBlock(@Nullable BlockState s, BlockState log) {
@@ -203,11 +207,70 @@ public final class ForestScan {
      */
     public static TreeShape.Tree survey(ServerLevel level, CampaignData data, @Nullable BaseState own, BlockPos start, boolean zones,
                                         boolean resume) {
+        return survey(level, data, own, start, zones, resume, TreeShape.MAX_FELL_DY);
+    }
+
+    /** As {@link #survey(ServerLevel, CampaignData, BaseState, BlockPos, boolean, boolean)}, reaching logs up to {@code maxDy}. */
+    public static TreeShape.Tree survey(ServerLevel level, CampaignData data, @Nullable BaseState own, BlockPos start, boolean zones,
+                                        boolean resume, int maxDy) {
         if (WorkSafety.planned(data, start) || (zones && WorkSafety.protectedWood(level, data, own, start))) {
             return new TreeShape.Tree(TreeShape.Verdict.TOUCHES_STRUCTURE, List.of(), false, 0);
         }
         TreeShape.Cells cells = cells(level, data, own, level.getBlockState(start).getBlock(), zones);
-        return TreeShape.survey(cells, start.getX(), start.getY(), start.getZ(), resume);
+        return TreeShape.survey(cells, start.getX(), start.getY(), start.getZ(), resume, maxDy);
+    }
+
+    /**
+     * Where the scaffold pillar for a tall tree stands (see {@link TreeShape#pillarSpot}): the stump {@code stump}
+     * (the north-west corner of a 2x2 trunk), its logs {@code logs}. With {@code groundToo} false every block of
+     * {@code logs} must come within reach from the pillar (scaffold blocks left standing, taken down from beside).
+     */
+    public static TreeShape.Pillar pillarSpot(ServerLevel level, CampaignData data, @Nullable BaseState own, BlockPos stump, boolean big,
+                                              List<BlockPos> logs, boolean groundToo) {
+        Set<Long> wood = new HashSet<>();
+        List<int[]> cells = new ArrayList<>();
+        for (BlockPos p : logs) {
+            wood.add(p.asLong());
+            cells.add(new int[]{p.getX(), p.getY(), p.getZ()});
+        }
+        int y = stump.getY();
+        return TreeShape.pillarSpot(cells, stump.getX(), y, stump.getZ(), big,
+                (x, z) -> pillarRoom(level, data, own, new BlockPos(x, y, z), wood), groundToo);
+    }
+
+    /**
+     * How high a scaffold pillar may be built in the column whose lowest cell is {@code base} (see
+     * {@link TreeShape.Room}): firm ground under it (no leaves, no log, no fluid), wood that is the woodcutter's to
+     * fell there ({@link WorkSafety#protectedWood}: no pillar by the walls, in other factions' land or by a known
+     * village), and every cell from {@code base} up clear: air or a plant that gives way, natural leaves, or one of
+     * {@code wood} (the tree's own logs, cut on the way up). No cell may be part of a base's plan or unloaded. Negative
+     * when no pillar can stand there.
+     */
+    static int pillarRoom(ServerLevel level, CampaignData data, @Nullable BaseState own, BlockPos base, Set<Long> wood) {
+        BlockPos ground = base.below();
+        if (!level.isLoaded(ground) || WorkSafety.protectedWood(level, data, own, base)) {
+            return -1;
+        }
+        BlockState g = level.getBlockState(ground);
+        if (!g.isFaceSturdy(level, ground, net.minecraft.core.Direction.UP) || g.is(BlockTags.LEAVES) || g.is(BlockTags.LOGS)
+                || !g.getFluidState().isEmpty() || wood.contains(ground.asLong())) {
+            return -1;
+        }
+        int clear = 0;
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        for (int dy = 0; dy < TreeShape.MAX_PILLAR + 2; dy++) {
+            m.set(base.getX(), base.getY() + dy, base.getZ());
+            if (!level.isLoaded(m) || WorkSafety.planned(data, m)) {
+                break;
+            }
+            BlockState s = level.getBlockState(m);
+            boolean open = (s.isAir() || s.canBeReplaced()) && s.getFluidState().isEmpty() && !s.hasBlockEntity();
+            if (!open && !naturalLeaves(s) && !wood.contains(m.asLong())) {
+                break;
+            }
+            clear++;
+        }
+        return clear - 2;
     }
 
     /**

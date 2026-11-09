@@ -45,15 +45,18 @@ commits, language and testing are in `/CLAUDE.md`.
    outposts/mansions avoided by work sites and travel, scouts step aside from monsters and keep exploring. Choice
    made by the agent and told to the owner: enemy *soldiers* still send a scout home (urgent intel); easy to change
    if the owner prefers. Notes: `docs/design/notes/scouts.md`.
+6. **Tall trees** (the owner's goal from request 4: woodcutters "can cut and replant any tree as they like"): trees too
+   tall to fell from the ground are felled from a scaffold pillar, as a player nerd-poles (see §6 and
+   `docs/design/notes/tall-trees.md`).
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
 | Package | What lives there |
 |---|---|
 | `campaign/` | Saved campaign state and the per-base "brain". `CampaignData` (SavedData, FORMAT 2), `BaseState` (one settlement or lair: centre, points, MIN/MAX work belt, `barrenUntil`, shortages), `FactionState` (reports, explored sectors, raid target, pact), `WorkplaceState` (MINE / TREE_PLOT / FISHERY / FARM / PEN / CAVE records; per-type NBT blocks keyed `mineV`, `woodV`, `fishV`; old saves convert in `load`), `FactionDirector` (needs, recruitment, retraining, war council, `FishingSpots.maintain`), `BaseBuilder` (builds settlements; `ensureWorkplaces`), `CampaignStarter`/`CampaignManager`, `Diplomacy` (pacts), `Logistics`, `Report`, `BaseZones` + `MapBounds` (walls-box zone maths, map clamp). |
-| `work/` | One `Job` per role (`Jobs.create`). `Job` = shared helpers: `goTo`, `atStorage`, survival errands, `markIdle/markBusy/idleFor`, `beforeErrand`, night rule. Big ones: `MinerJob` (+`MineSites` site search/retire/rest, `WorkSafety.mayDig`), `WoodcutterJob` (+`ForestScan`, which also holds `TreeClaims`), `FishermanJob` (+`FishingSpots`), `ScoutJob` (+`StructureSightings`), `CaveMinerJob`/`CaveWork`, `TraderJob`, `BlacksmithJob`, `BuilderJob`, `HaulerJob`, `CookingJob`/`ChefJob`/`SmelterJob`. `BlockWork` = player-speed breaking (`Breaker`), reach, wear. `Workplaces` = claim/held/release (role-aware holder check). |
+| `work/` | One `Job` per role (`Jobs.create`). `Job` = shared helpers: `goTo`, `atStorage`, survival errands, `markIdle/markBusy/idleFor`, `beforeErrand`, night rule. Big ones: `MinerJob` (+`MineSites` site search/retire/rest, `WorkSafety.mayDig`), `WoodcutterJob` (+`ForestScan`, which also holds `TreeClaims`; `Scaffold`, the dirt pillar it fells tall trees from), `FishermanJob` (+`FishingSpots`), `ScoutJob` (+`StructureSightings`), `CaveMinerJob`/`CaveWork`, `TraderJob`, `BlacksmithJob`, `BuilderJob`, `HaulerJob`, `CookingJob`/`ChefJob`/`SmelterJob`. `BlockWork` = player-speed breaking (`Breaker`), reach, wear. `Workplaces` = claim/held/release (role-aware holder check). |
 | `logic/` | Pure, unit-tested rules (no Minecraft classes): `SpiralMine` (shaft + branch geometry), `MinePlanner` (which layer next), `MineSiteRules`, `LegacyMine` (old hut-mine maths, migration only), `TreeShape`, `ForestRules`, `FishingWater`, `EscapeRoute`, `StructureRules`, `Zones`, `CaveSurvey`, `NpcHunger`, `Ledger`, `FoodPayment`, `AffixRoller`, `XpLevels`, `StuckRecovery`, `ScoutRules`, `Pads`. |
-| `npc/` | `FactionNpc` (the entity: inventory, hunger, gear, affixes, role changes release workplaces), `NpcNavigator` (travel/ARRIVED/MOVING/FAILED, stall and no-progress watchdogs, danger-zone waypoints), `DigOut` (digging/bridging/pillaring out when stuck), `NpcRole`, `ToolKind`. |
+| `npc/` | `FactionNpc` (the entity: inventory, hunger, gear, affixes, role changes release workplaces), `NpcNavigator` (travel/ARRIVED/MOVING/FAILED, stall and no-progress watchdogs, danger-zone waypoints), `DigOut` (digging/bridging/pillaring out when stuck; `perched` also knows a bare pillar), `NpcRole`, `ToolKind`. |
 | `structure/` | `BaseLayout` (settlement blueprint: 49x49 walls, gates W/E, grove pad W, 10-block landing E, `WORK_AREA_WEST/EAST`), `Blueprint`, `Terrain` (level/skirt pads), `SiteFinder` (base sites), `MineLayout` (per-level mine geometry, `nearStairs`), `TreePlotLayout` (legacy fences only), `LairLayout`, `ProjectLayouts`. |
 | `combat/` | Goals and rules: `CombatRules` (who is hostile, `sameSide` incl. pact allies), melee/ranged goals, `CivilianFleeGoal`, `CreeperEvadeGoal`, `WithdrawGoal`, `Alerts`. |
 | `command/` | `FCCommands`: `/fc start [radius]`, `/fc status|join|leave|base|info|map|achievements`, admin: `/fc admin dump|npcs|spawn|recruit|info|probe|mine <id>|blocks <from> <to>|destroy`. |
@@ -101,6 +104,8 @@ python3 tools/rcon.py "stop"
 ## 5. State at handoff (branch head after commit 9ee3f4a + this handoff)
 
 - 139 unit tests, 94 GameTests, all green. Download jar rebuilt; SHA-256 on README line 13.
+- After the tall-trees change (scaffold pillars, §6): 144 unit tests, 100 GameTests, all green; jar rebuilt. Not yet
+  checked in a campaign.
 - Final 8-day fresh campaign (results in README "The final check"): 11 self-chosen mines, all shafts reached the
   diamond layer through aquifers; 104-247 trees felled per base; all fisheries on real water; scouts reported a real
   village (2 traders) and, when placed by an outpost by hand, the outpost; 4.6-10.4 ms per tick.
@@ -119,8 +124,12 @@ python3 tools/rcon.py "stop"
 
 - A base keeps at most `maxOpenMines` (3) active mines; extra miners stay idle ("Every mine site of the base is
   taken") until the base needs another role, then they are retrained. A second miner sharing a mine could be added.
-- Woodcutters leave trees taller than 9 logs (mega spruce/jungle, some fancy oaks), mangroves and huge mushrooms
-  standing (cannot be felled whole from the ground). Mega-taiga/jungle bases get wood more slowly.
+- **Tall trees (request 6, see §2):** woodcutters now fell trees whose top log is up to 32 above the stump (mega
+  spruce, giant/tall jungle, tall fancy oaks and birches) from a dirt scaffold pillar beside the trunk, and replant a
+  2x2 spruce/jungle as four saplings. Notes: `docs/design/notes/tall-trees.md`. **Not yet verified in a campaign**:
+  check a mega-taiga or jungle base (felled counts, no dirt pillars or floating logs left, `Scaffold` statuses, no
+  fall deaths). Mangroves, huge mushrooms and trees no single pillar reaches are still left standing; a woodcutter
+  that dies on its pillar leaves the pillar (and the half-felled tree), as a dead woodcutter always left its tree.
 - Scouts retreat home from enemy *soldiers* (by choice, see §2.5). The drowned rule (only trident drowned are
   archers; swimming monsters count only when close or hunting) came after the last campaign: re-check in the next
   one that scouts no longer make hundreds of sidesteps along rivers.

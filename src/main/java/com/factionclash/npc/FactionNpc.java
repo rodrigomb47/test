@@ -192,6 +192,18 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.setZza(speed > 1.0E-4F ? PLAYER_INPUT : 0.0F);
     }
 
+    /**
+     * No knockback while it stands on a scaffold pillar it built (a woodcutter up a tall tree): like a player crouched
+     * at the edge, it is not pushed off; hurt up there, its job brings it down first.
+     */
+    @Override
+    public void knockback(double strength, double x, double z) {
+        if (job != null && job.onScaffold()) {
+            return;
+        }
+        super.knockback(strength, x, z);
+    }
+
     /** Allies pass through each other so narrow doors and stairs do not become permanent jams. */
     @Override
     protected void doPush(Entity other) {

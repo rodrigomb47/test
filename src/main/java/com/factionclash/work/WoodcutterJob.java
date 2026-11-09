@@ -51,19 +51,22 @@ import java.util.UUID;
  * base (see {@link ForestScan#findTree}) with its axe at real break speed, top down, breaks the canopy so the leaves'
  * own loot tables drop saplings, sticks and apples, picks up what fell, and replants the stump with a sapling of the
  * same species (dark oak only as a square of four). Before the first cut it checks the tree's shape
- * ({@link TreeShape}): a trunk touching anything built or another kind of log, or reaching higher than it can cut
- * from the ground, is left standing whole, and so is wood near bases, in other factions' land or near known villages
- * ({@link WorkSafety#protectedWood}). It speeds its saplings up with real bone meal, keeps a small grove growing in
+ * ({@link TreeShape}): a trunk touching anything built or another kind of log is left standing whole, and so is wood
+ * near bases, in other factions' land or near known villages ({@link WorkSafety#protectedWood}). A tree too tall to
+ * fell from the ground (a mega spruce, a giant jungle tree, a fancy oak) is felled from a scaffold pillar of dirt
+ * beside the trunk ({@link Scaffold}), when it carries the blocks: it pillars up, fells the tree top down and clears
+ * the canopy within reach, then breaks the pillar on the way down, the blocks going back into its backpack; without
+ * blocks such a tree is left standing. It speeds its saplings up with real bone meal, keeps a small grove growing in
  * the base's always-ticking work belt (so a base in treeless land still gets wood), takes down the fence of an old
  * save's tree plot, and walks further out to look for trees when none grow near the base. Between dusk and dawn it
  * does not work far outside the walls.
  */
 public class WoodcutterJob extends Job {
-    enum State { CHECK, STORAGE, CHOP, LEAVES, COLLECT, PLANT, BONEMEAL, DISMANTLE }
+    enum State { CHECK, STORAGE, CHOP, SCAFFOLD, LEAVES, COLLECT, PLANT, BONEMEAL, DISMANTLE }
 
     /** PROPOSED: logs, sticks and apples carried before a trip to the storehouse. */
     static final int CARGO_LIMIT = 48;
-    /** Reach used for tall trunks: a player would climb or pillar; NPCs reach a little higher instead (PROPOSED). */
+    /** PROPOSED: how far it reaches for a log (eyes to its centre), from the ground or from its scaffold pillar. */
     static final double TRUNK_REACH = TreeShape.REACH;
     /** PROPOSED: the walk to a tree ends this close (eyes to the stump), then it is cut from where the woodcutter stands. */
     static final double CHOP_REACH = 4.0, APPROACH = 2.5;
@@ -108,6 +111,14 @@ public class WoodcutterJob extends Job {
     static final int GROVE_TAKE = 8;
     /** PROPOSED: what it keeps when unloading: saplings of each species, and bone meal. */
     static final int KEEP_SAPLINGS = 8, KEEP_BONE_MEAL = 16;
+    /** How far it reaches for leaves (eyes to the block's centre), from the ground or from its scaffold. */
+    static final double LEAF_REACH = 5.5;
+    /** PROPOSED: jumps on the scaffold that land without a block going in under it before the pillar stops there. */
+    static final int MAX_MISSES = 6;
+    /** PROPOSED: pillars built for one tree before what is left of it is cut from the ground as far as it goes. */
+    static final int MAX_PILLARS_PER_TREE = 3;
+    /** PROPOSED: tries at taking down scaffold blocks left standing before they are given up. */
+    static final int MAX_STRAY_TRIES = 3;
 
     private State state = State.CHECK;
     /** The tree being felled (its stump, the north-west corner of a 2x2 trunk), the planting spot, the sapling or fence post. */
@@ -154,6 +165,21 @@ public class WoodcutterJob extends Job {
     private final Map<Long, Long> skipUntil = new HashMap<>();
     private final ForestScan.GroveSearch grove = new ForestScan.GroveSearch();
 
+    /** The scaffold pillar it is walking to, building, working from or taking down (null: none). Saved. */
+    private Scaffold.Pillar pillar;
+    /** Natural leaves around a tall tree's crown, highest first, cut from the pillar for their saplings. */
+    private final List<BlockPos> canopy = new ArrayList<>();
+    private boolean canopyFound;
+    /** Pillars built for the tree being felled (a climb cut short leaves logs for another one). */
+    private int pillars;
+    /** Scaffold blocks left standing that it is not on (it was knocked off): taken down from beside. Saved. */
+    private final List<BlockPos> strays = new ArrayList<>();
+    private int strayTries;
+    /** Scaffold blocks to fetch on the next storehouse visit; the storehouse's count of them, looked at now and then. */
+    private boolean wantScaffold;
+    private long nextScaffoldTrip, nextScaffoldLook;
+    private int storedScaffold;
+
     public WoodcutterJob(FactionNpc npc) {
         super(npc);
     }
@@ -191,12 +217,53 @@ public class WoodcutterJob extends Job {
         return skipUntil.getOrDefault(p.asLong(), 0L) > now();
     }
 
+    /** The scaffold pillar it is busy with, or null (for the GameTests). */
+    public Scaffold.Pillar pillar() {
+        return pillar;
+    }
+
     @Override
     protected int keep(ItemStack s) {
         if (s.is(ItemTags.SAPLINGS)) {
             return KEEP_SAPLINGS; // per species: the backpack keeps 8 of each
         }
+        if (Scaffold.isItem(s)) {
+            return Scaffold.CARRY; // its scaffold blocks stay with it
+        }
         return s.is(Items.BONE_MEAL) ? KEEP_BONE_MEAL : 0;
+    }
+
+    /**
+     * True while it stands on its scaffold pillar (or jumps up onto it): fights, flight from them and creepers leave
+     * it there, and nothing knocks it off. Hurt up there, it comes down first (see {@link #interruption}).
+     */
+    @Override
+    public boolean onScaffold() {
+        return pillar != null && (pillar.height > 0 || pillar.phase == Scaffold.Phase.CLIMB && !npc.onGround());
+    }
+
+    @Override
+    public boolean ignoresCombat() {
+        return onScaffold();
+    }
+
+    @Override
+    public boolean handlesOwnSafety() {
+        return onScaffold();
+    }
+
+    /**
+     * Before a trip home for food: down its scaffold first, breaking it block by block (the felling goes on
+     * afterwards). A pillar it has not climbed yet is simply given up.
+     */
+    @Override
+    protected boolean beforeErrand() {
+        if (pillar == null) {
+            return true;
+        }
+        comeDown("hungry");
+        scaffold(base(), null);
+        return pillar == null;
     }
 
     private int cargo() {
@@ -219,6 +286,11 @@ public class WoodcutterJob extends Job {
     protected void run() {
         BaseState b = base();
         WorkplaceState wp = b == null ? null : Workplaces.claim(npc, WorkplaceState.Type.TREE_PLOT);
+        if ((b == null || wp == null) && pillar != null) {
+            comeDown("no woodland"); // its base or woodland is gone: down the scaffold all the same
+            scaffold(b, null);
+            return;
+        }
         if (b == null || wp == null) {
             status("No woodland", "Idle");
             if (b != null) {
@@ -248,6 +320,7 @@ public class WoodcutterJob extends Job {
             case CHECK -> decide(b, wp);
             case STORAGE -> storage(b, wp);
             case CHOP -> chop(b, wp);
+            case SCAFFOLD -> scaffold(b, wp);
             case LEAVES -> breakLeaves(wp);
             case COLLECT -> collectDrops();
             case PLANT -> plant(wp);
@@ -285,8 +358,11 @@ public class WoodcutterJob extends Job {
             state = State.STORAGE;
             return;
         }
-        // 2. an old save's tree-plot fence comes down first
+        // 2. an old save's tree-plot fence comes down first, and scaffold blocks left standing
         if (wp.legacyFence && startDismantling(wp)) {
+            return;
+        }
+        if (!strays.isEmpty() && startStrayCleanup(b)) {
             return;
         }
         // 3. a tree it started to fell (before a trip to the storehouse, a fight or a reload): go back and finish it.
@@ -315,10 +391,13 @@ public class WoodcutterJob extends Job {
             state = State.COLLECT;
             return;
         }
-        // 6. the best natural tree around the base
+        // 6. the best natural tree around the base (a tall one only with the blocks for its scaffold, fetched first)
         ForestScan.Found tree = bestTree(b);
         if (tree != null) {
             forageFails = 0; // trees are found after all: a later round of foraging starts over
+            if (!scaffoldReady(tree)) {
+                return;
+            }
             spot = tree.stump();
             big = tree.big();
             startTree();
@@ -389,6 +468,7 @@ public class WoodcutterJob extends Job {
         if (!spot.equals(felling)) {
             logs.clear();
             deferred.clear();
+            pillars = 0;
         }
         surveyed = false;
         closerDone = false;
@@ -440,7 +520,7 @@ public class WoodcutterJob extends Job {
             return null;
         }
         int radius = BaseZones.workRadius(b, FCConfig.FOREST_RADIUS.get());
-        treeCache = ForestScan.findTree(level(), data(), b, npc, b.center, radius, badWild, scans++, this::passOver);
+        treeCache = ForestScan.findTree(level(), data(), b, npc, b.center, radius, badWild, scans++, this::passOver, maxTreeDy());
         // each scan reads every second column in a shifting pattern: an empty one is followed by the other three at
         // once, so every column has been read before the woodcutter decides there is no tree near the base
         emptyScans = treeCache == null ? emptyScans + 1 : 0;
@@ -486,6 +566,7 @@ public class WoodcutterJob extends Job {
         nextScan = now(); // look for the next tree at once, rather than walk out to forage
         logs.clear();
         deferred.clear();
+        pillars = 0;
         breaker.reset(npc);
         npc.navigator().reset();
         state = State.CHECK;
@@ -512,12 +593,97 @@ public class WoodcutterJob extends Job {
         if (!isLog(p)) {
             return; // felled by someone else, or burnt: nothing left to remember
         }
-        if (ForestScan.survey(level(), data(), b, p, true, false).ok()) {
+        if (fellable(b, p)) {
             treeCache = null;
             nextScan = now();
             return;
         }
         badWild.add(k);
+    }
+
+    /**
+     * True when the tree with stump {@code p} would now be felled whole, by its survey: from the ground, or from a
+     * scaffold when it has the blocks for one (carried or in the storehouse) and a column beside the trunk reaches
+     * every log.
+     */
+    private boolean fellable(BaseState b, BlockPos p) {
+        TreeShape.Tree t = ForestScan.survey(level(), data(), b, p, true, false, maxTreeDy());
+        if (!t.ok()) {
+            return false;
+        }
+        List<BlockPos> wood = new ArrayList<>();
+        for (int[] q : t.logs()) {
+            wood.add(new BlockPos(q[0], q[1], q[2]));
+        }
+        return !needsScaffold(p, wood) || ForestScan.pillarSpot(level(), data(), b, p, t.big(), wood, true) != null;
+    }
+
+    // ------------------------------------------------------------------ scaffold blocks
+
+    /** Scaffold blocks in the storehouse, counted at most every {@link #STORAGE_LOOK_TICKS}. */
+    private int scaffoldStored() {
+        if (now() >= nextScaffoldLook && base() != null) {
+            nextScaffoldLook = now() + STORAGE_LOOK_TICKS;
+            storedScaffold = FactionStorage.count(level(), base(), Scaffold::isItem);
+        }
+        return storedScaffold;
+    }
+
+    /**
+     * How tall a tree it looks for and fells now: up to {@link TreeShape#MAX_TALL_DY} when it has the blocks for the
+     * lowest scaffold (carried, or in the storehouse while a trip for them is allowed), else
+     * {@link TreeShape#MAX_FELL_DY}, as without scaffolds: no tall tree is even looked at then.
+     */
+    private int maxTreeDy() {
+        int least = TreeShape.scaffoldNeed(TreeShape.MAX_FELL_DY + 1);
+        int carried = Scaffold.carried(npc);
+        if (carried >= least || now() >= nextScaffoldTrip && carried + scaffoldStored() >= least) {
+            return TreeShape.MAX_TALL_DY;
+        }
+        return TreeShape.MAX_FELL_DY;
+    }
+
+    /**
+     * A trip to the storehouse for scaffold blocks, when it holds enough to make {@code need} with those carried; at
+     * most one every {@link #SAPLING_TRIP_TICKS} unless {@code now} (a tree it has started on). True when it set off.
+     */
+    private boolean fetchScaffold(int need, boolean now) {
+        if (!now && now() < nextScaffoldTrip || Scaffold.carried(npc) + scaffoldStored() < need) {
+            return false;
+        }
+        nextScaffoldTrip = now() + SAPLING_TRIP_TICKS;
+        wantScaffold = true;
+        breaker.reset(npc);
+        status("Fetching dirt for a scaffold", "Travelling");
+        state = State.STORAGE;
+        return true;
+    }
+
+    /**
+     * Whether it can go for the tree found: any tree it fells from the ground, a tall one only with enough scaffold
+     * blocks ({@link TreeShape#scaffoldNeed}). Short of them it fetches them (and returns false), or leaves the tree
+     * for a while when the storehouse has too few.
+     */
+    private boolean scaffoldReady(ForestScan.Found tree) {
+        int need = TreeShape.scaffoldNeed(tree.topDy());
+        if (need <= Scaffold.carried(npc) || fetchScaffold(need, false)) {
+            return need <= Scaffold.carried(npc);
+        }
+        status("Leaving a tall tree for now (no dirt for a scaffold)", "Chopping");
+        skipFor(tree.stump(), TREE_RETRY_TICKS);
+        treeCache = null;
+        nextScan = now();
+        return false;
+    }
+
+    /** True when some log of the tree with stump {@code stump} cannot be cut from the ground ({@link TreeShape#fromGround}). */
+    private static boolean needsScaffold(BlockPos stump, List<BlockPos> wood) {
+        for (BlockPos q : wood) {
+            if (!TreeShape.fromGround(q.getX() - stump.getX(), q.getY() - stump.getY(), q.getZ() - stump.getZ())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ felling
@@ -527,13 +693,16 @@ public class WoodcutterJob extends Job {
         return big ? List.of(spot, spot.east(), spot.south(), spot.south().east()) : List.of(spot);
     }
 
-    /** Where a started tree's survey begins: the lowest log of a felled species left in its stump column(s), up to +8. */
+    /**
+     * Where a started tree's survey begins: the lowest log of a felled species left in its stump column(s), up to the
+     * tallest tree a scaffold reaches.
+     */
     private BlockPos resumeStart() {
         if (felling == null) {
             return null;
         }
         List<BlockPos> cols = big ? List.of(felling, felling.east(), felling.south(), felling.south().east()) : List.of(felling);
-        for (int dy = 0; dy <= TreeShape.MAX_FELL_DY; dy++) {
+        for (int dy = 0; dy <= TreeShape.MAX_TALL_DY; dy++) {
             for (BlockPos c : cols) {
                 BlockPos p = c.above(dy);
                 if (level().isLoaded(p) && ForestScan.speciesOf(level().getBlockState(p)) != null) {
@@ -588,7 +757,8 @@ public class WoodcutterJob extends Job {
             BlockPos start = resume ? resumeStart() : spot;
             List<BlockPos> found = new ArrayList<>();
             if (start != null) {
-                TreeShape.Tree tree = ForestScan.survey(level(), data(), b, start, true, resume);
+                // a tall tree only with the blocks for a scaffold; a started one is finished whatever is left of it
+                TreeShape.Tree tree = ForestScan.survey(level(), data(), b, start, true, resume, resume ? TreeShape.MAX_TALL_DY : maxTreeDy());
                 if (!tree.ok()) {
                     // any other verdict leaves the tree standing whole, before the first cut: no floating logs
                     leaveTree(tree.verdict().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' '));
@@ -614,6 +784,9 @@ public class WoodcutterJob extends Job {
             logs.clear();
             logs.addAll(found);
             surveyed = true;
+            if (startPillar(b, resume)) {
+                return; // too tall to fell from the ground: up a scaffold first (or for its blocks, or on to another tree)
+            }
         }
         ForestScan.TreeClaims.claim(spot, npc.getUUID(), now()); // renewed while chopping
         while (!logs.isEmpty() && !treeLog(logs.get(0))) {
@@ -644,15 +817,73 @@ public class WoodcutterJob extends Job {
         closerDone = true;
         status("Felling a tree (" + (logs.size() + deferred.size()) + " logs left)", "Chopping");
         if (chopBlock(wp, log)) {
-            npc.awardXp(1);
             logs.remove(0);
-            if (felling == null) {
-                felling = spot;
-            }
-            if (log.getY() == spot.getY() && stumpCells().contains(log) && stumpCells().stream().noneMatch(this::isLog)) {
-                stumpCut(wp);
+            logCut(wp, log);
+        }
+    }
+
+    /** A log of the tree is cut: experience, the tree counts as started, and as felled once its stump is gone. */
+    private void logCut(WorkplaceState wp, BlockPos log) {
+        npc.awardXp(1);
+        if (felling == null) {
+            felling = spot;
+        }
+        if (log.getY() == spot.getY() && stumpCells().contains(log) && stumpCells().stream().noneMatch(this::isLog)) {
+            stumpCut(wp);
+        }
+    }
+
+    /**
+     * A tree with logs out of reach from the ground ({@link TreeShape#fromGround}): a scaffold pillar beside the trunk
+     * ({@link ForestScan#pillarSpot}), built with blocks it carries (fetched first when the storehouse has them). A new
+     * tree that no column suits, or that it has no blocks for, is left standing whole; a started one is finished from
+     * the ground as far as it can be. True when it set off for the pillar, the storehouse or another tree.
+     */
+    private boolean startPillar(BaseState b, boolean resume) {
+        List<BlockPos> wood = new ArrayList<>(logs);
+        for (BlockPos p : deferred) {
+            if (!wood.contains(p)) {
+                wood.add(p);
             }
         }
+        if (!needsScaffold(spot, wood) || pillars >= MAX_PILLARS_PER_TREE) {
+            return false;
+        }
+        TreeShape.Pillar plan = ForestScan.pillarSpot(level(), data(), b, spot, big, wood, true);
+        if (plan == null) {
+            if (resume) {
+                return false;
+            }
+            leaveTree("no room for a scaffold"); // wide branches on every side, or no firm ground beside the trunk
+            return true;
+        }
+        int need = plan.height() + TreeShape.PILLAR_SPARE;
+        if (Scaffold.carried(npc) < need) {
+            if (fetchScaffold(need, resume)) {
+                surveyed = false; // the tree is looked at again on its return
+                return true;
+            }
+            if (resume) {
+                return false;
+            }
+            status("Leaving a tall tree for now (no dirt for a scaffold)", "Chopping");
+            skipFor(spot, TREE_RETRY_TICKS);
+            dropTree();
+            return true;
+        }
+        // the logs it had put off for the end are cut from the pillar as well
+        wood.sort(Comparator.comparingInt((BlockPos q) -> q.getY()).reversed());
+        logs.clear();
+        logs.addAll(wood);
+        deferred.clear();
+        pillar = new Scaffold.Pillar(new BlockPos(plan.x(), spot.getY(), plan.z()), plan.height(), false);
+        canopy.clear();
+        canopyFound = false;
+        startWalk(pillar.base, ForestRules.WALK_BASE_TICKS);
+        breaker.reset(npc);
+        markBusy();
+        state = State.SCAFFOLD;
+        return true;
     }
 
     /** The stump is cut: the tree counts as felled and its place waits for a sapling of the same species. */
@@ -729,6 +960,7 @@ public class WoodcutterJob extends Job {
         nextScan = now();
         logs.clear();
         deferred.clear();
+        pillars = 0;
         findLeaves();
         state = State.LEAVES;
     }
@@ -754,7 +986,7 @@ public class WoodcutterJob extends Job {
         if (!leavesFound) {
             findLeaves(); // after a reload
         }
-        while (!leaves.isEmpty() && (!cuttableLeaves(leaves.get(0)) || !BlockWork.inReach(npc, leaves.get(0), 5.5))) {
+        while (!leaves.isEmpty() && (!cuttableLeaves(leaves.get(0)) || !BlockWork.inReach(npc, leaves.get(0), LEAF_REACH))) {
             leaves.remove(0);
         }
         if (leaves.isEmpty()) {
@@ -801,6 +1033,447 @@ public class WoodcutterJob extends Job {
             }
         }
         return best;
+    }
+
+    // ------------------------------------------------------------------ the scaffold pillar
+
+    /** The tree's species, for the statuses ("the spruce"), or "tree". */
+    private String treeName() {
+        return species == null ? "tree" : species.label();
+    }
+
+    /**
+     * One tick of work with the scaffold pillar: walking to its foot, building it up, felling from it, taking it down.
+     * A woodcutter found off its pillar (knocked or moved off it) leaves the blocks still standing to be taken down
+     * from beside ({@link #strayPillar}). {@code wp} is null while it only comes down (no woodland any more, an
+     * errand).
+     */
+    private void scaffold(BaseState b, WorkplaceState wp) {
+        Scaffold.Pillar p = pillar;
+        if (p == null) {
+            state = State.CHECK;
+            return;
+        }
+        if (p.phase != Scaffold.Phase.WALK && !Scaffold.overColumn(npc, p.base, 0.8)) {
+            strayPillar();
+            return;
+        }
+        if (p.down == null && wp != null) {
+            String why = interruption();
+            if (why != null) {
+                comeDown(why);
+                if (pillar == null) {
+                    return; // it had not climbed yet
+                }
+            }
+        }
+        switch (p.phase) {
+            case WALK -> walkToPillar(wp);
+            case CLIMB -> climb(wp);
+            case WORK -> workFromPillar(wp);
+            case DOWN -> stepDown();
+        }
+    }
+
+    /**
+     * Why it must come down before the work is done, or null: hurt (an arrow, a blow), a backpack with no room left
+     * for what the tree and its own blocks give back, night falling out beyond the walls, or the tree taken by
+     * another woodcutter.
+     */
+    private String interruption() {
+        if (npc.hurtTime > 0) {
+            return "under attack";
+        }
+        if (Inv.freeSlots(npc.inventory()) <= 1) {
+            return "backpack full";
+        }
+        if (!pillar.strays && remoteAtNight(spot)) {
+            return "nightfall";
+        }
+        if (!pillar.strays && !ForestScan.TreeClaims.claim(spot, npc.getUUID(), now())) {
+            return "the tree is taken";
+        }
+        return null;
+    }
+
+    /**
+     * It comes down now, saying why, without cutting anything more (the tree is finished later). A pillar it has not
+     * climbed yet is simply given up.
+     */
+    private void comeDown(String why) {
+        Scaffold.Pillar p = pillar;
+        if (p == null || p.down != null) {
+            return;
+        }
+        p.down = why;
+        breaker.reset(npc);
+        if (p.phase == Scaffold.Phase.WALK || p.height == 0 && npc.onGround() && p.phase != Scaffold.Phase.DOWN) {
+            endPillar();
+        } else if (p.phase != Scaffold.Phase.DOWN) {
+            p.phase = Scaffold.Phase.WORK; // (lands first, then steps down without cutting)
+        }
+    }
+
+    /**
+     * The pillar is gone (or was never climbed): on with the tree from the ground, or with what made it come down.
+     * When a climb was cut short and logs it was for are still standing, another pillar is tried (up to
+     * {@link #MAX_PILLARS_PER_TREE}), else they are cut from the ground as far as they go.
+     */
+    private void endPillar() {
+        Scaffold.Pillar p = pillar;
+        pillar = null;
+        canopy.clear();
+        canopyFound = false;
+        breaker.reset(npc);
+        if (p == null) {
+            return;
+        }
+        if (p.strays) {
+            strays.removeIf(q -> level().isLoaded(q) && !Scaffold.isBlock(level().getBlockState(q)));
+            state = State.CHECK;
+            return;
+        }
+        if (p.down != null) {
+            if (p.down.equals("the tree is taken")) {
+                if (spot.equals(felling)) {
+                    felling = null;
+                }
+                logs.clear();
+                deferred.clear();
+                treeCache = null;
+                nextScan = now();
+            }
+            surveyed = false; // the tree (now felling, if a log was cut) is surveyed again when it comes back
+            state = p.down.equals("backpack full") ? State.STORAGE : State.CHECK;
+            return;
+        }
+        logs.removeIf(q -> !treeLog(q));
+        if (needsScaffold(spot, logs)) {
+            pillars++; // the climb stopped short (something in the way): try again from a fresh survey
+            surveyed = false;
+            if (felling == null && !logs.isEmpty()) {
+                felling = spot;
+            }
+        }
+        closerDone = false;
+        closerTicks = 0;
+        finalTicks = 0;
+        state = State.CHOP; // the rest (the stump, low branches) from the ground, as for any tree
+    }
+
+    /**
+     * To the column's foot: natural leaves or the tree's own logs filling its two lowest cells are cut first; there it
+     * stands right over the middle of the column and starts building (or, for a pillar of height 0, works from the
+     * ground).
+     */
+    private void walkToPillar(WorkplaceState wp) {
+        Scaffold.Pillar p = pillar;
+        for (BlockPos c : List.of(p.base, p.base.above())) {
+            if ((cuttableLeaves(c) || logs.contains(c) && treeLog(c)) && BlockWork.inReach(npc, c, 4.5)) {
+                status("Clearing the foot of its scaffold", "Chopping");
+                if (chopBlock(wp, c) && logs.remove(c)) {
+                    logCut(wp, c);
+                }
+                return;
+            }
+        }
+        boolean there = Scaffold.overColumn(npc, p.base, 0.7) && Math.abs(npc.getY() - p.base.getY()) < 0.5 && npc.onGround();
+        if (!there) {
+            if (walkFailed()) {
+                if (p.strays) {
+                    strays.clear(); // cannot get to them: left (rare)
+                    pillar = null;
+                    state = State.CHECK;
+                } else {
+                    pillar = null;
+                    cannotReachTree();
+                }
+                return;
+            }
+            goTo(p.base, 0.7, p.strays ? "scaffold blocks left standing" : "the foot of its scaffold");
+            return;
+        }
+        npc.getNavigation().stop();
+        npc.setPos(p.base.getX() + 0.5, npc.getY(), p.base.getZ() + 0.5);
+        p.height = 0;
+        p.airTicks = 0;
+        p.misses = 0;
+        p.phase = p.goal > 0 ? Scaffold.Phase.CLIMB : Scaffold.Phase.WORK;
+    }
+
+    /**
+     * Building up, as a player pillars: on the ground (or the pillar's top) it clears what fills the cell over its
+     * head (leaves, a log of the tree) and jumps; once its feet are above the cell it stood in, a block goes in there
+     * from the backpack, and it lands on it. At the planned height (or when the way up is blocked, or out of blocks)
+     * it starts work.
+     */
+    private void climb(WorkplaceState wp) {
+        Scaffold.Pillar p = pillar;
+        Scaffold.holdStill(npc, p.base);
+        if (!npc.onGround()) {
+            p.airTicks++;
+            BlockPos cell = p.feet();
+            if (!p.placed && npc.getY() >= cell.getY() + 1.0 && Scaffold.place(npc, cell)) {
+                p.placed = true;
+                p.height++;
+            }
+            return;
+        }
+        if (p.airTicks > 0 && !p.placed) {
+            p.misses++; // landed back where it jumped from
+        }
+        p.airTicks = 0;
+        p.placed = false;
+        p.height = Math.max(0, npc.getBlockY() - p.base.getY());
+        if (p.height >= p.goal || p.misses >= MAX_MISSES || Scaffold.carried(npc) == 0) {
+            p.goal = p.height;
+            p.phase = Scaffold.Phase.WORK;
+            return;
+        }
+        BlockPos over = p.feet().above(2);
+        BlockState s = level().getBlockState(over);
+        if (!s.getCollisionShape(level(), over).isEmpty()) {
+            if (cuttableLeaves(over) || logs.contains(over) && treeLog(over)) {
+                status("Cutting through the canopy above its scaffold", "Chopping");
+                if (chopBlock(wp, over) && logs.remove(over)) {
+                    logCut(wp, over);
+                }
+                return;
+            }
+            p.goal = p.height; // something else overhead (it changed since the survey): the pillar ends here
+            p.phase = Scaffold.Phase.WORK;
+            return;
+        }
+        status((p.strays ? "Building a scaffold to take down another (" : "Building a scaffold up the " + treeName() + " (")
+                + p.height + " high)", "Building");
+        npc.getJumpControl().jump();
+    }
+
+    /**
+     * On the pillar, at each height on the way down: the highest log of the tree within reach is cut first (so the top
+     * comes down first and nothing is left hanging), then the natural leaves of the crown within reach (their
+     * saplings go into the backpack); with nothing left in reach it steps down a block. Coming down early, it cuts
+     * nothing. On the ground the pillar is done.
+     */
+    private void workFromPillar(WorkplaceState wp) {
+        Scaffold.Pillar p = pillar;
+        Scaffold.holdStill(npc, p.base);
+        if (!npc.onGround()) {
+            return; // still dropping onto the block below
+        }
+        p.height = Math.max(0, npc.getBlockY() - p.base.getY());
+        if (p.down == null && wp != null) {
+            if (p.strays) {
+                BlockPos block = nextStray();
+                if (block != null) {
+                    status("Taking down scaffold blocks left standing (" + strays.size() + ")", "Building");
+                    if (breaker.tick(npc, block)) {
+                        strays.remove(block);
+                    }
+                    return;
+                }
+            } else {
+                ForestScan.TreeClaims.claim(spot, npc.getUUID(), now());
+                BlockPos log = nextLog();
+                if (log != null) {
+                    status("Felling the " + treeName() + " from its scaffold (" + logs.size() + " logs left)", "Chopping");
+                    if (chopBlock(wp, log)) {
+                        logs.remove(log);
+                        logCut(wp, log);
+                    }
+                    return;
+                }
+                BlockPos leaf = nextCanopyLeaf();
+                if (leaf != null) {
+                    status("Clearing the canopy from its scaffold (" + canopy.size() + " leaves)", "Chopping");
+                    if (chopBlock(wp, leaf)) {
+                        canopy.remove(leaf);
+                    }
+                    return;
+                }
+            }
+        }
+        if (p.height == 0) {
+            endPillar();
+            return;
+        }
+        p.phase = Scaffold.Phase.DOWN;
+    }
+
+    /**
+     * The step down: the pillar block underfoot is broken at player speed (it goes back into the backpack) and the
+     * woodcutter drops one block onto the next. Should the block below have gone (blown up, broken by someone), one
+     * from the backpack is put back under it first, so the drop is never more than a block.
+     */
+    private void stepDown() {
+        Scaffold.Pillar p = pillar;
+        Scaffold.holdStill(npc, p.base);
+        if (!npc.onGround()) {
+            return;
+        }
+        p.height = Math.max(0, npc.getBlockY() - p.base.getY());
+        BlockPos under = p.top();
+        if (under == null) {
+            endPillar();
+            return;
+        }
+        BlockState s = level().getBlockState(under);
+        if (s.getCollisionShape(level(), under).isEmpty()) {
+            p.phase = Scaffold.Phase.WORK; // nothing under it after all: it drops, then looks again
+            return;
+        }
+        BlockPos below = under.below();
+        if (p.height >= 2 && level().getBlockState(below).getCollisionShape(level(), below).isEmpty() && Scaffold.place(npc, below)) {
+            return;
+        }
+        status("Taking the scaffold down (" + p.height + " high" + (p.down != null ? ", " + p.down : "") + ")", "Building");
+        if (s.hasBlockEntity() || s.getDestroySpeed(level(), under) < 0) {
+            // not a block it can break (someone put it there): left to the stuck recovery, which digs or bridges down
+            pillar = null;
+            state = State.CHECK;
+            return;
+        }
+        if (breaker.tick(npc, under)) {
+            p.height--;
+            p.phase = Scaffold.Phase.WORK;
+        }
+    }
+
+    /** The highest log of the tree still standing within reach of the pillar ({@link #TRUNK_REACH}), or null. */
+    private BlockPos nextLog() {
+        for (java.util.Iterator<BlockPos> it = logs.iterator(); it.hasNext(); ) {
+            BlockPos q = it.next();
+            if (!BlockWork.inReach(npc, q, TRUNK_REACH)) {
+                continue;
+            }
+            if (!treeLog(q)) {
+                it.remove(); // cut already (a branch on the way up), or gone
+                continue;
+            }
+            return q; // (the list is highest first)
+        }
+        return null;
+    }
+
+    /**
+     * The highest natural leaf of the crown within reach, or null. The crown is read once, from the top of the
+     * pillar: natural leaves within 5 (6 for a 2x2 trunk) sideways of the stump, from 2 above it to 2 above the
+     * pillar's reach. Leaves out of reach above it are dropped as it goes down (they never come into reach again).
+     */
+    private BlockPos nextCanopyLeaf() {
+        if (!canopyFound) {
+            canopyFound = true;
+            canopy.clear();
+            int r = big ? 6 : 5;
+            int top = (int) Math.ceil(npc.getEyeY() + LEAF_REACH);
+            for (BlockPos q : BlockPos.betweenClosed(spot.getX() - r, spot.getY() + 2, spot.getZ() - r, spot.getX() + r + (big ? 1 : 0),
+                    top, spot.getZ() + r + (big ? 1 : 0))) {
+                if (cuttableLeaves(q)) {
+                    canopy.add(q.immutable());
+                }
+            }
+            canopy.sort(Comparator.comparingInt((BlockPos q) -> q.getY()).reversed());
+        }
+        double eye = npc.getEyeY();
+        for (java.util.Iterator<BlockPos> it = canopy.iterator(); it.hasNext(); ) {
+            BlockPos q = it.next();
+            if (q.getY() + 0.5 > eye + LEAF_REACH) {
+                it.remove();
+                continue;
+            }
+            if (!BlockWork.inReach(npc, q, LEAF_REACH)) {
+                continue;
+            }
+            if (!cuttableLeaves(q)) {
+                it.remove();
+                continue;
+            }
+            return q;
+        }
+        return null;
+    }
+
+    /** The highest scaffold block left standing within reach ({@link #TRUNK_REACH}), or null. */
+    private BlockPos nextStray() {
+        BlockPos best = null;
+        for (java.util.Iterator<BlockPos> it = strays.iterator(); it.hasNext(); ) {
+            BlockPos q = it.next();
+            if (level().isLoaded(q) && !Scaffold.isBlock(level().getBlockState(q))) {
+                it.remove();
+                continue;
+            }
+            if (BlockWork.inReach(npc, q, TRUNK_REACH) && (best == null || q.getY() > best.getY())) {
+                best = q;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Off its pillar (knocked off, or moved there by something else): the blocks of it still standing are noted, to be
+     * taken down from beside ({@link #startStrayCleanup}); the tree is finished afterwards.
+     */
+    private void strayPillar() {
+        Scaffold.Pillar p = pillar;
+        for (int k = 0; k <= p.height + 1; k++) {
+            BlockPos c = p.base.above(k);
+            if (Scaffold.isBlock(level().getBlockState(c)) && !strays.contains(c) && strays.size() < 64) {
+                strays.add(c);
+            }
+        }
+        pillar = null;
+        canopy.clear();
+        canopyFound = false;
+        breaker.reset(npc);
+        surveyed = false;
+        state = State.CHECK;
+    }
+
+    /**
+     * Scaffold blocks left standing are taken down: from a column beside them, from the ground when the highest is
+     * within reach from there, else from a new pillar built beside them (see {@link TreeShape#pillarSpot}). Given up
+     * after {@link #MAX_STRAY_TRIES} tries, or when no column beside them will do. True when it set off.
+     */
+    private boolean startStrayCleanup(BaseState b) {
+        strays.removeIf(q -> level().isLoaded(q) && !Scaffold.isBlock(level().getBlockState(q)));
+        if (strays.isEmpty()) {
+            strayTries = 0;
+            return false;
+        }
+        for (BlockPos q : strays) {
+            if (!level().isLoaded(q)) {
+                return false; // later, when the place is loaded
+            }
+        }
+        if (++strayTries > MAX_STRAY_TRIES) {
+            strays.clear();
+            strayTries = 0;
+            return false;
+        }
+        BlockPos foot = strays.get(0);
+        for (BlockPos q : strays) {
+            foot = q.getY() < foot.getY() ? q : foot;
+        }
+        // the ground the column stands on (its lowest blocks may be gone)
+        for (int i = 0; i < TreeShape.MAX_PILLAR && level().getBlockState(foot.below()).getCollisionShape(level(), foot.below()).isEmpty(); i++) {
+            foot = foot.below();
+        }
+        TreeShape.Pillar plan = ForestScan.pillarSpot(level(), data(), b, foot, false, strays, false);
+        if (plan == null || plan.height() > 0 && Scaffold.carried(npc) < plan.height()) {
+            if (plan != null && fetchScaffold(plan.height(), true)) {
+                strayTries--;
+                return true;
+            }
+            strays.clear(); // nowhere to stand beside them, or no blocks to reach them: left (rare)
+            strayTries = 0;
+            return false;
+        }
+        pillar = new Scaffold.Pillar(new BlockPos(plan.x(), foot.getY(), plan.z()), plan.height(), true);
+        startWalk(pillar.base, ForestRules.WALK_BASE_TICKS);
+        breaker.reset(npc);
+        markBusy();
+        state = State.SCAFFOLD;
+        return true;
     }
 
     // ------------------------------------------------------------------ collecting
@@ -853,13 +1526,16 @@ public class WoodcutterJob extends Job {
         return Inv.count(npc.inventory(), x -> x.is(item));
     }
 
-    /** Saplings of each species the queued stumps need: one each, four for a dark oak. */
+    /**
+     * Saplings of each species the queued stumps need: one each, four for a dark oak and for a 2x2 spruce or jungle
+     * tree ({@link ForestRules#saplingsFor}).
+     */
     private static Map<ForestRules.Species, Integer> reserved(WorkplaceState wp) {
         Map<ForestRules.Species, Integer> out = new EnumMap<>(ForestRules.Species.class);
         for (WorkplaceState.Replant e : wp.replant) {
             ForestRules.Species s = ForestRules.Species.byName(e.species());
             if (s != null) {
-                out.merge(s, s.saplingsPerTree(), Integer::sum);
+                out.merge(s, ForestRules.saplingsFor(s, e.big()), Integer::sum);
             }
         }
         return out;
@@ -915,7 +1591,7 @@ public class WoodcutterJob extends Job {
                         looked = true;
                         net.minecraft.world.item.Item item = ForestScan.saplingItem(want);
                         int inStore = stored.computeIfAbsent(want, s -> FactionStorage.count(level(), b, x -> x.is(item)));
-                        if (inStore >= want.saplingsPerTree() - same) {
+                        if (inStore >= ForestRules.saplingsFor(want, e.big()) - same) {
                             nextSaplingTrip = now() + SAPLING_TRIP_TICKS; // its sapling is in the storehouse: fetch it
                             state = State.STORAGE;
                             return true;
@@ -1246,15 +1922,17 @@ public class WoodcutterJob extends Job {
             ForestScan.Found tree = null;
             for (int i = 0; i < ForestScan.PATTERNS && tree == null; i++) {
                 tree = ForestScan.findTree(level(), data(), b, npc, npc.blockPosition(), FORAGE_SCAN, badWild, scans++,
-                        this::passOver);
+                        this::passOver, maxTreeDy());
             }
             if (tree != null) {
                 forageFails = 0;
-                treeCache = tree;
-                spot = tree.stump();
-                big = tree.big();
-                startTree();
-                return true;
+                if (scaffoldReady(tree)) {
+                    treeCache = tree;
+                    spot = tree.stump();
+                    big = tree.big();
+                    startTree();
+                }
+                return true; // (a tall one without the dirt for its scaffold: fetched first, or left for a while)
             }
             forageDir = (forageDir + 1) % FORAGE_DIRECTIONS;
             if (++forageFails >= FORAGE_DIRECTIONS) {
@@ -1283,9 +1961,16 @@ public class WoodcutterJob extends Job {
             status("No axe in the storehouse - felling trees by hand", "Chopping");
             nextAxeCheck = now() + 2400;
         }
-        // the saplings the stumps wait for: one each (four for a dark oak)
-        for (Map.Entry<ForestRules.Species, Integer> e : reserved(wp).entrySet()) {
-            int need = e.getKey().saplingsPerTree() - carried(e.getKey());
+        // the saplings the stumps wait for: one (four for a dark oak or a 2x2 spruce or jungle tree)
+        Map<ForestRules.Species, Integer> most = new EnumMap<>(ForestRules.Species.class);
+        for (WorkplaceState.Replant r : wp.replant) {
+            ForestRules.Species sp = ForestRules.Species.byName(r.species());
+            if (sp != null) {
+                most.merge(sp, ForestRules.saplingsFor(sp, r.big()), Math::max);
+            }
+        }
+        for (Map.Entry<ForestRules.Species, Integer> e : most.entrySet()) {
+            int need = e.getValue() - carried(e.getKey());
             net.minecraft.world.item.Item item = ForestScan.saplingItem(e.getKey());
             if (need > 0) {
                 takeFromStorage(x -> x.is(item), need);
@@ -1309,6 +1994,19 @@ public class WoodcutterJob extends Job {
         int boneMeal = Inv.count(npc.inventory(), x -> x.is(Items.BONE_MEAL));
         if (boneMeal < 8) {
             takeFromStorage(x -> x.is(Items.BONE_MEAL), 16 - boneMeal);
+        }
+        // dirt for the scaffold of a tall tree it means to fell (coarse dirt when there is no plain dirt)
+        if (wantScaffold) {
+            wantScaffold = false;
+            int more = Scaffold.CARRY - Scaffold.carried(npc);
+            if (more > 0) {
+                more -= takeFromStorage(x -> x.is(Items.DIRT), more);
+            }
+            if (more > 0) {
+                takeFromStorage(x -> x.is(Items.COARSE_DIRT), more);
+            }
+            nextScaffoldLook = now() + STORAGE_LOOK_TICKS;
+            storedScaffold = FactionStorage.count(level(), b, Scaffold::isItem);
         }
         state = State.CHECK;
     }
@@ -1403,12 +2101,22 @@ public class WoodcutterJob extends Job {
         }
         if (felling != null) {
             tag.putLong("felling", felling.asLong());
+        }
+        if (felling != null || pillar != null) {
             // what it still has to cut of that tree: the survey alone would not find logs above a cut gap again
             tag.putLongArray("logs", logs.stream().mapToLong(BlockPos::asLong).toArray());
             tag.putLongArray("deferred", deferred.stream().mapToLong(BlockPos::asLong).toArray());
             if (species != null) {
                 tag.putString("species", species.name());
             }
+        }
+        if (pillar != null) {
+            // the scaffold it stands on: column, height, phase (absent in older saves: none)
+            tag.put("pillar", pillar.save());
+            tag.putInt("pillars", pillars);
+        }
+        if (!strays.isEmpty()) {
+            tag.putLongArray("strays", strays.stream().mapToLong(BlockPos::asLong).toArray());
         }
         tag.putBoolean("big", big);
         tag.putLongArray("badWild", badWild.stream().mapToLong(Long::longValue).toArray());
@@ -1419,7 +2127,8 @@ public class WoodcutterJob extends Job {
     /**
      * A tag without 'v' comes from the fenced-plot version: it starts over in CHECK without its spot, so a tree it was
      * in the middle of is never taken for a plot tree; the stump of a tree it had started to fell is kept. Old states
-     * (CRAFT, UPGRADE) and unknown ones load as CHECK; planting and tending pick their target again.
+     * (CRAFT, UPGRADE) and unknown ones load as CHECK; planting and tending pick their target again. A scaffold pillar
+     * it was on is resumed exactly where it was (saves from before scaffolds have none).
      */
     @Override
     public void load(CompoundTag tag, HolderLookup.Provider provider) {
@@ -1436,7 +2145,17 @@ public class WoodcutterJob extends Job {
         logs.clear();
         deferred.clear();
         species = null;
-        if (current && felling != null) {
+        pillar = current && tag.contains("pillar") ? Scaffold.Pillar.load(tag.getCompound("pillar")) : null;
+        pillars = tag.getInt("pillars");
+        canopy.clear();
+        canopyFound = false;
+        strays.clear();
+        for (long k : tag.getLongArray("strays")) {
+            strays.add(BlockPos.of(k));
+        }
+        strayTries = 0;
+        wantScaffold = false;
+        if (current && (felling != null || pillar != null)) {
             for (long k : tag.getLongArray("logs")) {
                 logs.add(BlockPos.of(k));
             }
@@ -1449,6 +2168,16 @@ public class WoodcutterJob extends Job {
         walkBudget = 0; // a walk under way starts over, with its allowance from where the woodcutter now stands
         if (!current || state == State.PLANT || state == State.BONEMEAL || state == State.DISMANTLE
                 || spot == null && state != State.STORAGE && state != State.CHECK) {
+            state = State.CHECK;
+        }
+        if (pillar != null && pillar.phase == Scaffold.Phase.WALK && (spot == null || pillar.strays && strays.isEmpty())) {
+            pillar = null; // not climbed yet: nothing to come down from
+        } else if (pillar != null && !pillar.strays && spot == null && pillar.down == null) {
+            pillar.down = "lost its tree"; // (never written so) it only comes down
+        }
+        if (pillar != null) {
+            state = State.SCAFFOLD; // on (or by) its pillar: resumed exactly
+        } else if (state == State.SCAFFOLD) {
             state = State.CHECK;
         }
         if (state == State.LEAVES || state == State.COLLECT) {

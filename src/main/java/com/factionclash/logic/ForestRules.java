@@ -17,7 +17,8 @@ public final class ForestRules {
      * The kinds of tree a woodcutter fells and replants, with their vanilla log and sapling ids. Azalea trees grow oak
      * logs, so they are felled as oaks and come back as oaks. Mangroves (their trunks stand on roots), huge mushrooms
      * (no logs), nether stems and logs of other mods are never felled. Dark oak only grows from four saplings in a
-     * square, so it is only ever replanted that way.
+     * square, so it is only ever replanted that way; spruce and jungle grow a huge 2x2 tree from four in a square,
+     * which is how a felled mega spruce or giant jungle tree comes back.
      */
     public enum Species {
         OAK, BIRCH, SPRUCE, JUNGLE, ACACIA, DARK_OAK, CHERRY;
@@ -42,6 +43,11 @@ public final class ForestRules {
             return this == DARK_OAK ? 4 : 1;
         }
 
+        /** True for the species that grow a huge 2x2 tree from four saplings in a square (spruce and jungle). */
+        public boolean growsHuge() {
+            return this == SPRUCE || this == JUNGLE;
+        }
+
         /** The species with this name ({@link #name()}, any case), or null. */
         public static Species byName(String name) {
             if (name == null) {
@@ -58,7 +64,8 @@ public final class ForestRules {
 
     /**
      * Saplings for the grove, best first: birch (5 to 7 logs), spruce (5 to 8), oak (a tenth grow into fancy oaks,
-     * which can be too tall to fell), cherry, acacia. Never jungle (up to 12 tall) or dark oak (four at once).
+     * which can be too tall to fell from the ground and need a scaffold), cherry, acacia. Never jungle (up to 12 tall)
+     * or dark oak (four at once). Grove saplings are planted one to a spot, so no mega tree grows in the grove.
      */
     public static final List<Species> GROVE_ORDER = List.of(Species.BIRCH, Species.SPRUCE, Species.OAK, Species.CHERRY, Species.ACACIA);
 
@@ -66,6 +73,12 @@ public final class ForestRules {
     public static final long REPLANT_PATIENCE = 12000;
     /** PROPOSED: a stump still not replanted after this long is forgotten. */
     public static final long REPLANT_GIVE_UP = 48000;
+    /**
+     * PROPOSED: the stump of a mega spruce or giant jungle tree waits this long for four saplings of its species
+     * (picked up from its canopy, or fetched from the storehouse) before a single one is planted at its north-west
+     * corner instead.
+     */
+    public static final long HUGE_PATIENCE = 2400;
     /** PROPOSED: grove saplings stand on a lattice this many blocks apart, so grown trees do not touch. */
     public static final int GROVE_SPACING = 5;
     /** PROPOSED: the grove keeps this far (Chebyshev) beyond the walls. */
@@ -186,14 +199,24 @@ public final class ForestRules {
     }
 
     /**
+     * Saplings a stump of {@code s} waits for ({@code big}: a 2x2 trunk): four for a dark oak, and for a 2x2 spruce
+     * or jungle tree (planted as a square, it grows back huge); one otherwise.
+     */
+    public static int saplingsFor(Species s, boolean big) {
+        return s == Species.DARK_OAK || big && s != null && s.growsHuge() ? 4 : 1;
+    }
+
+    /**
      * What to plant where a tree of {@code want} stood ({@code big}: a 2x2 trunk), carrying {@code sameCarried} of
      * its saplings, with {@code substitute} the best other sapling carried (see {@link #substitute}, null for none),
      * after the stump has waited {@code waited} ticks.
      *
      * <ul>
      *   <li>Dark oak: four saplings in a square, only with four carried. A lone dark oak sapling never grows.</li>
-     *   <li>Any other species: one sapling, at the north-west corner for a 2x2 trunk, so no huge spruce or jungle
-     *       tree grows that nobody could fell.</li>
+     *   <li>A 2x2 spruce or jungle tree (now felled from a scaffold): four saplings in a square with four carried,
+     *       so a mega spruce or giant jungle tree grows back; with fewer, after {@link #HUGE_PATIENCE}, one at the
+     *       north-west corner.</li>
+     *   <li>Any other tree: one sapling.</li>
      *   <li>Without it: wait; after {@link #REPLANT_PATIENCE} plant the substitute (one, never dark oak); after
      *       {@link #REPLANT_GIVE_UP} forget the stump.</li>
      * </ul>
@@ -202,6 +225,13 @@ public final class ForestRules {
         if (want == Species.DARK_OAK) {
             if (sameCarried >= 4) {
                 return new Replant(Action.SAME, Species.DARK_OAK, true, 4);
+            }
+        } else if (want != null && big && want.growsHuge()) {
+            if (sameCarried >= 4) {
+                return new Replant(Action.SAME, want, true, 4);
+            }
+            if (sameCarried >= 1 && waited >= HUGE_PATIENCE) {
+                return new Replant(Action.SAME, want, false, 1);
             }
         } else if (want != null && sameCarried >= 1) {
             return new Replant(Action.SAME, want, false, 1);
@@ -212,7 +242,8 @@ public final class ForestRules {
         if (waited >= REPLANT_PATIENCE && substitute != null && substitute != Species.DARK_OAK) {
             return new Replant(Action.SUBSTITUTE, substitute, false, 1);
         }
-        return new Replant(Action.WAIT, want, want == Species.DARK_OAK, want == null ? 0 : want.saplingsPerTree());
+        int count = want == null ? 0 : saplingsFor(want, big);
+        return new Replant(Action.WAIT, want, count == 4, count);
     }
 
     /**

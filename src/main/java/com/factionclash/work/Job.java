@@ -283,6 +283,14 @@ public abstract class Job {
         return false;
     }
 
+    /**
+     * True while the worker stands on a scaffold pillar it built (a woodcutter felling a tall tree): nothing may move
+     * it off there (a creeper dodge, a knockback) before it has come down by breaking the pillar under its feet.
+     */
+    public boolean onScaffold() {
+        return false;
+    }
+
     // ------------------------------------------------------------------ helpers
 
     protected void waitFor(int ticks) {

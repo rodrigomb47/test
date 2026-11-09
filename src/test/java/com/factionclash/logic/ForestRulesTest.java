@@ -62,13 +62,32 @@ class ForestRulesTest {
     }
 
     @Test
-    void bigSpruceIsReplantedAsOneSapling() {
-        Replant r = ForestRules.replant(Species.SPRUCE, true, 4, null, 0);
-        assertEquals(new Replant(Action.SAME, Species.SPRUCE, false, 1), r, "never a 2x2 square: no huge spruce nobody can fell");
-        Replant jungle = ForestRules.replant(Species.JUNGLE, true, 6, null, 0);
-        assertEquals(new Replant(Action.SAME, Species.JUNGLE, false, 1), jungle);
+    void bigSpruceAndJungleAreReplantedAsASquareOfFour() {
+        // felled from a scaffold now, a mega spruce or giant jungle tree comes back as four saplings in a square
+        assertEquals(new Replant(Action.SAME, Species.SPRUCE, true, 4), ForestRules.replant(Species.SPRUCE, true, 4, null, 0));
+        assertEquals(new Replant(Action.SAME, Species.JUNGLE, true, 4), ForestRules.replant(Species.JUNGLE, true, 6, null, 0));
+        // with fewer it waits a while for four (from the canopy or the storehouse), then plants one at the corner
+        Replant wait = ForestRules.replant(Species.SPRUCE, true, 2, Species.BIRCH, 0);
+        assertEquals(new Replant(Action.WAIT, Species.SPRUCE, true, 4), wait);
+        assertEquals(Action.WAIT, ForestRules.replant(Species.SPRUCE, true, 3, null, ForestRules.HUGE_PATIENCE - 1).action());
+        assertEquals(new Replant(Action.SAME, Species.SPRUCE, false, 1), ForestRules.replant(Species.SPRUCE, true, 1, null, ForestRules.HUGE_PATIENCE));
+        // with none, the old timeline: a substitute (one) after REPLANT_PATIENCE, forgotten after REPLANT_GIVE_UP
+        assertEquals(new Replant(Action.SUBSTITUTE, Species.BIRCH, false, 1),
+                ForestRules.replant(Species.SPRUCE, true, 0, Species.BIRCH, ForestRules.REPLANT_PATIENCE));
+        assertEquals(Action.DROP, ForestRules.replant(Species.JUNGLE, true, 0, null, ForestRules.REPLANT_GIVE_UP).action());
+        // a single trunk is one sapling, at once
+        assertEquals(new Replant(Action.SAME, Species.SPRUCE, false, 1), ForestRules.replant(Species.SPRUCE, false, 4, null, 0));
         Replant plain = ForestRules.replant(Species.BIRCH, false, 1, null, 0);
         assertEquals(new Replant(Action.SAME, Species.BIRCH, false, 1), plain);
+        // what a stump waits for
+        assertEquals(4, ForestRules.saplingsFor(Species.SPRUCE, true));
+        assertEquals(4, ForestRules.saplingsFor(Species.JUNGLE, true));
+        assertEquals(4, ForestRules.saplingsFor(Species.DARK_OAK, false));
+        assertEquals(1, ForestRules.saplingsFor(Species.SPRUCE, false));
+        assertEquals(1, ForestRules.saplingsFor(Species.OAK, true), "no oak grows huge from a square");
+        assertTrue(Species.SPRUCE.growsHuge() && Species.JUNGLE.growsHuge() && !Species.DARK_OAK.growsHuge() && !Species.BIRCH.growsHuge());
+        // the grove plants single saplings of species that never grow huge from one: no mega tree in the grove
+        assertFalse(ForestRules.GROVE_ORDER.contains(Species.JUNGLE) || ForestRules.GROVE_ORDER.contains(Species.DARK_OAK));
     }
 
     @Test

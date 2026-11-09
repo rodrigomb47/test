@@ -288,4 +288,149 @@ class TreeShapeTest {
         // a low branch end far out is still in reach from the column
         assertTrue(TreeShape.fromStumpColumn(7, 1, 0));
     }
+
+    /** A 2x2 trunk of the given height with its north-west corner at (0, 0), a canopy around its top. */
+    private static Grid bigTrunk(int height) {
+        Grid g = new Grid();
+        for (int x = 0; x <= 1; x++) {
+            for (int z = 0; z <= 1; z++) {
+                g.trunk(x, z, height);
+            }
+        }
+        return g.canopy(0, 0, height, Kind.NATURAL_LEAVES).canopy(1, 1, height, Kind.NATURAL_LEAVES);
+    }
+
+    private static java.util.List<int[]> logsOf(Tree t) {
+        return t.logs();
+    }
+
+    /** True when every log is in reach from column (cx, cz) at some pillar height from 0 to h (or from the ground). */
+    private static boolean everyLogReached(java.util.List<int[]> logs, TreeShape.Pillar p, boolean groundToo) {
+        for (int[] q : logs) {
+            if (groundToo && TreeShape.fromGround(q[0], q[1], q[2])) {
+                continue;
+            }
+            boolean reached = false;
+            for (int h = 0; h <= p.height() && !reached; h++) {
+                double dx = q[0] - p.x(), dz = q[2] - p.z(), dy = q[1] + 0.5 - (h + TreeShape.EYE);
+                reached = Math.sqrt(dx * dx + dz * dz + dy * dy) <= TreeShape.PILLAR_REACH + 1e-9;
+            }
+            if (!reached) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Test
+    void tallTreesAreFelledOnlyWithinTheScaffoldBounds() {
+        // a mega spruce, 20 tall on a 2x2 trunk: too tall from the ground, fine for a woodcutter with a scaffold
+        Tree ground = TreeShape.survey(bigTrunk(20), 0, 0, 0, false);
+        assertEquals(Verdict.TOO_TALL, ground.verdict());
+        Tree tall = TreeShape.survey(bigTrunk(20), 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        assertEquals(Verdict.OK, tall.verdict());
+        assertEquals(80, tall.logs().size());
+        assertTrue(tall.big());
+        assertEquals(19, tall.topDy());
+        // the tallest giant jungle tree (31, 2x2: 124 logs) is still seen whole
+        Tree giant = TreeShape.survey(bigTrunk(31), 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        assertEquals(Verdict.OK, giant.verdict());
+        assertEquals(124, giant.logs().size());
+        // 33 tall runs past the flood's 32: never cut in part
+        assertEquals(Verdict.TOO_BIG, TreeShape.survey(bigTrunk(34), 0, 0, 0, false, TreeShape.MAX_TALL_DY).verdict());
+        // the other rules hold for tall trees too: persistent leaves only, or a built block against the trunk
+        Grid hedge = new Grid().trunk(0, 0, 14).canopy(0, 0, 14, Kind.PERSISTENT_LEAVES);
+        assertEquals(Verdict.NOT_NATURAL, TreeShape.survey(hedge, 0, 0, 0, false, TreeShape.MAX_TALL_DY).verdict());
+        assertEquals(Verdict.TOUCHES_STRUCTURE,
+                TreeShape.survey(bigTrunk(20).set(2, 12, 0, Kind.STRUCTURE), 0, 0, 0, false, TreeShape.MAX_TALL_DY).verdict());
+    }
+
+    @Test
+    void aPillarBesideTheTrunkReachesEveryLog() {
+        Tree t = TreeShape.survey(bigTrunk(20), 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        TreeShape.Pillar p = TreeShape.pillarSpot(t.logs(), 0, 0, 0, true, (x, z) -> TreeShape.MAX_PILLAR, true);
+        assertNotNull(p);
+        assertTrue(p.x() >= -1 && p.x() <= 2 && p.z() >= -1 && p.z() <= 2 && !(p.x() >= 0 && p.x() <= 1 && p.z() >= 0 && p.z() <= 1),
+                "beside the 2x2 trunk, not in it: " + p);
+        assertTrue(everyLogReached(t.logs(), p, true), "every log out of reach from the ground is reached from the pillar " + p);
+        // the lowest such pillar: one block less leaves the top log out of reach
+        assertFalse(everyLogReached(t.logs(), new TreeShape.Pillar(p.x(), p.z(), p.height() - 1), true));
+        assertEquals(12, TreeShape.besideTrunk(0, 0, true).size());
+        assertEquals(8, TreeShape.besideTrunk(0, 0, false).size());
+        // a single tall jungle trunk, 13 tall: a pillar of 4
+        Grid jungle = new Grid().trunk(0, 0, 13).canopy(0, 0, 13, Kind.NATURAL_LEAVES);
+        Tree j = TreeShape.survey(jungle, 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        TreeShape.Pillar pj = TreeShape.pillarSpot(j.logs(), 0, 0, 0, false, (x, z) -> TreeShape.MAX_PILLAR, true);
+        assertNotNull(pj);
+        assertEquals(4, pj.height());
+        assertTrue(Math.abs(pj.x()) + Math.abs(pj.z()) == 1, "straight beside the trunk, not diagonally: " + pj);
+        // no room anywhere (a pillar may not stand by the trunk): no pillar, the tree is left whole
+        assertNull(TreeShape.pillarSpot(t.logs(), 0, 0, 0, true, (x, z) -> -1, true));
+        // room for only 5 blocks: the top is out of reach
+        assertNull(TreeShape.pillarSpot(t.logs(), 0, 0, 0, true, (x, z) -> 5, true));
+    }
+
+    @Test
+    void wideBranchesMustAllBeReachedFromOnePillar() {
+        // a giant jungle tree: 2x2 trunk 24 tall, branches ending 4 out past the south-east corner and 2 out past the
+        // north-west one (vanilla's branch ends lie from -2 to 5 of the trunk's north-west corner)
+        Grid g = bigTrunk(24);
+        g.set(4, 17, 4, Kind.SAME_LOG).set(5, 18, 5, Kind.SAME_LOG).set(3, 16, 3, Kind.SAME_LOG).set(2, 16, 2, Kind.SAME_LOG);
+        g.set(-1, 19, -1, Kind.SAME_LOG).set(-2, 20, -2, Kind.SAME_LOG);
+        g.canopy(5, 5, 19, Kind.NATURAL_LEAVES).canopy(-2, -2, 21, Kind.NATURAL_LEAVES);
+        Tree t = TreeShape.survey(g, 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        assertEquals(Verdict.OK, t.verdict());
+        assertTrue(has(t, 5, 18, 5) && has(t, -2, 20, -2));
+        TreeShape.Pillar p = TreeShape.pillarSpot(t.logs(), 0, 0, 0, true, (x, z) -> TreeShape.MAX_PILLAR, true);
+        assertNotNull(p);
+        assertTrue(everyLogReached(t.logs(), p, true), "both branch ends from one pillar: " + p);
+        // the north-west corner column cannot reach the far branch end (8.5 across): with only that one free, the
+        // tree is refused rather than left with a floating branch
+        assertNull(TreeShape.pillarSpot(t.logs(), 0, 0, 0, true, (x, z) -> x == -1 && z == -1 ? TreeShape.MAX_PILLAR : -1, true));
+        // a column in a branch's way is fine: its logs are cut on the way up
+        assertNotNull(TreeShape.pillarSpot(t.logs(), 0, 0, 0, true, (x, z) -> x == 2 && z == 2 ? TreeShape.MAX_PILLAR : -1, true));
+    }
+
+    @Test
+    void lowBranchEndsAreLeftToTheGroundUnlessEverythingMustBeReached() {
+        // a tall trunk with a long low branch ending 7 out and 7 up: cut from the ground under it, as before
+        Grid g = new Grid().trunk(0, 0, 14).canopy(0, 0, 14, Kind.NATURAL_LEAVES);
+        g.set(1, 4, 0, Kind.SAME_LOG).set(2, 5, 0, Kind.SAME_LOG).set(3, 5, 0, Kind.SAME_LOG).set(4, 6, 0, Kind.SAME_LOG)
+                .set(5, 7, 0, Kind.SAME_LOG).set(6, 7, 0, Kind.SAME_LOG).set(7, 7, 0, Kind.SAME_LOG);
+        Tree t = TreeShape.survey(g, 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        assertEquals(Verdict.OK, t.verdict());
+        assertTrue(TreeShape.fromGround(7, 7, 0));
+        // only the column west of the trunk is free: the branch end is 8 across from it, out of reach at any height
+        TreeShape.Room west = (x, z) -> x == -1 && z == 0 ? TreeShape.MAX_PILLAR : -1;
+        assertNotNull(TreeShape.pillarSpot(t.logs(), 0, 0, 0, false, west, true), "the branch end is cut from the ground");
+        assertNull(TreeShape.pillarSpot(t.logs(), 0, 0, 0, false, west, false), "everything from the pillar: out of reach");
+        // scaffold blocks left standing, 12 high: taken down from a pillar beside them, a low column from the ground
+        java.util.List<int[]> blocks = new java.util.ArrayList<>();
+        for (int y = 0; y < 12; y++) {
+            blocks.add(new int[]{0, y, 0});
+        }
+        TreeShape.Pillar beside = TreeShape.pillarSpot(blocks, 0, 0, 0, false, (x, z) -> TreeShape.MAX_PILLAR, false);
+        assertNotNull(beside);
+        assertEquals(3, beside.height(), "the top block, 11 up, is in reach from 3 up");
+        assertEquals(0, TreeShape.pillarSpot(blocks.subList(0, 8), 0, 0, 0, false, (x, z) -> TreeShape.MAX_PILLAR, false).height());
+    }
+
+    @Test
+    void scaffoldBlocksCarriedCoverThePillar() {
+        assertEquals(0, TreeShape.scaffoldNeed(TreeShape.MAX_FELL_DY));
+        for (int h = TreeShape.MAX_FELL_DY + 2; h <= TreeShape.MAX_TALL_DY + 1; h++) {
+            Tree t = TreeShape.survey(bigTrunk(h), 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+            assertEquals(Verdict.OK, t.verdict(), "a 2x2 trunk " + h + " tall");
+            TreeShape.Pillar p = TreeShape.pillarSpot(t.logs(), 0, 0, 0, true, (x, z) -> TreeShape.MAX_PILLAR, true);
+            assertNotNull(p, "a pillar for a trunk " + h + " tall");
+            assertTrue(p.height() + TreeShape.PILLAR_SPARE <= TreeShape.scaffoldNeed(t.topDy()),
+                    "the blocks fetched for a top " + t.topDy() + " up cover the pillar of " + p.height());
+            assertTrue(TreeShape.scaffoldNeed(t.topDy()) <= TreeShape.MAX_PILLAR + TreeShape.PILLAR_SPARE);
+        }
+        // the reach window from a column: a log level with the eyes, 1 across, is in reach from heights around it
+        int[] r = TreeShape.standRange(0, 0, 0, 1, 10, 0);
+        assertNotNull(r);
+        assertTrue(r[0] <= 9 && r[1] >= 9 && r[0] > 0);
+        assertNull(TreeShape.standRange(0, 0, 0, 8, 10, 0), "8 across is out of reach at any height");
+    }
 }

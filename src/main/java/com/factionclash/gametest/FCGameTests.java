@@ -3286,6 +3286,369 @@ public final class FCGameTests {
         });
     }
 
+    // ------------------------------------------------------------------ tall trees, felled from a scaffold
+
+    /**
+     * A tall test tree at relative (x, 2, z): {@code height} logs on grass, a 2x2 trunk (x..x+1, z..z+1) when
+     * {@code big}, with natural leaves (not persistent, distance 1) in a ring 2 wide round its top five layers (corners
+     * cut) and a cap above. Returns the stump (absolute; the north-west corner of a 2x2 trunk).
+     */
+    private static BlockPos tallTestTree(GameTestHelper h, int x, int z, net.minecraft.world.level.block.Block log,
+                                         net.minecraft.world.level.block.Block leaves, int height, boolean big) {
+        int size = big ? 2 : 1;
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                h.setBlock(new BlockPos(x + i, 1, z + j), Blocks.GRASS_BLOCK);
+                for (int y = 0; y < height; y++) {
+                    h.setBlock(new BlockPos(x + i, 2 + y, z + j), log);
+                }
+            }
+        }
+        int top = 2 + height - 1;
+        var leaf = leaves.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.DISTANCE, 1)
+                .setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, false);
+        for (int y = top - 4; y <= top + 1; y++) {
+            int r = y > top ? 1 : 2;
+            for (int dx = -r; dx < size + r; dx++) {
+                for (int dz = -r; dz < size + r; dz++) {
+                    boolean trunk = dx >= 0 && dx < size && dz >= 0 && dz < size && y <= top;
+                    boolean corner = (dx == -r || dx == size + r - 1) && (dz == -r || dz == size + r - 1);
+                    if (!trunk && !corner) {
+                        h.setBlock(new BlockPos(x + dx, y, z + dz), leaf);
+                    }
+                }
+            }
+        }
+        return h.absolutePos(new BlockPos(x, 2, z));
+    }
+
+    /** True while a block of {@code block} stands in the box from (x0, y0, z0) to (x1, y1, z1) (relative). */
+    private static boolean anyIn(GameTestHelper h, int x0, int y0, int z0, int x1, int y1, int z1, java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> what) {
+        for (BlockPos p : BlockPos.betweenClosed(x0, y0, z0, x1, y1, z1)) {
+            if (what.test(h.getBlockState(p))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Scaffold blocks (dirt, coarse dirt, or dirt grass spread onto) standing above the platform in that box. */
+    private static boolean scaffoldIn(GameTestHelper h, int x0, int z0, int x1, int z1, int y1) {
+        return anyIn(h, x0, 2, z0, x1, y1, z1, com.factionclash.work.Scaffold::isBlock);
+    }
+
+    /**
+     * Puts the NPC at the top level, so the experience of a long job rolls no affix half-way through a test (Regrowth
+     * would now and then grow a freshly replanted sapling into a tree at once).
+     */
+    private static void noLevelUps(FactionNpc n) {
+        CompoundTag tag = n.saveWithoutId(new CompoundTag());
+        tag.putInt("FcLevel", com.factionclash.logic.AffixRoller.MAX_LEVEL);
+        n.load(tag);
+    }
+
+    /** The woodcutter's job, or null while it has none of that kind. */
+    private static com.factionclash.work.WoodcutterJob woodJob(FactionNpc n) {
+        return n.job() instanceof com.factionclash.work.WoodcutterJob j ? j : null;
+    }
+
+    /**
+     * What every scaffold test asserts each tick: no fall damage, never (the woodcutter is only ever on the ground or
+     * a block above where it stood), and the highest pillar seen so far.
+     */
+    private static void scaffoldSafety(GameTestBases.Handle t, FactionNpc n, int[] highest) {
+        t.assertTrue(n.getHealth() >= n.getMaxHealth(), "the woodcutter got hurt (health " + n.getHealth() + ")");
+        var job = woodJob(n);
+        if (job != null && job.pillar() != null) {
+            highest[0] = Math.max(highest[0], job.pillar().height);
+        }
+    }
+
+    /**
+     * A mega spruce (a 2x2 trunk 19 logs tall, its top 18 above the stump, natural leaves) cannot be felled from the
+     * ground. The woodcutter carries no dirt: it fetches some from the storehouse, builds a pillar beside the trunk
+     * by jumping and placing a block under its feet, fells the tree top down from up there, clears the canopy within
+     * reach, and breaks the pillar on the way down. No log and no scaffold block is left, it never gets hurt, all its
+     * dirt is back, and it replants the stump as a square of four spruce saplings (it carries four), so a mega spruce
+     * grows back.
+     */
+    @GameTest(template = "platform", timeoutTicks = 6000, batch = "wood_tall_spruce", skyAccess = true)
+    public static void woodcutterFellsAMegaSpruceFromAScaffold(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 6000);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = tallTestTree(h, 18, 18, Blocks.SPRUCE_LOG, Blocks.SPRUCE_LEAVES, 19, true);
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.DIRT, 32));
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.IRON_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.SPRUCE_SAPLING, 4));
+            noLevelUps(n);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] highest = {0};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            var w = woodlandOf(t);
+            var job = woodJob(n);
+            if (w == null || job == null || w.felled < 1 || job.pillar() != null) {
+                return;
+            }
+            for (BlockPos c : java.util.List.of(stump, stump.east(), stump.south(), stump.south().east())) {
+                if (!h.getLevel().getBlockState(c).is(Blocks.SPRUCE_SAPLING)) {
+                    return; // not replanted yet
+                }
+            }
+            t.assertTrue(highest[0] >= 9, "the tree should have been felled from a pillar, the highest was " + highest[0]);
+            t.assertTrue(!logsIn(h, 15, 15, 22, 22, Blocks.SPRUCE_LOG) && !anyIn(h, 15, 10, 15, 22, 24, 22, x -> x.is(Blocks.SPRUCE_LOG)),
+                    "no spruce log may be left");
+            t.assertTrue(!scaffoldIn(h, 16, 16, 21, 21, 24), "no scaffold block may be left");
+            t.assertTrue(n.onGround() && n.getBlockY() == h.absolutePos(new BlockPos(0, 2, 0)).getY(), "the woodcutter should end on the ground: " + n.getY());
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == 32, "every block of the scaffold should be back: " + heldOrStored(t, n, Items.DIRT));
+            t.assertTrue(heldOrStored(t, n, Items.SPRUCE_LOG) >= 76, "the 76 logs should be in the backpack or the storehouse: "
+                    + heldOrStored(t, n, Items.SPRUCE_LOG));
+            t.assertTrue(w.felled == 1 && w.replant.isEmpty() && w.planted.contains(stump.asLong()), "one tree felled, replanted as a square: felled "
+                    + w.felled + ", waiting " + w.replant + ", planted " + w.planted.stream().map(k -> BlockPos.of(k).toShortString()).toList()
+                    + ", stump " + stump.toShortString());
+            t.succeed();
+        });
+    }
+
+    /**
+     * A tall single jungle trunk (13 logs: its top 12 above the stump): the woodcutter, carrying 8 dirt, fells it from
+     * a pillar 4 blocks high and replants one jungle sapling; nothing is left of the tree or the scaffold.
+     */
+    @GameTest(template = "platform", timeoutTicks = 3000, batch = "wood_tall_jungle", skyAccess = true)
+    public static void woodcutterFellsATallJungleTreeFromAScaffold(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 3000);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = tallTestTree(h, 18, 18, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 13, false);
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 1));
+            n.inventory().setItem(1, new ItemStack(Items.DIRT, 8));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] highest = {0};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            var w = woodlandOf(t);
+            var job = woodJob(n);
+            if (w == null || job == null || w.felled < 1 || job.pillar() != null || !h.getLevel().getBlockState(stump).is(Blocks.JUNGLE_SAPLING)) {
+                return;
+            }
+            t.assertTrue(highest[0] >= 4, "the tree should have been felled from a pillar, the highest was " + highest[0]);
+            t.assertTrue(!anyIn(h, 15, 2, 15, 21, 18, 21, x -> x.is(Blocks.JUNGLE_LOG)), "no jungle log may be left");
+            t.assertTrue(!scaffoldIn(h, 17, 17, 19, 19, 18), "no scaffold block may be left");
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == 8, "the 8 dirt should be back: " + heldOrStored(t, n, Items.DIRT));
+            t.assertTrue(heldOrStored(t, n, Items.JUNGLE_LOG) >= 13, "13 logs: " + heldOrStored(t, n, Items.JUNGLE_LOG));
+            t.assertTrue(n.onGround() && n.getBlockY() == stump.getY(), "the woodcutter should end on the ground: " + n.getY());
+            t.succeed();
+        });
+    }
+
+    /** Saves the whole NPC (position, backpack, job) and loads it back, as a server restart does. */
+    private static void reload(FactionNpc n) {
+        CompoundTag tag = n.saveWithoutId(new CompoundTag());
+        n.getNavigation().stop();
+        n.load(tag);
+    }
+
+    /**
+     * A reload in the middle of the scaffold work resumes it exactly: once while the woodcutter is building its
+     * pillar (3 blocks up) and once while it works from the top. The loaded job has the same pillar (column, height,
+     * phase), and the tree is still felled whole, the pillar taken down and the woodcutter left on the ground unhurt.
+     */
+    @GameTest(template = "platform", timeoutTicks = 3600, batch = "wood_tall_reload", skyAccess = true)
+    public static void woodcutterResumesItsScaffoldAfterAReload(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 3600);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = tallTestTree(h, 18, 18, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 16, false);
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 1));
+            n.inventory().setItem(1, new ItemStack(Items.DIRT, 12));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] highest = {0};
+        int[] reloads = {0};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            var job = woodJob(n);
+            var pillar = job == null ? null : job.pillar();
+            boolean climbing = pillar != null && reloads[0] == 0 && pillar.phase == com.factionclash.work.Scaffold.Phase.CLIMB && pillar.height == 3;
+            boolean atTop = pillar != null && reloads[0] == 1 && pillar.phase == com.factionclash.work.Scaffold.Phase.WORK
+                    && pillar.height == pillar.goal && pillar.goal > 3 && n.onGround();
+            if (climbing || atTop) {
+                var before = pillar.save();
+                reload(n);
+                reloads[0]++;
+                var again = woodJob(n);
+                t.assertTrue(again != null && again != job && again.pillar() != null && again.stateName().equals("SCAFFOLD"),
+                        "the loaded job should be on its pillar: " + (again == null ? null : again.stateName()));
+                t.assertTrue(again.pillar().save().equals(before), "the pillar should load as saved: " + again.pillar().save() + " vs " + before);
+                t.assertTrue(stump.equals(again.spot()), "the same tree: " + again.spot());
+                return;
+            }
+            var w = woodlandOf(t);
+            if (w == null || job == null || w.felled < 1 || pillar != null || !h.getLevel().getBlockState(stump).is(Blocks.JUNGLE_SAPLING)) {
+                return;
+            }
+            t.assertTrue(reloads[0] == 2, "it should have been reloaded twice, not " + reloads[0]);
+            t.assertTrue(!anyIn(h, 15, 2, 15, 21, 21, 21, x -> x.is(Blocks.JUNGLE_LOG)), "no jungle log may be left");
+            t.assertTrue(!scaffoldIn(h, 17, 17, 19, 19, 21), "no scaffold block may be left");
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == 12, "the 12 dirt should be back: " + heldOrStored(t, n, Items.DIRT));
+            t.assertTrue(n.onGround() && n.getBlockY() == stump.getY(), "the woodcutter should end on the ground: " + n.getY());
+            t.succeed();
+        });
+    }
+
+    /**
+     * Hungry on its scaffold with nothing to eat in its backpack, the woodcutter comes down first, breaking the pillar
+     * as it goes, fetches food from the storehouse, then comes back, builds a new pillar and finishes the tree. At no
+     * time is a pillar left standing without it on top.
+     */
+    @GameTest(template = "platform", timeoutTicks = 4000, batch = "wood_tall_errand", skyAccess = true)
+    public static void woodcutterComesDownItsScaffoldForAnErrand(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 4000);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = tallTestTree(h, 18, 18, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 16, false);
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.BREAD, 4));
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 1));
+            n.inventory().setItem(1, new ItemStack(Items.DIRT, 12));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] highest = {0};
+        int[] phase = {0}; // 0 working, 1 made hungry, 2 came down with the tree unfinished, 3 fetched food
+        t.onEachTick(() -> {
+            t.assertTrue(n.getHealth() >= n.getMaxHealth() - 1, "the woodcutter got hurt (health " + n.getHealth() + ")");
+            var job = woodJob(n);
+            var pillar = job == null ? null : job.pillar();
+            if (pillar != null) {
+                highest[0] = Math.max(highest[0], pillar.height);
+            }
+            if (phase[0] == 0 && pillar != null && pillar.phase == com.factionclash.work.Scaffold.Phase.WORK && pillar.height >= 4
+                    && job.felling() != null) {
+                n.hunger().set(4, 0, 0);
+                phase[0] = 1;
+                return;
+            }
+            if (phase[0] == 1 && pillar == null) {
+                t.assertTrue(job.felling() != null && h.getBlockState(new BlockPos(18, 2, 18)).is(Blocks.JUNGLE_LOG),
+                        "it should have come down before the tree was done");
+                t.assertTrue(!scaffoldIn(h, 17, 17, 19, 19, 21), "no scaffold may stand while it is away");
+                phase[0] = 2;
+            }
+            if (phase[0] == 2 && com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.BREAD)) > 0 || phase[0] == 2 && n.hunger().foodLevel() > 6) {
+                phase[0] = 3;
+            }
+            var w = woodlandOf(t);
+            if (phase[0] < 3 || w == null || w.felled < 1 || pillar != null || !h.getLevel().getBlockState(stump).is(Blocks.JUNGLE_SAPLING)) {
+                return;
+            }
+            t.assertTrue(!anyIn(h, 15, 2, 15, 21, 21, 21, x -> x.is(Blocks.JUNGLE_LOG)), "no jungle log may be left");
+            t.assertTrue(!scaffoldIn(h, 17, 17, 19, 19, 21), "no scaffold block may be left");
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == 12, "the 12 dirt should be back: " + heldOrStored(t, n, Items.DIRT));
+            t.succeed();
+        });
+    }
+
+    /**
+     * Without blocks for a scaffold (none carried, none stored) a woodcutter leaves a tall tree standing exactly as
+     * before: it fells the ordinary birch beside it and never touches the 13-log jungle tree or builds anything.
+     */
+    @GameTest(template = "platform", timeoutTicks = 2000, batch = "wood_tall_none", skyAccess = true)
+    public static void woodcutterWithoutScaffoldBlocksLeavesATallTree(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 2000);
+        FactionNpc n;
+        try {
+            tallTestTree(h, 18, 18, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 13, false);
+            testTree(h, 19, 6, Blocks.BIRCH_LOG, Blocks.BIRCH_LEAVES, 5, false, Blocks.GRASS_BLOCK);
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.BIRCH_SAPLING, 1));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        long[] felledAt = {-1};
+        t.onEachTick(() -> {
+            for (int y = 2; y <= 14; y++) {
+                t.assertTrue(h.getBlockState(new BlockPos(18, y, 18)).is(Blocks.JUNGLE_LOG), "the tall jungle tree should stand whole");
+            }
+            t.assertTrue(!scaffoldIn(h, 15, 15, 21, 21, 18), "nothing may be built by the tall tree");
+            var job = woodJob(n);
+            t.assertTrue(job == null || job.pillar() == null, "no scaffold without blocks");
+            var w = woodlandOf(t);
+            if (w == null || w.felled < 1) {
+                return;
+            }
+            if (felledAt[0] < 0) {
+                felledAt[0] = h.getTick();
+            }
+            if (h.getTick() - felledAt[0] >= 400) {
+                t.assertTrue(w.felled == 1, "only the birch: " + w.felled);
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * Any NPC left on top of a bare pillar (a scaffold its woodcutter no longer looks after) counts as stranded and
+     * breaks the block underfoot to get down, block by block; standing beside the pillar, or in a one-block hole, is
+     * not stranded.
+     */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "pillar_down", skyAccess = true)
+    public static void npcOnABarePillarDigsItsWayDown(GameTestHelper h) {
+        for (int y = 2; y <= 7; y++) {
+            h.setBlock(new BlockPos(12, y, 12), Blocks.DIRT);
+        }
+        for (BlockPos p : java.util.List.of(new BlockPos(4, 2, 5), new BlockPos(6, 2, 5), new BlockPos(5, 2, 4), new BlockPos(5, 2, 6))) {
+            h.setBlock(p, Blocks.STONE);
+            h.setBlock(p.above(), Blocks.STONE);
+        }
+        FactionNpc n = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(12, 8, 12));
+        n.faction(FactionType.STONEGUARD);
+        n.role(NpcRole.FARMER);
+        BlockPos goal = h.absolutePos(new BlockPos(2, 2, 2));
+        var level = h.getLevel();
+        h.assertFalse(com.factionclash.npc.DigOut.perched(level, h.absolutePos(new BlockPos(13, 2, 12))), "beside the pillar is plain ground");
+        h.assertFalse(com.factionclash.npc.DigOut.perched(level, h.absolutePos(new BlockPos(5, 2, 5))), "a one-block hole is no pillar");
+        h.assertFalse(com.factionclash.npc.DigOut.perched(level, h.absolutePos(new BlockPos(12, 5, 12)).east()) , "beside it in mid-air is no perch");
+        int[] steps = {0};
+        h.runAfterDelay(5, () -> {
+            h.assertTrue(com.factionclash.npc.DigOut.perched(level, n.blockPosition()), "on top of a 6-block pillar should count as stranded");
+            h.assertFalse(com.factionclash.npc.DigOut.free(n), "and not free to walk");
+            h.assertFalse(com.factionclash.npc.NpcNavigator.isSafeStandingSpot(level, n, n.blockPosition()), "nor a spot a recovery would land on");
+        });
+        h.onEachTick(() -> {
+            if (h.getTick() < 6 || h.getTick() % 20 != 0 || !n.onGround()) {
+                return;
+            }
+            if (!com.factionclash.npc.DigOut.perched(level, n.blockPosition())) {
+                // down to 3 blocks or fewer: a drop it can walk off without harm
+                h.assertTrue(n.getBlockY() <= h.absolutePos(new BlockPos(12, 5, 12)).getY(), "it stopped too high: y=" + n.getY());
+                h.assertTrue(com.factionclash.work.Inv.count(n.inventory(), x -> x.is(Items.DIRT)) >= 3, "the dirt went into its backpack");
+                h.assertTrue(n.getHealth() >= n.getMaxHealth(), "no fall damage");
+                h.succeed();
+                return;
+            }
+            h.assertTrue(++steps[0] <= 6, "too many steps");
+            h.assertTrue(com.factionclash.npc.DigOut.step(n, goal), "nothing was dug at " + n.blockPosition());
+        });
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

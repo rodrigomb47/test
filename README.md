@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `1b38f38d7b2fe7c7b0907a8a1e20e0f0eeea5e36eac6dadc2521d4a460272eaf`
+SHA-256: `b9ed29752eea6f716f90c97156cf610af107bf0c16d94636da234fbb5d43eb1c`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -69,8 +69,8 @@ Players respawn at their nearest surviving allied base when they have no bed.
   go around its walls.
 * **Getting unstuck like a player**: an NPC first gets a small validated hop (≤ 4 across / ≤ 2 up-down by
   default, configurable). If it truly has no way (a sealed cave pocket, the floor of a ravine or pit, a tree
-  canopy or the top of a tall trunk) it **digs its own way out**, a staircase step by step toward its
-  destination's height (or chops the leaves/log it stands on), until it can walk again. Where the floor is missing
+  canopy, the top of a tall trunk or of a bare one-block pillar) it **digs its own way out**, a staircase step by
+  step toward its destination's height (or chops the leaves, log or block it stands on), until it can walk again. Where the floor is missing
   (a ravine between it and home) it **builds a bridge** with stone or dirt from its backpack (any solid block it
   carries, such as logs, when it has none), one block per step, rising toward a higher destination; where nothing
   can be dug or bridged (a pit under a settlement's path, or beside a settlement's floor, which may not be dug) it
@@ -216,12 +216,19 @@ Players respawn at their nearest surviving allied base when they have no bed.
   of the base centre (oak, birch, spruce, jungle, acacia, dark oak and cherry, 2×2 trunks too) log by log with
   their axe from the top down, cutting high branch ends from the ground under them, break the canopy (the leaves'
   own loot drops saplings, sticks and apples), collect what fell and **replant the same species** at the stump
-  (four saplings for a dark oak; a stump still waiting for its sapling after half a day gets another species if one
-  is at hand, and after two days it is forgotten). They fell only what a player could fell whole from the ground: a
-  trunk of 3–9 logs on dirt with natural leaves, no log more than 8 blocks over the stump, touching no built block,
-  bee nest or other tree; never by the walls, in other factions' land, by a lair, within 32 blocks of a known
-  village or 48 of a known outpost or mansion. Mega spruces, tall jungle trees, some fancy oaks and mangroves are
-  left standing. Each base also keeps a **grove** of `groveSize` (16) saplings growing on a lattice in its
+  (four saplings for a dark oak, and for a mega spruce or giant jungle tree, so it grows back huge; a stump still
+  waiting for its sapling after half a day gets another species if one is at hand, and after two days it is
+  forgotten). They fell only a whole natural tree: a trunk of 3 or more logs on dirt with natural leaves, touching no
+  built block, bee nest or other tree; never by the walls, in other factions' land, by a lair, within 32 blocks of a
+  known village or 48 of a known outpost or mansion. **Tall trees** (mega spruces, giant and tall jungle trees, tall
+  fancy oaks and birches: any log more than 8 blocks over the stump, up to 32) are felled from a **scaffold**, as a
+  player "nerd-poles": the woodcutter fetches up to 32 dirt from the storehouse, chooses a column beside the trunk
+  from which every log comes within reach, jumps and places a block under its feet until the top is in reach, fells
+  the tree top down and clears the canopy within reach (its saplings go into the backpack), then breaks the pillar
+  block under its feet one at a time on the way down, the dirt going back into its backpack. Up there it ignores
+  fights and is not knocked off; hurt, hungry, with a full backpack or at nightfall far out it comes down first, and
+  a reload resumes the pillar exactly. Without dirt such trees are left standing, as are mangroves and trees whose
+  branches no single pillar reaches. Each base also keeps a **grove** of `groveSize` (16) saplings growing on a lattice in its
   always-ticking belt (birch first, then spruce, oak, cherry, acacia; twice as many while the base is short of
   wood), fetching the saplings from the storehouse and first picking any flowers beside an oak, birch or cherry
   sapling so no bee nest grows. Saplings grow naturally — woodcutters only speed growth up with real bone meal
@@ -375,18 +382,20 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 139 JUnit tests for the pure rules (spiral mine and branch-mine geometry, the mine layer
-  planner, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule,
-  replanting and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
+* `./gradlew test` — 144 JUnit tests for the pure rules (spiral mine and branch-mine geometry, the mine layer
+  planner, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule, the
+  scaffold pillar's column and height for tall trees, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 94 GameTests on a real headless server, including **miners** (digs its own
+* `./gradlew runGameTestServer` — 100 GameTests on a real headless server, including **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
   a resting mine; a mine set aside keeps only the ground it dug), **woodcutters** (fells a tree and replants the same
   species, leaves built and protected wood alone, takes down an old fence, resumes a tree after a reload, cuts a
   branch end from below, leaves an unreachable tree for a while, fills the grove from the storehouse and picks the
-  flowers first), **fishermen** (never picks farm irrigation, catches at a pond, leaves when the water is gone,
+  flowers first; fells a mega spruce and a tall jungle tree from a dirt scaffold and leaves no log or block behind,
+  replants the spruce as a square of four, resumes its scaffold after reloads, comes down it for food, leaves tall
+  trees alone without dirt; any NPC left on a bare pillar breaks its way down), **fishermen** (never picks farm irrigation, catches at a pond, leaves when the water is gone,
   climbs onto the bank before casting, treasure only in open water, no fisherman hired without water),
   **retraining** (frees the workplace, barren roles, a worker with its tool again is not toolless), **old saves**
   (old mines, tree plots and fishing spots load and convert), **scouts** (walk on past a drowned in a pond, step aside from zombies and keep
@@ -537,8 +546,8 @@ fixes below:
 
 Known rough edges: a few NPCs still need minutes of digging and bridging in very broken terrain; animals can still
 slip out of the pen occasionally; fishing has no visible bobber; the enchanter has nothing to do once all good gear
-is enchanted (it waits for new gear); trees too tall to fell whole from the ground (mega spruces, tall jungle trees,
-some fancy oaks) are left standing; a base with no ground deep enough for a mine, or no fishing water, within reach
+is enchanted (it waits for new gear); a woodcutter with no dirt in its backpack or the storehouse leaves trees taller
+than 8 logs standing (with dirt it fells them from a scaffold); a base with no ground deep enough for a mine, or no fishing water, within reach
 keeps only a trial miner or fisherman, hired again two days after the last one was retrained.
 
 **Old campaigns load and continue:** the hut mine is migrated (its levels become layers) and keeps being worked,

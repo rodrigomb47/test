@@ -34,6 +34,9 @@ public class CreeperEvadeGoal extends Goal {
             cooldown--;
             return false;
         }
+        if (npc.job() != null && npc.job().onScaffold()) {
+            return false; // up on its scaffold pillar: a jump or a run from there is a fall
+        }
         List<Creeper> list = npc.level().getEntitiesOfClass(Creeper.class, npc.getBoundingBox().inflate(5.0),
                 c -> c.isAlive() && (c.getSwellDir() > 0 || c.isIgnited()));
         if (list.isEmpty()) {
