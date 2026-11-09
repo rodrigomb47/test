@@ -6,7 +6,8 @@ commits, language and testing are in `/CLAUDE.md`.
 
 ## 1. The owner and how they work
 
-- Owner: rodrigomb47 (GitHub repo `rodrigomb47/test`). Speaks Portuguese; **all reports to them in Portuguese**.
+- Owner: rodrigomb47 (GitHub repo `rodrigomb47/test`). Portuguese speaker who asked for the chat
+  and reports to be in **English** (automatic messages after a usage-limit pause may come in Portuguese; answer in English).
 - They describe features in plain words and expect the agent to fill in the design sensibly ("do as you see fit").
   When an interpretation is uncertain, state it briefly and proceed; they confirm or correct.
 - They explicitly allowed adding things the agent finds worthwhile ("if you find something that you want to add,
@@ -123,5 +124,5 @@ python3 tools/rcon.py "stop"
 2. README/BALANCE updated (test counts in README "Testing"), `docs/factionclash-common.toml` regenerated if config
    changed (copy the file a fresh server writes).
 3. `cp build/libs/factionclash-0.1.0.jar download/` and put `sha256sum` on README line 13 (`SHA-256: \`...\``).
-4. Commit with the rules in `/CLAUDE.md`, push, report to the owner in Portuguese (what changed, what was verified,
+4. Commit with the rules in `/CLAUDE.md`, push, report to the owner in English (what changed, what was verified,
    what is left).

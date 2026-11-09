@@ -14,7 +14,8 @@ README.md describes the mod for players; BALANCE.md lists every tunable and PROP
   signed and GitHub shows them as verified. End every commit message with:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the current session's `Claude-Session:` line (the
   session gives it). Never put model identifiers anywhere else (code, comments, docs).
-- Report to the owner in **Portuguese** (pt-BR). Code, comments, docs and commit messages stay in English.
+- Talk and report to the owner in **English** (their choice). Automatic messages after a usage-limit pause may
+  arrive in Portuguese; keep answering in English. Code, comments, docs and commit messages are in English too.
 - The owner welcomes improvements you think are worth it (new roles, affixes, fixes), as long as you say what you
   added. Mod-wide behaviour stays "player-like": NPCs break blocks at player speed, use vanilla loot tables, walk
   (no teleporting except stuck recovery), and only know what scouts saw.
