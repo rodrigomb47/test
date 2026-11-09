@@ -3649,6 +3649,123 @@ public final class FCGameTests {
         });
     }
 
+    /** True while every log of the single trunk at relative (x, z) stands on a log (or on the ground under the stump). */
+    private static boolean trunkWhole(GameTestHelper h, int x, int z, int top, net.minecraft.world.level.block.Block log) {
+        for (int y = 3; y <= top; y++) {
+            if (h.getBlockState(new BlockPos(x, y, z)).is(log) && !h.getBlockState(new BlockPos(x, y - 1, z)).is(log)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * A climb cut short (a block turns up over the woodcutter's head 2 blocks up its pillar, out of reach of the top)
+     * never leaves logs hanging: from a pillar short of the top it cuts nothing below a log it cannot reach, comes
+     * down, and builds its next pillar in another column. The trunk stands on its stump at every tick until the tree
+     * is down, and nothing is left of it or of the scaffolds.
+     */
+    @GameTest(template = "platform", timeoutTicks = 4000, batch = "wood_tall_short", skyAccess = true)
+    public static void woodcutterLeavesNoLogHangingWhenItsClimbIsCutShort(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 4000);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = tallTestTree(h, 18, 18, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 16, false);
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 1));
+            n.inventory().setItem(1, new ItemStack(Items.DIRT, 16));
+            noLevelUps(n);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        BlockPos[] obstacle = {null};
+        java.util.Set<BlockPos> columns = new java.util.HashSet<>();
+        t.onEachTick(() -> {
+            t.assertTrue(n.getHealth() >= n.getMaxHealth(), "the woodcutter got hurt (health " + n.getHealth() + ")");
+            t.assertTrue(trunkWhole(h, 18, 18, 17, Blocks.JUNGLE_LOG), "a log was left hanging over a cut trunk");
+            var job = woodJob(n);
+            var pillar = job == null ? null : job.pillar();
+            if (pillar != null) {
+                columns.add(pillar.base);
+            }
+            if (obstacle[0] == null && pillar != null && pillar.phase == com.factionclash.work.Scaffold.Phase.CLIMB
+                    && pillar.height == 2 && n.onGround()) {
+                obstacle[0] = pillar.base.above(4); // over its head on the next jump
+                h.getLevel().setBlockAndUpdate(obstacle[0], Blocks.STONE.defaultBlockState());
+                return;
+            }
+            if (obstacle[0] != null && columns.size() >= 2 && h.getLevel().getBlockState(obstacle[0]).is(Blocks.STONE)) {
+                h.getLevel().setBlockAndUpdate(obstacle[0], Blocks.AIR.defaultBlockState()); // its work is done
+            }
+            var w = woodlandOf(t);
+            if (w == null || job == null || w.felled < 1 || pillar != null || !h.getLevel().getBlockState(stump).is(Blocks.JUNGLE_SAPLING)) {
+                return;
+            }
+            t.assertTrue(obstacle[0] != null && columns.size() >= 2, "the climb should have been cut short and a second pillar built: "
+                    + columns.size() + " columns");
+            t.assertTrue(!anyIn(h, 15, 2, 15, 21, 21, 21, x -> x.is(Blocks.JUNGLE_LOG)), "no jungle log may be left");
+            t.assertTrue(!scaffoldIn(h, 17, 17, 19, 19, 21), "no scaffold block may be left");
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == 16, "the 16 dirt should be back: " + heldOrStored(t, n, Items.DIRT));
+            t.assertTrue(n.onGround() && n.getBlockY() == stump.getY(), "the woodcutter should end on the ground: " + n.getY());
+            t.succeed();
+        });
+    }
+
+    /**
+     * A woodcutter killed on its scaffold leaves the pillar standing. The woodland remembers the column, and the next
+     * woodcutter to take the woodland over takes the pillar down from beside it (the dirt goes into its backpack); the
+     * woodland then forgets the column.
+     */
+    @GameTest(template = "platform", timeoutTicks = 3000, batch = "wood_tall_heir", skyAccess = true)
+    public static void nextWoodcutterTakesDownAPillarLeftByADeadOne(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 3000);
+        FactionNpc first;
+        try {
+            tallTestTree(h, 18, 18, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 16, false);
+            first = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            first.inventory().setItem(1, new ItemStack(Items.DIRT, 12));
+            noLevelUps(first);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        FactionNpc[] heir = {null};
+        BlockPos[] column = {null};
+        t.onEachTick(() -> {
+            if (heir[0] == null) {
+                var job = woodJob(first);
+                var pillar = job == null ? null : job.pillar();
+                if (pillar == null || pillar.phase != com.factionclash.work.Scaffold.Phase.WORK || pillar.height < 5 || !first.onGround()) {
+                    return;
+                }
+                column[0] = pillar.base;
+                var w = woodlandOf(t);
+                t.assertTrue(w != null && w.scaffolds.contains(pillar.base.asLong()), "the woodland should know where the pillar stands");
+                first.kill();
+                FactionNpc n = t.npc(8, 12, NpcRole.WOODCUTTER);
+                n.equip(new ItemStack(Items.STONE_AXE));
+                n.inventory().setItem(1, new ItemStack(Items.DIRT, 12));
+                noLevelUps(n);
+                heir[0] = n;
+                return;
+            }
+            FactionNpc n = heir[0];
+            t.assertTrue(n.getHealth() >= n.getMaxHealth(), "the heir got hurt (health " + n.getHealth() + ")");
+            var w = woodlandOf(t);
+            boolean standing = false;
+            for (int k = 0; k < com.factionclash.logic.TreeShape.MAX_PILLAR + 2; k++) {
+                standing |= com.factionclash.work.Scaffold.isBlock(h.getLevel().getBlockState(column[0].above(k)));
+            }
+            if (standing || w == null || w.scaffolds.contains(column[0].asLong())) {
+                return;
+            }
+            t.assertTrue(w.assigned != null && w.assigned.equals(n.getUUID()), "the heir should hold the woodland");
+            t.succeed();
+        });
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

@@ -177,7 +177,7 @@ public class WoodcutterJob extends Job {
     private int strayTries;
     /** Scaffold blocks to fetch on the next storehouse visit; the storehouse's count of them, looked at now and then. */
     private boolean wantScaffold;
-    private long nextScaffoldTrip, nextScaffoldLook;
+    private long nextScaffoldTrip, nextScaffoldLook, nextScaffoldSweep;
     private int storedScaffold;
 
     public WoodcutterJob(FactionNpc npc) {
@@ -227,8 +227,11 @@ public class WoodcutterJob extends Job {
         if (s.is(ItemTags.SAPLINGS)) {
             return KEEP_SAPLINGS; // per species: the backpack keeps 8 of each
         }
-        if (Scaffold.isItem(s)) {
-            return Scaffold.CARRY; // its scaffold blocks stay with it
+        if (s.is(Items.DIRT)) {
+            return Scaffold.CARRY; // its scaffold blocks stay with it: dirt, topped up with coarse dirt
+        }
+        if (s.is(Items.COARSE_DIRT)) {
+            return Math.max(0, Scaffold.CARRY - Inv.count(npc.inventory(), x -> x.is(Items.DIRT)));
         }
         return s.is(Items.BONE_MEAL) ? KEEP_BONE_MEAL : 0;
     }
@@ -362,7 +365,10 @@ public class WoodcutterJob extends Job {
         if (wp.legacyFence && startDismantling(wp)) {
             return;
         }
-        if (!strays.isEmpty() && startStrayCleanup(b)) {
+        if (strays.isEmpty()) {
+            sweepScaffolds(wp); // a pillar the woodland's last woodcutter left standing (it died or was retrained up there)
+        }
+        if (!strays.isEmpty() && startStrayCleanup(b, wp)) {
             return;
         }
         // 3. a tree it started to fell (before a trip to the storehouse, a fight or a reload): go back and finish it.
@@ -836,8 +842,10 @@ public class WoodcutterJob extends Job {
     /**
      * A tree with logs out of reach from the ground ({@link TreeShape#fromGround}): a scaffold pillar beside the trunk
      * ({@link ForestScan#pillarSpot}), built with blocks it carries (fetched first when the storehouse has them). A new
-     * tree that no column suits, or that it has no blocks for, is left standing whole; a started one is finished from
-     * the ground as far as it can be. True when it set off for the pillar, the storehouse or another tree.
+     * tree that no column suits is left standing whole, and one it has no blocks for is left for a while; a started
+     * one that no pillar can finish (no column, no blocks, or {@link #MAX_PILLARS_PER_TREE} climbs cut short) is left
+     * standing as it is, its top already felled and the rest on its stump. True when it set off for the pillar, the
+     * storehouse or another tree.
      */
     private boolean startPillar(BaseState b, boolean resume) {
         List<BlockPos> wood = new ArrayList<>(logs);
@@ -846,14 +854,18 @@ public class WoodcutterJob extends Job {
                 wood.add(p);
             }
         }
-        if (!needsScaffold(spot, wood) || pillars >= MAX_PILLARS_PER_TREE) {
+        if (!needsScaffold(spot, wood)) {
             return false;
+        }
+        // A started tree that still needs a scaffold but gets none is left standing as it is: the pillars cut it
+        // strictly from the top (see nextLog), so what is left stands on its stump. Cutting its foot from the ground
+        // would leave the logs above hanging.
+        if (pillars >= MAX_PILLARS_PER_TREE) {
+            leaveTree("cannot get up to its top"); // climbs cut short again and again
+            return true;
         }
         TreeShape.Pillar plan = ForestScan.pillarSpot(level(), data(), b, spot, big, wood, true);
         if (plan == null) {
-            if (resume) {
-                return false;
-            }
             leaveTree("no room for a scaffold"); // wide branches on every side, or no firm ground beside the trunk
             return true;
         }
@@ -864,7 +876,8 @@ public class WoodcutterJob extends Job {
                 return true;
             }
             if (resume) {
-                return false;
+                leaveTree("no dirt for a scaffold");
+                return true;
             }
             status("Leaving a tall tree for now (no dirt for a scaffold)", "Chopping");
             skipFor(spot, TREE_RETRY_TICKS);
@@ -1128,6 +1141,7 @@ public class WoodcutterJob extends Job {
         if (p == null) {
             return;
         }
+        forgetScaffold(woodland(), p.base);
         if (p.strays) {
             strays.removeIf(q -> level().isLoaded(q) && !Scaffold.isBlock(level().getBlockState(q)));
             state = State.CHECK;
@@ -1181,8 +1195,8 @@ public class WoodcutterJob extends Job {
         if (!there) {
             if (walkFailed()) {
                 if (p.strays) {
-                    strays.clear(); // cannot get to them: left (rare)
                     pillar = null;
+                    giveUpStrays(wp); // cannot get to them: left (rare)
                     state = State.CHECK;
                 } else {
                     pillar = null;
@@ -1216,6 +1230,9 @@ public class WoodcutterJob extends Job {
             if (!p.placed && npc.getY() >= cell.getY() + 1.0 && Scaffold.place(npc, cell)) {
                 p.placed = true;
                 p.height++;
+                if (wp != null && wp.addScaffold(p.base)) {
+                    data().setDirty(); // the woodland knows it stands, should this woodcutter die up there
+                }
             }
             return;
         }
@@ -1328,9 +1345,9 @@ public class WoodcutterJob extends Job {
         }
         status("Taking the scaffold down (" + p.height + " high" + (p.down != null ? ", " + p.down : "") + ")", "Building");
         if (s.hasBlockEntity() || s.getDestroySpeed(level(), under) < 0) {
-            // not a block it can break (someone put it there): left to the stuck recovery, which digs or bridges down
-            pillar = null;
-            state = State.CHECK;
+            // not a block it can break (someone put it there): left to the stuck recovery, which digs or bridges down;
+            // the scaffold blocks still standing are noted, to be taken down from beside
+            strayPillar();
             return;
         }
         if (breaker.tick(npc, under)) {
@@ -1339,20 +1356,37 @@ public class WoodcutterJob extends Job {
         }
     }
 
-    /** The highest log of the tree still standing within reach of the pillar ({@link #TRUNK_REACH}), or null. */
+    /**
+     * The highest log of the tree still standing within reach of the pillar ({@link #TRUNK_REACH}), or null. The tree
+     * comes down strictly from the top: while a log the ground cannot reach ({@link TreeShape#fromGround}) stands out
+     * of reach at this log's height or above, nothing is cut (it comes into reach lower down; after a climb cut short,
+     * the next pillar takes it). Cutting the middle of a trunk from a pillar that fell short of its top would leave
+     * the top hanging. Logs the ground reaches never hold it up: they are cut from the ground afterwards, as for any
+     * tree.
+     */
     private BlockPos nextLog() {
+        BlockPos best = null;
         for (java.util.Iterator<BlockPos> it = logs.iterator(); it.hasNext(); ) {
-            BlockPos q = it.next();
-            if (!BlockWork.inReach(npc, q, TRUNK_REACH)) {
+            BlockPos q = it.next(); // (the list is highest first)
+            if (best != null && q.getY() < best.getY()) {
+                break; // every log at its height has been looked at
+            }
+            boolean reach = BlockWork.inReach(npc, q, TRUNK_REACH);
+            if (!reach && TreeShape.fromGround(q.getX() - spot.getX(), q.getY() - spot.getY(), q.getZ() - spot.getZ())) {
                 continue;
             }
             if (!treeLog(q)) {
                 it.remove(); // cut already (a branch on the way up), or gone
                 continue;
             }
-            return q; // (the list is highest first)
+            if (!reach) {
+                return null; // a log above it (or level with it) is not in reach yet: nothing below it is cut
+            }
+            if (best == null) {
+                best = q;
+            }
         }
-        return null;
+        return best;
     }
 
     /**
@@ -1393,7 +1427,10 @@ public class WoodcutterJob extends Job {
         return null;
     }
 
-    /** The highest scaffold block left standing within reach ({@link #TRUNK_REACH}), or null. */
+    /**
+     * The highest scaffold block left standing within reach ({@link #TRUNK_REACH}), or null; also null while someone
+     * stands on that block (an NPC retrained up there, a mob): it is not broken from under them.
+     */
     private BlockPos nextStray() {
         BlockPos best = null;
         for (java.util.Iterator<BlockPos> it = strays.iterator(); it.hasNext(); ) {
@@ -1405,6 +1442,10 @@ public class WoodcutterJob extends Job {
             if (BlockWork.inReach(npc, q, TRUNK_REACH) && (best == null || q.getY() > best.getY())) {
                 best = q;
             }
+        }
+        if (best != null && !level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, new AABB(best.above()),
+                e -> e != npc && e.isAlive()).isEmpty()) {
+            return null;
         }
         return best;
     }
@@ -1434,7 +1475,7 @@ public class WoodcutterJob extends Job {
      * within reach from there, else from a new pillar built beside them (see {@link TreeShape#pillarSpot}). Given up
      * after {@link #MAX_STRAY_TRIES} tries, or when no column beside them will do. True when it set off.
      */
-    private boolean startStrayCleanup(BaseState b) {
+    private boolean startStrayCleanup(BaseState b, WorkplaceState wp) {
         strays.removeIf(q -> level().isLoaded(q) && !Scaffold.isBlock(level().getBlockState(q)));
         if (strays.isEmpty()) {
             strayTries = 0;
@@ -1446,8 +1487,7 @@ public class WoodcutterJob extends Job {
             }
         }
         if (++strayTries > MAX_STRAY_TRIES) {
-            strays.clear();
-            strayTries = 0;
+            giveUpStrays(wp);
             return false;
         }
         BlockPos foot = strays.get(0);
@@ -1459,13 +1499,13 @@ public class WoodcutterJob extends Job {
             foot = foot.below();
         }
         TreeShape.Pillar plan = ForestScan.pillarSpot(level(), data(), b, foot, false, strays, false);
-        if (plan == null || plan.height() > 0 && Scaffold.carried(npc) < plan.height()) {
-            if (plan != null && fetchScaffold(plan.height(), true)) {
+        int need = plan == null || plan.height() == 0 ? 0 : plan.height() + TreeShape.PILLAR_SPARE;
+        if (plan == null || Scaffold.carried(npc) < need) {
+            if (plan != null && fetchScaffold(need, true)) {
                 strayTries--;
                 return true;
             }
-            strays.clear(); // nowhere to stand beside them, or no blocks to reach them: left (rare)
-            strayTries = 0;
+            giveUpStrays(wp); // nowhere to stand beside them, or no blocks to reach them: left (rare)
             return false;
         }
         pillar = new Scaffold.Pillar(new BlockPos(plan.x(), foot.getY(), plan.z()), plan.height(), true);
@@ -1474,6 +1514,82 @@ public class WoodcutterJob extends Job {
         markBusy();
         state = State.SCAFFOLD;
         return true;
+    }
+
+    /** Scaffold blocks left standing are given up (rare: nowhere to stand beside them); the woodland forgets their columns. */
+    private void giveUpStrays(WorkplaceState wp) {
+        if (wp != null && wp.scaffolds.removeIf(k -> {
+            BlockPos c = BlockPos.of(k);
+            return strays.stream().anyMatch(q -> q.getX() == c.getX() && q.getZ() == c.getZ());
+        })) {
+            data().setDirty();
+        }
+        strays.clear();
+        strayTries = 0;
+    }
+
+    /** This woodcutter's woodland, without claiming one. */
+    private WorkplaceState woodland() {
+        return Workplaces.held(npc, WorkplaceState.Type.TREE_PLOT);
+    }
+
+    /**
+     * The scaffold blocks standing in the column whose lowest cell is {@code base} (none of them part of a base's
+     * plan), from the bottom up to two cells in a row without one: a pillar is one column with at most a block
+     * missing here and there, and the two cells over its top were clear (the woodcutter's body), so natural dirt
+     * further up (an overhang) is never taken for scaffold.
+     */
+    private List<BlockPos> scaffoldBlocksIn(BlockPos base) {
+        List<BlockPos> out = new ArrayList<>();
+        int gap = 0;
+        for (int k = 0; k < TreeShape.MAX_PILLAR + 2 && gap < 2; k++) {
+            BlockPos c = base.above(k);
+            if (Scaffold.isBlock(level().getBlockState(c)) && !WorkSafety.planned(data(), c)) {
+                out.add(c);
+                gap = 0;
+            } else {
+                gap++;
+            }
+        }
+        return out;
+    }
+
+    /** The woodland forgets the scaffold column at {@code base} once nothing of it is left standing. */
+    private void forgetScaffold(WorkplaceState wp, BlockPos base) {
+        if (wp != null && wp.scaffolds.contains(base.asLong()) && level().isLoaded(base) && scaffoldBlocksIn(base).isEmpty()) {
+            wp.scaffolds.remove(Long.valueOf(base.asLong()));
+            data().setDirty();
+        }
+    }
+
+    /**
+     * The scaffold columns the woodland remembers, at most every {@link #STORAGE_LOOK_TICKS} while this woodcutter has
+     * no pillar of its own: what still stands of one (its last woodcutter died or was retrained up there, or an NPC
+     * stranded on it broke its way down to a safe drop) is taken down from beside ({@link #startStrayCleanup}); a
+     * column with nothing left is forgotten. Columns not loaded wait.
+     */
+    private void sweepScaffolds(WorkplaceState wp) {
+        if (wp.scaffolds.isEmpty() || now() < nextScaffoldSweep || pillar != null) {
+            return;
+        }
+        nextScaffoldSweep = now() + STORAGE_LOOK_TICKS;
+        for (long k : new ArrayList<>(wp.scaffolds)) {
+            BlockPos base = BlockPos.of(k);
+            if (!level().isLoaded(base)) {
+                continue;
+            }
+            List<BlockPos> left = scaffoldBlocksIn(base);
+            if (left.isEmpty()) {
+                wp.scaffolds.remove(Long.valueOf(k));
+                data().setDirty();
+                continue;
+            }
+            for (BlockPos c : left) {
+                if (!strays.contains(c) && strays.size() < 64) {
+                    strays.add(c);
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------------ collecting
@@ -2113,7 +2229,9 @@ public class WoodcutterJob extends Job {
         if (pillar != null) {
             // the scaffold it stands on: column, height, phase (absent in older saves: none)
             tag.put("pillar", pillar.save());
-            tag.putInt("pillars", pillars);
+        }
+        if (pillar != null || felling != null) {
+            tag.putInt("pillars", pillars); // climbs cut short on this tree so far
         }
         if (!strays.isEmpty()) {
             tag.putLongArray("strays", strays.stream().mapToLong(BlockPos::asLong).toArray());

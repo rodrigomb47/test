@@ -104,7 +104,8 @@ python3 tools/rcon.py "stop"
 ## 5. State at handoff (branch head after commit 9ee3f4a + this handoff)
 
 - 139 unit tests, 94 GameTests, all green. Download jar rebuilt; SHA-256 on README line 13.
-- After the tall-trees change (scaffold pillars, §6): 144 unit tests, 100 GameTests, all green; jar rebuilt. Not yet
+- After the tall-trees change (scaffold pillars, §6) and its review fixes: 144 unit tests, 102 GameTests, all green;
+  jar rebuilt. Not yet
   checked in a campaign.
 - Final 8-day fresh campaign (results in README "The final check"): 11 self-chosen mines, all shafts reached the
   diamond layer through aquifers; 104-247 trees felled per base; all fisheries on real water; scouts reported a real
@@ -128,8 +129,9 @@ python3 tools/rcon.py "stop"
   spruce, giant/tall jungle, tall fancy oaks and birches) from a dirt scaffold pillar beside the trunk, and replant a
   2x2 spruce/jungle as four saplings. Notes: `docs/design/notes/tall-trees.md`. **Not yet verified in a campaign**:
   check a mega-taiga or jungle base (felled counts, no dirt pillars or floating logs left, `Scaffold` statuses, no
-  fall deaths). Mangroves, huge mushrooms and trees no single pillar reaches are still left standing; a woodcutter
-  that dies on its pillar leaves the pillar (and the half-felled tree), as a dead woodcutter always left its tree.
+  fall deaths). Mangroves, huge mushrooms and trees no single pillar reaches are still left standing. A woodcutter
+  that dies on its pillar leaves the half-felled tree standing on its stump (felled strictly top down); the
+  woodland remembers the pillar and its next woodcutter takes it down.
 - Scouts retreat home from enemy *soldiers* (by choice, see §2.5). The drowned rule (only trident drowned are
   archers; swimming monsters count only when close or hunting) came after the last campaign: re-check in the next
   one that scouts no longer make hundreds of sidesteps along rivers.

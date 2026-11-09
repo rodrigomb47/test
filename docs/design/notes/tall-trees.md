@@ -247,3 +247,95 @@ see "Campaign check" below.
 4. `sim.py summary`: felled counts go up, no woodcutter deaths, and recoveries do not climb for woodcutters.
 5. Check that miners' dirt stock covers the 32 a woodcutter keeps.
 6. Check a reload in the middle of a pillar.
+
+## Review (adversarial pass over 8f5c028)
+
+Every BUILD point was checked against the code paths. Three real defects were found (one confirmed by a GameTest
+that fails without the fix), plus four smaller ones. Fixed in the "Review fixes" commit.
+
+### Defects fixed
+1. **Logs left hanging after a climb cut short.** From the pillar it cut "the highest log within reach". A climb
+   that stops short of the planned height has that problem: a block over its head that was not there at the survey,
+   a mob in the cell it places into (6 missed jumps), or no blocks left. The woodcutter then cut the middle of the
+   trunk (everything up to about 7.5 above its eyes) and left the top hanging. The next pillar was planned only from
+   a fresh survey of the stump, which no longer reaches those logs, so they could stay up for good.
+   - Now `nextLog` fells strictly from the top. While a log the ground cannot reach (above 8) stands out of reach at
+     the same height or higher, nothing below it is cut.
+   - With a complete climb this never blocks: each log's reach window is centred on its own height, so a higher
+     log's window never lies wholly below a lower one's.
+   - Logs the ground reaches never block; they are cut afterwards from the ground, as before.
+   - Proof: `woodcutterLeavesNoLogHangingWhenItsClimbIsCutShort`. A stone appears over the woodcutter's head 2
+     blocks up its first pillar. Every tick, the test checks that each log of the trunk stands on a log.
+2. **A started tree was finished "from the ground as far as it can".** This happened when it still needed a
+   scaffold but got none (no column, no dirt, or 3 climbs cut short). It meant cutting the foot of the trunk and
+   leaving everything above 8 hanging. Such a tree is now left standing as it is (`leaveTree`): its top is already
+   felled (point 1), and the rest stands on its stump. An untouched tree that fails 3 climbs is also left; it is
+   rechecked from afar as before, and felled again once fellable.
+3. **A woodcutter that died (or was retrained) on its pillar left the pillar for good.** The job state died with it,
+   and nobody else knew the column.
+   - The woodland now remembers it: `WorkplaceState.scaffolds`, at most 16 columns, saved as `scaffolds` in the
+     woodland block. Old saves have none.
+   - The column is recorded when the first block is placed, and forgotten when the pillar comes down empty
+     (`endPillar`).
+   - Every 200 ticks, while it has no pillar, a woodcutter sweeps the remembered columns (`sweepScaffolds`). Blocks
+     still standing become `strays` and are taken down from beside (`startStrayCleanup`). An empty column is
+     forgotten. Strays it gives up on (no room beside them, cannot get there, 3 tries) forget their columns, so
+     there is no endless retry.
+   - The scan reads up the column and stops at two cells in a row without a scaffold block, so natural dirt above a
+     pillar column (an overhang) is never taken for scaffold.
+   - A stray block that someone stands on (an NPC retrained up there, a mob) is not broken from under them.
+   - This also covers the up to 3 blocks that a stranded NPC of any job leaves after `DigOut` breaks its way down.
+   - Proof: `nextWoodcutterTakesDownAPillarLeftByADeadOne`. The first woodcutter is killed 5 or more blocks up.
+     Another woodcutter takes over the woodland, takes the pillar down, and the woodland forgets the column.
+4. **Unbreakable block underfoot when stepping down** (a block entity or bedrock-hard block someone put there). The
+   pillar was dropped without noting the dirt below it. It is now recorded as strays (`strayPillar`).
+5. **`pillars` (climbs cut short on this tree) was only saved while a pillar stood.** A reload between two pillars
+   reset the per-tree cap. It is now saved while a tree is started.
+6. **`keep()`** kept 32 dirt and 32 coarse dirt (64 in all). It now keeps 32 of the two together.
+7. **The stray clean-up pillar** asked for just its height in blocks. It now asks for height + PILLAR_SPARE, like a
+   felling pillar, so a block missing below can be put back.
+
+### Checked and found sound (no change)
+- **Interruptions.** Hurt, 1 free slot, nightfall far out, the claim lost, a meal errand (`beforeErrand` drives the
+  descent from `survival()`) and no woodland all set `down`. From then on nothing is cut, and it steps down block by
+  block. A pillar not climbed yet is dropped.
+- **Reload and NBT.** The pillar compound round-trips (the GameTest compares the saved compounds). `logs`,
+  `deferred` and `species` are saved while a pillar stands. Old saves load with no pillar. Unknown phases load as
+  WORK.
+- **Movement.** In CLIMB, WORK and DOWN the job never calls `goTo`, so neither `NpcNavigator`'s watchdog nor
+  `DigOut` runs. `WorkGoal` cannot be pre-empted on the pillar: flight, melee, creeper dodge and hurt-by targeting
+  are all off, and the ranged goal is for archer roles only. Recovery teleports never land on a pillar top (`perched` →
+  `onPillar`). `DigOut`'s own pillaring toward a higher target is left alone.
+- **Protected places.** `pillarRoom` checks `protectedWood` for the column and `planned` for every cell. A missing
+  block is only ever put back into its own column.
+- **Scaffold supply.** Earth only, so the builders' tool-stone reserve is never touched. The fetch is at most every
+  2400 ticks, except for a started tree.
+- **Per-tick cost.** `nextLog` stops at the first log that blocks or at the first lower height. `interruption()`
+  is a few lookups. The canopy is read once per pillar. The sweep runs at most every 200 ticks, only without a
+  pillar, and reads at most about 30 blocks per column. Recovery-spot checks read at most about 25 blocks more per
+  candidate.
+- **2x2 replant.** Four saplings in a square with 4 carried, else one at the north-west corner after
+  HUGE_PATIENCE, else the old timeline. The storehouse trip fetches 4. The grove plants one sapling per spot and its
+  order is unchanged.
+- **The implementer's tests are meaningful.** Their sabotage logs (`gt_tall_neg*.log`) show each one failing.
+
+### Limits left as they are (told to the owner)
+- **An explosion or an enderman can still take the block under its feet.** A creeper that blows up the foot of the
+  pillar, or an enderman that takes the block it stands on, can drop it more than 3. Knockback and creeper dodges
+  are off up there (a dodge would be a fall too). The blocks left standing are taken down afterwards (strays).
+- **The half-felled tree of a dead woodcutter** stands on its stump (no floating logs). The heir only fells it
+  again if it still passes the survey as a tree (natural leaves near its top).
+- **Two far-out branch tips** whose reach windows are each under a block wide could, in theory, block each other
+  (rounding). It would re-plan, and after 3 climbs leave the tree standing. No vanilla tree was seen to do this.
+- **Builders' dirt.** Builders use dirt for grass and dirt repairs. A woodcutter keeps up to 32 once it has
+  fetched them.
+
+### Tests
+- 2 new GameTests (own batches `wood_tall_short` and `wood_tall_heir`, skyAccess, `GameTestBases.register`). The
+  stone obstacle is removed by the short-climb test itself.
+- Sabotage run (`impl/gt_review_neg.log`, scratchpad): the old `nextLog` rule plus the sweep switched off. Both new
+  tests fail: "a log was left hanging over a cut trunk", and the heir test times out. The code was restored
+  afterwards (checked with grep).
+- Counts: 144 unit tests, 102 GameTests (`impl/gt_review1.log` and three final runs, `impl/gt_review_final*.log`).
+- No dedicated-server campaign was run in this review (not allowed in this step). The campaign check above still
+  stands.

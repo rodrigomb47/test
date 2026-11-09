@@ -234,20 +234,27 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   trunk. No column reaching them all: the tree is left whole (a giant jungle tree's branch ends, from -2 to +5 of its
   north-west corner, are all reached from the south-east corner column). Height at most 28 (MAX_PILLAR); blocks
   needed: height + 2 (PILLAR_SPARE). Before walking to a tall tree the woodcutter carries at least
-  `scaffoldNeed(top)` blocks (the worst column's height + 2), else fetches up to 32 (Scaffold.CARRY, kept in the
-  backpack when unloading) at most every 2400 ticks; with too few in store the tree is skipped for 12000 ticks.
+  `scaffoldNeed(top)` blocks (the worst column's height + 2), else fetches up to 32 (Scaffold.CARRY, dirt and coarse
+  dirt together, kept in the backpack when unloading) at most every 2400 ticks; with too few in store the tree is skipped for 12000 ticks.
   Without at least 4 blocks carried or stored, no tree taller than 8 is even looked for. Building: it stands over
   the column's middle, cuts natural leaves or the tree's logs in the cell above its head, jumps, and places a block
   in the cell its feet left once they are above it (vanilla jump: about 9 ticks a block); 6 jumps without a block
-  (MAX_MISSES) end the climb. On the pillar: the highest log within 7.5 first, then natural leaves of the crown
+  (MAX_MISSES) end the climb. On the pillar: the highest log within 7.5 first, strictly top down (while a log above 8
+  stands out of reach at that log's height or higher, nothing below it is cut, so a climb cut short leaves nothing
+  hanging), then natural leaves of the crown
   (within 5/6 of the stump) within 5.5; nothing left in reach, it breaks the block underfoot at player speed (dirt by
   hand: 15 ticks) and drops one block. A block missing below is put back first. On the ground the rest is felled as
   for any tree. It comes down early (without cutting) when hurt, at 1 free backpack slot (then unloads), at nightfall
   far out, when the tree is claimed by another, for a meal errand, or when its base or woodland is gone; the tree is
-  resumed later with a new pillar (3 cut-short climbs per tree at most, MAX_PILLARS_PER_TREE). Up there it ignores
+  resumed later with a new pillar (3 cut-short climbs per tree at most, MAX_PILLARS_PER_TREE). A started tree that no
+  pillar can finish (no column, no dirt, or 3 climbs cut short) is left standing as it is, its top already felled;
+  it is never cut from its foot. Up there it ignores
   fights, does not flee or dodge creepers and takes no knockback. Scaffold blocks left standing (it was moved off
-  its pillar) are taken down from beside, from a pillar of its own when out of reach (3 tries, MAX_STRAY_TRIES).
-  The pillar (column, height, phase) is saved with the job.
+  its pillar) are taken down from beside, from a pillar of its own when out of reach (3 tries, MAX_STRAY_TRIES); a
+  block someone stands on is not broken. The woodland remembers every column where scaffold may stand
+  (WorkplaceState.scaffolds, at most 16, PROPOSED): a woodcutter taking the woodland over (the last one died or was
+  retrained up there) takes what is left down, looking every 200 ticks. The pillar (column, height, phase) and the
+  climbs per tree are saved with the job.
 * Protected wood (`WorkSafety.protectedWood`): any base's plan, 2 around a settlement's walls (its own included),
   other bases' land + 8 (lairs + 16), outside the map, within 32 of a village or 48 of a pillager outpost or
   woodland mansion the faction knows.

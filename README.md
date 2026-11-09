@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `b9ed29752eea6f716f90c97156cf610af107bf0c16d94636da234fbb5d43eb1c`
+SHA-256: `64040007e87927732fcb35e0e8733a8c7c05618f647f53591497c96b04bc5851`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -227,7 +227,9 @@ Players respawn at their nearest surviving allied base when they have no bed.
   the tree top down and clears the canopy within reach (its saplings go into the backpack), then breaks the pillar
   block under its feet one at a time on the way down, the dirt going back into its backpack. Up there it ignores
   fights and is not knocked off; hurt, hungry, with a full backpack or at nightfall far out it comes down first, and
-  a reload resumes the pillar exactly. Without dirt such trees are left standing, as are mangroves and trees whose
+  a reload resumes the pillar exactly. The tree comes down strictly from the top, so even a climb cut short leaves
+  no log hanging, and a pillar a woodcutter could not take down itself (it died up there) is taken down by the
+  woodland's next woodcutter. Without dirt such trees are left standing, as are mangroves and trees whose
   branches no single pillar reaches. Each base also keeps a **grove** of `groveSize` (16) saplings growing on a lattice in its
   always-ticking belt (birch first, then spruce, oak, cherry, acacia; twice as many while the base is short of
   wood), fetching the saplings from the storehouse and first picking any flowers beside an oak, birch or cherry
@@ -387,7 +389,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   scaffold pillar's column and height for tall trees, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 100 GameTests on a real headless server, including **miners** (digs its own
+* `./gradlew runGameTestServer` — 102 GameTests on a real headless server, including **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
   a resting mine; a mine set aside keeps only the ground it dug), **woodcutters** (fells a tree and replants the same
@@ -395,7 +397,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   branch end from below, leaves an unreachable tree for a while, fills the grove from the storehouse and picks the
   flowers first; fells a mega spruce and a tall jungle tree from a dirt scaffold and leaves no log or block behind,
   replants the spruce as a square of four, resumes its scaffold after reloads, comes down it for food, leaves tall
-  trees alone without dirt; any NPC left on a bare pillar breaks its way down), **fishermen** (never picks farm irrigation, catches at a pond, leaves when the water is gone,
+  trees alone without dirt, leaves no log hanging when a climb is cut short, takes down a pillar a dead woodcutter
+  left; any NPC left on a bare pillar breaks its way down), **fishermen** (never picks farm irrigation, catches at a pond, leaves when the water is gone,
   climbs onto the bank before casting, treasure only in open water, no fisherman hired without water),
   **retraining** (frees the workplace, barren roles, a worker with its tool again is not toolless), **old saves**
   (old mines, tree plots and fishing spots load and convert), **scouts** (walk on past a drowned in a pond, step aside from zombies and keep

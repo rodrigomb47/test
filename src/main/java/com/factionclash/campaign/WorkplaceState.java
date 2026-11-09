@@ -124,6 +124,14 @@ public final class WorkplaceState {
     public int felled;
     /** Woodland: an old save's tree-plot fence still stands (its rings follow from origin and facing). */
     public boolean legacyFence;
+    /**
+     * Woodland: the columns (packed position of the lowest cell) where its woodcutter built a scaffold pillar that may
+     * still stand. A woodcutter taking over the woodland (the last one died or was retrained on its pillar) takes
+     * whatever is left of them down; a column is forgotten once nothing of it stands.
+     */
+    public final List<Long> scaffolds = new ArrayList<>();
+    /** PROPOSED: scaffold columns a woodland remembers at most. */
+    public static final int MAX_SCAFFOLDS = 16;
     /** PROPOSED: a woodland remembers at most this many planted saplings and this many stumps to replant. */
     public static final int MAX_PLANTED = 64, MAX_REPLANT = 32;
 
@@ -142,6 +150,19 @@ public final class WorkplaceState {
         while (planted.size() > MAX_PLANTED) {
             planted.remove(0);
         }
+    }
+
+    /** Remembers a scaffold column (its lowest cell); false if it was known already. Forgets the oldest beyond {@link #MAX_SCAFFOLDS}. */
+    public boolean addScaffold(BlockPos base) {
+        long k = base.asLong();
+        if (scaffolds.contains(k)) {
+            return false;
+        }
+        scaffolds.add(k);
+        while (scaffolds.size() > MAX_SCAFFOLDS) {
+            scaffolds.remove(0);
+        }
+        return true;
     }
 
     /** Queues a stump for replanting, replacing an older entry at the same place and forgetting the oldest beyond {@link #MAX_REPLANT}. */
@@ -255,6 +276,9 @@ public final class WorkplaceState {
             t.put("replant", list);
             t.putInt("felled", felled);
             t.putBoolean("legacyFence", legacyFence);
+            if (!scaffolds.isEmpty()) {
+                t.putLongArray("scaffolds", scaffolds.stream().mapToLong(Long::longValue).toArray());
+            }
         }
         if (type == Type.FISHERY) {
             t.putInt("fishV", 1);
@@ -346,6 +370,11 @@ public final class WorkplaceState {
             }
             w.felled = Math.max(0, t.getInt("felled"));
             w.legacyFence = t.getBoolean("legacyFence");
+            for (long p : t.getLongArray("scaffolds")) { // (absent before scaffolds: none)
+                if (w.scaffolds.size() < MAX_SCAFFOLDS && !w.scaffolds.contains(p)) {
+                    w.scaffolds.add(p);
+                }
+            }
         } else {
             w.legacyFence = true;
             for (BlockPos p : com.factionclash.structure.TreePlotLayout.spots(w, Math.max(1, Math.min(3, w.tier)))) {
