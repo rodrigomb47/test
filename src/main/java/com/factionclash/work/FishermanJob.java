@@ -84,6 +84,11 @@ public class FishermanJob extends Job {
      */
     private int travelTicks;
     private long lastTravelTick = -1;
+    /**
+     * The route failures already counted when the walk to the stand began: failures left over from earlier walks (a
+     * forage leg, a catch, a spot given up as out of reach) do not count against a new spot.
+     */
+    private int travelFailBase;
     private UUID chasing;
     private long chaseStart;
     private final Set<UUID> leftLying = new HashSet<>();
@@ -192,7 +197,7 @@ public class FishermanJob extends Job {
 
     private void search(BaseState b, WorkplaceState w) {
         if (w.spot == FishingWater.VALID) {
-            state = State.FISH; // found meanwhile (the director looks too)
+            waterKnownAgain(); // found meanwhile (the director looks too)
             return;
         }
         if (now() < nextSearch) {
@@ -228,8 +233,7 @@ public class FishermanJob extends Job {
      */
     private void forage(BaseState b, WorkplaceState w) {
         if (w.spot == FishingWater.VALID) {
-            state = State.FISH;
-            restUntil = 0;
+            waterKnownAgain(); // the director found water meanwhile
             return;
         }
         if (restUntil > 0) {
@@ -258,7 +262,6 @@ public class FishermanJob extends Job {
             forageTarget = null;
             FishingWater.Spot s = FishingSpots.search(level(), data(), b, npc.blockPosition(), FORAGE_SCAN, FishingSpots.reach(b, true), w.badSpots);
             if (s != null) {
-                forageFails = 0;
                 found(b, w, s);
                 return;
             }
@@ -272,11 +275,18 @@ public class FishermanJob extends Job {
     private void found(BaseState b, WorkplaceState w, FishingWater.Spot s) {
         FishingSpots.apply(data(), w, s);
         FishingSpots.announce(level(), b, w);
-        markBusy();
+        waterKnownAgain();
+    }
+
+    /** There is water to fish again: go there, with a fresh round of foraging kept for the next time none is near. */
+    private void waterKnownAgain() {
+        markBusy(); // so the director does not retrain it on the way there
         state = State.FISH;
         bite = -1;
         stopTravel();
         restUntil = 0;
+        forageFails = 0;
+        forageTarget = null;
     }
 
     /** Neither the search nor a round of foraging found water: the base has none within reach, for now. */
@@ -343,11 +353,14 @@ public class FishermanJob extends Job {
             return;
         }
         chasing = null;
+        if (lastTravelTick < 0 || routeFailures() < travelFailBase) {
+            travelFailBase = routeFailures(); // a new walk, or the count was reset by arriving somewhere else (an errand)
+        }
         if (!goTo(w.extent, 1.0, "the fishing spot")) {
             travelTicks += lastTravelTick < 0 ? 0 : (int) Math.min(now() - lastTravelTick, MAX_TRAVEL_GAP);
             lastTravelTick = now();
             // a spot it cannot get to is given up, rather than digging toward a far lake for ever
-            if (travelTicks > TRAVEL_GIVE_UP_TICKS || routeFailures() >= TRAVEL_ROUTE_FAILURES) {
+            if (travelTicks > TRAVEL_GIVE_UP_TICKS || routeFailures() - travelFailBase >= TRAVEL_ROUTE_FAILURES) {
                 badSpot(b, w, "Could not reach the fishing spot");
             }
             return;
@@ -388,21 +401,17 @@ public class FishermanJob extends Job {
         reelIn(w, water, npc.getMainHandItem());
     }
 
-    private static FishingHook lootHook;
-
     /**
      * The entity the fishing loot table is rolled for. In open water (with fishingTreasure on) it is a fishing hook,
      * built like a player's but never added to the world, so the treasure entry's open-water condition holds exactly
-     * as for a player; elsewhere the fisherman itself, which gives fish and junk only.
+     * as for a player; elsewhere the fisherman itself, which gives fish and junk only. A new hook is made for each
+     * catch (cheap, once per bite): one kept in a static field would hold on to a closed world in single player.
      */
     public static Entity lootEntity(boolean open, FactionNpc npc) {
         if (!open || !FCConfig.FISHING_TREASURE.get()) {
             return npc;
         }
-        if (lootHook == null || lootHook.level() != npc.level()) {
-            lootHook = new FishingHook(EntityType.FISHING_BOBBER, npc.level()); // open water by default
-        }
-        return lootHook;
+        return new FishingHook(EntityType.FISHING_BOBBER, npc.level()); // open water by default
     }
 
     private void reelIn(WorkplaceState w, BlockPos water, ItemStack rod) {

@@ -1650,9 +1650,47 @@ public final class FCGameTests {
     }
 
     /**
+     * A fisherman that just found water at the end of a fruitless walk (a forage leg that could not reach its target,
+     * or a spot given up as out of reach) still walks to the new spot and fishes: the failed routes of the earlier
+     * walk do not count against it. Its saved FISH state is honoured, so it goes straight to the water.
+     */
+    @GameTest(template = "platform", timeoutTicks = 900, batch = "fish_resume", skyAccess = true)
+    public static void fishermanIsNotPutOffByEarlierFailedRoutes(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 900);
+        java.util.Set<BlockPos> pond = sunkenPond(h, 15, 15, 21, 21);
+        FactionNpc fisher;
+        try {
+            fisher = fisherAtPond(h, t, pond);
+            com.factionclash.work.Job job = fisher.job();
+            CompoundTag saved = new CompoundTag();
+            saved.putString("state", "FISH");
+            job.load(saved, h.getLevel().registryAccess());
+            // the failed routes a forage leg leaves behind (Job keeps them until it arrives somewhere)
+            java.lang.reflect.Field failures = com.factionclash.work.Job.class.getDeclaredField("routeFailures");
+            failures.setAccessible(true);
+            failures.setInt(job, 5);
+        } catch (ReflectiveOperationException e) {
+            t.cleanup();
+            throw new IllegalStateException(e);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        var fishery = t.data.workplaces.values().stream()
+                .filter(x -> x.baseId == t.base.id && x.type == com.factionclash.campaign.WorkplaceState.Type.FISHERY).findFirst().orElseThrow();
+        t.onEachTick(() -> {
+            h.assertTrue(fishery.spot == com.factionclash.logic.FishingWater.VALID && fishery.badSpots.isEmpty(),
+                    "the reachable pond must not be given up: " + fisher.status());
+            if (fishery.totalOutput > 0 && !fisher.inventory().isEmpty()) {
+                t.succeed();
+            }
+        });
+    }
+
+    /**
      * When the water at the spot is gone (the bobber's block turned to stone after the first cast), the fisherman
      * gives the spot up within two casts and remembers it, instead of waiting there for ever. The 5x5 pond is then
-     * too small, so no other spot is found.
+     * too small, so its next search finds no other spot and the fishery is marked as having no water within reach.
      */
     @GameTest(template = "platform", timeoutTicks = 900, batch = "fish_gone", skyAccess = true)
     public static void fishermanLeavesWhenTheWaterIsGone(GameTestHelper h) {
@@ -1669,6 +1707,7 @@ public final class FCGameTests {
                 .filter(x -> x.baseId == t.base.id && x.type == com.factionclash.campaign.WorkplaceState.Type.FISHERY).findFirst().orElseThrow();
         BlockPos[] gone = new BlockPos[1];
         int[] castsAtGone = new int[1];
+        boolean[] givenUp = new boolean[1];
         t.onEachTick(() -> {
             h.assertFalse(fisher.status().contains("has no water"), "the fisherman must not wait at a dry spot: " + fisher.status());
             if (!(fisher.job() instanceof com.factionclash.work.FishermanJob job)) {
@@ -1686,7 +1725,12 @@ public final class FCGameTests {
                 h.assertTrue(job.casts() <= castsAtGone[0] + 2, "the spot should be given up within two casts, took " + (job.casts() - castsAtGone[0]));
                 h.assertTrue(fishery.badSpots.contains(gone[0].asLong()), "the dry spot should be remembered as unfit");
                 h.assertFalse(pond.contains(fishery.origin), "no other spot in the 24-block pond: " + fishery.origin.toShortString());
-                t.succeed();
+                givenUp[0] = true;
+            } else {
+                h.assertFalse(givenUp[0], "the 24-block pond must not be taken up again: " + fishery.origin.toShortString());
+            }
+            if (fishery.spot == com.factionclash.logic.FishingWater.NONE) {
+                t.succeed(); // the search after it (no foraging on a test base) found no other water
             }
         });
     }

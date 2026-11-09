@@ -210,13 +210,14 @@ public final class FishingSpots {
 
     /**
      * The full check made every 20th cast: the water is still a fishing spot by every rule, the bobber and the stand
-     * still keep to the zones (a base may have been built nearby since), and the stand is still usable. Open water
-     * is recomputed.
+     * still keep to the zones (a base may have been built nearby since), and the stand is still usable, with the
+     * bobber in sight from it. Open water is recomputed.
      */
     public static boolean stillValid(ServerLevel level, CampaignData data, BaseState b, WorkplaceState w) {
         WorldCells c = new WorldCells(level, data, b, reach(b, true));
         BlockPos o = w.origin, s = w.extent;
         if (!c.zoneOk(o.getX(), o.getY(), o.getZ()) || !c.standAllowed(s.getX(), s.getY(), s.getZ())
+                || !c.sight(s.getX(), s.getY(), s.getZ(), o.getX(), o.getY(), o.getZ())
                 || FishingWater.evaluate(c, o.getX(), o.getY(), o.getZ()) == null
                 || !FishingWater.stillFishable(c, o.getX(), o.getY(), o.getZ(), s.getX(), s.getY(), s.getZ())) {
             return false;
@@ -246,7 +247,8 @@ public final class FishingSpots {
             return;
         }
         Long next = NEXT_DIRECTOR_SEARCH.get(b.id);
-        if (!force && next != null && t < next) {
+        // a time further ahead than one wait is left over from another world played in this session: look now
+        if (!force && next != null && t < next && next - t <= DIRECTOR_SEARCH_TICKS) {
             return;
         }
         NEXT_DIRECTOR_SEARCH.put(b.id, t + DIRECTOR_SEARCH_TICKS);
