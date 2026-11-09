@@ -90,8 +90,11 @@ public class MinerJob extends Job {
     /** PROPOSED: experience for the miner per layer reached or opened, and per lengthening. */
     static final int LEVEL_XP = 20;
 
-    /** Shaft watchdog: the shaft cell being dug and how long, failed plugs in a row, the next pickaxe check. */
-    private int extendStep = -1, extendTicks, sealFailures;
+    /**
+     * Shaft watchdog: the mine and shaft cell being dug and for how long, failed plugs in a row, the next pickaxe
+     * check.
+     */
+    private int extendMine = -1, extendStep = -1, extendTicks, sealFailures;
     private long nextTierCheck;
     /** Ticks in a row the stairs were blocked by a block nobody may dig. */
     private int stairBlockedTicks;
@@ -276,6 +279,19 @@ public class MinerJob extends Job {
             }
             unloadNow(); // what does not fit stays in the backpack until the next try
         }
+        // a mine of the base rests until a better pickaxe and the storehouse has one: fetch it, and the next tick
+        // takes the mine up again (step 4: this comes before looking for a new site)
+        int need = restingMineNeed(b);
+        if (need >= 0 && FactionStorage.count(level(), b, s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= need) > 0) {
+            status("Fetching " + MineSites.pickName(need) + " to take up a resting mine", "Travelling");
+            if (!atStorage()) {
+                return;
+            }
+            upgradeEquipmentNow();
+            if (pickTier() >= need) {
+                return;
+            }
+        }
         // step 4: a miner without a mine looks for a place to dig its own (state SITE)
         if (MineSites.openMines(data(), b) >= FCConfig.MAX_OPEN_MINES.get()) {
             markIdle("every mine site of the base is taken");
@@ -285,6 +301,21 @@ public class MinerJob extends Job {
             status("No free mine to work", "Idle");
         }
         waitFor(200);
+    }
+
+    /**
+     * The pickaxe tier the most easily unlocked resting mine of the base waits for, when the pickaxe in hand is too
+     * weak for it; -1 when no mine rests beyond this miner's pickaxe.
+     */
+    private int restingMineNeed(BaseState b) {
+        int tier = pickTier(), need = Integer.MAX_VALUE;
+        for (int id : b.workplaces) {
+            WorkplaceState w = data().workplace(id);
+            if (w != null && w.type == WorkplaceState.Type.MINE && !w.workedOut && w.restTier > tier) {
+                need = Math.min(need, w.restTier);
+            }
+        }
+        return need == Integer.MAX_VALUE ? -1 : need;
     }
 
     /** A survival errand (food, a new pickaxe) from inside a mine climbs out the way the miner came in first. */
@@ -326,8 +357,8 @@ public class MinerJob extends Job {
             cur = MineLayout.stepAt(wp, p);
             int depth = wp.origin.getY() - p.getY();
             double hx = p.getX() - wp.origin.getX(), hz = p.getZ() - wp.origin.getZ();
-            // on the surface (level with the mouth, or lower ground open to the sky)
-            boolean surface = cur == 0 && (depth <= 1 || level().canSeeSky(p));
+            // on the surface (level with the mouth, or lower ground with nothing above it but sky or leaves)
+            boolean surface = cur == 0 && (depth <= 1 || !MineSites.underground(level(), p));
             if (surface && destStep > 0 && !NpcNavigator.within(npc, MineLayout.stand(wp, 0), 3.0)) {
                 // to the mouth of the shaft first, then down the stairs
                 goTo(MineLayout.stand(wp, 0), 1.2, "the mine entrance");
@@ -399,12 +430,15 @@ public class MinerJob extends Job {
             stairBlockedTicks = 0;
         } else if (++stairBlockedTicks > STAIRS_BLOCKED_TICKS) {
             // the stairs stay blocked by something nobody may dig: the mine is given up, and the miner finds its
-            // own way out (plain walking, or digging out)
+            // own way out (plain walking, or digging out). Only the mine's own miner gives it up; one just passing
+            // through (climbing out of a mine it no longer works) only stops using the stairs.
             stairBlockedTicks = 0;
             leaveMineId = wp.id;
             leaveTicks = LEAVE_BUDGET_TICKS + 1;
             leaveBest = Double.NEGATIVE_INFINITY;
-            MineSites.retire(level(), data(), wp, "its stairs are blocked");
+            if (npc.getUUID().equals(wp.assigned)) {
+                MineSites.retire(level(), data(), wp, "its stairs are blocked");
+            }
             state = State.CHECK;
             return false;
         }
@@ -543,7 +577,16 @@ public class MinerJob extends Job {
                                 + " opens a branch mine at y=" + (y0 - d.step()) + " for " + d.band().label));
                     }
                 }
-                case REST -> MineSites.rest(level(), data(), wp, d.needTier());
+                case REST -> {
+                    // before the mine is set aside for a better pickaxe: one may be waiting in the storehouse (the
+                    // equipment check runs at most once a minute)
+                    int had = pickTier();
+                    upgradeEquipmentNow();
+                    if (pickTier() > had) {
+                        continue;
+                    }
+                    MineSites.rest(level(), data(), wp, d.needTier());
+                }
                 case WORKED_OUT -> MineSites.retire(level(), data(), wp, "every layer it can reach is dug");
             }
             data().setDirty();
@@ -613,6 +656,12 @@ public class MinerJob extends Job {
             state = State.STORAGE; // no level chosen yet: the storehouse trip plans one
             return;
         }
+        if (!wp.upgrading() && lv.step > wp.bottom) {
+            // a level below the stairs with no descent under way (a damaged record): dig down to it first, rather
+            // than walk down stairs that are not there
+            wp.upgradeStep = 0;
+            data().setDirty();
+        }
         if (now() >= nextIntegrityCheck) {
             nextIntegrityCheck = now() + 1200;
             if (findBlocked(wp)) {
@@ -632,9 +681,14 @@ public class MinerJob extends Job {
             return;
         }
         List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(lv);
-        BlockPos dest = lv.progress >= plan.size() ? MineLayout.landing(wp, lv) : approach(wp, lv, plan, lv.progress);
+        if (lv.progress >= plan.size()) {
+            // the level is done (after a reload, say): the storehouse trip plans the next one, with no walk down first
+            state = State.STORAGE;
+            return;
+        }
+        BlockPos dest = approach(wp, lv, plan, lv.progress);
         // already down in this level's tunnels: start working from here (mining handles walking, reach and bridging)
-        boolean inLevel = !npc.isInWater() && MineLayout.nearLevelAt(wp, npc.blockPosition()) == lv && lv.progress < plan.size();
+        boolean inLevel = !npc.isInWater() && MineLayout.nearLevelAt(wp, npc.blockPosition()) == lv;
         if (inLevel || walkInMine(wp, dest, lv.step, 1.2, "mine #" + wp.id)) {
             state = State.MINE;
         }
@@ -1062,7 +1116,8 @@ public class MinerJob extends Job {
         SpiralMine.Cell c = plan.get(wp.upgradeStep);
         BlockPos pos = MineLayout.spiralPos(wp, c);
         int step = stepOfCell(c);
-        if (wp.upgradeStep != extendStep) {
+        if (wp.upgradeStep != extendStep || wp.id != extendMine) {
+            extendMine = wp.id;
             extendStep = wp.upgradeStep;
             extendTicks = 0;
         } else if (++extendTicks > STUCK_STEP_TICKS) {

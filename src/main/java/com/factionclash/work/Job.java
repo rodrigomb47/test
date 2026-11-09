@@ -491,6 +491,15 @@ public abstract class Job {
         return rank * 100 + levels - (worn ? 50 : 0);
     }
 
+    /**
+     * {@link #upgradeEquipment} at once, even if it ran less than a minute ago: for a decision that depends on the
+     * best tool the storehouse has (a miner about to let its mine rest until a better pickaxe, say).
+     */
+    protected void upgradeEquipmentNow() {
+        lastEquipCheck = -100000;
+        upgradeEquipment();
+    }
+
     protected void upgradeEquipment() {
         if (now() - lastEquipCheck < 1200) {
             return;

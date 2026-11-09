@@ -13,6 +13,7 @@ import com.factionclash.util.Messages;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -142,14 +143,23 @@ public final class MineSites {
 
     /**
      * True if {@code p} is inside the mine: in its old surface hut, or underground in it ({@link MineLayout#inMine}),
-     * that is in the shaft, or in the corridor out of the sky's sight. Ground that dips below the mine's mouth
-     * somewhere above its tunnels is open to the sky, so a miner walking there is not taken for one in the tunnels.
+     * that is in the shaft, or in the corridor with ground above it. Ground that dips below the mine's mouth
+     * somewhere above its tunnels has nothing over it (at most a tree's leaves), so a miner walking there is not
+     * taken for one in the tunnels.
      */
     public static boolean inside(ServerLevel level, WorkplaceState wp, BlockPos p) {
         if (MineLayout.inHut(wp, p)) {
             return true;
         }
-        return MineLayout.inMine(wp, p) && (MineLayout.nearStairs(wp, p) || !level.canSeeSky(p));
+        return MineLayout.inMine(wp, p) && (MineLayout.nearStairs(wp, p) || underground(level, p));
+    }
+
+    /**
+     * True if something solid (or water) lies above {@code p}: it is under the ground, not on it. Leaves do not
+     * count, so the floor of a wood is still the surface; the sky light would say otherwise under a canopy.
+     */
+    public static boolean underground(ServerLevel level, BlockPos p) {
+        return p.getY() < level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, p.getX(), p.getZ());
     }
 
     /** The base's mine (worked out or not) that {@code pos} is {@link #inside}, or null. */

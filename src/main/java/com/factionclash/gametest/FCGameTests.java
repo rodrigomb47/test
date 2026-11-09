@@ -1033,6 +1033,38 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * A mine rests until an iron pickaxe; a miner with a stone one and nothing else to work fetches the iron pickaxe
+     * waiting in the storehouse and takes the mine up again (in the flat test world its planning then finds nothing
+     * to dig, so the mine is given up, but only after it was taken up).
+     */
+    @GameTest(template = "platform", timeoutTicks = 400, batch = "mine_rest")
+    public static void minerFetchesABetterPickaxeForARestingMine(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 400);
+        com.factionclash.campaign.WorkplaceState mine;
+        FactionNpc miner;
+        try {
+            mine = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(18, 2, 18)));
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            mine.restTier = 2;
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.IRON_PICKAXE));
+            miner = t.npc(6, 6, NpcRole.MINER);
+            miner.equip(new ItemStack(Items.STONE_PICKAXE));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        FactionNpc m = miner;
+        com.factionclash.campaign.WorkplaceState w = mine;
+        t.onEachTick(() -> {
+            if (w.workedOut) {
+                h.assertTrue(w.restTier == 0, "the resting mine was given up without being taken up again (rest tier " + w.restTier + ")");
+                h.assertTrue(m.tool().is(Items.IRON_PICKAXE), "the miner should work with the iron pickaxe, has " + m.tool());
+                t.succeed();
+            }
+        });
+    }
+
     /** At the bottom of a narrow well with walls it cannot dig: the NPC pillars up with blocks from its backpack. */
     @GameTest(template = "platform", timeoutTicks = 100)
     public static void npcPillarsOutOfAWell(GameTestHelper h) {
