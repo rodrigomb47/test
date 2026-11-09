@@ -280,6 +280,10 @@ public class CaveMinerJob extends Job {
             return;
         }
         if (BlockWork.inReach(npc, t, 4.5)) {
+            if (!WorkSafety.mayDig(level(), t, base(), null)) {
+                skip(w, t, "it is protected");
+                return;
+            }
             if (!plugFluids(t)) {
                 skip(w, t, "water or lava behind it and nothing to plug it with");
                 return;
@@ -338,8 +342,8 @@ public class CaveMinerJob extends Job {
             if (CaveWork.open(level(), c)) {
                 continue;
             }
-            if (cs.getDestroySpeed(level(), c) < 0 || !plugFluids(c)) {
-                skip(w, t, "blocked");
+            if (!WorkSafety.mayDig(level(), c, base(), null) || !plugFluids(c)) {
+                skip(w, t, "blocked"); // unbreakable or protected (WorkSafety), or water behind it with nothing to plug
                 return;
             }
             status("Tunnelling toward marked ore (cave #" + w.id + ")", "Mining");
@@ -442,8 +446,8 @@ public class CaveMinerJob extends Job {
             return;
         }
         BlockState s = level().getBlockState(cell);
-        if (s.getDestroySpeed(level(), cell) < 0 || !plugFluids(cell)) {
-            endDirection(w, dir);
+        if (!WorkSafety.mayDig(level(), cell, base(), null) || !plugFluids(cell)) {
+            endDirection(w, dir); // unbreakable or protected (WorkSafety), or water behind it with nothing to plug
             return;
         }
         status("Prospecting from cave #" + w.id + " (" + d.getName() + ", " + (k + 1) + "/" + PROSPECT_LENGTH + ")", "Mining");

@@ -1,8 +1,11 @@
 package com.factionclash.work;
 
+import com.factionclash.campaign.BaseState;
+import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.config.FCConfig;
 import com.factionclash.logic.Affix;
+import com.factionclash.logic.TreeShape;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.ToolKind;
 import com.factionclash.storage.FactionStorage;
@@ -28,11 +31,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,7 +43,10 @@ import java.util.Set;
  * Tree-plot woodcutter that works like a player (spec 8, reworked): it fells grown trees in its fenced plot with
  * its axe at real break speed, breaks the canopy so the leaves' own loot tables drop saplings, sticks and apples,
  * walks around collecting everything that dropped, replants, and speeds saplings up only with real bone meal
- * (otherwise they grow naturally). Upgrades enlarge the fence so the plot holds more trees.
+ * (otherwise they grow naturally). Upgrades enlarge the fence so the plot holds more trees. Before the first cut it
+ * checks the tree's shape ({@link TreeShape}): a trunk touching anything built, another kind of log, or reaching
+ * higher than it can cut from the ground is left standing whole, and wild trees near bases, in other factions' land
+ * or near known villages are never felled ({@link WorkSafety#protectedWood}).
  */
 public class WoodcutterJob extends Job {
     enum State { CHECK, STORAGE, CRAFT, CHOP, LEAVES, COLLECT, PLANT, BONEMEAL, UPGRADE }
@@ -142,8 +147,9 @@ public class WoodcutterJob extends Job {
             collect(wp);
         }
         BlockPos under = npc.blockPosition().below();
-        if (npc.onGround() && level().getBlockState(under).is(BlockTags.LEAVES)) {
-            // standing on a tree canopy: a player breaks the leaves underfoot and drops down
+        if (npc.onGround() && cuttableLeaves(under)) {
+            // standing on a tree canopy: a player breaks the leaves underfoot and drops down (a hedge or a leaf roof
+            // is left alone; getting off one is the stuck recovery's business)
             status("Breaking the leaves underfoot to get down", "Chopping");
             chopBlock(wp, under);
             return;
@@ -187,6 +193,16 @@ public class WoodcutterJob extends Job {
             state = State.UPGRADE;
             return;
         }
+        if (felling != null && isTree(felling)) {
+            // a tree it started to fell (before a trip to the storehouse, a fight or a reload): finish it first
+            spot = felling;
+            wild = fellingWild;
+            wildWalk = 0;
+            logs.clear();
+            state = State.CHOP;
+            return;
+        }
+        felling = null;
         List<BlockPos> spots = TreePlotLayout.spots(wp);
         for (BlockPos s : spots) {
             if (isTree(s) && skipUntil.getOrDefault(s.asLong(), 0L) <= now()) {
@@ -197,7 +213,7 @@ public class WoodcutterJob extends Job {
             }
         }
         BlockPos orphan = orphanTree(wp, spots);
-        if (orphan != null) {
+        if (orphan != null && skipUntil.getOrDefault(orphan.asLong(), 0L) <= now()) {
             spot = orphan;
             logs.clear();
             state = State.CHOP;
@@ -296,6 +312,9 @@ public class WoodcutterJob extends Job {
     private BlockPos wildCache;
     private int wildWalk;
     private final Set<Long> badWild = new HashSet<>();
+    /** The stump of the tree being felled once its first log is cut (null otherwise), and whether it is wild. */
+    private BlockPos felling;
+    private boolean fellingWild;
 
     /**
      * The nearest natural tree around the plot (a trunk standing on dirt with natural leaves), outside every base
@@ -335,8 +354,10 @@ public class WoodcutterJob extends Job {
                 while (level().getBlockState(base.below()).is(BlockTags.LOGS) && top.getY() - base.getY() < 30) {
                     base = base.below();
                 }
-                if (top.getY() - base.getY() < 2 || !level().getBlockState(base.below()).is(BlockTags.DIRT) || badWild.contains(base.asLong())
-                        || !naturalLeavesNear(top) || protectedSpot(base)) {
+                // too short, too tall to fell whole from the ground, not on soil, given up on, or not ours to fell
+                if (top.getY() - base.getY() < 2 || top.getY() - base.getY() > TreeShape.MAX_FELL_DY
+                        || !level().getBlockState(base.below()).is(BlockTags.DIRT) || badWild.contains(base.asLong())
+                        || !naturalLeavesNear(top) || WorkSafety.protectedWood(level(), data(), base(), base)) {
                     continue;
                 }
                 double d = base.distSqr(npc.blockPosition());
@@ -349,25 +370,20 @@ public class WoodcutterJob extends Job {
         return found;
     }
 
+    /**
+     * Leaves a woodcutter may cut: natural leaves only, never persistent ones (hedges, leaf roofs, decoration) and
+     * never part of a base's plan.
+     */
+    private boolean cuttableLeaves(BlockPos p) {
+        BlockState s = level().getBlockState(p);
+        return s.is(BlockTags.LEAVES) && !(s.hasProperty(LeavesBlock.PERSISTENT) && s.getValue(LeavesBlock.PERSISTENT))
+                && !WorkSafety.planned(data(), p);
+    }
+
     private boolean naturalLeavesNear(BlockPos top) {
         for (BlockPos p : BlockPos.betweenClosed(top.offset(-2, -1, -2), top.offset(2, 2, 2))) {
             BlockState s = level().getBlockState(p);
             if (s.is(BlockTags.LEAVES) && s.hasProperty(LeavesBlock.PERSISTENT) && !s.getValue(LeavesBlock.PERSISTENT)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Inside a base or any faction's tree plot: not a wild tree. */
-    private boolean protectedSpot(BlockPos p) {
-        for (com.factionclash.campaign.BaseState b : data().bases.values()) {
-            if (!b.destroyed && b.contains(p, 3)) {
-                return true;
-            }
-        }
-        for (WorkplaceState w : data().workplaces.values()) {
-            if (w.type == WorkplaceState.Type.TREE_PLOT && TreePlotLayout.insideInner(w, w.tier + 1, p)) {
                 return true;
             }
         }
@@ -518,32 +534,72 @@ public class WoodcutterJob extends Job {
         }
     }
 
-    private void collectLogs() {
-        logs.clear();
-        Deque<BlockPos> queue = new ArrayDeque<>();
-        Set<BlockPos> seen = new HashSet<>();
-        queue.add(spot);
-        while (!queue.isEmpty() && logs.size() < 96) {
-            BlockPos p = queue.poll();
-            if (!seen.add(p) || Math.abs(p.getX() - spot.getX()) > 7 || Math.abs(p.getZ() - spot.getZ()) > 7
-                    || p.getY() < spot.getY() || p.getY() > spot.getY() + 24) {
-                continue;
-            }
-            if (!level().getBlockState(p).is(BlockTags.LOGS)) {
-                continue;
-            }
-            logs.add(p);
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = 0; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx != 0 || dy != 0 || dz != 0) {
-                            queue.add(p.offset(dx, dy, dz));
-                        }
-                    }
-                }
-            }
+    /**
+     * The tree whose stump is at {@code stump}, as {@link TreeShape} sees it in the world. For a {@code wild} tree,
+     * wood that is not the woodcutter's to fell ({@link WorkSafety#protectedWood}, at the stump or any log) counts as
+     * a structure it touches. {@code relaxed} skips the size, leaf and soil rules: for a tree already started (its top
+     * is gone) and for the base's own plot trees, so a stub left from an interrupted felling still leaves the grid.
+     */
+    public static TreeShape.Tree surveyTree(ServerLevel level, CampaignData data, @Nullable BaseState own, BlockPos stump,
+                                            boolean wild, boolean relaxed) {
+        if (WorkSafety.planned(data, stump) || (wild && WorkSafety.protectedWood(level, data, own, stump))) {
+            return new TreeShape.Tree(TreeShape.Verdict.TOUCHES_STRUCTURE, List.of(), false, 0);
         }
-        logs.sort(Comparator.comparingInt((BlockPos p) -> p.getY()).reversed());
+        Block log = level.getBlockState(stump).getBlock();
+        BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
+        // step 6: this adapter moves to ForestScan.cells
+        TreeShape.Cells cells = (x, y, z) -> {
+            m.set(x, y, z);
+            if (!level.isLoaded(m) || WorkSafety.planned(data, m)) {
+                return TreeShape.Kind.STRUCTURE; // unseen, or part of a base: never felled into
+            }
+            BlockState s = level.getBlockState(m);
+            if (s.isAir()) {
+                return TreeShape.Kind.AIR;
+            }
+            if (s.hasBlockEntity()) {
+                return TreeShape.Kind.STRUCTURE; // chests, signs, beds, bee nests (no angry bees)
+            }
+            if (s.is(BlockTags.LOGS)) {
+                if (wild && WorkSafety.protectedWood(level, data, own, m.immutable())) {
+                    return TreeShape.Kind.STRUCTURE;
+                }
+                return s.is(log) ? TreeShape.Kind.SAME_LOG : TreeShape.Kind.OTHER_LOG;
+            }
+            if (s.is(BlockTags.LEAVES)) {
+                return s.hasProperty(LeavesBlock.PERSISTENT) && s.getValue(LeavesBlock.PERSISTENT)
+                        ? TreeShape.Kind.PERSISTENT_LEAVES : TreeShape.Kind.NATURAL_LEAVES;
+            }
+            if (WorkSafety.builtBlock(s)) {
+                return TreeShape.Kind.STRUCTURE;
+            }
+            return s.is(BlockTags.DIRT) ? TreeShape.Kind.GROUND : TreeShape.Kind.OTHER;
+        };
+        return TreeShape.survey(cells, stump.getX(), stump.getY(), stump.getZ(), relaxed);
+    }
+
+    /**
+     * The tree at {@link #spot} cannot be felled whole (or is not ours to fell): leave it standing, before the first
+     * cut. A wild tree is never tried again; a plot tree is tried again later.
+     */
+    private void leaveTree(TreeShape.Verdict why) {
+        status("Leaving a tree standing (" + why.name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ') + ")", "Chopping");
+        if (wild) {
+            badWild.add(spot.asLong());
+            if (badWild.size() > 128) {
+                badWild.clear();
+            }
+            wildCache = null;
+            wild = false;
+        } else {
+            skipUntil.put(spot.asLong(), now() + 6000);
+        }
+        if (spot.equals(felling)) {
+            felling = null;
+        }
+        logs.clear();
+        breaker.reset(npc);
+        state = State.CHECK;
     }
 
     private void chop(WorkplaceState wp) {
@@ -554,7 +610,7 @@ public class WoodcutterJob extends Job {
         }
         if (!BlockWork.inReach(npc, spot, 4.0)) {
             // low leaves at head height block the way to the trunk: a player cuts through them
-            BlockPos leaf = leafInTheWay();
+            BlockPos leaf = leafInTheWay(wp);
             if (leaf != null) {
                 status("Cutting through leaves to reach a tree in plot #" + wp.id, "Chopping");
                 chopBlock(wp, leaf);
@@ -566,6 +622,9 @@ public class WoodcutterJob extends Job {
                 if (badWild.size() > 128) {
                     badWild.clear();
                 }
+                if (spot.equals(felling)) {
+                    felling = null;
+                }
                 wildCache = null;
                 wild = false;
                 npc.navigator().reset();
@@ -576,6 +635,9 @@ public class WoodcutterJob extends Job {
                 // this tree cannot be reached (walled in by low leaves, fence, slope): leave it for a while and
                 // fell another one, as a player would
                 skipUntil.put(spot.asLong(), now() + 6000);
+                if (spot.equals(felling)) {
+                    felling = null;
+                }
                 plotWalk = 0;
                 viaOpening = false;
                 npc.navigator().reset();
@@ -607,8 +669,17 @@ public class WoodcutterJob extends Job {
             npc.getNavigation().stop();
         }
         if (logs.isEmpty()) {
-            collectLogs();
+            // a plot tree, or a tree it already started on, has lost its top: only the contact and height rules apply
+            TreeShape.Tree tree = surveyTree(level(), data(), base(), spot, wild, !wild || spot.equals(felling));
+            if (!tree.ok()) {
+                leaveTree(tree.verdict());
+                return;
+            }
+            for (int[] p : tree.logs()) {
+                logs.add(new BlockPos(p[0], p[1], p[2]));
+            }
             if (logs.isEmpty()) {
+                felling = null;
                 findLeaves();
                 state = State.LEAVES;
                 return;
@@ -623,7 +694,10 @@ public class WoodcutterJob extends Job {
         if (chopBlock(wp, log)) {
             npc.awardXp(1);
             logs.remove(0);
+            felling = spot;
+            fellingWild = wild;
             if (logs.isEmpty()) {
+                felling = null;
                 findLeaves();
                 state = State.LEAVES;
             }
@@ -634,8 +708,7 @@ public class WoodcutterJob extends Job {
     private void findLeaves() {
         leaves.clear();
         for (BlockPos p : BlockPos.betweenClosed(spot.offset(-3, 0, -3), spot.offset(3, 12, 3))) {
-            BlockState s = level().getBlockState(p);
-            if (s.is(BlockTags.LEAVES) && !(s.hasProperty(LeavesBlock.PERSISTENT) && s.getValue(LeavesBlock.PERSISTENT))) {
+            if (cuttableLeaves(p)) {
                 leaves.add(p.immutable());
             }
         }
@@ -675,12 +748,11 @@ public class WoodcutterJob extends Job {
         return f >= 0 && f <= TreePlotLayout.depth(wp.tier) && Math.abs(sd) <= TreePlotLayout.half(wp.tier);
     }
 
-    private BlockPos leafInTheWay() {
+    private BlockPos leafInTheWay(WorkplaceState wp) {
         if (spot == null) {
             return null;
         }
         // near the tree, or deeper in a plot so overgrown that walking gets no closer: cut through
-        WorkplaceState wp = wp();
         boolean overgrown = !wild && wp != null && inPlot(wp)
                 && (npc.navigator().ticksWithoutProgress() > 100 || plotWalk > 200);
         if (npc.blockPosition().distSqr(spot) > 8 * 8 && !overgrown) {
@@ -690,7 +762,7 @@ public class WoodcutterJob extends Job {
         BlockPos best = null;
         double bestD = Double.MAX_VALUE;
         for (BlockPos p : BlockPos.betweenClosed(npc.blockPosition().offset(-3, 0, -3), npc.blockPosition().offset(3, 1, 3))) {
-            if (level().getBlockState(p).is(BlockTags.LEAVES) && p.distSqr(spot) < own && BlockWork.inReach(npc, p, 4.5)) {
+            if (p.distSqr(spot) < own && cuttableLeaves(p) && BlockWork.inReach(npc, p, 4.5)) {
                 double d = p.distSqr(npc.blockPosition());
                 if (d < bestD) {
                     bestD = d;
@@ -990,6 +1062,10 @@ public class WoodcutterJob extends Job {
         tag.putInt("progress", progress);
         tag.putInt("tendCursor", tendCursor);
         tag.putLong("nextUpgrade", nextUpgradeCheck);
+        if (felling != null) {
+            tag.putLong("felling", felling.asLong());
+            tag.putBoolean("fellingWild", fellingWild);
+        }
     }
 
     @Override
@@ -1006,5 +1082,7 @@ public class WoodcutterJob extends Job {
         progress = tag.getInt("progress");
         tendCursor = tag.getInt("tendCursor");
         nextUpgradeCheck = tag.getLong("nextUpgrade");
+        felling = readPos(tag, "felling");
+        fellingWild = tag.getBoolean("fellingWild");
     }
 }

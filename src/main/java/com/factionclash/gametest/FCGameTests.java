@@ -1342,6 +1342,126 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /**
+     * Miners and cave miners leave alone what nobody may dig: a chest, a block of a base's plan, the rock under a base
+     * (here 10 below its floor), another mine's stairs, a sculk shrieker and deepslate bricks. Plain stone may be
+     * dug, and so may the miner's own mine's stairs (when it clears them).
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void minerNeverDigsProtectedBlocks(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 40);
+        var level = h.getLevel();
+        var type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+        try {
+            BlockPos planned = h.absolutePos(new BlockPos(13, 2, 13));
+            h.setBlock(new BlockPos(13, 2, 13), Blocks.STONE);
+            t.base.structures.add(com.factionclash.campaign.StructureRecord.of("Test plan", java.util.Map.of(planned, Blocks.STONE.defaultBlockState())));
+            t.base.invalidatePlanIndex();
+            var own = t.addWorkplace(type, h.absolutePos(new BlockPos(4, 5, 20)));
+            own.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            var other = t.addWorkplace(type, h.absolutePos(new BlockPos(18, 5, 4)));
+            other.facing = own.facing;
+            BlockPos ownStairs = com.factionclash.structure.MineLayout.local(own, 1, 0, -2);
+            BlockPos otherStairs = com.factionclash.structure.MineLayout.local(other, 1, 0, -2);
+            level.setBlockAndUpdate(ownStairs, Blocks.STONE.defaultBlockState());
+            level.setBlockAndUpdate(otherStairs, Blocks.STONE.defaultBlockState());
+            h.setBlock(new BlockPos(20, 2, 8), Blocks.CHEST);
+            h.setBlock(new BlockPos(20, 2, 10), Blocks.SCULK_SHRIEKER);
+            h.setBlock(new BlockPos(20, 2, 12), Blocks.DEEPSLATE_BRICKS);
+            h.setBlock(new BlockPos(20, 2, 16), Blocks.STONE);
+            java.util.function.BiPredicate<BlockPos, com.factionclash.campaign.WorkplaceState> may =
+                    (p, mine) -> com.factionclash.work.WorkSafety.mayDig(level, p, t.base, mine);
+            h.assertTrue(may.test(h.absolutePos(new BlockPos(20, 2, 16)), own), "plain stone should be diggable");
+            h.assertFalse(may.test(h.absolutePos(new BlockPos(20, 2, 8)), own), "a chest must not be dug");
+            h.assertFalse(may.test(planned, own), "a block of the base's plan must not be dug");
+            h.assertFalse(may.test(t.base.center.below(10), own), "the rock under the base must not be dug");
+            h.assertFalse(may.test(otherStairs, own), "another mine's stairs must not be dug");
+            h.assertTrue(may.test(ownStairs, own), "the miner's own stairs may be cleared");
+            h.assertFalse(may.test(ownStairs, null), "a cave miner must not dig any mine's stairs");
+            h.assertFalse(may.test(h.absolutePos(new BlockPos(20, 2, 10)), own), "a sculk shrieker must not be dug");
+            h.assertFalse(may.test(h.absolutePos(new BlockPos(20, 2, 12)), own), "deepslate bricks must not be dug");
+            h.assertFalse(com.factionclash.work.WorkSafety.structural(Blocks.STONE.defaultBlockState())
+                    || com.factionclash.work.WorkSafety.structural(Blocks.INFESTED_STONE.defaultBlockState())
+                    || com.factionclash.work.WorkSafety.structural(Blocks.OAK_PLANKS.defaultBlockState()), "stone, infested stone and planks are not structure blocks");
+            h.assertTrue(com.factionclash.work.WorkSafety.structural(Blocks.TUFF_BRICK_STAIRS.defaultBlockState())
+                    && com.factionclash.work.WorkSafety.structural(Blocks.WAXED_OXIDIZED_COPPER_GRATE.defaultBlockState())
+                    && com.factionclash.work.WorkSafety.structural(Blocks.REINFORCED_DEEPSLATE.defaultBlockState())
+                    && com.factionclash.work.WorkSafety.structural(Blocks.CRACKED_STONE_BRICKS.defaultBlockState()), "structure blocks");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * A woodcutter fells only a natural tree it can take down whole: a trunk touching planks, one with only persistent
+     * leaves, one on stone and one too tall to reach from the ground are left standing, and so is a wild tree right
+     * next to the walls (the same tree counts as fine where it is not protected wood).
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void treeSurveyLeavesBuiltAndProtectedWood(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 40);
+        var level = h.getLevel();
+        try {
+            BlockPos natural = testTree(h, 3, 19, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, false, Blocks.GRASS_BLOCK);
+            BlockPos framed = testTree(h, 9, 19, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, false, Blocks.GRASS_BLOCK);
+            h.setBlock(new BlockPos(10, 3, 19), Blocks.OAK_PLANKS);
+            BlockPos hedge = testTree(h, 15, 19, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, true, Blocks.GRASS_BLOCK);
+            BlockPos tall = testTree(h, 21, 19, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 10, false, Blocks.GRASS_BLOCK);
+            BlockPos onStone = testTree(h, 19, 6, Blocks.BIRCH_LOG, Blocks.BIRCH_LEAVES, 5, false, Blocks.STONE);
+            BlockPos byTheWalls = testTree(h, 12, 9, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, false, Blocks.GRASS_BLOCK);
+            java.util.function.Function<BlockPos, com.factionclash.logic.TreeShape.Tree> survey =
+                    p -> com.factionclash.work.WoodcutterJob.surveyTree(level, t.data, t.base, p, true, false);
+            var ok = survey.apply(natural);
+            h.assertTrue(ok.ok() && ok.logs().size() == 4 && ok.logs().get(0)[1] == natural.getY() + 3,
+                    "a natural oak should be felled whole, top first: " + ok.verdict() + " " + ok.logs().size());
+            h.assertTrue(survey.apply(framed).verdict() == com.factionclash.logic.TreeShape.Verdict.TOUCHES_STRUCTURE,
+                    "a trunk touching planks is part of a building: " + survey.apply(framed).verdict());
+            h.assertTrue(survey.apply(hedge).verdict() == com.factionclash.logic.TreeShape.Verdict.NOT_NATURAL,
+                    "a trunk with only persistent leaves is not a natural tree: " + survey.apply(hedge).verdict());
+            h.assertTrue(survey.apply(tall).verdict() == com.factionclash.logic.TreeShape.Verdict.TOO_TALL,
+                    "a tree with a log 9 above the stump cannot be felled whole: " + survey.apply(tall).verdict());
+            h.assertTrue(survey.apply(onStone).verdict() == com.factionclash.logic.TreeShape.Verdict.NOT_NATURAL,
+                    "a trunk on stone is not a natural tree: " + survey.apply(onStone).verdict());
+            h.assertTrue(com.factionclash.work.WorkSafety.protectedWood(level, t.data, t.base, byTheWalls)
+                    && !com.factionclash.work.WorkSafety.protectedWood(level, t.data, t.base, natural), "wood by the walls is protected");
+            h.assertTrue(survey.apply(byTheWalls).verdict() == com.factionclash.logic.TreeShape.Verdict.TOUCHES_STRUCTURE,
+                    "a wild tree by the walls is left standing: " + survey.apply(byTheWalls).verdict());
+            h.assertTrue(com.factionclash.work.WoodcutterJob.surveyTree(level, t.data, t.base, byTheWalls, false, false).ok(),
+                    "the same tree is fine where the zone rules do not apply");
+            h.assertTrue(level.getBlockState(natural).is(Blocks.OAK_LOG), "a survey never cuts anything");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * A test tree at relative (x, 2, z): {@code height} logs on {@code ground}, with a small canopy of leaves (natural
+     * or persistent) around the top log and one block above it. Returns the stump (absolute).
+     */
+    private static BlockPos testTree(GameTestHelper h, int x, int z, net.minecraft.world.level.block.Block log,
+                                     net.minecraft.world.level.block.Block leaves, int height, boolean persistent,
+                                     net.minecraft.world.level.block.Block ground) {
+        h.setBlock(new BlockPos(x, 1, z), ground);
+        for (int y = 0; y < height; y++) {
+            h.setBlock(new BlockPos(x, 2 + y, z), log);
+        }
+        int top = 2 + height - 1;
+        var leaf = leaves.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.DISTANCE, 1)
+                .setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, persistent);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int y = top - 1; y <= top + 1; y++) {
+                    if ((dx != 0 || dz != 0 || y > top)) {
+                        h.setBlock(new BlockPos(x + dx, y, z + dz), leaf);
+                    }
+                }
+            }
+        }
+        return h.absolutePos(new BlockPos(x, 2, z));
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

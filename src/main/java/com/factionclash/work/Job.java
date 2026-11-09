@@ -1,6 +1,7 @@
 package com.factionclash.work;
 
 import com.factionclash.campaign.BaseState;
+import com.factionclash.campaign.BaseZones;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.config.FCConfig;
 import com.factionclash.npc.FactionNpc;
@@ -210,11 +211,7 @@ public abstract class Job {
         if (b == null || p == null || !FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.get() || !isNight()) {
             return false;
         }
-        // step 2: BaseZones.chebyshev(b, p) > BaseZones.half(b) + NIGHT_SAFE_MARGIN
-        int half = b.testHalf >= 0 ? b.testHalf
-                : b.isSettlement() ? com.factionclash.structure.BaseLayout.HALF : com.factionclash.structure.LairLayout.HALF;
-        int chebyshev = Math.max(Math.abs(p.getX() - b.center.getX()), Math.abs(p.getZ() - b.center.getZ()));
-        return chebyshev > half + NIGHT_SAFE_MARGIN;
+        return BaseZones.chebyshev(b, p) > BaseZones.half(b) + NIGHT_SAFE_MARGIN;
     }
 
     /** How many times in a row the current destination could not be reached (0 after arriving). */

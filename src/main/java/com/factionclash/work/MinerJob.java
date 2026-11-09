@@ -325,8 +325,8 @@ public class MinerJob extends Job {
             BlockPos[] clearance = dir > 0 ? new BlockPos[]{step.above(), step}
                     : new BlockPos[]{MineLayout.stand(wp, k - dir).above(2), step.above(), step};
             for (BlockPos q : clearance) {
-                if (passable(level().getBlockState(q))) {
-                    continue;
+                if (passable(level().getBlockState(q)) || !mayDig(wp, q)) {
+                    continue; // open, or a block nobody may dig (it is left as it is)
                 }
                 if (!BlockWork.inReach(npc, q, 4.5)) {
                     // walk down (or up) to the stair just before the blocked one, then clear it from there
@@ -536,7 +536,7 @@ public class MinerJob extends Job {
         int steps = MineLayout.landingSteps(wp, MineLayout.level(wp));
         for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, steps)) {
             BlockPos p = MineLayout.spiralPos(wp, c);
-            if (!c.torch() && !passable(level().getBlockState(p))) {
+            if (!c.torch() && !passable(level().getBlockState(p)) && mayDig(wp, p)) {
                 blocked.add(p);
             }
         }
@@ -544,7 +544,7 @@ public class MinerJob extends Job {
         for (int i = 0; i < Math.min(wp.progress, plan.size()); i++) {
             SpiralMine.Cell c = plan.get(i);
             BlockPos p = MineLayout.tunnelPos(wp, c);
-            if (!c.torch() && !passable(level().getBlockState(p))) {
+            if (!c.torch() && !passable(level().getBlockState(p)) && mayDig(wp, p)) {
                 blocked.add(p);
             }
         }
@@ -562,8 +562,8 @@ public class MinerJob extends Job {
             return;
         }
         BlockState s = level().getBlockState(cell);
-        if (passable(s)) {
-            blocked.poll();
+        if (passable(s) || !mayDig(wp, cell)) {
+            blocked.poll(); // open again, or filled with a block nobody may dig
             return;
         }
         if (!BlockWork.inReach(npc, cell, 4.5)) {
@@ -661,7 +661,7 @@ public class MinerJob extends Job {
         if (!vein.isEmpty()) {
             BlockPos ore = vein.peek();
             BlockState os = level().getBlockState(ore);
-            if (!isOre(os) || !BlockWork.inReach(npc, ore, 5.0)) {
+            if (!isOre(os) || !BlockWork.inReach(npc, ore, 5.0) || !mayDig(wp, ore)) {
                 vein.poll();
                 return;
             }
@@ -689,20 +689,7 @@ public class MinerJob extends Job {
             // a full minute on one cell of the plan without getting it done (it cannot be reached from any floor the
             // miner can walk to, e.g. across a cavern): leave it, as a player would, and what lies beyond it
             faceTicks = 0;
-            SpiralMine.Cell lost = plan.get(wp.progress);
-            int side = MineLayout.landingSide(wp, MineLayout.level(wp));
-            if (lost.s() == side) {
-                // the main tunnel is cut (a cavern too wide to bridge): everything further out lies beyond the gap
-                wp.progress = plan.size();
-            } else {
-                // a side branch cut off: on to the next branch
-                int dir = Integer.signum(lost.s() - side);
-                while (wp.progress < plan.size() && plan.get(wp.progress).f() == lost.f()
-                        && Integer.signum(plan.get(wp.progress).s() - side) == dir) {
-                    wp.progress++;
-                }
-            }
-            data().setDirty();
+            cutPlan(wp, plan);
             npc.navigator().reset();
             return;
         }
@@ -757,6 +744,13 @@ public class MinerJob extends Job {
             noticeOres(pos);
             return;
         }
+        if (!mayDig(wp, pos)) {
+            // a block nobody may dig (a structure of the world, another mine's stairs, a base or its land, the deep
+            // dark): like a player, the miner ends this branch there (or the level, for the main tunnel)
+            breaker.reset(npc);
+            cutPlan(wp, plan);
+            return;
+        }
         if (!BlockWork.inReach(npc, pos, 4.5)) {
             if (bridgeNearbyHoles(wp, plan)) {
                 return;
@@ -796,6 +790,44 @@ public class MinerJob extends Job {
             data().setDirty();
             noticeOres(pos);
         }
+    }
+
+    /**
+     * Gives up plan cell {@code wp.progress} and what lies beyond it: a cut main tunnel ends the level (everything
+     * further out is past the gap), a cut side branch goes on to the next branch.
+     */
+    private void cutPlan(WorkplaceState wp, List<SpiralMine.Cell> plan) {
+        SpiralMine.Cell lost = plan.get(wp.progress);
+        int side = MineLayout.landingSide(wp, MineLayout.level(wp));
+        if (lost.s() == side) {
+            // step 3: also mark the level as cut, so it is never lengthened
+            wp.progress = plan.size();
+        } else {
+            int dir = Integer.signum(lost.s() - side);
+            while (wp.progress < plan.size() && plan.get(wp.progress).f() == lost.f()
+                    && Integer.signum(plan.get(wp.progress).s() - side) == dir) {
+                wp.progress++;
+            }
+        }
+        data().setDirty();
+    }
+
+    /** The last cell that passed {@link WorkSafety#mayDig}, and its block: breaking one takes many ticks. */
+    private BlockPos safeCell;
+    private BlockState safeState;
+
+    /** {@link WorkSafety#mayDig} for this miner and its mine, remembered for the cell being broken. */
+    private boolean mayDig(WorkplaceState wp, BlockPos pos) {
+        BlockState s = level().getBlockState(pos);
+        if (pos.equals(safeCell) && s == safeState) {
+            return true;
+        }
+        if (!WorkSafety.mayDig(level(), pos, base(), wp)) {
+            return false;
+        }
+        safeCell = pos.immutable();
+        safeState = s;
+        return true;
     }
 
     /** Prospector affix: a chance that the ore just mined drops its loot a second time. */
