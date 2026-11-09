@@ -1005,14 +1005,16 @@ public class WoodcutterJob extends Job {
 
     /**
      * A flower within the box a sapling at one of {@code cells} looks at when it grows (2 sideways, 1 down and up):
-     * vanilla then grows the tree with a bee nest, a block entity that would keep the tree standing for good. Flowers
-     * that are part of a base's plan are left.
+     * vanilla then grows the tree with a bee nest, a block entity that would keep the tree standing for good. What
+     * counts is vanilla's own #flowers tag, so a flowering azalea bush, a mangrove propagule or low natural cherry or
+     * azalea leaves are picked as well as small and tall flowers and pink petals. Flowers that are part of a base's
+     * plan, and leaves a player placed, are left.
      */
     private BlockPos flowerNear(List<BlockPos> cells) {
         for (BlockPos c : cells) {
             for (BlockPos p : BlockPos.betweenClosed(c.offset(-2, -1, -2), c.offset(2, 1, 2))) {
                 BlockState st = level().getBlockState(p);
-                if ((st.is(BlockTags.SMALL_FLOWERS) || st.is(BlockTags.TALL_FLOWERS) || st.is(Blocks.PINK_PETALS))
+                if (st.is(BlockTags.FLOWERS) && !(st.hasProperty(LeavesBlock.PERSISTENT) && st.getValue(LeavesBlock.PERSISTENT))
                         && !WorkSafety.planned(data(), p)) {
                     return p.immutable();
                 }

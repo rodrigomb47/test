@@ -3165,8 +3165,9 @@ public final class FCGameTests {
     }
 
     /**
-     * A woodcutter carrying no saplings fetches them from the storehouse for the grove, picks the flower next to the
-     * grove spot (a tree grown beside flowers gets a bee nest and is never felled) and plants the sapling there.
+     * A woodcutter carrying no saplings fetches them from the storehouse for the grove, picks the flowers next to the
+     * grove spot (a tree grown beside flowers gets a bee nest and is never felled; a flowering azalea counts as one, as
+     * it does for vanilla) and plants the sapling there.
      */
     @GameTest(template = "platform", timeoutTicks = 1500, batch = "wood_grove", skyAccess = true)
     public static void woodcutterFillsTheGroveFromTheStorehouse(GameTestHelper h) {
@@ -3174,6 +3175,7 @@ public final class FCGameTests {
         FactionNpc n;
         BlockPos spot = h.absolutePos(new BlockPos(22, 2, 17));
         BlockPos flower = h.absolutePos(new BlockPos(21, 2, 18));
+        BlockPos azalea = h.absolutePos(new BlockPos(23, 2, 15));
         try {
             // a wider work belt than a test base has, so a grove spot (walls + 4 = Chebyshev 6) fits on the platform
             t.base.points.put(BaseState.MIN, t.base.center.offset(-11, -1, -11));
@@ -3181,6 +3183,9 @@ public final class FCGameTests {
             h.setBlock(new BlockPos(22, 1, 17), Blocks.GRASS_BLOCK); // dx 10, dz 5: the one grove spot
             h.setBlock(new BlockPos(21, 1, 18), Blocks.GRASS_BLOCK);
             h.setBlock(new BlockPos(21, 2, 18), Blocks.POPPY);
+            // a flowering azalea bush is a flower to vanilla's tree grower too (the #flowers tag)
+            h.setBlock(new BlockPos(23, 1, 15), Blocks.GRASS_BLOCK);
+            h.setBlock(new BlockPos(23, 2, 15), Blocks.FLOWERING_AZALEA);
             FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.BIRCH_SAPLING, 2));
             n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
         } catch (RuntimeException | Error e) {
@@ -3193,6 +3198,7 @@ public final class FCGameTests {
                 return;
             }
             t.assertTrue(!h.getLevel().getBlockState(flower).is(Blocks.POPPY), "the flower beside the grove spot should be picked first");
+            t.assertTrue(!h.getLevel().getBlockState(azalea).is(Blocks.FLOWERING_AZALEA), "the flowering azalea beside the grove spot should be picked first");
             t.assertTrue(w.planted.contains(spot.asLong()), "the grove sapling counts as planted");
             t.succeed();
         });
