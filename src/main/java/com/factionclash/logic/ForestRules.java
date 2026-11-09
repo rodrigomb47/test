@@ -74,6 +74,61 @@ public final class ForestRules {
     public static final int ROAD_HALF_WIDTH = 3, ROAD_LENGTH = 30;
 
     /**
+     * Where a new base's four starter oak saplings stand, (dx, dz) from its centre: on the grove lattice of the
+     * levelled west pad, beside the west path. The first two are grown at once.
+     */
+    public static final List<int[]> STARTER_OFFSETS = List.of(new int[]{-35, -5}, new int[]{-35, 5}, new int[]{-40, -5}, new int[]{-40, 5});
+    /**
+     * The smallest forest radius the config allows: every starter tree lies within it (the farthest is 40.3 from the
+     * centre), so the woodcutter's tree search always finds them.
+     */
+    public static final int MIN_FOREST_RADIUS = 41;
+
+    /**
+     * PROPOSED: the default number of saplings kept growing in the grove. A sapling in the always-ticking belt gets a
+     * random tick 3 times in 4096 per game tick and grows one stage on 1 in 7 of those while lit (about half the day):
+     * two stages take about 36,000 ticks, a day and a half. Sixteen saplings therefore give about 10 trees a day, about
+     * 50 logs, which is what a base's builder, smiths and furnaces use in a day; eight gave half that.
+     */
+    public static final int DEFAULT_GROVE_SIZE = 16;
+    /** PROPOSED: the most saplings the grove ever keeps growing (the config's upper bound). */
+    public static final int MAX_GROVE_SIZE = 32;
+
+    /**
+     * How many saplings the grove keeps growing: {@code size} (the config's groveSize), or twice that, up to
+     * {@link #MAX_GROVE_SIZE}, while the base is short of wood. 0 keeps no grove at all.
+     */
+    public static int groveTarget(int size, boolean woodShort) {
+        if (size <= 0) {
+            return 0;
+        }
+        return woodShort ? Math.min(MAX_GROVE_SIZE, size * 2) : size;
+    }
+
+    /** PROPOSED: a walk to a tree, stump or sapling may take this long, plus {@link #WALK_TICKS_PER_BLOCK} per block away. */
+    public static final int WALK_BASE_TICKS = 400;
+    /** A woodcutter walks about 4.3 blocks a second (4.7 ticks a block) on open ground; paths wind, so twice that. */
+    public static final int WALK_TICKS_PER_BLOCK = 8;
+
+    /**
+     * How long a walk to something {@code distance} blocks away (horizontally) may take before it is given up, starting
+     * from {@code baseTicks} ({@link #WALK_BASE_TICKS} for a tree): a tree near the base chosen while the woodcutter
+     * was far out foraging is walked back to, not given up for the length of the way.
+     */
+    public static int walkBudget(int baseTicks, double distance) {
+        return baseTicks + (int) Math.ceil(WALK_TICKS_PER_BLOCK * Math.max(0, distance));
+    }
+
+    /**
+     * True for the species whose sapling grows a tree with a bee nest when flowers stand within 2 blocks of it (oak,
+     * birch, cherry). A nest is a block entity, so such a tree would be left standing for good: the woodcutter picks
+     * those flowers before planting, as a player keeping bees out of a tree farm would.
+     */
+    public static boolean beesNearFlowers(Species s) {
+        return s == Species.OAK || s == Species.BIRCH || s == Species.CHERRY;
+    }
+
+    /**
      * The species of a log block id ("minecraft:oak_log" or "oak_log"), or null when a woodcutter does not fell such
      * logs: stripped logs, wood blocks, mangrove, nether stems and anything from another mod.
      */

@@ -171,10 +171,12 @@ class TreeShapeTest {
         assertTrue(s.logs().stream().allMatch(p -> Math.abs(p[0]) <= TreeShape.MAX_SPREAD && Math.abs(p[2]) <= TreeShape.MAX_SPREAD));
         assertTrue(has(s, 7, 0, 0));
         assertFalse(has(s, 8, 0, 0));
+        assertEquals(Verdict.TOO_BIG, s.verdict(), "the log goes on past 7: only part of it was seen, none of it is cut");
         // up: a 40-high column is followed to +24 only
         Tree up = TreeShape.survey(new Grid().trunk(0, 0, 40), 0, 0, 0, false);
         assertEquals(TreeShape.MAX_RISE + 1, up.logs().size());
         assertEquals(TreeShape.MAX_RISE, up.topDy());
+        assertEquals(Verdict.TOO_BIG, up.verdict());
         // never more than 96 logs: a solid 9x9x9 block of logs
         Grid block = new Grid();
         for (int x = -4; x <= 4; x++) {
@@ -183,6 +185,7 @@ class TreeShapeTest {
             }
         }
         assertEquals(TreeShape.MAX_LOGS, TreeShape.survey(block, 0, 0, 0, false).logs().size());
+        assertEquals(Verdict.TOO_BIG, TreeShape.survey(block, 0, 0, 0, false).verdict());
         // nothing below the stump is followed
         Grid below = oak(4).set(1, -1, 0, Kind.SAME_LOG);
         assertFalse(has(TreeShape.survey(below, 0, 0, 0, false), 1, -1, 0));
@@ -216,5 +219,73 @@ class TreeShapeTest {
         assertTrue(gone.logs().isEmpty());
         assertEquals(Verdict.TOO_SMALL, TreeShape.survey(new Grid(), 0, 0, 0, false).verdict());
         assertEquals(List.of(), TreeShape.survey(new Grid(), 0, 0, 0, false).logs());
+    }
+
+    @Test
+    void woodRunningPastTheBoundsIsNeverCutInPart() {
+        // a log reaching exactly 7 out is a whole tree
+        Grid seven = oak(4);
+        for (int x = 1; x <= 7; x++) {
+            seven.set(x, 1, 0, Kind.SAME_LOG);
+        }
+        assertEquals(Verdict.OK, TreeShape.survey(seven, 0, 0, 0, false).verdict());
+        assertEquals(Verdict.TOO_BIG, TreeShape.survey(seven.set(8, 1, 0, Kind.SAME_LOG), 0, 0, 0, false).verdict(), "one more is not");
+        // a planted square of dark oaks a block apart, grown into each other: far more than 96 logs, every top within
+        // reach and nothing else touching. Felling the first 96 would leave the others' tops hanging over their stubs.
+        Grid farm = new Grid();
+        for (int tx = 0; tx <= 6; tx += 3) {
+            for (int tz = 0; tz <= 6; tz += 3) {
+                for (int i = 0; i <= 1; i++) {
+                    for (int j = 0; j <= 1; j++) {
+                        farm.trunk(tx + i, tz + j, 7);
+                    }
+                }
+                // each tree's branches reach the next one's trunk at the canopy
+                farm.set(tx + 2, 5, tz, Kind.SAME_LOG).set(tx, 5, tz + 2, Kind.SAME_LOG);
+            }
+        }
+        farm.canopy(0, 0, 7, Kind.NATURAL_LEAVES);
+        Tree t = TreeShape.survey(farm, 0, 0, 0, false);
+        assertTrue(t.logs().size() <= TreeShape.MAX_LOGS);
+        assertEquals(Verdict.TOO_BIG, t.verdict(), "the flood had to stop short of the farm: nothing is cut");
+        // one such tree alone is fine
+        Grid one = new Grid();
+        for (int i = 0; i <= 1; i++) {
+            for (int j = 0; j <= 1; j++) {
+                one.trunk(i, j, 7);
+            }
+        }
+        one.canopy(0, 0, 7, Kind.NATURAL_LEAVES);
+        assertEquals(Verdict.OK, TreeShape.survey(one, 0, 0, 0, false).verdict());
+        // and the same when resuming a tree whose wood was found to run on
+        assertEquals(Verdict.TOO_BIG, TreeShape.survey(farm, 0, 0, 0, true).verdict());
+    }
+
+    @Test
+    void aCherryBranchEndIsCutFromBelowNotLeftFloating() {
+        // a vanilla cherry: 8 tall, a branch going 5 out with its end log 7 up (the trunk top), leaves around the end
+        Grid g = new Grid().trunk(0, 0, 8);
+        g.set(1, 4, 0, Kind.SAME_LOG).set(2, 5, 0, Kind.SAME_LOG).set(3, 5, 0, Kind.SAME_LOG).set(4, 6, 0, Kind.SAME_LOG)
+                .set(5, 7, 0, Kind.SAME_LOG);
+        g.canopy(5, 0, 8, Kind.NATURAL_LEAVES).canopy(0, 0, 8, Kind.NATURAL_LEAVES);
+        Tree t = TreeShape.survey(g, 0, 0, 0, false);
+        assertEquals(Verdict.OK, t.verdict(), "the cherry is felled, not refused");
+        assertTrue(has(t, 5, 7, 0));
+        // from the cut stump's column the branch end is out of reach (7.72 from the eyes, more where the walk stops)...
+        assertFalse(TreeShape.fromStumpColumn(5, 7, 0));
+        // ...but standing right under it, it is (5.9 up)
+        assertTrue(TreeShape.fromBelow(7));
+        // the stump column reaches everything straight up to +8, and a little sideways
+        for (int dy = 0; dy <= TreeShape.MAX_FELL_DY; dy++) {
+            assertTrue(TreeShape.fromStumpColumn(0, dy, 0), "straight up at +" + dy);
+            assertTrue(TreeShape.fromBelow(dy), "from below at +" + dy);
+        }
+        assertFalse(TreeShape.fromStumpColumn(0, TreeShape.MAX_FELL_DY + 1, 0));
+        assertTrue(TreeShape.fromStumpColumn(2, 7, 0));
+        // an acacia's top 3 out and 8 up is 7.51 from the column's centre: from below as well
+        assertFalse(TreeShape.fromStumpColumn(3, 8, 0));
+        assertFalse(TreeShape.fromStumpColumn(-4, 7, 0), "the stop allowance counts: 7.11 + 0.45 is out of reach");
+        // a low branch end far out is still in reach from the column
+        assertTrue(TreeShape.fromStumpColumn(7, 1, 0));
     }
 }

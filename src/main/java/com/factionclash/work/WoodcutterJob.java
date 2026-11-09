@@ -2,6 +2,7 @@ package com.factionclash.work;
 
 import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.BaseZones;
+import com.factionclash.campaign.Logistics;
 import com.factionclash.campaign.MapBounds;
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.config.FCConfig;
@@ -63,11 +64,19 @@ public class WoodcutterJob extends Job {
     /** PROPOSED: logs, sticks and apples carried before a trip to the storehouse. */
     static final int CARGO_LIMIT = 48;
     /** Reach used for tall trunks: a player would climb or pillar; NPCs reach a little higher instead (PROPOSED). */
-    static final double TRUNK_REACH = 7.5;
+    static final double TRUNK_REACH = TreeShape.REACH;
     /** PROPOSED: the walk to a tree ends this close (eyes to the stump), then it is cut from where the woodcutter stands. */
     static final double CHOP_REACH = 4.0, APPROACH = 2.5;
-    /** PROPOSED: a tree not reached after this many walking ticks is given up. */
-    static final int WALK_GIVE_UP_TICKS = 400;
+    /**
+     * A tree not reached within {@link ForestRules#walkBudget} walking ticks (400 plus 8 a block of the way), or after
+     * this many failed routes, is left alone for {@link #TREE_RETRY_TICKS} (PROPOSED): only what the tree is (its
+     * survey) leaves it standing for good.
+     */
+    static final int TREE_ROUTE_FAILURES = 3, TREE_RETRY_TICKS = 12000;
+    /** PROPOSED: one tree it left standing for good is looked at again this often, from afar, in case it changed. */
+    static final int RECHECK_TICKS = 200;
+    /** PROPOSED: a log far out on a branch is cut standing within this of the ground right under it. */
+    static final double UNDER_BRANCH = 1.0;
     /** PROPOSED: when the top log is out of reach, it first steps this close to the stump, for at most this long. */
     static final double CLOSER_REACH = 1.5;
     static final int CLOSER_TICKS = 200;
@@ -90,8 +99,13 @@ public class WoodcutterJob extends Job {
     static final int FORAGE_REST_TICKS = 6000;
     /** PROPOSED: an old fence post not reached in this many walking ticks, or after this many failed routes, is left. */
     static final int POST_GIVE_UP_TICKS = 300, POST_ROUTE_FAILURES = 3;
-    /** PROPOSED: a planting spot or sapling not reached in this many walking ticks is left for a while. */
+    /**
+     * PROPOSED: a planting spot or sapling not reached in this many walking ticks (plus 8 a block of the way) or after
+     * {@link #TREE_ROUTE_FAILURES} failed routes is left for a while.
+     */
     static final int SPOT_GIVE_UP_TICKS = 600, SPOT_RETRY_TICKS = 2400;
+    /** PROPOSED: grove saplings taken from the storehouse at once, at most. */
+    static final int GROVE_TAKE = 8;
     /** PROPOSED: what it keeps when unloading: saplings of each species, and bone meal. */
     static final int KEEP_SAPLINGS = 8, KEEP_BONE_MEAL = 16;
 
@@ -108,12 +122,18 @@ public class WoodcutterJob extends Job {
     private BlockPos forageTarget;
     private long forageStart, forageRestUntil;
 
+    /**
+     * The logs of the tree being felled still to cut, top first, and those out of reach for now (cut at the end). Both
+     * are kept, and saved, until the tree is done: once the trunk below a log is cut, the survey no longer finds it.
+     */
     private final List<BlockPos> logs = new ArrayList<>();
     private final List<BlockPos> deferred = new ArrayList<>();
     private final List<BlockPos> leaves = new ArrayList<>();
     private final BlockWork.Breaker breaker = new BlockWork.Breaker();
     private boolean surveyed, leavesFound, closerDone;
     private int walkTicks, closerTicks, finalTicks, collectTicks, progress;
+    /** The current walk's allowance (see {@link ForestRules#walkBudget}) and the route failures when it began. */
+    private int walkBudget, walkFailBase;
     /** The last tree felled (its stump and whether it was 2x2): the drops around it are collected. */
     private BlockPos lastStump;
     private boolean lastBig;
@@ -126,11 +146,11 @@ public class WoodcutterJob extends Job {
     private ForestScan.Found treeCache;
     private long nextScan;
     private int scans, emptyScans;
-    private long nextSaplingTrip, nextStorageLook, nextAxeCheck, nextPrune;
+    private long nextSaplingTrip, nextStorageLook, nextGroveLook, nextAxeCheck, nextPrune, nextRecheck;
     private int tendCursor;
     private final Set<Long> skippedPosts = new HashSet<>();
     private int postFailBase;
-    /** Planting spots and saplings it could not get to, until a game time. */
+    /** Trees, planting spots and saplings it could not get to, until a game time. */
     private final Map<Long, Long> skipUntil = new HashMap<>();
     private final ForestScan.GroveSearch grove = new ForestScan.GroveSearch();
 
@@ -164,6 +184,11 @@ public class WoodcutterJob extends Job {
     /** True if this woodcutter has given up on the tree with this stump (for the GameTests). */
     public boolean gaveUp(BlockPos stump) {
         return badWild.contains(stump.asLong());
+    }
+
+    /** True while this woodcutter leaves a tree, planting spot or sapling it could not get to alone for a while. */
+    public boolean skipping(BlockPos p) {
+        return skipUntil.getOrDefault(p.asLong(), 0L) > now();
     }
 
     @Override
@@ -204,6 +229,12 @@ public class WoodcutterJob extends Job {
         }
         if (state != State.STORAGE) {
             collect(wp);
+        }
+        if (state != State.CHECK) {
+            // other work took over from a forage leg (a tree found on the way, a trip to unload): the leg is over, and
+            // the next one starts afresh in the same direction, with its own time, rather than ending at once
+            // wherever the woodcutter then stands
+            forageTarget = null;
         }
         BlockPos under = npc.blockPosition().below();
         if (npc.onGround() && cuttableLeaves(under)) {
@@ -270,6 +301,9 @@ public class WoodcutterJob extends Job {
             startTree();
             return;
         }
+        // a tree it left standing for good is looked at again now and then: one that has changed (the other kind of
+        // tree it touched is gone) or that it only gave up on for the way there, in an older save, is felled after all
+        recheckBadWild(b);
         // 4. stumps waiting for their sapling
         if (replantQueue(b, wp)) {
             return;
@@ -284,6 +318,7 @@ public class WoodcutterJob extends Job {
         // 6. the best natural tree around the base
         ForestScan.Found tree = bestTree(b);
         if (tree != null) {
+            forageFails = 0; // trees are found after all: a later round of foraging starts over
             spot = tree.stump();
             big = tree.big();
             startTree();
@@ -346,13 +381,18 @@ public class WoodcutterJob extends Job {
         waitFor(600);
     }
 
-    /** Starts work on the tree at {@link #spot}: walk to it, survey it, fell it. */
+    /**
+     * Starts work on the tree at {@link #spot}: walk to it, survey it, fell it. A tree it has started to fell keeps
+     * the logs it still had to cut (those above a cut gap are not found by a new survey).
+     */
     private void startTree() {
-        logs.clear();
-        deferred.clear();
+        if (!spot.equals(felling)) {
+            logs.clear();
+            deferred.clear();
+        }
         surveyed = false;
         closerDone = false;
-        walkTicks = 0;
+        startWalk(spot, ForestRules.WALK_BASE_TICKS);
         closerTicks = 0;
         finalTicks = 0;
         breaker.reset(npc);
@@ -360,12 +400,35 @@ public class WoodcutterJob extends Job {
         state = State.CHOP;
     }
 
+    /** A new walk to {@code p}: its allowance grows with the distance, so a far one is not given up for the way. */
+    private void startWalk(BlockPos p, int baseTicks) {
+        double dx = p.getX() + 0.5 - npc.getX(), dz = p.getZ() + 0.5 - npc.getZ();
+        walkTicks = 0;
+        walkBudget = ForestRules.walkBudget(baseTicks, Math.sqrt(dx * dx + dz * dz));
+        walkFailBase = routeFailures();
+    }
+
+    /** One more tick of the current walk; true once it has taken too long or failed too often to go on. */
+    private boolean walkFailed() {
+        if (walkBudget <= 0) {
+            startWalk(spot, ForestRules.WALK_BASE_TICKS); // a walk to a tree taken up again after a reload
+        }
+        if (routeFailures() < walkFailBase) {
+            walkFailBase = routeFailures(); // an arrival somewhere else (an errand) reset the count
+        }
+        return ++walkTicks > walkBudget || routeFailures() - walkFailBase >= TREE_ROUTE_FAILURES;
+    }
+
+    /** Trees it leaves alone: given up on for good, or for now (could not get to them), or too far out tonight. */
+    private boolean passOver(BlockPos stump) {
+        return badWild.contains(stump.asLong()) || skipping(stump) || remoteAtNight(stump);
+    }
+
     /** The cached tree while it still stands and is free, else a new search (at most every {@link #RESCAN_TICKS}). */
     private ForestScan.Found bestTree(BaseState b) {
         if (treeCache != null) {
             BlockPos s = treeCache.stump();
-            if (isLog(s) && !badWild.contains(s.asLong()) && !ForestScan.TreeClaims.claimedByOther(s, npc.getUUID(), now())
-                    && !remoteAtNight(s)) {
+            if (isLog(s) && !passOver(s) && !ForestScan.TreeClaims.claimedByOther(s, npc.getUUID(), now())) {
                 return treeCache;
             }
             // gone, given up on, taken by another woodcutter or too far out tonight: look again at once rather than
@@ -377,7 +440,7 @@ public class WoodcutterJob extends Job {
             return null;
         }
         int radius = BaseZones.workRadius(b, FCConfig.FOREST_RADIUS.get());
-        treeCache = ForestScan.findTree(level(), data(), b, npc, b.center, radius, badWild, scans++, this::remoteAtNight);
+        treeCache = ForestScan.findTree(level(), data(), b, npc, b.center, radius, badWild, scans++, this::passOver);
         // each scan reads every second column in a shifting pattern: an empty one is followed by the other three at
         // once, so every column has been read before the woodcutter decides there is no tree near the base
         emptyScans = treeCache == null ? emptyScans + 1 : 0;
@@ -390,7 +453,10 @@ public class WoodcutterJob extends Job {
         return emptyScans >= SCAN_PATTERNS;
     }
 
-    /** The tree at {@link #spot} is not to be felled (or cannot be reached): never tried again, the next one looked for at once. */
+    /**
+     * The tree at {@link #spot} is not to be felled, by what it is (its survey): left standing for good (only looked at
+     * again from afar now and then, see {@link #recheckBadWild}); the next one is looked for at once.
+     */
     private void leaveTree(String why) {
         status("Leaving a tree standing (" + why + ")", "Chopping");
         badWild.remove(spot.asLong());
@@ -398,6 +464,20 @@ public class WoodcutterJob extends Job {
         while (badWild.size() > MAX_BAD_WILD) {
             badWild.remove(badWild.iterator().next());
         }
+        dropTree();
+    }
+
+    /**
+     * The tree at {@link #spot} could not be got to (a cliff, water, fenced in): it is left alone for a while, not for
+     * good, since nothing is wrong with the tree itself. A tree it had started to fell is let go.
+     */
+    private void cannotReachTree() {
+        status("Leaving a tree for now (cannot get to it)", "Chopping");
+        skipFor(spot, TREE_RETRY_TICKS);
+        dropTree();
+    }
+
+    private void dropTree() {
         ForestScan.TreeClaims.release(spot, npc.getUUID());
         if (spot.equals(felling)) {
             felling = null;
@@ -409,6 +489,35 @@ public class WoodcutterJob extends Job {
         breaker.reset(npc);
         npc.navigator().reset();
         state = State.CHECK;
+    }
+
+    /**
+     * Every {@link #RECHECK_TICKS}, the longest-standing tree it left for good is surveyed again from where the
+     * woodcutter is (its chunk loaded): one that would now be felled whole is taken off the list and looked for at
+     * once (the other kind of tree it touched was felled meanwhile, or an older save gave it up only for the way
+     * there); one that is gone is forgotten; any other goes to the back of the list.
+     */
+    private void recheckBadWild(BaseState b) {
+        if (now() < nextRecheck || badWild.isEmpty()) {
+            return;
+        }
+        nextRecheck = now() + RECHECK_TICKS;
+        long k = badWild.iterator().next();
+        badWild.remove(k);
+        BlockPos p = BlockPos.of(k);
+        if (!level().isLoaded(p)) {
+            badWild.add(k);
+            return;
+        }
+        if (!isLog(p)) {
+            return; // felled by someone else, or burnt: nothing left to remember
+        }
+        if (ForestScan.survey(level(), data(), b, p, true, false).ok()) {
+            treeCache = null;
+            nextScan = now();
+            return;
+        }
+        badWild.add(k);
     }
 
     // ------------------------------------------------------------------ felling
@@ -444,14 +553,14 @@ public class WoodcutterJob extends Job {
         if (!surveyed) {
             if (!BlockWork.inReach(npc, spot, CHOP_REACH)) {
                 // low leaves at head height block the way to the trunk: a player cuts through them
-                BlockPos leaf = leafInTheWay();
+                BlockPos leaf = leafInTheWay(spot);
                 if (leaf != null) {
                     status("Cutting through leaves to reach a tree", "Chopping");
                     chopBlock(wp, leaf);
                     return;
                 }
-                if (++walkTicks > WALK_GIVE_UP_TICKS) {
-                    leaveTree("cannot get to it"); // a cliff, water, fenced in
+                if (walkFailed()) {
+                    cannotReachTree(); // a cliff, water, fenced in: tried again later
                     return;
                 }
                 if (!goTo(spot, APPROACH, "a tree")) {
@@ -467,6 +576,8 @@ public class WoodcutterJob extends Job {
                 // tree, this one is not given up on
                 if (spot.equals(felling)) {
                     felling = null;
+                    logs.clear();
+                    deferred.clear();
                 }
                 treeCache = null;
                 nextScan = now();
@@ -475,25 +586,37 @@ public class WoodcutterJob extends Job {
             }
             boolean resume = spot.equals(felling);
             BlockPos start = resume ? resumeStart() : spot;
-            if (start == null) {
-                finishTree(wp);
-                return;
+            List<BlockPos> found = new ArrayList<>();
+            if (start != null) {
+                TreeShape.Tree tree = ForestScan.survey(level(), data(), b, start, true, resume);
+                if (!tree.ok()) {
+                    // any other verdict leaves the tree standing whole, before the first cut: no floating logs
+                    leaveTree(tree.verdict().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' '));
+                    return;
+                }
+                species = ForestScan.speciesOf(level().getBlockState(start));
+                big = big || tree.big();
+                for (int[] p : tree.logs()) {
+                    found.add(new BlockPos(p[0], p[1], p[2]));
+                }
             }
-            TreeShape.Tree tree = ForestScan.survey(level(), data(), b, start, true, resume);
-            if (!tree.ok()) {
-                // any other verdict leaves the tree standing whole, before the first cut: no floating logs
-                leaveTree(tree.verdict().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' '));
-                return;
+            if (resume) {
+                // a started tree: what it still had to cut, though no longer joined to its stump column (above a
+                // cut gap, a branch whose base is gone), is cut as well; what was out of reach stays for the end
+                for (BlockPos p : logs) {
+                    if (!found.contains(p) && treeLog(p)) {
+                        found.add(p);
+                    }
+                }
+                found.removeAll(deferred);
+                found.sort(Comparator.comparingInt((BlockPos q) -> q.getY()).reversed());
             }
-            species = ForestScan.speciesOf(level().getBlockState(start));
-            big = big || tree.big();
-            for (int[] p : tree.logs()) {
-                logs.add(new BlockPos(p[0], p[1], p[2]));
-            }
+            logs.clear();
+            logs.addAll(found);
             surveyed = true;
         }
         ForestScan.TreeClaims.claim(spot, npc.getUUID(), now()); // renewed while chopping
-        while (!logs.isEmpty() && !isLog(logs.get(0))) {
+        while (!logs.isEmpty() && !treeLog(logs.get(0))) {
             logs.remove(0);
         }
         if (logs.isEmpty()) {
@@ -512,7 +635,10 @@ public class WoodcutterJob extends Job {
                 npc.getNavigation().stop();
                 return;
             }
-            deferred.add(logs.remove(0)); // cut at the end, from the stump's column
+            BlockPos later = logs.remove(0);
+            if (!deferred.contains(later)) {
+                deferred.add(later); // cut at the end, from the stump's column or right under it
+            }
             return;
         }
         closerDone = true;
@@ -539,10 +665,24 @@ public class WoodcutterJob extends Job {
         data().setDirty();
     }
 
-    /** Logs that were out of reach: cut standing in the stump's column (from there the eighth log above is in reach). */
+    /** A log of the tree being felled: the felled species (when known), and no part of any base's plan. */
+    private boolean treeLog(BlockPos p) {
+        if (!isLog(p) || WorkSafety.planned(data(), p)) {
+            return false;
+        }
+        return species == null || ForestScan.speciesOf(level().getBlockState(p)) == species;
+    }
+
+    /**
+     * Logs that were out of reach, cut at the end: standing in the cut stump's column, from where the eighth log
+     * straight up is in reach, or, for a log far out on a branch (a cherry's or an acacia's crown), standing on the
+     * ground right under it. Each gets {@link #FINAL_PASS_TICKS} to get there; one still out of reach is left (rare:
+     * the ground under it lies lower).
+     */
     private void finalPass(WorkplaceState wp) {
-        while (!deferred.isEmpty() && !isLog(deferred.get(0))) {
+        while (!deferred.isEmpty() && !treeLog(deferred.get(0))) {
             deferred.remove(0);
+            finalTicks = 0;
         }
         if (deferred.isEmpty()) {
             finishTree(wp);
@@ -550,20 +690,32 @@ public class WoodcutterJob extends Job {
         }
         BlockPos log = deferred.get(0);
         if (!BlockWork.inReach(npc, log, TRUNK_REACH)) {
-            if (finalTicks++ < FINAL_PASS_TICKS && !NpcNavigator.within(npc, spot, STUMP_COLUMN)) {
-                goTo(spot, STUMP_COLUMN, "the stump");
+            int dy = log.getY() - spot.getY();
+            boolean column = TreeShape.fromStumpColumn(log.getX() - spot.getX(), dy, log.getZ() - spot.getZ());
+            BlockPos stand = column ? spot : new BlockPos(log.getX(), spot.getY(), log.getZ());
+            double reach = column ? STUMP_COLUMN : UNDER_BRANCH;
+            if ((column || TreeShape.fromBelow(dy)) && finalTicks++ < FINAL_PASS_TICKS && !NpcNavigator.within(npc, stand, reach)) {
+                BlockPos leaf = column ? null : leafInTheWay(stand);
+                if (leaf != null) {
+                    status("Cutting through leaves to reach a branch", "Chopping");
+                    chopBlock(wp, leaf);
+                    return;
+                }
+                goTo(stand, reach, column ? "the stump" : "the end of a branch");
                 return;
             }
-            deferred.remove(0); // out of reach even from the stump's column: left (rare)
+            deferred.remove(0); // out of reach even from there: left (rare)
+            finalTicks = 0;
             return;
         }
         if (!npc.getNavigation().isDone()) {
             npc.getNavigation().stop();
         }
-        status("Felling the last logs from the stump", "Chopping");
+        status("Felling the last logs from below", "Chopping");
         if (chopBlock(wp, log)) {
             npc.awardXp(1);
             deferred.remove(0);
+            finalTicks = 0;
         }
     }
 
@@ -626,21 +778,21 @@ public class WoodcutterJob extends Job {
                 && !WorkSafety.planned(data(), p);
     }
 
-    /** A leaf block within reach, at foot or head height, between the woodcutter and the trunk. */
-    private BlockPos leafInTheWay() {
-        if (spot == null) {
+    /** A leaf block within reach, at foot or head height, between the woodcutter and {@code toward} (a trunk, a branch's end). */
+    private BlockPos leafInTheWay(BlockPos toward) {
+        if (toward == null) {
             return null;
         }
         // near the tree, or so overgrown that walking gets no closer: cut through
         boolean overgrown = npc.navigator().ticksWithoutProgress() > 100;
-        if (npc.blockPosition().distSqr(spot) > 8 * 8 && !overgrown) {
+        if (npc.blockPosition().distSqr(toward) > 8 * 8 && !overgrown) {
             return null;
         }
-        double own = npc.blockPosition().distSqr(spot);
+        double own = npc.blockPosition().distSqr(toward);
         BlockPos best = null;
         double bestD = Double.MAX_VALUE;
         for (BlockPos p : BlockPos.betweenClosed(npc.blockPosition().offset(-3, 0, -3), npc.blockPosition().offset(3, 1, 3))) {
-            if (p.distSqr(spot) < own && cuttableLeaves(p) && BlockWork.inReach(npc, p, 4.5)) {
+            if (p.distSqr(toward) < own && cuttableLeaves(p) && BlockWork.inReach(npc, p, 4.5)) {
                 double d = p.distSqr(npc.blockPosition());
                 if (d < bestD) {
                     bestD = d;
@@ -753,7 +905,7 @@ public class WoodcutterJob extends Job {
                     plantCount = r.count();
                     plantSquare = r.twoByTwo();
                     plantGrove = false;
-                    walkTicks = 0;
+                    startWalk(p, SPOT_GIVE_UP_TICKS);
                     markBusy();
                     state = State.PLANT;
                     return true;
@@ -778,15 +930,16 @@ public class WoodcutterJob extends Job {
         return false;
     }
 
-    /** Plants the sapling(s) chosen for {@link #spot}: a stump's replanting or a grove spot. No terrain is changed. */
+    /**
+     * Plants the sapling(s) chosen for {@link #spot}: a stump's replanting or a grove spot. No terrain is changed; the
+     * flowers around the spot are picked first for a species that would grow a bee nest beside them.
+     */
     private void plant(WorkplaceState wp) {
         if (!NpcNavigator.within(npc, spot, 3.0)) {
-            if (++walkTicks > SPOT_GIVE_UP_TICKS) {
-                if (plantGrove) {
-                    grove.reject(spot); // the grove search would offer it again and again: another spot is taken
-                } else {
-                    skipFor(spot); // cannot get to this stump for now
-                }
+            if (walkFailed()) {
+                // cannot get to it for now (a grove spot as much as a stump: the spot itself is fine, the search
+                // offers another meanwhile)
+                skipFor(spot, SPOT_RETRY_TICKS);
                 npc.navigator().reset();
                 state = State.CHECK;
                 return;
@@ -796,6 +949,14 @@ public class WoodcutterJob extends Job {
             }
         }
         List<BlockPos> cells = plantSquare ? List.of(spot, spot.east(), spot.south(), spot.south().east()) : List.of(spot);
+        BlockPos flower = ForestRules.beesNearFlowers(plantSpecies) ? flowerNear(cells) : null;
+        if (flower != null) {
+            status("Picking the flowers by a planting spot (no bee nest in the tree)", "Planting");
+            lookAt(flower);
+            level().destroyBlock(flower, true, npc);
+            npc.swing(InteractionHand.MAIN_HAND);
+            return;
+        }
         Block sapling = ForestScan.saplingBlock(plantSpecies);
         boolean fits = true;
         for (BlockPos c : cells) {
@@ -842,13 +1003,31 @@ public class WoodcutterJob extends Job {
         state = State.CHECK;
     }
 
-    /** Leaves a stump or sapling it could not get to alone for {@link #SPOT_RETRY_TICKS}; spots whose time is up are forgotten. */
-    private void skipFor(BlockPos p) {
+    /**
+     * A flower within the box a sapling at one of {@code cells} looks at when it grows (2 sideways, 1 down and up):
+     * vanilla then grows the tree with a bee nest, a block entity that would keep the tree standing for good. Flowers
+     * that are part of a base's plan are left.
+     */
+    private BlockPos flowerNear(List<BlockPos> cells) {
+        for (BlockPos c : cells) {
+            for (BlockPos p : BlockPos.betweenClosed(c.offset(-2, -1, -2), c.offset(2, 1, 2))) {
+                BlockState st = level().getBlockState(p);
+                if ((st.is(BlockTags.SMALL_FLOWERS) || st.is(BlockTags.TALL_FLOWERS) || st.is(Blocks.PINK_PETALS))
+                        && !WorkSafety.planned(data(), p)) {
+                    return p.immutable();
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Leaves a tree, stump, grove spot or sapling it could not get to alone for {@code ticks}; entries whose time is up are forgotten. */
+    private void skipFor(BlockPos p, int ticks) {
         long t = now();
         if (skipUntil.size() >= 64) {
             skipUntil.values().removeIf(until -> until <= t);
         }
-        skipUntil.put(p.asLong(), t + SPOT_RETRY_TICKS);
+        skipUntil.put(p.asLong(), t + ticks);
     }
 
     private void growNow(BlockPos p, int steps) {
@@ -894,7 +1073,7 @@ public class WoodcutterJob extends Job {
                 tendCursor = (idx + 1) % n;
                 spot = p;
                 progress = 0;
-                walkTicks = 0;
+                startWalk(p, SPOT_GIVE_UP_TICKS);
                 markBusy();
                 state = State.BONEMEAL;
                 return true;
@@ -912,8 +1091,8 @@ public class WoodcutterJob extends Job {
             return;
         }
         if (!NpcNavigator.within(npc, spot, 3.0)) {
-            if (++walkTicks > SPOT_GIVE_UP_TICKS) {
-                skipFor(spot);
+            if (walkFailed()) {
+                skipFor(spot, SPOT_RETRY_TICKS);
                 npc.navigator().reset();
                 state = State.CHECK;
                 return;
@@ -947,24 +1126,46 @@ public class WoodcutterJob extends Job {
         return n;
     }
 
-    /** True while the grove is short of saplings: fewer than groveSize planted saplings in the work belt. */
-    private static boolean groveWanted(BaseState b, WorkplaceState wp) {
-        int size = FCConfig.GROVE_SIZE.get();
-        return size > 0 && inBelt(b, wp) < size;
+    /**
+     * Saplings the grove still wants: groveSize planted saplings in the work belt (twice as many while the base is
+     * short of wood, see {@link ForestRules#groveTarget}) less those growing there now. Replanted stumps in the belt
+     * count as much as grove spots: they grow in the same always-ticking ground.
+     */
+    private static int groveShortfall(BaseState b, WorkplaceState wp) {
+        int want = ForestRules.groveTarget(FCConfig.GROVE_SIZE.get(), b.shortages.contains(Logistics.Resource.WOOD.name()));
+        return Math.max(0, want - inBelt(b, wp));
     }
 
-    /** A grove spot to plant one of its spare saplings in. True when it set a state. */
+    /** True while the grove is short of saplings. */
+    private static boolean groveWanted(BaseState b, WorkplaceState wp) {
+        return groveShortfall(b, wp) > 0;
+    }
+
+    /**
+     * A grove spot to plant one of its spare saplings in, the best species in {@link ForestRules#GROVE_ORDER} first.
+     * Carrying none (or only worse ones than the storehouse holds: oak, which may grow too tall, while birch is
+     * stored), it fetches them from the storehouse, as for a stump. True when it set a state.
+     */
     private boolean groveTarget(BaseState b, WorkplaceState wp) {
         if (!groveWanted(b, wp)) {
             return false;
         }
         Map<ForestRules.Species, Integer> reserved = reserved(wp);
         ForestRules.Species sp = ForestRules.groveSpecies(s -> spare(s, reserved));
-        if (sp == null) {
+        boolean mayFetch = sp != ForestRules.GROVE_ORDER.get(0) && now() >= nextSaplingTrip && now() >= nextGroveLook;
+        if (sp == null && !mayFetch) {
             return false;
         }
-        BlockPos p = grove.next(level(), data(), b);
-        if (p == null || remoteAtNight(p) || skipUntil.getOrDefault(p.asLong(), 0L) > now()) {
+        BlockPos p = grove.next(level(), data(), b, q -> remoteAtNight(q) || skipping(q));
+        if (p == null) {
+            return false; // no spot to plant in: no trip for saplings either
+        }
+        if (mayFetch && groveSaplingsStored(b, sp)) {
+            nextSaplingTrip = now() + SAPLING_TRIP_TICKS;
+            state = State.STORAGE;
+            return true;
+        }
+        if (sp == null) {
             return false;
         }
         spot = p;
@@ -972,10 +1173,28 @@ public class WoodcutterJob extends Job {
         plantCount = 1;
         plantSquare = false;
         plantGrove = true;
-        walkTicks = 0;
+        startWalk(p, SPOT_GIVE_UP_TICKS);
         markBusy();
         state = State.PLANT;
         return true;
+    }
+
+    /**
+     * True when the storehouse holds grove saplings better than {@code carried} (any, when it carries none). Called
+     * only when a trip for saplings is due; the storehouse is looked into at most every {@link #STORAGE_LOOK_TICKS}.
+     */
+    private boolean groveSaplingsStored(BaseState b, ForestRules.Species carried) {
+        nextGroveLook = now() + STORAGE_LOOK_TICKS;
+        for (ForestRules.Species s : ForestRules.GROVE_ORDER) {
+            if (s == carried) {
+                return false;
+            }
+            net.minecraft.world.item.Item item = ForestScan.saplingItem(s);
+            if (FactionStorage.count(level(), b, x -> x.is(item)) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ------------------------------------------------------------------ foraging
@@ -1025,7 +1244,7 @@ public class WoodcutterJob extends Job {
             ForestScan.Found tree = null;
             for (int i = 0; i < ForestScan.PATTERNS && tree == null; i++) {
                 tree = ForestScan.findTree(level(), data(), b, npc, npc.blockPosition(), FORAGE_SCAN, badWild, scans++,
-                        this::remoteAtNight);
+                        this::passOver);
             }
             if (tree != null) {
                 forageFails = 0;
@@ -1070,15 +1289,19 @@ public class WoodcutterJob extends Job {
                 takeFromStorage(x -> x.is(item), need);
             }
         }
-        // saplings for the grove
-        if (groveWanted(b, wp)) {
-            int have = 0;
-            for (ForestRules.Species s : ForestRules.GROVE_ORDER) {
-                have += carried(s);
+        // saplings for the grove, as many as it is short of (at most GROVE_TAKE), the best species first: birch from
+        // the storehouse is taken even while it carries oak
+        int groveWant = Math.min(GROVE_TAKE, groveShortfall(b, wp));
+        Map<ForestRules.Species, Integer> queued = reserved(wp);
+        int have = 0;
+        for (ForestRules.Species s : ForestRules.GROVE_ORDER) {
+            if (have >= groveWant) {
+                break;
             }
-            for (int i = 0; have < 4 && i < ForestRules.GROVE_ORDER.size(); i++) {
-                net.minecraft.world.item.Item item = ForestScan.saplingItem(ForestRules.GROVE_ORDER.get(i));
-                have += takeFromStorage(x -> x.is(item), 6 - have);
+            have += Math.max(0, spare(s, queued));
+            net.minecraft.world.item.Item item = ForestScan.saplingItem(s);
+            if (have < groveWant) {
+                have += takeFromStorage(x -> x.is(item), groveWant - have);
             }
         }
         int boneMeal = Inv.count(npc.inventory(), x -> x.is(Items.BONE_MEAL));
@@ -1178,6 +1401,12 @@ public class WoodcutterJob extends Job {
         }
         if (felling != null) {
             tag.putLong("felling", felling.asLong());
+            // what it still has to cut of that tree: the survey alone would not find logs above a cut gap again
+            tag.putLongArray("logs", logs.stream().mapToLong(BlockPos::asLong).toArray());
+            tag.putLongArray("deferred", deferred.stream().mapToLong(BlockPos::asLong).toArray());
+            if (species != null) {
+                tag.putString("species", species.name());
+            }
         }
         tag.putBoolean("big", big);
         tag.putLongArray("badWild", badWild.stream().mapToLong(Long::longValue).toArray());
@@ -1201,6 +1430,21 @@ public class WoodcutterJob extends Job {
         spot = current ? readPos(tag, "spot") : null;
         felling = readPos(tag, "felling");
         big = current && tag.getBoolean("big");
+        // a tree it was felling: the logs it still had to cut (absent in saves from before they were kept: empty)
+        logs.clear();
+        deferred.clear();
+        species = null;
+        if (current && felling != null) {
+            for (long k : tag.getLongArray("logs")) {
+                logs.add(BlockPos.of(k));
+            }
+            for (long k : tag.getLongArray("deferred")) {
+                deferred.add(BlockPos.of(k));
+            }
+            species = ForestRules.Species.byName(tag.getString("species"));
+        }
+        surveyed = false;
+        walkBudget = 0; // a walk under way starts over, with its allowance from where the woodcutter now stands
         if (!current || state == State.PLANT || state == State.BONEMEAL || state == State.DISMANTLE
                 || spot == null && state != State.STORAGE && state != State.CHECK) {
             state = State.CHECK;

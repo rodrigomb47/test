@@ -2884,6 +2884,194 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /** A natural leaf block (not persistent, next to a log) of {@code leaves} at relative {@code p}. */
+    private static void naturalLeaf(GameTestHelper h, BlockPos p, net.minecraft.world.level.block.Block leaves) {
+        h.setBlock(p, leaves.defaultBlockState().setValue(net.minecraft.world.level.block.LeavesBlock.DISTANCE, 1)
+                .setValue(net.minecraft.world.level.block.LeavesBlock.PERSISTENT, false));
+    }
+
+    /** A log along an axis at relative {@code p}. */
+    private static void log(GameTestHelper h, BlockPos p, net.minecraft.world.level.block.Block block, net.minecraft.core.Direction.Axis axis) {
+        h.setBlock(p, block.defaultBlockState().setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, axis));
+    }
+
+    /**
+     * A cherry whose branch ends 5 out and 7 up, on the far side from where the woodcutter comes: from the cut stump's
+     * column that end is out of reach, so the woodcutter cuts it standing right under it, and no log is left floating.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1500, batch = "wood_branch", skyAccess = true)
+    public static void woodcutterCutsABranchEndFromBelow(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 1500);
+        FactionNpc n;
+        try {
+            h.setBlock(new BlockPos(8, 1, 18), Blocks.GRASS_BLOCK);
+            for (int y = 2; y <= 7; y++) {
+                log(h, new BlockPos(8, y, 18), Blocks.CHERRY_LOG, net.minecraft.core.Direction.Axis.Y);
+            }
+            for (int[] b : new int[][]{{9, 7}, {10, 8}, {11, 8}, {12, 9}, {13, 9}}) {
+                log(h, new BlockPos(b[0], b[1], 18), Blocks.CHERRY_LOG, net.minecraft.core.Direction.Axis.X);
+            }
+            for (int[] l : new int[][]{{8, 8, 18}, {7, 8, 18}, {8, 8, 17}, {8, 8, 19}, {13, 10, 18}, {12, 10, 18}, {14, 9, 18},
+                    {13, 9, 17}, {13, 9, 19}, {14, 10, 18}}) {
+                naturalLeaf(h, new BlockPos(l[0], l[1], l[2]), Blocks.CHERRY_LEAVES);
+            }
+            n = testWoodcutter(t, 3, 18, new ItemStack(Items.STONE_AXE)); // it comes from the west, the branch points east
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            var w = woodlandOf(t);
+            if (w == null || w.felled < 1 || !(n.job() instanceof com.factionclash.work.WoodcutterJob job) || job.felling() != null
+                    || job.stateName().equals("CHOP")) {
+                return; // not done with the tree yet
+            }
+            t.assertTrue(!logsIn(h, 5, 15, 15, 21, Blocks.CHERRY_LOG), "no log of the cherry should be left, the branch end included");
+            t.succeed();
+        });
+    }
+
+    /**
+     * A woodcutter that went to unload half-way through a tree (the trunk below its top cut, the top log left for the
+     * end) and was saved: after loading it finishes the tree, the top log above the gap included, which a new survey
+     * from the stump alone would no longer find.
+     */
+    @GameTest(template = "platform", timeoutTicks = 900, batch = "wood_gap", skyAccess = true)
+    public static void woodcutterFinishesLogsAboveACutGap(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 900);
+        FactionNpc n;
+        BlockPos stump = h.absolutePos(new BlockPos(18, 2, 18));
+        try {
+            h.setBlock(new BlockPos(18, 1, 18), Blocks.GRASS_BLOCK);
+            for (int y : new int[]{2, 3, 7}) {
+                h.setBlock(new BlockPos(18, y, 18), Blocks.OAK_LOG); // y 4..6 already cut
+            }
+            for (int[] l : new int[][]{{17, 7, 18}, {19, 7, 18}, {18, 7, 17}, {18, 7, 19}, {18, 8, 18}}) {
+                naturalLeaf(h, new BlockPos(l[0], l[1], l[2]), Blocks.OAK_LEAVES);
+            }
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("v", 2);
+            tag.putString("state", "CHOP");
+            tag.putLong("spot", stump.asLong());
+            tag.putLong("felling", stump.asLong());
+            tag.putLongArray("logs", new long[]{stump.above().asLong(), stump.asLong()});
+            tag.putLongArray("deferred", new long[]{stump.above(5).asLong()});
+            tag.putString("species", "OAK");
+            n.job().load(tag, h.getLevel().registryAccess());
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            var w = woodlandOf(t);
+            if (w == null || w.felled < 1 || !(n.job() instanceof com.factionclash.work.WoodcutterJob job) || job.felling() != null
+                    || job.stateName().equals("CHOP")) {
+                return;
+            }
+            t.assertTrue(!logsIn(h, 18, 18, 18, 18, Blocks.OAK_LOG), "the log above the cut gap should be felled too, not left floating");
+            t.assertTrue(w.felled == 1, "the tree counts once: " + w.felled);
+            t.succeed();
+        });
+    }
+
+    /**
+     * A tree the woodcutter cannot get to (it is shut in bedrock) is left alone for a while, not given up for good:
+     * nothing is wrong with the tree, and a grove tree chosen from far away must not be lost for the length of the way.
+     */
+    @GameTest(template = "platform", timeoutTicks = 2400, batch = "wood_cage", skyAccess = true)
+    public static void woodcutterLeavesAnUnreachableTreeForAWhile(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 2400);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = testTree(h, 5, 18, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 5, false, Blocks.GRASS_BLOCK);
+            // bedrock it can neither dig nor climb, a hole for the woodcutter, nothing to stand on within 4
+            for (BlockPos p : BlockPos.betweenClosed(14, 2, 0, 23, 4, 10)) {
+                if (!(p.getX() == 19 && p.getZ() == 5 && p.getY() <= 3)) {
+                    h.setBlock(p, Blocks.BEDROCK);
+                }
+            }
+            n = testWoodcutter(t, 19, 5, new ItemStack(Items.STONE_AXE));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            if (!(n.job() instanceof com.factionclash.work.WoodcutterJob job)) {
+                return;
+            }
+            t.assertTrue(!job.gaveUp(stump), "a tree it only cannot get to is not given up for good");
+            if (job.skipping(stump)) {
+                t.succeed(); // left alone for a while
+            }
+        });
+    }
+
+    /**
+     * A tree in the list of trees left standing (as an older save put grove trees there when the way to them was long)
+     * is surveyed again from afar, found to be a natural tree it can fell whole, and felled.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1200, batch = "wood_recheck", skyAccess = true)
+    public static void woodcutterLooksAgainAtTreesItLeftStanding(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 1200);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = testTree(h, 18, 18, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 5, false, Blocks.GRASS_BLOCK);
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("v", 2);
+            tag.putString("state", "CHECK");
+            tag.putLongArray("badWild", new long[]{stump.asLong()});
+            n.job().load(tag, h.getLevel().registryAccess());
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            var w = woodlandOf(t);
+            if (w != null && w.felled >= 1 && !logsIn(h, 18, 18, 18, 18, Blocks.OAK_LOG)
+                    && n.job() instanceof com.factionclash.work.WoodcutterJob job && !job.gaveUp(stump)) {
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * A woodcutter carrying no saplings fetches them from the storehouse for the grove, picks the flower next to the
+     * grove spot (a tree grown beside flowers gets a bee nest and is never felled) and plants the sapling there.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1500, batch = "wood_grove", skyAccess = true)
+    public static void woodcutterFillsTheGroveFromTheStorehouse(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 15, 1500);
+        FactionNpc n;
+        BlockPos spot = h.absolutePos(new BlockPos(22, 2, 17));
+        BlockPos flower = h.absolutePos(new BlockPos(21, 2, 18));
+        try {
+            // a wider work belt than a test base has, so a grove spot (walls + 4 = Chebyshev 6) fits on the platform
+            t.base.points.put(BaseState.MIN, t.base.center.offset(-11, -1, -11));
+            t.base.points.put(BaseState.MAX, t.base.center.offset(11, 8, 11));
+            h.setBlock(new BlockPos(22, 1, 17), Blocks.GRASS_BLOCK); // dx 10, dz 5: the one grove spot
+            h.setBlock(new BlockPos(21, 1, 18), Blocks.GRASS_BLOCK);
+            h.setBlock(new BlockPos(21, 2, 18), Blocks.POPPY);
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.BIRCH_SAPLING, 2));
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            var w = woodlandOf(t);
+            if (w == null || !h.getLevel().getBlockState(spot).is(Blocks.BIRCH_SAPLING)) {
+                return;
+            }
+            t.assertTrue(!h.getLevel().getBlockState(flower).is(Blocks.POPPY), "the flower beside the grove spot should be picked first");
+            t.assertTrue(w.planted.contains(spot.asLong()), "the grove sapling counts as planted");
+            t.succeed();
+        });
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

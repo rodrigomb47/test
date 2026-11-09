@@ -12,14 +12,20 @@ import java.util.Set;
  * Pure shape check of a tree before a woodcutter fells it (no Minecraft classes, unit-tested). From the stump it
  * follows the logs of the stump's own kind, the way the old flood did (sideways, diagonally and one up at a time),
  * and decides whether this is a natural tree the woodcutter can take down whole: no built block or log of another
- * kind touching it, no log higher than it can reach from the ground, at least a few logs, natural leaves near the
- * top and soil under the stump. Anything else is left standing before the first cut, so no floating logs remain.
+ * kind touching it, no log higher than it can reach from the ground, not so big that the flood had to stop short of
+ * it, at least a few logs, natural leaves near the top and soil under the stump. Anything else is left standing before
+ * the first cut, so no floating logs remain. It also says where the woodcutter stands to cut a log at the end
+ * ({@link #fromStumpColumn}): in the cut stump's column, or right under a log that sticks out too far sideways.
  */
 public final class TreeShape {
     /** What a block is, as far as felling a tree goes. SAME_LOG is the stump's exact block, in any axis. */
     public enum Kind { AIR, SAME_LOG, OTHER_LOG, NATURAL_LEAVES, PERSISTENT_LEAVES, GROUND, STRUCTURE, OTHER }
 
-    public enum Verdict { OK, TOO_SMALL, NOT_NATURAL, TOUCHES_STRUCTURE, TOO_TALL }
+    /**
+     * The survey's answer. TOO_BIG: the same log runs on past the flood's bounds (7 sideways, 24 up or 96 logs), as in
+     * a square of dark oaks grown into each other, so only part of it was seen and none of it is cut.
+     */
+    public enum Verdict { OK, TOO_SMALL, NOT_NATURAL, TOUCHES_STRUCTURE, TOO_TALL, TOO_BIG }
 
     /** The world as seen by the survey. */
     @FunctionalInterface
@@ -39,9 +45,12 @@ public final class TreeShape {
 
     /** PROPOSED: the highest log a woodcutter can still reach from the stump column (eyes 1.62 up, reach 7.5). */
     public static final int MAX_FELL_DY = 8;
+    /** PROPOSED: how far a woodcutter reaches for a log (eyes to the log's centre), its eye height, and how far from a
+     * column's centre the walk there may stop. */
+    public static final double REACH = 7.5, EYE = 1.62, STOP = 0.45;
     /** PROPOSED: fewer logs than this is not a tree (a stump, a fence-post log). */
     public static final int MIN_LOGS = 3;
-    /** Flood bounds, as before: 7 blocks sideways, 24 up, 96 logs. */
+    /** Flood bounds, as before: 7 blocks sideways, 24 up, 96 logs. The same log going on past them makes the tree TOO_BIG. */
     public static final int MAX_SPREAD = 7, MAX_RISE = 24, MAX_LOGS = 96;
     /** Natural leaves must lie within this many blocks sideways of the top log (from 1 below to 2 above it). */
     public static final int LEAF_RADIUS = 2;
@@ -53,7 +62,8 @@ public final class TreeShape {
 
     /**
      * Surveys the tree whose stump is at (x, y, z). With {@code resume} (a tree this woodcutter has started to fell)
-     * the size, leaf and soil rules are skipped, since the top is already gone; the contact and height rules stay.
+     * the size, leaf and soil rules are skipped, since the top is already gone; the bounds, contact and height rules
+     * stay.
      */
     public static Tree survey(Cells cells, int x, int y, int z, boolean resume) {
         List<int[]> logs = new ArrayList<>();
@@ -63,13 +73,16 @@ public final class TreeShape {
         Deque<int[]> queue = new ArrayDeque<>();
         Set<Long> seen = new HashSet<>();
         queue.add(new int[]{x, y, z});
-        while (!queue.isEmpty() && logs.size() < MAX_LOGS) {
+        // the same log beyond the bounds, or still waiting when the count ran out: part of the wood was never seen
+        boolean cutShort = false;
+        while (!queue.isEmpty() && !cutShort) {
             int[] p = queue.poll();
-            if (!seen.add(key(p[0] - x, p[1] - y, p[2] - z)) || Math.abs(p[0] - x) > MAX_SPREAD || Math.abs(p[2] - z) > MAX_SPREAD
-                    || p[1] < y || p[1] > y + MAX_RISE) {
+            if (!seen.add(key(p[0] - x, p[1] - y, p[2] - z)) || cells.at(p[0], p[1], p[2]) != Kind.SAME_LOG) {
                 continue;
             }
-            if (cells.at(p[0], p[1], p[2]) != Kind.SAME_LOG) {
+            if (Math.abs(p[0] - x) > MAX_SPREAD || Math.abs(p[2] - z) > MAX_SPREAD || p[1] < y || p[1] > y + MAX_RISE
+                    || logs.size() >= MAX_LOGS) {
+                cutShort = true;
                 continue;
             }
             logs.add(p);
@@ -86,6 +99,10 @@ public final class TreeShape {
         logs.sort(Comparator.comparingInt((int[] p) -> p[1]).reversed());
         int topDy = logs.get(0)[1] - y;
         boolean big = twoByTwoCorner(cells, x, y, z) != null;
+        if (cutShort) {
+            // cutting what was seen would leave the rest hanging (a neighbour's top over its grounded stub)
+            return new Tree(Verdict.TOO_BIG, logs, big, topDy);
+        }
         for (int[] p : logs) {
             for (int[] f : FACES) {
                 Kind k = cells.at(p[0] + f[0], p[1] + f[1], p[2] + f[2]);
@@ -107,6 +124,26 @@ public final class TreeShape {
             }
         }
         return new Tree(Verdict.OK, logs, big, topDy);
+    }
+
+    /**
+     * True when a log at (dx, dy, dz) from the stump (its centre against the stump column's) is in reach of a woodcutter
+     * standing in the cut stump's column, allowing for a walk that stops up to {@link #STOP} from the column's centre.
+     * Logs straight above are in reach up to {@link #MAX_FELL_DY}; a log far out on a branch (a cherry's tip five out
+     * and seven up, an acacia's crown) is not, and is cut standing right under it instead ({@link #fromBelow}).
+     */
+    public static boolean fromStumpColumn(int dx, int dy, int dz) {
+        double v = dy + 0.5 - EYE;
+        return Math.sqrt(dx * dx + dz * dz + v * v) + STOP <= REACH;
+    }
+
+    /**
+     * True when a log {@code dy} above the stump's level is in reach of a woodcutter standing on that level right
+     * under it (its walk there stopping within 1 block of the log's column): every log up to {@link #MAX_FELL_DY}.
+     */
+    public static boolean fromBelow(int dy) {
+        double v = dy + 0.5 - EYE;
+        return Math.sqrt(1.0 + v * v) <= REACH;
     }
 
     /**

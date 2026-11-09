@@ -80,7 +80,8 @@ public final class BaseBuilder {
         bp.placeAll(level);
         // four starter oak saplings on the grove lattice of the levelled west pad, beside the path; two of them are
         // already grown so the woodcutter can start at once. They count as the woodland's planted saplings.
-        List<BlockPos> starters = List.of(center.offset(-35, 0, -5), center.offset(-35, 0, 5), center.offset(-40, 0, -5), center.offset(-40, 0, 5));
+        // (all within the smallest forest radius the config allows, so the woodcutter's tree search finds them)
+        List<BlockPos> starters = com.factionclash.logic.ForestRules.STARTER_OFFSETS.stream().map(o -> center.offset(o[0], 0, o[1])).toList();
         for (BlockPos p : starters) {
             if (!level.getBlockState(p.below()).is(BlockTags.DIRT)) {
                 level.setBlock(p.below(), Blocks.DIRT.defaultBlockState(), Block.UPDATE_ALL);

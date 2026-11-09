@@ -141,4 +141,56 @@ class ForestRulesTest {
         carried.put(Species.SPRUCE, 1);
         assertEquals(Species.SPRUCE, ForestRules.groveSpecies(s -> carried.getOrDefault(s, 0)));
     }
+
+    @Test
+    void startersLieWithinTheSmallestForestRadius() {
+        // a server may set forestRadius as low as the config allows: the tree search must still find every starter
+        int half = 24;
+        assertEquals(4, ForestRules.STARTER_OFFSETS.size());
+        for (int[] o : ForestRules.STARTER_OFFSETS) {
+            assertTrue(o[0] * o[0] + o[1] * o[1] <= ForestRules.MIN_FOREST_RADIUS * ForestRules.MIN_FOREST_RADIUS,
+                    o[0] + "," + o[1] + " lies beyond the smallest forest radius " + ForestRules.MIN_FOREST_RADIUS);
+            assertTrue(ForestRules.groveSpotAllowed(o[0], o[1], half, true, Ground.DIRT, false), "a starter stands on a grove spot");
+        }
+        // the old lowest setting (32) left all four outside, so the woodcutter had to forage for its own trees
+        assertTrue(ForestRules.STARTER_OFFSETS.stream().allMatch(o -> o[0] * o[0] + o[1] * o[1] > 32 * 32));
+    }
+
+    @Test
+    void groveGrowsTwiceAsBigWhileShortOfWood() {
+        assertEquals(16, ForestRules.DEFAULT_GROVE_SIZE);
+        assertEquals(16, ForestRules.groveTarget(16, false));
+        assertEquals(32, ForestRules.groveTarget(16, true), "short of wood: twice the saplings");
+        assertEquals(16, ForestRules.groveTarget(8, true));
+        assertEquals(ForestRules.MAX_GROVE_SIZE, ForestRules.groveTarget(20, true), "never beyond the config's ceiling");
+        assertEquals(0, ForestRules.groveTarget(0, true), "groveSize 0 keeps no grove, short of wood or not");
+        // the default's arithmetic: 3 random ticks in 4096 blocks a tick, 1 in 7 grows a stage, two stages, lit about
+        // half the day (raw sky light 9 or more): about a day and a half a sapling
+        double ticksPerSapling = 2 / (3.0 / 4096 / 7) / 0.52;
+        double treesPerDay = ForestRules.DEFAULT_GROVE_SIZE * 24000 / ticksPerSapling;
+        assertTrue(treesPerDay >= 9 && treesPerDay <= 12, "about 10 trees a day: " + treesPerDay);
+    }
+
+    @Test
+    void farWalksGetTheTimeTheyNeed() {
+        assertEquals(ForestRules.WALK_BASE_TICKS, ForestRules.walkBudget(ForestRules.WALK_BASE_TICKS, 0));
+        // a woodcutter 130 blocks out on a forage leg, walking back to a grove tree at about 4.3 blocks a second
+        double walkTicks = 130 / 4.3 * 20;
+        assertTrue(ForestRules.walkBudget(ForestRules.WALK_BASE_TICKS, 130) > 1.5 * walkTicks,
+                "the way back is not a reason to give the tree up: " + ForestRules.walkBudget(ForestRules.WALK_BASE_TICKS, 130));
+        assertTrue(ForestRules.walkBudget(ForestRules.WALK_BASE_TICKS, 130) > 400, "the old flat 400 ticks was 86 blocks at best");
+        assertEquals(600 + 80, ForestRules.walkBudget(600, 10));
+        assertEquals(600, ForestRules.walkBudget(600, -3), "no negative distance");
+    }
+
+    @Test
+    void flowersArePickedOnlyForSpeciesThatGrowBeeNests() {
+        assertTrue(ForestRules.beesNearFlowers(Species.OAK));
+        assertTrue(ForestRules.beesNearFlowers(Species.BIRCH));
+        assertTrue(ForestRules.beesNearFlowers(Species.CHERRY));
+        assertFalse(ForestRules.beesNearFlowers(Species.SPRUCE));
+        assertFalse(ForestRules.beesNearFlowers(Species.ACACIA));
+        assertFalse(ForestRules.beesNearFlowers(Species.JUNGLE));
+        assertFalse(ForestRules.beesNearFlowers(Species.DARK_OAK));
+    }
 }

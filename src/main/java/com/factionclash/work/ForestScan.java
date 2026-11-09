@@ -86,10 +86,10 @@ public final class ForestScan {
      * a log of a species the woodcutter fells, the same log runs down at least 3 blocks and at most 8 below the top,
      * the trunk stands on soil, and natural leaves grow around the top. Trees the woodcutter gave up on
      * ({@code badWild}), trees another woodcutter is felling, wood that is not the faction's to fell
-     * ({@link WorkSafety#protectedWood}) and spots {@code skip} rejects (too far out at night) are passed over. A trunk
-     * that is one corner of a 2x2 square is found as the square's north-west corner. The lowest score wins: the
-     * distance from the base centre plus half the distance from the woodcutter, so the trees next to the walls go
-     * first.
+     * ({@link WorkSafety#protectedWood}) and spots {@code skip} rejects (too far out at night, or not to be got to for
+     * now) are passed over. A trunk that is one corner of a 2x2 square is found as the square's north-west corner. The
+     * lowest score wins: the distance from the base centre plus half the distance from the woodcutter, so the trees next
+     * to the walls go first.
      */
     public static Found findTree(ServerLevel level, CampaignData data, BaseState base, FactionNpc npc, BlockPos around, int radius,
                                  Set<Long> badWild, int scan, Predicate<BlockPos> skip) {
@@ -278,6 +278,14 @@ public final class ForestScan {
 
         /** A grove spot (the cell the sapling goes into) for base {@code b}, or null. */
         public BlockPos next(ServerLevel level, CampaignData data, BaseState b) {
+            return next(level, data, b, p -> false);
+        }
+
+        /**
+         * A grove spot for base {@code b} that {@code skip} does not pass over (one the woodcutter could not get to
+         * for now, one too far out tonight), or null.
+         */
+        public BlockPos next(ServerLevel level, CampaignData data, BaseState b, Predicate<BlockPos> skip) {
             if (b.id != baseId) {
                 baseId = b.id;
                 points = lattice(b);
@@ -287,7 +295,7 @@ public final class ForestScan {
                 rejected.clear();
             }
             if (found != null) {
-                if (fits(level, data, b, found.getX(), found.getZ()) != null) {
+                if (!skip.test(found) && fits(level, data, b, found.getX(), found.getZ()) != null) {
                     return found;
                 }
                 found = null;
@@ -300,7 +308,7 @@ public final class ForestScan {
                 int[] p = points.get(cursor);
                 cursor = (cursor + 1) % points.size();
                 BlockPos at = fits(level, data, b, p[0], p[1]);
-                if (at != null) {
+                if (at != null && !skip.test(at)) {
                     found = at;
                     return at;
                 }
@@ -312,7 +320,10 @@ public final class ForestScan {
             return null;
         }
 
-        /** The spot did not take a sapling after all (the ground would not hold it): never offered again. */
+        /**
+         * The spot did not take a sapling after all (the ground would not hold it): never offered again. A spot that
+         * was only too far to walk to is passed over through {@code skip} instead, for a while.
+         */
         public void reject(BlockPos p) {
             rejected.add(p.asLong());
             if (p.equals(found)) {
