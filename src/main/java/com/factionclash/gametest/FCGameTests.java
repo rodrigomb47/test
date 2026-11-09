@@ -1140,6 +1140,101 @@ public final class FCGameTests {
     }
 
     /**
+     * A new mine whose mouth the miner never reaches is given up as unreachable, but a mine whose first descent is
+     * under way is not: its bottom stays at the surface until the whole descent is dug, so a miner on its way back
+     * to the shaft (after a reload, say) only looks as if it had never got there. The miner starts far from the
+     * mouth with its walking time to the mouth already used up; with part of the shaft dug the mine is kept, and once
+     * the record says nothing is dug the same walk gives it up and remembers the site.
+     */
+    @GameTest(template = "platform", timeoutTicks = 300, batch = "mine_reach", skyAccess = true)
+    public static void minerKeepsAHalfDugShaftWhileWalkingBack(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 300, new BlockPos(12, 2, 16));
+        com.factionclash.campaign.WorkplaceState mine = new com.factionclash.campaign.WorkplaceState();
+        FactionNpc miner;
+        java.lang.reflect.Field walkMine, walkTicks, walkLast, state, bad;
+        try {
+            for (BlockPos p : BlockPos.betweenClosed(3, 2, 3, 9, 4, 8)) {
+                h.setBlock(p, Blocks.STONE); // the mouth stands on a block the miner cannot climb
+            }
+            mine.type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+            mine.origin = h.absolutePos(new BlockPos(4, 5, 5));
+            mine.extent = mine.origin;
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            mine.hut = false;
+            mine.maxRounds = 4;
+            mine.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(3, 0, 0,
+                    com.factionclash.logic.MinePlanner.Band.COAL.ordinal()));
+            mine.cur = 0;
+            mine.bottom = 0;
+            mine.upgradeStep = 6; // steps 1 and 2 of the descent are dug
+            t.addWorkplace(mine);
+            miner = t.npc(19, 19, NpcRole.MINER);
+            miner.equip(new ItemStack(Items.STONE_PICKAXE));
+            mine.assigned = miner.getUUID();
+            Class<?> jc = com.factionclash.work.MinerJob.class;
+            walkMine = jc.getDeclaredField("siteWalkMine");
+            walkTicks = jc.getDeclaredField("siteWalkTicks");
+            walkLast = jc.getDeclaredField("siteWalkLast");
+            state = jc.getDeclaredField("state");
+            bad = jc.getDeclaredField("badSites");
+            for (java.lang.reflect.Field f : new java.lang.reflect.Field[]{walkMine, walkTicks, walkLast, state, bad}) {
+                f.setAccessible(true);
+            }
+        } catch (ReflectiveOperationException e) {
+            t.cleanup();
+            throw new IllegalStateException(e);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        FactionNpc m = miner;
+        // the walk toward the mouth has already taken the whole allowance (as if counted before a reload)
+        Runnable usedUp = () -> {
+            try {
+                walkMine.setInt(m.job(), mine.id);
+                walkTicks.setInt(m.job(), com.factionclash.work.MinerJob.UNREACHABLE_SITE_TICKS);
+                walkLast.setLong(m.job(), h.getLevel().getGameTime() - 50);
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+        };
+        int[] ticks = {0};
+        t.onEachTick(() -> {
+            if (!(m.job() instanceof com.factionclash.work.MinerJob)) {
+                return;
+            }
+            String st;
+            try {
+                st = String.valueOf(state.get(m.job()));
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+            ticks[0]++;
+            if (ticks[0] == 1) {
+                usedUp.run();
+            }
+            if (ticks[0] <= 30) {
+                t.assertTrue(!mine.workedOut, "a mine whose shaft is being dug was given up: " + mine.note);
+                if (ticks[0] == 30) {
+                    t.assertTrue(st.equals("TRAVEL"), "the miner should be walking back to its mine, is in " + st);
+                    mine.upgradeStep = 0; // nothing dug after all: the mouth was never reached
+                    usedUp.run();
+                }
+                return;
+            }
+            if (mine.workedOut) {
+                t.assertTrue(mine.note.contains("cannot be reached"), "given up for the wrong reason: " + mine.note);
+                try {
+                    t.assertTrue(((List<?>) bad.get(m.job())).contains(mine.origin.asLong()), "the unreachable site is not remembered");
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+                t.succeed();
+            }
+        });
+    }
+
+    /**
      * A mine rests until an iron pickaxe; a miner with a stone one and nothing else to work fetches the iron pickaxe
      * waiting in the storehouse and takes the mine up again (in the flat test world its planning then finds nothing
      * to dig, so the mine is given up, but only after it was taken up).

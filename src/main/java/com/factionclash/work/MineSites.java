@@ -277,8 +277,12 @@ public final class MineSites {
     public record Site(BlockPos origin, Direction facing, int maxRounds, double score) {
     }
 
-    /** Why a point was turned down; only "too shallow" matters to the miner (a world with no room for a mine). */
-    enum Verdict { OK, NOT_LOADED, SHALLOW, UNFIT }
+    /**
+     * Why a point was turned down; only "too shallow" matters to the miner (a world with no room for a mine). WORSE:
+     * deep enough, but even at its best it could not beat the site already found (its walk from the gate is longer
+     * than that site's whole score), so it was not looked at further.
+     */
+    enum Verdict { OK, NOT_LOADED, SHALLOW, UNFIT, WORSE }
 
     /**
      * A search for a mine site around a base, spread over several ticks: points every {@link #GRID} blocks on the
@@ -309,7 +313,7 @@ public final class MineSites {
             for (int i = 0; i < budget && next < points.size(); i++, next++) {
                 int[] p = points.get(next);
                 out[0] = null;
-                Verdict v = judge(level, data, base, p[0], p[1], bad, obstacles, map, out);
+                Verdict v = judge(level, data, base, p[0], p[1], bad, obstacles, map, best == null ? Double.MAX_VALUE : best.score(), out);
                 if (v == Verdict.NOT_LOADED) {
                     continue;
                 }
@@ -346,7 +350,7 @@ public final class MineSites {
     /** The site a mine with its mouth at column (x, z) would have, or null when it is unfit (or not loaded). */
     public static Site evaluate(ServerLevel level, CampaignData data, BaseState base, int x, int z, Collection<Long> badSites) {
         Site[] out = new Site[1];
-        return judge(level, data, base, x, z, badSites, obstacles(data, base, null), mapRect(data), out) == Verdict.OK ? out[0] : null;
+        return judge(level, data, base, x, z, badSites, obstacles(data, base, null), mapRect(data), Double.MAX_VALUE, out) == Verdict.OK ? out[0] : null;
     }
 
     /**
@@ -362,16 +366,22 @@ public final class MineSites {
      * not too much water over the tunnels or ground dipping toward them.</li>
      * </ul>
      * Of the directions, the one with the least water and dipping ground wins, then the one with more room to
-     * lengthen. Only loaded chunks are read.
+     * lengthen. Only loaded chunks are read. A point whose walk from the gate alone scores {@code bound} or more (the
+     * score of a site already found) cannot be better and is not looked at further: a site's score is never less
+     * than that walk.
      */
     static Verdict judge(ServerLevel level, CampaignData data, BaseState base, int x, int z, Collection<Long> bad,
-                         List<Rect> obstacles, Rect map, Site[] out) {
+                         List<Rect> obstacles, Rect map, double bound, Site[] out) {
         if (!loaded(level, x, z) || !MapBounds.inside(data, x, z, SITE_MAP_MARGIN)) {
             return Verdict.NOT_LOADED;
         }
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         if (!MinePlanner.deepEnough(y, level.getMinBuildHeight())) {
             return Verdict.SHALLOW;
+        }
+        double walk = gateDistance(base, x, z);
+        if (walk >= bound) {
+            return Verdict.WORSE;
         }
         BlockPos o = new BlockPos(x, y, z);
         if (!BaseZones.outsideAllWalls(data, o, SITE_WALLS_MARGIN) || BaseZones.inForeignArea(data, base.id, o, SITE_FOREIGN_MARGIN)
@@ -411,7 +421,7 @@ public final class MineSites {
         if (bestDir == null) {
             return Verdict.UNFIT;
         }
-        out[0] = new Site(o, bestDir, bestRounds, MineSiteRules.score(gateDistance(base, x, z), bestPenalty, bestRelief, bestLoose));
+        out[0] = new Site(o, bestDir, bestRounds, MineSiteRules.score(walk, bestPenalty, bestRelief, bestLoose));
         return Verdict.OK;
     }
 
@@ -456,9 +466,9 @@ public final class MineSites {
     /**
      * The ground around the shaft for tunnels running {@code dir} (forward 0..3, side -1..2, the cells
      * {@link MineLayout#nearStairs} keeps): every column within one block of the mouth's height, solid, dry
-     * ground with no tree over it, not farmland, a path, ice, a barrier, a block entity or part of a base, with the shaft's
-     * four columns open at the mouth's height and above. Returns {unevenness, 1 if some of the ground is sand or
-     * gravel}, or null when unfit.
+     * ground with no tree over it, not farmland, a path, ice, a barrier, a huge mushroom's cap or stem, a block entity
+     * or part of a base, with the shaft's four columns open at the mouth's height and above. Returns {unevenness, 1
+     * if some of the ground is sand or gravel}, or null when unfit.
      */
     private static int[] collar(ServerLevel level, CampaignData data, BlockPos o, Direction dir) {
         int lo = Integer.MAX_VALUE, hi = Integer.MIN_VALUE;
@@ -477,7 +487,8 @@ public final class MineSites {
                 BlockState gs = level.getBlockState(g);
                 if (!Terrain.isSolidGround(gs) || !gs.getFluidState().isEmpty() || gs.is(BlockTags.LEAVES) || gs.is(BlockTags.LOGS)
                         || gs.is(BlockTags.SAPLINGS) || gs.is(Blocks.FARMLAND) || gs.is(Blocks.DIRT_PATH) || gs.is(BlockTags.ICE)
-                        || gs.is(Blocks.BARRIER) || gs.hasBlockEntity() || WorkSafety.planned(data, g)) {
+                        || gs.is(Blocks.BARRIER) || gs.is(Blocks.BROWN_MUSHROOM_BLOCK) || gs.is(Blocks.RED_MUSHROOM_BLOCK)
+                        || gs.is(Blocks.MUSHROOM_STEM) || gs.hasBlockEntity() || WorkSafety.planned(data, g)) {
                     return null;
                 }
                 lo = Math.min(lo, h);

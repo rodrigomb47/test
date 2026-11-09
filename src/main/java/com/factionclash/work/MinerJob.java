@@ -118,11 +118,13 @@ public class MinerJob extends Job {
     /** PROPOSED: survey walks out from the base when nothing near is fit, how far out (each way), and how long each may take. */
     static final int SURVEY_POINTS = 4, SURVEY_OFFSET = 44, SURVEY_TICKS = 2400, SURVEY_MAP_MARGIN = 16;
     /** PROPOSED: walking ticks after which a new mine whose mouth the miner cannot reach is given up. */
-    static final int UNREACHABLE_SITE_TICKS = 2400;
+    public static final int UNREACHABLE_SITE_TICKS = 2400;
     /** PROPOSED: mine sites the miner gave up (unreachable, unsafe) that it remembers and never picks again. */
     static final int MAX_BAD_SITES = 32;
     /** A gap between two walking ticks (an errand, a wait) counts as at most this many ticks. */
     private static final int WALK_GAP = 101;
+    /** A miner waiting to look for a site again waits within this many blocks of the walls (at the storehouse otherwise). */
+    private static final int HOME_MARGIN = 16;
 
     /** The site search under way (not saved: it starts again after a reload), and the survey walk (-1: none). */
     private MineSites.Search siteSearch;
@@ -345,6 +347,10 @@ public class MinerJob extends Job {
         }
         if (now() < nextSiteSearch) {
             markIdle(siteFailReason);
+            // it waits at home, not out where it last looked (a survey point far outside the walls)
+            if (!BaseZones.insideWalls(b, npc.blockPosition(), HOME_MARGIN) && !atStorage()) {
+                return;
+            }
             status(capitalised(siteFailReason) + " - looking again later", "Idle");
             waitFor(200);
             return;
@@ -380,6 +386,11 @@ public class MinerJob extends Job {
         MineSites.Search done = siteSearch;
         siteSearch = null;
         MineSites.Site found = done.best();
+        if (found != null && MineSites.evaluate(level(), data(), b, found.origin().getX(), found.origin().getZ(), badSites) == null) {
+            // the site was found a few ticks ago; meanwhile another miner opened a mine near it (or the ground there
+            // changed): look again from scratch
+            return;
+        }
         if (found != null) {
             surveyIndex = -1;
             WorkplaceState w = MineSites.create(level(), data(), b, npc, found);
@@ -836,10 +847,12 @@ public class MinerJob extends Job {
 
     /**
      * A new mine (nothing dug yet) whose mouth the miner has walked toward for {@link #UNREACHABLE_SITE_TICKS}
-     * without getting there is given up and remembered as a bad site. True when that happened.
+     * without getting there is given up and remembered as a bad site. True when that happened. Once the descent has
+     * begun (its first cell is done) the mouth has been reached: the bottom only moves when the whole first descent is
+     * dug, so a miner climbing out of a half-dug shaft (after a reload, say) is not walking toward an unreachable mouth.
      */
     private boolean siteUnreachable(WorkplaceState wp) {
-        if (wp.bottom != 0 || NpcNavigator.within(npc, MineLayout.stand(wp, 0), 3.0)) {
+        if (wp.bottom != 0 || wp.upgradeStep > 0 || NpcNavigator.within(npc, MineLayout.stand(wp, 0), 3.0)) {
             siteWalkMine = -1;
             return false;
         }
@@ -1498,6 +1511,7 @@ public class MinerJob extends Job {
         }
         if (nextSiteSearch > 0) {
             tag.putLong("nextSite", nextSiteSearch);
+            tag.putString("siteWhy", siteFailReason);
         }
         CompoundTag cave = new CompoundTag();
         caveJob.save(cave, provider);
@@ -1523,6 +1537,9 @@ public class MinerJob extends Job {
             }
         }
         nextSiteSearch = tag.getLong("nextSite");
+        if (tag.contains("siteWhy", Tag.TAG_STRING)) {
+            siteFailReason = tag.getString("siteWhy");
+        }
         caveJob.load(tag.getCompound("cave"), provider);
     }
 }
