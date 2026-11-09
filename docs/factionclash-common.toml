@@ -28,7 +28,7 @@
 	# Range: 1 ~ 4
 	unstuckVertical = 2
 
-#Recruitment (PROPOSED defaults)
+#Survival: NPCs get hungry and their gear wears out like a player's
 [survival]
 	#NPCs have a food bar like a player's (food, saturation, exhaustion): they eat from what they carry,
 	#regenerate only when fed and starve when empty (down to 10 health on Easy, 1 on Normal, death on Hard).
@@ -42,6 +42,7 @@
 	# Range: 0.0 ~ 400.0
 	workExhaustionPerDay = 30.0
 
+#Faction achievements: the vanilla advancements, made by a faction
 [achievements]
 	#Factions make the vanilla advancements through what their NPCs do the way a player would,
 	#and through their players' own advancements.
@@ -52,6 +53,39 @@
 	#(on joining, logging in, and whenever the faction makes a new one).
 	grantToFactionPlayers = false
 
+#Workers: where miners, woodcutters and fishermen work (PROPOSED defaults)
+[workplaces]
+	#Farthest distance (blocks, along either axis) from the base centre at which a miner opens a mine.
+	#The nearest is fixed at the walls' half-size + 8 (32 blocks).
+	# Default: 64
+	# Range: 40 ~ 128
+	mineSiteRadius = 64
+	#Mines a base may be working at once (unfinished and not resting). Each miner works one.
+	# Default: 3
+	# Range: 1 ~ 8
+	maxOpenMines = 3
+	#Woodcutters fell natural trees within this many blocks of the base centre.
+	#When there are none, they forage up to 72 blocks further out. At least 41, so a new base's starter trees are in it.
+	# Default: 64
+	# Range: 41 ~ 128
+	forestRadius = 64
+	#Saplings the woodcutter keeps growing in the base's always-ticking work area, so treeless land still
+	#gives wood (twice as many while the base is short of wood). 0 = only replant felled trees.
+	# Default: 16
+	# Range: 0 ~ 32
+	groveSize = 16
+	#Fishing water is searched for within this many blocks of the base centre.
+	#Water a fisherman finds while foraging may be up to 40 blocks further.
+	# Default: 64
+	# Range: 32 ~ 128
+	fishingRadius = 64
+	#In open water (5x5, 2 deep, open sky, as for a player) the vanilla treasure catches can be fished.
+	fishingTreasure = true
+	#Between dusk and dawn (day time 13000-23000), woodcutters and fishermen do not work more than
+	#16 blocks outside the walls, where the guards cannot protect them.
+	remoteWorkInDaylightOnly = true
+
+#Recruitment (PROPOSED defaults)
 [recruitment]
 	#Hunger points of food consumed per recruit (bread=5, cooked beef=8, ...).
 	# Default: 20
@@ -80,6 +114,9 @@
 	# Default: 24000
 	# Range: 1200 ~ 480000
 	reportStaleTicks = 24000
+	#When a human faction conquers another, the surviving factions (two or more) swear a pact against
+	#the conqueror: no fighting between them, the conqueror's bases revealed, joint raids on it.
+	pacts = true
 	#Soldiers a faction always keeps at home.
 	# Default: 3
 	# Range: 0 ~ 20
