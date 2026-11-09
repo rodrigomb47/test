@@ -62,11 +62,16 @@ def summary(d):
         if b["kind"] == "SETTLEMENT":
             st = b["stock"]
             keys = ["cobblestone", "cobbled_deepslate", "coal", "raw_iron", "raw_copper", "raw_gold", "redstone", "lapis_lazuli",
-                    "diamond", "iron_ingot", "gold_ingot", "oak_log", "oak_sapling", "apple", "wheat", "bread", "beef", "porkchop",
+                    "diamond", "iron_ingot", "gold_ingot", "apple", "wheat", "bread", "beef", "porkchop",
                     "cooked_beef", "cod", "salmon", "torch", "iron_pickaxe"]
             line += f" station={b['stationPresent']} beds={b['beds']} repairs={b['pendingRepairs']} food={b['foodValue']} projects={b['projects']}"
             print(line)
-            print("      stock " + ", ".join(f"{k}={st.get(k, 0)}" for k in keys))
+            # every species counts: logs and saplings are summed over all *_log and *_sapling keys
+            logs = {k[:-4]: v for k, v in st.items() if k.endswith("_log")}
+            saplings = {k[:-8]: v for k, v in st.items() if k.endswith("_sapling")}
+            wood = (f"logs={sum(logs.values())} {dict(sorted(logs.items()))} "
+                    f"saplings={sum(saplings.values())} {dict(sorted(saplings.items()))}")
+            print("      stock " + ", ".join(f"{k}={st.get(k, 0)}" for k in keys) + ", " + wood)
             for w in b["workplaces"]:
                 extra = ""
                 if w["type"] == "MINE":
@@ -76,6 +81,9 @@ def summary(d):
                         extra += f" resting(tier {w.get('restTier')})"
                     if w.get("workedOut"):
                         extra += f" WORKED-OUT({w.get('note')})"
+                if w["type"] == "TREE_PLOT":
+                    extra = (f" origin={w.get('origin')} felled={w.get('felled')} planted={w.get('planted')}"
+                             f" replant={w.get('replant')}" + (" OLD-FENCE" if w.get("legacyFence") else ""))
                 if w["type"] == "FISHERY":
                     extra = f" spot={w.get('spot')} origin={w.get('origin')} stand={w.get('extent')} open={w.get('open')}"
                     if w.get("spot") == "NONE":

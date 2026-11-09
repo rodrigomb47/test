@@ -110,6 +110,10 @@ public final class BaseInfo {
                 out.add(fisheryLine(level, w, who));
                 continue;
             }
+            if (w.type == WorkplaceState.Type.TREE_PLOT) {
+                out.add(woodlandLine(b, w, who));
+                continue;
+            }
             out.add(w.type.label + " #" + w.id + ": tier " + w.tier + "/" + w.type.maxTier + (w.upgrading() ? " (upgrading, step " + w.upgradeStep + ")" : "")
                     + ", worker " + who + ", output " + w.totalOutput);
         }
@@ -142,6 +146,24 @@ public final class BaseInfo {
         }
         out.add("Great People: not implemented in this build");
         return out;
+    }
+
+    /**
+     * The woodland line: "Woodland #id (worker): F trees felled, P saplings growing (G in the grove), Q stumps to
+     * replant (1 dark oak waiting for 4 saplings), old fence being taken down; output N".
+     */
+    static String woodlandLine(BaseState b, WorkplaceState w, String who) {
+        int grove = 0;
+        for (long k : w.planted) {
+            if (com.factionclash.work.ForestScan.inBelt(b, net.minecraft.core.BlockPos.of(k))) {
+                grove++;
+            }
+        }
+        long darkOaks = w.replant.stream().filter(e -> "DARK_OAK".equals(e.species())).count();
+        return w.type.label + " #" + w.id + " (" + who + "): " + w.felled + (w.felled == 1 ? " tree" : " trees") + " felled, "
+                + w.planted.size() + " saplings growing (" + grove + " in the grove), " + w.replant.size() + " stumps to replant"
+                + (darkOaks > 0 ? " (" + darkOaks + " dark oak" + (darkOaks == 1 ? "" : "s") + " waiting for 4 saplings)" : "")
+                + (w.legacyFence ? ", old fence being taken down" : "") + "; output " + w.totalOutput;
     }
 
     /** The fishing spot's line: where it is and what it caught, or that water is being looked for or is not there. */

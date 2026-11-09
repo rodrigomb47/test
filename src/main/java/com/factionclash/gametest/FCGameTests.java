@@ -1713,7 +1713,7 @@ public final class FCGameTests {
             BlockPos onStone = testTree(h, 19, 6, Blocks.BIRCH_LOG, Blocks.BIRCH_LEAVES, 5, false, Blocks.STONE);
             BlockPos byTheWalls = testTree(h, 12, 9, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, false, Blocks.GRASS_BLOCK);
             java.util.function.Function<BlockPos, com.factionclash.logic.TreeShape.Tree> survey =
-                    p -> com.factionclash.work.WoodcutterJob.surveyTree(level, t.data, t.base, p, true, false);
+                    p -> com.factionclash.work.ForestScan.survey(level, t.data, t.base, p, true, false);
             var ok = survey.apply(natural);
             h.assertTrue(ok.ok() && ok.logs().size() == 4 && ok.logs().get(0)[1] == natural.getY() + 3,
                     "a natural oak should be felled whole, top first: " + ok.verdict() + " " + ok.logs().size());
@@ -1729,7 +1729,7 @@ public final class FCGameTests {
                     && !com.factionclash.work.WorkSafety.protectedWood(level, t.data, t.base, natural), "wood by the walls is protected");
             h.assertTrue(survey.apply(byTheWalls).verdict() == com.factionclash.logic.TreeShape.Verdict.TOUCHES_STRUCTURE,
                     "a wild tree by the walls is left standing: " + survey.apply(byTheWalls).verdict());
-            h.assertTrue(com.factionclash.work.WoodcutterJob.surveyTree(level, t.data, t.base, byTheWalls, false, false).ok(),
+            h.assertTrue(com.factionclash.work.ForestScan.survey(level, t.data, t.base, byTheWalls, false, false).ok(),
                     "the same tree is fine where the zone rules do not apply");
             h.assertTrue(level.getBlockState(natural).is(Blocks.OAK_LOG), "a survey never cuts anything");
         } finally {
@@ -2101,7 +2101,8 @@ public final class FCGameTests {
      * Workplace records saved by older versions load and save again: a fishing spot from before real-water fishing
      * (its spot on the farm channel) loads as not searched, keeping its id, worker, catch total and place until the
      * upkeep moves it; a hut mine dug in fixed tiers becomes its list of levels at the old depths, still digging down
-     * to the next one; an unknown workplace type is skipped. (The tree plot part comes with its change.)
+     * to the next one; an old fenced tree plot becomes a woodland whose fence is to come down, its grid's saplings
+     * counted as planted; an unknown workplace type is skipped.
      */
     @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
     public static void legacyWorkplacesLoad(GameTestHelper h) {
@@ -2178,7 +2179,60 @@ public final class FCGameTests {
         h.assertTrue(back2.levels.size() == 5 && back2.cur == 4 && back2.levels.get(1).cut && back2.levels.get(1).band == 2
                 && back2.shaftLimit == 118 && back2.restTier == 2 && back2.workedOut && back2.note.equals(m.note) && back2.opened == 4321
                 && back2.upgradeStep == 5 && back2.bottom == 114, "mine fields survive a save; levels " + back2.levels.size() + ", cur " + back2.cur);
-        // step 6: an old TREE_PLOT (tier 2, upgradeStep 3) loads with legacyFence, upgradeStep -1 and its old grid as planted
+        // an old fenced tree plot (tier 2, part-way through an enlargement) becomes a woodland whose fence is to come
+        // down, with no enlargement under way and the saplings of its old grid counted as planted
+        CompoundTag oldPlot = new CompoundTag();
+        oldPlot.putInt("id", 9);
+        oldPlot.putInt("base", 3);
+        oldPlot.putString("type", "TREE_PLOT");
+        oldPlot.putInt("tier", 2);
+        BlockPos plotOrigin = new BlockPos(100, 64, 0);
+        oldPlot.putLong("origin", plotOrigin.asLong());
+        oldPlot.putString("facing", "west");
+        oldPlot.putLong("extent", 0L);
+        oldPlot.putUUID("assigned", worker);
+        oldPlot.putInt("upgradeStep", 3);
+        oldPlot.putLong("output", 512);
+        oldPlot.putInt("subLevel", 0);
+        oldPlot.putInt("progress", 0);
+        var wl = com.factionclash.campaign.WorkplaceState.load(oldPlot);
+        com.factionclash.campaign.WorkplaceState grid = new com.factionclash.campaign.WorkplaceState();
+        grid.origin = plotOrigin;
+        grid.facing = net.minecraft.core.Direction.WEST;
+        java.util.List<Long> oldGrid = com.factionclash.structure.TreePlotLayout.spots(grid, 2).stream().map(BlockPos::asLong).toList();
+        for (int round = 0; round < 2; round++) {
+            String r = " (round " + round + ")";
+            h.assertTrue(wl != null && wl.type == com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT && wl.id == 9 && wl.baseId == 3
+                    && worker.equals(wl.assigned) && wl.totalOutput == 512 && wl.origin.equals(plotOrigin)
+                    && wl.facing == net.minecraft.core.Direction.WEST, "an old tree plot keeps id, worker, output and place" + r);
+            h.assertTrue(wl.legacyFence && wl.upgradeStep == -1 && wl.tier == 1 && wl.felled == 0 && wl.replant.isEmpty(),
+                    "an old plot's fence is to come down, with no enlargement: fence " + wl.legacyFence + ", step " + wl.upgradeStep + r);
+            h.assertTrue(wl.planted.equals(oldGrid) && oldGrid.size() == 9, "the old grid's 9 spots count as planted: " + wl.planted.size() + r);
+            CompoundTag saved = wl.save();
+            h.assertTrue(saved.getInt("woodV") == 1 && saved.getInt("upgradeStep") == -1, "a saved woodland carries its format marker" + r);
+            wl = com.factionclash.campaign.WorkplaceState.load(saved);
+        }
+        // a woodland in the new format keeps every field; the lists keep their newest entries
+        wl.legacyFence = false;
+        wl.felled = 17;
+        for (int i = 0; i < 70; i++) {
+            wl.addPlanted(plotOrigin.offset(i, 0, 5));
+        }
+        for (int i = 0; i < 40; i++) {
+            wl.addReplant(new com.factionclash.campaign.WorkplaceState.Replant(plotOrigin.offset(i, 0, -5).asLong(),
+                    i % 2 == 0 ? "DARK_OAK" : "BIRCH", i % 2 == 0, 1000 + i));
+        }
+        wl.addReplant(new com.factionclash.campaign.WorkplaceState.Replant(plotOrigin.offset(39, 0, -5).asLong(), "SPRUCE", false, 5000));
+        var wl2 = com.factionclash.campaign.WorkplaceState.load(wl.save());
+        h.assertTrue(!wl2.legacyFence && wl2.felled == 17 && wl2.planted.size() == com.factionclash.campaign.WorkplaceState.MAX_PLANTED
+                && wl2.planted.get(0) == plotOrigin.offset(6, 0, 5).asLong(), "planted keeps the newest 64: " + wl2.planted.size());
+        var lastEntry = wl2.replant.get(wl2.replant.size() - 1);
+        h.assertTrue(wl2.replant.size() == com.factionclash.campaign.WorkplaceState.MAX_REPLANT
+                && wl2.replant.get(0).pos() == plotOrigin.offset(8, 0, -5).asLong() && wl2.replant.get(0).species().equals("DARK_OAK")
+                && wl2.replant.get(0).big() && wl2.replant.get(0).since() == 1008
+                && lastEntry.species().equals("SPRUCE") && lastEntry.since() == 5000
+                && wl2.replant.stream().filter(e -> e.pos() == plotOrigin.offset(39, 0, -5).asLong()).count() == 1,
+                "the replant queue keeps the newest 32, one entry per place: " + wl2.replant.size());
         var v = com.factionclash.campaign.WorkplaceState.load(fish);
         v.spot = com.factionclash.logic.FishingWater.NONE;
         v.searched = 1234;
@@ -2193,6 +2247,245 @@ public final class FCGameTests {
         CompoundTag unknown = fish.copy();
         unknown.putString("type", "WINDMILL");
         h.assertTrue(com.factionclash.campaign.WorkplaceState.load(unknown) == null, "an unknown workplace type is skipped");
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ the fenceless woodland
+
+    /** A woodcutter of a registered test base, with a fenceless woodland it holds. */
+    private static FactionNpc testWoodcutter(GameTestBases.Handle t, int x, int z, ItemStack axe) {
+        com.factionclash.campaign.WorkplaceState woodland = new com.factionclash.campaign.WorkplaceState();
+        woodland.type = com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT;
+        woodland.origin = t.base.center;
+        woodland.extent = t.base.center;
+        t.addWorkplace(woodland);
+        FactionNpc n = t.npc(x, z, NpcRole.WOODCUTTER);
+        n.equip(axe);
+        woodland.assigned = n.getUUID();
+        return n;
+    }
+
+    private static com.factionclash.campaign.WorkplaceState woodlandOf(GameTestBases.Handle t) {
+        for (int id : t.base.workplaces) {
+            var w = t.data.workplace(id);
+            if (w != null && w.type == com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT) {
+                return w;
+            }
+        }
+        return null;
+    }
+
+    /** Items of this kind in the NPC's backpack and the test base's storehouse. */
+    private static int heldOrStored(GameTestBases.Handle t, FactionNpc n, net.minecraft.world.item.Item item) {
+        return com.factionclash.work.Inv.count(n.inventory(), x -> x.is(item))
+                + com.factionclash.storage.FactionStorage.count(t.helper.getLevel(), t.base, x -> x.is(item));
+    }
+
+    /** True while any log of {@code block} stands in the box from (x0, 2, z0) to (x1, 9, z1) (relative). */
+    private static boolean logsIn(GameTestHelper h, int x0, int z0, int x1, int z1, net.minecraft.world.level.block.Block block) {
+        for (BlockPos p : BlockPos.betweenClosed(x0, 2, z0, x1, 9, z1)) {
+            if (h.getBlockState(p).is(block)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A woodcutter fells a natural birch outside the walls whole, top first, with its axe, clears its canopy, and
+     * plants a birch sapling where it stood (it also carries oak saplings): the woodland counts the tree and the
+     * sapling.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1200, batch = "wood_fell", skyAccess = true)
+    public static void woodcutterFellsATreeAndReplantsTheSameSpecies(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 1200);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = testTree(h, 18, 18, Blocks.BIRCH_LOG, Blocks.BIRCH_LEAVES, 5, false, Blocks.GRASS_BLOCK);
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.BIRCH_SAPLING, 2));
+            n.inventory().setItem(1, new ItemStack(Items.OAK_SAPLING, 2));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            var w = woodlandOf(t);
+            if (w == null || w.felled < 1 || !h.getLevel().getBlockState(stump).is(Blocks.BIRCH_SAPLING)) {
+                return;
+            }
+            t.assertTrue(!logsIn(h, 15, 15, 21, 21, Blocks.BIRCH_LOG), "no birch log should be left of the tree");
+            t.assertTrue(heldOrStored(t, n, Items.BIRCH_LOG) >= 5, "the 5 birch logs should be in the backpack or the storehouse: "
+                    + heldOrStored(t, n, Items.BIRCH_LOG));
+            t.assertTrue(w.planted.contains(stump.asLong()), "the woodland should count the new sapling as planted");
+            t.assertTrue(w.felled == 1 && w.replant.isEmpty(), "one tree felled (" + w.felled + "), no stump left waiting: " + w.replant.size());
+            t.succeed();
+        });
+    }
+
+    /**
+     * A woodcutter leaves wood that is not a natural tree standing whole: a log pillar with persistent leaves (a
+     * hedge or decoration), a birch on stone, and an oak whose branch touches planks (part of something built). It
+     * fells the plain natural oak.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1000, batch = "wood_protect", skyAccess = true)
+    public static void woodcutterLeavesProtectedWoodAlone(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 1000);
+        FactionNpc n;
+        BlockPos framed;
+        try {
+            testTree(h, 19, 6, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, true, Blocks.GRASS_BLOCK);     // (a) persistent leaves
+            testTree(h, 19, 18, Blocks.BIRCH_LOG, Blocks.BIRCH_LEAVES, 5, false, Blocks.STONE);     // (b) on stone
+            framed = testTree(h, 12, 19, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, false, Blocks.GRASS_BLOCK); // (c) touches planks
+            h.setBlock(new BlockPos(13, 4, 19), Blocks.OAK_LOG.defaultBlockState()
+                    .setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, net.minecraft.core.Direction.Axis.X)); // a branch
+            h.setBlock(new BlockPos(14, 4, 19), Blocks.OAK_PLANKS);
+            testTree(h, 5, 18, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 4, false, Blocks.GRASS_BLOCK);    // (d) plain natural oak
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.OAK_SAPLING, 2));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            t.assertTrue(logsIn(h, 19, 6, 19, 6, Blocks.OAK_LOG), "the log pillar with persistent leaves should stand");
+            t.assertTrue(logsIn(h, 19, 18, 19, 18, Blocks.BIRCH_LOG), "the birch on stone should stand");
+            t.assertTrue(logsIn(h, 12, 19, 13, 19, Blocks.OAK_LOG), "the oak touching planks should stand");
+            for (int y = 2; y <= 5; y++) {
+                t.assertTrue(h.getBlockState(new BlockPos(12, y, 19)).is(Blocks.OAK_LOG), "every log of the oak touching planks should stand");
+            }
+            var w = woodlandOf(t);
+            boolean natural = logsIn(h, 5, 18, 5, 18, Blocks.OAK_LOG);
+            if (!natural && w != null && w.felled == 1 && n.job() instanceof com.factionclash.work.WoodcutterJob job && job.gaveUp(framed)) {
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * An old save's fenced tree plot: its woodcutter takes the whole fence down with its axe (the posts go into its
+     * backpack, for the storehouse) and the woodland no longer has a fence.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1500, batch = "wood_fence")
+    public static void woodcutterDismantlesAnOldFence(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 1500);
+        FactionNpc n;
+        java.util.List<BlockPos> ring;
+        com.factionclash.campaign.WorkplaceState plot = new com.factionclash.campaign.WorkplaceState();
+        try {
+            plot.type = com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT;
+            plot.origin = h.absolutePos(new BlockPos(5, 2, 12));
+            plot.extent = plot.origin;
+            plot.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            plot.legacyFence = true;
+            t.addWorkplace(plot);
+            ring = com.factionclash.structure.TreePlotLayout.fence(plot, 1);
+            h.assertTrue(ring.size() == 47, "a tier-1 ring has 47 posts, not " + ring.size());
+            for (BlockPos p : ring) {
+                h.getLevel().setBlockAndUpdate(p, Blocks.OAK_FENCE.defaultBlockState());
+            }
+            n = t.npc(9, 12, NpcRole.WOODCUTTER);
+            n.equip(new ItemStack(Items.IRON_AXE));
+            plot.assigned = n.getUUID();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            if (plot.legacyFence) {
+                return;
+            }
+            for (BlockPos p : ring) {
+                t.assertTrue(!h.getLevel().getBlockState(p).is(Blocks.OAK_FENCE), "a fence post is left at " + p.toShortString());
+            }
+            t.assertTrue(heldOrStored(t, n, Items.OAK_FENCE) >= 47, "every post should be in the backpack or the storehouse: "
+                    + heldOrStored(t, n, Items.OAK_FENCE));
+            t.succeed();
+        });
+    }
+
+    /**
+     * A woodcutter's job, saved after the first log of a tree is cut, loads with the tree it was felling and goes on
+     * chopping it; a job saved by the fenced-plot version (no format number, state UPGRADE) starts over without its spot.
+     */
+    @GameTest(template = "platform", timeoutTicks = 600, batch = "wood_resume", skyAccess = true)
+    public static void woodcutterResumesAfterReload(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 600);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = testTree(h, 18, 17, Blocks.OAK_LOG, Blocks.OAK_LEAVES, 5, false, Blocks.GRASS_BLOCK);
+            n = testWoodcutter(t, 15, 15, new ItemStack(Items.STONE_AXE));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        var provider = h.getLevel().registryAccess();
+        t.onEachTick(() -> {
+            if (!(n.job() instanceof com.factionclash.work.WoodcutterJob job) || job.felling() == null) {
+                return;
+            }
+            t.assertTrue(job.felling().equals(stump), "it should be felling the oak: " + job.felling());
+            CompoundTag saved = new CompoundTag();
+            job.save(saved, provider);
+            var again = new com.factionclash.work.WoodcutterJob(n);
+            again.load(saved, provider);
+            t.assertTrue(stump.equals(again.felling()) && stump.equals(again.spot()) && again.stateName().equals("CHOP"),
+                    "the loaded job should go on felling the oak: " + again.stateName() + " " + again.spot() + " " + again.felling());
+            t.assertTrue(saved.getInt("v") == 2, "the job is saved in the current format");
+            CompoundTag old = new CompoundTag();
+            old.putString("state", "UPGRADE");
+            old.putLong("spot", stump.asLong());
+            old.putInt("progress", 3);
+            old.putBoolean("wild", true);
+            var oldJob = new com.factionclash.work.WoodcutterJob(n);
+            oldJob.load(old, provider);
+            t.assertTrue(oldJob.stateName().equals("CHECK") && oldJob.spot() == null,
+                    "an old job starts over without its spot: " + oldJob.stateName() + " " + oldJob.spot());
+            CompoundTag oldChop = old.copy();
+            oldChop.putString("state", "CHOP");
+            oldJob.load(oldChop, provider);
+            t.assertTrue(oldJob.stateName().equals("CHECK") && oldJob.spot() == null, "an old mid-cut tree is not resumed as a plot tree");
+            t.succeed();
+        });
+    }
+
+    /**
+     * Grove spots follow the rules: on the 5-block lattice, inside the work belt, at least 4 beyond the walls, off the
+     * road strip, on soil under open sky (never farmland), with nothing growing within 2 blocks, and away from a mine.
+     * Of six lattice spots given grass or farmland, only the one that passes every rule is offered; once it holds a
+     * sapling nothing is.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static", skyAccess = true)
+    public static void groveSpotsFollowTheRules(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 40);
+        var level = h.getLevel();
+        try {
+            // a wider work belt than a test base has, so the grove lattice (walls + 4 = Chebyshev 6) fits on the platform
+            t.base.points.put(BaseState.MIN, t.base.center.offset(-11, -1, -11));
+            t.base.points.put(BaseState.MAX, t.base.center.offset(11, 8, 11));
+            h.setBlock(new BlockPos(22, 1, 17), Blocks.GRASS_BLOCK); // dx 10, dz 5: every rule holds
+            h.setBlock(new BlockPos(17, 1, 22), Blocks.FARMLAND);     // farmland
+            h.setBlock(new BlockPos(17, 1, 17), Blocks.GRASS_BLOCK); // Chebyshev 5: too close to the walls
+            h.setBlock(new BlockPos(22, 1, 12), Blocks.GRASS_BLOCK); // on the road strip
+            h.setBlock(new BlockPos(22, 1, 7), Blocks.GRASS_BLOCK);  // a sapling grows next to it
+            h.setBlock(new BlockPos(21, 2, 7), Blocks.OAK_SAPLING);
+            h.setBlock(new BlockPos(2, 1, 22), Blocks.GRASS_BLOCK);  // a mine opens beside it
+            t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(4, 2, 19)));
+            var search = new com.factionclash.work.ForestScan.GroveSearch();
+            BlockPos found = search.next(level, t.data, t.base);
+            h.assertTrue(h.absolutePos(new BlockPos(22, 2, 17)).equals(found), "the one fitting grove spot should be offered, not " + found);
+            h.assertTrue(search.next(level, t.data, t.base).equals(found), "a found spot is kept while it fits");
+            level.setBlockAndUpdate(found, Blocks.BIRCH_SAPLING.defaultBlockState());
+            h.assertTrue(search.next(level, t.data, t.base) == null, "with the spot planted nothing else fits");
+            h.assertTrue(com.factionclash.work.WorkSafety.reserved(t.data, t.base, h.absolutePos(new BlockPos(2, 2, 22)),
+                    com.factionclash.work.WorkSafety.Use.GROVE), "a grove keeps 6 away from a mine");
+            h.assertTrue(com.factionclash.work.WorkSafety.reserved(t.data, t.base, h.absolutePos(new BlockPos(22, 2, 12)),
+                    com.factionclash.work.WorkSafety.Use.GROVE), "the road strip is reserved");
+        } finally {
+            t.cleanup();
+        }
         h.succeed();
     }
 

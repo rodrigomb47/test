@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Chooses safe land for a settlement (spec 3): samples the real terrain of the whole footprint (the walled base and
- * the tree plot's pad west of it) and rejects water, steep ground and out-of-map positions. Mines are not part of
+ * the grove pad west of it) and rejects water, steep ground and out-of-map positions. Mines are not part of
  * it: miners choose their own sites later.
  */
 public final class SiteFinder {

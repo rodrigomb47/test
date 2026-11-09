@@ -480,6 +480,13 @@ public final class FCCommands {
                         }
                         wo.add("levels", lvs);
                     }
+                    if (w.type == WorkplaceState.Type.TREE_PLOT) {
+                        wo.addProperty("origin", w.origin.toShortString());
+                        wo.addProperty("felled", w.felled);
+                        wo.addProperty("planted", w.planted.size());
+                        wo.addProperty("replant", w.replant.size());
+                        wo.addProperty("legacyFence", w.legacyFence);
+                    }
                     if (w.type == WorkplaceState.Type.FISHERY) {
                         wo.addProperty("origin", w.origin.toShortString());
                         wo.addProperty("extent", w.extent.toShortString());

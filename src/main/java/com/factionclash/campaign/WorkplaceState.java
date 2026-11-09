@@ -22,7 +22,13 @@ public final class WorkplaceState {
          * with the base, have a hut over the shaft ({@link #hut}).
          */
         MINE("Mine", 1),
-        TREE_PLOT("Tree plot", 3),
+        /**
+         * A base's woodland (the old fenced tree plot): no fence and no grid. Its woodcutter fells natural trees around
+         * the base and replants each stump with its own species ({@link #replant}), tends the saplings it planted
+         * ({@link #planted}) and keeps a small grove growing in the base's work belt. origin and facing only matter for
+         * an old save's fence ({@link #legacyFence}), which the woodcutter takes down.
+         */
+        TREE_PLOT("Woodland", 1),
         FARM("Farm", 1),
         /** origin = pen centre (inside), extent = the pen's fence gate. */
         PEN("Animal pen", 1),
@@ -51,9 +57,9 @@ public final class WorkplaceState {
     public int baseId;
     public Type type;
     public int tier = 1;
-    /** Mine: surface entrance anchor. Tree plot: entrance (base-side fence centre). Farm: min corner. */
+    /** Mine: surface entrance anchor. Woodland: an old plot's fence entrance (only its old fence uses it). Farm: min corner. */
     public BlockPos origin;
-    /** Direction pointing away from the base (mine tunnels and plot growth go this way). */
+    /** Direction pointing away from the base (mine tunnels run this way; an old tree plot's fence grew this way). */
     public Direction facing = Direction.EAST;
     /** Farm: max corner. */
     public BlockPos extent = BlockPos.ZERO;
@@ -105,6 +111,42 @@ public final class WorkplaceState {
     public final List<Long> badSpots = new ArrayList<>();
     /** PROPOSED: how many unfit fishing spots a fishery remembers. */
     public static final int MAX_BAD_SPOTS = 32;
+    /** Woodland: the saplings this base's woodcutters planted (packed positions), oldest first. */
+    public final List<Long> planted = new ArrayList<>();
+    /** Woodland: stumps waiting to be replanted with their own species, oldest first. */
+    public final List<Replant> replant = new ArrayList<>();
+    /** Woodland: how many trees its woodcutters have felled (output counts every item, so it cannot tell). */
+    public int felled;
+    /** Woodland: an old save's tree-plot fence still stands (its rings follow from origin and facing). */
+    public boolean legacyFence;
+    /** PROPOSED: a woodland remembers at most this many planted saplings and this many stumps to replant. */
+    public static final int MAX_PLANTED = 64, MAX_REPLANT = 32;
+
+    /**
+     * A stump to replant: where (the north-west corner of a 2x2 trunk), the species that stood there
+     * ({@link com.factionclash.logic.ForestRules.Species} name), whether it was a 2x2 trunk, and since when it waits.
+     */
+    public record Replant(long pos, String species, boolean big, long since) {
+    }
+
+    /** Remembers a sapling planted at {@code p}, forgetting the oldest beyond {@link #MAX_PLANTED}. */
+    public void addPlanted(BlockPos p) {
+        long k = p.asLong();
+        planted.remove(Long.valueOf(k));
+        planted.add(k);
+        while (planted.size() > MAX_PLANTED) {
+            planted.remove(0);
+        }
+    }
+
+    /** Queues a stump for replanting, replacing an older entry at the same place and forgetting the oldest beyond {@link #MAX_REPLANT}. */
+    public void addReplant(Replant r) {
+        replant.removeIf(e -> e.pos() == r.pos());
+        replant.add(r);
+        while (replant.size() > MAX_REPLANT) {
+            replant.remove(0);
+        }
+    }
 
     /** Remembers an unfit fishing spot, forgetting the oldest beyond {@link #MAX_BAD_SPOTS}. */
     public void addBadSpot(BlockPos p) {
@@ -192,6 +234,22 @@ public final class WorkplaceState {
             t.putBoolean("workedOut", workedOut);
             t.putLongArray("faces", faces);
         }
+        if (type == Type.TREE_PLOT) {
+            t.putInt("woodV", 1);
+            t.putLongArray("planted", planted.stream().mapToLong(Long::longValue).toArray());
+            ListTag list = new ListTag();
+            for (Replant r : replant) {
+                CompoundTag e = new CompoundTag();
+                e.putLong("p", r.pos());
+                e.putString("s", r.species());
+                e.putBoolean("big", r.big());
+                e.putLong("at", r.since());
+                list.add(e);
+            }
+            t.put("replant", list);
+            t.putInt("felled", felled);
+            t.putBoolean("legacyFence", legacyFence);
+        }
         if (type == Type.FISHERY) {
             t.putInt("fishV", 1);
             t.putInt("spot", spot);
@@ -222,6 +280,9 @@ public final class WorkplaceState {
         w.progress = t.getInt("progress");
         if (w.type == Type.MINE) {
             loadMine(w, t);
+        }
+        if (w.type == Type.TREE_PLOT) {
+            loadWoodland(w, t);
         }
         if (w.type == Type.CAVE) {
             w.route = t.getLongArray("route");
@@ -259,6 +320,40 @@ public final class WorkplaceState {
             }
         }
         return w;
+    }
+
+    /**
+     * The woodland's own fields. A record without 'woodV' is an old fenced tree plot: its fence is to be taken down
+     * ({@link #legacyFence}), the saplings of its grid count as planted (any that are not saplings any more are
+     * dropped the first time they are looked at), nothing waits to be replanted and no tree was counted yet. An old
+     * plot's tier and enlargement step are not used any more.
+     */
+    private static void loadWoodland(WorkplaceState w, CompoundTag t) {
+        if (t.contains("woodV")) {
+            for (long p : t.getLongArray("planted")) {
+                w.planted.add(p);
+            }
+            ListTag list = t.getList("replant", Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag e = list.getCompound(i);
+                w.replant.add(new Replant(e.getLong("p"), e.getString("s"), e.getBoolean("big"), e.getLong("at")));
+            }
+            w.felled = Math.max(0, t.getInt("felled"));
+            w.legacyFence = t.getBoolean("legacyFence");
+        } else {
+            w.legacyFence = true;
+            for (BlockPos p : com.factionclash.structure.TreePlotLayout.spots(w, Math.max(1, Math.min(3, w.tier)))) {
+                w.planted.add(p.asLong());
+            }
+        }
+        while (w.planted.size() > MAX_PLANTED) {
+            w.planted.remove(0);
+        }
+        while (w.replant.size() > MAX_REPLANT) {
+            w.replant.remove(0);
+        }
+        w.tier = 1;
+        w.upgradeStep = -1;
     }
 
     /**

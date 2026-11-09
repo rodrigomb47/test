@@ -48,6 +48,7 @@ public final class BaseBuilder {
         int h = BaseLayout.HALF;
         BlockState grass = Blocks.GRASS_BLOCK.defaultBlockState();
         Terrain.level(level, cx - h - 1, cz - h - 1, cx + h + 1, cz + h + 1, y0, 26, grass);
+        // the levelled west pad (the old tree plot's size): grass grove ground in every biome, beside the west path
         int plotFar = BaseLayout.PLOT_ORIGIN_X - TreePlotLayout.depth(1) - 2;
         int plotHalf = TreePlotLayout.half(1) + 2;
         Terrain.level(level, cx + plotFar, cz - plotHalf, cx - h - 2, cz + plotHalf, y0, 24, grass);
@@ -66,15 +67,9 @@ public final class BaseBuilder {
         Blueprint bp = BaseLayout.generate(faction, center, level.random);
         // no mine is built with the base: each miner chooses its own place and digs its own shaft
 
-        WorkplaceState plot = new WorkplaceState();
-        plot.type = WorkplaceState.Type.TREE_PLOT;
-        plot.origin = center.offset(BaseLayout.PLOT_ORIGIN_X, 0, 0);
-        plot.facing = Direction.WEST;
-        data.addWorkplace(base, plot);
-        java.util.Set<BlockPos> workplaceManaged = new java.util.HashSet<>(TreePlotLayout.fence(plot, 1));
-        for (BlockPos p : workplaceManaged) {
-            bp.setAbs(p, Blocks.OAK_FENCE.defaultBlockState());
-        }
+        // the woodland has no fence: its woodcutter fells the trees around the base and replants them
+        WorkplaceState woodland = newWoodland(base);
+        data.addWorkplace(base, woodland);
 
         WorkplaceState farm = new WorkplaceState();
         farm.type = WorkplaceState.Type.FARM;
@@ -83,14 +78,18 @@ public final class BaseBuilder {
         data.addWorkplace(base, farm);
 
         bp.placeAll(level);
-        for (BlockPos p : TreePlotLayout.spots(plot)) {
-            level.setBlock(p.below(), Blocks.DIRT.defaultBlockState(), Block.UPDATE_ALL);
+        // four starter oak saplings on the grove lattice of the levelled west pad, beside the path; two of them are
+        // already grown so the woodcutter can start at once. They count as the woodland's planted saplings.
+        List<BlockPos> starters = List.of(center.offset(-35, 0, -5), center.offset(-35, 0, 5), center.offset(-40, 0, -5), center.offset(-40, 0, 5));
+        for (BlockPos p : starters) {
+            if (!level.getBlockState(p.below()).is(BlockTags.DIRT)) {
+                level.setBlock(p.below(), Blocks.DIRT.defaultBlockState(), Block.UPDATE_ALL);
+            }
             level.setBlock(p, Blocks.OAK_SAPLING.defaultBlockState(), Block.UPDATE_ALL);
+            woodland.addPlanted(p);
         }
-        // two of the starting saplings are already grown so the woodcutter can start at once
-        List<BlockPos> spots = TreePlotLayout.spots(plot);
-        for (int i = 0; i < 2 && i < spots.size(); i++) {
-            BlockPos p = spots.get(i);
+        for (int i = 0; i < 2; i++) {
+            BlockPos p = starters.get(i);
             for (int k = 0; k < 6 && level.getBlockState(p).getBlock() instanceof SaplingBlock sb; k++) {
                 sb.advanceTree(level, p, level.getBlockState(p), level.random);
             }
@@ -110,7 +109,6 @@ public final class BaseBuilder {
                 min.getY(), Math.min(min.getZ(), cz - TreePlotLayout.half(3) - 3)));
 
         Map<BlockPos, BlockState> plan = repairablePart(bp);
-        plan.keySet().removeAll(workplaceManaged); // plot fences move when the woodcutter enlarges the plot
         base.structures.add(StructureRecord.of("Settlement", plan));
 
         spawnAnimals(level, bp.markers.get("pen"));
@@ -124,16 +122,20 @@ public final class BaseBuilder {
 
     /**
      * The settlement's standing workplaces, kept up every director period (it also brings bases from older saves up
-     * to date): the pen (centre + gate) and one fishing spot. A missing fishing spot is created as not searched yet;
-     * while a fishing spot has no known water its bobber and stand wait at the base centre, as a placeholder, until
-     * the director or a fisherman finds real water outside the walls. It is never put on the farm's irrigation.
+     * to date): the pen (centre + gate), one fishing spot and one woodland. A missing fishing spot is created as not
+     * searched yet; while a fishing spot has no known water its bobber and stand wait at the base centre, as a
+     * placeholder, until the director or a fisherman finds real water outside the walls. It is never put on the farm's
+     * irrigation. A missing woodland is created without a fence.
      */
     public static void ensureWorkplaces(CampaignData data, BaseState base) {
-        boolean hasPen = false, hasFishery = false;
+        boolean hasPen = false, hasFishery = false, hasWoodland = false;
         for (int id : base.workplaces) {
             WorkplaceState w = data.workplace(id);
             if (w != null && w.type == WorkplaceState.Type.PEN) {
                 hasPen = true;
+            }
+            if (w != null && w.type == WorkplaceState.Type.TREE_PLOT) {
+                hasWoodland = true;
             }
             if (w != null && w.type == WorkplaceState.Type.FISHERY) {
                 hasFishery = true;
@@ -160,7 +162,23 @@ public final class BaseBuilder {
             fish.extent = base.center;
             data.addWorkplace(base, fish);
         }
-        // step 6: a missing TREE_PLOT is created here too (woodV 1, no fence)
+        if (!hasWoodland) {
+            data.addWorkplace(base, newWoodland(base));
+        }
+    }
+
+    /**
+     * A new, fenceless woodland: origin and facing only matter for an old plot's fence, so it sits where the plot used
+     * to be, west of the walls, facing west.
+     */
+    private static WorkplaceState newWoodland(BaseState base) {
+        WorkplaceState w = new WorkplaceState();
+        w.type = WorkplaceState.Type.TREE_PLOT;
+        w.origin = base.center.offset(BaseLayout.PLOT_ORIGIN_X, 0, 0);
+        w.extent = w.origin;
+        w.facing = Direction.WEST;
+        w.legacyFence = false;
+        return w;
     }
 
     /** Plan blocks that builders keep repaired: buildings, walls, paths. Crops, soil and water are excluded. */

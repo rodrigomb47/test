@@ -6,8 +6,8 @@ import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.MapBounds;
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.logic.FishingWater;
+import com.factionclash.logic.ForestRules;
 import com.factionclash.structure.MineLayout;
-import com.factionclash.structure.TreePlotLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -160,14 +160,16 @@ public final class WorkSafety {
     /**
      * The one registry of reserved places: true if {@code p} is kept free of work {@code u} (distances are
      * Chebyshev). A mine site keeps 12 away from any base's fishing spot (its bobber and its stand) while that spot
-     * has water, and 6 away from the trees a woodcutter grows; a grove sapling keeps 6 away from any mine origin and
-     * from such a fishing spot, and off the base's road strip (|dz| at most 3 for |dx| up to the walls plus 30); a
-     * fisherman's stand keeps 8 away from any mine origin. Fishing spots without known water are placeholders at a
-     * base centre and reserve nothing.
+     * has water, and 6 away from the saplings a woodcutter planted and the stumps waiting to be replanted; a grove
+     * sapling keeps 6 away from any mine origin and from such a fishing spot, and off the base's road strip (|dz| at
+     * most 3 for |dx| up to the walls plus 30); a fisherman's stand keeps 8 away from any mine origin and 1 away from
+     * a planted sapling. Fishing spots without known water are placeholders at a base centre and reserve nothing.
      */
     public static boolean reserved(CampaignData d, BaseState own, BlockPos p, Use u) {
-        // step 6: FISH_STAND within 1 of a planted sapling
-        if (u == Use.MINE_SITE && nearGrownTrees(d, p, TREE_SITE_RADIUS)) {
+        if (u == Use.MINE_SITE && nearGrownTrees(d, p, TREE_SITE_RADIUS, true)) {
+            return true;
+        }
+        if (u == Use.FISH_STAND && nearGrownTrees(d, p, SAPLING_STAND_RADIUS, false)) {
             return true;
         }
         int fisheryRadius = switch (u) {
@@ -185,7 +187,7 @@ public final class WorkSafety {
         }
         if (u == Use.GROVE && own != null) {
             int dx = p.getX() - own.center.getX(), dz = p.getZ() - own.center.getZ();
-            if (Math.abs(dz) <= 3 && Math.abs(dx) <= BaseZones.half(own) + 30) {
+            if (ForestRules.onRoadStrip(dx, dz, BaseZones.half(own))) {
                 return true;
             }
         }
@@ -205,23 +207,28 @@ public final class WorkSafety {
         return false;
     }
 
-    /** PROPOSED: a mine site keeps this far (Chebyshev) from the trees a woodcutter grows. */
-    static final int TREE_SITE_RADIUS = 6;
+    /** PROPOSED: a mine site keeps this far (Chebyshev) from the trees a woodcutter grows; a fisherman's stand this far. */
+    static final int TREE_SITE_RADIUS = 6, SAPLING_STAND_RADIUS = 1;
 
     /**
-     * True if {@code p} is within {@code r} of a spot where a woodcutter grows a tree: for now the grid of the old
-     * fenced tree plots.
+     * True if {@code p} is within {@code r} of a sapling any base's woodcutter planted, or (with {@code stumps}) of a
+     * stump waiting to be replanted.
      */
-    private static boolean nearGrownTrees(CampaignData d, BlockPos p, int r) {
-        // step 6: the woodland's planted saplings and replant entries take the place of the plot grid here
-        int reach = r + TreePlotLayout.depth(3) + TreePlotLayout.half(3) + 2;
+    private static boolean nearGrownTrees(CampaignData d, BlockPos p, int r, boolean stumps) {
         for (WorkplaceState w : d.workplaces.values()) {
-            if (w.type != WorkplaceState.Type.TREE_PLOT || w.origin == null || !within(p, w.origin, reach)) {
+            if (w.type != WorkplaceState.Type.TREE_PLOT) {
                 continue;
             }
-            for (BlockPos spot : TreePlotLayout.spots(w)) {
-                if (within(p, spot, r)) {
+            for (long k : w.planted) {
+                if (within(p, BlockPos.of(k), r)) {
                     return true;
+                }
+            }
+            if (stumps) {
+                for (WorkplaceState.Replant e : w.replant) {
+                    if (within(p, BlockPos.of(e.pos()), r)) {
+                        return true;
+                    }
                 }
             }
         }

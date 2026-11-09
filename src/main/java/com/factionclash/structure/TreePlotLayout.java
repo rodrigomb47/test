@@ -8,8 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Fenced tree plot (spec 8). Tier t holds a (t+1)x(t+1) grid of trees spaced 6 apart. The entrance gap is in
- * the fence facing the base; upgrades enlarge the enclosure away from the base.
+ * The fenced tree plot of older saves, kept only to read them: tier t held a (t+1)x(t+1) grid of trees spaced 6
+ * apart inside a fence whose entrance gap faced the base, and enlargements moved the fence away from the base. An
+ * old plot's grid saplings count as planted when it loads, and its woodcutter takes the fence of every tier down.
+ * New bases have no plot: their woodland has no fence and no grid (the tier-1 numbers still size the levelled grove
+ * pad west of the walls).
  */
 public final class TreePlotLayout {
     private TreePlotLayout() {
@@ -63,14 +66,6 @@ public final class TreePlotLayout {
             }
         }
         return out;
-    }
-
-    public static boolean insideInner(WorkplaceState wp, int tier, BlockPos p) {
-        Direction side = wp.facing.getClockWise();
-        BlockPos d = p.subtract(wp.origin);
-        int f = d.getX() * wp.facing.getStepX() + d.getZ() * wp.facing.getStepZ();
-        int s = d.getX() * side.getStepX() + d.getZ() * side.getStepZ();
-        return f >= 1 && f <= depth(tier) && Math.abs(s) <= half(tier);
     }
 
 }

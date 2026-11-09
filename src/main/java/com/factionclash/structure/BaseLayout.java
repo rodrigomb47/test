@@ -22,8 +22,8 @@ import net.minecraft.util.RandomSource;
 
 /**
  * The starting settlement plan (all coordinates relative to the base centre; y=0 is the walking level).
- * 49x49 walled base with gates west and east; the tree plot's levelled pad lies outside the west gate. Miners and
- * fishermen choose their own places outside the walls.
+ * 49x49 walled base with gates west and east; the levelled grove pad lies outside the west gate. Miners,
+ * woodcutters and fishermen choose their own places outside the walls.
  */
 public final class BaseLayout {
     public static final int HALF = 24;
@@ -252,7 +252,7 @@ public final class BaseLayout {
         bp.lots.add(bp.rel(-11, 0, 13));
         bp.lots.add(bp.rel(5, 0, 13));
 
-        // --- outside path to the tree plot
+        // --- outside path to the grove pad
         for (int x = PLOT_ORIGIN_X + 1; x <= -HALF - 1; x++) {
             bp.set(x, -1, 0, path);
         }

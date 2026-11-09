@@ -43,7 +43,7 @@ public class SmelterJob extends CookingJob {
     protected void fetchExtras() {
         int fuelStock = com.factionclash.storage.FactionStorage.count(level(), base(), x -> x.is(Items.COAL) || x.is(Items.CHARCOAL));
         int logs = com.factionclash.storage.FactionStorage.count(level(), base(), x -> x.is(net.minecraft.tags.ItemTags.LOGS));
-        // the same wood is kept back as from the cooks' fires (more while a tree plot still has to be enlarged)
+        // at least the wood kept back from the cooks' fires
         int reserve = Math.max(CHARCOAL_LOG_RESERVE, CookingJob.woodReserve(data(), base()));
         charcoal = fuelStock < 8 && logs > reserve;
         int have = Inv.count(npc.inventory(), x -> x.is(net.minecraft.tags.ItemTags.LOGS));
