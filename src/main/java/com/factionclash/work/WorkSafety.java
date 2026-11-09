@@ -7,6 +7,7 @@ import com.factionclash.campaign.MapBounds;
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.logic.FishingWater;
 import com.factionclash.structure.MineLayout;
+import com.factionclash.structure.TreePlotLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -159,12 +160,16 @@ public final class WorkSafety {
     /**
      * The one registry of reserved places: true if {@code p} is kept free of work {@code u} (distances are
      * Chebyshev). A mine site keeps 12 away from any base's fishing spot (its bobber and its stand) while that spot
-     * has water; a grove sapling keeps 6 away from any mine origin and from such a fishing spot, and off the base's
-     * road strip (|dz| at most 3 for |dx| up to the walls plus 30); a fisherman's stand keeps 8 away from any mine
-     * origin. Fishing spots without known water are placeholders at a base centre and reserve nothing.
+     * has water, and 6 away from the trees a woodcutter grows; a grove sapling keeps 6 away from any mine origin and
+     * from such a fishing spot, and off the base's road strip (|dz| at most 3 for |dx| up to the walls plus 30); a
+     * fisherman's stand keeps 8 away from any mine origin. Fishing spots without known water are placeholders at a
+     * base centre and reserve nothing.
      */
     public static boolean reserved(CampaignData d, BaseState own, BlockPos p, Use u) {
-        // step 6: MINE_SITE within 6 of a woodland planted sapling or replant entry; FISH_STAND within 1 of a planted sapling
+        // step 6: FISH_STAND within 1 of a planted sapling
+        if (u == Use.MINE_SITE && nearGrownTrees(d, p, TREE_SITE_RADIUS)) {
+            return true;
+        }
         int fisheryRadius = switch (u) {
             case MINE_SITE -> 12;
             case GROVE -> 6;
@@ -193,6 +198,29 @@ public final class WorkSafety {
             for (WorkplaceState w : d.workplaces.values()) {
                 if (w.type == WorkplaceState.Type.MINE && w.origin != null
                         && Math.max(Math.abs(p.getX() - w.origin.getX()), Math.abs(p.getZ() - w.origin.getZ())) <= mineRadius) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** PROPOSED: a mine site keeps this far (Chebyshev) from the trees a woodcutter grows. */
+    static final int TREE_SITE_RADIUS = 6;
+
+    /**
+     * True if {@code p} is within {@code r} of a spot where a woodcutter grows a tree: for now the grid of the old
+     * fenced tree plots.
+     */
+    private static boolean nearGrownTrees(CampaignData d, BlockPos p, int r) {
+        // step 6: the woodland's planted saplings and replant entries take the place of the plot grid here
+        int reach = r + TreePlotLayout.depth(3) + TreePlotLayout.half(3) + 2;
+        for (WorkplaceState w : d.workplaces.values()) {
+            if (w.type != WorkplaceState.Type.TREE_PLOT || w.origin == null || !within(p, w.origin, reach)) {
+                continue;
+            }
+            for (BlockPos spot : TreePlotLayout.spots(w)) {
+                if (within(p, spot, r)) {
                     return true;
                 }
             }

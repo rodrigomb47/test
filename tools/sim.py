@@ -86,6 +86,12 @@ def summary(d):
                         mark = ">" if i == w.get("cur") else " "
                         print(f"        {mark} y={lv['y']:4d} {lv['band']:5s} {lv['progress']}/{lv['size']} rounds={lv['rounds']}"
                               + (" cut" if lv.get("cut") else ""))
+                if w["type"] == "MINE" and not w.get("hut") and w.get("origin"):
+                    # a self-chosen mine's mouth lies more than 8 beyond every settlement's walls
+                    for o in d["bases"]:
+                        cheb = chebyshev(o["center"], w["origin"])
+                        if o["kind"] == "SETTLEMENT" and not o["destroyed"] and cheb <= SETTLEMENT_HALF + 8:
+                            print(f"      ERROR: mine #{w['id']} at {w['origin']} is only {cheb} from the centre of base {o['id']}")
                 if w["type"] == "FISHERY" and w.get("spot") == "VALID" and w.get("origin"):
                     # a fishing spot lies 4 or more beyond every settlement's walls: never the farm's irrigation
                     for o in d["bases"]:

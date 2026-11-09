@@ -11,7 +11,6 @@ import com.factionclash.storage.StorageCategory;
 import com.factionclash.structure.BaseLayout;
 import com.factionclash.structure.Blueprint;
 import com.factionclash.structure.LairLayout;
-import com.factionclash.structure.MineLayout;
 import com.factionclash.structure.Terrain;
 import com.factionclash.structure.TreePlotLayout;
 import com.factionclash.util.ChunkLoading;
@@ -49,14 +48,12 @@ public final class BaseBuilder {
         int h = BaseLayout.HALF;
         BlockState grass = Blocks.GRASS_BLOCK.defaultBlockState();
         Terrain.level(level, cx - h - 1, cz - h - 1, cx + h + 1, cz + h + 1, y0, 26, grass);
-        Terrain.level(level, cx + h + 2, cz - 4, cx + BaseLayout.MINE_ORIGIN_X + MineLayout.HUT_FRONT + 1, cz + 4, y0, 20, grass);
         int plotFar = BaseLayout.PLOT_ORIGIN_X - TreePlotLayout.depth(1) - 2;
         int plotHalf = TreePlotLayout.half(1) + 2;
         Terrain.level(level, cx + plotFar, cz - plotHalf, cx - h - 2, cz + plotHalf, y0, 24, grass);
         // slope the surroundings into the pads so nobody gets trapped in a cut or below a fill
         Terrain.skirt(level, java.util.List.of(
                 new int[]{cx - h - 1, cz - h - 1, cx + h + 1, cz + h + 1},
-                new int[]{cx + h + 2, cz - 4, cx + BaseLayout.MINE_ORIGIN_X + MineLayout.HUT_FRONT + 1, cz + 4},
                 new int[]{cx + plotFar, cz - plotHalf, cx - h - 2, cz + plotHalf}), y0 - 1, 5, grass);
 
         BaseState base = new BaseState();
@@ -67,23 +64,7 @@ public final class BaseBuilder {
         data.addBase(base);
 
         Blueprint bp = BaseLayout.generate(faction, center, level.random);
-
-        WorkplaceState mine = new WorkplaceState();
-        mine.type = WorkplaceState.Type.MINE;
-        mine.origin = center.offset(BaseLayout.MINE_ORIGIN_X, 0, 0);
-        mine.facing = Direction.EAST;
-        mine.hut = true;
-        mine.maxRounds = com.factionclash.logic.MinePlanner.MAX_REACH;
-        mine.opened = level.getGameTime();
-        // the hut's stairs come dug down to the first old level; the miner chooses its layers from there
-        com.factionclash.logic.LegacyMine.Migrated first = com.factionclash.logic.LegacyMine.migrate(y0, 1, 0, 0, 0, 0, -1);
-        for (com.factionclash.logic.LegacyMine.Level l : first.levels()) {
-            mine.levels.add(new WorkplaceState.MineLevel(l.step(), l.progress(), l.rounds(), -1));
-        }
-        mine.bottom = first.bottom();
-        mine.cur = first.cur();
-        data.addWorkplace(base, mine);
-        MineLayout.buildInitial(bp, mine, faction);
+        // no mine is built with the base: each miner chooses its own place and digs its own shaft
 
         WorkplaceState plot = new WorkplaceState();
         plot.type = WorkplaceState.Type.TREE_PLOT;
@@ -102,7 +83,6 @@ public final class BaseBuilder {
         data.addWorkplace(base, farm);
 
         bp.placeAll(level);
-        sealMine(level, mine);
         for (BlockPos p : TreePlotLayout.spots(plot)) {
             level.setBlock(p.below(), Blocks.DIRT.defaultBlockState(), Block.UPDATE_ALL);
             level.setBlock(p, Blocks.OAK_SAPLING.defaultBlockState(), Block.UPDATE_ALL);
@@ -122,11 +102,11 @@ public final class BaseBuilder {
         base.beds.addAll(bp.beds);
         base.expansionLots.addAll(bp.lots);
         base.storageExpansionSlots.addAll(bp.storageSlots);
+        // forced, randomly ticking work belt: groves and nearby mines keep ticking (the same box older bases have)
         BlockPos max = base.point(BaseState.MAX);
-        // the mine extends underground eastward; keep its whole length inside the ticking area
-        base.points.put(BaseState.MAX, new BlockPos(cx + BaseLayout.MINE_ORIGIN_X + 46, max.getY(), max.getZ()));
+        base.points.put(BaseState.MAX, new BlockPos(cx + BaseLayout.WORK_AREA_EAST, max.getY(), max.getZ()));
         BlockPos min = base.point(BaseState.MIN);
-        base.points.put(BaseState.MIN, new BlockPos(cx + BaseLayout.PLOT_ORIGIN_X - TreePlotLayout.depth(3) - 3,
+        base.points.put(BaseState.MIN, new BlockPos(cx - BaseLayout.WORK_AREA_WEST,
                 min.getY(), Math.min(min.getZ(), cz - TreePlotLayout.half(3) - 3)));
 
         Map<BlockPos, BlockState> plan = repairablePart(bp);
@@ -194,24 +174,6 @@ public final class BaseBuilder {
             out.put(p, s);
         });
         return out;
-    }
-
-    /** Plugs water, lava, sand and cave holes around the starting spiral steps so the first descent is safe. */
-    public static void sealMine(ServerLevel level, WorkplaceState mine) {
-        int steps = com.factionclash.logic.LegacyMine.landingSteps(mine.origin.getY(), 1);
-        for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, steps)) {
-            BlockPos p = MineLayout.spiralPos(mine, c);
-            for (Direction d : Direction.values()) {
-                BlockPos n = p.relative(d);
-                if (MineLayout.inShaft(mine, n, steps) || n.getY() >= mine.origin.getY() - 1) {
-                    continue;
-                }
-                BlockState s = level.getBlockState(n);
-                if (s.isAir() || !s.getFluidState().isEmpty() || s.getBlock() instanceof net.minecraft.world.level.block.FallingBlock) {
-                    level.setBlock(n, Blocks.COBBLESTONE.defaultBlockState(), Block.UPDATE_ALL);
-                }
-            }
-        }
     }
 
     private static void spawnAnimals(ServerLevel level, BlockPos pen) {

@@ -977,7 +977,8 @@ public final class FCGameTests {
     /**
      * A miner digs the spiral down from the surface to the level it chose, step by step, and the stairs it dug are
      * open. Back at the storehouse it plans the next layer: in the flat test world no layer is deep enough, so the
-     * mine is given up as worked out and handed back, and the miner, with no other mine or cave, is idle.
+     * mine is given up as worked out and handed back, and the miner, with no other mine or cave, looks for a new
+     * site, finds the ground everywhere too shallow and is idle.
      */
     @GameTest(template = "platform", timeoutTicks = 1200, batch = "mine_plan", skyAccess = true)
     public static void minerDigsDownToItsLevelThenRetiresAShallowMine(GameTestHelper h) {
@@ -1026,10 +1027,115 @@ public final class FCGameTests {
             if (mine.workedOut) {
                 h.assertTrue(reached[0], "the mine was given up before the shaft reached its level");
                 h.assertTrue(mine.assigned == null && mine.note.contains("every layer"), "a worked-out mine is handed back: " + mine.note);
-                if (m.job() != null && m.job().idleReason().contains("no mine")) {
+                if (m.job() != null && m.job().idleReason().contains("too shallow")) {
                     t.succeed();
                 }
             }
+        });
+    }
+
+    /**
+     * A miner digs the shaft of its own new mine (no hut) from the surface: the stairs it digs are open, the ground
+     * ring around the mouth is plugged where it was water or open (water by the careful plugging before each cell,
+     * an open hole by the new ring rule), and a torch stands beside the mouth. The test ends once the shaft
+     * reaches its level, before any planning or tunnelling.
+     */
+    @GameTest(template = "platform", timeoutTicks = 400, batch = "mine_shaft", skyAccess = true)
+    public static void minerDigsItsOwnShaftAndSealsTheGroundRing(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 400, new BlockPos(12, 2, 16));
+        com.factionclash.campaign.WorkplaceState mine = new com.factionclash.campaign.WorkplaceState();
+        BlockPos water, air, hole, torch;
+        try {
+            for (BlockPos p : BlockPos.betweenClosed(3, 2, 3, 9, 4, 8)) {
+                h.setBlock(p, Blocks.STONE);
+            }
+            mine.type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+            mine.origin = h.absolutePos(new BlockPos(4, 5, 5));
+            mine.extent = mine.origin;
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            mine.hut = false;
+            mine.maxRounds = 4;
+            mine.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(3, com.factionclash.logic.SpiralMine.planSize(4), 4,
+                    com.factionclash.logic.MinePlanner.Band.COAL.ordinal()));
+            mine.cur = 0;
+            mine.bottom = 0;
+            mine.upgradeStep = 0;
+            t.addWorkplace(mine);
+            water = com.factionclash.structure.MineLayout.local(mine, 2, -1, -1);
+            air = com.factionclash.structure.MineLayout.local(mine, 1, -1, -1);
+            hole = com.factionclash.structure.MineLayout.local(mine, 2, 2, -1); // beside step 3, away from the water
+            torch = com.factionclash.structure.MineLayout.local(mine, 0, -1, 0);
+            h.getLevel().setBlockAndUpdate(water, Blocks.WATER.defaultBlockState());
+            h.getLevel().setBlockAndUpdate(air, Blocks.AIR.defaultBlockState());
+            h.getLevel().setBlockAndUpdate(hole, Blocks.AIR.defaultBlockState());
+            FactionNpc miner = h.spawn(ModEntities.FACTION_NPC.get(), new BlockPos(4, 5, 5));
+            miner.faction(FactionType.STONEGUARD);
+            miner.role(NpcRole.MINER);
+            t.register(miner);
+            miner.equip(new ItemStack(Items.STONE_PICKAXE));
+            miner.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 16));
+            miner.inventory().setItem(1, new ItemStack(Items.TORCH, 4));
+            mine.assigned = miner.getUUID();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            if (mine.bottom != 3) {
+                return;
+            }
+            for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, 3)) {
+                BlockPos p = com.factionclash.structure.MineLayout.spiralPos(mine, c);
+                net.minecraft.world.level.block.state.BlockState s = h.getLevel().getBlockState(p);
+                t.assertTrue(s.isAir() || s.is(Blocks.TORCH) || s.is(Blocks.WALL_TORCH), "stair cell " + p + " should be dug, is " + s);
+            }
+            for (BlockPos p : new BlockPos[]{water, air, hole}) {
+                t.assertTrue(h.getLevel().getBlockState(p).is(Blocks.COBBLESTONE), "the ground ring at " + p + " should be plugged, is "
+                        + h.getLevel().getBlockState(p));
+            }
+            t.assertTrue(h.getLevel().getBlockState(torch).is(Blocks.TORCH), "a torch should stand beside the mouth");
+            t.succeed();
+        });
+    }
+
+    /**
+     * In the flat test world no ground lies deep enough for a mine: a miner without one looks around its base,
+     * finds every point too shallow and goes idle for that reason at once, without opening a mine, digging anything
+     * or walking out to look further.
+     */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "mine_nosite", skyAccess = true)
+    public static void minerFindsNoSiteOnShallowGround(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 200);
+        java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> floor = new java.util.HashMap<>();
+        FactionNpc miner;
+        try {
+            for (BlockPos p : BlockPos.betweenClosed(0, 1, 0, 23, 1, 23)) {
+                floor.put(h.absolutePos(p), h.getBlockState(p));
+            }
+            miner = t.npc(12, 16, NpcRole.MINER);
+            miner.equip(new ItemStack(Items.STONE_PICKAXE));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        BlockPos a = h.absolutePos(new BlockPos(0, 0, 0)), b = h.absolutePos(new BlockPos(23, 0, 23));
+        int minX = Math.min(a.getX(), b.getX()), maxX = Math.max(a.getX(), b.getX());
+        int minZ = Math.min(a.getZ(), b.getZ()), maxZ = Math.max(a.getZ(), b.getZ());
+        FactionNpc m = miner;
+        var data = t.data;
+        int baseId = t.base.id;
+        t.onEachTick(() -> {
+            BlockPos at = m.blockPosition();
+            t.assertTrue(at.getX() >= minX && at.getX() <= maxX && at.getZ() >= minZ && at.getZ() <= maxZ,
+                    "the miner left the platform at " + at);
+            if (m.job() == null || !m.job().idleReason().contains("too shallow")) {
+                return;
+            }
+            for (com.factionclash.campaign.WorkplaceState w : data.workplaces.values()) {
+                t.assertTrue(w.baseId != baseId || w.type != com.factionclash.campaign.WorkplaceState.Type.MINE, "a mine was opened: #" + w.id);
+            }
+            floor.forEach((p, s) -> t.assertTrue(h.getLevel().getBlockState(p) == s, "the platform was dug at " + p));
+            t.succeed();
         });
     }
 

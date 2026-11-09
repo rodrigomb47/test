@@ -1,5 +1,10 @@
 package com.factionclash.logic;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Pure rules for where a mine's tunnels lie (no Minecraft classes, unit-tested). A mine reserves a corridor: the
  * ground its branch mines can ever take up, from just behind the shaft to the end of the longest lengthening round
@@ -8,6 +13,10 @@ package com.factionclash.logic;
  *
  * <p>Directions are given as a unit step (fx, fz) along the tunnels; "side" is the clockwise direction, (-fz, fx),
  * as in {@code Direction.getClockWise()}.
+ *
+ * <p>A miner choosing a site looks at points on square rings around its base ({@link #candidates}), lets the
+ * tunnels run away from the base ({@link #facingsAwayFrom}), reserves as many lengthening rounds as fit
+ * ({@link #maxRoundsThatFit}) and takes the site with the lowest {@link #score}.
  */
 public final class MineSiteRules {
     /** First forward cell of the corridor: two behind the shaft (the shaft is at f 1..2). */
@@ -67,5 +76,85 @@ public final class MineSiteRules {
     /** True if two rectangles come within {@code margin} of each other. */
     public static boolean overlaps(Rect a, Rect b, int margin) {
         return a.inflate(margin).overlaps(b);
+    }
+
+    /**
+     * The directions (fx, fz) a mine at offset (dx, dz) from its base centre may run its tunnels: the one pointing
+     * most directly away from the base first, then the two at right angles to it (the more outward one first),
+     * leaving out any that points back toward the base. Empty at the centre itself.
+     */
+    public static List<int[]> facingsAwayFrom(int dx, int dz) {
+        List<int[]> out = new ArrayList<>();
+        if (dx == 0 && dz == 0) {
+            return out;
+        }
+        int[] main = Math.abs(dx) >= Math.abs(dz) ? new int[]{Integer.signum(dx), 0} : new int[]{0, Integer.signum(dz)};
+        out.add(main);
+        int[] a = {-main[1], main[0]}, b = {main[1], -main[0]};
+        int da = a[0] * dx + a[1] * dz, db = b[0] * dx + b[1] * dz;
+        for (int[] p : da >= db ? new int[][]{a, b} : new int[][]{b, a}) {
+            if (p[0] * dx + p[1] * dz >= 0) {
+                out.add(p);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Points (x, z) to look at for a mine site around (cx, cz): square rings at Chebyshev distance {@code rMin},
+     * {@code rMin + step}, ... up to {@code rMax}, inner rings first, with a point every {@code step} blocks along
+     * each ring, corners included.
+     */
+    public static List<int[]> candidates(int cx, int cz, int rMin, int rMax, int step) {
+        Set<Long> seen = new LinkedHashSet<>();
+        List<int[]> out = new ArrayList<>();
+        int st = Math.max(1, step);
+        for (int r = Math.max(1, rMin); r <= rMax; r += st) {
+            List<Integer> along = new ArrayList<>();
+            for (int t = -r; t < r; t += st) {
+                along.add(t);
+            }
+            along.add(r);
+            for (int t : along) {
+                for (int[] d : new int[][]{{t, -r}, {r, t}, {-t, r}, {-r, -t}}) {
+                    long key = ((long) d[0] << 32) ^ (d[1] & 0xffffffffL);
+                    if (seen.add(key)) {
+                        out.add(new int[]{cx + d[0], cz + d[1]});
+                    }
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The most lengthening rounds (0 to {@code maxReach}) a mine at (ox, oz) facing (fx, fz) can reserve: its whole
+     * corridor ({@link #corridor}) must overlap none of the {@code obstacles} (already widened by the gap each
+     * keeps) and lie inside {@code map} (null: no edge). -1 when even the first branch mine does not fit.
+     */
+    public static int maxRoundsThatFit(int ox, int oz, int fx, int fz, int maxReach, List<Rect> obstacles, Rect map) {
+        for (int r = 0; r <= maxReach; r++) {
+            Rect c = corridor(ox, oz, fx, fz, r);
+            boolean fits = map == null || (map.contains(c.minX(), c.minZ()) && map.contains(c.maxX(), c.maxZ()));
+            for (int i = 0; fits && i < obstacles.size(); i++) {
+                fits = !obstacles.get(i).overlaps(c);
+            }
+            if (!fits) {
+                return r - 1;
+            }
+        }
+        return maxReach;
+    }
+
+    /** PROPOSED: score weights: per point of corridor penalty, per block of uneven ground at the mouth, for loose ground. */
+    public static final int PENALTY_WEIGHT = 2, RELIEF_WEIGHT = 4, LOOSE_COST = 10;
+
+    /**
+     * How good a site is, lower is better: the walk from the nearer gate, plus twice the corridor penalty (water
+     * over the tunnels, ground dipping toward them), four per block of unevenness around the mouth, and 10 when the
+     * ground there is sand or gravel that has to be propped.
+     */
+    public static double score(double gateDistance, int penalty, int collarRelief, boolean loose) {
+        return gateDistance + PENALTY_WEIGHT * penalty + RELIEF_WEIGHT * collarRelief + (loose ? LOOSE_COST : 0);
     }
 }

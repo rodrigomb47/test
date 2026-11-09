@@ -2,8 +2,6 @@ package com.factionclash.structure;
 
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.campaign.WorkplaceState.MineLevel;
-import com.factionclash.faction.FactionType;
-import com.factionclash.logic.LegacyMine;
 import com.factionclash.logic.MineSiteRules;
 import com.factionclash.logic.SpiralMine;
 import net.minecraft.core.BlockPos;
@@ -200,33 +198,5 @@ public final class MineLayout {
         Direction side = wp.facing.getClockWise();
         // torch hangs on the shaft's outer wall: s=0 cells use the wall at s=-1, s=1 cells the wall at s=2
         return Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, s == 0 ? side : side.getOpposite());
-    }
-
-    /** Surface hut plus the first spiral steps down to level 1 (the rest is dug by the miner). */
-    public static void buildInitial(Blueprint bp, WorkplaceState wp, FactionType faction) {
-        BlockState wall = Blocks.COBBLESTONE.defaultBlockState();
-        BlockState frame = faction.style.frame().defaultBlockState();
-        BlockState roof = faction.style.floor().defaultBlockState();
-        for (int f = HUT_BACK; f <= HUT_FRONT; f++) {
-            for (int s = -2; s <= 2; s++) {
-                bp.setAbs(local(wp, f, s, -1), Blocks.COBBLESTONE.defaultBlockState());
-                boolean edge = f == HUT_BACK || f == HUT_FRONT || s == -2 || s == 2;
-                boolean corner = (f == HUT_BACK || f == HUT_FRONT) && (s == -2 || s == 2);
-                for (int y = 0; y <= 2; y++) {
-                    bp.setAbs(local(wp, f, s, y), edge ? (corner ? frame : wall) : Blocks.AIR.defaultBlockState());
-                }
-                bp.setAbs(local(wp, f, s, 3), roof);
-            }
-        }
-        bp.setAbs(local(wp, HUT_BACK, 0, 0), Blocks.AIR.defaultBlockState());
-        bp.setAbs(local(wp, HUT_BACK, 0, 1), Blocks.AIR.defaultBlockState());
-        Direction side = wp.facing.getClockWise();
-        bp.setAbs(local(wp, -1, -1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side));
-        bp.setAbs(local(wp, 4, 1, 1), Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, side.getOpposite()));
-        int first = LegacyMine.landingSteps(wp.origin.getY(), 1);
-        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, first)) {
-            bp.setAbs(spiralPos(wp, c), c.torch() ? wallTorchFor(wp, c.s()) : Blocks.AIR.defaultBlockState());
-        }
-        bp.setAbs(stand(wp, first).above(), wallTorchFor(wp, SpiralMine.cell(first)[1]));
     }
 }

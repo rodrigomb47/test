@@ -12,8 +12,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Chooses safe land for a settlement (spec 3): samples the real terrain of the whole footprint (base, mine pad
- * and tree plot pad) and rejects water, steep ground and out-of-map positions.
+ * Chooses safe land for a settlement (spec 3): samples the real terrain of the whole footprint (the walled base and
+ * the tree plot's pad west of it) and rejects water, steep ground and out-of-map positions. Mines are not part of
+ * it: miners choose their own sites later.
  */
 public final class SiteFinder {
     public record Site(BlockPos center, double score, int waterSamples) {
@@ -27,7 +28,7 @@ public final class SiteFinder {
     }
 
     public static Footprint settlement() {
-        return new Footprint(BaseLayout.PLOT_ORIGIN_X - 26, BaseLayout.MINE_ORIGIN_X + 7, -BaseLayout.HALF - 2, BaseLayout.HALF + 2);
+        return new Footprint(BaseLayout.PLOT_ORIGIN_X - 26, BaseLayout.HALF + 2, -BaseLayout.HALF - 2, BaseLayout.HALF + 2);
     }
 
     public static Footprint lair() {
@@ -84,36 +85,7 @@ public final class SiteFinder {
         if (median < level.getSeaLevel() - 1) {
             score += 40;
         }
-        if (fp.equals(settlement())) {
-            score += mineAreaPenalty(level, cx, cz, median);
-        }
         return new Site(new BlockPos(cx, median + 1, cz), score, water);
-    }
-
-    /**
-     * The mine's first level runs about 6 blocks under the surface for some 50 blocks east of the base: water
-     * above it (a lake or river) or ground dipping toward that depth (tunnels breaking out of a hillside) make a
-     * poor mine, so such sites score worse.
-     */
-    static double mineAreaPenalty(ServerLevel level, int cx, int cz, int median) {
-        double penalty = 0;
-        for (int x = cx + BaseLayout.MINE_ORIGIN_X + 3; x <= cx + BaseLayout.MINE_ORIGIN_X + 48; x += 6) {
-            for (int z = cz - 12; z <= cz + 12; z += 6) {
-                ChunkAccess chunk = level.getChunkSource().getChunk(x >> 4, z >> 4, ChunkStatus.SURFACE, true);
-                if (chunk == null) {
-                    continue;
-                }
-                int floor = chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, x & 15, z & 15);
-                int surface = chunk.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x & 15, z & 15);
-                if (surface > floor) {
-                    penalty += 6; // water over the tunnels
-                }
-                if (floor < median - 3) {
-                    penalty += 3; // the ground dips toward the tunnel level
-                }
-            }
-        }
-        return penalty;
     }
 
     public static boolean insideMap(BlockPos center, Footprint fp, BlockPos mapCenter, int radius) {

@@ -1,7 +1,9 @@
 package com.factionclash.work;
 
 import com.factionclash.campaign.BaseState;
+import com.factionclash.campaign.BaseZones;
 import com.factionclash.campaign.Logistics;
+import com.factionclash.campaign.MapBounds;
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.campaign.WorkplaceState.MineLevel;
 import com.factionclash.config.FCConfig;
@@ -17,6 +19,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -31,6 +34,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -45,12 +49,16 @@ import java.util.function.Predicate;
  * branch mine block by block, with real break times for its pickaxe and the block's hardness. Everything it gets is
  * what is really in the ground and drops by the vanilla rules (an iron ore broken with a wooden pickaxe drops
  * nothing). Exposed ore veins are followed, torches are placed, fluids and loose blocks are plugged before a cell
- * is opened. Which layer it works is its own choice ({@link MinePlanner}): the ore the storehouse lacks and its
- * pickaxe can harvest, at the height vanilla generation puts it; it digs the shaft deeper when that layer lies below,
- * lengthens a finished layer, lets the mine rest until a better pickaxe comes, or gives up a worked-out mine.
+ * is opened. Where it digs is its own choice: a miner without a mine looks for flat, dry ground a little way out
+ * from the base ({@link MineSites#evaluate}), walking out to look further when nothing near is fit, and digs its own
+ * spiral down from the surface there. Which layer it works is its own choice too ({@link MinePlanner}): the ore the
+ * storehouse lacks and its pickaxe can harvest, at the height vanilla generation puts it; it digs the shaft deeper
+ * when that layer lies below, lengthens a finished layer, lets the mine rest until a better pickaxe comes, or gives
+ * up a worked-out mine.
  */
 public class MinerJob extends Job {
-    enum State { CHECK, STORAGE, CRAFT, TRAVEL, MINE, EXTEND, CLEAR }
+    /** SITE: no mine to work, looking for a place to dig one (saved, but loads as CHECK). */
+    enum State { CHECK, STORAGE, CRAFT, TRAVEL, MINE, EXTEND, CLEAR, SITE }
 
     static final Predicate<ItemStack> TORCH = s -> s.is(Items.TORCH);
     /** Solid, non-falling blocks a miner may use to plug water, lava or sand. */
@@ -105,6 +113,32 @@ public class MinerJob extends Job {
     private int leaveMineId = -1, leaveTicks;
     private double leaveBest;
 
+    /** PROPOSED: how often a miner that found no mine site looks again. */
+    static final int SITE_RETRY_TICKS = 6000;
+    /** PROPOSED: survey walks out from the base when nothing near is fit, how far out (each way), and how long each may take. */
+    static final int SURVEY_POINTS = 4, SURVEY_OFFSET = 44, SURVEY_TICKS = 2400, SURVEY_MAP_MARGIN = 16;
+    /** PROPOSED: walking ticks after which a new mine whose mouth the miner cannot reach is given up. */
+    static final int UNREACHABLE_SITE_TICKS = 2400;
+    /** PROPOSED: mine sites the miner gave up (unreachable, unsafe) that it remembers and never picks again. */
+    static final int MAX_BAD_SITES = 32;
+    /** A gap between two walking ticks (an errand, a wait) counts as at most this many ticks. */
+    private static final int WALK_GAP = 101;
+
+    /** The site search under way (not saved: it starts again after a reload), and the survey walk (-1: none). */
+    private MineSites.Search siteSearch;
+    private int surveyIndex = -1;
+    private long surveyUntil;
+    /** When the miner may look for a site again after finding none (saved), and why it found none. */
+    private long nextSiteSearch;
+    private String siteFailReason = "no place to dig a mine";
+    /** Mouths of mines this miner gave up as unreachable or unsafe, oldest first (saved). */
+    private final List<Long> badSites = new ArrayList<>();
+    /** Walking ticks toward the mouth of a new mine that was never reached, and the last tick counted. */
+    private int siteWalkMine = -1, siteWalkTicks;
+    private long siteWalkLast;
+    /** With a full storehouse, the next time a miner without a mine tries to unload. */
+    private long nextSiteUnload;
+
     public MinerJob(FactionNpc npc) {
         super(npc);
         caveJob = new CaveMinerJob(npc);
@@ -151,7 +185,7 @@ public class MinerJob extends Job {
         }
         WorkplaceState wp = Workplaces.held(npc, WorkplaceState.Type.MINE); // looking never claims
         if (wp == null) {
-            return "no mine";
+            return siteSearch != null || surveyIndex >= 0 ? "no mine yet - looking for a place to dig one" : "no mine";
         }
         int y0 = wp.origin.getY();
         MineLevel lv = MineLayout.current(wp);
@@ -245,13 +279,15 @@ public class MinerJob extends Job {
         }
         WorkplaceState wp = wp();
         if (wp == null) {
-            noMine(b);
+            site(b);
             return;
         }
+        siteSearch = null;
+        surveyIndex = -1;
         markBusy();
         collect(wp);
         switch (state) {
-            case CHECK -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 || MineLayout.current(wp) == null
+            case CHECK, SITE -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 || MineLayout.current(wp) == null
                     ? State.STORAGE : State.TRAVEL;
             case STORAGE -> storage(wp);
             case CRAFT -> craftTorches(wp);
@@ -263,24 +299,31 @@ public class MinerJob extends Job {
     }
 
     /**
-     * No mine and no cave to work: out of the mine it was in (one just given up, say), the last load home, then
-     * idle. When the base already works as many mines as it may, that is the reason; otherwise there is no mine.
+     * No mine and no cave to work: the miner finds a place to dig its own. First out of the mine it was in (one just
+     * given up, say) and the last load home, and a better pickaxe fetched when a mine of the base rests for one.
+     * Then, unless the base already works as many mines as it may, it looks for a site around the base
+     * ({@link MineSites.Search}); when nothing near is fit it walks out to up to {@link #SURVEY_POINTS} points to look
+     * from there (its own chunks load around it). A site found becomes its mine at once; with none, it is idle and
+     * looks again after {@link #SITE_RETRY_TICKS}.
      */
-    private void noMine(BaseState b) {
+    private void site(BaseState b) {
         breaker.reset(npc);
-        state = State.CHECK;
+        state = State.SITE;
         WorkplaceState in = MineSites.mineAt(level(), data(), b, npc.blockPosition());
         if (in != null && !leaveMine(in)) {
             return;
         }
-        if (hasCargo()) {
+        if (hasCargo() && now() >= nextSiteUnload) {
             if (!atStorage()) {
                 return;
             }
-            unloadNow(); // what does not fit stays in the backpack until the next try
+            if (unloadNow() == Unload.PARTIAL_FULL) {
+                // the storehouse is full: what does not fit stays in the backpack, and the miner carries on
+                nextSiteUnload = now() + 1200;
+            }
         }
         // a mine of the base rests until a better pickaxe and the storehouse has one: fetch it, and the next tick
-        // takes the mine up again (step 4: this comes before looking for a new site)
+        // takes the mine up again (before any new site is looked for)
         int need = restingMineNeed(b);
         if (need >= 0 && FactionStorage.count(level(), b, s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= need) > 0) {
             status("Fetching " + MineSites.pickName(need) + " to take up a resting mine", "Travelling");
@@ -292,15 +335,109 @@ public class MinerJob extends Job {
                 return;
             }
         }
-        // step 4: a miner without a mine looks for a place to dig its own (state SITE)
         if (MineSites.openMines(data(), b) >= FCConfig.MAX_OPEN_MINES.get()) {
+            siteSearch = null;
+            surveyIndex = -1;
             markIdle("every mine site of the base is taken");
             status("Every mine site of the base is taken", "Idle");
-        } else {
-            markIdle("no mine or cave to work");
-            status("No free mine to work", "Idle");
+            waitFor(200);
+            return;
         }
+        if (now() < nextSiteSearch) {
+            markIdle(siteFailReason);
+            status(capitalised(siteFailReason) + " - looking again later", "Idle");
+            waitFor(200);
+            return;
+        }
+        if (pickTier() < 0) {
+            // no pickaxe: the storehouse trip first, as for any mine
+            status("No pickaxe - going to the storehouse", "Travelling");
+            if (!atStorage()) {
+                return;
+            }
+            upgradeEquipment();
+            if (pickTier() < 0) {
+                status("No pickaxe in storage - waiting for the blacksmith", "Waiting");
+                waitFor(300);
+            }
+            return;
+        }
+        if (siteSearch == null && surveyIndex >= 0) {
+            // walking out to look from further away; its own chunks load around it as it goes
+            BlockPos target = surveyPoint(b, surveyIndex);
+            if (!goTo(target, 8.0, "a place to look for a mine site") && now() < surveyUntil) {
+                return;
+            }
+            npc.navigator().reset();
+        }
+        if (siteSearch == null) {
+            siteSearch = new MineSites.Search(b, badSites);
+        }
+        status("Looking for a place to dig a mine", "Surveying");
+        if (!siteSearch.step(level(), data(), b, MineSites.PER_TICK)) {
+            return;
+        }
+        MineSites.Search done = siteSearch;
+        siteSearch = null;
+        MineSites.Site found = done.best();
+        if (found != null) {
+            surveyIndex = -1;
+            WorkplaceState w = MineSites.create(level(), data(), b, npc, found);
+            markBusy();
+            plan(w);
+            // with too few torches or blocks to plug water, the storehouse first (the plan is made: no second one)
+            boolean stocked = Inv.count(npc.inventory(), TORCH) >= 8 && Inv.count(npc.inventory(), SEAL) >= 16;
+            state = !w.active() || !npc.getUUID().equals(w.assigned) ? State.CHECK : stocked ? State.TRAVEL : State.STORAGE;
+            return;
+        }
+        if (done.allTooShallow()) {
+            siteFailed("the ground here is too shallow for a mine");
+            return;
+        }
+        if (BaseZones.forageAllowed(b) && surveyIndex + 1 < SURVEY_POINTS) {
+            surveyIndex++;
+            surveyUntil = now() + SURVEY_TICKS;
+            return;
+        }
+        siteFailed("no place to dig a mine");
+    }
+
+    /** No site anywhere the miner looked: idle, and it looks again after {@link #SITE_RETRY_TICKS}. */
+    private void siteFailed(String reason) {
+        surveyIndex = -1;
+        siteSearch = null;
+        nextSiteSearch = now() + SITE_RETRY_TICKS;
+        siteFailReason = reason;
+        markIdle(reason);
+        status(capitalised(reason), "Idle");
         waitFor(200);
+    }
+
+    private static String capitalised(String s) {
+        return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
+
+    /**
+     * Survey point {@code i} (0..3): {@link #SURVEY_OFFSET} blocks out from the base centre diagonally (north-east,
+     * south-east, south-west, north-west), kept on the map, at ground height when that is loaded.
+     */
+    private BlockPos surveyPoint(BaseState b, int i) {
+        int[][] d = {{1, -1}, {1, 1}, {-1, 1}, {-1, -1}};
+        BlockPos p = MapBounds.clamp(data(), b.center.offset(d[i][0] * SURVEY_OFFSET, 0, d[i][1] * SURVEY_OFFSET), SURVEY_MAP_MARGIN);
+        if (level().hasChunk(p.getX() >> 4, p.getZ() >> 4)) {
+            return new BlockPos(p.getX(), level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, p.getX(), p.getZ()), p.getZ());
+        }
+        return p;
+    }
+
+    /** Remembers a mine site this miner gave up, so it never picks it (or ground within 8 of it) again. */
+    private void addBadSite(BlockPos p) {
+        long k = p.asLong();
+        badSites.remove(Long.valueOf(k));
+        badSites.add(k);
+        while (badSites.size() > MAX_BAD_SITES) {
+            badSites.remove(0);
+        }
     }
 
     /**
@@ -437,6 +574,7 @@ public class MinerJob extends Job {
             leaveTicks = LEAVE_BUDGET_TICKS + 1;
             leaveBest = Double.NEGATIVE_INFINITY;
             if (npc.getUUID().equals(wp.assigned)) {
+                addBadSite(wp.origin);
                 MineSites.retire(level(), data(), wp, "its stairs are blocked");
             }
             state = State.CHECK;
@@ -670,7 +808,9 @@ public class MinerJob extends Job {
             }
         }
         if (wp.upgrading()) {
-            // step 4: a fresh site whose mouth cannot be reached is given up here (unreachable after 2400 ticks)
+            if (siteUnreachable(wp)) {
+                return;
+            }
             if (walkInMine(wp, MineLayout.stand(wp, wp.bottom), wp.bottom, 1.2, "mine #" + wp.id)) {
                 state = State.EXTEND;
             }
@@ -692,6 +832,33 @@ public class MinerJob extends Job {
         if (inLevel || walkInMine(wp, dest, lv.step, 1.2, "mine #" + wp.id)) {
             state = State.MINE;
         }
+    }
+
+    /**
+     * A new mine (nothing dug yet) whose mouth the miner has walked toward for {@link #UNREACHABLE_SITE_TICKS}
+     * without getting there is given up and remembered as a bad site. True when that happened.
+     */
+    private boolean siteUnreachable(WorkplaceState wp) {
+        if (wp.bottom != 0 || NpcNavigator.within(npc, MineLayout.stand(wp, 0), 3.0)) {
+            siteWalkMine = -1;
+            return false;
+        }
+        long t = now();
+        if (siteWalkMine != wp.id) {
+            siteWalkMine = wp.id;
+            siteWalkTicks = 0;
+        } else {
+            siteWalkTicks += (int) Math.min(WALK_GAP, Math.max(0, t - siteWalkLast));
+        }
+        siteWalkLast = t;
+        if (siteWalkTicks <= UNREACHABLE_SITE_TICKS) {
+            return false;
+        }
+        siteWalkMine = -1;
+        addBadSite(wp.origin);
+        MineSites.retire(level(), data(), wp, "its mouth cannot be reached");
+        state = State.CHECK;
+        return true;
     }
 
     /**
@@ -1101,6 +1268,9 @@ public class MinerJob extends Job {
             state = State.TRAVEL;
             return;
         }
+        if (from == 0 && wp.upgradeStep == 0 && !wp.hut) {
+            mouthTorch(wp);
+        }
         List<SpiralMine.Cell> plan = SpiralMine.spiralPlan(from, to);
         if (wp.upgradeStep >= plan.size()) {
             wp.bottom = to;
@@ -1177,6 +1347,21 @@ public class MinerJob extends Job {
     }
 
     /**
+     * A new mine has no hut: before the first block of its shaft is dug the miner sets a torch beside the mouth
+     * (where it is air on firm ground), so the opening is lit and easy to see.
+     */
+    private void mouthTorch(WorkplaceState wp) {
+        BlockPos t = MineLayout.local(wp, 0, -1, 0);
+        BlockState below = level().getBlockState(t.below());
+        if (level().getBlockState(t).isAir() && below.isFaceSturdy(level(), t.below(), Direction.UP)
+                && BlockWork.inReach(npc, t, 4.5) && Inv.consume(npc.inventory(), TORCH, 1)) {
+            level().setBlock(t, Blocks.TORCH.defaultBlockState(), Block.UPDATE_ALL);
+            level().playSound(null, t, SoundEvents.WOOD_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
+            npc.swing(InteractionHand.MAIN_HAND);
+        }
+    }
+
+    /**
      * The shaft cannot go below the step of {@code cell}: the steps above it, all dug, become the bottom and the
      * deepest the shaft may ever go, the level it was dug for is dropped, and the next storehouse trip plans a level
      * within reach. A mine whose shaft stops before it is {@link MinePlanner#MIN_DEPTH} deep is given up.
@@ -1199,7 +1384,7 @@ public class MinerJob extends Job {
         Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + wp.id + ": the shaft stops at y="
                 + (wp.origin.getY() - wp.bottom) + " (" + why + ")"));
         if (wp.bottom < MinePlanner.MIN_DEPTH) {
-            // step 4: the site also joins the miner's bad sites
+            addBadSite(wp.origin);
             MineSites.retire(level(), data(), wp, "the ground below is unsafe");
         }
     }
@@ -1274,12 +1459,16 @@ public class MinerJob extends Job {
         return false;
     }
 
-    /** After digging a shaft cell: close cave holes around the spiral so it stays a safe staircase. */
+    /**
+     * After digging a shaft cell: close cave holes around the spiral so it stays a safe staircase. A mine without a
+     * hut also plugs the ground ring around its mouth (the layer the miner stands on at the surface) where it is
+     * open, wet or loose; open air above the ground is left as it is.
+     */
     private boolean sealShaft(WorkplaceState wp, BlockPos dug, int steps) {
-        // step 4: a mine without a hut also plugs the ground ring at origin.y-1 around its first steps
+        int top = wp.origin.getY() - (wp.hut ? 1 : 0);
         for (Direction d : Direction.values()) {
             BlockPos n = dug.relative(d);
-            if (MineLayout.inShaft(wp, n, steps) || n.getY() >= wp.origin.getY() - 1
+            if (MineLayout.inShaft(wp, n, steps) || n.getY() >= top
                     || MineLayout.forwardOf(wp, n) >= SpiralMine.MAIN_START) {
                 continue;
             }
@@ -1304,6 +1493,12 @@ public class MinerJob extends Job {
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putString("state", state.name());
+        if (!badSites.isEmpty()) {
+            tag.putLongArray("badSites", badSites.stream().mapToLong(Long::longValue).toArray());
+        }
+        if (nextSiteSearch > 0) {
+            tag.putLong("nextSite", nextSiteSearch);
+        }
         CompoundTag cave = new CompoundTag();
         caveJob.save(cave, provider);
         tag.put("cave", cave);
@@ -1318,7 +1513,16 @@ public class MinerJob extends Job {
         }
         if (state == State.MINE || state == State.EXTEND || state == State.CLEAR || state == State.CRAFT) {
             state = State.TRAVEL;
+        } else if (state == State.SITE) {
+            state = State.CHECK;
         }
+        badSites.clear();
+        if (tag.contains("badSites", Tag.TAG_LONG_ARRAY)) {
+            for (long k : tag.getLongArray("badSites")) {
+                addBadSite(BlockPos.of(k));
+            }
+        }
+        nextSiteSearch = tag.getLong("nextSite");
         caveJob.load(tag.getCompound("cave"), provider);
     }
 }

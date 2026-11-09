@@ -17,7 +17,8 @@ import java.util.List;
 /**
  * Starts a campaign over several ticks so terrain evaluation never stalls the server. Each faction searches its
  * whole sector of the map on a coarse grid of real generated terrain (no water, gentle slopes, whole footprint
- * including the mine and tree-plot pads), re-checks the best candidates at full resolution, then builds there.
+ * including the tree-plot pad), re-checks the best candidates at full resolution, then builds there. No mine is
+ * built: the miners choose their own sites once the base stands.
  */
 public final class CampaignStarter {
     private record Job(FactionType faction, boolean lair, double angle, double sectorHalfWidth) {

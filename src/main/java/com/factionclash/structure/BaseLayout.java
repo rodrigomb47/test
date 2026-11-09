@@ -22,12 +22,18 @@ import net.minecraft.util.RandomSource;
 
 /**
  * The starting settlement plan (all coordinates relative to the base centre; y=0 is the walking level).
- * 49x49 walled base with gates west and east; mine outside the east gate, tree plot outside the west gate.
+ * 49x49 walled base with gates west and east; the tree plot's levelled pad lies outside the west gate. Miners and
+ * fishermen choose their own places outside the walls.
  */
 public final class BaseLayout {
     public static final int HALF = 24;
-    public static final int MINE_ORIGIN_X = 32;
     public static final int PLOT_ORIGIN_X = -32;
+    /**
+     * The base's work belt, west and east of the centre: its MIN/MAX box (z within the walls plus one, or the plot's
+     * width) is kept loaded and randomly ticking, so saplings grow and nearby mines keep working without players.
+     * The same numbers as older bases, whose hut mine reached that far east.
+     */
+    public static final int WORK_AREA_WEST = 58, WORK_AREA_EAST = 78;
 
     private BaseLayout() {
     }
@@ -246,10 +252,7 @@ public final class BaseLayout {
         bp.lots.add(bp.rel(-11, 0, 13));
         bp.lots.add(bp.rel(5, 0, 13));
 
-        // --- outside paths to the workspaces
-        for (int x = HALF + 1; x <= MINE_ORIGIN_X - 3; x++) {
-            bp.set(x, -1, 0, path);
-        }
+        // --- outside path to the tree plot
         for (int x = PLOT_ORIGIN_X + 1; x <= -HALF - 1; x++) {
             bp.set(x, -1, 0, path);
         }

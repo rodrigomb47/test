@@ -1,8 +1,14 @@
 package com.factionclash.work;
 
+import com.factionclash.campaign.BaseState;
+import com.factionclash.campaign.CampaignData;
+import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.logic.CaveSurvey;
+import com.factionclash.logic.MinePlanner;
+import com.factionclash.logic.MineSiteRules;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcNavigator;
+import com.factionclash.structure.MineLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -39,23 +45,37 @@ public final class CaveWork {
     }
 
     /**
-     * True if {@code pos} lies in the base itself or in the faction's own constructed mine - "caves" there are the
-     * base's cellars and its own tunnels, not natural caves.
+     * True if {@code pos} lies in the base itself (its MIN/MAX box and 16 around it) or in one of the base's own mines
+     * (worked out or not): the ground its tunnels may take up and a little around it, from the surface down to a few
+     * blocks under its shaft. "Caves" there are the base's cellars and its own tunnels, not natural caves.
      */
-    public static boolean ownWorkings(com.factionclash.campaign.CampaignData data, com.factionclash.campaign.BaseState b, BlockPos pos) {
+    public static boolean ownWorkings(CampaignData data, BaseState b, BlockPos pos) {
         if (b.contains(pos, 16)) {
             return true;
         }
         for (int id : b.workplaces) {
-            com.factionclash.campaign.WorkplaceState w = data.workplace(id);
-            if (w != null && w.type == com.factionclash.campaign.WorkplaceState.Type.MINE) {
-                double dx = pos.getX() - w.origin.getX(), dz = pos.getZ() - w.origin.getZ();
-                if (dx * dx + dz * dz < 64 * 64) {
-                    return true;
-                }
+            WorkplaceState w = data.workplace(id);
+            if (w != null && w.type == WorkplaceState.Type.MINE && w.origin != null && inMineWorkings(w, pos)) {
+                return true;
             }
         }
         return false;
+    }
+
+    /** PROPOSED: how far around a mine's corridor (and below its shaft) its workings count as the base's own. */
+    static final int WORKINGS_MARGIN = 4, WORKINGS_DEPTH = 6;
+
+    /** The mine's corridor widened by {@link #WORKINGS_MARGIN}, from 2 above the mouth to 6 under the shaft (at least 6 steps deep). */
+    static boolean inMineWorkings(WorkplaceState w, BlockPos pos) {
+        int y0 = w.origin.getY();
+        if (pos.getY() > y0 + 2 || pos.getY() < y0 - Math.max(w.bottom, MinePlanner.MIN_DEPTH) - WORKINGS_DEPTH) {
+            return false;
+        }
+        int f = MineLayout.forwardOf(w, pos), s = MineLayout.sideOf(w, pos);
+        int end = MineSiteRules.corridorEnd(MineLayout.reachRounds(w));
+        return f >= MineSiteRules.CORRIDOR_BACK - 2 && f <= end + WORKINGS_MARGIN
+                && s >= MineSiteRules.CORRIDOR_SIDE_MIN - WORKINGS_MARGIN
+                && s <= MineSiteRules.CORRIDOR_SIDE_MAX + WORKINGS_MARGIN;
     }
 
     /** Nothing to bump into and no fluid: air, torches, plants. */
