@@ -94,7 +94,7 @@ python3 tools/rcon.py "stop"
 
 ## 5. State at handoff (branch head after commit 9ee3f4a + this handoff)
 
-- 139 unit tests, 92 GameTests, all green. Download jar rebuilt; SHA-256 on README line 13.
+- 139 unit tests, 94 GameTests, all green. Download jar rebuilt; SHA-256 on README line 13.
 - Final 8-day fresh campaign (results in README "The final check"): 11 self-chosen mines, all shafts reached the
   diamond layer through aquifers; 104-247 trees felled per base; all fisheries on real water; scouts reported a real
   village (2 traders) and, when placed by an outpost by hand, the outpost; 4.6-10.4 ms per tick.
@@ -102,6 +102,14 @@ python3 tools/rcon.py "stop"
   fences taken down, fishing spots moved off the farm.
 
 ## 6. Known open items and ideas (none blocking)
+
+- Movement (see `docs/design/notes/stuck-pits.md`): NPCs that fall into a ravine beside a base now climb out
+  (dig-out continues until a walking route exists, ways up first); waypoints and partial paths avoid pits; new
+  bases slope the ground beside the walls even over ravines. Left: the gate choice does not know about pits; the
+  dig-out escalation rounds (`DigOut.escapeHeading`) have no GameTest (never needed live); NPCs on tree canopies
+  get down only through the "perched" rule after a stall.
+- Builders keep 24 cobblestone/cobbled deepslate/blackstone for stone tools (a base once built its last cobble
+  away and its mine rested forever).
 
 - A base keeps at most `maxOpenMines` (3) active mines; extra miners stay idle ("Every mine site of the base is
   taken") until the base needs another role, then they are retrained. A second miner sharing a mine could be added.
