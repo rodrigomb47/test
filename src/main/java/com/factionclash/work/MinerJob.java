@@ -124,6 +124,11 @@ public class MinerJob extends Job {
      */
     private int leaveMineId = -1, leaveTicks;
     private double leaveBest;
+    /** The current leg of a long walk along a mine level ({@link #tunnelLeg}), the destination it is for, and until when it holds. */
+    private BlockPos leg, legFor;
+    private long legUntil;
+    /** PROPOSED: a walk along a mine level longer than this goes in legs along its dug tunnels. */
+    static final int TUNNEL_LEG = 24;
 
     /**
      * Why a miner without a mine is idle, in words that follow "has had" (the faction hears "... has had no place to
@@ -531,11 +536,11 @@ public class MinerJob extends Job {
         if (lv != null) {
             int lk = lv.step;
             if (lk == destStep) {
-                return goTo(dest, reach, label);
+                return walkLevel(wp, lv, dest, reach, label);
             }
             BlockPos landing = MineLayout.stand(wp, lk);
             if (!NpcNavigator.within(npc, landing, 1.2)) {
-                goTo(landing, 1.2, "the mine shaft");
+                walkLevel(wp, lv, landing, 1.2, "the mine shaft");
                 return false;
             }
             cur = lk;
@@ -543,8 +548,11 @@ public class MinerJob extends Job {
             cur = MineLayout.stepAt(wp, p);
             int depth = wp.origin.getY() - p.getY();
             double hx = p.getX() - wp.origin.getX(), hz = p.getZ() - wp.origin.getZ();
-            // on the surface (level with the mouth, or lower ground with nothing above it but sky or leaves)
-            boolean surface = cur == 0 && (depth <= 1 || !MineSites.underground(level(), p));
+            // on the surface (level with the mouth, or lower ground with nothing above it but sky or leaves), or well
+            // away from the mine under some roof (a settlement's gate, a house): to the mouth of the shaft first. (Under
+            // the gate it used to aim at a stair deep in the shaft instead, from one step to the next, and back.)
+            boolean surface = cur == 0 && (depth <= 1 || !MineSites.underground(level(), p)
+                    || hx * hx + hz * hz >= 14 * 14 && !MineLayout.inMine(wp, p));
             if (surface && destStep > 0 && !NpcNavigator.within(npc, MineLayout.stand(wp, 0), 3.0)) {
                 // to the mouth of the shaft first, then down the stairs
                 goTo(MineLayout.stand(wp, 0), 1.2, "the mine entrance");
@@ -560,7 +568,8 @@ public class MinerJob extends Job {
             }
         }
         if (cur == destStep || (destStep == 0 && cur == 0)) {
-            return goTo(dest, reach, label);
+            // on the landing of the destination's level (or the surface): along its tunnels from here
+            return walkLevel(wp, destStep > 0 ? levelAtStep(wp, destStep) : null, dest, reach, label);
         }
         int next = cur < destStep ? Math.min(cur + 6, destStep) : Math.max(cur - 6, destStep);
         // the next stair must be open: a cave-in, falling sand or a block plugged against water fills it, and a
@@ -632,6 +641,69 @@ public class MinerJob extends Job {
         // spiral steps are diagonal neighbours: arrive precisely, or the next leg would be "reached" without moving
         goTo(MineLayout.stand(wp, next), 0.45, label);
         return false;
+    }
+
+    /** Walks to {@code dest} on level {@code lv} (if any): in stretches along its dug tunnels while it is far. */
+    private boolean walkLevel(WorkplaceState wp, MineLevel lv, BlockPos dest, double reach, String label) {
+        BlockPos next = lv == null ? null : tunnelLeg(wp, lv, dest);
+        if (next != null) {
+            goTo(next, 1.5, label);
+            return false;
+        }
+        return goTo(dest, reach, label);
+    }
+
+    private static MineLevel levelAtStep(WorkplaceState wp, int step) {
+        for (MineLevel l : wp.levels) {
+            if (l.step == step) {
+                return l;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The next stretch of a long walk along a mine level (out to a tunnel face 70 blocks from the shaft, or back): the
+     * dug tunnel cell within {@link #TUNNEL_LEG} blocks of the miner that lies nearest the destination. Vanilla path
+     * searches reach about 48 blocks and price every cell beside water (an aquifer the tunnels were sealed against)
+     * highly, so a search toward a farther point found a partial path up the stairs and over the surface: the miner
+     * stepped onto the stairs, turned back to the landing, and paced there. Null when the destination is near
+     * enough to walk to directly, or no dug cell brings the miner closer.
+     */
+    private BlockPos tunnelLeg(WorkplaceState wp, MineLevel lv, BlockPos dest) {
+        BlockPos p = npc.blockPosition();
+        double here = p.distSqr(dest);
+        if (here <= TUNNEL_LEG * TUNNEL_LEG) {
+            return null;
+        }
+        if (dest.equals(legFor) && now() < legUntil && (leg == null || !NpcNavigator.within(npc, leg, 2.0))) {
+            return leg; // (looked for at most every 10 seconds, or when the stretch is walked)
+        }
+        List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(lv);
+        BlockPos best = MineLayout.landing(wp, lv);
+        double bestD = best.distSqr(p) <= TUNNEL_LEG * TUNNEL_LEG ? best.distSqr(dest) : Double.MAX_VALUE;
+        for (int j = Math.min(lv.progress, plan.size()) - 1; j >= 0; j--) {
+            SpiralMine.Cell c = plan.get(j);
+            if (c.torch() || c.dy() != 0) {
+                continue;
+            }
+            BlockPos q = MineLayout.tunnelPos(wp, lv, c);
+            double d = q.distSqr(dest);
+            if (d >= bestD || q.distSqr(p) > TUNNEL_LEG * TUNNEL_LEG) {
+                continue;
+            }
+            BlockState s = level().getBlockState(q);
+            if ((s.isAir() || s.is(Blocks.TORCH)) && level().getBlockState(q.above()).isAir()
+                    && !level().getBlockState(q.below()).getCollisionShape(level(), q.below()).isEmpty()) {
+                best = q;
+                bestD = d;
+            }
+        }
+        // a stretch is worth it only when it brings the miner well closer (4 blocks or more)
+        leg = bestD < Double.MAX_VALUE && Math.sqrt(bestD) <= Math.sqrt(here) - 4 ? best : null;
+        legFor = dest.immutable();
+        legUntil = now() + 200;
+        return leg;
     }
 
     /**

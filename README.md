@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `6a5de62dd7b931873857ec5e60d19da1c330e0f62133099732781e06f2630ee3`
+SHA-256: `a8fa7b4d7299d7f6d7fa377e174540a9ca07aeef503ad66f7493a80df84ba309`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -73,12 +73,21 @@ Players respawn at their nearest surviving allied base when they have no bed.
   destination's height (or chops the leaves/log it stands on), until it can walk again. Where the floor is missing
   (a ravine between it and home) it **builds a bridge** with stone or dirt from its backpack (any solid block it
   carries, such as logs, when it has none), one block per step, rising toward a higher destination; where nothing
-  can be dug or bridged (a pit under a settlement's path) it **pillars up**. Out of blocks on the tip of its own
+  can be dug or bridged (a pit under a settlement's path, or beside a settlement's floor, which may not be dug) it
+  **pillars up**. Out in the open below its destination it builds or digs its way up first and only then sideways,
+  and it keeps at it until it can really walk on: standing in the open is not enough, a pit a few blocks deep is
+  still a dead end. If a whole round of digging finds no way, the next one tries off to one side, then the other.
+  Out of blocks on the tip of its own
   bridge, it **walks back** to firm ground (the tip is remembered as a dead end) and digs its way up through the
   rock instead, and it never paces back onto a spot it just left. In a mine stairwell with a step mined away it
   climbs the spiral and **puts the missing stair floor back**. It never digs faction structures, walls, mine stairs,
   containers or anything next to water or lava. A watchdog also catches NPCs that "walk" for 30 s without leaving
   the same spot.
+* **Keeping out of pits**: long walks never aim at the floor of a ravine (a waypoint far below both ends of the
+  trip is replaced by one off to the side), and a path that only leads down into one is not followed: the NPC goes
+  round. New bases also slope the ground beside their walls when a ravine runs right along them. Miners walk long
+  mine levels stretch by stretch along their own tunnels, so a far tunnel face no longer sends them up the stairs and
+  over the surface.
 * **Starting bases** are placed on dry, gentle land: each faction searches its own map sector on real generated
   terrain, widens to the whole map (and a 1.5× map) if needed, and levels the footprint: the walled base, a grove
   pad outside the west gate and a 10-block landing with a path outside the east gate, all sloped into the ground
@@ -368,7 +377,7 @@ the mines by layer, the woodland and the fishing water):
   replanting and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 92 GameTests on a real headless server, including **miners** (digs its own
+* `./gradlew runGameTestServer` — 94 GameTests on a real headless server, including **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
   a resting mine; a mine set aside keeps only the ground it dug), **woodcutters** (fells a tree and replants the same
@@ -386,7 +395,8 @@ the mines by layer, the woodland and the fishing water):
   armour per hit taken, pickaxe per block, a used-up pickaxe breaking), **hunger** (a hungry NPC eats its bread, not
   rotten flesh, unless starving; only a fed NPC heals), **anvil repair rules**, **digging out** (sealed in
   rock it climbs out by a staircase; on a canopy or a tall trunk it chops its way down; just above its goal it digs
-  down; a gap is bridged with exactly one block per step), the **enchanter** at a real table (levels and lapis paid,
+  down; a gap is bridged with exactly one block per step; a miner in a pit beside a settlement's protected floor and
+  wall builds itself up beside the edge and walks round to the storehouse), the **enchanter** at a real table (levels and lapis paid,
   nothing without experience), **ore experience** reaching the faction, enchanted-gear choice (Silk Touch loses),
   a cold furnace sending its worker for fuel, cave explorers seeing only visible ore and placing real torches, haulers sorting the storehouse,
   crossbow charging, player attack speeds, golden apples and mined blocks going into the backpack, plus: walking speed, no gear wear, half
@@ -400,6 +410,16 @@ the mines by layer, the woodland and the fishing water):
   per-day summary of every faction (see the source for usage).
 
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
+
+**Pits and long mine walks (a 15-day campaign, continued from day 15 with the fixes):** two Grove miners had sat
+for 8 and 2 days in a hole they had dug into the pad beside the south wall, at the bottom of a 20-block ravine
+that runs along it, and a woodcutter had joined them. All three climbed out (pillaring up beside the pad's edge)
+and were at the storehouse about 1,000 ticks after the server started, then went back to work. A miner whose tunnel
+face lay 73 blocks out along an aquifer had paced at its mine's landing (257 recoveries in a day); it now walks
+the tunnel in stretches. Over the next full day the stuck-recovery count of all NPCs fell from 592 to 97, and Grove
+brought in 204 raw iron instead of 128 and 96 coal instead of none. A fresh campaign with the same seed now slopes
+the ground beside that wall down to the ravine instead of leaving a 20-block drop, and had 199 recoveries after two
+days (274 in the run below). Notes: `docs/design/notes/stuck-pits.md`.
 
 **The final check: a fresh campaign with every fix, the east landing and the new scouts** (same seed, eight days,
 default config; the drowned rule for scouts came after it):

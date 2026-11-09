@@ -46,8 +46,9 @@ public final class Terrain {
     /**
      * Blends the ground around levelled pads into the landscape: within {@code width} blocks of the nearest pad,
      * a column may lie at most d blocks above or below the pads' surface at distance d, so the edge becomes a
-     * walkable slope of one block per block instead of a cliff or a trench (NPCs could get trapped in those).
-     * Columns inside a pad, and columns holding water, are left alone.
+     * walkable slope of one block per block instead of a cliff or a trench (NPCs could get trapped in those). A
+     * column with no ground at all within reach (a ravine beside the pads) is filled the same way. Columns inside a
+     * pad, and columns holding water, are left alone.
      */
     public static void skirt(ServerLevel level, List<int[]> pads, int surfaceY, int width, BlockState surface) {
         int minX = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
@@ -66,7 +67,8 @@ public final class Terrain {
                 }
                 int top = Integer.MIN_VALUE;
                 boolean wet = false;
-                for (int y = surfaceY + 48; y >= surfaceY - width - 14; y--) {
+                int bottom = surfaceY - width - 14;
+                for (int y = surfaceY + 48; y >= bottom; y--) {
                     m.set(x, y, z);
                     BlockState s = level.getBlockState(m);
                     if (!s.getFluidState().isEmpty()) {
@@ -78,8 +80,14 @@ public final class Terrain {
                         break;
                     }
                 }
-                if (wet || top == Integer.MIN_VALUE) {
+                if (wet) {
                     continue;
+                }
+                if (top == Integer.MIN_VALUE) {
+                    // no ground within reach: a ravine or a deep cave mouth right beside the pads. Left as it is, it is a
+                    // sheer drop beside the walls that NPCs fell into and could not climb out of; it gets the same slope,
+                    // on dirt filled in from as deep as the search went
+                    top = bottom - 1;
                 }
                 int lo = surfaceY - d, hi = surfaceY + d;
                 if (top < lo) {

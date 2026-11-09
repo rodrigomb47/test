@@ -17,25 +17,49 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   travelling without leaving a 3-block radius (flipping between destinations). Switching destinations while stuck
   in the same spot keeps the count.
 * After two failed trips an NPC digs. Shut in (under cover, up a tree on 3+ blocks of wood or leaves, or more than
-  4 blocks below its destination) it keeps digging a staircase, one step per 20 ticks and at most 64 steps: up if
-  the destination is above, down if below, otherwise level. It stops when it is out or a walking route exists
-  (checked every 4 steps). Under a settlement's edge it first heads out from under the walls. Never dug: faction
-  structures, a settlement's walls and floor band, any mine's spiral stairs, containers, unbreakable blocks and
-  anything touching a fluid. Up a tree it breaks the leaves or log underfoot (the wood goes into its backpack).
+  1 block below its destination: a pit, a ravine floor, the foot of a cliff) it keeps digging (or building) its way,
+  one step per 20 ticks and at most 64 steps per round: up if the destination is above, down if below, otherwise
+  level. Only a walking route ends the digging (looked for after every step in the open, every 4th under cover):
+  being out in the open is not enough, a pit a few blocks below the destination is still a dead end. A round that
+  ends without a route (64 steps spent, or no step possible) makes the next one head 16 blocks off to one side,
+  then the other side, then straight away, then toward the destination again (PROPOSED), always to the
+  destination's height; arriving anywhere resets this. Under a settlement's edge it first heads out from under the
+  walls. Never dug: faction structures, a settlement's walls and floor band, any mine's spiral stairs, containers,
+  unbreakable blocks and anything touching a fluid. Up a tree it breaks the leaves or log underfoot (the wood goes
+  into its backpack).
 * Recovery teleports never land on leaves or on top of a tall trunk.
 * Bridging: where the step toward the destination has no floor, an NPC places a block of stone, cobblestone,
   deepslate, dirt, andesite, diorite, granite or tuff from its backpack (else any full solid block it carries:
   logs, planks...) and steps onto it (rising one block per step when the destination is above); never inside
   protected ground.
 * Climbing, in order: a dug step up toward the destination, a level step, a bridge step in any other direction, a
-  pillar (a block placed underfoot, the cell two above must be clear), and last a step back down. Stepping away
+  pillar (a block placed underfoot, the cell two above must be clear), and last a step back down. Out in the open
+  (not under cover) it first tries only ways up: a rising bridge step toward the destination, a step dug up in any
+  direction, then a pillar; level steps come after (beside a settlement's floor, which may not be dug, a level step
+  led into a hole under it and back). Stepping away
   from the destination or back down marks the spot left as a dead end it will not return to; it also never steps
   back onto one of the last 6 spots it left. Both are forgotten on arrival or 12000 ticks after the last step.
 * In a mine stairwell (the 2x2 spiral column below a mine's mouth, or an old mine's hut floor) it climbs the
   spiral one step at a time and puts back a missing stair floor with a block from its backpack. Miners do not
   follow ore veins into the stairs or the rock ring around them.
 * Leaving a settlement, NPCs head for the gate with the shortest walk to the destination; long trips past their own
-  base put their waypoints around the walls.
+  base put their waypoints around the walls. Under a roof at home (a gate's arch, a house) counts as above ground
+  for this.
+* Pits (PROPOSED, `NpcNavigator.PIT_DEPTH` = 8): a long-trip waypoint whose ground lies more than 8 blocks below
+  both the NPC and its destination (the floor of a ravine) is not used while another turn (up to ±85 degrees) is
+  not one. A path that only gets as far as such a pit floor is not followed either: the NPC first walks to a point
+  24 blocks off to one side (left first) whose path does not lead down into it, at most once per 100 ticks.
+* A path search that finds nothing but the spot the NPC stands on is repeated after 20 ticks, not every tick.
+* Underground (a mine, a cave), cells beside water cost no more than others in path searches (vanilla adds 8, as
+  for a river bank, which made a mine's tunnels sealed against an aquifer cost more than a way round over the
+  surface); on the surface the vanilla cost stays.
+* Miners walk along a mine level in stretches (PROPOSED, `MinerJob.TUNNEL_LEG` = 24): to a destination more than
+  24 blocks away (a tunnel face far from the shaft, or back), they walk to the dug tunnel cell within 24 blocks that
+  lies nearest it, at least 4 blocks closer, then on from there (vanilla path searches reach about 48 blocks). A
+  miner well away from its mine (14+ blocks from the shaft and outside its tunnels) heads for the mouth first,
+  whatever is overhead.
+* Base terrain: the 5-block slope round the levelled pads (one block per block) is also made where a column has no
+  ground within its reach (19 blocks below the pads' surface, a ravine beside the walls): it is filled with dirt.
 
 ## Campaign (config `campaign`)
 | Value | Default | Effect |

@@ -34,6 +34,11 @@ public abstract class Job {
     private int routeFailures;
     /** Steps left while digging out of a dead end (sealed cave, ravine, canopy) and ticks until the next one. */
     private int digSteps, digWait;
+    /**
+     * Dig-out rounds in a row that ended without a walking route (the step budget spent, or no step possible): each
+     * next round heads another way ({@link com.factionclash.npc.DigOut#escapeHeading}). Reset on arrival.
+     */
+    private int digRounds;
     private static final int MAX_DIG_STEPS = 64, DIG_STEP_TICKS = 20;
 
     protected Job(FactionNpc npc) {
@@ -320,13 +325,14 @@ public abstract class Job {
         switch (r) {
             case ARRIVED:
                 routeFailures = 0;
+                digRounds = 0;
                 return true;
             case MOVING:
                 status("Walking to " + label, "Travelling");
                 return false;
             default:
                 // repeated total failure: dig toward the destination instead of waiting forever. Shut in (cave,
-                // canopy, the floor of a pit or ravine) it keeps digging until it is out or a route exists, since
+                // canopy, the floor of a pit or ravine, below a cliff) it keeps digging until a route exists, since
                 // walking the partial path would only lead back to the same dead end.
                 if (++routeFailures >= 2 && com.factionclash.npc.DigOut.shutIn(npc, npc.navigator().routeTarget(pos))) {
                     digSteps = MAX_DIG_STEPS;
@@ -352,20 +358,27 @@ public abstract class Job {
             return false;
         }
         digWait = DIG_STEP_TICKS;
-        BlockPos toward = npc.navigator().routeTarget(pos);
-        boolean done = !com.factionclash.npc.DigOut.shutIn(npc, toward) || --digSteps <= 0;
-        if (!done && digSteps % 4 == 0) {
-            done = npc.navigator().canWalkToward(pos); // the staircase met a passage or slope that leads there
-        }
-        if (!done && !com.factionclash.npc.DigOut.step(npc, toward)) {
+        BlockPos route = npc.navigator().routeTarget(pos);
+        // Only a walking route ends the digging. Out in the open is not enough: on a ledge or in a pit a few blocks
+        // below the destination the walk led straight back to the hole it had dug (the spot nearest the
+        // destination), and the digging started again from there, for days. In the open the route is looked for
+        // after every step; under cover after every fourth (the staircase met a passage or slope that leads there).
+        boolean open = com.factionclash.npc.DigOut.free(npc);
+        boolean walk = (open || digSteps % 4 == 0) && npc.navigator().canWalkToward(pos);
+        if (walk || --digSteps <= 0) {
+            if (!walk) {
+                digRounds++; // the budget is spent with no way out yet: the next round heads another way
+            }
             digSteps = 0;
+            npc.navigator().reset();
+            return false;
+        }
+        if (!com.factionclash.npc.DigOut.step(npc, com.factionclash.npc.DigOut.escapeHeading(npc, route, digRounds))) {
+            digSteps = 0;
+            digRounds++;
             status("Cannot dig a way out toward " + label + ", will retry", "Blocked");
             waitFor(100);
             return false;
-        }
-        if (done) {
-            digSteps = 0;
-            npc.navigator().reset();
         }
         return false;
     }

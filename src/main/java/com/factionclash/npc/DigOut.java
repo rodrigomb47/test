@@ -53,14 +53,51 @@ public final class DigOut {
     }
 
     /**
-     * Shut in with no route: under cover, on a canopy, or at the bottom of a pit or ravine far below the
-     * destination. Such an NPC keeps digging its staircase instead of walking back to the same dead end.
+     * Shut in with no route: under cover, on a canopy, or below the destination (more than a step) in a pit, on a
+     * ravine floor or at the foot of a cliff. Such an NPC keeps digging (or building) its way up instead of walking
+     * back to the same dead end, until a walking route exists.
      */
     public static boolean shutIn(FactionNpc npc, BlockPos target) {
         return !free(npc) || target.getY() - npc.getBlockY() > CLIMB;
     }
 
-    private static final int CLIMB = 4;
+    /** Blocks below the destination from which an NPC with no route counts as shut in (a step up is a walk). */
+    private static final int CLIMB = 1;
+
+    /**
+     * Where to head on dig-out round {@code round} after the earlier rounds ended without a walking route: toward the
+     * destination on round 0, then a point {@link #ESCAPE_REACH} blocks off to one side, the other side, straight
+     * away, and toward it again; always at the destination's height. A pit whose near side may not be dug (a
+     * settlement's floor) is then left by another side, and the walk goes round.
+     */
+    public static BlockPos escapeHeading(FactionNpc npc, BlockPos target, int round) {
+        double dx = target.getX() + 0.5 - npc.getX(), dz = target.getZ() + 0.5 - npc.getZ();
+        double len = Math.max(1.0e-3, Math.sqrt(dx * dx + dz * dz));
+        dx /= len;
+        dz /= len;
+        double rx, rz;
+        switch (Math.floorMod(round, 4)) {
+            case 1 -> {
+                rx = -dz;
+                rz = dx;
+            }
+            case 2 -> {
+                rx = dz;
+                rz = -dx;
+            }
+            case 3 -> {
+                rx = -dx;
+                rz = -dz;
+            }
+            default -> {
+                return target;
+            }
+        }
+        return BlockPos.containing(npc.getX() + rx * ESCAPE_REACH, target.getY(), npc.getZ() + rz * ESCAPE_REACH);
+    }
+
+    /** PROPOSED: how far off to the side an escape heading lies. */
+    private static final int ESCAPE_REACH = 16;
 
     public static boolean step(FactionNpc npc, BlockPos target) {
         if (!(npc.level() instanceof ServerLevel level)) {
@@ -92,7 +129,16 @@ public final class DigOut {
         dirs.sort(Comparator.comparingDouble(d -> -(d.getStepX() * fx + d.getStepZ() * fz)));
         boolean below = target.getY() < p.getY() - 1;
         boolean climb = target.getY() > p.getY() + 1;
-        if (!below && bridge(level, npc, p, dirs.get(0), climb)) {
+        if (climb && !underground) {
+            // out in the open below the destination with no route (a pit, a ravine floor, the foot of a cliff): get
+            // up to its level first - a rising step toward it, a step dug up in any direction, or a block underfoot -
+            // before any level step. Beside ground that may not be dug (a settlement's floor) a level step only leads
+            // into a hole under it and back out, and the walk from there would lead straight back in.
+            if (bridge(level, npc, p, dirs.get(0), true, false) || move(level, npc, p, dirs, 1, fx, fz, false) || pillar(level, npc, p)) {
+                return true;
+            }
+        }
+        if (!below && bridge(level, npc, p, dirs.get(0), climb, true)) {
             return true;
         }
         // destination above: climb (a step up in any direction beats walking along a ledge back to the same dead
@@ -107,7 +153,7 @@ public final class DigOut {
             // nothing to dig a step into and nowhere new to go (open air, or ground that may not be dug, such as a
             // settlement's path overhead): build up instead - a block to step onto, or one underfoot to pillar up
             for (Direction d : dirs.subList(1, dirs.size())) {
-                if (bridge(level, npc, p, d, true)) {
+                if (bridge(level, npc, p, d, true, true)) {
                     return true;
                 }
             }
@@ -265,14 +311,15 @@ public final class DigOut {
     /**
      * A gap toward the destination (a ravine between the NPC and home, a drop off a ledge): like a player, it places
      * a block from its backpack where the floor is missing and steps onto it, one block higher each step when the
-     * destination is above. Only where digging cannot help, and never inside protected ground.
+     * destination is above (and, unless {@code levelToo} is false, level when it cannot rise). Only where digging
+     * cannot help, and never inside protected ground.
      */
-    private static boolean bridge(ServerLevel level, FactionNpc npc, BlockPos p, Direction d, boolean climb) {
+    private static boolean bridge(ServerLevel level, FactionNpc npc, BlockPos p, Direction d, boolean climb, boolean levelToo) {
         int slot = blockSlot(level, npc); // stone or dirt, else any solid block it carries (logs, planks...)
         if (slot < 0) {
             return false;
         }
-        for (int dy : climb ? new int[]{1, 0} : new int[]{0}) {
+        for (int dy : climb ? (levelToo ? new int[]{1, 0} : new int[]{1}) : new int[]{0}) {
             BlockPos q = p.relative(d).above(dy);
             BlockPos floor = q.below();
             BlockState fs = level.getBlockState(floor);

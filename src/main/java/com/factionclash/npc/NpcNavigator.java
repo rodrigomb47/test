@@ -47,6 +47,16 @@ public final class NpcNavigator {
     private double bestDist;
     private int sinceBest;
     private int lastTeleport = -1000;
+    /**
+     * The last path found leads nowhere (a partial path that ends where the NPC stands): the navigation is "done" at
+     * once, and without this the next search would run on the very next tick, tick after tick, for as long as the
+     * NPC is stuck. It waits for the repath timer instead.
+     */
+    private boolean deadEndPath;
+    /** A point off to one side the NPC is walking to, rounding a pit that the way to its destination leads into. */
+    private BlockPos detour;
+    /** PROPOSED: a waypoint whose ground lies this far below both ends of the trip is in a pit or ravine. */
+    static final int PIT_DEPTH = 8;
     /** PROPOSED: ticks without getting at least a block closer before the trip counts as failing (pacing back and forth). */
     private static final int NO_PROGRESS_TICKS = 300;
 
@@ -108,6 +118,7 @@ public final class NpcNavigator {
 
     public void reset() {
         target = null;
+        detour = null;
         failures = 0;
         failAnchor = null;
         stuckChecks = 0;
@@ -136,6 +147,7 @@ public final class NpcNavigator {
             }
             stuckChecks = 0;
             repathTimer = 0;
+            detour = null;
             lastCheck = npc.position();
             progressTimer = 0;
             bestDist = Double.MAX_VALUE;
@@ -144,6 +156,7 @@ public final class NpcNavigator {
         if (within(npc, target, this.reach)) {
             npc.getNavigation().stop();
             stallTicks = 0;
+            lastProblem = "";
             deadEnds.clear();
             recentSpots.clear();
             return Result.ARRIVED;
@@ -162,7 +175,7 @@ public final class NpcNavigator {
             lastProblem = "going back and forth";
             return Result.FAILED;
         }
-        if (npc.getNavigation().isDone() || --repathTimer <= 0) {
+        if (npc.getNavigation().isDone() && !deadEndPath || --repathTimer <= 0) {
             repath(speed);
         }
         double dist = npc.position().distanceTo(Vec3.atBottomCenterOf(target));
@@ -241,6 +254,18 @@ public final class NpcNavigator {
         return best == null || bestHere <= 4 ? dest : best;
     }
 
+    /** In or right around its own settlement's walls box, at its floor level (so never down in a cave). */
+    private boolean atHome() {
+        com.factionclash.campaign.BaseState home = npc.base();
+        if (home == null || home.destroyed || !home.isSettlement()) {
+            return false;
+        }
+        int h = com.factionclash.campaign.BaseZones.half(home) + 3;
+        BlockPos p = npc.blockPosition();
+        return Math.abs(p.getX() - home.center.getX()) <= h && Math.abs(p.getZ() - home.center.getZ()) <= h
+                && p.getY() >= home.center.getY() - 2;
+    }
+
     /** Where travelling to {@code dest} really heads first (the nearest gate when coming home from outside). */
     public BlockPos routeTarget(BlockPos dest) {
         return viaGate(dest);
@@ -256,23 +281,39 @@ public final class NpcNavigator {
         BlockPos goal = dest;
         double hd = Math.sqrt(Mth.square(dest.getX() + 0.5 - npc.getX()) + Mth.square(dest.getZ() + 0.5 - npc.getZ()));
         int surface = npc.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, npc.getBlockX(), npc.getBlockZ());
-        boolean underground = npc.getY() < surface - 3;
+        // (under a roof at home - a gate's arch, a house - is not underground: leaving through a gate for somewhere
+        // far, the direct search found only a partial path back inside, and the NPC paced in the gateway)
+        boolean underground = npc.getY() < surface - 3 && !atHome();
         if (hd > LONG_TRIP && !underground) {
             goal = waypoint(dest, hd);
         }
-        Path path = npc.getNavigation().createPath(goal, 1);
+        if (detour != null && (underground || npc.blockPosition().closerThan(detour, 3))) {
+            detour = null;
+        }
+        Path path = search(detour != null ? detour : goal, underground);
+        if (detour == null && !underground && hd > 16 && intoPit(path, dest) && npc.tickCount >= nextExitSearch) {
+            nextExitSearch = npc.tickCount + 100;
+            // the nearest the search got is the floor of a pit or ravine between here and there (a partial path down
+            // its slope): nobody climbs back out of there. Round it instead, by a point off to one side or the other.
+            Path around = aroundPit(dest, hd);
+            if (around != null) {
+                path = around;
+                detour = around.getTarget();
+            }
+        }
         if ((path == null || !path.canReach()) && underground && (hd > 16 || dest.getY() - npc.getY() > 8) && npc.tickCount >= nextExitSearch) {
             nextExitSearch = npc.tickCount + 200; // path searches are expensive: bounded per NPC
             // No route from down here (lost in a cave or ravine): climb out first, toward the nearest reachable
             // surface point. A miner in its own tunnels has a full route and never takes this detour.
             BlockPos exit = surfaceExit(dest, hd);
             if (exit != null) {
-                Path out = npc.getNavigation().createPath(exit, 1);
+                Path out = search(exit, true);
                 if (out != null) {
                     path = out;
                 }
             }
         }
+        deadEndPath = false;
         if (path == null && !npc.onGround() && !npc.isInLiquid()) {
             // vanilla plans no path in mid-air (each step down a staircase is a small drop): not a failure, look
             // again as soon as it lands
@@ -286,7 +327,8 @@ public final class NpcNavigator {
             return;
         }
         npc.getNavigation().moveTo(path, speed);
-        repathTimer = 100;
+        deadEndPath = !path.canReach() && path.getNodeCount() <= 1;
+        repathTimer = deadEndPath ? 20 : 100;
     }
 
     private BlockPos waypoint(BlockPos dest, double hd) {
@@ -302,7 +344,10 @@ public final class NpcNavigator {
         boolean shun = known != null && !com.factionclash.campaign.BaseZones.nearKnownDanger(known, dest, danger)
                 && !com.factionclash.campaign.BaseZones.nearKnownDanger(known, npc.blockPosition(), danger);
         int wx = 0, wz = 0, bx = 0, bz = 0, bestGap = -1;
-        boolean found = false;
+        BlockPos pit = null;
+        // the bottom of a pit or ravine is no waypoint: the partial path toward it leads down a slope into it, and
+        // nobody climbs back out of there
+        int pitBelow = Math.min(npc.getBlockY(), dest.getY()) - PIT_DEPTH;
         // passing by its own settlement, the waypoint goes around the walls rather than back in through a gate
         for (double turn : new double[]{0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5}) {
             double c = Math.cos(turn), sn = Math.sin(turn);
@@ -313,31 +358,41 @@ public final class NpcNavigator {
             if (!walls) {
                 continue;
             }
-            if (!shun) {
-                found = true;
-                break;
+            if (shun) {
+                // a detour around dangerous ground stays on the campaign map: walking to the waypoint generates its chunk
+                boolean onMap = turn == 0 || com.factionclash.campaign.MapBounds.inside(cd, wx, wz, 0);
+                int gap = com.factionclash.campaign.BaseZones.dangerGap(known, wx, wz);
+                if (!onMap || gap <= danger) {
+                    if (onMap && gap > bestGap) {
+                        bestGap = gap;
+                        bx = wx;
+                        bz = wz;
+                    }
+                    continue;
+                }
             }
-            // a detour around dangerous ground stays on the campaign map: walking to the waypoint generates its chunk
-            boolean onMap = turn == 0 || com.factionclash.campaign.MapBounds.inside(cd, wx, wz, 0);
-            int gap = com.factionclash.campaign.BaseZones.dangerGap(known, wx, wz);
-            if (onMap && gap > danger) {
-                found = true;
-                break;
+            BlockPos top = surface(wx, wz);
+            if (top.getY() >= pitBelow) {
+                return top;
             }
-            if (onMap && gap > bestGap) {
-                bestGap = gap;
-                bx = wx;
-                bz = wz;
+            if (pit == null) {
+                pit = top; // every turn may lead down (a wide valley): then the first one after all
             }
         }
-        if (!found && bestGap >= 0) {
+        if (pit != null) {
+            return pit;
+        }
+        if (bestGap >= 0) {
             // no turn keeps out of the dangerous ground: the one that stays farthest from it (still clear of the walls)
-            wx = bx;
-            wz = bz;
+            return surface(bx, bz);
         }
-        // Heightmaps of unloaded chunks read as the world floor, so load (or generate) the waypoint's chunk first.
-        npc.level().getChunk(wx >> 4, wz >> 4);
-        return npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(wx, 0, wz));
+        return surface(wx, wz);
+    }
+
+    /** The surface at a column. Heightmaps of unloaded chunks read as the world floor: its chunk is loaded first. */
+    private BlockPos surface(int x, int z) {
+        npc.level().getChunk(x >> 4, z >> 4);
+        return npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
     }
 
     private void fail(int n) {
@@ -347,12 +402,53 @@ public final class NpcNavigator {
         failures += n;
     }
 
+    /**
+     * A vanilla path search. Underground (a mine, a cave) a cell beside water costs no more than any other: vanilla
+     * prices it like a river bank (8 extra), and a mine's tunnels sealed against an aquifer then cost more than a
+     * long way round over the surface, so the search went up the stairs and across the top, or gave up partway.
+     * On the surface the vanilla price stays (a bank one could slip off).
+     */
+    private Path search(BlockPos goal, boolean underground) {
+        npc.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER_BORDER,
+                underground ? 0.0F : net.minecraft.world.level.pathfinder.PathType.WATER_BORDER.getMalus());
+        return npc.getNavigation().createPath(goal, 1);
+    }
+
     /** Whether a walking route toward {@code dest} exists from here (its first surface waypoint on long trips). */
     public boolean canWalkToward(BlockPos dest) {
         BlockPos d = viaGate(dest);
         double hd = Math.sqrt(Mth.square(d.getX() + 0.5 - npc.getX()) + Mth.square(d.getZ() + 0.5 - npc.getZ()));
-        Path p = npc.getNavigation().createPath(hd > LONG_TRIP ? waypoint(d, hd) : d, 1);
+        int surface = npc.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, npc.getBlockX(), npc.getBlockZ());
+        Path p = search(hd > LONG_TRIP ? waypoint(d, hd) : d, npc.getY() < surface - 3 && !atHome());
         return p != null && p.canReach();
+    }
+
+    /** A partial path whose end lies far below both this NPC and the destination: it leads down into a pit. */
+    private boolean intoPit(Path path, BlockPos dest) {
+        return path != null && !path.canReach() && path.getEndNode() != null
+                && path.getEndNode().y < Math.min(npc.getBlockY(), dest.getY()) - PIT_DEPTH;
+    }
+
+    /**
+     * A path to a surface point off to one side of the way to {@code dest} (turned 30, 60 or 85 degrees, left first),
+     * that is not itself in a pit and that a search reaches without leading down into one; null if there is none.
+     */
+    private Path aroundPit(BlockPos dest, double hd) {
+        double ux = (dest.getX() + 0.5 - npc.getX()) / hd, uz = (dest.getZ() + 0.5 - npc.getZ()) / hd;
+        double reach = Math.min(hd, WAYPOINT_STEP);
+        int pitBelow = Math.min(npc.getBlockY(), dest.getY()) - PIT_DEPTH;
+        for (double turn : new double[]{0.5, -0.5, 1.0, -1.0, 1.5, -1.5}) {
+            double c = Math.cos(turn), sn = Math.sin(turn);
+            BlockPos top = surface(Mth.floor(npc.getX() + (ux * c - uz * sn) * reach), Mth.floor(npc.getZ() + (ux * sn + uz * c) * reach));
+            if (top.getY() < pitBelow) {
+                continue;
+            }
+            Path p = search(top, false);
+            if (p != null && (p.canReach() || !intoPit(p, dest))) {
+                return p;
+            }
+        }
+        return null;
     }
 
     /** Finds a surface position near an underground NPC (toward its target first) that a path can reach. */
@@ -364,7 +460,7 @@ public final class NpcNavigator {
                 int x = Mth.floor(npc.getX() + d[0] * dist), z = Mth.floor(npc.getZ() + d[1] * dist);
                 npc.level().getChunk(x >> 4, z >> 4);
                 BlockPos top = npc.level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
-                Path p = npc.getNavigation().createPath(top, 1);
+                Path p = search(top, true);
                 if (p != null && p.canReach()) {
                     return top;
                 }

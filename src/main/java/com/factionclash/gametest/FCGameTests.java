@@ -1610,6 +1610,59 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * A miner on its way to the storehouse at the bottom of a pit dug into the ground right outside a settlement's
+     * wall, where the pad's top layer and the wall may not be dug (seen in a campaign: a ravine beside the south
+     * wall). Its destination is four blocks up and behind the wall. With no route it used to step from the pit into a
+     * hole it dug under the pad (the spot nearest the storehouse) and back out, stop digging there because it stood
+     * in the open only a few blocks below its destination, and walk straight back into the hole, for days. Now it
+     * keeps digging until a walking route exists: it builds itself up beside the pad's edge with blocks from its
+     * backpack, steps onto the ground outside the wall and walks round the wall's end to the storehouse.
+     */
+    @GameTest(template = "platform", timeoutTicks = 2400, batch = "pit_escape", skyAccess = true)
+    public static void npcClimbsOutOfAPitBesideProtectedGround(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 2400, new BlockPos(4, 6, 4));
+        // the settlement's centre lies off the platform to the north: its walls box (and with it its protected floor
+        // band, y >= 5 here) takes in the pad up to z = 11 but neither the pit nor the hill beyond it
+        t.base.center = h.absolutePos(new BlockPos(12, 6, -14));
+        var dirt = Blocks.DIRT.defaultBlockState();
+        var grass = Blocks.GRASS_BLOCK.defaultBlockState();
+        var stone = Blocks.STONE.defaultBlockState();
+        for (BlockPos p : BlockPos.betweenClosed(0, 2, 0, 23, 5, 23)) {
+            boolean pit = p.getX() >= 6 && p.getX() <= 11 && p.getZ() >= 12 && p.getZ() <= 16;
+            boolean chest = p.getY() == 2 && p.getZ() == 2 && p.getX() >= 2 && p.getX() <= 5; // the test storehouse
+            if (!pit && !chest) {
+                // the pad (z <= 11, walked on at y 6) and the hill round the pit, both four blocks above its floor
+                h.setBlock(p, p.getY() == 5 ? grass : p.getZ() <= 11 ? dirt : stone);
+            }
+        }
+        java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> wall = new java.util.HashMap<>();
+        for (int x = 0; x <= 17; x++) {
+            for (int y = 6; y <= 8; y++) {
+                h.setBlock(new BlockPos(x, y, 10), Blocks.STONE_BRICKS);
+                wall.put(h.absolutePos(new BlockPos(x, y, 10)), Blocks.STONE_BRICKS.defaultBlockState());
+            }
+        }
+        // the wall is part of the settlement's plan; its gap is at the east end (x 18..23)
+        t.base.structures.add(com.factionclash.campaign.StructureRecord.of("Test wall", wall));
+        t.base.invalidatePlanIndex();
+        FactionNpc n = t.npc(8, 12, NpcRole.MINER);
+        n.equip(new ItemStack(Items.STONE_PICKAXE));
+        n.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 32));
+        n.inventory().setItem(1, new ItemStack(Items.RAW_IRON, 6)); // a load for the storehouse
+        BlockPos stand = h.absolutePos(new BlockPos(4, 6, 4));
+        t.onEachTick(() -> {
+            if (!com.factionclash.npc.NpcNavigator.within(n, stand, 2.0)) {
+                return;
+            }
+            for (int x = 0; x <= 23; x++) {
+                t.assertTrue(h.getBlockState(new BlockPos(x, 5, 11)).is(Blocks.GRASS_BLOCK), "the pad's protected edge was dug at x=" + x);
+            }
+            wall.forEach((p, s) -> t.assertTrue(h.getLevel().getBlockState(p) == s, "the wall was dug at " + p));
+            t.succeed();
+        });
+    }
+
     /** Shut in just above where it needs to be (a pocket over a mine tunnel), an NPC digs down toward it, not up. */
     @GameTest(template = "platform", timeoutTicks = 100)
     public static void sealedNpcDigsDownTowardALowerGoal(GameTestHelper h) {
