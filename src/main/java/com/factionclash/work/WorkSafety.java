@@ -5,6 +5,7 @@ import com.factionclash.campaign.BaseZones;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.MapBounds;
 import com.factionclash.campaign.WorkplaceState;
+import com.factionclash.logic.FishingWater;
 import com.factionclash.structure.MineLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -156,14 +157,27 @@ public final class WorkSafety {
     public enum Use { MINE_SITE, GROVE, FISH_STAND }
 
     /**
-     * The one registry of reserved places: true if {@code p} is kept free of work {@code u}. A grove sapling keeps 6
-     * away from any mine origin and off the base's road strip (|dz| at most 3 for |dx| up to the walls plus 30); a
-     * fisherman's stand keeps 8 away from any mine origin (Chebyshev).
+     * The one registry of reserved places: true if {@code p} is kept free of work {@code u} (distances are
+     * Chebyshev). A mine site keeps 12 away from any base's fishing spot (its bobber and its stand) while that spot
+     * has water; a grove sapling keeps 6 away from any mine origin and from such a fishing spot, and off the base's
+     * road strip (|dz| at most 3 for |dx| up to the walls plus 30); a fisherman's stand keeps 8 away from any mine
+     * origin. Fishing spots without known water are placeholders at a base centre and reserve nothing.
      */
     public static boolean reserved(CampaignData d, BaseState own, BlockPos p, Use u) {
-        // step 4: MINE_SITE within 12 of a fishery origin or extent and within 6 of a woodland sapling or replant entry
-        // step 5: GROVE within 6 of a VALID fishery origin or extent
-        // step 6: FISH_STAND within 1 of a woodland sapling
+        // step 6: MINE_SITE within 6 of a woodland planted sapling or replant entry; FISH_STAND within 1 of a planted sapling
+        int fisheryRadius = switch (u) {
+            case MINE_SITE -> 12;
+            case GROVE -> 6;
+            case FISH_STAND -> -1;
+        };
+        if (fisheryRadius >= 0) {
+            for (WorkplaceState w : d.workplaces.values()) {
+                if (w.type == WorkplaceState.Type.FISHERY && w.spot == FishingWater.VALID
+                        && (within(p, w.origin, fisheryRadius) || within(p, w.extent, fisheryRadius))) {
+                    return true;
+                }
+            }
+        }
         if (u == Use.GROVE && own != null) {
             int dx = p.getX() - own.center.getX(), dz = p.getZ() - own.center.getZ();
             if (Math.abs(dz) <= 3 && Math.abs(dx) <= BaseZones.half(own) + 30) {
@@ -184,5 +198,9 @@ public final class WorkSafety {
             }
         }
         return false;
+    }
+
+    private static boolean within(BlockPos p, BlockPos q, int r) {
+        return q != null && Math.max(Math.abs(p.getX() - q.getX()), Math.abs(p.getZ() - q.getZ())) <= r;
     }
 }

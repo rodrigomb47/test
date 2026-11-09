@@ -102,6 +102,10 @@ public final class BaseInfo {
                         + ", miner " + who + ", output " + w.totalOutput + " - " + w.note);
                 continue;
             }
+            if (w.type == WorkplaceState.Type.FISHERY) {
+                out.add(fisheryLine(level, w, who));
+                continue;
+            }
             out.add(w.type.label + " #" + w.id + ": tier " + w.tier + "/" + w.type.maxTier + (w.upgrading() ? " (upgrading, step " + w.upgradeStep + ")" : "")
                     + ", worker " + who + ", output " + w.totalOutput);
         }
@@ -134,6 +138,18 @@ public final class BaseInfo {
         }
         out.add("Great People: not implemented in this build");
         return out;
+    }
+
+    /** The fishing spot's line: where it is and what it caught, or that water is being looked for or is not there. */
+    static String fisheryLine(ServerLevel level, WorkplaceState w, String who) {
+        String head = w.type.label + " #" + w.id;
+        return switch (w.spot) {
+            case com.factionclash.logic.FishingWater.VALID -> head + " at " + w.origin.toShortString()
+                    + (w.open ? " (open water)" : " (still water)") + ", worker " + who + ", " + w.totalOutput + " caught";
+            case com.factionclash.logic.FishingWater.NONE -> head + ": no fishing water within reach (searched "
+                    + String.format(java.util.Locale.ROOT, "%.1f", Math.max(0, level.getGameTime() - w.searched) / 24000.0) + " days ago)";
+            default -> head + ": looking for fishing water";
+        };
     }
 
     public static void sendBaseInfo(ServerPlayer p, BaseState b) {

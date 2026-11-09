@@ -1472,6 +1472,346 @@ public final class FCGameTests {
         return h.absolutePos(new BlockPos(x, 2, z));
     }
 
+    // ------------------------------------------------------------------ fishing on real water
+
+    /** The farm's irrigation, as the base layout has it: a channel 1 deep and 5 long at relative x 5, z 9..13, farmland on both sides. Returns its water (absolute). */
+    private static java.util.Set<BlockPos> farmChannel(GameTestHelper h) {
+        java.util.Set<BlockPos> water = new java.util.HashSet<>();
+        for (int z = 9; z <= 13; z++) {
+            h.setBlock(new BlockPos(4, 1, z), Blocks.FARMLAND);
+            h.setBlock(new BlockPos(6, 1, z), Blocks.FARMLAND);
+            h.setBlock(new BlockPos(5, 0, z), Blocks.STONE);
+            h.setBlock(new BlockPos(5, 1, z), Blocks.WATER);
+            water.add(h.absolutePos(new BlockPos(5, 1, z)));
+        }
+        return water;
+    }
+
+    /** A pond standing on the platform: water at relative y 2..3 inside a stone rim (y 2..3) one block around it. Returns its water (absolute). */
+    private static java.util.Set<BlockPos> raisedPond(GameTestHelper h, int x0, int z0, int x1, int z1) {
+        java.util.Set<BlockPos> water = new java.util.HashSet<>();
+        for (int x = x0 - 1; x <= x1 + 1; x++) {
+            for (int z = z0 - 1; z <= z1 + 1; z++) {
+                boolean inside = x >= x0 && x <= x1 && z >= z0 && z <= z1;
+                for (int y = 2; y <= 3; y++) {
+                    h.setBlock(new BlockPos(x, y, z), inside ? Blocks.WATER : Blocks.STONE);
+                    if (inside) {
+                        water.add(h.absolutePos(new BlockPos(x, y, z)));
+                    }
+                }
+            }
+        }
+        return water;
+    }
+
+    /**
+     * A pond dug into the platform: water at relative y 0..1 (its surface level with the floor) over a stone bottom
+     * and sides, so a fisherman can walk right up to the bank. Returns its water (absolute).
+     */
+    private static java.util.Set<BlockPos> sunkenPond(GameTestHelper h, int x0, int z0, int x1, int z1) {
+        java.util.Set<BlockPos> water = new java.util.HashSet<>();
+        for (int x = x0 - 1; x <= x1 + 1; x++) {
+            for (int z = z0 - 1; z <= z1 + 1; z++) {
+                h.setBlock(new BlockPos(x, -1, z), Blocks.STONE);
+                h.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+            }
+        }
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                for (int y = 0; y <= 1; y++) {
+                    h.setBlock(new BlockPos(x, y, z), Blocks.WATER);
+                    water.add(h.absolutePos(new BlockPos(x, y, z)));
+                }
+            }
+        }
+        return water;
+    }
+
+    /** Checks a found fishing spot: bobber in {@code pond}, stand on dry solid ground with head room, 2..5 away and 1..2 above. */
+    private static void assertGoodSpot(GameTestHelper h, com.factionclash.logic.FishingWater.Spot s, java.util.Set<BlockPos> pond,
+                                       java.util.Set<BlockPos> never) {
+        var level = h.getLevel();
+        h.assertTrue(s != null, "a fishing spot should be found in the pond");
+        BlockPos bob = new BlockPos(s.bx(), s.by(), s.bz()), stand = new BlockPos(s.sx(), s.sy(), s.sz());
+        h.assertTrue(pond.contains(bob), "the bobber should float on the pond, not at " + bob.toShortString());
+        h.assertFalse(never.contains(bob) || never.contains(stand), "never the farm's irrigation: " + bob.toShortString());
+        h.assertTrue(level.getBlockState(stand.below()).isFaceSturdy(level, stand.below(), net.minecraft.core.Direction.UP),
+                "the stand " + stand.toShortString() + " should be on solid ground");
+        for (BlockPos p : new BlockPos[]{stand, stand.above()}) {
+            h.assertTrue(level.getBlockState(p).getCollisionShape(level, p).isEmpty() && level.getFluidState(p).isEmpty(),
+                    "the stand should be dry, with room for a body at " + p.toShortString());
+        }
+        int cheb = Math.max(Math.abs(s.sx() - s.bx()), Math.abs(s.sz() - s.bz()));
+        h.assertTrue(cheb >= 2 && cheb <= 5 && s.sy() - s.by() >= 1 && s.sy() - s.by() <= 2,
+                "the stand should be 2..5 from the bobber and 1..2 above it: " + stand.toShortString() + " / " + bob.toShortString());
+    }
+
+    /**
+     * The fisherman never fishes the farm's water: next to the irrigation channel (1 deep, 5 blocks, farmland on both
+     * sides) and a 7x7 pond, every search (all four grid parities) picks the pond, with a dry stand on its rim.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static", skyAccess = true)
+    public static void fishermanNeverPicksFarmIrrigation(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            java.util.Set<BlockPos> channel = farmChannel(h);
+            java.util.Set<BlockPos> pond = raisedPond(h, 15, 15, 21, 21);
+            for (int i = 0; i < 4; i++) {
+                var s = com.factionclash.work.FishingSpots.search(h.getLevel(), t.data, t.base, t.base.center, 11, 11, List.of());
+                assertGoodSpot(h, s, pond, channel);
+            }
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * An old save's fishing spot on the farm channel loads as not searched yet, keeps its id, worker and catch total,
+     * waits at the base centre after the upkeep, and the director's search moves it onto the pond.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static", skyAccess = true)
+    public static void legacyFarmFisheryIsRelocated(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            var level = h.getLevel();
+            java.util.Set<BlockPos> channel = farmChannel(h);
+            java.util.Set<BlockPos> pond = raisedPond(h, 15, 15, 21, 21);
+            com.factionclash.campaign.WorkplaceState old = new com.factionclash.campaign.WorkplaceState();
+            old.type = com.factionclash.campaign.WorkplaceState.Type.FISHERY;
+            old.origin = h.absolutePos(new BlockPos(5, 1, 13)); // the channel's end, as older versions chose
+            old.extent = old.origin.offset(0, 1, 1);
+            old.assigned = java.util.UUID.randomUUID();
+            old.totalOutput = 17;
+            t.addWorkplace(old);
+            CompoundTag tag = old.save();
+            for (String k : new String[]{"fishV", "spot", "open", "searched", "bad"}) {
+                tag.remove(k);
+            }
+            var legacy = com.factionclash.campaign.WorkplaceState.load(tag);
+            h.assertTrue(legacy != null && legacy.spot == com.factionclash.logic.FishingWater.UNSEARCHED, "an old fishing spot loads as not searched");
+            t.data.workplaces.put(legacy.id, legacy);
+            com.factionclash.campaign.BaseBuilder.ensureWorkplaces(t.data, t.base);
+            long fisheries = t.base.workplaces.stream().map(t.data::workplace)
+                    .filter(w -> w != null && w.type == com.factionclash.campaign.WorkplaceState.Type.FISHERY).count();
+            h.assertTrue(fisheries == 1, "the upkeep must not add a second fishing spot: " + fisheries);
+            h.assertTrue(legacy.origin.equals(t.base.center) && legacy.extent.equals(t.base.center),
+                    "the old spot should wait at the base centre, not on the channel: " + legacy.origin.toShortString());
+            com.factionclash.work.FishingSpots.maintain(level, t.data, t.base, level.getGameTime(), true);
+            h.assertTrue(legacy.spot == com.factionclash.logic.FishingWater.VALID && pond.contains(legacy.origin) && !channel.contains(legacy.origin),
+                    "the director should move the spot onto the pond: " + legacy.origin.toShortString() + " spot " + legacy.spot);
+            h.assertTrue(legacy.id == old.id && old.assigned.equals(legacy.assigned) && legacy.totalOutput == 17,
+                    "id, worker and catch total are kept");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /** A Lure III rod: the bite comes sooner, so the fishing tests run in reasonable time. */
+    private static ItemStack lureRod(GameTestHelper h) {
+        ItemStack rod = new ItemStack(Items.FISHING_ROD);
+        var reg = h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        rod.enchant(reg.getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.LURE), 3);
+        return rod;
+    }
+
+    /** A fisherman with a Lure III rod and the base's fishing spot set on the pond it would find itself. */
+    private static FactionNpc fisherAtPond(GameTestHelper h, GameTestBases.Handle t, java.util.Set<BlockPos> pond) {
+        var s = com.factionclash.work.FishingSpots.search(h.getLevel(), t.data, t.base, t.base.center, 11, 11, List.of());
+        assertGoodSpot(h, s, pond, java.util.Set.of());
+        var w = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.FISHERY, t.base.center);
+        com.factionclash.work.FishingSpots.apply(t.data, w, s);
+        FactionNpc fisher = t.npc(6, 6, NpcRole.FISHERMAN);
+        fisher.equip(lureRod(h));
+        return fisher;
+    }
+
+    /** A fisherman walks to the bank of a pond outside the walls, casts and brings in a catch. */
+    @GameTest(template = "platform", timeoutTicks = 900, batch = "fish_catch", skyAccess = true)
+    public static void fishermanCatchesAtAPond(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 900);
+        java.util.Set<BlockPos> pond = sunkenPond(h, 15, 15, 21, 21);
+        FactionNpc fisher;
+        try {
+            fisher = fisherAtPond(h, t, pond);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            var fishery = t.data.workplaces.values().stream()
+                    .filter(x -> x.baseId == t.base.id && x.type == com.factionclash.campaign.WorkplaceState.Type.FISHERY).findFirst().orElseThrow();
+            h.assertTrue(fishery.spot == com.factionclash.logic.FishingWater.VALID, "the pond should stay the fishing spot: " + fisher.status());
+            if (fishery.totalOutput > 0 && !fisher.inventory().isEmpty()) {
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * When the water at the spot is gone (the bobber's block turned to stone after the first cast), the fisherman
+     * gives the spot up within two casts and remembers it, instead of waiting there for ever. The 5x5 pond is then
+     * too small, so no other spot is found.
+     */
+    @GameTest(template = "platform", timeoutTicks = 900, batch = "fish_gone", skyAccess = true)
+    public static void fishermanLeavesWhenTheWaterIsGone(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 900);
+        java.util.Set<BlockPos> pond = sunkenPond(h, 16, 16, 20, 20);
+        FactionNpc fisher;
+        try {
+            fisher = fisherAtPond(h, t, pond);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        var fishery = t.data.workplaces.values().stream()
+                .filter(x -> x.baseId == t.base.id && x.type == com.factionclash.campaign.WorkplaceState.Type.FISHERY).findFirst().orElseThrow();
+        BlockPos[] gone = new BlockPos[1];
+        int[] castsAtGone = new int[1];
+        t.onEachTick(() -> {
+            h.assertFalse(fisher.status().contains("has no water"), "the fisherman must not wait at a dry spot: " + fisher.status());
+            if (!(fisher.job() instanceof com.factionclash.work.FishermanJob job)) {
+                return;
+            }
+            if (gone[0] == null) {
+                if (job.casts() >= 1) {
+                    gone[0] = fishery.origin;
+                    castsAtGone[0] = job.casts();
+                    h.getLevel().setBlockAndUpdate(gone[0], Blocks.STONE.defaultBlockState());
+                }
+                return;
+            }
+            if (fishery.spot != com.factionclash.logic.FishingWater.VALID) {
+                h.assertTrue(job.casts() <= castsAtGone[0] + 2, "the spot should be given up within two casts, took " + (job.casts() - castsAtGone[0]));
+                h.assertTrue(fishery.badSpots.contains(gone[0].asLong()), "the dry spot should be remembered as unfit");
+                h.assertFalse(pond.contains(fishery.origin), "no other spot in the 24-block pond: " + fishery.origin.toShortString());
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * No fisherman is hired where there is no water to fish: not when the last search found none (until two days
+     * later), and not while the role is barren; with known water and low food it is.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void noFishermanRecruitedWithoutWater(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            var level = h.getLevel();
+            long now = level.getGameTime();
+            FactionStorage.insert(level, t.base, new ItemStack(Items.FISHING_ROD));
+            var w = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.FISHERY, t.base.center);
+            java.util.function.Predicate<Long> wantsFisherman = at -> com.factionclash.campaign.FactionDirector.needs(level, t.data, t.base, at)
+                    .stream().anyMatch(n -> n.role() == NpcRole.FISHERMAN);
+            w.spot = com.factionclash.logic.FishingWater.NONE;
+            w.searched = now;
+            h.assertFalse(wantsFisherman.test(now), "no fisherman where the last search found no water");
+            h.assertTrue(wantsFisherman.test(now + com.factionclash.logic.FishingWater.NONE_MEMORY), "two days later the base may try again");
+            w.spot = com.factionclash.logic.FishingWater.VALID;
+            h.assertTrue(wantsFisherman.test(now), "with fishing water and little food the base wants a fisherman");
+            t.base.markBarren(NpcRole.FISHERMAN, now + 100);
+            h.assertFalse(wantsFisherman.test(now), "not while the fisherman's role is barren");
+            h.assertTrue(wantsFisherman.test(now + 100), "again once the mark has run out");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * Catches in open water are rolled for a fishing hook (never added to the world), so the vanilla treasure entry
+     * applies exactly as for a player; elsewhere they are rolled for the fisherman, which never gets treasure.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void openWaterUsesTheHookForLoot(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            var level = h.getLevel();
+            FactionNpc fisher = t.npc(8, 8, NpcRole.FISHERMAN);
+            var open = com.factionclash.work.FishermanJob.lootEntity(true, fisher);
+            h.assertTrue(open instanceof net.minecraft.world.entity.projectile.FishingHook hook && hook.isOpenWaterFishing(),
+                    "open water rolls the loot for a fishing hook in open water: " + open);
+            h.assertTrue(level.getEntity(open.getId()) == null, "the hook is never added to the world");
+            h.assertTrue(com.factionclash.work.FishermanJob.lootEntity(false, fisher) == fisher, "elsewhere the fisherman itself");
+            var table = level.getServer().reloadableRegistries().getLootTable(net.minecraft.world.level.storage.loot.BuiltInLootTables.FISHING);
+            java.util.function.Function<net.minecraft.world.entity.Entity, Integer> treasures = looter -> {
+                int n = 0;
+                for (int i = 0; i < 400; i++) {
+                    var params = new net.minecraft.world.level.storage.loot.LootParams.Builder(level)
+                            .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, fisher.position())
+                            .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.TOOL, new ItemStack(Items.FISHING_ROD))
+                            .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.THIS_ENTITY, looter)
+                            .create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.FISHING);
+                    for (ItemStack s : table.getRandomItems(params)) {
+                        if (s.is(Items.NAME_TAG) || s.is(Items.SADDLE) || s.is(Items.BOW) || s.is(Items.ENCHANTED_BOOK) || s.is(Items.NAUTILUS_SHELL)
+                                || (s.is(Items.FISHING_ROD) && s.isEnchanted())) {
+                            n++;
+                        }
+                    }
+                }
+                return n;
+            };
+            h.assertTrue(treasures.apply(open) > 0, "400 casts in open water should bring up some treasure (5% each)");
+            h.assertTrue(treasures.apply(fisher) == 0, "no treasure outside open water");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * Workplace records saved by older versions load and save again: a fishing spot from before real-water fishing
+     * (its spot on the farm channel) loads as not searched, keeping its id, worker, catch total and place until the
+     * upkeep moves it; an unknown workplace type is skipped. (The mine and tree plot parts come with their changes.)
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void legacyWorkplacesLoad(GameTestHelper h) {
+        java.util.UUID worker = java.util.UUID.randomUUID();
+        CompoundTag fish = new CompoundTag();
+        fish.putInt("id", 7);
+        fish.putInt("base", 3);
+        fish.putString("type", "FISHERY");
+        fish.putInt("tier", 1);
+        BlockPos channel = new BlockPos(115, 63, 8);
+        fish.putLong("origin", channel.asLong());
+        fish.putString("facing", "east");
+        fish.putLong("extent", channel.offset(0, 1, 1).asLong());
+        fish.putUUID("assigned", worker);
+        fish.putInt("upgradeStep", -1);
+        fish.putLong("output", 42);
+        fish.putInt("subLevel", 0);
+        fish.putInt("progress", 0);
+        var w = com.factionclash.campaign.WorkplaceState.load(fish);
+        for (int round = 0; round < 2; round++) {
+            h.assertTrue(w != null && w.type == com.factionclash.campaign.WorkplaceState.Type.FISHERY && w.id == 7 && w.baseId == 3
+                    && worker.equals(w.assigned) && w.totalOutput == 42 && w.origin.equals(channel)
+                    && w.spot == com.factionclash.logic.FishingWater.UNSEARCHED && !w.open && w.searched == 0 && w.badSpots.isEmpty(),
+                    "an old fishing spot loads as not searched, keeping id, worker, output and place (round " + round + ")");
+            CompoundTag saved = w.save();
+            h.assertTrue(saved.getInt("fishV") == 1, "a saved fishing spot carries its format marker");
+            w = com.factionclash.campaign.WorkplaceState.load(saved);
+        }
+        // step 3: an old hut MINE (tier 3, subLevel 1, upgradeStep 5, origin y 66) migrates to its level list
+        // step 6: an old TREE_PLOT (tier 2, upgradeStep 3) loads with legacyFence, upgradeStep -1 and its old grid as planted
+        var v = com.factionclash.campaign.WorkplaceState.load(fish);
+        v.spot = com.factionclash.logic.FishingWater.NONE;
+        v.searched = 1234;
+        v.open = true;
+        for (int i = 0; i < 40; i++) {
+            v.addBadSpot(channel.offset(i, 0, 0));
+        }
+        var back = com.factionclash.campaign.WorkplaceState.load(v.save());
+        h.assertTrue(back.spot == com.factionclash.logic.FishingWater.NONE && back.searched == 1234 && back.open
+                && back.badSpots.size() == com.factionclash.campaign.WorkplaceState.MAX_BAD_SPOTS
+                && back.badSpots.get(0) == channel.offset(8, 0, 0).asLong(), "fishing spot fields survive a save, the oldest unfit spots dropped first");
+        CompoundTag unknown = fish.copy();
+        unknown.putString("type", "WINDMILL");
+        h.assertTrue(com.factionclash.campaign.WorkplaceState.load(unknown) == null, "an unknown workplace type is skipped");
+        h.succeed();
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

@@ -239,9 +239,14 @@ public final class BlockWork {
      * Items that fail {@code keep} are left on the ground. Returns the number of items taken.
      */
     public static int pickUp(FactionNpc npc, Predicate<ItemStack> keep) {
+        return pickUp(npc, keep, e -> true);
+    }
+
+    /** As {@link #pickUp(FactionNpc, Predicate)}, taking only the item entities that pass {@code where}. */
+    public static int pickUp(FactionNpc npc, Predicate<ItemStack> keep, Predicate<ItemEntity> where) {
         int taken = 0;
         AABB box = npc.getBoundingBox().inflate(1.0, 0.5, 1.0);
-        for (ItemEntity item : npc.level().getEntitiesOfClass(ItemEntity.class, box, e -> e.isAlive() && !e.hasPickUpDelay())) {
+        for (ItemEntity item : npc.level().getEntitiesOfClass(ItemEntity.class, box, e -> e.isAlive() && !e.hasPickUpDelay() && where.test(e))) {
             ItemStack s = item.getItem();
             if (s.isEmpty() || !keep.test(s)) {
                 continue;

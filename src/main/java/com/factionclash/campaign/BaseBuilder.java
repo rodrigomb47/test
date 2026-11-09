@@ -3,6 +3,7 @@ package com.factionclash.campaign;
 import com.factionclash.FactionClash;
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
+import com.factionclash.logic.FishingWater;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
 import com.factionclash.storage.FactionStorage;
@@ -106,7 +107,7 @@ public final class BaseBuilder {
         }
 
         base.points.putAll(bp.markers);
-        ensureAnimalAndFishingWorkplaces(data, base);
+        ensureWorkplaces(data, base);
         bp.chests.forEach((cat, list) -> base.storage(cat).addAll(list));
         base.beds.addAll(bp.beds);
         base.expansionLots.addAll(bp.lots);
@@ -132,10 +133,12 @@ public final class BaseBuilder {
     }
 
     /**
-     * Registers the pen (centre + gate) and the fishing spot (farm water channel) as workplaces. Also used to
-     * upgrade bases from older saves that predate these roles.
+     * The settlement's standing workplaces, kept up every director period (it also brings bases from older saves up
+     * to date): the pen (centre + gate) and one fishing spot. A missing fishing spot is created as not searched yet;
+     * while a fishing spot has no known water its bobber and stand wait at the base centre, as a placeholder, until
+     * the director or a fisherman finds real water outside the walls. It is never put on the farm's irrigation.
      */
-    public static void ensureAnimalAndFishingWorkplaces(CampaignData data, BaseState base) {
+    public static void ensureWorkplaces(CampaignData data, BaseState base) {
         boolean hasPen = false, hasFishery = false;
         for (int id : base.workplaces) {
             WorkplaceState w = data.workplace(id);
@@ -144,6 +147,11 @@ public final class BaseBuilder {
             }
             if (w != null && w.type == WorkplaceState.Type.FISHERY) {
                 hasFishery = true;
+                if (w.spot != FishingWater.VALID && (!base.center.equals(w.origin) || !base.center.equals(w.extent))) {
+                    w.origin = base.center; // an old save's farm channel, or a spot found unfit
+                    w.extent = base.center;
+                    data.setDirty();
+                }
             }
         }
         BlockPos penCentre = base.point("pen");
@@ -154,14 +162,15 @@ public final class BaseBuilder {
             pen.extent = penCentre.offset(0, 0, -3); // the fence gate on the pen's north side
             data.addWorkplace(base, pen);
         }
-        BlockPos fmin = base.point("farm_min"), fmax = base.point("farm_max");
-        if (!hasFishery && fmin != null && fmax != null) {
+        if (!hasFishery) {
             WorkplaceState fish = new WorkplaceState();
             fish.type = WorkplaceState.Type.FISHERY;
-            fish.origin = new BlockPos((fmin.getX() + fmax.getX()) / 2, fmax.getY(), fmax.getZ()); // water channel end
-            fish.extent = fish.origin.offset(0, 1, 1);                                            // path beside it
+            fish.spot = FishingWater.UNSEARCHED;
+            fish.origin = base.center;
+            fish.extent = base.center;
             data.addWorkplace(base, fish);
         }
+        // step 6: a missing TREE_PLOT is created here too (woodV 1, no fence)
     }
 
     /** Plan blocks that builders keep repaired: buildings, walls, paths. Crops, soil and water are excluded. */

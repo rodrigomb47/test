@@ -73,7 +73,8 @@ public final class FactionDirector {
         if (!f.alive) {
             return;
         }
-        BaseBuilder.ensureAnimalAndFishingWorkplaces(data, b);
+        BaseBuilder.ensureWorkplaces(data, b);
+        com.factionclash.work.FishingSpots.maintain(level, data, b, t); // real water for the fishing spot, before a fisherman is hired
         // "Minecraft": the workshop's crafting table is the faction's from the start
         com.factionclash.achieve.FactionAchievements.criterion(level.getServer(), b.faction, "story/root", "crafting_table", null);
         rosterUpkeep(level, data, f, b, t);
@@ -155,7 +156,10 @@ public final class FactionDirector {
         if (living(f, b, NpcRole.SMELTER) == 0 && FactionStorage.count(level, b, SmelterJob::isOre) >= 16) {
             out.add(new Need(NpcRole.SMELTER, "raw ore backlog"));
         }
-        if (living(f, b, NpcRole.FISHERMAN) == 0
+        // a fisherman only where there may be water to fish: found, not looked for yet, or not found for two days now
+        WorkplaceState fishery = com.factionclash.work.FishingSpots.fishery(data, b);
+        if (living(f, b, NpcRole.FISHERMAN) == 0 && fishery != null
+                && com.factionclash.logic.FishingWater.waterKnown(fishery.spot, fishery.searched, t) && !b.barren(NpcRole.FISHERMAN, t)
                 && Recruitment.storedFoodValue(level, b) < FCConfig.RECRUIT_FOOD_VALUE.get() * 15) {
             if (FactionStorage.count(level, b, s -> s.is(Items.FISHING_ROD)) > 0 || FactionStorage.count(level, b, s -> s.is(Items.STRING)) >= 2) {
                 out.add(new Need(NpcRole.FISHERMAN, "more food")); // only with a rod, or the string for one

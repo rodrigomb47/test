@@ -1,9 +1,12 @@
 package com.factionclash.campaign;
 
+import com.factionclash.logic.FishingWater;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /** A personal, persistent workspace (spec 5): assigned worker, tier and upgrade progress. */
@@ -14,7 +17,11 @@ public final class WorkplaceState {
         FARM("Farm", 1),
         /** origin = pen centre (inside), extent = the pen's fence gate. */
         PEN("Animal pen", 1),
-        /** origin = the water block fished, extent = where the fisherman stands. */
+        /**
+         * One per settlement: origin = the water block the bobber floats on, extent = where the fisherman stands
+         * (feet). While no fishing water is known ({@link #spot} not VALID) both are the base centre, as a
+         * placeholder: a fishing spot is never derived from the farm's irrigation.
+         */
         FISHERY("Fishing spot", 1),
         /**
          * A natural cave surveyed by a cave explorer: origin = the entrance, extent = the cavity the scouts reported,
@@ -65,6 +72,28 @@ public final class WorkplaceState {
     public boolean workedOut;
     /** Caves: where each prospecting tunnel meets rock (packed; Long.MIN_VALUE = no tunnel that way). */
     public long[] faces = new long[0];
+    /**
+     * Fishing spot: whether real fishing water is known ({@link FishingWater#UNSEARCHED}, {@link FishingWater#VALID}
+     * or {@link FishingWater#NONE}), whether it is vanilla open water (treasure can be caught), and when a
+     * fisherman's full search and forage last found nothing (the NONE memory).
+     */
+    public int spot = FishingWater.UNSEARCHED;
+    public boolean open;
+    public long searched;
+    /** Fishing spot: bobber blocks that turned out unfit, oldest first (at most {@link #MAX_BAD_SPOTS}). */
+    public final List<Long> badSpots = new ArrayList<>();
+    /** PROPOSED: how many unfit fishing spots a fishery remembers. */
+    public static final int MAX_BAD_SPOTS = 32;
+
+    /** Remembers an unfit fishing spot, forgetting the oldest beyond {@link #MAX_BAD_SPOTS}. */
+    public void addBadSpot(BlockPos p) {
+        long k = p.asLong();
+        badSpots.remove(Long.valueOf(k));
+        badSpots.add(k);
+        while (badSpots.size() > MAX_BAD_SPOTS) {
+            badSpots.remove(0);
+        }
+    }
 
     public boolean upgrading() {
         return upgradeStep >= 0;
@@ -98,6 +127,13 @@ public final class WorkplaceState {
             t.putString("note", note);
             t.putBoolean("workedOut", workedOut);
             t.putLongArray("faces", faces);
+        }
+        if (type == Type.FISHERY) {
+            t.putInt("fishV", 1);
+            t.putInt("spot", spot);
+            t.putBoolean("open", open);
+            t.putLong("searched", searched);
+            t.putLongArray("bad", badSpots.stream().mapToLong(Long::longValue).toArray());
         }
         return t;
     }
@@ -141,6 +177,24 @@ public final class WorkplaceState {
             w.note = t.getString("note");
             w.workedOut = t.getBoolean("workedOut");
             w.faces = t.getLongArray("faces");
+        }
+        if (w.type == Type.FISHERY) {
+            if (!t.contains("fishV")) {
+                // an older save: its spot was the farm's water channel. It is looked for again on real water (the
+                // next upkeep moves the placeholder to the base centre); id, worker and catch total are kept.
+                w.spot = FishingWater.UNSEARCHED;
+            } else {
+                int spot = t.getInt("spot");
+                w.spot = spot == FishingWater.VALID || spot == FishingWater.NONE ? spot : FishingWater.UNSEARCHED;
+                w.open = t.getBoolean("open");
+                w.searched = t.getLong("searched");
+                for (long b : t.getLongArray("bad")) {
+                    w.badSpots.add(b);
+                }
+                while (w.badSpots.size() > MAX_BAD_SPOTS) {
+                    w.badSpots.remove(0);
+                }
+            }
         }
         return w;
     }

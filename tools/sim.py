@@ -39,6 +39,16 @@ def dump(sv):
         return json.load(f)
 
 
+SETTLEMENT_HALF = 24  # BaseLayout.HALF: the walls' half-size
+
+
+def chebyshev(a, b):
+    """Horizontal Chebyshev distance between two "x, y, z" strings."""
+    ax, _, az = (int(v) for v in a.split(","))
+    bx, _, bz = (int(v) for v in b.split(","))
+    return max(abs(ax - bx), abs(az - bz))
+
+
 def summary(d):
     print(f"== gameTime {d['gameTime']} (day {d['gameTime'] / 24000:.2f}) travellers {d['travellers']} winner {d.get('winner')}")
     for f in d["factions"]:
@@ -58,7 +68,18 @@ def summary(d):
             print(line)
             print("      stock " + ", ".join(f"{k}={st.get(k, 0)}" for k in keys))
             for w in b["workplaces"]:
-                print(f"      {w['type']:9s} tier={w['tier']} output={w['output']} upgradeStep={w['upgradeStep']}")
+                extra = ""
+                if w["type"] == "FISHERY":
+                    extra = f" spot={w.get('spot')} origin={w.get('origin')} stand={w.get('extent')} open={w.get('open')}"
+                    if w.get("spot") == "NONE":
+                        extra += f" searched={w.get('searched')}"
+                print(f"      {w['type']:9s} tier={w['tier']} output={w['output']} upgradeStep={w['upgradeStep']}{extra}")
+                if w["type"] == "FISHERY" and w.get("spot") == "VALID" and w.get("origin"):
+                    # a fishing spot lies 4 or more beyond every settlement's walls: never the farm's irrigation
+                    for o in d["bases"]:
+                        cheb = chebyshev(o["center"], w["origin"])
+                        if o["kind"] == "SETTLEMENT" and not o["destroyed"] and cheb < SETTLEMENT_HALF + 4:
+                            print(f"      ERROR: fishing spot #{w['id']} at {w['origin']} is only {cheb} from the centre of base {o['id']}")
             print(f"      recruit: {b['recruitNote'][:160]}")
             if b.get("pen"):
                 print(f"      pen: {b['pen']}")

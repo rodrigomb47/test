@@ -444,6 +444,14 @@ public final class FCCommands {
                         wo.addProperty("note", w.note);
                         wo.addProperty("origin", w.origin.toShortString());
                     }
+                    if (w.type == WorkplaceState.Type.FISHERY) {
+                        wo.addProperty("origin", w.origin.toShortString());
+                        wo.addProperty("extent", w.extent.toShortString());
+                        wo.addProperty("spot", w.spot == com.factionclash.logic.FishingWater.VALID ? "VALID"
+                                : w.spot == com.factionclash.logic.FishingWater.NONE ? "NONE" : "UNSEARCHED");
+                        wo.addProperty("open", w.open);
+                        wo.addProperty("searched", w.searched);
+                    }
                     wo.addProperty("assigned", w.assigned == null ? null : w.assigned.toString());
                     wps.add(wo);
                 }
