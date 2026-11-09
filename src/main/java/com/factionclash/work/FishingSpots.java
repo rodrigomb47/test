@@ -340,7 +340,7 @@ public final class FishingSpots {
         /**
          * The zone rules for a bobber or a stand: on the map and within reach of the base centre, at least 4 beyond
          * every base's walls (28 from a settlement centre, the own one included), out of other factions' land (8),
-         * more than 24 from any lair.
+         * more than 24 from any lair, more than 48 from a pillager outpost or woodland mansion the faction knows of.
          */
         boolean zoneOk(int x, int y, int z) {
             if (!MapBounds.inside(data, x, z, 0) || distSq(base.center, x, z) > (long) reach * reach) {
@@ -348,7 +348,8 @@ public final class FishingSpots {
             }
             BlockPos p = new BlockPos(x, y, z);
             return BaseZones.outsideAllWalls(data, p, WALLS_MARGIN - 1) && !BaseZones.inForeignArea(data, base.id, p, FOREIGN_MARGIN)
-                    && !BaseZones.nearLair(data, p, LAIR_RADIUS);
+                    && !BaseZones.nearLair(data, p, LAIR_RADIUS)
+                    && !BaseZones.nearKnownDanger(data.factions.get(base.faction), p, BaseZones.DANGER_RADIUS);
         }
 
         @Override

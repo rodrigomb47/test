@@ -265,6 +265,14 @@ public abstract class Job {
         return false;
     }
 
+    /**
+     * True while the job itself decides when to step aside, fight back or head home (a scout away from home), so the
+     * civilians' wounded flight to the station leaves it alone.
+     */
+    public boolean handlesOwnSafety() {
+        return false;
+    }
+
     // ------------------------------------------------------------------ helpers
 
     protected void waitFor(int ticks) {

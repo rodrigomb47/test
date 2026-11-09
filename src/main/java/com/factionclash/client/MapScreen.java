@@ -27,14 +27,16 @@ public class MapScreen extends Screen {
             0x9E9E9E, // cave entrance
             0xFFD54F, // exposed ore
             0x26C6DA, // surveyed cave
-            0x66BB6A  // village
+            0x66BB6A, // village
+            0x5C6BC0, // pillager outpost
+            0x8D6E63  // woodland mansion
     };
     private static final String[] NAMES = {"Our base", "Enemy settlement", "Monster lair", "Hostiles", "Cave entrance", "Exposed ore", "Surveyed cave",
-            "Village"};
+            "Village", "Pillager outpost", "Woodland mansion"};
 
     private final MapPayload data;
     private final List<FormattedCharSequence> rows = new ArrayList<>();
-    private int mapX, mapY, mapSize, listX, listW, listY, listH;
+    private int mapX, mapY, mapSize, listX, listW, listY, listH, legendCols = 1;
     private double scroll;
 
     public MapScreen(MapPayload data) {
@@ -49,7 +51,8 @@ public class MapScreen extends Screen {
         mapY = 28;
         listX = mapX + mapSize + 12;
         listW = Math.max(60, width - listX - 12);
-        listY = mapY + NAMES.length * 11 + 10;
+        legendCols = listW >= 220 ? 2 : 1; // two columns when there is room, so the report list keeps its height
+        listY = mapY + legendRows() * 11 + 10;
         listH = mapY + mapSize - listY;
         fitView();
         rows.clear();
@@ -58,6 +61,10 @@ public class MapScreen extends Screen {
         }
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds(width / 2 - 50, height - 26, 100, 20).build());
+    }
+
+    private int legendRows() {
+        return (NAMES.length + legendCols - 1) / legendCols;
     }
 
     private int viewCx, viewCz, viewR;
@@ -138,12 +145,16 @@ public class MapScreen extends Screen {
             if (px < mapX || py < mapY || px >= mapX + mapSize || py >= mapY + mapSize) {
                 continue;
             }
-            int r = kind == MapPayload.OWN_BASE || kind == MapPayload.ENEMY_BASE || kind == MapPayload.LAIR ? 3 : 2;
+            boolean danger = kind == MapPayload.PILLAGER_OUTPOST || kind == MapPayload.WOODLAND_MANSION;
+            int r = kind == MapPayload.OWN_BASE || kind == MapPayload.ENEMY_BASE || kind == MapPayload.LAIR || danger ? 3 : 2;
             int argb = (stale ? 0x80000000 : 0xFF000000) | color;
             if (kind == MapPayload.ENEMY_BASE) {
                 cross(g, px, py, r + 1, argb); // shape, not just colour: some factions' colours are red too
             } else {
                 g.fill(px - r, py - r, px + r + 1, py + r + 1, argb);
+            }
+            if (danger) {
+                g.renderOutline(px - r - 1, py - r - 1, 2 * r + 3, 2 * r + 3, 0xFF000000); // dangerous ground: a dark rim
             }
             if (kind == MapPayload.OWN_BASE) {
                 g.renderOutline(px - r - 1, py - r - 1, 2 * r + 3, 2 * r + 3, 0xFFFFFFFF);
@@ -164,17 +175,21 @@ public class MapScreen extends Screen {
         g.drawString(font, (2 * radius()) + " blocks across", mapX + 3, mapY + mapSize - 11, 0xFFBBBBAA);
         // legend
         for (int i = 0; i < NAMES.length; i++) {
-            int y = mapY + i * 11;
+            int y = mapY + (i % legendRows()) * 11;
+            int lx = listX + (i / legendRows()) * (listW / 2);
             int color = i == MapPayload.OWN_BASE ? data.titleColor() : COLORS[i];
             if (i == MapPayload.ENEMY_BASE) {
-                cross(g, listX + 3, y + 5, 3, 0xFF000000 | color);
+                cross(g, lx + 3, y + 5, 3, 0xFF000000 | color);
             } else {
-                g.fill(listX, y + 2, listX + 6, y + 8, 0xFF000000 | color);
+                g.fill(lx, y + 2, lx + 6, y + 8, 0xFF000000 | color);
             }
             if (i == MapPayload.OWN_BASE) {
-                g.renderOutline(listX - 1, y + 1, 8, 8, 0xFFFFFFFF);
+                g.renderOutline(lx - 1, y + 1, 8, 8, 0xFFFFFFFF);
             }
-            g.drawString(font, NAMES[i], listX + 10, y + 1, 0xFFE0E0E0);
+            if (i == MapPayload.PILLAGER_OUTPOST || i == MapPayload.WOODLAND_MANSION) {
+                g.renderOutline(lx - 1, y + 1, 8, 8, 0xFF000000);
+            }
+            g.drawString(font, NAMES[i], lx + 10, y + 1, 0xFFE0E0E0);
         }
         // written reports
         g.fill(listX, listY, listX + listW, listY + listH, 0xC0101018);

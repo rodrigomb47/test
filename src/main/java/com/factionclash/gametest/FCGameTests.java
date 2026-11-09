@@ -2641,4 +2641,241 @@ public final class FCGameTests {
         data.faction(FactionType.GROVE_COVENANT).roster.remove(r2.npc().getUUID());
         h.succeed();
     }
+
+    // ------------------------------------------------------------------ scouts: monsters and structures
+
+    /** Sends a scout out toward {@code target} (absolute), as if it had just left home: its saved form, loaded. */
+    private static com.factionclash.work.ScoutJob sendScout(GameTestHelper h, FactionNpc n, BlockPos target) {
+        var job = (com.factionclash.work.ScoutJob) n.job();
+        CompoundTag tag = new CompoundTag();
+        tag.putString("state", "OUTBOUND");
+        tag.putLong("target", target.asLong());
+        tag.putLong("departed", h.getLevel().getGameTime());
+        job.load(tag, h.getLevel().registryAccess());
+        return job;
+    }
+
+    /** A zombie that stands still (no AI) and wears a helmet against the sun, discarded when the test base is cleaned up. */
+    private static Zombie stillZombie(GameTestBases.Handle t, int x, int z) {
+        Zombie zb = t.track(t.helper.spawn(EntityType.ZOMBIE, new BlockPos(x, 2, z)));
+        zb.setNoAi(true);
+        zb.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+        return zb;
+    }
+
+    private static double nearest(FactionNpc n, List<? extends net.minecraft.world.entity.Entity> others) {
+        double d = Double.MAX_VALUE;
+        for (var e : others) {
+            d = Math.min(d, n.distanceTo(e));
+        }
+        return d;
+    }
+
+    /**
+     * Zombies next to a scout on its way to far-off land do not send it home: it runs to a point clear of them, on
+     * the side of where it is going, and goes on exploring - it never turns back, and ends well away from them.
+     */
+    @GameTest(template = "platform", timeoutTicks = 400, batch = "scout_evade", skyAccess = true)
+    public static void scoutStepsAsideFromZombiesAndKeepsExploring(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 400);
+        FactionNpc n;
+        List<Zombie> zombies;
+        com.factionclash.work.ScoutJob job;
+        try {
+            n = t.npc(18, 6, NpcRole.SCOUT);
+            n.equip(new ItemStack(Items.IRON_SWORD));
+            zombies = List.of(stillZombie(t, 21, 3), stillZombie(t, 22, 5), stillZombie(t, 20, 2));
+            job = sendScout(h, n, h.absolutePos(new BlockPos(18, 2, 400))); // far to the south
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        double start = nearest(n, zombies);
+        t.onEachTick(() -> {
+            t.assertTrue(!job.stateName().equals("RETURN") && !job.isRetreating(), "the scout turned back: " + job.workplaceInfo()
+                    + " / " + n.status());
+            t.assertTrue(n.getTarget() == null || !(n.getTarget() instanceof Zombie), "the scout took up a fight with a zombie");
+            if (job.evasions() >= 1 && !job.isEvading() && job.stateName().equals("OUTBOUND")) {
+                double d = nearest(n, zombies);
+                t.assertTrue(d > 12 && d > start + 6, "should have got clear of the zombies: " + String.format("%.1f", d)
+                        + " blocks (started " + String.format("%.1f", start) + ")");
+                FactionClash.LOGGER.info("GAMETEST scout stepped aside {} time(s) by tick {}: {} -> {} blocks from the zombies, now at {} ({})",
+                        job.evasions(), h.getTick(), String.format("%.1f", start), String.format("%.1f", d), h.relativePos(n.blockPosition()), n.status());
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * Line of sight matters: a skeleton behind a wall, 9 to 14 blocks away (inside an archer's 18-block keep-away
+     * distance, but not within 6), cannot shoot the scout, so the scout walks on past it without stepping aside.
+     */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "scout_sight", skyAccess = true)
+    public static void scoutWalksOnPastAMonsterThatCannotSeeIt(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 200);
+        FactionNpc n;
+        com.factionclash.work.ScoutJob job;
+        try {
+            for (int x = 0; x < 24; x++) {
+                for (int y = 2; y <= 5; y++) {
+                    h.setBlock(new BlockPos(x, y, 12), Blocks.STONE);
+                }
+            }
+            n = t.npc(3, 17, NpcRole.SCOUT);
+            n.equip(new ItemStack(Items.IRON_SWORD));
+            Skeleton sk = t.track(h.spawn(EntityType.SKELETON, new BlockPos(12, 2, 8)));
+            sk.setNoAi(true);
+            sk.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+            job = sendScout(h, n, h.absolutePos(new BlockPos(400, 2, 17))); // far to the east, along the wall
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int x0 = h.absolutePos(BlockPos.ZERO).getX();
+        t.onEachTick(() -> {
+            t.assertTrue(job.evasions() == 0, "stepped aside from a skeleton that cannot see it: " + n.status());
+            t.assertTrue(job.stateName().equals("OUTBOUND"), "the scout should carry on exploring: " + job.workplaceInfo());
+            if (n.getX() - x0 >= 18) {
+                t.succeed(); // walked past the skeleton
+            }
+        });
+    }
+
+    /** Badly hurt (under 40%), a scout does not step aside from a monster: it retreats home. */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "scout_hurt", skyAccess = true)
+    public static void badlyHurtScoutRetreatsFromAMonster(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 200);
+        FactionNpc n;
+        com.factionclash.work.ScoutJob job;
+        try {
+            n = t.npc(18, 6, NpcRole.SCOUT);
+            n.equip(new ItemStack(Items.IRON_SWORD));
+            n.setHealth(n.getMaxHealth() * 0.35F);
+            stillZombie(t, 20, 6);
+            job = sendScout(h, n, h.absolutePos(new BlockPos(18, 2, 400)));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            t.assertTrue(!job.isEvading(), "a badly hurt scout should not step aside but go home");
+            if (job.stateName().equals("RETURN")) {
+                t.assertTrue(job.isRetreating(), "it should retreat (at speed, ignoring attacks), not just return: " + job.workplaceInfo());
+                t.assertTrue(job.workplaceInfo().contains("badly hurt"), "the reason should say it was badly hurt: " + job.workplaceInfo());
+                t.succeed();
+            }
+        });
+    }
+
+    /** Enemy soldiers still make a scout retreat home with its report, as before (monsters are stepped around). */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "scout_soldiers", skyAccess = true)
+    public static void enemySoldiersStillSendAScoutHome(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 200);
+        FactionNpc n;
+        com.factionclash.work.ScoutJob job;
+        try {
+            n = t.npc(18, 6, NpcRole.SCOUT);
+            n.equip(new ItemStack(Items.IRON_SWORD));
+            for (int z : new int[]{5, 8}) {
+                FactionNpc s = t.track(npc(h, 21, z, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN));
+                s.setNoAi(true);
+            }
+            job = sendScout(h, n, h.absolutePos(new BlockPos(18, 2, 400)));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            if (job.stateName().equals("RETURN")) {
+                t.assertTrue(job.isRetreating() && job.workplaceInfo().contains("hostile"), "expected a retreat from the soldiers: "
+                        + job.workplaceInfo());
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * Structures cannot be generated in the flat test world, so their rules are checked as they stand: every village
+     * kind (by the village tag), pillager outposts and woodland mansions are recognised through the real structure
+     * registry, other structures are not; two looks at one village merge into one report that keeps the traders seen
+     * (a structure-only report of an abandoned village never counts as a trading village); outposts and mansions are
+     * dangerous ground; the new kinds survive saving and have their own map markers.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20)
+    public static void structureReportsClassifyAndMerge(GameTestHelper h) {
+        var registry = h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE);
+        java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.level.levelgen.structure.Structure>, com.factionclash.campaign.Report.Kind> expect =
+                new java.util.LinkedHashMap<>();
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.VILLAGE_PLAINS, com.factionclash.campaign.Report.Kind.VILLAGE);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.VILLAGE_DESERT, com.factionclash.campaign.Report.Kind.VILLAGE);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.VILLAGE_SAVANNA, com.factionclash.campaign.Report.Kind.VILLAGE);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.VILLAGE_SNOWY, com.factionclash.campaign.Report.Kind.VILLAGE);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.VILLAGE_TAIGA, com.factionclash.campaign.Report.Kind.VILLAGE);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.PILLAGER_OUTPOST, com.factionclash.campaign.Report.Kind.PILLAGER_OUTPOST);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.WOODLAND_MANSION, com.factionclash.campaign.Report.Kind.WOODLAND_MANSION);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.STRONGHOLD, null);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.MINESHAFT, null);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.ANCIENT_CITY, null);
+        expect.put(net.minecraft.world.level.levelgen.structure.BuiltinStructures.TRIAL_CHAMBERS, null);
+        expect.forEach((key, kind) -> {
+            var structure = registry.getOrThrow(key);
+            h.assertTrue(com.factionclash.work.StructureSightings.classify(registry, structure) == kind,
+                    key.location() + " should be " + kind + ", got " + com.factionclash.work.StructureSightings.classify(registry, structure));
+        });
+
+        com.factionclash.campaign.Report.Kind V = com.factionclash.campaign.Report.Kind.VILLAGE;
+        com.factionclash.campaign.FactionState f = new com.factionclash.campaign.FactionState(FactionType.STONEGUARD);
+        // the scout's two looks on one trip: from afar (the structure, no traders seen), then among the traders
+        var glance = new com.factionclash.campaign.Report(V, new BlockPos(1000, 64, 1000), 100, null, 0, "plains village, no villagers with trades seen");
+        var among = new com.factionclash.campaign.Report(V, new BlockPos(1030, 64, 1040), 140, null, 4, "plains village, 4 villagers with trades (farmer)");
+        h.assertTrue(glance.sameSubject(among), "two looks 50 blocks apart at one village should be one subject");
+        var trip = com.factionclash.work.ScoutJob.mergeOnTrip(com.factionclash.work.ScoutJob.mergeOnTrip(glance, among), glance);
+        h.assertTrue(trip.count == 4 && trip.tradingVillage(), "a later glance from afar should keep the 4 traders seen: " + trip.count);
+        // delivered: an older trader count arriving after a newer structure-only look still counts, merged into one
+        h.assertTrue(f.addReport(glance), "the first village report is new");
+        h.assertTrue(!f.addReport(among.copy()), "the second look is the same village");
+        var old = new com.factionclash.campaign.Report(V, new BlockPos(1010, 64, 990), 50, null, 3, "3 villagers with trades (mason)");
+        h.assertTrue(!f.addReport(old), "an old trader count of the same village is not a new report");
+        long villages = f.knowledge.stream().filter(r -> r.kind == V).count();
+        h.assertTrue(villages == 1, "one village should be on the map, not " + villages);
+        var known = f.knowledge.stream().filter(r -> r.kind == V).findFirst().orElseThrow();
+        h.assertTrue(known.count == 4 && known.tradingVillage(), "the village should keep its 4 traders: " + known.count + " (" + known.note + ")");
+        var later = new com.factionclash.campaign.Report(V, new BlockPos(1000, 64, 1000), 500, null, 0, "plains village, no villagers with trades seen");
+        f.addReport(later);
+        known = f.knowledge.stream().filter(r -> r.kind == V).findFirst().orElseThrow();
+        h.assertTrue(known.count == 4 && known.observedAt == 500, "a newer look without traders refreshes the report but keeps the traders");
+        // an abandoned village elsewhere: on the map, but no trader goes there
+        f.addReport(new com.factionclash.campaign.Report(V, new BlockPos(2000, 64, 2000), 200, null, 0, "desert village, abandoned (2 zombie villagers), no villagers with trades"));
+        long trading = f.knowledge.stream().filter(com.factionclash.campaign.Report::tradingVillage).count();
+        h.assertTrue(f.knowledge.stream().filter(r -> r.kind == V).count() == 2 && trading == 1,
+                "two villages, one with traders: " + f.knowledge.size() + " reports, " + trading + " trading");
+        // outposts and mansions: one report per structure, dangerous ground around it, never stale, saved by name
+        var outpost = new com.factionclash.campaign.Report(com.factionclash.campaign.Report.Kind.PILLAGER_OUTPOST, new BlockPos(3000, 70, 3000), 300, null, 3, "3 pillagers seen");
+        h.assertTrue(f.addReport(outpost), "the outpost is new");
+        h.assertTrue(!f.addReport(new com.factionclash.campaign.Report(com.factionclash.campaign.Report.Kind.PILLAGER_OUTPOST, new BlockPos(3040, 70, 3010), 320, null, 1, "1 pillager seen")),
+                "a second look at the outpost is not a second outpost");
+        h.assertTrue(com.factionclash.campaign.BaseZones.nearKnownDanger(f, new BlockPos(3040, 0, 3040), com.factionclash.campaign.BaseZones.DANGER_RADIUS),
+                "48 blocks around the outpost are dangerous ground");
+        h.assertTrue(!com.factionclash.campaign.BaseZones.nearKnownDanger(f, new BlockPos(3100, 0, 3000), com.factionclash.campaign.BaseZones.DANGER_RADIUS),
+                "100 blocks away is not");
+        h.assertTrue(!com.factionclash.campaign.BaseZones.nearKnownDanger(f, new BlockPos(1000, 0, 1000), com.factionclash.campaign.BaseZones.DANGER_RADIUS),
+                "a village is not dangerous ground");
+        f.addReport(new com.factionclash.campaign.Report(com.factionclash.campaign.Report.Kind.WOODLAND_MANSION, new BlockPos(5000, 70, 5000), 300, null, 0, "no illagers seen"));
+        h.assertTrue(com.factionclash.campaign.BaseZones.nearKnownDanger(f, new BlockPos(4960, 0, 5030), com.factionclash.campaign.BaseZones.DANGER_RADIUS),
+                "by the mansion is dangerous ground");
+        for (var kind : new com.factionclash.campaign.Report.Kind[]{com.factionclash.campaign.Report.Kind.PILLAGER_OUTPOST,
+                com.factionclash.campaign.Report.Kind.WOODLAND_MANSION}) {
+            h.assertTrue(!kind.canGoStale && kind.structure() && kind.dangerousGround(), kind + " should be a structure that never goes stale");
+            var copy = com.factionclash.campaign.Report.load(new com.factionclash.campaign.Report(kind, BlockPos.ZERO, 1, null, 2, "x").save());
+            h.assertTrue(copy != null && copy.kind == kind && copy.count == 2, kind + " did not survive saving");
+        }
+        int[] kinds = {com.factionclash.net.MapPayload.OWN_BASE, com.factionclash.net.MapPayload.ENEMY_BASE, com.factionclash.net.MapPayload.LAIR,
+                com.factionclash.net.MapPayload.HOSTILES, com.factionclash.net.MapPayload.CAVE, com.factionclash.net.MapPayload.ORE,
+                com.factionclash.net.MapPayload.SURVEYED_CAVE, com.factionclash.net.MapPayload.VILLAGE,
+                com.factionclash.net.MapPayload.PILLAGER_OUTPOST, com.factionclash.net.MapPayload.WOODLAND_MANSION};
+        h.assertTrue(java.util.Arrays.stream(kinds).distinct().count() == kinds.length
+                        && java.util.Arrays.stream(kinds).allMatch(k -> k >= 0 && k < com.factionclash.net.MapPayload.STALE),
+                "map marker kinds must be distinct and below the STALE flag");
+        h.succeed();
+    }
 }

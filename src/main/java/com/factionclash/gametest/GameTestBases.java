@@ -81,6 +81,7 @@ public final class GameTestBases {
         public final CampaignData data;
         public final BaseState base;
         private final List<FactionNpc> npcs = new ArrayList<>();
+        private final List<net.minecraft.world.entity.Entity> extras = new ArrayList<>();
         private boolean cleaned;
 
         private Handle(GameTestHelper helper, CampaignData data, BaseState base) {
@@ -104,6 +105,12 @@ public final class GameTestBases {
             Recruitment.register(data, n, base);
             npcs.add(n);
             return n;
+        }
+
+        /** An entity the test spawned (a monster, an enemy) that cleanup discards too, so it never outlives the test. */
+        public <E extends net.minecraft.world.entity.Entity> E track(E e) {
+            extras.add(e);
+            return e;
         }
 
         /** Adds a workplace to the base with a fresh id (removed again by cleanup). */
@@ -178,6 +185,8 @@ public final class GameTestBases {
                 n.discard();
             }
             npcs.clear();
+            extras.forEach(net.minecraft.world.entity.Entity::discard);
+            extras.clear();
             data.setDirty();
         }
     }

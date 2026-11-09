@@ -47,7 +47,7 @@ public final class MineSites {
     /**
      * PROPOSED: a mine's mouth keeps this far (Chebyshev) beyond every base's walls, out of other bases' land, from
      * villages the faction knows of, from every other mine's mouth and from the miner's own bad sites, and inside
-     * the map edge.
+     * the map edge (and {@link BaseZones#DANGER_RADIUS} from known pillager outposts and woodland mansions).
      */
     static final int SITE_WALLS_MARGIN = 8, SITE_FOREIGN_MARGIN = 16, VILLAGE_RADIUS = 48, MINE_SPACING = 24,
             BAD_SITE_RADIUS = 8, SITE_MAP_MARGIN = 16;
@@ -386,6 +386,7 @@ public final class MineSites {
         BlockPos o = new BlockPos(x, y, z);
         if (!BaseZones.outsideAllWalls(data, o, SITE_WALLS_MARGIN) || BaseZones.inForeignArea(data, base.id, o, SITE_FOREIGN_MARGIN)
                 || BaseZones.nearKnownVillage(data.factions.get(base.faction), o, VILLAGE_RADIUS)
+                || BaseZones.nearKnownDanger(data.factions.get(base.faction), o, BaseZones.DANGER_RADIUS)
                 || WorkSafety.reserved(data, base, o, WorkSafety.Use.MINE_SITE) || nearMine(data, x, z) || nearBad(bad, x, z)) {
             return Verdict.UNFIT;
         }

@@ -220,11 +220,23 @@ public class FishermanJob extends Job {
         forageTarget = null;
     }
 
-    /** Where the current forage leg goes: 72 blocks out from the centre in the current direction, kept on the map. */
+    /**
+     * Where the current forage leg goes: 72 blocks out from the centre in the current direction, kept on the map. A
+     * direction whose point lies by a pillager outpost or woodland mansion the faction knows of is passed over.
+     */
     private BlockPos forageTargetFor(BaseState b) {
-        double a = forageDir * Math.PI * 2 / FORAGE_DIRECTIONS;
-        BlockPos p = b.center.offset((int) Math.round(Math.cos(a) * FORAGE_DISTANCE), 0, (int) Math.round(Math.sin(a) * FORAGE_DISTANCE));
-        return MapBounds.clamp(data(), p, 16);
+        BlockPos first = null;
+        for (int i = 0; i < FORAGE_DIRECTIONS; i++) {
+            double a = forageDir * Math.PI * 2 / FORAGE_DIRECTIONS;
+            BlockPos p = MapBounds.clamp(data(), b.center.offset((int) Math.round(Math.cos(a) * FORAGE_DISTANCE), 0,
+                    (int) Math.round(Math.sin(a) * FORAGE_DISTANCE)), 16);
+            if (!BaseZones.nearKnownDanger(data().factions.get(b.faction), p, BaseZones.DANGER_RADIUS)) {
+                return p;
+            }
+            first = first == null ? p : first;
+            forageDir = (forageDir + 1) % FORAGE_DIRECTIONS;
+        }
+        return first; // dangerous every way: the first direction, as before
     }
 
     /**

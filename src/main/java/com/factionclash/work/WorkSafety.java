@@ -133,8 +133,9 @@ public final class WorkSafety {
     /**
      * True if wood at {@code pos} is not the woodcutter's to fell: part of any base's plan, within 2 blocks of a
      * settlement's walls (its own included), in another base's land (8 around its MIN/MAX box, 16 for a lair), off
-     * the campaign map, or within 32 blocks of a village the faction knows of. The own base's work belt (its MIN/MAX
-     * box) does not protect anything.
+     * the campaign map, within 32 blocks of a village the faction knows of, or within 48 of a pillager outpost or
+     * woodland mansion it knows of (dangerous ground). The own base's work belt (its MIN/MAX box) does not protect
+     * anything.
      */
     public static boolean protectedWood(ServerLevel level, CampaignData data, @Nullable BaseState own, BlockPos pos) {
         for (BaseState b : data.bases.values()) {
@@ -151,7 +152,8 @@ public final class WorkSafety {
         if (!MapBounds.inside(data, pos, 0)) {
             return true;
         }
-        return own != null && BaseZones.nearKnownVillage(data.factions.get(own.faction), pos, VILLAGE_WOOD_RADIUS);
+        return own != null && (BaseZones.nearKnownVillage(data.factions.get(own.faction), pos, VILLAGE_WOOD_RADIUS)
+                || BaseZones.nearKnownDanger(data.factions.get(own.faction), pos, BaseZones.DANGER_RADIUS));
     }
 
     /** The kinds of work that keep a place free of each other. */

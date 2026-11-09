@@ -47,8 +47,8 @@ In the world:
   their own faction's records.
 * **World Map Board** (right-click): opens a drawn map of the campaign area — explored sectors shaded, your
   bases, and every report your scouts physically delivered as a marker (enemy settlements, lairs, monsters, cave
-  entrances, exposed ore, surveyed caves; hover a marker for details; moving things fade when *stale*), your own
-  position, a legend and the written report list.
+  entrances, exposed ore, surveyed caves, villages, pillager outposts, woodland mansions; hover a marker for
+  details; moving things fade when *stale*), your own position, a legend and the written report list.
 * **NPCs** (right-click): a screen with identity, job, equipment, backpack, current task, destination, workplace,
   level and affixes. Sneak + right-click with a better tool, weapon, armour piece or arrow to hand it over — the
   replaced item disappears.
@@ -131,8 +131,10 @@ Players respawn at their nearest surviving allied base when they have no bed.
   member joins an offensive another member has launched when their parties together are strong enough. The pact
   ends when the conqueror falls or fewer than two members are left; the next conquest can raise a new one. Shown in
   `/fc status` and the base information screen.
-* **Traders and villages**: scouts report villages (two or more villagers with a trade). A base of 14 or more people
-  with a village within 320 blocks hires a **trader**. By day, at most every half day, it packs the base's surplus
+* **Traders and villages**: scouts report villages - any village they come within sight of (plains, desert,
+  savanna, snowy, taiga, abandoned ones too), with the villagers with a trade they saw there, or two or more such
+  villagers met elsewhere. A base of 14 or more people with a village with traders within 320 blocks hires a
+  **trader**; an abandoned village is on the map but no trader goes there. By day, at most every half day, it packs the base's surplus
   (crops, sticks, string, leather, rotten flesh, stone, coal above the reserves — after the first visit, only what
   that village buys) and the stored emeralds, walks to the village and trades with each villager **as a player
   does**: the villager's own offers, prices (with demand) and stock, paid from its backpack. It sells for emeralds
@@ -220,8 +222,13 @@ Players respawn at their nearest surviving allied base when they have no bed.
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
 * **Scouts** explore unexplored map sectors, record only what they see and what is worth a trip (enemy
-  settlements, lairs, monsters, cave entrances they can see a way into, exposed ore — not trees or water, which
-  are easy to find), retreat home on danger along a fixed route, and publish by reaching the station. Once
+  settlements, lairs, monsters, cave entrances they can see a way into, exposed ore, villages, pillager outposts
+  and woodland mansions — not trees or water, which are easy to find), and publish by reaching the station.
+  Monsters do not end a trip: the scout steps aside to firm ground 12-20 blocks away, clear of them and on the
+  side of where it is going, and carries on; it retreats home along a fixed route from enemy soldiers, or from
+  monsters only when badly hurt, hit again and again or unable to shake them. Known pillager outposts and
+  woodland mansions are dangerous ground: no exploration target, mine, tree, fishing spot or travel waypoint lies
+  within 48 blocks of one. Once
   everything within `scoutRange` is explored and no living rival settlement is known, they push the frontier out
   64 blocks at a time, up to the edge of the map, so distant factions find each other.
 * **Soldiers**: swordsmen, axe fighters, archers and crossbowmen. Melee timing follows the held weapon's real

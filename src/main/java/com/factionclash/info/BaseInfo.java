@@ -125,6 +125,10 @@ public final class BaseInfo {
         }
         out.add("Repairs pending: " + b.pendingRepairs.size() + "  Player edits preserved: " + b.playerEdits.size());
         out.add("Reports delivered: " + f.reportsDelivered + " (" + f.knowledge.size() + " on the map), sectors explored " + f.explored.size());
+        String places = knownPlaces(f, b);
+        if (!places.isEmpty()) {
+            out.add(places);
+        }
         com.factionclash.campaign.CampaignData cd = com.factionclash.campaign.CampaignData.get(level.getServer());
         if (cd.pactAgainst != null && (cd.pactMembers.contains(b.faction) || cd.pactAgainst == b.faction)) {
             out.add(com.factionclash.campaign.Diplomacy.describe(cd));
@@ -146,6 +150,42 @@ public final class BaseInfo {
         }
         out.add("Great People: not implemented in this build");
         return out;
+    }
+
+    /**
+     * The structures the scouts reported, nearest first: "Known places: village 140 blocks NE (4 traders), village
+     * 260 blocks S (no traders seen), pillager outpost 210 blocks W (keep away)". Empty when none are known.
+     */
+    static String knownPlaces(FactionState f, BaseState b) {
+        List<Report> places = new ArrayList<>();
+        for (Report r : f.knowledge) {
+            if (r.kind.structure()) {
+                places.add(r);
+            }
+        }
+        if (places.isEmpty()) {
+            return "";
+        }
+        places.sort(Comparator.comparingDouble(r -> r.pos.distSqr(b.center)));
+        List<String> parts = new ArrayList<>();
+        for (Report r : places) {
+            int dx = r.pos.getX() - b.center.getX(), dz = r.pos.getZ() - b.center.getZ();
+            String where = Math.round(Math.sqrt((double) dx * dx + dz * dz)) + " blocks " + compass(dx, dz);
+            parts.add(switch (r.kind) {
+                case VILLAGE -> (r.count > 0 ? "village " + where + " (" + r.count + (r.count == 1 ? " trader)" : " traders)")
+                        : "village " + where + " (no traders seen)");
+                case PILLAGER_OUTPOST -> "pillager outpost " + where + " (keep away)";
+                default -> "woodland mansion " + where + " (keep away)";
+            });
+        }
+        return "Known places: " + String.join(", ", parts);
+    }
+
+    /** "N", "NE", ... for a horizontal offset (north is -z). */
+    static String compass(int dx, int dz) {
+        String[] names = {"E", "SE", "S", "SW", "W", "NW", "N", "NE"};
+        double a = Math.atan2(dz, dx);
+        return names[Math.floorMod((int) Math.round(a / (Math.PI / 4)), 8)];
     }
 
     /**
@@ -215,6 +255,9 @@ public final class BaseInfo {
         if (l.startsWith("Recruitment")) {
             return 0xFFD54F;
         }
+        if (l.startsWith("Known places")) {
+            return 0xFFCC80;
+        }
         if (l.startsWith("Construction") || l.startsWith("Repairs")) {
             return 0xA5D6A7;
         }
@@ -280,6 +323,8 @@ public final class BaseInfo {
                 case CAVE -> com.factionclash.net.MapPayload.CAVE;
                 case ORE -> com.factionclash.net.MapPayload.ORE;
                 case VILLAGE -> com.factionclash.net.MapPayload.VILLAGE;
+                case PILLAGER_OUTPOST -> com.factionclash.net.MapPayload.PILLAGER_OUTPOST;
+                case WOODLAND_MANSION -> com.factionclash.net.MapPayload.WOODLAND_MANSION;
             };
             boolean stale = r.kind.canGoStale && now - r.observedAt > FCConfig.REPORT_STALE_TICKS.get();
             markers.add(new com.factionclash.net.MapPayload.Marker(r.pos.getX(), r.pos.getZ(),

@@ -294,14 +294,22 @@ public final class NpcNavigator {
         com.factionclash.campaign.BaseState home = npc.base();
         boolean avoid = home != null && !home.destroyed && home.isSettlement() && !insideWalls(home, npc.blockPosition())
                 && !insideWalls(home, dest);
+        // and a trip that neither starts nor ends at a pillager outpost or woodland mansion the faction knows of
+        // goes around it rather than straight through
+        com.factionclash.campaign.FactionState known = npc.getServer() == null ? null
+                : com.factionclash.campaign.CampaignData.get(npc.getServer()).factions.get(npc.getFaction());
+        int danger = com.factionclash.campaign.BaseZones.DANGER_RADIUS;
+        boolean shun = known != null && !com.factionclash.campaign.BaseZones.nearKnownDanger(known, dest, danger)
+                && !com.factionclash.campaign.BaseZones.nearKnownDanger(known, npc.blockPosition(), danger);
         int wx = 0, wz = 0;
         // passing by its own settlement, the waypoint goes around the walls rather than back in through a gate
         for (double turn : new double[]{0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5}) {
             double c = Math.cos(turn), sn = Math.sin(turn);
             wx = Mth.floor(npc.getX() + (ux * c - uz * sn) * WAYPOINT_STEP);
             wz = Mth.floor(npc.getZ() + (ux * sn + uz * c) * WAYPOINT_STEP);
-            if (!avoid || Math.abs(wx - home.center.getX()) > com.factionclash.structure.BaseLayout.HALF + 2
-                    || Math.abs(wz - home.center.getZ()) > com.factionclash.structure.BaseLayout.HALF + 2) {
+            boolean walls = !avoid || Math.abs(wx - home.center.getX()) > com.factionclash.structure.BaseLayout.HALF + 2
+                    || Math.abs(wz - home.center.getZ()) > com.factionclash.structure.BaseLayout.HALF + 2;
+            if (walls && (!shun || !com.factionclash.campaign.BaseZones.nearKnownDanger(known, new BlockPos(wx, 0, wz), danger))) {
                 break;
             }
         }

@@ -225,10 +225,10 @@ public final class FactionDirector {
     /** PROPOSED: a base hires a trader once it has this many people (its surplus is worth a trip). */
     private static final int TRADER_POPULATION = 14;
 
-    /** A village the scouts reported within a trader's reach of the base. */
+    /** A village with traders the scouts reported within a trader's reach of the base. */
     private static boolean villageInReach(FactionState f, BaseState b) {
         double r = com.factionclash.work.TraderJob.TRADE_RANGE;
-        return f.knowledge.stream().anyMatch(rep -> rep.kind == Report.Kind.VILLAGE && rep.pos.distSqr(b.center) <= r * r);
+        return f.knowledge.stream().anyMatch(rep -> rep.tradingVillage() && rep.pos.distSqr(b.center) <= r * r);
     }
 
     /**

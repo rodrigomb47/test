@@ -80,6 +80,27 @@ public final class BaseZones {
         return false;
     }
 
+    /**
+     * PROPOSED: how far (Chebyshev, from the reported position) the faction's people keep from a pillager outpost or
+     * woodland mansion its scouts have reported: no exploration target, mine site, tree, fishing spot or travel waypoint
+     * lies closer.
+     */
+    public static final int DANGER_RADIUS = 48;
+
+    /** Within {@code r} blocks (Chebyshev) of a pillager outpost or woodland mansion the faction's scouts have reported. */
+    public static boolean nearKnownDanger(FactionState f, BlockPos p, int r) {
+        if (f == null) {
+            return false;
+        }
+        for (Report rep : f.knowledge) {
+            if (rep.kind.dangerousGround() && rep.pos != null
+                    && Zones.chebyshev(p.getX(), p.getZ(), rep.pos.getX(), rep.pos.getZ()) <= r) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** How far from the centre the base's workers look for work: a GameTest base's own radius, else the configured one. */
     public static int workRadius(BaseState b, int configured) {
         return Zones.workRadius(b.testRadius, configured);

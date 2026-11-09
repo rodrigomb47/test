@@ -77,14 +77,15 @@ public final class FactionState {
         return roster.values().stream().filter(r -> r.alive).count();
     }
 
-    /** Adds or refreshes a delivered report, replacing an older observation of the same subject. */
+    /**
+     * Adds or refreshes a delivered report: a newer observation of the same subject replaces the older one (see
+     * {@link Report#merge}: a village seen without traders keeps the traders seen before).
+     */
     public boolean addReport(Report r) {
         for (int i = 0; i < knowledge.size(); i++) {
             Report old = knowledge.get(i);
             if (old.sameSubject(r)) {
-                if (r.observedAt >= old.observedAt) {
-                    knowledge.set(i, r);
-                }
+                knowledge.set(i, r.observedAt >= old.observedAt ? Report.merge(old, r) : Report.merge(r, old));
                 return false;
             }
         }

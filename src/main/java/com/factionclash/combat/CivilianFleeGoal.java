@@ -10,7 +10,10 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.EnumSet;
 
-/** Noncombatants below 50% health run to safety and alert guards (spec 14). Combatants never use this. */
+/**
+ * Noncombatants below 50% health run to safety and alert guards (spec 14). Combatants never use this, nor does a
+ * worker whose job looks after its own safety (a scout away from home steps aside or retreats by itself).
+ */
 public class CivilianFleeGoal extends Goal {
     private final FactionNpc npc;
     private LivingEntity threat;
@@ -29,9 +32,14 @@ public class CivilianFleeGoal extends Goal {
         return null;
     }
 
+    /** A job that looks after its own safety (a scout away from home) is left to it. */
+    private boolean jobDecides() {
+        return npc.job() != null && npc.job().handlesOwnSafety();
+    }
+
     @Override
     public boolean canUse() {
-        if (!npc.getRole().isCivilian() || npc.getHealth() >= npc.getMaxHealth() * 0.5F) {
+        if (!npc.getRole().isCivilian() || npc.getHealth() >= npc.getMaxHealth() * 0.5F || jobDecides()) {
             return false;
         }
         threat = currentThreat();
@@ -40,7 +48,7 @@ public class CivilianFleeGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        if (npc.getHealth() >= npc.getMaxHealth() * 0.5F) {
+        if (npc.getHealth() >= npc.getMaxHealth() * 0.5F || jobDecides()) {
             return false;
         }
         LivingEntity t = currentThreat();

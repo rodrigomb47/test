@@ -201,7 +201,7 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
   factions (2+) are allied until the conqueror falls or fewer than 2 members remain. Members learn the
   conqueror's bases, target only it, and join a member's raid on the same base when their combined power is at
   least 2/3 of the defence (after a quarter of the interval).
-* Traders (PROPOSED): hired with 14+ people and a reported village within 320 blocks; one trip per 12000 ticks, by
+* Traders (PROPOSED): hired with 14+ people and a reported village with traders within 320 blocks; one trip per 12000 ticks, by
   day (setting out between 23500 and 9000 day time), abandoned after 24000 ticks. Packs up to 8 kinds × 64 of
   surplus above the reserves (wheat, potatoes, carrots 64; beetroot 32; sticks 64; string, leather 16; feathers,
   flint, cod, salmon 32; stone 64; granite, andesite, diorite 128; coal 96; white wool 8; pumpkins, melons, rotten
@@ -240,7 +240,7 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 ## Levels and affixes (`AffixRoller`, `Affix`)
 * Level n → n+1 costs 40 + 30n XP; max level 30; one affix roll per level; job affixes weighted ×2.
 * Caps: Vitality +2 HP ×5, Swiftness +3% ×5, Might +1 ×5, Toughness +1 ×5, Diligence +6% dig/build speed ×5, Prospector +5% chance an ore drops twice ×5, Regrowth +8% instant growth ×5, Green Thumb +10% chance a crop drops twice ×5, Pathfinder +16 range ×4, Mason +10% build speed ×5, Marksman +10% arrow damage ×5, Thrifty 8% chance a wear event is skipped ×4, Hardy −8% exhaustion ×4, Duelist +10% critical damage (×1.5 → ×2.0 at 5) ×5 (swordsmen, axe fighters), Angler 8% chance the fishing loot is rolled twice ×5 (fishermen), Haggler −5% emerald prices ×4 (traders).
-* XP: ore XP above (stone 0); 1 per log/harvest/breeding feed; 2 per butchered animal; 20 per new mine level; 1 per repaired block; 25 + blocks/20 per project; scouts: report base value (enemy base 12, lair 12, cave 8, ore 6, hostiles 4) + 1 per 32 blocks from home. Trees and water are not reported.
+* XP: ore XP above (stone 0); 1 per log/harvest/breeding feed; 2 per butchered animal; 20 per new mine level; 1 per repaired block; 25 + blocks/20 per project; scouts: report base value (enemy base 12, lair 12, woodland mansion 12, pillager outpost 10, cave 8, village 8, ore 6, hostiles 4) + 1 per 32 blocks from home. Trees and water are not reported.
 
 ## Soldiers (`NpcMeleeAttackGoal`, `NpcRangedAttackGoal`)
 * Melee: one hit every 20 / attack speed ticks (the player's attack speed, set by the held weapon), clamped to
@@ -262,6 +262,20 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * Scouts: range 160 (+Pathfinder), at least 96 blocks out, 4 sectors per expedition, overdue after 24000 ticks.
   When every sector in range is explored and no living rival settlement is known, the faction's range grows by 64
   (saved, up to the far edge of the map); otherwise the explored sectors are forgotten and scouted again.
+* Scouts and structures (PROPOSED): a village (village tag), pillager outpost or woodland mansion is reported once
+  per trip when its bounds come within 48 blocks (loaded chunks within 3 of the scout only); villages at their town
+  centre, others at the middle of their bounds. Reports of one structure merge within 64 blocks; a look that saw no
+  traders keeps the traders seen before. No exploration target, mine site, tree, fishing spot, forage leg or travel
+  waypoint within 48 blocks (Chebyshev) of a known outpost or mansion.
+* Scouts and monsters (PROPOSED): checked every 10 ticks; a monster counts within 6 blocks, or within its keep-away
+  distance (12; creepers 16; skeletons, pillagers, witches 18) when seen or hunting the scout (+4). The scout runs at
+  1.3x to a point 16/20/12 blocks out in one of 16 directions, clear of every monster, passing none closer than 4,
+  scored by clearance (up to 4 over the keep-away) + 8 x the target side + 1 x away from the group - 6 x reversing
+  the last escape; firm dry ground in a loaded chunk, 8 inside the map edge, with a walking route (4 path searches at
+  most). A run lasts at most 160 ticks. It retreats home when under 40% health with monsters about, after 3 monster
+  hits in one encounter, or after 4 escapes in a row that did not shake them; cornered with a monster within 3.5
+  blocks it fights back for 100 ticks while over half health. An encounter ends after 100 quiet ticks. Enemy
+  soldiers: retreat home as before (2 threats, or 1 under 60% health).
 * Raids: interval 36000 ticks, party at least 3 (see the war council above), 3 home defenders kept; assault takes 400 ticks at the target heart.
 * Hollow lairs: start with 5 monsters, +1 per day up to 12; raid every 30000 ticks on the nearest settlement within 300 blocks.
 * Damage: zombies, skeletons and variants deal ×0.5 to NPCs; NPCs regenerate 1 HP per 4 s out of combat (they have no hunger).

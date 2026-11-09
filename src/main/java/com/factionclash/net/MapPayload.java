@@ -17,8 +17,9 @@ public record MapPayload(String title, int titleColor, List<Integer> frame, List
                          List<String> lines) implements CustomPacketPayload {
     public static final Type<MapPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "map"));
 
-    /** Marker kinds drawn on the map. */
-    public static final int OWN_BASE = 0, ENEMY_BASE = 1, LAIR = 2, HOSTILES = 3, CAVE = 4, ORE = 5, SURVEYED_CAVE = 6, VILLAGE = 7, STALE = 16;
+    /** Marker kinds drawn on the map (the low 4 bits; new kinds are appended below 16), with the STALE flag bit. */
+    public static final int OWN_BASE = 0, ENEMY_BASE = 1, LAIR = 2, HOSTILES = 3, CAVE = 4, ORE = 5, SURVEYED_CAVE = 6, VILLAGE = 7,
+            PILLAGER_OUTPOST = 8, WOODLAND_MANSION = 9, STALE = 16;
 
     public record Marker(int x, int z, int kind, String label) {
         public static final StreamCodec<ByteBuf, Marker> CODEC = StreamCodec.composite(

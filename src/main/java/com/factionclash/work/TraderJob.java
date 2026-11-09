@@ -139,7 +139,7 @@ public class TraderJob extends Job {
     private void plan(BaseState b) {
         Report r = nearestVillage(b);
         if (r == null) {
-            status("No village reported within " + TRADE_RANGE + " blocks", "Idle");
+            status("No village with traders reported within " + TRADE_RANGE + " blocks", "Idle");
             waitFor(1200);
             return;
         }
@@ -191,11 +191,12 @@ public class TraderJob extends Job {
         state = State.TRAVEL;
     }
 
+    /** The nearest village within reach where the scouts saw villagers with trades (an abandoned one is no use). */
     private Report nearestVillage(BaseState b) {
         Report best = null;
         double bestD = (double) TRADE_RANGE * TRADE_RANGE;
         for (Report r : data().faction(npc.getFaction()).knowledge) {
-            if (r.kind == Report.Kind.VILLAGE) {
+            if (r.tradingVillage()) {
                 double d = r.pos.distSqr(b.center);
                 if (d < bestD) {
                     bestD = d;
