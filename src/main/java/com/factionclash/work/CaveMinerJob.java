@@ -279,11 +279,12 @@ public class CaveMinerJob extends Job {
             done(w, t);
             return;
         }
+        if (!WorkSafety.mayDig(level(), t, base(), null)) {
+            // under a base, in another mine's stairs, in the deep dark...: not worth walking or tunnelling to
+            skip(w, t, "it is protected");
+            return;
+        }
         if (BlockWork.inReach(npc, t, 4.5)) {
-            if (!WorkSafety.mayDig(level(), t, base(), null)) {
-                skip(w, t, "it is protected");
-                return;
-            }
             if (!plugFluids(t)) {
                 skip(w, t, "water or lava behind it and nothing to plug it with");
                 return;

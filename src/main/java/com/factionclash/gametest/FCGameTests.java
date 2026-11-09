@@ -1343,9 +1343,10 @@ public final class FCGameTests {
     }
 
     /**
-     * Miners and cave miners leave alone what nobody may dig: a chest, a block of a base's plan, the rock under a base
-     * (here 10 below its floor), another mine's stairs, a sculk shrieker and deepslate bricks. Plain stone may be
-     * dug, and so may the miner's own mine's stairs (when it clears them).
+     * Miners and cave miners leave alone what nobody may dig: a chest, a block of a base's plan (here outside its
+     * walls), the rock under a base (here 3 below its floor; deeper in a real world), another mine's stairs, a sculk
+     * shrieker and deepslate bricks. Plain stone may be dug, also just beyond the zone under the base, and so may the
+     * miner's own mine's stairs (when it clears them).
      */
     @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
     public static void minerNeverDigsProtectedBlocks(GameTestHelper h) {
@@ -1353,10 +1354,18 @@ public final class FCGameTests {
         var level = h.getLevel();
         var type = com.factionclash.campaign.WorkplaceState.Type.MINE;
         try {
-            BlockPos planned = h.absolutePos(new BlockPos(13, 2, 13));
-            h.setBlock(new BlockPos(13, 2, 13), Blocks.STONE);
+            // the planned block lies well outside the walls box (Chebyshev 8 from the centre), so only the plan rule
+            // can refuse it; it is plain stone and diggable until it becomes part of the plan
+            BlockPos planned = h.absolutePos(new BlockPos(4, 2, 12));
+            h.setBlock(new BlockPos(4, 2, 12), Blocks.STONE);
+            h.assertTrue(com.factionclash.work.WorkSafety.mayDig(level, planned, t.base, null), "stone outside any plan should be diggable");
             t.base.structures.add(com.factionclash.campaign.StructureRecord.of("Test plan", java.util.Map.of(planned, Blocks.STONE.defaultBlockState())));
             t.base.invalidatePlanIndex();
+            // the rock under the base: below its floor and within its walls box + 2 (Chebyshev 4 here), but not one
+            // block further out (kept inside the world: the GameTest ground lies a few blocks above its bottom)
+            BlockPos under = h.absolutePos(new BlockPos(14, -1, 8)), beside = h.absolutePos(new BlockPos(17, -1, 12));
+            h.setBlock(new BlockPos(14, -1, 8), Blocks.STONE);
+            h.setBlock(new BlockPos(17, -1, 12), Blocks.STONE);
             var own = t.addWorkplace(type, h.absolutePos(new BlockPos(4, 5, 20)));
             own.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
             var other = t.addWorkplace(type, h.absolutePos(new BlockPos(18, 5, 4)));
@@ -1374,7 +1383,8 @@ public final class FCGameTests {
             h.assertTrue(may.test(h.absolutePos(new BlockPos(20, 2, 16)), own), "plain stone should be diggable");
             h.assertFalse(may.test(h.absolutePos(new BlockPos(20, 2, 8)), own), "a chest must not be dug");
             h.assertFalse(may.test(planned, own), "a block of the base's plan must not be dug");
-            h.assertFalse(may.test(t.base.center.below(10), own), "the rock under the base must not be dug");
+            h.assertFalse(may.test(under, own), "the rock under the base must not be dug");
+            h.assertTrue(may.test(beside, own), "the rock just beyond the walls box + 2 may be dug");
             h.assertFalse(may.test(otherStairs, own), "another mine's stairs must not be dug");
             h.assertTrue(may.test(ownStairs, own), "the miner's own stairs may be cleared");
             h.assertFalse(may.test(ownStairs, null), "a cave miner must not dig any mine's stairs");

@@ -315,6 +315,8 @@ public class WoodcutterJob extends Job {
     /** The stump of the tree being felled once its first log is cut (null otherwise), and whether it is wild. */
     private BlockPos felling;
     private boolean fellingWild;
+    /** The last tree surveyed has a 2x2 trunk, so its canopy is wider. */
+    private boolean bigTree;
 
     /**
      * The nearest natural tree around the plot (a trunk standing on dirt with natural leaves), outside every base
@@ -590,6 +592,7 @@ public class WoodcutterJob extends Job {
                 badWild.clear();
             }
             wildCache = null;
+            nextWildScan = now(); // look for the next tree at once, rather than walk out to forage
             wild = false;
         } else {
             skipUntil.put(spot.asLong(), now() + 6000);
@@ -626,6 +629,7 @@ public class WoodcutterJob extends Job {
                     felling = null;
                 }
                 wildCache = null;
+                nextWildScan = now(); // look for the next tree at once, rather than walk out to forage
                 wild = false;
                 npc.navigator().reset();
                 state = State.CHECK;
@@ -675,6 +679,7 @@ public class WoodcutterJob extends Job {
                 leaveTree(tree.verdict());
                 return;
             }
+            bigTree = tree.big();
             for (int[] p : tree.logs()) {
                 logs.add(new BlockPos(p[0], p[1], p[2]));
             }
@@ -704,10 +709,11 @@ public class WoodcutterJob extends Job {
         }
     }
 
-    /** The felled tree's canopy within a player's reach of the stump. */
+    /** The felled tree's canopy within a player's reach of the stump (a wider box for a 2x2 trunk). */
     private void findLeaves() {
         leaves.clear();
-        for (BlockPos p : BlockPos.betweenClosed(spot.offset(-3, 0, -3), spot.offset(3, 12, 3))) {
+        int r = bigTree ? 5 : 3;
+        for (BlockPos p : BlockPos.betweenClosed(spot.offset(-r, 0, -r), spot.offset(r, 12, r))) {
             if (cuttableLeaves(p)) {
                 leaves.add(p.immutable());
             }
@@ -1062,6 +1068,7 @@ public class WoodcutterJob extends Job {
         tag.putInt("progress", progress);
         tag.putInt("tendCursor", tendCursor);
         tag.putLong("nextUpgrade", nextUpgradeCheck);
+        tag.putBoolean("wild", wild); // a wild tree in the middle of being felled, collected or replanted is not a plot tree
         if (felling != null) {
             tag.putLong("felling", felling.asLong());
             tag.putBoolean("fellingWild", fellingWild);
@@ -1082,6 +1089,7 @@ public class WoodcutterJob extends Job {
         progress = tag.getInt("progress");
         tendCursor = tag.getInt("tendCursor");
         nextUpgradeCheck = tag.getLong("nextUpgrade");
+        wild = spot != null && tag.getBoolean("wild");
         felling = readPos(tag, "felling");
         fellingWild = tag.getBoolean("fellingWild");
     }
