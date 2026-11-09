@@ -28,6 +28,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Drowned;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.level.block.state.BlockState;
@@ -99,6 +100,11 @@ public class ScoutJob extends Job {
      * of them, must not keep it stepping aside forever (on the way home there is no overdue check to stop it).
      */
     static final int MAX_ENCOUNTER_ESCAPES = 10;
+    /**
+     * PROPOSED: escapes on one expedition before the scout gives the trip up and heads home: past this the land is
+     * too thick with monsters to get anywhere (a typical trip needs well under 20).
+     */
+    static final int MAX_TRIP_ESCAPES = 40;
     /** PROPOSED: the longest run to one escape point, and how long without a monster in reach ends an encounter. */
     static final int ESCAPE_TICKS = 160, QUIET_TICKS = 100;
     /** PROPOSED: monsters are looked for this far around (8 up or down); this close they count even unseen. */
@@ -503,6 +509,10 @@ public class ScoutJob extends Job {
             retreatFrom(threats, "could not get past " + evadeInfo);
             return;
         }
+        if (evasions >= MAX_TRIP_ESCAPES) {
+            retreatFrom(threats, "too many monsters about, last " + evadeInfo);
+            return;
+        }
         BlockPos to = pickEscape(toThreats(clearanceSet(around, threats)), goal);
         if (to != null) {
             escape = to;
@@ -680,13 +690,17 @@ public class ScoutJob extends Job {
      * The monsters to get away from: any within 6 blocks on about the scout's level (or in sight), one hunting the
      * scout within its keep-away distance plus 4, and any other within its keep-away distance that the scout can see.
      * A monster behind a hill or down in a cave under its feet does not count, and archers only shoot what they can see.
+     * One swimming (a drowned in the river beside the scout's path) counts only when it is close or hunting the scout:
+     * it is slow in the water and walking along a shore past it is safe.
      */
     private List<Monster> threatening(List<Monster> around) {
         List<Monster> out = new ArrayList<>();
         for (Monster m : around) {
             double d = npc.distanceTo(m), keep = keepAway(m);
             boolean close = d <= CLOSE && (Math.abs(m.getY() - npc.getY()) <= 3 || npc.hasLineOfSight(m));
-            if (close || m.getTarget() == npc && d <= keep + 4 || d <= keep && npc.hasLineOfSight(m)) {
+            boolean hunting = m.getTarget() == npc && d <= keep + 4;
+            boolean seen = d <= keep && npc.hasLineOfSight(m) && !m.isInWater();
+            if (close || hunting || seen) {
                 out.add(m);
             }
         }
@@ -714,13 +728,15 @@ public class ScoutJob extends Job {
 
     /**
      * PROPOSED: how far from a monster counts as clear: 16 from a creeper (its blast), 18 from an archer (skeletons,
-     * pillagers and witches shoot from about 15), 12 from anything else.
+     * pillagers and witches shoot from about 15; a drowned only when it holds a trident), 12 from anything else.
      */
     public static double keepAway(Monster m) {
         if (m instanceof Creeper) {
             return 16;
         }
-        return m instanceof RangedAttackMob ? 18 : 12;
+        boolean ranged = m instanceof Drowned d ? d.getMainHandItem().is(net.minecraft.world.item.Items.TRIDENT)
+                : m instanceof RangedAttackMob;
+        return ranged ? 18 : 12;
     }
 
     /** "a zombie", or "3 monsters (zombie, skeleton)": the kinds most numerous first, at most three named. */

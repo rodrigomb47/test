@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `328deb996a6580a82b4d206b6a0394010ddc413ec7eeb592480cf69b676ef54d`
+SHA-256: `6a5de62dd7b931873857ec5e60d19da1c330e0f62133099732781e06f2630ee3`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -368,7 +368,7 @@ the mines by layer, the woodland and the fishing water):
   replanting and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 91 GameTests on a real headless server, including **miners** (digs its own
+* `./gradlew runGameTestServer` — 92 GameTests on a real headless server, including **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
   a resting mine; a mine set aside keeps only the ground it dug), **woodcutters** (fells a tree and replants the same
@@ -377,7 +377,7 @@ the mines by layer, the woodland and the fishing water):
   flowers first), **fishermen** (never picks farm irrigation, catches at a pond, leaves when the water is gone,
   climbs onto the bank before casting, treasure only in open water, no fisherman hired without water),
   **retraining** (frees the workplace, barren roles, a worker with its tool again is not toolless), **old saves**
-  (old mines, tree plots and fishing spots load and convert), **scouts** (step aside from zombies and keep
+  (old mines, tree plots and fishing spots load and convert), **scouts** (walk on past a drowned in a pond, step aside from zombies and keep
   exploring, walk on past a monster that cannot see them, retreat when badly hurt or from enemy soldiers, find
   villages and outposts through loaded chunks only), **faction advancements**
   (single, any-of and all-of requirements; an NPC's diamond makes Diamonds!), **rationing** on and off,
@@ -400,6 +400,23 @@ the mines by layer, the woodland and the fishing water):
   per-day summary of every faction (see the source for usage).
 
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
+
+**The final check: a fresh campaign with every fix, the east landing and the new scouts** (same seed, eight days,
+default config; the drowned rule for scouts came after it):
+* **Mines**: 11 mines, every one on a site its miner chose, and no shaft stopped early. Shafts went down through
+  aquifers to the diamond layer (y=−54 to −56) at every base. Miners took iron at y=14 to 16, coal near the surface,
+  lapis and gold where the stock called for them, and mines whose tunnels could not be lengthened opened extra iron
+  layers nearby (y=9, 16 and 23 at Stoneguard).
+* **Wood**: the woodcutters felled 247 (Stoneguard), 227 (Grove), 224 (Ember) and 104 (Tide) trees. Tide's base
+  stands on the sparse ground where the run below felled only 25 trees in ten days.
+* **Fishing**: all four bases fished real water beyond their walls, two in open water; Tide made 357 catches.
+* **Scouts**: 173 expeditions. On 23 of them scouts stepped aside from monsters and went on exploring, and 12 ended
+  early because of monsters, five of them because of drowned along rivers. On one trip a scout stepped aside 229
+  times from drowned swimming by the shore, which led to the drowned rule and the cap of 40 per trip. Tide's scout reported a plains village 8 blocks from its real centre, with 2 traders. The map holds no outpost
+  or mansion (the nearest lie 1,300 and 3,700 blocks out), so a scout was set down beside an outpost by hand: it
+  reported it, and its base's station listed "pillager outpost 1324 blocks S (keep away)".
+* **War**: Ember Legion and Grove Covenant had fallen by day 8, and one of the two Hollow lairs.
+* **Performance**: 4.6 to 10.4 ms per tick over the sprints (the busiest days of the war).
 
 **A fresh campaign with the worker redesign** (same seed, ten days, run before the last round of review fixes,
 which came out of it, and before the scouts' villages, outposts, mansions and stepping aside):

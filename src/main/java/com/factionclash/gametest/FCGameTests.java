@@ -3382,6 +3382,47 @@ public final class FCGameTests {
      * Line of sight matters: a skeleton behind a wall, 9 to 14 blocks away (inside an archer's 18-block keep-away
      * distance, but not within 6), cannot shoot the scout, so the scout walks on past it without stepping aside.
      */
+    /**
+     * A drowned swimming in a pond beside the scout's way (in plain sight, 9 blocks off, not hunting it) is no reason to
+     * step aside, and without a trident it is no archer: the scout walks on past it.
+     */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "scout_water", skyAccess = true)
+    public static void scoutWalksOnPastADrownedInThePond(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 200);
+        FactionNpc n;
+        com.factionclash.work.ScoutJob job;
+        try {
+            for (int x = 10; x <= 14; x++) {
+                for (int z = 6; z <= 10; z++) {
+                    boolean rim = x == 10 || x == 14 || z == 6 || z == 10;
+                    h.setBlock(new BlockPos(x, 2, z), rim ? Blocks.STONE.defaultBlockState() : Blocks.WATER.defaultBlockState());
+                }
+            }
+            n = t.npc(3, 17, NpcRole.SCOUT);
+            n.equip(new ItemStack(Items.IRON_SWORD));
+            net.minecraft.world.entity.monster.Drowned dr = t.track(h.spawn(EntityType.DROWNED, new BlockPos(12, 2, 8)));
+            dr.setNoAi(true);
+            dr.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+            dr.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            t.assertTrue(com.factionclash.work.ScoutJob.keepAway(dr) == 12, "a drowned without a trident is no archer");
+            dr.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.TRIDENT));
+            t.assertTrue(com.factionclash.work.ScoutJob.keepAway(dr) == 18, "a drowned with a trident throws it");
+            dr.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            job = sendScout(h, n, h.absolutePos(new BlockPos(400, 2, 17))); // far to the east, past the pond
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int x0 = h.absolutePos(BlockPos.ZERO).getX();
+        t.onEachTick(() -> {
+            t.assertTrue(job.evasions() == 0, "stepped aside from a drowned swimming in a pond: " + n.status());
+            t.assertTrue(job.stateName().equals("OUTBOUND"), "the scout should carry on exploring: " + job.workplaceInfo());
+            if (n.getX() - x0 >= 18) {
+                t.succeed(); // walked past the pond
+            }
+        });
+    }
+
     @GameTest(template = "platform", timeoutTicks = 200, batch = "scout_sight", skyAccess = true)
     public static void scoutWalksOnPastAMonsterThatCannotSeeIt(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 200);

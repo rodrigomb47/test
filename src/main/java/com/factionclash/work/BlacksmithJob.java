@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Blacksmith (spec 10): plans useful batches from real needs (mine-upgrade pickaxes, worker tools, soldier
+ * Blacksmith (spec 10): plans useful batches from real needs (better pickaxes for the miners, worker tools, soldier
  * swords and armour, bows, torches), gathers real inputs, crafts at the workshop and delivers to storage.
  * Without a smelter it also smelts raw ore.
  */

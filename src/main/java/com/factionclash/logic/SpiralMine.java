@@ -6,12 +6,14 @@ import java.util.List;
 /**
  * Pure geometry of a player-style mine (no Minecraft classes, unit-tested).
  *
- * <p>Access is a 2x2 spiral staircase inside the surface hut: step k stands one block lower than step k-1 and turns
+ * <p>Access is a 2x2 spiral staircase dug down from the mine's mouth (inside the surface hut of an old hut mine):
+ * step k stands one block lower than step k-1 and turns
  * 90 degrees, so every column keeps a solid floor every four blocks (no long falls) and the whole shaft fits in a
  * 2x2 footprint. Each level has a "landing" step on the far side of the shaft, from which a classic branch mine
  * runs forward: a 2-high main tunnel with 2-high side branches every 4 blocks.
  *
- * <p>Coordinates: f = forward (away from the base), s = sideways, y relative to the hut floor (y0 = 0).
+ * <p>Coordinates: f = forward (the way the tunnels run, away from the base), s = sideways, y relative to the mouth's
+ * ground level (y0 = 0; the hut floor of an old hut mine).
  */
 public final class SpiralMine {
     /** Spiral cells (f, s) in walking order. Steps whose cell has f = 2 face the tunnels. */
@@ -28,7 +30,7 @@ public final class SpiralMine {
         return CELLS[Math.floorMod(step - 1, 4)];
     }
 
-    /** Standing height (relative to the hut floor) of spiral step k. */
+    /** Standing height (relative to the mouth's ground level) of spiral step k. */
     public static int standY(int step) {
         return -step;
     }
@@ -128,7 +130,7 @@ public final class SpiralMine {
     }
 
     /**
-     * The step whose open cells include (f, s, y), y relative to the hut floor; 0 when it is not a cell of the spiral
+     * The step whose open cells include (f, s, y), y relative to the mouth's ground level; 0 when it is not a cell of the spiral
      * (at or above the floor, outside the 2x2 column, or the floor between two steps of a column).
      */
     public static int shaftStepOf(int f, int s, int y) {
