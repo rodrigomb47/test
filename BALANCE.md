@@ -19,8 +19,9 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * After two failed trips an NPC digs. Shut in (under cover, up a tree on 3+ blocks of wood or leaves, or more than
   1 block below its destination: a pit, a ravine floor, the foot of a cliff) it keeps digging (or building) its way,
   one step per 20 ticks and at most 64 steps per round: up if the destination is above, down if below, otherwise
-  level. Only a walking route ends the digging (looked for after every step in the open, every 4th under cover):
-  being out in the open is not enough, a pit a few blocks below the destination is still a dead end. A round that
+  level. Only a walking route ends the digging (looked for after every step in the open, every 4th under cover,
+  never before a round's first step): being out in the open is not enough, a pit a few blocks below the
+  destination is still a dead end. A round that
   ends without a route (64 steps spent, or no step possible) makes the next one head 16 blocks off to one side,
   then the other side, then straight away, then toward the destination again (PROPOSED), always to the
   destination's height; arriving anywhere resets this. Under a settlement's edge it first heads out from under the
@@ -48,7 +49,8 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 * Pits (PROPOSED, `NpcNavigator.PIT_DEPTH` = 8): a long-trip waypoint whose ground lies more than 8 blocks below
   both the NPC and its destination (the floor of a ravine) is not used while another turn (up to ±85 degrees) is
   not one. A path that only gets as far as such a pit floor is not followed either: the NPC first walks to a point
-  24 blocks off to one side (left first) whose path does not lead down into it, at most once per 100 ticks.
+  24 blocks off to one side (left first) whose path does not lead down into it, at most once per 100 ticks; never
+  a point back inside its own walls when the trip leaves or passes them. With no such point the path is followed.
 * A path search that finds nothing but the spot the NPC stands on is repeated after 20 ticks, not every tick.
 * Underground (a mine, a cave), cells beside water cost no more than others in path searches (vanilla adds 8, as
   for a river bank, which made a mine's tunnels sealed against an aquifer cost more than a way round over the

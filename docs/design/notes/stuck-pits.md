@@ -98,3 +98,60 @@ Two causes, both seen live:
 
 Not addressed (seen in passing): NPCs walking onto a tree canopy at hill level (Cira on an oak at 483,77,186) still
 get down by the existing "perched" rule after a stall; the Tide pen gate gives a few one-block recovery hops a day.
+
+## Review (independent, after commit 707d69f)
+
+**Re-checked.**
+* Root cause, on a fresh copy of the day-15 world with the committed jar and temporary `-Dfc.dbg` logging: Cira
+  Reed, Vela Thorne and Hale Ember (all three at 508,60,169, problem "going back and forth") started a dig round,
+  pillared up to 508,63,170 in 3, 3 and 6 steps, found a walking route there and were walking to their mines and
+  the woodland within 1,200 ticks. That matches the hole/pad-edge loop described above.
+* The new GameTest is meaningful: the commit's `FCGameTests.java` on top of the pre-fix commit b9a1ec5 fails exactly
+  one test, `npcclimbsoutofapitbesideprotectedground` (timeout after 2400 ticks); on the fix it passes.
+* Build, 139 unit tests and all 94 GameTests green, on the commit and again with the review fixes.
+* Blocks: every block dug or placed while digging out over two in-game days was logged (145 cells). None was a
+  structure block; 8 lay within a walls box, all right outside Grove's south wall at y=62 (the pad's dirt under
+  its protected top layer, and pillars beside it), which the rules allow.
+* Cost: 4.1-4.3 ms per tick while sprinting a full day.
+
+**Found and fixed** (commit "Review fixes: ...").
+1. Empty dig rounds (a regression of the commit). `Job.digOut` looked for a walking route before a round's first
+   step; the old code always dug 3 steps first. Under cover on a long trip, `canWalkToward` searches toward the first
+   surface waypoint (whose chunk `waypoint()` loads), while the walk itself searches toward the destination, and
+   vanilla's ground navigation returns no path at all when the destination's chunk is not loaded. Seen live: the Tide
+   woodcutter Aldo Ember under a tree at 206,71,-190 went "no path" (every tick, 6 times) -> trip failed -> dig round
+   ended at once with 0 steps because a route "existed" -> again: 13 empty rounds in about 130 ticks, some 7 path
+   searches each, and it never moved. Fix: no route check before a round's first step (under cover the first check comes
+   after 4 steps, in the open after every step). Live after the fix: no empty round in a day.
+2. Detours back inside the NPC's own walls. `aroundPit` had no walls rule (`waypoint` has one). Seen live: the cave
+   explorer Tamsin Brook, leaving through the west gate for a cave at 562,69,207 (south-east, with the ravine along
+   the south wall). Every waypoint turn outside the walls lay in the ravine, so the path led into it; `aroundPit` then
+   chose 509,64,167, just inside the south wall. The explorer walked back in, was sent out to the west gate again,
+   and so on: 91 detours, and it was still at the gate at the end of the day. Fix: `aroundPit` skips points within
+   its own walls box (half + 2) when the trip leaves or passes the walls, like `waypoint`; with no detour left the
+   partial path is followed, as before the commit. Live after the fix: one detour search, no detour chosen; the
+   explorer went on and surveyed that cave (never reached in the original campaign, nor with the committed jar) and
+   six more that day, digging itself out of a cave passage on the way back from one with a 31-step staircase. With
+   the committed jar it surveyed one cave that day.
+
+One day each from the same start (day-15 world): committed jar 125 recoveries in all (Aldo's empty rounds, Tamsin
+pacing at the gate with 9); review fixes 164 (Tamsin 51 of them, mostly dig steps out of a cave it surveyed; the
+runs are not deterministic, so the totals say little). The three NPCs in the hole got out in both runs within about
+1,000 ticks; in the second run an animal carer herding at the rim fell in too and pillared out in 3 steps.
+
+**Not changed, worth knowing.**
+* `CLIMB` = 1 is measured against the route target, which on a long trip is the far destination. An NPC whose trips
+  fail twice anywhere more than a block below its destination's height now digs or builds rounds of up to 64 steps
+  (ways up first: rising bridge, dug steps, a pillar) until a route to its first waypoint exists, where before it took
+  one step per failed trip for 2 to 4 blocks. Not seen in the two days checked (every continuous round was a pit, a
+  cave, a tree or a canopy), but a far valley could get a short pillar. Comparing with the first waypoint's height
+  on long trips would be the refinement.
+* The gate choice (shortest straight walk through a gate) knows nothing about pits: the explorer's trip above leaves
+  by the west gate, whose only ways south-east lead past the ravine, where the east gate would have been shorter.
+* `digRounds` is reset only on arrival, not per destination: after unrelated failed rounds a new dig-out may start
+  sideways. `canWalkToward` and the walk still disagree underground on long trips (waypoint vs destination); with fix
+  1 that costs a few dig steps per round, as before the commit.
+* `Terrain.skirt` fills a column with no ground from 19 blocks below the pads; over a deeper ravine that fill is an
+  overhang with air under it (walkable, looks odd).
+* The review fixes have no GameTest (they need a far, unloaded destination under cover, or a settlement with gates
+  beside a ravine); they were checked live only.

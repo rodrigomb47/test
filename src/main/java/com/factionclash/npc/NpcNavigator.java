@@ -431,15 +431,27 @@ public final class NpcNavigator {
 
     /**
      * A path to a surface point off to one side of the way to {@code dest} (turned 30, 60 or 85 degrees, left first),
-     * that is not itself in a pit and that a search reaches without leading down into one; null if there is none.
+     * that is not itself in a pit, not back inside its own walls when the trip leaves or passes them, and that a
+     * search reaches without leading down into one; null if there is none.
      */
     private Path aroundPit(BlockPos dest, double hd) {
         double ux = (dest.getX() + 0.5 - npc.getX()) / hd, uz = (dest.getZ() + 0.5 - npc.getZ()) / hd;
         double reach = Math.min(hd, WAYPOINT_STEP);
         int pitBelow = Math.min(npc.getBlockY(), dest.getY()) - PIT_DEPTH;
+        com.factionclash.campaign.BaseState home = npc.base();
+        // (a point inside the walls only leads back out through the same gate: leaving through the west gate for
+        // somewhere south-east with a ravine along the south wall, a cave explorer paced between the gate and the
+        // inside of the south-west corner for a whole day)
+        boolean walls = home != null && !home.destroyed && home.isSettlement() && !insideWalls(home, npc.blockPosition())
+                && !insideWalls(home, dest);
         for (double turn : new double[]{0.5, -0.5, 1.0, -1.0, 1.5, -1.5}) {
             double c = Math.cos(turn), sn = Math.sin(turn);
-            BlockPos top = surface(Mth.floor(npc.getX() + (ux * c - uz * sn) * reach), Mth.floor(npc.getZ() + (ux * sn + uz * c) * reach));
+            int x = Mth.floor(npc.getX() + (ux * c - uz * sn) * reach), z = Mth.floor(npc.getZ() + (ux * sn + uz * c) * reach);
+            if (walls && Math.abs(x - home.center.getX()) <= com.factionclash.structure.BaseLayout.HALF + 2
+                    && Math.abs(z - home.center.getZ()) <= com.factionclash.structure.BaseLayout.HALF + 2) {
+                continue;
+            }
+            BlockPos top = surface(x, z);
             if (top.getY() < pitBelow) {
                 continue;
             }

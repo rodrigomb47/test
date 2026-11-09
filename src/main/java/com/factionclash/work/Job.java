@@ -363,8 +363,11 @@ public abstract class Job {
         // below the destination the walk led straight back to the hole it had dug (the spot nearest the
         // destination), and the digging started again from there, for days. In the open the route is looked for
         // after every step; under cover after every fourth (the staircase met a passage or slope that leads there).
+        // Never before a round's first step: the walk has just failed, and a route the search claims anyway (under a
+        // tree, toward a loaded waypoint while the walk searched for the destination's unloaded chunk) ended every
+        // round at once, so the NPC went from failed walk to empty round and back every few ticks without moving.
         boolean open = com.factionclash.npc.DigOut.free(npc);
-        boolean walk = (open || digSteps % 4 == 0) && npc.navigator().canWalkToward(pos);
+        boolean walk = digSteps < MAX_DIG_STEPS && (open || digSteps % 4 == 0) && npc.navigator().canWalkToward(pos);
         if (walk || --digSteps <= 0) {
             if (!walk) {
                 digRounds++; // the budget is spent with no way out yet: the next round heads another way
