@@ -25,6 +25,10 @@ neoForge {
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
+        clientViewer {
+            client()
+            programArguments.addAll '--quickPlayMultiplayer', 'localhost:25565', '--username', 'Viewer'
+        }
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id

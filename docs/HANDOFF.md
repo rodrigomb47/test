@@ -89,6 +89,12 @@ python3 tools/rcon.py "stop"
   block map. For a stuck loop, a temporary `LOGGER.info` guarded by a `-D` system property (added to the server's
   `user_jvm_args.txt`) is the fastest way; remove it before committing.
 - Old-save migration: keep a copy of a world from before a format change and load it with the new jar.
+- Screenshots: `build.gradle` has a `clientViewer` run (a real client that joins `localhost:25565` as "Viewer",
+  offline mode). With the server up: `Xvfb :99 -screen 0 1280x720x24 &`, then
+  `DISPLAY=:99 ./gradlew runClientViewer &`; once "Viewer joined the game" is logged, use RCON (`op Viewer`,
+  `gamemode spectator Viewer`, `execute as Viewer run fc join <faction>`, `tp Viewer x y z yaw pitch`,
+  `execute as Viewer run fc info` / `fc map` to open the screens) and capture with `DISPLAY=:99 import -window
+  root shot.png`; the game window is the 854x480 box at (213,120) of the 1280x720 screen.
 - `/locate structure minecraft:pillager_outpost` (or `#minecraft:village`, `minecraft:mansion`) via RCON finds
   structures to test scouts; a scout can be teleported next to one (`tp <uuid> x y z`) and back home to deliver.
 

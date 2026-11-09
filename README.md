@@ -360,12 +360,15 @@ mod and rendered the bases, blocks, NPC skins, armour and held items, and opened
 screens (screenshots below; the screens were opened with `/fc info` and `/fc map`, which send the same screens
 as right-clicking the blocks). No interactive play session by a human player was performed.
 
-![Ember Legion base](docs/screenshots/ember_legion_base.png)
+Grove Covenant's base on day 16 of a campaign with this version: no fenced plot or mine hut any more; the woodland
+the woodcutter fells and replants grows all around the walls, and the miners' own shafts lie outside them.
+
+![Grove Covenant base](docs/screenshots/grove_covenant_base.png)
 ![NPCs in the plaza](docs/screenshots/ember_legion_plaza_npcs.png)
 
-The reporting station and world map board screens, captured in the same real client with an earlier version (the
-station screenshot still shows the old constructed mine, tree plot and farm fishing spot lines; today's screen lists
-the mines by layer, the woodland and the fishing water):
+The reporting station and world map board screens of the same base, captured in the same real client. The station
+lists each self-chosen mine with its layers (height, ore, progress, lengthening rounds) and how deep its shaft goes;
+the map legend has the village, pillager outpost and woodland mansion markers scouts now report:
 
 ![Reporting station screen](docs/screenshots/station_screen.png)
 ![World map board screen](docs/screenshots/map_board_screen.png)
