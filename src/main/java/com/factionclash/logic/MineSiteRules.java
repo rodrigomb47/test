@@ -68,6 +68,33 @@ public final class MineSiteRules {
         return area(ox, oz, fx, fz, CORRIDOR_BACK, corridorEnd(rounds), CORRIDOR_SIDE_MIN, CORRIDOR_SIDE_MAX);
     }
 
+    /** What a mine set aside for good keeps reserved when it never got a shaft, or got one but no tunnels. */
+    public static final int KEEPS_NOTHING = -2, KEEPS_STAIRS = -1;
+
+    /**
+     * How much ground a mine keeps from other mines' corridors, in lengthening rounds of its corridor. An open or
+     * resting mine keeps all it reserved ({@code maxRounds}, or more where a level was lengthened further). A mine set
+     * aside for good keeps only what was really dug: nothing ({@link #KEEPS_NOTHING}) when its shaft was never begun
+     * ({@code bottom} 0), the ground around its stairs ({@link #KEEPS_STAIRS}, see {@link #stairsArea}) when no
+     * tunnel was started ({@code dugRounds} -1), otherwise its tunnels as far as they were lengthened.
+     *
+     * @param dugRounds the most lengthening rounds of any level with tunnels dug, or -1 when none has any
+     */
+    public static int keptRounds(boolean setAside, int bottom, int maxRounds, int dugRounds) {
+        if (!setAside) {
+            return Math.max(maxRounds, dugRounds);
+        }
+        if (bottom <= 0) {
+            return KEEPS_NOTHING;
+        }
+        return dugRounds < 0 ? KEEPS_STAIRS : dugRounds;
+    }
+
+    /** The ground around a mine's spiral stairs (forward 1..2, side 0..1) with three blocks to spare. */
+    public static Rect stairsArea(int ox, int oz, int fx, int fz) {
+        return area(ox, oz, fx, fz, CORRIDOR_BACK, 5, -3, 4);
+    }
+
     /** The stretch a lengthening round adds to the corridor: round {@code round} (1 or more) beyond round - 1. */
     public static Rect segment(int ox, int oz, int fx, int fz, int round) {
         return area(ox, oz, fx, fz, corridorEnd(round - 1) + 1, corridorEnd(round), CORRIDOR_SIDE_MIN, CORRIDOR_SIDE_MAX);
@@ -148,13 +175,21 @@ public final class MineSiteRules {
 
     /** PROPOSED: score weights: per point of corridor penalty, per block of uneven ground at the mouth, for loose ground. */
     public static final int PENALTY_WEIGHT = 2, RELIEF_WEIGHT = 4, LOOSE_COST = 10;
+    /**
+     * PROPOSED: score cost per lengthening round the site's corridor has no room for (of {@link MinePlanner#MAX_REACH}).
+     * Each round is another 40 blocks of main tunnel with its branches on every layer; a site with none gives 463
+     * cells a layer and is worked out quickly, so a site with room is worth a walk up to 15 blocks longer per round.
+     */
+    public static final int ROUND_COST = 15;
 
     /**
      * How good a site is, lower is better: the walk from the nearer gate, plus twice the corridor penalty (water
-     * over the tunnels, ground dipping toward them), four per block of unevenness around the mouth, and 10 when the
-     * ground there is sand or gravel that has to be propped.
+     * over the tunnels, ground dipping toward them), four per block of unevenness around the mouth, 10 when the
+     * ground there is sand or gravel that has to be propped, and {@link #ROUND_COST} for every lengthening round the
+     * corridor has no room for ({@code rounds} of {@link MinePlanner#MAX_REACH} fit).
      */
-    public static double score(double gateDistance, int penalty, int collarRelief, boolean loose) {
-        return gateDistance + PENALTY_WEIGHT * penalty + RELIEF_WEIGHT * collarRelief + (loose ? LOOSE_COST : 0);
+    public static double score(double gateDistance, int penalty, int collarRelief, boolean loose, int rounds) {
+        return gateDistance + PENALTY_WEIGHT * penalty + RELIEF_WEIGHT * collarRelief + (loose ? LOOSE_COST : 0)
+                + ROUND_COST * Math.max(0, MinePlanner.MAX_REACH - rounds);
     }
 }

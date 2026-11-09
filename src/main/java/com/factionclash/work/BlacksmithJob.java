@@ -223,16 +223,18 @@ public class BlacksmithJob extends Job {
             cobble -= 3;
             sticksAvail -= 2;
         }
+        // (a pickaxe a miner would not take, a Silk Touch one rated below its own, does not count as one in store)
+        int plainStone = Job.gearScore(new ItemStack(Items.STONE_PICKAXE), 1), plainIron = Job.gearScore(new ItemStack(Items.IRON_PICKAXE), 2);
         long weakMiners = members.stream().filter(n -> n.getRole() == NpcRole.MINER && ToolKind.tierOf(n.tool()) < 2).count();
         if (weakMiners > 0 && iron >= 3 && sticksAvail >= 2
-                && FactionStorage.count(level, base, s -> s.is(Items.IRON_PICKAXE)) == 0) {
+                && FactionStorage.count(level, base, s -> s.is(Items.IRON_PICKAXE) && Job.gearScore(s, 2) > plainStone) == 0) {
             out.add(new Order(Crafting.tool("iron pickaxe", Items.IRON_INGOT, 3, 2, Items.IRON_PICKAXE), 1, "miner upgrade"));
             iron -= 3;
             sticksAvail -= 2;
         }
         long weakMinersDiamond = members.stream().filter(n -> n.getRole() == NpcRole.MINER && ToolKind.tierOf(n.tool()) < 3).count();
         if (weakMinersDiamond > 0 && diamonds >= 6 && sticksAvail >= 2
-                && FactionStorage.count(level, base, s -> s.is(Items.DIAMOND_PICKAXE)) == 0) {
+                && FactionStorage.count(level, base, s -> s.is(Items.DIAMOND_PICKAXE) && Job.gearScore(s, 3) > plainIron) == 0) {
             out.add(new Order(Crafting.tool("diamond pickaxe", Items.DIAMOND, 3, 2, Items.DIAMOND_PICKAXE), 1, "miner upgrade"));
             diamonds -= 3;
             sticksAvail -= 2;

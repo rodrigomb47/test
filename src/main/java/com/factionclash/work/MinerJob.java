@@ -82,8 +82,16 @@ public class MinerJob extends Job {
     /** Miners without a mine of their own work a cave a cave explorer surveyed. */
     private final CaveMinerJob caveJob;
 
-    /** PROPOSED: ticks on the same shaft cell (counted while digging down) before the descent is given up. */
+    /**
+     * PROPOSED: ticks spent at the same shaft cell, within reach of it (plugging around it and breaking it), before
+     * the descent is given up. Walking to it has its own budget ({@link #DESCENT_WALK_TICKS}).
+     */
     static final int STUCK_STEP_TICKS = 2400;
+    /**
+     * PROPOSED: ticks walking toward the shaft cell being dug without getting any closer to it before the descent is
+     * given up (the cell cannot be reached). A trip away from the shaft (an errand, a fight) starts the count afresh.
+     */
+    static final int DESCENT_WALK_TICKS = 1200;
     /** PROPOSED: failed plugs in a row, with nothing to plug with at home either, before the descent is given up. */
     static final int SEAL_FAILURES = 3;
     /** PROPOSED: how often the miner checks that its pickaxe can still harvest the ore of its level. */
@@ -103,6 +111,10 @@ public class MinerJob extends Job {
      * check.
      */
     private int extendMine = -1, extendStep = -1, extendTicks, sealFailures;
+    /** Walking toward the shaft cell: ticks without getting closer, the closest it got, and the last EXTEND tick. */
+    private int extendWalkTicks;
+    private double extendWalkBest = Double.MAX_VALUE;
+    private long extendLast;
     private long nextTierCheck;
     /** Ticks in a row the stairs were blocked by a block nobody may dig. */
     private int stairBlockedTicks;
@@ -112,6 +124,13 @@ public class MinerJob extends Job {
      */
     private int leaveMineId = -1, leaveTicks;
     private double leaveBest;
+
+    /**
+     * Why a miner without a mine is idle, in words that follow "has had" (the faction hears "... has had no place to
+     * dig a mine for half a day and becomes ..."); the status line says the same as a sentence.
+     */
+    public static final String NO_SITE = "no place to dig a mine", TOO_SHALLOW = "no ground deep enough for a mine",
+            NO_FREE_SITE = "no free mine site (the base works as many mines as it may)";
 
     /** PROPOSED: how often a miner that found no mine site looks again. */
     static final int SITE_RETRY_TICKS = 6000;
@@ -132,7 +151,7 @@ public class MinerJob extends Job {
     private long surveyUntil;
     /** When the miner may look for a site again after finding none (saved), and why it found none. */
     private long nextSiteSearch;
-    private String siteFailReason = "no place to dig a mine";
+    private String siteFailReason = NO_SITE;
     /** Mouths of mines this miner gave up as unreachable or unsafe, oldest first (saved). */
     private final List<Long> badSites = new ArrayList<>();
     /** Walking ticks toward the mouth of a new mine that was never reached, and the last tick counted. */
@@ -140,6 +159,8 @@ public class MinerJob extends Job {
     private long siteWalkLast;
     /** With a full storehouse, the next time a miner without a mine tries to unload. */
     private long nextSiteUnload;
+    /** After a trip for a resting mine's pickaxe that brought none, when the miner may try again. */
+    private long nextRestFetch;
 
     public MinerJob(FactionNpc npc) {
         super(npc);
@@ -168,6 +189,13 @@ public class MinerJob extends Job {
     private WorkplaceState caveWork() {
         WorkplaceState cave = Workplaces.held(npc, WorkplaceState.Type.CAVE);
         if (cave != null) {
+            // a miner works one place at a time: a mine it still holds (an old save's miner took up a cave without
+            // handing its worked-out hut mine back, and the mine came back to life when the save was migrated) goes
+            // back to the base, for another miner to take up
+            WorkplaceState mine = Workplaces.held(npc, WorkplaceState.Type.MINE);
+            if (mine != null) {
+                Workplaces.release(data(), mine);
+            }
             return cave;
         }
         WorkplaceState mine = Workplaces.held(npc, WorkplaceState.Type.MINE);
@@ -326,8 +354,12 @@ public class MinerJob extends Job {
         }
         // a mine of the base rests until a better pickaxe and the storehouse has one: fetch it, and the next tick
         // takes the mine up again (before any new site is looked for)
+        // (only a pickaxe the miner would really take counts: one it rates no better than its own, such as a Silk
+        // Touch one, stays where it is, and the miner would otherwise be held at the storehouse tick after tick)
         int need = restingMineNeed(b);
-        if (need >= 0 && FactionStorage.count(level(), b, s -> ToolKind.PICKAXE.matches(s) && ToolKind.tierOf(s) >= need) > 0) {
+        int own = pickTier() < 0 ? -1 : gearScore(npc.tool(), pickTier());
+        if (need >= 0 && now() >= nextRestFetch && FactionStorage.count(level(), b, s -> ToolKind.PICKAXE.matches(s)
+                && ToolKind.tierOf(s) >= need && gearScore(s, ToolKind.tierOf(s)) > own) > 0) {
             status("Fetching " + MineSites.pickName(need) + " to take up a resting mine", "Travelling");
             if (!atStorage()) {
                 return;
@@ -336,11 +368,12 @@ public class MinerJob extends Job {
             if (pickTier() >= need) {
                 return;
             }
+            nextRestFetch = now() + SITE_RETRY_TICKS / 5; // it was not to be had after all: not again for a while
         }
         if (MineSites.openMines(data(), b) >= FCConfig.MAX_OPEN_MINES.get()) {
             siteSearch = null;
             surveyIndex = -1;
-            markIdle("every mine site of the base is taken");
+            markIdle(NO_FREE_SITE);
             status("Every mine site of the base is taken", "Idle");
             waitFor(200);
             return;
@@ -391,6 +424,11 @@ public class MinerJob extends Job {
             // changed): look again from scratch
             return;
         }
+        if (found != null && MineSites.openMines(data(), b) >= FCConfig.MAX_OPEN_MINES.get()) {
+            // another miner of the base opened a mine during the search and took the last place: the next tick
+            // finds every mine site taken
+            return;
+        }
         if (found != null) {
             surveyIndex = -1;
             WorkplaceState w = MineSites.create(level(), data(), b, npc, found);
@@ -402,7 +440,7 @@ public class MinerJob extends Job {
             return;
         }
         if (done.allTooShallow()) {
-            siteFailed("the ground here is too shallow for a mine");
+            siteFailed(TOO_SHALLOW);
             return;
         }
         if (BaseZones.forageAllowed(b) && surveyIndex + 1 < SURVEY_POINTS) {
@@ -410,7 +448,7 @@ public class MinerJob extends Job {
             surveyUntil = now() + SURVEY_TICKS;
             return;
         }
-        siteFailed("no place to dig a mine");
+        siteFailed(NO_SITE);
     }
 
     /** No site anywhere the miner looked: idle, and it looks again after {@link #SITE_RETRY_TICKS}. */
@@ -586,7 +624,7 @@ public class MinerJob extends Job {
             leaveBest = Double.NEGATIVE_INFINITY;
             if (npc.getUUID().equals(wp.assigned)) {
                 addBadSite(wp.origin);
-                MineSites.retire(level(), data(), wp, "its stairs are blocked");
+                MineSites.giveUp(level(), data(), wp, "its stairs are blocked");
             }
             state = State.CHECK;
             return false;
@@ -736,7 +774,7 @@ public class MinerJob extends Job {
                     }
                     MineSites.rest(level(), data(), wp, d.needTier());
                 }
-                case WORKED_OUT -> MineSites.retire(level(), data(), wp, "every layer it can reach is dug");
+                case WORKED_OUT -> MineSites.retire(level(), data(), wp, MineSites.WORKED_OUT);
             }
             data().setDirty();
             return;
@@ -822,7 +860,11 @@ public class MinerJob extends Job {
             if (siteUnreachable(wp)) {
                 return;
             }
-            if (walkInMine(wp, MineLayout.stand(wp, wp.bottom), wp.bottom, 1.2, "mine #" + wp.id)) {
+            // already down in the shaft below its bottom (back from a fight, or after a reload, partway down a
+            // descent): the descent walks on from here instead of climbing back up to the bottom (the surface, for
+            // a new mine) and down again
+            if (MineLayout.stepAt(wp, npc.blockPosition()) > wp.bottom
+                    || walkInMine(wp, MineLayout.stand(wp, wp.bottom), wp.bottom, 1.2, "mine #" + wp.id)) {
                 state = State.EXTEND;
             }
             return;
@@ -869,7 +911,7 @@ public class MinerJob extends Job {
         }
         siteWalkMine = -1;
         addBadSite(wp.origin);
-        MineSites.retire(level(), data(), wp, "its mouth cannot be reached");
+        MineSites.giveUp(level(), data(), wp, "its mouth cannot be reached");
         state = State.CHECK;
         return true;
     }
@@ -949,6 +991,15 @@ public class MinerJob extends Job {
 
     private static boolean passable(BlockState s) {
         return s.isAir() || s.is(Blocks.TORCH) || s.is(Blocks.WALL_TORCH);
+    }
+
+    /**
+     * A cell that is nothing but fluid: water or lava, or a water plant or bubble column standing in water. Breaking
+     * it with a pickaxe would take thousands of ticks (fluids are as hard as obsidian is to a bare hand), so it is
+     * cleared once plugged around. A waterlogged block is broken as usual; the water it leaves is cleared next.
+     */
+    static boolean fluidCell(BlockState s) {
+        return !s.getFluidState().isEmpty() && !s.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED);
     }
 
     private void clear(WorkplaceState wp) {
@@ -1183,6 +1234,18 @@ public class MinerJob extends Job {
             return;
         }
         status("Branch mining at y=" + pos.getY() + " (mine #" + wp.id + ", " + lv.progress + "/" + plan.size() + ")", "Mining");
+        if (fluidCell(level().getBlockState(pos))) {
+            // a flooded tunnel cell (a cave lake, an aquifer): with every way in plugged, it is cleared out, as in the
+            // shaft, instead of being "dug" until the face watchdog gives the tunnel up
+            level().setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            if (c.dy() == 0) {
+                bridgeFloor(pos);
+            }
+            lv.progress++;
+            data().setDirty();
+            noticeOres(pos);
+            return;
+        }
         if (dig(wp, pos)) {
             if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
                 npc.awardXp(oreXp(s));
@@ -1278,9 +1341,11 @@ public class MinerJob extends Job {
     // ------------------------------------------------------------------ digging deeper
 
     /**
-     * Digs the spiral down from the bottom to the current level's landing, step by step. The descent is given up
-     * (see {@link #abandonDescent}) at a block nobody may dig, after {@link #STUCK_STEP_TICKS} on one cell, or after
-     * {@link #SEAL_FAILURES} failed plugs in a row with nothing to plug with.
+     * Digs the spiral down from the bottom to the current level's landing, step by step. Water or lava in a cell is
+     * plugged around and cleared, not broken. The descent is given up (see {@link #abandonDescent}) at a block nobody
+     * may dig, after {@link #STUCK_STEP_TICKS} at one cell within reach of it, after {@link #DESCENT_WALK_TICKS}
+     * walking toward it without getting closer, or after {@link #SEAL_FAILURES} failed plugs in a row with nothing to
+     * plug with.
      */
     private void extend(WorkplaceState wp) {
         MineLevel lv = MineLayout.current(wp);
@@ -1309,14 +1374,19 @@ public class MinerJob extends Job {
         SpiralMine.Cell c = plan.get(wp.upgradeStep);
         BlockPos pos = MineLayout.spiralPos(wp, c);
         int step = stepOfCell(c);
+        long t = now();
         if (wp.upgradeStep != extendStep || wp.id != extendMine) {
             extendMine = wp.id;
             extendStep = wp.upgradeStep;
             extendTicks = 0;
-        } else if (++extendTicks > STUCK_STEP_TICKS) {
-            abandonDescent(wp, c, "the shaft could not be dug further");
-            return;
+            extendWalkTicks = 0;
+            extendWalkBest = Double.MAX_VALUE;
+        } else if (t - extendLast > WALK_GAP) {
+            // back from an errand or a fight: the walk back to the cell is measured from here
+            extendWalkTicks = 0;
+            extendWalkBest = Double.MAX_VALUE;
         }
+        extendLast = t;
         if (c.torch()) {
             if (level().getBlockState(pos).isAir() && Inv.consume(npc.inventory(), TORCH, 1)) {
                 level().setBlock(pos, MineLayout.wallTorchFor(wp, c.s()), Block.UPDATE_ALL);
@@ -1339,7 +1409,20 @@ public class MinerJob extends Job {
             return;
         }
         if (!BlockWork.inReach(npc, pos, 4.5)) {
+            // the walk down counts toward its own budget, measured by getting closer, never toward the time at the cell
+            double d = Math.sqrt(npc.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5));
+            if (d < extendWalkBest - 0.5) {
+                extendWalkBest = d;
+                extendWalkTicks = 0;
+            } else if (++extendWalkTicks > DESCENT_WALK_TICKS) {
+                abandonDescent(wp, c, "the bottom of the shaft could not be reached");
+                return;
+            }
             walkInMine(wp, MineLayout.stand(wp, step - 1), step - 1, 1.0, "the bottom of the shaft");
+            return;
+        }
+        if (++extendTicks > STUCK_STEP_TICKS) {
+            abandonDescent(wp, c, "the shaft could not be dug further");
             return;
         }
         if (!preSeal(wp, pos, to)) {
@@ -1354,6 +1437,18 @@ public class MinerJob extends Job {
         }
         sealFailures = 0;
         status("Digging the shaft down to y=" + (wp.origin.getY() - to) + " for " + bandOf(wp, lv).label + " (y=" + pos.getY() + ")", "Digging");
+        if (fluidCell(level().getBlockState(pos))) {
+            // water or lava standing in the cell itself (an aquifer, an underground lake): with every way in plugged,
+            // it is cleared out as a player would (a block placed and broken again), and the descent goes on
+            level().setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            if (!sealShaft(wp, pos, to)) {
+                state = State.STORAGE;
+                return;
+            }
+            wp.upgradeStep++;
+            data().setDirty();
+            return;
+        }
         if (dig(wp, pos)) {
             if (isOre(s) && BlockWork.canHarvest(s, npc.getMainHandItem())) {
                 npc.awardXp(oreXp(s));
@@ -1408,7 +1503,7 @@ public class MinerJob extends Job {
                 + (wp.origin.getY() - wp.bottom) + " (" + why + ")"));
         if (wp.bottom < MinePlanner.MIN_DEPTH) {
             addBadSite(wp.origin);
-            MineSites.retire(level(), data(), wp, "the ground below is unsafe");
+            MineSites.giveUp(level(), data(), wp, "the ground below is unsafe");
         }
     }
 
@@ -1450,6 +1545,8 @@ public class MinerJob extends Job {
      * careful player would. Returns false when the miner has nothing to plug with.
      */
     private boolean preSeal(WorkplaceState wp, BlockPos cell, int shaftSteps) {
+        MineLevel lv = wp == null ? null : MineLayout.current(wp);
+        List<SpiralMine.Cell> plan = lv != null && lv.step <= wp.bottom ? MineLayout.tunnelPlan(lv) : null;
         for (Direction d : Direction.values()) {
             BlockPos n = cell.relative(d);
             BlockState ns = level().getBlockState(n);
@@ -1457,9 +1554,16 @@ public class MinerJob extends Job {
             // sand or gravel holding back water (a lake bottom) is as dangerous as the water itself
             boolean fluid = !ns.getFluidState().isEmpty() || (loose && touchesFluid(n));
             boolean inShaft = wp != null && MineLayout.inShaft(wp, n, shaftSteps);
-            if (fluid && inShaft && !level().getFluidState(n).isEmpty()) {
-                // water or lava that ran into the stairs themselves: clear it out (a player places a block there
-                // and breaks it again) rather than plugging the stairs shut
+            if (fluid && (inShaft || (plan != null && dugTunnelCell(wp, lv, plan, n))) && !level().getFluidState(n).isEmpty()) {
+                // water or lava in a cell of the stairs not dug yet (an aquifer below the descent): plugged like the
+                // rock around, so it does not pour into the cells just opened; it is dug out as an ordinary block when
+                // the descent comes to it (with nothing to plug with, it is only cleared, as below)
+                if (inShaft && !MineLayout.shaftCellDug(wp, n) && !npc.getBoundingBox().intersects(new net.minecraft.world.phys.AABB(n))
+                        && placeSeal(n)) {
+                    continue;
+                }
+                // water or lava that ran into the stairs or the tunnels already dug: clear it out (a player places a
+                // block there and breaks it again) rather than plugging the way in and out shut
                 level().setBlock(n, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
                 continue;
             }
@@ -1471,6 +1575,36 @@ public class MinerJob extends Job {
             }
         }
         return true;
+    }
+
+    /**
+     * True if {@code q} is a cell of the level's branch mine that the miner has already passed: the plan runs outward
+     * (each main-tunnel cell, then the branches at that distance), so every planned cell nearer the shaft than the
+     * cell being worked is behind it, and so are the cells just before it at the same distance.
+     */
+    static boolean dugTunnelCell(WorkplaceState wp, MineLevel lv, List<SpiralMine.Cell> plan, BlockPos q) {
+        int f = MineLayout.forwardOf(wp, q), s = MineLayout.sideOf(wp, q), dy = q.getY() - (wp.origin.getY() - lv.step);
+        if (f < SpiralMine.MAIN_START || dy < 0 || dy > 1 || lv.progress <= 0) {
+            return false;
+        }
+        int side = MineLayout.landingSide(lv), off = Math.abs(s - side);
+        boolean branch = f > SpiralMine.MAIN_START && (f - SpiralMine.MAIN_START) % SpiralMine.BRANCH_SPACING == 0
+                && off >= 1 && off <= SpiralMine.BRANCH_LENGTH;
+        if (off != 0 && !branch) {
+            return false;
+        }
+        int cur = Math.min(lv.progress, plan.size());
+        int fCur = cur < plan.size() ? plan.get(cur).f() : Integer.MAX_VALUE;
+        if (f != fCur) {
+            return f < fCur && f < SpiralMine.MAIN_START + SpiralMine.MAIN_LENGTH * (lv.rounds + 1);
+        }
+        for (int j = cur - 1; j >= 0 && plan.get(j).f() == f; j--) {
+            SpiralMine.Cell c = plan.get(j);
+            if (!c.torch() && c.s() == s && c.dy() == dy) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean touchesFluid(BlockPos p) {
@@ -1548,7 +1682,9 @@ public class MinerJob extends Job {
         }
         nextSiteSearch = tag.getLong("nextSite");
         if (tag.contains("siteWhy", Tag.TAG_STRING)) {
-            siteFailReason = tag.getString("siteWhy");
+            String why = tag.getString("siteWhy");
+            // saved by an earlier version, in words that did not follow "has had"
+            siteFailReason = why.equals("the ground here is too shallow for a mine") ? TOO_SHALLOW : why;
         }
         caveJob.load(tag.getCompound("cave"), provider);
     }

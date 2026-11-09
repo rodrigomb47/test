@@ -17,8 +17,9 @@ import java.util.Set;
  * Iron, lapis and gold use the same absolute heights as the vanilla ore placements; only the deep layer follows the
  * world's bottom, as diamonds and redstone do. A miner finishes the level it is on before it switches; then, for the
  * most wanted ore it can harvest, it works or lengthens a level already near that height, or opens a new one at
- * least {@link #MIN_SPACING} steps from every other. When only a better pickaxe would help, the mine rests; when
- * nothing is left at all, it is worked out.
+ * least {@link #MIN_SPACING} steps from every other; a mine with little room to lengthen digs further layers of the
+ * ore a little above or below it instead ({@link #moreLayers}). When only a better pickaxe would help, the mine rests;
+ * when nothing is left at all, it is worked out.
  *
  * <p>Depths are counted in spiral steps below the mine's surface (step k stands k blocks down); a level's landing is
  * always a step whose cell faces the tunnels ({@link SpiralMine#isLanding}).
@@ -58,6 +59,11 @@ public final class MinePlanner {
     public static final int REUSE_WITHIN = MIN_SPACING - 1;
     /** PROPOSED: how many times a level's branch mine may be lengthened (another 40 blocks out each time). */
     public static final int MAX_REACH = 4;
+    /**
+     * PROPOSED: in a mine with little room to lengthen, further layers of an ore lie at most this many blocks above or
+     * below its height (vanilla iron, lapis, gold and diamonds are still plentiful there).
+     */
+    public static final int BAND_SPREAD = 12;
     /** PROPOSED: coal is mined this many blocks below the surface. */
     public static final int COAL_DEPTH = 6;
     /** Vanilla ore-band heights (absolute Y): iron, lapis and gold. */
@@ -231,22 +237,17 @@ public final class MinePlanner {
                 continue;
             }
             int s = stepFor(b, surfaceY, minY);
-            if (s < 0 || s > maxStep) {
+            if (s < 0) {
                 continue;
             }
-            int li = nearest(levels, s);
-            if (li < 0) {
-                return new Decision(Kind.NEW_LAYER, -1, s, b, b.pickTier);
+            Decision d = s <= maxStep ? atStep(levels, s, b, maxRounds, true) : null;
+            if (d == null && (maxRounds < MAX_REACH || s > maxStep)) {
+                // a short corridor makes up in depth; a shaft that stops above the band's height takes the band's
+                // nearest height it does reach
+                d = moreLayers(surfaceY, minY, levels, b, s, maxStep, maxRounds);
             }
-            Level l = levels.get(li);
-            if (l.cut()) {
-                continue;
-            }
-            if (l.unfinished()) {
-                return Decision.work(Kind.WORK, li, l, b);
-            }
-            if (l.rounds() < maxRounds) {
-                return Decision.work(Kind.LENGTHEN, li, l, b);
+            if (d != null) {
+                return d;
             }
         }
         // (3) nothing for this pickaxe, but a better one would have work: rest until it comes
@@ -257,6 +258,61 @@ public final class MinePlanner {
             }
         }
         return new Decision(Kind.WORKED_OUT, -1, -1, null, 0);
+    }
+
+    /**
+     * Work for band {@code b} at step {@code s}: the level near it (worked on while unfinished, lengthened while its
+     * corridor has room), or a new level there when none is near and {@code mayOpen}; null when the level there is
+     * done or cut.
+     */
+    private static Decision atStep(List<Level> levels, int s, Band b, int maxRounds, boolean mayOpen) {
+        int li = nearest(levels, s);
+        if (li < 0) {
+            return mayOpen ? new Decision(Kind.NEW_LAYER, -1, s, b, b.pickTier) : null;
+        }
+        Level l = levels.get(li);
+        if (l.cut()) {
+            return null;
+        }
+        if (l.unfinished()) {
+            return Decision.work(Kind.WORK, li, l, b);
+        }
+        if (l.rounds() < maxRounds) {
+            return Decision.work(Kind.LENGTHEN, li, l, b);
+        }
+        return null;
+    }
+
+    /**
+     * Further layers of band {@code b}, whose own height is step {@code s}. A mine whose corridor leaves little or no
+     * room to lengthen ({@code maxRounds} below {@link #MAX_REACH}) makes up for it in depth, as a player would: once
+     * the layer at a band's height is done (or cut, or below the shaft's limit), it works further layers of the same
+     * ore a little above or below it, nearest first; a mine whose shaft stops above a band's height works the band
+     * where it still reaches, if anywhere near (then one layer only, as at its height). Each lies within
+     * {@link #BAND_SPREAD} blocks of the band's height and nearer to it than to any other band's, at a landing at
+     * least {@link #MIN_SPACING} steps from every other level and no deeper than {@code maxStep}. The band's layers
+     * together hold no more tunnel than one layer lengthened {@link #MAX_REACH} times would. Null when there is none.
+     */
+    static Decision moreLayers(int surfaceY, int minY, List<Level> levels, Band b, int s, int maxStep, int maxRounds) {
+        int used = 0;
+        for (Level l : levels) {
+            if (l.band() == b) {
+                used += l.rounds() + 1;
+            }
+        }
+        boolean mayOpen = used + maxRounds + 1 <= MAX_REACH + 1;
+        for (int d = 1; d <= BAND_SPREAD; d++) {
+            for (int c : new int[]{s - d, s + d}) { // the shallower one first
+                if (c < MIN_DEPTH || c > maxStep || !SpiralMine.isLanding(c) || bandAt(surfaceY - c, surfaceY, minY) != b) {
+                    continue;
+                }
+                Decision dec = atStep(levels, c, b, maxRounds, mayOpen);
+                if (dec != null) {
+                    return dec;
+                }
+            }
+        }
+        return null;
     }
 
     /** Index of the level nearest to step {@code s} within {@link #REUSE_WITHIN} (the shallower one on a tie), or -1. */

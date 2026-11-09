@@ -97,6 +97,11 @@ public final class WorkplaceState {
     public long surveyedAt;
     public String note = "";
     public boolean workedOut;
+    /**
+     * Mines: set aside for good before it was worked out (its mouth could not be reached, the ground below was unsafe,
+     * its stairs were blocked); {@link #workedOut} is set too.
+     */
+    public boolean givenUp;
     /** Caves: where each prospecting tunnel meets rock (packed; Long.MIN_VALUE = no tunnel that way). */
     public long[] faces = new long[0];
     /**
@@ -223,6 +228,7 @@ public final class WorkplaceState {
             }
             t.put("levels", list);
             t.putBoolean("workedOut", workedOut);
+            t.putBoolean("givenUp", givenUp);
             t.putString("note", note);
         }
         if (type == Type.CAVE) {
@@ -372,6 +378,9 @@ public final class WorkplaceState {
             w.opened = t.getLong("opened");
             w.workedOut = t.getBoolean("workedOut");
             w.note = t.getString("note");
+            // saved before the flag existed: every mine set aside other than as worked out was given up
+            w.givenUp = t.contains("givenUp") ? t.getBoolean("givenUp")
+                    : w.workedOut && !w.note.isEmpty() && !w.note.startsWith("every layer");
             ListTag list = t.getList("levels", Tag.TAG_COMPOUND);
             for (int i = 0; i < list.size(); i++) {
                 CompoundTag l = list.getCompound(i);

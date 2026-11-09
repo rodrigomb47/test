@@ -127,6 +127,37 @@ public final class SpiralMine {
         return out;
     }
 
+    /**
+     * The step whose open cells include (f, s, y), y relative to the hut floor; 0 when it is not a cell of the spiral
+     * (at or above the floor, outside the 2x2 column, or the floor between two steps of a column).
+     */
+    public static int shaftStepOf(int f, int s, int y) {
+        if (y >= 0) {
+            return 0;
+        }
+        // step k is open from standY(k) to standY(k) + 2; of three steps in a row only one is in a given column
+        for (int k = Math.max(1, -y); k <= -y + 2; k++) {
+            int[] c = cell(k);
+            if (c[0] == f && c[1] == s) {
+                return k;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * The index in {@link #spiralPlan}({@code fromStep}, ...) of the cell of step {@code k} (deeper than
+     * {@code fromStep}) at height {@code y}, one of its three open rows: the plan digs each step's column top-down,
+     * with a torch after every eighth step.
+     */
+    public static int spiralIndex(int fromStep, int k, int y) {
+        int before = 0;
+        for (int j = fromStep + 1; j < k; j++) {
+            before += j % 8 == 0 ? 4 : 3;
+        }
+        return before + (standY(k) + 2 - y);
+    }
+
     /** True if (f, s, y) is open (air) space of the spiral down to {@code steps}. */
     public static boolean inShaft(int f, int s, int y, int steps) {
         if (y >= 0) {

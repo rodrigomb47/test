@@ -119,6 +119,23 @@ public final class MineLayout {
         return SpiralMine.inShaft(forwardOf(wp, p), sideOf(wp, p), p.getY() - wp.origin.getY(), steps);
     }
 
+    /**
+     * True if {@code p} is a cell of the spiral that has been dug: its step lies no deeper than the bottom, or the
+     * descent under way has already passed it (each step's column is dug top-down). The other cells of the shaft are
+     * still rock (or a cave, or water) and are only opened when the descent comes to them.
+     */
+    public static boolean shaftCellDug(WorkplaceState wp, BlockPos p) {
+        int y = p.getY() - wp.origin.getY();
+        int k = SpiralMine.shaftStepOf(forwardOf(wp, p), sideOf(wp, p), y);
+        if (k <= 0) {
+            return false;
+        }
+        if (k <= wp.bottom) {
+            return true;
+        }
+        return wp.upgrading() && SpiralMine.spiralIndex(wp.bottom, k, y) < wp.upgradeStep;
+    }
+
     /** Spiral step an NPC standing at {@code p} is on, 0 when at or above the hut floor or outside the shaft. */
     public static int stepAt(WorkplaceState wp, BlockPos p) {
         int f = forwardOf(wp, p), s = sideOf(wp, p);

@@ -25,6 +25,38 @@ class SpiralMineTest {
     }
 
     @Test
+    void shaftStepOfNamesTheStepOfEveryOpenCell() {
+        int steps = 130;
+        for (int f = -1; f <= 4; f++) {
+            for (int s = -1; s <= 2; s++) {
+                for (int y = -steps - 4; y <= 2; y++) {
+                    int k = SpiralMine.shaftStepOf(f, s, y);
+                    assertEquals(SpiralMine.inShaft(f, s, y, steps), k > 0 && k <= steps, "cell " + f + "," + s + "," + y + " step " + k);
+                    if (k > 0) {
+                        assertTrue(SpiralMine.inShaft(f, s, y, k) && !SpiralMine.inShaft(f, s, y, k - 1), "step " + k + " opens " + f + "," + s + "," + y);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void spiralIndexMatchesThePlan() {
+        for (int from = 0; from <= 20; from++) {
+            List<SpiralMine.Cell> plan = SpiralMine.spiralPlan(from, from + 30);
+            for (int i = 0; i < plan.size(); i++) {
+                SpiralMine.Cell c = plan.get(i);
+                if (c.torch() || c.dy() >= 0) {
+                    continue; // (the first steps' top cells lie at or above the floor of the mouth: not in the shaft)
+                }
+                int k = SpiralMine.shaftStepOf(c.f(), c.s(), c.dy());
+                assertTrue(k > from, "plan cell " + c + " belongs to step " + k);
+                assertEquals(i, SpiralMine.spiralIndex(from, k, c.dy()), "index of " + c + " in the plan from step " + from);
+            }
+        }
+    }
+
+    @Test
     void consecutiveStepsAreWalkable() {
         for (int k = 2; k < 120; k++) {
             int[] a = SpiralMine.cell(k - 1), b = SpiralMine.cell(k);

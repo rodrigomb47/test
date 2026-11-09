@@ -276,6 +276,78 @@ class MinePlannerTest {
     }
 
     @Test
+    void shortCorridorDigsMoreLayersOfTheOre() {
+        // a site with no room to lengthen: the iron layer at y=16 is done, iron is nearly gone, the pickaxe is stone
+        Stock noIron = new Stock(3, 0, 0, 0, 100, false, false);
+        List<Level> levels = new ArrayList<>(List.of(done(6, 0, Band.COAL), done(54, 0, Band.IRON)));
+        Decision d = MinePlanner.next(SURFACE, MIN_Y, levels, 1, 54, 0, 1, MinePlanner.wanted(noIron), 0);
+        assertEquals(Kind.NEW_LAYER, d.kind(), "another iron layer, not lapis, coal or a rest for an iron pickaxe: " + d);
+        assertEquals(Band.IRON, d.band());
+        assertTrue(Math.abs(d.step() - 54) >= MinePlanner.MIN_SPACING && Math.abs(d.step() - 54) <= MinePlanner.BAND_SPREAD, "step " + d.step());
+        assertEquals(Band.IRON, MinePlanner.bandAt(SURFACE - d.step(), SURFACE, MIN_Y), "still nearer iron's height than any other ore's");
+        // the iron layers together hold no more tunnel than one layer lengthened four times would
+        int layers = 1;
+        for (int guard = 0; guard < 20; guard++) {
+            d = MinePlanner.next(SURFACE, MIN_Y, levels, -1, 126, 0, 1, MinePlanner.wanted(noIron), 0);
+            if (d.kind() != Kind.NEW_LAYER || d.band() != Band.IRON) {
+                break;
+            }
+            for (Level l : levels) {
+                assertTrue(Math.abs(l.step() - d.step()) >= MinePlanner.MIN_SPACING, "layer " + d.step() + " too close to " + l.step());
+            }
+            levels.add(done(d.step(), 0, Band.IRON));
+            layers++;
+        }
+        assertTrue(layers >= 2 && layers <= MinePlanner.MAX_REACH + 1, "iron layers: " + layers);
+        assertNotEquals(Band.IRON, d.band(), "no iron layer once the band's share is dug: " + d);
+        // a full corridor keeps one layer per ore, lengthened instead
+        Decision full = MinePlanner.next(SURFACE, MIN_Y, List.of(done(54, 4, Band.IRON)), 0, 54, 0, 1, MinePlanner.wanted(noIron), 4);
+        assertNotEquals(Band.IRON, full.band(), "a fully lengthened iron layer gets no second one: " + full);
+        // with one round of room, two layers' worth (each lengthened once)
+        Decision one = MinePlanner.next(SURFACE, MIN_Y, List.of(done(54, 1, Band.IRON)), 0, 54, 0, 1, MinePlanner.wanted(noIron), 1);
+        assertEquals(Kind.NEW_LAYER, one.kind());
+        assertEquals(Band.IRON, one.band());
+        Decision two = MinePlanner.next(SURFACE, MIN_Y, List.of(done(54, 1, Band.IRON), done(one.step(), 1, Band.IRON)), -1, 126, 0, 1,
+                MinePlanner.wanted(noIron), 1);
+        assertNotEquals(Band.IRON, two.band(), "a third layer would hold more than one fully lengthened one: " + two);
+    }
+
+    @Test
+    void shaftStoppedAboveAnOreTakesItsNearestHeight() {
+        // the shaft could not go below step 50 (y=20): iron's own height (step 54, y=16) is out of reach
+        Stock noIron = new Stock(3, 100, 100, 100, 100, false, false);
+        Decision d = MinePlanner.next(SURFACE, MIN_Y, List.of(done(6, 4, Band.COAL)), 0, 50, 50, 1, MinePlanner.wanted(noIron), 4);
+        assertEquals(Kind.NEW_LAYER, d.kind(), "" + d);
+        assertEquals(Band.IRON, d.band());
+        assertEquals(50, d.step(), "the deepest landing the shaft reaches, still in iron's band");
+        // too far above it: no iron layer at all
+        Decision far = MinePlanner.next(SURFACE, MIN_Y, List.of(done(6, 4, Band.COAL)), 0, 30, 30, 1, MinePlanner.wanted(noIron), 4);
+        assertNotEquals(Band.IRON, far.band(), "y=40 is coal's ground, not iron's: " + far);
+    }
+
+    @Test
+    void moreLayersNeverBreakTheRules() {
+        Random r = new Random(6);
+        for (int i = 0; i < 5000; i++) {
+            List<Level> levels = randomLevels(r);
+            int tier = r.nextInt(4), limit = r.nextBoolean() ? 0 : 6 + r.nextInt(120), maxRounds = r.nextInt(5);
+            Decision d = MinePlanner.next(SURFACE, MIN_Y, levels, levels.isEmpty() ? -1 : r.nextInt(levels.size()), 126, limit, tier,
+                    MinePlanner.wanted(randomStock(r)), maxRounds);
+            if (d.kind() == Kind.NEW_LAYER) {
+                assertTrue(d.band().pickTier <= tier, "" + d);
+                assertTrue(limit == 0 || d.step() <= limit, "below the shaft's limit: " + d);
+                assertTrue(SpiralMine.isLanding(d.step()) && d.step() >= MinePlanner.MIN_DEPTH, "" + d);
+                for (Level l : levels) {
+                    assertTrue(Math.abs(l.step() - d.step()) >= MinePlanner.MIN_SPACING, "new layer " + d.step() + " too close to " + l.step());
+                }
+            }
+            if (d.kind() == Kind.LENGTHEN) {
+                assertTrue(levels.get(d.level()).rounds() < maxRounds, "lengthened beyond the corridor: " + d);
+            }
+        }
+    }
+
+    @Test
     void wantedOrder() {
         assertEquals(List.of(Band.IRON, Band.DEEP, Band.COAL, Band.GOLD, Band.LAPIS),
                 MinePlanner.wanted(new Stock(3, 0, 0, 0, 0, true, true)));

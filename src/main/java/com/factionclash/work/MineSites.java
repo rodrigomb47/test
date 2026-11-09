@@ -32,9 +32,9 @@ import java.util.Map;
 /**
  * The mine sites of the campaign, as the world sees them: where a miner without a mine may dig its own
  * ({@link Search}, {@link #evaluate}, {@link #create}), which mines a base has open, which mine an NPC is standing
- * in, whether a mine's tunnels may be lengthened, and the only two ways a mine is set aside (worked out, or resting
- * until a better pickaxe). Records of set-aside mines are kept: their stairs stay protected and their corridors stay
- * reserved.
+ * in, whether a mine's tunnels may be lengthened, and the only ways a mine is set aside (worked out or given up for
+ * good, or resting until a better pickaxe). Records of set-aside mines are kept: their stairs stay protected, a
+ * resting mine keeps its whole corridor, and a mine set aside for good keeps the ground it really dug.
  */
 public final class MineSites {
     /** PROPOSED: how far a mine's corridor keeps from other things (blocks, Chebyshev, on the ground). */
@@ -61,22 +61,40 @@ public final class MineSites {
     private MineSites() {
     }
 
+    /** The note of a mine whose every reachable layer is dug. */
+    public static final String WORKED_OUT = "every layer it can reach is dug";
+
     /**
-     * The mine is worked out for good: nobody works it any more and it is not taken up again. The only place that
-     * marks a mine worked out.
+     * The mine is worked out for good: every layer it can reach is dug. Nobody works it any more and it is not taken
+     * up again.
      */
     public static void retire(ServerLevel level, CampaignData data, WorkplaceState wp, String why) {
+        setAside(level, data, wp, why, false);
+    }
+
+    /**
+     * The mine is given up before it was worked out (its mouth cannot be reached, the ground below is unsafe, its
+     * stairs are blocked): set aside for good like a worked-out one, but announced and listed as given up.
+     */
+    public static void giveUp(ServerLevel level, CampaignData data, WorkplaceState wp, String why) {
+        setAside(level, data, wp, why, true);
+    }
+
+    /** The only place that marks a mine worked out (or given up). */
+    private static void setAside(ServerLevel level, CampaignData data, WorkplaceState wp, String why, boolean givenUp) {
         if (wp.workedOut) {
             return;
         }
         wp.workedOut = true;
+        wp.givenUp = givenUp;
         wp.upgradeStep = -1;
         wp.note = why == null ? "" : why;
         Workplaces.release(data, wp);
         data.setDirty();
         BaseState b = data.base(wp.baseId);
         if (b != null && level != null) {
-            Messages.toFaction(level.getServer(), b.faction, Component.literal("Mine #" + wp.id + " is worked out (" + wp.note + ")"));
+            Messages.toFaction(level.getServer(), b.faction, Component.literal("Mine #" + wp.id + (givenUp ? " is given up (" : " is worked out (")
+                    + wp.note + ")"));
         }
     }
 
@@ -106,11 +124,11 @@ public final class MineSites {
 
     /**
      * One line per mine for the station screen: an open mine with its levels (height, ore, progress, lengthening
-     * rounds), how deep its shaft goes and its output; worked-out and resting mines together on one line.
+     * rounds), how deep its shaft goes and its output; worked-out, given-up and resting mines together on one line.
      */
     public static List<String> describe(CampaignData data, BaseState b, int minY, java.util.function.Function<WorkplaceState, String> who) {
         List<String> out = new ArrayList<>();
-        List<String> done = new ArrayList<>();
+        List<String> done = new ArrayList<>(), abandoned = new ArrayList<>();
         long doneOutput = 0;
         java.util.Map<Integer, List<String>> resting = new java.util.TreeMap<>();
         for (int id : b.workplaces) {
@@ -119,7 +137,7 @@ public final class MineSites {
                 continue;
             }
             if (w.workedOut) {
-                done.add("#" + w.id);
+                (w.givenUp ? abandoned : done).add("#" + w.id);
                 doneOutput += w.totalOutput;
                 continue;
             }
@@ -151,7 +169,11 @@ public final class MineSites {
         }
         List<String> tail = new ArrayList<>();
         if (!done.isEmpty()) {
-            tail.add("Worked-out mines: " + String.join(", ", done) + " (output " + doneOutput + ")");
+            tail.add("Worked-out mines: " + String.join(", ", done) + (abandoned.isEmpty() ? " (output " + doneOutput + ")" : ""));
+        }
+        if (!abandoned.isEmpty()) {
+            // a mine given up before it was worked out (often before anything was dug) is not called worked out
+            tail.add((done.isEmpty() ? "Given-up mines: " : "given up: ") + String.join(", ", abandoned) + " (output " + doneOutput + ")");
         }
         resting.forEach((tier, ids) -> tail.add("resting until " + pickName(tier) + ": " + String.join(", ", ids)));
         if (!tail.isEmpty()) {
@@ -224,6 +246,30 @@ public final class MineSites {
     }
 
     /**
+     * The ground a mine keeps from other mines' corridors ({@link MineSiteRules#keptRounds}): an open or resting
+     * mine its whole corridor; one set aside for good only what it really dug, so the ring of sites around a base does
+     * not fill up with ground reserved for tunnels nobody will dig. Null when it keeps nothing.
+     */
+    static Rect kept(WorkplaceState w) {
+        if (!w.workedOut) {
+            return corridor(w);
+        }
+        int dug = -1;
+        for (WorkplaceState.MineLevel lv : w.levels) {
+            if (lv.progress > 0 && lv.step <= w.bottom) {
+                dug = Math.max(dug, lv.rounds);
+            }
+        }
+        int r = MineSiteRules.keptRounds(true, w.bottom, w.maxRounds, dug);
+        int ox = w.origin.getX(), oz = w.origin.getZ(), fx = w.facing.getStepX(), fz = w.facing.getStepZ();
+        return switch (r) {
+            case MineSiteRules.KEEPS_NOTHING -> null;
+            case MineSiteRules.KEEPS_STAIRS -> MineSiteRules.stairsArea(ox, oz, fx, fz);
+            default -> MineSiteRules.corridor(ox, oz, fx, fz, r);
+        };
+    }
+
+    /**
      * True if the stretch that lengthening round {@code rounds} adds to the mine's tunnels keeps clear of everything
      * a corridor must avoid: the edge of the map, every settlement's walls (its own too), other bases' land and
      * lairs, and other mines' corridors. A mine's corridor is checked when its site is chosen; this catches what
@@ -245,7 +291,8 @@ public final class MineSites {
     /**
      * What a mine's corridor must keep clear of, already widened by the gap to keep: every settlement's walls (+4,
      * the own base's included, so tunnels never run under the walls), other bases' land (+8), lairs (+16) and the
-     * corridors of every other mine (+2), worked-out ones included.
+     * ground every other mine keeps (+2, see {@link #kept}): the whole corridor of an open or resting mine, what a
+     * worked-out or given-up one really dug.
      */
     static List<Rect> obstacles(CampaignData data, BaseState own, WorkplaceState self) {
         List<Rect> out = new ArrayList<>();
@@ -265,7 +312,10 @@ public final class MineSites {
         }
         for (WorkplaceState w : data.workplaces.values()) {
             if (w != self && w.type == WorkplaceState.Type.MINE && w.origin != null) {
-                out.add(corridor(w).inflate(CORRIDOR_GAP));
+                Rect k = kept(w);
+                if (k != null) {
+                    out.add(k.inflate(CORRIDOR_GAP));
+                }
             }
         }
         return out;
@@ -359,14 +409,15 @@ public final class MineSites {
      * <li>deep enough for at least one layer above the bottom of the world ({@link MinePlanner#deepEnough});</li>
      * <li>beyond every base's walls +8, out of other bases' land +16, 48 from villages the faction knows of, not on a
      * place kept for other work ({@link WorkSafety#reserved}), 24 from every other mine's mouth (worked-out ones
-     * too) and 8 from the miner's bad sites;</li>
+     * too; 8 from a mine given up before its shaft was begun) and 8 from the miner's bad sites;</li>
      * <li>a mouth the miner can stand in, and for some tunnel direction pointing away from the base: flat, dry,
      * solid ground around the shaft (no tree over it, no farmland, path or ice, nothing built), the shaft's cells
      * open, no surface water or lava and nothing built within 3, a corridor that fits at least one branch mine, and
      * not too much water over the tunnels or ground dipping toward them.</li>
      * </ul>
-     * Of the directions, the one with the least water and dipping ground wins, then the one with more room to
-     * lengthen. Only loaded chunks are read. A point whose walk from the gate alone scores {@code bound} or more (the
+     * Of the directions, the one with the best {@link MineSiteRules#score} wins (water and dipping ground over the
+     * tunnels, uneven or loose ground at the mouth, and too little room to lengthen all count against it), then the
+     * one with more room to lengthen. Only loaded chunks are read. A point whose walk from the gate alone scores {@code bound} or more (the
      * score of a site already found) cannot be better and is not looked at further: a site's score is never less
      * than that walk.
      */
@@ -393,8 +444,8 @@ public final class MineSites {
         if (!CaveWork.standable(level, o)) {
             return Verdict.UNFIT;
         }
-        int bestPenalty = Integer.MAX_VALUE, bestRounds = -1, bestRelief = 0;
-        boolean bestLoose = false;
+        int bestRounds = -1;
+        double bestScore = Double.MAX_VALUE;
         Direction bestDir = null;
         Map<Long, Boolean> built = new HashMap<>();
         for (int[] f : MineSiteRules.facingsAwayFrom(x - base.center.getX(), z - base.center.getZ())) {
@@ -411,18 +462,17 @@ public final class MineSites {
             if (penalty >= MAX_PENALTY) {
                 continue;
             }
-            if (penalty < bestPenalty || (penalty == bestPenalty && r > bestRounds)) {
-                bestPenalty = penalty;
+            double score = MineSiteRules.score(walk, penalty, collar[0], collar[1] != 0, r);
+            if (score < bestScore || (score == bestScore && r > bestRounds)) {
+                bestScore = score;
                 bestRounds = r;
                 bestDir = dir;
-                bestRelief = collar[0];
-                bestLoose = collar[1] != 0;
             }
         }
         if (bestDir == null) {
             return Verdict.UNFIT;
         }
-        out[0] = new Site(o, bestDir, bestRounds, MineSiteRules.score(walk, bestPenalty, bestRelief, bestLoose));
+        out[0] = new Site(o, bestDir, bestRounds, bestScore);
         return Verdict.OK;
     }
 
@@ -439,10 +489,18 @@ public final class MineSites {
         return new Rect(cx - r, cz - r, cx + r, cz + r);
     }
 
+    /**
+     * True within {@link #MINE_SPACING} of another mine's mouth; a mine set aside before its shaft was begun keeps
+     * only {@link #BAD_SITE_RADIUS} (nothing is dug there, but its mouth could not be reached or its ground was unsafe,
+     * so no miner of the base tries the same spot again).
+     */
     private static boolean nearMine(CampaignData data, int x, int z) {
         for (WorkplaceState w : data.workplaces.values()) {
-            if (w.type == WorkplaceState.Type.MINE && w.origin != null
-                    && Math.max(Math.abs(w.origin.getX() - x), Math.abs(w.origin.getZ() - z)) < MINE_SPACING) {
+            if (w.type != WorkplaceState.Type.MINE || w.origin == null) {
+                continue;
+            }
+            int d = Math.max(Math.abs(w.origin.getX() - x), Math.abs(w.origin.getZ() - z));
+            if (w.workedOut && w.bottom <= 0 ? d <= BAD_SITE_RADIUS : d < MINE_SPACING) {
                 return true;
             }
         }

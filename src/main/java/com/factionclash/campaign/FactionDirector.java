@@ -165,9 +165,21 @@ public final class FactionDirector {
                 out.add(new Need(NpcRole.FISHERMAN, "more food")); // only with a rod, or the string for one
             }
         }
-        // mines and caves: every workplace a miner can work should have one
+        // mines and caves: every workplace a miner can work should have one. A miner of the base that holds neither
+        // an open mine nor a cave takes such a place up itself (a mine first, else a cave) the next time it looks, so
+        // while one is free nobody is hired or retrained for it: the base would only gain a miner with nothing to do
         int cavesToMine = 0, caveMiners = 0;
         boolean mineUnworked = false;
+        java.util.Set<UUID> holders = new java.util.HashSet<>();
+        for (int id : b.workplaces) {
+            WorkplaceState w = data.workplace(id);
+            if (w != null && !com.factionclash.work.Workplaces.unworked(data, w)
+                    && ((w.type == WorkplaceState.Type.MINE && w.active()) || (w.type == WorkplaceState.Type.CAVE && !w.workedOut))) {
+                holders.add(w.assigned);
+            }
+        }
+        boolean minerFree = f.roster.values().stream()
+                .anyMatch(r -> r.alive && r.baseId == b.id && r.role == NpcRole.MINER && !holders.contains(r.uuid));
         for (int id : b.workplaces) {
             WorkplaceState w = data.workplace(id);
             if (w == null) {
@@ -184,10 +196,10 @@ public final class FactionDirector {
                 }
             }
         }
-        if (mineUnworked && living(f, b, NpcRole.MINER) > 0) {
+        if (mineUnworked && living(f, b, NpcRole.MINER) > 0 && !minerFree) {
             out.add(new Need(NpcRole.MINER, "an open mine has no miner"));
         }
-        if (cavesToMine > 0 && caveMiners < MAX_CAVE_MINERS) {
+        if (cavesToMine > 0 && caveMiners < MAX_CAVE_MINERS && !minerFree) {
             out.add(new Need(NpcRole.MINER, "a surveyed cave with ore to mine"));
         }
         if (living(f, b, NpcRole.CAVE_EXPLORER) == 0 && unsurveyedCave(data, f, b)) {
@@ -363,10 +375,15 @@ public final class FactionDirector {
             data.setDirty();
             LAST_RECRUIT_NOTE.put(b.id, n.npcName() + " retrained as " + top.role().displayName + " (" + top.reason() + ")");
             Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (" + old.displayName + ") has had "
-                    + why + " for half a day and becomes a " + top.role().displayName + " (" + top.reason() + ")"));
+                    + why + " for half a day and becomes " + withArticle(top.role().displayName) + " (" + top.reason() + ")"));
             return true;
         }
         return false;
+    }
+
+    /** "a Swordsman", "an Axe Fighter". */
+    public static String withArticle(String noun) {
+        return (!noun.isEmpty() && "AEIOUaeiou".indexOf(noun.charAt(0)) >= 0 ? "an " : "a ") + noun;
     }
 
     /**

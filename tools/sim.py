@@ -80,7 +80,7 @@ def summary(d):
                     if w.get("restTier"):
                         extra += f" resting(tier {w.get('restTier')})"
                     if w.get("workedOut"):
-                        extra += f" WORKED-OUT({w.get('note')})"
+                        extra += (" GIVEN-UP" if w.get("givenUp") else " WORKED-OUT") + f"({w.get('note')})"
                 if w["type"] == "TREE_PLOT":
                     extra = (f" origin={w.get('origin')} felled={w.get('felled')} planted={w.get('planted')}"
                              f" replant={w.get('replant')}" + (" OLD-FENCE" if w.get("legacyFence") else ""))

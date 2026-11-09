@@ -148,8 +148,42 @@ class MineSiteRulesTest {
 
     @Test
     void scoreWeighsTheWalkWaterAndGround() {
-        assertEquals(40.0, MineSiteRules.score(40, 0, 0, false));
-        assertEquals(40 + 2 * 9 + 4 * 1 + 10, MineSiteRules.score(40, 9, 1, true));
-        assertTrue(MineSiteRules.score(50, 0, 0, false) < MineSiteRules.score(40, 6, 0, false), "water over the tunnels costs more than a short walk");
+        assertEquals(40.0, MineSiteRules.score(40, 0, 0, false, 4));
+        assertEquals(40 + 2 * 9 + 4 * 1 + 10, MineSiteRules.score(40, 9, 1, true, 4));
+        assertTrue(MineSiteRules.score(50, 0, 0, false, 4) < MineSiteRules.score(40, 6, 0, false, 4), "water over the tunnels costs more than a short walk");
+    }
+
+    @Test
+    void scorePrefersRoomToLengthen() {
+        assertEquals(40 + 4 * MineSiteRules.ROUND_COST, MineSiteRules.score(40, 0, 0, false, 0));
+        assertEquals(40 + MineSiteRules.ROUND_COST, MineSiteRules.score(40, 0, 0, false, 3));
+        // a site whose corridor allows no lengthening loses to one with full room a good walk further out
+        assertTrue(MineSiteRules.score(60, 0, 0, false, 4) < MineSiteRules.score(10, 0, 0, false, 0));
+        // but one round more is not worth any walk at all
+        assertTrue(MineSiteRules.score(20, 0, 0, false, 3) < MineSiteRules.score(40, 0, 0, false, 4));
+        for (int r = 1; r <= 4; r++) {
+            assertTrue(MineSiteRules.score(30, 3, 1, false, r) < MineSiteRules.score(30, 3, 1, false, r - 1), "more room scores better");
+        }
+    }
+
+    @Test
+    void setAsideMinesKeepOnlyWhatWasDug() {
+        // open or resting: the whole corridor, or more where a level was lengthened further before
+        assertEquals(4, MineSiteRules.keptRounds(false, 0, 4, -1), "a new mine keeps its corridor before anything is dug");
+        assertEquals(3, MineSiteRules.keptRounds(false, 60, 2, 3));
+        // set aside for good: what was really dug
+        assertEquals(MineSiteRules.KEEPS_NOTHING, MineSiteRules.keptRounds(true, 0, 4, -1), "never dug: nothing kept");
+        assertEquals(MineSiteRules.KEEPS_STAIRS, MineSiteRules.keptRounds(true, 3, 4, -1), "a shaft but no tunnels: the stairs");
+        assertEquals(1, MineSiteRules.keptRounds(true, 66, 4, 1), "tunnels lengthened once: one round of corridor");
+        assertEquals(0, MineSiteRules.keptRounds(true, 66, 4, 0));
+        // the stairs area covers the stairs and their protected ring, and lies within the corridor
+        Rect stairs = MineSiteRules.stairsArea(100, 0, 1, 0);
+        for (int f = 0; f <= 3; f++) {
+            for (int s = -1; s <= 2; s++) {
+                assertTrue(stairs.contains(100 + f, s), "stairs cell " + f + "," + s);
+            }
+        }
+        Rect c0 = MineSiteRules.corridor(100, 0, 1, 0, 0);
+        assertTrue(c0.contains(stairs.minX(), stairs.minZ()) && c0.contains(stairs.maxX(), stairs.maxZ()));
     }
 }

@@ -1032,7 +1032,7 @@ public final class FCGameTests {
             if (mine.workedOut) {
                 h.assertTrue(reached[0], "the mine was given up before the shaft reached its level");
                 h.assertTrue(mine.assigned == null && mine.note.contains("every layer"), "a worked-out mine is handed back: " + mine.note);
-                if (m.job() != null && m.job().idleReason().contains("too shallow")) {
+                if (m.job() != null && m.job().idleReason().equals(com.factionclash.work.MinerJob.TOO_SHALLOW)) {
                     t.succeed();
                 }
             }
@@ -1133,7 +1133,7 @@ public final class FCGameTests {
             BlockPos at = m.blockPosition();
             t.assertTrue(at.getX() >= minX && at.getX() <= maxX && at.getZ() >= minZ && at.getZ() <= maxZ,
                     "the miner left the platform at " + at);
-            if (m.job() == null || !m.job().idleReason().contains("too shallow")) {
+            if (m.job() == null || !m.job().idleReason().equals(com.factionclash.work.MinerJob.TOO_SHALLOW)) {
                 return;
             }
             for (com.factionclash.campaign.WorkplaceState w : data.workplaces.values()) {
@@ -1269,6 +1269,255 @@ public final class FCGameTests {
                 t.succeed();
             }
         });
+    }
+
+    /**
+     * A hutless mine on the 3-high stone block of the platform (mouth at relative (4, 5, 5), tunnels running east)
+     * with one coal level at step 3, for the shaft and tunnel tests below.
+     */
+    private static com.factionclash.campaign.WorkplaceState stoneBlockMine(GameTestHelper h, GameTestBases.Handle t, int progress, int bottom,
+                                                                           int upgradeStep) {
+        for (BlockPos p : BlockPos.betweenClosed(3, 2, 3, 9, 4, 8)) {
+            h.setBlock(p, Blocks.STONE);
+        }
+        com.factionclash.campaign.WorkplaceState mine = new com.factionclash.campaign.WorkplaceState();
+        mine.type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+        mine.origin = h.absolutePos(new BlockPos(4, 5, 5));
+        mine.extent = mine.origin;
+        mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+        mine.hut = false;
+        mine.maxRounds = 0;
+        mine.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(3, progress, 0, com.factionclash.logic.MinePlanner.Band.COAL.ordinal()));
+        mine.cur = 0;
+        mine.bottom = bottom;
+        mine.upgradeStep = upgradeStep;
+        t.addWorkplace(mine);
+        // the stairs the record says are dug
+        for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, 3)) {
+            BlockPos p = com.factionclash.structure.MineLayout.spiralPos(mine, c);
+            if (!c.torch() && com.factionclash.structure.MineLayout.shaftCellDug(mine, p)) {
+                h.getLevel().setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+            }
+        }
+        return mine;
+    }
+
+    private static FactionNpc stoneBlockMiner(GameTestHelper h, GameTestBases.Handle t, com.factionclash.campaign.WorkplaceState mine, BlockPos at) {
+        FactionNpc miner = h.spawn(ModEntities.FACTION_NPC.get(), at);
+        miner.faction(FactionType.STONEGUARD);
+        miner.role(NpcRole.MINER);
+        t.register(miner);
+        miner.equip(new ItemStack(Items.STONE_PICKAXE));
+        miner.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 32));
+        miner.inventory().setItem(1, new ItemStack(Items.TORCH, 8));
+        mine.assigned = miner.getUUID();
+        return miner;
+    }
+
+    /**
+     * The shaft meets an aquifer: the cells of the step it digs down to, and the rock beside them, hold water. The
+     * miner plugs the water around each cell, plugs the wet cells of the stairs it has not reached yet instead of
+     * only emptying them (they would fill again at once), and digs on; a cell that floods all the same just before
+     * its turn is cleared rather than "dug" for thousands of ticks. The descent reaches its level well before the
+     * stuck-shaft watchdog, with no shaft limit set.
+     */
+    @GameTest(template = "platform", timeoutTicks = 900, batch = "mine_aquifer", skyAccess = true)
+    public static void minerDigsItsShaftThroughAnAquifer(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 900, new BlockPos(12, 2, 16));
+        com.factionclash.campaign.WorkplaceState mine;
+        BlockPos lowest;
+        try {
+            mine = stoneBlockMine(h, t, com.factionclash.logic.SpiralMine.planSize(0), 0, 0);
+            // step 3's cell (forward 2, side 1) at its two lower rows, and the rock beside it, is an aquifer
+            for (int dy = -3; dy <= -2; dy++) {
+                for (int[] fs : new int[][]{{2, 1}, {3, 1}, {2, 2}}) {
+                    h.getLevel().setBlockAndUpdate(com.factionclash.structure.MineLayout.local(mine, fs[0], fs[1], dy), Blocks.WATER.defaultBlockState());
+                }
+            }
+            lowest = com.factionclash.structure.MineLayout.local(mine, 2, 1, -3);
+            stoneBlockMiner(h, t, mine, new BlockPos(4, 5, 5));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        com.factionclash.campaign.WorkplaceState w = mine;
+        // the index of step 3's lowest cell in the descent's plan
+        int last = com.factionclash.logic.SpiralMine.spiralIndex(0, 3, lowest.getY() - mine.origin.getY());
+        boolean[] flooded = {false};
+        t.onEachTick(() -> {
+            if (!flooded[0] && w.upgradeStep == last) {
+                // water seeps into the last cell just before its turn
+                flooded[0] = true;
+                h.getLevel().setBlockAndUpdate(lowest, Blocks.WATER.defaultBlockState());
+            }
+            t.assertTrue(w.shaftLimit == 0 && !w.workedOut, "the descent was given up at the aquifer: limit " + w.shaftLimit + ", " + w.note);
+            if (w.bottom != 3) {
+                return;
+            }
+            t.assertTrue(flooded[0], "the last cell was never reached by the plan");
+            for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, 3)) {
+                BlockPos p = com.factionclash.structure.MineLayout.spiralPos(w, c);
+                net.minecraft.world.level.block.state.BlockState st = h.getLevel().getBlockState(p);
+                t.assertTrue(st.isAir() || st.is(Blocks.TORCH) || st.is(Blocks.WALL_TORCH), "stair cell " + p + " should be open, is " + st);
+            }
+            t.succeed();
+        });
+    }
+
+    /**
+     * A miner partway down the first descent of a new mine (its bottom is still the surface: the bottom only moves
+     * once the whole descent is dug), back on its walk (after a fight or a reload), goes on down from where it is
+     * instead of climbing to the mouth and walking all the way down again.
+     */
+    @GameTest(template = "platform", timeoutTicks = 400, batch = "mine_descent", skyAccess = true)
+    public static void minerGoesOnDownFromWhereItIsInAHalfDugShaft(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 400, new BlockPos(12, 2, 16));
+        com.factionclash.campaign.WorkplaceState mine;
+        FactionNpc miner;
+        BlockPos stand2;
+        try {
+            // steps 1 and 2 dug, step 3 not yet
+            mine = stoneBlockMine(h, t, com.factionclash.logic.SpiralMine.planSize(0), 0, com.factionclash.logic.SpiralMine.spiralIndex(0, 3, -1));
+            stand2 = com.factionclash.structure.MineLayout.stand(mine, 2);
+            h.assertTrue(stand2.equals(h.absolutePos(new BlockPos(6, 3, 5))), "step 2 should stand at (6, 3, 5)");
+            miner = stoneBlockMiner(h, t, mine, new BlockPos(6, 3, 5));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        com.factionclash.campaign.WorkplaceState w = mine;
+        FactionNpc m = miner;
+        int top = mine.origin.getY();
+        t.onEachTick(() -> {
+            t.assertTrue(m.getBlockY() < top, "the miner climbed back out to the mouth (at " + m.blockPosition() + ")");
+            t.assertTrue(w.shaftLimit == 0 && !w.workedOut, "the descent was given up: " + w.note);
+            if (w.bottom == 3) {
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * Branch mining, a tunnel cell ahead floods (water from a cave lake or an aquifer seeps in just before the miner
+     * gets to it, and runs into the tunnel already dug): the miner plugs the rock around it, empties the water from
+     * the cell and from the tunnel behind it (rather than walling its own way out shut) and goes on, instead of
+     * "digging" the water until the face watchdog gives the whole level up.
+     */
+    @GameTest(template = "platform", timeoutTicks = 600, batch = "mine_tunnel", skyAccess = true)
+    public static void minerClearsAFloodedTunnelCell(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 600, new BlockPos(12, 2, 16));
+        com.factionclash.campaign.WorkplaceState mine;
+        try {
+            mine = stoneBlockMine(h, t, 0, 3, -1);
+            h.assertTrue(com.factionclash.structure.MineLayout.stand(mine, 3).equals(h.absolutePos(new BlockPos(6, 2, 6))), "step 3 should stand at (6, 2, 6)");
+            stoneBlockMiner(h, t, mine, new BlockPos(6, 2, 6));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        com.factionclash.campaign.WorkplaceState w = mine;
+        com.factionclash.campaign.WorkplaceState.MineLevel lv = mine.levels.get(0);
+        List<com.factionclash.logic.SpiralMine.Cell> plan = com.factionclash.structure.MineLayout.tunnelPlan(lv);
+        // the second main-tunnel cell's upper half (forward 4), after the first one (forward 3) is dug
+        int wet = 2;
+        h.assertTrue(plan.get(wet).f() == 4 && plan.get(wet).dy() == 1 && plan.get(0).f() == 3, "unexpected plan " + plan.subList(0, 4));
+        BlockPos cell = com.factionclash.structure.MineLayout.tunnelPos(mine, lv, plan.get(wet));
+        BlockPos behind = com.factionclash.structure.MineLayout.tunnelPos(mine, lv, plan.get(0));
+        boolean[] flooded = {false};
+        t.onEachTick(() -> {
+            if (!flooded[0] && lv.progress == wet) {
+                flooded[0] = true;
+                h.getLevel().setBlockAndUpdate(cell, Blocks.WATER.defaultBlockState());
+                h.getLevel().setBlockAndUpdate(behind, Blocks.WATER.defaultBlockState()); // it has run into the tunnel
+            }
+            t.assertTrue(!lv.cut, "the level was given up at the flooded cell");
+            if (lv.progress <= wet + 1 || !flooded[0]) {
+                return;
+            }
+            t.assertTrue(h.getLevel().getBlockState(cell).isAir(), "the flooded cell should be open, is " + h.getLevel().getBlockState(cell));
+            t.assertTrue(!h.getLevel().getBlockState(behind).is(Blocks.COBBLESTONE), "the tunnel behind was walled shut");
+            t.succeed();
+        });
+    }
+
+    /**
+     * A mine rests until an iron pickaxe, and the only one in the storehouse has Silk Touch, which a miner never
+     * takes over its own stone one. The miner does not go to fetch it (it would stand at the storehouse every tick,
+     * never getting anywhere): it looks for a new mine site at once, from where it stands. On the flat test world it
+     * finds the ground too shallow everywhere and is idle, the mine still resting and the pickaxe still in store.
+     */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "mine_restfetch", skyAccess = true)
+    public static void minerLooksForANewSiteWhenTheRestingMinesPickaxeIsNoUse(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 200);
+        com.factionclash.campaign.WorkplaceState mine;
+        FactionNpc miner;
+        try {
+            mine = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(4, 2, 18)));
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            mine.restTier = 2;
+            var reg = h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+            ItemStack silk = new ItemStack(Items.IRON_PICKAXE);
+            silk.enchant(reg.getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), 1);
+            FactionStorage.insert(h.getLevel(), t.base, silk);
+            miner = t.npc(20, 20, NpcRole.MINER);
+            miner.equip(new ItemStack(Items.STONE_PICKAXE));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        FactionNpc m = miner;
+        com.factionclash.campaign.WorkplaceState w = mine;
+        BlockPos store = h.absolutePos(new BlockPos(4, 2, 4));
+        t.onEachTick(() -> {
+            t.assertTrue(m.blockPosition().distManhattan(store) > 10, "the miner went to the storehouse for a pickaxe it would not take");
+            if (m.job() == null || !m.job().idleReason().equals(com.factionclash.work.MinerJob.TOO_SHALLOW)) {
+                return;
+            }
+            t.assertTrue(w.restTier == 2 && w.assigned == null, "the resting mine was taken up");
+            t.assertTrue(FactionStorage.count(h.getLevel(), t.base, s -> s.is(Items.IRON_PICKAXE)) == 1, "the Silk Touch pickaxe left the storehouse");
+            t.succeed();
+        });
+    }
+
+    /**
+     * An old save's miner holds the surveyed cave it works and also its old hut mine (the old version never handed a
+     * worked-out hut mine back; the migration brings it back to life). It goes on with the cave and hands the mine
+     * back, so another miner can take it up and the base sees it has no miner.
+     */
+    @GameTest(template = "platform", timeoutTicks = 60, batch = "mine_legacy")
+    public static void minerWorkingACaveHandsBackItsOldMine(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 60);
+        com.factionclash.campaign.WorkplaceState mine, cave;
+        FactionNpc miner;
+        try {
+            miner = t.npc(8, 8, NpcRole.MINER);
+            miner.equip(new ItemStack(Items.STONE_PICKAXE));
+            mine = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(4, 2, 18)));
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            mine.hut = true;
+            mine.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(6, 0, 0, -1));
+            mine.cur = 0;
+            mine.bottom = 6;
+            mine.assigned = miner.getUUID();
+            cave = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.CAVE, h.absolutePos(new BlockPos(18, 2, 4)));
+            cave.marks.add(h.absolutePos(new BlockPos(18, 1, 4)).asLong());
+            cave.route = new long[]{cave.origin.asLong()};
+            cave.parent = new int[]{-1};
+            cave.assigned = miner.getUUID();
+            h.assertTrue(mine.active(), "the migrated mine should be open");
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        FactionNpc m = miner;
+        com.factionclash.campaign.WorkplaceState mw = mine, cw = cave;
+        h.runAtTickTime(20, t.guard(() -> {
+            t.assertTrue(m.getUUID().equals(cw.assigned), "the miner should still work its cave");
+            t.assertTrue(mw.assigned == null, "the old mine should be handed back");
+            t.assertTrue(com.factionclash.campaign.FactionDirector.needs(h.getLevel(), t.data, t.base, h.getLevel().getGameTime()).stream()
+                    .anyMatch(n -> n.role() == NpcRole.MINER && n.reason().equals("an open mine has no miner")), "the base should want a miner for it");
+            t.succeed();
+        }));
     }
 
     /** At the bottom of a narrow well with walls it cannot dig: the NPC pillars up with blocks from its backpack. */
@@ -1598,6 +1847,97 @@ public final class FCGameTests {
             h.assertTrue(got == b, "the claim should skip the worked-out mine #" + a.id + " and take #" + b.id + ", got "
                     + (got == null ? "none" : "#" + got.id));
             h.assertTrue(miner.getUUID().equals(b.assigned), "the active mine should now be the miner's");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * The base hires no miner for a surveyed cave or an open mine while one of its miners has nothing to work (no mine,
+     * no cave): that miner takes the place up itself. Only once every miner holds a place is another one wanted.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void noMinerHiredWhileAMinerIsFree(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 40);
+        try {
+            var level = h.getLevel();
+            FactionNpc a = t.npc(8, 8, NpcRole.MINER);
+            var cave = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.CAVE, h.absolutePos(new BlockPos(18, 2, 4)));
+            cave.marks.add(h.absolutePos(new BlockPos(18, 1, 4)).asLong());
+            java.util.function.Predicate<String> wants = why -> com.factionclash.campaign.FactionDirector.needs(level, t.data, t.base, level.getGameTime())
+                    .stream().anyMatch(n -> n.role() == NpcRole.MINER && n.reason().equals(why));
+            h.assertFalse(wants.test("a surveyed cave with ore to mine"), "a free miner takes the cave itself: nobody should be hired for it");
+            var mine = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(4, 2, 18)));
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            h.assertFalse(wants.test("an open mine has no miner"), "a free miner takes the open mine itself");
+            mine.assigned = a.getUUID();
+            h.assertTrue(wants.test("a surveyed cave with ore to mine"), "with the only miner busy, the cave wants one");
+            cave.assigned = a.getUUID();
+            mine.assigned = null;
+            h.assertTrue(wants.test("an open mine has no miner"), "with the only miner in the cave, the open mine wants one");
+            mine.workedOut = true;
+            h.assertFalse(wants.test("an open mine has no miner"), "a worked-out mine wants nobody");
+            h.assertTrue(com.factionclash.campaign.FactionDirector.withArticle("Axe Fighter").equals("an Axe Fighter")
+                    && com.factionclash.campaign.FactionDirector.withArticle("Swordsman").equals("a Swordsman"), "articles before a role");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * A mine set aside for good keeps only the ground it really dug from other mines' corridors: nothing when its
+     * shaft was never begun, the ground around its stairs when no tunnel was started, its tunnels as far as they were
+     * lengthened otherwise; an open or resting mine keeps its whole corridor. It is listed as given up, not worked
+     * out, when it was given up, and that survives a save (an older save says so through its note).
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void setAsideMinesKeepOnlyTheGroundTheyDug(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            var level = h.getLevel();
+            var type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+            BlockPos bo = h.absolutePos(new BlockPos(30, 2, 12));
+            var b = t.addWorkplace(type, bo);
+            b.facing = net.minecraft.core.Direction.EAST;
+            b.maxRounds = 4;
+            // another mine 60 east and 60 south of it, its tunnels running north across b's second stretch
+            var a = t.addWorkplace(type, bo.offset(60, 0, 60));
+            a.facing = net.minecraft.core.Direction.NORTH;
+            a.maxRounds = 4;
+            java.util.function.BooleanSupplier clear = () -> com.factionclash.work.MineSites.corridorClear(level, t.data, b, 1);
+            h.assertFalse(clear.getAsBoolean(), "a new mine keeps its whole corridor");
+            com.factionclash.work.MineSites.giveUp(level, t.data, a, "its mouth cannot be reached");
+            h.assertTrue(a.workedOut && a.givenUp, "a given-up mine is set aside for good");
+            h.assertTrue(clear.getAsBoolean(), "a mine given up before its shaft was begun keeps no corridor");
+            a.bottom = 10;
+            h.assertTrue(clear.getAsBoolean(), "a shaft with no tunnels keeps only the ground by its stairs");
+            a.bottom = 60;
+            a.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(54, 100, 0, com.factionclash.logic.MinePlanner.Band.IRON.ordinal()));
+            h.assertTrue(clear.getAsBoolean(), "tunnels never lengthened keep only the first stretch");
+            a.levels.get(0).rounds = 4;
+            h.assertFalse(clear.getAsBoolean(), "tunnels lengthened four times keep the whole corridor");
+            a.levels.get(0).rounds = 0;
+            a.workedOut = false;
+            a.restTier = 2;
+            h.assertFalse(clear.getAsBoolean(), "a resting mine keeps its whole corridor");
+            a.restTier = 0;
+            a.workedOut = true;
+            // the station lists it as given up; a mine retired with every layer dug as worked out
+            var c = t.addWorkplace(type, bo.offset(0, 0, -60));
+            c.facing = net.minecraft.core.Direction.EAST;
+            com.factionclash.work.MineSites.retire(level, t.data, c, com.factionclash.work.MineSites.WORKED_OUT);
+            h.assertTrue(c.workedOut && !c.givenUp, "a worked-out mine is not given up");
+            String lines = String.join("\n", com.factionclash.work.MineSites.describe(t.data, t.base, level.getMinBuildHeight(), w -> "x"));
+            h.assertTrue(lines.contains("Worked-out mines: #" + c.id + "; given up: #" + a.id), "station lines: " + lines);
+            CompoundTag tag = a.save();
+            h.assertTrue(com.factionclash.campaign.WorkplaceState.load(tag).givenUp, "the flag survives a save");
+            tag.remove("givenUp");
+            h.assertTrue(com.factionclash.campaign.WorkplaceState.load(tag).givenUp, "an older save's given-up mine is known by its note");
+            CompoundTag old = c.save();
+            old.remove("givenUp");
+            h.assertFalse(com.factionclash.campaign.WorkplaceState.load(old).givenUp, "an older save's worked-out mine stays worked out");
         } finally {
             t.cleanup();
         }

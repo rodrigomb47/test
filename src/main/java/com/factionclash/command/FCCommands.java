@@ -335,7 +335,7 @@ public final class FCCommands {
         StringBuilder sb = new StringBuilder("mine " + w.id + " origin " + w.origin.toShortString() + " facing " + w.facing
                 + (w.hut ? " (hut)" : "") + " bottom " + w.bottom + " (y=" + (y0 - w.bottom) + ") shaftLimit " + w.shaftLimit
                 + " maxRounds " + w.maxRounds + " cur " + w.cur + " shaftStep " + w.upgradeStep + " restTier " + w.restTier
-                + (w.workedOut ? " WORKED OUT (" + w.note + ")" : "") + "\n");
+                + (w.workedOut ? (w.givenUp ? " GIVEN UP (" : " WORKED OUT (") + w.note + ")" : "") + "\n");
         for (int i = 0; i < w.levels.size(); i++) {
             WorkplaceState.MineLevel lv = w.levels.get(i);
             sb.append(i == w.cur ? " > " : "   ").append("level ").append(i).append(" step ").append(lv.step).append(" y=").append(y0 - lv.step)
@@ -466,6 +466,7 @@ public final class FCCommands {
                         wo.addProperty("cur", w.cur);
                         wo.addProperty("restTier", w.restTier);
                         wo.addProperty("workedOut", w.workedOut);
+                        wo.addProperty("givenUp", w.givenUp);
                         wo.addProperty("note", w.note);
                         JsonArray lvs = new JsonArray();
                         for (WorkplaceState.MineLevel lv : w.levels) {
