@@ -56,13 +56,13 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 ## Workplaces (config `workplaces`)
 | Value | Default | Effect |
 |---|---|---|
-| `mineSiteRadius` | 64 (40–128) | Farthest distance (Chebyshev) from the base centre at which a miner opens a mine. The nearest is fixed at the walls' half-size + 8 (32). |
+| `mineSiteRadius` | 64 (40–128) | Farthest distance (Chebyshev) from the base centre at which a miner opens a mine. The search starts at the walls' half-size + 8 (32), which a mouth must lie beyond, so the nearest mouth is 36 out. |
 | `maxOpenMines` | 3 (1–8) | Mines a base works at once (unfinished and not resting); each miner works one. |
 | `forestRadius` | 64 (41–128) | Woodcutters fell natural trees within this many blocks of the base centre. At least 41 so the starter saplings (40.3 out) are inside it. |
 | `groveSize` | 16 (0–32) | Saplings kept growing in the base's always-ticking belt, twice as many (up to 32) while the base is short of wood. 0 = only replant felled trees. A config file written by an earlier build keeps its old default of 8: set 16 by hand. |
 | `fishingRadius` | 64 (32–128) | Fishing water is searched for within this many blocks of the base centre; water found while foraging may lie 40 further. |
 | `fishingTreasure` | true | In open water (vanilla's 5x5, 2-deep, open-sky test) the vanilla treasure catches can be fished, as by a player. |
-| `remoteWorkInDaylightOnly` | true | Between dusk and dawn (day time 13000–23000) woodcutters and fishermen do no work more than 16 blocks (Chebyshev) beyond the walls, where the guards cannot protect them. Turning it off trades about a third of their day for more deaths at remote spots. |
+| `remoteWorkInDaylightOnly` | true | Between dusk and dawn (day time 13000–23000) woodcutters and fishermen do no work more than 16 blocks (Chebyshev) beyond the walls, where the guards cannot protect them. Turning it off gives them back about two fifths of their day (10000 of 24000 ticks) for more deaths at remote spots. |
 
 ## Mines (`MinePlanner`, `MineSiteRules`, `MineSites`, `MinerJob`, `SpiralMine`, `MineLayout`)
 Each miner chooses its own mine site and digs its own shaft; there is no hut, no tier and no pickaxe payment (old hut
@@ -72,7 +72,7 @@ Layers (PROPOSED, `MinePlanner`): a layer is put where vanilla 1.21.1 ore is ric
 
 | Layer | Height | Pickaxe needed | Wanted while the storehouse holds |
 |---|---|---|---|
-| Coal | 6 below the mine's surface | any (wood or gold) | fewer than 32 coal + charcoal, or the base is short of fuel or wood |
+| Coal | 6 below the mine's surface | any (wood or gold) | fewer than 32 fuel (coal + charcoal, 9 per coal block), or the base is short of fuel or wood |
 | Iron | y = 16 (vanilla) | stone or better | fewer than 8 iron (ingots + raw; most urgent of all), else fewer than 32 |
 | Lapis | y = 0 (vanilla) | stone or better | fewer than 32 lapis, once there is an enchanting table |
 | Gold | y = −16 (vanilla) | iron or better | fewer than 16 gold (raw + ingots) |
@@ -200,7 +200,7 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   woodland mansion the faction knows.
 * Search (`ForestScan`): every second column (one of 4 rotating patterns per scan) in a circle of `forestRadius`
   around the base centre, loaded chunks only; a column counts when its top block (leaves aside) is a known log whose
-  trunk runs down at most 30 blocks to dirt, with 3–9 logs and natural leaves near the top; a 2x2 trunk is found at
+  trunk of 3–9 logs of the same block stands on dirt, with natural leaves near the top; a 2x2 trunk is found at
   its north-west corner. Best: distance from the centre + 0.5 × distance from the woodcutter. Scans run at most
   every 600 ticks (RESCAN_TICKS); after an empty one the next pattern follows 20 ticks later, and only a whole empty
   round of 4 sends the woodcutter foraging. A tree another woodcutter claimed is skipped (claims last 1200 ticks).
@@ -240,8 +240,8 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   or mansion is skipped), at most 2400 ticks a leg, then a look 40 around; the direction moves on only after a miss;
   after 8 misses it rests 6000 ticks. Never at night or from a GameTest base.
 * Night: a woodcutter does no work beyond the walls + 16 between day time 13000 and 23000 (config
-  `remoteWorkInDaylightOnly`); a tree started there waits for daylight. Forage legs and night waits do not reset its
-  idle time.
+  `remoteWorkInDaylightOnly`); a tree started there waits for daylight. Forage legs, and night waits with no tree
+  started, do not reset its idle time (waiting to finish a started tree counts as busy).
 * Idle and retraining: "no trees or saplings" when foraging rests (or is not allowed), nothing is planted or waiting
   to be replanted and no sapling is carried or stored; a second woodcutter of a base whose woodland is held: "no
   woodland of its own".
@@ -301,10 +301,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   butchers): retried every 1200 ticks; after 12000 ticks without one, a civilian is retrained. The time without a
   tool is cleared whenever the role's tool is in hand, however it got there.
 * Blacksmith replacements, one per tool kind per plan: iron if there is enough, else stone, else wooden. A miner
-  with a wooden pickaxe gets a stone one as soon as there are 3 cobblestone; then iron (3 ingots) and diamond (6
-  diamonds stored) pickaxes for the miners, which open the deeper layers. A Silk Touch pickaxe in storage does not
-  count as one (miners rate it below a plain one). The blacksmith's crew is every living worker of its base on the
-  roster within 256 blocks (horizontally) of the centre, wherever it works (CREW_RANGE).
+  with a wooden pickaxe gets a stone one as soon as there are 3 cobblestone; then an iron one (3 ingots), which opens
+  the gold and diamond layers, and a diamond one (6 diamonds stored), which only digs faster. A Silk Touch pickaxe in
+  storage does not count as one (miners rate it below a plain one). The blacksmith's crew is every living member of
+  its base on the roster (soldiers too) within 256 blocks (horizontally) of the centre, wherever it works (CREW_RANGE).
 * Anvil (vanilla): each material unit repairs a quarter; cost = units + prior work; prior work becomes
   2 × prior + 1; "Too Expensive" from 40 levels. Repaired only when worth it (PROPOSED): enchanted, or iron,
   diamond, netherite or chainmail gear needing fewer units than its recipe (pickaxe/axe 3, sword/hoe 2, shovel 1,
@@ -399,12 +399,12 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 * Feed kept in storage for other uses: 24 wheat seeds, 4 wheat, 4 carrots/potatoes/beetroot.
 * Milking: a bucket per cow at most every 6000 ticks. Shearing: vanilla `readyForShearing`.
 * Butcher: keeps 4 breeding adults per species, never kills babies or animals in love; melee hit every 12 ticks.
-* Fishing water (PROPOSED, `FishingWater`): the bobber cell is a water source (kelp and seagrass count, waterlogged
-  blocks never) with air or a lily pad above and a source below (2 or more deep), under open sky, in a body of at
-  least 25 surface sources (MIN_BODY; counted up to 400), with no farmland within 5 sideways and 1 up or down
-  (FARMLAND_CLEARANCE: the farm's channel and any irrigation never qualify). The stand is the nearest spot 2–5
-  blocks (Chebyshev) from the bobber and 1–2 above it, on sturdy ground that is not farmland, leaves, ice or fluid,
-  with 2 clear blocks and a line of sight to the bobber.
+* Fishing water (PROPOSED, `FishingWater`): the bobber cell is a water source with nothing to bump into (kelp and
+  seagrass count; waterlogged slabs, stairs and the like never) with air or a lily pad above and a source below (2 or
+  more deep), under open sky, in a body of at least 25 surface sources (MIN_BODY; counted up to 400), with no
+  farmland within 5 sideways and 1 up or down (FARMLAND_CLEARANCE: the farm's channel and any irrigation never
+  qualify). The stand is the nearest spot 2–5 blocks (Chebyshev) from the bobber and 1–2 above it, on sturdy ground
+  that is not farmland, leaves, ice or fluid, with 2 clear blocks and a line of sight to the bobber.
 * Zones (`FishingSpots`), for the bobber and the stand: within `fishingRadius` of the centre (+40 for water found
   while foraging), beyond every base's walls + 4 (28 from a settlement centre), 8 out of other bases' land, 24 from
   a lair, 48 from known pillager outposts and woodland mansions, inside the map; the stand also 8 from a mine mouth
@@ -497,7 +497,7 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   encounter ends after 100 quiet ticks. Enemy soldiers: retreat home as before (2 threats, or 1 under 60% health).
 * Raids: interval 36000 ticks, party at least 3 (see the war council above), 3 home defenders kept; assault takes 400 ticks at the target heart.
 * Hollow lairs: start with 5 monsters, +1 per day up to 12; raid every 30000 ticks on the nearest settlement within 300 blocks.
-* Damage: zombies, skeletons and variants deal ×0.5 to NPCs; NPCs regenerate 1 HP per 4 s out of combat (they have no hunger).
+* Damage: zombies, skeletons and variants deal ×0.5 to NPCs; with `survival.hunger` off, NPCs regenerate 1 HP per 4 s once 10 s have passed since they were last hurt; with it on (the default) they heal only through the food bar (see Hunger).
 * Victory rule (proposed): a base falls when its **Faction Heart** is destroyed; a faction with no standing bases is eliminated; the last faction standing (The Hollow included) wins. The reporting station is not the defeat core.
 
 ## Historical values (before the worker redesign)

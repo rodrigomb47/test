@@ -174,7 +174,7 @@ Players respawn at their nearest surviving allied base when they have no bed.
     anything.
 * **Mines** are sited and dug by the miners, as a player would. A miner with no open mine of its base to work and
   no surveyed cave looks for a place to dig one within `mineSiteRadius` (64) of the base centre, on ground already
-  loaded: 8 or more blocks beyond every base's walls, out of other factions' land, 48 blocks from the villages,
+  loaded: more than 8 blocks beyond every base's walls, out of other factions' land, 48 blocks from the villages,
   pillager outposts and woodland mansions its scouts reported and 24 from every other mine's mouth; firm, nearly
   level ground deep enough for a mine, with no water, lava or built blocks around the mouth; and room for the
   tunnels to run away from the base without coming near walls, other bases, lairs, other mines' tunnels or the map
@@ -256,7 +256,8 @@ Players respawn at their nearest surviving allied base when they have no bed.
   can come up as for a player (config `fishingTreasure`). There is no visible bobber entity.
 * **Farmer, chef, smelter, blacksmith** use the real farm, smoker, furnaces and crafting recipes. The blacksmith
   crafts batches from real needs of every worker of its base: replacements for worn-out tools, better pickaxes for
-  the miners (stone at once, then iron and diamond, which open the deeper layers), iron swords, armour and shields
+  the miners (stone at once, then iron, which opens the gold and diamond layers, and diamond, which only digs
+  faster), iron swords, armour and shields
   for soldiers, bows, sticks, bone meal, torches, golden apples, diamond swords when diamonds exist. Furnace and
   smoker workers fetch fuel as soon as any station runs dry (coal, charcoal, a coal block, then logs and planks
   beyond a building reserve); with nothing to burn they wait at the storehouse and say so.
@@ -317,7 +318,7 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | Spec area | State | Verified |
 |---|---|---|
 | §1 Factions, bounded map, join/teleport/respawn, last-faction-standing victory | Implemented (victory rule proposed: faction heart) | S (bases destroyed, a faction eliminated); player join/respawn — (no client was connected) |
-| §2 No hunger, nutrition-weighted recruitment, no gear wear, equipment cost, one arrow, finished station at start | Implemented | U, G, S |
+| §2 No hunger, nutrition-weighted recruitment, no gear wear, equipment cost, one arrow, finished station at start | Implemented; hunger and gear wear were added later and are on by default (`survival.hunger`, `survival.toolWear` off restore the spec's rule) | U, G, S |
 | §2/§16 Great People (HSR/ZZZ characters), starter hero, 10-minute revival | ✗ not implemented | — |
 | §3 Safe starting bases, roster, supplies once, animals, enchanting setup | Implemented | S (incl. save/reload) |
 | §4 Roles: builder, miner, farmer, woodcutter, blacksmith, chef, smelter, scout, swordsman, archer | Implemented | S |
@@ -353,7 +354,9 @@ as right-clicking the blocks). No interactive play session by a human player was
 ![Ember Legion base](docs/screenshots/ember_legion_base.png)
 ![NPCs in the plaza](docs/screenshots/ember_legion_plaza_npcs.png)
 
-The reporting station and world map board screens, captured in the same real client:
+The reporting station and world map board screens, captured in the same real client with an earlier version (the
+station screenshot still shows the old constructed mine, tree plot and farm fishing spot lines; today's screen lists
+the mines by layer, the woodland and the fishing water):
 
 ![Reporting station screen](docs/screenshots/station_screen.png)
 ![World map board screen](docs/screenshots/map_board_screen.png)
@@ -399,7 +402,7 @@ The reporting station and world map board screens, captured in the same real cli
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
 
 **A fresh campaign with the worker redesign** (same seed, ten days, run before the last round of review fixes,
-which came out of it):
+which came out of it, and before the scouts' villages, outposts, mansions and stepping aside):
 * **Mines**: every faction's miners chose their own sites outside the walls and dug their own shafts. Ember Legion
   (six miners by day 10) opened five mines with layers at about y=58 to 69 (coal), 14 to 16 (iron), −2 to 0
   (lapis), −16 to −18 (gold) and −54 to −56 (diamonds), worked two of them out, and had 118 diamonds, 389 raw iron

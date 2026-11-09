@@ -93,7 +93,7 @@ public final class FCConfig {
         MAX_OPEN_MINES = b.comment("Mines a base may be working at once (unfinished and not resting). Each miner works one.")
                 .defineInRange("maxOpenMines", 3, 1, 8);
         FOREST_RADIUS = b.comment("Woodcutters fell natural trees within this many blocks of the base centre.",
-                        "When there are none, they forage up to 72 blocks further out. At least 41, so a new base's starter trees are in it.")
+                        "When there are none, they walk 72 blocks out from the centre to look for more. At least 41, so a new base's starter trees are in it.")
                 .defineInRange("forestRadius", 64, com.factionclash.logic.ForestRules.MIN_FOREST_RADIUS, 128);
         GROVE_SIZE = b.comment("Saplings the woodcutter keeps growing in the base's always-ticking work area, so treeless land still",
                         "gives wood (twice as many while the base is short of wood). 0 = only replant felled trees.")

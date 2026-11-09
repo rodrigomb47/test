@@ -65,7 +65,7 @@
 	# Range: 1 ~ 8
 	maxOpenMines = 3
 	#Woodcutters fell natural trees within this many blocks of the base centre.
-	#When there are none, they forage up to 72 blocks further out. At least 41, so a new base's starter trees are in it.
+	#When there are none, they walk 72 blocks out from the centre to look for more. At least 41, so a new base's starter trees are in it.
 	# Default: 64
 	# Range: 41 ~ 128
 	forestRadius = 64
