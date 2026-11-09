@@ -366,7 +366,7 @@ public final class FactionDirector {
                 continue;
             }
             NpcRole old = r.role;
-            String why = idle ? (job.idleReason().isEmpty() ? "nothing to do" : job.idleReason()) : "no tool for the job";
+            String why = idle ? (job.idleReason().isEmpty() ? "nothing to do" : job.idleReason()) : "no " + old.tool.noun();
             if (idle && !toolless && !othersBusy(level, f, b, r)) {
                 b.markBarren(old, t + BARREN_TICKS); // nothing to do here even with its tool: do not hire into it again
             }
@@ -374,11 +374,20 @@ public final class FactionDirector {
             n.role(top.role());
             data.setDirty();
             LAST_RECRUIT_NOTE.put(b.id, n.npcName() + " retrained as " + top.role().displayName + " (" + top.reason() + ")");
-            Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (" + old.displayName + ") has had "
-                    + why + " for half a day and becomes " + withArticle(top.role().displayName) + " (" + top.reason() + ")"));
+            Messages.toFaction(level.getServer(), b.faction, Component.literal(retrainNote(n.npcName(), old, why, top)));
             return true;
         }
         return false;
+    }
+
+    /**
+     * What the faction hears when a worker is retrained: "Elsa Wells (Fisherman) has had no fishing rod for half a day
+     * and becomes a Miner (a surveyed cave with ore to mine)". {@code why} reads after "has had": a job's idle reason,
+     * or "no" and the tool it could not get.
+     */
+    public static String retrainNote(String name, NpcRole old, String why, Need top) {
+        return name + " (" + old.displayName + ") has had " + why + " for half a day and becomes " + withArticle(top.role().displayName)
+                + " (" + top.reason() + ")";
     }
 
     /** "a Swordsman", "an Axe Fighter". */

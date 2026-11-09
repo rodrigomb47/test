@@ -67,7 +67,11 @@ public abstract class Job {
             return false;
         }
         NpcRole role = npc.getRole();
-        if (role.tool != ToolKind.NONE && !role.tool.matches(npc.tool())) {
+        if (role.tool == ToolKind.NONE || role.tool.matches(npc.tool())) {
+            // it has its tool, however it came (a job's own visit to the storehouse, a spare): the time without one
+            // starts afresh the next time it breaks
+            toolMissingSince = -1;
+        } else {
             for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
                 if (role.tool.matches(npc.inventory().getItem(i))) {
                     npc.equip(npc.inventory().removeItem(i, 1)); // the spare it carries
@@ -77,14 +81,14 @@ public abstract class Job {
             }
             if (needsToolToWork(role) && now() >= nextToolTrip) {
                 waitTicks = 0;
-                status("Going to the storehouse for a new " + role.tool.name().toLowerCase(), "Travelling");
+                status("Going to the storehouse for a new " + role.tool.noun(), "Travelling");
                 if (!beforeErrand() || !atStorage()) {
                     return true;
                 }
                 lastEquipCheck = -100000;
                 upgradeEquipment();
                 if (!role.tool.matches(npc.tool())) {
-                    status("No " + role.tool.name().toLowerCase() + " in the storehouse - waiting for the blacksmith", "Waiting");
+                    status("No " + role.tool.noun() + " in the storehouse - waiting for the blacksmith", "Waiting");
                     nextToolTrip = now() + 1200;
                     if (toolMissingSince < 0) {
                         toolMissingSince = now();
@@ -147,9 +151,10 @@ public abstract class Job {
     /** Since when the storehouse had no tool for this worker (-1: it has one, or has not looked yet). */
     private long toolMissingSince = -1;
 
-    /** True when this worker has been unable to get its tool for at least {@code ticks}. */
+    /** True when this worker has been without its tool, and unable to get one, for at least {@code ticks}. */
     public boolean missingToolFor(long ticks) {
-        return toolMissingSince >= 0 && now() - toolMissingSince >= ticks;
+        ToolKind tool = npc.getRole().tool;
+        return toolMissingSince >= 0 && tool != ToolKind.NONE && !tool.matches(npc.tool()) && now() - toolMissingSince >= ticks;
     }
 
     /** Since when this worker has had no work it can do (-1: busy), and why. Not saved: a reload starts busy. */

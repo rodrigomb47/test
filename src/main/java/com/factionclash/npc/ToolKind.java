@@ -91,6 +91,15 @@ public enum ToolKind {
         };
     }
 
+    /** The tool in words, for status lines and the faction's notes: "pickaxe", "fishing rod"; empty for NONE. */
+    public String noun() {
+        return switch (this) {
+            case NONE -> "";
+            case ROD -> "fishing rod";
+            default -> name().toLowerCase(java.util.Locale.ROOT);
+        };
+    }
+
     /** Vanilla crafting ingredients of {@link #basicItem()}; charged instead of the finished item when none is stored. */
     public List<Cost> materialCost() {
         return switch (this) {

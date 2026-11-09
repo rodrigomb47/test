@@ -8,6 +8,7 @@ import com.factionclash.config.FCConfig;
 import com.factionclash.logic.FishingWater;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.ToolKind;
+import com.factionclash.storage.FactionStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,6 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
@@ -47,9 +49,9 @@ import java.util.UUID;
  * bobber entity (vanilla ties it to a player), so the cast is shown by the rod swing and the splash.
  *
  * <p>With no water near the base it walks out in eight directions in turn to look further away; when that finds
- * nothing it gives up for a while and has nothing to do, so the director retrains it. A spot that turns out unfit
- * (the water is gone, the stand cannot be reached) is remembered and another is looked for. Between dusk and dawn it
- * does not fish far outside the walls.
+ * nothing it gives up for a while and waits at the storehouse with nothing to do, so the director retrains it. A spot
+ * that turns out unfit (the water is gone, the stand cannot be reached) is remembered and another is looked for.
+ * Between dusk and dawn it does not fish far outside the walls.
  */
 public class FishermanJob extends Job {
     enum State { STORAGE, SEARCH, FORAGE, FISH }
@@ -68,6 +70,13 @@ public class FishermanJob extends Job {
     static final long FORAGE_REST_TICKS = 6000;
     /** PROPOSED: a catch that cannot be reached for this long is left where it lies. */
     static final int CHASE_TICKS = 200;
+    /**
+     * How close to the stand counts as there: NpcNavigator's precise reach (under 0.8: within 0.7 sideways and 0.6 up
+     * or down), so the fisherman stands on the stand itself. With a loose reach one swimming up to the bank counted as
+     * arrived from the water beside it and fished floating there; now it climbs out first. Vanilla path following
+     * stops within 0.45 of a node a side (under 0.64 across), so a walker always gets this close.
+     */
+    static final double STAND_REACH = 0.7;
 
     private State state = State.STORAGE;
     /** Ticks until a fish bites; -1 when no line is cast. */
@@ -180,7 +189,11 @@ public class FishermanJob extends Job {
         unloadNow();
         upgradeEquipment();
         if (!ToolKind.ROD.matches(npc.tool())) {
-            status("No fishing rod in storage", "Waiting");
+            // the blacksmith makes one from 2 string. Without string it waits (guards bring home what spiders drop),
+            // and after half a day without a rod the director retrains it to whatever the base needs
+            boolean string = FactionStorage.count(level(), base(), x -> x.is(Items.STRING)) >= 2;
+            status(string ? "No fishing rod in storage - the blacksmith can make one" : "No fishing rod in storage, and no string to make one",
+                    "Waiting");
             waitFor(400);
             return;
         }
@@ -241,7 +254,8 @@ public class FishermanJob extends Job {
 
     /**
      * No water near the base: like a player looking for a lake, walk out about 70 blocks in one direction (a different
-     * one each time) and look around there. After eight directions with nothing found it rests, idle.
+     * one each time) and look around there. After eight directions with nothing found it walks home and rests at the
+     * storehouse, idle.
      */
     private void forage(BaseState b, WorkplaceState w) {
         if (w.spot == FishingWater.VALID) {
@@ -250,8 +264,13 @@ public class FishermanJob extends Job {
         }
         if (restUntil > 0) {
             if (now() < restUntil) {
-                status("No fishing water within reach", "Idle");
+                // it rests at the storehouse, not wherever the last forage leg ended (far out, maybe at dusk): idle
+                // all the same, so the director can retrain it
                 markIdle("no fishing water");
+                if (!atStorage()) {
+                    return;
+                }
+                status("No fishing water within reach", "Idle");
                 waitFor(1200);
                 return;
             }
@@ -368,7 +387,7 @@ public class FishermanJob extends Job {
         if (lastTravelTick < 0 || routeFailures() < travelFailBase) {
             travelFailBase = routeFailures(); // a new walk, or the count was reset by arriving somewhere else (an errand)
         }
-        if (!goTo(w.extent, 1.0, "the fishing spot")) {
+        if (!onStand(w)) {
             travelTicks += lastTravelTick < 0 ? 0 : (int) Math.min(now() - lastTravelTick, MAX_TRAVEL_GAP);
             lastTravelTick = now();
             // a spot it cannot get to is given up, rather than digging toward a far lake for ever
@@ -411,6 +430,25 @@ public class FishermanJob extends Job {
             return;
         }
         reelIn(w, water, npc.getMainHandItem());
+    }
+
+    /**
+     * Walks to the stand; true once standing on it. Climbing out of the water onto the bank, the top of the climb can
+     * come within reach of the stand while still in the air: that is not arriving (it would drop back into the water,
+     * with nothing steering it, and fish from there), so it keeps heading for the middle of the stand until it stands
+     * on dry ground.
+     */
+    private boolean onStand(WorkplaceState w) {
+        if (!goTo(w.extent, STAND_REACH, "the fishing spot")) {
+            return false;
+        }
+        if (npc.onGround() && !npc.isInWater()) {
+            return true;
+        }
+        Vec3 c = Vec3.atBottomCenterOf(w.extent);
+        npc.getMoveControl().setWantedPosition(c.x, c.y, c.z, 1.0);
+        status("Climbing out onto the bank", "Travelling");
+        return false;
     }
 
     /**

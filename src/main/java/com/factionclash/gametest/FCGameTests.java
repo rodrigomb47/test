@@ -2373,6 +2373,132 @@ public final class FCGameTests {
     }
 
     /**
+     * A fisherman swimming up to its stand from the water side climbs out onto the bank before it casts: it counts as
+     * arrived on the stand itself, never from the water beside it, and its catches reach its backpack.
+     */
+    @GameTest(template = "platform", timeoutTicks = 900, batch = "fish_swim", skyAccess = true)
+    public static void fishermanClimbsOntoTheBankBeforeCasting(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 900);
+        sunkenPond(h, 15, 15, 21, 21);
+        BlockPos stand = h.absolutePos(new BlockPos(14, 2, 18)), bobber = h.absolutePos(new BlockPos(17, 1, 18));
+        FactionNpc fisher;
+        com.factionclash.campaign.WorkplaceState fishery;
+        com.factionclash.work.FishermanJob job;
+        try {
+            fishery = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.FISHERY, t.base.center);
+            com.factionclash.work.FishingSpots.apply(t.data, fishery, new com.factionclash.logic.FishingWater.Spot(bobber.getX(), bobber.getY(),
+                    bobber.getZ(), stand.getX(), stand.getY(), stand.getZ(), false, 49));
+            fisher = t.npc(18, 18, NpcRole.FISHERMAN); // drops into the pond, 3 blocks out from the bank
+            fisher.equip(lureRod(h));
+            job = (com.factionclash.work.FishermanJob) fisher.job();
+            CompoundTag saved = new CompoundTag();
+            saved.putString("state", "FISH"); // straight to the water, from the water
+            job.load(saved, h.getLevel().registryAccess());
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        boolean[] swam = new boolean[1];
+        t.onEachTick(() -> {
+            swam[0] |= fisher.isInWater();
+            if (job.casts() == 0) {
+                return;
+            }
+            h.assertTrue(swam[0], "the fisherman should have started in the water");
+            net.minecraft.world.phys.Vec3 at = fisher.position(), on = net.minecraft.world.phys.Vec3.atBottomCenterOf(stand);
+            h.assertFalse(fisher.isInWater(), "it cast from the water at " + at);
+            h.assertTrue(Math.abs(at.y - on.y) < 0.6 && at.subtract(on).horizontalDistance() <= 0.75,
+                    "it should cast standing on the stand " + stand.toShortString() + ", not at " + at);
+            if (fishery.totalOutput > 0 && !fisher.inventory().isEmpty()) {
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * A fisherman whose round of foraging found no water rests at the storehouse, idle, rather than wherever its last
+     * forage leg ended, far outside the walls and maybe at nightfall.
+     */
+    @GameTest(template = "platform", timeoutTicks = 600, batch = "fish_rest", skyAccess = true)
+    public static void restingFishermanWaitsAtTheStorehouse(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 600);
+        FactionNpc fisher;
+        com.factionclash.work.FishermanJob job;
+        try {
+            var fishery = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.FISHERY, t.base.center);
+            fishery.spot = com.factionclash.logic.FishingWater.NONE;
+            fishery.searched = h.getLevel().getGameTime();
+            fisher = t.npc(21, 21, NpcRole.FISHERMAN);
+            fisher.equip(lureRod(h));
+            job = (com.factionclash.work.FishermanJob) fisher.job();
+            CompoundTag saved = new CompoundTag();
+            saved.putString("state", "FORAGE");
+            saved.putLong("restUntil", h.getLevel().getGameTime() + 6000); // the round just ended out here
+            job.load(saved, h.getLevel().registryAccess());
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        BlockPos home = t.base.point(BaseState.STORAGE_STAND);
+        t.onEachTick(() -> {
+            if (h.getTick() < 5) {
+                return;
+            }
+            h.assertTrue(job.idleFor(0) && job.idleReason().equals("no fishing water"),
+                    "resting, it has nothing to do: " + job.idleReason() + " / " + fisher.status());
+            if (fisher.position().distanceTo(net.minecraft.world.phys.Vec3.atBottomCenterOf(home)) <= 2.5
+                    && fisher.status().startsWith("No fishing water within reach")) {
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * A worker that has its tool again, however it got it, is not counted as toolless: the time without one starts
+     * afresh when it next breaks, so the director never retrains a fisherman busy with a new rod. The faction's note
+     * on a toolless worker names the tool.
+     */
+    @GameTest(template = "platform", timeoutTicks = 200, batch = "workers_toolless")
+    public static void aWorkerWithItsToolAgainIsNotToolless(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 200);
+        FactionNpc fisher;
+        try {
+            fisher = t.npc(4, 4, NpcRole.FISHERMAN); // at the storehouse, which has no rod
+            h.assertTrue(com.factionclash.campaign.FactionDirector.retrainNote("Elsa Wells", NpcRole.FISHERMAN, "no " + NpcRole.FISHERMAN.tool.noun(),
+                            new com.factionclash.campaign.FactionDirector.Need(NpcRole.AXE_FIGHTER, "garrison growth"))
+                            .equals("Elsa Wells (Fisherman) has had no fishing rod for half a day and becomes an Axe Fighter (garrison growth)"),
+                    "the retraining note should name the missing tool");
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] phase = {0};
+        long[] since = {0};
+        t.onEachTick(() -> {
+            com.factionclash.work.Job job = fisher.job();
+            switch (phase[0]) {
+                case 0 -> {
+                    if (job.missingToolFor(0)) { // the trip to the storehouse found no rod
+                        fisher.equip(new ItemStack(Items.FISHING_ROD)); // as a job's own storehouse visit would
+                        phase[0] = 1;
+                        since[0] = h.getTick();
+                    }
+                }
+                case 1 -> {
+                    h.assertFalse(job.missingToolFor(0), "with a rod in hand it is not toolless");
+                    if (h.getTick() - since[0] >= 3) {
+                        fisher.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY); // the new rod breaks
+                        h.assertFalse(job.missingToolFor(0), "the time without a rod starts again when the new one breaks");
+                        t.succeed();
+                    }
+                }
+                default -> {
+                }
+            }
+        });
+    }
+
+    /**
      * No fisherman is hired where there is no water to fish: not when the last search found none (until two days
      * later), and not while the role is barren; with known water and low food it is.
      */
