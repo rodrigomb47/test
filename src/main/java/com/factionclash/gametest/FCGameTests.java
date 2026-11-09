@@ -2452,10 +2452,54 @@ public final class FCGameTests {
     }
 
     /**
+     * A woodcutter goes back to a tree it had started to fell even when nothing of it is left to cut (its last logs
+     * went while it was away unloading, or its chunk was not loaded when it decided): it finishes the tree there,
+     * picking up the drops around the stump, and does not count the tree a second time.
+     */
+    @GameTest(template = "platform", timeoutTicks = 600, batch = "wood_return", skyAccess = true)
+    public static void woodcutterGoesBackToAStartedTree(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 600);
+        FactionNpc n;
+        BlockPos stump = h.absolutePos(new BlockPos(18, 2, 18));
+        try {
+            h.setBlock(new BlockPos(18, 1, 18), Blocks.GRASS_BLOCK);
+            n = testWoodcutter(t, 6, 12, new ItemStack(Items.STONE_AXE));
+            // what the felled tree dropped, lying around its stump, well away from the woodcutter
+            h.spawnItem(Items.BIRCH_SAPLING, 16.5f, 2.2f, 18.5f);
+            h.spawnItem(Items.STICK, 19.5f, 2.2f, 20.5f);
+            h.spawnItem(Items.APPLE, 18.5f, 2.2f, 15.5f);
+            // the job as saved while it was on its way to unload, half-way through that tree
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("v", 2);
+            tag.putString("state", "CHECK");
+            tag.putLong("felling", stump.asLong());
+            n.job().load(tag, h.getLevel().registryAccess());
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            var w = woodlandOf(t);
+            if (w == null) {
+                return; // cleaned up just before the timeout
+            }
+            t.assertTrue(w.felled == 0 && w.replant.isEmpty(), "a tree with no stump left is not counted again");
+            if (!(n.job() instanceof com.factionclash.work.WoodcutterJob job) || job.felling() != null) {
+                return;
+            }
+            var left = h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
+                    new net.minecraft.world.phys.AABB(stump).inflate(4, 2, 4), net.minecraft.world.entity.Entity::isAlive);
+            if (left.isEmpty()) {
+                t.succeed(); // it went back, found nothing left to cut, and picked up what lay around the stump
+            }
+        });
+    }
+
+    /**
      * Grove spots follow the rules: on the 5-block lattice, inside the work belt, at least 4 beyond the walls, off the
-     * road strip, on soil under open sky (never farmland), with nothing growing within 2 blocks, and away from a mine.
-     * Of six lattice spots given grass or farmland, only the one that passes every rule is offered; once it holds a
-     * sapling nothing is.
+     * road strip, on soil under open sky (never farmland), with nothing growing within 2 blocks, away from a mine, and
+     * within the forest radius. Of six lattice spots given grass or farmland, only the one that passes every rule is
+     * offered (and not while the forest radius stops short of it); once it holds a sapling nothing is.
      */
     @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static", skyAccess = true)
     public static void groveSpotsFollowTheRules(GameTestHelper h) {
@@ -2473,6 +2517,12 @@ public final class FCGameTests {
             h.setBlock(new BlockPos(21, 2, 7), Blocks.OAK_SAPLING);
             h.setBlock(new BlockPos(2, 1, 22), Blocks.GRASS_BLOCK);  // a mine opens beside it
             t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(4, 2, 19)));
+            // a grove tree is felled like any other, so no grove spot lies beyond the forest radius (the fitting
+            // spot is 11.2 from the centre)
+            t.base.testRadius = 11;
+            h.assertTrue(new com.factionclash.work.ForestScan.GroveSearch().next(level, t.data, t.base) == null,
+                    "no grove spot beyond the forest radius");
+            t.base.testRadius = 15;
             var search = new com.factionclash.work.ForestScan.GroveSearch();
             BlockPos found = search.next(level, t.data, t.base);
             h.assertTrue(h.absolutePos(new BlockPos(22, 2, 17)).equals(found), "the one fitting grove spot should be offered, not " + found);

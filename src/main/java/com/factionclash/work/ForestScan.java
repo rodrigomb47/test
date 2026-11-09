@@ -4,6 +4,7 @@ import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.BaseZones;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.MapBounds;
+import com.factionclash.config.FCConfig;
 import com.factionclash.logic.ForestRules;
 import com.factionclash.logic.TreeShape;
 import com.factionclash.npc.FactionNpc;
@@ -46,6 +47,8 @@ public final class ForestScan {
 
     /** PROPOSED: the tree search reads every second column, in a rotating pattern that covers each column every 4 scans. */
     static final int STEP = 2;
+    /** The number of column patterns: scans {@code scan}, {@code scan+1}, ... {@code scan+PATTERNS-1} read every column once. */
+    public static final int PATTERNS = STEP * STEP;
     /** A trunk is followed down at most this far. */
     static final int MAX_TRUNK_WALK = 30;
 
@@ -91,7 +94,7 @@ public final class ForestScan {
     public static Found findTree(ServerLevel level, CampaignData data, BaseState base, FactionNpc npc, BlockPos around, int radius,
                                  Set<Long> badWild, int scan, Predicate<BlockPos> skip) {
         Loaded w = new Loaded(level);
-        int phase = Math.floorMod(scan, 4);
+        int phase = Math.floorMod(scan, PATTERNS);
         int px = phase == 1 || phase == 2 ? 1 : 0, pz = phase == 1 || phase == 3 ? 1 : 0;
         int ax = around.getX(), az = around.getZ();
         int x0 = ax - radius + Math.floorMod(px - (ax - radius), STEP), z0 = az - radius + Math.floorMod(pz - (az - radius), STEP);
@@ -254,7 +257,8 @@ public final class ForestScan {
 
     /**
      * Looks for grove spots of one base: lattice points ({@link ForestRules#GROVE_SPACING} apart) inside the base's
-     * work belt, the walls' side first, where a sapling may stand by {@link ForestRules#groveSpotAllowed} and the
+     * work belt and within the forest radius (so the grown trees are felled), the walls' side first, where a sapling
+     * may stand by {@link ForestRules#groveSpotAllowed} and the
      * ground allows it: soil under open sky, the spot free, nothing growing within 2 blocks, no part of a base's plan,
      * nothing else reserved there. At most {@link #POINTS_PER_CALL} points are looked at per call; a found spot is
      * kept until it is planted or no longer fits; after a full round with nothing found it rests a while. GameTest
@@ -316,7 +320,11 @@ public final class ForestScan {
             }
         }
 
-        /** Lattice points of the base's belt that pass the pure rules except ground and reservations, walls' side first. */
+        /**
+         * Lattice points of the base's belt that pass the pure rules except ground and reservations, walls' side
+         * first. Only points within the woodcutters' forest radius count: a grove tree is felled and replanted like
+         * any other, and the tree search reaches no further (the belt's far east end lies beyond it).
+         */
         private static List<int[]> lattice(BaseState b) {
             List<int[]> out = new ArrayList<>();
             BlockPos min = b.point(BaseState.MIN), max = b.point(BaseState.MAX);
@@ -324,9 +332,12 @@ public final class ForestScan {
                 return out;
             }
             int cx = b.center.getX(), cz = b.center.getZ(), half = BaseZones.half(b);
+            long r = BaseZones.workRadius(b, FCConfig.FOREST_RADIUS.get());
             for (int x = min.getX(); x <= max.getX(); x++) {
                 for (int z = min.getZ(); z <= max.getZ(); z++) {
-                    if (ForestRules.groveSpotAllowed(x - cx, z - cz, half, true, ForestRules.Ground.DIRT, false)) {
+                    long dx = x - cx, dz = z - cz;
+                    if (dx * dx + dz * dz <= r * r
+                            && ForestRules.groveSpotAllowed(x - cx, z - cz, half, true, ForestRules.Ground.DIRT, false)) {
                         out.add(new int[]{x, z});
                     }
                 }

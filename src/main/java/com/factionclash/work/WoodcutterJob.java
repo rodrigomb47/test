@@ -77,11 +77,13 @@ public class WoodcutterJob extends Job {
     /** PROPOSED: the tree search runs at most this often (sooner when the tree it had in mind is gone). */
     static final int RESCAN_TICKS = 600;
     /** The search reads one of 4 column patterns per scan; after an empty one the next follows this soon. */
-    static final int SCAN_PATTERNS = 4, PATTERN_TICKS = 20;
+    static final int SCAN_PATTERNS = ForestScan.PATTERNS, PATTERN_TICKS = 20;
     /** PROPOSED: trees given up on that it remembers, oldest forgotten first. */
     static final int MAX_BAD_WILD = 128;
     /** PROPOSED: at most one trip to the storehouse for a stump's sapling this often. */
     static final int SAPLING_TRIP_TICKS = 2400;
+    /** The storehouse is looked into for a stump's missing sapling at most this often. */
+    static final int STORAGE_LOOK_TICKS = 200;
     /** PROPOSED: foraging walks this far out in one of eight directions, looks around this far, then tries the next one. */
     static final int FORAGE_DISTANCE = 72, FORAGE_SCAN = 40, FORAGE_DIRECTIONS = 8, FORAGE_LEG_TICKS = 2400;
     /** PROPOSED: after a full round of foraging finds nothing, it rests this long before going out again. */
@@ -124,7 +126,7 @@ public class WoodcutterJob extends Job {
     private ForestScan.Found treeCache;
     private long nextScan;
     private int scans, emptyScans;
-    private long nextSaplingTrip, nextAxeCheck, nextPrune;
+    private long nextSaplingTrip, nextStorageLook, nextAxeCheck, nextPrune;
     private int tendCursor;
     private final Set<Long> skippedPosts = new HashSet<>();
     private int postFailBase;
@@ -194,6 +196,9 @@ public class WoodcutterJob extends Job {
         WorkplaceState wp = b == null ? null : Workplaces.claim(npc, WorkplaceState.Type.TREE_PLOT);
         if (b == null || wp == null) {
             status("No woodland", "Idle");
+            if (b != null) {
+                markIdle("no woodland of its own"); // the base's woodland has its woodcutter: retrainable
+            }
             waitFor(200);
             return;
         }
@@ -253,19 +258,17 @@ public class WoodcutterJob extends Job {
         if (wp.legacyFence && startDismantling(wp)) {
             return;
         }
-        // 3. a tree it started to fell (before a trip to the storehouse, a fight or a reload): finish it first
+        // 3. a tree it started to fell (before a trip to the storehouse, a fight or a reload): go back and finish it.
+        // Its chunk may have unloaded while the woodcutter was away, so whether logs are left is only looked at
+        // there; a tree with none left goes straight on to its canopy, drops and replanting.
         if (felling != null) {
-            if (resumeStart() != null) {
-                if (remoteAtNight(felling)) {
-                    nightWait();
-                    return;
-                }
-                spot = felling;
-                startTree();
+            if (remoteAtNight(felling)) {
+                nightWait(true);
                 return;
             }
-            ForestScan.TreeClaims.release(felling, npc.getUUID());
-            felling = null;
+            spot = felling;
+            startTree();
+            return;
         }
         // 4. stumps waiting for their sapling
         if (replantQueue(b, wp)) {
@@ -298,7 +301,7 @@ public class WoodcutterJob extends Job {
         // 9. at night, home; by day, further out to look for trees
         if (nightRule()) {
             forageTarget = null;
-            nightWait();
+            nightWait(false);
             return;
         }
         if (!noTreeNearby()) {
@@ -323,8 +326,12 @@ public class WoodcutterJob extends Job {
         waitFor(100);
     }
 
-    /** Between dusk and dawn with nothing near the walls left to do: unload, then wait at the storehouse. */
-    private void nightWait() {
+    /**
+     * Between dusk and dawn with nothing near the walls left to do: unload, then wait at the storehouse. Only a
+     * started tree waiting for daylight ({@code treeWaiting}) counts as work; otherwise the night leaves the idle
+     * stretch as it was, so a woodcutter with no trees and no saplings is still retrained in time.
+     */
+    private void nightWait(boolean treeWaiting) {
         if (hasCargo()) {
             state = State.STORAGE;
             return;
@@ -333,7 +340,9 @@ public class WoodcutterJob extends Job {
             return;
         }
         status("Waiting for daylight", "Resting");
-        markBusy();
+        if (treeWaiting) {
+            markBusy();
+        }
         waitFor(600);
     }
 
@@ -359,7 +368,10 @@ public class WoodcutterJob extends Job {
                     && !remoteAtNight(s)) {
                 return treeCache;
             }
+            // gone, given up on, taken by another woodcutter or too far out tonight: look again at once rather than
+            // wait out the rescan time with nothing in mind
             treeCache = null;
+            nextScan = now();
         }
         if (now() < nextScan) {
             return null;
@@ -717,6 +729,10 @@ public class WoodcutterJob extends Job {
         List<WorkplaceState.Replant> entries = new ArrayList<>(wp.replant);
         entries.sort(Comparator.comparingDouble(e -> BlockPos.of(e.pos()).distSqr(npc.blockPosition())));
         Map<ForestRules.Species, Integer> reserved = reserved(wp);
+        // the storehouse is counted at most once per species here, and looked into at most every STORAGE_LOOK_TICKS
+        // while no trip is made (decide() runs every tick on a forage walk)
+        Map<ForestRules.Species, Integer> stored = new EnumMap<>(ForestRules.Species.class);
+        boolean looked = false;
         for (WorkplaceState.Replant e : entries) {
             BlockPos p = BlockPos.of(e.pos());
             ForestRules.Species want = ForestRules.Species.byName(e.species());
@@ -743,14 +759,21 @@ public class WoodcutterJob extends Job {
                     return true;
                 }
                 case WAIT -> {
-                    if (want != null && now() >= nextSaplingTrip
-                            && FactionStorage.count(level(), b, x -> x.is(ForestScan.saplingItem(want))) >= want.saplingsPerTree() - same) {
-                        nextSaplingTrip = now() + SAPLING_TRIP_TICKS; // its sapling is in the storehouse: fetch it
-                        state = State.STORAGE;
-                        return true;
+                    if (want != null && now() >= nextSaplingTrip && now() >= nextStorageLook) {
+                        looked = true;
+                        net.minecraft.world.item.Item item = ForestScan.saplingItem(want);
+                        int inStore = stored.computeIfAbsent(want, s -> FactionStorage.count(level(), b, x -> x.is(item)));
+                        if (inStore >= want.saplingsPerTree() - same) {
+                            nextSaplingTrip = now() + SAPLING_TRIP_TICKS; // its sapling is in the storehouse: fetch it
+                            state = State.STORAGE;
+                            return true;
+                        }
                     }
                 }
             }
+        }
+        if (looked) {
+            nextStorageLook = now() + STORAGE_LOOK_TICKS; // none of the missing saplings is stored: look again later
         }
         return false;
     }
@@ -759,7 +782,11 @@ public class WoodcutterJob extends Job {
     private void plant(WorkplaceState wp) {
         if (!NpcNavigator.within(npc, spot, 3.0)) {
             if (++walkTicks > SPOT_GIVE_UP_TICKS) {
-                skipUntil.put(spot.asLong(), now() + SPOT_RETRY_TICKS); // cannot get there for now
+                if (plantGrove) {
+                    grove.reject(spot); // the grove search would offer it again and again: another spot is taken
+                } else {
+                    skipFor(spot); // cannot get to this stump for now
+                }
                 npc.navigator().reset();
                 state = State.CHECK;
                 return;
@@ -813,6 +840,15 @@ public class WoodcutterJob extends Job {
             status("Instant regrowth!", "Planting");
         }
         state = State.CHECK;
+    }
+
+    /** Leaves a stump or sapling it could not get to alone for {@link #SPOT_RETRY_TICKS}; spots whose time is up are forgotten. */
+    private void skipFor(BlockPos p) {
+        long t = now();
+        if (skipUntil.size() >= 64) {
+            skipUntil.values().removeIf(until -> until <= t);
+        }
+        skipUntil.put(p.asLong(), t + SPOT_RETRY_TICKS);
     }
 
     private void growNow(BlockPos p, int steps) {
@@ -877,7 +913,7 @@ public class WoodcutterJob extends Job {
         }
         if (!NpcNavigator.within(npc, spot, 3.0)) {
             if (++walkTicks > SPOT_GIVE_UP_TICKS) {
-                skipUntil.put(spot.asLong(), now() + SPOT_RETRY_TICKS);
+                skipFor(spot);
                 npc.navigator().reset();
                 state = State.CHECK;
                 return;
@@ -969,11 +1005,16 @@ public class WoodcutterJob extends Job {
         }
         BlockPos t = level().isLoaded(forageTarget) ? level().getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, forageTarget) : forageTarget;
         status("Looking for trees further out (" + t.toShortString() + ")", "Travelling");
-        markBusy();
+        // the walk itself is not work found: a woodcutter already idle (a round of foraging found nothing and it has
+        // no saplings) stays idle while it looks again, as a fisherman does, so the director can retrain it
         if (goTo(t, 8.0, "trees further out") || now() - forageStart > FORAGE_LEG_TICKS) {
             forageTarget = null;
-            ForestScan.Found tree = ForestScan.findTree(level(), data(), b, npc, npc.blockPosition(), FORAGE_SCAN, badWild, scans++,
-                    this::remoteAtNight);
+            // every column around the forage point is read (all four patterns), so a lone tree there is not missed
+            ForestScan.Found tree = null;
+            for (int i = 0; i < ForestScan.PATTERNS && tree == null; i++) {
+                tree = ForestScan.findTree(level(), data(), b, npc, npc.blockPosition(), FORAGE_SCAN, badWild, scans++,
+                        this::remoteAtNight);
+            }
             if (tree != null) {
                 forageFails = 0;
                 treeCache = tree;
