@@ -43,7 +43,7 @@ public class FarmerJob extends Job {
 
     @Override
     public String workplaceInfo() {
-        WorkplaceState wp = wp();
+        WorkplaceState wp = Workplaces.held(npc, WorkplaceState.Type.FARM); // looking never claims
         return wp == null ? "no farm" : "Farm #" + wp.id + " (" + cellCount(wp) + " plots)";
     }
 

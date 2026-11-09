@@ -35,6 +35,13 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue ACHIEVEMENTS;
     public static final ModConfigSpec.BooleanValue ANNOUNCE_ACHIEVEMENTS;
     public static final ModConfigSpec.BooleanValue GRANT_ACHIEVEMENTS_TO_PLAYERS;
+    public static final ModConfigSpec.IntValue MINE_SITE_RADIUS;
+    public static final ModConfigSpec.IntValue MAX_OPEN_MINES;
+    public static final ModConfigSpec.IntValue FOREST_RADIUS;
+    public static final ModConfigSpec.IntValue GROVE_SIZE;
+    public static final ModConfigSpec.IntValue FISHING_RADIUS;
+    public static final ModConfigSpec.BooleanValue FISHING_TREASURE;
+    public static final ModConfigSpec.BooleanValue REMOTE_WORK_IN_DAYLIGHT_ONLY;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -77,6 +84,28 @@ public final class FCConfig {
         GRANT_ACHIEVEMENTS_TO_PLAYERS = b.comment("Also give the faction's advancements to its players as real advancements",
                         "(on joining, logging in, and whenever the faction makes a new one).")
                 .define("grantToFactionPlayers", false);
+        b.pop();
+
+        b.comment("Workers: where miners, woodcutters and fishermen work (PROPOSED defaults)").push("workplaces");
+        MINE_SITE_RADIUS = b.comment("Farthest distance (blocks, along either axis) from the base centre at which a miner opens a mine.",
+                        "The nearest is fixed at the walls' half-size + 8 (32 blocks).")
+                .defineInRange("mineSiteRadius", 64, 40, 128);
+        MAX_OPEN_MINES = b.comment("Mines a base may be working at once (unfinished and not resting). Each miner works one.")
+                .defineInRange("maxOpenMines", 3, 1, 8);
+        FOREST_RADIUS = b.comment("Woodcutters fell natural trees within this many blocks of the base centre.",
+                        "When there are none, they forage up to 72 blocks further out.")
+                .defineInRange("forestRadius", 64, 32, 128);
+        GROVE_SIZE = b.comment("Saplings the woodcutter keeps growing in the base's always-ticking work area, so treeless land still",
+                        "gives wood. 0 = only replant felled trees.")
+                .defineInRange("groveSize", 8, 0, 32);
+        FISHING_RADIUS = b.comment("Fishing water is searched for within this many blocks of the base centre.",
+                        "Water a fisherman finds while foraging may be up to 40 blocks further.")
+                .defineInRange("fishingRadius", 64, 32, 128);
+        FISHING_TREASURE = b.comment("In open water (5x5, 2 deep, open sky, as for a player) the vanilla treasure catches can be fished.")
+                .define("fishingTreasure", true);
+        REMOTE_WORK_IN_DAYLIGHT_ONLY = b.comment("Between dusk and dawn (day time 13000-23000), woodcutters and fishermen do not work more than",
+                        "16 blocks outside the walls, where the guards cannot protect them.")
+                .define("remoteWorkInDaylightOnly", true);
         b.pop();
 
         b.comment("Recruitment (PROPOSED defaults)").push("recruitment");

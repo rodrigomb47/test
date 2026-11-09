@@ -23,7 +23,6 @@ import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -182,7 +181,7 @@ public class BlacksmithJob extends Job {
                 + FactionStorage.count(level, base, s -> s.is(ItemTags.PLANKS)) * 2
                 + FactionStorage.count(level, base, s -> s.is(ItemTags.LOGS)) * 8;
 
-        List<FactionNpc> crew = membersNearBase();
+        List<FactionNpc> crew = members();
         // 0. Replacements for broken and nearly used-up gear (with tool wear on): one new tool of each kind a worker
         //    lacks a fresh one of, unless the storehouse already has one. Iron when there is iron, else stone (the
         //    miners always bring cobblestone), so work never waits on scarce iron.
@@ -583,14 +582,30 @@ public class BlacksmithJob extends Job {
         return item instanceof ArmorItem a ? a.getDefense() : 0;
     }
 
-    private List<FactionNpc> membersNearBase() {
+    /** PROPOSED: members this far from the base centre (horizontally) or nearer count as the blacksmith's crew. */
+    static final int CREW_RANGE = 256;
+
+    /**
+     * The base's people the blacksmith makes gear for: every living member of its roster that is in the world within
+     * {@link #CREW_RANGE} blocks of the centre at any depth, so deep miners, fishermen at a far lake and woodcutters
+     * out foraging get their worn tools replaced too.
+     */
+    private List<FactionNpc> members() {
         BaseState b = base();
-        BlockPos min = b.point(BaseState.MIN), max = b.point(BaseState.MAX);
-        AABB box = min == null ? new AABB(b.center).inflate(48) : new AABB(min.getX(), min.getY() - 32, min.getZ(),
-                max.getX() + 1, max.getY() + 32, max.getZ() + 1).inflate(16);
         FactionState f = data().faction(npc.getFaction());
-        return level().getEntitiesOfClass(FactionNpc.class, box, n -> n.isAlive() && n.getFaction() == npc.getFaction()
-                && f.roster.containsKey(n.getUUID()));
+        List<FactionNpc> out = new ArrayList<>();
+        for (com.factionclash.campaign.NpcRecord r : f.roster.values()) {
+            if (!r.alive || r.baseId != b.id) {
+                continue;
+            }
+            if (level().getEntity(r.uuid) instanceof FactionNpc n && n.isAlive()) {
+                double dx = n.getX() - (b.center.getX() + 0.5), dz = n.getZ() - (b.center.getZ() + 0.5);
+                if (dx * dx + dz * dz <= (double) CREW_RANGE * CREW_RANGE) {
+                    out.add(n);
+                }
+            }
+        }
+        return out;
     }
 
     @Override

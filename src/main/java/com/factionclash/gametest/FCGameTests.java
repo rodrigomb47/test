@@ -1244,6 +1244,69 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /**
+     * Retraining frees the old job's workplace: a fisherman who becomes a miner no longer holds the fishing spot, and a
+     * tree plot still assigned to a worker who is now a scout (as in saves from before this rule) is free, so a
+     * woodcutter can claim it.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void retrainingReleasesTheWorkplace(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        var roster = t.data.faction(t.base.faction).roster;
+        com.factionclash.campaign.NpcRecord scout = new com.factionclash.campaign.NpcRecord();
+        scout.uuid = java.util.UUID.randomUUID();
+        scout.name = "Old woodcutter";
+        scout.role = NpcRole.SCOUT;
+        scout.baseId = t.base.id;
+        try {
+            var fishery = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.FISHERY, h.absolutePos(new BlockPos(18, 1, 18)));
+            FactionNpc fisher = t.npc(8, 8, NpcRole.FISHERMAN);
+            h.assertTrue(com.factionclash.work.Workplaces.claim(fisher, com.factionclash.campaign.WorkplaceState.Type.FISHERY) == fishery,
+                    "the fisherman should claim the free fishing spot");
+            h.assertFalse(com.factionclash.work.Workplaces.unworked(t.data, fishery), "a fishing spot with its fisherman counts as worked");
+            fisher.role(NpcRole.MINER);
+            h.assertTrue(fishery.assigned == null, "retraining should hand back the fishing spot, held by " + fishery.assigned);
+
+            roster.put(scout.uuid, scout);
+            var plot = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT, h.absolutePos(new BlockPos(18, 2, 6)));
+            plot.assigned = scout.uuid; // retrained before retraining released workplaces
+            h.assertTrue(com.factionclash.work.Workplaces.unworked(t.data, plot), "a tree plot held by a living scout should count as free");
+            FactionNpc cutter = t.npc(10, 8, NpcRole.WOODCUTTER);
+            h.assertTrue(com.factionclash.work.Workplaces.claim(cutter, com.factionclash.campaign.WorkplaceState.Type.TREE_PLOT) == plot
+                    && cutter.getUUID().equals(plot.assigned), "the woodcutter should claim the plot, held by " + plot.assigned);
+            h.assertFalse(com.factionclash.work.Workplaces.unworked(t.data, plot), "the plot with its woodcutter counts as worked");
+        } finally {
+            roster.remove(scout.uuid);
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
+    /**
+     * A claim's condition applies to the NPC's own workplace too: a miner still holding a worked-out mine gets the
+     * free active one instead of its old one.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void claimSkipsOwnWorkedOutMine(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 40);
+        try {
+            FactionNpc miner = t.npc(8, 8, NpcRole.MINER);
+            var type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+            var a = t.addWorkplace(type, h.absolutePos(new BlockPos(4, 2, 18)));
+            a.assigned = miner.getUUID();
+            a.workedOut = true;
+            var b = t.addWorkplace(type, h.absolutePos(new BlockPos(18, 2, 4)));
+            h.assertTrue(com.factionclash.work.Workplaces.claim(miner, type) == a, "without a condition the miner's own mine comes first");
+            var got = com.factionclash.work.Workplaces.claim(miner, type, w -> !w.workedOut);
+            h.assertTrue(got == b, "the claim should skip the worked-out mine #" + a.id + " and take #" + b.id + ", got "
+                    + (got == null ? "none" : "#" + got.id));
+            h.assertTrue(miner.getUUID().equals(b.assigned), "the active mine should now be the miner's");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

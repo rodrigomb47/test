@@ -337,11 +337,19 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return v[Math.floorMod(b, v.length)];
     }
 
+    /**
+     * Gives the NPC a role (a new recruit, or retraining). A real change hands back every workplace it held, so the
+     * mine, woodland or fishing spot of its old job is free for the next worker. Loading a saved NPC sets the role
+     * directly and keeps its workplaces.
+     */
     public void role(NpcRole role) {
         boolean changed = role != getRole();
         entityData.set(DATA_ROLE, (byte) role.ordinal());
         if (changed || job == null) {
             job = null;
+        }
+        if (changed && level() instanceof ServerLevel sl) {
+            com.factionclash.work.Workplaces.releaseAll(CampaignData.get(sl.getServer()), getUUID());
         }
         reapplyAffixes();
     }

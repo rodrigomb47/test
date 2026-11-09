@@ -2,6 +2,7 @@ package com.factionclash.work;
 
 import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.CampaignData;
+import com.factionclash.config.FCConfig;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcNavigator;
 import com.factionclash.npc.NpcRole;
@@ -76,7 +77,7 @@ public abstract class Job {
             if (needsToolToWork(role) && now() >= nextToolTrip) {
                 waitTicks = 0;
                 status("Going to the storehouse for a new " + role.tool.name().toLowerCase(), "Travelling");
-                if (!atStorage()) {
+                if (!beforeErrand() || !atStorage()) {
                     return true;
                 }
                 lastEquipCheck = -100000;
@@ -95,7 +96,7 @@ public abstract class Job {
         }
         // hungry, or badly hurt without the 18 food that lets it heal: fetch food like a player would
         boolean needsFood = npc.hunger().foodLevel() <= 6 || npc.getHealth() <= npc.getMaxHealth() * 0.3F && npc.hunger().foodLevel() < 18;
-        if (com.factionclash.config.FCConfig.HUNGER.get() && needsFood && now() >= nextMealTrip
+        if (FCConfig.HUNGER.get() && needsFood && now() >= nextMealTrip
                 && Inv.count(npc.inventory(), Job::isProvision) == 0 && !npc.isEatingMeal()) {
             if (FactionStorage.count(level(), b, Job::isProvision) == 0) {
                 nextMealTrip = now() + 2400; // nothing to eat at home either: work on, and look again later
@@ -103,7 +104,7 @@ public abstract class Job {
             }
             waitTicks = 0;
             status("Hungry - going to the storehouse for food", "Travelling");
-            if (!atStorage()) {
+            if (!beforeErrand() || !atStorage()) {
                 return true;
             }
             nextMealTrip = now() + 600;
@@ -148,6 +149,77 @@ public abstract class Job {
     /** True when this worker has been unable to get its tool for at least {@code ticks}. */
     public boolean missingToolFor(long ticks) {
         return toolMissingSince >= 0 && now() - toolMissingSince >= ticks;
+    }
+
+    /** Since when this worker has had no work it can do (-1: busy), and why. Not saved: a reload starts busy. */
+    private long idleSince = -1;
+    private String idleReason = "";
+
+    /**
+     * The worker has nothing it can do: no place to work, nothing left to work on. The time it started is kept
+     * across repeated calls, so {@link #idleFor} measures the whole idle stretch; the reason is the latest one.
+     */
+    protected void markIdle(String reason) {
+        if (idleSince < 0) {
+            idleSince = now();
+        }
+        idleReason = reason == null ? "" : reason;
+    }
+
+    /** The worker has work again: the idle stretch ends. */
+    protected void markBusy() {
+        idleSince = -1;
+        idleReason = "";
+    }
+
+    /** True when the worker has had nothing to do for at least {@code ticks} (the director then retrains it). */
+    public boolean idleFor(long ticks) {
+        return idleSince >= 0 && now() - idleSince >= ticks;
+    }
+
+    /** Why the worker is idle, in words that follow "has had", for example "no place to dig a mine"; empty when busy. */
+    public String idleReason() {
+        return idleReason;
+    }
+
+    /**
+     * Called right before a survival errand (a new tool, food) sends the worker to the storehouse. A job whose
+     * worker has to leave its workplace a particular way first (a miner climbing out of its mine) does that here and
+     * returns false until it is out; the errand then goes on as usual.
+     */
+    protected boolean beforeErrand() {
+        return true;
+    }
+
+    /** PROPOSED: night for remote work, dusk to dawn (dayTime 13000-23000), roughly when monsters spawn in the open. */
+    static final int NIGHT_START = 13000, NIGHT_END = 23000;
+    /** PROPOSED: at night, work further than this many blocks outside the walls waits for daylight. */
+    static final int NIGHT_SAFE_MARGIN = 16;
+
+    protected boolean isNight() {
+        long day = level().getDayTime() % 24000;
+        return day >= NIGHT_START && day < NIGHT_END;
+    }
+
+    /**
+     * True when {@code p} is too far out to work at night: with remoteWorkInDaylightOnly, between dusk and dawn,
+     * more than {@link #NIGHT_SAFE_MARGIN} blocks beyond the walls, where the guards do not reach.
+     */
+    protected boolean remoteAtNight(BlockPos p) {
+        BaseState b = base();
+        if (b == null || p == null || !FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.get() || !isNight()) {
+            return false;
+        }
+        // step 2: BaseZones.chebyshev(b, p) > BaseZones.half(b) + NIGHT_SAFE_MARGIN
+        int half = b.testHalf >= 0 ? b.testHalf
+                : b.isSettlement() ? com.factionclash.structure.BaseLayout.HALF : com.factionclash.structure.LairLayout.HALF;
+        int chebyshev = Math.max(Math.abs(p.getX() - b.center.getX()), Math.abs(p.getZ() - b.center.getZ()));
+        return chebyshev > half + NIGHT_SAFE_MARGIN;
+    }
+
+    /** How many times in a row the current destination could not be reached (0 after arriving). */
+    protected int routeFailures() {
+        return routeFailures;
     }
 
     /** At the storehouse: tops up the meals carried, the most filling food first. */

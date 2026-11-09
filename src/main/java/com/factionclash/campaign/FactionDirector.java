@@ -127,7 +127,7 @@ public final class FactionDirector {
         List<Need> out = new ArrayList<>();
         for (NpcRole r : new NpcRole[]{NpcRole.MINER, NpcRole.WOODCUTTER, NpcRole.FARMER, NpcRole.BUILDER, NpcRole.BLACKSMITH,
                 NpcRole.CHEF, NpcRole.SCOUT}) {
-            if (living(f, b, r) == 0) {
+            if (living(f, b, r) == 0 && !b.barren(r, t)) { // a barren role's last worker had nothing to do here
                 out.add(new Need(r, "replacing the missing " + r.displayName.toLowerCase()));
             }
         }
@@ -306,7 +306,7 @@ public final class FactionDirector {
             }
             top = food;
         }
-        if (top.role() != NpcRole.MINER && retrainIdleWorker(level, data, f, b, top)) {
+        if (retrainIdleWorker(level, data, f, b, top, t)) {
             b.lastRecruitAt = t;
             return;
         }
@@ -321,34 +321,45 @@ public final class FactionDirector {
         }
     }
 
-    /** PROPOSED: a miner with no mine or cave to work for this long takes up the faction's most needed role. */
+    /** PROPOSED: a worker with nothing to do (or no tool) for this long takes up the faction's most needed role. */
     public static final long RETRAIN_IDLE_TICKS = 12000;
+    /** PROPOSED: after an idle worker is retrained, its old role is not hired again at that base for this long. */
+    public static final long BARREN_TICKS = 48000;
 
     /**
-     * Instead of recruiting, a miner who has had nothing to dig for half a day (no free mine, no surveyed cave)
-     * takes up the job the base needs most, keeping its level and traits - like a player switching jobs.
+     * Instead of recruiting, a worker who has had nothing to do for half a day (a miner with no mine or cave, any
+     * worker whose job reports itself idle) or no tool for its job takes up the job the base needs most, keeping its
+     * level and traits - like a player switching jobs. Taking the new role hands back its old workplaces. When it was
+     * idle rather than toolless, its old role is barren for two days: the base does not hire into the same dead end.
      */
-    private static boolean retrainIdleWorker(ServerLevel level, CampaignData data, FactionState f, BaseState b, Need top) {
+    private static boolean retrainIdleWorker(ServerLevel level, CampaignData data, FactionState f, BaseState b, Need top, long t) {
         for (NpcRecord r : f.roster.values()) {
             if (!r.alive || r.baseId != b.id || r.role == top.role() || r.role.combatant) {
                 continue;
             }
-            boolean idleMiner = level.getEntity(r.uuid) instanceof FactionNpc m && m.job() instanceof com.factionclash.work.MinerJob mj
-                    && mj.idleFor(RETRAIN_IDLE_TICKS);
+            if (!(level.getEntity(r.uuid) instanceof FactionNpc n) || n.job() == null) {
+                continue;
+            }
+            com.factionclash.work.Job job = n.job();
+            boolean idle = job.idleFor(RETRAIN_IDLE_TICKS);
             // a fisherman, butcher or miner who has not been able to get its tool for half a day (no string for a
             // rod, nothing to make it from) does something useful instead
-            boolean toolless = level.getEntity(r.uuid) instanceof FactionNpc t && t.job() != null && t.job().missingToolFor(RETRAIN_IDLE_TICKS);
-            if ((idleMiner || toolless) && level.getEntity(r.uuid) instanceof FactionNpc n) {
-                String was = r.role.displayName;
-                r.role = top.role();
-                n.role(top.role());
-                data.setDirty();
-                LAST_RECRUIT_NOTE.put(b.id, n.npcName() + " retrained as " + top.role().displayName + " (" + top.reason() + ")");
-                Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (" + was + ") has had "
-                        + (idleMiner ? "no mine or cave to work" : "no tool for the job") + " for half a day and becomes a "
-                        + top.role().displayName + " (" + top.reason() + ")"));
-                return true;
+            boolean toolless = job.missingToolFor(RETRAIN_IDLE_TICKS);
+            if (!idle && !toolless) {
+                continue;
             }
+            NpcRole old = r.role;
+            String why = idle ? (job.idleReason().isEmpty() ? "nothing to do" : job.idleReason()) : "no tool for the job";
+            if (idle && !toolless) {
+                b.markBarren(old, t + BARREN_TICKS); // nothing to do here even with its tool: do not hire into it again
+            }
+            r.role = top.role();
+            n.role(top.role());
+            data.setDirty();
+            LAST_RECRUIT_NOTE.put(b.id, n.npcName() + " retrained as " + top.role().displayName + " (" + top.reason() + ")");
+            Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (" + old.displayName + ") has had "
+                    + why + " for half a day and becomes a " + top.role().displayName + " (" + top.reason() + ")"));
+            return true;
         }
         return false;
     }

@@ -1,6 +1,7 @@
 package com.factionclash.campaign;
 
 import com.factionclash.faction.FactionType;
+import com.factionclash.npc.NpcRole;
 import com.factionclash.storage.StorageCategory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -76,6 +77,20 @@ public final class BaseState {
     /** Reserved chest slots inside the storage house for STORAGE_EXPANSION projects. */
     public final List<BlockPos> storageExpansionSlots = new ArrayList<>();
 
+    /**
+     * Roles (by id) that found nothing to do here and were retrained: until the tick stored, the director does not
+     * hire that role again, so a base without a place to mine, trees or fishing water does not keep paying for
+     * recruits who stand idle. Missing in old saves, which means none.
+     */
+    public final Map<String, Long> barrenUntil = new HashMap<>();
+
+    /**
+     * GameTests only, never saved: the walls' half-size (-1 = the layout's) and the work radius around the centre
+     * (-1 = the configured one), so test bases fit on a small platform.
+     */
+    public transient int testHalf = -1;
+    public transient int testRadius = -1;
+
     // Lair state
     public final Set<UUID> lairMobs = new HashSet<>();
     public int lairCap;
@@ -121,6 +136,21 @@ public final class BaseState {
 
     public boolean isSettlement() {
         return kind == Kind.SETTLEMENT;
+    }
+
+    /** Until when the director hires no new worker of this role (0 when it may). */
+    public long barrenUntil(NpcRole role) {
+        return barrenUntil.getOrDefault(role.id, 0L);
+    }
+
+    /** True while the role is barren here at tick {@code now}: its last worker had nothing to do. */
+    public boolean barren(NpcRole role, long now) {
+        return now < barrenUntil(role);
+    }
+
+    /** Marks the role barren until the given tick (never shortening an earlier mark). */
+    public void markBarren(NpcRole role, long until) {
+        barrenUntil.merge(role.id, until, Math::max);
     }
 
     public boolean contains(BlockPos pos, int margin) {
@@ -198,6 +228,9 @@ public final class BaseState {
         });
         t.put("ledgers", led);
         t.putString("shortages", String.join(",", shortages));
+        CompoundTag barren = new CompoundTag();
+        barrenUntil.forEach(barren::putLong);
+        t.put("barrenUntil", barren);
         return t;
     }
 
@@ -276,6 +309,10 @@ public final class BaseState {
             if (!s.isEmpty()) {
                 b.shortages.add(s);
             }
+        }
+        CompoundTag barren = t.getCompound("barrenUntil");
+        for (String k : barren.getAllKeys()) {
+            b.barrenUntil.put(k, barren.getLong(k));
         }
         return b;
     }

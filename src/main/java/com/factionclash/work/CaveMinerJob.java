@@ -151,7 +151,7 @@ public class CaveMinerJob extends Job {
         if (w.marks.isEmpty() && w.progress >= prospectSize()) {
             // nothing left that a player could see or reach from this cave: hand it back
             w.workedOut = true;
-            w.assigned = null;
+            Workplaces.release(data(), w);
             data().setDirty();
             Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Cave #" + w.id + " at "
                     + w.origin.toShortString() + " is worked out (" + npc.npcName() + ", " + w.totalOutput + " items brought home)"));

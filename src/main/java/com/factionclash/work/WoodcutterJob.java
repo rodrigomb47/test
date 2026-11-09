@@ -69,7 +69,7 @@ public class WoodcutterJob extends Job {
 
     @Override
     public String workplaceInfo() {
-        WorkplaceState wp = wp();
+        WorkplaceState wp = Workplaces.held(npc, WorkplaceState.Type.TREE_PLOT); // looking never claims
         return wp == null ? "no tree plot" : "Tree plot #" + wp.id + " tier " + wp.tier + " (" + TreePlotLayout.spots(wp).size()
                 + " trees)" + (wp.upgrading() ? " upgrading" : "");
     }
@@ -82,7 +82,7 @@ public class WoodcutterJob extends Job {
         if (s.is(Items.BONE_MEAL)) {
             return 16;
         }
-        WorkplaceState wp = wp();
+        WorkplaceState wp = Workplaces.held(npc, WorkplaceState.Type.TREE_PLOT); // unloading never claims
         if (wp != null && wp.upgrading()) {
             if (s.is(Items.OAK_FENCE) || s.is(ItemTags.FENCES)) {
                 return 256;

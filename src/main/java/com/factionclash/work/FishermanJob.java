@@ -44,7 +44,7 @@ public class FishermanJob extends Job {
 
     @Override
     public String workplaceInfo() {
-        WorkplaceState w = spot();
+        WorkplaceState w = Workplaces.held(npc, WorkplaceState.Type.FISHERY); // looking never claims
         return w == null ? "no fishing spot" : "Fishing spot at " + w.origin.toShortString() + ", " + w.totalOutput + " caught";
     }
 

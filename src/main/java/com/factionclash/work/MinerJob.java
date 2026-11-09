@@ -101,7 +101,7 @@ public class MinerJob extends Job {
         if (Workplaces.held(npc, WorkplaceState.Type.CAVE) != null) {
             return caveJob.workplaceInfo();
         }
-        WorkplaceState wp = wp();
+        WorkplaceState wp = Workplaces.held(npc, WorkplaceState.Type.MINE); // looking never claims
         if (wp == null) {
             return "no mine";
         }
@@ -216,18 +216,10 @@ public class MinerJob extends Job {
         return n;
     }
 
-    /** Since when this miner has had nothing to dig (no free mine, no cave, its mine done for good); -1 = busy. */
-    private long idleSince = -1;
-
-    /** True when the miner has had no mine or cave to work for at least {@code ticks}. */
-    public boolean idleFor(long ticks) {
-        return idleSince >= 0 && now() - idleSince >= ticks;
-    }
-
     @Override
     protected void run() {
         if (caveWork() != null) {
-            idleSince = -1;
+            markBusy();
             caveJob.tick();
             return;
         }
@@ -244,21 +236,17 @@ public class MinerJob extends Job {
                 return;
             }
             status("Mine #" + wp.id + " is fully worked out: every level is dug", "Idle");
-            if (idleSince < 0) {
-                idleSince = now();
-            }
+            markIdle("nothing left to dig in mine #" + wp.id + " and no cave to work");
             waitFor(1200);
             return;
         }
         if (wp == null) {
-            if (idleSince < 0) {
-                idleSince = now();
-            }
+            markIdle("no mine or cave to work");
             status("No free mine to work", "Idle");
             waitFor(200);
             return;
         }
-        idleSince = -1;
+        markBusy();
         collect();
         switch (state) {
             case CHECK -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 ? State.STORAGE : State.TRAVEL;
