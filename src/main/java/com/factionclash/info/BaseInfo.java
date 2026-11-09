@@ -91,7 +91,9 @@ public final class BaseInfo {
                 continue;
             }
             NpcRecord worker = w.assigned == null ? null : f.roster.get(w.assigned);
-            String who = worker == null ? "none" : worker.name + (worker.alive ? "" : " (dead)");
+            // a holder who died or took up another job no longer works it (the next worker may claim it)
+            String who = worker == null ? "none" : worker.name + (!worker.alive ? " (dead)"
+                    : com.factionclash.work.Workplaces.holderValid(data, w) ? "" : " (now a " + worker.role.displayName.toLowerCase() + ", free)");
             if (w.type == WorkplaceState.Type.CAVE) {
                 if (w.workedOut && w.totalOutput == 0) {
                     continue; // surveyed, nothing worth mining: not worth a line

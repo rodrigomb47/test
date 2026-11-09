@@ -197,7 +197,7 @@ public abstract class Job {
     static final int NIGHT_SAFE_MARGIN = 16;
 
     protected boolean isNight() {
-        long day = level().getDayTime() % 24000;
+        long day = Math.floorMod(level().getDayTime(), 24000L);
         return day >= NIGHT_START && day < NIGHT_END;
     }
 

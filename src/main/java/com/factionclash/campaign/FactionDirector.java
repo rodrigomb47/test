@@ -330,7 +330,8 @@ public final class FactionDirector {
      * Instead of recruiting, a worker who has had nothing to do for half a day (a miner with no mine or cave, any
      * worker whose job reports itself idle) or no tool for its job takes up the job the base needs most, keeping its
      * level and traits - like a player switching jobs. Taking the new role hands back its old workplaces. When it was
-     * idle rather than toolless, its old role is barren for two days: the base does not hire into the same dead end.
+     * idle rather than toolless and no other worker of its old role at the base still has work, that role is barren
+     * for two days: the base does not hire into the same dead end.
      */
     private static boolean retrainIdleWorker(ServerLevel level, CampaignData data, FactionState f, BaseState b, Need top, long t) {
         for (NpcRecord r : f.roster.values()) {
@@ -350,7 +351,7 @@ public final class FactionDirector {
             }
             NpcRole old = r.role;
             String why = idle ? (job.idleReason().isEmpty() ? "nothing to do" : job.idleReason()) : "no tool for the job";
-            if (idle && !toolless) {
+            if (idle && !toolless && !othersBusy(level, f, b, r)) {
                 b.markBarren(old, t + BARREN_TICKS); // nothing to do here even with its tool: do not hire into it again
             }
             r.role = top.role();
@@ -360,6 +361,23 @@ public final class FactionDirector {
             Messages.toFaction(level.getServer(), b.faction, Component.literal(n.npcName() + " (" + old.displayName + ") has had "
                     + why + " for half a day and becomes a " + top.role().displayName + " (" + top.reason() + ")"));
             return true;
+        }
+        return false;
+    }
+
+    /**
+     * True when another living worker of {@code idle}'s role at this base still has work (or is not loaded, so it
+     * may). The idle one was then only one too many - every mine taken, say - and the role is not barren: if the
+     * busy ones die, the base must hire again. A role is barren only when none of its workers has anything to do.
+     */
+    private static boolean othersBusy(ServerLevel level, FactionState f, BaseState b, NpcRecord idle) {
+        for (NpcRecord o : f.roster.values()) {
+            if (o == idle || !o.alive || o.baseId != b.id || o.role != idle.role) {
+                continue;
+            }
+            if (!(level.getEntity(o.uuid) instanceof FactionNpc n) || n.job() == null || !n.job().idleFor(RETRAIN_IDLE_TICKS)) {
+                return true;
+            }
         }
         return false;
     }

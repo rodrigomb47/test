@@ -1307,6 +1307,41 @@ public final class FCGameTests {
         h.succeed();
     }
 
+    /**
+     * A barren role is not hired again while the mark lasts: with no woodcutter at the base the director wants one,
+     * but not while the woodcutter role is barren there, and again once the mark has run out. The mark survives a
+     * save and load, and a base saved before marks existed loads with none.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void barrenRoleIsNotReplaced(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 40);
+        try {
+            var level = h.getLevel();
+            long now = level.getGameTime();
+            java.util.function.LongPredicate wantsWoodcutter = at -> com.factionclash.campaign.FactionDirector.needs(level, t.data, t.base, at).stream()
+                    .anyMatch(n -> n.role() == NpcRole.WOODCUTTER && n.reason().startsWith("replacing"));
+            h.assertTrue(wantsWoodcutter.test(now), "a base without a woodcutter should want one");
+            t.base.markBarren(NpcRole.WOODCUTTER, now + 100);
+            t.base.markBarren(NpcRole.WOODCUTTER, now + 50); // never shortened
+            h.assertTrue(t.base.barrenUntil(NpcRole.WOODCUTTER) == now + 100, "a later mark must not shorten an earlier one");
+            h.assertFalse(wantsWoodcutter.test(now), "no woodcutter should be hired while the role is barren");
+            h.assertFalse(wantsWoodcutter.test(now + 99), "still barren one tick before the mark runs out");
+            h.assertTrue(wantsWoodcutter.test(now + 100), "the base should hire a woodcutter again once the mark ran out");
+
+            var provider = level.registryAccess();
+            net.minecraft.nbt.CompoundTag tag = t.base.save(provider);
+            BaseState back = BaseState.load(tag, provider);
+            h.assertTrue(back.barrenUntil(NpcRole.WOODCUTTER) == now + 100 && back.barrenUntil.size() == 1,
+                    "the barren mark should survive a save and load: " + back.barrenUntil);
+            h.assertTrue(back.testHalf == -1 && back.testRadius == -1, "test sizes must never be saved");
+            tag.remove("barrenUntil");
+            h.assertTrue(BaseState.load(tag, provider).barrenUntil.isEmpty(), "an old base without marks should load with none");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
     private static BaseState fakeBase(GameTestHelper h, FactionType f) {
         BaseState b = new BaseState();
         b.id = 900000 + h.getLevel().random.nextInt(10000);

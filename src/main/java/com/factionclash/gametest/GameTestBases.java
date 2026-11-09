@@ -67,8 +67,10 @@ public final class GameTestBases {
         }
         data.bases.put(b.id, b);
         Handle handle = new Handle(h, data, b);
-        if (timeoutTicks > 2) {
-            h.runAfterDelay(timeoutTicks - 2, handle::cleanup); // a timeout must not leave a phantom base behind
+        if (timeoutTicks - 2 > h.getTick()) {
+            // a timeout must not leave a phantom base behind; the test's own tick count, so a base registered
+            // after the start is still cleaned up before the test runs out of time
+            h.runAtTickTime(timeoutTicks - 2, handle::cleanup);
         }
         return handle;
     }
