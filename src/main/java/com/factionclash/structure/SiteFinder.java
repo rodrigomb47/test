@@ -28,7 +28,7 @@ public final class SiteFinder {
     }
 
     public static Footprint settlement() {
-        return new Footprint(BaseLayout.PLOT_ORIGIN_X - 26, BaseLayout.HALF + 2, -BaseLayout.HALF - 2, BaseLayout.HALF + 2);
+        return new Footprint(BaseLayout.PLOT_ORIGIN_X - 26, BaseLayout.HALF + BaseLayout.EAST_APRON + 2, -BaseLayout.HALF - 2, BaseLayout.HALF + 2);
     }
 
     public static Footprint lair() {

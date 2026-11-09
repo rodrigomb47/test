@@ -52,9 +52,13 @@ public final class BaseBuilder {
         int plotFar = BaseLayout.PLOT_ORIGIN_X - TreePlotLayout.depth(1) - 2;
         int plotHalf = TreePlotLayout.half(1) + 2;
         Terrain.level(level, cx + plotFar, cz - plotHalf, cx - h - 2, cz + plotHalf, y0, 24, grass);
+        // a levelled landing outside the east gate, so that gate never opens onto a drop, a cut or a lake
+        int apron = h + BaseLayout.EAST_APRON;
+        Terrain.level(level, cx + h + 2, cz - 4, cx + apron, cz + 4, y0, 20, grass);
         // slope the surroundings into the pads so nobody gets trapped in a cut or below a fill
         Terrain.skirt(level, java.util.List.of(
                 new int[]{cx - h - 1, cz - h - 1, cx + h + 1, cz + h + 1},
+                new int[]{cx + h + 2, cz - 4, cx + apron, cz + 4},
                 new int[]{cx + plotFar, cz - plotHalf, cx - h - 2, cz + plotHalf}), y0 - 1, 5, grass);
 
         BaseState base = new BaseState();

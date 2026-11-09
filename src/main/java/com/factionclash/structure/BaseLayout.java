@@ -22,12 +22,17 @@ import net.minecraft.util.RandomSource;
 
 /**
  * The starting settlement plan (all coordinates relative to the base centre; y=0 is the walking level).
- * 49x49 walled base with gates west and east; the levelled grove pad lies outside the west gate. Miners,
- * woodcutters and fishermen choose their own places outside the walls.
+ * 49x49 walled base with gates west and east; the levelled grove pad lies outside the west gate and a levelled
+ * landing outside the east gate. Miners, woodcutters and fishermen choose their own places outside the walls.
  */
 public final class BaseLayout {
     public static final int HALF = 24;
     public static final int PLOT_ORIGIN_X = -32;
+    /**
+     * Depth of the levelled landing outside the east gate (from the wall outwards), with a path across it, so the gate
+     * never opens onto a drop, a cut or water.
+     */
+    public static final int EAST_APRON = 10;
     /**
      * The base's work belt, west and east of the centre: its MIN/MAX box (z within the walls plus one, or the plot's
      * width) is kept loaded and randomly ticking, so saplings grow and nearby mines keep working without players.
@@ -252,7 +257,10 @@ public final class BaseLayout {
         bp.lots.add(bp.rel(-11, 0, 13));
         bp.lots.add(bp.rel(5, 0, 13));
 
-        // --- outside path to the grove pad
+        // --- outside paths: across the east landing, and to the grove pad
+        for (int x = HALF + 1; x <= HALF + EAST_APRON; x++) {
+            bp.set(x, -1, 0, path);
+        }
         for (int x = PLOT_ORIGIN_X + 1; x <= -HALF - 1; x++) {
             bp.set(x, -1, 0, path);
         }
