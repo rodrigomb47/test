@@ -119,6 +119,11 @@ public class WoodcutterJob extends Job {
     static final int MAX_PILLARS_PER_TREE = 3;
     /** PROPOSED: tries at taking down scaffold blocks left standing before they are given up. */
     static final int MAX_STRAY_TRIES = 3;
+    /**
+     * PROPOSED: an instant regrowth earned while standing in the sapling's room waits this long for the woodcutter to
+     * step clear; bone meal waits this long for the step back before the sapling is left for a while.
+     */
+    static final int REGROW_WAIT_TICKS = 200, STEP_CLEAR_TICKS = 40;
 
     private State state = State.CHECK;
     /** The tree being felled (its stump, the north-west corner of a 2x2 trunk), the planting spot, the sapling or fence post. */
@@ -175,6 +180,14 @@ public class WoodcutterJob extends Job {
     /** Scaffold blocks left standing that it is not on (it was knocked off): taken down from beside. Saved. */
     private final List<BlockPos> strays = new ArrayList<>();
     private int strayTries;
+    /**
+     * A sapling (or square) whose instant regrowth waits until the woodcutter stands clear of it, and until when; not
+     * saved (a reload only loses the bonus).
+     */
+    private BlockPos regrowAt;
+    private boolean regrowSquare;
+    private long regrowUntil;
+    private int clearTicks;
     /** Scaffold blocks to fetch on the next storehouse visit; the storehouse's count of them, looked at now and then. */
     private boolean wantScaffold;
     private long nextScaffoldTrip, nextScaffoldLook, nextScaffoldSweep;
@@ -301,6 +314,12 @@ public class WoodcutterJob extends Job {
             }
             waitFor(200);
             return;
+        }
+        if (regrowAt != null && (now() > regrowUntil || !inTreeRoom(saplingCells(regrowAt, regrowSquare)))) {
+            if (now() <= regrowUntil) {
+                growNow(regrowAt, 2); // stepped clear of it: the regrowth it earned when planting
+            }
+            regrowAt = null;
         }
         if (state != State.STORAGE) {
             collect(wp);
@@ -1798,10 +1817,75 @@ public class WoodcutterJob extends Job {
         status("Planting " + (plantCount > 1 ? plantCount + " " + plantSpecies.label() + " saplings" : "a " + plantSpecies.label() + " sapling")
                 + (plantGrove ? " in the grove" : " where a tree stood"), "Planting");
         if (level().random.nextDouble() < npc.affix(Affix.REGROWTH)) {
-            growNow(spot, 2);
+            if (inTreeRoom(cells)) {
+                // standing where the trunk would grow (a sapling has no body to keep it out): the tree grows once it
+                // has stepped clear, never into its head
+                regrowAt = spot;
+                regrowSquare = plantSquare;
+                regrowUntil = now() + REGROW_WAIT_TICKS;
+            } else {
+                growNow(spot, 2);
+            }
             status("Instant regrowth!", "Planting");
         }
         state = State.CHECK;
+    }
+
+    /**
+     * The sapling at {@code p} and the saplings of its kind beside it (a 2x2 square grows one huge tree whose trunk
+     * takes all four): the room bone meal may fill with a trunk.
+     */
+    private List<BlockPos> saplingsAround(BlockPos p) {
+        Block kind = level().getBlockState(p).getBlock();
+        List<BlockPos> out = new ArrayList<>();
+        for (BlockPos q : BlockPos.betweenClosed(p.offset(-1, 0, -1), p.offset(1, 0, 1))) {
+            if (q.equals(p) || level().getBlockState(q).is(kind)) {
+                out.add(q.immutable());
+            }
+        }
+        return out;
+    }
+
+    /** One step straight away from the middle of {@code cells}, out of the room their tree would take. */
+    private void stepClearOf(List<BlockPos> cells) {
+        double x0 = Double.MAX_VALUE, z0 = Double.MAX_VALUE, x1 = -Double.MAX_VALUE, z1 = -Double.MAX_VALUE;
+        for (BlockPos c : cells) {
+            x0 = Math.min(x0, c.getX());
+            z0 = Math.min(z0, c.getZ());
+            x1 = Math.max(x1, c.getX() + 1);
+            z1 = Math.max(z1, c.getZ() + 1);
+        }
+        double cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, dx = npc.getX() - cx, dz = npc.getZ() - cz, len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.05) {
+            dx = 1;
+            dz = 0;
+            len = 1;
+        }
+        double out = Math.max(x1 - x0, z1 - z0) / 2 + 0.9; // the box's half-width, plus the body's and a little
+        npc.getNavigation().stop();
+        npc.getMoveControl().setWantedPosition(cx + dx / len * out, npc.getY(), cz + dz / len * out, 1.0);
+        status("Stepping out of the sapling's way", "Tending");
+    }
+
+    /** The cells of a sapling at {@code p}, or of the 2x2 square whose north-west corner it is. */
+    private static List<BlockPos> saplingCells(BlockPos p, boolean square) {
+        return square ? List.of(p, p.east(), p.south(), p.south().east()) : List.of(p);
+    }
+
+    /**
+     * True while the woodcutter's body is in the room the trunk of a tree grown from {@code cells} takes (their
+     * columns, from the ground to 3 up): vanilla grows a tree whatever stands there, and a log in its head would
+     * suffocate it. Saplings have no body, so it can stand half in one after planting or reaching for it.
+     */
+    private boolean inTreeRoom(List<BlockPos> cells) {
+        int x0 = Integer.MAX_VALUE, z0 = Integer.MAX_VALUE, x1 = Integer.MIN_VALUE, z1 = Integer.MIN_VALUE, y = cells.get(0).getY();
+        for (BlockPos c : cells) {
+            x0 = Math.min(x0, c.getX());
+            z0 = Math.min(z0, c.getZ());
+            x1 = Math.max(x1, c.getX());
+            z1 = Math.max(z1, c.getZ());
+        }
+        return npc.getBoundingBox().intersects(new AABB(x0, y, z0, x1 + 1, y + 3, z1 + 1));
     }
 
     /**
@@ -1904,6 +1988,19 @@ public class WoodcutterJob extends Job {
                 return;
             }
         }
+        List<BlockPos> room = saplingsAround(spot);
+        if (inTreeRoom(room)) {
+            // half in the sapling's column: a step back before the tree may grow there
+            if (clearTicks++ >= STEP_CLEAR_TICKS) {
+                clearTicks = 0;
+                skipFor(spot, SPOT_RETRY_TICKS); // hemmed in: the sapling is left for a while
+                state = State.CHECK;
+                return;
+            }
+            stepClearOf(room);
+            return;
+        }
+        clearTicks = 0;
         lookAt(spot);
         status("Using bone meal on a sapling", "Tending");
         if (++progress < 10) {

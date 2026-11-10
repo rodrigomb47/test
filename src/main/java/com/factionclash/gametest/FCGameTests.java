@@ -3541,6 +3541,38 @@ public final class FCGameTests {
     }
 
     /**
+     * A woodcutter standing half in a sapling's column (saplings have no body, so it can) steps out of the way before
+     * its bone meal may grow the tree there: vanilla grows the trunk whatever stands in it, and a log in its head
+     * would suffocate it (seen in a campaign with an instant regrowth). It is never hurt, and the tree grows.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1200, batch = "wood_grow_clear", skyAccess = true)
+    public static void woodcutterStepsOutOfASaplingsWayBeforeItGrows(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 1200);
+        FactionNpc n;
+        BlockPos sapling = new BlockPos(18, 2, 18);
+        try {
+            h.setBlock(sapling.below(), Blocks.GRASS_BLOCK);
+            h.setBlock(sapling, Blocks.OAK_SAPLING);
+            n = testWoodcutter(t, 18, 18, new ItemStack(Items.STONE_AXE)); // right in the sapling's column
+            n.inventory().setItem(0, new ItemStack(Items.BONE_MEAL, 16));
+            woodlandOf(t).addPlanted(h.absolutePos(sapling));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            t.assertTrue(n.getHealth() >= n.getMaxHealth(), "the woodcutter got hurt (health " + n.getHealth() + ")");
+            t.assertTrue(!n.isInWall(), "the woodcutter is inside a block");
+            if (h.getBlockState(sapling).is(Blocks.OAK_LOG)) {
+                BlockPos p = h.absolutePos(sapling);
+                t.assertTrue(!n.getBoundingBox().intersects(new net.minecraft.world.phys.AABB(p.getX(), p.getY(), p.getZ(), p.getX() + 1,
+                        p.getY() + 3, p.getZ() + 1)), "the trunk grew where the woodcutter stands");
+                t.succeed();
+            }
+        });
+    }
+
+    /**
      * Grows a vanilla tree from its configured feature at relative (x, 2, z) on grass, with a fixed seed (so the same
      * tree grows every run), and returns its log count in the box around it.
      */
