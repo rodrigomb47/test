@@ -11,8 +11,8 @@ within reach. Then it breaks the pillar block under its feet one at a time on th
 into its backpack. Without dirt, tall trees are not even looked for, as before.
 
 Build: clean (only the old deprecation warnings). Unit tests: 144 (139 + 5). GameTests: "All 100 required tests
-passed" (94 + 6). Logs are in the session scratchpad under `impl/` (`gt_tall*.log`). Not checked in a campaign yet:
-see "Campaign check" below.
+passed" (94 + 6). Logs are in the session scratchpad under `impl/` (`gt_tall*.log`). Checked in a campaign afterwards:
+see "Live check" at the end.
 
 ## What changed, by file
 
@@ -237,7 +237,7 @@ see "Campaign check" below.
 - **One pillar per tree** (re-planned up to 3 times when a climb is cut short). No vanilla tree needs two, but a
   modded or player-built shape might be refused.
 
-## Campaign check (for the next agent, on a dedicated server)
+## Campaign check (for the next agent, on a dedicated server; done, see "Live check" below)
 1. Find a base in old growth taiga or jungle: seed 20261107 with `fc start 256`, or `/locate biome` and a hand-placed
    base.
 2. Watch the woodcutter statuses: "Fetching dirt for a scaffold", "Building a scaffold up the spruce (N high)",
@@ -339,3 +339,94 @@ that fails without the fix), plus four smaller ones. Fixed in the "Review fixes"
 - Counts: 144 unit tests, 102 GameTests (`impl/gt_review1.log` and three final runs, `impl/gt_review_final*.log`).
 - No dedicated-server campaign was run in this review (not allowed in this step). The campaign check above still
   stands.
+
+## Live check (dedicated server, fresh campaign)
+
+A fresh campaign (seed 20261107, `fc start 256`, the map grew to radius 384) ran from day 0 to day 14.2 on the
+server in the session scratchpad. 21 trees were grown by hand with `/place feature` (`minecraft:mega_spruce`,
+`mega_pine`, `mega_jungle_tree`, `jungle_tree_no_vine`, `fancy_oak`, `super_birch_bees_0002`), 28 to 51 blocks from a
+base centre, outside the walls and inside `forestRadius`. 17 of them had their top more than 8 above the stump (9 to
+29). Each site was snapshotted (logs and #dirt cells) and compared afterwards: logs left, new dirt cells, and logs with
+nothing under them. The scripts are in the scratchpad's `live/` folder (`tree.py`, `mon.py`, `watch.py`, `finder.py`).
+
+### What worked
+- **Felled clean.** 13 hand-grown tall trees were felled from pillars 3 to 17 high:
+  - mega spruces of 77, 89 and 101 logs;
+  - a mega pine of 93;
+  - giant jungle trees of 57 to 109 logs;
+  - tall single jungle trees, a fancy oak and a super birch.
+  Each left no log and no dirt. Every 2x2 stump got four saplings.
+- **Regrowth.** The 2x2 stumps grew back into mega trees (bone meal), and they were felled again and again. A
+  debug trace ran from day 7.2 to 13.5. In that window there were 344 tree surveys. 29 were trees taller than 8, all
+  `OK`, and all 29 were felled from a pillar (1 to 19 high, 11 to 117 logs, 2,109 logs in all). They came from 10
+  sites, and every pillar came down normally.
+- **Natural trees.** Tall natural oaks and birches were also felled from short scaffolds at three bases.
+- **No dirt.** Stoneguard had no dirt at all. Its three tall trees (tops 10, 16 and 25) stood untouched for 28,000
+  ticks while it felled 22 other trees. After 64 dirt went into its storehouse by hand, the woodcutter fetched 32 and
+  felled two of them: the 25-high mega spruce came down from a 17-high pillar. The square of four regrew twice and was
+  felled again (89 and 62 logs).
+- **Restart mid-pillar.** The server was stopped with a woodcutter 10 blocks up, working. After the restart the
+  pillar compound was identical (`phase: WORK, goal: 10, height: 10`). It went on felling, took the pillar down and
+  replanted the square. Two later restarts also landed mid-pillar, and both resumed.
+- **Day 8.2 to 13.2** (`days5.log`), for the two factions still alive:
+  - Ember felled 333 → 472 trees. Its logs in store went 2,517 → 3,868 (oak 1,741, jungle 926, birch 654, spruce 547).
+  - Tide felled 130 → 180 trees, and its logs went 755 → 1,244.
+  - The server ran at 4.8 to 5.8 ms per tick.
+  - The woodcutters' stuck recoveries were 39 and 42 over 5.5 days; a scout had 137.
+  - Stoneguard fell to a pact raid on day 5.3 and Grove on day 9 (war, not woodcutting).
+- **Deaths.** No woodcutter died in a fall, and none was hurt on a pillar. Six woodcutter deaths came from raids or a
+  destroyed base, all on the ground. The seventh was the suffocation below.
+- **Dirt supply depends on the ground.**
+  - Ember's miners raised its dirt from 10 (day 1) to 727 (day 13).
+  - Grove had 21, and its woodcutter took all of it on day 2.6.
+  - Tide's storehouse stayed near 0 while its woodcutter carried its 32.
+  - Stoneguard had none.
+
+### Defects found and fixed ("Live fixes" commits)
+1. **Vines.**
+   - Problem: a vanilla giant jungle trunk is hung with vines, so every column beside it holds them. Standing in vines,
+     a jump lifts an NPC only about half a block (vanilla climbing), so no block ever went in under it. Stoneguard's
+     woodcutter made three climbs of 0 to 1 high and dropped the tree.
+   - Fix: `climb()` now cuts a vine (any climbable plant that gives way) out of the cell its feet are in before each
+     jump.
+   - Tests: GameTest `woodcutterBuildsItsScaffoldThroughVines` timed out before the fix. Three GameTests grow real
+     vanilla giant jungle trees from the configured feature with fixed seeds (11, 23, 1). Each is felled whole, leaves
+     no scaffold and replants a square.
+   - Live: after the fix, giant jungle trees were felled from pillars 3 to 16 high.
+2. **Branch end in protected wood.**
+   - Problem: a giant jungle tree 30 north of Ember's centre had a branch end at z = 150, in the 2-block margin by the
+     walls (protected wood). That log was not part of the survey, and the face-only contact rule missed it, because
+     branches step diagonally. The woodcutter felled the other 108 logs from a 16-high pillar and left that one log
+     hanging 21 up.
+   - Fix: the world adapter now reports the tree's own log in protected wood as `KEPT_LOG`. A tree whose flood reaches
+     one (diagonally too) is `TOUCHES_STRUCTURE` and is left whole. Built blocks diagonal to a log are still no
+     contact.
+   - Tests: unit test `branchRunningDiagonallyIntoKeptWoodLeavesTheTreeWhole`. GameTest
+     `woodcutterLeavesATreeWhoseBranchRunsIntoTheWallMargin` fails with the rule switched off ("no scaffold for a tree
+     that is left whole").
+3. **Suffocation.**
+   - Problem: a woodcutter suffocated in a wall. It stood half in the column of a sapling it had just planted, and its
+     Regrowth affix grew the tree at once. Vanilla puts the trunk there whatever stands in it.
+   - Why it matters more now: felling tall trees gives far more experience (1 per log), so Regrowth stacks are
+     commoner, and a 2x2 square now grows a giant trunk.
+   - Fix:
+     - An instant regrowth waits until the woodcutter has stepped out of the trunk's room (`REGROW_WAIT_TICKS` 200).
+     - Before bone meal it steps straight out of that room; hemmed in for `STEP_CLEAR_TICKS` (40), it leaves that
+       sapling for a while.
+   - Test: GameTest `woodcutterStepsOutOfASaplingsWayBeforeItGrows` ends with the woodcutter inside the trunk when
+     the room check is off.
+
+### Seen but not explained
+- A hand-grown giant jungle tree 30 north-east of Ember's centre (393, 70, 146, outside the margin) lost its whole
+  trunk and lower branches below y = 94. Its crown and the 8 logs in it (y 94 to 97) were left floating; there is no
+  sapling and no dirt.
+- The debug trace logged every survey, pillar and stump cut, and no woodcutter ever surveyed this tree or listed its
+  logs. No builder project or mine was there, and the ground under it is untouched.
+- The pattern (the trunk gone under the canopy, the crown up in the rain intact) fits a fire lit by a lightning strike
+  on an NPC beside the trunk in a thunderstorm. It is not proven. Watch for it in the next campaign.
+
+### Counts
+145 unit tests, 108 GameTests (102 + vines, wall margin, 3 vanilla giant jungle trees, stepping out of a sapling's
+way). Full runs: `impl/gt_live6.log` to `gt_live10.log` (some before the last fix) and the final runs. The pre-existing
+`woodcutterComesDownItsScaffoldForAnErrand` failed once in about 12 runs ("it should have come down before the tree was
+done", in a run where the then-broken vine test was spinning). It passed in every run after that.

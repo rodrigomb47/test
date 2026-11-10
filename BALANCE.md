@@ -219,7 +219,8 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   29 with about 115; wood running past those bounds is TOO_BIG and left whole, never cut in part). A tree is felled
   only with 3 or more logs (MIN_LOGS), natural (not persistent) leaves within 2 of its top, the stump on dirt, and no
   built block (planks, cobblestone, fences, glass, wool, torches, signs, rails, any structural block), block entity
-  (a bee nest) or log of another species touching it. Its top log may be at most 8 above the stump (MAX_FELL_DY;
+  (a bee nest) or log of another species touching it, and none of its own wood in protected wood (below), not even
+  diagonally (a giant jungle tree's branch end by the walls: the rest would be felled and that log left hanging). Its top log may be at most 8 above the stump (MAX_FELL_DY;
   with the 7.5 reach, every log can then be cut from the ground), or up to 32 (MAX_TALL_DY) when the woodcutter has
   the dirt for a scaffold (below). Species: oak, birch, spruce, jungle, acacia, dark oak and cherry; not mangrove,
   nether stems, stripped logs or other mods' logs.
@@ -237,9 +238,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   `scaffoldNeed(top)` blocks (the worst column's height + 2), else fetches up to 32 (Scaffold.CARRY, dirt and coarse
   dirt together, kept in the backpack when unloading) at most every 2400 ticks; with too few in store the tree is skipped for 12000 ticks.
   Without at least 4 blocks carried or stored, no tree taller than 8 is even looked for. Building: it stands over
-  the column's middle, cuts natural leaves or the tree's logs in the cell above its head, jumps, and places a block
-  in the cell its feet left once they are above it (vanilla jump: about 9 ticks a block); 6 jumps without a block
-  (MAX_MISSES) end the climb. On the pillar: the highest log within 7.5 first, strictly top down (while a log above 8
+  the column's middle, cuts a vine out of the cell its feet are in (standing in vines a jump lifts it only half a
+  block; giant jungle trunks are hung with them on every side) and natural leaves or the tree's logs in the cell
+  above its head, jumps, and places a block in the cell its feet left once they are above it (vanilla jump: about 9
+  ticks a block); 6 jumps without a block (MAX_MISSES) end the climb. On the pillar: the highest log within 7.5 first, strictly top down (while a log above 8
   stands out of reach at that log's height or higher, nothing below it is cut, so a climb cut short leaves nothing
   hanging), then natural leaves of the crown
   (within 5/6 of the stump) within 5.5; nothing left in reach, it breaks the block underfoot at player speed (dirt by
@@ -294,6 +296,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   what a base's builder, smiths and furnaces use; 8 gave half that.
 * Bees: before an oak, birch or cherry sapling is planted, every `#flowers` block in the 5x3x5 box vanilla's tree
   grower checks (plan blocks and persistent leaves aside) is picked, so no tree grows with a bee nest.
+* Growing room (PROPOSED): vanilla grows a tree whatever stands in its trunk, so a woodcutter standing half in a
+  sapling's column (ground to 3 up; the whole square for saplings side by side) steps straight out of it before its
+  bone meal, and an instant Regrowth earned there waits until it has stepped clear (REGROW_WAIT_TICKS 200, then the
+  bonus is lost); hemmed in for 40 ticks (STEP_CLEAR_TICKS) it leaves that sapling for a while.
 * Bone meal: used round-robin on planted saplings, those outside the belt first. Unloading keeps 8 saplings of each
   species and 16 bone meal (topped up to 16 below 8). The blacksmith turns bones into bone meal (1 → 3) while fewer
   than 16 are stored. Records: 64 planted saplings and 32 waiting stumps (oldest dropped).

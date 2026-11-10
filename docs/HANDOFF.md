@@ -104,9 +104,12 @@ python3 tools/rcon.py "stop"
 ## 5. State at handoff (branch head after commit 9ee3f4a + this handoff)
 
 - 139 unit tests, 94 GameTests, all green. Download jar rebuilt; SHA-256 on README line 13.
-- After the tall-trees change (scaffold pillars, §6) and its review fixes: 144 unit tests, 102 GameTests, all green;
-  jar rebuilt. Not yet
-  checked in a campaign.
+- After the tall-trees change (scaffold pillars, request 6), its review fixes and the live fixes from its campaign check:
+  **145 unit tests, 108 GameTests**, all green; jar rebuilt (SHA-256 on README line 13). Checked in a fresh 14-day
+  campaign with 21 hand-grown trees (`docs/design/notes/tall-trees.md` → "Live check"): 13 hand-grown tall trees and,
+  over days 7 to 13, 29 tall regrown trees felled from pillars 1 to 19 high, no log or dirt left, no woodcutter hurt
+  or fallen, a restart mid-pillar resumed. Three faults found there are fixed: vines on giant jungle trunks, a branch
+  end in the wall margin, and a suffocation from an instant Regrowth.
 - Final 8-day fresh campaign (results in README "The final check"): 11 self-chosen mines, all shafts reached the
   diamond layer through aquifers; 104-247 trees felled per base; all fisheries on real water; scouts reported a real
   village (2 traders) and, when placed by an outpost by hand, the outpost; 4.6-10.4 ms per tick.
@@ -125,13 +128,22 @@ python3 tools/rcon.py "stop"
 
 - A base keeps at most `maxOpenMines` (3) active mines; extra miners stay idle ("Every mine site of the base is
   taken") until the base needs another role, then they are retrained. A second miner sharing a mine could be added.
-- **Tall trees (request 6, see §2):** woodcutters now fell trees whose top log is up to 32 above the stump (mega
-  spruce, giant/tall jungle, tall fancy oaks and birches) from a dirt scaffold pillar beside the trunk, and replant a
-  2x2 spruce/jungle as four saplings. Notes: `docs/design/notes/tall-trees.md`. **Not yet verified in a campaign**:
-  check a mega-taiga or jungle base (felled counts, no dirt pillars or floating logs left, `Scaffold` statuses, no
-  fall deaths). Mangroves, huge mushrooms and trees no single pillar reaches are still left standing. A woodcutter
-  that dies on its pillar leaves the half-felled tree standing on its stump (felled strictly top down); the
-  woodland remembers the pillar and its next woodcutter takes it down.
+- Tall trees (request 6, `docs/design/notes/tall-trees.md`), what is left:
+  - **An unexplained trunk loss.** One hand-grown giant jungle tree lost its trunk below the crown with no
+    woodcutter, builder or miner near it. The crown and 8 logs were left floating. It looks like fire under the
+    canopy in a thunderstorm; watch for it.
+  - **Dirt supply depends on the ground.** Ember's miners brought 727 dirt, but Grove had 21 and Stoneguard none. A
+    woodcutter keeps up to 32 once fetched, while builders also use dirt.
+  - **Mega tree farms.** A 2x2 stump replanted as four saplings grows a mega tree again (bone meal), so the same 10
+    sites gave 29 fellings in six days. That is good wood, but woodcutters spend most of their time there.
+  - **Still left standing:** mangroves, huge mushrooms, trees no single pillar reaches, and trees with any log in
+    protected wood.
+  - **A woodcutter that dies on its pillar** leaves the half-felled tree on its stump. Its pillar is taken down by the
+    next woodcutter.
+  - **No direct test for the deferred Regrowth.** The deferral waits until the woodcutter is out of the trunk's room.
+    It is random, so it has no GameTest of its own; the bone meal GameTest covers the same room check.
+  - **A possible flake.** `woodcutterComesDownItsScaffoldForAnErrand` failed once in about 12 suite runs. That run
+    was unusual: a broken test was spinning in it.
 - Scouts retreat home from enemy *soldiers* (by choice, see §2.5). The drowned rule (only trident drowned are
   archers; swimming monsters count only when close or hunting) came after the last campaign: re-check in the next
   one that scouts no longer make hundreds of sidesteps along rivers.
