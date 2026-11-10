@@ -1,0 +1,346 @@
+You are going to write ONE hero file for Faction Clash, a Minecraft 1.21.1 mod. Read everything below, then turn the
+character described at the very end into a hero file.
+
+ABOUT FACTION CLASH
+Faction Clash is a Minecraft mod in which four AI factions (Ember Legion, Grove Covenant, Tide Alliance, Stoneguard)
+build bases, gather, recruit, raid and make pacts, while monster lairs (the Hollow) threaten everyone. Every faction
+member is a player-like NPC: it walks, breaks blocks at player speed, wears real gear, eats, and fights with vanilla
+weapons, armour and potion effects. A HERO is a unique, named champion NPC of a faction: it has its own skin, stats,
+gear, behaviour, a basic attack, skills, an ultimate charged by energy, passives, out-of-combat abilities at its base,
+and dialogue lines. Heroes level up, revive 10 minutes after falling, and join raids. The mod builds the hero from a
+JSON file; it cannot run code, so ONLY the fields and words listed here exist. Abilities are made by combining a
+fixed list of effects. The mod pulls any number outside its limits back inside, so stay inside them.
+
+WHAT TO PRODUCE
+1. One JSON object for the character, valid against the JSON SCHEMA below, inside one ```json code block.
+   Nothing but JSON inside the block, no comments. (Keys starting with "_" are allowed as notes, but not needed.)
+2. After the block, one line: "Files: <id>.json and <id>.png", where <id> is the hero's "id" field: the name in
+   lowercase with underscores, letters, digits and "_" only, starting with a letter, 3-32 characters (example:
+   "Bram Ostler" -> bram_ostler).
+3. Then a short SKIN BRIEF of 4-8 lines for the person who makes the skin: hair, face, clothing, colours (with hex
+   codes), notable details, and which parts belong on the outer layer (hood, cape edge, jacket, sleeves, hat).
+   Say "Arm model: slim" or "Arm model: classic" and use the same word in "skin_model".
+4. Then up to 5 lines titled NOTES: anything from the character you could not express with this format and how you
+   approximated it.
+5. Only if you can create downloadable files: also attach <id>.json (exactly the JSON of the code block) and, if you
+   can draw images with code, a skin <id>.png of your own original design, painted from your SKIN BRIEF with the
+   layout under THE SKIN (never a copy of an existing character's look).
+   If you cannot create files, skip this step; the code block is enough.
+Do not write anything else.
+
+THE SKIN (for the person installing the hero)
+- A standard Minecraft player skin: a 64x64 PNG (the old 64x32 layout also works), the same layout every skin editor
+  uses. "classic" arms are 4 pixels wide, "slim" arms 3 pixels; it must match "skin_model".
+- The base layer must be fully opaque; the outer layer (hat, jacket, sleeves, trousers) may use transparency.
+- Layout (x,y = top-left pixel; "right" = the character's own right). Each part is a box unfolded the usual way: its
+  top and bottom faces in the first rows, then right side, front, left side and back in one row below them.
+  head 8x8x8: base at 0,0 (front x 8-15, y 8-15), hat layer at 32,0 | body 8x12x4: base at 16,16 (front x 20-27,
+  y 20-31), jacket layer at 16,32 | right arm 4x12x4 (slim 3x12x4): base at 40,16 (front x 44-47, slim 44-46,
+  y 20-31), sleeve at 40,32 | left arm: base at 32,48, sleeve at 48,48 | right leg 4x12x4: base at 0,16 (front
+  x 4-7, y 20-31), outer at 0,32 | left leg: base at 16,48, outer at 0,48. Pixels outside these boxes stay
+  transparent.
+- Make it in any Minecraft skin editor, or use a skin you have the right to use. Name it exactly <id>.png.
+- A missing or broken skin is not fatal: the hero then wears its faction's default look.
+
+INSTALLING (for the person installing the hero)
+Save the JSON code block as <id>.json (pasting the whole answer into that file also works: the mod reads the code
+block). Put <id>.json and <id>.png side by side in the server folder config/factionclash/heroes/ and run
+/fc hero reload (or restart the server). /fc hero check <id> lists every problem with the exact field and what
+is allowed. Players need nothing extra: the server sends the skin to them.
+
+HOW TO TRANSLATE THE CHARACTER
+- Be faithful to the character's personality, fighting style, skills, ultimate, passive traits and support or
+  out-of-combat talents, but only with the pieces below. Pick the closest pieces and sensible numbers inside the caps.
+- Personality -> behaviour: combat_role, aggression (cautious/steady/bold), focus, protects, retreat_below, raids.
+- Weapon and style -> basic_attack.style and gear. A spellcaster or thrower uses style "thrown" with a projectile
+  look and a held_item prop. Elemental flavour -> "element" and the elements of its damage effects.
+- Signature moves -> skills (up to 4), each with a cooldown. The big signature move -> "ultimate".
+- Traits that react to events (when hit, on kills, every few seconds, when an ally attacks, at low health) ->
+  passives. Permanent strengths -> stats.
+- A transformation, enhanced form or stance -> "empowered" plus an "empower" effect in the skill that enters it.
+- Healing, shields, buffs, cleansing -> heal, shield, stat, effect, cleanse effects on allies.
+- What the character does for its people when there is no fight -> "duty" (its job at the base) and
+  base_abilities (work auras, healing between fights, a lookout, cheaper recruits, drill).
+- Write NEW, original dialogue lines and descriptions in the character's voice. Do not copy text from any book,
+  game, film or show. Give each ability a short name (max 24 characters) that fits the character.
+- If the character is far stronger than a normal fighter, express it with good synergy inside the caps, not with
+  bigger numbers: the mod scales all heroes together.
+
+UNITS (always)
+- Time in seconds (decimals allowed). Distance in blocks.
+- Health, damage, healing and shields in health points: 2 = one heart. A player and a zombie have 20.
+  An iron sword hit is 6, a diamond sword 7, a fully drawn bow shot about 6-9.
+- Every chance, share, bonus and speed is a whole number of percent: 25 means 25%.
+- Vanilla ids are written without "minecraft:" (iron_sword, slowness, flame, entity.blaze.shoot).
+
+REQUIRED FIELDS: "format": 1, "id", "name", "behaviour": {"combat_role"}, "basic_attack": {"style"}.
+Everything else is optional and has a sensible default. Leaving a field out is always safe.
+
+TOP LEVEL
+format 1 | id | name (1-24 chars) | title (0-32, an epithet like "the Gatewarden") | description (0-300)
+rarity: common, rare, epic, legendary (default rare)
+starter_for: ember_legion, grove_covenant, tide_alliance, stoneguard (the faction that starts with this hero)
+factions: list of the factions that may own it (default all four)
+skin_model: classic, slim | color: "#RRGGBB" | element (default physical)
+stats | resistances | gear | behaviour | basic_attack | skills (0-4) | ultimate (0-1) | passives (0-4)
+empowered | base_abilities (0-3) | lines
+
+ELEMENTS: physical, fire, frost, shock, venom, blight, arcane, radiant.
+Vanilla rules apply: fire does nothing to fire-immune mobs; frost does nothing to freeze-immune mobs and 30% more to
+blazes; venom does nothing to undead; blight does nothing to wither creatures; arcane ignores armour and shields;
+radiant does 30% more to undead; shock does 30% more to targets in water or rain; physical is reduced by armour.
+resistances: {"fire": 20, "frost": -10, ...} whole percent -30 to 60 per element; negative is a weakness.
+
+STATS (defaults depend on combat_role)
+health 20-40 | attack 0-4 (extra damage on every hit) | armor 0-8 (natural armour) | speed 90-120 (% of a player)
+knockback_resistance 0-60 (%) | size 85-110 (% of normal height) | growth: balanced, tough, fierce, swift, mystic
+Role defaults: vanguard 34 health, 1 attack, 3 armor, 95 speed, growth tough; striker 28/2/1/100 fierce;
+skirmisher 26/2/0/108 swift; marksman 24/0/1/100 balanced; support 26/0/1/100 mystic.
+Growth per level (max level 30): tough = more health and armour; fierce = more attack; swift = a bit of speed;
+mystic = ability power +2% per level (tough +0.5%, the others +1%); balanced = even.
+
+GEAR (the hero's own kit, never lost): up to 6 items, one per slot, iron at most (no diamond or netherite).
+Write an id, or {"item": "iron_sword", "name": "Custom Name", "enchantments": {"sharpness": 2}} (name 1-24 chars).
+Items: {{GEAR}}
+Enchantments (max level; at most 3 per item, at most 6 levels in the whole kit; the item must accept it):
+{{ENCHANTS}}
+If the kit lacks the weapon its style needs, the mod adds a basic one.
+
+BEHAVIOUR
+combat_role (required): vanguard (front line, draws enemies, protects), striker (melee damage), skirmisher
+  (hit and run), marksman (ranged damage, kites), support (stays behind, heals and buffs)
+focus: nearest, weakest, strongest, ranged_first, threat_to_allies, heroes_first
+keep_distance 0-16 blocks (0 = melee) | aggression: cautious, steady, bold
+protects: none, allies, workers, players, heart (the Faction Heart during a defence)
+retreat_below 0-60 (% health; 0 = never) | raids: leads, joins, stays_home
+duty (what it does outside fights): guard, scout, builder, miner, farmer, woodcutter, blacksmith, chef, smelter,
+  animal_carer, butcher, fisherman, cave_explorer, hauler, enchanter, trader
+
+BASIC ATTACK
+style (required): melee (held sword/axe/mace), bow, crossbow, trident (thrown and melee), thrown (for casters)
+thrown only: projectile (look, below), held_item (a prop in its hand, below), amount 2-10 (damage per hit, default 4),
+  interval 0.8-3 seconds (default 1.5; at most 5 damage per second: amount 10 needs interval 2), element
+on_hit: 1-3 effects applied to the enemy each basic hit lands on (an imbue, a mark, a chance to ignite)
+every_nth_hit: {"n": 2-6, "effects": [1-3 effects]}  a combo finisher on every n-th hit
+Thrown projectile looks: {{ITEM_LOOKS}}
+Held props: {{PROPS}}
+
+SKILLS AND ULTIMATE (same fields; skills have a cooldown, the ultimate fires when energy is full)
+name (required) | description (0-200) | form (required) | effects (required, 1-5)
+range | radius | count | angle | width | hits | hit_interval | projectile | zone_at | delay | duration | interval
+windup 0-2 s (the hero stops and gathers; default 0, leap 0.3, ultimate 0.5) | use_when | use_value
+| unlock_level 1-30 (the level at which the hero learns it; default 1)
+look | line (1-120 chars, said when used)
+skills only: cooldown 2-120 s (default 8) | charges 1-3 | energy_gain 0-30 (default 10)
+ultimate only: charge_rate 50-150 (% speed at which its energy fills)
+
+FORMS (who is affected; "range" and "radius" in blocks, defaults in brackets)
+melee   the target in sword reach; radius 0-3 adds enemies around the target; hits 1-5
+shot    one projectile, range 4-24 [16]; radius 0-4 = splash at impact; projectile
+volley  count 2-5 [3] projectiles in a fan, range 4-24 [16]; radius 0-3 splash; projectile
+bolt    instant hit with line of sight, range 4-20 [12]; radius 0-3 splash; hits 1-5
+chain   hits the target, then jumps to more enemies: count 2-5 [3] targets, radius 2-6 [4] between them,
+        range 4-16 [10]
+cone    enemies in front: range 2-8 [5], angle 30-120 [70] degrees; hits 1-5
+line    enemies along a line to the target: range 4-16 [8], width 1-3 [1]; stops at walls; hits 1-5
+nova    every enemy within radius 2-8 [4] of the hero; hits 1-5
+zone    an area: zone_at target [default] (range 4-20 [12]), self or follow_self; radius 2-6 [3]; delay 0-3 s
+        before it lands [1 at the target, else 0] (players can step out); duration 0-10 s [0] (0 = one burst, else
+        it pulses); interval 0.5-3 s [1] between pulses; pulses = 1 + duration / interval, rounded down
+leap    the hero jumps to the target (range 3-10 [8]) and hits enemies within radius 1-4 [2.5] where it lands
+dash    the hero dashes at the target (range 3-8 [6]) hitting enemies along its path
+self    the hero
+ally    the most hurt ally within range 4-16 [10] (may be the hero)
+allies  the hero and allies within radius 4-12 [8]
+self, ally and allies are FRIENDLY forms; all others are ENEMY forms.
+hits: the effects land that many times, hit_interval 0.2-1 s apart (amounts are per hit).
+
+"to" (optional on any effect: who receives it)
+targets (default: whoever the form affects) | self (the hero) | ally (most hurt ally within "radius", default 8)
+allies (in nova, zone and leap: allies inside the same area; otherwise the hero and allies within "radius" 2-12,
+  default 8). This is how "hit them and shield myself" is written: {"type": "shield", "to": "self", ...}.
+
+USE_WHEN (when the AI uses it) + use_value
+always | self_health_below (% 10-90) | ally_health_below (% 10-90) | target_health_below (% 10-90, a finisher)
+| enemies_near (count 2-6) | target_far (blocks 4-16, a gap closer) | target_close (blocks 2-6, an escape)
+| big_fight (3+ enemies, a strong enemy, or the hero under half health) | out_of_combat (friendly forms only)
+Defaults: ally/allies -> ally_health_below 60; other skills -> always; ultimate -> big_fight.
+
+LOOK (optional): particle, color "#RRGGBB" (for dust), sound, pose, lightning true/false (ultimate only, visual),
+fangs true/false (line, nova, zone: visual fangs rise from the ground)
+pose: none, swing, block, bow_draw, spear_throw, crossbow_charge, horn, spyglass
+Particles: {{PARTICLES}}
+Sounds: {{SOUNDS}}
+Ability projectile looks (shot, volley): {{PROJECTILES}}
+
+AMOUNTS (for damage, dot, heal, shield): a plain number of health points (0.5-30), or an object whose parts add up:
+base 0-30 | attack_percent 0-300 (100 = one weapon hit of this hero; gear makes it stronger)
+| max_health_percent 0-40 (of the HERO's max health) | armor_percent 0-100 (of the hero's armour points)
+| target_max_health_percent 0-20 (of the receiver's max health) | target_missing_health_percent 0-30
+| mark + per_mark_stack 0-6 (health points per stack of that mark on the receiver; always both)
+Examples: 6 | {"attack_percent": 120} | {"base": 2, "armor_percent": 20} | {"mark": "frost_bite", "per_mark_stack": 2}
+
+EFFECTS: each is {"type": ..., its fields}, plus optional "to", "chance" (1-100 %), "if" (a condition).
+ENEMY-ONLY (only in enemy forms with "to" targets):
+  damage     amount (required), element, drain 0-50 (% of damage dealt heals the hero). Max 2 per ability.
+  dot        damage over time: amount per second (required), seconds 2-10 [4], element, max_stacks 1-5 [1]
+  knockback  strength 1-5 [2], up 0-3 blocks
+  pull       strength 1-3 [1] (toward the hero)
+  ignite     seconds 1-8 [4] (sets the target on fire, never blocks)
+  freeze     seconds 1-6 [3] (powder-snow freezing: slows; leather armour protects)
+  stun       seconds 0.5-2 [1] (players are only slowed; bosses are immune)
+  taunt      seconds 1-8 [3] (monsters and enemy NPCs must attack the hero)
+  dispel     removes the target's helpful effects and buffs
+ALLY-ONLY (to allies; in an enemy form they go to the hero unless "to" says otherwise):
+  heal       amount (required)
+  shield     amount (required), seconds 2-30 [10] (golden hearts that absorb damage)
+  cleanse    removes harmful effects, damage over time, fire, freezing, stuns and enemy marks
+  energy     amount 5-30 (required; ultimate energy for heroes)
+HELPFUL ON ALLIES, HARMFUL ON ENEMIES (decided by the id or the sign; a helpful one follows the ALLY-ONLY rules, a
+harmful one the ENEMY-ONLY rules):
+  effect     id (required), level 1-3 [1], seconds 1-30 (required): a vanilla potion effect, see the caps below
+  stat       stat (required), percent (required, not 0), seconds 2-30 [8], max_stacks 1-5 [1]
+             stats and ranges: attack -30..40, damage_dealt -30..40, damage_taken -40..30 (negative = takes less,
+             helpful), armor -50..50, speed -40..40, attack_speed -30..30, healing_received -50..50,
+             knockback_resistance 0..60, crit_damage 0..50, energy_gain 0..50
+SELF-ONLY (always the hero):
+  move_self     direction back, forward or up [back], distance 2-8 [4] (a hop, never a teleport; max 1 per ability)
+  cooldown_cut  seconds 1-10 (required; shortens the hero's running skill cooldowns, never below half of each)
+  empower       seconds 3-20 (required; enters the "empowered" state; needs "empowered" at the top level)
+  summon        creature (required) wolf, snow_golem or iron_golem, count 1-3 (snow golems max 2, iron golems 1),
+                seconds 10-60 [20], name (1-24 chars). Only in skills and the ultimate; at most 3 summons alive
+                per hero, at most 1 of them an iron golem.
+MARKS (on enemies, or on the hero with "to": "self"):
+  mark          mark (required, an id like "pinned"), stacks 1-5 [1], max_stacks 1-10 [5], seconds 2-30 [10],
+                glow true/false [false] (true = the marked one glows for everyone)
+  clear_marks   mark (removes it; put it after a damage that uses per_mark_stack for a "spend the stacks" finisher)
+Potion caps. Helpful (allies): {{HELPFUL}}
+Harmful (enemies): {{HARMFUL}}
+blindness and darkness only affect players. levitation is not renewed until the receiver has landed.
+No other potion effects exist for heroes (use shield instead of absorption, heal instead of instant_health).
+
+CONDITIONS ("if" on an effect, checked per receiver; or on a passive, checked when it fires)
+{"condition": ..., plus "value" (whole % 1-99) or "mark" (+ "value" = least stacks, default 1) or "kind"}
+target_health_below / target_health_above (value) | self_health_below / self_health_above (value)
+| target_has_mark (mark, value) | self_has_mark (mark, value) | target_burning | target_freezing | target_slowed
+| target_stunned | target_has_dot | target_is (kind: monster, undead, arthropod, illager, player, npc, hero, boss)
+| self_empowered | self_shielded
+
+PASSIVES (react to events)
+name (required) | description | trigger (required) | trigger_value | mark (for on_mark_full) | chance 1-100
+| cooldown 1-120 s (default 1) | form | radius 2-12 | projectile (form shot) | if | effects (required, 1-3)
+| look | line | unlock_level
+Triggers and their allowed forms (the first is the default):
+  always            self only; effects: stat without seconds, -20..20; holds while its "if" is true
+  on_hit, on_crit   (basic attack lands / jump critical hit lands) trigger_enemy, self, nova, allies, bolt, shot
+  on_hurt           (an enemy damages it) trigger_enemy (the attacker), self, nova, allies, bolt, shot
+  on_kill           self, nova, allies
+  on_skill          self, ally, allies, nova
+  on_ultimate       self, allies, nova (no energy effect)
+  on_fight_start    self, allies, nova
+  on_low_health     (trigger_value % 10-60, default 35) self, allies, nova
+  on_ally_low_health (trigger_value % 10-60, default 35) trigger_ally, allies, self
+  on_ally_hurt      (an ally within 12 blocks is hit) trigger_ally, trigger_enemy (the attacker), self, bolt, shot
+  on_ally_attack    (an ally within 12 blocks hits an enemy; the hero strikes that enemy too) trigger_enemy, bolt,
+                    shot
+  on_ally_ultimate  (another hero of its side uses its ultimate) self, allies, trigger_ally
+  on_mark_full      (a mark this hero applies reaches max_stacks; needs "mark") trigger_enemy, self, nova
+  every             (trigger_value 3-30 seconds, default 10, while fighting; strong effects make the mod wait
+                    longer) self, ally, allies, nova
+Passive forms: self | trigger_enemy (the enemy of the event) | trigger_ally (the ally of the event) | ally (most hurt
+ally) | allies | nova | bolt / shot (an instant bolt / a projectile at the event's enemy, range 16).
+Damage from passives never triggers other on_hit or on_ally_attack passives.
+
+EMPOWERED (optional, one per hero: an enhanced form or stance entered by an "empower" effect)
+name (required) | description | stats: 1-4 of {"stat", "percent" -30..30} | on_hit: 1-2 effects added to basic hits
+| particle (aura) | color | size 100-110 (%; with stats.size never above 110 in total) | skills_locked true/false
+(basic attacks only) | line (said on entering). Its on_hit shares the basic on_hit cap.
+
+BASE ABILITIES (out of combat, at the hero's home base): each is {"type": ..., its fields}, for example
+{"type": "aura", "affix": "mason", "stacks": 2}; each may also have "name" (1-24 chars) and "unlock_level" 1-30.
+  aura     affix (diligence = work speed, prospector = extra ore, regrowth = saplings grow, green_thumb = extra crops,
+           mason = building speed, marksman = arrow damage, thrifty = less gear wear, hardy = less hunger,
+           duelist = critical damage, angler = extra fish, haggler = better trades), stacks 1-3 [1],
+           radius 8-32 [24], roles (optional list: builder, miner, farmer, woodcutter, blacksmith, chef, smelter,
+           animal_carer, butcher, fisherman, cave_explorer, hauler, enchanter, trader, scout, swordsman, archer,
+           crossbowman, axe_fighter)
+  mend     percent 1-10 [5] of max health, every 5-30 s [10], radius 8-24 [16] (heals hurt allies between fights)
+  lookout  radius 16-48 [32] (spots enemies in sight and raises the base alarm)
+  rally    percent 5-25 [10] (recruits at its base cost that much less food)
+  drill    xp 1-3 [1] per in-game hour, radius 8-24 [16] (soldiers nearby train)
+
+LINES (dialogue): "lines": {"event": ["line", ...]}, 1-8 lines per event, 1-120 characters, no line breaks.
+Events and their placeholders ({name} works everywhere):
+summoned {faction} | greeting {player} {faction} | idle {player} {faction} | fight_start {enemy}
+| skill {enemy} {ability} | ultimate {enemy} {ability} | low_health | kill {enemy} | ally_fallen {ally} | victory
+| raid_start {faction} | base_attacked {faction} | level_up {level} | unlock {level} {ability} | fallen | revived
+No other placeholders exist.
+
+ENERGY AND THE ULTIMATE
+Energy goes from 0 to 100; the ultimate fires at 100 and uses it all. The hero gains 5 per basic hit, the skill's
+energy_gain per skill (10), 1 per 2 health lost, 10 per kill, 1 per 2 points healed or shielded, and "energy"
+effects; all times charge_rate. At least 20 seconds between two ultimates, up to 60 for very strong ones (the
+mod works this out from the ultimate's strength).
+
+BALANCE CAPS (level-1 totals per use and per receiver). For these totals the mod assumes: attack_percent 100 =
+6 for melee and bow, 7 crossbow, 8 trident, the basic "amount" for thrown, each plus stats.attack; armour =
+stats.armor + 15; a receiver with 20 max health missing 10; every mark at its max_stacks.
+damage: basic on_hit 4 per hit, every_nth_hit 8, skill 16, ultimate 30, passive 8 (all damage effects x hits)
+damage over time (amount x seconds): on_hit 4, finisher 8, skill 16, ultimate 24, passive 8
+heal: on_hit 2, finisher 4, skill 8, ultimate 14, passive 4 | shield: on_hit 2, finisher 4, skill 8, ultimate 12,
+passive 4 | stun seconds: skill 2, ultimate 3, passive 1, finisher 1, none on on_hit
+A lasting zone may total 1.5x these over all its pulses. Over a cap, the mod scales the numbers down.
+Strong skills need long cooldowns: the mod raises a cooldown that is too short for the skill's strength (roughly,
+2 seconds plus half the skill's total damage/healing; stuns and big areas count extra). Typical good cooldowns:
+a single 6-damage strike 8 s, an area taunt with a self-shield 14 s, a 4-arrow volley 14 s.
+
+RULES THAT MUST HOLD
+- Enemy-only effects never in self/ally/allies forms, never with "to" other than targets.
+- At most 2 damage effects and 1 move_self per ability; no move_self in leap or dash.
+- invisibility only with "to": "self". energy never in an on_ultimate passive.
+- An "empower" effect needs an "empowered" object. on_mark_full needs "mark". summon only in skills and the ultimate.
+- Mark ids: lowercase letters, digits and "_", 2-24 characters. Use the same mark id everywhere it is meant.
+- Only the fields, words and ids listed here; no extra fields; numbers inside their ranges.
+
+SELF-CHECK BEFORE ANSWERING
+[ ] "format": 1, "id" (matches the name, lowercase_with_underscores), "name", "behaviour.combat_role",
+    "basic_attack.style" are present.
+[ ] Every skill/ultimate has name, form and 1-5 effects; every passive has name, trigger and 1-3 effects.
+[ ] Every effect "type" is one of: damage, dot, heal, shield, effect, stat, knockback, pull, ignite, freeze, stun,
+    taunt, cleanse, dispel, energy, cooldown_cut, move_self, mark, clear_marks, empower, summon.
+[ ] Every effect fits its form (enemy-only effects in enemy forms; heals and shields to allies or "to": "self").
+[ ] Every number is inside its range and the totals are inside the balance caps.
+[ ] Every particle, sound, item, enchantment, potion and projectile comes from the lists above.
+[ ] Every line uses only the placeholders of its event.
+[ ] The JSON is valid: double quotes, commas between fields, no trailing commas, no comments.
+
+JSON SCHEMA (draft 2020-12; the file must validate against it. To the person pasting this prompt: if the chat says
+the message is too long, delete from this heading down to the EXAMPLE heading; the text above says the same.)
+{{SCHEMA}}
+
+EXAMPLE (a complete, valid, original hero; a frontline protector)
+```json
+{{EXAMPLE}}
+```
+Files: bram_ostler.json and bram_ostler.png
+SKIN BRIEF:
+- Broad man in his fifties, weathered tan face, short grey-brown beard (#6E6259), calm dark eyes.
+- Outer layer: a rounded iron helm (#B8B8B8) with a darker rim (#7A7A7A) on the hat layer.
+- Body: a dull brown gambeson (#7B5E43) under a chainmail vest (#9A9A9A) on the jacket layer, a wide leather belt.
+- Arms: rolled sleeves over thick forearms; leather bracers (#5A3E2B). Legs: dark wool trousers (#4A4038), boots.
+- Small brass toll badge (#C9A227) on the chest.
+Arm model: classic
+
+==================================================================================================================
+THE HERO I WANT (written by the person using this prompt; replace everything between the lines)
+==================================================================================================================
+Character:
+Personality and how they talk:
+Fighting style and weapon:
+Skills:
+Ultimate:
+Passive traits:
+Support or out-of-combat talents (what they do for their people at home):
+Faction it should start in (optional):
+Anything else:
+==================================================================================================================

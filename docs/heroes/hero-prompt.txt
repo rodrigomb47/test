@@ -1,0 +1,1275 @@
+You are going to write ONE hero file for Faction Clash, a Minecraft 1.21.1 mod. Read everything below, then turn the
+character described at the very end into a hero file.
+
+ABOUT FACTION CLASH
+Faction Clash is a Minecraft mod in which four AI factions (Ember Legion, Grove Covenant, Tide Alliance, Stoneguard)
+build bases, gather, recruit, raid and make pacts, while monster lairs (the Hollow) threaten everyone. Every faction
+member is a player-like NPC: it walks, breaks blocks at player speed, wears real gear, eats, and fights with vanilla
+weapons, armour and potion effects. A HERO is a unique, named champion NPC of a faction: it has its own skin, stats,
+gear, behaviour, a basic attack, skills, an ultimate charged by energy, passives, out-of-combat abilities at its base,
+and dialogue lines. Heroes level up, revive 10 minutes after falling, and join raids. The mod builds the hero from a
+JSON file; it cannot run code, so ONLY the fields and words listed here exist. Abilities are made by combining a
+fixed list of effects. The mod pulls any number outside its limits back inside, so stay inside them.
+
+WHAT TO PRODUCE
+1. One JSON object for the character, valid against the JSON SCHEMA below, inside one ```json code block.
+   Nothing but JSON inside the block, no comments. (Keys starting with "_" are allowed as notes, but not needed.)
+2. After the block, one line: "Files: <id>.json and <id>.png", where <id> is the hero's "id" field: the name in
+   lowercase with underscores, letters, digits and "_" only, starting with a letter, 3-32 characters (example:
+   "Bram Ostler" -> bram_ostler).
+3. Then a short SKIN BRIEF of 4-8 lines for the person who makes the skin: hair, face, clothing, colours (with hex
+   codes), notable details, and which parts belong on the outer layer (hood, cape edge, jacket, sleeves, hat).
+   Say "Arm model: slim" or "Arm model: classic" and use the same word in "skin_model".
+4. Then up to 5 lines titled NOTES: anything from the character you could not express with this format and how you
+   approximated it.
+5. Only if you can create downloadable files: also attach <id>.json (exactly the JSON of the code block) and, if you
+   can draw images with code, a skin <id>.png of your own original design, painted from your SKIN BRIEF with the
+   layout under THE SKIN (never a copy of an existing character's look).
+   If you cannot create files, skip this step; the code block is enough.
+Do not write anything else.
+
+THE SKIN (for the person installing the hero)
+- A standard Minecraft player skin: a 64x64 PNG (the old 64x32 layout also works), the same layout every skin editor
+  uses. "classic" arms are 4 pixels wide, "slim" arms 3 pixels; it must match "skin_model".
+- The base layer must be fully opaque; the outer layer (hat, jacket, sleeves, trousers) may use transparency.
+- Layout (x,y = top-left pixel; "right" = the character's own right). Each part is a box unfolded the usual way: its
+  top and bottom faces in the first rows, then right side, front, left side and back in one row below them.
+  head 8x8x8: base at 0,0 (front x 8-15, y 8-15), hat layer at 32,0 | body 8x12x4: base at 16,16 (front x 20-27,
+  y 20-31), jacket layer at 16,32 | right arm 4x12x4 (slim 3x12x4): base at 40,16 (front x 44-47, slim 44-46,
+  y 20-31), sleeve at 40,32 | left arm: base at 32,48, sleeve at 48,48 | right leg 4x12x4: base at 0,16 (front
+  x 4-7, y 20-31), outer at 0,32 | left leg: base at 16,48, outer at 0,48. Pixels outside these boxes stay
+  transparent.
+- Make it in any Minecraft skin editor, or use a skin you have the right to use. Name it exactly <id>.png.
+- A missing or broken skin is not fatal: the hero then wears its faction's default look.
+
+INSTALLING (for the person installing the hero)
+Save the JSON code block as <id>.json (pasting the whole answer into that file also works: the mod reads the code
+block). Put <id>.json and <id>.png side by side in the server folder config/factionclash/heroes/ and run
+/fc hero reload (or restart the server). /fc hero check <id> lists every problem with the exact field and what
+is allowed. Players need nothing extra: the server sends the skin to them.
+
+HOW TO TRANSLATE THE CHARACTER
+- Be faithful to the character's personality, fighting style, skills, ultimate, passive traits and support or
+  out-of-combat talents, but only with the pieces below. Pick the closest pieces and sensible numbers inside the caps.
+- Personality -> behaviour: combat_role, aggression (cautious/steady/bold), focus, protects, retreat_below, raids.
+- Weapon and style -> basic_attack.style and gear. A spellcaster or thrower uses style "thrown" with a projectile
+  look and a held_item prop. Elemental flavour -> "element" and the elements of its damage effects.
+- Signature moves -> skills (up to 4), each with a cooldown. The big signature move -> "ultimate".
+- Traits that react to events (when hit, on kills, every few seconds, when an ally attacks, at low health) ->
+  passives. Permanent strengths -> stats.
+- A transformation, enhanced form or stance -> "empowered" plus an "empower" effect in the skill that enters it.
+- Healing, shields, buffs, cleansing -> heal, shield, stat, effect, cleanse effects on allies.
+- What the character does for its people when there is no fight -> "duty" (its job at the base) and
+  base_abilities (work auras, healing between fights, a lookout, cheaper recruits, drill).
+- Write NEW, original dialogue lines and descriptions in the character's voice. Do not copy text from any book,
+  game, film or show. Give each ability a short name (max 24 characters) that fits the character.
+- If the character is far stronger than a normal fighter, express it with good synergy inside the caps, not with
+  bigger numbers: the mod scales all heroes together.
+
+UNITS (always)
+- Time in seconds (decimals allowed). Distance in blocks.
+- Health, damage, healing and shields in health points: 2 = one heart. A player and a zombie have 20.
+  An iron sword hit is 6, a diamond sword 7, a fully drawn bow shot about 6-9.
+- Every chance, share, bonus and speed is a whole number of percent: 25 means 25%.
+- Vanilla ids are written without "minecraft:" (iron_sword, slowness, flame, entity.blaze.shoot).
+
+REQUIRED FIELDS: "format": 1, "id", "name", "behaviour": {"combat_role"}, "basic_attack": {"style"}.
+Everything else is optional and has a sensible default. Leaving a field out is always safe.
+
+TOP LEVEL
+format 1 | id | name (1-24 chars) | title (0-32, an epithet like "the Gatewarden") | description (0-300)
+rarity: common, rare, epic, legendary (default rare)
+starter_for: ember_legion, grove_covenant, tide_alliance, stoneguard (the faction that starts with this hero)
+factions: list of the factions that may own it (default all four)
+skin_model: classic, slim | color: "#RRGGBB" | element (default physical)
+stats | resistances | gear | behaviour | basic_attack | skills (0-4) | ultimate (0-1) | passives (0-4)
+empowered | base_abilities (0-3) | lines
+
+ELEMENTS: physical, fire, frost, shock, venom, blight, arcane, radiant.
+Vanilla rules apply: fire does nothing to fire-immune mobs; frost does nothing to freeze-immune mobs and 30% more to
+blazes; venom does nothing to undead; blight does nothing to wither creatures; arcane ignores armour and shields;
+radiant does 30% more to undead; shock does 30% more to targets in water or rain; physical is reduced by armour.
+resistances: {"fire": 20, "frost": -10, ...} whole percent -30 to 60 per element; negative is a weakness.
+
+STATS (defaults depend on combat_role)
+health 20-40 | attack 0-4 (extra damage on every hit) | armor 0-8 (natural armour) | speed 90-120 (% of a player)
+knockback_resistance 0-60 (%) | size 85-110 (% of normal height) | growth: balanced, tough, fierce, swift, mystic
+Role defaults: vanguard 34 health, 1 attack, 3 armor, 95 speed, growth tough; striker 28/2/1/100 fierce;
+skirmisher 26/2/0/108 swift; marksman 24/0/1/100 balanced; support 26/0/1/100 mystic.
+Growth per level (max level 30): tough = more health and armour; fierce = more attack; swift = a bit of speed;
+mystic = ability power +2% per level (tough +0.5%, the others +1%); balanced = even.
+
+GEAR (the hero's own kit, never lost): up to 6 items, one per slot, iron at most (no diamond or netherite).
+Write an id, or {"item": "iron_sword", "name": "Custom Name", "enchantments": {"sharpness": 2}} (name 1-24 chars).
+Items: wooden_sword, stone_sword, iron_sword, golden_sword, wooden_axe, stone_axe, iron_axe, golden_axe, mace, bow,
+  crossbow, trident, shield, turtle_helmet, leather_helmet, leather_chestplate, leather_leggings, leather_boots,
+  chainmail_helmet, chainmail_chestplate, chainmail_leggings, chainmail_boots, iron_helmet, iron_chestplate,
+  iron_leggings, iron_boots, golden_helmet, golden_chestplate, golden_leggings, golden_boots
+Enchantments (max level; at most 3 per item, at most 6 levels in the whole kit; the item must accept it):
+sharpness 2, smite 3, bane_of_arthropods 3, knockback 1, fire_aspect 1, sweeping_edge 2, density 2, breach 1,
+  power 2, punch 1, flame 1, quick_charge 2, piercing 2, multishot 1, impaling 2, loyalty 1, protection 2,
+  fire_protection 2, blast_protection 2, projectile_protection 2, thorns 1, feather_falling 2, respiration 1,
+  aqua_affinity 1, depth_strider 2, unbreaking 3
+If the kit lacks the weapon its style needs, the mod adds a basic one.
+
+BEHAVIOUR
+combat_role (required): vanguard (front line, draws enemies, protects), striker (melee damage), skirmisher
+  (hit and run), marksman (ranged damage, kites), support (stays behind, heals and buffs)
+focus: nearest, weakest, strongest, ranged_first, threat_to_allies, heroes_first
+keep_distance 0-16 blocks (0 = melee) | aggression: cautious, steady, bold
+protects: none, allies, workers, players, heart (the Faction Heart during a defence)
+retreat_below 0-60 (% health; 0 = never) | raids: leads, joins, stays_home
+duty (what it does outside fights): guard, scout, builder, miner, farmer, woodcutter, blacksmith, chef, smelter,
+  animal_carer, butcher, fisherman, cave_explorer, hauler, enchanter, trader
+
+BASIC ATTACK
+style (required): melee (held sword/axe/mace), bow, crossbow, trident (thrown and melee), thrown (for casters)
+thrown only: projectile (look, below), held_item (a prop in its hand, below), amount 2-10 (damage per hit, default 4),
+  interval 0.8-3 seconds (default 1.5; at most 5 damage per second: amount 10 needs interval 2), element
+on_hit: 1-3 effects applied to the enemy each basic hit lands on (an imbue, a mark, a chance to ignite)
+every_nth_hit: {"n": 2-6, "effects": [1-3 effects]}  a combo finisher on every n-th hit
+Thrown projectile looks: snowball, fire_charge, wind_charge, slime_ball, magma_cream, amethyst_shard,
+  prismarine_shard, prismarine_crystals, echo_shard, blaze_powder, feather, bone, flint, heart_of_the_sea,
+  nautilus_shell
+Held props: stick, blaze_rod, breeze_rod, book, amethyst_shard, echo_shard, prismarine_shard, heart_of_the_sea,
+  nautilus_shell, feather, bone, spyglass, compass, clock, lantern, soul_lantern, poppy, cornflower
+
+SKILLS AND ULTIMATE (same fields; skills have a cooldown, the ultimate fires when energy is full)
+name (required) | description (0-200) | form (required) | effects (required, 1-5)
+range | radius | count | angle | width | hits | hit_interval | projectile | zone_at | delay | duration | interval
+windup 0-2 s (the hero stops and gathers; default 0, leap 0.3, ultimate 0.5) | use_when | use_value
+| unlock_level 1-30 (the level at which the hero learns it; default 1)
+look | line (1-120 chars, said when used)
+skills only: cooldown 2-120 s (default 8) | charges 1-3 | energy_gain 0-30 (default 10)
+ultimate only: charge_rate 50-150 (% speed at which its energy fills)
+
+FORMS (who is affected; "range" and "radius" in blocks, defaults in brackets)
+melee   the target in sword reach; radius 0-3 adds enemies around the target; hits 1-5
+shot    one projectile, range 4-24 [16]; radius 0-4 = splash at impact; projectile
+volley  count 2-5 [3] projectiles in a fan, range 4-24 [16]; radius 0-3 splash; projectile
+bolt    instant hit with line of sight, range 4-20 [12]; radius 0-3 splash; hits 1-5
+chain   hits the target, then jumps to more enemies: count 2-5 [3] targets, radius 2-6 [4] between them,
+        range 4-16 [10]
+cone    enemies in front: range 2-8 [5], angle 30-120 [70] degrees; hits 1-5
+line    enemies along a line to the target: range 4-16 [8], width 1-3 [1]; stops at walls; hits 1-5
+nova    every enemy within radius 2-8 [4] of the hero; hits 1-5
+zone    an area: zone_at target [default] (range 4-20 [12]), self or follow_self; radius 2-6 [3]; delay 0-3 s
+        before it lands [1 at the target, else 0] (players can step out); duration 0-10 s [0] (0 = one burst, else
+        it pulses); interval 0.5-3 s [1] between pulses; pulses = 1 + duration / interval, rounded down
+leap    the hero jumps to the target (range 3-10 [8]) and hits enemies within radius 1-4 [2.5] where it lands
+dash    the hero dashes at the target (range 3-8 [6]) hitting enemies along its path
+self    the hero
+ally    the most hurt ally within range 4-16 [10] (may be the hero)
+allies  the hero and allies within radius 4-12 [8]
+self, ally and allies are FRIENDLY forms; all others are ENEMY forms.
+hits: the effects land that many times, hit_interval 0.2-1 s apart (amounts are per hit).
+
+"to" (optional on any effect: who receives it)
+targets (default: whoever the form affects) | self (the hero) | ally (most hurt ally within "radius", default 8)
+allies (in nova, zone and leap: allies inside the same area; otherwise the hero and allies within "radius" 2-12,
+  default 8). This is how "hit them and shield myself" is written: {"type": "shield", "to": "self", ...}.
+
+USE_WHEN (when the AI uses it) + use_value
+always | self_health_below (% 10-90) | ally_health_below (% 10-90) | target_health_below (% 10-90, a finisher)
+| enemies_near (count 2-6) | target_far (blocks 4-16, a gap closer) | target_close (blocks 2-6, an escape)
+| big_fight (3+ enemies, a strong enemy, or the hero under half health) | out_of_combat (friendly forms only)
+Defaults: ally/allies -> ally_health_below 60; other skills -> always; ultimate -> big_fight.
+
+LOOK (optional): particle, color "#RRGGBB" (for dust), sound, pose, lightning true/false (ultimate only, visual),
+fangs true/false (line, nova, zone: visual fangs rise from the ground)
+pose: none, swing, block, bow_draw, spear_throw, crossbow_charge, horn, spyglass
+Particles: angry_villager, ash, bubble_pop, cherry_leaves, cloud, crimson_spore, crit, damage_indicator,
+  dragon_breath, dust, electric_spark, enchant, enchanted_hit, end_rod, explosion, firework, flame, glow, gust,
+  happy_villager, heart, large_smoke, nautilus, note, poof, portal, reverse_portal, scrape, sculk_soul, small_flame,
+  small_gust, smoke, snowflake, sonic_boom, soul, soul_fire_flame, spore_blossom_air, splash, sweep_attack,
+  totem_of_undying, trial_spawner_detection, warped_spore, wax_on, white_ash, witch
+Sounds: block.amethyst_block.chime, block.amethyst_cluster.break, block.anvil.land, block.beacon.activate,
+  block.beacon.power_select, block.bell.use, block.conduit.activate, block.enchantment_table.use,
+  block.fire.ambient, block.glass.break, block.note_block.bell, block.respawn_anchor.charge,
+  block.respawn_anchor.deplete, block.sculk_shrieker.shriek, entity.arrow.shoot, entity.blaze.ambient,
+  entity.blaze.shoot, entity.breeze.shoot, entity.breeze.wind_burst, entity.dolphin.splash,
+  entity.elder_guardian.curse, entity.ender_dragon.growl, entity.evoker.cast_spell, entity.evoker.prepare_attack,
+  entity.evoker.prepare_summon, entity.experience_orb.pickup, entity.generic.explode, entity.ghast.shoot,
+  entity.glow_squid.squirt, entity.goat.ram_impact, entity.illusioner.cast_spell, entity.illusioner.mirror_move,
+  entity.illusioner.prepare_blindness, entity.iron_golem.attack, entity.lightning_bolt.thunder,
+  entity.player.attack.crit, entity.player.attack.knockback, entity.player.attack.strong,
+  entity.player.attack.sweep, entity.player.hurt_freeze, entity.player.levelup, entity.player.splash,
+  entity.ravager.roar, entity.snowball.throw, entity.vex.charge, entity.warden.sonic_boom,
+  entity.wind_charge.wind_burst, entity.wither.shoot, entity.wolf.howl, event.raid.horn, item.book.page_turn,
+  item.crossbow.shoot, item.firecharge.use, item.flintandsteel.use, item.mace.smash_ground, item.shield.block,
+  item.totem.use, item.trident.hit, item.trident.riptide_1, item.trident.throw, item.trident.thunder
+Ability projectile looks (shot, volley): arrow, spectral_arrow, trident, snowball, fire_charge, wind_charge,
+  slime_ball, magma_cream, amethyst_shard, prismarine_shard, prismarine_crystals, echo_shard, blaze_powder, feather,
+  bone, flint, heart_of_the_sea, nautilus_shell (arrow, spectral_arrow and trident arc like arrows; the others fly
+  straight)
+
+AMOUNTS (for damage, dot, heal, shield): a plain number of health points (0.5-30), or an object whose parts add up:
+base 0-30 | attack_percent 0-300 (100 = one weapon hit of this hero; gear makes it stronger)
+| max_health_percent 0-40 (of the HERO's max health) | armor_percent 0-100 (of the hero's armour points)
+| target_max_health_percent 0-20 (of the receiver's max health) | target_missing_health_percent 0-30
+| mark + per_mark_stack 0-6 (health points per stack of that mark on the receiver; always both)
+Examples: 6 | {"attack_percent": 120} | {"base": 2, "armor_percent": 20} | {"mark": "frost_bite", "per_mark_stack": 2}
+
+EFFECTS: each is {"type": ..., its fields}, plus optional "to", "chance" (1-100 %), "if" (a condition).
+ENEMY-ONLY (only in enemy forms with "to" targets):
+  damage     amount (required), element, drain 0-50 (% of damage dealt heals the hero). Max 2 per ability.
+  dot        damage over time: amount per second (required), seconds 2-10 [4], element, max_stacks 1-5 [1]
+  knockback  strength 1-5 [2], up 0-3 blocks
+  pull       strength 1-3 [1] (toward the hero)
+  ignite     seconds 1-8 [4] (sets the target on fire, never blocks)
+  freeze     seconds 1-6 [3] (powder-snow freezing: slows; leather armour protects)
+  stun       seconds 0.5-2 [1] (players are only slowed; bosses are immune)
+  taunt      seconds 1-8 [3] (monsters and enemy NPCs must attack the hero)
+  dispel     removes the target's helpful effects and buffs
+ALLY-ONLY (to allies; in an enemy form they go to the hero unless "to" says otherwise):
+  heal       amount (required)
+  shield     amount (required), seconds 2-30 [10] (golden hearts that absorb damage)
+  cleanse    removes harmful effects, damage over time, fire, freezing, stuns and enemy marks
+  energy     amount 5-30 (required; ultimate energy for heroes)
+HELPFUL ON ALLIES, HARMFUL ON ENEMIES (decided by the id or the sign; a helpful one follows the ALLY-ONLY rules, a
+harmful one the ENEMY-ONLY rules):
+  effect     id (required), level 1-3 [1], seconds 1-30 (required): a vanilla potion effect, see the caps below
+  stat       stat (required), percent (required, not 0), seconds 2-30 [8], max_stacks 1-5 [1]
+             stats and ranges: attack -30..40, damage_dealt -30..40, damage_taken -40..30 (negative = takes less,
+             helpful), armor -50..50, speed -40..40, attack_speed -30..30, healing_received -50..50,
+             knockback_resistance 0..60, crit_damage 0..50, energy_gain 0..50
+SELF-ONLY (always the hero):
+  move_self     direction back, forward or up [back], distance 2-8 [4] (a hop, never a teleport; max 1 per ability)
+  cooldown_cut  seconds 1-10 (required; shortens the hero's running skill cooldowns, never below half of each)
+  empower       seconds 3-20 (required; enters the "empowered" state; needs "empowered" at the top level)
+  summon        creature (required) wolf, snow_golem or iron_golem, count 1-3 (snow golems max 2, iron golems 1),
+                seconds 10-60 [20], name (1-24 chars). Only in skills and the ultimate; at most 3 summons alive
+                per hero, at most 1 of them an iron golem.
+MARKS (on enemies, or on the hero with "to": "self"):
+  mark          mark (required, an id like "pinned"), stacks 1-5 [1], max_stacks 1-10 [5], seconds 2-30 [10],
+                glow true/false [false] (true = the marked one glows for everyone)
+  clear_marks   mark (removes it; put it after a damage that uses per_mark_stack for a "spend the stacks" finisher)
+Potion caps. Helpful (allies): speed (max II, 20 s), haste (max II, 30 s), strength (max II, 12 s),
+  regeneration (max II, 10 s), resistance (max II, 10 s), fire_resistance (max I, 30 s),
+  water_breathing (max I, 30 s), jump_boost (max II, 20 s), slow_falling (max I, 10 s),
+  invisibility (max I, 6 s, self only)
+Harmful (enemies): slowness (max III, 8 s), weakness (max II, 8 s), mining_fatigue (max II, 10 s),
+  poison (max II, 8 s), wither (max II, 6 s), glowing (max I, 15 s), levitation (max I, 3 s),
+  blindness (max I, 5 s), darkness (max I, 6 s)
+blindness and darkness only affect players. levitation is not renewed until the receiver has landed.
+No other potion effects exist for heroes (use shield instead of absorption, heal instead of instant_health).
+
+CONDITIONS ("if" on an effect, checked per receiver; or on a passive, checked when it fires)
+{"condition": ..., plus "value" (whole % 1-99) or "mark" (+ "value" = least stacks, default 1) or "kind"}
+target_health_below / target_health_above (value) | self_health_below / self_health_above (value)
+| target_has_mark (mark, value) | self_has_mark (mark, value) | target_burning | target_freezing | target_slowed
+| target_stunned | target_has_dot | target_is (kind: monster, undead, arthropod, illager, player, npc, hero, boss)
+| self_empowered | self_shielded
+
+PASSIVES (react to events)
+name (required) | description | trigger (required) | trigger_value | mark (for on_mark_full) | chance 1-100
+| cooldown 1-120 s (default 1) | form | radius 2-12 | projectile (form shot) | if | effects (required, 1-3)
+| look | line | unlock_level
+Triggers and their allowed forms (the first is the default):
+  always            self only; effects: stat without seconds, -20..20; holds while its "if" is true
+  on_hit, on_crit   (basic attack lands / jump critical hit lands) trigger_enemy, self, nova, allies, bolt, shot
+  on_hurt           (an enemy damages it) trigger_enemy (the attacker), self, nova, allies, bolt, shot
+  on_kill           self, nova, allies
+  on_skill          self, ally, allies, nova
+  on_ultimate       self, allies, nova (no energy effect)
+  on_fight_start    self, allies, nova
+  on_low_health     (trigger_value % 10-60, default 35) self, allies, nova
+  on_ally_low_health (trigger_value % 10-60, default 35) trigger_ally, allies, self
+  on_ally_hurt      (an ally within 12 blocks is hit) trigger_ally, trigger_enemy (the attacker), self, bolt, shot
+  on_ally_attack    (an ally within 12 blocks hits an enemy; the hero strikes that enemy too) trigger_enemy, bolt,
+                    shot
+  on_ally_ultimate  (another hero of its side uses its ultimate) self, allies, trigger_ally
+  on_mark_full      (a mark this hero applies reaches max_stacks; needs "mark") trigger_enemy, self, nova
+  every             (trigger_value 3-30 seconds, default 10, while fighting; strong effects make the mod wait
+                    longer) self, ally, allies, nova
+Passive forms: self | trigger_enemy (the enemy of the event) | trigger_ally (the ally of the event) | ally (most hurt
+ally) | allies | nova | bolt / shot (an instant bolt / a projectile at the event's enemy, range 16).
+Damage from passives never triggers other on_hit or on_ally_attack passives.
+
+EMPOWERED (optional, one per hero: an enhanced form or stance entered by an "empower" effect)
+name (required) | description | stats: 1-4 of {"stat", "percent" -30..30} | on_hit: 1-2 effects added to basic hits
+| particle (aura) | color | size 100-110 (%; with stats.size never above 110 in total) | skills_locked true/false
+(basic attacks only) | line (said on entering). Its on_hit shares the basic on_hit cap.
+
+BASE ABILITIES (out of combat, at the hero's home base): each is {"type": ..., its fields}, for example
+{"type": "aura", "affix": "mason", "stacks": 2}; each may also have "name" (1-24 chars) and "unlock_level" 1-30.
+  aura     affix (diligence = work speed, prospector = extra ore, regrowth = saplings grow, green_thumb = extra crops,
+           mason = building speed, marksman = arrow damage, thrifty = less gear wear, hardy = less hunger,
+           duelist = critical damage, angler = extra fish, haggler = better trades), stacks 1-3 [1],
+           radius 8-32 [24], roles (optional list: builder, miner, farmer, woodcutter, blacksmith, chef, smelter,
+           animal_carer, butcher, fisherman, cave_explorer, hauler, enchanter, trader, scout, swordsman, archer,
+           crossbowman, axe_fighter)
+  mend     percent 1-10 [5] of max health, every 5-30 s [10], radius 8-24 [16] (heals hurt allies between fights)
+  lookout  radius 16-48 [32] (spots enemies in sight and raises the base alarm)
+  rally    percent 5-25 [10] (recruits at its base cost that much less food)
+  drill    xp 1-3 [1] per in-game hour, radius 8-24 [16] (soldiers nearby train)
+
+LINES (dialogue): "lines": {"event": ["line", ...]}, 1-8 lines per event, 1-120 characters, no line breaks.
+Events and their placeholders ({name} works everywhere):
+summoned {faction} | greeting {player} {faction} | idle {player} {faction} | fight_start {enemy}
+| skill {enemy} {ability} | ultimate {enemy} {ability} | low_health | kill {enemy} | ally_fallen {ally} | victory
+| raid_start {faction} | base_attacked {faction} | level_up {level} | unlock {level} {ability} | fallen | revived
+No other placeholders exist.
+
+ENERGY AND THE ULTIMATE
+Energy goes from 0 to 100; the ultimate fires at 100 and uses it all. The hero gains 5 per basic hit, the skill's
+energy_gain per skill (10), 1 per 2 health lost, 10 per kill, 1 per 2 points healed or shielded, and "energy"
+effects; all times charge_rate. At least 20 seconds between two ultimates, up to 60 for very strong ones (the
+mod works this out from the ultimate's strength).
+
+BALANCE CAPS (level-1 totals per use and per receiver). For these totals the mod assumes: attack_percent 100 =
+6 for melee and bow, 7 crossbow, 8 trident, the basic "amount" for thrown, each plus stats.attack; armour =
+stats.armor + 15; a receiver with 20 max health missing 10; every mark at its max_stacks.
+damage: basic on_hit 4 per hit, every_nth_hit 8, skill 16, ultimate 30, passive 8 (all damage effects x hits)
+damage over time (amount x seconds): on_hit 4, finisher 8, skill 16, ultimate 24, passive 8
+heal: on_hit 2, finisher 4, skill 8, ultimate 14, passive 4 | shield: on_hit 2, finisher 4, skill 8, ultimate 12,
+passive 4 | stun seconds: skill 2, ultimate 3, passive 1, finisher 1, none on on_hit
+A lasting zone may total 1.5x these over all its pulses. Over a cap, the mod scales the numbers down.
+Strong skills need long cooldowns: the mod raises a cooldown that is too short for the skill's strength (roughly,
+2 seconds plus half the skill's total damage/healing; stuns and big areas count extra). Typical good cooldowns:
+a single 6-damage strike 8 s, an area taunt with a self-shield 14 s, a 4-arrow volley 14 s.
+
+RULES THAT MUST HOLD
+- Enemy-only effects never in self/ally/allies forms, never with "to" other than targets.
+- At most 2 damage effects and 1 move_self per ability; no move_self in leap or dash.
+- invisibility only with "to": "self". energy never in an on_ultimate passive.
+- An "empower" effect needs an "empowered" object. on_mark_full needs "mark". summon only in skills and the ultimate.
+- Mark ids: lowercase letters, digits and "_", 2-24 characters. Use the same mark id everywhere it is meant.
+- Only the fields, words and ids listed here; no extra fields; numbers inside their ranges.
+
+SELF-CHECK BEFORE ANSWERING
+[ ] "format": 1, "id" (matches the name, lowercase_with_underscores), "name", "behaviour.combat_role",
+    "basic_attack.style" are present.
+[ ] Every skill/ultimate has name, form and 1-5 effects; every passive has name, trigger and 1-3 effects.
+[ ] Every effect "type" is one of: damage, dot, heal, shield, effect, stat, knockback, pull, ignite, freeze, stun,
+    taunt, cleanse, dispel, energy, cooldown_cut, move_self, mark, clear_marks, empower, summon.
+[ ] Every effect fits its form (enemy-only effects in enemy forms; heals and shields to allies or "to": "self").
+[ ] Every number is inside its range and the totals are inside the balance caps.
+[ ] Every particle, sound, item, enchantment, potion and projectile comes from the lists above.
+[ ] Every line uses only the placeholders of its event.
+[ ] The JSON is valid: double quotes, commas between fields, no trailing commas, no comments.
+
+JSON SCHEMA (draft 2020-12; the file must validate against it. To the person pasting this prompt: if the chat says
+the message is too long, delete from this heading down to the EXAMPLE heading; the text above says the same.)
+{
+ "$schema":"https://json-schema.org/draft/2020-12/schema",
+ "$id":"urn:factionclash:hero:1",
+ "title":"Faction Clash hero file, format 1",
+ "description":"One hero per file: config/factionclash/heroes/<id>.json next to <id>.png. Keys starting with _ are comments.",
+ "type":"object",
+ "required":["format","id","name","behaviour","basic_attack"],
+ "properties":{
+  "format":{"const":1},
+  "id":{"$ref":"#/$defs/id"},
+  "name":{"type":"string","minLength":1,"maxLength":24},
+  "title":{"type":"string","minLength":0,"maxLength":32},
+  "description":{"type":"string","minLength":0,"maxLength":300},
+  "rarity":{"enum":["common","rare","epic","legendary"]},
+  "starter_for":{"enum":["ember_legion","grove_covenant","tide_alliance","stoneguard"]},
+  "factions":{"type":"array","minItems":1,"maxItems":4,"uniqueItems":true,"items":{"enum":["ember_legion","grove_covenant","tide_alliance","stoneguard"]}},
+  "skin_model":{"enum":["classic","slim"]},
+  "color":{"$ref":"#/$defs/color"},
+  "element":{"$ref":"#/$defs/element"},
+  "stats":{
+   "type":"object",
+   "properties":{
+    "health":{"type":"number","minimum":20,"maximum":40},
+    "attack":{"type":"number","minimum":0,"maximum":4},
+    "armor":{"type":"number","minimum":0,"maximum":8},
+    "speed":{"type":"integer","minimum":90,"maximum":120},
+    "knockback_resistance":{"type":"integer","minimum":0,"maximum":60},
+    "size":{"type":"integer","minimum":85,"maximum":110},
+    "growth":{"enum":["balanced","tough","fierce","swift","mystic"]}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "resistances":{
+   "type":"object",
+   "properties":{
+    "physical":{"type":"integer","minimum":-30,"maximum":60},
+    "fire":{"type":"integer","minimum":-30,"maximum":60},
+    "frost":{"type":"integer","minimum":-30,"maximum":60},
+    "shock":{"type":"integer","minimum":-30,"maximum":60},
+    "venom":{"type":"integer","minimum":-30,"maximum":60},
+    "blight":{"type":"integer","minimum":-30,"maximum":60},
+    "arcane":{"type":"integer","minimum":-30,"maximum":60},
+    "radiant":{"type":"integer","minimum":-30,"maximum":60}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "gear":{"type":"array","maxItems":6,"items":{"$ref":"#/$defs/gear_item"}},
+  "behaviour":{
+   "type":"object",
+   "required":["combat_role"],
+   "properties":{
+    "combat_role":{"enum":["vanguard","striker","skirmisher","marksman","support"]},
+    "focus":{"enum":["nearest","weakest","strongest","ranged_first","threat_to_allies","heroes_first"]},
+    "keep_distance":{"type":"number","minimum":0,"maximum":16},
+    "aggression":{"enum":["cautious","steady","bold"]},
+    "protects":{"enum":["none","allies","workers","players","heart"]},
+    "retreat_below":{"type":"integer","minimum":0,"maximum":60},
+    "raids":{"enum":["leads","joins","stays_home"]},
+    "duty":{
+     "enum":[
+      "guard",
+      "scout",
+      "builder",
+      "miner",
+      "farmer",
+      "woodcutter",
+      "blacksmith",
+      "chef",
+      "smelter",
+      "animal_carer",
+      "butcher",
+      "fisherman",
+      "cave_explorer",
+      "hauler",
+      "enchanter",
+      "trader"
+     ]
+    }
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "basic_attack":{
+   "type":"object",
+   "required":["style"],
+   "properties":{
+    "style":{"enum":["melee","bow","crossbow","trident","thrown"]},
+    "projectile":{
+     "type":"string",
+     "pattern":"^(minecraft:)?(snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+    },
+    "held_item":{
+     "type":"string",
+     "pattern":"^(minecraft:)?(stick|blaze_rod|breeze_rod|book|amethyst_shard|echo_shard|prismarine_shard|heart_of_the_sea|nautilus_shell|feather|bone|spyglass|compass|clock|lantern|soul_lantern|poppy|cornflower)$"
+    },
+    "amount":{"type":"number","minimum":2,"maximum":10},
+    "interval":{"type":"number","minimum":0.8,"maximum":3},
+    "element":{"$ref":"#/$defs/element"},
+    "on_hit":{"type":"array","minItems":1,"maxItems":3,"items":{"$ref":"#/$defs/effect"}},
+    "every_nth_hit":{
+     "type":"object",
+     "required":["n","effects"],
+     "properties":{"n":{"type":"integer","minimum":2,"maximum":6},"effects":{"type":"array","minItems":1,"maxItems":3,"items":{"$ref":"#/$defs/effect"}}},
+     "patternProperties":{"^_":{}},
+     "additionalProperties":false
+    }
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "skills":{"type":"array","maxItems":4,"items":{"$ref":"#/$defs/skill"}},
+  "ultimate":{"$ref":"#/$defs/ultimate"},
+  "passives":{"type":"array","maxItems":4,"items":{"$ref":"#/$defs/passive"}},
+  "empowered":{"$ref":"#/$defs/empowered"},
+  "base_abilities":{"type":"array","maxItems":3,"items":{"$ref":"#/$defs/base_ability"}},
+  "lines":{"$ref":"#/$defs/lines"}
+ },
+ "patternProperties":{"^_":{}},
+ "additionalProperties":false,
+ "$defs":{
+  "id":{"type":"string","pattern":"^[a-z][a-z0-9_]{2,31}$"},
+  "mark_id":{"type":"string","pattern":"^[a-z][a-z0-9_]{1,23}$"},
+  "element":{"enum":["physical","fire","frost","shock","venom","blight","arcane","radiant"]},
+  "color":{"type":"string","pattern":"^#[0-9A-Fa-f]{6}$"},
+  "particle":{
+   "type":"string",
+   "pattern":"^(minecraft:)?(angry_villager|ash|bubble_pop|cherry_leaves|cloud|crimson_spore|crit|damage_indicator|dragon_breath|dust|electric_spark|enchant|enchanted_hit|end_rod|explosion|firework|flame|glow|gust|happy_villager|heart|large_smoke|nautilus|note|poof|portal|reverse_portal|scrape|sculk_soul|small_flame|small_gust|smoke|snowflake|sonic_boom|soul|soul_fire_flame|spore_blossom_air|splash|sweep_attack|totem_of_undying|trial_spawner_detection|warped_spore|wax_on|white_ash|witch)$"
+  },
+  "sound":{
+   "type":"string",
+   "pattern":"^(minecraft:)?(block\\.amethyst_block\\.chime|block\\.amethyst_cluster\\.break|block\\.anvil\\.land|block\\.beacon\\.activate|block\\.beacon\\.power_select|block\\.bell\\.use|block\\.conduit\\.activate|block\\.enchantment_table\\.use|block\\.fire\\.ambient|block\\.glass\\.break|block\\.note_block\\.bell|block\\.respawn_anchor\\.charge|block\\.respawn_anchor\\.deplete|block\\.sculk_shrieker\\.shriek|entity\\.arrow\\.shoot|entity\\.blaze\\.ambient|entity\\.blaze\\.shoot|entity\\.breeze\\.shoot|entity\\.breeze\\.wind_burst|entity\\.dolphin\\.splash|entity\\.elder_guardian\\.curse|entity\\.ender_dragon\\.growl|entity\\.evoker\\.cast_spell|entity\\.evoker\\.prepare_attack|entity\\.evoker\\.prepare_summon|entity\\.experience_orb\\.pickup|entity\\.generic\\.explode|entity\\.ghast\\.shoot|entity\\.glow_squid\\.squirt|entity\\.goat\\.ram_impact|entity\\.illusioner\\.cast_spell|entity\\.illusioner\\.mirror_move|entity\\.illusioner\\.prepare_blindness|entity\\.iron_golem\\.attack|entity\\.lightning_bolt\\.thunder|entity\\.player\\.attack\\.crit|entity\\.player\\.attack\\.knockback|entity\\.player\\.attack\\.strong|entity\\.player\\.attack\\.sweep|entity\\.player\\.hurt_freeze|entity\\.player\\.levelup|entity\\.player\\.splash|entity\\.ravager\\.roar|entity\\.snowball\\.throw|entity\\.vex\\.charge|entity\\.warden\\.sonic_boom|entity\\.wind_charge\\.wind_burst|entity\\.wither\\.shoot|entity\\.wolf\\.howl|event\\.raid\\.horn|item\\.book\\.page_turn|item\\.crossbow\\.shoot|item\\.firecharge\\.use|item\\.flintandsteel\\.use|item\\.mace\\.smash_ground|item\\.shield\\.block|item\\.totem\\.use|item\\.trident\\.hit|item\\.trident\\.riptide_1|item\\.trident\\.throw|item\\.trident\\.thunder)$"
+  },
+  "amount":{
+   "oneOf":[
+    {"type":"number","minimum":0.5,"maximum":30},
+    {
+     "type":"object",
+     "properties":{
+      "base":{"type":"number","minimum":0,"maximum":30},
+      "attack_percent":{"type":"integer","minimum":0,"maximum":300},
+      "max_health_percent":{"type":"integer","minimum":0,"maximum":40},
+      "armor_percent":{"type":"integer","minimum":0,"maximum":100},
+      "target_max_health_percent":{"type":"integer","minimum":0,"maximum":20},
+      "target_missing_health_percent":{"type":"integer","minimum":0,"maximum":30},
+      "mark":{"$ref":"#/$defs/mark_id"},
+      "per_mark_stack":{"type":"number","minimum":0,"maximum":6}
+     },
+     "patternProperties":{"^_":{}},
+     "additionalProperties":false,
+     "minProperties":1,
+     "dependentRequired":{"per_mark_stack":["mark"],"mark":["per_mark_stack"]}
+    }
+   ]
+  },
+  "condition":{
+   "type":"object",
+   "required":["condition"],
+   "properties":{
+    "condition":{
+     "enum":[
+      "target_health_below",
+      "target_health_above",
+      "self_health_below",
+      "self_health_above",
+      "target_has_mark",
+      "self_has_mark",
+      "target_burning",
+      "target_freezing",
+      "target_slowed",
+      "target_stunned",
+      "target_has_dot",
+      "target_is",
+      "self_empowered",
+      "self_shielded"
+     ]
+    },
+    "value":{"type":"integer","minimum":1,"maximum":99},
+    "mark":{"$ref":"#/$defs/mark_id"},
+    "kind":{"enum":["monster","undead","arthropod","illager","player","npc","hero","boss"]}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false,
+   "allOf":[
+    {
+     "if":{
+      "required":["condition"],
+      "properties":{"condition":{"enum":["target_health_below","target_health_above","self_health_below","self_health_above"]}}
+     },
+     "then":{"required":["value"]}
+    },
+    {"if":{"required":["condition"],"properties":{"condition":{"enum":["target_has_mark","self_has_mark"]}}},"then":{"required":["mark"]}},
+    {"if":{"required":["condition"],"properties":{"condition":{"const":"target_is"}}},"then":{"required":["kind"]}}
+   ]
+  },
+  "effect":{
+   "type":"object",
+   "required":["type"],
+   "properties":{
+    "type":{
+     "enum":[
+      "damage",
+      "dot",
+      "heal",
+      "shield",
+      "effect",
+      "stat",
+      "knockback",
+      "pull",
+      "ignite",
+      "freeze",
+      "stun",
+      "taunt",
+      "cleanse",
+      "dispel",
+      "energy",
+      "cooldown_cut",
+      "move_self",
+      "mark",
+      "clear_marks",
+      "empower",
+      "summon"
+     ]
+    },
+    "to":{"enum":["targets","self","allies","ally"]},
+    "radius":{"type":"number","minimum":2,"maximum":12},
+    "chance":{"type":"integer","minimum":1,"maximum":100},
+    "if":{"$ref":"#/$defs/condition"},
+    "amount":{},
+    "element":{},
+    "drain":{},
+    "seconds":{},
+    "max_stacks":{},
+    "id":{},
+    "level":{},
+    "stat":{},
+    "percent":{},
+    "strength":{},
+    "up":{},
+    "direction":{},
+    "distance":{},
+    "mark":{},
+    "stacks":{},
+    "glow":{},
+    "creature":{},
+    "count":{},
+    "name":{}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false,
+   "allOf":[
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"damage"}}},
+     "then":{
+      "properties":{"amount":{"$ref":"#/$defs/amount"},"element":{"$ref":"#/$defs/element"},"drain":{"type":"integer","minimum":0,"maximum":50}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","amount","element","drain"]},{"pattern":"^_"}]},
+      "required":["amount"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"dot"}}},
+     "then":{
+      "properties":{
+       "amount":{"$ref":"#/$defs/amount"},
+       "seconds":{"type":"number","minimum":2,"maximum":10},
+       "element":{"$ref":"#/$defs/element"},
+       "max_stacks":{"type":"integer","minimum":1,"maximum":5}
+      },
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","amount","seconds","element","max_stacks"]},{"pattern":"^_"}]},
+      "required":["amount"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"heal"}}},
+     "then":{
+      "properties":{"amount":{"$ref":"#/$defs/amount"}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","amount"]},{"pattern":"^_"}]},
+      "required":["amount"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"shield"}}},
+     "then":{
+      "properties":{"amount":{"$ref":"#/$defs/amount"},"seconds":{"type":"number","minimum":2,"maximum":30}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","amount","seconds"]},{"pattern":"^_"}]},
+      "required":["amount"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"effect"}}},
+     "then":{
+      "properties":{
+       "id":{
+        "type":"string",
+        "pattern":"^(minecraft:)?(speed|haste|strength|regeneration|resistance|fire_resistance|water_breathing|jump_boost|slow_falling|invisibility|slowness|weakness|mining_fatigue|poison|wither|glowing|levitation|blindness|darkness)$"
+       },
+       "level":{"type":"integer","minimum":1,"maximum":3},
+       "seconds":{"type":"number","minimum":1,"maximum":30}
+      },
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","id","level","seconds"]},{"pattern":"^_"}]},
+      "required":["id","seconds"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"stat"}}},
+     "then":{
+      "properties":{
+       "stat":{
+        "enum":["attack","damage_dealt","damage_taken","armor","speed","attack_speed","healing_received","knockback_resistance","crit_damage","energy_gain"]
+       },
+       "percent":{"type":"integer","minimum":-50,"maximum":60},
+       "seconds":{"type":"number","minimum":2,"maximum":30},
+       "max_stacks":{"type":"integer","minimum":1,"maximum":5}
+      },
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","stat","percent","seconds","max_stacks"]},{"pattern":"^_"}]},
+      "required":["stat","percent"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"knockback"}}},
+     "then":{
+      "properties":{"strength":{"type":"number","minimum":1,"maximum":5},"up":{"type":"number","minimum":0,"maximum":3}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","strength","up"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"pull"}}},
+     "then":{
+      "properties":{"strength":{"type":"number","minimum":1,"maximum":3}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","strength"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"ignite"}}},
+     "then":{
+      "properties":{"seconds":{"type":"number","minimum":1,"maximum":8}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","seconds"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"freeze"}}},
+     "then":{
+      "properties":{"seconds":{"type":"number","minimum":1,"maximum":6}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","seconds"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"stun"}}},
+     "then":{
+      "properties":{"seconds":{"type":"number","minimum":0.5,"maximum":2}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","seconds"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"taunt"}}},
+     "then":{
+      "properties":{"seconds":{"type":"number","minimum":1,"maximum":8}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","seconds"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"cleanse"}}},
+     "then":{"properties":{},"propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if"]},{"pattern":"^_"}]}}
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"dispel"}}},
+     "then":{"properties":{},"propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if"]},{"pattern":"^_"}]}}
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"energy"}}},
+     "then":{
+      "properties":{"amount":{"type":"integer","minimum":5,"maximum":30}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","amount"]},{"pattern":"^_"}]},
+      "required":["amount"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"cooldown_cut"}}},
+     "then":{
+      "properties":{"seconds":{"type":"number","minimum":1,"maximum":10}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","seconds"]},{"pattern":"^_"}]},
+      "required":["seconds"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"move_self"}}},
+     "then":{
+      "properties":{"direction":{"enum":["back","forward","up"]},"distance":{"type":"number","minimum":2,"maximum":8}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","direction","distance"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"mark"}}},
+     "then":{
+      "properties":{
+       "mark":{"$ref":"#/$defs/mark_id"},
+       "stacks":{"type":"integer","minimum":1,"maximum":5},
+       "max_stacks":{"type":"integer","minimum":1,"maximum":10},
+       "seconds":{"type":"number","minimum":2,"maximum":30},
+       "glow":{"type":"boolean"}
+      },
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","mark","stacks","max_stacks","seconds","glow"]},{"pattern":"^_"}]},
+      "required":["mark"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"clear_marks"}}},
+     "then":{
+      "properties":{"mark":{"$ref":"#/$defs/mark_id"}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","mark"]},{"pattern":"^_"}]},
+      "required":["mark"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"empower"}}},
+     "then":{
+      "properties":{"seconds":{"type":"number","minimum":3,"maximum":20}},
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","seconds"]},{"pattern":"^_"}]},
+      "required":["seconds"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"summon"}}},
+     "then":{
+      "properties":{
+       "creature":{"enum":["wolf","snow_golem","iron_golem"]},
+       "count":{"type":"integer","minimum":1,"maximum":3},
+       "seconds":{"type":"number","minimum":10,"maximum":60},
+       "name":{"type":"string","minLength":1,"maxLength":24}
+      },
+      "propertyNames":{"anyOf":[{"enum":["type","to","radius","chance","if","creature","count","seconds","name"]},{"pattern":"^_"}]},
+      "required":["creature"]
+     }
+    }
+   ]
+  },
+  "effects":{"type":"array","minItems":1,"maxItems":5,"items":{"$ref":"#/$defs/effect"}},
+  "look":{
+   "type":"object",
+   "properties":{
+    "particle":{"$ref":"#/$defs/particle"},
+    "color":{"$ref":"#/$defs/color"},
+    "sound":{"$ref":"#/$defs/sound"},
+    "lightning":{"type":"boolean"},
+    "fangs":{"type":"boolean"},
+    "pose":{"enum":["none","swing","block","bow_draw","spear_throw","crossbow_charge","horn","spyglass"]}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "skill":{
+   "type":"object",
+   "required":["name","form","effects"],
+   "properties":{
+    "name":{"type":"string","minLength":1,"maxLength":24},
+    "description":{"type":"string","minLength":0,"maxLength":200},
+    "form":{"enum":["melee","shot","volley","bolt","chain","cone","line","nova","zone","leap","dash","self","ally","allies"]},
+    "range":{"type":"number","minimum":2,"maximum":24},
+    "radius":{"type":"number","minimum":0,"maximum":12},
+    "count":{"type":"integer","minimum":2,"maximum":5},
+    "angle":{"type":"integer","minimum":30,"maximum":120},
+    "width":{"type":"number","minimum":1,"maximum":3},
+    "hits":{"type":"integer","minimum":1,"maximum":5},
+    "hit_interval":{"type":"number","minimum":0.2,"maximum":1},
+    "projectile":{
+     "type":"string",
+     "pattern":"^(minecraft:)?(arrow|spectral_arrow|trident|snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+    },
+    "zone_at":{"enum":["target","self","follow_self"]},
+    "delay":{"type":"number","minimum":0,"maximum":3},
+    "duration":{"type":"number","minimum":0,"maximum":10},
+    "interval":{"type":"number","minimum":0.5,"maximum":3},
+    "windup":{"type":"number","minimum":0,"maximum":2},
+    "use_when":{
+     "enum":["always","self_health_below","ally_health_below","target_health_below","enemies_near","target_far","target_close","big_fight","out_of_combat"]
+    },
+    "use_value":{"type":"number","minimum":2,"maximum":90},
+    "unlock_level":{"type":"integer","minimum":1,"maximum":30},
+    "effects":{"$ref":"#/$defs/effects"},
+    "look":{"$ref":"#/$defs/look"},
+    "line":{"type":"string","minLength":1,"maxLength":120},
+    "cooldown":{"type":"number","minimum":2,"maximum":120},
+    "charges":{"type":"integer","minimum":1,"maximum":3},
+    "energy_gain":{"type":"integer","minimum":0,"maximum":30}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "ultimate":{
+   "type":"object",
+   "required":["name","form","effects"],
+   "properties":{
+    "name":{"type":"string","minLength":1,"maxLength":24},
+    "description":{"type":"string","minLength":0,"maxLength":200},
+    "form":{"enum":["melee","shot","volley","bolt","chain","cone","line","nova","zone","leap","dash","self","ally","allies"]},
+    "range":{"type":"number","minimum":2,"maximum":24},
+    "radius":{"type":"number","minimum":0,"maximum":12},
+    "count":{"type":"integer","minimum":2,"maximum":5},
+    "angle":{"type":"integer","minimum":30,"maximum":120},
+    "width":{"type":"number","minimum":1,"maximum":3},
+    "hits":{"type":"integer","minimum":1,"maximum":5},
+    "hit_interval":{"type":"number","minimum":0.2,"maximum":1},
+    "projectile":{
+     "type":"string",
+     "pattern":"^(minecraft:)?(arrow|spectral_arrow|trident|snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+    },
+    "zone_at":{"enum":["target","self","follow_self"]},
+    "delay":{"type":"number","minimum":0,"maximum":3},
+    "duration":{"type":"number","minimum":0,"maximum":10},
+    "interval":{"type":"number","minimum":0.5,"maximum":3},
+    "windup":{"type":"number","minimum":0,"maximum":2},
+    "use_when":{
+     "enum":["always","self_health_below","ally_health_below","target_health_below","enemies_near","target_far","target_close","big_fight","out_of_combat"]
+    },
+    "use_value":{"type":"number","minimum":2,"maximum":90},
+    "unlock_level":{"type":"integer","minimum":1,"maximum":30},
+    "effects":{"$ref":"#/$defs/effects"},
+    "look":{"$ref":"#/$defs/look"},
+    "line":{"type":"string","minLength":1,"maxLength":120},
+    "charge_rate":{"type":"integer","minimum":50,"maximum":150}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "passive":{
+   "type":"object",
+   "required":["name","trigger","effects"],
+   "properties":{
+    "name":{"type":"string","minLength":1,"maxLength":24},
+    "description":{"type":"string","minLength":0,"maxLength":200},
+    "trigger":{
+     "enum":[
+      "always",
+      "on_hit",
+      "on_crit",
+      "on_hurt",
+      "on_kill",
+      "on_skill",
+      "on_ultimate",
+      "on_fight_start",
+      "on_low_health",
+      "on_ally_low_health",
+      "on_ally_hurt",
+      "on_ally_attack",
+      "on_ally_ultimate",
+      "on_mark_full",
+      "every"
+     ]
+    },
+    "trigger_value":{"type":"number","minimum":3,"maximum":60},
+    "mark":{"$ref":"#/$defs/mark_id"},
+    "chance":{"type":"integer","minimum":1,"maximum":100},
+    "cooldown":{"type":"number","minimum":1,"maximum":120},
+    "form":{"enum":["self","trigger_enemy","trigger_ally","ally","allies","nova","bolt","shot"]},
+    "radius":{"type":"number","minimum":2,"maximum":12},
+    "projectile":{
+     "type":"string",
+     "pattern":"^(minecraft:)?(arrow|spectral_arrow|trident|snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+    },
+    "if":{"$ref":"#/$defs/condition"},
+    "effects":{"type":"array","minItems":1,"maxItems":3,"items":{"$ref":"#/$defs/effect"}},
+    "look":{"$ref":"#/$defs/look"},
+    "line":{"type":"string","minLength":1,"maxLength":120},
+    "unlock_level":{"type":"integer","minimum":1,"maximum":30}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false,
+   "allOf":[{"if":{"required":["trigger"],"properties":{"trigger":{"const":"on_mark_full"}}},"then":{"required":["mark"]}}]
+  },
+  "stat_bonus":{
+   "type":"object",
+   "required":["stat","percent"],
+   "properties":{
+    "stat":{
+     "enum":["attack","damage_dealt","damage_taken","armor","speed","attack_speed","healing_received","knockback_resistance","crit_damage","energy_gain"]
+    },
+    "percent":{"type":"integer","minimum":-30,"maximum":30}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "empowered":{
+   "type":"object",
+   "required":["name"],
+   "properties":{
+    "name":{"type":"string","minLength":1,"maxLength":24},
+    "description":{"type":"string","minLength":0,"maxLength":200},
+    "stats":{"type":"array","minItems":1,"maxItems":4,"items":{"$ref":"#/$defs/stat_bonus"}},
+    "on_hit":{"type":"array","minItems":1,"maxItems":2,"items":{"$ref":"#/$defs/effect"}},
+    "particle":{"$ref":"#/$defs/particle"},
+    "color":{"$ref":"#/$defs/color"},
+    "size":{"type":"integer","minimum":100,"maximum":110},
+    "skills_locked":{"type":"boolean"},
+    "line":{"type":"string","minLength":1,"maxLength":120}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  },
+  "base_ability":{
+   "type":"object",
+   "required":["type"],
+   "properties":{
+    "type":{"enum":["aura","mend","lookout","rally","drill"]},
+    "name":{"type":"string","minLength":1,"maxLength":24},
+    "unlock_level":{"type":"integer","minimum":1,"maximum":30},
+    "affix":{},
+    "stacks":{},
+    "radius":{},
+    "roles":{},
+    "percent":{},
+    "every":{},
+    "xp":{}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false,
+   "allOf":[
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"aura"}}},
+     "then":{
+      "properties":{
+       "affix":{"enum":["diligence","prospector","regrowth","green_thumb","mason","marksman","thrifty","hardy","duelist","angler","haggler"]},
+       "stacks":{"type":"integer","minimum":1,"maximum":3},
+       "radius":{"type":"number","minimum":8,"maximum":32},
+       "roles":{
+        "type":"array",
+        "minItems":1,
+        "items":{
+         "enum":[
+          "builder",
+          "miner",
+          "farmer",
+          "woodcutter",
+          "blacksmith",
+          "chef",
+          "smelter",
+          "animal_carer",
+          "butcher",
+          "fisherman",
+          "cave_explorer",
+          "hauler",
+          "enchanter",
+          "trader",
+          "scout",
+          "swordsman",
+          "archer",
+          "crossbowman",
+          "axe_fighter"
+         ]
+        },
+        "uniqueItems":true
+       }
+      },
+      "propertyNames":{"anyOf":[{"enum":["type","name","unlock_level","affix","stacks","radius","roles"]},{"pattern":"^_"}]},
+      "required":["affix"]
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"mend"}}},
+     "then":{
+      "properties":{
+       "percent":{"type":"integer","minimum":1,"maximum":10},
+       "every":{"type":"number","minimum":5,"maximum":30},
+       "radius":{"type":"number","minimum":8,"maximum":24}
+      },
+      "propertyNames":{"anyOf":[{"enum":["type","name","unlock_level","percent","every","radius"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"lookout"}}},
+     "then":{
+      "properties":{"radius":{"type":"number","minimum":16,"maximum":48}},
+      "propertyNames":{"anyOf":[{"enum":["type","name","unlock_level","radius"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"rally"}}},
+     "then":{
+      "properties":{"percent":{"type":"integer","minimum":5,"maximum":25}},
+      "propertyNames":{"anyOf":[{"enum":["type","name","unlock_level","percent"]},{"pattern":"^_"}]}
+     }
+    },
+    {
+     "if":{"required":["type"],"properties":{"type":{"const":"drill"}}},
+     "then":{
+      "properties":{"xp":{"type":"integer","minimum":1,"maximum":3},"radius":{"type":"number","minimum":8,"maximum":24}},
+      "propertyNames":{"anyOf":[{"enum":["type","name","unlock_level","xp","radius"]},{"pattern":"^_"}]}
+     }
+    }
+   ]
+  },
+  "gear_id":{
+   "type":"string",
+   "pattern":"^(minecraft:)?(wooden_sword|stone_sword|iron_sword|golden_sword|wooden_axe|stone_axe|iron_axe|golden_axe|mace|bow|crossbow|trident|shield|turtle_helmet|leather_helmet|leather_chestplate|leather_leggings|leather_boots|chainmail_helmet|chainmail_chestplate|chainmail_leggings|chainmail_boots|iron_helmet|iron_chestplate|iron_leggings|iron_boots|golden_helmet|golden_chestplate|golden_leggings|golden_boots)$"
+  },
+  "gear_item":{
+   "oneOf":[
+    {"$ref":"#/$defs/gear_id"},
+    {
+     "type":"object",
+     "required":["item"],
+     "properties":{
+      "item":{"$ref":"#/$defs/gear_id"},
+      "name":{"type":"string","minLength":1,"maxLength":24},
+      "enchantments":{
+       "type":"object",
+       "propertyNames":{
+        "type":"string",
+        "pattern":"^(minecraft:)?(sharpness|smite|bane_of_arthropods|knockback|fire_aspect|sweeping_edge|density|breach|power|punch|flame|quick_charge|piercing|multishot|impaling|loyalty|protection|fire_protection|blast_protection|projectile_protection|thorns|feather_falling|respiration|aqua_affinity|depth_strider|unbreaking)$"
+       },
+       "additionalProperties":{"type":"integer","minimum":1,"maximum":3},
+       "maxProperties":3
+      }
+     },
+     "patternProperties":{"^_":{}},
+     "additionalProperties":false
+    }
+   ]
+  },
+  "line_list":{"type":"array","minItems":1,"maxItems":8,"items":{"type":"string","minLength":1,"maxLength":120}},
+  "lines":{
+   "type":"object",
+   "properties":{
+    "summoned":{"$ref":"#/$defs/line_list"},
+    "greeting":{"$ref":"#/$defs/line_list"},
+    "idle":{"$ref":"#/$defs/line_list"},
+    "fight_start":{"$ref":"#/$defs/line_list"},
+    "skill":{"$ref":"#/$defs/line_list"},
+    "ultimate":{"$ref":"#/$defs/line_list"},
+    "low_health":{"$ref":"#/$defs/line_list"},
+    "kill":{"$ref":"#/$defs/line_list"},
+    "ally_fallen":{"$ref":"#/$defs/line_list"},
+    "victory":{"$ref":"#/$defs/line_list"},
+    "raid_start":{"$ref":"#/$defs/line_list"},
+    "base_attacked":{"$ref":"#/$defs/line_list"},
+    "level_up":{"$ref":"#/$defs/line_list"},
+    "unlock":{"$ref":"#/$defs/line_list"},
+    "fallen":{"$ref":"#/$defs/line_list"},
+    "revived":{"$ref":"#/$defs/line_list"}
+   },
+   "patternProperties":{"^_":{}},
+   "additionalProperties":false
+  }
+ }
+}
+
+EXAMPLE (a complete, valid, original hero; a frontline protector)
+```json
+{
+  "format": 1,
+  "id": "bram_ostler",
+  "name": "Bram Ostler",
+  "title": "the Gatewarden",
+  "description": "A former toll-keeper who decided the gate was his to hold. Slow to anger, impossible to move, and fond of anyone who stands behind him.",
+  "rarity": "rare",
+  "starter_for": "stoneguard",
+  "skin_model": "classic",
+  "color": "#8A7F70",
+  "element": "physical",
+  "stats": { "health": 36, "attack": 1, "armor": 4, "speed": 95, "knockback_resistance": 40, "size": 105, "growth": "tough" },
+  "resistances": { "physical": 10, "frost": -10 },
+  "gear": [
+    { "item": "iron_sword", "name": "Toll Breaker", "enchantments": { "knockback": 1 } },
+    "shield",
+    "iron_helmet",
+    "chainmail_chestplate"
+  ],
+  "behaviour": {
+    "combat_role": "vanguard",
+    "focus": "threat_to_allies",
+    "aggression": "steady",
+    "protects": "workers",
+    "retreat_below": 20,
+    "raids": "leads",
+    "duty": "guard"
+  },
+  "basic_attack": {
+    "style": "melee",
+    "on_hit": [
+      { "type": "mark", "mark": "toll", "stacks": 1, "max_stacks": 4, "seconds": 12 }
+    ],
+    "every_nth_hit": {
+      "n": 4,
+      "effects": [
+        { "type": "knockback", "strength": 2 },
+        { "type": "stat", "stat": "damage_dealt", "percent": -20, "seconds": 5 }
+      ]
+    }
+  },
+  "skills": [
+    {
+      "name": "Shield Slam",
+      "description": "Drives his shield into the target. A target that has paid enough toll is knocked senseless.",
+      "form": "melee",
+      "windup": 0.3,
+      "cooldown": 9,
+      "effects": [
+        { "type": "damage", "amount": { "base": 2, "armor_percent": 20 } },
+        { "type": "stun", "seconds": 1, "if": { "condition": "target_has_mark", "mark": "toll", "value": 3 } },
+        { "type": "clear_marks", "mark": "toll", "if": { "condition": "target_has_mark", "mark": "toll", "value": 3 } }
+      ],
+      "look": { "particle": "crit", "sound": "item.shield.block", "pose": "block" }
+    },
+    {
+      "name": "Gate Call",
+      "description": "A bellow that turns every nearby enemy toward him while he braces behind golden hearts.",
+      "form": "nova",
+      "radius": 6,
+      "cooldown": 14,
+      "use_when": "enemies_near",
+      "use_value": 2,
+      "effects": [
+        { "type": "taunt", "seconds": 4 },
+        { "type": "shield", "to": "self", "amount": { "max_health_percent": 20 }, "seconds": 8 }
+      ],
+      "look": { "particle": "angry_villager", "sound": "entity.ravager.roar", "pose": "horn" },
+      "line": "Eyes on me!"
+    },
+    {
+      "name": "Brace",
+      "description": "Plants his feet and shrugs off whatever is clinging to him.",
+      "form": "self",
+      "cooldown": 16,
+      "use_when": "self_health_below",
+      "use_value": 50,
+      "effects": [
+        { "type": "stat", "stat": "damage_taken", "percent": -30, "seconds": 6 },
+        { "type": "cleanse" }
+      ],
+      "look": { "particle": "white_ash", "sound": "block.anvil.land" }
+    }
+  ],
+  "ultimate": {
+    "name": "Hold the Gate",
+    "description": "Everyone near him stands firm behind a wall of golden hearts, and Bram becomes the gate itself.",
+    "form": "allies",
+    "radius": 10,
+    "windup": 0.5,
+    "use_when": "big_fight",
+    "charge_rate": 110,
+    "effects": [
+      { "type": "shield", "amount": { "base": 4, "max_health_percent": 15 }, "seconds": 10 },
+      { "type": "effect", "id": "resistance", "level": 1, "seconds": 8 },
+      { "type": "empower", "seconds": 10 }
+    ],
+    "look": { "particle": "totem_of_undying", "sound": "block.beacon.activate" },
+    "line": "Nobody passes. Nobody falls."
+  },
+  "empowered": {
+    "name": "Iron Vigil",
+    "description": "Heavier, steadier, and every blow he lands demands the enemy's attention.",
+    "stats": [
+      { "stat": "armor", "percent": 30 },
+      { "stat": "knockback_resistance", "percent": 30 }
+    ],
+    "on_hit": [ { "type": "taunt", "seconds": 2 } ],
+    "particle": "white_ash",
+    "size": 104,
+    "line": "I am the gate."
+  },
+  "passives": [
+    {
+      "name": "Shoulder to Shoulder",
+      "description": "When an ally beside him is struck, he throws a guard over them.",
+      "trigger": "on_ally_hurt",
+      "cooldown": 8,
+      "form": "trigger_ally",
+      "effects": [ { "type": "shield", "amount": { "max_health_percent": 8 }, "seconds": 5 } ]
+    },
+    {
+      "name": "Stubborn",
+      "description": "Below half health he only gets harder to move.",
+      "trigger": "always",
+      "if": { "condition": "self_health_below", "value": 50 },
+      "effects": [ { "type": "stat", "stat": "damage_taken", "percent": -15 } ]
+    }
+  ],
+  "base_abilities": [
+    { "type": "aura", "name": "Foreman's Eye", "affix": "mason", "stacks": 2, "radius": 24 },
+    { "type": "drill", "name": "Gate Drill", "xp": 2, "radius": 16 }
+  ],
+  "lines": {
+    "summoned": ["Bram Ostler. Show me the gate and I'll show you a wall."],
+    "greeting": ["Morning, {player}. Walls are holding.", "Toll's paid, {player}. Go on through."],
+    "idle": ["Good gates don't need to be pretty. Just stubborn."],
+    "fight_start": ["Here they come. Behind me.", "Line up, {enemy}. Everyone pays."],
+    "ultimate": ["Nobody passes!"],
+    "low_health": ["Not... yet."],
+    "kill": ["Stay down."],
+    "ally_fallen": ["{ally}! I should have been closer."],
+    "victory": ["Gate's clear."],
+    "raid_start": ["{faction} marches. Stay in my shadow."],
+    "base_attacked": ["To the gate! {faction}, to the gate!"],
+    "level_up": ["Level {level}. Still the same stubborn fool."],
+    "fallen": ["Hold... the gate..."],
+    "revived": ["Back on my feet. Who did I miss?"]
+  }
+}
+```
+Files: bram_ostler.json and bram_ostler.png
+SKIN BRIEF:
+- Broad man in his fifties, weathered tan face, short grey-brown beard (#6E6259), calm dark eyes.
+- Outer layer: a rounded iron helm (#B8B8B8) with a darker rim (#7A7A7A) on the hat layer.
+- Body: a dull brown gambeson (#7B5E43) under a chainmail vest (#9A9A9A) on the jacket layer, a wide leather belt.
+- Arms: rolled sleeves over thick forearms; leather bracers (#5A3E2B). Legs: dark wool trousers (#4A4038), boots.
+- Small brass toll badge (#C9A227) on the chest.
+Arm model: classic
+
+==================================================================================================================
+THE HERO I WANT (written by the person using this prompt; replace everything between the lines)
+==================================================================================================================
+Character:
+Personality and how they talk:
+Fighting style and weapon:
+Skills:
+Ultimate:
+Passive traits:
+Support or out-of-combat talents (what they do for their people at home):
+Faction it should start in (optional):
+Anything else:
+==================================================================================================================
+

@@ -31,19 +31,22 @@ server, documented (README/BALANCE) and shipped in the download jar. Keep the St
 | Nether expeditions (§15) | A portal, Nether wart, quartz, blaze rods; unlocks potions and better enchanting | planned |
 | Overworld/Nether dungeons and bosses, reward chests, hero tokens (§15, §17) | Ties into Phase 4 heroes | planned |
 
-## Phase 4: heroes (§2, §16)
+## Phase 4: heroes (§2, §16), to start right after phase 1
 
-The owner wants the heroes to be Honkai: Star Rail and Zenless Zone Zero characters. The mod will provide a
-**data-driven hero system**: each hero is a datapack definition (name, skin texture from a resource pack, role,
-abilities chosen from the mod's ability set, stats), with a starter hero per faction, hero tokens from bosses, and the
-10-minute revival. The mod ships original example heroes; the owner adds the Star Rail / ZZZ characters through their
-own datapack and resource pack (the mod's code and assets do not include those characters).
+The owner's main feature. The format is final: `docs/heroes/HERO_FORMAT.md` (version 1), with the chatbot prompt
+`docs/heroes/hero-prompt.txt`, the schema, original examples and the checker `tools/herotool/`. Each hero is
+`<id>.json` + `<id>.png` dropped into the server's `config/factionclash/heroes/`, loaded and validated on start and on
+`/fc hero reload`; the server sends skins to clients. The owner writes their heroes (Honkai: Star Rail / Zenless
+Zone Zero characters) with a chatbot and keeps them in their private repository `rodrigomb47/faction-heros`; those
+files are never committed to this repository or shipped in the jar. Claude can install copies on its test server,
+check and test them, and report problems; it does not edit or author them.
 
 | Item | Status |
 |---|---|
-| Hero definition format (datapack) and loader, validation, example original heroes | planned |
-| Ability set (a fixed list of player-like abilities a definition can pick from) | planned |
-| Starter hero, hero tokens, 10-minute revival | planned |
+| Format, prompt, schema, examples, offline checker (`docs/heroes/`, `tools/herotool/`) | done |
+| Loader and validator (`/fc hero reload`, `check`, `_report.txt`), skin sync to clients | planned |
+| Hero entity, stats, gear, behaviour, basic attack, skills, ultimate/energy, passives, base abilities | planned |
+| Progression, dialogue, starter hero, hero tokens, 10-minute revival, war council and raids | planned |
 
 ## Phase 5: play and polish
 
