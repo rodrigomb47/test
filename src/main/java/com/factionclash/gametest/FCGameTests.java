@@ -3451,6 +3451,182 @@ public final class FCGameTests {
         });
     }
 
+    /**
+     * A giant jungle tree hung with vines, as vanilla grows one: a 2x2 trunk 18 logs tall (its top 17 above the stump)
+     * with vines on every side face of the trunk below the crown, so every column beside the trunk holds vines. The
+     * woodcutter, carrying 24 dirt, builds its pillar through the vines (they give way to a block, as for a player),
+     * fells the tree from up there and replants it as a square of four jungle saplings; no log, no scaffold block and
+     * no vine on the pillar's column is left, it is never hurt and gets all its dirt back.
+     */
+    @GameTest(template = "platform", timeoutTicks = 6000, batch = "wood_tall_vines", skyAccess = true)
+    public static void woodcutterBuildsItsScaffoldThroughVines(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 6000);
+        FactionNpc n;
+        BlockPos stump;
+        try {
+            stump = tallTestTree(h, 18, 18, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 18, true);
+            var vine = Blocks.VINE.defaultBlockState();
+            for (int y = 2; y <= 2 + 18 - 6; y++) {
+                for (int i = 0; i < 2; i++) {
+                    h.setBlock(new BlockPos(17, y, 18 + i), vine.setValue(net.minecraft.world.level.block.VineBlock.EAST, true));
+                    h.setBlock(new BlockPos(20, y, 18 + i), vine.setValue(net.minecraft.world.level.block.VineBlock.WEST, true));
+                    h.setBlock(new BlockPos(18 + i, y, 17), vine.setValue(net.minecraft.world.level.block.VineBlock.SOUTH, true));
+                    h.setBlock(new BlockPos(18 + i, y, 20), vine.setValue(net.minecraft.world.level.block.VineBlock.NORTH, true));
+                }
+            }
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.IRON_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 4));
+            n.inventory().setItem(1, new ItemStack(Items.DIRT, 24));
+            noLevelUps(n);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] highest = {0};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            var w = woodlandOf(t);
+            var job = woodJob(n);
+            if (w == null || job == null || w.felled < 1 || job.pillar() != null) {
+                return;
+            }
+            for (BlockPos c : java.util.List.of(stump, stump.east(), stump.south(), stump.south().east())) {
+                if (!h.getLevel().getBlockState(c).is(Blocks.JUNGLE_SAPLING)) {
+                    return; // not replanted yet
+                }
+            }
+            t.assertTrue(highest[0] >= 8, "the tree should have been felled from a pillar, the highest was " + highest[0]);
+            t.assertTrue(!anyIn(h, 14, 2, 14, 23, 24, 23, x -> x.is(Blocks.JUNGLE_LOG)), "no jungle log may be left");
+            t.assertTrue(!scaffoldIn(h, 16, 16, 21, 21, 24), "no scaffold block may be left");
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == 24, "the 24 dirt should be back: " + heldOrStored(t, n, Items.DIRT));
+            t.assertTrue(n.onGround() && n.getBlockY() == stump.getY(), "the woodcutter should end on the ground: " + n.getY());
+            t.succeed();
+        });
+    }
+
+    /**
+     * A tall 2x2 jungle trunk just outside the margin by the walls (2 blocks), with one branch log stepping diagonally
+     * (one out, one up, as a giant jungle tree's branches do) into that margin, where wood is not the woodcutter's to
+     * fell. Felling the rest would leave that log hanging in the air, so the tree is left standing whole: the
+     * woodcutter, carrying dirt for a scaffold, gives up on it without building anything or cutting a log.
+     */
+    @GameTest(template = "platform", timeoutTicks = 3000, batch = "wood_tall_margin", skyAccess = true)
+    public static void woodcutterLeavesATreeWhoseBranchRunsIntoTheWallMargin(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.GROVE_COVENANT, 2, 11, 3000);
+        FactionNpc n;
+        BlockPos stump;
+        BlockPos branch = new BlockPos(16, 11, 16); // the margin: within 4 of the centre (12, 12), walls half 2 plus 2
+        try {
+            stump = tallTestTree(h, 17, 17, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 13, true);
+            h.setBlock(branch, Blocks.JUNGLE_LOG); // diagonal to the trunk's log at (17, 10, 17), face to face with none
+            n = testWoodcutter(t, 8, 20, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(1, new ItemStack(Items.DIRT, 24));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        t.onEachTick(() -> {
+            t.assertTrue(h.getBlockState(branch).is(Blocks.JUNGLE_LOG), "the branch log in the margin should stay");
+            for (int y = 2; y <= 14; y++) {
+                t.assertTrue(h.getBlockState(new BlockPos(17, y, 17)).is(Blocks.JUNGLE_LOG)
+                        && h.getBlockState(new BlockPos(18, y, 18)).is(Blocks.JUNGLE_LOG), "the tree should stand whole");
+            }
+            var job = woodJob(n);
+            t.assertTrue(job == null || job.pillar() == null, "no scaffold for a tree that is left whole");
+            if (job != null && job.gaveUp(stump)) {
+                t.assertTrue(!scaffoldIn(h, 15, 15, 20, 20, 18), "nothing may be built by the tree");
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * Grows a vanilla tree from its configured feature at relative (x, 2, z) on grass, with a fixed seed (so the same
+     * tree grows every run), and returns its log count in the box around it.
+     */
+    private static int vanillaTree(GameTestHelper h, net.minecraft.resources.ResourceKey<net.minecraft.world.level.levelgen.feature.ConfiguredFeature<?, ?>> key,
+                                   int x, int z, long seed) {
+        for (int i = -1; i <= 2; i++) {
+            for (int j = -1; j <= 2; j++) {
+                h.setBlock(new BlockPos(x + i, 1, z + j), Blocks.GRASS_BLOCK);
+            }
+        }
+        var feature = h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.CONFIGURED_FEATURE).getHolderOrThrow(key);
+        boolean placed = feature.value().place(h.getLevel(), h.getLevel().getChunkSource().getGenerator(),
+                net.minecraft.util.RandomSource.create(seed), h.absolutePos(new BlockPos(x, 2, z)));
+        h.assertTrue(placed, "the tree should grow");
+        int n = 0;
+        for (BlockPos p : BlockPos.betweenClosed(x - 7, 2, z - 7, x + 8, 40, z + 8)) {
+            if (h.getBlockState(p).is(net.minecraft.tags.BlockTags.LOGS)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * Vanilla giant jungle trees (the real feature, fixed seeds: branches far out on every side, vines down the trunk,
+     * leaf blobs round the branch ends) are felled whole from one pillar: no log is left in the air, no scaffold
+     * block stands, and the stump is replanted as a square of four.
+     */
+    private static void fellsVanillaGiantJungle(GameTestHelper h, long seed) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 9000);
+        FactionNpc n;
+        BlockPos stump = h.absolutePos(new BlockPos(18, 2, 18));
+        try {
+            int logs = vanillaTree(h, net.minecraft.data.worldgen.features.TreeFeatures.MEGA_JUNGLE_TREE, 18, 18, seed);
+            h.assertTrue(logs >= 60, "a giant jungle tree should grow: " + logs + " logs");
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.IRON_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 4));
+            n.inventory().setItem(1, new ItemStack(Items.DIRT, 32));
+            noLevelUps(n);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] highest = {0};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            var w = woodlandOf(t);
+            var job = woodJob(n);
+            if (w == null || job == null || w.felled < 1 || job.pillar() != null) {
+                return;
+            }
+            for (BlockPos c : java.util.List.of(stump, stump.east(), stump.south(), stump.south().east())) {
+                if (!h.getLevel().getBlockState(c).is(Blocks.JUNGLE_SAPLING)) {
+                    return; // not replanted yet
+                }
+            }
+            List<String> left = new java.util.ArrayList<>();
+            for (BlockPos p : BlockPos.betweenClosed(10, 2, 10, 27, 40, 27)) {
+                if (h.getBlockState(p).is(Blocks.JUNGLE_LOG)) {
+                    left.add(p.immutable().toShortString());
+                }
+            }
+            t.assertTrue(left.isEmpty(), "no jungle log may be left (relative): " + left);
+            t.assertTrue(highest[0] >= 3, "the tree should have been felled from a pillar, the highest was " + highest[0]);
+            t.assertTrue(!scaffoldIn(h, 15, 15, 22, 22, 40), "no scaffold block may be left");
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == 32, "the 32 dirt should be back: " + heldOrStored(t, n, Items.DIRT));
+            t.assertTrue(n.onGround() && n.getBlockY() == stump.getY(), "the woodcutter should end on the ground: " + n.getY());
+            t.succeed();
+        });
+    }
+
+    @GameTest(template = "platform", timeoutTicks = 9000, batch = "wood_tall_vanilla_jungle1", skyAccess = true)
+    public static void woodcutterFellsAVanillaGiantJungleTree(GameTestHelper h) {
+        fellsVanillaGiantJungle(h, 11L);
+    }
+
+    @GameTest(template = "platform", timeoutTicks = 9000, batch = "wood_tall_vanilla_jungle2", skyAccess = true)
+    public static void woodcutterFellsAnotherVanillaGiantJungleTree(GameTestHelper h) {
+        fellsVanillaGiantJungle(h, 23L);
+    }
+
+    @GameTest(template = "platform", timeoutTicks = 9000, batch = "wood_tall_vanilla_jungle3", skyAccess = true)
+    public static void woodcutterFellsAThirdVanillaGiantJungleTree(GameTestHelper h) {
+        fellsVanillaGiantJungle(h, 1L);
+    }
+
     /** Saves the whole NPC (position, backpack, job) and loads it back, as a server restart does. */
     private static void reload(FactionNpc n) {
         CompoundTag tag = n.saveWithoutId(new CompoundTag());

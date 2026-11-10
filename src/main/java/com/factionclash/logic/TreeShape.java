@@ -21,8 +21,12 @@ import java.util.Set;
  * within reach on the way down.
  */
 public final class TreeShape {
-    /** What a block is, as far as felling a tree goes. SAME_LOG is the stump's exact block, in any axis. */
-    public enum Kind { AIR, SAME_LOG, OTHER_LOG, NATURAL_LEAVES, PERSISTENT_LEAVES, GROUND, STRUCTURE, OTHER }
+    /**
+     * What a block is, as far as felling a tree goes. SAME_LOG is the stump's exact block, in any axis. KEPT_LOG is
+     * that block where the woodcutter may not fell it (wood by the walls, in another faction's land, by a known
+     * village): a tree reaching into it, even diagonally, is left whole, or that log would be left hanging.
+     */
+    public enum Kind { AIR, SAME_LOG, OTHER_LOG, NATURAL_LEAVES, PERSISTENT_LEAVES, GROUND, STRUCTURE, OTHER, KEPT_LOG }
 
     /**
      * The survey's answer. TOO_BIG: the same log runs on past the flood's bounds (7 sideways, 32 up or 192 logs), as in
@@ -105,9 +109,18 @@ public final class TreeShape {
         queue.add(new int[]{x, y, z});
         // the same log beyond the bounds, or still waiting when the count ran out: part of the wood was never seen
         boolean cutShort = false;
+        // the tree's own wood where the flood would go on but may not (a giant jungle tree's branch end running
+        // diagonally into the margin by the walls): felling the rest would leave that log hanging, so the tree counts
+        // as touching a structure (the face rule below misses a branch's diagonal steps)
+        boolean touches = false;
         while (!queue.isEmpty() && !cutShort) {
             int[] p = queue.poll();
-            if (!seen.add(key(p[0] - x, p[1] - y, p[2] - z)) || cells.at(p[0], p[1], p[2]) != Kind.SAME_LOG) {
+            if (!seen.add(key(p[0] - x, p[1] - y, p[2] - z))) {
+                continue;
+            }
+            Kind kind = cells.at(p[0], p[1], p[2]);
+            if (kind != Kind.SAME_LOG) {
+                touches |= kind == Kind.KEPT_LOG;
                 continue;
             }
             if (Math.abs(p[0] - x) > MAX_SPREAD || Math.abs(p[2] - z) > MAX_SPREAD || p[1] < y || p[1] > y + MAX_RISE
@@ -133,10 +146,13 @@ public final class TreeShape {
             // cutting what was seen would leave the rest hanging (a neighbour's top over its grounded stub)
             return new Tree(Verdict.TOO_BIG, logs, big, topDy);
         }
+        if (touches) {
+            return new Tree(Verdict.TOUCHES_STRUCTURE, logs, big, topDy);
+        }
         for (int[] p : logs) {
             for (int[] f : FACES) {
                 Kind k = cells.at(p[0] + f[0], p[1] + f[1], p[2] + f[2]);
-                if (k == Kind.STRUCTURE || k == Kind.OTHER_LOG) {
+                if (k == Kind.STRUCTURE || k == Kind.OTHER_LOG || k == Kind.KEPT_LOG) {
                     return new Tree(Verdict.TOUCHES_STRUCTURE, logs, big, topDy);
                 }
             }

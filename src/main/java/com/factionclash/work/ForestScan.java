@@ -279,7 +279,8 @@ public final class ForestScan {
      * trapdoors, walls, glass, wool, carpets, beds, cobblestone, bricks, bookshelves, hay, torches, lanterns, signs and
      * rails are STRUCTURE, and so is anything not loaded; logs of another kind are OTHER_LOG; leaves are split by
      * PERSISTENT; soil (#dirt, mud and muddy mangrove roots included) is GROUND; stone, vines, cocoa and the rest are
-     * OTHER. This keeps faction frame logs, old hut corners and village houses standing.
+     * OTHER; the tree's own log where its wood is protected is KEPT_LOG (the tree is then left whole). This keeps
+     * faction frame logs, old hut corners and village houses standing.
      */
     public static TreeShape.Cells cells(ServerLevel level, CampaignData data, @Nullable BaseState own, Block log, boolean zones) {
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
@@ -297,7 +298,7 @@ public final class ForestScan {
             }
             if (s.is(BlockTags.LOGS)) {
                 if (zones && WorkSafety.protectedWood(level, data, own, m.immutable())) {
-                    return TreeShape.Kind.STRUCTURE;
+                    return s.is(log) ? TreeShape.Kind.KEPT_LOG : TreeShape.Kind.STRUCTURE;
                 }
                 return s.is(log) ? TreeShape.Kind.SAME_LOG : TreeShape.Kind.OTHER_LOG;
             }

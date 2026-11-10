@@ -87,6 +87,25 @@ class TreeShapeTest {
     }
 
     @Test
+    void branchRunningDiagonallyIntoKeptWoodLeavesTheTreeWhole() {
+        // a giant jungle tree's branch leaves the trunk one block out and one up at a time (diagonal steps only)
+        Grid g = oak(12).set(1, 9, 1, Kind.SAME_LOG).set(2, 10, 2, Kind.SAME_LOG);
+        Tree free = TreeShape.survey(g, 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        assertEquals(Verdict.OK, free.verdict());
+        assertTrue(has(free, 2, 10, 2), "a branch's diagonal steps join the flood");
+        // its end lies in wood the woodcutter may not fell (by the walls): felling the rest would leave it hanging
+        g.set(3, 11, 3, Kind.KEPT_LOG);
+        Tree kept = TreeShape.survey(g, 0, 0, 0, false, TreeShape.MAX_TALL_DY);
+        assertEquals(Verdict.TOUCHES_STRUCTURE, kept.verdict(), "a branch running into kept wood leaves the tree whole");
+        assertFalse(has(kept, 3, 11, 3));
+        assertEquals(Verdict.TOUCHES_STRUCTURE, TreeShape.survey(oak(4).set(1, 2, 0, Kind.KEPT_LOG), 0, 0, 0, false).verdict(),
+                "face to face as well");
+        // a built block diagonally beside a branch is still no contact: only the tree's own wood counts there
+        assertEquals(Verdict.OK, TreeShape.survey(oak(12).set(1, 9, 1, Kind.SAME_LOG).set(2, 10, 2, Kind.STRUCTURE), 0, 0, 0, false,
+                TreeShape.MAX_TALL_DY).verdict());
+    }
+
+    @Test
     void logTouchingAnotherSpeciesAborts() {
         Grid g = oak(5).set(0, 2, 1, Kind.OTHER_LOG);
         Tree t = TreeShape.survey(g, 0, 0, 0, false);

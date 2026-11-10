@@ -1247,7 +1247,16 @@ public class WoodcutterJob extends Job {
             p.phase = Scaffold.Phase.WORK;
             return;
         }
-        BlockPos over = p.feet().above(2);
+        BlockPos feet = p.feet();
+        BlockState here = level().getBlockState(feet);
+        if (here.is(BlockTags.CLIMBABLE) && here.canBeReplaced()) {
+            // vines down the trunk: standing in them, a jump only lifts it half a block (it would hang on them), so it
+            // cuts them away first, as a player clears the vines off the spot it pillars up from
+            status("Cutting the vines off its scaffold's column", "Chopping");
+            breaker.tick(npc, feet);
+            return;
+        }
+        BlockPos over = feet.above(2);
         BlockState s = level().getBlockState(over);
         if (!s.getCollisionShape(level(), over).isEmpty()) {
             if (cuttableLeaves(over) || logs.contains(over) && treeLog(over)) {
