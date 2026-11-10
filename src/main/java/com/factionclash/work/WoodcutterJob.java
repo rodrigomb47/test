@@ -7,6 +7,7 @@ import com.factionclash.campaign.MapBounds;
 import com.factionclash.campaign.WorkplaceState;
 import com.factionclash.config.FCConfig;
 import com.factionclash.logic.Affix;
+import com.factionclash.logic.DirtPatch;
 import com.factionclash.logic.ForestRules;
 import com.factionclash.logic.TreeShape;
 import com.factionclash.npc.FactionNpc;
@@ -24,6 +25,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -55,14 +57,15 @@ import java.util.UUID;
  * near bases, in other factions' land or near known villages ({@link WorkSafety#protectedWood}). A tree too tall to
  * fell from the ground (a mega spruce, a giant jungle tree, a fancy oak) is felled from a scaffold pillar of dirt
  * beside the trunk ({@link Scaffold}), when it carries the blocks: it pillars up, fells the tree top down and clears
- * the canopy within reach, then breaks the pillar on the way down, the blocks going back into its backpack; without
- * blocks such a tree is left standing. It speeds its saplings up with real bone meal, keeps a small grove growing in
- * the base's always-ticking work belt (so a base in treeless land still gets wood), takes down the fence of an old
- * save's tree plot, and walks further out to look for trees when none grow near the base. Between dusk and dawn it
- * does not work far outside the walls.
+ * the canopy within reach, then breaks the pillar on the way down, the blocks going back into its backpack. With no
+ * dirt carried or stored it digs its own from open ground ({@link DirtDig}: the top layer of a flat patch, by hand or
+ * with a shovel it carries); with no ground to dig either, such a tree is left standing. It speeds its saplings up
+ * with real bone meal, keeps a small grove growing in the base's always-ticking work belt (so a base in treeless land
+ * still gets wood), takes down the fence of an old save's tree plot, and walks further out to look for trees when none
+ * grow near the base. Between dusk and dawn it does not work far outside the walls.
  */
 public class WoodcutterJob extends Job {
-    enum State { CHECK, STORAGE, CHOP, SCAFFOLD, LEAVES, COLLECT, PLANT, BONEMEAL, DISMANTLE }
+    enum State { CHECK, STORAGE, CHOP, SCAFFOLD, DIG, LEAVES, COLLECT, PLANT, BONEMEAL, DISMANTLE }
 
     /** PROPOSED: logs, sticks and apples carried before a trip to the storehouse. */
     static final int CARGO_LIMIT = 48;
@@ -124,6 +127,14 @@ public class WoodcutterJob extends Job {
      * step clear; bone meal waits this long for the step back before the sapling is left for a while.
      */
     static final int REGROW_WAIT_TICKS = 200, STEP_CLEAR_TICKS = 40;
+    /**
+     * PROPOSED: after finding no ground to dig dirt on near a tall tree, it digs no more for this long (tall trees are
+     * then looked for only with dirt carried or stored, as before), and that tree is left for {@link #TREE_RETRY_TICKS};
+     * digging for one tree is given up after this long, or after this many patches it could not dig.
+     */
+    static final int DIG_RETRY_TICKS = 2400, DIG_GIVE_UP_TICKS = 3600, MAX_DIG_SEARCHES = 3;
+    /** PROPOSED: how far it reaches for the earth it digs (eyes to the block's centre), a player's reach. */
+    static final double DIG_REACH = 4.5;
 
     private State state = State.CHECK;
     /** The tree being felled (its stump, the north-west corner of a 2x2 trunk), the planting spot, the sapling or fence post. */
@@ -192,6 +203,18 @@ public class WoodcutterJob extends Job {
     private boolean wantScaffold;
     private long nextScaffoldTrip, nextScaffoldLook, nextScaffoldSweep;
     private int storedScaffold;
+    /**
+     * Dirt it digs itself for a scaffold when the storehouse has too little (see {@link DirtDig}): the stump of the
+     * tall tree waiting for it, the blocks carried it digs up to, the patch (all its cells, and those still to dig),
+     * the search for one, the cell it digs now and the walk there. Not saved: a reload looks for the tree again.
+     */
+    private BlockPos digFor, digTarget;
+    private int digNeed, digSearches, digWalkTicks, digWalkBudget, digFailBase;
+    private final List<BlockPos> digCells = new ArrayList<>();
+    private final Set<Long> digPatch = new HashSet<>();
+    private DirtDig.Search digSearch;
+    private boolean digChecked;
+    private long digStart, nextDigTry;
 
     public WoodcutterJob(FactionNpc npc) {
         super(npc);
@@ -343,6 +366,7 @@ public class WoodcutterJob extends Job {
             case STORAGE -> storage(b, wp);
             case CHOP -> chop(b, wp);
             case SCAFFOLD -> scaffold(b, wp);
+            case DIG -> dig(b);
             case LEAVES -> breakLeaves(wp);
             case COLLECT -> collectDrops();
             case PLANT -> plant(wp);
@@ -437,16 +461,17 @@ public class WoodcutterJob extends Job {
         if (groveTarget(b, wp)) {
             return;
         }
-        // 9. at night, home; by day, further out to look for trees
+        // 9. at night, home; by day, further out to look for trees. Either way the search reads every column first
+        // (a few patterns, a second or so): a tree near the walls is felled at night too, so going home after one empty
+        // pattern left it standing until the morning.
+        if (!noTreeNearby()) {
+            status("Looking for trees", "Waiting");
+            waitFor(PATTERN_TICKS);
+            return;
+        }
         if (nightRule()) {
             forageTarget = null;
             nightWait(false);
-            return;
-        }
-        if (!noTreeNearby()) {
-            // the search has not read every column yet: finish it before walking out
-            status("Looking for trees", "Waiting");
-            waitFor(PATTERN_TICKS);
             return;
         }
         if (forage(b)) {
@@ -654,18 +679,32 @@ public class WoodcutterJob extends Job {
         return storedScaffold;
     }
 
+    /** How tall a tree it looks for and fells now, digging its own dirt when the storehouse has too little. */
+    private int maxTreeDy() {
+        return maxTreeDy(true);
+    }
+
     /**
      * How tall a tree it looks for and fells now: up to {@link TreeShape#MAX_TALL_DY} when it has the blocks for the
-     * lowest scaffold (carried, or in the storehouse while a trip for them is allowed), else
-     * {@link TreeShape#MAX_FELL_DY}, as without scaffolds: no tall tree is even looked at then.
+     * lowest scaffold (carried, or in the storehouse while a trip for them is allowed), or, with {@code digToo}, when
+     * the storehouse has too few and it may dig its own ({@link #mayDig}); else {@link TreeShape#MAX_FELL_DY}, as
+     * without scaffolds: no tall tree is even looked at then.
      */
-    private int maxTreeDy() {
+    private int maxTreeDy(boolean digToo) {
         int least = TreeShape.scaffoldNeed(TreeShape.MAX_FELL_DY + 1);
         int carried = Scaffold.carried(npc);
-        if (carried >= least || now() >= nextScaffoldTrip && carried + scaffoldStored() >= least) {
+        if (carried >= least) {
             return TreeShape.MAX_TALL_DY;
         }
-        return TreeShape.MAX_FELL_DY;
+        if (carried + scaffoldStored() >= least) {
+            return now() >= nextScaffoldTrip ? TreeShape.MAX_TALL_DY : TreeShape.MAX_FELL_DY;
+        }
+        return digToo && mayDig() ? TreeShape.MAX_TALL_DY : TreeShape.MAX_FELL_DY;
+    }
+
+    /** True unless a search for ground to dig dirt on found none a short while ago ({@link #DIG_RETRY_TICKS}). */
+    private boolean mayDig() {
+        return now() >= nextDigTry;
     }
 
     /**
@@ -686,13 +725,18 @@ public class WoodcutterJob extends Job {
 
     /**
      * Whether it can go for the tree found: any tree it fells from the ground, a tall one only with enough scaffold
-     * blocks ({@link TreeShape#scaffoldNeed}). Short of them it fetches them (and returns false), or leaves the tree
-     * for a while when the storehouse has too few.
+     * blocks ({@link TreeShape#scaffoldNeed}). Short of them it fetches them from the storehouse, or digs its own when
+     * the storehouse has too few (the storehouse's dirt is then left to the builders), and returns false; with no
+     * trip allowed yet and no ground to dig, it leaves the tree for a while.
      */
     private boolean scaffoldReady(ForestScan.Found tree) {
         int need = TreeShape.scaffoldNeed(tree.topDy());
-        if (need <= Scaffold.carried(npc) || fetchScaffold(need, false)) {
-            return need <= Scaffold.carried(npc);
+        int carried = Scaffold.carried(npc);
+        if (need <= carried) {
+            return true;
+        }
+        if (carried + scaffoldStored() >= need ? fetchScaffold(need, false) : startDig(need, tree.stump())) {
+            return false;
         }
         status("Leaving a tall tree for now (no dirt for a scaffold)", "Chopping");
         skipFor(tree.stump(), TREE_RETRY_TICKS);
@@ -709,6 +753,224 @@ public class WoodcutterJob extends Job {
             }
         }
         return false;
+    }
+
+    // ------------------------------------------------------------------ digging its own dirt
+
+    /**
+     * Digs its own dirt for the scaffold of the tall tree with stump {@code tree}, up to {@code need} blocks carried
+     * (the scaffold's need, its spare included), when the storehouse has too few: a player scrapes the top layer off a
+     * patch of open ground. False when it may not dig now (no ground found a short while ago), or the tree lies beyond
+     * the forest radius (dirt is dug only within it, so a tree found foraging needs dirt carried or stored).
+     */
+    private boolean startDig(int need, BlockPos tree) {
+        BaseState b = base();
+        if (!mayDig() || b == null) {
+            return false;
+        }
+        long dx = tree.getX() - b.center.getX(), dz = tree.getZ() - b.center.getZ();
+        long r = BaseZones.workRadius(b, FCConfig.FOREST_RADIUS.get());
+        if (dx * dx + dz * dz > r * r) {
+            return false;
+        }
+        digFor = tree.immutable();
+        digNeed = Math.min(need, Scaffold.CARRY);
+        digCells.clear();
+        digPatch.clear();
+        digSearch = null;
+        digTarget = null;
+        digSearches = 0;
+        digStart = now();
+        breaker.reset(npc);
+        npc.navigator().reset();
+        markBusy();
+        status("Looking for open ground to dig dirt", "Digging");
+        state = State.DIG;
+        return true;
+    }
+
+    /**
+     * One tick of digging dirt: look for a patch ({@link DirtDig.Search}), walk to its nearest cell and dig its top
+     * block at player speed (grass and podzol drop dirt), checking first that it may still be dug
+     * ({@link DirtDig#mayDigNow}: its step out is there, nothing beside it changed). It stops at the need, and when the
+     * tree is gone, taken by another woodcutter or too far out tonight (what it dug stays with it); with no patch, or
+     * after {@link #DIG_GIVE_UP_TICKS}, it leaves the tree for a while.
+     */
+    private void dig(BaseState b) {
+        int carried = Scaffold.carried(npc);
+        if (digFor == null || carried >= digNeed) {
+            endDig(); // on to the tree
+            return;
+        }
+        if (Inv.freeSlots(npc.inventory()) == 0) {
+            endDig();
+            state = State.STORAGE; // (its dirt stays with it)
+            return;
+        }
+        // (a tree it started to fell may have lost its stump already: what is left of it is looked at on its return)
+        if (!digFor.equals(felling) && !isLog(digFor) || ForestScan.TreeClaims.claimedByOther(digFor, npc.getUUID(), now())
+                || remoteAtNight(digFor)) {
+            endDig();
+            return;
+        }
+        if (now() - digStart > DIG_GIVE_UP_TICKS) {
+            giveUpDig();
+            return;
+        }
+        if (digCells.isEmpty()) {
+            if (digSearch == null) {
+                if (digSearches >= MAX_DIG_SEARCHES) {
+                    giveUpDig();
+                    return;
+                }
+                digSearches++;
+                digSearch = new DirtDig.Search(level(), data(), b, digFor, digNeed - carried);
+            }
+            status("Looking for open ground to dig dirt", "Digging");
+            List<BlockPos> found = digSearch.step();
+            if (found == null) {
+                return;
+            }
+            digSearch = null;
+            if (found.isEmpty()) {
+                giveUpDig();
+                return;
+            }
+            digCells.addAll(found);
+            digPatch.clear();
+            for (BlockPos p : found) {
+                digPatch.add(DirtPatch.key(p.getX(), p.getZ()));
+            }
+            digTarget = null;
+        }
+        if (digTarget == null) {
+            digTarget = nextDigCell();
+            digChecked = false;
+            double dx = digTarget.getX() + 0.5 - npc.getX(), dz = digTarget.getZ() + 0.5 - npc.getZ();
+            digWalkTicks = 0;
+            digWalkBudget = ForestRules.walkBudget(SPOT_GIVE_UP_TICKS, Math.sqrt(dx * dx + dz * dz));
+            digFailBase = routeFailures();
+        }
+        if (!DirtDig.earth(level().getBlockState(digTarget))) {
+            dropDigCell(); // dug or changed meanwhile
+            return;
+        }
+        if (!BlockWork.inReach(npc, digTarget, DIG_REACH)) {
+            if (routeFailures() < digFailBase) {
+                digFailBase = routeFailures(); // an arrival elsewhere (an errand) reset the count
+            }
+            if (++digWalkTicks > digWalkBudget || routeFailures() - digFailBase >= TREE_ROUTE_FAILURES) {
+                digCells.clear(); // cannot get to the patch: another one is looked for
+                digTarget = null;
+                breaker.reset(npc);
+                npc.navigator().reset();
+                return;
+            }
+            goTo(digTarget.above(), 2.0, "open ground to dig dirt");
+            return;
+        }
+        if (!npc.getNavigation().isDone()) {
+            npc.getNavigation().stop();
+        }
+        if (!digChecked) {
+            if (!DirtDig.mayDigNow(level(), data(), b, digPatch, digTarget)) {
+                dropDigCell();
+                return;
+            }
+            digChecked = true;
+        }
+        holdDigTool();
+        status("Digging dirt for a scaffold (" + carried + "/" + digNeed + ")", "Digging");
+        if (breaker.tick(npc, digTarget)) {
+            dropDigCell();
+        }
+    }
+
+    /** The cell of the patch it digs next: the nearest, one it does not stand on first. */
+    private BlockPos nextDigCell() {
+        BlockPos best = null;
+        double bestD = Double.MAX_VALUE;
+        AABB body = npc.getBoundingBox();
+        for (BlockPos c : digCells) {
+            double d = c.distToCenterSqr(npc.getX(), npc.getY() - 0.5, npc.getZ()) + (body.intersects(new AABB(c.above())) ? 1000 : 0);
+            if (d < bestD) {
+                bestD = d;
+                best = c;
+            }
+        }
+        return best;
+    }
+
+    private void dropDigCell() {
+        digCells.remove(digTarget);
+        digTarget = null;
+        breaker.reset(npc);
+    }
+
+    /** Done digging (or stopped): back to deciding, the tree first; its axe goes back into its hand (see {@link #usesOtherTool}). */
+    private void endDig() {
+        digFor = null;
+        digTarget = null;
+        digCells.clear();
+        digPatch.clear();
+        digSearch = null;
+        breaker.reset(npc);
+        state = State.CHECK;
+    }
+
+    /**
+     * No ground to dig on (or none it could get to): no more digging for {@link #DIG_RETRY_TICKS}, and the tree is left
+     * for a while ({@link #TREE_RETRY_TICKS}). A tree it started to fell is gone back to as before: with no dirt for
+     * the rest it is left standing as it is ({@link #startPillar}).
+     */
+    private void giveUpDig() {
+        BlockPos tree = digFor;
+        nextDigTry = now() + DIG_RETRY_TICKS;
+        endDig();
+        status("Leaving a tall tree for now (no dirt for a scaffold)", "Chopping");
+        if (tree != null && !tree.equals(felling)) {
+            skipFor(tree, TREE_RETRY_TICKS);
+            ForestScan.TreeClaims.release(tree, npc.getUUID());
+        }
+        treeCache = null;
+        nextScan = now();
+    }
+
+    /**
+     * Earth is dug with a shovel it carries (one without Silk Touch, the best first), as a player switches to it; with
+     * none, with what it holds (an axe digs earth as fast as a hand and wears nothing), unless that has Silk Touch,
+     * which would drop grass blocks: then by hand.
+     */
+    private void holdDigTool() {
+        ItemStack hand = npc.getMainHandItem();
+        if (DirtDig.digTool(hand)) {
+            return;
+        }
+        int shovel = -1, free = -1;
+        for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
+            ItemStack s = npc.inventory().getItem(i);
+            if (DirtDig.digTool(s) && (shovel < 0 || ToolKind.tierOf(s) > ToolKind.tierOf(npc.inventory().getItem(shovel)))) {
+                shovel = i;
+            } else if (s.isEmpty() && free < 0) {
+                free = i;
+            }
+        }
+        if (shovel >= 0) {
+            ItemStack s = npc.inventory().getItem(shovel);
+            npc.inventory().setItem(shovel, hand); // the axe goes into the shovel's slot
+            npc.setItemSlot(EquipmentSlot.MAINHAND, s);
+            npc.inventory().setChanged();
+        } else if (DirtDig.silky(hand) && free >= 0) {
+            npc.inventory().setItem(free, hand);
+            npc.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            npc.inventory().setChanged();
+        }
+    }
+
+    /** While digging dirt it may hold a shovel or nothing: its axe waits in the backpack. */
+    @Override
+    protected boolean usesOtherTool() {
+        return state == State.DIG;
     }
 
     // ------------------------------------------------------------------ felling
@@ -890,7 +1152,8 @@ public class WoodcutterJob extends Job {
         }
         int need = plan.height() + TreeShape.PILLAR_SPARE;
         if (Scaffold.carried(npc) < need) {
-            if (fetchScaffold(need, resume)) {
+            if (fetchScaffold(need, resume)
+                    || Scaffold.carried(npc) + scaffoldStored() < need && startDig(need, spot)) {
                 surveyed = false; // the tree is looked at again on its return
                 return true;
             }
@@ -2143,8 +2406,9 @@ public class WoodcutterJob extends Job {
             // every column around the forage point is read (all four patterns), so a lone tree there is not missed
             ForestScan.Found tree = null;
             for (int i = 0; i < ForestScan.PATTERNS && tree == null; i++) {
+                // (dirt is dug only within the forest radius: out here a tall tree needs dirt carried or stored)
                 tree = ForestScan.findTree(level(), data(), b, npc, npc.blockPosition(), FORAGE_SCAN, badWild, scans++,
-                        this::passOver, maxTreeDy());
+                        this::passOver, maxTreeDy(false));
             }
             if (tree != null) {
                 forageFails = 0;
@@ -2390,7 +2654,7 @@ public class WoodcutterJob extends Job {
         }
         surveyed = false;
         walkBudget = 0; // a walk under way starts over, with its allowance from where the woodcutter now stands
-        if (!current || state == State.PLANT || state == State.BONEMEAL || state == State.DISMANTLE
+        if (!current || state == State.PLANT || state == State.BONEMEAL || state == State.DISMANTLE || state == State.DIG
                 || spot == null && state != State.STORAGE && state != State.CHECK) {
             state = State.CHECK;
         }

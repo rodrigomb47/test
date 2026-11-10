@@ -72,7 +72,7 @@ public abstract class Job {
             return false;
         }
         NpcRole role = npc.getRole();
-        if (role.tool == ToolKind.NONE || role.tool.matches(npc.tool())) {
+        if (role.tool == ToolKind.NONE || role.tool.matches(npc.tool()) || usesOtherTool()) {
             // it has its tool, however it came (a job's own visit to the storehouse, a spare): the time without one
             // starts afresh the next time it breaks
             toolMissingSince = -1;
@@ -120,6 +120,15 @@ public abstract class Job {
             nextMealTrip = now() + 600;
             return true;
         }
+        return false;
+    }
+
+    /**
+     * True while the job holds another tool than its role's for a moment, as a player switches hotbar slots (a
+     * woodcutter digging earth with a shovel or a bare hand): the role's tool waits in the backpack meanwhile and is
+     * taken back into the hand once this is false again.
+     */
+    protected boolean usesOtherTool() {
         return false;
     }
 

@@ -3721,7 +3721,9 @@ public final class FCGameTests {
     /**
      * Hungry on its scaffold with nothing to eat in its backpack, the woodcutter comes down first, breaking the pillar
      * as it goes, fetches food from the storehouse, then comes back, builds a new pillar and finishes the tree. At no
-     * time is a pillar left standing without it on top.
+     * time is a pillar left standing without it on top. (Meals it packed at the storehouse before, as when the test
+     * starts at night and it waits there for daylight, go back into the storehouse when it is made hungry: with food
+     * in its backpack it would rightly eat up there and never come down.)
      */
     @GameTest(template = "platform", timeoutTicks = 4000, batch = "wood_tall_errand", skyAccess = true)
     public static void woodcutterComesDownItsScaffoldForAnErrand(GameTestHelper h) {
@@ -3749,6 +3751,9 @@ public final class FCGameTests {
             }
             if (phase[0] == 0 && pillar != null && pillar.phase == com.factionclash.work.Scaffold.Phase.WORK && pillar.height >= 4
                     && job.felling() != null) {
+                for (ItemStack food : com.factionclash.work.Inv.remove(n.inventory(), com.factionclash.work.Job::isProvision, 64)) {
+                    FactionStorage.insert(h.getLevel(), t.base, food);
+                }
                 n.hunger().set(4, 0, 0);
                 phase[0] = 1;
                 return;
@@ -3774,8 +3779,9 @@ public final class FCGameTests {
     }
 
     /**
-     * Without blocks for a scaffold (none carried, none stored) a woodcutter leaves a tall tree standing exactly as
-     * before: it fells the ordinary birch beside it and never touches the 13-log jungle tree or builds anything.
+     * Without blocks for a scaffold (none carried, none stored) and no open ground to dig dirt from (the platform is
+     * stone; the only grass lies under the two trunks), a woodcutter leaves a tall tree standing exactly as before: it
+     * fells the ordinary birch beside it and never touches the 13-log jungle tree or builds anything.
      */
     @GameTest(template = "platform", timeoutTicks = 2000, batch = "wood_tall_none", skyAccess = true)
     public static void woodcutterWithoutScaffoldBlocksLeavesATallTree(GameTestHelper h) {
@@ -3809,6 +3815,180 @@ public final class FCGameTests {
                 t.assertTrue(w.felled == 1, "only the birch: " + w.felled);
                 t.succeed();
             }
+        });
+    }
+
+    // ------------------------------------------------------------------ dirt dug for a scaffold
+
+    /** Lays grass at relative (x, 1, z) over the box, with dirt under it at y 0 (the floor a dug cell leaves). */
+    private static java.util.List<BlockPos> grassPatch(GameTestHelper h, int x0, int z0, int x1, int z1) {
+        java.util.List<BlockPos> out = new java.util.ArrayList<>();
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                h.setBlock(new BlockPos(x, 0, z), Blocks.DIRT);
+                h.setBlock(new BlockPos(x, 1, z), Blocks.GRASS_BLOCK);
+                out.add(new BlockPos(x, 1, z));
+            }
+        }
+        return out;
+    }
+
+    /** Ground one stands on at relative (x, 1, z): a solid block with two free cells over it. */
+    private static boolean standable(GameTestHelper h, int x, int z) {
+        BlockPos p = new BlockPos(x, 1, z);
+        return !h.getBlockState(p).getCollisionShape(h.getLevel(), h.absolutePos(p)).isEmpty()
+                && h.getBlockState(p.above()).getCollisionShape(h.getLevel(), h.absolutePos(p.above())).isEmpty()
+                && h.getBlockState(p.above(2)).getCollisionShape(h.getLevel(), h.absolutePos(p.above(2))).isEmpty()
+                && h.getBlockState(p.above()).getFluidState().isEmpty();
+    }
+
+    /**
+     * What every dirt-digging test asserts each tick over its grass: a cell dug (no earth left at y 1) was dug one
+     * block deep only (its floor at y 0 is still earth) and keeps a side neighbour to step out onto, one block up.
+     * Returns the cells dug so far.
+     */
+    private static int dugSafely(GameTestBases.Handle t, java.util.List<BlockPos> grass) {
+        GameTestHelper h = t.helper;
+        int dug = 0;
+        for (BlockPos p : grass) {
+            if (com.factionclash.work.DirtDig.earth(h.getBlockState(p))) {
+                continue;
+            }
+            dug++;
+            t.assertTrue(com.factionclash.work.DirtDig.earth(h.getBlockState(p.below())), "dug deeper than one block at " + p.toShortString());
+            t.assertTrue(h.getBlockState(p).isAir() && h.getBlockState(p.above()).isAir(), "a dug cell is open: " + p.toShortString());
+            boolean out = false;
+            for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                BlockPos n = p.relative(d);
+                out |= standable(h, n.getX(), n.getZ());
+            }
+            t.assertTrue(out, "no step out of the dug cell " + p.toShortString());
+        }
+        return dug;
+    }
+
+    /**
+     * A woodcutter with no dirt anywhere (none carried, none in the storehouse) and a tall jungle tree (13 logs) to
+     * fell digs its own: it scrapes the top layer off the open grass south of the base, one block deep, by hand at
+     * player speed, up to what the scaffold needs (7), and then fells the tree from its pillar and replants it. Every
+     * dug cell is one block deep with a step out; the dirt it dug is what it carries at the end (the pillar's blocks
+     * came back); the grass under the trunk is never dug; it is never hurt.
+     */
+    @GameTest(template = "platform", timeoutTicks = 4000, batch = "wood_dig", skyAccess = true)
+    public static void woodcutterDigsDirtForATallTreeFromOpenGround(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 4000);
+        FactionNpc n;
+        BlockPos stump;
+        java.util.List<BlockPos> grass;
+        try {
+            stump = tallTestTree(h, 18, 6, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 13, false);
+            grass = grassPatch(h, 6, 19, 16, 22);
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 1));
+            noLevelUps(n);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int need = com.factionclash.logic.TreeShape.scaffoldNeed(12);
+        int[] highest = {0};
+        boolean[] sawDig = {false};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            int dug = dugSafely(t, grass);
+            t.assertTrue(com.factionclash.work.DirtDig.earth(h.getBlockState(new BlockPos(18, 1, 6))), "the ground under the trunk is never dug");
+            t.assertTrue(FactionStorage.count(h.getLevel(), t.base, x -> x.is(Items.DIRT)) == 0, "no dirt was ever in the storehouse");
+            var job = woodJob(n);
+            if (job != null && "DIG".equals(job.stateName())) {
+                sawDig[0] = true;
+                t.assertTrue(job.pillar() == null, "no scaffold while digging");
+            }
+            var w = woodlandOf(t);
+            if (w == null || job == null || w.felled < 1 || job.pillar() != null || !h.getLevel().getBlockState(stump).is(Blocks.JUNGLE_SAPLING)) {
+                return;
+            }
+            t.assertTrue(sawDig[0], "it should have dug its dirt");
+            t.assertTrue(highest[0] >= 4, "the tree should have been felled from a pillar, the highest was " + highest[0]);
+            t.assertTrue(dug >= need && dug <= need + 1, "it digs what the scaffold needs (" + need + "), dug " + dug);
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == dug, "the dirt it dug is back in its backpack: " + heldOrStored(t, n, Items.DIRT) + " of " + dug);
+            t.assertTrue(!anyIn(h, 15, 2, 3, 21, 18, 9, x -> x.is(Blocks.JUNGLE_LOG)), "no jungle log may be left");
+            t.assertTrue(!scaffoldIn(h, 17, 5, 19, 7, 18), "no scaffold block may be left");
+            t.assertTrue(n.onGround(), "the woodcutter should end on the ground");
+            t.succeed();
+        });
+    }
+
+    /**
+     * Grass lies in every place a woodcutter must not dig, each kept from digging for one reason only: inside the walls
+     * plus 4, on the road strip, round a water source, round a one-block hole (a drop), round the tall tree's trunk and
+     * under its crown, by a stump waiting for replanting, and by a mine's mouth; a farmland and a path block lie in the
+     * one patch it may dig. With no dirt anywhere it digs only that patch, with the stone shovel it carries (its axe
+     * goes back into its hand afterwards), one block deep with a step out from every cell, and fells the tree. None of
+     * the other grass, the farmland or the path is touched.
+     */
+    @GameTest(template = "platform", timeoutTicks = 4000, batch = "wood_dig_safe", skyAccess = true)
+    public static void woodcutterDigsDirtOnlyWhereItMay(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 4000);
+        FactionNpc n;
+        BlockPos stump;
+        java.util.List<BlockPos> legal, kept = new java.util.ArrayList<>();
+        try {
+            stump = tallTestTree(h, 12, 3, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 13, false);
+            legal = grassPatch(h, 8, 20, 16, 21);
+            h.setBlock(new BlockPos(16, 1, 20), Blocks.FARMLAND);
+            h.setBlock(new BlockPos(16, 1, 21), Blocks.DIRT_PATH);
+            legal.removeIf(p -> p.getX() == 16);
+            kept.addAll(grassPatch(h, 9, 17, 15, 18));   // inside the walls plus 4
+            kept.addAll(grassPatch(h, 19, 10, 21, 14));  // the road strip
+            kept.addAll(grassPatch(h, 19, 16, 21, 18));  // round a water source
+            h.setBlock(new BlockPos(20, 1, 17), Blocks.WATER);
+            kept.addAll(grassPatch(h, 3, 16, 5, 18));    // round a hole one block deep
+            h.setBlock(new BlockPos(4, 1, 17), Blocks.AIR);
+            h.setBlock(new BlockPos(4, 0, 17), Blocks.STONE);
+            kept.addAll(grassPatch(h, 11, 2, 13, 4));    // round the trunk, under the crown
+            kept.addAll(grassPatch(h, 19, 4, 21, 6));    // by a stump waiting for its sapling
+            kept.addAll(grassPatch(h, 3, 6, 5, 8));      // by a mine's mouth
+            kept.removeIf(p -> p.equals(new BlockPos(20, 1, 17)) || p.equals(new BlockPos(4, 1, 17)) || p.equals(new BlockPos(12, 1, 3)));
+            t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(2, 2, 7)));
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            woodlandOf(t).addReplant(new com.factionclash.campaign.WorkplaceState.Replant(h.absolutePos(new BlockPos(20, 2, 5)).asLong(),
+                    "DARK_OAK", true, h.getLevel().getGameTime()));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 1));
+            n.inventory().setItem(1, new ItemStack(Items.STONE_SHOVEL));
+            noLevelUps(n);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        int[] highest = {0};
+        boolean[] sawShovel = {false};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            int dug = dugSafely(t, legal);
+            for (BlockPos p : kept) {
+                // (grass under a scaffold block may turn to dirt: still not dug)
+                t.assertTrue(com.factionclash.work.DirtDig.earth(h.getBlockState(p)), "ground it may not dig was dug at " + p.toShortString());
+            }
+            // (farmland with no water dries back to dirt)
+            t.assertTrue(!h.getBlockState(new BlockPos(16, 1, 20)).isAir() && h.getBlockState(new BlockPos(16, 1, 21)).is(Blocks.DIRT_PATH),
+                    "farmland and paths are never dug");
+            var job = woodJob(n);
+            if (job != null && "DIG".equals(job.stateName()) && n.getMainHandItem().is(Items.STONE_SHOVEL)) {
+                sawShovel[0] = true;
+            }
+            var w = woodlandOf(t);
+            if (w == null || job == null || w.felled < 1 || job.pillar() != null || !h.getLevel().getBlockState(stump).is(Blocks.JUNGLE_SAPLING)) {
+                return;
+            }
+            t.assertTrue(dug >= com.factionclash.logic.TreeShape.scaffoldNeed(12), "it should have dug its dirt: " + dug);
+            t.assertTrue(sawShovel[0], "it digs with the shovel it carries");
+            t.assertTrue(n.getMainHandItem().is(Items.STONE_AXE), "its axe is back in its hand: " + n.getMainHandItem());
+            ItemStack shovel = com.factionclash.work.Inv.first(n.inventory(), x -> x.is(Items.STONE_SHOVEL));
+            t.assertTrue(!shovel.isEmpty() && shovel.getDamageValue() > 0, "the shovel wore: " + shovel.getDamageValue());
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == dug, "the dirt it dug is back in its backpack");
+            t.assertTrue(!anyIn(h, 9, 2, 0, 15, 18, 6, x -> x.is(Blocks.JUNGLE_LOG)) && !scaffoldIn(h, 10, 1, 14, 5, 18),
+                    "no jungle log and no scaffold block may be left");
+            t.succeed();
         });
     }
 

@@ -133,7 +133,9 @@ python3 tools/rcon.py "stop"
     woodcutter, builder or miner near it. The crown and 8 logs were left floating. It looks like fire under the
     canopy in a thunderstorm; watch for it.
   - **Dirt supply depends on the ground.** Ember's miners brought 727 dirt, but Grove had 21 and Stoneguard none. A
-    woodcutter keeps up to 32 once fetched, while builders also use dirt.
+    woodcutter keeps up to 32 once fetched, while builders also use dirt. Roadmap phase 1: a woodcutter now digs its
+    own from flat open ground when the storehouse has too little (`docs/design/notes/phase1.md`); a base on bare stone
+    still has none. Not yet checked in a campaign.
   - **Mega tree farms.** A 2x2 stump replanted as four saplings grows a mega tree again (bone meal), so the same 10
     sites gave 29 fellings in six days. That is good wood, but woodcutters spend most of their time there.
   - **Still left standing:** mangroves, huge mushrooms, trees no single pillar reaches, and trees with any log in
@@ -142,8 +144,10 @@ python3 tools/rcon.py "stop"
     next woodcutter.
   - **No direct test for the deferred Regrowth.** The deferral waits until the woodcutter is out of the trunk's room.
     It is random, so it has no GameTest of its own; the bone meal GameTest covers the same room check.
-  - **A possible flake.** `woodcutterComesDownItsScaffoldForAnErrand` failed once in about 12 suite runs. That run
-    was unusual: a broken test was spinning in it.
+  - **The flake is explained.** `woodcutterComesDownItsScaffoldForAnErrand` failed when the suite reached night at
+    its start: the woodcutter went home after one empty search pattern and packed bread, so it later ate on its pillar
+    instead of coming down. The test now takes such food back, and `decide()` finishes the search before going home
+    for the night (`docs/design/notes/phase1.md`).
 - Scouts retreat home from enemy *soldiers* (by choice, see §2.5). The drowned rule (only trident drowned are
   archers; swimming monsters count only when close or hunting) came after the last campaign: re-check in the next
   one that scouts no longer make hundreds of sidesteps along rivers.

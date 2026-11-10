@@ -236,8 +236,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   north-west corner, are all reached from the south-east corner column). Height at most 28 (MAX_PILLAR); blocks
   needed: height + 2 (PILLAR_SPARE). Before walking to a tall tree the woodcutter carries at least
   `scaffoldNeed(top)` blocks (the worst column's height + 2), else fetches up to 32 (Scaffold.CARRY, dirt and coarse
-  dirt together, kept in the backpack when unloading) at most every 2400 ticks; with too few in store the tree is skipped for 12000 ticks.
-  Without at least 4 blocks carried or stored, no tree taller than 8 is even looked for. Building: it stands over
+  dirt together, kept in the backpack when unloading) at most every 2400 ticks; with too few in store it digs its own
+  (below). With no trip allowed yet, or no ground to dig, the tree is skipped for 12000 ticks. Without at least 4
+  blocks carried or stored, and with digging on hold (DIG_RETRY_TICKS), no tree taller than 8 is even looked for; a
+  tree found while foraging (beyond the forest radius) needs dirt carried or stored. Building: it stands over
   the column's middle, cuts a vine out of the cell its feet are in (standing in vines a jump lifts it only half a
   block; giant jungle trunks are hung with them on every side) and natural leaves or the tree's logs in the cell
   above its head, jumps, and places a block in the cell its feet left once they are above it (vanilla jump: about 9
@@ -257,6 +259,33 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   (WorkplaceState.scaffolds, at most 16, PROPOSED): a woodcutter taking the woodland over (the last one died or was
   retrained up there) takes what is left down, looking every 200 ticks. The pillar (column, height, phase) and the
   climbs per tree are saved with the job.
+* Dirt dug for a scaffold (PROPOSED, `DirtPatch`, `DirtDig`, `WoodcutterJob`): only when a tall tree within the
+  forest radius waits for its scaffold and carried + stored dirt is short of its need; the storehouse's dirt is then
+  left to the builders and the woodcutter digs the whole shortfall, up to the need (`scaffoldNeed(top)`, its spare
+  included; at most 32). It digs the top block of grass, dirt, coarse dirt or podzol (they drop dirt; a shovel with
+  Silk Touch is never used, and a Silk Touch axe goes into the backpack) by hand or with the best shovel it carries
+  (switched into its hand for the digging, the axe back afterwards; 4 ticks a grass block with stone, 17 by hand),
+  reach 4.5 (DIG_REACH), into its backpack. Where (all PROPOSED):
+  * Seeds on a lattice 5 apart (SEED_SPACING) within 24 (SEARCH_RADIUS) of the tree, nearest first, 4 a tick
+    (SEEDS_PER_TICK); each lays a patch over the 7x7 window around it (WINDOW 3) in rows along x or z (the way that
+    gives more), two rows dug and the third left standing (ROW_PERIOD 3), so every dug cell has a side neighbour never
+    dug, one block up: its step out. Cells nearest the seed first, at most the shortfall. The first seed giving all of
+    it wins; else the largest patch of at least 4 cells (MIN_CELLS) or of all that is still needed; another patch is
+    looked for when one is used up (3 per tree, MAX_DIG_SEARCHES).
+  * A cell is dug only when its top is earth with a firm floor under it (no fluid, sand or gravel, leaves), only a
+    plant that gives way on it (no flower, sapling or crop), open sky over it, and all eight neighbours ground one
+    stands on (a full solid top, two free cells, no fluid) at its own height: so never beside water, a drop, a step
+    up, a path or farmland, and never on or beside an earlier patch (its cells lie a block below their rims), so
+    nothing is ever dug two deep. Every cell is checked again just before it is dug.
+  * Never within 2 (TREE_CLEARANCE) of a log, leaves or a sapling (from a block below to 4 above); never within 4 of
+    any base's walls (WALLS_MARGIN), in any plan, in protected wood (above), where a miner may not dig
+    (`WorkSafety.mayDig`), within 6 of a fishing spot with water, 8 of a mine origin, 3 of a planted sapling or a stump
+    waiting for one (`WorkSafety.reserved`, DIRT_PIT), on the road strip, within 1 of a grove lattice point of the work
+    belt or of a scaffold column the woodland remembers, outside the forest radius or the map, or in unloaded chunks.
+  * No patch: no digging for 2400 ticks (DIG_RETRY_TICKS) and the tree is skipped for 12000. Digging for one tree
+    stops after 3600 ticks (DIG_GIVE_UP_TICKS); it stops at once (keeping its dirt) when the tree is gone or taken, at
+    nightfall when the tree is far out, or with a full backpack (it unloads first). Not saved: after a reload it looks
+    for the tree again.
 * Protected wood (`WorkSafety.protectedWood`): any base's plan, 2 around a settlement's walls (its own included),
   other bases' land + 8 (lairs + 16), outside the map, within 32 of a village or 48 of a pillager outpost or
   woodland mansion the faction knows.
@@ -307,8 +336,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   or mansion is skipped), at most 2400 ticks a leg, then a look 40 around; the direction moves on only after a miss;
   after 8 misses it rests 6000 ticks. Never at night or from a GameTest base.
 * Night: a woodcutter does no work beyond the walls + 16 between day time 13000 and 23000 (config
-  `remoteWorkInDaylightOnly`); a tree started there waits for daylight. Forage legs, and night waits with no tree
-  started, do not reset its idle time (waiting to finish a started tree counts as busy).
+  `remoteWorkInDaylightOnly`); a tree started there waits for daylight. With nothing else to do it goes home for the
+  night only once its tree search has read every column (4 patterns, 20 ticks apart), so a tree near the walls is
+  still felled at night. Forage legs, and night waits with no tree started, do not reset its idle time (waiting to
+  finish a started tree counts as busy).
 * Idle and retraining: "no trees or saplings" when foraging rests (or is not allowed), nothing is planted or waiting
   to be replanted and no sapling is carried or stored; a second woodcutter of a base whose woodland is held: "no
   woodland of its own".

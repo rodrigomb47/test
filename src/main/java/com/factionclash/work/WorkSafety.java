@@ -157,7 +157,7 @@ public final class WorkSafety {
     }
 
     /** The kinds of work that keep a place free of each other. */
-    public enum Use { MINE_SITE, GROVE, FISH_STAND }
+    public enum Use { MINE_SITE, GROVE, FISH_STAND, DIRT_PIT }
 
     /**
      * The one registry of reserved places: true if {@code p} is kept free of work {@code u} (distances are
@@ -165,7 +165,9 @@ public final class WorkSafety {
      * has water, and 6 away from the saplings a woodcutter planted and the stumps waiting to be replanted; a grove
      * sapling keeps 6 away from any mine origin and from such a fishing spot, and off the base's road strip (|dz| at
      * most 3 for |dx| up to the walls plus 30); a fisherman's stand keeps 8 away from any mine origin and 1 away from
-     * a planted sapling. Fishing spots without known water are placeholders at a base centre and reserve nothing.
+     * a planted sapling; a woodcutter digging dirt for a scaffold keeps 6 away from such a fishing spot, 8 from any
+     * mine origin (its mouth and stairs), 3 from planted saplings and stumps waiting to be replanted, and off the road
+     * strip. Fishing spots without known water are placeholders at a base centre and reserve nothing.
      */
     public static boolean reserved(CampaignData d, BaseState own, BlockPos p, Use u) {
         if (u == Use.MINE_SITE && nearGrownTrees(d, p, TREE_SITE_RADIUS, true)) {
@@ -174,9 +176,12 @@ public final class WorkSafety {
         if (u == Use.FISH_STAND && nearGrownTrees(d, p, SAPLING_STAND_RADIUS, false)) {
             return true;
         }
+        if (u == Use.DIRT_PIT && nearGrownTrees(d, p, SAPLING_PIT_RADIUS, true)) {
+            return true;
+        }
         int fisheryRadius = switch (u) {
             case MINE_SITE -> 12;
-            case GROVE -> 6;
+            case GROVE, DIRT_PIT -> 6;
             case FISH_STAND -> -1;
         };
         if (fisheryRadius >= 0) {
@@ -187,7 +192,7 @@ public final class WorkSafety {
                 }
             }
         }
-        if (u == Use.GROVE && own != null) {
+        if ((u == Use.GROVE || u == Use.DIRT_PIT) && own != null) {
             int dx = p.getX() - own.center.getX(), dz = p.getZ() - own.center.getZ();
             if (ForestRules.onRoadStrip(dx, dz, BaseZones.half(own))) {
                 return true;
@@ -195,7 +200,7 @@ public final class WorkSafety {
         }
         int mineRadius = switch (u) {
             case GROVE -> 6;
-            case FISH_STAND -> 8;
+            case FISH_STAND, DIRT_PIT -> 8;
             case MINE_SITE -> -1;
         };
         if (mineRadius >= 0) {
@@ -209,8 +214,11 @@ public final class WorkSafety {
         return false;
     }
 
-    /** PROPOSED: a mine site keeps this far (Chebyshev) from the trees a woodcutter grows; a fisherman's stand this far. */
-    static final int TREE_SITE_RADIUS = 6, SAPLING_STAND_RADIUS = 1;
+    /**
+     * PROPOSED: a mine site keeps this far (Chebyshev) from the trees a woodcutter grows; a fisherman's stand this far;
+     * dirt dug for a scaffold this far.
+     */
+    static final int TREE_SITE_RADIUS = 6, SAPLING_STAND_RADIUS = 1, SAPLING_PIT_RADIUS = 3;
 
     /**
      * True if {@code p} is within {@code r} of a sapling any base's woodcutter planted, or (with {@code stumps}) of a
