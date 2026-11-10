@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * The world side of {@link DirtPatch}: where a woodcutter may dig its own dirt for a scaffold when the storehouse has
@@ -39,7 +40,8 @@ import java.util.Set;
  * base's plan, not in wood that is not the faction's ({@link WorkSafety#protectedWood}: other factions' land, by a
  * known village, outpost or mansion), where a worker may dig ({@link WorkSafety#mayDig}), not reserved for other work
  * ({@link WorkSafety#reserved} with {@link WorkSafety.Use#DIRT_PIT}: fishing spots, mine mouths, saplings and stumps,
- * the road strip), not by a grove lattice point of the work belt, and not by a scaffold column a woodland remembers.
+ * the road strip), not by a grove lattice point of the work belt, not by a scaffold column a woodland remembers, and
+ * not where the woodcutter itself keeps away for now ({@code keepOut}: far out at night, ground it could not get to).
  */
 public final class DirtDig {
     private DirtDig() {
@@ -77,16 +79,18 @@ public final class DirtDig {
         private final ServerLevel level;
         private final CampaignData data;
         private final BaseState own;
+        private final Predicate<BlockPos> keepOut;
         private final Map<Long, LevelChunk> chunks = new HashMap<>();
         private final Map<Long, DirtPatch.Column> columns = new HashMap<>();
         private final Map<Long, Boolean> woody = new HashMap<>(), allowed = new HashMap<>();
         private final BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
         private static final DirtPatch.Column UNSEEN = new DirtPatch.Column(Integer.MIN_VALUE, false, false);
 
-        View(ServerLevel level, CampaignData data, BaseState own) {
+        View(ServerLevel level, CampaignData data, BaseState own, Predicate<BlockPos> keepOut) {
             this.level = level;
             this.data = data;
             this.own = own;
+            this.keepOut = keepOut;
         }
 
         private LevelChunk chunk(int x, int z) {
@@ -169,6 +173,9 @@ public final class DirtDig {
         /** The rules of the place for digging the earth at {@code at}: nothing growing near it, no place kept from digging. */
         private boolean placeAllows(BlockPos at) {
             int x = at.getX(), y = at.getY(), z = at.getZ();
+            if (keepOut.test(at)) {
+                return false;
+            }
             for (int dx = -TREE_CLEARANCE; dx <= TREE_CLEARANCE; dx++) {
                 for (int dz = -TREE_CLEARANCE; dz <= TREE_CLEARANCE; dz++) {
                     if (woodyAt(x + dx, y, z + dz)) {
@@ -255,10 +262,10 @@ public final class DirtDig {
         private int cursor;
         private List<int[]> best = List.of();
 
-        Search(ServerLevel level, CampaignData data, BaseState own, BlockPos tree, int need) {
+        Search(ServerLevel level, CampaignData data, BaseState own, BlockPos tree, int need, Predicate<BlockPos> keepOut) {
             this.seeds = DirtPatch.seeds(tree.getX(), tree.getZ(), DirtPatch.SEARCH_RADIUS, DirtPatch.SEED_SPACING);
             this.need = need;
-            this.view = new View(level, data, own);
+            this.view = new View(level, data, own, keepOut);
         }
 
         /** Looks at the next few seeds: null while the search goes on, else the cells to dig (empty: no patch at all). */
@@ -292,7 +299,8 @@ public final class DirtDig {
      * True when the patch cell {@code cell} may be dug now, with the world as it is: {@link DirtPatch#mayDigNow} over
      * a fresh view, the patch being {@code patch} (keys of {@link DirtPatch#key}).
      */
-    static boolean mayDigNow(ServerLevel level, CampaignData data, BaseState own, Set<Long> patch, BlockPos cell) {
-        return DirtPatch.mayDigNow(new View(level, data, own), patch, cell.getX(), cell.getY(), cell.getZ());
+    static boolean mayDigNow(ServerLevel level, CampaignData data, BaseState own, Set<Long> patch, BlockPos cell,
+                             Predicate<BlockPos> keepOut) {
+        return DirtPatch.mayDigNow(new View(level, data, own, keepOut), patch, cell.getX(), cell.getY(), cell.getZ());
     }
 }

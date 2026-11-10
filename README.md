@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `21a75547798b47f9d40aaaef0c0ec0ec8a51b440d5ce7c97cb535ec4dd341b3e`
+SHA-256: `3bee1bc103feba3b857d10814bf414186f13b62132bfb15c72843c55e8c8e5e6`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -399,7 +399,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   step out from every cell, never beside water, a drop or an earlier patch), branch ends in protected wood, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 110 GameTests on a real headless server, including **miners** (digs its own
+* `./gradlew runGameTestServer` — 112 GameTests on a real headless server, including **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
   a resting mine; a mine set aside keeps only the ground it dug), **woodcutters** (fells a tree and replants the same
@@ -408,7 +408,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   flowers first; fells a mega spruce and a tall jungle tree from a dirt scaffold and leaves no log or block behind,
   replants the spruce as a square of four, resumes its scaffold after reloads, comes down it for food, digs its own
   dirt from open grass (one block deep, a step out from every cell, never in the places kept from digging, with a
-  shovel it carries) and fells the tall tree with it, leaves tall trees alone with no dirt and no ground to dig, leaves
+  shovel it carries) and fells the tall tree with it, digs elsewhere when it cannot get to a patch, leaves tall trees
+  alone with no dirt and no ground to dig, leaves
   no log hanging when a climb is cut short, takes down a pillar a dead woodcutter
   left, builds its pillar through a trunk's vines, fells three vanilla giant jungle trees grown from the real feature,
   leaves a tree whose branch end lies by the walls, steps out of a sapling's way before it grows; any NPC left on a
@@ -422,7 +423,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   **critical hits and sweeps**, **shields** (up against an archer, an axe knocks it aside), **wounded withdrawal and
   archer kiting**, **gear wear** (sword per hit,
   armour per hit taken, pickaxe per block, a used-up pickaxe breaking), **hunger** (a hungry NPC eats its bread, not
-  rotten flesh, unless starving; only a fed NPC heals), **anvil repair rules**, **digging out** (sealed in
+  rotten flesh, unless starving; only a fed NPC heals), **anvil repair rules** (and no new axe for a woodcutter whose
+  axe is only put away while it digs), **digging out** (sealed in
   rock it climbs out by a staircase; on a canopy or a tall trunk it chops its way down; just above its goal it digs
   down; a gap is bridged with exactly one block per step; a miner in a pit beside a settlement's protected floor and
   wall builds itself up beside the edge and walks round to the storehouse), the **enchanter** at a real table (levels and lapis paid,

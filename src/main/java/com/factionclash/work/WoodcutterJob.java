@@ -135,6 +135,12 @@ public class WoodcutterJob extends Job {
     static final int DIG_RETRY_TICKS = 2400, DIG_GIVE_UP_TICKS = 3600, MAX_DIG_SEARCHES = 3;
     /** PROPOSED: how far it reaches for the earth it digs (eyes to the block's centre), a player's reach. */
     static final double DIG_REACH = 4.5;
+    /**
+     * PROPOSED: the ground round a patch it could not get to (this far, Chebyshev, from the patch's middle: its whole
+     * window and a little beyond) is not dug for this long, so the next search looks elsewhere instead of walking at the
+     * same cliff top or fenced field again; at most this many such places are remembered (not saved).
+     */
+    static final int DIG_AVOID_RADIUS = 2 * DirtPatch.WINDOW, DIG_AVOID_TICKS = TREE_RETRY_TICKS, MAX_DIG_AVOID = 16;
 
     private State state = State.CHECK;
     /** The tree being felled (its stump, the north-west corner of a 2x2 trunk), the planting spot, the sapling or fence post. */
@@ -215,6 +221,9 @@ public class WoodcutterJob extends Job {
     private DirtDig.Search digSearch;
     private boolean digChecked;
     private long digStart, nextDigTry;
+    /** The middle of the patch being dug (x, z), and the ground it keeps away from for now as {x, z, until}. */
+    private int digMidX, digMidZ;
+    private final List<long[]> digAvoid = new ArrayList<>();
 
     public WoodcutterJob(FactionNpc npc) {
         super(npc);
@@ -794,7 +803,8 @@ public class WoodcutterJob extends Job {
      * block at player speed (grass and podzol drop dirt), checking first that it may still be dug
      * ({@link DirtDig#mayDigNow}: its step out is there, nothing beside it changed). It stops at the need, and when the
      * tree is gone, taken by another woodcutter or too far out tonight (what it dug stays with it); with no patch, or
-     * after {@link #DIG_GIVE_UP_TICKS}, it leaves the tree for a while.
+     * after {@link #DIG_GIVE_UP_TICKS}, it leaves the tree for a while. A patch it cannot get to is left with the ground
+     * round it ({@link #DIG_AVOID_RADIUS}); at night it digs nothing beyond the walls + 16 ({@link #keptFromDigging}).
      */
     private void dig(BaseState b) {
         int carried = Scaffold.carried(npc);
@@ -824,7 +834,7 @@ public class WoodcutterJob extends Job {
                     return;
                 }
                 digSearches++;
-                digSearch = new DirtDig.Search(level(), data(), b, digFor, digNeed - carried);
+                digSearch = new DirtDig.Search(level(), data(), b, digFor, digNeed - carried, this::keptFromDigging);
             }
             status("Looking for open ground to dig dirt", "Digging");
             List<BlockPos> found = digSearch.step();
@@ -838,9 +848,16 @@ public class WoodcutterJob extends Job {
             }
             digCells.addAll(found);
             digPatch.clear();
+            int x0 = Integer.MAX_VALUE, x1 = Integer.MIN_VALUE, z0 = Integer.MAX_VALUE, z1 = Integer.MIN_VALUE;
             for (BlockPos p : found) {
                 digPatch.add(DirtPatch.key(p.getX(), p.getZ()));
+                x0 = Math.min(x0, p.getX());
+                x1 = Math.max(x1, p.getX());
+                z0 = Math.min(z0, p.getZ());
+                z1 = Math.max(z1, p.getZ());
             }
+            digMidX = Math.floorDiv(x0 + x1, 2);
+            digMidZ = Math.floorDiv(z0 + z1, 2);
             digTarget = null;
         }
         if (digTarget == null) {
@@ -851,7 +868,13 @@ public class WoodcutterJob extends Job {
             digWalkBudget = ForestRules.walkBudget(SPOT_GIVE_UP_TICKS, Math.sqrt(dx * dx + dz * dz));
             digFailBase = routeFailures();
         }
-        if (!DirtDig.earth(level().getBlockState(digTarget))) {
+        if (remoteAtNight(digTarget)) {
+            dropDigCell(); // nightfall: no digging far out until daylight (a new search keeps near the walls)
+            return;
+        }
+        // (its chunk is only read while loaded: a block read would load it, and the walk there loads it anyway)
+        boolean loaded = level().isLoaded(digTarget);
+        if (loaded && !DirtDig.earth(level().getBlockState(digTarget))) {
             dropDigCell(); // dug or changed meanwhile
             return;
         }
@@ -860,7 +883,10 @@ public class WoodcutterJob extends Job {
                 digFailBase = routeFailures(); // an arrival elsewhere (an errand) reset the count
             }
             if (++digWalkTicks > digWalkBudget || routeFailures() - digFailBase >= TREE_ROUTE_FAILURES) {
-                digCells.clear(); // cannot get to the patch: another one is looked for
+                // cannot get to the patch (a cliff top, a fenced field): that ground is left for a while and another
+                // patch is looked for, not the same one again
+                avoidDigPatch();
+                digCells.clear();
                 digTarget = null;
                 breaker.reset(npc);
                 npc.navigator().reset();
@@ -869,11 +895,15 @@ public class WoodcutterJob extends Job {
             goTo(digTarget.above(), 2.0, "open ground to dig dirt");
             return;
         }
+        if (!loaded) {
+            dropDigCell();
+            return;
+        }
         if (!npc.getNavigation().isDone()) {
             npc.getNavigation().stop();
         }
         if (!digChecked) {
-            if (!DirtDig.mayDigNow(level(), data(), b, digPatch, digTarget)) {
+            if (!DirtDig.mayDigNow(level(), data(), b, digPatch, digTarget, this::keptFromDigging)) {
                 dropDigCell();
                 return;
             }
@@ -905,6 +935,35 @@ public class WoodcutterJob extends Job {
         digCells.remove(digTarget);
         digTarget = null;
         breaker.reset(npc);
+    }
+
+    /**
+     * True where it digs no dirt now: beyond the walls + 16 at night (remote work waits for daylight, as for trees:
+     * the patch can lie 27 blocks from a tree by the walls), or round a patch it could not get to a short while ago.
+     */
+    private boolean keptFromDigging(BlockPos p) {
+        if (remoteAtNight(p)) {
+            return true;
+        }
+        long t = now();
+        digAvoid.removeIf(a -> a[2] <= t);
+        for (long[] a : digAvoid) {
+            if (Math.max(Math.abs(p.getX() - a[0]), Math.abs(p.getZ() - a[1])) <= DIG_AVOID_RADIUS) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The patch being dug could not be got to: the ground round its middle is left for {@link #DIG_AVOID_TICKS}. */
+    private void avoidDigPatch() {
+        if (digPatch.isEmpty()) {
+            return;
+        }
+        if (digAvoid.size() >= MAX_DIG_AVOID) {
+            digAvoid.remove(0);
+        }
+        digAvoid.add(new long[]{digMidX, digMidZ, now() + DIG_AVOID_TICKS});
     }
 
     /** Done digging (or stopped): back to deciding, the tree first; its axe goes back into its hand (see {@link #usesOtherTool}). */

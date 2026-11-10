@@ -135,7 +135,8 @@ python3 tools/rcon.py "stop"
   - **Dirt supply depends on the ground.** Ember's miners brought 727 dirt, but Grove had 21 and Stoneguard none. A
     woodcutter keeps up to 32 once fetched, while builders also use dirt. Roadmap phase 1: a woodcutter now digs its
     own from flat open ground when the storehouse has too little (`docs/design/notes/phase1.md`); a base on bare stone
-    still has none. Not yet checked in a campaign.
+    still has none. Reviewed (night rule, unreachable patches, the blacksmith's axe count fixed); not yet checked
+    in a campaign.
   - **Mega tree farms.** A 2x2 stump replanted as four saplings grows a mega tree again (bone meal), so the same 10
     sites gave 29 fellings in six days. That is good wood, but woodcutters spend most of their time there.
   - **Still left standing:** mangroves, huge mushrooms, trees no single pillar reaches, and trees with any log in

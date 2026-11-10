@@ -1273,6 +1273,47 @@ public final class FCGameTests {
         }
     }
 
+    /**
+     * A woodcutter digging dirt for a scaffold holds a shovel, its axe put away in its backpack meanwhile: the
+     * blacksmith does not take that for a missing axe and make a new one. One with no axe at all does get one.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void blacksmithMakesNoAxeForOnePutAwayWhileDigging(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.COBBLESTONE, 32));
+            FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.STICK, 16));
+            FactionNpc smith = t.npc(6, 6, NpcRole.BLACKSMITH);
+            FactionNpc digger = t.npc(8, 8, NpcRole.WOODCUTTER);
+            digger.equip(new ItemStack(Items.STONE_SHOVEL));
+            digger.inventory().setItem(3, new ItemStack(Items.STONE_AXE));
+            java.lang.reflect.Method plan = com.factionclash.work.BlacksmithJob.class.getDeclaredMethod("planOrders");
+            plan.setAccessible(true);
+            java.util.function.BooleanSupplier axeOrdered = () -> {
+                try {
+                    for (Object o : (List<?>) plan.invoke(smith.job())) {
+                        if (((com.factionclash.work.BlacksmithJob.Order) o).reason().equals("replacing a worn-out axe")) {
+                            return true;
+                        }
+                    }
+                    return false;
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+            };
+            t.assertTrue(!axeOrdered.getAsBoolean(), "an axe put away for a moment is no missing axe");
+            digger.inventory().setItem(3, ItemStack.EMPTY);
+            t.assertTrue(axeOrdered.getAsBoolean(), "a woodcutter with no axe at all gets a new one");
+            t.succeed();
+        } catch (ReflectiveOperationException e) {
+            t.cleanup();
+            throw new IllegalStateException(e);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
     @GameTest(template = "platform", timeoutTicks = 400, batch = "mine_rest")
     public static void minerFetchesABetterPickaxeForARestingMine(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 400);
@@ -3987,6 +4028,79 @@ public final class FCGameTests {
             t.assertTrue(!shovel.isEmpty() && shovel.getDamageValue() > 0, "the shovel wore: " + shovel.getDamageValue());
             t.assertTrue(heldOrStored(t, n, Items.DIRT) == dug, "the dirt it dug is back in its backpack");
             t.assertTrue(!anyIn(h, 9, 2, 0, 15, 18, 6, x -> x.is(Blocks.JUNGLE_LOG)) && !scaffoldIn(h, 10, 1, 14, 5, 18),
+                    "no jungle log and no scaffold block may be left");
+            t.succeed();
+        });
+    }
+
+    /**
+     * A patch the woodcutter cannot get to (its walk there runs out, as on a cliff top or in a fenced field) is left
+     * with the ground round it: the next search finds the open grass further from the tree instead of the same patch
+     * again, and the tree is felled with that dirt. The grass nearer the tree (north of the base) is never dug; the
+     * walk there is cut short by the test the first time it heads for it.
+     */
+    @GameTest(template = "platform", timeoutTicks = 4000, batch = "wood_dig_avoid", skyAccess = true)
+    public static void woodcutterDigsElsewhereWhenItCannotGetToAPatch(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 4000);
+        FactionNpc n;
+        BlockPos stump;
+        java.util.List<BlockPos> near, far;
+        java.lang.reflect.Field target, walkTicks, walkBudget;
+        try {
+            stump = tallTestTree(h, 18, 6, Blocks.JUNGLE_LOG, Blocks.JUNGLE_LEAVES, 13, false);
+            near = grassPatch(h, 9, 2, 15, 4);   // nearest the tree: the patch it "cannot get to"
+            far = grassPatch(h, 6, 19, 16, 22);  // south of the base, further from the tree
+            n = testWoodcutter(t, 8, 12, new ItemStack(Items.STONE_AXE));
+            n.inventory().setItem(0, new ItemStack(Items.JUNGLE_SAPLING, 1));
+            noLevelUps(n);
+            Class<?> jc = com.factionclash.work.WoodcutterJob.class;
+            target = jc.getDeclaredField("digTarget");
+            walkTicks = jc.getDeclaredField("digWalkTicks");
+            walkBudget = jc.getDeclaredField("digWalkBudget");
+            for (java.lang.reflect.Field f : new java.lang.reflect.Field[]{target, walkTicks, walkBudget}) {
+                f.setAccessible(true);
+            }
+        } catch (ReflectiveOperationException e) {
+            t.cleanup();
+            throw new IllegalStateException(e);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        BlockPos nearMin = h.absolutePos(new BlockPos(9, 1, 2)), nearMax = h.absolutePos(new BlockPos(15, 1, 4));
+        int need = com.factionclash.logic.TreeShape.scaffoldNeed(12);
+        int[] highest = {0};
+        boolean[] cut = {false};
+        t.onEachTick(() -> {
+            scaffoldSafety(t, n, highest);
+            int dug = dugSafely(t, far);
+            for (BlockPos p : near) {
+                t.assertTrue(com.factionclash.work.DirtDig.earth(h.getBlockState(p)), "ground it could not get to was dug at " + p.toShortString());
+            }
+            var job = woodJob(n);
+            if (job != null && "DIG".equals(job.stateName())) {
+                BlockPos at;
+                try {
+                    at = (BlockPos) target.get(job);
+                    if (at != null && !cut[0] && !com.factionclash.work.BlockWork.inReach(n, at, 4.5)
+                            && at.getX() >= Math.min(nearMin.getX(), nearMax.getX()) && at.getX() <= Math.max(nearMin.getX(), nearMax.getX())
+                            && at.getZ() >= Math.min(nearMin.getZ(), nearMax.getZ()) && at.getZ() <= Math.max(nearMin.getZ(), nearMax.getZ())) {
+                        walkTicks.setInt(job, walkBudget.getInt(job)); // the walk there runs out on the next tick
+                        cut[0] = true;
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+            var w = woodlandOf(t);
+            if (w == null || job == null || w.felled < 1 || job.pillar() != null || !h.getLevel().getBlockState(stump).is(Blocks.JUNGLE_SAPLING)) {
+                return;
+            }
+            t.assertTrue(cut[0], "it should first have headed for the patch nearest the tree");
+            t.assertTrue(highest[0] >= 4, "the tree should have been felled from a pillar, the highest was " + highest[0]);
+            t.assertTrue(dug >= need && dug <= need + 1, "it digs what the scaffold needs (" + need + ") from the far grass, dug " + dug);
+            t.assertTrue(heldOrStored(t, n, Items.DIRT) == dug, "the dirt it dug is back in its backpack");
+            t.assertTrue(!anyIn(h, 15, 2, 3, 21, 18, 9, x -> x.is(Blocks.JUNGLE_LOG)) && !scaffoldIn(h, 17, 5, 19, 7, 18),
                     "no jungle log and no scaffold block may be left");
             t.succeed();
         });

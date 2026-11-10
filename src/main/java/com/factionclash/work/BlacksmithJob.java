@@ -188,7 +188,13 @@ public class BlacksmithJob extends Job {
             java.util.Map<ToolKind, Integer> lacking = new java.util.EnumMap<>(ToolKind.class);
             for (FactionNpc n : crew) {
                 ToolKind k = n.getRole().tool;
-                if (k != ToolKind.NONE && (!k.matches(n.tool()) || worn(n.tool()))) {
+                if (k == ToolKind.NONE) {
+                    continue;
+                }
+                // the tool in its hand, else one in its backpack: a spare it takes up next, or its own put away for a
+                // moment (a woodcutter digging dirt for a scaffold holds a shovel or nothing meanwhile)
+                ItemStack own = k.matches(n.tool()) ? n.tool() : Inv.first(n.inventory(), k::matches);
+                if (own.isEmpty() || worn(own)) {
                     lacking.merge(k, 1, Integer::sum);
                 }
             }

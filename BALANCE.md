@@ -282,6 +282,12 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
     (`WorkSafety.mayDig`), within 6 of a fishing spot with water, 8 of a mine origin, 3 of a planted sapling or a stump
     waiting for one (`WorkSafety.reserved`, DIRT_PIT), on the road strip, within 1 of a grove lattice point of the work
     belt or of a scaffold column the woodland remembers, outside the forest radius or the map, or in unloaded chunks.
+    At night (`remoteWorkInDaylightOnly`) nothing beyond the walls + 16 is dug, as for trees: a patch can lie 27 blocks
+    from a tree by the walls, so the search and every cell keep to that, and a cell left beyond it at nightfall is
+    dropped.
+  * A patch it cannot get to (its walk runs out: 600 ticks + 8 a block, or 3 failed routes) is left, and so is the
+    ground within 6 (DIG_AVOID_RADIUS, Chebyshev) of the patch's middle for 12000 ticks (DIG_AVOID_TICKS, at most 16
+    such places, not saved), so the next search looks elsewhere instead of walking at the same cliff top again.
   * No patch: no digging for 2400 ticks (DIG_RETRY_TICKS) and the tree is skipped for 12000. Digging for one tree
     stops after 3600 ticks (DIG_GIVE_UP_TICKS); it stops at once (keeping its dirt) when the tree is gone or taken, at
     nightfall when the tree is far out, or with a full backpack (it unloads first). Not saved: after a reload it looks
@@ -403,6 +409,8 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   the gold and diamond layers, and a diamond one (6 diamonds stored), which only digs faster. A Silk Touch pickaxe in
   storage does not count as one (miners rate it below a plain one). The blacksmith's crew is every living member of
   its base on the roster (soldiers too) within 256 blocks (horizontally) of the centre, wherever it works (CREW_RANGE).
+  A worker lacks its tool when there is none of its kind in its hand or its backpack (a woodcutter digging dirt with
+  a shovel has its axe put away meanwhile), or the one it holds is worn.
 * Anvil (vanilla): each material unit repairs a quarter; cost = units + prior work; prior work becomes
   2 × prior + 1; "Too Expensive" from 40 levels. Repaired only when worth it (PROPOSED): enchanted, or iron,
   diamond, netherite or chainmail gear needing fewer units than its recipe (pickaxe/axe 3, sword/hoe 2, shovel 1,

@@ -167,7 +167,8 @@ passed. The probe lines were removed, and the 10 natural full runs above passed 
    store is not touched by woodcutters while they dig.
 4. Stoneguard-like ground with no grass at all: "Leaving a tall tree for now (no dirt for a scaffold)" at most every
    2400 ticks, no tick-time cost (the search is 4 seeds a tick, a few ticks long).
-5. The night order: woodcutters near the walls keep felling at night; none goes far out at night.
+5. The night order: woodcutters near the walls keep felling at night; none goes far out at night, to fell or to dig.
+6. Grass it cannot get to (a terrace, a fenced field): it walks at it once, then digs elsewhere (Review, fix 2).
 
 ### Limits
 
@@ -177,3 +178,92 @@ passed. The probe lines were removed, and the 10 natural full runs above passed 
   not fill them in. A patch is never dug a second time, so in a long campaign the woodcutter moves on to fresh ground.
   It needs dirt only rarely, because the blocks come back from every pillar and it keeps 32.
 - **No line-of-sight check** for the dig reach (4.5), as for every other job's block breaking.
+
+### Review (adversarial pass on 87d98db)
+
+Read the whole change against the item and the code around it: `DirtPatch`, `DirtDig`, the DIG state and its entry
+points in `WoodcutterJob` (`scaffoldReady`, `startPillar`, `maxTreeDy`, forage, `fellable`), `Job.survival` and
+`usesOtherTool`, `WorkSafety.reserved`, save/load, the `decide()` night reorder, the tests and the docs.
+
+**Found and fixed**
+
+1. **Digging far out at night.** Only the tree was held to the night rule (`remoteAtNight(digFor)`), but a patch can
+   lie up to 27 blocks from it (seeds within 24, window 3). A tree 16 beyond the walls could send the woodcutter
+   digging 40 out after dusk, against "between dusk and dawn it does not work far outside the walls". Now the search
+   and the dig-time check both get a keep-out rule from the job (`keptFromDigging`), which includes
+   `remoteAtNight(cell)`, and a cell left beyond the walls + 16 at nightfall is dropped before the walk there.
+2. **Walking at the same unreachable patch three times.** When the walk to a patch ran out (cliff top, fenced field,
+   island), `digCells` was cleared and a new search started, but nothing had changed, so the search found the same
+   patch, nearest the tree first. That happened three times (`MAX_DIG_SEARCHES`), about 700 to 900 ticks each, then
+   digging was put on hold, and again for the next tall tree near it. On a stone base whose only grass is on a
+   terrace, that is about half the woodcutter's time. Now the ground within 6 (`DIG_AVOID_RADIUS`, Chebyshev) of
+   the failed patch's middle is kept out of the searches for 12000 ticks (`DIG_AVOID_TICKS`, at most 16 places, not
+   saved). The next search goes elsewhere.
+3. **A block read that could load a chunk.** `dig()` read `level().getBlockState(digTarget)` every tick of the walk.
+   The patch was found in loaded chunks, but the woodcutter may start the walk from far away (the storehouse), and a
+   read of an unloaded chunk loads it synchronously. The block is now read only while its chunk is loaded. Out of
+   reach it walks on (the walk loads the chunk anyway). In reach but not loaded, the cell is dropped.
+4. **The blacksmith took the shovel for a missing axe.** `BlacksmithJob.planOrders` counted a worker as lacking its
+   tool whenever its hand held something else. A woodcutter digging with a shovel, its axe in the backpack, made the
+   blacksmith craft a new axe (one per plan until the storehouse holds a spare). Now a worker lacks its tool only
+   when there is none of its kind in its hand or its backpack, or the one it holds is worn. For other roles this is
+   the same as before: a spare in the backpack is equipped by `Job.survival` on the next tick anyway.
+
+**Tests added**
+
+- `woodcutterDigsElsewhereWhenItCannotGetToAPatch` (batch `wood_dig_avoid`). Grass lies nearer the tree (north,
+  x 9-15, z 2-4) and further away (south, the `wood_dig` patch). The first time the woodcutter heads for the
+  northern patch, the test runs its walk out (reflection on `digWalkTicks`, as `minerKeepsAHalfDugShaftWhileWalkingBack`
+  does). It must then dig the southern grass, never the northern, and fell the tree. **Sabotage**
+  (`avoidDigPatch` a no-op): fails with "ground it could not get to was dug at 11, 1, 4". The second search found
+  the same patch, and the second walk reached it.
+- `blacksmithMakesNoAxeForOnePutAwayWhileDigging` (batch `workers_static`). A woodcutter holds a stone shovel, its
+  stone axe is in its backpack, and the storehouse has cobblestone and sticks: `planOrders` has no "replacing a
+  worn-out axe". With the axe taken away, it has one. **Sabotage** (backpack ignored): fails with "an axe put away
+  for a moment is no missing axe".
+- Runs (scratchpad `impl/`): `gt_p1_rev1.log` "All 111 required tests passed" (after fixes 1-3),
+  `gt_p1_rev2.log` and the final runs "All 112", the sabotage runs `gt_p1_rev_neg1.log` and `gt_p1_rev_neg2.log`.
+  The code was restored after each one and compared byte for byte. Unit tests: 153.
+
+**Checked and found sound**
+
+- **No trap, no second block deep.** Within one patch at most two rows next to each other are dug (`ROW_PERIOD` 3).
+  Two patches never touch, since a cell next to a dug one fails `flatAround`. So no 3x3 area is ever all dug, and a
+  dug floor can never pass `flatAround` itself. Depth stays 1 unless something else (a player, an explosion)
+  levels the ridges. Every dug cell keeps a ridge or rim neighbour at the old height. The open sky over it gives the
+  head room for the jump out.
+- **No water or falling blocks.** Water or lava next to a dug cell is ruled out (8 neighbours, no fluid on their tops
+  or in the two cells above). A fluid two cells away is held back by the rim block. A fluid under the rim touches
+  only the dug cell's solid floor, not its air. Sand or gravel as the floor is refused. Sand as a neighbour's top
+  does not fall, since nothing under it changes.
+- **The ground stays walkable.** A 1-deep trench is far below the navigator's pit depth (8), so detours and the
+  stuck-pit work never see it.
+- **No DIG/CHECK loop.** `digNeed = min(need, 32)` and the largest need is 27 (`scaffoldNeed(32)`) or 30 (pillar 28
+  + 2), so it never stops short of a need it can never reach. Every way out of DIG either makes progress (unload,
+  dirt) or holds digging (`giveUpDig`). Searches are bounded (3 per tree, 69 seeds, 4 a tick).
+- **Saves.** DIG is saved by name and loads as CHECK, which old jars cannot write anyway. Nothing else is saved, and
+  `nextDigTry` and the avoid list start empty. A shovel left in the hand after a reload is swapped for the axe by
+  `Job.survival` on the first tick.
+- **Builders' dirt.** It is never taken when there is too little of it. The dug dirt stays in the backpack (kept up
+  to 32, as before), so it never reaches the storehouse either.
+- **Per-tick cost.** The search is about 4 seeds x 2 orientations x 49 cells of cached column reads. The place rules
+  (plans, protected wood, reserved, scaffolds) run once per candidate cell and are cached. The dig-time check makes
+  one fresh view per cell. While digging is on hold, no tall tree is even looked for.
+- **The night reorder in `decide()`.** At night the woodcutter goes home after at most 4 patterns (80 ticks) instead
+  of at once. `emptyScans` stays at 4 or more until a tree is found, so it never waits there for good.
+
+**Left as they are** (minor, written down for the campaign check)
+
+- The night rule has no GameTest. A test base's walls + 16 lies beyond its 24-block platform, and outside the
+  platform is ground left by earlier batches. It is a one-line use of `remoteAtNight`. Campaign check step 5 covers
+  it.
+- `DIG_GIVE_UP_TICKS` (3600) counts the time of a meal errand taken while digging. Digging a full 27 by hand takes
+  about 500 ticks, so even a long errand rarely reaches it.
+- Between the grove's lattice points (5 apart, each kept 1 clear) the levelled west pad can be dug. The grove spots
+  themselves and their neighbours never are, and the trenches do not stop saplings from being planted or growing.
+- With dirt enough in store but the storehouse trip on its 2400-tick timer, a tall tree is skipped as before rather
+  than dug for. This was already the case.
+- The owner's message in this round ("the heroes should keep being Honkai: Star Rail and ZZZ characters") belongs to
+  roadmap phase 4 and does not touch this item. `docs/ROADMAP.md` phase 4 still says the mod ships original
+  example heroes and the owner adds those characters through a datapack and resource pack. Whoever takes up phase
+  4 (or the roadmap) should settle that with the owner.
