@@ -148,11 +148,10 @@ python3 tools/rcon.py "stop"
   archers; swimming monsters count only when close or hunting) came after the last campaign: re-check in the next
   one that scouts no longer make hundreds of sidesteps along rivers.
 - Structure detection was verified live for villages and an outpost (hand-placed scout); woodland mansions only by
-  GameTest (none within reach of the test maps). The new map marker colours were never checked on a real client.
+  GameTest (none within reach of the test maps). The map legend and markers were checked on a real client.
 - A base with no needs keeps a fisherman whose rod broke until string comes in (by design, documented).
 - A woodcutter's long walk to a far tree is not restarted after a survival errand (it can skip the tree for 12000
   ticks). `MinerJob.site()` counts storage pickaxes every tick while a mine rests (cheap).
-- The station screenshot in `docs/screenshots` is from the old layout (caption says so).
 - Ideas not started: water bonus in base siting, raids on known outposts, headframes/covers over mine mouths.
 
 ## 7. Release checklist
