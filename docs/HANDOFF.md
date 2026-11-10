@@ -152,7 +152,8 @@ python3 tools/rcon.py "stop"
 - A base with no needs keeps a fisherman whose rod broke until string comes in (by design, documented).
 - A woodcutter's long walk to a far tree is not restarted after a survival errand (it can skip the tree for 12000
   ticks). `MinerJob.site()` counts storage pickaxes every tick while a mine rests (cheap).
-- Ideas not started: water bonus in base siting, raids on known outposts, headframes/covers over mine mouths.
+- The agreed plan for what comes next is `docs/ROADMAP.md` (phases 1-5; keep its Status column current). Smaller
+  ideas not on it: water bonus in base siting, headframes/covers over mine mouths.
 
 ## 7. Release checklist
 
