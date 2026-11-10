@@ -1549,6 +1549,317 @@ public final class FCGameTests {
         });
     }
 
+    // ------------------------------------------------------------------ two miners sharing a mine
+
+    /** A mine two miners share, built by {@link #sharedMine}: the mine, its miner, the second miner, and its two levels. */
+    private record SharedMine(com.factionclash.campaign.WorkplaceState mine, FactionNpc holder, FactionNpc helper,
+                              com.factionclash.campaign.WorkplaceState.MineLevel deep, com.factionclash.campaign.WorkplaceState.MineLevel upper) {
+    }
+
+    /**
+     * A hutless mine in a stone hill 10 high on the platform (mouth at relative (3, 12, 14), tunnels running east),
+     * its stairs dug down to step 10, with two levels 7 steps apart: step 10, the holder's current one (the holder
+     * stands on its landing), and step 3, unfinished and nobody's. Walls of stone bricks (which nobody may dig) at side
+     * -4 and 5 and at forward 20 keep the branches 3 or 4 long and every tunnel on the platform. A second miner stands
+     * at the mouth. {@code othersOpen} more open mines of the base, each held by a miner who is away, fill the base's
+     * mine sites. Cleanup clears the hill, which stands above the platform's template.
+     */
+    private static SharedMine sharedMine(GameTestHelper h, GameTestBases.Handle t, int othersOpen) {
+        var level = h.getLevel();
+        var mine = new com.factionclash.campaign.WorkplaceState();
+        mine.type = com.factionclash.campaign.WorkplaceState.Type.MINE;
+        mine.origin = h.absolutePos(new BlockPos(3, 12, 14));
+        mine.extent = mine.origin;
+        mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+        mine.hut = false;
+        mine.maxRounds = 0;
+        mine.bottom = 10;
+        mine.upgradeStep = -1;
+        var deep = new com.factionclash.campaign.WorkplaceState.MineLevel(10, 0, 0, com.factionclash.logic.MinePlanner.Band.IRON.ordinal());
+        var upper = new com.factionclash.campaign.WorkplaceState.MineLevel(3, 0, 0, com.factionclash.logic.MinePlanner.Band.COAL.ordinal());
+        mine.levels.add(deep);
+        mine.levels.add(upper);
+        mine.cur = 0;
+        t.onCleanup(() -> {
+            for (int f = -1; f <= 20; f++) {
+                for (int s = -4; s <= 5; s++) {
+                    for (int dy = -10; dy <= 2; dy++) {
+                        level.setBlockAndUpdate(com.factionclash.structure.MineLayout.local(mine, f, s, dy), Blocks.AIR.defaultBlockState());
+                    }
+                }
+            }
+        });
+        for (int f = -1; f <= 20; f++) {
+            for (int s = -4; s <= 5; s++) {
+                for (int dy = -10; dy <= -1; dy++) {
+                    boolean wall = s == -4 || s == 5 || f == 20;
+                    level.setBlockAndUpdate(com.factionclash.structure.MineLayout.local(mine, f, s, dy),
+                            (wall ? Blocks.STONE_BRICKS : Blocks.STONE).defaultBlockState());
+                }
+            }
+        }
+        for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.logic.SpiralMine.spiralPlan(0, 10)) {
+            if (!c.torch()) {
+                level.setBlockAndUpdate(com.factionclash.structure.MineLayout.spiralPos(mine, c), Blocks.AIR.defaultBlockState());
+            }
+        }
+        t.addWorkplace(mine);
+        for (int i = 0; i < othersOpen; i++) {
+            var other = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(20 - 6 * i, 2, 3)));
+            other.facing = mine.facing;
+            other.assigned = t.absentWorker(NpcRole.MINER);
+        }
+        h.assertTrue(com.factionclash.structure.MineLayout.stand(mine, 10).equals(h.absolutePos(new BlockPos(5, 2, 14))),
+                "step 10 should stand at (5, 2, 14)");
+        FactionNpc holder = shareMiner(h, t, new BlockPos(5, 2, 14), "Ada Holt");
+        mine.assigned = holder.getUUID();
+        FactionNpc helper = shareMiner(h, t, new BlockPos(3, 12, 14), "Bo Lindqvist");
+        return new SharedMine(mine, holder, helper, deep, upper);
+    }
+
+    private static FactionNpc shareMiner(GameTestHelper h, GameTestBases.Handle t, BlockPos at, String name) {
+        FactionNpc miner = h.spawn(ModEntities.FACTION_NPC.get(), at);
+        miner.faction(t.base.faction);
+        miner.role(NpcRole.MINER);
+        t.register(miner);
+        t.data.record(miner.getUUID()).name = name; // (the roster's name, which the station shows)
+        miner.equip(new ItemStack(Items.STONE_PICKAXE));
+        miner.inventory().setItem(0, new ItemStack(Items.COBBLESTONE, 32));
+        miner.inventory().setItem(1, new ItemStack(Items.TORCH, 16));
+        return miner;
+    }
+
+    /** The packed positions of every cell a level's branch mine digs (torch spots left out). */
+    private static java.util.Set<Long> planCells(com.factionclash.campaign.WorkplaceState mine, com.factionclash.campaign.WorkplaceState.MineLevel lv) {
+        java.util.Set<Long> out = new java.util.HashSet<>();
+        for (com.factionclash.logic.SpiralMine.Cell c : com.factionclash.structure.MineLayout.tunnelPlan(lv)) {
+            if (!c.torch()) {
+                out.add(com.factionclash.structure.MineLayout.tunnelPos(mine, lv, c).asLong());
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Two miners share a mine (roadmap phase 1). The base works as many mines as it may, so the second miner, with
+     * no site of its own to open, joins the open mine as its helper instead of standing idle ("Every mine site of the
+     * base is taken"): it takes the unfinished upper level (step 3), never the holder's level (step 10) nor the
+     * stairs, and both dig at the same time. Every block each one breaks is a cell of its own level's plan, so no
+     * cell is dug by both; the holder stays on its level, the helper never goes below its own. Mid-way the helper is
+     * saved and loaded again: the relation is kept in the mine's record, and the miner comes back and goes on with
+     * its level. The station's mine line names the helper, the helper counts as a spare hand the base may retrain,
+     * and no miner is wanted for the base.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1600, batch = "mine_share", skyAccess = true)
+    public static void secondMinerHelpsInAMineAtTheCap(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 1600);
+        SharedMine sm;
+        try {
+            sm = sharedMine(h, t, com.factionclash.config.FCConfig.MAX_OPEN_MINES.get() - 1);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        var mine = sm.mine();
+        var level = h.getLevel();
+        java.util.Set<Long> deepCells = planCells(mine, sm.deep()), upperCells = planCells(mine, sm.upper());
+        java.util.Set<Long> byHolder = new java.util.HashSet<>(), byHelper = new java.util.HashSet<>();
+        FactionNpc[] helper = {sm.helper()};
+        boolean[] reloaded = {false};
+        int y0 = mine.origin.getY();
+        t.onEachTick(() -> {
+            var hj = (com.factionclash.work.MinerJob) helper[0].job();
+            var oj = (com.factionclash.work.MinerJob) sm.holder().job();
+            BlockPos ht = hj.digTarget(), ot = oj.digTarget();
+            if (ot != null) {
+                t.assertTrue(deepCells.contains(ot.asLong()), "the holder broke " + ot + ", not a cell of its level");
+                byHolder.add(ot.asLong());
+            }
+            if (ht != null) {
+                t.assertTrue(upperCells.contains(ht.asLong()), "the helper broke " + ht + ", not a cell of its level");
+                byHelper.add(ht.asLong());
+            }
+            t.assertTrue(mine.cur == 0 && mine.assigned.equals(sm.holder().getUUID()), "the holder left its level: cur " + mine.cur);
+            t.assertTrue(helper[0].getBlockY() >= y0 - 4, "the helper went down past its level, to " + helper[0].blockPosition());
+            if (mine.helper == null) {
+                t.assertTrue(sm.upper().progress == 0 && byHelper.isEmpty(), "the upper level was dug by a miner that is no helper");
+                return;
+            }
+            t.assertTrue(mine.helper.equals(helper[0].getUUID()) && mine.helperStep == 3, "the helper should work the step 3 level, works "
+                    + mine.helperStep);
+            if (!reloaded[0] && sm.upper().progress >= 12) {
+                reloaded[0] = true;
+                var back = com.factionclash.campaign.WorkplaceState.load(mine.save());
+                t.assertTrue(helper[0].getUUID().equals(back.helper) && back.helperStep == 3 && back.cur == 0,
+                        "the helper relation is saved with the mine");
+                // the helper is saved and loaded again (a chunk unloaded and back, a restart)
+                CompoundTag tag = helper[0].saveWithoutId(new CompoundTag());
+                helper[0].discard();
+                FactionNpc copy = new FactionNpc(ModEntities.FACTION_NPC.get(), level);
+                copy.load(tag);
+                t.assertTrue(level.addFreshEntity(copy), "the reloaded helper could not be added");
+                t.register(copy);
+                t.data.record(copy.getUUID()).name = "Bo Lindqvist";
+                helper[0] = copy;
+                return;
+            }
+            if (!reloaded[0] || sm.upper().progress < 30 || sm.deep().progress < 30) {
+                return;
+            }
+            t.assertTrue(java.util.Collections.disjoint(byHolder, byHelper), "a cell was broken by both miners");
+            t.assertTrue(byHolder.size() >= 10 && byHelper.size() >= 10, "both should have dug: holder " + byHolder.size() + ", helper "
+                    + byHelper.size());
+            t.assertTrue(hj.spareFor(0) && !oj.spareFor(0), "the helper is a spare hand the base may retrain, its miner is not");
+            t.assertTrue(hj.workplaceInfo().startsWith("Helping in mine #" + mine.id + " (its miner: Ada Holt), level y=" + (y0 - 3)),
+                    "workplace: " + hj.workplaceInfo());
+            String lines = String.join("\n", com.factionclash.work.MineSites.describe(t.data, t.base, level.getMinBuildHeight(), w -> "x"));
+            t.assertTrue(lines.contains("(x, helped by Bo Lindqvist on y=" + (y0 - 3) + "): y=" + (y0 - 10) + " iron"),
+                    "the station line should name the helper, the holder's level first: " + lines);
+            t.assertTrue(com.factionclash.campaign.FactionDirector.needs(level, t.data, t.base, level.getGameTime()).stream()
+                    .noneMatch(n -> n.role() == NpcRole.MINER), "no miner should be hired at a base whose miners all work");
+            t.succeed();
+        });
+    }
+
+    /**
+     * A helper leaves cleanly when the mine it helps in is set aside: once it is digging its level, the mine is called
+     * worked out. Its record is released with the holder's, it stops digging at once, climbs out up the stairs
+     * (breaking nothing on the way) and, every mine site of the base still being taken, waits idle by the mouth with
+     * nothing left to help in.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1200, batch = "mine_share_leave", skyAccess = true)
+    public static void helperLeavesAMineThatIsSetAside(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 1200);
+        SharedMine sm;
+        try {
+            sm = sharedMine(h, t, com.factionclash.config.FCConfig.MAX_OPEN_MINES.get());
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        var mine = sm.mine();
+        long[] retiredAt = {-1};
+        int[] progressThen = {0};
+        t.onEachTick(() -> {
+            var hj = (com.factionclash.work.MinerJob) sm.helper().job();
+            if (retiredAt[0] < 0) {
+                if (mine.helper != null && sm.upper().progress >= 6) {
+                    retiredAt[0] = h.getTick();
+                    progressThen[0] = sm.upper().progress;
+                    com.factionclash.work.MineSites.retire(h.getLevel(), t.data, mine, com.factionclash.work.MineSites.WORKED_OUT);
+                    t.assertTrue(mine.helper == null && mine.helperStep == 0 && mine.assigned == null, "setting the mine aside releases both");
+                }
+                return;
+            }
+            t.assertTrue(mine.helper == null, "nobody may help in a worked-out mine");
+            t.assertTrue(sm.upper().progress == progressThen[0], "the level was dug on after the mine was set aside");
+            if (h.getTick() > retiredAt[0] + 1) {
+                t.assertTrue(hj.digTarget() == null, "the helper broke " + hj.digTarget() + " after the mine was set aside");
+            }
+            if (sm.helper().getBlockY() < mine.origin.getY()) {
+                return; // still climbing out
+            }
+            if (!com.factionclash.work.MinerJob.NO_FREE_SITE.equals(hj.idleReason())) {
+                return;
+            }
+            t.assertTrue(com.factionclash.work.Workplaces.helped(sm.helper()) == null, "the helper should help nowhere");
+            t.succeed();
+        });
+    }
+
+    /**
+     * The mine's own miner dies while a helper works in it: the helper takes the mine over at once, as its miner, and
+     * goes on with the level it was digging (now the mine's current level), rather than leaving it to be hired for.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1200, batch = "mine_share_heir", skyAccess = true)
+    public static void helperTakesOverAMineWhoseMinerDied(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 1200);
+        SharedMine sm;
+        try {
+            sm = sharedMine(h, t, com.factionclash.config.FCConfig.MAX_OPEN_MINES.get() - 1);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        var mine = sm.mine();
+        int[] progressThen = {-1, -1};
+        t.onEachTick(() -> {
+            if (progressThen[0] < 0) {
+                if (mine.helper != null && sm.upper().progress >= 6) {
+                    progressThen[0] = sm.upper().progress;
+                    progressThen[1] = sm.deep().progress;
+                    t.data.record(sm.holder().getUUID()).alive = false; // (the roster's mark, as a death sets it)
+                    sm.holder().discard();
+                }
+                return;
+            }
+            if (!sm.helper().getUUID().equals(mine.assigned)) {
+                return;
+            }
+            t.assertTrue(mine.helper == null && mine.helperStep == 0, "the heir is the mine's miner now, not its helper");
+            t.assertTrue(mine.cur == 1, "the heir goes on with the level it was digging, not the dead miner's: cur " + mine.cur);
+            if (sm.upper().progress < progressThen[0] + 6) {
+                return;
+            }
+            t.assertTrue(sm.deep().progress == progressThen[1], "the dead miner's level should wait (the heir works its own first)");
+            t.succeed();
+        });
+    }
+
+    /**
+     * The helper relation in the mine's record: saved and loaded, missing in an older save (no helper), and dropped
+     * when it cannot be true (its level gone or below the stairs, the holder's own level, the holder itself). A dead
+     * or retrained helper is no helper, and retraining hands the help back like any workplace.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void mineHelperRecordSurvivesASaveAndIsReleased(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 40);
+        try {
+            var mine = t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(4, 2, 18)));
+            mine.facing = h.getTestRotation().rotate(net.minecraft.core.Direction.EAST);
+            mine.bottom = 54;
+            mine.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(54, 10, 0, 1));
+            mine.levels.add(new com.factionclash.campaign.WorkplaceState.MineLevel(6, 20, 0, 0));
+            mine.cur = 0;
+            mine.assigned = t.absentWorker(NpcRole.MINER);
+            java.util.UUID helper = t.absentWorker(NpcRole.MINER);
+            mine.helper = helper;
+            mine.helperStep = 6;
+            h.assertTrue(com.factionclash.work.Workplaces.helperValid(t.data, mine), "a living miner on a level of the mine is its helper");
+            var back = com.factionclash.campaign.WorkplaceState.load(mine.save());
+            h.assertTrue(helper.equals(back.helper) && back.helperStep == 6 && back.helperLevel() == back.levels.get(1),
+                    "the helper and its level survive a save");
+            CompoundTag old = mine.save();
+            old.remove("helper");
+            old.remove("helperStep");
+            var older = com.factionclash.campaign.WorkplaceState.load(old);
+            h.assertTrue(older.helper == null && older.helperStep == 0 && older.levels.size() == 2, "an older save's mine has no helper");
+            for (int step : new int[]{12, 54}) {
+                CompoundTag bad = mine.save();
+                bad.putInt("helperStep", step);
+                h.assertTrue(com.factionclash.campaign.WorkplaceState.load(bad).helper == null,
+                        "a helper on step " + step + " (no level there, or the holder's) is dropped");
+            }
+            CompoundTag self = mine.save();
+            self.putUUID("helper", mine.assigned);
+            h.assertTrue(com.factionclash.campaign.WorkplaceState.load(self).helper == null, "the holder is not its own helper");
+            mine.levels.get(1).step = 6;
+            mine.bottom = 5;
+            h.assertTrue(com.factionclash.campaign.WorkplaceState.load(mine.save()).helper == null, "a helper below the stairs is dropped");
+            mine.bottom = 54;
+            t.data.record(helper).role = NpcRole.FARMER;
+            h.assertFalse(com.factionclash.work.Workplaces.helperValid(t.data, mine), "a retrained helper is no helper");
+            t.data.record(helper).role = NpcRole.MINER;
+            t.data.record(helper).alive = false;
+            h.assertFalse(com.factionclash.work.Workplaces.helperValid(t.data, mine), "a dead helper is no helper");
+            com.factionclash.work.Workplaces.releaseAll(t.data, helper);
+            h.assertTrue(mine.helper == null && mine.helperStep == 0 && mine.assigned != null, "retraining hands the help back, not the mine");
+        } finally {
+            t.cleanup();
+        }
+        h.succeed();
+    }
+
     /**
      * An old save's miner holds the surveyed cave it works and also its old hut mine (the old version never handed a
      * worked-out hut mine back; the migration brings it back to life). It goes on with the cave and hands the mine

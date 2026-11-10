@@ -77,6 +77,8 @@ def summary(d):
                 if w["type"] == "MINE":
                     extra = (f" origin={w.get('origin')} facing={w.get('facing')} hut={w.get('hut')} bottom={w.get('bottom')}"
                              f" shaftLimit={w.get('shaftLimit')} maxRounds={w.get('maxRounds')} cur={w.get('cur')}")
+                    if w.get("helper"):
+                        extra += f" helper={w.get('helper')[:8]}@y={w.get('helperY')}" + ("" if w.get("helperValid") else "(stale)")
                     if w.get("restTier"):
                         extra += f" resting(tier {w.get('restTier')})"
                     if w.get("workedOut"):
@@ -91,7 +93,7 @@ def summary(d):
                 print(f"      {w['type']:9s} tier={w['tier']} output={w['output']} upgradeStep={w['upgradeStep']}{extra}")
                 if w["type"] == "MINE":
                     for i, lv in enumerate(w.get("levels", [])):
-                        mark = ">" if i == w.get("cur") else " "
+                        mark = ">" if i == w.get("cur") else "h" if w.get("helper") and lv["y"] == w.get("helperY") else " "
                         print(f"        {mark} y={lv['y']:4d} {lv['band']:5s} {lv['progress']}/{lv['size']} rounds={lv['rounds']}"
                               + (" cut" if lv.get("cut") else ""))
                 if w["type"] == "MINE" and not w.get("hut") and w.get("origin"):

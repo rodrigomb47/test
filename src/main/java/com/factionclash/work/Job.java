@@ -203,6 +203,20 @@ public abstract class Job {
     }
 
     /**
+     * True when the worker, though busy, has been a spare hand for at least {@code ticks}: it only helps another
+     * worker at that one's workplace (a miner helping in another miner's mine). The director may retrain it as it
+     * would an idle worker.
+     */
+    public boolean spareFor(long ticks) {
+        return false;
+    }
+
+    /** Why the worker is a spare hand ({@link #spareFor}), in words that follow "has had"; empty when it is not. */
+    public String spareReason() {
+        return "";
+    }
+
+    /**
      * Called right before a survival errand (a new tool, food) sends the worker to the storehouse. A job whose
      * worker has to leave its workplace a particular way first (a miner climbing out of its mine) does that here and
      * returns false until it is out; the errand then goes on as usual.

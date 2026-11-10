@@ -85,7 +85,7 @@ Not configurable (`NpcNavigator`, `DigOut`, `Job`):
 | Value | Default | Effect |
 |---|---|---|
 | `mineSiteRadius` | 64 (40–128) | Farthest distance (Chebyshev) from the base centre at which a miner opens a mine. The search starts at the walls' half-size + 8 (32), which a mouth must lie beyond, so the nearest mouth is 36 out. |
-| `maxOpenMines` | 3 (1–8) | Mines a base works at once (unfinished and not resting); each miner works one. |
+| `maxOpenMines` | 3 (1–8) | Mines a base works at once (unfinished and not resting); each has a miner of its own, and while every site is taken a spare miner helps in one (see "Sharing a mine"). |
 | `forestRadius` | 64 (41–128) | Woodcutters fell natural trees within this many blocks of the base centre. At least 41 so the starter saplings (40.3 out) are inside it. |
 | `groveSize` | 16 (0–32) | Saplings kept growing in the base's always-ticking belt, twice as many (up to 32) while the base is short of wood. 0 = only replant felled trees. A config file written by an earlier build keeps its old default of 8: set 16 by hand. |
 | `fishingRadius` | 64 (32–128) | Fishing water is searched for within this many blocks of the base centre; water found while foraging may lie 40 further. |
@@ -130,7 +130,29 @@ Layers (PROPOSED, `MinePlanner`): a layer is put where vanilla 1.21.1 ore is ric
   count; tried again at most every 1200 ticks), else it looks for another site. Worked out: every layer it can
   reach is dug; the miner moves on to a cave or a new site.
 * Order of work for a miner: a held cave, else an open mine of its base, else a surveyed cave with marked ores, else
-  a new site.
+  a new site, else (every site taken, or none found for now) helping in an open mine of its base.
+* Sharing a mine (`MinePlanner.forHelper`, `MinerJob.joinAsHelper`): a mine has at most one helper besides its
+  holder. A miner helps only in an open mine of its base with a living holder that has a level planned (one
+  between levels, or waiting for its helper, chooses first), no helper yet and its stairs dug (`bottom` 1 or more),
+  and never in a mine it gave up. Its level follows the holder's rules (the wanted order
+  above, then the default one; its pickaxe must harvest the ore): the level near the band's height (worked, or
+  lengthened while `maxRounds` allows and the corridor is clear), a new branch mine there at least 6 steps
+  (MIN_SPACING) from every level, or further layers within BAND_SPREAD where the corridor is short; failing that, any
+  unfinished level it may work, the shallowest first. Only levels the stairs already pass (step at most `bottom`),
+  never the holder's current level (also while the holder digs down to it) and never one within 3 steps of it
+  (HELPER_CLEARANCE, PROPOSED: 2-high tunnels 3 apart share no cell, floor or roof). Of several mines, the most
+  wanted ore first, then the nearest mouth. The holder's planner skips the helper's level (and those within 3 of
+  it); when only that level (or a lengthening of it) is left, the holder waits at the storehouse (`WAIT`, looked at
+  again every 600 ticks, idle meanwhile) instead of resting or retiring the mine. Neither follows an ore vein into
+  the other's level layer (its two rows, the floor and the roof). The helper never digs or repairs the shaft except
+  stairs in its way, and its integrity check covers only its own level.
+* A help ends (the helper climbs out first) when its level is done or cut, the mine is set aside or rests (both
+  release the helper's record), the holder works that level or one within 3 of it, its pickaxe is too weak for the
+  level, it has a mine or cave of its own, or the stairs stay blocked (then no help anywhere for 6000 ticks,
+  SITE_RETRY_TICKS). When the holder dies or is retrained (its record released), the helper takes the mine over at
+  once and its level becomes the mine's current one (unless a descent was under way). The relation is saved in the
+  mine's record (`helper`, `helperStep`; an older save has none) and handed back on death or retraining like a
+  workplace.
 * Branch mine per level: main tunnel 40 blocks long and 2 high from the landing, side branches of 10 blocks every
   4 blocks on both sides, torches every 8 blocks.
 * Shaft: 2x2 spiral staircase, one block down per step, wall torch every 8 steps. Before the first step of a new
@@ -555,7 +577,11 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   that role is barren for 48000 ticks (BARREN_TICKS, two days): "replacing the missing ..." is not raised for it and
   no fisherman is hired. A barren base therefore tries one new worker in that role about every two and a half days.
 * Miners: "an open mine has no miner" and "a surveyed cave with ore to mine" are raised only while no miner of the
-  base is free (holding neither an open mine nor a cave); at most 2 cave miners per base.
+  base is free (holding neither an open mine nor a cave); at most 2 cave miners per base. A helper holds neither, so
+  it counts as free: no miner is hired because helpers exist, and an open mine whose miner is gone is taken over by
+  its helper. A helper that has had no mine or cave of its own for 12000 ticks is a spare hand and may be retrained
+  like an idle worker ("no mine of its own (only another miner's to help in)"); a holder waiting for its helper is
+  idle ("no level of its own left in its mine (only its helper's)").
 * Fishermen: hired only where the fishing spot has water, has not been searched yet, or was found to have none
   48000+ ticks ago (and not while the role is barren), with stored food under 15 recruits' worth and a rod or 2
   string in storage.

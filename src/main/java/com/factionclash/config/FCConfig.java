@@ -90,7 +90,8 @@ public final class FCConfig {
         MINE_SITE_RADIUS = b.comment("Farthest distance (blocks, along either axis) from the base centre at which a miner opens a mine.",
                         "The nearest is fixed at the walls' half-size + 8 (32 blocks).")
                 .defineInRange("mineSiteRadius", 64, 40, 128);
-        MAX_OPEN_MINES = b.comment("Mines a base may be working at once (unfinished and not resting). Each miner works one.")
+        MAX_OPEN_MINES = b.comment("Mines a base may be working at once (unfinished and not resting). Each has a miner of its own;",
+                        "while every site is taken, a spare miner helps in one, on another of its levels.")
                 .defineInRange("maxOpenMines", 3, 1, 8);
         FOREST_RADIUS = b.comment("Woodcutters fell natural trees within this many blocks of the base centre.",
                         "When there are none, they walk 72 blocks out from the centre to look for more. At least 41, so a new base's starter trees are in it.")

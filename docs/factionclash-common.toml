@@ -60,7 +60,8 @@
 	# Default: 64
 	# Range: 40 ~ 128
 	mineSiteRadius = 64
-	#Mines a base may be working at once (unfinished and not resting). Each miner works one.
+	#Mines a base may be working at once (unfinished and not resting). Each has a miner of its own;
+	#while every site is taken, a spare miner helps in one, on another of its levels.
 	# Default: 3
 	# Range: 1 ~ 8
 	maxOpenMines = 3

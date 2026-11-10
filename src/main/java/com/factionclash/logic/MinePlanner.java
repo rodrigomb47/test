@@ -172,6 +172,13 @@ public final class MinePlanner {
         return List.copyOf(out);
     }
 
+    /** The order bands are considered in: those {@link #wanted} first, then the rest of the default order. */
+    public static List<Band> order(List<Band> wanted) {
+        Set<Band> order = new LinkedHashSet<>(wanted);
+        order.addAll(DEFAULT);
+        return List.copyOf(order);
+    }
+
     /** A level of the mine as the planner sees it. A cut level (its main tunnel met something nobody may dig) is done. */
     public record Level(int step, int progress, int rounds, boolean cut, Band band) {
         /** Cells in the level's branch-mine plan at its current length. */
@@ -195,7 +202,12 @@ public final class MinePlanner {
         /** Nothing to do with this pickaxe: the mine waits for a pickaxe of tier {@code needTier}. */
         REST,
         /** Every layer the mine can reach is dug. */
-        WORKED_OUT
+        WORKED_OUT,
+        /**
+         * The only level with work left for now is the one the mine's helper works (level {@code level}): the holder
+         * waits until the helper is done with it, rather than letting the mine rest or calling it worked out.
+         */
+        WAIT
     }
 
     /** The planner's choice. {@code level} is an index into the level list (-1 when none); {@code band} may be null. */
@@ -220,39 +232,53 @@ public final class MinePlanner {
      */
     public static Decision next(int surfaceY, int minY, List<Level> levels, int current, int bottom, int shaftLimit,
                                 int pickTier, List<Band> wanted, int maxRounds) {
+        return next(surfaceY, minY, levels, current, bottom, shaftLimit, pickTier, wanted, maxRounds, -1);
+    }
+
+    /**
+     * {@link #next} for the holder of a mine that has a helper working level {@code taken} (an index, or -1 for none).
+     * The holder never picks that level, nor one within {@link #HELPER_CLEARANCE} steps of it (two miners never share
+     * a cell, a floor or a roof); it still counts for the spacing of new levels. When the only work left lies on the
+     * helper's level (or a lengthening of it), the answer is {@link Kind#WAIT}: the mine is neither rested nor called
+     * worked out under the helper's feet.
+     */
+    public static Decision next(int surfaceY, int minY, List<Level> levels, int current, int bottom, int shaftLimit,
+                                int pickTier, List<Band> wanted, int maxRounds, int taken) {
+        if (taken >= levels.size()) {
+            taken = -1;
+        }
+        Decision d = choose(surfaceY, minY, levels, current, bottom, shaftLimit, pickTier, wanted, maxRounds, taken);
+        if (taken < 0 || (d.kind() != Kind.REST && d.kind() != Kind.WORKED_OUT)) {
+            return d;
+        }
+        Level h = levels.get(taken);
+        Decision wait = new Decision(Kind.WAIT, taken, h.step(), h.band(), 0);
+        if (h.unfinished()) {
+            return wait;
+        }
+        Decision all = choose(surfaceY, minY, levels, current, bottom, shaftLimit, pickTier, wanted, maxRounds, -1);
+        return all.kind() == Kind.REST || all.kind() == Kind.WORKED_OUT ? all : wait;
+    }
+
+    private static Decision choose(int surfaceY, int minY, List<Level> levels, int current, int bottom, int shaftLimit,
+                                   int pickTier, List<Band> wanted, int maxRounds, int taken) {
         int maxN = surfaceY - floorY(minY);
         int maxStep = shaftLimit > 0 ? Math.min(shaftLimit, maxN) : maxN;
         // (1) a level is finished before the miner switches, so changing stock never makes it go back and forth
-        if (current >= 0 && current < levels.size()) {
+        if (current >= 0 && current < levels.size() && current != taken) {
             Level c = levels.get(current);
             if (c.unfinished() && c.band().pickTier <= pickTier && c.step() <= maxStep) {
                 return Decision.work(Kind.WORK, current, c, c.band());
             }
         }
         // (2) the most wanted band the pickaxe can harvest: a level near its height, or a new one
-        Set<Band> order = new LinkedHashSet<>(wanted);
-        order.addAll(DEFAULT);
-        for (Band b : order) {
-            if (b.pickTier > pickTier) {
-                continue;
-            }
-            int s = stepFor(b, surfaceY, minY);
-            if (s < 0) {
-                continue;
-            }
-            Decision d = s <= maxStep ? atStep(levels, s, b, maxRounds, true) : null;
-            if (d == null && (maxRounds < MAX_REACH || s > maxStep)) {
-                // a short corridor makes up in depth; a shaft that stops above the band's height takes the band's
-                // nearest height it does reach
-                d = moreLayers(surfaceY, minY, levels, b, s, maxStep, maxRounds);
-            }
-            if (d != null) {
-                return d;
-            }
+        Decision d = byBand(surfaceY, minY, levels, maxStep, pickTier, wanted, maxRounds, taken, Integer.MAX_VALUE);
+        if (d != null) {
+            return d;
         }
         // (3) nothing for this pickaxe, but a better one would have work: rest until it comes
         for (int t = Math.max(1, pickTier + 1); t <= 2; t++) {
-            Kind k = next(surfaceY, minY, levels, current, bottom, shaftLimit, t, wanted, maxRounds).kind();
+            Kind k = choose(surfaceY, minY, levels, current, bottom, shaftLimit, t, wanted, maxRounds, taken).kind();
             if (k != Kind.WORKED_OUT && k != Kind.REST) {
                 return new Decision(Kind.REST, -1, -1, null, t);
             }
@@ -261,17 +287,95 @@ public final class MinePlanner {
     }
 
     /**
+     * Rule (2) of {@link #next}: for the most wanted band the pickaxe can harvest, the level near its height (worked on,
+     * or lengthened) or a new one at least {@link #MIN_SPACING} from every other, no deeper than {@code maxStep};
+     * further layers of the band where the corridor is short or the shaft stops above it. Level {@code taken} (and
+     * those too close to it) is never chosen, nor an existing level deeper than {@code deepest}. Null when no band has
+     * work.
+     */
+    private static Decision byBand(int surfaceY, int minY, List<Level> levels, int maxStep, int pickTier, List<Band> wanted,
+                                   int maxRounds, int taken, int deepest) {
+        for (Band b : order(wanted)) {
+            if (b.pickTier > pickTier) {
+                continue;
+            }
+            int s = stepFor(b, surfaceY, minY);
+            if (s < 0) {
+                continue;
+            }
+            Decision d = s <= maxStep ? atStep(levels, s, b, maxRounds, true, taken, deepest) : null;
+            if (d == null && (maxRounds < MAX_REACH || s > maxStep)) {
+                // a short corridor makes up in depth; a shaft that stops above the band's height takes the band's
+                // nearest height it does reach
+                d = moreLayers(surfaceY, minY, levels, b, s, maxStep, maxRounds, taken, deepest);
+            }
+            if (d != null) {
+                return d;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * PROPOSED: the level a helper works and the holder's lie at least this many steps apart. The tunnels are 2
+     * high, so 3 steps apart they share no cell, and neither digs away the other's floor or roof.
+     */
+    public static final int HELPER_CLEARANCE = 3;
+
+    /**
+     * The level a second miner of the mine (a helper) works while its holder works level {@code holderLevel} (an
+     * index, or -1 while the holder has none planned; while the holder digs the shaft down, its level lies below the
+     * bottom). Pure, unit-tested. Only levels the stairs already pass are used ({@code step <= bottom}), so a helper
+     * never digs the shaft, and never the holder's level or one within {@link #HELPER_CLEARANCE} steps of it. Like
+     * the holder, it takes the most wanted band its pickaxe can harvest ({@link #wanted}, then the default order): the
+     * level near that band's height (worked on while unfinished, lengthened while the corridor has room), a new layer
+     * there at least {@link #MIN_SPACING} from every other level (the holder's planned one too), or, in a mine with a
+     * short corridor or a shaft that stops above the band, a further layer of it ({@link #moreLayers}). Failing all
+     * that, any unfinished level it may work (the shallowest first, an old hut mine's say). The decision's level is an
+     * index into {@code levels} (WORK, LENGTHEN), or its step is a new landing (NEW_LAYER); null when nothing in the
+     * mine is worth a helper.
+     */
+    public static Decision forHelper(int surfaceY, int minY, List<Level> levels, int holderLevel, int bottom, int pickTier,
+                                     List<Band> wanted, int maxRounds) {
+        if (holderLevel >= levels.size()) {
+            holderLevel = -1;
+        }
+        int maxStep = Math.min(bottom, surfaceY - floorY(minY));
+        if (maxStep < 1) {
+            return null;
+        }
+        Decision d = byBand(surfaceY, minY, levels, maxStep, pickTier, wanted, maxRounds, holderLevel, bottom);
+        if (d != null) {
+            return d;
+        }
+        int best = -1;
+        for (int i = 0; i < levels.size(); i++) {
+            Level l = levels.get(i);
+            if (l.unfinished() && l.step() <= bottom && l.band().pickTier <= pickTier && !kept(levels, i, holderLevel)
+                    && (best < 0 || l.step() < levels.get(best).step())) {
+                best = i;
+            }
+        }
+        return best < 0 ? null : Decision.work(Kind.WORK, best, levels.get(best), levels.get(best).band());
+    }
+
+    /** True if level {@code i} is kept for another miner: it is level {@code taken}, or within {@link #HELPER_CLEARANCE} of it. */
+    static boolean kept(List<Level> levels, int i, int taken) {
+        return taken >= 0 && (i == taken || Math.abs(levels.get(i).step() - levels.get(taken).step()) < HELPER_CLEARANCE);
+    }
+
+    /**
      * Work for band {@code b} at step {@code s}: the level near it (worked on while unfinished, lengthened while its
      * corridor has room), or a new level there when none is near and {@code mayOpen}; null when the level there is
-     * done or cut.
+     * done or cut, kept for another miner ({@link #kept}), or deeper than {@code deepest}.
      */
-    private static Decision atStep(List<Level> levels, int s, Band b, int maxRounds, boolean mayOpen) {
+    private static Decision atStep(List<Level> levels, int s, Band b, int maxRounds, boolean mayOpen, int taken, int deepest) {
         int li = nearest(levels, s);
         if (li < 0) {
             return mayOpen ? new Decision(Kind.NEW_LAYER, -1, s, b, b.pickTier) : null;
         }
         Level l = levels.get(li);
-        if (l.cut()) {
+        if (l.cut() || kept(levels, li, taken) || l.step() > deepest) {
             return null;
         }
         if (l.unfinished()) {
@@ -291,9 +395,12 @@ public final class MinePlanner {
      * where it still reaches, if anywhere near (then one layer only, as at its height). Each lies within
      * {@link #BAND_SPREAD} blocks of the band's height and nearer to it than to any other band's, at a landing at
      * least {@link #MIN_SPACING} steps from every other level and no deeper than {@code maxStep}. The band's layers
-     * together hold no more tunnel than one layer lengthened {@link #MAX_REACH} times would. Null when there is none.
+     * together hold no more tunnel than one layer lengthened {@link #MAX_REACH} times would. Level {@code taken} (and
+     * those too close to it) is kept for another miner, and no existing level deeper than {@code deepest} is used.
+     * Null when there is none.
      */
-    static Decision moreLayers(int surfaceY, int minY, List<Level> levels, Band b, int s, int maxStep, int maxRounds) {
+    static Decision moreLayers(int surfaceY, int minY, List<Level> levels, Band b, int s, int maxStep, int maxRounds, int taken,
+                               int deepest) {
         int used = 0;
         for (Level l : levels) {
             if (l.band() == b) {
@@ -306,7 +413,7 @@ public final class MinePlanner {
                 if (c < MIN_DEPTH || c > maxStep || !SpiralMine.isLanding(c) || bandAt(surfaceY - c, surfaceY, minY) != b) {
                     continue;
                 }
-                Decision dec = atStep(levels, c, b, maxRounds, mayOpen);
+                Decision dec = atStep(levels, c, b, maxRounds, mayOpen, taken, deepest);
                 if (dec != null) {
                     return dec;
                 }

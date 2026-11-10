@@ -267,3 +267,155 @@ points in `WoodcutterJob` (`scaffoldReady`, `startPillar`, `maxTreeDy`, forage, 
   roadmap phase 4 and does not touch this item. `docs/ROADMAP.md` phase 4 still says the mod ships original
   example heroes and the owner adds those characters through a datapack and resource pack. Whoever takes up phase
   4 (or the roadmap) should settle that with the owner.
+
+## Two miners share a mine
+
+**Why.** A base works at most `maxOpenMines` (3) mines. Until now each mine had exactly one miner, so a fourth miner
+stood idle ("Every mine site of the base is taken") until the base needed another role and retrained it. Now it
+helps in an open mine of its base, on another level, as a second player would.
+
+**What it does.**
+
+- **When a miner helps.** In `MinerJob.site()`, where it used to go idle: when every mine site of the base is taken,
+  and also while it waits to look for a site again after finding none (`nextSiteSearch`). Below the cap with ground
+  to dig, it still opens a mine of its own, as before: a mine of its own adds a shaft, a helper does not.
+- **Which mine** (`joinAsHelper`): an open mine of its base with a living holder that has a level planned (a holder
+  between two levels, or waiting for its helper, chooses first), no valid helper yet, its stairs dug (`bottom` 1 or
+  more), and not one of the miner's bad sites. Of several, the one whose level has the most wanted ore, then the
+  nearest mouth. One helper per mine.
+- **Which level** (`MinePlanner.forHelper`, pure): the holder's rules, restricted. Bands in the wanted order, then the
+  default one, only those its pickaxe harvests: the level near the band's height (worked while unfinished, lengthened
+  while the corridor has room; the corridor is checked as for the holder), a new branch mine there at least 6 steps
+  from every level, or further layers within `BAND_SPREAD` (short corridor, shaft stopping above the band). Failing
+  that, any unfinished level it may work, shallowest first (an old hut mine's levels, which lie off every band's
+  height). Never a level deeper than `bottom` (so it never digs the shaft), never the holder's current level (also
+  while the holder digs down to it), never one within `HELPER_CLEARANCE` (3, PROPOSED) steps of it: 2-high tunnels
+  3 apart share no cell, and neither digs the other's floor or roof.
+- **The holder** (`plan()` → `MinePlanner.next(..., taken)`): its planner skips the helper's level and those within 3
+  of it; they still count for the spacing of new levels. When the only work left (for its pickaxe or a better one)
+  is on the helper's level, or a lengthening of it, the answer is the new `Kind.WAIT`: the holder waits at the
+  storehouse (`cur = -1`, looked at again every 600 ticks, marked idle "no level of its own left in its mine (only
+  its helper's)") instead of resting or retiring the mine under the helper. A stale helper record (dead, retrained)
+  is cleared there.
+- **Digging.** The helper runs the miner's normal state machine with `workLevel()` = the mine's helper level instead of
+  `MineLayout.current`: TRAVEL, MINE, CLEAR, STORAGE and CRAFT as usual, never EXTEND, never `plan()`, never the
+  holder's descent checks (`upgrading`, `siteUnreachable`). Its integrity check covers only its own level (stairs
+  are the holder's; a stair in its way is still cleared while walking, as for anyone). `noticeOres` never follows a
+  vein into the other miner's level layer (its two rows, floor and roof) for either miner. Both use the same stairs
+  through `walkInMine`; allies already pass through each other (`FactionNpc.doPush`), so neither blocks the other.
+- **When the help ends** (`settleHelp`, `helpOver`, every tick): the mine is set aside or rests (`MineSites.setAside`
+  and `rest` also release the helper's record), the holder is gone, the level is gone, done or cut, the holder now
+  works it or one within 3 of it, the pickaxe in hand is too weak for its ore, or the miner gets a mine or cave of
+  its own (a free mine, a cave with marked ore). The stairs staying blocked ends it too, and then it helps nowhere
+  for `SITE_RETRY_TICKS`. It climbs out of that mine first (`leaveFirst`, `leaveMine`), unless it is now its own,
+  then goes back to `site()`: unload, the cap, another help or a site. Each finished level is therefore one stint,
+  with a storehouse trip between stints, as a holder unloads between levels.
+- **Its miner gone** (`takeOverHelpedMine`): when the holder dies or is retrained (the mine has no valid holder), the
+  helper takes the mine over at once, before any other free mine, and its level becomes the mine's current one
+  (unless a descent was under way, which it then finishes). The faction hears "Mine #n: X takes the mine over".
+- **Persistence.** `WorkplaceState.helper` (UUID) and `helperStep` (the level's step, not its index: the holder's
+  `abandonDescent` removes levels) are saved in the mine block only when set; an older save has none and loads as
+  before, an older jar ignores them. On load a helper is dropped when its level is gone, lies below the stairs, is
+  the holder's current level, or the helper is the holder. `Workplaces.helperValid` (alive, still a miner, not the
+  holder, on a level that exists), `helped`, `releaseHelper`; `releaseAll` (role changes) releases help too.
+- **Station, dump, sim.** `MineSites.describe`: "Mine #n at ... (Holder, helped by Name on y=..): " with the holder's
+  level first, then the helper's. `workplaceInfo`: "Helping in mine #n (its miner: Name), level y=.. for coal, branch
+  mine p/size". `/fc admin dump` has `helper`, `helperY`, `helperValid`; `sim.py` shows `helper=xxxxxxxx@y=..` and
+  marks the level `h`; `/fc admin mine <id>` shows it too.
+
+### Choices (told to the owner in the summary)
+
+- **Recruitment** is unchanged and needs no change: a helper holds no mine or cave, so it counts as a free miner, and
+  "an open mine has no miner" is not raised while it is there (it takes such a mine over itself). Helpers never make
+  the base hire miners.
+- **Retraining keeps its old effect.** A helper that has had no mine or cave of its own for half a day is a spare
+  hand (`Job.spareFor`/`spareReason`, new; `FactionDirector.retrainIdleWorker` treats it like an idle worker): the base
+  may retrain it for a role it needs, as it did with idle extra miners, saying "has had no mine of its own (only
+  another miner's to help in) for half a day". The difference is that it mines meanwhile. Without this a base with
+  full beds could never fill a missing farmer from its spare miners. Its role is not marked barren (its holder is busy).
+- **One helper per mine**, and a helper only where the stairs are dug: no third miner and no second shaft in one mine.
+- **The config comment** of `maxOpenMines` mentions the helper; `docs/factionclash-common.toml` was regenerated from a
+  fresh file written by the GameTest server (only that comment changed).
+
+### Files
+
+- `logic/MinePlanner.java`: `next(..., taken)` (the old `next` is `next(..., -1)`), `choose`, `byBand` (rule 2, shared),
+  `forHelper`, `kept`, `order`, `HELPER_CLEARANCE`, `Kind.WAIT`; `atStep`/`moreLayers` take the kept level and the
+  deepest usable level.
+- `campaign/WorkplaceState.java`: `helper`, `helperStep`, `helperLevel()`, save/load and load-time checks.
+- `work/Workplaces.java`: `helperValid`, `helped`, `releaseHelper`; `releaseAll` releases help.
+- `work/MinerJob.java`: `run()` (take-over, cave, own mine, help, climb out first), `workLevel`, `takeOverHelpedMine`,
+  `settleHelp`, `helpOver`, `climbedOutFirst`, `joinAsHelper`, `plannerLevels`, `othersLayer`, `spareFor`,
+  `digTarget` (for tests); helper branches in `site`, `storage`, `plan` (WAIT), `travel`, `findBlocked`, `clear`,
+  `mine`, `preSeal`, `noticeOres`, `walkInMine` (blocked stairs).
+- `work/Job.java`: `spareFor`, `spareReason`. `campaign/FactionDirector.java`: spare hands are retrained like idle ones.
+- `work/MineSites.java`: `setAside` and `rest` release the helper; `describe` names it.
+- `command/FCCommands.java` (dump, `admin mine`), `tools/sim.py`, `config/FCConfig.java` (comment).
+- `gametest/GameTestBases.java`: `Handle.absentWorker(role)` (a roster entry with no entity, removed by cleanup) and
+  `Handle.onCleanup(Runnable)`.
+
+### Tests
+
+- Unit (`MinePlannerTest`, 7 new, 160 in all): a helper takes the most wanted ore's level that is not the holder's
+  (works it, or lengthens a finished one); never the holder's level nor one 2 steps from it (an old hut mine's); in
+  5000 random mines never a level below the stairs, never within 3 of the holder's, only work its pickaxe can do, new
+  layers 6 apart; nothing for a helper in a mine with no other work, a new mine, or with a wooden pickaxe; a holder
+  never takes the helper's level (5000 random cases); the holder waits rather than retiring the mine (also when the
+  helper's level could only be lengthened), but a mine with nothing left is worked out and one needing a better
+  pickaxe rests as before; without a helper `next` is exactly the old one (3000 random cases).
+- GameTest `secondMinerHelpsInAMineAtTheCap` (batch `mine_share`). A mine in a stone hill 10 high on the platform
+  (mouth at relative (3, 12, 14), above the template, cleared by cleanup), stairs dug to step 10, levels at step 10
+  (the holder's, which it stands on) and step 3 (unfinished). Brick walls at side -4 and 5 and forward 20 keep the
+  branches short and on the platform. Two more open mines, each held by an absent miner, make the cap. The second
+  miner, at the mouth, joins as helper and takes step 3. Every tick: each miner's block being broken is a cell of its
+  own level's plan, the holder stays on its level, the helper never goes below its own. At upper-level progress 12
+  the mine record is saved and loaded (the relation is kept), and the helper entity is saved, discarded and loaded
+  again as a new entity, which goes on with its level. At progress 30 on both levels: no cell broken by both, each
+  broke 10 or more, the helper is a spare hand and the holder is not, `workplaceInfo` and the station line name the
+  helper ("(x, helped by Bo Lindqvist on y=-51): y=-58 iron ..."), and the base wants no miner. A trace
+  (`impl/gt_p1_share_trace.log`): joined within the first 20 ticks, on its level by tick 40, done at tick 254 with 21 and 18 cells.
+- GameTest `helperLeavesAMineThatIsSetAside` (batch `mine_share_leave`): three more open mines, so the cap is still
+  reached after the test mine goes. Once the helper digs, the mine is retired: both records are released at once,
+  the helper's level never moves again, from the next tick it breaks nothing, it climbs out to the mouth and waits
+  idle ("no free mine site").
+- GameTest `helperTakesOverAMineWhoseMinerDied` (batch `mine_share_heir`): the holder dies; the helper becomes the
+  mine's miner (no helper left), its level is the current one, it digs on there, and the dead miner's level waits.
+- GameTest `mineHelperRecordSurvivesASaveAndIsReleased` (batch `workers_static`): save and load; an older save has no
+  helper; a helper on a missing level, on the holder's level, below the stairs, or the holder itself is dropped; a
+  retrained or dead helper is not valid; `releaseAll` hands the help back but not the mine.
+- **Sabotage** (scratchpad `impl/gt_p1_share_neg1..3.log`; the code was restored from copies and compared after each):
+  1. `joinAsHelper` always refuses: all three new dynamic tests time out (the second miner stands idle, as before
+     this change).
+  2. `workLevel` returns the holder's level for the helper: `mine_share` fails "the helper went down past its level";
+     the other two time out.
+  3. No release in `setAside` and no "set aside" check in `helpOver`: `mine_share_leave` fails "setting the mine aside
+     releases both".
+- Runs: `impl/gt_p1_share2.log`, `gt_p1_share_trace.log`, `gt_p1_share_freshcfg.log` (a fresh default config, which
+  also wrote the regenerated toml), `gt_p1_share_final1..4.log` (the last one on the committed code): "All 116
+  required tests passed" (112 + 4). The first
+  run (`gt_p1_share1.log`) failed only the heir test's own wrong assertion (it expected the dead miner's level
+  untouched from the start; it now checks it from the death on). `woodcutterComesDownItsScaffoldForAnErrand` passed in
+  every run.
+
+### For the campaign check (not done here: no dedicated server in this role)
+
+1. A base with 4 or more miners and 3 open mines: watch for "Mine #n: X helps Y and works/opens/lengthens ...", the
+   station line "helped by", and `sim.py` `helper=...@y=` with an `h` level. The helper's level must lie above the
+   holder's shaft bottom and at least 3 steps from the holder's level.
+2. `/fc admin mine <id>` while both dig: two levels progressing, one shaft.
+3. Holders waiting: "Waiting for X to finish the last level of mine #n" should be rare and short.
+4. Stuck-recovery counts of miners must not rise (two NPCs on one spiral).
+5. Retraining: a helper may become another role after half a day without a mine of its own when the base needs one
+   ("has had no mine of its own ..."); the base should hire no miner while helpers exist.
+6. Save/restart mid-help: the helper comes back to its level.
+
+### Limits
+
+- **No third miner** in a mine, and a helper never digs the shaft, so a mine with a single deep level and nothing
+  else above the stairs has nothing for a helper (it then idles and is retrained as before).
+- **A helper may take the level the holder would have chosen next** (its rules are the same); the holder then picks
+  another band, or waits when nothing else is left.
+- **The level choice is made once per stint**, at the storehouse or wherever the miner stood; a changed stock does
+  not move a helper mid-level (as for the holder).
+- The owner's message in this round ("the heroes should keep being Honkai: Star Rail and ZZZ characters") belongs to
+  roadmap phase 4 and does not touch this item; the hero format work (commit dcef653) carries it.

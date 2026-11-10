@@ -90,6 +90,7 @@ public final class MineSites {
         wp.upgradeStep = -1;
         wp.note = why == null ? "" : why;
         Workplaces.release(data, wp);
+        Workplaces.releaseHelper(data, wp); // a helper climbs out and looks for work again
         data.setDirty();
         BaseState b = data.base(wp.baseId);
         if (b != null && level != null) {
@@ -106,6 +107,7 @@ public final class MineSites {
         wp.restTier = Math.max(1, tier);
         wp.upgradeStep = -1;
         Workplaces.release(data, wp);
+        Workplaces.releaseHelper(data, wp);
         data.setDirty();
         BaseState b = data.base(wp.baseId);
         if (b != null && level != null) {
@@ -123,8 +125,9 @@ public final class MineSites {
     }
 
     /**
-     * One line per mine for the station screen: an open mine with its levels (height, ore, progress, lengthening
-     * rounds), how deep its shaft goes and its output; worked-out, given-up and resting mines together on one line.
+     * One line per mine for the station screen: an open mine with its miner and helper (if any), its levels (height,
+     * ore, progress, lengthening rounds; the holder's level first, then the helper's), how deep its shaft goes and its
+     * output; worked-out, given-up and resting mines together on one line.
      */
     public static List<String> describe(CampaignData data, BaseState b, int minY, java.util.function.Function<WorkplaceState, String> who) {
         List<String> out = new ArrayList<>();
@@ -146,13 +149,20 @@ public final class MineSites {
                 continue;
             }
             int y0 = w.origin.getY();
+            // a second miner helping in the mine, and the level it works
+            WorkplaceState.MineLevel helped = Workplaces.helperValid(data, w) ? w.helperLevel() : null;
+            String helper = helped == null ? "" : ", helped by " + data.record(w.helper).name + " on y=" + (y0 - helped.step);
             StringBuilder sb = new StringBuilder("Mine #" + w.id + " at " + w.origin.toShortString() + " facing "
-                    + w.facing.getSerializedName() + " (" + who.apply(w) + "): ");
+                    + w.facing.getSerializedName() + " (" + who.apply(w) + helper + "): ");
             List<WorkplaceState.MineLevel> order = new ArrayList<>(w.levels);
             WorkplaceState.MineLevel cur = MineLayout.current(w);
+            if (helped != null && helped != cur) {
+                order.remove(helped);
+                order.add(0, helped);
+            }
             if (cur != null) {
                 order.remove(cur);
-                order.add(0, cur); // the level being worked first
+                order.add(0, cur); // the level being worked first, then the helper's
             }
             List<String> parts = new ArrayList<>();
             for (WorkplaceState.MineLevel lv : order) {

@@ -366,4 +366,164 @@ class MinePlannerTest {
         assertEquals(Band.DEEP, MinePlanner.bandAt(-56, SURFACE, MIN_Y));
         assertEquals(Band.LAPIS, MinePlanner.bandAt(-8, SURFACE, MIN_Y), "a tie goes to the shallower band");
     }
+    // ------------------------------------------------------------------ a second miner (a helper) in the mine
+
+    private static Decision helper(List<Level> levels, int holder, int bottom, int tier, Stock stock, int maxRounds) {
+        return MinePlanner.forHelper(SURFACE, MIN_Y, levels, holder, bottom, tier, MinePlanner.wanted(stock), maxRounds);
+    }
+
+    @Test
+    void helperTakesAnotherLevelOfTheMostWantedOre() {
+        // the holder digs the deep level; the shaft passes iron's height (step 54), where an unfinished iron level waits
+        List<Level> levels = List.of(level(126, 10, 0, false, Band.DEEP), level(54, 30, 0, false, Band.IRON), done(6, 0, Band.COAL));
+        Decision d = helper(levels, 0, 126, 2, new Stock(3, 0, 0, 0, 0, false, true), 4);
+        assertEquals(Kind.WORK, d.kind(), "" + d);
+        assertEquals(1, d.level(), "the iron level, which the base needs most and the holder does not work");
+        // with iron plenty and coal short: the finished coal level is lengthened
+        Decision c = helper(levels, 0, 126, 2, new Stock(100, 100, 100, 100, 0, false, true), 4);
+        assertEquals(Kind.LENGTHEN, c.kind(), "" + c);
+        assertEquals(2, c.level());
+    }
+
+    @Test
+    void helperNeverTakesTheHoldersLevelNorOneTooCloseToIt() {
+        // the holder works the only iron level: a helper looks elsewhere, even though iron is the most wanted
+        List<Level> levels = List.of(level(54, 10, 0, false, Band.IRON));
+        Decision d = helper(levels, 0, 54, 2, new Stock(3, 100, 100, 100, 100, false, false), 4);
+        assertNotNull(d);
+        assertFalse((d.kind() == Kind.WORK || d.kind() == Kind.LENGTHEN) && d.level() == 0, "the holder's level: " + d);
+        assertEquals(Kind.NEW_LAYER, d.kind(), "a new layer where the stairs pass: " + d);
+        assertEquals(Band.COAL, d.band(), "coal at step 6 is the only band the stairs (to 54) pass besides iron's own");
+        assertEquals(6, d.step());
+        // an old hut mine's levels 2 steps apart: the shallower one shares the holder's roof, so it is not taken
+        List<Level> legacy = List.of(level(4, 0, 0, false, Band.COAL), level(2, 0, 0, false, Band.COAL), level(10, 0, 0, false, Band.COAL));
+        Decision l = MinePlanner.forHelper(-40, MIN_Y, legacy, 0, 10, 2, List.of(), 0);
+        assertEquals(Kind.WORK, l.kind(), "" + l);
+        assertEquals(2, l.level(), "the level 6 steps away, not the one 2 steps from the holder's");
+        assertTrue(MinePlanner.HELPER_CLEARANCE >= 3, "2-high tunnels 3 steps apart share no cell, floor or roof");
+    }
+
+    @Test
+    void helperNeverDigsTheShaft() {
+        Random r = new Random(7);
+        for (int i = 0; i < 5000; i++) {
+            List<Level> levels = randomLevels(r);
+            int holder = levels.isEmpty() || r.nextInt(4) == 0 ? -1 : r.nextInt(levels.size());
+            int bottom = r.nextInt(127), tier = r.nextInt(4), maxRounds = r.nextInt(5);
+            Decision d = helper(levels, holder, bottom, tier, randomStock(r), maxRounds);
+            if (d == null) {
+                continue;
+            }
+            int step = d.kind() == Kind.NEW_LAYER ? d.step() : levels.get(d.level()).step();
+            assertTrue(step <= bottom, "below the stairs: " + d + " with the bottom at " + bottom);
+            assertTrue(d.band() == null || d.band().pickTier <= tier, "" + d);
+            if (holder >= 0) {
+                assertTrue(Math.abs(step - levels.get(holder).step()) >= MinePlanner.HELPER_CLEARANCE, "next to the holder's level: " + d);
+            }
+            switch (d.kind()) {
+                case WORK -> assertTrue(levels.get(d.level()).unfinished(), "a done level is not worked: " + d);
+                case LENGTHEN -> assertTrue(levels.get(d.level()).rounds() < maxRounds && !levels.get(d.level()).cut(), "" + d);
+                case NEW_LAYER -> {
+                    assertTrue(SpiralMine.isLanding(d.step()) && d.step() >= MinePlanner.MIN_DEPTH, "" + d);
+                    for (Level l : levels) {
+                        assertTrue(Math.abs(l.step() - d.step()) >= MinePlanner.MIN_SPACING, "new layer " + d.step() + " too close to " + l.step());
+                    }
+                }
+                default -> fail("a helper only works, lengthens or opens a level: " + d);
+            }
+        }
+    }
+
+    @Test
+    void helperFindsNothingInAMineWithNoOtherWork() {
+        // the stairs end at the holder's level, which is the only one: nothing above it fits a helper but coal
+        assertEquals(Band.COAL, helper(List.of(level(54, 0, 0, false, Band.IRON)), 0, 54, 2, PLENTY, 4).band());
+        // coal is dug and fully lengthened, the shaft reaches nothing else: no help
+        List<Level> levels = List.of(level(54, 0, 0, false, Band.IRON), done(6, 4, Band.COAL));
+        assertNull(helper(levels, 0, 54, 2, PLENTY, 4), "nothing a helper could work");
+        // a shaft not dug yet (a new mine): nothing at all
+        assertNull(helper(List.of(level(54, 0, 0, false, Band.IRON)), 0, 0, 2, PLENTY, 4));
+        // a wooden pickaxe cannot help on an iron level
+        assertNull(helper(List.of(level(126, 0, 0, false, Band.DEEP), level(54, 0, 0, false, Band.IRON), done(6, 4, Band.COAL)), 0, 126, 0,
+                PLENTY, 4));
+        // an old hut mine whose levels lie off every band's height: any unfinished one, the shallowest first
+        Decision d = MinePlanner.forHelper(-40, MIN_Y, List.of(level(3, 0, 0, false, Band.COAL), level(10, 5, 0, false, Band.COAL)), 1, 10, 1,
+                List.of(), 0);
+        assertEquals(Kind.WORK, d.kind(), "" + d);
+        assertEquals(0, d.level());
+    }
+
+    @Test
+    void holderNeverTakesTheHelpersLevel() {
+        Random r = new Random(8);
+        for (int i = 0; i < 5000; i++) {
+            List<Level> levels = randomLevels(r);
+            if (levels.size() < 2) {
+                continue;
+            }
+            int taken = r.nextInt(levels.size());
+            int current = r.nextInt(levels.size());
+            if (current == taken) {
+                current = -1;
+            }
+            Decision d = MinePlanner.next(SURFACE, MIN_Y, levels, current, 126, 0, r.nextInt(4), MinePlanner.wanted(randomStock(r)),
+                    r.nextInt(5), taken);
+            if (d.kind() == Kind.WORK || d.kind() == Kind.LENGTHEN) {
+                assertNotEquals(taken, d.level(), "the helper's level: " + d);
+                if (d.level() != current) {
+                    assertTrue(Math.abs(levels.get(d.level()).step() - levels.get(taken).step()) >= MinePlanner.HELPER_CLEARANCE, "" + d);
+                }
+            }
+            if (d.kind() == Kind.NEW_LAYER) {
+                assertTrue(Math.abs(levels.get(taken).step() - d.step()) >= MinePlanner.MIN_SPACING, "" + d);
+            }
+            if (d.kind() == Kind.WAIT) {
+                assertEquals(taken, d.level());
+            }
+        }
+    }
+
+    @Test
+    void holderWaitsForItsHelperInsteadOfRetiringTheMine() {
+        // everything is dug but the coal level its helper works: the holder waits, the mine is not worked out
+        List<Level> levels = List.of(level(6, 40, 4, false, Band.COAL), done(54, 4, Band.IRON), done(70, 4, Band.LAPIS), done(86, 4, Band.GOLD),
+                done(126, 4, Band.DEEP));
+        Decision d = MinePlanner.next(SURFACE, MIN_Y, levels, 4, 126, 0, 2, List.of(), 4, 0);
+        assertEquals(Kind.WAIT, d.kind(), "" + d);
+        assertEquals(0, d.level());
+        Decision alone = MinePlanner.next(SURFACE, MIN_Y, levels, 4, 126, 0, 2, List.of(), 4, -1);
+        assertEquals(Kind.WORK, alone.kind(), "without a helper the holder would work that level itself");
+        assertEquals(0, alone.level());
+        // the helper's level is done too, but could still be lengthened: the holder still waits (the helper leaves first)
+        List<Level> roomy = new ArrayList<>(levels);
+        roomy.set(0, done(6, 2, Band.COAL));
+        assertEquals(Kind.LENGTHEN, MinePlanner.next(SURFACE, MIN_Y, roomy, 4, 126, 0, 2, List.of(), 4, -1).kind());
+        assertEquals(Kind.WAIT, MinePlanner.next(SURFACE, MIN_Y, roomy, 4, 126, 0, 2, List.of(), 4, 0).kind());
+        // nothing left anywhere: worked out, helper or not
+        List<Level> all = new ArrayList<>(levels);
+        all.set(0, done(6, 4, Band.COAL));
+        assertEquals(Kind.WORKED_OUT, MinePlanner.next(SURFACE, MIN_Y, all, 4, 126, 0, 2, List.of(), 4, 0).kind());
+        // only a better pickaxe would help, and the helper's level is dug: the mine rests as before
+        List<Level> stone = List.of(done(6, 4, Band.COAL), done(54, 4, Band.IRON), done(70, 4, Band.LAPIS));
+        assertEquals(Kind.REST, MinePlanner.next(SURFACE, MIN_Y, stone, 2, 70, 0, 1, List.of(), 4, 0).kind());
+        // the holder still has work elsewhere: it is not held back by the helper
+        Decision other = MinePlanner.next(SURFACE, MIN_Y, List.of(level(54, 0, 0, false, Band.IRON), level(6, 0, 0, false, Band.COAL)), 0, 54, 0,
+                2, List.of(Band.COAL), 4, 1);
+        assertEquals(Kind.WORK, other.kind());
+        assertEquals(0, other.level(), "its own unfinished level first, even with coal wanted most");
+    }
+
+    @Test
+    void withoutAHelperNextIsUnchanged() {
+        Random r = new Random(9);
+        for (int i = 0; i < 3000; i++) {
+            List<Level> levels = randomLevels(r);
+            int cur = levels.isEmpty() ? -1 : r.nextInt(levels.size());
+            int bottom = r.nextInt(127), tier = r.nextInt(4), maxRounds = r.nextInt(5);
+            List<Band> wanted = MinePlanner.wanted(randomStock(r));
+            assertEquals(MinePlanner.next(SURFACE, MIN_Y, levels, cur, bottom, 0, tier, wanted, maxRounds),
+                    MinePlanner.next(SURFACE, MIN_Y, levels, cur, bottom, 0, tier, wanted, maxRounds, -1));
+        }
+        assertEquals(List.of(Band.COAL, Band.IRON, Band.DEEP, Band.GOLD, Band.LAPIS), MinePlanner.order(List.of(Band.COAL)));
+    }
 }

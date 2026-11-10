@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `3bee1bc103feba3b857d10814bf414186f13b62132bfb15c72843c55e8c8e5e6`
+SHA-256: `a647e911fc55a20e373620a48152666e3b8c2dddfd90d65095f3b45af14b84f6`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -204,6 +204,18 @@ Players respawn at their nearest surviving allied base when they have no bed.
   layers of the same ore a little above or below instead. When only a better pickaxe would help, the mine
   **rests** until the blacksmith has made one (the miner fetches it, or looks for another site meanwhile); when
   every layer it can reach is dug, the mine is **worked out** and its miner moves on to a cave or a new site.
+* **Two miners can share a mine.** While every mine site of the base is taken (or no site can be found), a miner
+  without a mine **helps** in an open mine of its base instead of standing idle: one with a miner of its own, no
+  helper yet and its stairs dug. It takes another level of it by the same rules (the ore the base lacks most that
+  its pickaxe can harvest): an unfinished level, one to lengthen, or a new branch mine where the stairs already
+  pass. It never works the holder's level or one within 3 steps of it, and never digs the shaft, so the two never
+  dig the same cells; the holder goes on planning the mine and digging the shaft deeper, both use the same stairs,
+  and neither follows an ore vein into the other's level. A holder whose only work left is the helper's level
+  waits for it rather than calling the mine worked out. The helper leaves (climbing out first) when its level is
+  done or cut, when the mine is set aside or rests, or when it gets a mine or cave of its own; it takes the mine
+  over when its miner dies or is retrained. The station's mine line names it ("helped by ... on y=..."). Helping
+  is no reason to hire miners, and a helper with no mine of its own for half a day counts as a spare hand: the
+  base may retrain it for a role it needs, as it did idle miners.
   Miners follow exposed ore veins, plug water, lava and loose sand before opening a cell (or dig through falling
   sand like a player), clear flooded tunnel cells, bridge cave holes in the tunnel floor, stop a branch where it
   breaks out of a hillside, and stop collecting cobblestone-type junk once storage holds 512 of it. They never dig
@@ -393,16 +405,18 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 153 JUnit tests for the pure rules (spiral mine and branch-mine geometry, the mine layer
-  planner, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule, the
+* `./gradlew test` — 160 JUnit tests for the pure rules (spiral mine and branch-mine geometry, the mine layer
+  planner and the level a helper takes in a shared mine, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule, the
   scaffold pillar's column and height for tall trees, the dirt patches a woodcutter digs for one (one block deep, a
   step out from every cell, never beside water, a drop or an earlier patch), branch ends in protected wood, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 112 GameTests on a real headless server, including **miners** (digs its own
+* `./gradlew runGameTestServer` — 116 GameTests on a real headless server, including **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
-  a resting mine; a mine set aside keeps only the ground it dug), **woodcutters** (fells a tree and replants the same
+  a resting mine; a mine set aside keeps only the ground it dug; a second miner helps in a mine at the cap on
+  another level with no shared cell, through a reload, leaves a mine that is set aside and takes over one whose
+  miner died), **woodcutters** (fells a tree and replants the same
   species, leaves built and protected wood alone, takes down an old fence, resumes a tree after a reload, cuts a
   branch end from below, leaves an unreachable tree for a while, fills the grove from the storehouse and picks the
   flowers first; fells a mega spruce and a tall jungle tree from a dirt scaffold and leaves no log or block behind,

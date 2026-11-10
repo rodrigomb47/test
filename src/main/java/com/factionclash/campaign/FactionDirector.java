@@ -344,7 +344,8 @@ public final class FactionDirector {
 
     /**
      * Instead of recruiting, a worker who has had nothing to do for half a day (a miner with no mine or cave, any
-     * worker whose job reports itself idle) or no tool for its job takes up the job the base needs most, keeping its
+     * worker whose job reports itself idle, a miner that only helps in another's mine) or no tool for its job takes
+     * up the job the base needs most, keeping its
      * level and traits - like a player switching jobs. Taking the new role hands back its old workplaces. When it was
      * idle rather than toolless and no other worker of its old role at the base still has work, that role is barren
      * for two days: the base does not hire into the same dead end.
@@ -358,7 +359,9 @@ public final class FactionDirector {
                 continue;
             }
             com.factionclash.work.Job job = n.job();
-            boolean idle = job.idleFor(RETRAIN_IDLE_TICKS);
+            // a spare hand (a miner only helping in another's mine) counts as idle, as it stood idle before it could help
+            boolean spare = !job.idleFor(RETRAIN_IDLE_TICKS) && job.spareFor(RETRAIN_IDLE_TICKS);
+            boolean idle = job.idleFor(RETRAIN_IDLE_TICKS) || spare;
             // a fisherman, butcher or miner who has not been able to get its tool for half a day (no string for a
             // rod, nothing to make it from) does something useful instead
             boolean toolless = job.missingToolFor(RETRAIN_IDLE_TICKS);
@@ -366,7 +369,7 @@ public final class FactionDirector {
                 continue;
             }
             NpcRole old = r.role;
-            String why = idle ? (job.idleReason().isEmpty() ? "nothing to do" : job.idleReason()) : "no " + old.tool.noun();
+            String why = spare ? job.spareReason() : idle ? (job.idleReason().isEmpty() ? "nothing to do" : job.idleReason()) : "no " + old.tool.noun();
             if (idle && !toolless && !othersBusy(level, f, b, r)) {
                 b.markBarren(old, t + BARREN_TICKS); // nothing to do here even with its tool: do not hire into it again
             }

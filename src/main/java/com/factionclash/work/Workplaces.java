@@ -66,6 +66,44 @@ public final class Workplaces {
         return role == null || holder.role == role;
     }
 
+    /**
+     * True if the mine's helper ({@link WorkplaceState#helper}) is really there: alive, still a miner, not the mine's
+     * holder itself, and on a level that still exists. A dead or retrained helper's record counts as no helper, so
+     * the holder may take its level again and another miner may help instead.
+     */
+    public static boolean helperValid(CampaignData data, WorkplaceState w) {
+        if (w.type != WorkplaceState.Type.MINE || w.helper == null || w.helper.equals(w.assigned) || w.helperLevel() == null) {
+            return false;
+        }
+        NpcRecord r = data.record(w.helper);
+        return r != null && r.alive && r.role == NpcRole.MINER;
+    }
+
+    /** The mine of the NPC's base it helps in (it is the mine's {@link WorkplaceState#helper}), or null. */
+    public static WorkplaceState helped(FactionNpc npc) {
+        BaseState base = npc.base();
+        if (base == null || npc.level().getServer() == null) {
+            return null;
+        }
+        CampaignData data = CampaignData.get(npc.level().getServer());
+        for (int id : base.workplaces) {
+            WorkplaceState w = data.workplace(id);
+            if (w != null && w.type == WorkplaceState.Type.MINE && npc.getUUID().equals(w.helper)) {
+                return w;
+            }
+        }
+        return null;
+    }
+
+    /** Ends the help in a mine: nobody works its helper's level until the holder or a new helper takes it. */
+    public static void releaseHelper(CampaignData data, WorkplaceState w) {
+        if (w.helper != null || w.helperStep != 0) {
+            w.helper = null;
+            w.helperStep = 0;
+            data.setDirty();
+        }
+    }
+
     /** True if a workplace has no worker (nobody assigned, or its worker is dead or now does another job). */
     public static boolean unworked(CampaignData data, WorkplaceState w) {
         return !holderValid(data, w);
@@ -112,7 +150,7 @@ public final class Workplaces {
         }
     }
 
-    /** Hands back every workplace assigned to this NPC, for example when it takes up another job. */
+    /** Hands back every workplace assigned to this NPC, and any help it gave in a mine, for example when it takes up another job. */
     public static void releaseAll(CampaignData data, UUID uuid) {
         if (uuid == null) {
             return;
@@ -120,6 +158,9 @@ public final class Workplaces {
         for (WorkplaceState w : data.workplaces.values()) {
             if (uuid.equals(w.assigned)) {
                 release(data, w);
+            }
+            if (uuid.equals(w.helper)) {
+                releaseHelper(data, w);
             }
         }
     }

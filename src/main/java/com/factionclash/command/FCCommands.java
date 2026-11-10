@@ -335,10 +335,12 @@ public final class FCCommands {
         StringBuilder sb = new StringBuilder("mine " + w.id + " origin " + w.origin.toShortString() + " facing " + w.facing
                 + (w.hut ? " (hut)" : "") + " bottom " + w.bottom + " (y=" + (y0 - w.bottom) + ") shaftLimit " + w.shaftLimit
                 + " maxRounds " + w.maxRounds + " cur " + w.cur + " shaftStep " + w.upgradeStep + " restTier " + w.restTier
-                + (w.workedOut ? (w.givenUp ? " GIVEN UP (" : " WORKED OUT (") + w.note + ")" : "") + "\n");
+                + (w.workedOut ? (w.givenUp ? " GIVEN UP (" : " WORKED OUT (") + w.note + ")" : "")
+                + (w.helper == null ? "" : " helper " + w.helper + " on step " + w.helperStep
+                + (com.factionclash.work.Workplaces.helperValid(CampaignData.get(c.getSource().getServer()), w) ? "" : " (stale)")) + "\n");
         for (int i = 0; i < w.levels.size(); i++) {
             WorkplaceState.MineLevel lv = w.levels.get(i);
-            sb.append(i == w.cur ? " > " : "   ").append("level ").append(i).append(" step ").append(lv.step).append(" y=").append(y0 - lv.step)
+            sb.append(i == w.cur ? " > " : w.helper != null && lv.step == w.helperStep ? " h " : "   ").append("level ").append(i).append(" step ").append(lv.step).append(" y=").append(y0 - lv.step)
                     .append(" ").append(com.factionclash.work.MineSites.bandOf(w, lv, level.getMinBuildHeight()).label)
                     .append(" tunnel ").append(lv.progress).append("/").append(com.factionclash.structure.MineLayout.tunnelPlan(lv).size())
                     .append(" rounds ").append(lv.rounds).append(lv.cut ? " cut" : "").append("\n");
@@ -468,6 +470,11 @@ public final class FCCommands {
                         wo.addProperty("workedOut", w.workedOut);
                         wo.addProperty("givenUp", w.givenUp);
                         wo.addProperty("note", w.note);
+                        if (w.helper != null) {
+                            wo.addProperty("helper", w.helper.toString());
+                            wo.addProperty("helperY", w.origin.getY() - w.helperStep);
+                            wo.addProperty("helperValid", com.factionclash.work.Workplaces.helperValid(data, w));
+                        }
                         JsonArray lvs = new JsonArray();
                         for (WorkplaceState.MineLevel lv : w.levels) {
                             JsonObject lo = new JsonObject();

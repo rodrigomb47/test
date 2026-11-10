@@ -82,6 +82,8 @@ public final class GameTestBases {
         public final BaseState base;
         private final List<FactionNpc> npcs = new ArrayList<>();
         private final List<net.minecraft.world.entity.Entity> extras = new ArrayList<>();
+        private final List<UUID> absent = new ArrayList<>();
+        private final List<Runnable> undo = new ArrayList<>();
         private boolean cleaned;
 
         private Handle(GameTestHelper helper, CampaignData data, BaseState base) {
@@ -111,6 +113,28 @@ public final class GameTestBases {
         public <E extends net.minecraft.world.entity.Entity> E track(E e) {
             extras.add(e);
             return e;
+        }
+
+        /**
+         * A living member of the base in {@code role} with no entity in the test (away, in an unloaded chunk): only its
+         * roster entry, which cleanup removes again. Its last known place lies far off, so it is never reported missing.
+         */
+        public UUID absentWorker(NpcRole role) {
+            com.factionclash.campaign.NpcRecord r = new com.factionclash.campaign.NpcRecord();
+            r.uuid = UUID.randomUUID();
+            r.name = "Absent " + role.displayName;
+            r.role = role;
+            r.baseId = base.id;
+            r.lastPos = new BlockPos(1_000_000, 64, 1_000_000);
+            r.lastSeen = helper.getLevel().getGameTime();
+            data.faction(base.faction).roster.put(r.uuid, r);
+            absent.add(r.uuid);
+            return r.uuid;
+        }
+
+        /** Something cleanup does too (for example clearing blocks the test built above the platform's template). */
+        public void onCleanup(Runnable r) {
+            undo.add(r);
         }
 
         /** Adds a workplace to the base with a fresh id (removed again by cleanup). */
@@ -185,8 +209,12 @@ public final class GameTestBases {
                 n.discard();
             }
             npcs.clear();
+            absent.forEach(roster::remove);
+            absent.clear();
             extras.forEach(net.minecraft.world.entity.Entity::discard);
             extras.clear();
+            undo.forEach(Runnable::run);
+            undo.clear();
             data.setDirty();
         }
     }

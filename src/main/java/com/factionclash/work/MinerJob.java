@@ -167,6 +167,25 @@ public class MinerJob extends Job {
     /** After a trip for a resting mine's pickaxe that brought none, when the miner may try again. */
     private long nextRestFetch;
 
+    /**
+     * Sharing a mine: the mine this miner helps in as its second miner (-1: none; the relation itself is saved in the
+     * mine's record, {@link WorkplaceState#helper}), and a mine it must climb out of before anything else, once its
+     * help there is over (-1: none).
+     */
+    private int helpingId = -1, leaveFirst = -1;
+    /** True while this tick's work is a helper's: its level is the mine's helper level, and the shaft is not its own. */
+    private boolean helping;
+    /** Since when the miner, helping, has had no mine or cave of its own (-1: it has one). Not saved. */
+    private long spareSince = -1;
+    /** After a help that went wrong (the stairs blocked), when the miner may help in a mine again. */
+    private long nextHelp;
+    /** The holder waits at the storehouse while only its helper's level has work left ({@link MinePlanner.Kind#WAIT}). */
+    private boolean waitingForHelper;
+    /** Why a holder waiting for its helper is idle, in words that follow "has had". */
+    public static final String ONLY_HELPERS_LEVEL = "no level of its own left in its mine (only its helper's)";
+    /** Why a helper with no mine of its own is a spare hand the base may retrain, in words that follow "has had". */
+    public static final String NO_MINE_OF_ITS_OWN = "no mine of its own (only another miner's to help in)";
+
     public MinerJob(FactionNpc npc) {
         super(npc);
         caveJob = new CaveMinerJob(npc);
@@ -219,6 +238,14 @@ public class MinerJob extends Job {
             return caveJob.workplaceInfo();
         }
         WorkplaceState wp = Workplaces.held(npc, WorkplaceState.Type.MINE); // looking never claims
+        WorkplaceState helped = wp == null || !wp.active() ? Workplaces.helped(npc) : null;
+        if (helped != null && helped.helperLevel() != null) {
+            MineLevel lv = helped.helperLevel();
+            var holder = helped.assigned == null ? null : data().record(helped.assigned);
+            return "Helping in mine #" + helped.id + " (its miner: " + (holder == null ? "none" : holder.name) + "), level y="
+                    + (helped.origin.getY() - lv.step) + " for " + bandOf(helped, lv).label + ", branch mine " + lv.progress + "/"
+                    + MineLayout.tunnelPlan(lv).size();
+        }
         if (wp == null) {
             return siteSearch != null || surveyIndex >= 0 ? "no mine yet - looking for a place to dig one" : "no mine";
         }
@@ -307,30 +334,306 @@ public class MinerJob extends Job {
             waitFor(200);
             return;
         }
-        if (caveWork() != null) {
+        takeOverHelpedMine();
+        WorkplaceState cave = caveWork();
+        WorkplaceState own = cave == null ? wp() : null;
+        WorkplaceState helped = settleHelp(own, cave);
+        helping = helped != null;
+        if (leaveFirst >= 0 && !climbedOutFirst(own)) {
+            return;
+        }
+        if (cave != null) {
+            spareSince = -1;
             markBusy();
             caveJob.tick();
             return;
         }
-        WorkplaceState wp = wp();
+        WorkplaceState wp = own != null ? own : helped;
         if (wp == null) {
             site(b);
             return;
         }
+        if (own != null) {
+            spareSince = -1;
+        } else if (spareSince < 0) {
+            spareSince = now();
+        }
         siteSearch = null;
         surveyIndex = -1;
-        markBusy();
+        if (!waitingForHelper || helping) {
+            waitingForHelper = false;
+            markBusy();
+        }
         collect(wp);
         switch (state) {
-            case CHECK, SITE -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 || MineLayout.current(wp) == null
+            case CHECK, SITE -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 || workLevel(wp) == null
                     ? State.STORAGE : State.TRAVEL;
             case STORAGE -> storage(wp);
             case CRAFT -> craftTorches(wp);
             case TRAVEL -> travel(wp);
             case MINE -> mine(wp);
-            case EXTEND -> extend(wp);
+            case EXTEND -> {
+                if (helping) {
+                    state = State.TRAVEL; // (the shaft is the holder's to dig)
+                } else {
+                    extend(wp);
+                }
+            }
             case CLEAR -> clear(wp);
         }
+    }
+
+    /** The block this miner is breaking right now, or null (for GameTests). */
+    public BlockPos digTarget() {
+        return breaker.target();
+    }
+
+    /** The level this miner works in {@code wp}: the helper's level while it helps, else the mine's current level. */
+    private MineLevel workLevel(WorkplaceState wp) {
+        return helping ? wp.helperLevel() : MineLayout.current(wp);
+    }
+
+    // ------------------------------------------------------------------ sharing a mine
+
+    /**
+     * True while this miner is a spare hand: it has helped in another miner's mine, with no mine or cave of its own, for
+     * at least {@code ticks}. The base may then retrain it for a role it needs, as it would an idle miner (before mines
+     * could be shared, such a miner stood idle).
+     */
+    @Override
+    public boolean spareFor(long ticks) {
+        return spareSince >= 0 && now() - spareSince >= ticks;
+    }
+
+    @Override
+    public String spareReason() {
+        return NO_MINE_OF_ITS_OWN;
+    }
+
+    /**
+     * The mine this miner helps in has lost its miner (dead, retrained, or released it): the helper takes it over, as
+     * its holder, and goes on with the level it was working (unless the shaft was being dug down, which it then
+     * finishes first). It takes it up before any other free mine.
+     */
+    private void takeOverHelpedMine() {
+        WorkplaceState h = Workplaces.helped(npc);
+        if (h == null || !h.active() || Workplaces.holderValid(data(), h)) {
+            return;
+        }
+        WorkplaceState own = Workplaces.held(npc, WorkplaceState.Type.MINE);
+        if (own != null && own != h && own.active()) {
+            return; // (a mine of its own already: the help ends below)
+        }
+        MineLevel lv = h.helperLevel();
+        h.assigned = npc.getUUID();
+        Workplaces.releaseHelper(data(), h);
+        if (lv != null && !h.upgrading()) {
+            h.cur = h.levels.indexOf(lv);
+        }
+        data().setDirty();
+        helpingId = -1;
+        state = State.CHECK;
+        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + h.id + ": " + npc.npcName()
+                + " takes the mine over"));
+    }
+
+    /**
+     * Whether the help this miner gives in a mine goes on; returns that mine, or null. The help ends when the miner
+     * has a mine or cave of its own, or {@link #helpOver} says so; then (and when the mine's record was released
+     * elsewhere: the mine set aside or resting) the miner climbs out of that mine first ({@link #leaveFirst}), unless
+     * it is now its own.
+     */
+    private WorkplaceState settleHelp(WorkplaceState own, WorkplaceState cave) {
+        WorkplaceState h = Workplaces.helped(npc);
+        if (h != null) {
+            if (own == null && cave == null && helpOver(h) == null) {
+                helpingId = h.id;
+                return h;
+            }
+            Workplaces.releaseHelper(data(), h);
+            if (helpingId < 0) {
+                helpingId = h.id; // (after a reload)
+            }
+        }
+        if (helpingId >= 0) {
+            if (own == null || own.id != helpingId) {
+                leaveFirst = helpingId;
+            }
+            helpingId = -1;
+            state = State.CHECK;
+            breaker.reset(npc);
+            vein.clear();
+            blocked.clear();
+            npc.navigator().reset();
+        }
+        return null;
+    }
+
+    /**
+     * Why the help in mine {@code h} is over, or null while it goes on: the mine is set aside or rests, its miner is
+     * gone, the helper's level is gone, done or cut, the holder now works it (or one too close to it), or the
+     * pickaxe in hand cannot harvest its ore.
+     */
+    private String helpOver(WorkplaceState h) {
+        if (!h.active()) {
+            return "the mine is set aside";
+        }
+        if (!Workplaces.holderValid(data(), h)) {
+            return "the mine has no miner";
+        }
+        MineLevel lv = h.helperLevel();
+        if (lv == null || lv.step > h.bottom) {
+            return "its level is gone";
+        }
+        MineLevel cur = MineLayout.current(h);
+        if (cur != null && Math.abs(cur.step - lv.step) < MinePlanner.HELPER_CLEARANCE) {
+            return "the mine's miner works there";
+        }
+        if (lv.cut || lv.progress >= MineLayout.tunnelPlan(lv).size()) {
+            return "its level is done";
+        }
+        int tier = pickTier();
+        if (tier >= 0 && bandOf(h, lv).pickTier > tier) {
+            return "its pickaxe is too weak for the level"; // (a better one broke and a spare took its place)
+        }
+        return null;
+    }
+
+    /** Climbs out of the mine whose help is over before doing anything else; true once out (or it is the miner's own mine now). */
+    private boolean climbedOutFirst(WorkplaceState own) {
+        WorkplaceState old = data().workplace(leaveFirst);
+        if (old == null || old == own || old.type != WorkplaceState.Type.MINE || leaveMine(old)) {
+            leaveFirst = -1;
+            return true;
+        }
+        markBusy();
+        return false;
+    }
+
+    /**
+     * Instead of standing idle (every mine site of the base taken, or no site to be found), the miner helps in an
+     * open mine of the base: one with a miner of its own working a level (not between two, nor waiting) and no helper
+     * yet, whose stairs are dug, where {@link MinePlanner#forHelper} finds a level for it (never the holder's, never
+     * below the stairs). Of several
+     * mines, the one with the most wanted ore comes first, then the nearest. The level is taken at once: lengthened,
+     * or opened as a new branch mine where the stairs pass. True when the miner now helps.
+     */
+    private boolean joinAsHelper(BaseState b) {
+        int tier = pickTier();
+        if (tier < 0 || now() < nextHelp || Workplaces.held(npc, WorkplaceState.Type.CAVE) != null) {
+            return false;
+        }
+        int minY = level().getMinBuildHeight();
+        List<MinePlanner.Band> order = null;
+        WorkplaceState best = null;
+        MinePlanner.Decision bestD = null;
+        int bestRank = Integer.MAX_VALUE;
+        double bestDist = Double.MAX_VALUE;
+        for (int id : b.workplaces) {
+            WorkplaceState w = data().workplace(id);
+            // (a holder with no level planned is about to choose one, or waits for its helper: it chooses first)
+            if (w == null || w.type != WorkplaceState.Type.MINE || !w.active() || w.bottom < 1 || MineLayout.current(w) == null
+                    || npc.getUUID().equals(w.assigned) || !Workplaces.holderValid(data(), w) || Workplaces.helperValid(data(), w)
+                    || badSites.contains(w.origin.asLong())) {
+                continue;
+            }
+            if (order == null) {
+                order = MinePlanner.order(MinePlanner.wanted(stock(b)));
+            }
+            MinePlanner.Decision d = MinePlanner.forHelper(w.origin.getY(), minY, plannerLevels(w), w.cur, w.bottom, tier, order, w.maxRounds);
+            if (d == null) {
+                continue;
+            }
+            int rank = d.band() == null ? order.size() : order.indexOf(d.band());
+            double dist = npc.blockPosition().distSqr(w.origin);
+            if (rank < bestRank || (rank == bestRank && dist < bestDist)) {
+                best = w;
+                bestD = d;
+                bestRank = rank;
+                bestDist = dist;
+            }
+        }
+        if (best == null) {
+            return false;
+        }
+        WorkplaceState w = best;
+        int y0 = w.origin.getY();
+        MineLevel lv;
+        String what;
+        switch (bestD.kind()) {
+            case WORK -> {
+                lv = w.levels.get(bestD.level());
+                what = "works its y=" + (y0 - lv.step) + " branch mine";
+            }
+            case LENGTHEN -> {
+                lv = w.levels.get(bestD.level());
+                if (!MineSites.corridorClear(level(), data(), w, lv.rounds + 1)) {
+                    // something now lies where the next stretch would go: the corridor ends at this length (the next
+                    // look finds the mine's other levels)
+                    w.maxRounds = lv.rounds;
+                    data().setDirty();
+                    return false;
+                }
+                lv.rounds++;
+                what = "lengthens its y=" + (y0 - lv.step) + " branch mine (round " + lv.rounds + ")";
+            }
+            case NEW_LAYER -> {
+                lv = new MineLevel(bestD.step(), 0, 0, bestD.band().ordinal());
+                w.levels.add(lv);
+                what = "opens a branch mine at y=" + (y0 - lv.step);
+            }
+            default -> {
+                return false;
+            }
+        }
+        MinePlanner.Band have = bandOf(w, lv);
+        if (bestD.band() != null && bestD.band() != have && have.pickTier > bestD.band().pickTier) {
+            lv.band = bestD.band().ordinal(); // (as the holder's choice does: worked for the ore of the weaker pickaxe)
+        }
+        w.helper = npc.getUUID();
+        w.helperStep = lv.step;
+        data().setDirty();
+        helpingId = w.id;
+        helping = true;
+        siteSearch = null;
+        surveyIndex = -1;
+        if (spareSince < 0) {
+            spareSince = now();
+        }
+        markBusy();
+        npc.awardXp(bestD.kind() == MinePlanner.Kind.WORK ? 0 : LEVEL_XP);
+        var holder = data().record(w.assigned);
+        Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Mine #" + w.id + ": " + npc.npcName() + " helps "
+                + (holder == null ? "its miner" : holder.name) + " and " + what + " for " + bandOf(w, lv).label));
+        boolean stocked = Inv.count(npc.inventory(), TORCH) >= 8 && Inv.count(npc.inventory(), SEAL) >= 16;
+        state = stocked ? State.TRAVEL : State.STORAGE;
+        return true;
+    }
+
+    /** The mine's levels as the planner sees them. */
+    private List<MinePlanner.Level> plannerLevels(WorkplaceState wp) {
+        List<MinePlanner.Level> levels = new ArrayList<>();
+        for (MineLevel lv : wp.levels) {
+            levels.add(new MinePlanner.Level(lv.step, lv.progress, lv.rounds, lv.cut, bandOf(wp, lv)));
+        }
+        return levels;
+    }
+
+    /**
+     * True if {@code p} lies in the layer of the level the other miner of the mine works (the helper's for the holder,
+     * the holder's for the helper): its two tunnel rows and the floor and roof around them, out from the shaft. An ore
+     * vein is never followed there, so the two never dig the same cells (nor each other's floor).
+     */
+    private boolean othersLayer(WorkplaceState wp, BlockPos p) {
+        if (wp == null) {
+            return false;
+        }
+        MineLevel other = helping ? MineLayout.current(wp) : Workplaces.helperValid(data(), wp) ? wp.helperLevel() : null;
+        if (other == null) {
+            return false;
+        }
+        int y = wp.origin.getY() - other.step;
+        return p.getY() >= y - 1 && p.getY() <= y + 2 && MineLayout.forwardOf(wp, p) >= SpiralMine.MAIN_START - 1;
     }
 
     /**
@@ -378,12 +681,18 @@ public class MinerJob extends Job {
         if (MineSites.openMines(data(), b) >= FCConfig.MAX_OPEN_MINES.get()) {
             siteSearch = null;
             surveyIndex = -1;
+            if (joinAsHelper(b)) {
+                return; // a level of another miner's mine instead of standing idle
+            }
             markIdle(NO_FREE_SITE);
             status("Every mine site of the base is taken", "Idle");
             waitFor(200);
             return;
         }
         if (now() < nextSiteSearch) {
+            if (joinAsHelper(b)) {
+                return; // no site of its own to be found for now: it helps in a mine of the base meanwhile
+            }
             markIdle(siteFailReason);
             // it waits at home, not out where it last looked (a survey point far outside the walls)
             if (!BaseZones.insideWalls(b, npc.blockPosition(), HOME_MARGIN) && !atStorage()) {
@@ -634,6 +943,10 @@ public class MinerJob extends Job {
             if (npc.getUUID().equals(wp.assigned)) {
                 addBadSite(wp.origin);
                 MineSites.giveUp(level(), data(), wp, "its stairs are blocked");
+            } else if (npc.getUUID().equals(wp.helper)) {
+                // a helper only stops helping there (the next tick climbs out), and helps nowhere for a while
+                Workplaces.releaseHelper(data(), wp);
+                nextHelp = now() + SITE_RETRY_TICKS;
             }
             state = State.CHECK;
             return false;
@@ -770,10 +1083,18 @@ public class MinerJob extends Job {
             takeFromStorage(SEAL, 32);
         }
         noSealBlocks = Inv.count(npc.inventory(), SEAL) == 0;
-        if (!wp.upgrading()) {
+        if (!helping && !wp.upgrading()) {
+            // (a helper's level was chosen when it joined; the holder plans the mine)
             plan(wp);
             if (!wp.active() || !npc.getUUID().equals(wp.assigned)) {
                 state = State.CHECK; // the mine rests or is worked out: on to another mine, a cave, or nothing
+                return;
+            }
+            if (waitingForHelper) {
+                var helper = wp.helper == null ? null : data().record(wp.helper);
+                markIdle(ONLY_HELPERS_LEVEL);
+                status("Waiting for " + (helper == null ? "its helper" : helper.name) + " to finish the last level of mine #" + wp.id, "Waiting");
+                waitFor(600);
                 return;
             }
         }
@@ -802,12 +1123,15 @@ public class MinerJob extends Job {
         BaseState b = base();
         int y0 = wp.origin.getY(), minY = level().getMinBuildHeight();
         List<MinePlanner.Band> wanted = MinePlanner.wanted(stock(b));
+        waitingForHelper = false;
+        if (wp.helper != null && !Workplaces.helperValid(data(), wp)) {
+            Workplaces.releaseHelper(data(), wp); // a helper that died or was retrained (its record stayed behind)
+        }
         for (int guard = 0; guard < 16; guard++) {
-            List<MinePlanner.Level> levels = new ArrayList<>();
-            for (MineLevel lv : wp.levels) {
-                levels.add(new MinePlanner.Level(lv.step, lv.progress, lv.rounds, lv.cut, bandOf(wp, lv)));
-            }
-            MinePlanner.Decision d = MinePlanner.next(y0, minY, levels, wp.cur, wp.bottom, wp.shaftLimit, pickTier(), wanted, wp.maxRounds);
+            List<MinePlanner.Level> levels = plannerLevels(wp);
+            // a level the mine's helper works is never the holder's choice
+            int taken = Workplaces.helperValid(data(), wp) ? wp.levels.indexOf(wp.helperLevel()) : -1;
+            MinePlanner.Decision d = MinePlanner.next(y0, minY, levels, wp.cur, wp.bottom, wp.shaftLimit, pickTier(), wanted, wp.maxRounds, taken);
             switch (d.kind()) {
                 case WORK -> choose(wp, d);
                 case LENGTHEN -> {
@@ -847,6 +1171,12 @@ public class MinerJob extends Job {
                     MineSites.rest(level(), data(), wp, d.needTier());
                 }
                 case WORKED_OUT -> MineSites.retire(level(), data(), wp, MineSites.WORKED_OUT);
+                case WAIT -> {
+                    // the only work left is on the helper's level: wait at the storehouse until it is done
+                    wp.cur = -1;
+                    wp.upgradeStep = -1;
+                    waitingForHelper = true;
+                }
             }
             data().setDirty();
             return;
@@ -910,12 +1240,12 @@ public class MinerJob extends Job {
             state = State.STORAGE;
             return;
         }
-        MineLevel lv = MineLayout.current(wp);
+        MineLevel lv = workLevel(wp);
         if (lv == null) {
             state = State.STORAGE; // no level chosen yet: the storehouse trip plans one
             return;
         }
-        if (!wp.upgrading() && lv.step > wp.bottom) {
+        if (!helping && !wp.upgrading() && lv.step > wp.bottom) {
             // a level below the stairs with no descent under way (a damaged record): dig down to it first, rather
             // than walk down stairs that are not there
             wp.upgradeStep = 0;
@@ -928,7 +1258,7 @@ public class MinerJob extends Job {
                 return;
             }
         }
-        if (wp.upgrading()) {
+        if (!helping && wp.upgrading()) {
             if (siteUnreachable(wp)) {
                 return;
             }
@@ -1036,13 +1366,14 @@ public class MinerJob extends Job {
      */
     private boolean findBlocked(WorkplaceState wp) {
         blocked.clear();
-        for (SpiralMine.Cell c : SpiralMine.spiralPlan(0, wp.bottom)) {
+        // (the stairs are the holder's to keep: a helper clears a stair only when it is in its way, walking)
+        for (SpiralMine.Cell c : helping ? List.<SpiralMine.Cell>of() : SpiralMine.spiralPlan(0, wp.bottom)) {
             BlockPos p = MineLayout.spiralPos(wp, c);
             if (!c.torch() && refilled(level().getBlockState(p)) && mayDig(wp, p)) {
                 blocked.add(p);
             }
         }
-        MineLevel lv = MineLayout.current(wp);
+        MineLevel lv = workLevel(wp);
         if (lv != null && lv.step <= wp.bottom) {
             List<SpiralMine.Cell> plan = MineLayout.tunnelPlan(lv);
             for (int i = 0; i < Math.min(lv.progress, plan.size()); i++) {
@@ -1087,7 +1418,7 @@ public class MinerJob extends Job {
             return;
         }
         if (!BlockWork.inReach(npc, cell, 4.5)) {
-            MineLevel lv = MineLayout.current(wp);
+            MineLevel lv = workLevel(wp);
             int step = MineLayout.stepAt(wp, cell.above(0));
             BlockPos stand;
             int destStep;
@@ -1153,12 +1484,15 @@ public class MinerJob extends Job {
         return 0;
     }
 
-    private void noticeOres(BlockPos opened) {
+    private void noticeOres(WorkplaceState wp, BlockPos opened) {
         var mines = com.factionclash.campaign.CampaignData.get(npc.getServer()).workplaces.values();
         for (Direction d : Direction.values()) {
             BlockPos n = opened.relative(d);
             if (mines.stream().anyMatch(w -> w.type == WorkplaceState.Type.MINE && MineLayout.nearStairs(w, n))) {
                 continue; // ore in a stair floor or the rock holding the stairs stays: mining it breaks the way down
+            }
+            if (othersLayer(wp, n)) {
+                continue; // the other miner's level: its cells are its own
             }
             if (vein.size() < MAX_VEIN && !vein.contains(n) && isOre(level().getBlockState(n))) {
                 vein.add(n);
@@ -1176,8 +1510,8 @@ public class MinerJob extends Job {
             state = State.STORAGE;
             return;
         }
-        MineLevel lv = MineLayout.current(wp);
-        if (lv == null || wp.upgrading()) {
+        MineLevel lv = workLevel(wp);
+        if (lv == null || (!helping && wp.upgrading())) {
             breaker.reset(npc);
             state = lv == null ? State.STORAGE : State.TRAVEL;
             return;
@@ -1208,7 +1542,7 @@ public class MinerJob extends Job {
                     prospect(wp, os, ore);
                 }
                 vein.poll();
-                noticeOres(ore);
+                noticeOres(wp, ore);
             }
             return;
         }
@@ -1269,7 +1603,7 @@ public class MinerJob extends Job {
             }
             lv.progress++;
             data().setDirty();
-            noticeOres(pos);
+            noticeOres(wp, pos);
             return;
         }
         if (!mayDig(wp, pos)) {
@@ -1315,7 +1649,7 @@ public class MinerJob extends Job {
             }
             lv.progress++;
             data().setDirty();
-            noticeOres(pos);
+            noticeOres(wp, pos);
             return;
         }
         if (dig(wp, pos)) {
@@ -1328,7 +1662,7 @@ public class MinerJob extends Job {
             }
             lv.progress++;
             data().setDirty();
-            noticeOres(pos);
+            noticeOres(wp, pos);
         }
     }
 
@@ -1526,7 +1860,7 @@ public class MinerJob extends Job {
                 npc.awardXp(oreXp(s));
                 prospect(wp, s, pos);
             }
-            noticeOres(pos);
+            noticeOres(wp, pos);
             if (!sealShaft(wp, pos, to)) {
                 state = State.STORAGE;
                 return;
@@ -1617,7 +1951,7 @@ public class MinerJob extends Job {
      * careful player would. Returns false when the miner has nothing to plug with.
      */
     private boolean preSeal(WorkplaceState wp, BlockPos cell, int shaftSteps) {
-        MineLevel lv = wp == null ? null : MineLayout.current(wp);
+        MineLevel lv = wp == null ? null : workLevel(wp);
         List<SpiralMine.Cell> plan = lv != null && lv.step <= wp.bottom ? MineLayout.tunnelPlan(lv) : null;
         for (Direction d : Direction.values()) {
             BlockPos n = cell.relative(d);

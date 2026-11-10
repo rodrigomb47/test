@@ -126,8 +126,10 @@ python3 tools/rcon.py "stop"
 - Builders keep 24 cobblestone/cobbled deepslate/blackstone for stone tools (a base once built its last cobble
   away and its mine rested forever).
 
-- A base keeps at most `maxOpenMines` (3) active mines; extra miners stay idle ("Every mine site of the base is
-  taken") until the base needs another role, then they are retrained. A second miner sharing a mine could be added.
+- A base keeps at most `maxOpenMines` (3) active mines. Roadmap phase 1: a miner left without a site now helps in
+  an open mine of its base, on another level (`docs/design/notes/phase1.md`, "Two miners share a mine"); it is still
+  retrained after half a day without a mine of its own when the base needs another role. Tested (160 unit tests,
+  116 GameTests); not yet checked in a campaign.
 - Tall trees (request 6, `docs/design/notes/tall-trees.md`), what is left:
   - **An unexplained trunk loss.** One hand-grown giant jungle tree lost its trunk below the crown with no
     woodcutter, builder or miner near it. The crown and 8 logs were left floating. It looks like fire under the

@@ -65,6 +65,13 @@ public final class WorkplaceState {
     public BlockPos extent = BlockPos.ZERO;
     public UUID assigned;
     /**
+     * Mines: a second miner of the base working one level of the mine beside its holder ({@link #assigned}), or null.
+     * It holds no workplace of its own; the record is released like a holder's (death, retraining, the help ending).
+     */
+    public UUID helper;
+    /** Mines: the step of the level {@link #helper} works (0 when none); never below {@link #bottom}. */
+    public int helperStep;
+    /**
      * Upgrade in progress: next build/dig step index; -1 when idle. Mines: the step of
      * {@code SpiralMine.spiralPlan(bottom, levels[cur].step)} while the shaft is dug down to the current level.
      */
@@ -237,6 +244,10 @@ public final class WorkplaceState {
             t.putInt("maxRounds", maxRounds);
             t.putInt("restTier", restTier);
             t.putLong("opened", opened);
+            if (helper != null) {
+                t.putUUID("helper", helper);
+                t.putInt("helperStep", helperStep);
+            }
             ListTag list = new ListTag();
             for (MineLevel lv : levels) {
                 CompoundTag l = new CompoundTag();
@@ -405,6 +416,9 @@ public final class WorkplaceState {
             w.maxRounds = t.getInt("maxRounds");
             w.restTier = t.getInt("restTier");
             w.opened = t.getLong("opened");
+            // (absent before mines could be shared: no helper)
+            w.helper = t.hasUUID("helper") ? t.getUUID("helper") : null;
+            w.helperStep = t.getInt("helperStep");
             w.workedOut = t.getBoolean("workedOut");
             w.note = t.getString("note");
             // saved before the flag existed: every mine set aside other than as worked out was given up
@@ -457,5 +471,25 @@ public final class WorkplaceState {
         if (w.cur < 0) {
             w.upgradeStep = -1;
         }
+        // a helper works an existing level the stairs reach, never the holder's own
+        MineLevel helped = w.helperLevel();
+        if (w.helper == null || helped == null || helped.step > w.bottom || helped == com.factionclash.structure.MineLayout.current(w)
+                || w.helper.equals(w.assigned)) {
+            w.helper = null;
+            w.helperStep = 0;
+        }
+    }
+
+    /** Mines: the level {@link #helper} works ({@link #helperStep}), or null when there is none. */
+    public MineLevel helperLevel() {
+        if (helperStep <= 0) {
+            return null;
+        }
+        for (MineLevel lv : levels) {
+            if (lv.step == helperStep) {
+                return lv;
+            }
+        }
+        return null;
     }
 }
