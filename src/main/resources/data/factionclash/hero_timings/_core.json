@@ -12,10 +12,10 @@
     "death": {
       "events": [],
       "kind": "action",
-      "length": 1,
+      "length": 0.75,
       "loop": "hold",
-      "ticks": 20,
-      "total_ticks": 22,
+      "ticks": 15,
+      "total_ticks": 17,
       "transition_ticks": 2
     },
     "defeated": {
@@ -502,6 +502,6 @@
   "file": "_core",
   "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "bd81fb1006abd872d6880e9b83178181ceb3a1b334143ba98fececa2603c0412",
+  "source_sha256": "954d4169be631c2acc26da1f0c40b950799444632b6ba4cf8ab4ba8a58a352fb",
   "tick": 0.05
 }

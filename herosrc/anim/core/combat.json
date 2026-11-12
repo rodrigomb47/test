@@ -362,8 +362,8 @@
       }
     },
     "death": {
-      "description": "Death (the action controller on isDeadOrDying), 1.0 s and held: a jolt with pain eyes, the knees buckle (0.25 s), the hero sits down hard with the feet kicking up (0.45 s) and falls back onto the ground with the arms out (0.7 s, a small bounce), lying still (held: GeckoLib's hold_on_last_frame). Within vanilla's 20-tick death; A2 turns off GeckoLib's own death roll (getDeathMaxRotation 0), since the clip lays the body down itself.",
-      "length": 1.0,
+      "description": "Death (the action controller on isDeadOrDying), 0.75 s and held: a jolt with pain eyes, the knees buckle (0.18 s), the hero sits down hard with the feet kicking up (0.33 s) and falls back onto the ground with the arms out (0.52 s, a small bounce), lying still from 0.68 s (held: GeckoLib's hold_on_last_frame). With the action controller's 2-tick blend it ends on tick 17, so the body lies still for the last ticks of vanilla's 20-tick death before the entity is removed (G4 review: 1.0 s plus the blend ran past tick 20 and the landing never showed); A2 turns off GeckoLib's own death roll (getDeathMaxRotation 0), since the clip lays the body down itself.",
+      "length": 0.75,
       "loop": "hold",
       "restyle": true,
       "planted": false,
@@ -376,42 +376,42 @@
           "pose": "@stance",
           "face": {"eyes": 7, "mouth": 3}
         },
-        {"t": 0.08, "pose": "react.recoil", "over": true, "ease": "easeOutQuad"},
+        {"t": 0.06, "pose": "react.recoil", "over": true, "ease": "easeOutQuad"},
         {
-          "t": 0.25,
+          "t": 0.18,
           "pose": "death.buckle",
           "ease": "easeInSine",
           "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
         },
         {
-          "t": 0.34,
+          "t": 0.25,
           "pose": "death.drop",
           "root": [0, 4.5, 0],
           "ease": "easeInSine",
           "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
         },
         {
-          "t": 0.45,
+          "t": 0.33,
           "pose": "death.sit",
           "ease": "easeInQuad",
           "face": {"eyes": 2, "mouth": 3},
           "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
         },
         {
-          "t": 0.7,
+          "t": 0.52,
           "pose": "death.lie",
           "ease": "easeInQuad",
           "face": {"eyes": 2, "mouth": 0},
           "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
         },
         {
-          "t": 0.78,
+          "t": 0.58,
           "pose": "death.bounce",
           "ease": "easeOutQuad",
           "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
         },
         {
-          "t": 0.9,
+          "t": 0.68,
           "pose": "death.lie",
           "ease": "easeInOutSine",
           "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
@@ -468,7 +468,7 @@
           "extends": "lie.back",
           "bones": {
             "chest": [0, 0, 4],
-            "neck": [24, 24, 6],
+            "neck": [34, 8, 4],
             "arm_r": [-6, 0, 26],
             "forearm_r": [-26, 0, 0],
             "hand_r": [0, 0, 0],
@@ -487,7 +487,7 @@
           "extends": "death.lie",
           "bones": {
             "body": [-84, 0, 0],
-            "neck": [20, 24, 6],
+            "neck": [30, 10, 4],
             "arm_r": [-12, 0, 32],
             "arm_l": [-22, 0, -24]
           }

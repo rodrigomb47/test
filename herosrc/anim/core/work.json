@@ -24,7 +24,7 @@
       ]
     },
     "work.chop": {
-      "description": "An axe swing into a trunk, 0.8 s: the torso winds right with the axe cocked behind the right shoulder (0.25 s), swings across at chest height (contact at 0.4 s), the blade bites and bounces, back by 0.8 s.",
+      "description": "An axe swing into a trunk, 0.8 s: the torso winds right with the axe cocked behind the right shoulder, its head back (0.25 s), swings round flat at chest height (contact at 0.4 s: the handle points at the trunk, the edge leading to the left), the blade bites and bounces, back by 0.8 s.",
       "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
       "length": 0.8,
       "keys": [
@@ -46,8 +46,8 @@
       ]
     },
     "work.till": {
-      "description": "A hoe stroke into the soil a block ahead, 0.8 s: both hands raise the hoe (0.25 s), the hips fold forward as it chops down (contact at 0.4 s), a short pull back toward the feet, back by 0.8 s.",
-      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "description": "A hoe stroke into the soil a block ahead, 0.8 s: both hands raise the hoe over the head (0.25 s), the hips fold forward as it chops down, the blade driving into the ground ahead (contact at 0.4 s), a short pull back toward the feet with the right hand, back by 0.8 s. Keys the torso from the hips up (body included: the fold) but no leg, so it still plays over a walk.",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
       "length": 0.8,
       "keys": [
         {"t": 0, "pose": "@stance"},
@@ -112,38 +112,45 @@
         "plant.kneel": {
           "extends": "kneel.r",
           "bones": {
-            "body": [16, 0, 0],
-            "chest": [8, 0, 0],
-            "neck": [10, 0, 0],
-            "arm_r": [-62, 0, 4],
-            "forearm_r": [-8, 0, 0],
-            "hand_r": [14, 0, 0],
-            "arm_l": [-34, 0, 0],
-            "forearm_l": [-42, 0, 0],
-            "hand_l": [10, 0, 0]
+            "body": [30, 0, 0],
+            "chest": [10, 0, 0],
+            "neck": [2, 0, 0],
+            "arm_r": [-55.2, -4.5, 2.2],
+            "forearm_r": [-1, -0.1, 0],
+            "hand_r": [-10.6, 0.4, 2.7],
+            "arm_l": [-45.5, 3.2, 3.3],
+            "forearm_l": [-9, 0, 0],
+            "hand_l": [7.1, 0, 0.2]
           }
         },
         "plant.kneel_poke": {
           "extends": "plant.kneel",
           "bones": {
-            "body": [18, 0, 0],
-            "neck": [12, 0, 0],
-            "arm_r": [-50, 0, 4],
-            "forearm_r": [0, 0, 0],
-            "hand_r": [30, 0, 0]
+            "body": [40, 0, 0],
+            "waist": [6, 0, 0],
+            "chest": [12, 0, 0],
+            "neck": [-4, 0, 0],
+            "arm_r": [-67, -4.9, 0.8],
+            "forearm_r": [-2.4, 0.1, 0],
+            "hand_r": [-6.8, 0.4, 3],
+            "arm_l": [-25.5, 6.7, -0.8],
+            "forearm_l": [-57.3, 0.1, 0],
+            "hand_l": [-12.2, 0.2, 1.3]
           }
         },
         "plant.kneel_pat": {
           "extends": "plant.kneel",
           "bones": {
-            "body": [18, 0, 0],
-            "neck": [12, 0, 0],
-            "arm_r": [-40, 0, 8],
-            "forearm_r": [-30, 0, 0],
-            "hand_r": [10, 0, 0],
-            "arm_l": [-58, 0, -4],
-            "forearm_l": [-4, 0, 0],
-            "hand_l": [28, 0, 0]
+            "body": [40, 0, 0],
+            "waist": [6, 0, 0],
+            "chest": [12, 0, 0],
+            "neck": [-4, 0, 0],
+            "arm_r": [-52, -3, 3.6],
+            "forearm_r": [-17.2, -0.1, 0],
+            "hand_r": [-23, 0.8, 3.7],
+            "arm_l": [-68.6, 17, 5.5],
+            "forearm_l": [-1, 0, 0],
+            "hand_l": [1.9, -0.1, 0.1]
           }
         }
       }
@@ -200,9 +207,11 @@
         "fish.dip": {
           "extends": "fish.hold",
           "bones": {
-            "forearm_r": [-34, 0, 0],
-            "hand_r": [-4, 0, 0],
-            "neck": [8, 0, 0]
+            "chest": [-2, 0, 0],
+            "neck": [8, 0, 0],
+            "arm_r": [-16.4, -5.6, 8.2],
+            "forearm_r": [-75.1, 0.4, 0],
+            "hand_r": [74.5, 12.5, -0.8]
           }
         }
       }
@@ -276,7 +285,7 @@
           "primitive": "oscillate",
           "params": {
             "bones": {
-              "forearm_l": [14, 0, 10]
+              "forearm_l": [-1, 0, 10]
             },
             "period": 0.25,
             "shape": "circle",
@@ -338,7 +347,7 @@
       ]
     },
     "work.smith": {
-      "description": "A hammer blow on the anvil, 1.0 s: the hammer goes up behind the head as the left hand holds the work with tongs (0.28 s), comes down hard (contact at 0.4 s: sparks), bounces, back by 1.0 s; eyes on the work.",
+      "description": "A hammer blow on the anvil, 1.0 s: the hammer goes up behind the head as the left hand holds the work with tongs on the anvil (0.28 s), comes over the top (0.35 s) and down hard, the face flat on the work at anvil height a block ahead (contact at 0.4 s: sparks), bounces, back by 1.0 s; eyes on the work.",
       "length": 1.0,
       "keys": [
         {"t": 0, "pose": "@stance"},
@@ -347,10 +356,11 @@
           "face": {"eyes": 8}
         },
         {"t": 0.28, "pose": "smith.raise", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "smith.over", "ease": "easeInQuad"},
         {
           "t": 0.4,
           "pose": "smith.strike",
-          "ease": "easeInQuad",
+          "ease": "linear",
           "marker": "vfx:sparks",
           "face": {"eyes": 8, "mouth": 4}
         },
@@ -450,14 +460,15 @@
       ]
     },
     "work.sweep": {
-      "description": "Sweeping with a broom held low in both hands, 1.4 s: two strokes from right to left (0.2-0.55 s and 0.85-1.15 s), the torso turning with them and the eyes on the floor, back by 1.4 s.",
+      "description": "Sweeping with a broom held low in both hands (the left above the right on the handle), 1.4 s: the bristles on the floor in front of the feet, two strokes from right to left (0.2-0.55 s and 0.85-1.15 s), the torso turning with them, the eyes on the floor and a little smile, back by 1.4 s.",
       "length": 1.4,
       "keys": [
         {"t": 0, "pose": "@stance"},
-        {"t": 0.2, "pose": "sweep.right"},
+        {"t": 0.2, "pose": "sweep.right", "face": {"mouth": 1}},
         {"t": 0.55, "pose": "sweep.left", "ease": "easeInOutQuad"},
         {"t": 0.85, "pose": "sweep.right", "ease": "easeInOutSine"},
         {"t": 1.15, "pose": "sweep.left", "ease": "easeInOutQuad"},
+        {"t": 1.25, "face": "none"},
         {"t": 1.4, "pose": "@stance"}
       ]
     },

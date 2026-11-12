@@ -29,10 +29,10 @@
     "death": {
       "events": [],
       "kind": "action",
-      "length": 1,
+      "length": 0.75,
       "loop": "hold",
-      "ticks": 20,
-      "total_ticks": 22,
+      "ticks": 15,
+      "total_ticks": 17,
       "transition_ticks": 2
     },
     "defeated": {
@@ -138,6 +138,6 @@
   "file": "_style_katana",
   "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "08cef5b7116b962ff0ae0df18cb1cad814d00f47e20a6748617a21d8b40bcb26",
+  "source_sha256": "2e0deb48aed46c7b4159018874fa8d17bad1baefee453212e330c4fcde2ab008",
   "tick": 0.05
 }

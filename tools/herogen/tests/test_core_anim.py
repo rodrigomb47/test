@@ -286,6 +286,130 @@ class PrimitiveTest(unittest.TestCase):
         self.assertIn(("leg_r", "rotation"), c.tracks)
 
 
+def _tool(name, t, base_id="teen_f", side="r"):
+    """(grip, handle direction, striking side) of the item at item_<side> at clip time t over move.idle: the grip
+    convention of HEROES_V2 4.7 (handle along the hand's -z, striking side toward its -y). File space: x is the
+    hero's left, y up, -z forward."""
+    import numpy as np
+    c, sk = clip(name), S.for_base(base_id)
+    pose = layered(clip("move.idle"), c, t, t, d=sk.d)
+    r, tr = sk.world(pose, only=["item_" + side])["item_" + side]
+    return r @ sk.pivot["item_" + side] + tr, r @ np.array([0, 0, -1.0]), r @ np.array([0, -1.0, 0])
+
+
+class ToolTest(unittest.TestCase):
+    """G4 review: the work strokes read as the job on the reference body (teen_f, hip 20, a block is 28.4 px at
+    render scale 0.5625). G4's poses held the tool along the hand with the arm raised forward, so the axe stood up
+    like a torch at the chop, the hoe and the broom stayed level at hip height, the hammer stood upright after the
+    blow and the rod pointed straight up while fishing."""
+
+    def test_the_axe_meets_the_trunk_flat(self):
+        grip, d, s = _tool("work.chop", 0.25)
+        self.assertGreater(d[2], 0.6)                               # wound up: the head behind the shoulder
+        grip, d, s = _tool("work.chop", 0.4)
+        head = grip + 11.5 * d
+        self.assertLess(d[2], -0.85)                                # the handle points at the trunk ahead
+        self.assertLess(abs(d[1]), 0.35)                            # flat, not up like a torch
+        self.assertTrue(22 < head[1] < 34 and head[2] < -14, head)  # chest height, into the trunk's face
+        self.assertGreater(s[0], 0.7)                               # the edge leads the swing to the left
+
+    def test_the_hoe_goes_down_into_the_soil(self):
+        grip, d, s = _tool("work.till", 0.25)
+        self.assertGreater(grip[1], 40)                             # raised over the head
+        grip, d, s = _tool("work.till", 0.4)
+        head = grip + 12 * d
+        self.assertLess(d[1], -0.6)                                 # chopping down
+        self.assertTrue(head[1] < 11 and head[2] < -14, head)      # low, a block ahead
+        self.assertIn(("body", "rotation"), clip("work.till").tracks)          # the hips fold
+        self.assertFalse([b for b, _ in clip("work.till").tracks if b.startswith(("leg_", "shin_", "foot_"))])
+
+    def test_the_hammer_lands_on_the_anvil(self):
+        grip, d, s = _tool("work.smith", 0.4)
+        head = grip + 9.6 * d
+        self.assertTrue(24 < head[1] < 31 and head[2] < -15, head)  # anvil height (28.4), a block ahead
+        self.assertLess(s[1], -0.6)                                 # the face down on the work
+        for t in (0.3, 0.33, 0.35, 0.38):                           # over the top, not out to the side
+            self.assertLess(abs(_tool("work.smith", t)[1][0]), 0.35, t)
+        for t in (0.45, 0.5, 0.6, 0.7):                             # the rebound does not stand it upright
+            self.assertLess(_tool("work.smith", t)[1][1], 0.9, t)
+
+    def test_the_broom_sweeps_the_floor(self):
+        xs = []
+        for t in (0.2, 0.55, 0.85, 1.15):
+            grip, d, s = _tool("work.sweep", t)
+            end = grip + 20.5 * d                                   # the bristles' end (the preview broom)
+            self.assertTrue(-1.0 < end[1] < 3.5, (t, end))
+            xs.append(end[0])
+        self.assertGreater(xs[1] - xs[0], 8)                        # right to left across the feet
+        hl = _tool("work.sweep", 0.55, side="l")[0]
+        grip, d, _ = _tool("work.sweep", 0.55)
+        self.assertLess(math.dist(hl, grip - 3 * d), 1.5)           # both hands on the handle
+
+    def test_the_rod_points_out_over_the_water(self):
+        for name, t in (("work.fish_wait.loop", 0.0), ("work.fish_wait.loop", 2.0), ("work.fish_reel", 0.3)):
+            grip, d, s = _tool(name, t)
+            up = math.degrees(math.asin(d[1]))
+            self.assertTrue(d[2] < -0.7 and 15 < up < 45, (name, t, d))
+        self.assertGreater(_tool("work.fish_cast", 0.3)[1][2], 0.5)            # back over the shoulder
+        grip, d, s = _tool("work.fish_cast", 0.45)
+        self.assertTrue(d[2] < -0.5 and d[1] > 0.5, d)                         # the flick: forward and up
+
+    def test_the_pick_strikes_forward(self):
+        grip, d, s = _tool("work.mine", 0.22)
+        self.assertGreater((grip + 12 * d)[2], 5)                   # over the shoulder, the head behind
+        grip, d, s = _tool("work.mine", 0.34)
+        self.assertLess(d[2], -0.5)
+        self.assertLess(s[1], -0.5)                                 # the points come down on the block ahead
+
+    def test_the_planting_hand_reaches_the_soil(self):
+        grip, _, _ = _tool("work.plant", 0.6)
+        self.assertTrue(grip[1] < 7 and grip[2] < -9, grip)
+
+
+class DeathTest(unittest.TestCase):
+    def test_death_lands_inside_vanillas_death_ticks(self):
+        """LivingEntity.tickDeath removes the entity at deathTime 20 (HeroEntity keeps it), and the action
+        controller blends 2 ticks first: the clip must end, lying still, with ticks to spare (G4 review: 1.0 s plus
+        the blend ran to tick 22, so the landing never showed)."""
+        from anim.writer import TRANSITION_TICKS
+        c = clip("death")
+        self.assertEqual(c.loop, "hold")
+        self.assertLessEqual(int(round(c.length / TICK)) + TRANSITION_TICKS["action"], 18)
+        for b in ("chibi_f", "adult_m"):
+            sk = S.for_base(b)
+            end = layered(clip("move.idle"), c, c.length, 0.0, d=sk.d)
+            still = layered(clip("move.idle"), c, c.length - 0.05, 0.0, d=sk.d)
+            self.assertLess(max(abs(a - b) for a, b in zip(end["body"]["rotation"], still["body"]["rotation"])),
+                            1.0, b)
+
+    def test_the_dead_head_rests_on_the_ground(self):
+        """The head is left out of the body contact rule (2 px allowed into the ground when lying); G4's dead head
+        rolled 24 degrees and sank 3.5 px on a chibi."""
+        for b in BASE_IDS:
+            sk = S.for_base(b)
+            pose = layered(clip("move.idle"), clip("death"), clip("death").length, 0.0, d=sk.d)
+            self.assertGreater(sk.lowest_body(pose, ["head"])[0], -2.0, b)
+
+
+class SettleRuleTest(unittest.TestCase):
+    def test_an_action_that_does_not_end_on_the_idle_fails(self):
+        """The rule GeckoLib's snap needs (4.8): sabotaging quality.check_settle to return nothing passed every
+        earlier test, since they only checked clean clips."""
+        idle = clip("move.idle")
+        good = clip("emote.wave")
+        self.assertEqual(quality.check_settle(good, idle), [])
+        bad = Clip("bad", 1.0, "once", {"kind": "action", "settle_to": "move.idle"})
+        bad.tracks[("arm_r", "rotation")] = Track([Key(0, (0, 0, 8)), Key(1.0, (-10, 0, 8))])
+        self.assertTrue(any("not on move.idle's first key" in p for p in quality.check_settle(bad, idle)))
+        short = Clip("short", 1.0, "once", {"kind": "action", "settle_to": "move.idle"})
+        short.tracks[("arm_r", "rotation")] = Track([Key(0, (0, 0, 8)), Key(0.8, (0, 0, 8))])
+        self.assertTrue(any("no key at the end" in p for p in quality.check_settle(short, idle)))
+        arm = idle.tracks[("arm_r", "rotation")].sample(0.0)
+        ok = Clip("ok", 1.0, "once", {"kind": "action", "settle_to": "move.idle"})
+        ok.tracks[("arm_r", "rotation")] = Track([Key(0, (0, 0, 0)), Key(1.0, arm)])
+        self.assertEqual(quality.check_settle(ok, idle), [])
+
+
 class PlaybackTest(unittest.TestCase):
     def test_the_written_core_plays_per_form(self):
         """The written file, read back, plays the form-scaled sit at each form's own height."""

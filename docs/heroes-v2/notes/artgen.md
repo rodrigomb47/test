@@ -1298,7 +1298,7 @@ motion.
 | rest and carry (base loops) | `rest.sit` 8 s (on the ground, one knee up, glances, breathing), `rest.sleep` 8 s (on the back, sleeping eyes, 4 s breaths), `carry.loop` 1.0 s (a loaded walk, forearms under the load) |
 | work (actions) | `work.mine` 0.7, `work.chop` 0.8, `work.till` 0.8, `work.plant` 1.5 (kneels), `work.harvest` 1.2, `work.fish_cast` 1.1 -> `work.fish_wait` 0.5 -> `work.fish_wait.loop` 4 s -> `work.fish_reel` 1.2, `work.cook` 1.8, `work.smith` 1.0 (sparks), `work.build` 0.7, `work.read` 2.4, `work.pray` 3.0, `work.sweep` 1.4, `work.tend` 1.5, `work.eat` 1.8 |
 | emotes (actions) | `emote.greet` 1.2, `bow` 1.6, `wave` 1.8, `laugh` 2.0, `angry` 1.5 (a stamp, an anger mark), `sad` 2.4 (a tear), `think` 2.4 (an idea at the end), `cheer` 1.4 (a hop), `talk` 2.0, `shrug` 1.3; `personal.1-3` 2.0-2.6; `founding` 2.0 |
-| combat reactions (actions) | `hurt.heavy` 0.5, `stagger` 2.5 (a hop, down on one knee with stars, a dizzy circle, back up), `stun` 0.4 -> `stun.loop` 2 s, `interrupt` 0.6, `dodge` 0.55 (a tucked hop), `death` 1.0 held (buckle, a hard sit, onto the back), `defeated` 0.9 -> `defeated.loop` 3 s -> `spared` 1.8, `intro` 1.4, `victory` 2.0, `enrage` 1.3 (a roar) |
+| combat reactions (actions) | `hurt.heavy` 0.5, `stagger` 2.5 (a hop, down on one knee with stars, a dizzy circle, back up), `stun` 0.4 -> `stun.loop` 2 s, `interrupt` 0.6, `dodge` 0.55 (a tucked hop), `death` 0.75 held (buckle, a hard sit, onto the back; 1.0 s before the G4 review), `defeated` 0.9 -> `defeated.loop` 3 s -> `spared` 1.8, `intro` 1.4, `victory` 2.0, `enrage` 1.3 (a roar) |
 
 Every action ends on the first frame of the clip that follows it (move.idle, a style's combat.idle, or its own
 `.loop`), so GeckoLib's snap when the action controller stops (4.8) shows nothing. Faces come from `face_ctrl` keys
@@ -1364,7 +1364,8 @@ throw and retrieve sounds; all on whole ticks and written after the controller's
 - `HeroModel.applyMolangQueries` sets `v.fc_dhip` (above). Without it, kneels, sits, sleep and death are off by up to
   3 px on chibis and adults (the middle-form compromise).
 - **Death lays the body down itself**: A2 returns 0 from `getDeathMaxRotation`, or GeckoLib's own death roll adds a
-  sideways 90 degrees. The clip is 1.0 s, inside vanilla's 20 death ticks; `death` holds its last frame.
+  sideways 90 degrees. The clip is 0.75 s (G4 review; it was 1.0 s, which with the blend ran past vanilla's 20 death
+  ticks); `death` holds its last frame.
 - **Sleep and sit are on the ground**, laid down by the clip (not vanilla's `Pose.SLEEPING`, which would rotate the
   model again): the entity stands at the hips, the body lies toward +z behind it (`rest.sleep`), the seat is at the
   entity's feet (`rest.sit`).
@@ -1441,3 +1442,101 @@ port evaluates Molang components (with the variable and without), and the katana
   ones, the climbers' and swimmers' variants come with it.
 - **Polish**: bell sleeves show their open end when the arms are raised forward (swim, cheer, the recoil of a hit);
   the hip scabbard stays on the hips when lying (it sinks into the ground); a chibi's crouch is subtle (short legs).
+
+## G4 review: tools that read as the job, death inside vanilla's ticks, the settle rule's test (2026-11-12)
+
+A review of commit 16fbb16: every new clip rendered on Tansy (chibi_f) and Garrick (adult_m) from the side, the
+front and the tool side (frames read one by one, not only the committed sheets), the written files loaded with
+GeckoLib 4.9.3's own classes, and the quality rules sabotaged one at a time. No reference model was opened.
+
+### Confirmed correct
+
+- **The files, read by GeckoLib itself.** `_core` and `_style_katana` parsed with GeckoLib's `KeyFramesAdapter.GEO_GSON`
+  (the jar on a plain JVM with the Minecraft classes of the NeoForm cache, `v.fc_dhip` set to the chibi, middle and
+  adult values through `MathParser.setVariable`): all 55 + 18 animations load, every keyframe's end value (224 847,
+  rotations converted back from GeckoLib's negated radians) equals herogen's reader within 0.0012, loop types match
+  (`loop`, `hold_on_last_frame`, play once), and GeckoLib's event keyframes are exactly the timing files' ticks.
+  The Molang roots, `"a - b * v.fc_dhip"` included, evaluate right in GeckoLib's own `MathParser`.
+- Keys ascend in file order on every channel, start at 0, end inside the clip; every key is a `{vector, easing}` or a
+  `{pre, post}` jump; easing names are GeckoLib's. Every one-shot ends on the first key of the clip that follows it
+  (`move.idle`, the katana `combat.idle`, or its `.loop`) on every channel it keys, form-scaled roots included (a
+  check written for this review, independent of `quality.py`). The timing files agree with the markers.
+- Movement, rest, the emotes, the reactions and the chains read: the kneels touch on every base, the sit and the sleep
+  rest on the ground, `stun` and `defeated` hand over to their loops without a pop, faces change where the emotion is
+  the point. Only `work.fish_wait`, its loop and `work.sweep` had no face key; the sweep now smiles, the wait keeps
+  the mood face (a calm wait is the point).
+
+### Found and fixed
+
+1. **The tool strokes did not read as the work.** The grip puts the handle along the hand's -z, so a tool points
+   forward when the arm hangs and straight **up** when the arm is raised forward, and G4's poses did not correct for
+   it: at `work.chop`'s contact the axe stood upright like a torch at head height (its head at y 42 on the teen,
+   the trunk is at chest height); `work.till`'s hoe stayed level at hip height, 16 px above the soil; the broom of
+   `work.sweep` was held like a lance at hip height, never touching the floor, with the left hand at the chest;
+   `work.smith`'s hammer stood upright for 0.3 s after the blow; the rod of the fishing chain pointed straight up
+   through the whole wait. The arms of these poses (`chop.*`, `till.*`, `smith.*`, `sweep.*`, `fish.*`, the plant's
+   kneels) were solved numerically on teen_f (an offline Nelder-Mead over arm, forearm with its twist, and hand,
+   seeded from the previous key of the stroke so keys interpolate smoothly, the wrist kept within 80 degrees of
+   flexion and 25 of sideways bend) for these targets, then written into the pose files as plain numbers:
+
+   | Pose | Grip (teen_f px; -z forward) | Handle | What it reads as |
+   |---|---|---|---|
+   | `chop.wind` | (-10, 33.5, 1), beside the right shoulder | back and out (-0.5, 0.3, 0.8) | the axe cocked behind the shoulder |
+   | `chop.hit` | (4, 28, -7), in front of the chest | forward (0.1, 0.1, -1), edge to the left | flat into the trunk at chest height |
+   | `till.raise` / `.strike` | (-2.5, 44, -0.5) / (-3.4, 18, -10) | back-down / down-forward 40 degrees | over the head, then into the soil a block ahead; both hands on the handle, the hips fold (`body` now keyed, still no leg) |
+   | `smith.raise` / `.over` / `.strike` | (-4.5, 43, 1) / (-4.5, 42, -6) / (-3.8, 23.5, -12) | back / up / forward-up 29 degrees, face down-forward | behind the head, over the top (a new key at 0.35 s: the hammer had swung out to the side between raise and strike), the face on the work at anvil height (28.4 = one block) |
+   | `sweep.right` / `.left` | (-6, 20, -4.5) / (1, 20, -5.5) | steeply down to the right / left | the bristles on the floor in front of the feet, 15 px across; the left hand above the right on the handle |
+   | `fish.back` / `.flick` / `.hold` | over the shoulder / (-3.4, 30, -11) / (-4.6, 25.5, -8) | up-back / forward-up 50 / forward-up 28 degrees | the cast and the rod held out over the water; `fish.reel` puts the left hand on the reel |
+   | `plant.kneel_poke` / `_pat` | (-3.7, 5.4, -11.4) | | a deeper bow (hips 40 degrees) so the hand reaches the soil (it stopped 10 px above it) |
+
+   Rotations transfer across forms, the tools do not scale: on the chibi the hoe goes 5 px lower and the broom's
+   bristles about 5 px into the floor, on an adult they stop 4 px above it (the teen is the reference; a hero or a
+   style may override `work.sweep`, and G10's staff-broom is its own clip). `work.mine` and `work.build` were
+   right and are unchanged.
+2. **Death ran past vanilla's death.** `LivingEntity.tickDeath` removes the entity at deathTime 20 (HeroEntity
+   keeps it), the action controller first blends 2 ticks, and `death` was 1.0 s: it reached its last pose on tick
+   20-22, so the hero vanished as it hit the ground and never lay still. It is now 0.75 s (keys at 0.06, 0.18, 0.25,
+   0.33, 0.52, a bounce at 0.58, still from 0.68): the body is down by tick 13, still from tick 16, the clip ends on
+   tick 17. The katana copy follows (restyled).
+3. **The dead head sank into the ground.** `death.lie` rolled the head 24 degrees on its side; a rolled 10 px head
+   reaches deeper than the 3.5 px chibi torso it lies behind, 3.5 px into the ground (the body contact rule leaves the
+   head out, up to 2 px allowed). The neck now tucks the chin (34, 8, 4): 1.8 px on a chibi, 0.5 on a teen, 0.2 on
+   an adult.
+4. **Forearms bent past straight.** Three solved poses ended a hair past 0 degrees of elbow flexion (`herogen check`
+   caught them); written as -1.
+5. **The settle rule had no failing test.** With `quality.check_settle` sabotaged to return nothing, all 79 animation
+   tests passed: every test only checked clean clips. `SettleRuleTest` now builds an action that ends 10 degrees off
+   `move.idle`'s first key and one whose last key comes early, and both must fail. The slide rule's sabotage
+   (`check_slide` returning nothing) was already caught by `test_a_sliding_foot_fails`.
+
+### Tests (245 -> 255)
+
+`tests/test_core_anim.py`: `ToolTest` (7) pins what each stroke must read as on teen_f, with the grip convention of
+4.7: the axe flat into the trunk at chest height with the edge leading left, cocked behind the shoulder at the
+wind-up; the hoe raised over the head, then down into the soil a block ahead with the hips folding and no leg keyed;
+the hammer head at anvil height with its face down, over the top of its arc (no sideways swing between keys) and not
+upright in the rebound; the broom's bristles on the floor at every stroke key, 8 px or more across, both hands on the
+handle; the rod 15-45 degrees above level over the water in the wait and the reel, back over the shoulder in the
+cast's wind-up and forward-up at the flick; the pick behind the head at the raise and striking forward-down; the
+planting hand down at the soil. Sabotage: with G4's sources, 8 of these 9 tool and death tests fail (all but the
+pick's, which G4 had right). `DeathTest` (2): the clip and its blend end by tick 18 and the body is still at the end;
+the dead head rests no more than 2 px into the ground on all six bases. `SettleRuleTest` (1): above.
+
+### Decisions
+
+1. **Tool poses are solved offline and written as numbers**, as G3 did for the katana swing; the targets are in the
+   table above and the tests pin the outcome, so a later author can re-solve or hand-tune within them.
+2. **The teen is the reference form for tools.** One file serves every form and only the root height is form-scaled
+   (G4); scaling arm angles by `v.fc_dhip` would also be possible in Molang, but tools of one size cannot fit every
+   form exactly anyway, and the item layer's scale is A2's.
+3. **`work.till` keys `body`** (the hips fold): the torso alone could not bring the blade down to the soil. `body` is
+   above the legs (they hang from `root`), so the stroke still plays over a walk.
+
+### Open items
+
+- **A2**: the item layer must hold tools exactly as the grip convention says (the strokes are solved for it), and its
+  item scale decides how close the hoe and the broom come to the ground on each form.
+- **G5**: style versions of `work.chop`/`work.mine` should be solved the same way (grip, handle and edge targets).
+- **G10**: a broom clip of its own for Ambrose; per-form tool reach (the chibi's broom) if it shows in game.
+- **Polish** (unchanged): bell sleeves show their open end when an arm is raised forward (the axe wind-up, the
+  hammer strike, swim, cheer); the hip scabbard when lying.

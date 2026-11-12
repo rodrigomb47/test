@@ -493,7 +493,7 @@ ponytails, a visor, a mask).
 | Layer | What |
 |---|---|
 | `AutoGlowingGeoLayer` | `<id>_glowmask.png` (and `_p2_glowmask.png`): glowing eyes in the last phase, runes, magic weapons, foxfire |
-| `BlockAndItemGeoLayer` | vanilla items at `item_r`/`item_l`: pickaxe, axe, hoe, rod, food while eating; hidden while the weapon is drawn. Grip (G4, what the work animations are authored for): the handle along the hand's -z from the grip centre, the head at the far end with its striking side toward the hand's -y (a pick's points, an axe's edge, a hoe's blade); `carry.loop` holds the hauled item between the hands |
+| `BlockAndItemGeoLayer` | vanilla items at `item_r`/`item_l`: pickaxe, axe, hoe, rod, food while eating; hidden while the weapon is drawn. Grip (G4, what the work animations are authored for): the handle along the hand's -z from the grip centre, the head at the far end with its striking side toward the hand's -y (a pick's points, an axe's edge, a hoe's blade); `carry.loop` holds the hauled item between the hands. G4 review: the strokes are solved for this grip on the teen form (two-handed tools put the left hand on the handle: ahead of the right hand overhead, above it on a broom), so another item transform shows the tool off target |
 | faction tint (no extra layer) | the `sash` and `fine_sash_*` bones are painted greyscale; `HeroRenderer.renderCubesOfBone` passes the faction's primary colour as the vertex colour for those bones only (the `colour` argument GeckoLib already threads through), so the texture is multiplied by it in the same pass: a hero who changes faction changes its sash, nothing else, and nothing is drawn twice |
 | Name tag | vanilla: `★ Name · title` plus `[Fighting 80%]` energy while fighting (v1 §25.8) |
 
@@ -547,7 +547,9 @@ sheet lists it. The phase look uses `p2_`/`p3_` bones and, when the art spec ask
 - **Chains (G4)**: a one-shot that leads into a loop ends on the loop's first frame, so the server plays them back to
   back: `stun` then `stun.loop`; `defeated` then `defeated.loop`, then `spared` or `death`; `work.fish_cast`, then
   `work.fish_wait` (its `.loop` follows), then `work.fish_reel`. A code 0 between them snaps to the base pose. `death`
-  holds its last frame (`hold_on_last_frame`, 1.0 s, inside vanilla's 20 death ticks).
+  holds its last frame (`hold_on_last_frame`). G4 review: 0.75 s, so with the 2-tick blend it ends on tick 17 and
+  the body lies still before vanilla removes the entity at deathTime 20 (1.0 s ran past it: the hero vanished as it
+  landed).
 - **Movement moves** (`dash`, `leap`, `charge`) stay physical on the server (no root motion); the animation is
   authored in place with the same duration, and the leap's airtime comes from the animation length.
 - **Work**: today's jobs already call `swing(hand)` for block breaking; while the action controller is idle, a fresh
@@ -1942,7 +1944,13 @@ action plays over; **restyled reactions** (`restyle: true`: every style library 
 copy of `hurt.heavy`, `stagger`, `stun` (+`.loop`), `interrupt`, `dodge`, `death`, `defeated` (+`.loop`), `intro`,
 `victory`, `enrage`, ending on its own stance); skirt panels that follow the thighs of a sit or a kneel. Previews:
 `previews/anim/core/` (movement, work with tool props, work at home, emotes, combat over move.idle and over the katana
-stance; GIFs and contact sheets on a chibi and an adult; `herogen anim-previews --core --check`).
+stance; GIFs and contact sheets on a chibi and an adult; `herogen anim-previews --core --check`). G4 review
+(`notes/artgen.md`, "G4 review"): the files load in GeckoLib 4.9.3's own parser with every key and event as herogen
+reads them; the tool strokes were re-solved for the grip convention (4.7) so they read as the work (the axe flat
+into a trunk at chest height, the hoe into the soil, the hammer face on the anvil, the broom's bristles on the floor,
+the rod out over the water; `work.till` now keys `body`, still no leg) and tests pin them on the teen form; `death`
+is 0.75 s (inside vanilla's death ticks with the blend) and its head no longer sinks; the settle rule has a failing
+test.
 
 **Style libraries** (16, about 14 animations each): `combat.idle`, `move.run` arm carry, `draw`, `sheathe`,
 `attack.1-3` (a string that reads as that weapon), `attack.ranged` where it has one, `guard` (`.loop`, `.hit`),
@@ -2186,7 +2194,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G1s3 | Art direction pass 2: review of the style pass 2 previews against the references; hair ramp and strand gradient, parted crown, covered nape, lower crown, spikes, stubble, plaster and cat mouth, ear slabs as one mass, jag edges without the barcode, twin-tail nape strands, lighter fixture skins | G1s2 | M | done 2026-11-12: 136 Python tests; previews regenerated; before and after in `notes/previews/artdir2_before_after.png` |
 | G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px. Renderer done 2026-11-12 (215 Python tests, golden images, the owner's set in `docs/heroes-v2/previews/render/`); the fidelity test waits for A2. Review 2026-11-12: two stale GIFs regenerated (the swing's events were a frame late), `render-previews --check`, the coplanar-face check, larger GIFs; 217 Python tests |
 | G3 | Animation generator: poses, primitives, recipes, secondary bake, markers, writer, frames into the server file, quality rules | G1 | L | done 2026-11-12: 181 Python tests; `_core` (idle 24 s, walk, run) and `_style_katana` (`combat.idle`, `attack.1` with its `hit` at tick 8) pass the rules on all six bases; timing files beside them; previews in `docs/heroes-v2/previews/anim/` (A2 plays them in game) |
-| G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs. Done 2026-11-12: 55 animations in `_core` (plus 15 restyled reactions in `_style_katana`) pass `check` on all six bases; form-scaled roots for kneels, sits, sleep and death (`v.fc_dhip`, set by A2); GIFs and sheets in `docs/heroes-v2/previews/anim/core/` reviewed; 245 Python tests |
+| G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs. Done 2026-11-12: 55 animations in `_core` (plus 15 restyled reactions in `_style_katana`) pass `check` on all six bases; form-scaled roots for kneels, sits, sleep and death (`v.fc_dhip`, set by A2); GIFs and sheets in `docs/heroes-v2/previews/anim/core/` reviewed; 245 Python tests. Reviewed 2026-11-12 (`notes/artgen.md`, "G4 review"): checked against GeckoLib's own loader; tool strokes re-solved so chop, till, smith, sweep, fishing and planting read as the work; death fits vanilla's 20 ticks; 255 Python tests |
 | G5 | Style libraries for the slice: fists, focus, hammer, katana, twin_blades, sword_shield, staff | G3, G4 | M | each passes `check`; reviewed as GIFs on two bases |
 | G6a | Parts library, head: hair, ears, horns, tails, wings, headwear (30 parts of 13.3) and `lint` | G1 | M | `lint` clean; the head parts on all six bases reviewed on a sheet |
 | G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first) |
