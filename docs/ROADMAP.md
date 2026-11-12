@@ -48,6 +48,10 @@ EACH batch of 24 heroes waits for the owner's review of its screenshot gallery b
 Later the same day the owner approved art style pass 2 (rig v3: smaller heads, distinct faces, strand hair) from the
 preview GIFs ("these designs are better, I like it"), and asked that heroes get superhuman mobility (higher and longer
 jumps, flight for some) and work better than ordinary NPCs outside battle (`docs/heroes-v2/MOBILITY_AND_WORK.md`).
+The owner then answered that design's questions: heroes may use their abilities to make things "unfair" (they cross
+hostile walls and reach players anywhere; soldiers still need the gate), the 27 flyers stay, every hero has all of its
+abilities from level 1 at a power that grows to full at level 20, and an escaping hero may make pursuit impossible
+(`MOBILITY_AND_WORK.md` section 19).
 
 | Milestone | Status |
 |---|---|

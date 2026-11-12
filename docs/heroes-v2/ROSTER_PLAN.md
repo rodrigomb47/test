@@ -85,7 +85,7 @@ Status: plan, 2026-11-12. Companion of `HEROES_V2.md` (the design), `SLICE_PLAN.
 | common | 33 | 39 | 72 |
 | **total** | **100** | **100** | **200** |
 
-Rarity sets the draw weight (leaders 4/4/2/1 for common/rare/epic/legendary, tokens 8/4/2/1) and the boss phase count (common and rare: 2 phases, the third unlocks at level 15; epic and legendary: 3 phases; only legendary heroes may use `rebirth`). It does not change raw numbers beyond the boss `health_scale` default (HEROES_V2.md section 6.2). All eight slice heroes are epic so the slice exercises three phases.
+Rarity sets the draw weight (leaders 4/4/2/1 for common/rare/epic/legendary, tokens 8/4/2/1) and the boss phase count (common and rare: 2 phases, or 3 when the file authors a third, there from level 1; epic and legendary: 3 phases; only legendary heroes may use `rebirth`). It does not change raw numbers beyond the boss `health_scale` default (HEROES_V2.md section 6.2). All eight slice heroes are epic so the slice exercises three phases.
 
 ### 2.3 Archetypes (54) and their gender split
 
@@ -238,7 +238,7 @@ Each hero's primary specialty is listed; the finished hero file adds one or two 
 | swimmer | 4 | 6 | 10 |
 | **total** | **100** | **100** | **200** |
 
-| Primary | Tier I | Tier II | Tier III | Secondaries it carries |
+| Primary | Ceiling I | Ceiling II | Ceiling III | Secondaries it carries |
 |---|---|---|---|---|
 | runner | 14 | 26 | 4 | climber 7, swimmer 7, charger 6, acrobat 5, leaper 4, snowstride 2, ember_stride 1, none 12 |
 | charger | 6 | 27 | 4 | runner 8, leaper 7, ember_stride 3, swimmer 3, snowstride 2, climber 1, none 13 |
@@ -252,7 +252,7 @@ Each hero's primary specialty is listed; the finished hero file adds one or two 
 
 **Flyers** (27, 13% of the roster; 14 F, 13 M) and what carries them: 27 Kagehisa Tobikiri (crow wings); 28 Tsubame Kakeyama (crow wings); 29 Shizuki Minekaze (crow wings); 30 Ojin Atagomaru (crow wings); 40 Mizuchi Haruaki (cloud); 42 Raishin Kumokiri (cloud); 43 Seika Ryugasaki (cloud); 46 Ignatia Vermillor (dragon wings); 48 Aurelian Wyrmholt (dragon wings); 63 Kotoyo Kamo (paper crane); 94 Lin Mingxuan (flying sword); 105 Feng Zhaoming (ember wings); 106 Huang Jinlu (ember wings); 107 Zhu Yanchi (ember wings); 113 Celestine Brightwater (light wings); 121 Ambrose Nettlewick (broom); 122 Pippa Hexley (broom); 123 Hazel Brambleworth (broom); 131 Ottavia Sanguine (bat wings); 135 Belphira Ashenthrone (demon wings); 139 Amariel Lumen (feathered wings); 140 Ishara Morn (feathered wings); 141 Ariston Highgate (feathered wings); 142 Halvard Skye (feathered wings); 177 Momoka Akebono (star wings); 180 Akito Hoshinaga (star wings); 191 Tetsu-9 (jets).
 
-The tier is a ceiling: a hero has tier I from level 1, II from level 10 and III from level 20, up to its ceiling (the talent tiers' levels). Tier III is reserved for epic and legendary heroes.
+The tier is a ceiling, not an unlock gate (the owner's answer of 2026-11-12, "all abilities but not full power"): a hero has every mobility feature up to its ceiling from level 1, and its numbers grow from 60% at level 1 to 100% at level 20 (`MOBILITY_AND_WORK.md` section 1.1; the slice heroes by level in 15.9). Tier III is reserved for epic and legendary heroes.
 
 ## 3. Column legend
 
@@ -288,7 +288,7 @@ The tier is a ceiling: a hero has tier I from level 1, II from level 10 and III 
 - `stance`: switches movesets (stance or transformation); punish the switch.
 - `summoner`: fights through allies or summons; kill them or dive the summoner.
 
-**Mobility** (`MOBILITY_AND_WORK.md` section 1; the numbers are tiers I / II / III):
+**Mobility** (`MOBILITY_AND_WORK.md` section 1; the numbers are the full values, at level 20, of ceilings I / II / III, and a hero has every feature up to its ceiling from level 1):
 
 - `runner`: fleet of foot: faster travel, steps up blocks, crosses soul sand and honey unslowed.
 - `charger`: heavy ground mover: sure footing, knockback resistance on the move, traversal charges, shrugs off cobwebs.

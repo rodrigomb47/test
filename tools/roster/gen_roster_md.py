@@ -211,9 +211,10 @@ def main():
     w(count_table("Rarity", ra, ["legendary", "epic", "rare", "common"]))
     w("")
     w("Rarity sets the draw weight (leaders 4/4/2/1 for common/rare/epic/legendary, tokens 8/4/2/1) and the boss "
-      "phase count (common and rare: 2 phases, the third unlocks at level 15; epic and legendary: 3 phases; only "
-      "legendary heroes may use `rebirth`). It does not change raw numbers beyond the boss `health_scale` default "
-      "(HEROES_V2.md section 6.2). All eight slice heroes are epic so the slice exercises three phases.")
+      "phase count (common and rare: 2 phases, or 3 when the file authors a third, there from level 1; epic and "
+      "legendary: 3 phases; only legendary heroes may use `rebirth`). It does not change raw numbers beyond the boss "
+      "`health_scale` default (HEROES_V2.md section 6.2). All eight slice heroes are epic so the slice exercises three "
+      "phases.")
     w("")
     w("### 2.3 Archetypes (54) and their gender split")
     w("")
@@ -240,7 +241,7 @@ def main():
     mo = by_g(rows, lambda r: r["mobility"]["primary"]["trait"])
     w(count_table("Primary mobility", mo, cr.MOBILITY_PRIMARY))
     w("")
-    out = ["| Primary | Tier I | Tier II | Tier III | Secondaries it carries |", "|---|---|---|---|---|"]
+    out = ["| Primary | Ceiling I | Ceiling II | Ceiling III | Secondaries it carries |", "|---|---|---|---|---|"]
     for t in cr.MOBILITY_PRIMARY:
         grp = [r for r in rows if r["mobility"]["primary"]["trait"] == t]
         tc = collections.Counter(r["mobility"]["primary"]["tier"] for r in grp)
@@ -256,8 +257,10 @@ def main():
       f"{sum(1 for r in fly if r['g'] == 'F')} F, {sum(1 for r in fly if r['g'] == 'M')} M) and what carries them: "
       + "; ".join(f"{r['n']} {r['name']} ({cr.FLIGHT_CARRIER[r['arch']]})" for r in fly) + ".")
     w("")
-    w("The tier is a ceiling: a hero has tier I from level 1, II from level 10 and III from level 20, up to its "
-      "ceiling (the talent tiers' levels). Tier III is reserved for epic and legendary heroes.")
+    w("The tier is a ceiling, not an unlock gate (the owner's answer of 2026-11-12, \"all abilities but not full "
+      "power\"): a hero has every mobility feature up to its ceiling from level 1, and its numbers grow from 60% at "
+      "level 1 to 100% at level 20 (`MOBILITY_AND_WORK.md` section 1.1; the slice heroes by level in 15.9). Tier III is "
+      "reserved for epic and legendary heroes.")
     w("")
     w("## 3. Column legend")
     w("")
@@ -276,7 +279,8 @@ def main():
     for d in cr.DUELS:
         w(f"- `{d}`: {DUEL_TEXT[d]}.")
     w("")
-    w("**Mobility** (`MOBILITY_AND_WORK.md` section 1; the numbers are tiers I / II / III):")
+    w("**Mobility** (`MOBILITY_AND_WORK.md` section 1; the numbers are the full values, at level 20, of ceilings "
+      "I / II / III, and a hero has every feature up to its ceiling from level 1):")
     w("")
     for t, text in MOBILITY_TEXT.items():
         w(f"- `{t}`: {text}.")

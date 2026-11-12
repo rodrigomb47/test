@@ -86,11 +86,14 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
 14. **No recorded voices.** Dialogue is text (chat line and a speech bubble) with a talking mouth and pitched vanilla
     "voice blips". Recording voices for 200 original characters is out of scope.
 15. **Heroes move and work better than players** (the owner's request of 2026-11-12; this reverses the earlier "heroes
-    move like players, nobody flies"): each hero has a mobility trait with a tier (runner, charger, leaper, acrobat,
-    climber, glider, flyer, hover, swimmer; snow and fire footings), about 13% of the roster flies with a stamina bar,
-    and every hero works its duty with a proficiency plus a specialty from its primary talent. Fairness is enforced by
-    the mod (flyers land to strike, can be shot down, never cross a hostile base's walls), teleporting stays out, and
-    workers and soldiers stay player-like. `MOBILITY_AND_WORK.md`.
+    move like players, nobody flies"): each hero has a mobility trait with a tier ceiling (runner, charger, leaper,
+    acrobat, climber, glider, flyer, hover, swimmer; snow and fire footings), about 13% of the roster flies with a
+    stamina bar, and every hero works its duty with a proficiency plus a specialty from its primary talent. Fairness is
+    counterplay enforced by the mod (flyers land to strike and can be shot down; a fighting hero comes back within
+    reach), teleporting stays out, and workers and soldiers stay player-like. The owner's answers of the same day:
+    heroes may use their abilities to make things "unfair" (they cross hostile walls in raids, sieges and scouting and
+    reach players anywhere; an escaping hero may make pursuit impossible), the 27 flyers stay, and every hero has all
+    of its abilities from level 1 at a power that grows with level (section 8). `MOBILITY_AND_WORK.md`.
 
 ---
 
@@ -197,7 +200,7 @@ it has the `court` duty it is never sent alone. GameTest `heroNotDraftedIntoRaid
 | 1 | `HeroYieldGoal` | kneels, passive, while yielding |
 | 2 | `HeroMoveGoal` | replaces v1's `HeroAbilityGoal`: picks and runs moves in both modes (section 6.3); MOVE+LOOK while a move runs |
 | 3 | `NpcMeleeAttackGoal` / `NpcRangedAttackGoal` / `HeroThrowGoal` | basic attacks, leash from aggression (v1 §8), skirmisher step-back, `keep_distance` |
-| 4 | `WithdrawGoal` | `retreat_below` from personality (section 5.4); never while boss mode is on |
+| 4 | `WithdrawGoal` | `retreat_below` from personality (section 5.4); never while boss mode is on; the withdrawal is an escape with any mobility (`MOBILITY_AND_WORK.md` 7.7) |
 | 5+ | `WorkGoal` | its duty, or `court` for a leader |
 | target | `HeroTargetGoal` | focus, protects, aggression radius (v1 §8), attack tokens (section 6.2) |
 
@@ -792,7 +795,7 @@ INTRO (first engagement of the in-game day, 1.0-1.5 s, super armour)
 - **Gap** between moves (NEUTRAL time): phase 1 1.5-2.5 s, phase 2 1.0-2.0 s, phase 3 0.6-1.5 s; enraged x0.7. Basic
   attacks continue during the gap.
 - **The pick** (`logic/hero/MoveSelector`, every 5 ticks when NEUTRAL and the gap is over; seeded per entity). The
-  candidates are the moves of the current phase that are unlocked, have a ready charge, have a valid target in range
+  candidates are the moves of the current phase that have a ready charge, have a valid target in range
   and whose v1 `use_when` holds (default `always`):
 
 ```
@@ -885,7 +888,9 @@ passive.
 ### 6.7 Phases
 
 - 1-3 phases (`boss.phases`, each with `at` = the health share at which it begins: 100, then for example 60 and 25).
-  Common and rare heroes have 2 (a third may unlock at level 15); epic, legendary and every leader have 3.
+  Common and rare heroes have 2 by default and may author a third, which they have from level 1 (the first draft
+  unlocked it at level 15; changed with the owner's answer of 2026-11-12, section 8); epic, legendary and every
+  leader have 3.
 - **Transition** (0.8-2.0 s): 50% less damage taken and no stagger (super armour, shown by a glint), never
   invulnerable; a shockwave pushes everyone within 4 blocks back (strength 2, no damage, hazard-aware) to reset
   spacing; the phase line, a face change and the phase look (`p2_`/`p3_` bones, `_p2.png`, eyes glowing in the last
@@ -976,9 +981,11 @@ and a passed chance replaces the next pick (never a move in progress).
   along a path (dashes and charges stop short), open sky (needed by visual lightning and `rain` outdoors).
 - **Hazard-aware knockback** on players: if the landing area 4 blocks away has lava, fire, a drop over 6 or the void,
   the push is cut to 0.5 strength. No cheap deaths.
-- **Unreachable target** (no path, or no melee reach for 5 s): far-band moves; after 10 s the hero uses the NPCs' own
-  tools at player speed (`DigOut` pillaring and bridging, `BlockWork` breaking) to reach the player, exactly as a
-  player would; after 30 s it disengages with a taunt line and resets. A hero without any far-band move gets a NOTE.
+- **Unreachable target**: a hero first uses its mobility, at once, to reach a player on a pillar, in a pen or behind
+  a wall (climb, leap, glide, flight: `MOBILITY_AND_WORK.md` 3.7, the owner's answer of 2026-11-12). When no link
+  reaches (no path, or no melee reach for 5 s): far-band moves; after 10 s the hero uses the NPCs' own tools at player
+  speed (`DigOut` pillaring and bridging, `BlockWork` breaking) to reach the player, exactly as a player would; after
+  30 s it disengages with a taunt line and resets. A hero without any far-band move gets a NOTE.
 - **Home ground**: the `in_home_base` condition lets a hero use its walls (a bell rung to call guards, a stand at the
   heart).
 
@@ -995,7 +1002,9 @@ and a passed chance replaces the next pick (never a move in progress).
   action-bar prompt "Sneak and use to spare, strike to finish". **Spare**: it walks home (no combat for 10 minutes,
   counted as a defeat, not a death, no gear dropped; its `spared` line; standing and opinion effects in milestone 2).
   **Finish**: it dies (revival timer, v1 drops). No choice in 5 s: it collapses and dies. Killed by NPCs or in field
-  mode: a 1 s defeat beat, then death.
+  mode: a 1 s defeat beat, then death. **Refused yield**: a hero with honour 30 or less, or a leader with caution 70
+  or more, does not kneel but escapes at 1 health, once in 10 minutes: boss mode ends, nothing drops, no rewards, and
+  the next hit that reaches it kills it (`MOBILITY_AND_WORK.md` 7.7).
 - **Rewards** for a player-defeated hero: XP orbs (`7 x level`, at most 100), its non-kit gear, a `hero_crest`
   trophy item (named, one per hero per player per in-game day), and (milestone 3) a chance of a token fragment.
 
@@ -1008,10 +1017,11 @@ and a passed chance replaces the next pick (never a move in progress).
 5. Hazard-aware knockback (6.12).
 6. Boss mode never starts against creative or spectator players; the damage cap applies only to player sources, so NPC
    wars are unaffected.
-7. Mobility: an air budget per take-off, melee only on the ground or as a telegraphed `dive`, no hovering out of reach,
-   air poise (shot down by arrows, bolts, tridents, wind charges), no climbing or flying over hostile walls, no leap,
-   climb or flight that puts an obstacle a player cannot cross between the hero and every engaged player, travel
-   bonuses off in fights (`MOBILITY_AND_WORK.md` section 5).
+7. Mobility, as counterplay rather than limits on where a hero may go (the owner accepts "unfair" abilities,
+   2026-11-12): an air budget per take-off, melee only on the ground or as a telegraphed `dive`, air poise (shot down
+   by arrows, bolts, tridents, wind charges), travel bonuses off in fights, and while fighting at most 4 s at a time
+   where no engaged player can reach it before it comes back. Heroes may cross any base's walls and reach players
+   anywhere, and an escaping hero may go where no one can follow (`MOBILITY_AND_WORK.md` sections 3.7, 5 and 7.7).
 
 ---
 
@@ -1033,12 +1043,14 @@ woken by any alarm.
 ### 7.2 Talents
 
 Rules: up to 3 per hero from the catalogue; **the numbers belong to the mod** (tiers I/II/III at hero levels 1, 10 and
-20), so 200 authored heroes cannot break the economy. A talent works at the base where the hero is (inside the walls
-or within 16 blocks), not on a raid. One talent of a leader may be marked `realm: true` and then also works at every
-other base of the faction at tier I. The strongest copy of each talent at a base counts, never the sum. Talents change
-speeds, odds, choices, ranges and costs within the bounds affixes already use; they never create items, place or break
-blocks outside the existing jobs, or teleport. v1 base abilities (`aura`, `mend`, `lookout`, `rally`, `drill`) are
-catalogue entries.
+20), so 200 authored heroes cannot break the economy. Every talent works from level 1 and only its numbers grow by tier:
+no part of a talent is missing at tier I (the owner's answer of 2026-11-12, "all abilities but not full power";
+`mentor`'s recruit level and `spymaster`'s raid warning, which gave nothing at tier I, now start there). A talent works
+at the base where the hero is (inside the walls or within 16 blocks), not on a raid. One talent of a leader may be
+marked `realm: true` and then also works at every other base of the faction at tier I. The strongest copy of each talent
+at a base counts, never the sum. Talents change speeds, odds, choices, ranges and costs within the bounds affixes
+already use; they never create items, place or break blocks outside the existing jobs, or teleport. v1 base abilities
+(`aura`, `mend`, `lookout`, `rally`, `drill`) are catalogue entries.
 
 | Talent | I / II / III (PROPOSED) | Hook (existing code) | Milestone |
 |---|---|---|---|
@@ -1053,7 +1065,7 @@ catalogue entries.
 | `ember_keeper` | smelting +10/20/30% faster; furnaces refuelled before they go cold | `SmelterJob`, `FurnaceWork` | 1 |
 | `quartermaster` | shortages warned 0.5/1/1.5 days earlier; haulers carry one more stack; food reserve x0.9/0.85/0.8 | `Logistics`, `HaulerJob` | 2 |
 | `rally` | recruits cost 10/15/20% less food | `Recruitment` (v1 hook) | 1 |
-| `mentor` | NPCs within 16 blocks gain +15/25/35% work XP; recruits start at level 1/2/3 | `FactionNpc.awardXp`, `Recruitment` | 1 |
+| `mentor` | NPCs within 16 blocks gain +15/25/35% work XP; recruits start at level 1-2/2/3 (tier I: every second recruit at level 2) | `FactionNpc.awardXp`, `Recruitment` | 1 |
 | `renown` | recruitment interval x0.9/0.8/0.7; one extra affix roll per recruit | `FactionDirector.recruitment`, `AffixRoller` | 2 |
 | `drill` | soldiers gain 1/2/3 work XP per in-game hour by day | `FactionNpc.awardXp` (v1 hook) | 1 |
 | `festival_host` | unlocks the festival edict; festival morale +15/20/25 | morale, edicts | 2 |
@@ -1064,7 +1076,7 @@ catalogue entries.
 | `purifier` | NPCs at the base lose poison, wither and hunger effects every 30/20/10 s | `FactionNpc.tick` | 1 |
 | `lookout` | line-of-sight alarm within 32/40/48 blocks | v1 hook | 1 |
 | `cartographer` | scouts reach +16/32/48 blocks; each report marks the 3x3 sectors around it explored | `ScoutJob`, `FactionState.explored` | 1 |
-| `spymaster` | base reports carry garrison counts and whether the leader is home; enemy raids announced 0/1/2 minutes before they reach the walls | `ScoutJob` notes, `Report.count` | 1 |
+| `spymaster` | base reports carry garrison counts and whether the leader is home; enemy raids announced 0.5/1/2 minutes before they reach the walls | `ScoutJob` notes, `Report.count` | 1 |
 | `pathfinder` | NPCs of the base walk 5/8/10% faster outside the walls | transient `MOVEMENT_SPEED` modifier | 2 |
 | `envoy` | pact and peace acceptance +0.1/0.2/0.3; opinion of this faction recovers twice as fast | `DiplomacyRules` | 2 |
 | `intimidation` | rival war councils see this base's defence x1.15/1.3/1.45; strangers' hostile threshold -10 | director target cost | 2 |
@@ -1118,8 +1130,15 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
   XP from faction events (a base built +40, a raid won +100, a pact sworn +40, an advancement +20, a festival +20).
   Each level rolls an affix from its duty job, as for any NPC.
 - **Growth** profiles of v1 §5.3; `controller` and `summoner` default to `mystic`.
-- **Unlocks**: talents tier II at level 10 and III at 20; moves by `unlock_level`; a common or rare hero's third phase
-  at level 15; at level 25 an optional **awakened ultimate** (`ultimate.awakened`) replaces the first.
+- **All abilities from level 1, power growing with level** (the owner's answer of 2026-11-12: "they should have all
+  abilities but not full power"). Nothing in a format-2 hero is gated by level: every move, every authored phase and
+  both ultimates are there at level 1, and so is every mobility feature up to its ceiling (`MOBILITY_AND_WORK.md`
+  1.1). Power grows: stats and ability power by the growth profile (v1 §5.3), talent numbers by tier (II at level 10,
+  III at 20; 7.2), work proficiency, and mobility numbers (60% at level 1 to 100% at level 20). The first draft's
+  gates, changed: moves by `unlock_level` (now read and ignored with a NOTE, 12.7), a common or rare hero's third
+  phase at level 15 (now there from level 1 when authored, 6.7), and an **awakened ultimate** (`ultimate.awakened`)
+  replacing the first at level 25 (now a second ultimate beside the first from level 1, 12.8). Format-1 files keep
+  v1 §22.3.
 - **Heroes per faction** (milestone 3): `heroes.maxPerFaction` 6 (the leader plus five); non-leaders take posts the
   leader assigns (general, steward, envoy, warden) or their own duty.
 - **Recruiting more heroes** (milestone 3): v1 tokens; wandering heroes with a personality-driven join condition
@@ -1253,7 +1272,7 @@ strict reporting). Added: colours are `"#RRGGBB"`; part ids are `<category>/<nam
 | `behaviour` | yes | - | v1 §8, plus `duel_style` (the 8 duel styles) and the roles `controller`, `summoner`; `duty` adds `court` (set by the game for leaders, never authored) |
 | `basic_attack` | yes | - | v1 §9, plus `combo` (1-4, default 3: how many `attack.N` animations the string uses) |
 | `moves` | no | `[]` | 0-12 moves (12.7); v1 `skills` load as moves |
-| `ultimate` | no | none | v1 ability shape plus move fields; optional `awakened` variant (unlocks at 25) |
+| `ultimate` | no | none | v1 ability shape plus move fields; optional `awakened` second ultimate (from level 1, 12.8) |
 | `passives` | no | `[]` | v1 §17 plus the new triggers (6.6) and `once_per_fight` |
 | `states` | no | `[]` | 0-3 named states (12.9); v1 `empowered` loads as one state |
 | `boss` | no | from role and rarity | 12.10 |
@@ -1312,7 +1331,8 @@ Synonyms (ADJUSTED) add `crowd_control`, `cc`, `debuffer`, `trapper` → control
 ### 12.7 `moves`
 
 A move is a v1 ability (v1 §10: `name`, `form` and form fields, `effects`, `look`, `line`, `use_when`, `cooldown`,
-`charges`, `energy_gain`, `unlock_level`) plus:
+`charges`, `energy_gain`; a v1 `unlock_level` is read and ignored with a NOTE, because every move is there from level
+1: section 8) plus:
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
@@ -1332,7 +1352,9 @@ A move is a v1 ability (v1 §10: `name`, `form` and form fields, `effects`, `loo
 ### 12.8 `ultimate`
 
 v1 ultimate (energy 100, `charge_rate`, minimum gap 20-60 s) plus move fields; class `ultimate`. `awakened`: a second
-ultimate with the same shape, unlocked at level 25, replacing the first.
+ultimate with the same shape, there from level 1 beside the first (the first draft unlocked it at level 25 to replace
+the first; changed with the owner's answer of 2026-11-12, section 8). The two share the energy bar and the minimum
+gap, and the selector picks between them by weight, band and `prefer_when`, as it does moves.
 
 ### 12.9 `states`
 
@@ -1350,7 +1372,7 @@ condition `self_state` reads it. The animation `state.<name>` plays on entering.
 | `max_hit_share` | whole % 5-25 | 12 | per-hit cap from players |
 | `damage_vs_players` | whole % 100-140 | 115 | |
 | `poise` | 0 or 50-200 | by role | 0 only with another weakness |
-| `phases` | 1-3 of `{ at, moves, states, adds, stats, transition }` | 2 or 3 by rarity | `at`: health share where it begins (first 100); `transition`: `{ seconds 0.8-2, line, shockwave {radius, strength}, effects, face }`; `unlock_level` on the last |
+| `phases` | 1-3 of `{ at, moves, states, adds, stats, transition }` | 2 or 3 by rarity | `at`: health share where it begins (first 100); `transition`: `{ seconds 0.8-2, line, shockwave {radius, strength}, effects, face }`; an `unlock_level` is read and ignored with a NOTE (every phase from level 1: section 8) |
 | `reactions` | 0-8 of `{ when, move, chance, cooldown }` | none | 6.8 |
 | `weak_points` | 1-4 | by archetype | 6.9 |
 | `enrage` | `{ after, triggers, line }` | 180/240 s, none | 6.10 |
@@ -1408,6 +1430,7 @@ v1 §23 events and rules, plus:
 | `phase_2`, `phase_3` | phase transitions | `{name}` |
 | `enrage`, `stagger`, `counter` | those moments (rate-limited) | `{name}`, `{enemy}` |
 | `yield`, `spared` | the defeat beat; spared | `{name}`, `{player}` |
+| `escape` | it escapes: a refused yield, low health, a lost raid (`MOBILITY_AND_WORK.md` 7.7) | `{name}`, `{enemy}` |
 | `raid_announce`, `base_lost`, `hero_fallen` | leader announcements | `{name}`, `{faction}`, `{target_faction}` |
 | `work`, `night`, `small_talk` | idle moments at home | `{name}`, `{player}` |
 | `pact_offer`, `pact_accepted`, `pact_refused`, `peace_offer`, `declare_war`, `betrayal`, `betrayed`, `stranger_warning`, `welcome`, `gift_liked`, `gift_disliked` | milestone 2 and 3 events (read now, used later) | as they need, plus `{item}` |
@@ -2064,12 +2087,12 @@ numbers and the strongest-copy rule are in the unit test `TalentsTest`): `talent
 `talentWardenOfWallsAlarmRadius`.
 
 **Fixture heroes.** The eight slice heroes are all epic, and none uses a bow, a crossbow or v1 summons, so four small
-test-only definitions cover the rest of the engine: `fixture_rare` (2 phases, the third unlocking at level 15),
+test-only definitions cover the rest of the engine: `fixture_rare` (2 phases plus an authored third, there at level 1),
 `fixture_legendary` (`rebirth`), `fixture_bow` (marksman with a real bow: `NpcRangedAttackGoal`, arrows, the
 `target_drawing_bow` reaction) and `fixture_summoner` (v1 `summon` of wolves, adds counted against the caps). They are
 JSON strings inside the GameTest classes, registered for the test's duration with `HeroRegistry.registerTransient`
 (the `GameTestBases.register` pattern), never shipped as content, and drawn with the `_fallback` model. GameTests:
-`rareHeroThirdPhaseUnlocksAtLevel15`, `legendaryRebirthStartsFinalPhase`, `bowHeroShootsRealArrows`,
+`rareHeroAuthoredThirdPhaseAtLevelOne`, `legendaryRebirthStartsFinalPhase`, `bowHeroShootsRealArrows`,
 `summonerHeroSummonsWithinCaps`.
 
 These 55 come on top of the v1 ability GameTests (v1 §31.2, about 26, built in A3 and A4): about 81 new GameTests.
@@ -2137,13 +2160,13 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | C2 | Slice heroes: Benika Akagane and Yugen Kagaribi | C1 | M | same |
 | C3 | Slice heroes: Kagenori Tsurumine and Ambrose Nettlewick | C1 | M | same |
 | C4 | Slice heroes: Ilsabet Frostmere and Tobimaru Usugumo | C1 | M | same |
-| F5 | Mobility and work-mastery pure logic: `MobilityRules`, `LeapSolver`, `FlightPlanner`, link rules, `WorkMastery`; the `mobility` block and the `dive` form in the catalogue and validator (`MOBILITY_AND_WORK.md` 18.1) | F1, F2 | M | `MobilityRulesTest`, `LeapSolverTest`, `FlightPlannerTest`, `HeroLinksTest`, `WorkMasteryTest` |
-| A10 | Mobility engine: tiered attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2 |
-| A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, hostile airspace, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day |
-| A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids (scout and harass, no wall crossing), the fairness rules | A6, A10, A11 | M | the boss mobility GameTests |
+| F5 | Mobility and work-mastery pure logic: `MobilityRules` (ceilings and level power), `LeapSolver`, `FlightPlanner`, link rules, `WallEntry`, `EscapeRules`, `WorkMastery`; the `mobility` block and the `dive` form in the catalogue and validator (`MOBILITY_AND_WORK.md` 18.1) | F1, F2 | M | `MobilityRulesTest`, `LeapSolverTest`, `FlightPlannerTest`, `HeroLinksTest`, `WorkMasteryTest`, `WallEntryTest`, `EscapeRulesTest` |
+| A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2 |
+| A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, walls as terrain for heroes, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration (mobility first, no 10 s wait) | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day |
+| A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape and the refused yield, the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
-| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 81 new ones and the 31 of `MOBILITY_AND_WORK.md` 17.2 pass |
+| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 81 new ones and the 39 of `MOBILITY_AND_WORK.md` 17.2 pass |
 | V2 | Screenshot session for the owner (SLICE_PLAN.md section 7) and render measurements | A2, C1-C4 | M | the gallery exists; numbers recorded |
 | V3 | Campaign runs A and B (8 days each), C (3 + 3 days), the 2-day baseline, the old-world load, tick time (SLICE_PLAN.md 6.4) | all | L | SLICE_PLAN.md section 6 criteria met |
 | V4 | Adversarial review and fixes | V1-V3 | M | review findings closed |
@@ -2232,8 +2255,11 @@ reload time, a 64-hero lineup); the 30-day soak; adversarial review; docs; relea
    and answered on 2026-11-12, so you may see no prompt at all; if it is refused again when the work starts, you will
    see a prompt to allow it once. After that the library is stored in the repository and the host is no longer needed.
    (An action for you, not a design choice.)
-5. **Mobility and work mastery.** Four questions in `MOBILITY_AND_WORK.md` section 19: flyers never crossing a hostile
-   base's walls, which archetypes fly (27 of 200), tiers growing with level, and the size of the extra output.
+5. **Mobility and work mastery.** *Answered on 2026-11-12* (`MOBILITY_AND_WORK.md` 19.1): heroes may use their
+   abilities to make things "unfair" (they cross hostile walls and reach players anywhere), the 27 flyers stay, every
+   hero has all of its abilities from level 1 but not at full power (applied to moves, phases, ultimates and talents
+   too: section 8), and an escaping hero may make pursuit impossible. The size of the extra output was not answered:
+   those numbers stay and are tuned after you play.
 
 ---
 
