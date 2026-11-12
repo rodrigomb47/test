@@ -1,0 +1,41 @@
+{
+  "_comment": "Style library: katana (HEROES_V2.md 13.6). G3 builds the ready stance and the first cut of the string; G5 completes the library (attack.2-3, draw, sheathe, guard, dodge, intro, victory, taunt).",
+  "style": "katana",
+  "animations": {
+    "combat.idle": {
+      "description": "Ready stance, breathing twice as fast as the idle.",
+      "length": 3,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "katana.stance"}, {"t": 3, "pose": "katana.stance"}],
+      "layers": [{"primitive": "breathe", "params": {"period": 1.5, "depth": 1.2}}]
+    },
+    "attack.1": {
+      "description": "A one-handed diagonal cut from over the right shoulder: the wind-up eases out to 0.20 s and stretches to 0.30 s, the cut accelerates through two ticks and lands at 0.40 s (the 'hit' marker), follow-through to 0.55 s, back on the ready stance at 0.90 s. Upper body only, so the legs keep walking under it.",
+      "length": 0.9,
+      "class": "light",
+      "settle_to": "combat.idle",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.2, "pose": "katana.windup", "ease": "easeOutCubic"},
+        {
+          "t": 0.3,
+          "pose": "katana.windup_peak",
+          "ease": "easeInOutSine",
+          "sound": "minecraft:entity.player.attack.sweep"
+        },
+        {
+          "t": 0.4,
+          "pose": "katana.cut",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:slash_arc",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.55, "pose": "katana.follow", "ease": "easeOutCubic"},
+        {"t": 0.7, "face": "none"},
+        {"t": 0.9, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ]
+    }
+  }
+}

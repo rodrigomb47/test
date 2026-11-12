@@ -1,0 +1,38 @@
+{
+  "_comment": "Core library, movement (HEROES_V2.md 13.6; the plan of the whole core library is in docs/heroes-v2/notes/artgen.md, 'G3'). One file for every body form: bone names are the same on all six bases and rotations transfer; root offsets are solved on the teen and stay within half a pixel on the chibi and the adult.",
+  "animations": {
+    "move.idle": {
+      "description": "A 24 s idle loop (the references idle for 24-30 s with baked weight shifts and head turns): breathing every 3 s, two weight shifts, three glances on the neck (the head stays free for the procedural head look), seeded ear twitches.",
+      "length": 24,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "stance.relaxed"}, {"t": 24, "pose": "stance.relaxed"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 3}},
+        {
+          "primitive": "weight_shift",
+          "params": {"shifts": [[4, 5.2, 9, 10.4, "r"], [14.5, 15.8, 19.6, 21, "l"]]}
+        },
+        {
+          "primitive": "look",
+          "params": {
+            "glances": [[6.6, 7.2, 8.8, 9.5, 18, 2], [11.8, 12.3, 12.9, 13.5, 0, 9], [17, 17.5, 18.6, 19.2, -13, -1]]
+          }
+        },
+        {"primitive": "ear_twitch"}
+      ]
+    },
+    "move.walk": {
+      "description": "Walk cycle in place, 1.0 s (the base controller scales the speed with the ground speed).",
+      "length": 1,
+      "loop": true,
+      "layers": [{"primitive": "walk_cycle", "add": false}]
+    },
+    "move.run": {
+      "description": "Run cycle in place, 0.6 s, with a short flight phase.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "layers": [{"primitive": "run_cycle", "add": false}]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "animations": {
+    "attack.1": {
+      "class": "light",
+      "events": [
+        {"t": 0.3, "tick": 6, "type": "sfx", "value": "minecraft:entity.player.attack.sweep"},
+        {"t": 0.4, "tick": 8, "type": "hit"},
+        {"t": 0.4, "tick": 8, "type": "vfx", "value": "slash_arc"}
+      ],
+      "frame_ticks": {"active": 1, "recovery": 9, "windup": 8},
+      "frames": {"active": 0.05, "recovery": 0.45, "windup": 0.4},
+      "hits": [0.4],
+      "kind": "action",
+      "length": 0.9,
+      "loop": "once",
+      "ticks": 18
+    },
+    "combat.idle": {"events": [], "kind": "base", "length": 3, "loop": "loop", "ticks": 60}
+  },
+  "file": "_style_katana",
+  "format": 1,
+  "generator": "herogen 1",
+  "source_sha256": "afd35a08c606ed96d343149bf89c7b83236885bf52f4761a46c5f0bd241f7062",
+  "tick": 0.05
+}

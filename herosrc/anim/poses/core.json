@@ -1,0 +1,12 @@
+{
+  "_comment": "Shared poses (HEROES_V2.md 13.6; conventions in tools/herogen/anim/poses.py). File degrees added to the rest rotation; 'mirror' builds the left side from the right.",
+  "poses": {
+    "rest": {"bones": {}},
+    "stance.relaxed": {
+      "_comment": "The idle stance: arms a little out from the sides (the references' soft A-pose), elbows slightly bent, feet flat.",
+      "mirror": true,
+      "bones": {"arm_r": [0, 0, 8], "forearm_r": [-7, 0, 0], "hand_r": [0, 0, -2]},
+      "fix": ["level_feet", "ground"]
+    }
+  }
+}

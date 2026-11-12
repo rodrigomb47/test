@@ -4,7 +4,8 @@ Reads a written .geo.json and its PNG, so it shows exactly what the game gets. C
 baking: positions are mirrored in x (render x = -file x), cube and bone rotations become (-rx, -ry, rz) and apply
 in the order Z, Y, X about their pivot. Faces map their UV rectangle as vanilla box UV does (uvpack docstring).
 Rendering is cull-free with alpha cut-out at 0.1 like entityCutoutNoCull, nearest-neighbour sampling and simple
-block-style face shading (top 1.0, front and back 0.8, sides 0.6, bottom 0.5). Rest pose only.
+block-style face shading (top 1.0, front and back 0.8, sides 0.6, bottom 0.5). A `pose` (an animation sample)
+moves the bones.
 """
 import math
 
@@ -43,27 +44,44 @@ def _to_render(p):
     return np.array([-p[0], p[1], p[2]], dtype=float)
 
 
+def _pose_of(pose, name):
+    """(rotation, position) a pose gives a bone: a pose entry is file-degree rotations (rx, ry, rz), or
+    {"rotation": ..., "position": ...} (file pixels), as an animation sample gives them."""
+    if not pose or name not in pose:
+        return None, None
+    v = pose[name]
+    if isinstance(v, dict):
+        return v.get("rotation"), v.get("position")
+    return v, None
+
+
 def _bone_matrices(geo, pose=None):
-    """Rest transforms of every bone (render space): a function p -> p for each bone, parents applied. `pose` adds
-    file-degree rotations to named bones (a preview pose, as an animation would)."""
+    """Transforms of every bone (render space): a list of (pivot, rotation, offset) from the root down for each
+    bone, parents applied. `pose` adds file-degree rotations and file-pixel positions to named bones, as an animation
+    does (GeckoLib: translate by the position, then rotate about the pivot)."""
     mats = {}
     for name in geo.order:
         b = geo.bones[name]
         parent = b.get("parent")
         rot = b.get("rotation")
-        if pose and name in pose:
+        add_rot, add_pos = _pose_of(pose, name)
+        if add_rot is not None:
             base = rot or (0.0, 0.0, 0.0)
-            rot = [base[i] + pose[name][i] for i in range(3)]
+            rot = [base[i] + add_rot[i] for i in range(3)]
         local = None
-        if rot and any(abs(a) > 1e-9 for a in rot):
-            local = (_to_render(b["pivot"]), rotation_matrix(-rot[0], -rot[1], rot[2]))
+        has_rot = rot and any(abs(a) > 1e-9 for a in rot)
+        has_pos = add_pos is not None and any(abs(a) > 1e-9 for a in add_pos)
+        if has_rot or has_pos:
+            m = rotation_matrix(-rot[0], -rot[1], rot[2]) if has_rot else np.eye(3)
+            off = _to_render(add_pos) if has_pos else np.zeros(3)
+            local = (_to_render(b["pivot"]), m, off)
         mats[name] = (mats.get(parent, []) if parent else []) + ([local] if local else [])
     return mats
 
 
 def _apply_chain(chain, p):
-    for pivot, m in reversed(chain):
-        p = pivot + m @ (p - pivot)
+    for pivot, m, off in reversed(chain):
+        p = pivot + m @ (p - pivot) + off
     return p
 
 
@@ -97,7 +115,7 @@ def quads(geo, hidden=(), uv_shift=None, pose=None):
             n = _to_render(NORMALS[face])
             if crot:
                 n = crot[1] @ n
-            for _, m in reversed(chains[c.bone]):
+            for _, m, _ in reversed(chains[c.bone]):
                 n = m @ n
             if uv_shift and c.bone in uv_shift:
                 du, dv = uv_shift[c.bone]

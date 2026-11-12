@@ -1,0 +1,76 @@
+{
+  "_comment": "Poses of the katana style (one-handed in the right hand for G3's swing; the two-handed string is G5). Conventions in tools/herogen/anim/poses.py: a forward arm swing is negative rx, elbow flexion negative rx on forearm_*, positive ry turns toward the hero's right. The neck turns back what the body, waist and chest turn, so the head faces the target.",
+  "poses": {
+    "katana.stance": {
+      "_comment": "Ready stance: knees bent, right foot forward, the right shoulder leading, the hand in front of the belly with the blade forward and up at about 45 degrees, the left hand loose at the hip. Arm angles solved for hand and blade targets on the teen (docs/heroes-v2/notes/artgen.md, G3).",
+      "knees": 10,
+      "bones": {
+        "leg_r": [-8, 0, 3],
+        "leg_l": [7, 0, -4],
+        "body": [3, -14, 0],
+        "waist": [0, -4, 0],
+        "chest": [2, -6, 0],
+        "neck": [-4, 24, 0],
+        "arm_r": [6, -6, 10],
+        "forearm_r": [-78, 0, 0],
+        "hand_r": [21, 12, 3],
+        "arm_l": [8, 0, -14],
+        "forearm_l": [-26, 0, 0],
+        "hand_l": [0, 0, 4]
+      },
+      "fix": ["level_feet", "ground"]
+    },
+    "katana.windup": {
+      "_comment": "The blade cocked over the right shoulder (elbow up and out, hand above and behind the shoulder, the blade pointing back), the torso turned right, the left hand forward for balance.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [-1, 7, 0],
+        "chest": [-3, 18, 2],
+        "neck": [-2, -11, 0],
+        "arm_r": [-168, 26, -34],
+        "forearm_r": [-78, 0, 0],
+        "hand_r": [106, 0, 20],
+        "arm_l": [-34, 0, -10],
+        "forearm_l": [-24, 0, 0]
+      }
+    },
+    "katana.windup_peak": {
+      "_comment": "The last stretch of the wind-up: a little further back, the moment before the cut.",
+      "extends": "katana.windup",
+      "bones": {
+        "chest": [-4, 22, 3],
+        "neck": [-2, -15, 0],
+        "arm_r": [-167, 24, -35],
+        "forearm_r": [-78, 0, 0],
+        "waist": [-1, 8, 0],
+        "hand_r": [104, 0, 20]
+      }
+    },
+    "katana.cut": {
+      "_comment": "The hit: the arm thrown forward, down and across (the shoulder sweeps about 130 degrees from the wind-up), the blade in line with the arm, the torso turned left.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [2, -12, 0],
+        "chest": [6, -22, -2],
+        "neck": [-6, 46, 0],
+        "arm_r": [-36, 5, 16],
+        "forearm_r": [-64, 0, 0],
+        "hand_r": [112, -3, 6],
+        "arm_l": [16, 0, -18],
+        "forearm_l": [-30, 0, 0]
+      }
+    },
+    "katana.follow": {
+      "_comment": "Follow-through: the blade carries on down and to the left.",
+      "extends": "katana.cut",
+      "bones": {
+        "waist": [3, -16, 0],
+        "chest": [8, -28, -3],
+        "neck": [-7, 56, 0],
+        "arm_r": [-31, -7, -5],
+        "forearm_r": [-43, 0, 0],
+        "hand_r": [90, -2, 2]
+      }
+    }
+  }
+}

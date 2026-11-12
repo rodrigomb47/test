@@ -84,12 +84,13 @@
     {"name": "vfx_feet", "parent": "root", "pivot": [0, 0, 0], "required": true, "kind": "locator"}
   ],
   "joint_limits": {
-    "_comment": "Degrees, checked by the animation generator (G3), which also fixes the sign convention of 'flex'.",
-    "forearm_r": {"axis": "x", "flex": [0, 150]},
-    "forearm_l": {"axis": "x", "flex": [0, 150]},
-    "shin_r": {"axis": "x", "flex": [0, 150]},
-    "shin_l": {"axis": "x", "flex": [0, 150]},
+    "_comment": "Degrees of animation rotation (file degrees added to the rest rotation), checked by the animation generator (G3, tools/herogen/anim/quality.py). flex = sign x the rotation about axis: elbow flexion is negative rx on forearm_* (the forearm swings forward), knee flexion positive rx on shin_* (the shin swings back). yaw = ry, pitch = rx, twist = ry.",
+    "forearm_r": {"axis": "x", "sign": -1, "flex": [0, 150]},
+    "forearm_l": {"axis": "x", "sign": -1, "flex": [0, 150]},
+    "shin_r": {"axis": "x", "sign": 1, "flex": [0, 150]},
+    "shin_l": {"axis": "x", "sign": 1, "flex": [0, 150]},
     "head": {"yaw": [-80, 80], "pitch": [-60, 60]},
+    "neck": {"yaw": [-60, 60], "pitch": [-40, 40]},
     "waist": {"twist": [-45, 45]}
   },
   "uv_template": {

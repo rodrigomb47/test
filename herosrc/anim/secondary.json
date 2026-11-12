@@ -1,0 +1,66 @@
+{
+  "_comment": "Spring groups of the secondary-motion bake (tools/herogen/anim/secondary.py, HEROES_V2.md 13.6). 'chain': links solved root first, each pointing at the next link's pivot (the last at 'tip'); 'bones': independent links pointing along 'tip' ('mirror_x' flips its x on the hero's right side). stiffness 0-1 sets the frequency (0.8 + 3.5 x stiffness Hz), damping 0-1 the damping ratio (0.8 x damping); limit caps the turn away from the authored pose in degrees; hang (0-1) pulls the tip toward its bind direction in the world, like gravity (wide sleeves, capes, ponytails). Bones a hero lacks are skipped (GeckoLib ignores keys for missing bones).",
+  "groups": {
+    "tail": {
+      "chain": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"],
+      "tip": [0, 1, 0.4],
+      "tip_len": 4,
+      "stiffness": 0.4,
+      "damping": 0.75,
+      "limit": 35
+    },
+    "ponytail": {
+      "chain": ["tail_hair_1", "tail_hair_2", "tail_hair_3"],
+      "tip": [0, -1, 0.1],
+      "tip_len": 5,
+      "stiffness": 0.35,
+      "damping": 0.6,
+      "limit": 40,
+      "hang": 0.6
+    },
+    "ears": {
+      "bones": ["ear_r", "ear_l"],
+      "tip": [0, 1, 0],
+      "tip_len": 4,
+      "stiffness": 0.65,
+      "damping": 0.6,
+      "limit": 10
+    },
+    "hair": {
+      "bones": ["hair_back", "hair_l", "hair_r"],
+      "tip": [0, -1, 0],
+      "tip_len": 8,
+      "stiffness": 0.8,
+      "damping": 0.75,
+      "limit": 6,
+      "hang": 0.4
+    },
+    "sleeves": {
+      "bones": ["sleeve_r", "sleeve_l"],
+      "tip": [0, -1, 0],
+      "tip_len": 6,
+      "stiffness": 0.5,
+      "damping": 0.7,
+      "limit": 85,
+      "hang": 1
+    },
+    "skirt": {
+      "bones": ["skirt_f", "skirt_b", "skirt_r", "skirt_l"],
+      "tip": [0, -1, 0],
+      "tip_len": 7,
+      "stiffness": 0.6,
+      "damping": 0.7,
+      "limit": 12,
+      "hang": 0.5
+    },
+    "cape": {
+      "chain": ["cape_1", "cape_2"],
+      "tip": [0, -1, 0.1],
+      "tip_len": 9,
+      "stiffness": 0.35,
+      "damping": 0.6,
+      "limit": 45,
+      "hang": 0.7
+    }
+  }
+}

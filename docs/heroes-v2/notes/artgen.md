@@ -747,3 +747,249 @@ their hair uses the new kit and ramp).
   - Seen at a grazing angle, the inside of a jagged slab still shows between its teeth.
   - Outfits have no fabric patterns yet: no hero-level pattern override exists, and the parts library has none on
     its panels.
+
+---
+
+## G3: the animation generator (2026-11-12)
+
+HEROES_V2.md 13.6 and 4.4-4.8, built on rig v3. Python only (`tools/herogen/anim/`), sources in `herosrc/anim/`, outputs
+committed. As in the earlier passes, the reference models (`reference-study.md`) were used only for measurements and
+for the list of animations a rich model has; no animation data, timing curve or pose of theirs is in the repository.
+Where this section and the design differ, this section says why; HEROES_V2.md is updated to match.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `anim/clip.py` | keys, tracks, clips and events with GeckoLib 4.9.3's keyframe semantics; its easings ported from `EasingType` |
+| `anim/skeleton.py` | forward kinematics in file space (GeckoLib's `prepMatrixForBone`), the feet's sole corners; one skeleton per base |
+| `anim/poses.py` | the pose library: `extends`, `mirror`, `knees` (bend with planted feet), fixes `level_feet` and `ground` |
+| `anim/primitives.py` | `breathe`, `weight_shift`, `look`, `ear_twitch`, `walk_cycle`, `run_cycle` |
+| `anim/recipes.py` | recipe -> clip: pose keys (overshoot, settle), layers, face keys, markers, the `bones` filter, the settle on the idle |
+| `anim/secondary.py` | the follow-through bake: damped springs on the rig's chain bones, with gravity `hang` |
+| `anim/writer.py` | the GeckoLib `.animation.json` writer and the server timing file |
+| `anim/quality.py` | the 13.6 / 14.2 animation rules, on all six bases, and the timing agreement check |
+| `anim/library.py` | the core library, the style libraries, a hero's own file, the animation chain, output paths |
+| `anim/timing.py` | the `generated` block of the server definition: each move's frames from its clip (for F2) |
+| `anim/preview.py` | filmstrips and GIFs (`herogen anim-previews`) |
+| `herosrc/anim/poses/{core,katana}.json` | `rest`, `stance.relaxed`; `katana.stance`, `.windup`, `.windup_peak`, `.cut`, `.follow` |
+| `herosrc/anim/core/locomotion.json` | `move.idle`, `move.walk`, `move.run` |
+| `herosrc/anim/styles/katana.json` | `combat.idle`, `attack.1` |
+| `herosrc/anim/secondary.json` | the seven spring groups (tail, ponytail, ears, hair, sleeves, skirt, cape) |
+| outputs | `assets/.../animations/hero/_core.animation.json` (88 KB), `_style_katana.animation.json` (25 KB), `_style_fists.animation.json` (empty: `_fallback`'s style), `test_rig` and `_fallback` own files (empty), and beside each a server timing file `data/factionclash/hero_timings/<file>.json` |
+
+Commands: `herogen build` also writes the libraries (and `--check` compares them); `herogen check` runs the animation
+rules on the libraries and on each hero's own file, and checks that every timing file says what its animation file's
+markers say; `herogen anim` lists the libraries; `herogen anim-previews` writes `docs/heroes-v2/previews/anim/`.
+`visual.json` gains `animation_chain` (hero file, style library, core: what `HeroModel.getAnimationResource` and its
+fallbacks return) and `secondary` (the chains the hero's parts declare, with their stiffness and damping).
+
+### GeckoLib facts the writer relies on (read from the 4.9.3 jar with `javap -c`)
+
+- `BakedAnimationsAdapter`: a channel's keys are read **in file order**; each key's segment runs from the previous
+  key's time, so the map must ascend in time, and a `"0"` key that is not the first entry is an error. herogen's JSON
+  writer sorts keys, so keyframe maps are now written as `util.Ordered` (insertion order); "24.0" no longer sorts
+  before "3.0".
+- A key is a vector, `{"vector", "easing", "easingArgs"}`, or Bedrock's `{"pre", "post"}` (pre placed 0.001 s before
+  the key). Rotation constants are negated on x and y and turned into radians, exactly like a bone's rest rotation, so
+  animation angles add to rest angles in file degrees (`rot.file_matrix` holds). Position keys are file pixels
+  (`RenderUtil.translateMatrixToBone` negates x when it applies them).
+- The easing of a key shapes the segment **arriving** at it; before the first key a channel holds that key's value,
+  after the last key its value. Easing names are matched in lower case; unknown names fall back to linear.
+- **`step` is 2 steps**: `EasingType.step(2)` returns 0 for the first half of a segment and **0.5** for the second
+  half. A face_ctrl change from eye frame 0 to frame 4 through `step` would show frame 2 (closed) for half the
+  segment, and frame 2 is a whole number, so the 0.05 rule of 4.6 would not catch it. **Deviation**: face changes are
+  written as pre/post jumps (instant), never `step`.
+- `KeyFramesAdapter`: `timeline` values are strings (an array would arrive as "[a, b]"), so instructions are joined
+  with ";"; `sound_effects` take `{"effect"}`, `particle_effects` `{"effect", "locator", "pre_effect_script"}`.
+- `loop`: `true`, `"hold_on_last_frame"` or absent (play once); `animation_length` in seconds.
+A test ports `getKeyframes`, `addBedrockKeyframes`, `buildKeyframeStack` and the point lookup and reads every written
+channel back: it gives herogen's own sampled values at every tick.
+
+### Sign conventions (pinned by `tests/test_anim.py`)
+
+Positive rx leans an upright bone forward and swings a hanging one back, so a forward arm or leg swing is negative
+rx, **elbow flexion is negative rx on `forearm_*` and knee flexion positive rx on `shin_*`** (the rig's joint limits
+now carry `sign` -1 and +1: the "flex" sign G1 left open). Positive ry turns toward the hero's right (-x). Positive
+rz tilts an upright bone's top toward the hero's left and swings a hanging bone toward the hero's right: raising
+`arm_r` sideways is +rz, `arm_l` -rz. Mirroring a pose keeps rx and negates ry and rz (positions: x). Euler order
+matters once an arm is raised (X is applied first), so the swing's arm angles were solved numerically for hand and
+blade targets on the teen and written into the pose file as plain numbers.
+
+### The generated animations
+
+| Animation | File | Length | What |
+|---|---|---|---|
+| `move.idle` | `_core` | 24 s loop | the relaxed A-pose stance; breathing every 3 s (chest up 0.14 px and back 0.9 degrees, shoulders out 1.2, head kept level); weight on the right foot 4-10.4 s and the left 14.5-21 s (hips 0.4 px over the foot, pelvis tips 1.8 degrees, chest and neck counter-tilt, the legs tilt so the feet stay put); glances on the neck 6.6-9.5 s (18 right), 11.8-13.5 s (9 down), 17-19.2 s (13 left); seeded ear twitches at 5.0 (right), 9.9 (left), 13.1 (right) and 18.9 s (left): one ear flicks back and out by 24 degrees in one tick, holds a tick and returns in three |
+| `move.walk` | `_core` | 1.0 s loop | legs +-21 degrees, a 42 degree knee lift in the swing, heel strike and toe-off, the root following the lower foot, hips turning 4 and tipping 1.6 degrees, shoulders counter-turning, arms +-17 with the elbows bending as they come forward, skirt panels following the legs, a 4 degree tail sway |
+| `move.run` | `_core` | 0.6 s loop | legs +-36, a 96 degree knee in the swing, a 9 degree forward lean (the head kept up), elbows at 72-86, arms +-32, a flight phase after each push-off (both feet up to 0.9 px off the ground on the teen) |
+| `combat.idle` | `_style_katana` | 3.0 s loop | the ready stance: knees bent 10 degrees with level feet on the ground, right foot forward, the right shoulder leading, the blade forward-up at about 45 degrees; breathing twice as fast |
+| `attack.1` | `_style_katana` | 0.9 s | wind-up to 0.20 s (easeOutCubic) and a stretch to 0.30 s, the shoulder sweeps about 130 degrees through the cut, which lands at **0.40 s** (`hit;vfx:slash_arc`, tick 8), follow-through to 0.55 s, back on `combat.idle` at 0.90 s; a sweep sound at 0.30 s; the face goes focused at 0.05 s, angry eyes with a shout at the hit, no override from 0.70 s; upper body only (waist, chest, neck, arms) |
+
+The idle keys `neck`, never `head`: the head is left to the procedural head look of `HeroModel.setCustomAnimations`.
+`attack.1` keys no leg, `body` or `root` bone, so a hero can swing while the base controller walks it (the references
+also split the arm layer from the locomotion). Its timing file says `frames: windup 0.4, active 0.05, recovery 0.45`
+(ticks 8 / 1 / 9): class light, at the 6.4 minimums (0.4 / 0.3).
+
+### Every body form, one file
+
+Bone names are the same on every base and rotations transfer exactly; what does not transfer is anything in pixels
+that depends on leg length (the root height that keeps a sole on the ground as the legs swing, the leg tilt that
+keeps the feet planted under a hip shift, the drop of a knee bend). Those are solved on all three forms and set to
+the **compromise that minimises the worst error** (the middle of the per-form solutions), not on one reference form.
+Measured lowest sole over each clip (px; 0 is the ground; tests allow +-0.6 for grounded clips, planted feet may move
+0.5):
+
+| Clip | chibi | teen | adult f | adult m |
+|---|---|---|---|---|
+| `move.idle` | 0.00 | 0.00 | 0.00..0.01 | 0.00..0.01 |
+| `move.walk` | -0.27..0.00 | 0.00..0.10 | 0.00..0.27 | 0.00..0.25 |
+| `move.run` | -0.44..0.15 | 0.04..0.90 | 0.04..1.34 | 0.04..1.34 (flight) |
+| `combat.idle`, `attack.1` | -0.14 | 0.04 | 0.14 | 0.14 |
+
+An option for later (A2/G4), not used: GeckoLib evaluates Molang in keyframes, so a root key could read a per-model
+variable (`v.leg_px`) that `HeroModel` sets from `visual.json`, which would make pixel offsets exact on every form.
+
+### The secondary bake
+
+Each link of a spring group (`herosrc/anim/secondary.json`) is a point mass at the link's tip, pulled toward where the
+**parent** carries it by a spring of 0.8 + 3.5 x stiffness Hz with a damping ratio of 0.8 x damping, damped relative
+to the target's own velocity (a steady motion leaves no lag, every acceleration does). The bone's own authored
+rotation is added on top unchanged (otherwise the spring would smear the ear twitch it was given) while the bones below
+it feel it. `hang` (0-1) also pulls the tip toward its bind direction in the world, as gravity does: without it a wide
+kimono sleeve stood out like a disc whenever the forearm was raised (seen on Garrick and Tansy in the first renders).
+Input sampled every tick with 4 sub-steps; output keyed every 2 ticks plus the authored keys' times, simplified at 0.5
+degrees; a bone whose follow-through stays under 0.5 degrees gets no keys; loops run 3 s of warm-up and spread the
+residual so they close exactly.
+
+| Group | Bones | Stiffness / damping | Hang | Limit | Peak in walk / run / attack.1 (degrees) |
+|---|---|---|---|---|---|
+| tail | `tail_1..5` (chain) | 0.4 / 0.75 | - | 35 | 21 / 34 / - (body not keyed) |
+| ponytail | `tail_hair_1..3` (chain) | 0.35 / 0.6 | 0.6 | 40 | 1 / 8 / 17 |
+| ears | `ear_r`, `ear_l` | 0.65 / 0.6 | - | 10 | - / 2.5 / 10 |
+| hair | `hair_back`, `hair_l`, `hair_r` | 0.8 / 0.75 | 0.4 | 6 | - / 1 / 6 |
+| sleeves | `sleeve_r`, `sleeve_l` | 0.5 / 0.7 | 1.0 | 85 | 34 / 85 / 79 (mostly hanging) |
+| skirt | `skirt_f/b/r/l` | 0.6 / 0.7 | 0.5 | 12 | 1.5 / 5.6 / 1.5 |
+| cape | `cape_1`, `cape_2` (chain) | 0.35 / 0.6 | 0.7 | 45 | 2 / 10 / 11 |
+
+The tail's first tuning (0.3 / 0.55, the cat tail part's own numbers) resonated with the walk's 2 Hz bob and pinned
+the tip at its limit; 0.4 / 0.75 moves it to 2.2 Hz and a 21 degree peak. A wide sleeve still lags for a tick or two
+in the fastest part of the cut (the shoulder turns about 130 degrees in 0.1 s), so its open end faces the viewer for a
+frame: physically right for a whipping sleeve, and the open end could be painted darker (G6b).
+
+**Runtime cost.** GeckoLib samples only keyed channels, every frame, per animated hero: `move.walk` keys 31 bones
+(447 keys), `move.run` 36 (336), `move.idle` 30 (820 keys over 24 s), `combat.idle` 29, `attack.1` 26. Interpolating
+a channel is a few multiplications, so the animation pass is small next to the vertex transform of 130-230 cubes; the
+bake adds keys, not bones. The libraries are shared files (core 88 KB, katana 25 KB), loaded once.
+
+**Controllers (a design change, for A2).** GeckoLib overrides per bone and channel, so the planned `secondary`
+controller with `sec.*` loops would overwrite the follow-through baked into walk, run and the swing on those bones.
+Recommendation: no `sec.*` clip keys a bone the library bakes; the part-declared chains the library cannot know
+(Tansy's `twin_r`/`twin_l`, Rowan's `scarf_tail_*`, an `ahoge`) and the per-part stiffness and damping go to
+`visual.json` `secondary` for the procedural lag of `setCustomAnimations` (additive, after the animation pass). If a
+later hero needs authored keys and sway on the same bone, add sway wrapper bones (study 11.7).
+
+### Markers and the server timing file
+
+Markers sit in recipe keys (`marker`, `sound`, `particle`) and must be on whole ticks. `hit;vfx:slash_arc` is split:
+`sfx:<id>` parts become sound keyframes, the rest is joined into one `timeline` string. Each animation file gets a
+server timing file (`data/factionclash/hero_timings/<file>.json`, same chain as the client): per animation its length
+in seconds and ticks, loop mode, kind (base or action), class, every event with its tick, and for one with `hit` or
+`cast` markers `hits`, `frames` (wind-up = first hit, active = last - first + one tick, recovery = the rest; 12.18's
+definition) and `frame_ticks`. `anim/timing.generated(hero)` resolves `move.<id>` and `ultimate` through the chain
+and returns the move frames for the server definition's `generated` block, with NOTEs for a missing animation, a
+clip without a hit, or frames under the class minimums. The server definition itself stays F2's (it is not written
+for `test_rig`, which is not a roster hero).
+
+### Quality rules as built (`anim/quality.py`)
+
+Keys at 0 and none after the end; finite values; GeckoLib easing names; loops close; markers on ticks and inside the
+clip; the class minimums before the first hit and after the last; face_ctrl whole frame numbers changing only by
+jumps; joint limits every tick (elbow and knee 0-150 by their sign, head yaw 80 / pitch 60, neck yaw 60 / pitch 40,
+waist twist 45); actions end on their settle clip's first key on every channel they key (or the rest pose); on all
+six bases planted clips keep every sole corner within 0.5 px, grounded clips keep the lowest sole within 0.6 px of
+the ground, gaits never sink more than 0.6 px; no root motion beyond 1.5 px; keyed bones are rig bones (or the hero's
+own); at most 24 animations in a hero's own file; and the timing file agrees with the animation file's markers.
+`herogen check --style` passes for the libraries and all 8 models.
+
+### Recipe format additions
+
+`layers` (`[{primitive, params, add}]`, additive or replacing, over the whole clip) instead of a primitive inside a
+key; `bones` (globs of the bones the keys and layers may key); `planted` and `ground` (feet rules); `kind`;
+`description`. A pose key is a whole pose (every bone any key's pose mentions is keyed at every pose key). `overshoot`
+k pushes the key k x the last change past its pose and returns 0.1 s later (an explicit key, not `easeOutBack`, so the
+overshoot size is the author's); `settle` k relaxes k x the change back 0.15 s later.
+
+### The core library plan (from the reference study's animation list, our own content)
+
+What a rich model has (study 9, survey 7) mapped to what our NPC heroes need (study 11.9) and to HEROES_V2 4.5; G4
+builds the rest of this table, G5 the style libraries. Lengths are targets.
+
+| Group | Animations | Length | Status |
+|---|---|---|---|
+| idle | `move.idle` (one long loop with weight shifts, glances, ear twitches) | 24 s | **G3** |
+| locomotion | `move.walk`, `move.run` | 1.0 / 0.6 s | **G3** |
+| locomotion | `move.crouch`, `move.swim`, `move.climb`, `move.fall` (loop), jump take-off and land (small, roll) | 1.0-1.3 / 0.75 / 0.12-0.6 s | G4 |
+| rest and carry | `rest.sit`, `rest.sleep`, `carry.loop` | loops | G4 |
+| hurt and death | `hurt.heavy` (lean back, ears back, tail up, surprised face), `stagger`, `stun` (+`.loop`), `interrupt`, `death` (held), `defeated` (+`.loop`) | 0.5 / 1.0 s | G4 |
+| work | the 16 `work.*` of 7.3 (mine, chop, till, plant, harvest, fish cast/wait/reel, cook, smith, build, read, pray, sweep, tend, eat) | 0.6-1.6 s | G4 |
+| emotes | `emote.greet`, `bow`, `wave`, `laugh`, `angry`, `sad`, `think`, `cheer`, `talk`, `shrug`; `personal.*` generics | 1-3 s | G4 |
+| generic combat | `dodge`, `intro`, `victory` | 0.5-3 s | G4 |
+| style (16) | `combat.idle`, `attack.1-3`, `attack.ranged`, `guard` (+`.loop`, `.hit`), `dodge`, `draw`, `sheathe`, `intro`, `victory`, `taunt`, a `move.run` arm carry | 0.4-1.5 s | katana `combat.idle` and `attack.1` **G3**; the rest G5 |
+| not needed | vehicles, guns, elytra, GUI poses, board games, carrying a player | | - |
+
+### Previews (`docs/heroes-v2/previews/anim/`)
+
+`filmstrip_idle.png`, `filmstrip_walk.png`, `filmstrip_run.png` (Tansy the chibi, Wren the teen, the test rig adult;
+side and 3/4), `filmstrip_attack.png` (the same three with a preview-only katana variant, and Garrick, adult male),
+and `anim_walk.gif`, `anim_run.gif`, `anim_attack_1.gif`, `anim_idle.gif` (an excerpt with an ear twitch, the weight
+shift and a glance). They are drawn by the G1 renderer with GeckoLib's bone transforms, the face frames the face_ctrl
+keys pick, the action over its settle clip and the weapon drawn for combat.
+
+### Tests (136 -> 181)
+
+`tests/test_anim.py` (45): easings and track semantics against GeckoLib's, `step`'s midpoint; every written channel
+read back through a port of GeckoLib's parser; keyframe maps in time order; loop and marker fields; the attack's hit
+at 0.40 s / tick 8 and its frames; timing files agree with their animation files, and a moved hit, a too-early hit and
+an off-tick marker fail; frames of several hits; move frames from a signature through the chain; byte-identical
+library builds twice and across processes with different hash seeds; the committed libraries are fresh; the quality
+rules pass on all six bases; one file serves every form; walk phase (right foot and left hand forward at 0) on every
+base; the run's flight; breathing period; ear twitches (one tick up, over 20 degrees, 3-6 s apart or a double); no
+`head` keys; the attack keys no leg bone and settles on `combat.idle`; the cut sweeps the hand down and forward
+through the hit; joint-limit signs, open loops, drifting feet, sliding face frames and root motion fail; pose sign
+conventions, mirroring, `extends` and the feet fixes; overshoot, settle, face and marker keys, layers; the spring lags
+a turn, swings through and settles; baked keys are sparse and loops close; the twitch is not smeared; sleeves hang;
+part chains reach `visual.json`; every file of every chain exists; a signature hero's file passes; the own-file
+budget; a pose position moves the render.
+
+### Decisions (each deliberate)
+
+1. **Face frames jump** (pre/post keys), they never use `step` (GeckoLib's step would show a third frame).
+2. **One timing file per animation file** in `data/factionclash/hero_timings/`, not only the hero's server
+   definition: basic attacks (`attack.1-3`) live in style libraries and need server timings too. The move frames of a
+   hero's definition come from the same clips (`anim/timing.py`).
+3. **Actions key the upper body** unless they must move the legs, so locomotion keeps playing under them.
+4. **Springs answer the parent only**, with gravity `hang` for sleeves, capes, ponytails, skirts and hair.
+5. **The library bakes the rig's chain bones**; part-declared chains and per-part spring numbers go to `visual.json`
+   for the procedural lag (A2); the `secondary` controller should not key baked bones.
+6. **Pixel offsets solved over the three forms** (the compromise), so one file serves chibi, teen and adult.
+7. **The idle is one 24 s loop** (the study's recommendation) instead of a short loop plus rare idles; `personal.1-3`
+   stay for synchronised moments the server starts.
+8. **Joint limits** get the flex sign and a neck limit; the rest of the rig is unchanged (no geometry change: only
+   `visual.json` changed in the committed models, for the new fields and the rig file's hash).
+
+### Open items
+
+- **A2**: play `move.idle`, `move.walk`, `move.run` (base controller), `combat.idle` and `attack.1` (action controller,
+  log the `hit` instruction's tick: 8); read face_ctrl jumps (pre/post); register a sound keyframe handler for
+  `sound_effects`; the `secondary` controller recommendation above; the procedural lag from `visual.json` `secondary`.
+- **G4 / G5**: the rest of the core and style libraries (the plan above); the remaining primitives (swing, thrust,
+  slam, spin, leap, land, cast, draw_bow, throw, guard, dodge, hurt, stagger, kneel, death, greet_bow, wave, cheer,
+  taunt, play_instrument, work_loop); a two-handed katana string.
+- **G2**: compare the preview renderer's animated poses with in-game screenshots (rotation order and position sign
+  are pinned to GeckoLib's code, as for the geometry).
+- **G7**: the Java `HeroAssetsTest` port of `quality.check_timing` (the timing files against the animation files).
+- **Owner**: the timing of the swing (wind-up 0.4 s is the light minimum; a basic attack every 0.9 s) and the
+  amount of tail and sleeve follow-through.
+- **Polish**: the sleeve's open end during the fastest frames of a swing (above); the idle's motions are deliberately
+  small (0.4 px hip shift, 1-2 degree tilts), worth a look in game at normal distance.

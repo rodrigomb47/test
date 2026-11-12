@@ -1,4 +1,5 @@
 {
+  "animation_chain": ["test_rig", "_style_katana", "_core"],
   "base": "adult_f",
   "bones": {
     "fine": [
@@ -92,7 +93,22 @@
   "render_scale": 0.56,
   "rig": "hero_rig_v3",
   "scale": 1,
-  "source_sha256": "9af5c772e8f2ec35b813b987c330197f6573806d818e93050cc0ee677143a06c",
+  "secondary": [
+    {
+      "chain": ["tail_hair_1", "tail_hair_2"],
+      "damping": 0.6,
+      "part": "hair/high_ponytail_long",
+      "stiffness": 0.35
+    },
+    {"chain": ["ear_r", "ear_l"], "damping": 0.6, "part": "ears/cat", "stiffness": 0.6},
+    {
+      "chain": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"],
+      "damping": 0.55,
+      "part": "tails/cat_long",
+      "stiffness": 0.3
+    }
+  ],
+  "source_sha256": "cb379b7c66914e870d26ce0a70b9bff533da0c3ef1cc4a1202ec057f04bbcbd7",
   "states": [],
   "style": "katana",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": true, "width": 256},

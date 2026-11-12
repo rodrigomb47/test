@@ -5,7 +5,12 @@ whole model; the hitbox is height_px x render_scale x scale / 16 blocks), style 
 overrides applied, so the Java side needs no copy of the defaults), move list (index -> animation name; filled by the
 animation generator), states, phase looks, bone groups the renderer treats specially (tint, fine, phase, weapon,
 items), texture facts and voice.
+G3 adds `animation_chain` (the animation files GeckoLib looks a name up in, in order: the hero's own, its style
+library, the core; HeroModel.getAnimationResource and its fallbacks) and `secondary` (the chains the hero's parts
+declare, with their stiffness and damping, for the procedural lag of HeroModel.setCustomAnimations; the shared
+libraries bake follow-through only for the rig's own chain bones).
 """
+from anim.library import chain_of
 from face import BLINK_OVER, BLINK_PROFILES, CHEEK_FRAMES, EYE_FRAMES, MOODS, MOUTH_FRAMES, mood_table
 from util import GENERATOR, HerogenError
 
@@ -46,6 +51,9 @@ def visual_json(hero, model, spec, textures, source_hash, moves=None, states=Non
         "render_scale": model.env["render_scale"],
         "scale": art.get("scale", 100) / 100.0,
         "style": anim.get("style", "fists"),
+        "animation_chain": chain_of(hero),
+        "secondary": [{"chain": list(sec["chain"]), "stiffness": sec.get("stiffness", 0.5),
+                       "damping": sec.get("damping", 0.6), "part": sec["part"]} for sec in model.secondary],
         "texture": textures,
         "face": {
             "regions": regions,

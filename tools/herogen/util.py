@@ -33,11 +33,19 @@ def num(x):
     return v
 
 
+class Ordered(dict):
+    """A JSON object whose keys are written in insertion order, not sorted: keyframe maps (GeckoLib reads an
+    animation's keyframes in file order and rejects a time-0 key that is not the first one, so "10.0" must not sort
+    before "2.0")."""
+
+
 def _norm(obj):
     if isinstance(obj, bool) or obj is None or isinstance(obj, str):
         return obj
     if isinstance(obj, (int, float)):
         return num(obj)
+    if isinstance(obj, Ordered):
+        return Ordered((str(k), _norm(v)) for k, v in obj.items())
     if isinstance(obj, dict):
         return {str(k): _norm(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
@@ -52,6 +60,8 @@ _RANK = {k: i for i, k in enumerate(KEY_ORDER)}
 
 
 def _keys(d):
+    if isinstance(d, Ordered):
+        return list(d)
     return sorted(d, key=lambda k: (_RANK.get(k, len(_RANK)), k))
 
 
