@@ -502,8 +502,8 @@ public abstract class Job {
         for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
             ItemStack s = npc.inventory().getItem(i);
             int deposit = s.getCount() - kept[i];
-            if (s.isEmpty() || deposit <= 0) {
-                continue;
+            if (s.isEmpty() || deposit <= 0 || com.factionclash.hero.HeroKit.isKit(s)) {
+                continue; // (a hero's own kit item is never deposited)
             }
             ItemStack out = s.split(deposit);
             ItemStack rest = FactionStorage.insert(level(), b, out, npc.npcName());

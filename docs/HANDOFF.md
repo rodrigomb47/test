@@ -73,6 +73,8 @@ commits, language and testing are in `/CLAUDE.md`.
 | `config/` | `FCConfig` (NeoForge common config; sections campaign, movement, survival, achievements, workplaces, recruitment, war). |
 | `info/`, `net/`, `client/` | Station/info screen text (`BaseInfo`), map payload (`MapPayload` marker kinds: … VILLAGE 7, PILLAGER_OUTPOST 8, WOODLAND_MANSION 9, STALE flag 16), client screens (`MapScreen`, `InfoScreen`). |
 | `gametest/` | `FCGameTests` (all GameTests), `GameTestBases` (register an isolated test base, clean-up). |
+| `hero/` (Heroes v2, `docs/heroes-v2/HEROES_V2.md`) | `HeroEntity` (a `FactionNpc` subclass and GeckoLib `GeoEntity`: hero id and the synced fields `DATA_HERO/ACTION/STATE/MOOD/LOCO`, hitbox from the model, kit never dropped, `FcHero` NBT), `HeroRegistry` (every `assets/factionclash/heroes/*.visual.json` read from the mod file, config overrides in `config/factionclash/heroes/`, `registerTransient` fixtures for GameTests), `HeroVisual`/`HeroEntry` (what a hero looks like and where its files are), `HeroManager` (give, release, death and revival after `heroes.reviveSeconds`, one living entity per id), `HeroKit`, `HeroEvents`. Campaign record: `campaign/HeroState` in `CampaignData.heroes` (format 3); a hero's roster `NpcRecord` has `heroId`. Pure rules in `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`); commands in `command/HeroCommands` (`/fc hero list\|info`, `/fc admin hero give\|release\|revive`); GameTests in `gametest/HeroGameTests`. |
+| `client/hero/` | `HeroRenderer` + `HeroModel`: the GeckoLib renderer, so far only the bind pose at the rig's render scale (A2 adds controllers, face frames, layers, tint, LOD). |
 | `tools/` (repo root) | `sim.py` (drive a server over RCON, print campaign summaries), `rcon.py`, `days.sh`, `setup_server.sh`, `gen_assets.py`. |
 | `libs/maven/` (repo root) | Vendored GeckoLib 4.9.3 (the hero models' animation library; jar, POM, `.module`, a hand-written `maven-metadata.xml`, `LICENSE-geckolib.txt`). The build reads the group `software.bernie.geckolib` only from here and embeds the jar (jar-in-jar). Hashes in section 5. |
 
@@ -154,6 +156,27 @@ python3 tools/rcon.py "stop"
   log line `Reference map 'geckolib.refmap.json' ... could not be read` appears in both and is harmless (NeoForge runs on
   Mojang's names, so no reference map is needed). The download jar (README line 13) was not rebuilt for this: it has no
   GeckoLib until the next release.
+- **The hero entity** (Heroes v2 task A1a, 2026-11-12; `HEROES_V2.md` 15.2 has the as-built notes). A hero is a
+  `factionclash:hero` entity: a faction NPC that counts as one soldier of the role its weapon style fits (the test rig's
+  katana: swordsman) for needs, garrison and war council, is never drafted into a raid party or retrained, fights with
+  that role's basic attacks and a bound kit weapon, and has a hitbox from its model (test rig 1.82 blocks; floor 1.2,
+  cap 1.98). Only the art pipeline's `test_rig` exists so far; operators give it with `/fc admin hero give test_rig
+  <faction> [pos]` (from RCON it appears at the base's spawn point). **191 unit tests and 145 GameTests** (8 new: the
+  registry, synced fields, size, the raid rule, uniqueness, a fight, saving and death/return). Checked on a dedicated
+  server built by `tools/setup_server.sh` (fresh world, `fc start 256`): the registry logs `Heroes: 1 loaded (test_rig)`
+  with no problems; the test rig, given to Ember, killed a summoned husk (`slain by Test Rig` and Ember's Monster Hunter
+  advancement credited to it); after `save-all` and a restart it was back with the same UUID and kit; `/kill` gave
+  "has fallen ... returns in 10:00", no sword on the ground, `/fc hero list` "returns in 9:58", and
+  `/fc admin hero revive` brought it back as a new entity (one hero entity in the world throughout); `release` removed
+  it. The Xvfb viewer drew it next to a swordsman with hitboxes on (F3+B): `docs/screenshots/hero_test_rig_a1a.png`
+  (bind pose; the phase-2 halo still shows until A2 sets bone visibility). `docs/factionclash-common.toml` was
+  regenerated (new `[heroes] reviveSeconds`). The download jar was not rebuilt (heroes are not playable yet).
+  Six full GameTest runs, with the art workflow's Python jobs loading the machine: three green (the last two on the
+  final code), three lost one or two combat tests that ran with no hero batch beside them (batches run one at a
+  time): `soldiersHoldOutOfReachOfAPlayerTheyCannotReach`, `soldiersLeaveThePenThroughTheGateAfterALongFight` and
+  `soldiersDoNotKeepBreakingABlockThePlayerPutsBack` (known flakes, `docs/design/notes/combat-unreachable.md`), and
+  once `aGuardWaitingOnAMonsterTurnsToAnIntruder` (the guard was still in CHASE, not HOLD, at its tick-100 check; not
+  seen failing before; watch it).
 
 ## 6. Known open items and ideas (none blocking)
 

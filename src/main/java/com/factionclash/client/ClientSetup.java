@@ -15,5 +15,6 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void onRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.FACTION_NPC.get(), FactionNpcRenderer::new);
+        event.registerEntityRenderer(ModEntities.HERO.get(), com.factionclash.client.hero.HeroRenderer::new);
     }
 }

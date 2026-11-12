@@ -40,6 +40,8 @@ No other mods are required. Build from source with `./gradlew build` (jar in `bu
 | `/fc info`, `/fc map` | member | Base report and your faction's delivered map knowledge |
 | `/fc achievements [faction]` | anyone | The vanilla advancements a faction has made (day, who) and its progress on the long ones |
 | `/fc admin dump\|npcs\|info <f>\|spawn <f> <role>\|recruit <f> <role>\|probe <x> <z>\|mine <id>\|blocks <from> <to>\|destroy <id>` | op | Diagnostics, kept separate from player commands |
+| `/fc hero list`, `/fc hero info <id>` | all | Heroes (in development: only the test model `test_rig` ships so far): whom each serves, alive or "returns in m:ss", level; one hero's body, size, model and place in the world |
+| `/fc admin hero give <id> <faction> [pos]\|release <id>\|revive <id>` | op | A hero joins a faction (beside you, at the position given, or at the faction's base from the console), leaves it, or returns at once after a death |
 
 In the world:
 * **Reporting Station** (right-click): opens a scrollable screen with population, stock, recruitment decision,
@@ -373,7 +375,7 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 |---|---|---|
 | §1 Factions, bounded map, join/teleport/respawn, last-faction-standing victory | Implemented (victory rule proposed: faction heart) | S (bases destroyed, a faction eliminated); player join/respawn — (no client was connected) |
 | §2 No hunger, nutrition-weighted recruitment, no gear wear, equipment cost, one arrow, finished station at start | Implemented; hunger and gear wear were added later and are on by default (`survival.hunger`, `survival.toolWear` off restore the spec's rule) | U, G, S |
-| §2/§16 Great People (HSR/ZZZ characters), starter hero, 10-minute revival | ✗ not implemented | — |
+| §2/§16 Great People (HSR/ZZZ characters), starter hero, 10-minute revival | In development as original heroes (`docs/heroes-v2/`): the hero entity with the test model, given by an operator; it counts as a soldier of its role but is never drafted into a raid, fights with that role's basic attacks, keeps one entity per hero, saves, and returns 10 minutes after a death. Kits, animated faces, boss fights and hero-led factions are still to come | U (size, synced fields, revival), G (files, fields, size, raids, uniqueness, a fight, saving, death and return), S (a dedicated server: give, fight, restart) |
 | §3 Safe starting bases, roster, supplies once, animals, enchanting setup | Implemented | S (incl. save/reload) |
 | §4 Roles: builder, miner, farmer, woodcutter, blacksmith, chef, smelter, scout, swordsman, archer | Implemented | S |
 | §4 Roles: animal carer, butcher, fisherman | Implemented (player-like) | G (breeding, culling rules), S |
@@ -421,14 +423,14 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 174 JUnit tests for the pure rules (how a soldier reaches a target it cannot walk up to: break,
+* `./gradlew test` — 191 JUnit tests for the pure rules (a hero's hitbox from its model, its synced fields and revival time; how a soldier reaches a target it cannot walk up to: break,
   build up, undermine or nothing; spiral mine and branch-mine geometry, the mine layer
   planner and the level a helper takes in a shared mine, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule, the
   scaffold pillar's column and height for tall trees, the dirt patches a woodcutter digs for one (one block deep, a
   step out from every cell, never beside water, a drop or an earlier patch), branch ends in protected wood, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 137 GameTests on a real headless server, including **soldiers against a player
+* `./gradlew runGameTestServer` — 145 GameTests on a real headless server, including **heroes** (the shipped hero files load; a hero's synced fields, hitbox and its 1.98 cap; never drafted into a raid party; one entity per hero; it fights, saves and reloads, falls and returns), **soldiers against a player
   they cannot reach** (open a pen's gate and close it behind them with the cow still in, and walk out through it after
   the fight, also after a fight longer than the gate memory; break a player's block in a broken doorway and never the
   wall, and go straight in once it is broken, but not again and again when the player puts it back; break the block

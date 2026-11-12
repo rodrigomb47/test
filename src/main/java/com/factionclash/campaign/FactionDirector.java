@@ -352,8 +352,8 @@ public final class FactionDirector {
      */
     private static boolean retrainIdleWorker(ServerLevel level, CampaignData data, FactionState f, BaseState b, Need top, long t) {
         for (NpcRecord r : f.roster.values()) {
-            if (!r.alive || r.baseId != b.id || r.role == top.role() || r.role.combatant) {
-                continue;
+            if (!r.alive || r.baseId != b.id || r.role == top.role() || r.role.combatant || r.isHero()) {
+                continue; // (a hero is never retrained: its duty is its own)
             }
             if (!(level.getEntity(r.uuid) instanceof FactionNpc n) || n.job() == null) {
                 continue;
@@ -605,7 +605,12 @@ public final class FactionDirector {
             // how well armed the garrison is, as the war councils of other factions will judge it
             f.soldierPower = (float) soldiers.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
         }
-        if (soldiers.size() < FCConfig.HOME_DEFENDERS.get() + party) {
+        // a hero counts as one soldier of its role for the garrison and the party size, but the soldier sort never
+        // picks it: it joins a raid only through its own rules (HEROES_V2 3.2: a leader going with the raid, its
+        // behaviour), which come with the leaders
+        List<FactionNpc> draftable = soldiers.stream().filter(n -> !(n instanceof com.factionclash.hero.HeroEntity)).toList();
+        party = Math.min(party, draftable.size());
+        if (soldiers.size() < FCConfig.HOME_DEFENDERS.get() + party || party < FCConfig.RAID_PARTY_SIZE.get()) {
             return;
         }
         // war council: of the bases the scouts reported, the weakest garrison first (then the nearest); attack when
@@ -636,8 +641,9 @@ public final class FactionDirector {
         if (target == null) {
             return;
         }
-        soldiers.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
-        double partyPower = soldiers.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
+        List<FactionNpc> picks = new ArrayList<>(draftable);
+        picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
+        double partyPower = picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
         double defencePower = targetDefence * (target.isSettlement() ? data.faction(target.faction).soldierPower : 1.0);
         boolean counter = !intervalOver && partyPower * 2 >= defencePower * 3;
         // a pact offensive: allies already marching on the same base count toward the strength needed
@@ -656,7 +662,7 @@ public final class FactionDirector {
         }
         f.raiders.clear();
         for (int i = 0; i < party; i++) {
-            f.raiders.add(soldiers.get(i).getUUID());
+            f.raiders.add(picks.get(i).getUUID());
         }
         f.raidTarget = target.id;
         f.raidParty = party;

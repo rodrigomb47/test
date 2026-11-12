@@ -708,6 +708,24 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
 * Damage: zombies, skeletons and variants deal ×0.5 to NPCs; with `survival.hunger` off, NPCs regenerate 1 HP per 4 s once 10 s have passed since they were last hurt; with it on (the default) they heal only through the food bar (see Hunger).
 * Victory rule (proposed): a base falls when its **Faction Heart** is destroyed; a faction with no standing bases is eliminated; the last faction standing (The Hollow included) wins. The reporting station is not the defeat core.
 
+## Heroes (config `heroes`; `HeroSize`, `HeroManager`, `HeroIdentity`) — in development
+Only the test model ships so far; an operator gives a hero to a faction with `/fc admin hero give`.
+* Hitbox (`HeroSize`): the model's height, `height_px x render_scale x scale / 16` blocks (rig v3 at render scale 0.56:
+  adult 1.82, teen 1.58, chibi 1.23), eyes at `(head_y + 3) x render_scale x scale / 16`; width 0.6 x scale. At least
+  **1.2 blocks** (PROPOSED; an 85% chibi would be 1.04) and at most **1.98** (a 110% adult would be 2.00; the eyes drop
+  in proportion), so every hero walks through a 2-high doorway; the model itself draws at its full scale. The culling
+  box is 1.5 blocks larger all round (wings, tails, long weapons).
+* Role: a hero counts as one soldier of the role its weapon style fits (bow archer, crossbow crossbowman, axe,
+  hammer and scythe axe fighter, every other style swordsman) for recruitment needs, the garrison and the war council,
+  but the raid party's soldier sort never picks it. It is never retrained. Until the kit engine it fights as a plain
+  soldier of that role, with the role's basic weapon (stone sword, stone axe, bow and arrow, crossbow) as its kit.
+* Kit items are bound to the hero: they never drop, are never deposited, and vanish when better storehouse gear
+  replaces them; a returning hero gets them again.
+* Death: `heroes.reviveSeconds` **600** (30-3600) later the hero returns at its home base's spawn point (or its
+  faction's first standing base), at full health with its kit, level, experience and traits, as a new entity; a faction
+  with no standing base loses it (released). A hero the director finds missing (gone from a loaded area for 2400
+  ticks) counts as fallen. One living entity per hero id: any other copy is discarded when it joins the level.
+
 ## Historical values (before the worker redesign)
 These numbers belonged to the old fixed workplaces. New bases no longer have them; they matter only for campaigns
 saved by an earlier version, which load and convert (`CampaignData.FORMAT` 2; each record converts itself in

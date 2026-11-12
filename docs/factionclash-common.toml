@@ -143,3 +143,10 @@
 	# Default: 30000
 	# Range: 1200 ~ 480000
 	lairRaidIntervalTicks = 30000
+
+#Heroes (in development: only the test model ships yet; an operator gives one with /fc admin hero give)
+[heroes]
+	#A hero that falls returns at its home base this many seconds later (PROPOSED: 600, ten minutes).
+	# Default: 600
+	# Range: 30 ~ 3600
+	reviveSeconds = 600

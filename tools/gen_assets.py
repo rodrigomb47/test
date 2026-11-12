@@ -242,6 +242,7 @@ def models():
         "block.factionclash.faction_heart": "Faction Heart",
         "block.factionclash.bedroll": "Straw Bedroll",
         "entity.factionclash.faction_npc": "Faction NPC",
+        "entity.factionclash.hero": "Hero",
     })
 
     for name in ("reporting_station", "world_map_board", "bedroll"):

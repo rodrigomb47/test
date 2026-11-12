@@ -18,6 +18,12 @@ public final class NpcRecord {
     /** Scouts: tick of departure on the current expedition (0 when home). */
     public long departedAt;
     public int level;
+    /** The hero this record is (empty for an ordinary NPC). A hero counts as one soldier of its role. */
+    public String heroId = "";
+
+    public boolean isHero() {
+        return !heroId.isEmpty();
+    }
 
     public CompoundTag save() {
         CompoundTag t = new CompoundTag();
@@ -30,6 +36,9 @@ public final class NpcRecord {
         t.putLong("seen", lastSeen);
         t.putLong("departed", departedAt);
         t.putInt("level", level);
+        if (isHero()) {
+            t.putString("hero", heroId);
+        }
         return t;
     }
 
@@ -47,6 +56,7 @@ public final class NpcRecord {
         r.lastSeen = t.getLong("seen");
         r.departedAt = t.getLong("departed");
         r.level = t.getInt("level");
+        r.heroId = t.getString("hero");
         return r;
     }
 }

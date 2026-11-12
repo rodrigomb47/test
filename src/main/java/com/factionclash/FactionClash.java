@@ -33,10 +33,12 @@ public final class FactionClash {
         modBus.addListener(com.factionclash.net.FCNetwork::register);
         NeoForge.EVENT_BUS.register(new FCEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.achieve.AchievementEvents());
+        NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroEvents());
     }
 
     private static void onAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.FACTION_NPC.get(), FactionNpc.createAttributes().build());
+        event.put(ModEntities.HERO.get(), com.factionclash.hero.HeroEntity.createAttributes().build());
     }
 
     private static void onTickets(RegisterTicketControllersEvent event) {

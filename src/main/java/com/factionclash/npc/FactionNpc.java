@@ -415,6 +415,12 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return npcName;
     }
 
+    /** Names the NPC (a hero takes its hero's name) and refreshes its name tag. */
+    public void setNpcName(String name) {
+        this.npcName = name;
+        refreshName();
+    }
+
     public int baseId() {
         return baseId;
     }
@@ -508,6 +514,18 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 rec.level = npcLevel;
             }
         }
+    }
+
+    /**
+     * Sets level, experience and traits at once (a hero coming back from death, or joining a new faction, keeps the
+     * progress its campaign record holds).
+     */
+    public void restoreProgress(int level, int xp, Map<Affix, Integer> traits) {
+        this.npcLevel = Math.max(0, level);
+        this.xp = Math.max(0, xp);
+        affixes.clear();
+        affixes.putAll(traits);
+        reapplyAffixes();
     }
 
     /** Applies affix attribute bonuses with fixed ids, so reloads or role changes never stack them. */

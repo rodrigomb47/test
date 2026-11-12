@@ -23,9 +23,10 @@ public final class CampaignData extends SavedData {
     /**
      * The save layout's version, written with every save. 2: mines, woodlands and fishing spots carry their own
      * per-record versions (mineV, woodV, fishV) and convert older records themselves on load (WorkplaceState.load), so
-     * format 1 campaigns load and keep playing. It is read back only to be logged, never used as a gate.
+     * format 1 campaigns load and keep playing. 3: heroes ({@link #heroes}, an empty map when missing). It is read back
+     * only to be logged, never used as a gate.
      */
-    public static final int FORMAT = 2;
+    public static final int FORMAT = 3;
 
     public boolean started;
     public BlockPos center = BlockPos.ZERO;
@@ -37,6 +38,8 @@ public final class CampaignData extends SavedData {
     public final Map<Integer, BaseState> bases = new LinkedHashMap<>();
     public final Map<Integer, WorkplaceState> workplaces = new LinkedHashMap<>();
     public final Map<UUID, FactionType> players = new HashMap<>();
+    /** Every hero that has ever been given to a faction, by hero id (HeroState: owner, base, entity, alive, revival). */
+    public final Map<String, HeroState> heroes = new LinkedHashMap<>();
     /** The pact (Diplomacy): members sworn against one conqueror; null when there is none. */
     public FactionType pactAgainst;
     public final java.util.Set<FactionType> pactMembers = java.util.EnumSet.noneOf(FactionType.class);
@@ -118,6 +121,14 @@ public final class CampaignData extends SavedData {
         bases.clear();
         workplaces.clear();
         players.clear();
+        // a new campaign frees every hero (they keep their level for the next owner, and their last UUID, so a stale
+        // copy of an old entity that loads later is discarded); HeroManager.releaseAll removes the loaded entities
+        for (HeroState h : heroes.values()) {
+            h.owner = null;
+            h.baseId = -1;
+            h.alive = false;
+            h.reviveAt = 0;
+        }
         pactAgainst = null;
         pactMembers.clear();
         nextBaseId = 1;
@@ -155,6 +166,11 @@ public final class CampaignData extends SavedData {
         CompoundTag pl = new CompoundTag();
         players.forEach((u, f) -> pl.putString(u.toString(), f.id));
         t.put("players", pl);
+        ListTag hl = new ListTag();
+        for (HeroState h : heroes.values()) {
+            hl.add(h.save());
+        }
+        t.put("heroes", hl);
         if (pactAgainst != null) {
             t.putString("pactAgainst", pactAgainst.id);
             ListTag pm = new ListTag();
@@ -171,10 +187,12 @@ public final class CampaignData extends SavedData {
     public static CampaignData load(CompoundTag t, HolderLookup.Provider provider) {
         CampaignData d = new CampaignData();
         d.loadedFormat = t.getInt("format");
-        if (d.loadedFormat < FORMAT) {
+        if (d.loadedFormat < 2) {
             // older records convert themselves as they load (WorkplaceState.load): hut mine kept, old fences taken down,
             // fishing spots moved off the farm to real water
             com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} - migrating workplaces to format {}", d.loadedFormat, FORMAT);
+        } else if (d.loadedFormat < FORMAT) {
+            com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} (no heroes yet) as format {}", d.loadedFormat, FORMAT);
         }
         d.started = t.getBoolean("started");
         d.center = BlockPos.of(t.getLong("center"));
@@ -213,6 +231,13 @@ public final class CampaignData extends SavedData {
                 }
             }
             d.pactSince = t.getLong("pactSince");
+        }
+        ListTag hl = t.getList("heroes", Tag.TAG_COMPOUND);
+        for (int i = 0; i < hl.size(); i++) {
+            HeroState h = HeroState.load(hl.getCompound(i));
+            if (h != null) {
+                d.heroes.put(h.id, h);
+            }
         }
         CompoundTag pl = t.getCompound("players");
         for (String k : pl.getAllKeys()) {

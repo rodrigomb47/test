@@ -59,6 +59,7 @@ public final class CampaignStarter {
             jobs.add(new Job(FactionType.HOLLOW, true, 2 * Math.PI * i / Math.max(1, lairs), Math.PI / Math.max(2, lairs)));
         }
         CampaignData data = CampaignData.get(server);
+        com.factionclash.hero.HeroManager.releaseAll(server, "a new campaign starts");
         data.reset();
         data.center = mapCenter;
         data.radius = radius;

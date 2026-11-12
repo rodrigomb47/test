@@ -2149,7 +2149,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first) |
 | G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style |
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
-| A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads |
+| A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`) |
 | A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file |
 | A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash |
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core |
@@ -2189,6 +2189,30 @@ Plan change (2026-11-12, the implementation workflow): A1 is split into A1a (the
 only A0) and A1b (the kit-backed parts, after F1 and F2), so the test rig can render in game before the format work
 lands. Checkpoint 1 ("pipeline alive": the test rig renders in game, blinks and walks) is reached with A0 + A1a + A2.
 Elsewhere in this section, "A1" as a dependency means both halves.
+
+A1a as built (2026-11-12), where it goes beyond or differs from the rows above:
+- **A bind-pose renderer already.** A client needs a renderer for every entity type, so A1a registers a minimal
+  `client/hero/HeroRenderer` (GeckoLib's `GeoEntityRenderer` at the visual's `render_scale`) and `HeroModel` (geometry,
+  texture and the animation chain with its fallbacks from the registry; `_fallback` for fixtures and unknown heroes).
+  `HeroEntity.registerControllers` is empty, so the hero stands in its bind pose; A2 adds the controllers, the face,
+  the layers, bone visibility (the phase-2 halo still shows), the sash tint and LOD to these two classes.
+- **`HeroActions` came with A1a** (listed under F3): the bit layouts of `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD` and
+  `DATA_LOCO` and the appendix D code table, with `HeroActionsTest`; F3 adds nothing to it unless the table grows.
+- **Registry.** `HeroRegistry` reads `assets/factionclash/heroes/*.visual.json` from the mod file itself (a dedicated
+  server loads no client assets, yet sizes heroes), lazily and again at every server start; a config override
+  (`config/factionclash/heroes/<id>.json`) may set `name` and `title` in this build (other fields are reported as not
+  read yet; `id`, `art` and `animations` never). A hero has the id's name ("Test Rig") until A1b reads definitions.
+- **Size.** Hitbox as 3.6 with the PROPOSED 1.2-block floor (the eyes stay on the model) and the 1.98 cap (eyes in
+  proportion), width 0.6 x scale; `getDefaultDimensions` divides by `generic.scale` so vanilla's own scaling lands on
+  the capped size.
+- **Kit.** Until kits exist, the kit is the role's basic weapon (stone sword or axe, bow and arrow, crossbow), bound
+  with a custom-data marker: never dropped, never deposited, gone when storehouse gear replaces it, given again on return.
+- **Life cycle.** `give` releases the hero from any faction first and spawns a new entity (new UUID) at the operator,
+  a given position, or the base's spawn point; revival also makes a new entity and replaces the roster entry, so any
+  stale copy of an older entity is discarded when it loads (`HeroState` keeps the last UUID after a release). A new
+  campaign frees every hero. `heroes.reviveSeconds` (600) is the first key of the `[heroes]` config section.
+- **Director.** A hero's roster entry carries `heroId`; it counts in every soldier count (needs, garrison, war council
+  strength) but the raid party is picked from the non-heroes only, and `retrainIdleWorker` skips it.
 
 ### 15.3 Milestone 2: systems breadth
 

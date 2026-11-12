@@ -66,6 +66,7 @@ public final class FCCommands {
                 .then(Commands.literal("base").executes(FCCommands::teleportBase))
                 .then(Commands.literal("info").executes(FCCommands::info))
                 .then(Commands.literal("map").executes(FCCommands::map))
+                .then(HeroCommands.player())
                 .then(Commands.literal("achievements").executes(c -> achievements(c, null))
                         .then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS)
                                 .executes(c -> achievements(c, StringArgumentType.getString(c, "faction")))))
@@ -82,7 +83,8 @@ public final class FCCommands {
                         .then(Commands.literal("mine").then(Commands.argument("id", IntegerArgumentType.integer(1)).executes(FCCommands::mineDump)))
                         .then(Commands.literal("blocks").then(Commands.argument("from", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos())
                                 .then(Commands.argument("to", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos()).executes(FCCommands::blockDump))))
-                        .then(Commands.literal("destroy").then(Commands.argument("baseId", IntegerArgumentType.integer(1)).executes(FCCommands::destroy)))));
+                        .then(Commands.literal("destroy").then(Commands.argument("baseId", IntegerArgumentType.integer(1)).executes(FCCommands::destroy)))
+                        .then(HeroCommands.admin())));
     }
 
     /** The advancements a faction has made, who made them and when, and its progress on the long ones. */

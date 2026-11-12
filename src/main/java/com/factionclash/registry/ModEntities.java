@@ -1,6 +1,7 @@
 package com.factionclash.registry;
 
 import com.factionclash.FactionClash;
+import com.factionclash.hero.HeroEntity;
 import com.factionclash.npc.FactionNpc;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -17,6 +18,14 @@ public final class ModEntities {
                     .eyeHeight(1.62F)
                     .clientTrackingRange(10)
                     .build("faction_npc"));
+
+    /** A hero (HEROES_V2 3.1): its hitbox comes from its model once its id is set (HeroEntity.getDefaultDimensions). */
+    public static final DeferredHolder<EntityType<?>, EntityType<HeroEntity>> HERO = ENTITIES.register("hero",
+            () -> EntityType.Builder.<HeroEntity>of(HeroEntity::new, MobCategory.MISC)
+                    .sized(0.6F, 1.8F)
+                    .eyeHeight(1.62F)
+                    .clientTrackingRange(10)
+                    .build("hero"));
 
     private ModEntities() {
     }

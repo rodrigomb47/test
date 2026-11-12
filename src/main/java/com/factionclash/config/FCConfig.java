@@ -42,6 +42,7 @@ public final class FCConfig {
     public static final ModConfigSpec.IntValue FISHING_RADIUS;
     public static final ModConfigSpec.BooleanValue FISHING_TREASURE;
     public static final ModConfigSpec.BooleanValue REMOTE_WORK_IN_DAYLIGHT_ONLY;
+    public static final ModConfigSpec.IntValue HERO_REVIVE_SECONDS;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -142,6 +143,11 @@ public final class FCConfig {
                 .defineInRange("lairMaxCap", 12, 0, 80);
         LAIR_RAID_INTERVAL_TICKS = b.comment("Minimum ticks between Hollow raids from one lair.")
                 .defineInRange("lairRaidIntervalTicks", 30000, 1200, 480000);
+        b.pop();
+
+        b.comment("Heroes (in development: only the test model ships yet; an operator gives one with /fc admin hero give)").push("heroes");
+        HERO_REVIVE_SECONDS = b.comment("A hero that falls returns at its home base this many seconds later (PROPOSED: 600, ten minutes).")
+                .defineInRange("reviveSeconds", 600, 30, 3600);
         b.pop();
         SPEC = b.build();
     }
