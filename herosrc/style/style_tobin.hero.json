@@ -1,0 +1,38 @@
+{
+  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original chibi boy with round ears and a big fluffy tail, a wide-sleeved jacket over hakama and tabi with sandals. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "format": 2,
+  "id": "style_tobin",
+  "name": "Tobin",
+  "title": "style test: chibi boy with a fluffy tail",
+  "gender": "male",
+  "archetype": "fixture",
+  "style_preview": {"faction_tint": "#D9A23A", "order": 6},
+  "art": {
+    "base": "male",
+    "form": "chibi",
+    "build": "large",
+    "palette": {
+      "skin": "#F3D6C0",
+      "hair": "#7B5A44",
+      "hair_accent": "#EADCC6",
+      "eyes": "#C46A2E",
+      "primary": "#4F7A3A",
+      "secondary": "#F1ECE2",
+      "accent": "#3D4A63",
+      "trim": "#E8D6A0",
+      "leather": "#5A3B2A"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/messy_short", "color": "hair"},
+      {"part": "ears/round", "color": "hair", "alt": "hair_accent"},
+      {"part": "tails/fluffy", "color": "hair", "alt": "hair_accent", "params": {"length": 11}},
+      {"part": "outfit_top/kimono_wide", "color": "primary", "alt": "secondary", "trim": "trim"},
+      {"part": "outfit_bottom/hakama", "color": "accent", "trim": "trim"},
+      {"part": "accessories/sash_obi"},
+      {"part": "legwear/socks_shoes", "color": "secondary", "alt": "leather", "trim": "primary"}
+    ],
+    "face": {"eyes": "round", "lashes": 1, "brows": "bold", "mouth": "cat", "fang": "right"}
+  },
+  "animations": {"style": "fists", "blink": "normal"}
+}

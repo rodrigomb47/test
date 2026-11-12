@@ -1,5 +1,6 @@
 """Command line (design 13.7). G1 provides build, build --check, check (geometry and face part of 14.2), previews
-and stats; G2 and G3 add preview/faces/sheet/gif, the animation commands and the kit checks."""
+(rig v2: the style set) and stats; G2 and G3 add preview/faces/sheet/gif, the animation commands and the kit
+checks. `check --style` also checks the style fixtures in herosrc/style (built in memory, never written)."""
 import argparse
 import io
 import json
@@ -19,6 +20,8 @@ def _ids(args):
     ids = args.ids or []
     if getattr(args, "all", False) or not ids:
         ids = build.hero_ids()
+    if getattr(args, "style", False):
+        ids = list(ids) + build.style_ids()
     return ids
 
 
@@ -55,7 +58,9 @@ def cmd_check(args):
         paths = build.out_paths(hid)
         geo = GeoModel(json.loads(files[paths["geo"]]))
         tex = np.array(Image.open(io.BytesIO(files[paths["texture"]])).convert("RGBA"))
-        problems = validate.check_built(geo, tex) + build.check_files(hid, files)
+        problems = validate.check_built(geo, tex)
+        if hid in build.hero_ids():
+            problems += build.check_files(hid, files)
         for p in problems:
             print("ERROR %s: %s" % (hid, p))
         if not problems:
@@ -94,12 +99,15 @@ def main(argv=None):
     c = sub.add_parser("check", help="asset checks (geometry, UVs, face frames, reproducibility)")
     c.add_argument("ids", nargs="*")
     c.add_argument("--all", action="store_true")
+    c.add_argument("--style", action="store_true", help="also check the style fixtures (herosrc/style)")
     c.set_defaults(fn=cmd_check)
-    v = sub.add_parser("previews", help="write the G1 preview sheets (bases, test rig, faces, texture)")
+    v = sub.add_parser("previews", help="write the style preview set (bases, lineup, face close-ups, character "
+                                        "sheets, test rig, fallback) to docs/heroes-v2/previews/style")
     v.add_argument("--out", default=None)
     v.set_defaults(fn=cmd_previews)
     s = sub.add_parser("stats", help="budgets per hero")
     s.add_argument("ids", nargs="*")
+    s.add_argument("--style", action="store_true", help="include the style fixtures")
     s.set_defaults(fn=cmd_stats)
     args = p.parse_args(argv)
     try:

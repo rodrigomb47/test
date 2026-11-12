@@ -1,0 +1,25 @@
+{
+  "_comment": "Layered shoulder plates: two stacked plates per shoulder, each wider than the arm, with trimmed edges (volume over the shoulder line).",
+  "id": "armour/pauldrons",
+  "category": "armour",
+  "slots": {"main": "metal", "trim": "trim"},
+  "occupies": ["shoulders"],
+  "cubes": [
+    {
+      "origin": ["-shoulder_x - arm_w / 2 - 1.1", "arm_top - 1.25", "-arm_d / 2 - 1"],
+      "size": ["arm_w + 1.85", 1.75, "arm_d + 2"],
+      "bone": "arm_r",
+      "material": "metal",
+      "mirror": true,
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    },
+    {
+      "origin": ["-shoulder_x - arm_w / 2 - 0.85", "arm_top - 2.75", "-arm_d / 2 - 0.75"],
+      "size": ["arm_w + 1.35", 1.75, "arm_d + 1.5"],
+      "bone": "arm_r",
+      "material": "metal",
+      "mirror": true,
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    }
+  ]
+}

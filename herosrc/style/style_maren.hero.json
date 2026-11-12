@@ -1,0 +1,40 @@
+{
+  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original tall knight in plate with layered pauldrons, coat tails and a long cape. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "format": 2,
+  "id": "style_maren",
+  "name": "Maren",
+  "title": "style test: tall knight",
+  "gender": "female",
+  "archetype": "fixture",
+  "style_preview": {"faction_tint": "#3E9A5E", "order": 3},
+  "art": {
+    "base": "female",
+    "form": "adult",
+    "build": "standard",
+    "palette": {
+      "skin": "#F0CFB4",
+      "hair": "#B9532C",
+      "eyes": "#3E9C70",
+      "primary": "#8C2633",
+      "secondary": "#E9E1D0",
+      "accent": "#3B3E4C",
+      "trim": "#D9A944",
+      "metal": "#B9C1CD",
+      "leather": "#5E4031"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/high_ponytail_long", "color": "hair", "trim": "trim", "params": {"length": 13, "locks": 7}},
+      {"part": "armour/breastplate", "color": "metal", "trim": "trim", "alt": "secondary"},
+      {"part": "armour/pauldrons", "color": "metal", "trim": "trim"},
+      {"part": "armour/gauntlets", "color": "metal", "trim": "trim"},
+      {"part": "outfit_bottom/coat_tails", "color": "primary", "trim": "trim"},
+      {"part": "back/cape_long", "color": "primary", "alt": "secondary", "trim": "trim"},
+      {"part": "accessories/sash_obi"},
+      {"part": "legwear/greaves", "color": "metal", "alt": "accent", "trim": "trim"}
+    ],
+    "weapon": {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip", "params": {"blade": 11}},
+    "face": {"eyes": "sharp", "lashes": 2, "brows": "straight", "mouth": "small"}
+  },
+  "animations": {"style": "sword_shield", "blink": "calm"}
+}

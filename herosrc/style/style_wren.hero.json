@@ -1,0 +1,36 @@
+{
+  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original teen girl with long layered hair and an ahoge, a short jacket, a pleated skirt, a capelet, tights and boots. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "format": 2,
+  "id": "style_wren",
+  "name": "Wren",
+  "title": "style test: teen with long layered hair",
+  "gender": "female",
+  "archetype": "fixture",
+  "style_preview": {"faction_tint": "#8A5CC8", "order": 5},
+  "art": {
+    "base": "female",
+    "form": "teen",
+    "build": "slim",
+    "palette": {
+      "skin": "#F5D8C4",
+      "hair": "#2F3B5C",
+      "eyes": "#4FA3D9",
+      "primary": "#E8E2D4",
+      "secondary": "#C8404A",
+      "accent": "#2B2E3A",
+      "trim": "#D9B04C",
+      "leather": "#5B3C2C"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/long_layered", "color": "hair", "params": {"length": 9, "locks": 6, "ahoge": 1}},
+      {"part": "outfit_top/short_jacket", "color": "primary", "trim": "trim", "alt": "secondary"},
+      {"part": "outfit_bottom/pleated_skirt", "color": "secondary", "trim": "trim", "params": {"drop": 0.8}},
+      {"part": "back/cape_short", "color": "accent", "trim": "trim", "params": {"length": 5}},
+      {"part": "accessories/sash_obi"},
+      {"part": "legwear/tights_boots", "color": "accent", "alt": "leather", "params": {"boot": 0.7}}
+    ],
+    "face": {"eyes": "wide", "lashes": 2, "brows": "thin_arched", "mouth": "small", "blush": true}
+  },
+  "animations": {"style": "focus", "blink": "normal"}
+}

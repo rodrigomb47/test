@@ -7,6 +7,7 @@
   "archetype": "fixture",
   "art": {
     "base": "male",
+    "form": "adult",
     "build": "slim",
     "palette": {
       "skin": "#E8C4A8",

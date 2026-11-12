@@ -1,0 +1,26 @@
+{
+  "_comment": "Hakama-like wide trousers drawn as a long flared skirt of two tiers with deep pleats, ending above the ankle; a front panel band in trim. Length is drop x (waist to ankle).",
+  "id": "outfit_bottom/hakama",
+  "category": "outfit_bottom",
+  "slots": {"main": "accent", "trim": "trim"},
+  "params": {"drop": {"default": 0.85, "max": 1, "min": 0.6}},
+  "occupies": ["skirt"],
+  "paint": [{"cubes": ["hips", "thigh_*", "shin_*"], "material": "cloth", "slot": "main"}],
+  "cubes": [
+    {
+      "origin": ["-hips_w / 2 - 0.6", "waist_y + 0.25 - (waist_y - ankle_y) * drop * 0.45", "-hips_d / 2 - 0.6"],
+      "size": ["hips_w + 1.2", "(waist_y - ankle_y) * drop * 0.45", "hips_d + 1.2"],
+      "bone": "skirt",
+      "faces": ["north", "south", "east", "west"],
+      "pattern": {"type": "pleats", "width": 2}
+    },
+    {
+      "origin": ["-hips_w / 2 - 1.5", "waist_y + 0.25 - (waist_y - ankle_y) * drop", "-hips_d / 2 - 1.25"],
+      "size": ["hips_w + 3", "(waist_y - ankle_y) * drop * 0.55", "hips_d + 2.5"],
+      "bone": "skirt",
+      "faces": ["north", "south", "east", "west", "up"],
+      "pattern": {"type": "pleats", "width": 2},
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    }
+  ]
+}

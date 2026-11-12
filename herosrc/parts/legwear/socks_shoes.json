@@ -1,0 +1,28 @@
+{
+  "_comment": "Knee socks with a folded cuff and round shoes (a shell around the foot with a strap band on top).",
+  "id": "legwear/socks_shoes",
+  "category": "legwear",
+  "slots": {"alt": "leather", "main": "secondary", "trim": "accent"},
+  "occupies": ["legs", "feet"],
+  "paint": [
+    {"cubes": ["shin_*"], "material": "cloth", "slot": "main"},
+    {"cubes": ["foot_*"], "material": "leather", "slot": "alt"}
+  ],
+  "cubes": [
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.2", "knee_y - 0.75", "-leg_d / 2 - 0.2"],
+      "size": ["leg_w + 0.4", 1, "leg_d + 0.4"],
+      "bone": "shin_r",
+      "mirror": true
+    },
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.3", 0, "-leg_d / 2 - toe - 0.4"],
+      "size": ["leg_w + 0.6", "min(1.25, ankle_y)", "leg_d + toe + 0.7"],
+      "bone": "foot_r",
+      "material": "lacquer",
+      "mirror": true,
+      "slot": "alt",
+      "trim": {"edge": "top", "slot": "trim", "width": 1}
+    }
+  ]
+}

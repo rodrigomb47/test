@@ -1,0 +1,33 @@
+{
+  "_comment": "A chin-length bob: blunt fringe with notched strands, rounded sides that curl in under the chin line, a full back. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), density 2. Built from the layered hair kit of the style guide: a cap open at the front, a crown step, a fringe block over the forehead, strand cubes over it whose tips stop at the lash line (y 6.5), side cover, back cover and the style's own pieces.",
+  "id": "hair/bob",
+  "category": "hair",
+  "slots": {"main": "hair"},
+  "occupies": ["hair_top", "hair_back"],
+  "offset": [0, "head_y", 0],
+  "density": 2,
+  "cubes": [
+    {
+      "origin": [-5.5, 3, -5.5],
+      "size": [11, 7.75, 11],
+      "bone": "hair_top",
+      "faces": ["up", "south", "east", "west"]
+    },
+    {"origin": [-5, 10.75, -5], "size": [10, 0.75, 10], "bone": "hair_top"},
+    {"origin": [-4, 11.5, -4], "size": [8, 0.5, 8], "bone": "hair_top"},
+    {"origin": [-3, 11.5, -5.75], "size": [3, 0.5, 4], "bone": "hair_top"},
+    {"origin": [0.5, 11.5, -5.5], "size": [3, 0.75, 3.5], "bone": "hair_top"},
+    {"origin": [-5.5, 7.25, -6], "size": [11, 3.75, 1], "bone": "bangs", "cutout": "jagged_8"},
+    {"origin": [-4, 6.5, -6.5], "size": [2, 4.5, 0.75], "bone": "bangs", "taper": 0.5},
+    {"origin": [2, 6.5, -6.65], "size": [2, 4.5, 0.9], "bone": "bangs", "taper": 0.5},
+    {
+      "origin": [-6.75, 1, -5.25],
+      "size": [1.75, 9.5, 10.75],
+      "bone": "hair_r",
+      "cutout": "round_bottom",
+      "mirror": true
+    },
+    {"origin": [-6.25, 0.25, -4.75], "size": [1.5, 1, 9.75], "bone": "hair_r", "mirror": true},
+    {"origin": [-6.25, 0.25, 5], "size": [12.5, 10.75, 1.5], "bone": "hair_back", "cutout": "round_bottom"}
+  ]
+}

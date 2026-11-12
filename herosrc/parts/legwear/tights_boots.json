@@ -1,16 +1,27 @@
 {
-  "_comment": "Starter part: tights painted on the legs and boots to a chosen height with a turned-down cuff.",
+  "_comment": "Rig v2 starter: tights painted on the legs and boots to a chosen height with a turned-down cuff.",
   "id": "legwear/tights_boots",
   "category": "legwear",
-  "slots": {"main": "accent", "alt": "leather"},
-  "params": {"boot": {"min": 2.5, "max": 9, "default": 5}},
+  "slots": {"alt": "leather", "main": "accent"},
+  "params": {"boot": {"default": 0.6, "max": 1, "min": 0.3}},
   "occupies": ["legs", "feet"],
   "paint": [
-    {"cubes": ["thigh_*", "shin_*"], "slot": "main", "material": "cloth"},
-    {"cubes": ["thigh_*", "shin_*", "foot_*"], "y": [0, "boot"], "slot": "alt", "material": "leather"}
+    {"cubes": ["thigh_*", "shin_*"], "material": "cloth", "slot": "main"},
+    {
+      "cubes": ["shin_*", "foot_*"],
+      "material": "leather",
+      "slot": "alt",
+      "y": [0, "ankle_y + (knee_y - ankle_y) * boot"]
+    }
   ],
   "cubes": [
-    {"bone": "shin_r", "origin": ["-hip_x - leg_w / 2 - 0.25", "boot - 0.75", "-leg_d / 2 - 0.25"],
-     "size": ["leg_w + 0.5", 0.75, "leg_d + 0.5"], "slot": "alt", "material": "leather", "mirror": true}
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.25", "ankle_y + (knee_y - ankle_y) * boot - 0.75", "-leg_d / 2 - 0.25"],
+      "size": ["leg_w + 0.5", 0.75, "leg_d + 0.5"],
+      "bone": "shin_r",
+      "material": "leather",
+      "mirror": true,
+      "slot": "alt"
+    }
   ]
 }

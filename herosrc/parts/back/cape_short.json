@@ -1,20 +1,27 @@
 {
-  "_comment": "Starter part: a short two-segment cape (capelet) on the cape bones, trimmed hem.",
+  "_comment": "Rig v2 starter: a short two-segment cape (capelet) on the cape bones, trimmed hem.",
   "id": "back/cape_short",
   "category": "back",
   "slots": {"main": "primary", "trim": "trim"},
-  "params": {"length": {"min": 4, "max": 12, "default": 7}},
+  "params": {"length": {"default": 6, "max": 10, "min": 3}},
   "occupies": ["back"],
   "bones": [
-    {"name": "cape_1", "parent": "back", "pivot": [0, 23, "chest_d / 2 + 0.35"]},
-    {"name": "cape_2", "parent": "cape_1", "pivot": [0, "23 - length * 0.55", "chest_d / 2 + 0.35"]}
+    {"name": "cape_1", "parent": "back", "pivot": [0, "chest_top", "chest_d / 2 + 0.35"]},
+    {"name": "cape_2", "parent": "cape_1", "pivot": [0, "chest_top - length * 0.55", "chest_d / 2 + 0.35"]}
   ],
   "cubes": [
-    {"bone": "cape_1", "origin": ["-chest_w / 2 - 0.75", "23 - length * 0.55", "chest_d / 2 + 0.1"],
-     "size": ["chest_w + 1.5", "length * 0.55 + 0.5", 0.5], "slot": "main", "material": "cloth"},
-    {"bone": "cape_2", "origin": ["-chest_w / 2 - 1", "23 - length", "chest_d / 2 + 0.15"],
-     "size": ["chest_w + 2", "length * 0.45", 0.5], "slot": "main", "material": "cloth", "cutout": "round_bottom",
-     "trim": {"slot": "trim", "edge": "bottom", "width": 1}}
+    {
+      "origin": ["-chest_w / 2 - 0.75", "chest_top - length * 0.55", "chest_d / 2 + 0.1"],
+      "size": ["chest_w + 1.5", "length * 0.55 + 0.5", 0.5],
+      "bone": "cape_1"
+    },
+    {
+      "origin": ["-chest_w / 2 - 1", "chest_top - length", "chest_d / 2 + 0.15"],
+      "size": ["chest_w + 2", "length * 0.45", 0.5],
+      "bone": "cape_2",
+      "cutout": "round_bottom",
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    }
   ],
-  "secondary": {"chain": ["cape_1", "cape_2"], "stiffness": 0.4, "damping": 0.6}
+  "secondary": {"chain": ["cape_1", "cape_2"], "damping": 0.6, "stiffness": 0.4}
 }

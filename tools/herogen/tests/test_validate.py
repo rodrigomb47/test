@@ -52,7 +52,7 @@ class ValidateTest(unittest.TestCase):
 
     def test_uv_outside_texture(self):
         d = copy.deepcopy(self.geo_data)
-        next(b for b in self.bones(d) if b["name"] == "chest")["cubes"][0]["uv"]["north"]["uv"] = [126, 126]
+        next(b for b in self.bones(d) if b["name"] == "chest")["cubes"][0]["uv"]["north"]["uv"] = [254, 126]
         self.assertProblem("leaves the texture", self.problems(d))
 
     def test_missing_required_bone(self):
@@ -83,13 +83,13 @@ class ValidateTest(unittest.TestCase):
 
     def test_plane_off_its_region(self):
         d = copy.deepcopy(self.geo_data)
-        next(b for b in self.bones(d) if b["name"] == "eyes")["cubes"][0]["uv"]["north"]["uv"] = [80, 0]
+        next(b for b in self.bones(d) if b["name"] == "eyes")["cubes"][0]["uv"]["north"]["uv"] = [84, 0]
         self.assertProblem("face plane eyes", self.problems(d))
 
     def test_texture_size_mismatch(self):
         d = copy.deepcopy(self.geo_data)
-        d["minecraft:geometry"][0]["description"]["texture_width"] = 256
-        self.assertProblem("geometry says 256x128", self.problems(d))
+        d["minecraft:geometry"][0]["description"]["texture_height"] = 256
+        self.assertProblem("geometry says 256x256", self.problems(d))
 
     def test_missing_eye_frame(self):
         tex = self.tex.copy()
@@ -112,13 +112,13 @@ class ValidateTest(unittest.TestCase):
     def test_unmirrored_eyes(self):
         tex = self.tex.copy()
         u, v, _, _ = F.frame_rect(load_rig(), "eyes", 0)
-        tex[v + 5, u + 3] = (255, 0, 0, 255)
+        tex[v + 6, u + 3] = (255, 0, 0, 255)
         self.assertProblem("eyes frame 0: the eyes do not mirror", self.problems(tex=tex))
 
     def test_head_front_without_holes(self):
         tex = self.tex.copy()
         hu, hv, _, _ = load_rig()["uv_template"]["head_front"]
-        tex[hv + 4, hu + 4] = (200, 150, 120, 255)
+        tex[hv + 6, hu + 4] = (200, 150, 120, 255)
         self.assertProblem("not transparent under the eyes and mouth planes", self.problems(tex=tex))
 
     def test_mouth_edge_must_match_the_head_front(self):
@@ -128,13 +128,27 @@ class ValidateTest(unittest.TestCase):
         self.assertProblem("mouth frame 3 differs from the head front", self.problems(tex=tex))
 
     def test_cube_in_front_of_the_face(self):
+        head_y = 23           # the test rig is an adult: the lash line is at head_y + 6.5
         d = copy.deepcopy(self.geo_data)
         bangs = next(b for b in self.bones(d) if b["name"] == "bangs")
         long_bangs = copy.deepcopy(bangs["cubes"][0])
-        long_bangs["origin"] = [-1, 28, -4.6]
+        long_bangs["origin"] = [-1, head_y + 5, -5.6]
         long_bangs["size"] = [2, 3, 0.5]
         bangs["cubes"].append(long_bangs)
-        self.assertProblem("in front of the face below y 30", self.problems(d))
+        self.assertProblem("in front of the face below y 29.5", self.problems(d))
+
+    def test_open_cap_and_side_locks_are_fine(self):
+        """Faces, not boxes: a cap without its north face may enclose the head, and a lock beside the face (|x| > 4.5)
+        may hang below the lash line."""
+        head_y = 23
+        d = copy.deepcopy(self.geo_data)
+        top = next(b for b in self.bones(d) if b["name"] == "hair_top")
+        cap = {"origin": [-5.5, head_y + 2, -5.5], "size": [11, 9, 11],
+               "uv": {f: {"uv": [0, 100], "uv_size": [1, 1]} for f in ("up", "east", "west", "south")}}
+        top["cubes"] = [cap]
+        self.assertFalse(any("front of the face" in p for p in validate._check_clear_face(GeoModel(d), load_rig())))
+        cap["uv"]["north"] = {"uv": [0, 100], "uv_size": [1, 1]}
+        self.assertProblem("in front of the face", validate._check_clear_face(GeoModel(d), load_rig()))
 
 
 if __name__ == "__main__":

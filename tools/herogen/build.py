@@ -19,7 +19,7 @@ import palette
 from geo import geo_json
 from paint import paint_model
 from parts import apply_part, apply_weapon, part_path
-from rig import BASE_SLOTS, DEFAULT_BASE_LAYER, Model
+from rig import BASE_SLOTS, BUILDS, DEFAULT_BASE_LAYER, FORMS, RIG_FILE, Model, base_id_for
 from util import HEROSRC, ROOT, HerogenError, dumps_json, load_json, png_bytes, rel, sha256_bytes
 from uvpack import pack
 from visual import visual_json
@@ -28,12 +28,24 @@ ASSETS = "src/main/resources/assets/factionclash"
 EMPTY_ANIMATIONS = {"format_version": "1.8.0", "animations": {}}
 
 
+STYLE_DIR = os.path.join(HEROSRC, "style")
+
+
 def hero_path(hero_id):
-    return os.path.join(HEROSRC, "heroes", hero_id + ".hero.json")
+    """herosrc/heroes/<id>.hero.json, or herosrc/style/<id>.hero.json for the style fixtures (built for previews and
+    tests only; their assets are never written to the mod's resources)."""
+    path = os.path.join(HEROSRC, "heroes", hero_id + ".hero.json")
+    style = os.path.join(STYLE_DIR, hero_id + ".hero.json")
+    return style if not os.path.exists(path) and os.path.exists(style) else path
 
 
 def hero_ids():
     return sorted(os.path.basename(p)[:-len(".hero.json")] for p in glob.glob(os.path.join(HEROSRC, "heroes",
+                                                                                           "*.hero.json")))
+
+
+def style_ids():
+    return sorted(os.path.basename(p)[:-len(".hero.json")] for p in glob.glob(os.path.join(STYLE_DIR,
                                                                                            "*.hero.json")))
 
 
@@ -62,14 +74,19 @@ def load_hero(hero_id):
 
 
 def base_id_of(hero):
+    """(base id, build) of a hero: art.form (chibi, teen, adult; default adult) and art.base (female, male; default
+    the gender) pick the base, art.build (slim, standard, large) its widths."""
     art = hero["art"]
     family = art.get("base") or hero.get("gender")
     if family not in ("female", "male"):
         raise HerogenError("%s: art.base (or gender) must be female or male" % hero["id"])
+    form = art.get("form", "adult")
+    if form not in FORMS:
+        raise HerogenError("%s: art.form %r is unknown (%s)" % (hero["id"], form, ", ".join(FORMS)))
     build = art.get("build", "standard")
-    if build not in ("slim", "standard", "large"):
-        raise HerogenError("%s: art.build %r is unknown (slim, standard, large)" % (hero["id"], build))
-    return family[0] + "_" + build
+    if build not in BUILDS:
+        raise HerogenError("%s: art.build %r is unknown (%s)" % (hero["id"], build, ", ".join(BUILDS)))
+    return base_id_for(form, family), build
 
 
 class Built:
@@ -92,7 +109,8 @@ def base_layer_of(art):
 def assemble(hero):
     """Model with parts and weapon applied and UVs packed (not painted)."""
     art = hero["art"]
-    model = Model(hero["id"], base_id_of(hero))
+    base_id, build_name = base_id_of(hero)
+    model = Model(hero["id"], base_id, build_name)
     for i, entry in enumerate(art.get("parts", []) or []):
         apply_part(model, entry, i)
     if art.get("weapon"):
@@ -135,7 +153,7 @@ def build(hero):
 
 def source_hash(hero, model):
     """Hash of every source the build read, so a stale output is easy to spot."""
-    paths = [hero_path(hero["id"]), os.path.join(HEROSRC, "rig", "rig_v1.json"),
+    paths = [hero_path(hero["id"]), os.path.join(HEROSRC, "rig", RIG_FILE),
              os.path.join(HEROSRC, "bases", model.base_id + ".json"),
              os.path.join(HEROSRC, "bases", model.base.get("template", "_template") + ".json")]
     for pid in sorted(set(model.parts_used + ([hero["art"]["weapon"]["prop"]] if hero["art"].get("weapon") else []))):

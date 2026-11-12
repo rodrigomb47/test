@@ -1,0 +1,60 @@
+{
+  "_comment": "An open short jacket with volume: slightly oversized sleeves with rolled cuffs, lapels flanking the shirt, a hem that flares over the hips (open at the front, on the skirt bone) and a hood bunched behind the neck.",
+  "id": "outfit_top/jacket_open",
+  "category": "outfit_top",
+  "slots": {"alt": "secondary", "main": "primary", "trim": "trim"},
+  "occupies": ["torso", "sleeves"],
+  "paint": [
+    {"cubes": ["chest", "bust", "waist", "upper_arm_*", "forearm_*"], "material": "cloth", "slot": "main"},
+    {
+      "abs_x": [0, 1.26],
+      "cubes": ["chest", "bust", "waist"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "alt"
+    }
+  ],
+  "cubes": [
+    {
+      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "elbow_y - 0.25", "-arm_d / 2 - 0.3"],
+      "size": ["arm_w + 0.6", "arm_top - elbow_y + 0.55", "arm_d + 0.6"],
+      "bone": "arm_r",
+      "mirror": true
+    },
+    {
+      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "wrist_y + 0.75", "-arm_d / 2 - 0.3"],
+      "size": ["arm_w + 0.6", "elbow_y - wrist_y - 0.75", "arm_d + 0.6"],
+      "bone": "forearm_r",
+      "mirror": true
+    },
+    {
+      "origin": ["-shoulder_x - arm_w / 2 - 0.45", "wrist_y - 0.1", "-arm_d / 2 - 0.45"],
+      "size": ["arm_w + 0.9", 1, "arm_d + 0.9"],
+      "bone": "forearm_r",
+      "mirror": true,
+      "slot": "trim"
+    },
+    {
+      "origin": ["-chest_w / 2 + 0.25", "chest_y + 0.25", "-chest_d / 2 - bust_d - 0.4"],
+      "size": [1.25, "chest_top - chest_y", 0.5],
+      "bone": "chest",
+      "mirror": true,
+      "trim": {"edge": "top", "slot": "trim", "width": 1}
+    },
+    {
+      "origin": ["-hips_w / 2 - 0.45", "hip_y - 1.75", "-hips_d / 2 - 0.45"],
+      "size": ["hips_w + 0.9", "waist_y - hip_y + 2.25", "hips_d + 0.9"],
+      "bone": "skirt",
+      "faces": ["south", "east", "west"],
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    },
+    {
+      "origin": ["-hips_w / 2 - 0.45", "hip_y - 1.75", "-hips_d / 2 - 0.55"],
+      "size": ["hips_w / 2 - 0.65", "waist_y - hip_y + 2.25", 0.5],
+      "bone": "skirt",
+      "mirror": true,
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    },
+    {"origin": [-2.75, "chest_top - 1.75", "chest_d / 2 - 0.5"], "size": [5.5, 2.5, 2.25], "bone": "chest"}
+  ]
+}

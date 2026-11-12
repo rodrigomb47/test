@@ -5,13 +5,16 @@ Checked here: geometry format_version; texture size matches the geometry and is 
 budgets; bone names; parents before children; required bones; whole-texel UVs; UV islands inside the texture and not
 overlapping (face planes on their fixed regions); the alpha holes under the eyes and mouth planes (face.head_front_holes)
 and, where a plane edge covers painted head front, identical texels; every eye, mouth and cheek frame present and
-distinct; the eyes mirror (frame 9 may raise one brow); nothing in front of the face below y 30 within |x| < 3.5.
+distinct; the eyes mirror (frame 9 may raise one brow); no face of any cube in front of the face below the lash line
+(rig face.clear_below_y, head-local) within |x| < face.clear_half_width (bangs may cover the forehead and the brows,
+never the eyes; side locks hang outside that width).
 """
 import math
 import re
 
 import numpy as np
 
+import face as F
 from face import frame_rect, head_front_holes
 from render.ortho import rotation_matrix
 from rig import load_rig, required_bones
@@ -99,30 +102,45 @@ def _check_uvs(geo, rig):
     return out
 
 
-def _cube_points(c):
+def _face_points(c, face):
+    """Corners of one face of a cube (after its own rotation), file coordinates."""
     x, y, z = c.origin
     sx, sy, sz = c.size
-    pts = [(x + a * sx, y + b * sy, z + d * sz) for a in (0, 1) for b in (0, 1) for d in (0, 1)]
+    x1, y1, z1 = x + sx, y + sy, z + sz
+    corners = {
+        "north": [(a, b, z) for a in (x, x1) for b in (y, y1)],
+        "south": [(a, b, z1) for a in (x, x1) for b in (y, y1)],
+        "east": [(x, b, d) for b in (y, y1) for d in (z, z1)],
+        "west": [(x1, b, d) for b in (y, y1) for d in (z, z1)],
+        "up": [(a, y1, d) for a in (x, x1) for d in (z, z1)],
+        "down": [(a, y, d) for a in (x, x1) for d in (z, z1)],
+    }[face]
     if c.rotation is None:
-        return pts
+        return corners
     m = rotation_matrix(c.rotation[0], c.rotation[1], c.rotation[2])
     pv = np.array(c.pivot)
-    return [tuple(pv + m @ (np.array(p) - pv)) for p in pts]
+    return [tuple(pv + m @ (np.array(p) - pv)) for p in corners]
 
 
 def _check_clear_face(geo, rig):
-    """Nothing but the face planes may sit in front of the face below y 30 within |x| < 3.5 (4.6)."""
+    """No face of any cube (the face planes aside) may sit in front of the face between the chin and the lash line
+    within |x| < clear_half_width (4.6). Faces, not bounding boxes: a hair cap open at the front is fine."""
     out = []
-    lim_y = rig["face"]["clear_below_y"]
+    head_y = geo.bones["head"]["pivot"][1]
+    front = rig["head"]["front_z"]
+    lim_y = head_y + rig["face"]["clear_below_y"]
     half = rig["face"]["clear_half_width"]
+    flagged = set()
     for c in geo.cubes:
         if c.bone in ("eyes", "mouth", "cheeks", "head"):
             continue
-        pts = _cube_points(c)
-        xs, ys, zs = zip(*pts)
-        if min(zs) < -4 - 1e-6 and min(ys) < lim_y - 1e-6 and max(ys) > 24 + 1e-6 \
-                and min(xs) < half - 1e-6 and max(xs) > -half + 1e-6:
-            out.append("bone %s: a cube sits in front of the face below y %g within |x| < %g" % (c.bone, lim_y, half))
+        for face in c.uv:
+            xs, ys, zs = zip(*_face_points(c, face))
+            if min(zs) < front - 1e-6 and min(ys) < lim_y - 1e-6 and max(ys) > head_y + 1e-6 \
+                    and min(xs) < half - 1e-6 and max(xs) > -half + 1e-6 and c.bone not in flagged:
+                flagged.add(c.bone)
+                out.append("bone %s: a cube sits in front of the face below y %g within |x| < %g"
+                           % (c.bone, lim_y, half))
     return out
 
 
@@ -139,7 +157,7 @@ def check_face_texture(tex, rig=None):
         out.append("head front has transparent texels outside the plane holes")
     # where a plane covers painted head-front texels (the mouth's edge columns), every frame must match them exactly,
     # or the two coincident surfaces would flicker between different colours
-    for plane, (r0, c0) in (("eyes", (2, 0)), ("mouth", (12, 4))):
+    for plane, (r0, c0) in (("eyes", F.EYES_AT), ("mouth", F.MOUTH_AT)):
         n = rig["face"]["planes"][plane]["frames"]
         for k in range(n):
             u, v, w, h = frame_rect(rig, plane, k)
@@ -167,10 +185,10 @@ def check_face_texture(tex, rig=None):
                     out.append("%s frames %d and %d are identical" % (plane, i, j))
         if plane == "eyes":
             for k, f in enumerate(frames):
-                rows = slice(2, 8) if k == 9 else slice(0, 8)
+                rows = slice(F.LASH, F.EH) if k == 9 else slice(0, F.EH)
                 if not np.array_equal(f[rows], f[rows, ::-1]):
                     out.append("eyes frame %d: the eyes do not mirror" % k)
-            skin = frames[0][7, 0].copy()
+            skin = frames[0][F.EH - 1, 0].copy()
             for k, f in enumerate(frames):
                 if (f[:, :, :3] == skin[:3]).all():
                     out.append("eyes frame %d is blank skin (missing frame?)" % k)
@@ -178,4 +196,4 @@ def check_face_texture(tex, rig=None):
 
 
 def check_built(geo, tex):
-    return check_geometry(geo, tex) + check_face_texture(tex)
+    return F.check_layout(load_rig()) + check_geometry(geo, tex) + check_face_texture(tex)

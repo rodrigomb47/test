@@ -1,0 +1,39 @@
+{
+  "_comment": "Trousers painted on the legs and boots with volume: a shaft over the shin, a turned-down cuff and a sturdy foot. boot is the shaft height as a fraction of the shin.",
+  "id": "legwear/boots",
+  "category": "legwear",
+  "slots": {"alt": "leather", "main": "accent", "trim": "leather"},
+  "params": {"boot": {"default": 0.7, "max": 1, "min": 0.3}},
+  "occupies": ["legs", "feet"],
+  "paint": [
+    {"cubes": ["hips", "thigh_*", "shin_*"], "material": "cloth", "slot": "main"},
+    {"cubes": ["foot_*"], "material": "leather", "slot": "alt"}
+  ],
+  "cubes": [
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.3", "ankle_y - 0.1", "-leg_d / 2 - 0.3"],
+      "size": ["leg_w + 0.6", "(knee_y - ankle_y) * boot", "leg_d + 0.6"],
+      "bone": "shin_r",
+      "material": "leather",
+      "mirror": true,
+      "slot": "alt"
+    },
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.45", "ankle_y + (knee_y - ankle_y) * boot - 0.75", "-leg_d / 2 - 0.45"],
+      "size": ["leg_w + 0.9", 0.85, "leg_d + 0.9"],
+      "bone": "shin_r",
+      "material": "leather",
+      "mirror": true,
+      "slot": "trim",
+      "tone": 1
+    },
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.3", 0, "-leg_d / 2 - toe - 0.4"],
+      "size": ["leg_w + 0.6", "ankle_y", "leg_d + toe + 0.7"],
+      "bone": "foot_r",
+      "material": "leather",
+      "mirror": true,
+      "slot": "alt"
+    }
+  ]
+}

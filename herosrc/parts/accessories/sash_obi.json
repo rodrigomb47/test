@@ -1,16 +1,27 @@
 {
-  "_comment": "Starter part: the faction sash (painted greyscale, tinted by the renderer) with a hanging knot as a fine bone.",
+  "_comment": "Rig v2 starter: the faction sash at the waist (painted greyscale, tinted by the renderer) with a hanging knot as a fine bone.",
   "id": "accessories/sash_obi",
   "category": "accessories",
   "slots": {"main": "sash"},
   "occupies": ["waist_band"],
   "bones": [
-    {"name": "fine_sash_knot", "parent": "sash", "pivot": ["waist_w / 2 - 1", 16.25, "waist_d / 2 + 0.3"]}
+    {
+      "name": "fine_sash_knot",
+      "parent": "sash",
+      "pivot": ["waist_w / 2 - 1", "waist_y + 1", "waist_d / 2 + 0.3"]
+    }
   ],
   "cubes": [
-    {"bone": "sash", "origin": ["-waist_w / 2 - 0.3", 16.25, "-waist_d / 2 - 0.3"],
-     "size": ["waist_w + 0.6", 1.75, "waist_d + 0.6"], "slot": "main", "material": "cloth"},
-    {"bone": "fine_sash_knot", "origin": ["waist_w / 2 - 1.5", 13.5, "waist_d / 2 + 0.35"], "size": [1, 3, 0.5],
-     "slot": "main", "material": "cloth", "cutout": "tip_jagged_1"}
+    {
+      "origin": ["-waist_w / 2 - 0.3", "waist_y + 0.25", "-waist_d / 2 - 0.3"],
+      "size": ["waist_w + 0.6", "min(2, chest_y - waist_y - 0.25)", "waist_d + 0.6"],
+      "bone": "sash"
+    },
+    {
+      "origin": ["waist_w / 2 - 1.5", "waist_y - 2", "waist_d / 2 + 0.35"],
+      "size": [1, 3, 0.5],
+      "bone": "fine_sash_knot",
+      "cutout": "tip_jagged_1"
+    }
   ]
 }

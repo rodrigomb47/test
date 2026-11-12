@@ -1,0 +1,38 @@
+{
+  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original chibi cat-eared girl. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "format": 2,
+  "id": "style_tansy",
+  "name": "Tansy",
+  "title": "style test: chibi cat girl",
+  "gender": "female",
+  "archetype": "fixture",
+  "style_preview": {"faction_tint": "#D2524A", "order": 1},
+  "art": {
+    "base": "female",
+    "form": "chibi",
+    "build": "standard",
+    "palette": {
+      "skin": "#F7DCC9",
+      "hair": "#A98AD6",
+      "eyes": "#EFA22E",
+      "primary": "#2E9E92",
+      "secondary": "#F3EADA",
+      "accent": "#7A4C98",
+      "trim": "#E4B24A",
+      "leather": "#6E2F34"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/twin_tails", "color": "hair", "trim": "trim", "params": {"length": 15, "locks": 4}},
+      {"part": "ears/cat", "color": "hair", "alt": "blush"},
+      {"part": "tails/cat_long", "color": "hair", "alt": "secondary", "params": {"length": 9}},
+      {"part": "outfit_top/kimono_wide", "color": "primary", "alt": "secondary", "trim": "trim"},
+      {"part": "outfit_bottom/flared_skirt", "color": "accent", "trim": "trim", "params": {"drop": 1.25}},
+      {"part": "accessories/sash_bow"},
+      {"part": "legwear/socks_shoes", "color": "secondary", "alt": "leather", "trim": "trim"}
+    ],
+    "face": {"eyes": "cat", "pupil": "slit", "lashes": 3, "brows": "thin_arched", "mouth": "cat", "fang": "left",
+             "blush": true}
+  },
+  "animations": {"style": "fists", "blink": "nervous"}
+}

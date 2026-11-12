@@ -1,21 +1,35 @@
 {
-  "_comment": "Starter part: a short open jacket painted over the torso and arms, trimmed hem and cuffs, and a stand-up collar.",
+  "_comment": "Rig v2 starter: a short open jacket painted over the torso and arms, trimmed hem and cuffs, and a stand-up collar.",
   "id": "outfit_top/short_jacket",
   "category": "outfit_top",
-  "slots": {"main": "primary", "trim": "trim", "alt": "secondary"},
-  "params": {"hem": {"min": 14, "max": 19, "default": 16}},
+  "slots": {"alt": "secondary", "main": "primary", "trim": "trim"},
+  "params": {"hem": {"default": 0.4, "max": 1, "min": 0}},
   "occupies": ["torso"],
   "paint": [
-    {"cubes": ["chest", "bust", "waist"], "y": ["hem", 24], "slot": "main", "material": "cloth",
-     "trim": {"slot": "trim", "edge": "bottom", "width": 1}},
-    {"cubes": ["chest", "bust", "waist"], "faces": ["north"], "abs_x": [0, 1.01], "y": ["hem", 22.5], "slot": "alt",
-     "material": "cloth"},
-    {"cubes": ["upper_arm_*", "forearm_*"], "slot": "main", "material": "cloth"},
-    {"cubes": ["forearm_*"], "y": [13.5, 14.5], "slot": "trim", "material": "cloth"}
+    {
+      "cubes": ["chest", "bust", "waist"],
+      "material": "cloth",
+      "slot": "main",
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1},
+      "y": ["waist_y + (chest_y - waist_y) * hem", "head_y"]
+    },
+    {
+      "abs_x": [0, 1.01],
+      "cubes": ["chest", "bust", "waist"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "alt",
+      "y": ["waist_y + (chest_y - waist_y) * hem", "chest_top - 0.5"]
+    },
+    {"cubes": ["upper_arm_*", "forearm_*"], "material": "cloth", "slot": "main"},
+    {"cubes": ["forearm_*"], "material": "cloth", "slot": "trim", "y": ["wrist_y", "wrist_y + 1"]}
   ],
   "cubes": [
-    {"bone": "chest", "origin": ["-chest_w / 2 + 0.5", 22.25, "-chest_d / 2 - 0.25"],
-     "size": ["chest_w - 1", 1.25, "chest_d + 0.5"], "slot": "main", "material": "cloth",
-     "trim": {"slot": "trim", "edge": "top", "width": 1}}
+    {
+      "origin": ["-chest_w / 2 + 0.5", "chest_top - 0.75", "-chest_d / 2 - 0.25"],
+      "size": ["chest_w - 1", 1.25, "chest_d + 0.5"],
+      "bone": "chest",
+      "trim": {"edge": "top", "slot": "trim", "width": 1}
+    }
   ]
 }

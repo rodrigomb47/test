@@ -28,8 +28,8 @@ docs task (V5).
 | `validate.py` | the geometry and face half of the 14.2 asset checks |
 | `render/ortho.py`, `previews.py` | minimal rest-pose orthographic renderer and the preview sheets (stopgap until G2) |
 | `tests/` | unit tests (87 after the review): `python3 -m unittest discover tools/herogen/tests` (or `python3 -m unittest` in `tools/herogen`) |
-| `herosrc/rig/rig_v1.json` | bones (61 with every option, 33 required), pivots, heights, joint limits, UV template, face layout, budgets (72 bones, 140 cubes) |
-| `herosrc/bases/*.json` | the six bases (dims) and `_template.json` (body cubes shared by all six) |
+| `herosrc/rig/rig_v1.json` | bones (61 with every option, 33 required), pivots, heights, joint limits, UV template, face layout, budgets (72 bones, 140 cubes); replaced by `rig_v2.json` in the style pass below |
+| `herosrc/bases/*.json` | the six bases (dims) and `_template.json` (body cubes shared by all six); rig v2 bases in the style pass below |
 | `herosrc/parts/**` | 11 starter parts for the test rig and the fallback (G6a-c grow this into the library) |
 | `herosrc/heroes/test_rig.hero.json`, `_fallback.hero.json` | the pipeline fixture and the neutral model |
 | `src/main/resources/assets/factionclash/{geo/hero, textures/entity/hero, animations/hero, heroes}/` | generated: `test_rig.*` (geometry, texture, glow mask, `_p2` and `_p2_glowmask`, empty animation file, visual.json) and `_fallback.*` |
@@ -231,3 +231,172 @@ sheath refusing a `weapon_back` already used by a part.
   and bottom edges can show a sub-pixel sliver of the head's inside. Check it in the fidelity screenshots up close.
 - **G6a-c**: author new cut-out parts knowing that caps and narrow faces now follow the side faces' cut (a thick cube
   with different cuts on its front and side faces gets their intersection on its caps).
+
+---
+
+## Style pass: rig v2 and the style system (2026-11-12)
+
+The owner sent a style reference ("something that feels blocky but has different body forms": three sizes of one
+fox-eared shrine maiden standing on grass, and a close-up of her face). It is used for **style only** (proportions,
+volume, construction, shading); none of our heroes copies that character. This pass replaces rig v1 with **rig v2**
+and adds the parts and painter features the style needs. HEROES_V2.md 3.6, 4.3, 4.6, 12.5, 13.2-13.5 and 15.2 (G1s)
+were updated to match. Where this section and the G1 section above differ, this one holds.
+
+Previews (committed): `docs/heroes-v2/previews/style/`
+- `lineup_three_forms.png` (one character per form, shot like the reference), `lineup.png` (all six fixtures),
+- `face_closeups.png` (every fixture's head in six moods, a blink and a 3/4 view),
+- `bases_v2.png` (the six bases, mannequin palette), `style_<id>.png` (front, 3/4, side, back, blink, weapon drawn),
+  `style_<id>_frames.png` (the 12 moods and every eye, mouth and cheek frame), `test_rig.png`, `fallback.png`,
+  `test_rig_texture.png`. Regenerate with `python3 tools/herogen/herogen.py previews`.
+The G1 previews in `notes/previews/g1_*.png` show rig v1 and are kept as history.
+
+### Style guide
+
+What the reference does, as rules our generator follows (all numbers are rig v2 pixels; "texels" are texture pixels).
+
+**Proportions.** Blocky cube bodies with anime chibi-leaning proportions: the head is big and the same 10x10x10 cube
+on every form, so the face and every head part fit everywhere; the forms differ below the neck.
+
+| Form | Crown | Head-heights tall | Head share | Legs | Torso | Neck | Arm reach | Feel |
+|---|---|---|---|---|---|---|---|---|
+| chibi | 23 px | 2.3 | 0.43 | 7 (thigh 3, shin 2.5, foot 1.5) | 5.5 | 0.5 | hand bottom at the hip line | a small child: the head is as wide as shoulders and sleeves together |
+| teen | 28 px | 2.8 | 0.36 | 11 (5.5, 4, 1.5) | 6.5 | 0.5 | hand at the upper thigh | petite, head about a third |
+| adult | 33 px | 3.3 | 0.30 | 14 (6.5, 5.5, 2) | 8 | 1 | hand at mid thigh | tall, long legs, head a bit under a third |
+
+The reference's tall form has a smaller head share (about 0.25 counting the hair); we keep 0.30 so the face reads at a
+distance, as the owner asked for big heads. Hair adds 1-2 px of volume above the head and 0.5-2 px around it, ears
+3-5 px more. Hitbox: the form's height x 15/16 (adult 1.93 blocks, under the 1.98 cap).
+
+**Builds.** Female and male differ in widths (male: broader chest and shoulders, thicker arms and legs; female:
+narrower waist, wider hips than waist, a small bust cube on teen and adult). Each base has slim and large builds that
+override widths only. Arms hang flush with the chest; legs stay inside the hips.
+
+**Face (double density).** The head front is 20x20 texels (0.5 px each). Layout, top to bottom: forehead rows 0-3
+(covered by the fringe), eyes plane rows 4-13 (brows 4-5, skin 6, lash 7, eye body 8-13), cheeks plane rows 14-15,
+mouth plane rows 16-19 (the mouth line on row 17, a small anime mouth 2-4 texels wide). No nose.
+
+**Eyes.** Big: 5-7 texels wide and 5-7 tall with the lash (about 3 x 3.5 px on a 10 px face, a third of its width
+and height), 2-6 texels apart. Structure of an open eye, outer corner first:
+- a heavy dark upper lash across the eye (the hair's hue, never black); female faces (lash weight 2-3) add an outer
+  corner texel and an upward flick, male faces (weight 1) a plain line; a soft lower-lash texel at the outer corner;
+- the white only beside the iris, shadowed (a cool grey) in the upper half under the lash;
+- the iris 3-5 texels wide, its ramp running from tone -2 directly under the lash to +2 on the bottom row (dark top,
+  light bottom: the anime gradient), a 2x2 pupil (1 texel when surprised, a slit for cat eyes);
+- highlights: a 2x2 pure-white highlight in the upper outer iris (it may overlap the pupil), a small second highlight
+  (white mixed into the light iris) low on the inner side. Pure white is kept for highlights only.
+Brows are thin (1 texel), rest on row 1 so a skin row separates them from the lash, and move for expressions (raised
+to row 0, inner end down to row 2 when angry, outer end down when sad). The fringe may cover them; strands leave gaps.
+Blink frames keep the brows. The 12 moods and the frame table are unchanged from G1.
+
+**Hair (built from layered cubes, never painted on the head).** Every style uses the hair kit, all head-local and at
+double density:
+1. a **cap** open at the front (faces up, south, east, west), 0.5 px outside the head, from y 3-4.5 up to 10.75;
+2. a **stepped dome** on top (one or two cubes 1 px narrower each) and, for messy styles, tufts of different heights,
+   so the top is a mass, not a flat lid;
+3. a **fringe block** in front of the forehead (z -6..-5, y 8.5..11.25) and 3-5 **strand cubes** over it (2-2.5 px
+   wide, 0.75-0.9 px deep, alternating depth, tapered or jagged tips) whose tips stop between y 6.5 and 8.25: the
+   bangs cover the forehead and partly the brows, **never the lash or the eyes** (validated: no cube face in front of
+   the face below the lash line within |x| < 4.5);
+4. **side locks** hanging outside the face (|x| >= 4.75) in front of the ears, past the chin and over the shoulders
+   (1.75 px thick, tapered, a thin face-framing strand beside them), plus **side cover** slabs over the head's sides;
+5. **back cover** behind the head, then the style's long pieces: layered back strands at two depths (long hair),
+   ponytail or twin tails on bone chains (with a tie and ribbon), an **ahoge** (a thin peaked cube on its own bone);
+6. lengths are params clamped so long hair stays above the ankles of a chibi (`max(-length, 2 - head_y)`).
+Touching hair cubes of one colour are one region: no outline where a strand rests on the cap, only at free tips.
+
+**Ears and tails (volume).** Ears are thick cubes (1.5 px) with a `peak` cutout (full width at the base, pointed top),
+tilted 10 degrees outward, with a thin inner-ear plate in the alt colour (pink, cream) in front; round ears use
+`round_top`. The narrow sides of a cut-out cube follow its front silhouette. Tails are 3-bone chains: slender (1.5 px,
+a curl and a lighter tip) or voluminous (a narrow root, a 4.5-5.5 px body that sweeps up, a lighter tapered fur tip).
+
+**Outfits (volume).** Clothes are painted on the body and then given volume with cubes on the right bones:
+- **wide sleeves**: a box around each forearm on the `sleeve` bone, 1.75-2.75 px wider than the arm outward (widest on
+  the small forms, so a chibi's sleeves span the head's width), 1.5 px in front and 2.75 px behind it, from mid upper
+  arm to the wrist, open at the bottom so the hand shows under it, a trimmed cuff, a hanging pouch at the back; puffed
+  upper sleeves 0.75 px around the upper arm;
+- **flared skirts and hakama**: stacked tiers on the `skirt` bone, each wider and deeper than the one above (+1, +2, +3
+  px), open at the bottom, pleats (tone), a trimmed hem; the ledge on top of each tier is painted (it catches light);
+- **coat tails and tabards**: flat panels on `skirt_f/b/l/r` (two split tails at the back), trimmed;
+- **collars**: a V neckline painted with `vee` (an inner layer edged in trim), a standing back collar, lapels, a hood
+  bunched behind the neck, a scarf ring up to the chin with tails on their own bones (one fluttering back);
+- **sash and bow**: the faction sash (tinted, greyscale) as a wide obi with a big bow (knot, two loops, two tails);
+- **armour**: shells 0.35-0.5 px around the body part (breastplate over chest and bust, fauld at the waist, gauntlets,
+  greaves with knee cops), layered pauldrons (two stacked plates, each wider than the arm), trimmed edges;
+- a fur mantle and a two-segment cape for knights.
+
+**Footwear.** A shell 0.3 px around the foot (round shoes in lacquer with a trimmed strap band, sabatons, boots), a
+boot shaft over the shin with a turned-down cuff, socks painted on the shin with a folded cuff at the knee; white tabi
+with dark sandals by painting socks white and the shoe shell dark.
+
+**Shading.** Five-tone OKLCH ramps per colour (unchanged), with clear light and dark steps: top faces +1, the hero's
+right side -1, bottoms -2; every hair strand lit in its top fifth (+1), darker in its lower third (-1) and outlined at
+its tip (-2), with strand lines every 4 texels and short highlight streaks; cloth outlined at free hems, softer where it
+rests on the body; trims in a contrasting slot. Palettes are saturated, with a value contrast between neighbouring
+pieces (hair against the face, the top against the bottom), so each piece reads as its own block from a distance.
+
+### What was built
+
+- **Rig v2** (`herosrc/rig/rig_v2.json`): pivots are expressions over the base dims (heights per form); the head
+  facts (`head.size` 10, `front_z` -5); three new optional bones (`ahoge`, `sleeve_r`, `sleeve_l`; 64 in the full
+  tree, 33 required, budget 72); `sash` under `waist`; the face block with head-local plane origins and the eye rows.
+  Rig v1 and its six bases were removed (no hero content used them; git keeps them).
+- **Bases**: `_template.json` (body cubes as expressions) and six `<form>_<f|m>.json` files with standard dims and
+  `builds.slim` / `builds.large` width overrides (`rig.load_base(base_id, build)` refuses height overrides).
+- **Hero format**: `art.form` (`chibi`, `teen`, `adult`; default adult) with `art.base` and `art.build`;
+  `visual.json` gains `form`, `build`, `height_px` and `head_y` (A1 sizes the hitbox from them).
+- **Texture**: 256x128 (256x256 when needed). Fixed regions: base 0,0,64,80; eyes 64,0,80,30; head front 144,0,20,20;
+  mouth 64,30,64,4; cheeks 64,34,64,2. All eight current models fit 256x128.
+- **Face** (`face.py`): constants checked against the rig by `check_layout` (also run by `herogen check`); new eye
+  templates and drawing (see the style guide); cheeks with hatch lines; the 20x20 head front and its holes.
+- **Parts format**: part `offset` and `density`; cube `density`, `shade`, `skip_if_empty`; paint op `vee`; cutouts
+  `tri_down`, `peak`, `round_top`; silhouette-consistent cutouts (narrow faces follow the broad ones).
+- **Painter**: hair `vertical` shading, strand lines scaled by density, front-to-back strands on top faces, hair as
+  one region; the v1 crown ring is gone (it read as a stripe across the head).
+- **Validator**: the clear-face rule is face-based and head-relative (a cap open at the front may enclose the head).
+- **Parts library** (30 parts): see HEROES_V2.md 13.3, "Built for the rig v2 style set". The 11 G1 starter ids are
+  kept and rewritten for rig v2 (the test rig still uses them).
+- **Style fixtures** (`herosrc/style/*.hero.json`, original characters, one per base, built in memory for previews and
+  tests, never written to `src/main/resources`): Tansy (chibi_f, cat ears and tail, twin tails, wide-sleeved kimono
+  top, flared skirt, sash bow), Tobin (chibi_m large, round ears, fluffy tail, wide sleeves over hakama, tabi), Rowan
+  (teen_m, messy hair, open jacket with hood, striped scarf, boots), Wren (teen_f slim, long layered hair with an
+  ahoge, short jacket, pleated skirt, capelet), Maren (adult_f, high ponytail, breastplate, layered pauldrons,
+  gauntlets, coat tails, fur-mantled cape, greaves, sword), Garrick (adult_m, ponytail, wide-sleeved coat over hakama,
+  sword). They use 54-76 cubes and 42-52 bones. `style_preview` in a fixture holds its preview faction tint and
+  lineup order (not part of the hero format).
+- **Previews**: the renderer takes a camera `pitch`; sheets on a light background; a sky-and-grass lineup with ground
+  shadows; face close-ups. `herogen check --style` and `stats --style` include the fixtures.
+- **Tests** (105, was 87): rig v2 forms, builds and heights; every part on every base passes the geometry checks and
+  stays above ground; head parts are form-independent; every hair style is layered, at 2x, covers the forehead; the
+  fixtures cover all six bases, pass every check and are deterministic; offset, density, `vee`, `skip_if_empty`, ear
+  cutouts and the hair region; the v2 eye structure (lash, iris gradient, pupil, highlight) and the face layout.
+
+### Decisions (each deliberate)
+
+1. **One head size for every form** (10 px). Different head sizes would need different face layouts or non-square
+   texels; the forms differ in the body, which is also how the reference's three sizes read.
+2. **Head parts at double density, body at 1x.** The reference draws face and hair finer than the clothes; hair next
+   to a 2x face at 1x looked coarse. The texture stays 256x128 for every model so far.
+3. **Rig v2 replaces v1** instead of living beside it: nothing shipped uses v1, and two face layouts would double the
+   face code and the A2 renderer's cases.
+4. **Builds as width overrides** of six form/family files (18 bodies) instead of 18 files, so a form's heights cannot
+   drift between builds.
+5. **The hair cap is open at the front** and the clear-face rule checks faces, not bounding boxes.
+6. **No hair crown ring**: per-strand vertical shading gives the reference's lit-top, dark-tip look without a stripe.
+7. **Style fixtures are not heroes**: they live in `herosrc/style/`, are never written to the mod's resources, and do
+   not count against the roster.
+
+### Open items
+
+- **A1 (HeroEntity)**: size the hitbox from `visual.json` `height_px` (and scale); decide a floor for chibi heroes
+  (PROPOSED 1.2 blocks) so the small forms are not much harder to hit; eye height from the face (head_y + 5.5).
+- **A2 (HeroRenderer)**: frame shifts read `visual.json` regions (now 20x10 eyes, 16x2 cheeks, texture 256 wide).
+- **G2**: confirm the v2 face planes and the 2x hair in the in-game screenshot; the preview renderer's lighting is
+  still the block-style stopgap.
+- **G3 (animations)**: author on the adult and check on the chibi: rotations transfer, root offsets are larger
+  relative to a chibi; long hair and wide sleeves on the head and forearm bones swing with them (secondary chains are
+  declared: twin tails, ponytail, sleeves, scarf tails, skirts).
+- **G6a-c**: grow the library on the kit (horns, wings, hats need head-local authoring with `offset`); `lint` as a
+  command (the test `test_every_part_on_every_base` is the miniature); more hair styles (braids, buns, side tail,
+  hime cut), more ears (fox, wolf, rabbit), robes, more armour.
+- **Owner review**: the proportions in the table above are PROPOSED; the lineup and the close-ups are the material to
+  decide on (head share of the adult, chibi height, eye size).

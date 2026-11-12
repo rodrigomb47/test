@@ -100,12 +100,18 @@ def quads(geo, hidden=(), uv_shift=None):
     return out
 
 
-def render(geo, tex, yaw=0.0, scale=8, hidden=(), uv_shift=None, tint=None, pad=2, bounds=None):
+def view_matrix(yaw, pitch=0.0):
+    """Turn the model by `yaw` degrees, then tilt it so a camera `pitch` degrees above the horizon sees its top."""
+    return rotation_matrix(-pitch, 0, 0) @ rotation_matrix(0, yaw, 0)
+
+
+def render(geo, tex, yaw=0.0, scale=8, hidden=(), uv_shift=None, tint=None, pad=2, bounds=None, pitch=0.0):
     """RGBA image of the model seen from the front (camera on -z looking +z) after turning it by `yaw` degrees
-    (negative yaw shows the hero's left side). `tint` maps bone names to an RGB multiplier."""
+    (negative yaw shows the hero's left side) and tilting it by `pitch` (camera above). `tint` maps bone names to an
+    RGB multiplier."""
     tex = np.asarray(tex)
     th, tw = tex.shape[:2]
-    view = rotation_matrix(0, yaw, 0)
+    view = view_matrix(yaw, pitch)
     items = []
     for pts, rect, n, face, bone in quads(geo, hidden, uv_shift):
         items.append(((view @ pts.T).T, rect, n, face, bone))
@@ -172,11 +178,11 @@ def _raster(img, depth, pts, uvs, tex, rect, mult, tw, th):
     img[yy, xx, 3] = 255
 
 
-def model_bounds(geo, yaws, hidden=()):
+def model_bounds(geo, yaws, hidden=(), pitch=0.0):
     """Common screen bounds for several views, so they line up at the same scale."""
     xs, ys = [], []
     for yaw in yaws:
-        view = rotation_matrix(0, yaw, 0)
+        view = view_matrix(yaw, pitch)
         for pts, *_ in quads(geo, hidden):
             vp = (view @ pts.T).T
             xs += [vp[:, 0].min(), vp[:, 0].max()]

@@ -22,7 +22,7 @@ def face_pixels(b, cube_name, face):
 class PaintTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        hero = mannequin("f_standard", parts=[
+        hero = mannequin("adult_f", parts=[
             {"part": {"category": "test", "slots": {"main": "primary"}, "cubes": [
                 {"name": "lock", "bone": "hair_r", "origin": [-6, 20, -1], "size": [1, 6, 1], "slot": "hair",
                  "material": "hair"},
@@ -83,7 +83,7 @@ class ShadingRulesTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        hero = mannequin("f_standard", parts=[
+        hero = mannequin("adult_f", parts=[
             {"part": {"category": "test", "slots": {"main": "primary"}, "cubes": [
                 {"name": "panel", "bone": "cape_1", "origin": [-3, 14, 4], "size": [6, 7, 0.5], "slot": "primary",
                  "material": "cloth"},

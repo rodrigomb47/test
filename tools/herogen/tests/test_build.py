@@ -85,7 +85,8 @@ class BuildTest(unittest.TestCase):
         self.assertEqual(vis["bones"]["tint"], ["fine_sash_knot", "sash"])
         self.assertEqual(vis["bones"]["phase"], {"p2_halo": 2})
         self.assertEqual(len(vis["face"]["moods"]), 12)
-        self.assertEqual(vis["texture"]["width"], 128)
+        self.assertEqual(vis["texture"]["width"], 256)
+        self.assertEqual((vis["form"], vis["height_px"], vis["head_y"]), ("adult", 33, 23))
         self.assertTrue(vis["texture"]["glow_outside_face"], "the halo glows")
         self.assertEqual(vis["phases"][0]["texture"], "p2")
         geo = json.loads(files[p["geo"]])
@@ -97,7 +98,7 @@ class BuildTest(unittest.TestCase):
         p2 = np.array(Image.open(io.BytesIO(files[p["p2"]])))
         diff = np.argwhere((base != p2).any(axis=2))
         self.assertTrue(len(diff) > 0)
-        self.assertTrue(((diff[:, 0] < 24) & (diff[:, 1] >= 64)).all(), "only the eye frames change")
+        self.assertTrue(((diff[:, 0] < 30) & (diff[:, 1] >= 64) & (diff[:, 1] < 144)).all(), "only the eye frames change")
 
     def test_geometry_numbers_are_rounded(self):
         files, _ = build.build_files("test_rig")
@@ -116,8 +117,9 @@ class BuildTest(unittest.TestCase):
 
     def test_hero_source_errors(self):
         from util import HerogenError
-        hero = mannequin("f_slim")
+        hero = mannequin("teen_f")
         for mutate in (lambda h: h["art"].update(build="huge"), lambda h: h["art"].update(base="robot"),
+                       lambda h: h["art"].update(form="giant"),
                        lambda h: h["art"].update(base_layer={"shirt": "primary"})):
             h = json.loads(json.dumps(hero))
             mutate(h)

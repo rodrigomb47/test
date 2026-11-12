@@ -1,0 +1,35 @@
+{
+  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original teen boy in an open jacket with a hood and a long scarf. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "format": 2,
+  "id": "style_rowan",
+  "name": "Rowan",
+  "title": "style test: teen with jacket and scarf",
+  "gender": "male",
+  "archetype": "fixture",
+  "style_preview": {"faction_tint": "#4C7ED6", "order": 2},
+  "art": {
+    "base": "male",
+    "form": "teen",
+    "build": "standard",
+    "palette": {
+      "skin": "#F1D2BA",
+      "hair": "#8A5634",
+      "eyes": "#3FA866",
+      "primary": "#2F4373",
+      "secondary": "#EDE8DE",
+      "accent": "#4A4D58",
+      "trim": "#D2512F",
+      "leather": "#6B4630"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/messy_short", "color": "hair"},
+      {"part": "outfit_top/jacket_open", "color": "primary", "alt": "secondary", "trim": "trim"},
+      {"part": "accessories/scarf", "color": "trim", "alt": "secondary", "params": {"length": 5}},
+      {"part": "accessories/sash_obi"},
+      {"part": "legwear/boots", "color": "accent", "alt": "leather", "trim": "leather", "params": {"boot": 0.8}}
+    ],
+    "face": {"eyes": "almond", "lashes": 1, "brows": "straight_thick", "mouth": "small"}
+  },
+  "animations": {"style": "fists", "blink": "normal"}
+}

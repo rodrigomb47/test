@@ -1,0 +1,32 @@
+{
+  "_comment": "A flared skirt of three stacked, widening tiers (open at the bottom), pleated lower tiers and a trimmed hem; the ledges where a tier steps out are painted. Length is drop x (waist to knee).",
+  "id": "outfit_bottom/flared_skirt",
+  "category": "outfit_bottom",
+  "slots": {"main": "accent", "trim": "trim"},
+  "params": {"drop": {"default": 0.9, "max": 1.4, "min": 0.5}},
+  "occupies": ["skirt"],
+  "paint": [{"cubes": ["hips"], "material": "cloth", "slot": "main"}],
+  "cubes": [
+    {
+      "origin": ["-hips_w / 2 - 0.5", "waist_y + 0.25 - (waist_y + 0.25 - knee_y) * drop * 0.3", "-hips_d / 2 - 0.5"],
+      "size": ["hips_w + 1", "(waist_y + 0.25 - knee_y) * drop * 0.3", "hips_d + 1"],
+      "bone": "skirt",
+      "faces": ["north", "south", "east", "west"]
+    },
+    {
+      "origin": ["-hips_w / 2 - 1", "waist_y + 0.25 - (waist_y + 0.25 - knee_y) * drop * 0.65", "-hips_d / 2 - 0.9"],
+      "size": ["hips_w + 2", "(waist_y + 0.25 - knee_y) * drop * 0.35", "hips_d + 1.8"],
+      "bone": "skirt",
+      "faces": ["north", "south", "east", "west", "up"],
+      "pattern": {"type": "pleats", "width": 1}
+    },
+    {
+      "origin": ["-hips_w / 2 - 1.5", "waist_y + 0.25 - (waist_y + 0.25 - knee_y) * drop", "-hips_d / 2 - 1.3"],
+      "size": ["hips_w + 3", "(waist_y + 0.25 - knee_y) * drop * 0.35", "hips_d + 2.6"],
+      "bone": "skirt",
+      "faces": ["north", "south", "east", "west", "up"],
+      "pattern": {"type": "pleats", "width": 1},
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    }
+  ]
+}

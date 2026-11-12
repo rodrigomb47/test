@@ -1,0 +1,29 @@
+{
+  "_comment": "The faction sash (painted greyscale, tinted by the renderer) as a wide obi with a big bow at the back: a knot, two flat loops and two hanging tails (fine bone).",
+  "id": "accessories/sash_bow",
+  "category": "accessories",
+  "slots": {"main": "sash"},
+  "occupies": ["waist_band"],
+  "bones": [{"name": "fine_sash_tails", "parent": "sash", "pivot": [0, "waist_y", "waist_d / 2 + 0.75"]}],
+  "cubes": [
+    {
+      "origin": ["-waist_w / 2 - 0.4", "waist_y", "-waist_d / 2 - 0.4"],
+      "size": ["waist_w + 0.8", "min(2.5, chest_y - waist_y + 0.25)", "waist_d + 0.8"],
+      "bone": "sash"
+    },
+    {"origin": [-0.75, "waist_y + 0.25", "waist_d / 2 + 0.4"], "size": [1.5, 1.75, 1], "bone": "sash"},
+    {
+      "origin": [-3.5, "waist_y", "waist_d / 2 + 0.55"],
+      "size": [2.75, 2.25, 0.75],
+      "bone": "sash",
+      "mirror": true
+    },
+    {
+      "origin": [-1.5, "waist_y - 3", "waist_d / 2 + 0.75"],
+      "size": [1.25, 3.25, 0.5],
+      "bone": "fine_sash_tails",
+      "cutout": "tip_jagged_1",
+      "mirror": true
+    }
+  ]
+}

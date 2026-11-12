@@ -1,8 +1,13 @@
-"""Rig v1, the six base bodies and the in-memory model (bones and cubes) the other modules fill.
+"""Rig v2, the base bodies (three forms x two families, each in three builds) and the in-memory model (bones and
+cubes) the other modules fill.
 
 Coordinates are Bedrock model pixels as written to the .geo.json: feet at y 0, the hero faces north (-z), and the
 hero's RIGHT side is -x (Bedrock and GeckoLib mirror x when they bake, so -x in the file is the hero's right on screen).
 Cube origins and bone pivots are absolute model coordinates, as in Bedrock geometry.
+
+A base is a form (chibi, teen, adult: the heights) and a family (female, male: the widths), in a build (slim,
+standard, large: width overrides). The head is the same 10 px cube on every form, so the face planes, the face
+texture layout and head-anchored parts (hair, ears, hats: `offset` [0, "head_y", 0]) fit every base.
 """
 import fnmatch
 import os
@@ -14,7 +19,13 @@ from util import HEROSRC, HerogenError, load_json
 
 FACES = ("north", "south", "east", "west", "up", "down")
 SIDE_FACES = ("north", "south", "east", "west")
-BASE_IDS = ("f_slim", "f_standard", "f_large", "m_slim", "m_standard", "m_large")
+FORMS = ("chibi", "teen", "adult")
+FAMILIES = ("female", "male")
+BUILDS = ("slim", "standard", "large")
+BASE_IDS = ("chibi_f", "chibi_m", "teen_f", "teen_m", "adult_f", "adult_m")
+RIG_FILE = "rig_v2.json"
+HEIGHT_KEYS = ("ankle_y", "knee_y", "hip_y", "waist_y", "chest_y", "chest_top", "head_y", "arm_top", "shoulder_y",
+               "elbow_y", "wrist_y", "hand_bottom", "hand_y", "toe")
 BASE_SLOTS = ("skin", "base_top", "base_bottom", "shoes")
 DEFAULT_BASE_LAYER = {"skin": "skin", "base_top": "secondary", "base_bottom": "accent", "shoes": "leather"}
 
@@ -22,7 +33,7 @@ _RIG_CACHE = {}
 
 
 def load_rig(path=None):
-    path = path or os.path.join(HEROSRC, "rig", "rig_v1.json")
+    path = path or os.path.join(HEROSRC, "rig", RIG_FILE)
     if path not in _RIG_CACHE:
         rig = load_json(path)
         names = [b["name"] for b in rig["bones"]]
@@ -40,19 +51,40 @@ def required_bones(rig=None):
     return [b["name"] for b in rig["bones"] if b.get("required")]
 
 
-def load_base(base_id):
+def base_id_for(form, family):
+    if form not in FORMS:
+        raise HerogenError("form %r is unknown (%s)" % (form, ", ".join(FORMS)))
+    if family not in FAMILIES:
+        raise HerogenError("family %r is unknown (%s)" % (family, ", ".join(FAMILIES)))
+    return "%s_%s" % (form, family[0])
+
+
+def load_base(base_id, build="standard"):
+    """A base's file with the build's width overrides applied to its dims."""
     if base_id not in BASE_IDS:
         raise HerogenError("base %r is unknown (bases: %s)" % (base_id, ", ".join(BASE_IDS)))
+    if build not in BUILDS:
+        raise HerogenError("build %r is unknown (%s)" % (build, ", ".join(BUILDS)))
     base = load_json(os.path.join(HEROSRC, "bases", base_id + ".json"))
     template = load_json(os.path.join(HEROSRC, "bases", base.get("template", "_template") + ".json"))
     base["cubes"] = template["cubes"] + base.get("extra_cubes", [])
+    over = (base.get("builds") or {}).get(build, {}) if build != "standard" else {}
+    for k in over:
+        if k in HEIGHT_KEYS:
+            raise HerogenError("base %s: build %s may change widths only, not %s" % (base_id, build, k))
+    base["dims"] = dict(base["dims"], **over)
+    base["build"] = build
     return base
 
 
 def base_env(base, rig=None):
+    """Expression names of a base: its dims plus the head facts (head_s, head_top, height)."""
     rig = rig or load_rig()
-    env = dict(rig["heights"])
-    env.update({k: float(v) for k, v in base["dims"].items()})
+    env = {k: float(v) for k, v in base["dims"].items()}
+    size = float(rig["head"]["size"])
+    env["head_s"] = size
+    env["head_top"] = env["head_y"] + size
+    env["height"] = env["head_top"]
     return env
 
 
@@ -102,6 +134,7 @@ class Cube:
     fixed: dict = field(default_factory=dict)     # face -> uv_template region name
     density: int = 1
     pattern: Optional[dict] = None
+    shade: Optional[str] = None                   # extra light ramp: "vertical" (top lit, tip dark)
     cutout: Optional[str] = None
     taper: Optional[float] = None
     trim: Optional[dict] = None
@@ -126,11 +159,13 @@ class Cube:
 class Model:
     """Bones and cubes of one hero (or one bare base), before UV packing and painting."""
 
-    def __init__(self, hero_id, base_id, rig=None):
+    def __init__(self, hero_id, base_id, build="standard", rig=None):
         self.hero_id = hero_id
         self.rig = rig or load_rig()
-        self.base = load_base(base_id)
+        self.base = load_base(base_id, build)
         self.base_id = base_id
+        self.build = build
+        self.form = self.base["form"]
         self.family = self.base["family"]
         self.env = base_env(self.base, self.rig)
         self.catalogue = {}            # every rig bone, pivots resolved
@@ -148,7 +183,7 @@ class Model:
         self.occupied = {}
         self.parts_used = []
         self.notes = []
-        self.tex_w, self.tex_h = 128, 128
+        self.tex_w, self.tex_h = self.rig["budgets"]["textures"][0]
         for name in self.rig_order:
             if self.catalogue[name].required:
                 self.use_bone(name)
@@ -236,9 +271,11 @@ class Model:
                 self.add_cube(Cube(name=name, bone=bone, origin=org, size=size, slot=spec["slot"],
                                    material=spec["material"], part="base", fixed=dict(spec.get("fixed", {}))))
         face = self.rig["face"]
+        hy = self.env["head_y"]
         for plane in ("eyes", "mouth", "cheeks"):
             p = face["planes"][plane]
-            self.add_cube(Cube(name=plane, bone=plane, origin=tuple(p["origin"]), size=tuple(p["size"]),
+            o = p["origin"]                      # head-local: y 0 is the head's bottom
+            self.add_cube(Cube(name=plane, bone=plane, origin=(o[0], o[1] + hy, o[2]), size=tuple(p["size"]),
                                slot="skin", material="face", part="base", faces=("north",),
                                fixed={"north": plane}, density=face["density"]))
 

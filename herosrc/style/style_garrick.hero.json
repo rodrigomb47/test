@@ -1,0 +1,37 @@
+{
+  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original tall man in a wide-sleeved coat over hakama, with a high ponytail, tabi and sandals, and a sword at the hip. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "format": 2,
+  "id": "style_garrick",
+  "name": "Garrick",
+  "title": "style test: tall swordsman",
+  "gender": "male",
+  "archetype": "fixture",
+  "style_preview": {"faction_tint": "#3A8FA8", "order": 4},
+  "art": {
+    "base": "male",
+    "form": "adult",
+    "build": "standard",
+    "palette": {
+      "skin": "#E9C4A6",
+      "hair": "#26282E",
+      "eyes": "#B23A3A",
+      "primary": "#2E5A5E",
+      "secondary": "#EDE6DA",
+      "accent": "#5B5F6B",
+      "trim": "#C9B27A",
+      "metal": "#C4CBD4",
+      "leather": "#3A2C24"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/high_ponytail_long", "color": "hair", "trim": "secondary", "params": {"length": 9, "locks": 3}},
+      {"part": "outfit_top/kimono_wide", "color": "primary", "alt": "secondary", "trim": "trim"},
+      {"part": "outfit_bottom/hakama", "color": "accent", "trim": "trim"},
+      {"part": "accessories/sash_obi"},
+      {"part": "legwear/socks_shoes", "color": "secondary", "alt": "leather", "trim": "secondary"}
+    ],
+    "weapon": {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip", "params": {"blade": 11}},
+    "face": {"eyes": "sharp", "lashes": 1, "brows": "straight_thick", "mouth": "stern"}
+  },
+  "animations": {"style": "katana", "blink": "calm"}
+}

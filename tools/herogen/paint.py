@@ -12,7 +12,11 @@ that point; the tone (-2..+2 on the slot's ramp) is the sum of
 - an outline: -2 on the last row of a clothing or hair region (hems, sleeve ends, bangs) and on the lowest texel a
   cutout leaves in a column (jagged tips), never on skin;
 - material detail (cloth folds, hair strands and a crown ring, metal specular band, leather stitches, fur noise...);
+- vertical shading (`shade: vertical`, the default for hair): the top fifth of a side face one tone lighter, so every
+  strand or lock reads lit at the root and dark at the tip, as pixel-art hair is drawn;
 - pattern tone and the op's or cube's own tone.
+Hair detail scales with the cube's density (strand lines every 3 texels at 1x, every 4 at 2x, running down the sides
+and front to back over the top). Rig v2 hair has no crown ring: light comes from the vertical shading of each strand.
 Patterns use whole-texel 3D coordinates, so stripes and checks line up across neighbouring faces. Cutouts set alpha 0.
 A cutout is authored on the side faces, and the other faces follow it so the solid stays consistent: the top and
 bottom faces keep only what the side faces keep on their edge rows (a tapered or jagged tip has no flat full-size cap),
@@ -28,7 +32,8 @@ from util import hash_ints, hash_unit, seed_of
 LIGHT = {"up": 1, "north": 0, "south": 0, "west": 0, "east": -1, "down": -2}
 BANDED = {"cloth", "hair", "leather", "fur", "scale", "wood"}
 OUTLINED = {"cloth", "hair", "leather", "fur"}
-RESTING = {"cloth", "leather"}           # materials whose edges against the body get a soft shadow instead
+RESTING = {"cloth", "leather"}
+SILHOUETTE_CUTS = {"tri_up", "tri_down", "peak", "round_top", "round_bottom"}   # cut through the front and back           # materials whose edges against the body get a soft shadow instead
 EPS = 1e-6
 
 
@@ -58,6 +63,7 @@ class Painter:
         self.op_cubes = [set(c.name for c in model.cubes_matching(o["cubes"])) for o in self.ops]
         self.solid = [c for c in model.cubes if c.flat_axis is None and c.rotation is None]
         self._ao = {c.name: self._ao_top(c) for c in model.cubes}
+        self.head_y = model.env["head_y"]
 
     # -------------------------------------------------------------- geometry helpers
 
@@ -104,7 +110,10 @@ class Painter:
     def resolve(self, cube, face, p, row=None, rows=None):
         """(slot, material, pattern, tone, is_trim, group) of the texel at model point p on a face of cube."""
         slot, mat, pattern, tone = cube.slot, cube.material, cube.pattern, cube.tone
-        group = ("cube", cube.name if cube.part != "base" else cube.slot)
+        # one region per cube, except hair: touching hair cubes of one colour are one mass (a cap, its dome and the
+        # strands over it are not outlined against each other, only where the hair ends)
+        group = ("cube", cube.name if cube.part != "base" else cube.slot) if cube.material != "hair" \
+            else ("hair", cube.slot)
         is_trim = False
         if cube.trim and face in SIDE_FACES and row is not None:
             w, edge = cube.trim["width"], cube.trim["edge"]
@@ -121,6 +130,9 @@ class Painter:
             if op["side"] == "r" and x >= 0 or op["side"] == "l" and x <= 0:
                 continue
             if not (_in(op["y"], y) and _in(op["x"], x) and _in(op["z"], z) and _in(op["abs_x"], abs(x))):
+                continue
+            vee = op.get("vee")
+            if vee is not None and not (y >= vee[0] - EPS and abs(x) <= (y - vee[0]) * vee[1] + EPS):
                 continue
             slot, mat, pattern, tone, is_trim = op["slot"], op["material"], op["pattern"], op["tone"], False
             group = ("op",) + tuple(op["order"])
@@ -149,13 +161,17 @@ class Painter:
                     return -1
             return 0
         if mat == "hair":
+            d = cube.density
+            period = 3 if d == 1 else 4
             if side:
-                if 31.0 <= p[1] < 31.75:
-                    return 2 if i % 4 == 1 else 1
-                if j >= 1 and (i + hash_ints(s, k, 3)) % 3 == 0:
+                if j >= d and (i + hash_ints(s, k, 3)) % period == 0:
                     return -1
+                if d == 2 and j < H // 2 and (i + hash_ints(s, k, 4)) % 5 == 2:
+                    return 1
                 return 0
-            return -1 if hash_unit(s, k, i, j) < 0.25 else 0
+            if face == "up":            # strands run front to back over the top of the head
+                return -1 if (i + hash_ints(s, k, 3)) % period == 0 else 0
+            return -1 if hash_unit(s, k, i // d, j // d) < 0.25 else 0
         if mat == "metal":
             if side:
                 if W >= 3 and i == W // 3:
@@ -232,8 +248,18 @@ class Painter:
             return True
         if cut == "tri_up":
             return abs(i + 0.5 - W / 2.0) <= (j + 1) * (W / 2.0) / H + EPS
+        if cut == "tri_down":
+            return abs(i + 0.5 - W / 2.0) <= (H - j) * (W / 2.0) / H + EPS
         if cut == "round_bottom":
             return not (j == H - 1 and W >= 3 and i in (0, W - 1))
+        if cut == "round_top":
+            return not (j == 0 and W >= 3 and i in (0, W - 1))
+        if cut == "peak":
+            # an animal ear: full width in the lower third, a triangle above it with its tip on the top row
+            base = H - max(1, H // 3)
+            if j >= base:
+                return True
+            return abs(i + 0.5 - W / 2.0) <= (j + 1) * (W / 2.0) / base + EPS
         if cut == "fur_tips":
             return not (j == H - 1 and H >= 2 and i % 2 == 1)
         if cut == "torn":
@@ -246,23 +272,37 @@ class Painter:
 
     @classmethod
     def keep(cls, cube, face, i, j, W, H):
-        """Alpha of a texel: the side faces' own cutout, followed by the other faces so the solid stays consistent
-        (caps keep what the side faces keep on their edge row; a thin cube's narrow faces follow the broad face's edge
-        column)."""
+        """Alpha of a texel: the cube's cutout, carried to every face so the solid stays consistent.
+
+        A taper narrows every side face on its own (a strand is pointed in every view); caps keep what the side faces
+        keep on their edge rows. A cutout without a taper is a silhouette cut through the cube's broad pair of faces
+        (north/south for the shape cuts tri_up, tri_down, peak, round_top and round_bottom and for cubes wider than
+        deep; east/west for cubes deeper than wide): the narrow faces and the caps follow the broad face's edge
+        column and edge row, so an ear or a jagged side cover has no full-height strip on its narrow sides."""
         if cube.taper is None and not cube.cutout:
             return True
         if cube.flat_axis is not None:
             return cls.own_keep(cube, face, i, j, W, H)
         d = cube.density
         wx, hy, dz = texels(cube.size[0], d), texels(cube.size[1], d), texels(cube.size[2], d)
-        if face in ("up", "down"):
-            r = hy - 1 if face == "down" else 0
-            return cls.own_keep(cube, "north", i, r, wx, hy) and cls.own_keep(cube, "west", dz - 1 - j, r, dz, hy)
-        if face in ("east", "west") and dz == 1:
-            return cls.own_keep(cube, "north", 0 if face == "east" else wx - 1, j, wx, hy)
-        if face in ("north", "south") and wx == 1 and dz > 1:
+        if cube.taper is not None:
+            if face in ("up", "down"):
+                r = hy - 1 if face == "down" else 0
+                return cls.own_keep(cube, "north", i, r, wx, hy) and cls.own_keep(cube, "west", dz - 1 - j, r, dz,
+                                                                                    hy)
+            return cls.own_keep(cube, face, i, j, W, H)
+        r = hy - 1 if face == "down" else 0
+        if cube.cutout in SILHOUETTE_CUTS or wx >= dz:
+            if face in ("north", "south"):
+                return cls.own_keep(cube, face, i, j, W, H)
+            if face in ("east", "west"):
+                return cls.own_keep(cube, "north", 0 if face == "east" else wx - 1, j, wx, hy)
+            return cls.own_keep(cube, "north", i, r, wx, hy)
+        if face in ("east", "west"):
+            return cls.own_keep(cube, face, i, j, W, H)
+        if face in ("north", "south"):
             return cls.own_keep(cube, "west", 0 if face == "north" else dz - 1, j, dz, hy)
-        return cls.own_keep(cube, face, i, j, W, H)
+        return cls.own_keep(cube, "west", dz - 1 - j, r, dz, hy)
 
     # -------------------------------------------------------------- paint
 
@@ -303,6 +343,9 @@ class Painter:
                             or (H >= 3 and j + 1 < H and not kept[j + 1][i])):
                         # a cloth edge lying against the body (the bust, a collar) is a soft shadow, not a hem line
                         t -= 1 if mat in RESTING and self._rests_on_body(cube, face, p) else 2
+                if side and H >= 4 and (cube.shade == "vertical" or (cube.shade is None and mat == "hair")) \
+                        and (j + 0.5) / H < 0.2:
+                    t += 1
                 t += self.material_tone(cube, mat, face, i, j, W, H, p)
                 t = max(-2, min(2, t))
                 r, g, b = self.ramps[slot][t + 2]

@@ -1,38 +1,71 @@
 {
-  "_comment": "Starter part (G1 test rig). Crown cap, jagged bangs over the forehead whose tips stop at y 31 (the brows on row 0 of the eyes plane stay visible), side locks outside |x| 3.5, back hair and a two-segment ponytail with a fine tip.",
+  "_comment": "A long high ponytail on a three-bone chain (tail_hair_1, tail_hair_2, fine_tail_hair_tip) tied with a band, side-swept fringe strands, long side locks. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), density 2. Built from the layered hair kit of the style guide: a cap open at the front, a crown step, a fringe block over the forehead, strand cubes over it whose tips stop at the lash line (y 6.5), side cover, back cover and the style's own pieces.",
   "id": "hair/high_ponytail_long",
   "category": "hair",
   "slots": {"main": "hair", "trim": "accent"},
-  "params": {"length": {"min": 6, "max": 14, "default": 10}, "volume": {"min": 0, "max": 2, "default": 1}},
+  "params": {"length": {"default": 12, "max": 16, "min": 6}, "locks": {"default": 6, "max": 10, "min": 2}},
   "occupies": ["hair_top", "hair_back"],
-  "conflicts": ["hair/twin_tails_*"],
+  "conflicts": ["hair/twin_tails*"],
+  "offset": [0, "head_y", 0],
+  "density": 2,
   "bones": [
-    {"name": "tail_hair_1", "parent": "head", "pivot": [0, 31, 4.5]},
-    {"name": "tail_hair_2", "parent": "tail_hair_1", "pivot": [0, "31 - length * 0.5", 6]},
-    {"name": "fine_tail_hair_tip", "parent": "tail_hair_2", "pivot": [0, "31 - length", 6]}
-  ],
-  "paint": [
-    {"cubes": ["head"], "faces": ["up", "south", "east", "west"], "slot": "main", "material": "hair"},
-    {"cubes": ["head"], "faces": ["east", "west"], "y": [24, 27.5], "z": [-4, -1], "slot": "skin", "material": "skin"}
+    {"name": "tail_hair_1", "parent": "head", "pivot": [0, 9.25, 5.75]},
+    {"name": "tail_hair_2", "parent": "tail_hair_1", "pivot": [0, 3.25, 6.5]},
+    {
+      "name": "fine_tail_hair_tip",
+      "parent": "tail_hair_2",
+      "pivot": [0, "max(3.25 - length * 0.6, 3.5 - head_y)", 6.5]
+    }
   ],
   "cubes": [
-    {"bone": "hair_top", "origin": [-4.25, 31.5, -4.25], "size": [8.5, "0.75 + volume * 0.5", 8.5],
-     "slot": "main", "material": "hair"},
-    {"bone": "hair_back", "origin": [-4.25, 25, 4.05], "size": [8.5, 7, 0.75], "slot": "main", "material": "hair",
-     "cutout": "jagged_4"},
-    {"bone": "bangs", "origin": [-4.25, 31, -4.6], "size": [8.5, 1.75, 0.6], "slot": "main", "material": "hair",
-     "cutout": "bangs_jagged_5"},
-    {"bone": "hair_r", "origin": [-4.6, 25.5, -4.6], "size": [1, 6, 1.2], "slot": "main", "material": "hair",
-     "mirror": true, "cutout": "tip_jagged_1"},
-    {"bone": "hair_r", "origin": [-4.55, 26.5, -3.4], "size": [0.5, 5.25, 7.45], "slot": "main", "material": "hair",
-     "mirror": true, "cutout": "jagged_3"},
-    {"bone": "tail_hair_1", "origin": [-1.25, "31 - length * 0.5", 4.8], "size": [2.5, "length * 0.5 + 0.5", 2.5],
-     "slot": "main", "material": "hair"},
-    {"bone": "tail_hair_1", "origin": [-1.5, 30.25, 4.55], "size": [3, 1, 3], "slot": "trim", "material": "cloth"},
-    {"bone": "tail_hair_2", "origin": [-1, "31 - length", 5.05], "size": [2, "length * 0.5", 2], "slot": "main",
-     "material": "hair", "taper": 0.7},
-    {"bone": "fine_tail_hair_tip", "origin": [-0.75, "29.5 - length", 5.3], "size": [1.5, 1.5, 1.5], "slot": "main",
-     "material": "hair", "cutout": "tip_jagged_2"}
+    {
+      "origin": [-5.5, 4, -5.5],
+      "size": [11, 6.75, 11],
+      "bone": "hair_top",
+      "faces": ["up", "south", "east", "west"]
+    },
+    {"origin": [-5, 10.75, -5], "size": [10, 0.75, 10], "bone": "hair_top"},
+    {"origin": [-4, 11.5, -4], "size": [8, 0.5, 8], "bone": "hair_top"},
+    {"origin": [-3, 11.5, -5.75], "size": [3, 0.5, 4], "bone": "hair_top"},
+    {"origin": [0.5, 11.5, -5.5], "size": [3, 0.75, 3.5], "bone": "hair_top"},
+    {"origin": [-5.5, 8.5, -6], "size": [11, 2.75, 1], "bone": "bangs"},
+    {"origin": [-5.25, 6.5, -6.5], "size": [2.5, 4.5, 0.75], "bone": "bangs", "taper": 0.3},
+    {"origin": [-2.75, 7, -6.65], "size": [2.5, 4, 0.9], "bone": "bangs", "taper": 0.3},
+    {"origin": [-0.25, 7.5, -6.5], "size": [2.25, 3.5, 0.75], "bone": "bangs", "taper": 0.3},
+    {"origin": [2, 8, -6.65], "size": [2, 3, 0.9], "bone": "bangs", "taper": 0.3},
+    {"origin": [3.75, 8.25, -6.5], "size": [1.75, 2.75, 0.75], "bone": "bangs", "taper": 0.3},
+    {
+      "origin": [-6.6, "max(-locks, 3 - head_y)", -5.4],
+      "size": [1.75, "10 - max(-locks, 3 - head_y)", 1.75],
+      "bone": "hair_r",
+      "cutout": "tip_jagged_1",
+      "mirror": true,
+      "taper": 0.5
+    },
+    {"origin": [-5.9, 2.25, -5.75], "size": [1.1, 7.75, 0.75], "bone": "hair_r", "mirror": true, "taper": 0.35},
+    {"origin": [-6.1, 2, -4.75], "size": [1, 8.5, 9.75], "bone": "hair_r", "cutout": "jagged_5", "mirror": true},
+    {"origin": [-6, 1.5, 5], "size": [12, 9.5, 1.25], "bone": "hair_back", "cutout": "jagged_6"},
+    {
+      "origin": [-1.5, 8.25, 5.5],
+      "size": [3, 2, 2],
+      "bone": "tail_hair_1",
+      "material": "cloth",
+      "shade": "flat",
+      "slot": "trim"
+    },
+    {"origin": [-2, 3.25, 6], "size": [4, 6, 3], "bone": "tail_hair_1"},
+    {
+      "origin": [-1.75, "max(3.25 - length * 0.6, 3.5 - head_y)", 6.25],
+      "size": [3.5, "3.5 - max(3.25 - length * 0.6, 3.5 - head_y)", 2.75],
+      "bone": "tail_hair_2",
+      "taper": 0.75
+    },
+    {
+      "origin": [-1.25, "max(3.25 - length * 0.6, 3.5 - head_y) - 2", 6.5],
+      "size": [2.5, 2.25, 2.25],
+      "bone": "fine_tail_hair_tip",
+      "cutout": "tip_jagged_2"
+    }
   ],
-  "secondary": {"chain": ["tail_hair_1", "tail_hair_2", "fine_tail_hair_tip"], "stiffness": 0.35, "damping": 0.6}
+  "secondary": {"chain": ["tail_hair_1", "tail_hair_2", "fine_tail_hair_tip"], "damping": 0.6, "stiffness": 0.35}
 }

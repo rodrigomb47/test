@@ -4,8 +4,10 @@ Every cube face gets its own rectangle of WHOLE texels: round(face size x densit
 (a 2.5 px arm face uses 3 texels). A cube's faces are laid out as a vanilla skin net (top and bottom above; right
 side, front, left side, back below), so seams stay adjacent and the texture reads like a Minecraft skin in an editor.
 Islands are packed largest first (height, then width) at the first free spot in row-major order with a 1-texel gutter
-around everything already placed. Base body cubes pack into the base region (0, 0, 64, 64); part cubes into the rest
-of the texture outside the fixed template regions; the texture grows from 128x128 to 256x128 when parts need it.
+around everything already placed. Base body cubes pack into the base region (rig v2: 0, 0, 64, 80); part cubes into the rest
+of the texture outside the fixed template regions; the texture is the first size of the rig's budget list the parts
+fit (rig v2: 256x128, then 256x256). A cube's density (texels per pixel) is 1 for the body and 2 for the face planes,
+the head front and head-anchored parts such as hair and ears (the head is drawn at double density).
 
 Net orientation of each face rectangle (u to the right, v down), which is vanilla box UV:
   north (front): left edge = hero's right (-x), top = up      south (back): left edge = hero's left (+x)
@@ -156,21 +158,22 @@ def pack(model):
     part_items = [it for it in items if it[0].part != "base"]
     by_name = {c.name: c for c, _ in items}
 
-    placed = _pack_items(lambda: Packer(128, 128, area=base_area), base_items)
+    sizes = [tuple(t) for t in model.rig["budgets"]["textures"]]
+    placed = _pack_items(lambda: Packer(sizes[0][0], sizes[0][1], area=base_area), base_items)
     if placed is None:
         raise HerogenError("base %s: the body cubes do not fit the base region %s" % (model.base_id, base_area))
     for name, uv in placed.items():
         by_name[name].uv.update(uv)
 
-    for width in (128, 256):
+    for width, height in sizes:
         reserved = [base_area] + list(fixed_rects.values())
-        placed = _pack_items(lambda: Packer(width, 128, reserved=reserved), part_items)
+        placed = _pack_items(lambda: Packer(width, height, reserved=reserved), part_items)
         if placed is not None:
             for name, uv in placed.items():
                 by_name[name].uv.update(uv)
-            model.tex_w, model.tex_h = width, 128
+            model.tex_w, model.tex_h = width, height
             return
-    raise HerogenError("%s: the parts do not fit a 256x128 texture" % model.hero_id)
+    raise HerogenError("%s: the parts do not fit a %dx%d texture" % ((model.hero_id,) + sizes[-1]))
 
 
 # ------------------------------------------------------------------ file convention

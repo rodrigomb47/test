@@ -1,15 +1,32 @@
 {
-  "_comment": "Starter part: pointed cat ears with a pink inner ear.",
+  "_comment": "Big cat ears built as volume: a thick outer ear (tri_up) tilted outward and a thin inner-ear plate in the alt colour in front of it. Head-local (offset head_y), density 2.",
   "id": "ears/cat",
   "category": "ears",
-  "slots": {"main": "hair", "alt": "blush"},
+  "slots": {"alt": "blush", "main": "hair"},
   "occupies": ["ears"],
+  "offset": [0, "head_y", 0],
+  "density": 2,
   "cubes": [
-    {"name": "ears/cat#ear_r", "bone": "ear_r", "origin": [-4, 32.25, -1.25], "size": [2.5, 2.75, 1],
-     "slot": "main", "material": "hair", "cutout": "tri_up", "mirror": true}
-  ],
-  "paint": [
-    {"cubes": ["ears/cat#ear_r*"], "faces": ["north"], "abs_x": [2.3, 3.2], "y": [32.25, 34.0], "slot": "alt",
-     "material": "skin"}
+    {
+      "pivot": [-4.25, 10.5, -1],
+      "rotation": [0, 0, -10],
+      "origin": [-6.25, 10.5, -1.75],
+      "size": [4, 5, 1.5],
+      "bone": "ear_r",
+      "cutout": "peak",
+      "material": "hair",
+      "mirror": true
+    },
+    {
+      "pivot": [-4.25, 10.5, -1],
+      "rotation": [0, 0, -10],
+      "origin": [-5.75, 10.75, -2],
+      "size": [3, 3.75, 0.25],
+      "bone": "ear_r",
+      "cutout": "peak",
+      "material": "fur",
+      "mirror": true,
+      "slot": "alt"
+    }
   ]
 }

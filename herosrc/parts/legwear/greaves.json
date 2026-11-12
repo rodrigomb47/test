@@ -1,0 +1,35 @@
+{
+  "_comment": "Greaves with knee cops and sabatons over the shins and feet; the thighs in alt cloth.",
+  "id": "legwear/greaves",
+  "category": "legwear",
+  "slots": {"alt": "accent", "main": "metal", "trim": "trim"},
+  "occupies": ["legs", "feet"],
+  "paint": [
+    {"cubes": ["hips", "thigh_*"], "material": "cloth", "slot": "alt"},
+    {"cubes": ["shin_*", "foot_*"], "material": "metal", "slot": "main"}
+  ],
+  "cubes": [
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.35", "ankle_y - 0.15", "-leg_d / 2 - 0.35"],
+      "size": ["leg_w + 0.7", "knee_y - ankle_y", "leg_d + 0.7"],
+      "bone": "shin_r",
+      "material": "metal",
+      "mirror": true
+    },
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.5", "knee_y - 0.75", "-leg_d / 2 - 0.65"],
+      "size": ["leg_w + 1", 1.5, 1.25],
+      "bone": "shin_r",
+      "material": "metal",
+      "mirror": true,
+      "slot": "trim"
+    },
+    {
+      "origin": ["-hip_x - leg_w / 2 - 0.3", 0, "-leg_d / 2 - toe - 0.4"],
+      "size": ["leg_w + 0.6", "ankle_y", "leg_d + toe + 0.7"],
+      "bone": "foot_r",
+      "material": "metal",
+      "mirror": true
+    }
+  ]
+}

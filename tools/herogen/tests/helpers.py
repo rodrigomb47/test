@@ -8,8 +8,10 @@ if HEROGEN not in sys.path:
     sys.path.insert(0, HEROGEN)
 
 
-def mannequin(base_id, parts=None, **art):
-    family = "female" if base_id.startswith("f_") else "male"
-    a = {"base": family, "build": base_id.split("_", 1)[1], "parts": parts or []}
+def mannequin(base_id, parts=None, build="standard", **art):
+    """A bare hero on a rig v2 base id (form_f / form_m)."""
+    form, fam = base_id.split("_")
+    family = "female" if fam == "f" else "male"
+    a = {"base": family, "form": form, "build": build, "parts": parts or []}
     a.update(art)
     return {"format": 2, "id": "t_" + base_id, "gender": family, "art": a}

@@ -19,7 +19,7 @@ BOX = {"origin": [-1, 10, -1], "size": [1, 1, 1]}
 
 class PartsTest(unittest.TestCase):
     def test_mirror_and_bones(self):
-        m = Model("t", "f_standard")
+        m = Model("t", "adult_f")
         apply_part(m, inline(bones=[{"name": "lock_r", "parent": "head", "pivot": [-3, 30, 0]}],
                              cubes=[dict(BOX, bone="lock_r", mirror=True), dict(BOX, bone="ear_r", mirror=True)]), 0)
         r, l = m.cube("inline/0#0"), m.cube("inline/0#0:l")
@@ -30,7 +30,7 @@ class PartsTest(unittest.TestCase):
         self.assertIn("ear_r", m.bones)
 
     def test_phase_and_fine_bones(self):
-        m = Model("t", "f_standard")
+        m = Model("t", "adult_f")
         apply_part(m, dict(inline(bones=[{"name": "tail_b_1", "parent": "body", "pivot": [0, 14, 2]}],
                                   cubes=[dict(BOX, bone="tail_b_1"), dict(BOX, bone="halo")]), phase=2), 0)
         self.assertIn("p2_tail_b_1", m.bones, "a phase part's own bones are renamed")
@@ -43,16 +43,16 @@ class PartsTest(unittest.TestCase):
         self.assertIn("fine_hat", m.fine_bones())
 
     def test_params_and_expressions(self):
-        m = Model("t", "m_standard")
+        m = Model("t", "adult_m")
         part = inline(cubes=[{"bone": "chest", "origin": ["-chest_w / 2", 18, 0], "size": ["length", 1, 1]}],
                       params={"length": {"min": 1, "max": 5, "default": 2}})
         apply_part(m, dict(part, params={"length": 4}), 0)
         c = m.cube("inline/0#0")
-        self.assertEqual(c.origin[0], -4.0)
+        self.assertEqual(c.origin[0], -4.25)
         self.assertEqual(c.size[0], 4.0)
         for bad in ({"length": 9}, {"width": 1}):
             with self.assertRaises(HerogenError):
-                apply_part(Model("t", "m_standard"), dict(part, params=bad), 0)
+                apply_part(Model("t", "adult_m"), dict(part, params=bad), 0)
 
     def test_errors(self):
         cases = [
@@ -68,16 +68,16 @@ class PartsTest(unittest.TestCase):
         ]
         for i, entry in enumerate(cases):
             with self.subTest(i=i), self.assertRaises(HerogenError):
-                apply_part(Model("t", "f_slim"), entry, 0)
+                apply_part(Model("t", "adult_f", "slim"), entry, 0)
 
     def test_tags(self):
-        m = Model("t", "f_slim")
+        m = Model("t", "adult_f", "slim")
         apply_part(m, {"part": "hair/high_ponytail_long"}, 0)
         with self.assertRaises(HerogenError):
             apply_part(m, {"part": "hair/short_crop"}, 1)          # both occupy hair_top
 
     def test_weapon_in_hand_and_sheathed(self):
-        m = Model("t", "f_standard")
+        m = Model("t", "adult_f")
         apply_weapon(m, {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip"})
         hand = [c for c in m.cubes if c.bone == "weapon_r"]
         sheath = [c for c in m.cubes if c.bone == "weapon_back"]
@@ -92,14 +92,14 @@ class PartsTest(unittest.TestCase):
             self.assertEqual(c.rotation, (55.0, 0.0, 0.0))
             self.assertGreater(c.pivot[0], 0, "a right-hand sword hangs on the left hip (+x)")
         self.assertEqual(m.bones["weapon_back"].parent, "body", "a hip scabbard follows the hips, not the chest")
-        m2 = Model("t", "f_standard")
+        m2 = Model("t", "adult_f")
         apply_weapon(m2, {"prop": "weapons/sword_plain", "hand": "pair", "sheathed": "back"})
         self.assertEqual(m2.bones["weapon_back"].parent, "back", "a back carry follows the chest")
         self.assertEqual(len([c for c in m2.cubes if c.bone == "weapon_l"]), 4)
         self.assertEqual(len([c for c in m2.cubes if c.bone == "weapon_back"]), 8)
         with self.assertRaises(HerogenError):
-            apply_weapon(Model("t", "f_slim"), {"prop": "hair/short_crop"})
-        m3 = Model("t", "f_slim")
+            apply_weapon(Model("t", "adult_f", "slim"), {"prop": "hair/short_crop"})
+        m3 = Model("t", "adult_f", "slim")
         apply_part(m3, inline(cubes=[dict(BOX, bone="weapon_back")]), 0)
         with self.assertRaises(HerogenError):
             apply_weapon(m3, {"prop": "weapons/sword_plain", "sheathed": "hip"})

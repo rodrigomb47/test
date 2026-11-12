@@ -4,13 +4,20 @@ body. A hero's art.parts entry picks a part and maps its logical colour slots to
 Part file fields:
   id, category, params {name: {min, max, default}}, slots {main|trim|alt|detail: default palette slot},
   occupies [...], conflicts [glob...], bones [{name, parent, pivot}], cubes [...], paint [...],
-  locators {bone: [x, y, z]}, secondary {chain: [...], stiffness, damping}
+  locators {bone: [x, y, z]}, secondary {chain: [...], stiffness, damping},
+  offset [x, y, z] (added to every cube origin and pivot, bone pivot, locator and paint range: hair, ears and hats
+  are authored head-local with offset [0, "head_y", 0], so y 0 is the chin, the face is at z -5 and the head spans
+  x and z -5..5, y 0..10 on every form), density (texels per pixel for the part's cubes, default 1; 2 for parts on
+  the head, which is drawn at double density).
 Cube fields: bone, origin, size (numbers or expressions over params and base dims), slot, material, pattern, cutout,
   taper, trim {slot, edge, width}, mirror (build the left copy from the right), fine (own fine_ bone for level of
-  detail), inflate, rotation + pivot (cube rotation, degrees), faces (subset), glow, tone, name.
+  detail), inflate, rotation + pivot (cube rotation, degrees), faces (subset), glow, tone, name, density, shade
+  ("vertical": lit top, darker tip, the default for hair; "flat": none), skip_if_empty (leave the cube out when a
+  param makes one of its sizes 0, for optional pieces such as an ahoge).
 Paint op fields (paint over existing cubes, usually the base body): cubes [glob...], faces [...], y [lo, hi],
-  x [lo, hi], z [lo, hi], abs_x [lo, hi] (|x|, for symmetric regions), side r|l, slot, material, pattern,
-  trim {slot, edge, width}, tone. Ranges are model pixels at rest, lower bound inclusive.
+  x [lo, hi], z [lo, hi], abs_x [lo, hi] (|x|, for symmetric regions), side r|l, vee [y_tip, slope] (only where
+  |x| <= (y - y_tip) * slope: a V neckline), slot, material, pattern, trim {slot, edge, width}, tone. Ranges are
+  model pixels at rest, lower bound inclusive.
 Weapon parts (category weapons) are authored in grip space (grip centre at 0,0,0, blade along -z, as a held item at
   rest) with cube roles hilt or blade, a scabbard cube list and a tip point; see apply_weapon.
 """
@@ -28,7 +35,8 @@ MATERIALS = ("cloth", "skin", "hair", "metal", "leather", "fur", "scale", "wood"
 PATTERNS = ("stripes", "checks", "plaid", "dots", "pleats")
 TONE_PATTERNS = ("pleats",)          # patterns that only shade, without a second colour
 CUTOUT_PREFIXES = ("jagged_", "tip_jagged_", "bangs_jagged_")
-CUTOUTS = ("tri_up", "round_bottom", "fur_tips", "torn")
+CUTOUTS = ("tri_up", "tri_down", "peak", "round_bottom", "round_top", "fur_tips", "torn")
+SHADES = ("vertical", "flat")
 
 
 def part_path(part_id):
@@ -84,6 +92,13 @@ class _Ctx:
         self.prefix = "p%d_" % phase if phase else ""
         self.renames = {}
         self.index = index
+        off = part.get("offset", [0, 0, 0])
+        self.offset = tuple(evaluate(off, self.env))
+        if len(self.offset) != 3:
+            raise HerogenError("%s: offset must be [x, y, z]" % self.where)
+        self.density = int(part.get("density", 1))
+        if self.density not in (1, 2):
+            raise HerogenError("%s: density must be 1 or 2" % self.where)
 
     def slot(self, name):
         name = self.slots.get(name, name)
@@ -98,6 +113,11 @@ class _Ctx:
 
     def ev(self, v):
         return evaluate(v, self.env)
+
+    def at(self, v):
+        """A point expression moved by the part's offset."""
+        x, y, z = evaluate(v, self.env)
+        return (x + self.offset[0], y + self.offset[1], z + self.offset[2])
 
     def pattern(self, spec):
         if spec is None:
@@ -140,7 +160,7 @@ def _declare_bones(ctx):
     model = ctx.model
     for b in ctx.part.get("bones", []):
         name, parent = b["name"], ctx.renames.get(b["parent"], b["parent"])
-        pivot = tuple(ctx.ev(b["pivot"]))
+        pivot = ctx.at(b["pivot"])
         if ctx.prefix:
             new = ctx.prefix + name
             ctx.renames[name] = new
@@ -189,25 +209,34 @@ def _cube_from_spec(ctx, spec, n, bone, origin, size, name_suffix=""):
             raise HerogenError("%s: face %r is unknown" % (ctx.where, f))
     _check_cutout(spec.get("cutout"), ctx.where)
     rotation = tuple(ctx.ev(spec["rotation"])) if "rotation" in spec else None
-    pivot = tuple(ctx.ev(spec["pivot"])) if "pivot" in spec else None
+    pivot = ctx.at(spec["pivot"]) if "pivot" in spec else None
     if rotation is not None and pivot is None:
         raise HerogenError("%s: a rotated cube needs a pivot" % ctx.where)
+    shade = spec.get("shade")
+    if shade is not None and shade not in SHADES:
+        raise HerogenError("%s: shade %r is unknown (%s)" % (ctx.where, shade, ", ".join(SHADES)))
+    density = int(spec.get("density", ctx.density))
+    if density not in (1, 2):
+        raise HerogenError("%s: density must be 1 or 2" % ctx.where)
     return Cube(name=spec.get("name", "%s#%d" % (ctx.pid, n)) + name_suffix, bone=bone, origin=tuple(origin),
                 size=tuple(size), slot=ctx.slot(spec.get("slot", "main")),
                 material=_material(ctx, spec.get("material", "cloth")), part=ctx.pid,
                 inflate=float(ctx.ev(spec.get("inflate", 0))), rotation=rotation, pivot=pivot, faces=faces,
                 pattern=ctx.pattern(spec.get("pattern")), cutout=spec.get("cutout"),
                 taper=float(spec["taper"]) if "taper" in spec else None, trim=ctx.trim(spec.get("trim")),
-                glow=bool(spec.get("glow")) or spec.get("material") == "glow", tone=int(spec.get("tone", 0)))
+                glow=bool(spec.get("glow")) or spec.get("material") == "glow", tone=int(spec.get("tone", 0)),
+                density=density, shade=shade)
 
 
 def _add_cubes(ctx):
     model = ctx.model
     for n, spec in enumerate(ctx.part.get("cubes", [])):
-        origin = ctx.ev(spec["origin"])
+        origin = ctx.at(spec["origin"])
         size = ctx.ev(spec["size"])
         if any(s < 0 for s in size):
             raise HerogenError("%s: cube %d has a negative size" % (ctx.where, n))
+        if spec.get("skip_if_empty") and any(abs(s) < 1e-9 for s in size):
+            continue                       # an optional piece switched off by a param (an ahoge of height 0)
         bone = _target_bone(ctx, spec["bone"], spec.get("fine"))
         cube = _cube_from_spec(ctx, spec, n, bone, origin, size)
         if ctx.prefix:
@@ -232,8 +261,14 @@ def _paint_ops(ctx):
                "slot": ctx.slot(op.get("slot", "main")), "material": _material(ctx, op.get("material", "cloth")),
                "pattern": ctx.pattern(op.get("pattern")), "side": op.get("side"), "tone": int(op.get("tone", 0)),
                "trim": ctx.trim(op.get("trim")), "order": (ctx.index, n)}
-        for axis in ("x", "y", "z", "abs_x"):
-            rec[axis] = tuple(ctx.ev(op[axis])) if axis in op else None
+        for k, axis in enumerate(("x", "y", "z")):
+            rec[axis] = tuple(v + ctx.offset[k] for v in ctx.ev(op[axis])) if axis in op else None
+        rec["abs_x"] = tuple(ctx.ev(op["abs_x"])) if "abs_x" in op else None
+        if "vee" in op:
+            y_tip, slope = ctx.ev(op["vee"])
+            rec["vee"] = (y_tip + ctx.offset[1], slope)
+        else:
+            rec["vee"] = None
         if rec["faces"]:
             for f in rec["faces"]:
                 if f not in FACES:
@@ -280,7 +315,7 @@ def apply_part(model, entry, index):
         b = model.use_bone(name)
         if b.kind != "locator":
             raise HerogenError("%s: %s is not a locator" % (ctx.where, name))
-        b.pivot = tuple(ctx.ev(pos))
+        b.pivot = ctx.at(pos)
     if part.get("secondary"):
         sec = dict(part["secondary"])
         sec["chain"] = [ctx.renames.get(c, c) for c in sec.get("chain", [])]
@@ -316,8 +351,11 @@ SHEATH = {
     # GeckoLib bakes file rotations as (-x, -y, z) in its x-mirrored space, so +55 about x swings a hanging blade
     # backward, and -35 about z puts a back-carried hilt over the hero's right shoulder. A hip scabbard hangs from the
     # hips (`body`), so a waist twist or chest lean does not swing it through the leg; a back carry follows the chest.
-    "hip": (lambda env, side: (side * (env["hips_w"] / 2 + 0.75), 15.5, -0.5), "down", (55.0, 0.0, 0.0), "body"),
-    "back": (lambda env, side: (0.0, 20.5, env["chest_d"] / 2 + 1.0), "down", (0.0, 0.0, -35.0), "back"),
+    # Heights follow the form (the waist line for a hip sheath, mid-chest for a back carry).
+    "hip": (lambda env, side: (side * (env["hips_w"] / 2 + 0.75), env["waist_y"], -0.5), "down", (55.0, 0.0, 0.0),
+            "body"),
+    "back": (lambda env, side: (0.0, (env["chest_y"] + env["chest_top"]) / 2, env["chest_d"] / 2 + 1.0), "down",
+             (0.0, 0.0, -35.0), "back"),
 }
 
 
@@ -364,8 +402,8 @@ def apply_weapon(model, weapon, index=0):
         if "weapon_back" in model.bones:
             raise HerogenError("art.weapon: weapon_back is already used by a part, so a %s sheath cannot move it"
                                % sheathed)
-        model.catalogue["weapon_back"] = Bone("weapon_back", parent, (0.0, 15.5, -0.5), required=rig_bone.required,
-                                              kind=rig_bone.kind, source="weapon")
+        model.catalogue["weapon_back"] = Bone("weapon_back", parent, (0.0, model.env["waist_y"], -0.5),
+                                              required=rig_bone.required, kind=rig_bone.kind, source="weapon")
     for side in sides:
         mside = 1 if side == "r" else -1      # a right-hand weapon hangs on the left hip
         mount = mount_fn(model.env, mside)

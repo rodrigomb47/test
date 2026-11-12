@@ -20,7 +20,7 @@ class RenderTest(unittest.TestCase):
         hidden = ["p2_halo", "weapon_r", "weapon_l"]
         img = ortho.render(self.geo, self.b.image, scale=4, hidden=hidden, pad=0)
         ys = np.argwhere(img[:, :, 3] > 0)[:, 0]
-        self.assertAlmostEqual((ys.max() - ys.min() + 1) / 4.0, 35.0, delta=1.0, msg="feet to ear tips")
+        self.assertAlmostEqual((ys.max() - ys.min() + 1) / 4.0, 38.5, delta=1.0, msg="feet to ear tips (adult 33 + ears)")
         self.assertTrue(img[:, :, 3].any())
         colours = {tuple(p[:3]) for p in img.reshape(-1, 4) if p[3]}
         self.assertGreater(len(colours), 20)

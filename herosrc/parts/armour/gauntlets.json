@@ -1,0 +1,18 @@
+{
+  "_comment": "Gauntlets: a metal shell over each forearm with a flared, trimmed cuff, and metal-painted hands.",
+  "id": "armour/gauntlets",
+  "category": "armour",
+  "slots": {"main": "metal", "trim": "trim"},
+  "occupies": ["hands"],
+  "paint": [{"cubes": ["hand_*"], "material": "metal", "slot": "main"}],
+  "cubes": [
+    {
+      "origin": ["-shoulder_x - arm_w / 2 - 0.35", "wrist_y - 0.25", "-arm_d / 2 - 0.35"],
+      "size": ["arm_w + 0.7", "elbow_y - wrist_y - 0.25", "arm_d + 0.7"],
+      "bone": "forearm_r",
+      "material": "metal",
+      "mirror": true,
+      "trim": {"edge": "top", "slot": "trim", "width": 1}
+    }
+  ]
+}

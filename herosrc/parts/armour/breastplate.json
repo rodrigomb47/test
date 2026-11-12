@@ -1,0 +1,30 @@
+{
+  "_comment": "Plate armour for the torso: a breastplate over chest and bust with a trimmed top edge, a gorget, and a fauld of waist plates with a trimmed hem; sleeves under it in alt.",
+  "id": "armour/breastplate",
+  "category": "armour",
+  "slots": {"alt": "secondary", "main": "metal", "trim": "trim"},
+  "occupies": ["torso"],
+  "paint": [{"cubes": ["upper_arm_*", "forearm_*", "chest", "waist"], "material": "cloth", "slot": "alt"}],
+  "cubes": [
+    {
+      "origin": ["-chest_w / 2 - 0.35", "chest_y - 0.25", "-chest_d / 2 - bust_d - 0.35"],
+      "size": ["chest_w + 0.7", "chest_top - chest_y + 0.35", "chest_d + bust_d + 0.7"],
+      "bone": "chest",
+      "material": "metal",
+      "trim": {"edge": "top", "slot": "trim", "width": 1}
+    },
+    {
+      "origin": ["-neck_w / 2 - 0.75", "chest_top - 0.25", "-neck_d / 2 - 0.75"],
+      "size": ["neck_w + 1.5", 1, "neck_d + 1.5"],
+      "bone": "chest",
+      "material": "metal"
+    },
+    {
+      "origin": ["-waist_w / 2 - 0.5", "waist_y - 0.75", "-waist_d / 2 - 0.5"],
+      "size": ["waist_w + 1", "chest_y - waist_y + 0.5", "waist_d + 1"],
+      "bone": "waist",
+      "material": "metal",
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    }
+  ]
+}

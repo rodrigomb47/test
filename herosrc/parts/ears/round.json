@@ -1,0 +1,28 @@
+{
+  "_comment": "Round animal ears (bear, tanuki, mouse): a thick outer ear with a rounded top and an inner plate in the alt colour. Head-local (offset head_y), density 2.",
+  "id": "ears/round",
+  "category": "ears",
+  "slots": {"alt": "secondary", "main": "hair"},
+  "occupies": ["ears"],
+  "offset": [0, "head_y", 0],
+  "density": 2,
+  "cubes": [
+    {
+      "origin": [-6, 10.25, -1],
+      "size": [3, 3, 1.5],
+      "bone": "ear_r",
+      "cutout": "round_top",
+      "material": "fur",
+      "mirror": true
+    },
+    {
+      "origin": [-5.5, 10.5, -1.25],
+      "size": [2, 2, 0.25],
+      "bone": "ear_r",
+      "cutout": "round_top",
+      "material": "fur",
+      "mirror": true,
+      "slot": "alt"
+    }
+  ]
+}

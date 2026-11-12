@@ -81,17 +81,29 @@ class UvTest(unittest.TestCase):
                     self.assertTrue(all(isinstance(a, int) for a in (u, v, w, h)))
                     if f in c.fixed:
                         continue
-                    self.assertTrue(u + w <= 64 and v + h <= 64, "%s %s %s outside the base region" % (bid, c.name, f))
+                    self.assertTrue(u + w <= 64 and v + h <= 80, "%s %s %s outside the base region" % (bid, c.name, f))
                     self.assertFalse(occ[v:v + h, u:u + w].any(), "%s %s %s overlaps" % (bid, c.name, f))
                     occ[v:v + h, u:u + w] = 1
             head = m.cube("head")
-            self.assertEqual(head.uv["north"], (64, 32, 16, 16))
-            self.assertEqual(m.cube("eyes").uv["north"], (64, 0, 16, 8))
-            self.assertEqual(m.cube("mouth").uv["north"], (64, 24, 8, 4))
-            self.assertEqual(m.cube("cheeks").uv["north"], (64, 28, 12, 2))
+            self.assertEqual(head.uv["north"], (144, 0, 20, 20), "the 20x20 double-density face")
+            self.assertEqual(m.cube("eyes").uv["north"], (64, 0, 20, 10))
+            self.assertEqual(m.cube("mouth").uv["north"], (64, 30, 8, 4))
+            self.assertEqual(m.cube("cheeks").uv["north"], (64, 34, 16, 2))
+            self.assertEqual((m.tex_w, m.tex_h), (256, 128))
+
+    def test_every_build_packs(self):
+        for bid in BASE_IDS:
+            for build in ("slim", "large"):
+                pack(Model("t", bid, build))
+
+    def test_density_two_doubles_the_net(self):
+        w1, h1, _ = net(cube((3.0, 5.0, 2.0)))
+        w2, h2, rects = net(cube((3.0, 5.0, 2.0), density=2))
+        self.assertEqual((w2, h2), (2 * w1, 2 * h1))
+        self.assertEqual(rects["north"], (4, 4, 6, 10))
 
     def test_packing_is_deterministic(self):
-        a, b = Model("t", "m_large"), Model("t", "m_large")
+        a, b = Model("t", "adult_m", "large"), Model("t", "adult_m", "large")
         pack(a)
         pack(b)
         self.assertEqual([c.uv for c in a.cubes], [c.uv for c in b.cubes])

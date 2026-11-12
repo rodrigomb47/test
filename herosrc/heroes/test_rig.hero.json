@@ -8,6 +8,7 @@
   "archetype": "fixture",
   "art": {
     "base": "female",
+    "form": "adult",
     "build": "standard",
     "scale": 100,
     "palette": {

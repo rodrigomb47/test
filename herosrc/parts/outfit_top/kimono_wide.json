@@ -1,0 +1,67 @@
+{
+  "_comment": "A kimono-style top with volume: wide hanging sleeves (a box around each forearm on the sleeve bone, deeper at the back, with a trimmed cuff and a hanging pouch), puffed upper sleeves, a crossed V collar (inner layer in alt, edged in trim) and a standing back collar.",
+  "id": "outfit_top/kimono_wide",
+  "category": "outfit_top",
+  "slots": {"alt": "secondary", "main": "primary", "trim": "trim"},
+  "occupies": ["torso", "sleeves"],
+  "paint": [
+    {"cubes": ["chest", "bust", "waist"], "material": "cloth", "slot": "main"},
+    {"cubes": ["upper_arm_*", "forearm_*"], "material": "cloth", "slot": "main"},
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "trim",
+      "vee": ["chest_top - 3.25", 0.75]
+    },
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "alt",
+      "vee": ["chest_top - 2.5", 0.75]
+    }
+  ],
+  "cubes": [
+    {
+      "origin": ["-neck_w / 2 - 1", "chest_top - 0.25", -0.25],
+      "size": ["neck_w + 2", 1, "chest_d / 2 + 0.5"],
+      "bone": "chest",
+      "slot": "trim"
+    },
+    {
+      "origin": ["-shoulder_x - arm_w / 2 - 0.75", "elbow_y - 0.25", "-arm_d / 2 - 0.75"],
+      "size": ["arm_w + 1.5", "arm_top - elbow_y + 0.5", "arm_d + 1.5"],
+      "bone": "arm_r",
+      "mirror": true
+    },
+    {
+      "origin": [
+        "-shoulder_x - arm_w / 2 - clamp(4.25 - (elbow_y - wrist_y) * 0.75, 1.75, 2.75)",
+        "wrist_y - 0.25",
+        "-arm_d / 2 - 1.5"
+      ],
+      "size": [
+        "arm_w + 0.25 + clamp(4.25 - (elbow_y - wrist_y) * 0.75, 1.75, 2.75)",
+        "elbow_y - wrist_y + 0.25 + (arm_top - elbow_y) * 0.4",
+        "arm_d + 4.25"
+      ],
+      "bone": "sleeve_r",
+      "faces": ["north", "south", "east", "west", "up"],
+      "mirror": true,
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    },
+    {
+      "origin": [
+        "-shoulder_x - arm_w / 2 - clamp(4.25 - (elbow_y - wrist_y) * 0.75, 1.75, 2.75)",
+        "wrist_y - 1.75",
+        "arm_d / 2 + 0.25"
+      ],
+      "size": ["arm_w + 0.25 + clamp(4.25 - (elbow_y - wrist_y) * 0.75, 1.75, 2.75)", 1.5, 2.5],
+      "bone": "sleeve_r",
+      "mirror": true,
+      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+    }
+  ],
+  "secondary": {"chain": ["sleeve_r", "sleeve_l"], "damping": 0.7, "stiffness": 0.5}
+}
