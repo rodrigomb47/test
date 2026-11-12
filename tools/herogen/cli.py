@@ -1,8 +1,9 @@
 """Command line (design 13.7). G1 provides build, build --check, check (geometry and face part of 14.2), previews
 (rig v3: the style set) and stats; G3 adds the animation libraries to build and check, the animation rules and the
 timing agreement to check, `anim` (list the libraries and their timings) and `anim-previews` (filmstrips and GIFs);
-G2 adds preview/faces/sheet/gif. `check --style` also checks the style fixtures in herosrc/style (built in memory,
-never written)."""
+G2 adds `preview`, `gif`, `faces`, `sheet` (written to build/herogen/ unless --out says otherwise) and
+`render-previews` (the owner's set, render/showcase.py). `check --style` also checks the style fixtures in
+herosrc/style (built in memory, never written)."""
 import argparse
 import io
 import json
@@ -169,6 +170,130 @@ def cmd_anim_previews(args):
     return 0
 
 
+# ------------------------------------------------------------------ G2: preview, gif, faces, sheet, render-previews
+
+PREVIEW_OUT = os.path.join("build", "herogen")
+VIEWS = {"front": (0.0, None), "34": (-34.0, None), "34back": (145.0, None), "side": (-90.0, None),
+         "left": (-90.0, None), "right": (90.0, None), "back": (180.0, None), "top": (0.0, 89.0)}
+
+
+def _view(args, scale=None):
+    from render import raster
+    from render.scene import PITCH
+    if args.yaw is not None:
+        yaw, pitch = args.yaw, None
+    else:
+        if args.view not in VIEWS:
+            raise HerogenError("--view %r: one of %s (or --yaw DEG)" % (args.view, ", ".join(VIEWS)))
+        yaw, pitch = VIEWS[args.view]
+    pitch = args.pitch if args.pitch is not None else (pitch if pitch is not None else PITCH)
+    return raster.View(yaw, pitch, scale or args.scale)
+
+
+def _assets(hero_id, committed=False):
+    from render.scene import HeroAssets
+    return HeroAssets.committed(hero_id) if committed else HeroAssets.build(hero_id)
+
+
+def _out(args, default):
+    path = args.out or os.path.join(PREVIEW_OUT, default)
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    return path
+
+
+def cmd_preview(args):
+    """PNG(s) of a hero: a pose (the stance, or an animation at --t, or --frames evenly over it) from one view."""
+    from PIL import Image
+
+    from render.scene import to_image
+    from render.sheet import BG
+    a = _assets(args.id, args.committed)
+    view = _view(args)
+    drawn = args.drawn or bool(args.action)
+    if args.anim or args.action:
+        pb = a.playback(args.anim, args.action, 0.0)
+        length = pb.length()
+        times = [args.t] if args.frames is None else [length * i / args.frames for i in range(args.frames)]
+    else:
+        pb, times = None, [0.0]
+    face_sim = a.face_sim(args.mood)
+    frames = []
+    for t in times:
+        pose = pb.pose(t) if pb else a.stance(drawn)
+        face = face_sim.frames(t, pose, blink_ok=False)
+        frames.append(to_image(a.render(view, pose, face=face, phase=args.phase, drawn=drawn,
+                                        brightness=0.25 if args.night else 1.0)))
+    if len(frames) == 1:
+        out = frames[0]
+    else:
+        out = Image.new("RGBA", (sum(f.width + 8 for f in frames) + 8, max(f.height for f in frames) + 16), BG)
+        x = 8
+        for f in frames:
+            out.alpha_composite(f, (x, 8))
+            x += f.width + 8
+    if not args.transparent:
+        bg = Image.new("RGBA", out.size, BG)
+        bg.alpha_composite(out)
+        out = bg
+    path = _out(args, "%s_%s.png" % (args.id, (args.action or args.anim or "stance").replace(".", "_")))
+    out.save(path, format="PNG", optimize=True)
+    print(path)
+    return 0
+
+
+def cmd_gif(args):
+    """An animated preview of one or more heroes."""
+    from render import gif
+    heroes = [_assets(h, args.committed) for h in args.ids]
+    view = _view(args)
+    actors = []
+    for i, a in enumerate(heroes):
+        pb = a.playback(args.anim, args.action, args.lead if args.action else 0.0)
+        actors.append(gif.Actor(a, pb, a.face_sim(args.mood, i), view, drawn=bool(args.action) or args.drawn))
+    pb = actors[0].pb
+    t1 = args.t1 if args.t1 is not None else (pb.length() + (args.lead if args.action else 0.0)
+                                              if args.action else pb.base.length)
+    frames = gif.film(actors, gif.ticks(args.t0, t1, args.fps), args.action or args.anim or "move.idle")
+    path = _out(args, "%s_%s.gif" % ("_".join(args.ids), (args.action or args.anim or "idle").replace(".", "_")))
+    gif.write_gif(frames, path, fps=args.fps)
+    print(path)
+    return 0
+
+
+def cmd_faces(args):
+    """Every eye, mouth and cheek frame enlarged with the 12 moods (from the texture), and the face strip (rendered)."""
+    import previews
+    from render import sheet
+    a = _assets(args.id, args.committed)
+    p1 = _out(args, "%s_face_frames.png" % args.id)
+    previews.faces_sheet(args.id, p1)
+    p2 = p1.replace(".png", "_strip.png")
+    sheet.face_strip([a], p2)
+    print(p1)
+    print(p2)
+    return 0
+
+
+def cmd_sheet(args):
+    """Contact sheet(s), 24 heroes each."""
+    from render import sheet
+    ids = list(args.ids) or build.hero_ids()
+    if args.style:
+        ids = build.style_ids() + ids
+    heroes = [_assets(h, args.committed) for h in ids]
+    for path in sheet.contact_sheet(heroes, _out(args, "contact_sheet.png")):
+        print(path)
+    return 0
+
+
+def cmd_render_previews(args):
+    from render import showcase
+    out = args.out or showcase.OUT_DIR
+    for k, p in sorted(showcase.write_all(out, gifs=not args.no_gif, only=args.only or None).items()):
+        print("%s: %s" % (k, p))
+    return 0
+
+
 def cmd_stats(args):
     for hid in _ids(args):
         files, b = build.build_files(hid)
@@ -203,6 +328,49 @@ def main(argv=None):
     ap.add_argument("--out", default=None)
     ap.add_argument("--no-gif", action="store_true")
     ap.set_defaults(fn=cmd_anim_previews)
+    for name, fn, hlp in (("preview", cmd_preview, "render a hero to PNG (a pose, an animation frame or frames)"),
+                          ("gif", cmd_gif, "an animated preview of one or more heroes")):
+        q = sub.add_parser(name, help=hlp)
+        if name == "preview":
+            q.add_argument("id")
+            q.add_argument("--t", type=float, default=0.0, help="animation time (s)")
+            q.add_argument("--frames", type=int, default=None, help="this many frames evenly over the animation")
+            q.add_argument("--phase", type=int, default=1)
+            q.add_argument("--night", action="store_true", help="light map at night (shows the glow layer)")
+            q.add_argument("--transparent", action="store_true")
+        else:
+            q.add_argument("ids", nargs="+")
+            q.add_argument("--t0", type=float, default=0.0)
+            q.add_argument("--t1", type=float, default=None)
+            q.add_argument("--fps", type=int, default=20)
+            q.add_argument("--lead", type=float, default=0.3, help="stance before the action starts (s)")
+        q.add_argument("--anim", default=None, help="base animation (move.idle, move.walk, combat.idle, ...)")
+        q.add_argument("--action", default=None, help="action animation over the base (attack.1, ...)")
+        q.add_argument("--view", default="34", help="front, 34, 34back, side (left), right, back, top")
+        q.add_argument("--yaw", type=float, default=None, help="camera angle round the hero (deg), overrides --view")
+        q.add_argument("--pitch", type=float, default=None)
+        q.add_argument("--mood", default="calm")
+        q.add_argument("--scale", type=int, default=4)
+        q.add_argument("--drawn", action="store_true", help="weapon drawn")
+        q.add_argument("--committed", action="store_true", help="read the committed files instead of building")
+        q.add_argument("--out", default=None)
+        q.set_defaults(fn=fn)
+    f = sub.add_parser("faces", help="a hero's face frames, moods and face strip")
+    f.add_argument("id")
+    f.add_argument("--committed", action="store_true")
+    f.add_argument("--out", default=None)
+    f.set_defaults(fn=cmd_faces)
+    sh = sub.add_parser("sheet", help="contact sheet(s): 24 heroes per sheet")
+    sh.add_argument("ids", nargs="*")
+    sh.add_argument("--style", action="store_true", help="include the style fixtures")
+    sh.add_argument("--committed", action="store_true")
+    sh.add_argument("--out", default=None)
+    sh.set_defaults(fn=cmd_sheet)
+    rp = sub.add_parser("render-previews", help="write the G2 preview set to docs/heroes-v2/previews/render")
+    rp.add_argument("--out", default=None)
+    rp.add_argument("--no-gif", action="store_true")
+    rp.add_argument("--only", nargs="*", choices=("lineups", "turnarounds", "faces", "contact", "gifs"))
+    rp.set_defaults(fn=cmd_render_previews)
     s = sub.add_parser("stats", help="budgets per hero")
     s.add_argument("ids", nargs="*")
     s.add_argument("--style", action="store_true", help="include the style fixtures")

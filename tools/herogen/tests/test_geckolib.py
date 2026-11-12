@@ -27,7 +27,7 @@ from helpers import HEROGEN  # noqa: F401
 
 import build
 from geo import GeoModel
-from render import ortho
+from render import raster
 from rig import Cube
 from uvpack import from_file_uv, texel_point, to_file_uv
 
@@ -140,7 +140,7 @@ class GeckoLibConformanceTest(unittest.TestCase):
                 self.assertAlmostEqual(unbake(p)[axis], value, msg=face)
 
     def test_preview_renderer_maps_corners_like_geckolib(self):
-        """ortho._face_corners (TL, TR, BR, BL) with UVs (u, v), (u+w, v), (u+w, v+h), (u, v+h) of the net rectangle
+        """raster.face_corners (TL, TR, BR, BL) with UVs (u, v), (u+w, v), (u+w, v+h), (u, v+h) of the net rectangle
         puts every UV corner on the same 3D corner as GeckoLib does."""
         c = self.CUBE
         quads = gecko_quads(c.origin, c.size)
@@ -150,15 +150,15 @@ class GeckoLibConformanceTest(unittest.TestCase):
             gecko = {tuple(round(a, 6) for a in uvc): tuple(round(a, 6) for a in unbake(p))
                      for uvc, p in zip(gecko_uvs(uv, size), quads[face])}
             u, v, w, h = from_file_uv(face, uv, size)
-            mine = dict(zip([(u, v), (u + w, v), (u + w, v + h), (u, v + h)], ortho._face_corners(face, c.box)))
+            mine = dict(zip([(u, v), (u + w, v), (u + w, v + h), (u, v + h)], raster.face_corners(face, c.box)))
             for uvc, p in mine.items():
                 self.assertEqual(gecko[tuple(float(a) for a in uvc)], tuple(round(float(a), 6) for a in p), face)
 
     def test_rotation_order_and_signs(self):
-        """ortho emulates GeckoLib's rotations: baked angles (-rx, -ry, rz), a vertex turned about X, then Y, then Z
+        """raster emulates GeckoLib's rotations: baked angles (-rx, -ry, rz), a vertex turned about X, then Y, then Z
         (checked with angles whose order matters)."""
         for rot in ((55, 0, 0), (0, 0, -35), (30, 40, 0), (20, -60, 75), (-10, 25, 140)):
-            mine = ortho.rotation_matrix(-rot[0], -rot[1], rot[2])
+            mine = raster.rotation_matrix(-rot[0], -rot[1], rot[2])
             np.testing.assert_allclose(mine, gecko_rotation(rot), atol=1e-12, err_msg=str(rot))
 
     def test_written_geometry_uses_only_keys_geckolib_reads(self):

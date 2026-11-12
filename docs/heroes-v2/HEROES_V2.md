@@ -1888,17 +1888,19 @@ install):
 | `build [ids \| --batch N \| --slice \| --all \| --changed]` | write the model, texture, glow and phase textures, animation file, `visual.json` and the server definition |
 | `build --check` | rebuild into a temporary folder and fail if anything differs from the committed files |
 | `check [ids \| --all]` | asset validation (14.2), then `./gradlew checkHeroes` for the kit rules (14.1) |
-| `preview <id> [--anim NAME] [--t 0.4 \| --frames 8] [--view 34\|front\|side\|back\|top] [--phase 2] [--mood angry] [--scale 4]` | render PNGs with the software renderer (13.8) |
-| `gif <id> --anim NAME` | an animated preview |
-| `faces <id>` | every eye, mouth and cheek frame enlarged, plus each mood |
-| `sheet [ids \| --batch N \| --slice] --out FILE` | a contact sheet |
+| `preview <id> [--anim NAME] [--action NAME] [--t 0.4 \| --frames 8] [--view 34\|front\|side\|right\|back\|34back\|top] [--yaw DEG] [--phase 2] [--mood angry] [--night] [--scale 4] [--committed]` | render PNGs with the software renderer (13.8) |
+| `gif <ids...> [--anim NAME] [--action NAME] [--fps 20] [--view ...]` | an animated preview (heroes side by side) |
+| `faces <id>` | every eye, mouth and cheek frame enlarged, plus each mood, and the rendered face strip |
+| `sheet [ids] [--style] --out FILE` | contact sheets, 24 heroes each (`--batch`/`--slice` come with the roster) |
+| `render-previews [--only ...]` | the owner's G2 set in `docs/heroes-v2/previews/render/` |
 | `lint` | the parts library on every base |
 | `stats` | budgets per hero and library usage |
 | `import-anim <id> <file>` | adopt a Blockbench-polished animation file (sets `animations.source: manual`) |
 
 Modules: `rig.py`, `parts.py`, `uvpack.py`, `palette.py`, `paint.py`, `face.py`, `geo.py`, `anim/poses.py`,
 `anim/primitives.py`, `anim/recipes.py`, `anim/secondary.py`, `anim/writer.py`, `kit.py` (server definition and
-frames), `visual.py`, `validate.py`, `render/raster.py`, `render/sheet.py`, `render/gif.py`, `scaffold.py`, `cli.py`;
+frames), `visual.py`, `validate.py`, `render/raster.py`, `render/sheet.py`, `render/gif.py` (as built for G2 also
+`render/animfile.py`, `render/face_sim.py`, `render/scene.py`, `render/showcase.py`), `scaffold.py`, `cli.py`;
 tests in `tools/herogen/tests/` (`python3 -m unittest discover tools/herogen/tests`). Determinism: sorted keys, numbers
 rounded to 3 decimals, randomness seeded from the hero id, PNGs written without metadata. As built for G3 the
 animation side also has `anim/clip.py`, `anim/skeleton.py`, `anim/quality.py`, `anim/library.py`, `anim/timing.py`
@@ -1916,8 +1918,16 @@ still build. The Java `HeroAssetsTest` (14.2) runs in the normal unit tests with
   rotation sign conversions GeckoLib applies when baking), builds cube quads with their UVs, rasterises them with a
   z-buffer and nearest-neighbour texture sampling, alpha cut-out at 0.1 like `entityCutoutNoCull`, and shades faces
   with vanilla's entity light directions so the result looks like the game. Output is pixel-crisp at 4x.
-- **Fidelity check** (task G2): the test rig in three poses is rendered by the preview and screenshotted in game; the
-  silhouettes must match within one pixel at 4x. This guards the sign and order conventions.
+- **As built (G2, 2026-11-12; `notes/artgen.md`)**: the light is vanilla's world-space entity light (front and back
+  0.74, sides 0.50, top 1.0, bottom 0.4 for a hero facing south or north; it does not follow the camera), normals go
+  through GeckoLib's flat-cube fix, the glow layer is lit but ignores the light map, animations are read from the
+  written files and played through an emulation of the base and action controllers (the action's 2-tick blend,
+  events on the frame they fire), and the face comes from `visual.json` through a stand-in for `HeroFace` (moods,
+  `face_ctrl`, seeded blinks). The camera is orthographic for previews and perspective for the fidelity check. Found
+  by it: the zero-thickness face planes are lit apart from the head when the face points down or to one side
+  (GeckoLib's flat-cube fix); recommended: A2 skips the fix for those bones.
+- **Fidelity check** (task G2, with A2): the test rig in three poses is rendered by the preview and screenshotted in
+  game; the silhouettes must match within one pixel at 4x. This guards the sign and order conventions.
 - **Contact sheet**: 24 heroes per sheet (6 x 4 cells); each cell has the 3/4 front view, a small back view, the phase
   look, the face strip (open, blink, happy, angry, focused, pain, talk), a palette swatch, and the name, archetype,
   role, element and weapon.
@@ -2077,7 +2087,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G1s | Style pass after the owner's reference: rig v2 (three forms x two families x three builds, 10 px head, 20x20 face), larger eye frames, the layered hair kit, volumetric ears and tails, outfit volume parts, six original style fixtures, the style preview set | G1 | L | done 2026-11-12: all parts on all six bases pass the checks; previews in `docs/heroes-v2/previews/style/` |
 | G1s2 | Style pass 2 after the owner's feedback ("head too big, faces similar") and the reference measurements: rig v3 (longer bodies, render scale 0.56, low wide-set eyes), part generators (strands, chains, groups) and the strand hair kit, layered ears and five-bone tails, detailed outfits, the face system, six redesigned fixtures, budgets 300 cubes / 130 outside `fine_` / 100 bones | G1s | L | done 2026-11-12: 123 Python tests; every part on every base passes the checks; the six faces differ pairwise in 5+ features; previews regenerated |
 | G1s3 | Art direction pass 2: review of the style pass 2 previews against the references; hair ramp and strand gradient, parted crown, covered nape, lower crown, spikes, stubble, plaster and cat mouth, ear slabs as one mass, jag edges without the barcode, twin-tail nape strands, lighter fixture skins | G1s2 | M | done 2026-11-12: 136 Python tests; previews regenerated; before and after in `notes/previews/artdir2_before_after.png` |
-| G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px |
+| G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px. Renderer done 2026-11-12 (215 Python tests, golden images, the owner's set in `docs/heroes-v2/previews/render/`); the fidelity test waits for A2 |
 | G3 | Animation generator: poses, primitives, recipes, secondary bake, markers, writer, frames into the server file, quality rules | G1 | L | done 2026-11-12: 181 Python tests; `_core` (idle 24 s, walk, run) and `_style_katana` (`combat.idle`, `attack.1` with its `hit` at tick 8) pass the rules on all six bases; timing files beside them; previews in `docs/heroes-v2/previews/anim/` (A2 plays them in game) |
 | G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs |
 | G5 | Style libraries for the slice: fists, focus, hammer, katana, twin_blades, sword_shield, staff | G3, G4 | M | each passes `check`; reviewed as GIFs on two bases |

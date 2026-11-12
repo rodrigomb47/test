@@ -1,7 +1,7 @@
 """Cube rotations in file (Bedrock / GeckoLib) degrees, in one place.
 
 A cube or bone rotation (rx, ry, rz) in a .geo.json is applied by GeckoLib in its x-mirrored render space as
-(-rx, -ry, rz), X first, then Y, then Z (render/ortho.py emulates it; tests/test_geckolib.py pins it to GeckoLib's
+(-rx, -ry, rz), X first, then Y, then Z (render/raster.py emulates it; tests/test_geckolib.py pins it to GeckoLib's
 code). Seen in the file's own coordinates (the hero's right at -x, the hero facing -z) the same rotation is
 
     R_file = Rz(-rz) . Ry(ry) . Rx(-rx)

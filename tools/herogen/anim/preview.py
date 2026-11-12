@@ -1,7 +1,8 @@
 """Animation previews for the owner: filmstrips (frames side by side, one row per hero) and animated GIFs, drawn by
-the preview renderer (render/ortho.py) from the built geometry and texture, with GeckoLib's bone transforms and the
-face frames the animation's face_ctrl keys pick. An action is shown over the clip it settles on (the base controller
-keeps playing under the action controller), with the weapon drawn.
+the preview renderer (render/raster.py, vanilla entity light) from the built geometry and texture, with GeckoLib's
+bone transforms and the face frames the animation's face_ctrl keys pick. An action is shown over the clip it settles
+on (the base controller keeps playing under the action controller), with the weapon drawn. The G2 films that play
+the written files through the controller emulation, with blinks, are render/gif.py.
 """
 import io
 import json
@@ -15,7 +16,7 @@ import previews
 from anim import library
 from anim.clip import layered
 from geo import GeoModel
-from render import ortho
+from render import raster
 from util import ROOT
 
 ANIM_PREVIEW_DIR = os.path.join(ROOT, "docs", "heroes-v2", "previews", "anim")
@@ -69,7 +70,7 @@ def render(geo, tex, hero, name, t, yaw=-90.0, scale=4, pitch=8.0, bounds=None):
     pose = {b: v for b, v in pose.items() if b in geo.bones}
     hidden = previews.view_hidden(geo, drawn=drawn)
     shift = previews.face_shift(*face)
-    img = ortho.render(geo, tex, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=previews.tint_of(geo),
+    img = raster.render(geo, tex, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=previews.tint_of(geo),
                        bounds=bounds, pitch=pitch, pose=pose)
     return Image.fromarray(img, "RGBA")
 
@@ -79,7 +80,7 @@ def bounds_over(geo, hero, name, times, yaw, pitch):
     for t in times:
         pose, _, drawn = pose_at(hero, name, t)
         pose = {b: v for b, v in pose.items() if b in geo.bones}
-        b = ortho.model_bounds(geo, [yaw], previews.view_hidden(geo, drawn=drawn), pitch, pose)
+        b = raster.model_bounds(geo, [raster.View(yaw, pitch)], previews.view_hidden(geo, drawn=drawn), pose)
         xs += [b[0], b[1]]
         ys += [b[2], b[3]]
     return min(xs), max(xs), min(ys), max(ys)

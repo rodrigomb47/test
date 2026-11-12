@@ -2,19 +2,22 @@
 side, back, 3/4 back, a blink, the far level of detail, the weapon drawn), a lineup of the characters side by side on
 grass under a sky (the way the owner's reference lineup is shot), face close-ups, the six calm faces side by side
 and the texture layout. Every model is drawn at the same model-pixel scale, which is the same world scale because rig
-v3 draws every form at one render scale. They are rendered from the built files (geometry + PNG), not from the in-memory model, so they show
-what the game gets. G2 replaces the renderer with the full one (animations, vanilla lighting, contact sheets, GIFs).
+v3 draws every form at one render scale. They are rendered from the built files (geometry + PNG), not from the
+in-memory model, so they show what the game gets, by the G2 renderer (render/raster.py: vanilla entity light, the
+hero facing south) in the stance the game shows (the first frame of move.idle). The G2 sheets built on the whole
+hero (turnarounds, face strips with blinks, the contact sheet, GIFs) are in render/sheet.py and render/gif.py.
 """
 import json
 import os
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw
 
 import build
 import face as F
 from geo import GeoModel
-from render import ortho
+from render import raster
+from render.sheet import backdrop, font as _font, shadow as _shadow
 from rig import BASE_IDS, load_rig
 from util import ROOT
 
@@ -25,20 +28,21 @@ DIM = (48, 54, 66, 255)
 SASH_TINT = (74, 118, 196)
 VIEWS = (("front", 0.0), ("3/4", -34.0), ("side", -90.0), ("back", 180.0), ("3/4 back", 145.0))
 PITCH = 10.0                 # camera a little above the hero, like a player looking at it
-# The previews show the idle stance the animations will use (the arms a little out, an A-pose like the references), not
-# the straight-armed rest pose of the geometry: file degrees added to the bones' rest rotation.
-IDLE_POSE = {"arm_r": (0.0, 0.0, 9.0), "arm_l": (0.0, 0.0, -9.0)}
+
+
+def idle_pose():
+    """The stance the game shows a standing hero in (the first frame of the core move.idle: the arms a little out,
+    an A-pose like the references), not the straight-armed rest pose of the geometry."""
+    from anim import library
+    return library.core().by_name["move.idle"].sample(0.0)
+
+
+def _bounds(geo, yaws, hidden, pitch, pose):
+    return raster.model_bounds(geo, [raster.View(y, pitch) for y in yaws], hidden, pose)
 
 # A mannequin for the bare bases: neutral base layer, short hair, default face of the family.
 MANNEQUIN_PALETTE = {"skin": "#F1D0B8", "hair": "#4A3F3A", "eyes": "#4F78C8", "secondary": "#A3AABB",
                      "accent": "#5A6072", "leather": "#4B3D35"}
-
-
-def _font(size):
-    try:
-        return ImageFont.load_default(size=size)
-    except TypeError:          # Pillow < 10.1
-        return ImageFont.load_default()
 
 
 def mannequin(base_id, build_name="standard"):
@@ -87,11 +91,11 @@ def render_views(geo, tex, views, scale, phase=1, drawn=False, eyes=0, mouth=0, 
     hidden = view_hidden(geo, phase, drawn, far)
     shift = face_shift(eyes, mouth, cheeks)
     out = []
-    pose = IDLE_POSE if pose is None else pose
-    yb = ybounds or ortho.model_bounds(geo, [v for _, v in views], hidden, pitch, pose)[2:]
+    pose = idle_pose() if pose is None else pose
+    yb = ybounds or _bounds(geo, [v for _, v in views], hidden, pitch, pose)[2:]
     for label, yaw in views:
-        xb = ortho.model_bounds(geo, [yaw], hidden, pitch, pose)
-        img = ortho.render(geo, tex, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=tint_of(geo, tint),
+        xb = _bounds(geo, [yaw], hidden, pitch, pose)
+        img = raster.render(geo, tex, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=tint_of(geo, tint),
                            bounds=(xb[0], xb[1], yb[0], yb[1]), pitch=pitch, pose=pose)
         out.append((label, Image.fromarray(img, "RGBA")))
     return out
@@ -121,38 +125,9 @@ def _built(hero_id, hero=None):
     return built_geo(files, hero_id), b
 
 
-# ------------------------------------------------------------------ backdrop (sky and grass, like the reference)
-
-def backdrop(w, h, horizon):
-    """A flat sky gradient over a blocky grass field (16-px tiles with a little noise), deterministic."""
-    img = np.zeros((h, w, 4), dtype=np.uint8)
-    t = np.linspace(0.0, 1.0, max(1, horizon))[:, None]
-    top, low = np.array([126, 168, 236]), np.array([186, 212, 250])
-    img[:horizon, :, :3] = (top + (low - top) * t).astype(np.uint8)[:, None, :] if horizon else 0
-    yy, xx = np.mgrid[horizon:h, 0:w]
-    depth = (yy - horizon) / max(1.0, h - horizon)
-    tile = (6 + 22 * depth).astype(int)                     # tiles grow toward the viewer
-    tx, ty = xx // np.maximum(tile, 1), (yy - horizon) // np.maximum(tile, 1)
-    noise = ((tx * 73856093) ^ (ty * 19349663)) % 7
-    base = np.array([96, 150, 64])
-    shade = (noise - 3) * 5 + (depth * 16).astype(int)
-    for c in range(3):
-        img[horizon:, :, c] = np.clip(base[c] + shade * (1.0 if c != 2 else 0.6), 0, 255).astype(np.uint8)
-    img[..., 3] = 255
-    return Image.fromarray(img, "RGBA")
-
-
-def _shadow(size, alpha=90):
-    w, h = size
-    im = Image.new("RGBA", (w + 16, h + 16), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
-    d.ellipse([8, 8, 8 + w, 8 + h], fill=(20, 40, 16, alpha))
-    return im.filter(ImageFilter.GaussianBlur(3))
-
-
 def _feet_row(geo, hidden, yaw, pitch, scale, pad, ybounds):
     """Screen row of the ground point (0, 0, 0) in an image rendered with these bounds."""
-    view = ortho.view_matrix(yaw, pitch)
+    view = raster.view_matrix(yaw, pitch)
     p = view @ np.array([0.0, 0.0, 0.0])
     return int((ybounds[1] - p[1]) * scale + pad)
 
@@ -167,8 +142,9 @@ def bases_sheet(path, scale=7):
         geo, b = _built("base_" + base_id, mannequin(base_id))
         built.append((base_id, geo, b))
     hidden = view_hidden(built[0][1])
-    ytop = max(ortho.model_bounds(g, [v for _, v in views], view_hidden(g), PITCH)[3] for _, g, _ in built)
-    ybot = min(ortho.model_bounds(g, [v for _, v in views], view_hidden(g), PITCH)[2] for _, g, _ in built)
+    pose = idle_pose()
+    ytop = max(_bounds(g, [v for _, v in views], view_hidden(g), PITCH, pose)[3] for _, g, _ in built)
+    ybot = min(_bounds(g, [v for _, v in views], view_hidden(g), PITCH, pose)[2] for _, g, _ in built)
     font, small = _font(18), _font(13)
     cells = []
     for base_id, geo, b in built:
@@ -217,7 +193,8 @@ def hero_sheet(hero_id, path, scale=9, tint=SASH_TINT, title=None):
     d.text((16, 12), title or b.hero.get("name", hero_id), fill=INK, font=font)
     far = sum(1 for c in m.cubes if not _under_fine(m, c.bone))
     d.text((16, 36), "%s (%s, %s build): %d bones, %d cubes (%d beyond the fine distance), %dx%d texture, %g px tall "
-                     "(%.2f blocks); sash tinted as its faction; idle stance (arms 9 degrees out)" % (
+                     "(%.2f blocks); sash tinted as its faction; idle stance (move.idle at 0 s), vanilla entity "
+                     "light" % (
         hero_id, m.base_id, m.build, len(m.bones), len(m.cubes), far, m.tex_w, m.tex_h, m.env["head_top"],
         m.env["head_top"] * m.env["render_scale"] / 16), fill=DIM, font=small)
     x = 16
@@ -241,7 +218,7 @@ def lineup(ids, path, scale=10, yaw=-24.0, pitch=12.0, tints=None, gap=26, label
     for n, hid in enumerate(ids):
         geo, b = _built(hid)
         hidden = view_hidden(geo)
-        bx = ortho.model_bounds(geo, [yaw], hidden, pitch, IDLE_POSE)
+        bx = _bounds(geo, [yaw], hidden, pitch, idle_pose())
         renders.append((hid, geo, b, hidden, bx))
     ytop = max(r[4][3] for r in renders)
     ybot = min(r[4][2] for r in renders)
@@ -249,9 +226,9 @@ def lineup(ids, path, scale=10, yaw=-24.0, pitch=12.0, tints=None, gap=26, label
     imgs = []
     for n, (hid, geo, b, hidden, bx) in enumerate(renders):
         tint = (tints or {}).get(hid, SASH_TINT)
-        img = ortho.render(geo, b.image, yaw=yaw, scale=scale, hidden=hidden, uv_shift=face_shift(),
+        img = raster.render(geo, b.image, yaw=yaw, scale=scale, hidden=hidden, uv_shift=face_shift(),
                            tint=tint_of(geo, tint), bounds=(bx[0], bx[1], ybot, ytop), pitch=pitch, pad=pad,
-                           pose=IDLE_POSE)
+                           pose=idle_pose())
         imgs.append((hid, b, Image.fromarray(img, "RGBA"), _feet_row(geo, hidden, yaw, pitch, scale, pad,
                                                                      (ybot, ytop)), bx))
     body_h = max(i[2].height for i in imgs)
@@ -323,11 +300,11 @@ def face_strip(ids, path, scale=13, moods=HEAD_MOODS):
 
 def _head_render(geo, b, hidden, head_y, yaw, pitch, scale, shift):
     """The head and what hangs from it, cropped from shoulders up."""
-    full = ortho.model_bounds(geo, [yaw], hidden, pitch, IDLE_POSE)
+    full = _bounds(geo, [yaw], hidden, pitch, idle_pose())
     lo = head_y - 4.0
-    img = ortho.render(geo, b.image, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=tint_of(geo),
+    img = raster.render(geo, b.image, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=tint_of(geo),
                        bounds=(max(full[0], -12.0), min(full[1], 12.0), lo, min(full[3], head_y + 20.0)),
-                       pitch=pitch, pad=4, pose=IDLE_POSE)
+                       pitch=pitch, pad=4, pose=idle_pose())
     return Image.fromarray(img, "RGBA")
 
 

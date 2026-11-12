@@ -1078,3 +1078,126 @@ no fade fails). A jump at 0 is its post value. Updated: the signature move's fra
   their ears together at 5 s: start `move.idle` at a per-entity offset if GeckoLib allows, or accept it.
 - **G4/G5**: footstep or work sounds in base loops will be written 4 ticks after their pose (automatic).
 - **G6b**: paint the inside of a bell sleeve darker; the cut still shows the sleeve's inside for a frame at 0.35 s.
+
+---
+
+## G2: the preview renderer (2026-11-12)
+
+HEROES_V2.md 13.8 without the in-game fidelity test (that needs A2's `HeroRenderer`; see the open items). The
+renderer draws a hero from its written files the way Minecraft 1.21.1 and GeckoLib 4.9.3 draw an entity in daylight,
+plays the written animation files through an emulation of the two controllers, picks the face frames as `HeroFace`
+will (moods, authored face keys, blinks), and writes PNG sheets and GIFs.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `render/raster.py` | the renderer: GeckoLib's bone and cube transforms, vanilla entity light, cut-out at alpha 0.1, nearest texels, the faction tint, the glow layer; orthographic camera (previews) or perspective (`distance`, for the fidelity test); a `Frame` keeps the depth, the face index and the texel of every pixel for tests. Faces are rasterised in batches (each face inverted through its projective map, the nearest fragment wins), 2-4x faster than G1's renderer at preview scales |
+| `render/animfile.py` | animation files read back the way GeckoLib reads them; `AnimChain` (the hero's file, its style, the core, as `visual.json` `animation_chain` lists them); `Playback` (a base loop plus an action with the action controller's 2-tick blend; events on the frame they fire); `authored_face` (the `face_ctrl` whole-number rule) |
+| `render/face_sim.py` | a stand-in for `HeroFace` (4.6): the priority order, the mood table from `visual.json`, seeded blinks per profile, no blink in a wind-up |
+| `render/scene.py` | `HeroAssets`: a hero's built files (in memory, so style fixtures and preview variants work) or the committed ones, and HeroModel's per-frame rules read from `visual.json`: face UV shifts, tint bones, phase bones and texture, drawn or sheathed weapon, fine bones beyond the fine distance, glow mask; `stance()` = the first frame of `move.idle` (or `combat.idle` with the weapon drawn) |
+| `render/sheet.py` | turnaround (eight views 45 degrees apart, from above, weapon drawn, far LOD, phase look at night), lineup on grass, face strip, contact sheet (6 x 4 cells) |
+| `render/gif.py` | films (heroes side by side, the clip time, events written over the frame they fire on) and GIFs (one shared palette, Pillow's frame differencing) |
+| `render/showcase.py` | the owner's set in `docs/heroes-v2/previews/render/`, with the face-plane evidence image |
+| `cli.py` | `preview`, `gif`, `faces`, `sheet` (to `build/herogen/` unless `--out`), `render-previews` |
+| `tests/test_render.py`, `tests/golden/` | 31 tests; 4 golden images of a synthetic fixture |
+
+`render/ortho.py` is gone: `previews.py` (the style set) and `anim/preview.py` (the G3 filmstrips) now draw with
+`raster`, in the real idle stance instead of the hand-set `IDLE_POSE`, and their sheets were regenerated, so every
+preview under `docs/heroes-v2/previews/` now shows the game's light.
+
+The owner's set (`render-previews`, about 4 minutes): `forms_lineup.png` (the six bases), `lineup.png` (the six style
+characters and the test rig), `turnaround_<id>.png` (each of the seven), `faces.png` (calm, a blink midway and
+closed, happy, angry, 3/4), `contact_sheet.png` (the seven and `_fallback`), `idle_blink.gif` (the whole 24 s idle at
+10 fps on the three forms), `idle_blink_faces.gif` (the seven heads at 20 fps, one frame a tick, 6 s in which every
+hero blinks at least once and Rowan blinks twice in a row), `walk.gif`, `run.gif` and `swing.gif` (the katana
+`attack.1` over `combat.idle` on Tansy and Wren with the test sword, the test rig and Garrick; "sound" and "hit"
+written over the frames they fire on), and `face_plane_light.png` (see "Found while rendering").
+
+### What it emulates, and where each rule was read
+
+- **Geometry**: unchanged from G1 (pinned to GeckoLib by `tests/test_geckolib.py`). With the old block shading
+  substituted, the new rasteriser reproduced G1's images to within 1 of rounding on every pixel, posed and unposed.
+- **Light** (vanilla `minecraft_mix_light`, `Lighting.DIFFUSE_LIGHT_0/1`): `min(1, (max(0, n.L0) + max(0, n.L1)) *
+  0.6 + 0.4)` with `L0 = normalize(0.2, 1, -0.7)`, `L1 = normalize(-0.2, 1, 0.7)` in world space. In 1.21 the
+  entity's pose stack carries no camera rotation (it is in the model-view matrix), so the light belongs to the world:
+  a hero facing south or north is lit 0.74 on its front and back, 0.50 on its sides, 1.0 on top, 0.4 underneath
+  (G1's stopgap used 0.8, 0.6, 1.0, 0.5). Facing east or west the front gets 0.50 and the sides 0.74 (vanilla mobs do
+  the same).
+- **Normals** (`GeoRenderer.renderCube`, `RenderUtil.fixInvertedFlatCube`, javap of the 4.9.3 jar): the face's
+  direction through the pose's normal matrix, then the flat-cube fix (a cube with a zero size flips a negative x
+  when its y or z size is 0, a negative y when its x or z size is 0, a negative z when its x or y size is 0).
+- **Glow layer** (`AutoGlowingGeoLayer`, `AutoGlowingTexture`, javap): the `entity_translucent_emissive` shader,
+  translucent blending, packed light `0xF00000`: the glow texel of the visible surface, lit by the diffuse light but
+  not by the light map, blended by its alpha. The night views use a light map of 0.25.
+- **Entity and camera**: the model turned by 180 - body yaw (body yaw 0 faces south); the camera goes round the hero
+  (`yaw`, `pitch`), so turnarounds show what a player sees walking round a hero standing still.
+- **Animations**: the files are parsed like `BakedAnimationsAdapter` (file order, pre/post jumps 0.001 s apart,
+  easings), and a test compares every channel of the written libraries at every tick with the generator's clips. The
+  base controller loops from 0; an action blends linearly for 2 ticks from the pose at its start to its first frame
+  (only the channels it keys), then replaces those channels; its events fire at action start + file time, which is
+  the frame on which the generator's pose shows them (tested: the hit at 0.80 s in `swing.gif`, the frame of the cut).
+- **Face**: the frames come from `visual.json` (`face.regions`, `face.moods`, `face.blink`), so the previews use the
+  same data A2 will.
+
+### Decisions
+
+1. **The previews stand in the real idle stance** (the first frame of `move.idle`: arms 8 degrees out, forearms bent
+   7 degrees, sleeves hanging) instead of G1's hand-set arms at 9 degrees, and in `combat.idle` with the weapon drawn.
+2. **Golden images are of a synthetic fixture** (a body, a rotated arm bone, a cube with its own rotation, an
+   inflated cube, a zero-thickness plane, a tinted bone, a cut-out hole, a glowing part), so art changes never break
+   them. The real models are covered by property tests: every pixel equals its texel times its face's light times its
+   tint, the light of a face does not change when the camera moves, the committed and the freshly built test rig
+   render identically, and renders are deterministic. `HEROGEN_UPDATE_GOLDEN=1` rewrites the images.
+3. **GIFs** use one palette for every frame (255 colours from a sample of frames, no dithering) and Pillow's frame
+   differencing (unchanged pixels transparent): 5 times smaller, and a test decodes the GIF back to its frames.
+4. **The blink stand-in** draws the next interval from the end of the last blink, in whole ticks; a double blink
+   starts 2 ticks after the first ends (`DOUBLE_GAP`, the one number 4.6 leaves open: PROPOSED for A2); the talking
+   mouth changes every 3 ticks (4.6: every 2-3 with noise). A2's `HeroFace` and `FaceRules` are the reference.
+5. **The perspective camera** (`View(distance=...)`, perspective-correct by inverting each face's projective map) is
+   there for the fidelity test; the previews stay orthographic.
+
+### Found while rendering (for other tasks)
+
+1. **Face planes are lit apart from the head in some poses** (`previews/render/face_plane_light.png`). The `eyes`,
+   `mouth` and `cheeks` planes have zero thickness in z, so GeckoLib's flat-cube fix makes the x and y of their world
+   normal positive. A face pointing down is then lit like a face pointing up: with the head pitched 20 degrees down
+   the eyes plane is lit 0.88 while the head front around it is 0.55, a bright rectangle over the eyes; turned 30
+   degrees to its right (facing south) the plane is 0.65 against 0.74. Level, looking up or turned the other way they
+   match. This is GeckoLib's code as read, so it should happen in game (the fidelity test will confirm). Fix options:
+   (a) A2: `HeroRenderer` overrides `renderCube` for the face-plane bones and skips the flat-cube fix (a few lines;
+   recommended); (b) the generator gives the planes a small thickness (changes the packer's flat-cube path and the
+   checks). Until then any pose that points the face down (a look down, the procedural look at a lower target, a bow)
+   shows the eye and mouth rectangles.
+2. **One frame of a bell sleeve seen end-on in the swing** (`swing.gif` at 0.45 s, clip time 0.05 s, Tansy and
+   Garrick in the 3/4 view): the arm rises about 100 degrees in the first tick (`easeOutCubic` into the raised key)
+   and the sleeve shows its open end as a ring for that frame. For G5 or G6b, with the darker sleeve inside.
+3. **The previews are darker than before** on fronts (0.74 against 0.8) and sides (0.50 against 0.6). That is the
+   daylight look the game gives; the art pass's question (does the hair ramp survive the game's light?) can now be
+   judged on the previews, with the in-game screenshot as the final word.
+
+### Tests (187 -> 215)
+
+`tests/test_render.py` (the 3 G1 render tests rewritten for `raster`, 28 new): golden images of the fixture in four
+cases (front; 3/4 posed with a bone position; back with tint, glow and a dark light map; perspective); the light
+values per direction; the entity turn; the flat-cube fix; every pixel = texel x light x tint over three camera angles;
+the plane-versus-surface quirk; a turned entity lights its sides; cut-out and brightness; the glow ignores the light
+map; the test rig's height, hidden children, the sheathed blade, view directions; perspective converging to the
+orthographic image at a large distance and drawing the near face larger; the animation reader against the generator
+at every tick; event file times and the chain; the blend then play; the hit on the frame of the cut; the face_ctrl
+rule; a blink is half, closed, closed, half; intervals per profile with doubles; seeded and never in step; no blink
+over happy eyes or in a wind-up; face priorities; face UV shifts equal the rig's frame regions; hidden bones by phase,
+weapon and distance; the tint reaches only the sash; committed and built render alike; a GIF decodes to its frames
+and is byte-identical twice; `preview` from the command line. `test_anim.py` and `test_geckolib.py` now use `raster`.
+
+### Open items
+
+- **G2 fidelity test (with A2)**: screenshot the test rig in three poses (rest, an animated frame, a frame with the
+  head pitched down) with the Xvfb client of HANDOFF section 4, render the same poses with the perspective camera at
+  the screenshot's position (FOV 70, its distance and pitch) and compare silhouettes within 1 px at 4x; check the
+  light map value at noon (taken as 1.0) and the face-plane quirk above.
+- **A2**: fix the face-plane light (option a above); the double-blink gap (`DOUBLE_GAP` 2 ticks, PROPOSED); match
+  `FaceRules` to 4.6 and `face_sim.py` or update the stand-in.
+- **Not emulated**: GeckoLib's bone reset after an action ends (the base shows at once here), blends between two base
+  animations, the procedural look and the secondary chains of `setCustomAnimations`, held vanilla items, name tags,
+  fog, the hurt overlay and the entity shadow (lineups draw a soft ellipse).

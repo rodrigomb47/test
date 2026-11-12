@@ -685,7 +685,7 @@ class HeroFileTest(unittest.TestCase):
 
 class RenderPoseTest(unittest.TestCase):
     def test_a_pose_position_moves_the_render(self):
-        from render import ortho
+        from render import raster
         from geo import GeoModel
         import io
         from PIL import Image
@@ -693,8 +693,8 @@ class RenderPoseTest(unittest.TestCase):
         geo = GeoModel(json.loads(files[build.out_paths("_fallback")["geo"]]))
         tex = np.array(Image.open(io.BytesIO(files[build.out_paths("_fallback")["texture"]])).convert("RGBA"))
         bounds = (-12, 12, -2, 60)
-        a = ortho.render(geo, tex, scale=2, bounds=bounds)
-        b = ortho.render(geo, tex, scale=2, bounds=bounds, pose={"root": {"position": (0, 4, 0)}})
+        a = raster.render(geo, tex, raster.View(scale=2), bounds=bounds)
+        b = raster.render(geo, tex, raster.View(scale=2), bounds=bounds, pose={"root": {"position": (0, 4, 0)}})
         top = [int(np.argmax(im[:, :, 3].any(axis=1))) for im in (a, b)]
         self.assertEqual(top[0] - top[1], 8)                      # 4 px up at scale 2
 
