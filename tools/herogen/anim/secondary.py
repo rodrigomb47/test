@@ -156,13 +156,14 @@ def below(skeleton, bone, movers):
     return any(b in movers for b in skeleton.chain_to_root(bone))
 
 
-def pose_function(clip, base=None):
-    """The pose shown at time t: the clip alone, or the clip over a base clip (an action over its idle)."""
+def pose_function(clip, base=None, d=0.0):
+    """The pose shown at time t on a model whose FORM_VAR is d (anim.clip): the clip alone, or the clip over a base
+    clip (an action over its idle)."""
     if base is None:
-        return clip.sample
+        return lambda t: clip.sample(t, d)
 
     def pose(t):
-        return layered(base, clip, t, base_t=t % base.length if base.loop == "loop" else min(t, base.length))
+        return layered(base, clip, t, base_t=t % base.length if base.loop == "loop" else min(t, base.length), d=d)
     return pose
 
 
@@ -170,7 +171,7 @@ def simulate(clip, skeleton, groups, base=None, movers=None):
     """{bone: [offset (rx, ry, rz) per tick 0..N]} for the clip's length (N = length / tick). `base` is the clip an
     action plays over (its authored view, see authored_view); with `movers`, only the links below those bones are
     simulated."""
-    pose_at = pose_function(clip, base)
+    pose_at = pose_function(clip, base, skeleton.d)
     links = [ln for g in groups for ln in g.links if movers is None or below(skeleton, ln.bone, movers)]
     if not links:
         return {}

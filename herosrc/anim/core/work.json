@@ -1,0 +1,563 @@
+{
+  "_comment": "Core library, work (G4; HEROES_V2.md 7.3 and 4.8: the swing-driven work.mine, work.chop and work.till restart on every vanilla swing while the action controller is idle; the others play from DATA_ACTION). Every one ends on move.idle's first frame. Tools sit at item_r, handle along the hand's -z. The swing-driven strokes and work.build key only the upper body (like attack.1), so the legs keep walking under them.",
+  "animations": {
+    "work.mine": {
+      "description": "A pickaxe stroke, 0.7 s: the pick goes up over the right shoulder as the chest turns and leans back (0.22 s, ease out), comes down through the block in front at chest to waist height (contact at 0.34 s, ease in), recoils a little and settles by 0.7 s; focused eyes, gritted teeth at the contact.",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "length": 0.7,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.05,
+          "face": {"eyes": 8}
+        },
+        {"t": 0.22, "pose": "mine.raise", "ease": "easeOutCubic"},
+        {
+          "t": 0.34,
+          "pose": "mine.strike",
+          "ease": "easeInQuad",
+          "face": {"eyes": 8, "mouth": 4}
+        },
+        {"t": 0.42, "pose": "mine.recoil", "ease": "easeOutQuad"},
+        {"t": 0.55, "face": "none"},
+        {"t": 0.7, "pose": "@stance"}
+      ]
+    },
+    "work.chop": {
+      "description": "An axe swing into a trunk, 0.8 s: the torso winds right with the axe cocked behind the right shoulder (0.25 s), swings across at chest height (contact at 0.4 s), the blade bites and bounces, back by 0.8 s.",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "length": 0.8,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.05,
+          "face": {"eyes": 8}
+        },
+        {"t": 0.25, "pose": "chop.wind", "ease": "easeOutCubic"},
+        {
+          "t": 0.4,
+          "pose": "chop.hit",
+          "ease": "easeInQuad",
+          "face": {"eyes": 8, "mouth": 4}
+        },
+        {"t": 0.48, "pose": "chop.bite", "ease": "easeOutQuad"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.8, "pose": "@stance"}
+      ]
+    },
+    "work.till": {
+      "description": "A hoe stroke into the soil a block ahead, 0.8 s: both hands raise the hoe (0.25 s), the hips fold forward as it chops down (contact at 0.4 s), a short pull back toward the feet, back by 0.8 s.",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "length": 0.8,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.05,
+          "face": {"eyes": 8}
+        },
+        {"t": 0.25, "pose": "till.raise", "ease": "easeOutCubic"},
+        {"t": 0.4, "pose": "till.strike", "ease": "easeInQuad"},
+        {"t": 0.52, "pose": "till.pull"},
+        {"t": 0.65, "face": "none"},
+        {"t": 0.8, "pose": "@stance"}
+      ]
+    },
+    "work.plant": {
+      "description": "Planting, 1.5 s: down on the right knee (right foot steps back, the left stays planted, 0.45 s), the right hand pokes seeds into the soil (0.6 s), the left pats it down (0.85 s), a pleased look, then up again by 1.5 s.",
+      "length": 1.5,
+      "steps": true,
+      "contact": "body",
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {"t": 0.15, "pose": "plant.lift", "ease": "easeInOutSine"},
+        {"t": 0.3, "pose": "plant.mid", "ease": "easeInSine"},
+        {
+          "t": 0.45,
+          "pose": "plant.kneel",
+          "ease": "easeOutQuad",
+          "face": {"eyes": 8}
+        },
+        {"t": 0.6, "pose": "plant.kneel_poke", "ease": "easeInQuad"},
+        {"t": 0.72, "pose": "plant.kneel"},
+        {"t": 0.85, "pose": "plant.kneel_pat", "ease": "easeInQuad"},
+        {
+          "t": 0.97,
+          "pose": "plant.kneel",
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {"t": 1.15, "pose": "plant.mid", "ease": "easeInOutSine"},
+        {"t": 1.3, "pose": "plant.lift", "ease": "easeInOutSine", "face": "none"},
+        {"t": 1.5, "pose": "@stance"}
+      ],
+      "poses": {
+        "plant.lift": {
+          "extends": "kneel.r_lift",
+          "bones": {
+            "neck": [8, 0, 0],
+            "chest": [2, 0, 0]
+          }
+        },
+        "plant.mid": {
+          "extends": "kneel.r_mid",
+          "bones": {
+            "body": [8, 0, 0],
+            "neck": [10, 0, 0],
+            "chest": [4, 0, 0],
+            "arm_r": [-20, 0, 6],
+            "forearm_r": [-20, 0, 0],
+            "arm_l": [-20, 0, -6],
+            "forearm_l": [-20, 0, 0]
+          }
+        },
+        "plant.kneel": {
+          "extends": "kneel.r",
+          "bones": {
+            "body": [16, 0, 0],
+            "chest": [8, 0, 0],
+            "neck": [10, 0, 0],
+            "arm_r": [-62, 0, 4],
+            "forearm_r": [-8, 0, 0],
+            "hand_r": [14, 0, 0],
+            "arm_l": [-34, 0, 0],
+            "forearm_l": [-42, 0, 0],
+            "hand_l": [10, 0, 0]
+          }
+        },
+        "plant.kneel_poke": {
+          "extends": "plant.kneel",
+          "bones": {
+            "body": [18, 0, 0],
+            "neck": [12, 0, 0],
+            "arm_r": [-50, 0, 4],
+            "forearm_r": [0, 0, 0],
+            "hand_r": [30, 0, 0]
+          }
+        },
+        "plant.kneel_pat": {
+          "extends": "plant.kneel",
+          "bones": {
+            "body": [18, 0, 0],
+            "neck": [12, 0, 0],
+            "arm_r": [-40, 0, 8],
+            "forearm_r": [-30, 0, 0],
+            "hand_r": [10, 0, 0],
+            "arm_l": [-58, 0, -4],
+            "forearm_l": [-4, 0, 0],
+            "hand_l": [28, 0, 0]
+          }
+        }
+      }
+    },
+    "work.harvest": {
+      "description": "Harvesting a crop, 1.2 s: knees bend and the hips fold to reach the plant (0.3 s), the hand closes on it (0.42 s), pulls it up to the chest with the left hand coming to take it (0.65 s), a happy look at the crop (0.8 s), back by 1.2 s.",
+      "length": 1.2,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.3,
+          "pose": "harvest.reach",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 8}
+        },
+        {"t": 0.42, "pose": "harvest.grab"},
+        {"t": 0.65, "pose": "harvest.pull", "ease": "easeOutQuad"},
+        {
+          "t": 0.8,
+          "pose": "harvest.show",
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {"t": 1.05, "face": "none"},
+        {"t": 1.2, "pose": "@stance"}
+      ]
+    },
+    "work.fish_cast": {
+      "description": "Casting a rod, 1.1 s: the rod goes back over the right shoulder with the weight back (0.3 s), flicks forward (0.45 s, the throw sound), follows through and settles into the waiting hold (work.fish_wait.loop's pose) by 1.1 s. The server plays work.fish_wait right after it.",
+      "length": 1.1,
+      "settle_to": "work.fish_wait.loop",
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.05,
+          "face": {"eyes": 8}
+        },
+        {"t": 0.3, "pose": "fish.back", "ease": "easeOutCubic"},
+        {"t": 0.45, "pose": "fish.flick", "ease": "easeInQuad", "sound": "minecraft:entity.fishing_bobber.throw"},
+        {"t": 0.6, "pose": "fish.follow", "ease": "easeOutQuad"},
+        {"t": 0.9, "face": "none"},
+        {"t": 1.1, "pose": "fish.hold"}
+      ]
+    },
+    "work.fish_wait": {
+      "description": "The bobber lands, 0.5 s: from the waiting hold the rod tip dips and recovers, then work.fish_wait.loop plays (HEROES_V2 4.8: a .loop follows its action).",
+      "length": 0.5,
+      "settle_to": "work.fish_wait.loop",
+      "keys": [
+        {"t": 0, "pose": "fish.hold"},
+        {"t": 0.15, "pose": "fish.dip", "ease": "easeOutQuad"},
+        {"t": 0.5, "pose": "fish.hold"}
+      ],
+      "poses": {
+        "fish.dip": {
+          "extends": "fish.hold",
+          "bones": {
+            "forearm_r": [-34, 0, 0],
+            "hand_r": [-4, 0, 0],
+            "neck": [8, 0, 0]
+          }
+        }
+      }
+    },
+    "work.fish_wait.loop": {
+      "description": "Waiting for a bite, 4 s loop on the action controller until the server plays work.fish_reel: the rod held out, the tip bobbing, breathing, a glance aside at 1.5 s.",
+      "length": 4,
+      "loop": true,
+      "kind": "action",
+      "keys": [
+        {"t": 0, "pose": "fish.hold"},
+        {"t": 4, "pose": "fish.hold"}
+      ],
+      "layers": [
+        {
+          "primitive": "breathe",
+          "params": {"period": 4}
+        },
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "hand_r": [2.5, 0, 0],
+              "forearm_r": {
+                "amp": [1.5, 0, 0],
+                "phase": 0.1
+              }
+            },
+            "period": 2
+          }
+        },
+        {
+          "primitive": "look",
+          "params": {
+            "glances": [
+              [1.4, 1.8, 2.4, 2.9, 20, 2]
+            ]
+          }
+        }
+      ]
+    },
+    "work.fish_reel": {
+      "description": "Reeling in, 1.2 s from the waiting hold: the left hand cranks the reel (0.1-0.55 s), the rod is yanked up and back (0.65 s, the retrieve sound, a splash), the left hand reaches for the line (0.85 s), back to the stance by 1.2 s with a happy face.",
+      "length": 1.2,
+      "keys": [
+        {"t": 0, "pose": "fish.hold"},
+        {
+          "t": 0.1,
+          "pose": "fish.reel",
+          "face": {"eyes": 8}
+        },
+        {"t": 0.55, "pose": "fish.reel"},
+        {
+          "t": 0.65,
+          "pose": "fish.yank",
+          "ease": "easeOutCubic",
+          "sound": "minecraft:entity.fishing_bobber.retrieve",
+          "marker": "vfx:splash",
+          "face": {"eyes": 6, "mouth": 2}
+        },
+        {
+          "t": 0.85,
+          "pose": "fish.catch",
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {"t": 1.05, "face": "none"},
+        {"t": 1.2, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "forearm_l": [14, 0, 10]
+            },
+            "period": 0.25,
+            "shape": "circle",
+            "window": [0.08, 0.14, 0.5, 0.56]
+          }
+        }
+      ]
+    },
+    "work.cook": {
+      "description": "Cooking, 1.8 s: leaning over a pot, the right hand stirs two circles (0.25-1.1 s) while the left steadies the pot, then tastes from the spoon (1.3 s) with a pleased face and a nod, back by 1.8 s.",
+      "length": 1.8,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.25,
+          "pose": "cook.stir",
+          "face": {"eyes": 8}
+        },
+        {"t": 1.1, "pose": "cook.stir"},
+        {
+          "t": 1.3,
+          "pose": "cook.taste",
+          "ease": "easeOutSine",
+          "face": {"eyes": 3, "mouth": 6}
+        },
+        {"t": 1.45, "pose": "cook.nod"},
+        {
+          "t": 1.55,
+          "pose": "cook.taste",
+          "face": {"eyes": 3, "mouth": 6, "cheeks": 1}
+        },
+        {"t": 1.7, "face": "none"},
+        {"t": 1.8, "pose": "@stance"}
+      ],
+      "poses": {
+        "cook.nod": {
+          "extends": "cook.taste",
+          "bones": {
+            "neck": [6, 0, 0]
+          }
+        }
+      },
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "arm_r": [7, 0, 7],
+              "forearm_r": {
+                "amp": [6, 0, 0],
+                "phase": 0.25
+              }
+            },
+            "period": 0.42,
+            "shape": "circle",
+            "window": [0.25, 0.35, 1.0, 1.1]
+          }
+        }
+      ]
+    },
+    "work.smith": {
+      "description": "A hammer blow on the anvil, 1.0 s: the hammer goes up behind the head as the left hand holds the work with tongs (0.28 s), comes down hard (contact at 0.4 s: sparks), bounces, back by 1.0 s; eyes on the work.",
+      "length": 1.0,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.05,
+          "face": {"eyes": 8}
+        },
+        {"t": 0.28, "pose": "smith.raise", "ease": "easeOutCubic"},
+        {
+          "t": 0.4,
+          "pose": "smith.strike",
+          "ease": "easeInQuad",
+          "marker": "vfx:sparks",
+          "face": {"eyes": 8, "mouth": 4}
+        },
+        {"t": 0.48, "pose": "smith.bounce", "ease": "easeOutQuad"},
+        {"t": 0.7, "face": "none"},
+        {"t": 1.0, "pose": "@stance"}
+      ]
+    },
+    "work.build": {
+      "description": "Placing a block, 0.7 s: reach forward at chest height (0.25 s), press it into place (0.33 s), draw back, settle by 0.7 s.",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "length": 0.7,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.05,
+          "face": {"eyes": 8}
+        },
+        {"t": 0.25, "pose": "build.reach", "ease": "easeOutSine"},
+        {"t": 0.33, "pose": "build.place", "ease": "easeInQuad"},
+        {"t": 0.45, "pose": "build.reach", "ease": "easeOutSine"},
+        {"t": 0.55, "face": "none"},
+        {"t": 0.7, "pose": "@stance"}
+      ]
+    },
+    "work.read": {
+      "description": "Reading, 2.4 s: an open book held in both hands at the chest, the head bent over it with focused eyes, small nods along the lines, a page turned with the right hand at 1.3 s, closed and lowered by 2.4 s.",
+      "length": 2.4,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.3,
+          "pose": "read.hold",
+          "face": {"eyes": 8}
+        },
+        {"t": 1.15, "pose": "read.hold"},
+        {"t": 1.32, "pose": "read.turn", "ease": "easeOutSine"},
+        {"t": 1.5, "pose": "read.hold"},
+        {"t": 2.05, "pose": "read.hold", "face": "none"},
+        {"t": 2.4, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "neck": [2, 3, 0]
+            },
+            "period": 0.8,
+            "window": [0.35, 0.5, 1.0, 1.15]
+          }
+        },
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "neck": [2, 3, 0]
+            },
+            "period": 0.8,
+            "window": [1.5, 1.65, 1.9, 2.05]
+          }
+        }
+      ]
+    },
+    "work.pray": {
+      "description": "A shrine prayer, 3.0 s (original timing of a familiar rite): two deep bows (0.35 and 1.1 s), two claps (1.85 and 2.05 s), palms together with the eyes closed, a last small bow, back by 3.0 s.",
+      "length": 3.0,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.35,
+          "pose": "pray.bow",
+          "face": {"eyes": 2}
+        },
+        {"t": 0.55, "pose": "pray.bow"},
+        {"t": 0.85, "pose": "@stance", "face": "none"},
+        {
+          "t": 1.1,
+          "pose": "pray.bow",
+          "face": {"eyes": 2}
+        },
+        {"t": 1.3, "pose": "pray.bow"},
+        {"t": 1.55, "pose": "@stance", "face": "none"},
+        {"t": 1.75, "pose": "pray.open"},
+        {"t": 1.85, "pose": "pray.clap", "ease": "easeInQuad"},
+        {"t": 1.95, "pose": "pray.open"},
+        {"t": 2.05, "pose": "pray.clap", "ease": "easeInQuad"},
+        {
+          "t": 2.2,
+          "pose": "pray.palms",
+          "face": {"eyes": 11}
+        },
+        {"t": 2.55, "pose": "pray.palms"},
+        {"t": 2.72, "pose": "pray.nod"},
+        {"t": 2.85, "pose": "pray.palms", "face": "none"},
+        {"t": 3.0, "pose": "@stance"}
+      ]
+    },
+    "work.sweep": {
+      "description": "Sweeping with a broom held low in both hands, 1.4 s: two strokes from right to left (0.2-0.55 s and 0.85-1.15 s), the torso turning with them and the eyes on the floor, back by 1.4 s.",
+      "length": 1.4,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {"t": 0.2, "pose": "sweep.right"},
+        {"t": 0.55, "pose": "sweep.left", "ease": "easeInOutQuad"},
+        {"t": 0.85, "pose": "sweep.right", "ease": "easeInOutSine"},
+        {"t": 1.15, "pose": "sweep.left", "ease": "easeInOutQuad"},
+        {"t": 1.4, "pose": "@stance"}
+      ]
+    },
+    "work.tend": {
+      "description": "Tending an animal, 1.5 s: knees bend and the body leans to stroke an animal at knee height (0.3 s), four slow strokes with a happy face, back by 1.5 s.",
+      "length": 1.5,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {"t": 0.3, "pose": "tend.bend", "ease": "easeInOutSine"},
+        {
+          "t": 0.4,
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {"t": 1.15, "pose": "tend.bend"},
+        {"t": 1.3, "face": "none"},
+        {"t": 1.5, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "arm_r": [9, 0, 0],
+              "forearm_r": {
+                "amp": [6, 0, 0],
+                "phase": 0.1
+              }
+            },
+            "period": 0.35,
+            "window": [0.35, 0.45, 1.05, 1.15]
+          }
+        }
+      ]
+    },
+    "work.eat": {
+      "description": "Eating, 1.8 s: food to the mouth (0.25 s), three bites with the head dipping and the mouth chewing (0.35-1.05 s), the hand lowers while chewing, a happy flush at 1.25 s, back by 1.8 s.",
+      "length": 1.8,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.25,
+          "pose": "eat.bite",
+          "ease": "easeOutSine",
+          "face": {"eyes": 0, "mouth": 2}
+        },
+        {
+          "t": 0.4,
+          "face": {"mouth": 0}
+        },
+        {
+          "t": 0.55,
+          "face": {"mouth": 2}
+        },
+        {
+          "t": 0.7,
+          "face": {"mouth": 0}
+        },
+        {
+          "t": 0.85,
+          "face": {"mouth": 2}
+        },
+        {
+          "t": 1.0,
+          "face": {"mouth": 0}
+        },
+        {"t": 1.05, "pose": "eat.bite"},
+        {
+          "t": 1.25,
+          "pose": "eat.chew",
+          "face": {"eyes": 3, "mouth": 6, "cheeks": 1}
+        },
+        {
+          "t": 1.4,
+          "face": {"eyes": 3, "mouth": 1, "cheeks": 1}
+        },
+        {
+          "t": 1.55,
+          "face": {"eyes": 3, "mouth": 6, "cheeks": 1}
+        },
+        {"t": 1.65, "face": "none"},
+        {"t": 1.8, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "neck": [6, 0, 0],
+              "forearm_r": {
+                "amp": [-6, 0, 0],
+                "phase": 0
+              }
+            },
+            "period": 0.3,
+            "shape": "pulse",
+            "window": [0.3, 0.35, 1.0, 1.05]
+          }
+        }
+      ]
+    },
+    "eat": {"copy": "work.eat", "description": "Action code 15 (appendix D): the same as work.eat."}
+  }
+}

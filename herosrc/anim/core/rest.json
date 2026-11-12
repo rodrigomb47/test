@@ -1,0 +1,98 @@
+{
+  "_comment": "Core library, rest and carry (G4; HEROES_V2.md 4.4: the base controller plays them). Sit and sleep are on the ground, the seat and back placed by the form-scaled floor fix, so they fit every form.",
+  "animations": {
+    "rest.sit": {
+      "description": "Sitting on the ground at rest, 8 s loop: the right leg out, the left knee up with the forearm on it, the right hand on the thigh; slow breathing, glances, an ear twitch now and then, a lazy tail sway.",
+      "length": 8,
+      "loop": true,
+      "contact": "body",
+      "keys": [
+        {"t": 0, "pose": "sit.ground"},
+        {"t": 8, "pose": "sit.ground"}
+      ],
+      "layers": [
+        {
+          "primitive": "breathe",
+          "params": {"period": 4}
+        },
+        {
+          "primitive": "look",
+          "params": {
+            "glances": [
+              [1.6, 2.2, 3.4, 4.0, 22, 4],
+              [5.2, 5.8, 6.6, 7.2, -16, -6]
+            ]
+          }
+        },
+        {"primitive": "ear_twitch"},
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "tail_1": [0, 8, 0],
+              "tail_2": {
+                "amp": [0, 6, 0],
+                "phase": 0.2
+              }
+            },
+            "period": 4
+          }
+        }
+      ]
+    },
+    "rest.sleep": {
+      "description": "Asleep on the back, 8 s loop (the entity stands at the hips, the body lies behind it): slow deep breathing (4 s), sleeping eyes through face_ctrl, an ear twitch, a small shift of the head at 5 s.",
+      "length": 8,
+      "loop": true,
+      "contact": "body",
+      "secondary": ["tail", "ears"],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "sleep.back",
+          "face": {"eyes": 11, "mouth": 0}
+        },
+        {"t": 8, "pose": "sleep.back"}
+      ],
+      "layers": [
+        {
+          "primitive": "breathe",
+          "params": {"period": 4, "depth": 1.6}
+        },
+        {
+          "primitive": "look",
+          "params": {
+            "glances": [
+              [4.6, 5.2, 6.6, 7.4, -10, 0]
+            ]
+          }
+        },
+        {"primitive": "ear_twitch"}
+      ]
+    },
+    "carry.loop": {
+      "description": "Hauling a full load, 1.0 s walk in place (HaulerJob): a shorter, heavier stride with more side-to-side tip, leaning back a little, forearms forward under the load (A2 draws the item at item_r), the load bobbing with each step.",
+      "length": 1,
+      "loop": true,
+      "keys": [
+        {"t": 0, "pose": "carry.hold"},
+        {"t": 1, "pose": "carry.hold"}
+      ],
+      "layers": [
+        {"primitive": "carry_cycle", "add": false},
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "forearm_r": [3, 0, 0],
+              "forearm_l": [3, 0, 0],
+              "neck": [1, 0, 0]
+            },
+            "period": 0.5,
+            "phase": 0.1
+          }
+        }
+      ]
+    }
+  }
+}

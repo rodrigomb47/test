@@ -141,7 +141,12 @@ class HeroAssets:
         move.idle."""
         if base is None:
             base = "combat.idle" if action and self.chain.get("combat.idle") else "move.idle"
-        return Playback(self.chain, base, action, action_at)
+        return Playback(self.chain, base, action, action_at, d=self.form_var())
+
+    def form_var(self):
+        """FORM_VAR (anim/clip.py): what HeroModel sets for this model's form-scaled keys (G4)."""
+        from anim.clip import form_var_of_geo
+        return form_var_of_geo(self.geo)
 
     # -------------------------------------------------------------- drawing
 
@@ -174,7 +179,7 @@ class HeroAssets:
         bind pose if the chain has neither)."""
         name = "combat.idle" if drawn and self.chain.get("combat.idle") else "move.idle"
         clip = self.chain.get(name)
-        return clip.sample(0.0) if clip is not None else {}
+        return clip.sample(0.0, self.form_var()) if clip is not None else {}
 
 
 def to_image(arr):

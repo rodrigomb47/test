@@ -15,19 +15,43 @@ channel by channel (GeckoLib replaces per keyframe stack); once it has finished 
 of the action fires at action_at + its file time (on the frame its pose shows).
 """
 import json
+import re
 
-from anim.clip import TICK, Clip, Event, Key, Track
+from anim.clip import FORM_VAR, TICK, Clip, Event, Key, Track
 from anim.writer import TRANSITION_TICKS
 
 LOOP_MODES = {True: "loop", "loop": "loop", "hold_on_last_frame": "hold"}
+# the one Molang form herogen writes (anim/writer.py): "v + k * v.fc_dhip" or "v - k * v.fc_dhip"
+_FORM = re.compile(r"^\s*(-?\d+(?:\.\d+)?)\s*([+-])\s*(\d+(?:\.\d+)?)\s*\*\s*" + re.escape(FORM_VAR) + r"\s*$")
+
+
+def _component(x, where):
+    """(value, FORM_VAR coefficient) of one component: a number or herogen's form-scaled Molang string."""
+    if isinstance(x, (int, float)) and not isinstance(x, bool):
+        return float(x), 0.0
+    if isinstance(x, str):
+        m = _FORM.match(x)
+        if m:
+            k = float(m.group(3))
+            return float(m.group(1)), (k if m.group(2) == "+" else -k)
+    raise ValueError("%s: a key component must be a number or \"v + k * %s\", got %r" % (where, FORM_VAR, x))
+
+
+def _vec_k(v, where):
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return (float(v),) * 3, None
+    if not isinstance(v, list) or len(v) != 3:
+        raise ValueError("%s: a key value must be 3 components, got %r" % (where, v))
+    parts = [_component(x, where) for x in v]
+    k = tuple(p[1] for p in parts)
+    return tuple(p[0] for p in parts), (k if any(k) else None)
 
 
 def _vec(v, where):
-    if isinstance(v, (int, float)):
-        return (float(v),) * 3
-    if not isinstance(v, list) or len(v) != 3 or not all(isinstance(x, (int, float)) for x in v):
-        raise ValueError("%s: a key value must be 3 numbers (no Molang in herogen files), got %r" % (where, v))
-    return tuple(float(x) for x in v)
+    vec, k = _vec_k(v, where)
+    if k is not None:
+        raise ValueError("%s: a jump's pre value cannot be form-scaled, got %r" % (where, v))
+    return vec
 
 
 def parse_track(keys, where):
@@ -40,13 +64,15 @@ def parse_track(keys, where):
             raise ValueError("%s: key %s is not after %s (GeckoLib reads keys in file order)" % (where, ts, last))
         last = t
         if isinstance(value, dict) and "vector" in value:
-            tr.put(Key(t, _vec(value["vector"], where), value.get("easing", "linear")))
+            v, k = _vec_k(value["vector"], where)
+            tr.put(Key(t, v, value.get("easing", "linear"), k=k))
         elif isinstance(value, dict) and ("pre" in value or "post" in value):
-            post = _vec(value.get("post", value.get("pre")), where)
+            post, k = _vec_k(value.get("post", value.get("pre")), where)
             pre = _vec(value["pre"], where) if "pre" in value and t > 0 else None
-            tr.put(Key(t, post, value.get("lerp_mode", "linear"), pre))
+            tr.put(Key(t, post, value.get("lerp_mode", "linear"), pre, k=k))
         else:
-            tr.put(Key(t, _vec(value, where)))
+            v, k = _vec_k(value, where)
+            tr.put(Key(t, v, k=k))
     return tr
 
 
@@ -109,10 +135,12 @@ def _lerp(a, b, f):
 
 
 class Playback:
-    """A base animation looping from wall time 0 and, optionally, an action started at `action_at`."""
+    """A base animation looping from wall time 0 and, optionally, an action started at `action_at`, on a model whose
+    FORM_VAR (anim/clip.py: its hip height minus 18.25 px, what HeroModel sets for form-scaled keys) is `d`."""
 
-    def __init__(self, chain, base, action=None, action_at=0.0):
+    def __init__(self, chain, base, action=None, action_at=0.0, d=0.0):
         self.chain = chain
+        self.d = float(d)
         self.base = chain.get(base) if base else None
         if base and self.base is None:
             raise KeyError("no animation %r in %s" % (base, ", ".join(f for f, _ in chain.files)))
@@ -123,7 +151,7 @@ class Playback:
         self.blend = TRANSITION_TICKS["action"] * TICK
 
     def base_pose(self, t):
-        return self.base.sample(t) if self.base is not None else {}
+        return self.base.sample(t, self.d) if self.base is not None else {}
 
     def action_phase(self, t):
         """None (no action or before it), "blend", "play" or "done"."""
@@ -144,14 +172,14 @@ class Playback:
             return pose
         if phase == "blend":
             start = self.base_pose(self.action_at)          # the snapshot the controller blends from
-            first = self.action.sample(0.0)
+            first = self.action.sample(0.0, self.d)
             f = (t - self.action_at) / self.blend
             for bone, chans in first.items():
                 for ch, v in chans.items():
                     rest = (1.0, 1.0, 1.0) if ch == "scale" else (0.0, 0.0, 0.0)
                     pose.setdefault(bone, {})[ch] = _lerp(start.get(bone, {}).get(ch, rest), v, f)
             return pose
-        for bone, chans in self.action.sample(t - self.action_at - self.blend).items():
+        for bone, chans in self.action.sample(t - self.action_at - self.blend, self.d).items():
             pose.setdefault(bone, {}).update(chans)
         return pose
 

@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw
 import build
 import previews
 from anim import library
-from anim.clip import layered
+from anim.clip import form_var_of_geo, layered
 from geo import GeoModel
 from render import raster
 from util import ROOT
@@ -44,8 +44,8 @@ def _resolve(hero, name):
     return _CLIPS[key]
 
 
-def pose_at(hero, name, t):
-    """(pose for the renderer, face frames, weapon drawn) of animation `name` at time t on this hero."""
+def pose_at(hero, name, t, d=0.0):
+    """(pose for the renderer, face frames, weapon drawn) of animation `name` at time t on this hero (FORM_VAR d)."""
     clip = _resolve(hero, name)
     if clip is None:
         raise KeyError("%s has no animation %s" % (hero["id"], name))
@@ -55,9 +55,9 @@ def pose_at(hero, name, t):
         bt = None
         if base is not None and base.loop == "loop":
             bt = t % base.length
-        pose = layered(base, clip, t, bt)
+        pose = layered(base, clip, t, bt, d=d)
     else:
-        pose = clip.sample(t)
+        pose = clip.sample(t, d)
     face = (0, 0, 0)
     fc = pose.get("face_ctrl", {}).get("position")
     if fc:
@@ -66,7 +66,7 @@ def pose_at(hero, name, t):
 
 
 def render(geo, tex, hero, name, t, yaw=-90.0, scale=4, pitch=8.0, bounds=None):
-    pose, face, drawn = pose_at(hero, name, t)
+    pose, face, drawn = pose_at(hero, name, t, form_var_of_geo(geo))
     pose = {b: v for b, v in pose.items() if b in geo.bones}
     hidden = previews.view_hidden(geo, drawn=drawn)
     shift = previews.face_shift(*face)
@@ -78,7 +78,7 @@ def render(geo, tex, hero, name, t, yaw=-90.0, scale=4, pitch=8.0, bounds=None):
 def bounds_over(geo, hero, name, times, yaw, pitch):
     xs, ys = [], []
     for t in times:
-        pose, _, drawn = pose_at(hero, name, t)
+        pose, _, drawn = pose_at(hero, name, t, form_var_of_geo(geo))
         pose = {b: v for b, v in pose.items() if b in geo.bones}
         b = raster.model_bounds(geo, [raster.View(yaw, pitch)], previews.view_hidden(geo, drawn=drawn), pose)
         xs += [b[0], b[1]]

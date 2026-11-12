@@ -1,0 +1,210 @@
+{
+  "_comment": "Poses of the core movement and rest loops (G4: move.swim, move.fall, move.climb, rest.sit, rest.sleep, carry.loop). Conventions in tools/herogen/anim/poses.py.",
+  "poses": {
+    "swim.glide": {
+      "_comment": "Breaststroke glide: the body pitched forward 44 degrees about the hips with the legs trailing behind it in line, arms reaching forward, toes pointed, the head up out of the water.",
+      "mirror": true,
+      "bones": {
+        "body": [44, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-36, 0, 0],
+        "arm_r": [-150, 0, 6],
+        "forearm_r": [-6, 0, 0],
+        "leg_r": [40, 0, 3],
+        "shin_r": [6, 0, 0],
+        "foot_r": [40, 0, 0],
+        "tail_1": [10, 0, 0]
+      }
+    },
+    "swim.pull": {
+      "_comment": "The pull: arms sweep out and down to shoulder level, the head lifts to breathe.",
+      "mirror": true,
+      "bones": {
+        "body": [38, 0, 0],
+        "chest": [-2, 0, 0],
+        "neck": [-38, 0, 0],
+        "arm_r": [-84, 0, 58],
+        "forearm_r": [-22, 0, 0],
+        "hand_r": [14, 0, 0],
+        "leg_r": [38, 0, 3],
+        "shin_r": [10, 0, 0],
+        "foot_r": [38, 0, 0],
+        "tail_1": [8, 0, 0]
+      }
+    },
+    "swim.tuck": {
+      "_comment": "Recovery: the hands come together under the chest, the knees draw up and out for the frog kick.",
+      "mirror": true,
+      "bones": {
+        "body": [40, 0, 0],
+        "chest": [3, 0, 0],
+        "neck": [-38, 0, 0],
+        "arm_r": [-34, 0, 14],
+        "forearm_r": [-112, 0, 0],
+        "hand_r": [0, 0, -10],
+        "leg_r": [4, 0, 22],
+        "shin_r": [104, 0, 0],
+        "foot_r": [-24, 0, -14],
+        "tail_1": [4, 0, 0]
+      }
+    },
+    "swim.kick": {
+      "_comment": "The kick: legs drive back and together while the arms shoot forward.",
+      "mirror": true,
+      "bones": {
+        "body": [44, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-36, 0, 0],
+        "arm_r": [-128, 0, 10],
+        "forearm_r": [-28, 0, 0],
+        "leg_r": [40, 0, 10],
+        "shin_r": [24, 0, 0],
+        "foot_r": [44, 0, 0],
+        "tail_1": [14, 0, 0]
+      }
+    },
+    "fall.a": {
+      "_comment": "Falling: arms thrown up and out, legs bent and paddling, ears and tail swept up.",
+      "bones": {
+        "body": [-6, 0, 0],
+        "chest": [-4, 0, 0],
+        "neck": [-8, 0, 0],
+        "arm_r": [-96, 0, 64],
+        "forearm_r": [-34, 0, 0],
+        "hand_r": [0, 0, 10],
+        "arm_l": [-136, 0, -44],
+        "forearm_l": [-48, 0, 0],
+        "hand_l": [0, 0, -10],
+        "leg_r": [-26, 0, 6],
+        "shin_r": [44, 0, 0],
+        "foot_r": [10, 0, 0],
+        "leg_l": [8, 0, -6],
+        "shin_l": [62, 0, 0],
+        "foot_l": [18, 0, 0],
+        "ear_r": [-22, 0, 8],
+        "ear_l": [-22, 0, -8],
+        "tail_1": [34, 0, 0],
+        "tail_2": [10, 0, 0]
+      }
+    },
+    "fall.b": {
+      "_comment": "The other half of the falling flail (arms and legs swapped).",
+      "bones": {
+        "body": [-6, 0, 0],
+        "chest": [-4, 0, 0],
+        "neck": [-8, 0, 0],
+        "arm_r": [-136, 0, 44],
+        "forearm_r": [-48, 0, 0],
+        "hand_r": [0, 0, 10],
+        "arm_l": [-96, 0, -64],
+        "forearm_l": [-34, 0, 0],
+        "hand_l": [0, 0, -10],
+        "leg_r": [8, 0, 6],
+        "shin_r": [62, 0, 0],
+        "foot_r": [18, 0, 0],
+        "leg_l": [-26, 0, -6],
+        "shin_l": [44, 0, 0],
+        "foot_l": [10, 0, 0],
+        "ear_r": [-22, 0, 8],
+        "ear_l": [-22, 0, -8],
+        "tail_1": [30, 0, 0],
+        "tail_2": [14, 0, 0]
+      }
+    },
+    "climb.a": {
+      "_comment": "Climbing a ladder or vines, facing it: the right hand reaching high, the left at chest height, the right knee up on the next rung, the left leg pushing, the body close to the wall, looking up.",
+      "bones": {
+        "body": [6, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-16, 0, 0],
+        "arm_r": [-166, 0, 8],
+        "forearm_r": [-18, 0, 0],
+        "hand_r": [-10, 0, 0],
+        "arm_l": [-108, 0, -8],
+        "forearm_l": [-64, 0, 0],
+        "hand_l": [-10, 0, 0],
+        "leg_r": [-72, 0, 3],
+        "shin_r": [84, 0, 0],
+        "foot_r": [-12, 0, 0],
+        "leg_l": [-14, 0, -3],
+        "shin_l": [24, 0, 0],
+        "foot_l": [-10, 0, 0]
+      }
+    },
+    "climb.b": {
+      "_comment": "climb.a with the sides swapped.",
+      "bones": {
+        "body": [6, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-16, 0, 0],
+        "arm_l": [-166, 0, -8],
+        "forearm_l": [-18, 0, 0],
+        "hand_l": [-10, 0, 0],
+        "arm_r": [-108, 0, 8],
+        "forearm_r": [-64, 0, 0],
+        "hand_r": [-10, 0, 0],
+        "leg_l": [-72, 0, -3],
+        "shin_l": [84, 0, 0],
+        "foot_l": [-12, 0, 0],
+        "leg_r": [-14, 0, 3],
+        "shin_r": [24, 0, 0],
+        "foot_r": [-10, 0, 0]
+      }
+    },
+    "sit.ground": {
+      "_comment": "Sitting on the ground at rest: the right leg out in front resting on the heel, the left knee up (thigh 35 degrees above level, shin 40 below it, the foot flat), the forearm on that knee, the right hand on the ground beside the hip, a relaxed lean back. The contacts scale with the leg, so the floor fix holds on every base.",
+      "bones": {
+        "body": [-10, 0, 0],
+        "waist": [2, 0, 0],
+        "chest": [5, 0, 0],
+        "neck": [4, 0, 0],
+        "leg_r": [-90, 0, 8],
+        "shin_r": [0, 0, 0],
+        "foot_r": [70, 0, 4],
+        "leg_l": [-125, 0, -12],
+        "shin_l": [75, 0, 0],
+        "foot_l": [50, 0, 6],
+        "arm_r": [-18, 0, 12],
+        "forearm_r": [-34, 0, 0],
+        "hand_r": [10, 0, 0],
+        "arm_l": [-46, 0, -4],
+        "forearm_l": [-46, 0, 0],
+        "hand_l": [12, 0, 0],
+        "tail_1": [-30, 30, 0]
+      },
+      "fix": ["floor"],
+      "floor": ["body", "leg_*", "shin_*", "foot_*"]
+    },
+    "sleep.back": {
+      "_comment": "Asleep on the back: the head on the pillow, the right hand on the belly, the left arm bent up beside the head, the left knee a little up, the tail curled to the side. The entity stands at the hips; the body lies toward +z (behind it).",
+      "extends": "lie.back",
+      "bones": {
+        "chest": [-2, 0, 0],
+        "neck": [18, 10, 6],
+        "arm_r": [-34, 0, -4],
+        "forearm_r": [-92, 0, 0],
+        "hand_r": [0, 0, -14],
+        "arm_l": [-168, 0, -22],
+        "forearm_l": [-70, 0, 0],
+        "hand_l": [0, 0, -10],
+        "leg_l": [-78, 0, -8],
+        "shin_l": [26, 0, 0],
+        "foot_l": [56, 0, -6],
+        "ear_r": [-14, 0, 10],
+        "ear_l": [-14, 0, -10],
+        "tail_1": [-50, 50, 0],
+        "tail_2": [10, 20, 0]
+      }
+    },
+    "carry.hold": {
+      "_comment": "Arms of carry.loop: forearms forward under a load held at the chest (A2 draws the hauled item at item_r).",
+      "mirror": true,
+      "bones": {
+        "arm_r": [-36, 0, 6],
+        "forearm_r": [-66, 0, 0],
+        "hand_r": [0, 0, 8],
+        "neck": [-4, 0, 0]
+      }
+    }
+  }
+}

@@ -1,0 +1,848 @@
+{
+  "_comment": "Core library, combat reactions and life (G4; HEROES_V2.md 4.5, 4.8, 6.9, 6.13, appendix D). Reactions marked restyle start and end on '@stance' with the upper body as offsets over it, so every style library with a combat.idle gets its own copy that settles on its stance (anim/library.py); legs are absolute where they kneel, hop or fall. death holds its last frame; stun, defeated and work.fish_wait lead into their .loop.",
+  "animations": {
+    "hurt.heavy": {
+      "description": "A heavy hit (code 11), 0.5 s: the chest snaps back and the arms fly out in two ticks, the head whips aside, ears flatten and the tail jerks up, pain eyes and an open mouth; a rebound past the stance and back by 0.5 s. Feet planted.",
+      "length": 0.5,
+      "restyle": true,
+      "keys": [
+        {
+          "t": 0,
+          "pose": "@stance",
+          "face": {"eyes": 7, "mouth": 3}
+        },
+        {"t": 0.1, "pose": "react.recoil", "over": true, "ease": "easeOutQuad"},
+        {
+          "t": 0.28,
+          "pose": "react.recoil_back",
+          "over": true,
+          "face": {"eyes": 7, "mouth": 4}
+        },
+        {"t": 0.4, "face": "none"},
+        {"t": 0.5, "pose": "@stance"}
+      ]
+    },
+    "stagger": {
+      "description": "Poise broken (6.9), 2.5 s: the hit knocks the hero into a little hop, it lands on the left foot with the right lifted, drops to the right knee (the right foot steps back) at 0.4 s with stars over the head, sways dizzily with a lolling head until 1.9 s, pushes up on the left foot, brings the right foot under the hips and resettles the left foot into the stance by 2.5 s.",
+      "length": 2.5,
+      "restyle": true,
+      "steps": true,
+      "contact": "body",
+      "keys": [
+        {
+          "t": 0,
+          "pose": "@stance",
+          "face": {"eyes": 7, "mouth": 3}
+        },
+        {
+          "t": 0.08,
+          "pose": "stagger.jolt",
+          "root": [0, 1.2, 0],
+          "ease": "easeOutQuad",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.17,
+          "pose": "stagger.lift",
+          "ease": "easeInSine",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.28,
+          "pose": "stagger.mid",
+          "ease": "easeInSine",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.4,
+          "pose": "stagger.kneel",
+          "ease": "easeOutQuad",
+          "marker": "vfx:stars",
+          "face": {"eyes": 7, "mouth": 5},
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 1.9,
+          "pose": "stagger.kneel",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 1.95,
+          "face": {"eyes": 4, "mouth": 4}
+        },
+        {
+          "t": 2.1,
+          "pose": "stagger.mid",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 2.22,
+          "pose": "stagger.lift",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 2.37,
+          "pose": "react.settle_l",
+          "over": true,
+          "ease": "easeOutQuad",
+          "face": "none"
+        },
+        {"t": 2.5, "pose": "@stance"}
+      ],
+      "poses": {
+        "stagger.jolt": {
+          "extends": "react.hop",
+          "bones": {
+            "body": [-4, 0, 0],
+            "waist": [-5, 0, 0],
+            "chest": [-15, 4, 5],
+            "neck": [-12, -6, -6],
+            "arm_r": [-6, 0, 16],
+            "forearm_r": [-16, 0, 0],
+            "hand_r": [0, 0, 10],
+            "arm_l": [-4, 0, -20],
+            "forearm_l": [-20, 0, 0],
+            "hand_l": [0, 0, -10],
+            "ear_r": [-28, 0, 10],
+            "ear_l": [-28, 0, -10],
+            "tail_1": [26, 0, 0],
+            "tail_2": [12, 0, 0]
+          }
+        },
+        "stagger.lift": {
+          "extends": "kneel.r_lift",
+          "bones": {
+            "body": [2, 0, 0],
+            "chest": [-4, 0, 2],
+            "neck": [-3, 0, -2],
+            "arm_r": [-6, 0, 12],
+            "forearm_r": [-14, 0, 0],
+            "arm_l": [-6, 0, -14],
+            "forearm_l": [-16, 0, 0],
+            "ear_r": [-20, 0, 8],
+            "ear_l": [-20, 0, -8],
+            "tail_1": [12, 0, 0]
+          }
+        },
+        "stagger.mid": {
+          "extends": "kneel.r_mid",
+          "bones": {
+            "body": [6, 0, 0],
+            "waist": [2, 0, 0],
+            "chest": [2, 0, -2],
+            "neck": [0, 0, 3],
+            "arm_r": [-4, 0, 8],
+            "forearm_r": [-12, 0, 0],
+            "arm_l": [-14, 0, -6],
+            "forearm_l": [-22, 0, 0],
+            "ear_r": [-14, 0, 8],
+            "ear_l": [-14, 0, -8]
+          }
+        },
+        "stagger.kneel": {
+          "extends": "kneel.r",
+          "bones": {
+            "body": [8, 0, 0],
+            "waist": [3, 0, 0],
+            "chest": [5, 0, -3],
+            "neck": [6, 0, 6],
+            "arm_r": [8, 0, -6],
+            "forearm_r": [-6, 0, 0],
+            "hand_r": [0, 0, 4],
+            "arm_l": [-30, 0, 2],
+            "forearm_l": [-40, 0, 0],
+            "hand_l": [10, 0, 0],
+            "ear_r": [-18, 0, 14],
+            "ear_l": [-18, 0, -14],
+            "tail_1": [-6, 0, 0]
+          }
+        }
+      },
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "neck": [7, 0, 8],
+              "chest": {
+                "amp": [2, 0, 3],
+                "phase": 0.15
+              }
+            },
+            "period": 0.9,
+            "shape": "circle",
+            "window": [0.5, 0.8, 1.7, 1.95]
+          }
+        }
+      ]
+    },
+    "stun": {
+      "description": "Stunned (code 9), 0.4 s: a jolt with surprised eyes, then the body goes slack into a dazed slump (stun.loop's first frame), which plays next until the server ends the stun.",
+      "length": 0.4,
+      "restyle": true,
+      "settle_to": "stun.loop",
+      "keys": [
+        {
+          "t": 0,
+          "pose": "@stance",
+          "face": {"eyes": 6, "mouth": 3}
+        },
+        {"t": 0.1, "pose": "react.recoil", "over": true, "ease": "easeOutQuad"},
+        {"t": 0.4, "pose": "react.slump", "over": true, "ease": "easeInOutSine"}
+      ]
+    },
+    "stun.loop": {
+      "description": "Dazed, 2.0 s loop on the action controller: slumped with the head lolling in slow circles and the body swaying, half-closed eyes and a slack mouth, stars every pass.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "restyle": true,
+      "keys": [
+        {
+          "t": 0,
+          "pose": "react.slump",
+          "over": true,
+          "face": {"eyes": 1, "mouth": 2},
+          "marker": "vfx:stars"
+        },
+        {"t": 2.0, "pose": "react.slump", "over": true}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "neck": [6, 0, 7],
+              "chest": {
+                "amp": [2, 0, 3],
+                "phase": 0.15
+              }
+            },
+            "period": 1.0,
+            "shape": "circle"
+          }
+        },
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "body": [0, 0, 2]
+            },
+            "period": 2.0
+          }
+        }
+      ]
+    },
+    "interrupt": {
+      "description": "A wind-up broken (code 10), 0.6 s: arms jerk back and out, the chest twists, surprised eyes turning to an annoyed grit with a shake of the head, back by 0.6 s. Feet planted.",
+      "length": 0.6,
+      "restyle": true,
+      "keys": [
+        {
+          "t": 0,
+          "pose": "@stance",
+          "face": {"eyes": 6, "mouth": 3}
+        },
+        {"t": 0.08, "pose": "react.jerk", "over": true, "ease": "easeOutQuad"},
+        {
+          "t": 0.25,
+          "pose": "react.jerk_back",
+          "over": true,
+          "face": {"eyes": 4, "mouth": 4}
+        },
+        {"t": 0.5, "face": "none"},
+        {"t": 0.6, "pose": "@stance"}
+      ],
+      "poses": {
+        "react.jerk": {
+          "bones": {
+            "chest": [-8, -10, 0],
+            "neck": [-6, 12, 0],
+            "waist": [-2, -4, 0],
+            "arm_r": [14, 0, 16],
+            "forearm_r": [5, 0, 0],
+            "arm_l": [12, 0, -16],
+            "forearm_l": [5, 0, 0],
+            "ear_r": [-20, 0, 8],
+            "ear_l": [-20, 0, -8]
+          }
+        },
+        "react.jerk_back": {
+          "bones": {
+            "chest": [-2, -3, 0],
+            "neck": [-2, 4, 0],
+            "arm_r": [4, 0, 4],
+            "arm_l": [4, 0, -4],
+            "ear_r": [-8, 0, 4],
+            "ear_l": [-8, 0, -4]
+          }
+        }
+      },
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "neck": [0, 6, 0]
+            },
+            "period": 0.16,
+            "window": [0.25, 0.3, 0.4, 0.48]
+          }
+        }
+      ]
+    },
+    "dodge": {
+      "description": "The generic dodge (code 7; styles override it), 0.55 s: a quick hop with the knees tucked, ducking and leaning left with the arms pulled in (0.14 s), landing on softly bent knees (0.3 s), back by 0.55 s. Everything is offset over the stance, so a style's copy hops from its own footing; in place (the server moves the hero).",
+      "length": 0.55,
+      "restyle": true,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.04,
+          "face": {"eyes": 8, "mouth": 4}
+        },
+        {
+          "t": 0.14,
+          "pose": "dodge.duck",
+          "over": true,
+          "root": [0, 1.6, 0],
+          "ease": "easeOutQuad"
+        },
+        {
+          "t": 0.3,
+          "pose": "dodge.land",
+          "over": true,
+          "root": [0, -0.3, 0],
+          "ease": "easeInQuad"
+        },
+        {"t": 0.45, "face": "none"},
+        {"t": 0.55, "pose": "@stance"}
+      ],
+      "poses": {
+        "dodge.duck": {
+          "bones": {
+            "leg_r": [-22, 0, 0],
+            "shin_r": [44, 0, 0],
+            "foot_r": [-22, 0, 0],
+            "leg_l": [-22, 0, 0],
+            "shin_l": [44, 0, 0],
+            "foot_l": [-22, 0, 0],
+            "body": [6, 0, 8],
+            "chest": [8, 0, 8],
+            "neck": [6, 0, -10],
+            "arm_r": [-30, 0, -4],
+            "forearm_r": [-50, 0, 0],
+            "arm_l": [-30, 0, 4],
+            "forearm_l": [-50, 0, 0],
+            "ear_r": [-24, 0, 10],
+            "ear_l": [-24, 0, -10],
+            "tail_1": [20, 0, 0]
+          }
+        },
+        "dodge.land": {
+          "bones": {
+            "leg_r": [-8, 0, 0],
+            "shin_r": [16, 0, 0],
+            "foot_r": [-8, 0, 0],
+            "leg_l": [-8, 0, 0],
+            "shin_l": [16, 0, 0],
+            "foot_l": [-8, 0, 0],
+            "body": [4, 0, 6],
+            "chest": [6, 0, 6],
+            "neck": [4, 0, -8],
+            "arm_r": [-20, 0, -2],
+            "forearm_r": [-34, 0, 0],
+            "arm_l": [-20, 0, 2],
+            "forearm_l": [-34, 0, 0],
+            "ear_r": [-16, 0, 8],
+            "ear_l": [-16, 0, -8]
+          }
+        }
+      }
+    },
+    "death": {
+      "description": "Death (the action controller on isDeadOrDying), 1.0 s and held: a jolt with pain eyes, the knees buckle (0.25 s), the hero sits down hard with the feet kicking up (0.45 s) and falls back onto the ground with the arms out (0.7 s, a small bounce), lying still (held: GeckoLib's hold_on_last_frame). Within vanilla's 20-tick death; A2 turns off GeckoLib's own death roll (getDeathMaxRotation 0), since the clip lays the body down itself.",
+      "length": 1.0,
+      "loop": "hold",
+      "restyle": true,
+      "planted": false,
+      "ground": false,
+      "contact": "body",
+      "secondary": ["tail", "ears", "skirt"],
+      "keys": [
+        {
+          "t": 0,
+          "pose": "@stance",
+          "face": {"eyes": 7, "mouth": 3}
+        },
+        {"t": 0.08, "pose": "react.recoil", "over": true, "ease": "easeOutQuad"},
+        {
+          "t": 0.25,
+          "pose": "death.buckle",
+          "ease": "easeInSine",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.34,
+          "pose": "death.drop",
+          "root": [0, 4.5, 0],
+          "ease": "easeInSine",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.45,
+          "pose": "death.sit",
+          "ease": "easeInQuad",
+          "face": {"eyes": 2, "mouth": 3},
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.7,
+          "pose": "death.lie",
+          "ease": "easeInQuad",
+          "face": {"eyes": 2, "mouth": 0},
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.78,
+          "pose": "death.bounce",
+          "ease": "easeOutQuad",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.9,
+          "pose": "death.lie",
+          "ease": "easeInOutSine",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        }
+      ],
+      "poses": {
+        "death.buckle": {
+          "extends": "react.squat",
+          "bones": {
+            "body": [-6, 0, 4],
+            "chest": [-6, 0, 4],
+            "neck": [-10, 8, 0],
+            "arm_r": [-8, 0, 20],
+            "forearm_r": [-20, 0, 0],
+            "arm_l": [-12, 0, -22],
+            "forearm_l": [-24, 0, 0],
+            "ear_r": [-20, 0, 10],
+            "ear_l": [-20, 0, -10]
+          }
+        },
+        "death.drop": {
+          "extends": "sit.fall",
+          "floor": ["body", "leg_*", "shin_*", "foot_*"],
+          "bones": {
+            "body": [-16, 0, 0],
+            "chest": [-2, 0, 5],
+            "neck": [-12, 8, 0],
+            "leg_r": [-62, 0, 8],
+            "shin_r": [40, 0, 0],
+            "leg_l": [-62, 0, -8],
+            "shin_l": [40, 0, 0],
+            "arm_r": [-24, 0, 26],
+            "forearm_r": [-22, 0, 0],
+            "arm_l": [-28, 0, -28],
+            "forearm_l": [-26, 0, 0],
+            "ear_r": [-20, 0, 10],
+            "ear_l": [-20, 0, -10]
+          }
+        },
+        "death.sit": {
+          "extends": "sit.fall",
+          "bones": {
+            "chest": [-4, 0, 6],
+            "neck": [-12, 8, 0],
+            "arm_r": [-30, 0, 28],
+            "forearm_r": [-24, 0, 0],
+            "arm_l": [-34, 0, -30],
+            "forearm_l": [-28, 0, 0],
+            "ear_r": [-20, 0, 10],
+            "ear_l": [-20, 0, -10]
+          }
+        },
+        "death.lie": {
+          "extends": "lie.back",
+          "bones": {
+            "chest": [0, 0, 4],
+            "neck": [24, 24, 6],
+            "arm_r": [-6, 0, 26],
+            "forearm_r": [-26, 0, 0],
+            "hand_r": [0, 0, 0],
+            "arm_l": [-18, 0, -18],
+            "forearm_l": [-40, 0, 0],
+            "leg_r": [-90, 0, 12],
+            "foot_r": [70, 0, 14],
+            "leg_l": [-90, 0, -2],
+            "foot_l": [60, 0, -16],
+            "ear_r": [-20, 0, 10],
+            "ear_l": [-20, 0, -10],
+            "tail_1": [-40, 40, 0]
+          }
+        },
+        "death.bounce": {
+          "extends": "death.lie",
+          "bones": {
+            "body": [-84, 0, 0],
+            "neck": [20, 24, 6],
+            "arm_r": [-12, 0, 32],
+            "arm_l": [-22, 0, -24]
+          }
+        }
+      }
+    },
+    "defeated": {
+      "description": "Defeated (code 21, the yield beat of 6.13), 0.9 s: the knees give in a stumble, down on the right knee (the right foot steps back) with the head bowed and a hand on the knee, a pained face; defeated.loop plays next.",
+      "length": 0.9,
+      "restyle": true,
+      "steps": true,
+      "contact": "body",
+      "settle_to": "defeated.loop",
+      "keys": [
+        {
+          "t": 0,
+          "pose": "@stance",
+          "face": {"eyes": 7, "mouth": 4}
+        },
+        {
+          "t": 0.08,
+          "pose": "defeated.stumble",
+          "root": [0, 1.0, 0],
+          "ease": "easeOutQuad",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.2,
+          "pose": "defeated.lift",
+          "ease": "easeInSine",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.4,
+          "pose": "defeated.mid",
+          "ease": "easeInSine",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.58,
+          "pose": "defeated.kneel",
+          "ease": "easeOutQuad",
+          "face": {"eyes": 5, "mouth": 4},
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 0.9,
+          "pose": "defeated.kneel",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        }
+      ],
+      "poses": {
+        "defeated.stumble": {
+          "extends": "react.hop",
+          "bones": {
+            "chest": [6, 0, 3],
+            "neck": [8, 0, 4],
+            "arm_r": [4, 0, 6],
+            "arm_l": [4, 0, -6],
+            "ear_r": [-20, 0, 12],
+            "ear_l": [-20, 0, -12]
+          }
+        },
+        "defeated.lift": {
+          "extends": "kneel.r_lift",
+          "bones": {
+            "chest": [4, 0, 0],
+            "neck": [10, 0, 0],
+            "ear_r": [-20, 0, 12],
+            "ear_l": [-20, 0, -12]
+          }
+        },
+        "defeated.mid": {
+          "extends": "kneel.r_mid",
+          "bones": {
+            "body": [8, 0, 0],
+            "chest": [6, 0, 0],
+            "neck": [14, 0, 0],
+            "arm_r": [4, 0, -2],
+            "arm_l": [-18, 0, -2],
+            "forearm_l": [-24, 0, 0],
+            "ear_r": [-24, 0, 16],
+            "ear_l": [-24, 0, -16],
+            "tail_1": [-10, 0, 0]
+          }
+        },
+        "defeated.kneel": {
+          "extends": "kneel.r",
+          "bones": {
+            "body": [8, 0, 0],
+            "waist": [3, 0, 0],
+            "chest": [8, 0, 0],
+            "neck": [12, 0, 4],
+            "arm_r": [6, 0, -4],
+            "forearm_r": [-4, 0, 0],
+            "arm_l": [-34, 0, 0],
+            "forearm_l": [-36, 0, 0],
+            "hand_l": [12, 0, 0],
+            "ear_r": [-30, 0, 22],
+            "ear_l": [-30, 0, -22],
+            "tail_1": [-16, 0, 0]
+          }
+        }
+      }
+    },
+    "defeated.loop": {
+      "description": "Kneeling in defeat, 3.0 s loop on the action controller (the 5 s yield window): heavy breathing, the head hanging, a wince at 1.8 s.",
+      "length": 3.0,
+      "loop": true,
+      "kind": "action",
+      "restyle": true,
+      "contact": "body",
+      "keys": [
+        {
+          "t": 0,
+          "pose": "defeated.kneel",
+          "face": {"eyes": 5, "mouth": 4},
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        },
+        {
+          "t": 1.8,
+          "face": {"eyes": 7, "mouth": 4}
+        },
+        {
+          "t": 2.1,
+          "face": {"eyes": 5, "mouth": 4}
+        },
+        {
+          "t": 3.0,
+          "pose": "defeated.kneel",
+          "over": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+        }
+      ],
+      "poses": {
+        "defeated.kneel": {
+          "extends": "kneel.r",
+          "bones": {
+            "body": [8, 0, 0],
+            "waist": [3, 0, 0],
+            "chest": [8, 0, 0],
+            "neck": [12, 0, 4],
+            "arm_r": [6, 0, -4],
+            "forearm_r": [-4, 0, 0],
+            "arm_l": [-34, 0, 0],
+            "forearm_l": [-36, 0, 0],
+            "hand_l": [12, 0, 0],
+            "ear_r": [-30, 0, 22],
+            "ear_l": [-30, 0, -22],
+            "tail_1": [-16, 0, 0]
+          }
+        }
+      },
+      "layers": [
+        {
+          "primitive": "breathe",
+          "params": {"period": 1.0, "depth": 2.2}
+        },
+        {
+          "primitive": "flinch",
+          "params": {
+            "t": 1.8,
+            "bones": {
+              "chest": [-5, 0, 0],
+              "neck": [-6, 0, 0],
+              "arm_l": [-4, 0, 0]
+            },
+            "decay": 0.18
+          }
+        }
+      ]
+    },
+    "spared": {
+      "description": "Spared (code 22), 1.8 s from the defeated kneel: a breath, pushes up on the left foot, brings the right foot under (1.0 s), a small grateful bow (1.35 s), back on the idle stance by 1.8 s (the hero then walks home).",
+      "length": 1.8,
+      "steps": true,
+      "contact": "body",
+      "keys": [
+        {
+          "t": 0,
+          "pose": "spared.kneel",
+          "face": {"eyes": 5, "mouth": 0}
+        },
+        {"t": 0.3, "pose": "spared.kneel"},
+        {"t": 0.6, "pose": "spared.mid", "ease": "easeInOutSine"},
+        {"t": 0.78, "pose": "spared.lift"},
+        {"t": 0.93, "pose": "react.settle_l", "over": true, "ease": "easeOutSine"},
+        {"t": 1.05, "pose": "@stance"},
+        {
+          "t": 1.35,
+          "pose": "spared.bow",
+          "face": {"eyes": 2, "mouth": 0}
+        },
+        {"t": 1.6, "pose": "@stance", "face": "none"},
+        {"t": 1.8, "pose": "@stance"}
+      ],
+      "poses": {
+        "spared.kneel": {
+          "extends": "kneel.r",
+          "bones": {
+            "body": [8, 0, 0],
+            "waist": [3, 0, 0],
+            "chest": [8, 0, 0],
+            "neck": [12, 0, 4],
+            "arm_r": [14, 0, 4],
+            "forearm_r": [-11, 0, 0],
+            "hand_r": [0, 0, 2],
+            "arm_l": [-26, 0, -8],
+            "forearm_l": [-43, 0, 0],
+            "hand_l": [12, 0, -2],
+            "ear_r": [-30, 0, 22],
+            "ear_l": [-30, 0, -22],
+            "tail_1": [-16, 0, 0]
+          }
+        },
+        "spared.mid": {
+          "extends": "kneel.r_mid",
+          "bones": {
+            "body": [6, 0, 0],
+            "neck": [8, 0, 0],
+            "arm_r": [4, 0, 8],
+            "forearm_r": [-7, 0, 0],
+            "arm_l": [-10, 0, -10],
+            "forearm_l": [-20, 0, 0]
+          }
+        },
+        "spared.lift": {
+          "extends": "kneel.r_lift",
+          "bones": {
+            "neck": [4, 0, 0],
+            "arm_r": [0, 0, 8],
+            "forearm_r": [-7, 0, 0],
+            "arm_l": [0, 0, -8],
+            "forearm_l": [-7, 0, 0]
+          }
+        },
+        "spared.bow": {"extends": "bow.down"}
+      }
+    },
+    "intro": {
+      "description": "The generic boss intro (code 16; heroes and styles override it), 1.4 s, super armour: chest out and chin up, a fist pressed into the open palm (0.35 s, with the weapon in a style's copy), a nod (0.6 s), a determined look, back on the stance by 1.4 s.",
+      "length": 1.4,
+      "restyle": true,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.35,
+          "pose": "intro.palm",
+          "ease": "easeOutBack",
+          "face": {"eyes": 4, "mouth": 0},
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 0.6,
+          "pose": "intro.nod",
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 0.85,
+          "pose": "intro.palm",
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {"t": 1.15, "face": "none"},
+        {"t": 1.4, "pose": "@stance"}
+      ]
+    },
+    "victory": {
+      "description": "The generic victory (code 20; styles override it), 2.0 s: a dip (0.3 s), the right fist (or weapon) thrust to the sky with the left on the hip and a happy shout (0.55 s), two pumps, lowered by 2.0 s.",
+      "length": 2.0,
+      "restyle": true,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.3,
+          "pose": "victory.load",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 3, "mouth": 1},
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 0.55,
+          "pose": "victory.up",
+          "ease": "easeOutQuad",
+          "face": {"eyes": 3, "mouth": 2},
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 1.4,
+          "pose": "victory.up",
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 1.6,
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {"t": 1.8, "face": "none"},
+        {"t": 2.0, "pose": "@stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "arm_r": [-8, 0, 0],
+              "chest": [-1.5, 0, 0]
+            },
+            "period": 0.3,
+            "shape": "pulse",
+            "window": [0.65, 0.7, 1.2, 1.3]
+          }
+        }
+      ]
+    },
+    "enrage": {
+      "description": "Enraged (code 19), 1.3 s: hunched and fists clenched (0.25 s), then a roar with the chest thrown out, the arms flung down and back and the head up (0.5 s: a roar mark), trembling, back by 1.3 s.",
+      "length": 1.3,
+      "restyle": true,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.25,
+          "pose": "enrage.load",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 4, "mouth": 4},
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 0.5,
+          "pose": "enrage.roar",
+          "ease": "easeOutQuad",
+          "marker": "vfx:roar",
+          "face": {"eyes": 4, "mouth": 3},
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 1.0,
+          "pose": "enrage.roar",
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {"t": 1.15, "face": "none"},
+        {"t": 1.3, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "chest": [1.5, 0, 1],
+              "arm_r": [2, 0, 0],
+              "arm_l": [2, 0, 0]
+            },
+            "period": 0.1,
+            "window": [0.55, 0.6, 0.95, 1.05]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -8,19 +8,23 @@ file degrees), scale, move back. In file coordinates a bone therefore maps a poi
 
 and its parent's transform follows. `Skeleton.world` returns, per bone, (R, T) with world(p) = R p + T.
 """
+import fnmatch
 import functools
 
 import numpy as np
 
+from anim.clip import form_var
 from rig import BASE_IDS, Model
 from rot import file_matrix
 
 ZERO = (0.0, 0.0, 0.0)
+FACE_PLANES = ("eyes", "mouth", "cheeks")
 
 
 class Skeleton:
-    def __init__(self, bones, env=None):
-        """bones: (name, parent, pivot, rest rotation), parents before children."""
+    def __init__(self, bones, env=None, body=None):
+        """bones: (name, parent, pivot, rest rotation), parents before children. body: {bone: [corner points]} of the
+        base body's cubes (the contact points of the `floor` fix and the body ground rule)."""
         self.order = []
         self.parent, self.pivot, self.rest = {}, {}, {}
         for name, parent, pivot, rest in bones:
@@ -31,16 +35,26 @@ class Skeleton:
             self.pivot[name] = np.array(pivot, dtype=float)
             self.rest[name] = tuple(float(a) for a in (rest or ZERO))
         self.env = dict(env or {})
+        self.body = {b: [np.array(p, dtype=float) for p in pts] for b, pts in (body or {}).items()}
+        # FORM_VAR of this body (anim.clip): what HeroModel sets for its form-scaled keys
+        self.d = form_var(self.env) if "hip_y" in self.env else 0.0
 
     @classmethod
     def from_model(cls, model):
-        """Every rig bone of a model's catalogue (pivots resolved for its base), plus the bones its parts declared."""
+        """Every rig bone of a model's catalogue (pivots resolved for its base), plus the bones its parts declared,
+        and the corners of its base body cubes (not the face planes)."""
         names = list(model.rig_order) + list(model.extra_order)
         bones = []
         for n in names:
             b = model.catalogue[n]
             bones.append((n, b.parent, b.pivot, b.rotation))
-        return cls(bones, model.env)
+        body = {}
+        for c in model.cubes:
+            if c.part != "base" or c.bone in FACE_PLANES:
+                continue
+            x0, y0, z0, x1, y1, z1 = c.box
+            body.setdefault(c.bone, []).extend((x, y, z) for x in (x0, x1) for y in (y0, y1) for z in (z0, z1))
+        return cls(bones, model.env, body)
 
     @classmethod
     def from_geo(cls, geo):
@@ -108,6 +122,28 @@ class Skeleton:
 
     def lowest_sole(self, pose):
         return min(float(p[1]) for pts in self.soles(pose).values() for p in pts)
+
+    # -------------------------------------------------------------- the whole body
+
+    def body_bones(self, globs=None):
+        if not globs:
+            return sorted(self.body)
+        return sorted(b for b in self.body if any(fnmatch.fnmatchcase(b, g) for g in globs))
+
+    def body_points(self, pose, globs=None):
+        """World positions of the base body's cube corners: {bone: [points]} (the bones matching `globs`, or all)."""
+        bones = self.body_bones(globs)
+        w = self.world(pose, only=bones)
+        return {b: [self.apply(w, b, p) for p in self.body[b]] for b in bones}
+
+    def lowest_body(self, pose, globs=None):
+        """The lowest point of the base body (or of the bones matching `globs`): its height and its bone."""
+        best, bone = None, None
+        for b, pts in self.body_points(pose, globs).items():
+            y = min(float(p[1]) for p in pts)
+            if best is None or y < best:
+                best, bone = y, b
+        return best, bone
 
 
 @functools.lru_cache(maxsize=None)

@@ -10,8 +10,10 @@ BakedAnimationsAdapter and KeyFramesAdapter):
       "sound_effects": {time: {"effect": sound id}},
       "particle_effects": {time: {"effect": id, "locator": bone}}}}}
 A key is {"vector": [x, y, z]} (linear), {"vector": [...], "easing": "easeOutCubic"} or, for a jump,
-{"pre": [x, y, z], "post": [x, y, z]}. Times are strings ("0.0", "0.45", "24.0") and every keyframe map is written
-in ascending time order (GeckoLib reads them in file order).
+{"pre": [x, y, z], "post": [x, y, z]}. A form-scaled component (anim/clip.py, G4) is the Molang string
+"v + k * v.fc_dhip" (or "v - k * v.fc_dhip"): GeckoLib compiles it once and evaluates it every frame with the
+variable HeroModel sets for the model (0, the middle-form compromise, where it sets none). Times are strings ("0.0",
+"0.45", "24.0") and every keyframe map is written in ascending time order (GeckoLib reads them in file order).
 
 Event times and the controller blend (GeckoLib 4.9.3, AnimationController.process and processCurrentAnimation, read
 with `javap -c`): when a controller starts an animation it first blends from the current pose to the animation's
@@ -37,7 +39,7 @@ animations with a hit or cast marker) is what HEROES_V2 4.8 and 12.18 define, fr
 first hit, active = last hit - first hit + one tick, recovery = the rest of the blend and the clip. At a playback
 speed s every frame divides by s (4.8), the blend included, as GeckoLib's clock does.
 """
-from anim.clip import TICK, fmt_time
+from anim.clip import FORM_VAR, TICK, fmt_time
 from util import GENERATOR, Ordered
 
 ANIM_FORMAT = "1.8.0"
@@ -58,10 +60,32 @@ def file_time(clip, t):
     return round(t + transition(clip), 4)
 
 
+def _num(x):
+    r = round(float(x), 3)
+    if r == 0:
+        return "0"
+    return ("%.3f" % r).rstrip("0").rstrip(".")
+
+
+def molang(v, k):
+    """A form-scaled component: "v + k * v.fc_dhip" (numbers to 3 decimals, as the JSON writer rounds)."""
+    k = round(float(k), 3)
+    if k == 0:
+        return round(float(v), 3)
+    sign = "-" if k < 0 else "+"
+    return "%s %s %s * %s" % (_num(v), sign, _num(abs(k)), FORM_VAR)
+
+
+def _vector(v, k):
+    if k is None:
+        return list(v)
+    return [molang(a, b) for a, b in zip(v, k)]
+
+
 def _key_json(k):
     if k.pre is not None and k.t > 0:          # a jump at 0 has nothing before it: GeckoLib shows `post` from 0
-        return {"pre": list(k.pre), "post": list(k.v)}
-    d = {"vector": list(k.v)}
+        return {"pre": list(k.pre), "post": _vector(k.v, k.k)}
+    d = {"vector": _vector(k.v, k.k)}
     if k.ease != "linear":
         d["easing"] = k.ease
     return d

@@ -1267,3 +1267,177 @@ area (6 x 1 model pixels at 4x) and the pair (belt, body), and the preview shows
   (G5 or G6b).
 - Not part of this step: the owner's request for more anime reference models by other authors (for the art-direction
   study; measure only, as with the WineFox set).
+
+---
+
+## G4: the core animation library (2026-11-12)
+
+HEROES_V2.md 13.6 "Core library", 7.3 and appendix D, built on G3's generator. `_core.animation.json` now holds 55
+animations (G3's three plus 52); every one passes `herogen check` on all six bases, and the katana style library gets
+its own copies of the core's combat reactions (below). As in the earlier passes, no reference model's animation,
+pose or timing is in the repository: the clips are authored here, with the references used only for the list of
+animations a rich model has (G3's plan). The style is unchanged (the approved style pass 2 look); this pass only adds
+motion.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/anim/core/locomotion.json` | G3's `move.idle`, `move.walk`, `move.run` (unchanged, byte-identical clips) and `move.crouch`, `move.swim`, `move.fall`, `move.climb` |
+| `herosrc/anim/core/rest.json` | `rest.sit`, `rest.sleep`, `carry.loop` |
+| `herosrc/anim/core/work.json` | the 16 `work.*` of 7.3 (`work.fish_wait` with its `.loop`) and `eat` (code 15, a copy of `work.eat`) |
+| `herosrc/anim/core/emotes.json` | the 10 `emote.*`, `personal.1-3` (generics: a stretch, a look into the distance, a sheepish scratch) and `founding` (code 23) |
+| `herosrc/anim/core/combat.json` | `hurt.heavy`, `stagger`, `stun` (+ `.loop`), `interrupt`, `dodge`, `death` (held), `defeated` (+ `.loop`), `spared` (code 22), `intro`, `victory`, `enrage` (code 19) |
+| `herosrc/anim/poses/{react,move,work,emote}.json` | the poses they use (kneels, lunges, sits and lying poses with the floor fix; work strokes; gestures) |
+| `anim/core_preview.py` | the previews below (`herogen anim-previews --core [--groups ...] [--check]`) |
+| `tests/test_core_anim.py` | 28 tests (below) |
+
+| Group | Animations (length) |
+|---|---|
+| movement (base loops) | `move.crouch` 1.2 s (a sneaking walk, knees 38 degrees), `move.swim` 1.2 s (breaststroke, body pitched 44 degrees, legs trailing), `move.fall` 0.8 s (arms flung up, legs paddling, a surprised face), `move.climb` 1.0 s (hand over hand, knee over knee) |
+| rest and carry (base loops) | `rest.sit` 8 s (on the ground, one knee up, glances, breathing), `rest.sleep` 8 s (on the back, sleeping eyes, 4 s breaths), `carry.loop` 1.0 s (a loaded walk, forearms under the load) |
+| work (actions) | `work.mine` 0.7, `work.chop` 0.8, `work.till` 0.8, `work.plant` 1.5 (kneels), `work.harvest` 1.2, `work.fish_cast` 1.1 -> `work.fish_wait` 0.5 -> `work.fish_wait.loop` 4 s -> `work.fish_reel` 1.2, `work.cook` 1.8, `work.smith` 1.0 (sparks), `work.build` 0.7, `work.read` 2.4, `work.pray` 3.0, `work.sweep` 1.4, `work.tend` 1.5, `work.eat` 1.8 |
+| emotes (actions) | `emote.greet` 1.2, `bow` 1.6, `wave` 1.8, `laugh` 2.0, `angry` 1.5 (a stamp, an anger mark), `sad` 2.4 (a tear), `think` 2.4 (an idea at the end), `cheer` 1.4 (a hop), `talk` 2.0, `shrug` 1.3; `personal.1-3` 2.0-2.6; `founding` 2.0 |
+| combat reactions (actions) | `hurt.heavy` 0.5, `stagger` 2.5 (a hop, down on one knee with stars, a dizzy circle, back up), `stun` 0.4 -> `stun.loop` 2 s, `interrupt` 0.6, `dodge` 0.55 (a tucked hop), `death` 1.0 held (buckle, a hard sit, onto the back), `defeated` 0.9 -> `defeated.loop` 3 s -> `spared` 1.8, `intro` 1.4, `victory` 2.0, `enrage` 1.3 (a roar) |
+
+Every action ends on the first frame of the clip that follows it (move.idle, a style's combat.idle, or its own
+`.loop`), so GeckoLib's snap when the action controller stops (4.8) shows nothing. Faces come from `face_ctrl` keys
+(pain, grit, happy, surprised, sleeping, a tear, a blush, chewing and talking mouths). Markers: `vfx:stars`
+(stagger, stun.loop), `vfx:sparks` (smith), `vfx:splash` (reel), `vfx:anger`, `vfx:roar`, and the vanilla fishing
+throw and retrieve sounds; all on whole ticks and written after the controller's blend (G3 review).
+
+### What the generator gained (and why)
+
+1. **Form-scaled keys** (`anim/clip.py`). One file serves every form because rotations transfer; pixel offsets that
+   depend on leg length do not. G3's poses only bent the knees 10 degrees, where the compromise over the forms stays
+   within half a pixel. A kneel drops the hips 5 px on a chibi and 11 on an adult, so any single offset leaves a
+   chibi's knee 3 px in the ground or an adult's 3 px in the air. A key may now carry `k`: its value on a model is
+   `v + k x v.fc_dhip`, where `v.fc_dhip` is the model's hip height minus 18.25 px (the middle of the forms' 12 and
+   24.5). The writer turns such a component into the Molang string `"v + k * v.fc_dhip"`; GeckoLib 4.9.3 compiles a
+   non-number keyframe component with `MathParser.parseJson` and evaluates it every frame, and an unknown variable is
+   created on first use with the value 0 (`MolangQueries.getVariableFor`, read with `javap -c` in the jar whose
+   SHA-256 4.2 records). So a model that never sets the variable plays the middle-form compromise (what G3's
+   constants gave), and **A2's `HeroModel` makes every form exact by setting it in `applyMolangQueries`**:
+   `MathParser.setVariable("v.fc_dhip", () -> leg_r.getPivotY() - 18.25)` from the baked model (the `leg_r` pivot is
+   the hip height; no `visual.json` change). Only `root` position y is ever scaled (a test pins it). The readers
+   (`render/animfile.py`, the GeckoLib port in `tests/test_anim.py`) evaluate the same form, and the quality rules
+   evaluate it with each base's own value.
+2. **The floor fix** (`poses.py`): `fix: ["floor"]` puts the lowest point of the base body (or of the bones in
+   `floor`: the knee of a kneel, the seat of a sit, the back of a lying pose, a planted foot) on y 0 on every form,
+   fitted as `a + b x v.fc_dhip` over the three forms (least squares; exact when the contacts scale with the legs,
+   which is why the sit's legs rest on the heels and the lying pose keeps its legs flat).
+3. **The root follows the floor between keys** (`recipes._follow_floor`): two pose keys on the ground whose legs
+   differ (a squat, a kneel, a step) get root keys every tick fitted to the interpolated legs, since angles
+   interpolated linearly shorten a leg along a curve and the feet would sink or float between the keys. Only the
+   feet planted at both keys count (a foot that lifts or lands is free), so a step is not pulled to the ground early.
+4. **Kneels without sliding.** The kneel's angles were solved with a two-link IK on the teen (angles hold on every
+   form because the segments scale together): the front foot stays on its stance spot, the back foot lifts, steps
+   back and tucks its toes. The transition goes through `kneel.r_lift` and `kneel.r_mid`; getting up reverses it.
+5. **New rules** (`quality.py`): `steps: true` replaces the planted rule by the slide rule (a sole corner on the
+   ground stays within 0.5 px of where it touched down until it lifts); `contact: body` takes the lowest base-body
+   point (all but the head, which is 10 px deep on every form while a chibi's torso is 3.5, so a hero lying on its
+   back rests its head up to 2 px into the pillow or the grass) for the ground rule and never lets it sink. A
+   one-shot that leads into a `.loop` ends on the loop's first key; action loops close instead of settling; a held
+   clip (`loop: "hold"`, death) stays on its last frame.
+6. **Stance-relative keys and restyled reactions** (`recipes.py`, `library.py`). The pose `"@stance"` is the first
+   frame of the clip an action plays over; `over: true` adds a pose to it, `over: [globs]` only for those bones (a
+   kneel's legs absolute under a style's arms). A core recipe with `restyle: true` is expanded again in every style
+   library that has a `combat.idle`, over that stance (unless the style defines the name), so a katana hero's
+   stagger, stun, dodge, death or victory starts and ends on the katana stance with the sword in hand and no snap.
+   `_style_katana` now holds those 15 copies; G5's styles get theirs automatically. Kneels and hops that would start
+   from a style's own footing begin with a little hop or stumble (both feet off the ground for two ticks), so no
+   foot slides from the style's footing to the kneel's.
+7. **Skirt panels over the thighs.** In a sit or a kneel (a thigh 30 degrees or more off the hips), `skirt_f/b/r/l`
+   follow the thighs at every pose key (the front panel lies over both thighs of a sit, a third of a single raised
+   knee; the back panel flares behind a deep sit), counted from the stance's legs; a hakama no longer hangs through
+   the ground.
+8. **Primitives** (`primitives.py`): `crouch_cycle` and `carry_cycle` (G3's gait with a knee bend and a form-scaled
+   root, or with the arms left to the recipe), `oscillate` (sine, one-way pulse or circle, windowed: waves, nods,
+   shakes, pumps, stirring, a dizzy head, a swimmer's bob) and `flinch` (a damped impulse). The design's keyed
+   motions (dodge, hurt, stagger, kneel, death, greet_bow, wave, cheer, work strokes) are pose keys with these layers
+   on top; the attack primitives (swing, thrust, slam, spin, leap, land, cast, draw_bow, throw, guard, taunt,
+   play_instrument) come with G5's styles.
+9. **Base loops that leave the ground** (swim, fall, climb) set `planted: false`, `ground: false`.
+
+### Conventions for A2 and the jobs (recorded in HEROES_V2 4.4, 4.7, 4.8)
+
+- `HeroModel.applyMolangQueries` sets `v.fc_dhip` (above). Without it, kneels, sits, sleep and death are off by up to
+  3 px on chibis and adults (the middle-form compromise).
+- **Death lays the body down itself**: A2 returns 0 from `getDeathMaxRotation`, or GeckoLib's own death roll adds a
+  sideways 90 degrees. The clip is 1.0 s, inside vanilla's 20 death ticks; `death` holds its last frame.
+- **Sleep and sit are on the ground**, laid down by the clip (not vanilla's `Pose.SLEEPING`, which would rotate the
+  model again): the entity stands at the hips, the body lies toward +z behind it (`rest.sleep`), the seat is at the
+  entity's feet (`rest.sit`).
+- **Chains**: the server plays `stun` then `stun.loop` (automatic, as `ultimate.loop`), `defeated` then
+  `defeated.loop` then `spared` (or death), and `work.fish_cast`, `work.fish_wait` (its loop follows), then
+  `work.fish_reel`; a code 0 after `work.fish_cast` would snap from the waiting hold to the idle.
+- **Tools at item_r**: the handle along the hand's -z from the grip, the head at the far end with its striking side
+  toward the hand's -y (a pick's points, an axe's edge, a hoe's blade): the work strokes are authored for it, the
+  previews draw props that way, and the item layer must hold vanilla tools the same way. `carry.loop` expects the
+  hauled item at `item_r` between the hands.
+- **Swing-driven work** (`work.mine`, `work.chop`, `work.till`, `work.build`) and the hand emotes (`emote.greet`,
+  `emote.wave`, `emote.talk`) key only the upper body (`waist`, `chest`, `neck`, the arms), like `attack.1`, so they
+  can play while the base controller walks.
+
+### Previews (`docs/heroes-v2/previews/anim/core/`)
+
+Tansy (chibi_f: cat ears, a long tail, twin tails, bell sleeves, a skirt) and Garrick (adult_m: a ponytail, bell
+sleeves, a long hakama), side by side, playing the written `_core` through the controller emulation of G2 (an action
+starts with the 2-tick blend from the pose it cuts, so the chains play as in game) with HeroFace's frames and blinks.
+`movement`, `work` (tools), `work_home` (the fishing chain, cook, read, pray, eat), `emotes`, `combat` (over
+move.idle) and `combat_katana` (the restyled copies over combat.idle, sword drawn): a GIF at 20 fps (one frame a
+tick) and a contact sheet each, and a README. Tools are preview props (an inline part at the grip, built in memory;
+nothing is written to the hero files). `herogen anim-previews --core --check` fails on a stale preview.
+
+### Measured
+
+- Lowest base-body point over every clip on all six bases: within 0.6 px of the ground for every grounded clip
+  (kneel contacts within 0.45 px: knee, toes and front sole), never sinking more than 0.6 px; no foot slides more than
+  0.5 px on the ground; the core and the katana copies pass with no problem.
+- Without `v.fc_dhip` the kneel and sit offsets are the middle form's: about 3 px off on a chibi and an adult, equal
+  and opposite (a test pins it), which is what A2's variable removes.
+- File sizes: `_core.animation.json` about 1.2 MB (55 clips, 15-37 KB each, like `move.idle`), `_style_katana`
+  about 0.3 MB; loaded once. Per animated hero GeckoLib samples only the channels the playing clips key (21-39
+  bones).
+
+### Tests (217 -> 245)
+
+`tests/test_core_anim.py`: the design's list is complete (55 names, 17 `work.*`); kinds and loop modes; one-shots
+end on their loop's or move.idle's first key; `eat` is `work.eat`; markers and faces (stars, sparks, the throw sound,
+sleeping eyes); G3's clips unchanged and unscaled; FORM_VAR per form and from a written model; scaled keys sample
+per form; the Molang round trip (writer, reader, every form); only `root` position is scaled; the kneel touches on all
+six bases though the drop differs by over 5 px; without the variable the compromise; sit, sleep and death rest on
+the ground on all bases and the dead torso lies flat; kneel contacts in stagger, defeated.loop and plant; the crouch
+keeps its soles down and really crouches; a skating foot fails the slide rule and a lifted step passes; a floating
+seat fails; restyled reactions settle on the katana stance and differ from the core's; `@stance` without a stance
+fails; skirts follow a sit's thighs; `oscillate`, `flinch`, `crouch_cycle`, `carry_cycle`; the written core plays
+each form's sit at its own height; a chain blends into its loop without a pop. `tests/test_anim.py`: the GeckoLib
+port evaluates Molang components (with the variable and without), and the katana set includes the restyled copies.
+
+### Decisions (each deliberate)
+
+1. **One Molang variable, not per-form files or constants**: one file for every form stays the rule; the variable
+   degrades to G3's compromise where it is not set. Hip height alone is enough because the forms' leg segments scale
+   together (the fits are exact within 0.1-0.4 px where the contacts scale).
+2. **Lying poses fold at the hips** (torso back 90 degrees, legs forward) rather than rotating the root about the
+   feet: the hips stay over the entity, the fall reads as sit-then-lie, and the contacts do not depend on the form.
+3. **The head may rest into the ground by up to 2 px when lying** (excluded from the body contact), rather than the
+   torso floating 2 px on a chibi.
+4. **Restyled copies are generated, not authored per style**; a style that defines its own `dodge`, `intro` or
+   `victory` (G5) replaces the copy.
+5. **Shinto-style prayer** (two bows, two claps, a bow) for `work.pray`: the slice's prayer is a shrine maiden's, and
+   the timing and poses are our own.
+6. **Extra codes served by the core** (`eat`, `spared`, `enrage`, `founding`): appendix D codes no other file
+   provides, so every code resolves (14.2) before G5 and the heroes exist.
+
+### Open items
+
+- **A2**: set `v.fc_dhip`; `getDeathMaxRotation` 0; items at `item_r` with the grip convention; play the chains;
+  `carry.loop` with the hauled item; the procedural lag and the bake both treat lying heroes' hair as hanging (the
+  sleep and death clips bake only the tail, ears and skirt, so a ponytail stays with the head).
+- **G5**: style versions of `work.chop` and `work.mine` where it matters (a katana `work.chop`), its own `dodge`,
+  `intro`, `victory`; the restyled copies cover the rest.
+- **G10**: the mobility set (jump, land, leap, glide, fly...); `move.climb` and `move.swim` here are the generic
+  ones, the climbers' and swimmers' variants come with it.
+- **Polish**: bell sleeves show their open end when the arms are raised forward (swim, cheer, the recoil of a hit);
+  the hip scabbard stays on the hips when lying (it sinks into the ground); a chibi's crouch is subtle (short legs).

@@ -1,0 +1,155 @@
+{
+  "_comment": "Poses of the core reactions (G4: hurt.heavy, stagger, stun, interrupt, dodge, death, defeated, spared, enrage, intro, victory). Upper-body poses are offsets over the stance the reaction plays from ('over' in the recipes, so a restyled copy keeps a style's arms and weapon); legs are absolute where a reaction kneels, hops, sits or lies. Kneel leg angles were solved with a two-link IK on the teen and hold on every form (the segments scale together); hip heights come from the floor fix (form-scaled, anim/poses.py). Conventions in tools/herogen/anim/poses.py.",
+  "poses": {
+    "react.recoil": {
+      "_comment": "A heavy hit from the front (offsets): the chest snaps back, the head whips back and aside, the arms fly out, the ears flatten, the tail jerks up.",
+      "bones": {
+        "body": [-4, 0, 0],
+        "waist": [-5, 0, 0],
+        "chest": [-15, 4, 5],
+        "neck": [-12, -6, -6],
+        "arm_r": [-6, 0, 16],
+        "forearm_r": [-16, 0, 0],
+        "hand_r": [0, 0, 10],
+        "arm_l": [-4, 0, -20],
+        "forearm_l": [-20, 0, 0],
+        "hand_l": [0, 0, -10],
+        "ear_r": [-28, 0, 10],
+        "ear_l": [-28, 0, -10],
+        "tail_1": [26, 0, 0],
+        "tail_2": [12, 0, 0]
+      }
+    },
+    "react.recoil_back": {
+      "_comment": "The rebound past the stance on the way back from the recoil (offsets).",
+      "bones": {
+        "body": [1, 0, 0],
+        "waist": [1, 0, 0],
+        "chest": [3, -1, -1],
+        "neck": [4, 2, 1],
+        "arm_r": [2, 0, -3],
+        "forearm_r": [3, 0, 0],
+        "arm_l": [2, 0, 3],
+        "forearm_l": [3, 0, 0],
+        "ear_r": [-10, 0, 4],
+        "ear_l": [-10, 0, -4],
+        "tail_1": [8, 0, 0]
+      }
+    },
+    "kneel.r": {
+      "_comment": "Down on the right knee: the right shin back on the ground with the toes tucked (the right foot stepped back), the left foot planted where it stood with the knee forward over it. Knee, toes and left sole within 0.4 px of the ground on every base; the left foot within 0.35 px of its stance spot.",
+      "bones": {
+        "leg_r": [2, 0, 1],
+        "shin_r": [98, 0, 0],
+        "foot_r": [-18, 0, 0],
+        "leg_l": [-53, 0, 0],
+        "shin_l": [118, 0, 0],
+        "foot_l": [-65, 0, 0]
+      },
+      "fix": ["floor"]
+    },
+    "kneel.r_mid": {
+      "_comment": "Half way between the stance and kneel.r, going down or coming up: the left foot planted on its stance spot (IK at three quarters of the leg's height), the right foot in the air behind.",
+      "bones": {
+        "leg_r": [4, 0, 1],
+        "shin_r": [86, 0, 0],
+        "foot_r": [8, 0, 0],
+        "leg_l": [-38.7, 0, 0],
+        "shin_l": [83, 0, 0],
+        "foot_l": [-44.3, 0, 0]
+      },
+      "fix": ["floor"],
+      "floor": ["foot_l"]
+    },
+    "kneel.r_lift": {
+      "_comment": "The first step into kneel.r and the last out of it: the weight on a slightly bent left leg, the right foot lifted in place.",
+      "bones": {
+        "leg_r": [-50, 0, 1],
+        "shin_r": [100, 0, 0],
+        "foot_r": [-34, 0, 0],
+        "leg_l": [-17.3, 0, 0],
+        "shin_l": [36.5, 0, 0],
+        "foot_l": [-19.2, 0, 0]
+      },
+      "fix": ["floor"],
+      "floor": ["foot_l"]
+    },
+    "react.settle_l": {
+      "_comment": "Offsets over the stance: the left foot lifted on its way back to its stance spot (the last shuffle after a kneel or a hop).",
+      "bones": {
+        "leg_l": [-22, 0, 0],
+        "shin_l": [44, 0, 0],
+        "foot_l": [-22, 0, 0],
+        "chest": [1, 0, 0]
+      }
+    },
+    "react.hop": {
+      "_comment": "Legs of a jolt that lifts both feet (with a root lift in the recipe key): knees a little bent, soles level.",
+      "extends": "stance.relaxed",
+      "knees": 10,
+      "fix": ["level_feet", "floor"],
+      "floor": ["foot_*"]
+    },
+    "react.squat": {
+      "_comment": "Both knees bent about 40 degrees with the feet planted on their stance spots (IK at 80 percent of the leg's height): the dip before a hop, a buckle.",
+      "extends": "stance.relaxed",
+      "bones": {
+        "leg_r": [-38.7, 0, 0],
+        "shin_r": [83, 0, 0],
+        "foot_r": [-44.3, 0, 0],
+        "leg_l": [-38.7, 0, 0],
+        "shin_l": [83, 0, 0],
+        "foot_l": [-44.3, 0, 0]
+      },
+      "fix": ["floor"],
+      "floor": ["foot_*"]
+    },
+    "react.slump": {
+      "_comment": "Upper body of a dazed stand (offsets): hips and chest folded a little, the head hanging aside, the arms limp, the ears drooping.",
+      "bones": {
+        "body": [4, 0, 0],
+        "waist": [2, 0, 0],
+        "chest": [8, 0, 5],
+        "neck": [12, 4, 10],
+        "arm_r": [6, 0, -5],
+        "forearm_r": [5, 0, 0],
+        "hand_r": [0, 0, 4],
+        "arm_l": [6, 0, 5],
+        "forearm_l": [5, 0, 0],
+        "hand_l": [0, 0, -4],
+        "ear_r": [-16, 0, 16],
+        "ear_l": [-16, 0, -16],
+        "tail_1": [-8, 0, 0]
+      }
+    },
+    "sit.fall": {
+      "_comment": "Thrown down onto the seat: thighs on the ground, the knees up a little and the feet just off the ground, the torso leaning back.",
+      "bones": {
+        "body": [-26, 0, 0],
+        "chest": [6, 0, 0],
+        "neck": [10, 0, 0],
+        "leg_r": [-106, 0, 8],
+        "shin_r": [36, 0, 0],
+        "foot_r": [60, 0, 0],
+        "leg_l": [-106, 0, -8],
+        "shin_l": [36, 0, 0],
+        "foot_l": [60, 0, 0]
+      },
+      "fix": ["floor"],
+      "floor": ["body", "leg_*", "shin_*", "foot_*"]
+    },
+    "lie.back": {
+      "_comment": "Lying on the back, legs out straight: the torso folded back 90 degrees about the hips and the legs forward along the ground, resting on the heels; the entity stands at the hips. The floor fix takes the torso and legs (their contacts do not change with the form, so the fit is exact), so the big head, chin tucked as on a pillow, sinks into the ground or the pillow by up to 2 px on a chibi.",
+      "bones": {
+        "body": [-90, 0, 0],
+        "neck": [26, 0, 0],
+        "leg_r": [-90, 0, 4],
+        "foot_r": [70, 0, 6],
+        "leg_l": [-90, 0, -4],
+        "foot_l": [70, 0, -6]
+      },
+      "fix": ["floor"],
+      "floor": ["body", "waist", "chest", "leg_*", "shin_*", "foot_*"]
+    }
+  }
+}

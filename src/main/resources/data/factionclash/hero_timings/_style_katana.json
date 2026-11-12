@@ -25,11 +25,119 @@
       "ticks": 60,
       "total_ticks": 64,
       "transition_ticks": 4
+    },
+    "death": {
+      "events": [],
+      "kind": "action",
+      "length": 1,
+      "loop": "hold",
+      "ticks": 20,
+      "total_ticks": 22,
+      "transition_ticks": 2
+    },
+    "defeated": {
+      "events": [],
+      "kind": "action",
+      "length": 0.9,
+      "loop": "once",
+      "ticks": 18,
+      "total_ticks": 20,
+      "transition_ticks": 2
+    },
+    "defeated.loop": {
+      "events": [],
+      "kind": "action",
+      "length": 3,
+      "loop": "loop",
+      "ticks": 60,
+      "total_ticks": 62,
+      "transition_ticks": 2
+    },
+    "dodge": {
+      "events": [],
+      "kind": "action",
+      "length": 0.55,
+      "loop": "once",
+      "ticks": 11,
+      "total_ticks": 13,
+      "transition_ticks": 2
+    },
+    "enrage": {
+      "events": [{"t": 0.6, "tick": 12, "type": "vfx", "value": "roar"}],
+      "kind": "action",
+      "length": 1.3,
+      "loop": "once",
+      "ticks": 26,
+      "total_ticks": 28,
+      "transition_ticks": 2
+    },
+    "hurt.heavy": {
+      "events": [],
+      "kind": "action",
+      "length": 0.5,
+      "loop": "once",
+      "ticks": 10,
+      "total_ticks": 12,
+      "transition_ticks": 2
+    },
+    "interrupt": {
+      "events": [],
+      "kind": "action",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 14,
+      "transition_ticks": 2
+    },
+    "intro": {
+      "events": [],
+      "kind": "action",
+      "length": 1.4,
+      "loop": "once",
+      "ticks": 28,
+      "total_ticks": 30,
+      "transition_ticks": 2
+    },
+    "stagger": {
+      "events": [{"t": 0.5, "tick": 10, "type": "vfx", "value": "stars"}],
+      "kind": "action",
+      "length": 2.5,
+      "loop": "once",
+      "ticks": 50,
+      "total_ticks": 52,
+      "transition_ticks": 2
+    },
+    "stun": {
+      "events": [],
+      "kind": "action",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 10,
+      "transition_ticks": 2
+    },
+    "stun.loop": {
+      "events": [{"t": 0.1, "tick": 2, "type": "vfx", "value": "stars"}],
+      "kind": "action",
+      "length": 2,
+      "loop": "loop",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "victory": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
     }
   },
   "file": "_style_katana",
   "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "be80f939bf2fb280ac0948ec5fef70a84b1adbd042075fa655cf4bb982729d85",
+  "source_sha256": "08cef5b7116b962ff0ae0df18cb1cad814d00f47e20a6748617a21d8b40bcb26",
   "tick": 0.05
 }

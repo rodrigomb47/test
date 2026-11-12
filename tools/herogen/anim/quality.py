@@ -18,7 +18,12 @@ Per clip:
               chain bones too (a bake that counted the base's follow-through twice pops a sleeve at the start)
   feet        on all six bases: a planted clip (idles, stances, actions over them) keeps every sole corner within
               0.5 px of where it starts; a grounded clip keeps its lowest sole within 0.6 px of the ground; a gait
-              never sinks a sole more than 0.6 px below it
+              never sinks a sole more than 0.6 px below it. G4: a clip with `contact: body` takes the lowest point of
+              the base body (BODY_CONTACT: all but the head) instead of the soles (a kneel, a sit, lying down) and
+              never sinks it, and a stepping clip (`steps`)
+              may lift and move a foot but never slides one along the ground (check_slide: a sole corner on the
+              ground stays within 0.5 px of where it touched down until it lifts). Form-scaled keys are evaluated
+              with each base's FORM_VAR (anim/clip.py), as HeroModel sets it
   root        no root motion: the root's x and z offsets stay within 1.5 px (movement is physical on the server)
   bones       keyed bones are rig bones (or, in a hero's own file, bones its parts declare)
 Per file: a hero's own file has at most the rig's `own_animations` (24) animations.
@@ -27,7 +32,7 @@ Across files: the server timing file says exactly what the animation file's mark
 import math
 
 from anim import skeleton as S
-from anim.clip import TICK, layered, on_tick
+from anim.clip import FORM_SPAN, TICK, layered, on_tick
 from anim.recipes import FACE_BONE
 from anim.writer import TRANSITION_TICKS
 from face import CHEEK_FRAMES, EYE_FRAMES, MOUTH_FRAMES
@@ -36,6 +41,11 @@ from rig import BASE_IDS, load_rig
 CLASS_MIN = {"light": (0.4, 0.3), "heavy": (0.8, 0.8), "area": (1.0, 0.8), "ultimate": (1.5, 1.5)}
 FEET_DRIFT = 0.5
 GROUND_TOL = 0.6
+CONTACT = 0.3               # a sole corner this close to the ground is on it (check_slide)
+# the base body cubes of the body contact rule: every one but the head, which is 10 px deep on every form while a
+# chibi's torso is 3.5, so a hero lying on its back rests its head into the pillow (or the grass) by up to 2 px
+BODY_CONTACT = ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "leg_*", "shin_*", "foot_*"]
+SLIDE = 0.5                 # how far a corner on the ground may move before it lifts
 ROOT_XZ = 1.5
 LOOP_TOL = 0.01
 SETTLE_TOL = 0.01
@@ -63,9 +73,11 @@ def check_keys(clip):
         if clip.loop == "loop":
             if abs(tr.end - clip.length) > 1e-6:
                 out.append("%s: a loop channel without a key at the end" % name)
-            a, b = tr.sample(0.0), tr.sample(clip.length)
-            if max(abs(a[c] - b[c]) for c in range(3)) > LOOP_TOL:
-                out.append("%s: the loop does not close (%s at 0, %s at the end)" % (name, _v(a), _v(b)))
+            for d in ((0.0, -FORM_SPAN, FORM_SPAN) if tr.scaled() else (0.0,)):
+                a, b = tr.sample(0.0, d), tr.sample(clip.length, d)
+                if max(abs(a[c] - b[c]) for c in range(3)) > LOOP_TOL:
+                    out.append("%s: the loop does not close (%s at 0, %s at the end)" % (name, _v(a), _v(b)))
+                    break
     return out
 
 
@@ -158,8 +170,8 @@ def check_joints(clip, rig=None):
 
 
 def check_settle(clip, target):
-    if clip.meta.get("kind") != "action":
-        return []
+    if clip.meta.get("kind") != "action" or clip.loop != "once":
+        return []      # an action loop plays until the server stops it (4.8) and closes; a held clip (death) stays
     out = []
     for bc, tr in sorted(clip.tracks.items()):
         goal = target.tracks[bc].sample(0.0) if target is not None and bc in target.tracks else (0.0, 0.0, 0.0)
@@ -169,6 +181,12 @@ def check_settle(clip, target):
         elif max(abs(end.v[c] - goal[c]) for c in range(3)) > SETTLE_TOL:
             out.append("%s: %s.%s ends on %s, not on %s's first key %s" % (
                 clip.name, bc[0], bc[1], _v(end.v), target.name if target else "the rest pose", _v(goal)))
+        else:
+            gk = target.tracks[bc].sample_k(0.0) if target is not None and bc in target.tracks else (0.0,) * 3
+            ek = tr.sample_k(clip.length)
+            if max(abs(ek[c] - gk[c]) for c in range(3)) * FORM_SPAN > SETTLE_TOL:
+                out.append("%s: %s.%s ends on another form scaling than %s's first key" % (
+                    clip.name, bc[0], bc[1], target.name if target else "the rest pose"))
     return out
 
 
@@ -203,32 +221,44 @@ def secondary_chain_bones():
     return chain_bones()
 
 
-def _pose_fn(clip, base):
+def _pose_fn(clip, base, d=0.0):
     if base is None or clip.meta.get("kind") != "action":
-        return clip.sample
-    return lambda t: layered(base, clip, t, t % base.length if base.loop == "loop" else min(t, base.length))
+        return lambda t: clip.sample(t, d)
+    return lambda t: layered(base, clip, t, t % base.length if base.loop == "loop" else min(t, base.length), d=d)
 
 
 def check_feet(clip, base=None, bases=BASE_IDS):
-    """Planted, grounded and gait rules on every base."""
+    """Planted, grounded, gait and stepping rules on every base."""
     out = []
     planted = clip.meta.get("planted", False)
     ground = clip.meta.get("ground", False)
     steps = clip.meta.get("steps", False)
-    if not (planted or ground or steps):
+    stepping = clip.meta.get("stepping", False)
+    body = clip.meta.get("contact") == "body"
+    if not (planted or ground or steps or stepping or body):
         return out
-    pose_at = _pose_fn(clip, base)
     times = _ticks(clip)
-    poses = [pose_at(t) for t in times]
+    shared = None
     for base_id in bases:
         sk = S.for_base(base_id)
+        if clip.scaled() or (base is not None and base.scaled()) or shared is None:
+            pose_at = _pose_fn(clip, base, sk.d)
+            poses = [pose_at(t) for t in times]
+            if not (clip.scaled() or (base is not None and base.scaled())):
+                shared = poses
+        else:
+            poses = shared
         start = None
         worst_drift = worst_low = worst_high = 0.0
         at = {}
+        soles_by_tick = []
         for t, pose in zip(times, poses):
             soles = sk.soles(pose)
+            soles_by_tick.append(soles)
             pts = [p for s in ("r", "l") for p in soles[s]]
             low = min(float(p[1]) for p in pts)
+            if body:
+                low = min(low, sk.lowest_body(pose, BODY_CONTACT)[0])
             if start is None:
                 start = pts
             drift = max(math.dist(a, b) for a, b in zip(pts, start))
@@ -238,16 +268,40 @@ def check_feet(clip, base=None, bases=BASE_IDS):
                 worst_low, at["low"] = low, t
             if low > worst_high:
                 worst_high, at["high"] = low, t
+        what = "the body" if body else "a sole"
         if planted and not steps and worst_drift > FEET_DRIFT:
             out.append("%s on %s: a foot moves %.2f px (at %.2f s); planted feet may move %.1f" % (
                 clip.name, base_id, worst_drift, at["drift"], FEET_DRIFT))
-        if (ground or steps) and worst_low < -GROUND_TOL:
-            out.append("%s on %s: a sole sinks %.2f px below the ground (at %.2f s)" % (
-                clip.name, base_id, -worst_low, at["low"]))
+        if (ground or steps or stepping or body) and worst_low < -GROUND_TOL:
+            out.append("%s on %s: %s sinks %.2f px below the ground (at %.2f s)" % (
+                clip.name, base_id, what, -worst_low, at["low"]))
         if ground and worst_high > GROUND_TOL:
-            out.append("%s on %s: both feet float %.2f px above the ground (at %.2f s)" % (
-                clip.name, base_id, worst_high, at["high"]))
+            out.append("%s on %s: %s floats %.2f px above the ground (at %.2f s)" % (
+                clip.name, base_id, "the body" if body else "both feet", worst_high, at["high"]))
+        if stepping:
+            out += check_slide(clip.name, base_id, times, soles_by_tick)
     return out
+
+
+def check_slide(name, base_id, times, soles_by_tick):
+    """A sole corner on the ground (within CONTACT px) stays within SLIDE px (horizontally) of where it touched down
+    until it lifts: a foot may pivot on a corner and step, never skate."""
+    for side in ("r", "l"):
+        for i in range(4):
+            anchor = None
+            for t, soles in zip(times, soles_by_tick):
+                p = soles[side][i]
+                if p[1] > CONTACT:
+                    anchor = None
+                    continue
+                if anchor is None:
+                    anchor = p
+                    continue
+                if math.hypot(p[0] - anchor[0], p[2] - anchor[2]) > SLIDE:
+                    return ["%s on %s: the %s foot slides on the ground at %.2f s (%.2f px)" % (
+                        name, base_id, "right" if side == "r" else "left", t,
+                        math.hypot(p[0] - anchor[0], p[2] - anchor[2]))]
+    return []
 
 
 def check_root(clip):
@@ -267,14 +321,17 @@ def check_bones(clip, known):
     return ["%s: keys unknown bones %s" % (clip.name, ", ".join(bad))] if bad else []
 
 
-def check_clip(clip, settle_target=None, known_bones=None, feet=True):
+def check_clip(clip, settle_target=None, known_bones=None, feet=True, over=None):
+    """`settle_target`: the clip an action ends on; `over`: the base clip it plays over (default the same; they
+    differ for a one-shot that leads into its .loop)."""
+    over = over if over is not None else settle_target
     out = check_keys(clip) + check_markers(clip) + check_face(clip) + check_joints(clip) + check_root(clip)
     if clip.meta.get("kind") == "action":
-        out += check_settle(clip, settle_target) + check_start(clip, settle_target)
+        out += check_settle(clip, settle_target) + check_start(clip, over)
     if known_bones is not None:
         out += check_bones(clip, known_bones)
     if feet:
-        out += check_feet(clip, settle_target)
+        out += check_feet(clip, over)
     return out
 
 
@@ -288,8 +345,11 @@ def check_built(built, lookup, extra_bones=(), own_file=False, feet=True):
     out = []
     known = rig_bone_names() | set(extra_bones)
     for clip in built.clips:
-        target = lookup(clip.meta["settle_to"]) if clip.meta.get("kind") == "action" else None
-        out += check_clip(clip, target, known, feet)
+        target = over = None
+        if clip.meta.get("kind") == "action":
+            target = lookup(clip.meta["settle_to"])
+            over = lookup(clip.meta.get("over", clip.meta["settle_to"]))
+        out += check_clip(clip, target, known, feet, over=over)
     if own_file:
         cap = load_rig()["budgets"].get("own_animations", 24)
         if len(built.clips) > cap:

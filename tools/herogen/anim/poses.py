@@ -7,8 +7,11 @@ A pose file is {"poses": {name: pose}}; a pose is
   mirror    true: every right-side entry without a left counterpart gets one, mirrored (rx, -ry, -rz; x -> -x),
             and the other way round
   knees     degrees of knee bend with the feet kept in place: thigh -k, shin +2k, foot -k on both legs (added)
-  fix       a list of "level_feet" (soles parallel to the ground: foot = -(thigh + shin) about x and -thigh about z)
-            and "ground" (root y set so the lowest sole corner touches y 0: the compromise over the three forms)
+  fix       a list of "level_feet" (soles parallel to the ground: foot = -(thigh + shin) about x and -thigh about z),
+            "ground" (root y set so the lowest sole corner touches y 0: the compromise over the three forms) and
+            "floor" (G4: root y set so the lowest point of the base body touches y 0 on EVERY form: the knee of a
+            kneel, the seat of a sit, the back of a lying pose; a form-scaled key, anim/clip.py)
+  floor     globs of the bones whose base cubes may touch the floor (default: all of the base body)
 Conventions (file space, derived from rot.file_matrix and pinned by tests): positive rx leans an upright bone forward
 (its top toward -z) and swings a hanging bone backward; a forward arm or leg swing is negative rx; elbow flexion is
 negative rx on forearm_*, knee flexion positive rx on shin_*; positive ry turns toward the hero's right; positive rz
@@ -22,16 +25,18 @@ from rig import mirror_name
 from util import HEROSRC, HerogenError, load_json, rel
 
 POSE_DIR = os.path.join(HEROSRC, "anim", "poses")
-FIXES = ("level_feet", "ground")
+FIXES = ("level_feet", "ground", "floor")
+K_PREFIX = "k:"             # chans[bone]["k:position"]: the FORM_VAR coefficient of a form-scaled position
 
 
 class Pose:
-    def __init__(self, name, rotation=None, position=None, fixes=(), knees=0.0):
+    def __init__(self, name, rotation=None, position=None, fixes=(), knees=0.0, floor=None):
         self.name = name
         self.rotation = dict(rotation or {})
         self.position = dict(position or {})
         self.fixes = tuple(fixes)
         self.knees = float(knees)
+        self.floor = list(floor) if floor else None
 
     def chans(self):
         """{bone: {"rotation": v, "position": v}}"""
@@ -69,7 +74,7 @@ def _vec3(v, where):
 def parse(name, spec, lookup, where="pose"):
     """A Pose from its spec; `lookup(name)` resolves `extends`."""
     for k in spec:
-        if k not in ("bones", "position", "extends", "mirror", "knees", "fix"):
+        if k not in ("bones", "position", "extends", "mirror", "knees", "fix", "floor", "_comment"):
             raise HerogenError("%s %s: unknown field %r" % (where, name, k))
     rot = {b: _vec3(v, "%s %s.bones.%s" % (where, name, b)) for b, v in (spec.get("bones") or {}).items()}
     pos = {b: _vec3(v, "%s %s.position.%s" % (where, name, b)) for b, v in (spec.get("position") or {}).items()}
@@ -81,13 +86,19 @@ def parse(name, spec, lookup, where="pose"):
         if f not in FIXES:
             raise HerogenError("%s %s: fix %r is unknown (%s)" % (where, name, f, ", ".join(FIXES)))
     knees = float(spec.get("knees", 0.0))
+    floor = spec.get("floor")
     if spec.get("extends"):
         base = lookup(spec["extends"])
         rot = dict(base.rotation, **rot)
         pos = dict(base.position, **pos)
-        fixes = list(base.fixes) + [f for f in fixes if f not in base.fixes]
+        inherited = [f for f in base.fixes if not (f == "ground" and "floor" in fixes)
+                     and not (f == "floor" and "ground" in fixes)]     # a pose's own placement fix wins
+        fixes = inherited + [f for f in fixes if f not in inherited]
         knees = knees if "knees" in spec else base.knees
-    return Pose(name, rot, pos, fixes, knees)
+        floor = floor if floor is not None else base.floor
+    if "floor" in fixes and "ground" in fixes:
+        raise HerogenError("%s %s: fix ground and floor exclude each other" % (where, name))
+    return Pose(name, rot, pos, fixes, knees, floor)
 
 
 class Library:
@@ -160,4 +171,29 @@ def resolve(pose, skeletons):
         lows = [sk.lowest_sole(chans) for sk in skeletons]
         root[1] = -0.5 * (min(lows) + max(lows))
         chans["root"]["position"] = tuple(root)
+    if "floor" in pose.fixes:
+        a, b, _ = floor_fit(chans, skeletons, pose.floor)
+        root = list(chans.get("root", {}).get("position", (0.0, 0.0, 0.0)))
+        root[1] += a
+        chans.setdefault("root", {})["position"] = tuple(root)
+        chans["root"][K_PREFIX + "position"] = (0.0, b, 0.0)
     return chans
+
+
+def floor_fit(chans, skeletons, globs=None):
+    """(a, b, worst residual): the root lift a + b x FORM_VAR that puts the lowest base-body point of the pose on
+    y 0, fitted over the forms' exact lifts (least squares; exact for two forms, within the residual for three)."""
+    rows = []
+    for sk in skeletons:
+        low, _ = sk.lowest_body(chans, globs)
+        rows.append((sk.d, -low))
+    if len(rows) == 1:
+        return rows[0][1], 0.0, 0.0
+    n = float(len(rows))
+    md = sum(d for d, _ in rows) / n
+    my = sum(y for _, y in rows) / n
+    var = sum((d - md) ** 2 for d, _ in rows)
+    b = sum((d - md) * (y - my) for d, y in rows) / var if var > 1e-12 else 0.0
+    a = my - b * md
+    worst = max(abs(a + b * d - y) for d, y in rows)
+    return a, b, worst

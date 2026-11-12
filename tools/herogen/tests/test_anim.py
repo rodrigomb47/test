@@ -42,8 +42,37 @@ def as_dict(pairs):
 
 # ------------------------------------------------------------------ a port of GeckoLib 4.9.3's keyframe reader
 
-def gecko_entries(channel_pairs):
-    """BakedAnimationsAdapter.getKeyframes + addBedrockKeyframes: [(time, vector, easing)] in file order."""
+def gecko_value(x, variables):
+    """MathParser for what herogen writes: a number, or a Molang expression of numbers, + - * and variables (an
+    unknown variable reads 0, as MolangQueries.getVariableFor creates it)."""
+    if not isinstance(x, str):
+        return float(x)
+    tokens = x.replace("*", " * ").replace("+", " + ").replace(" - ", " - ").split()
+    terms, sign, i = [], 1.0, 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in ("+", "-"):
+            sign = 1.0 if tok == "+" else -1.0
+            i += 1
+            continue
+        value = variables.get(tok, 0.0) if tok[0].isalpha() else float(tok)
+        while i + 2 < len(tokens) + 1 and i + 1 < len(tokens) and tokens[i + 1] == "*":
+            nxt = tokens[i + 2]
+            value *= variables.get(nxt, 0.0) if nxt[0].isalpha() else float(nxt)
+            i += 2
+        terms.append(sign * value)
+        sign = 1.0
+        i += 1
+    return sum(terms)
+
+
+def gecko_entries(channel_pairs, variables=None):
+    """BakedAnimationsAdapter.getKeyframes + addBedrockKeyframes: [(time, vector, easing)] in file order, with
+    Molang components evaluated for `variables` (GeckoLib evaluates them every frame)."""
+    variables = variables or {}
+
+    def vec(v):
+        return [gecko_value(x, variables) for x in v]
     out = []
     for key, value in channel_pairs:
         t = float(key)
@@ -52,14 +81,14 @@ def gecko_entries(channel_pairs):
         if isinstance(value, list) and value and isinstance(value[0], tuple):
             d = dict(value)
             if "vector" in d:
-                out.append((t, d["vector"], d.get("easing", "linear")))
+                out.append((t, vec(d["vector"]), d.get("easing", "linear")))
                 continue
             if "pre" in d:
-                out.append((t if t == 0 else t - 0.001, d["pre"], "linear"))
+                out.append((t if t == 0 else t - 0.001, vec(d["pre"]), "linear"))
             if "post" in d:
-                out.append((t, d["post"], d.get("lerp_mode", "linear")))
+                out.append((t, vec(d["post"]), d.get("lerp_mode", "linear")))
         else:
-            out.append((t, value, "linear"))
+            out.append((t, vec(value), "linear"))
     return out
 
 
@@ -134,19 +163,24 @@ class ClipSemanticsTest(unittest.TestCase):
 class WriterTest(unittest.TestCase):
     def test_geckolib_reads_what_herogen_means(self):
         """Every channel of every library animation, read back through the port of GeckoLib's parser, gives the
-        values herogen sampled, at every tick."""
+        values herogen sampled, at every tick; a form-scaled channel (G4) on a chibi, a teen and an adult with the
+        variable HeroModel sets, and on a model that sets none (the middle-form value)."""
+        from anim.clip import FORM_VAR
         for built in (library.core(), library.style("katana")):
             doc, _ = lib_json(built)
             anims = dict(dict(doc)["animations"])
             for clip in built.clips:
                 bones = dict(dict(anims[clip.name])["bones"])
                 for (bone, ch), tr in clip.tracks.items():
-                    entries = gecko_entries(dict(bones[bone])[ch])
-                    for i in range(int(round(clip.length / TICK)) + 1):
-                        t = i * TICK
-                        got, want = gecko_sample(entries, t), tr.sample(t)
-                        self.assertTrue(all(abs(a - b) < 2e-3 for a, b in zip(got, want)),
-                                        "%s %s.%s at %.2f: %s vs %s" % (clip.name, bone, ch, t, got, want))
+                    for d in ((0.0, -6.25, 1.75, 6.25) if tr.scaled() else (0.0,)):
+                        entries = gecko_entries(dict(bones[bone])[ch], {FORM_VAR: d} if d else {})
+                        for i in range(int(round(clip.length / TICK)) + 1):
+                            t = i * TICK
+                            got, want = gecko_sample(entries, t), tr.sample(t, d)
+                            tol = 2e-3 + abs(d) * 5e-4          # the coefficient is written to 3 decimals too
+                            self.assertTrue(all(abs(a - b) < tol for a, b in zip(got, want)),
+                                            "%s %s.%s at %.2f (d %g): %s vs %s" % (clip.name, bone, ch, t, d, got,
+                                                                                   want))
 
     def test_keyframe_maps_are_in_time_order(self):
         doc, _ = lib_json(library.core())
@@ -349,7 +383,10 @@ class LibraryRulesTest(unittest.TestCase):
                          ["move.idle", "move.run", "move.walk"])
         self.assertEqual((core_clip("move.walk").length, core_clip("move.run").length,
                           core_clip("move.idle").length), (1.0, 0.6, 24.0))
-        self.assertEqual(sorted(library.style("katana").by_name), ["attack.1", "combat.idle"])
+        kat = library.style("katana").by_name
+        self.assertTrue({"attack.1", "combat.idle"} <= set(kat))
+        # G4: the core's restyled reactions, re-expanded over the katana stance
+        self.assertEqual(sorted(set(kat) - {"attack.1", "combat.idle"}), sorted(library.restyled_recipes()))
 
     def test_one_file_serves_every_form(self):
         """Every keyed bone is a rig bone, so it has the same name and a pivot from the rig on every base."""

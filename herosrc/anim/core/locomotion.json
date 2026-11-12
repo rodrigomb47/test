@@ -1,21 +1,36 @@
 {
-  "_comment": "Core library, movement (HEROES_V2.md 13.6; the plan of the whole core library is in docs/heroes-v2/notes/artgen.md, 'G3'). One file for every body form: bone names are the same on all six bases and rotations transfer; root offsets are solved on the teen and stay within half a pixel on the chibi and the adult.",
+  "_comment": "Core library, movement (HEROES_V2.md 13.6; the plan of the whole core library is in docs/heroes-v2/notes/artgen.md, 'G3'). One file for every body form: bone names are the same on all six bases and rotations transfer; root offsets are solved on the teen and stay within half a pixel on the chibi and the adult. G4: move.crouch, move.swim, move.fall and move.climb (the mobility locomotion set of MOBILITY_AND_WORK.md 4.1 is G10's).",
   "animations": {
     "move.idle": {
       "description": "A 24 s idle loop (the references idle for 24-30 s with baked weight shifts and head turns): breathing every 3 s, two weight shifts, three glances on the neck (the head stays free for the procedural head look), seeded ear twitches.",
       "length": 24,
       "loop": true,
-      "keys": [{"t": 0, "pose": "stance.relaxed"}, {"t": 24, "pose": "stance.relaxed"}],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 24, "pose": "stance.relaxed"}
+      ],
       "layers": [
-        {"primitive": "breathe", "params": {"period": 3}},
+        {
+          "primitive": "breathe",
+          "params": {"period": 3}
+        },
         {
           "primitive": "weight_shift",
-          "params": {"shifts": [[4, 5.2, 9, 10.4, "r"], [14.5, 15.8, 19.6, 21, "l"]]}
+          "params": {
+            "shifts": [
+              [4, 5.2, 9, 10.4, "r"],
+              [14.5, 15.8, 19.6, 21, "l"]
+            ]
+          }
         },
         {
           "primitive": "look",
           "params": {
-            "glances": [[6.6, 7.2, 8.8, 9.5, 18, 2], [11.8, 12.3, 12.9, 13.5, 0, 9], [17, 17.5, 18.6, 19.2, -13, -1]]
+            "glances": [
+              [6.6, 7.2, 8.8, 9.5, 18, 2],
+              [11.8, 12.3, 12.9, 13.5, 0, 9],
+              [17, 17.5, 18.6, 19.2, -13, -1]
+            ]
           }
         },
         {"primitive": "ear_twitch"}
@@ -25,14 +40,94 @@
       "description": "Walk cycle in place, 1.0 s (the base controller scales the speed with the ground speed).",
       "length": 1,
       "loop": true,
-      "layers": [{"primitive": "walk_cycle", "add": false}]
+      "layers": [
+        {"primitive": "walk_cycle", "add": false}
+      ]
     },
     "move.run": {
       "description": "Run cycle in place, 0.6 s, with a short flight phase.",
       "length": 0.6,
       "loop": true,
       "ground": false,
-      "layers": [{"primitive": "run_cycle", "add": false}]
+      "layers": [
+        {"primitive": "run_cycle", "add": false}
+      ]
+    },
+    "move.crouch": {
+      "description": "Sneaking walk in place, 1.2 s (the base controller plays it while crouching and scales its speed with the ground speed): both knees bent about 38 degrees, an 18 degree lean with the head kept up, a short careful stride, arms a little out. The root height is form-scaled, so the soles stay on the ground on every form.",
+      "length": 1.2,
+      "loop": true,
+      "layers": [
+        {"primitive": "crouch_cycle", "add": false}
+      ]
+    },
+    "move.swim": {
+      "description": "Breaststroke in place, 1.2 s: glide with the arms forward, pull out and down while the head lifts to breathe (0.35 s), hands in and knees up (0.55 s), kick back as the arms shoot forward (0.75 s), glide; the body pitched forward 44 degrees with the legs trailing in line. Not grounded (in water).",
+      "length": 1.2,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "swim.glide"},
+        {"t": 0.35, "pose": "swim.pull", "ease": "easeOutSine"},
+        {"t": 0.55, "pose": "swim.tuck"},
+        {"t": 0.75, "pose": "swim.kick", "ease": "easeOutQuad"},
+        {"t": 1.2, "pose": "swim.glide", "ease": "easeOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "root": [0, 0.5, 0]
+            },
+            "period": 1.2,
+            "channel": "position",
+            "phase": 0.15
+          }
+        }
+      ]
+    },
+    "move.fall": {
+      "description": "Falling, 0.8 s loop: arms thrown up and out and the legs paddling slowly, ears and tail swept up, a surprised face (face_ctrl). Not grounded.",
+      "length": 0.8,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {
+          "t": 0,
+          "pose": "fall.a",
+          "face": {"eyes": 6, "mouth": 2}
+        },
+        {"t": 0.4, "pose": "fall.b"},
+        {"t": 0.8, "pose": "fall.a"}
+      ]
+    },
+    "move.climb": {
+      "description": "Climbing in place, 1.0 s: hand over hand and knee over knee (the right hand reaches high as the right knee comes up, then the left), the body close to the wall, looking up, a small push on each step. Not grounded.",
+      "length": 1.0,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "climb.a"},
+        {"t": 0.5, "pose": "climb.b"},
+        {"t": 1.0, "pose": "climb.a"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "root": [0, 0.6, 0]
+            },
+            "period": 0.5,
+            "channel": "position",
+            "shape": "pulse"
+          }
+        }
+      ]
     }
   }
 }

@@ -11,10 +11,12 @@ feet planted under a hip shift) is solved on all three forms and set to the comp
 error: one file serves every form, and the chibi, teen and adult stay within half a pixel (tests check all six
 bases).
 
-Implemented for G3: breathe, weight_shift, look, ear_twitch, walk_cycle, run_cycle. The rest of the design's list
-(swing, thrust, slam, spin, leap, land, cast, draw_bow, throw, guard, dodge, hurt, stagger, kneel, death, greet_bow,
-wave, cheer, taunt, play_instrument, work_loop) comes with the libraries that need them (G4, G5); G3's swing is
-authored as pose keys (herosrc/anim/styles/katana.json).
+Implemented for G3: breathe, weight_shift, look, ear_twitch, walk_cycle, run_cycle. G4 (the core library) adds
+crouch_cycle and carry_cycle (gaits with form-scaled root heights, anim/clip.py), oscillate (sways, waves, nods,
+shakes, pumps, stirring circles, a dizzy head circle, a swimmer's bob) and flinch (an impulse: a hit, a jolt). The
+design's keyed motions (dodge, hurt, stagger, kneel, death, greet_bow, wave, cheer, work strokes) are pose keys in
+herosrc/anim/core with these layers on top; swing, thrust, slam, spin, leap, land, cast, draw_bow, throw, guard,
+taunt and play_instrument come with the style libraries (G5).
 """
 import math
 
@@ -66,14 +68,26 @@ def envelope(t, t0, t1, t2, t3):
     return 1.0 - smoothstep((t - t2) / (t3 - t2))
 
 
-def _dense_clip(name, ctx, fns, rot_tol=ROT_TOL, pos_tol=POS_TOL):
-    """A clip from {(bone, channel): fn(t) -> 3-vector}, sampled every tick over the clip and simplified."""
+def _dense_clip(name, ctx, fns, rot_tol=ROT_TOL, pos_tol=POS_TOL, kfns=None):
+    """A clip from {(bone, channel): fn(t) -> 3-vector}, sampled every tick over the clip and simplified; kfns gives
+    the FORM_VAR coefficient of form-scaled channels (anim/clip.py)."""
     clip = Clip(name, ctx.length, "loop" if ctx.loop else "once")
     for (bone, ch), fn in sorted(fns.items()):
-        tr = simplify(dense_track(fn, 0.0, ctx.length), rot_tol if ch == "rotation" else pos_tol)
+        kfn = (kfns or {}).get((bone, ch))
+        tr = simplify(dense_track(fn, 0.0, ctx.length, kfn=kfn), rot_tol if ch == "rotation" else pos_tol)
         if tr.max_abs() > 1e-6:
             clip.tracks[(bone, ch)] = tr
     return clip
+
+
+def form_fit(values):
+    """(a, b): the line a + b x FORM_VAR through [(FORM_VAR, value)] of the forms (least squares)."""
+    n = float(len(values))
+    md = sum(d for d, _ in values) / n
+    mv = sum(v for _, v in values) / n
+    var = sum((d - md) ** 2 for d, _ in values)
+    b = sum((d - md) * (v - mv) for d, v in values) / var if var > 1e-12 else 0.0
+    return mv - b * md, b
 
 
 def _periodic_check(ctx, period, what):
@@ -199,8 +213,12 @@ def ear_twitch(ctx, twitches=None, every=(3.0, 6.0), flick=EAR_FLICK, seed=None)
 # ------------------------------------------------------------------ locomotion
 
 def _gait(ctx, name, p, flight=None):
-    """A walk or run cycle: the right foot strikes at phase 0, the left at 0.5."""
+    """A walk or run cycle: the right foot strikes at phase 0, the left at 0.5. G4: `bend` bends both knees through the
+    whole cycle (a crouch) and the root height is then a form-scaled key fitted over the forms (exact on each, where
+    the G3 gaits keep the compromise); `upper` 0 leaves the arms to the recipe's pose keys (a carry)."""
     L = ctx.length
+    bend = p.get("bend", 0.0)
+    scaled = bend > 0
     A, knee, load, arms, flex, flex_swing = p["stride"], p["knee"], p["load"], p["arms"], p["elbow"], p["elbow_swing"]
     lean, twist, tilt, sway, toe, heel = p["lean"], p["twist"], p["tilt"], p["sway"], p["toe_off"], p["heel"]
     knee_at, knee_w = p["knee_at"], p["knee_width"]
@@ -211,25 +229,43 @@ def _gait(ctx, name, p, flight=None):
     def leg(t, side):
         return -A * math.cos(TAU * ph(t, side))
 
+    def leg_bent(t, side):
+        return leg(t, side) - bend
+
     def shin(t, side):
         x = ph(t, side)
-        return load * bump(x, 0.07, 0.07) + knee * bump(x, knee_at, knee_w)
+        return load * bump(x, 0.07, 0.07) + knee * bump(x, knee_at, knee_w) + 2.0 * bend
 
     def foot(t, side):
         x = ph(t, side)
-        return -(leg(t, side) + shin(t, side)) + toe * bump(x, 0.5, 0.06) - heel * bump(x, 0.0, 0.05)
+        return -(leg_bent(t, side) + shin(t, side)) + toe * bump(x, 0.5, 0.06) - heel * bump(x, 0.0, 0.05)
 
     def legs_pose(t):
-        return {"leg_r": {"rotation": (leg(t, "r"), 0, 0)}, "shin_r": {"rotation": (shin(t, "r"), 0, 0)},
-                "foot_r": {"rotation": (foot(t, "r"), 0, 0)}, "leg_l": {"rotation": (leg(t, "l"), 0, 0)},
+        return {"leg_r": {"rotation": (leg_bent(t, "r"), 0, 0)}, "shin_r": {"rotation": (shin(t, "r"), 0, 0)},
+                "foot_r": {"rotation": (foot(t, "r"), 0, 0)}, "leg_l": {"rotation": (leg_bent(t, "l"), 0, 0)},
                 "shin_l": {"rotation": (shin(t, "l"), 0, 0)}, "foot_l": {"rotation": (foot(t, "l"), 0, 0)}}
 
+    fits = {}
+
+    def lift(t):
+        key = round(t, 6)
+        if key not in fits:
+            pose = legs_pose(t)
+            if scaled:
+                fits[key] = form_fit([(f.d, -f.lowest_sole(pose)) for f in ctx.forms])
+            else:
+                fits[key] = (compromise([-f.lowest_sole(pose) for f in ctx.forms]), 0.0)
+        return fits[key]
+
     def root(t):
-        pose = legs_pose(t)
-        y = compromise([-f.lowest_sole(pose) for f in ctx.forms])
+        y = lift(t)[0]
         if flight:
             y += flight * (bump(t / L, p["flight_at"], 0.07) + bump(t / L, p["flight_at"] + 0.5, 0.07))
+        y += p.get("bob", 0.0) * math.cos(2.0 * TAU * t / L)
         return (-sway * math.sin(TAU * t / L), y, 0.0)
+
+    def root_k(t):
+        return (0.0, lift(t)[1], 0.0)
 
     def c(t):
         return math.cos(TAU * t / L)
@@ -252,21 +288,22 @@ def _gait(ctx, name, p, flight=None):
         ("chest", "rotation"): lambda t: (p["chest_lean"], 0.6 * twist * c(t), -0.4 * tilt * s(t)),
         ("neck", "rotation"): lambda t: (-(lean + p["waist_lean"] + p["chest_lean"]) * p["head_level"], 0.0,
                                          -0.3 * tilt * s(t)),
-        ("arm_r", "rotation"): lambda t: arm(t, "r"),
-        ("arm_l", "rotation"): lambda t: arm(t, "l"),
-        ("forearm_r", "rotation"): lambda t: forearm(t, "r"),
-        ("forearm_l", "rotation"): lambda t: forearm(t, "l"),
         ("skirt_f", "rotation"): lambda t: (0.45 * min(leg(t, "r"), leg(t, "l")), 0.0, 0.0),
         ("skirt_b", "rotation"): lambda t: (0.45 * max(leg(t, "r"), leg(t, "l")), 0.0, 0.0),
         ("skirt_r", "rotation"): lambda t: (0.35 * leg(t, "r"), 0.0, 0.0),
         ("skirt_l", "rotation"): lambda t: (0.35 * leg(t, "l"), 0.0, 0.0),
         ("tail_1", "rotation"): lambda t: (p["tail_lift"], p["tail_sway"] * s(t), 0.0),
     }
+    if p.get("upper", 1.0):
+        fns[("arm_r", "rotation")] = lambda t: arm(t, "r")
+        fns[("arm_l", "rotation")] = lambda t: arm(t, "l")
+        fns[("forearm_r", "rotation")] = lambda t: forearm(t, "r")
+        fns[("forearm_l", "rotation")] = lambda t: forearm(t, "l")
     for side in ("r", "l"):
-        fns[("leg_" + side, "rotation")] = (lambda sd: lambda t: (leg(t, sd), 0.0, 0.0))(side)
+        fns[("leg_" + side, "rotation")] = (lambda sd: lambda t: (leg_bent(t, sd), 0.0, 0.0))(side)
         fns[("shin_" + side, "rotation")] = (lambda sd: lambda t: (shin(t, sd), 0.0, 0.0))(side)
         fns[("foot_" + side, "rotation")] = (lambda sd: lambda t: (foot(t, sd), 0.0, 0.0))(side)
-    clip = _dense_clip(name, ctx, fns)
+    clip = _dense_clip(name, ctx, fns, kfns={("root", "position"): root_k} if scaled else None)
     clip.meta["steps"] = True
     return clip
 
@@ -303,6 +340,96 @@ def run_cycle(ctx, flight=0.7, **params):
     return _gait(ctx, "run_cycle", _params(RUN, params, "run_cycle"), flight=float(flight))
 
 
+CROUCH = dict(WALK, stride=14.0, knee=30.0, load=4.0, arms=7.0, arm_out=10.0, elbow=30.0, elbow_swing=8.0, lean=18.0,
+              chest_lean=3.0, head_level=0.9, twist=3.0, tilt=1.0, sway=0.15, toe_off=8.0, heel=4.0, tail_sway=7.0,
+              tail_lift=-6.0, bend=38.0, bob=0.0, upper=1.0)
+CARRY = dict(WALK, stride=16.0, knee=34.0, load=11.0, lean=-3.0, chest_lean=-1.5, head_level=1.0, twist=2.0,
+             tilt=2.4, sway=0.3, toe_off=10.0, heel=6.0, tail_sway=3.0, bend=0.0, bob=0.0, upper=0.0)
+
+
+def crouch_cycle(ctx, **params):
+    """A sneaking walk in place (1.2 s in the core library): both knees bent about 38 degrees through the cycle, an 18
+    degree forward lean with the head kept up, a short careful stride, arms held a little out and forward with small
+    swings. The root height is form-scaled (exact on every form, anim/clip.py): no compromise holds a deep bend."""
+    return _gait(ctx, "crouch_cycle", _params(CROUCH, params, "crouch_cycle"))
+
+
+def carry_cycle(ctx, **params):
+    """A loaded walk in place (carry.loop): a shorter, heavier stride with more side-to-side tip, the body leaning a
+    little back against the load; the arms are left to the recipe's pose keys (holding the load)."""
+    return _gait(ctx, "carry_cycle", _params(CARRY, params, "carry_cycle"))
+
+
+# ------------------------------------------------------------------ G4: oscillations and impulses
+
+def _window(ctx, window):
+    if window is None:
+        return lambda t: 1.0
+    if len(window) != 4 or not all(isinstance(x, (int, float)) for x in window):
+        raise HerogenError("window must be [t0, t1, t2, t3] (eased in from t0 to t1, held to t2, out by t3)")
+    t0, t1, t2, t3 = (float(x) for x in window)
+    return lambda t: envelope(t, t0, t1, t2, t3)
+
+
+def oscillate(ctx, bones=None, period=1.0, window=None, channel="rotation", shape="sine", phase=0.0):
+    """Periodic motion added to bones (additive): bones {bone: [ax, ay, az]} or {bone: {"amp": [...], "phase":
+    cycles}}; `shape` "sine" swings both ways, "pulse" (1 - cos) / 2 only one way (a nod down, a pump up), "circle"
+    turns x and z a quarter cycle apart (a stirring hand, a dizzy head: amp [ax, 0, az]). `window` [t0, t1, t2, t3]
+    fades it in and out; without one the clip must hold a whole number of periods (a loop)."""
+    if channel not in ("rotation", "position"):
+        raise HerogenError("oscillate: channel must be rotation or position")
+    if shape not in ("sine", "pulse", "circle"):
+        raise HerogenError("oscillate: shape must be sine, pulse or circle")
+    if window is None:
+        _periodic_check(ctx, float(period), "oscillate")
+    env = _window(ctx, window)
+    fns = {}
+    for bone, spec in sorted((bones or {}).items()):
+        if isinstance(spec, dict):
+            amp, ph = spec["amp"], float(spec.get("phase", 0.0))
+        else:
+            amp, ph = spec, 0.0
+        amp = tuple(float(a) for a in amp)
+        ph += float(phase)
+
+        def fn(t, amp=amp, ph=ph):
+            x = TAU * (t / float(period) + ph)
+            e = env(t)
+            if shape == "sine":
+                f = (math.sin(x),) * 3
+            elif shape == "pulse":
+                f = (0.5 - 0.5 * math.cos(x),) * 3
+            else:
+                f = (math.sin(x), math.cos(x), math.cos(x))
+            return tuple(amp[c] * f[c] * e for c in range(3))
+        fns[(bone, channel)] = fn
+    return _dense_clip("oscillate", ctx, fns, rot_tol=0.05, pos_tol=0.005)
+
+
+def flinch(ctx, t=0.0, bones=None, rise=0.08, decay=0.22, rebound=0.25, channel="rotation"):
+    """An impulse added to bones (additive): each bone turns to its peak offset in `rise` seconds (ease out), then
+    returns over about 3 x `decay` with a small swing past rest (`rebound` x the peak): a hit, a jolt, a recoil.
+    bones {bone: [rx, ry, rz]} peaks (file degrees, or pixels with channel position)."""
+    t0, rise, decay, rebound = float(t), float(rise), float(decay), float(rebound)
+
+    def f(tt):
+        x = tt - t0
+        if x <= 0:
+            return 0.0
+        if x < rise:
+            u = x / rise
+            return 1.0 - (1.0 - u) * (1.0 - u)
+        y = (x - rise) / decay
+        return math.exp(-y) * math.cos(min(y, 3.0) * (math.pi / 2.0 + math.atan(rebound * 4.0)) / 1.5)
+
+    fns = {}
+    for bone, peak in sorted((bones or {}).items()):
+        pk = tuple(float(a) for a in peak)
+        fns[(bone, channel)] = lambda tt, pk=pk: tuple(pk[c] * f(tt) for c in range(3))
+    clip = _dense_clip("flinch", ctx, fns, rot_tol=0.05, pos_tol=0.005)
+    return clip
+
+
 PRIMITIVES = {
     "breathe": breathe,
     "weight_shift": weight_shift,
@@ -310,6 +437,10 @@ PRIMITIVES = {
     "ear_twitch": ear_twitch,
     "walk_cycle": walk_cycle,
     "run_cycle": run_cycle,
+    "crouch_cycle": crouch_cycle,
+    "carry_cycle": carry_cycle,
+    "oscillate": oscillate,
+    "flinch": flinch,
 }
 
 

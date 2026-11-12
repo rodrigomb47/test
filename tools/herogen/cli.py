@@ -164,6 +164,19 @@ def cmd_anim(args):
 
 def cmd_anim_previews(args):
     from anim import preview
+    if args.core:                       # G4: the core library's previews (anim/core_preview.py)
+        from anim import core_preview
+        out = args.out or core_preview.OUT_DIR
+        if args.check:
+            problems = core_preview.check(out, args.groups or None, gifs=not args.no_gif)
+            for p in problems:
+                print("DIFF " + p)
+            if not problems:
+                print("OK   %s: the committed previews match a fresh render" % out)
+            return 1 if problems else 0
+        for k, p in sorted(core_preview.write_all(out, args.groups or None, gifs=not args.no_gif).items()):
+            print("%s: %s" % (k, p))
+        return 0
     out = args.out or preview.ANIM_PREVIEW_DIR
     for k, p in sorted(preview.write_all(out, gifs=not args.no_gif).items()):
         print("%s: %s" % (k, p))
@@ -342,6 +355,12 @@ def main(argv=None):
     ap = sub.add_parser("anim-previews", help="write animation filmstrips and GIFs to docs/heroes-v2/previews/anim")
     ap.add_argument("--out", default=None)
     ap.add_argument("--no-gif", action="store_true")
+    ap.add_argument("--core", action="store_true", help="the core library's previews (G4) in "
+                                                        "docs/heroes-v2/previews/anim/core")
+    ap.add_argument("--groups", nargs="*", help="with --core: movement, work, work_home, emotes, combat, "
+                                                "combat_katana")
+    ap.add_argument("--check", action="store_true", help="with --core: render in a temporary folder and fail if a "
+                                                         "committed preview differs")
     ap.set_defaults(fn=cmd_anim_previews)
     for name, fn, hlp in (("preview", cmd_preview, "render a hero to PNG (a pose, an animation frame or frames)"),
                           ("gif", cmd_gif, "an animated preview of one or more heroes")):

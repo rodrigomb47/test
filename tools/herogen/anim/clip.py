@@ -15,10 +15,23 @@ What GeckoLib does with an animation file (read from its BakedAnimationsAdapter,
 - easing names are matched lower-case; an unknown name falls back to linear. `step` divides the segment into 2 steps
   by default: the value sits at the MIDPOINT for the second half of the segment, so a jump between two face frames
   through `step` would show a third frame for half the segment. herogen writes jumps as pre/post keys instead.
+- a component may be a Molang expression instead of a number (MathParser.parseJson; a non-constant position value is
+  used as it is, in pixels). An unknown variable is created on first use with the value 0 (MolangQueries
+  .getVariableFor), so a file never fails to load for a variable the model does not set.
+
+Form-scaled keys (G4): a pixel offset that depends on the legs' length (the root drop of a kneel, a sit, a crouch) has
+no single value that fits a chibi (hip 12 px) and an adult (hip 24.5 px). Such a key carries `k`, pixels per pixel of
+FORM_VAR, the model's hip height minus HIP_MID (the middle of the three forms' hip heights): its value on a model is
+v + k x FORM_VAR. HeroModel sets FORM_VAR every frame from the baked model (the `leg_r` bone's pivot y is the hip
+height); on a model that does not set it the value is v, the middle-form compromise (the variable reads 0). The writer
+turns such a component into "v + k * v.fc_dhip".
 """
 import math
 
 TICK = 0.05                     # one game tick in seconds
+FORM_VAR = "v.fc_dhip"          # the Molang variable of form-scaled keys: the model's hip height minus HIP_MID (px)
+HIP_MID = 18.25                 # the middle of the three forms' hip heights (chibi 12, adult 24.5): FORM_VAR = 0
+FORM_SPAN = 6.25                # the largest |FORM_VAR| of the six bases (simplify's error bound for k)
 TIME_EPS = 1e-6
 CHANNELS = ("rotation", "position", "scale")
 LOOPS = ("once", "loop", "hold")
@@ -117,17 +130,30 @@ def _vec(v):
 
 class Key:
     """One keyframe: time (s), value (3 floats), the easing that arrives at it and, for a jump, the value just before
-    it (`pre`, written as a Bedrock pre/post key)."""
-    __slots__ = ("t", "v", "ease", "pre")
+    it (`pre`, written as a Bedrock pre/post key). `k` (3 floats or None) scales the value with the model's legs: the
+    value on a model is v + k x FORM_VAR (module docstring)."""
+    __slots__ = ("t", "v", "ease", "pre", "k")
 
-    def __init__(self, t, v, ease="linear", pre=None):
+    def __init__(self, t, v, ease="linear", pre=None, k=None):
         self.t = float(t)
         self.v = _vec(v)
         self.ease = canonical_easing(ease)
         self.pre = _vec(pre) if pre is not None else None
+        k = _vec(k) if k is not None else None
+        self.k = k if k is not None and any(abs(x) > 1e-9 for x in k) else None
+
+    def at(self, d=0.0):
+        """The value on a model whose FORM_VAR is d."""
+        if self.k is None or not d:
+            return self.v
+        return tuple(self.v[c] + self.k[c] * d for c in range(3))
+
+    def copy(self):
+        return Key(self.t, self.v, self.ease, self.pre, self.k)
 
     def __repr__(self):
-        return "Key(%g, %r, %s%s)" % (self.t, self.v, self.ease, ", pre=%r" % (self.pre,) if self.pre else "")
+        return "Key(%g, %r, %s%s%s)" % (self.t, self.v, self.ease, ", pre=%r" % (self.pre,) if self.pre else "",
+                                       ", k=%r" % (self.k,) if self.k else "")
 
 
 class Track:
@@ -149,23 +175,23 @@ class Track:
         self.keys.append(key)
         return key
 
-    def set(self, t, v, ease="linear", pre=None):
-        return self.put(Key(t, v, ease, pre))
+    def set(self, t, v, ease="linear", pre=None, k=None):
+        return self.put(Key(t, v, ease, pre, k))
 
     def copy(self):
-        return Track(Key(k.t, k.v, k.ease, k.pre) for k in self.keys)
+        return Track(k.copy() for k in self.keys)
 
-    def _expanded(self):
+    def _expanded(self, d=0.0):
         out = []
         for k in self.keys:
             if k.pre is not None and k.t > 0:     # GeckoLib shows a jump at 0 as its `post` value from the start
                 out.append((k.t - 0.001, k.pre, "linear"))
-            out.append((k.t, k.v, k.ease))
+            out.append((k.t, k.at(d), k.ease))
         return out
 
-    def sample(self, t):
-        """The value GeckoLib computes at time t (seconds)."""
-        e = self._expanded()
+    def sample(self, t, d=0.0):
+        """The value GeckoLib computes at time t (seconds) on a model whose FORM_VAR is d."""
+        e = self._expanded(d)
         if not e:
             return (0.0, 0.0, 0.0)
         if t <= e[0][0]:
@@ -179,6 +205,16 @@ class Track:
                 return tuple(a + (b - a) * f for a, b in zip(v0, v1))
         return e[-1][1]
 
+    def sample_k(self, t):
+        """The FORM_VAR coefficient at time t (the value is linear in it: sample(t, d) = sample(t) + d x this)."""
+        if not self.scaled():
+            return (0.0, 0.0, 0.0)
+        a, b = self.sample(t, 0.0), self.sample(t, 1.0)
+        return tuple(b[c] - a[c] for c in range(3))
+
+    def scaled(self):
+        return any(k.k is not None for k in self.keys)
+
     @property
     def start(self):
         return self.keys[0].t if self.keys else 0.0
@@ -191,16 +227,19 @@ class Track:
         return all(k.ease == "linear" and k.pre is None for k in self.keys)
 
     def max_abs(self):
-        return max((abs(x) for k in self.keys for x in k.v + (k.pre or ())), default=0.0)
+        return max((abs(x) for k in self.keys for x in k.v + (k.pre or ()) + tuple(FORM_SPAN * abs(c)
+                                                                                    for c in (k.k or ()))),
+                   default=0.0)
 
 
-def dense_track(fn, t0, t1, step=TICK):
-    """A linear track sampling fn(t) -> 3-vector every `step` seconds from t0 to t1 (both ends included)."""
+def dense_track(fn, t0, t1, step=TICK, kfn=None):
+    """A linear track sampling fn(t) -> 3-vector every `step` seconds from t0 to t1 (both ends included); kfn(t), if
+    given, the FORM_VAR coefficient of each key."""
     n = max(1, int(round((t1 - t0) / step)))
     tr = Track()
     for i in range(n + 1):
         t = t0 + (t1 - t0) * i / n
-        tr.set(round(t, 6), fn(t))
+        tr.set(round(t, 6), fn(t), k=kfn(t) if kfn else None)
     return tr
 
 
@@ -219,16 +258,20 @@ def simplify(track, tol):
             continue
         ka, kb = keys[a], keys[b]
         worst, at = -1.0, -1
+        kka, kkb = ka.k or (0.0,) * 3, kb.k or (0.0,) * 3
         for i in range(a + 1, b):
             f = (keys[i].t - ka.t) / (kb.t - ka.t)
-            err = max(abs(keys[i].v[c] - (ka.v[c] + (kb.v[c] - ka.v[c]) * f)) for c in range(3))
+            ki = keys[i].k or (0.0,) * 3
+            # a form-scaled key is kept if the line misses it on any form (|FORM_VAR| up to FORM_SPAN)
+            err = max(abs(keys[i].v[c] - (ka.v[c] + (kb.v[c] - ka.v[c]) * f))
+                      + FORM_SPAN * abs(ki[c] - (kka[c] + (kkb[c] - kka[c]) * f)) for c in range(3))
             if err > worst:
                 worst, at = err, i
         if worst > tol:
             keep[at] = True
             stack.append((a, at))
             stack.append((at, b))
-    return Track(Key(k.t, k.v) for k, kk in zip(keys, keep) if kk)
+    return Track(Key(k.t, k.v, k=k.k) for k, kk in zip(keys, keep) if kk)
 
 
 # ------------------------------------------------------------------ events and clips
@@ -278,14 +321,18 @@ class Clip:
         c.events = [Event(e.t, e.kind, e.value, e.locator) for e in self.events]
         return c
 
-    def sample(self, t):
-        """{bone: {channel: value}} at time t (a loop wraps t)."""
+    def sample(self, t, d=0.0):
+        """{bone: {channel: value}} at time t (a loop wraps t) on a model whose FORM_VAR is d."""
         if self.loop == "loop" and self.length > 0:
             t = t % self.length if t != self.length else self.length
         out = {}
         for (bone, ch), tr in self.tracks.items():
-            out.setdefault(bone, {})[ch] = tr.sample(t)
+            out.setdefault(bone, {})[ch] = tr.sample(t, d)
         return out
+
+    def scaled(self):
+        """True when a key scales with the model's legs (FORM_VAR)."""
+        return any(tr.scaled() for tr in self.tracks.values())
 
     def instructions(self):
         """{time: [instruction, ...]} of the timeline, in time order."""
@@ -300,13 +347,24 @@ class Clip:
         return sorted(e.t for e in self.events if e.kind == "instruction" and e.value in ("hit", "cast"))
 
 
-def layered(base, action, t, base_t=None):
+def layered(base, action, t, base_t=None, d=0.0):
     """The pose GeckoLib shows while `action` plays on the action controller over `base` on the base controller: the
     action's channels override the base's, bone by bone and channel by channel (HEROES_V2 4.4)."""
-    pose = base.sample(t if base_t is None else base_t) if base is not None else {}
-    for bone, chans in action.sample(t).items():
+    pose = base.sample(t if base_t is None else base_t, d) if base is not None else {}
+    for bone, chans in action.sample(t, d).items():
         pose.setdefault(bone, {}).update(chans)
     return pose
+
+
+def form_var(env):
+    """FORM_VAR of a body (its hip height minus HIP_MID): what HeroModel sets for its form-scaled keys."""
+    return round(float(env["hip_y"]) - HIP_MID, 4)
+
+
+def form_var_of_geo(geo):
+    """FORM_VAR of a written model, as HeroModel computes it: the `leg_r` bone's pivot y (the hip height) minus
+    HIP_MID. `geo` is a geo.GeoModel."""
+    return round(float(geo.bones["leg_r"]["pivot"][1]) - HIP_MID, 4)
 
 
 def on_tick(t):

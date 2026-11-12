@@ -1,5 +1,221 @@
 {
   "animations": {
+    "carry.loop": {
+      "events": [],
+      "kind": "base",
+      "length": 1,
+      "loop": "loop",
+      "ticks": 20,
+      "total_ticks": 24,
+      "transition_ticks": 4
+    },
+    "death": {
+      "events": [],
+      "kind": "action",
+      "length": 1,
+      "loop": "hold",
+      "ticks": 20,
+      "total_ticks": 22,
+      "transition_ticks": 2
+    },
+    "defeated": {
+      "events": [],
+      "kind": "action",
+      "length": 0.9,
+      "loop": "once",
+      "ticks": 18,
+      "total_ticks": 20,
+      "transition_ticks": 2
+    },
+    "defeated.loop": {
+      "events": [],
+      "kind": "action",
+      "length": 3,
+      "loop": "loop",
+      "ticks": 60,
+      "total_ticks": 62,
+      "transition_ticks": 2
+    },
+    "dodge": {
+      "events": [],
+      "kind": "action",
+      "length": 0.55,
+      "loop": "once",
+      "ticks": 11,
+      "total_ticks": 13,
+      "transition_ticks": 2
+    },
+    "eat": {
+      "events": [],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "emote.angry": {
+      "events": [{"t": 0.45, "tick": 9, "type": "vfx", "value": "anger"}],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "emote.bow": {
+      "events": [],
+      "kind": "action",
+      "length": 1.6,
+      "loop": "once",
+      "ticks": 32,
+      "total_ticks": 34,
+      "transition_ticks": 2
+    },
+    "emote.cheer": {
+      "events": [],
+      "kind": "action",
+      "length": 1.4,
+      "loop": "once",
+      "ticks": 28,
+      "total_ticks": 30,
+      "transition_ticks": 2
+    },
+    "emote.greet": {
+      "events": [],
+      "kind": "action",
+      "length": 1.2,
+      "loop": "once",
+      "ticks": 24,
+      "total_ticks": 26,
+      "transition_ticks": 2
+    },
+    "emote.laugh": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "emote.sad": {
+      "events": [],
+      "kind": "action",
+      "length": 2.4,
+      "loop": "once",
+      "ticks": 48,
+      "total_ticks": 50,
+      "transition_ticks": 2
+    },
+    "emote.shrug": {
+      "events": [],
+      "kind": "action",
+      "length": 1.3,
+      "loop": "once",
+      "ticks": 26,
+      "total_ticks": 28,
+      "transition_ticks": 2
+    },
+    "emote.talk": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "emote.think": {
+      "events": [],
+      "kind": "action",
+      "length": 2.4,
+      "loop": "once",
+      "ticks": 48,
+      "total_ticks": 50,
+      "transition_ticks": 2
+    },
+    "emote.wave": {
+      "events": [],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "enrage": {
+      "events": [{"t": 0.6, "tick": 12, "type": "vfx", "value": "roar"}],
+      "kind": "action",
+      "length": 1.3,
+      "loop": "once",
+      "ticks": 26,
+      "total_ticks": 28,
+      "transition_ticks": 2
+    },
+    "founding": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "hurt.heavy": {
+      "events": [],
+      "kind": "action",
+      "length": 0.5,
+      "loop": "once",
+      "ticks": 10,
+      "total_ticks": 12,
+      "transition_ticks": 2
+    },
+    "interrupt": {
+      "events": [],
+      "kind": "action",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 14,
+      "transition_ticks": 2
+    },
+    "intro": {
+      "events": [],
+      "kind": "action",
+      "length": 1.4,
+      "loop": "once",
+      "ticks": 28,
+      "total_ticks": 30,
+      "transition_ticks": 2
+    },
+    "move.climb": {
+      "events": [],
+      "kind": "base",
+      "length": 1,
+      "loop": "loop",
+      "ticks": 20,
+      "total_ticks": 24,
+      "transition_ticks": 4
+    },
+    "move.crouch": {
+      "events": [],
+      "kind": "base",
+      "length": 1.2,
+      "loop": "loop",
+      "ticks": 24,
+      "total_ticks": 28,
+      "transition_ticks": 4
+    },
+    "move.fall": {
+      "events": [],
+      "kind": "base",
+      "length": 0.8,
+      "loop": "loop",
+      "ticks": 16,
+      "total_ticks": 20,
+      "transition_ticks": 4
+    },
     "move.idle": {
       "events": [],
       "kind": "base",
@@ -18,6 +234,15 @@
       "total_ticks": 16,
       "transition_ticks": 4
     },
+    "move.swim": {
+      "events": [],
+      "kind": "base",
+      "length": 1.2,
+      "loop": "loop",
+      "ticks": 24,
+      "total_ticks": 28,
+      "transition_ticks": 4
+    },
     "move.walk": {
       "events": [],
       "kind": "base",
@@ -26,11 +251,257 @@
       "ticks": 20,
       "total_ticks": 24,
       "transition_ticks": 4
+    },
+    "personal.1": {
+      "events": [],
+      "kind": "action",
+      "length": 2.4,
+      "loop": "once",
+      "ticks": 48,
+      "total_ticks": 50,
+      "transition_ticks": 2
+    },
+    "personal.2": {
+      "events": [],
+      "kind": "action",
+      "length": 2.6,
+      "loop": "once",
+      "ticks": 52,
+      "total_ticks": 54,
+      "transition_ticks": 2
+    },
+    "personal.3": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "rest.sit": {
+      "events": [],
+      "kind": "base",
+      "length": 8,
+      "loop": "loop",
+      "ticks": 160,
+      "total_ticks": 164,
+      "transition_ticks": 4
+    },
+    "rest.sleep": {
+      "events": [],
+      "kind": "base",
+      "length": 8,
+      "loop": "loop",
+      "ticks": 160,
+      "total_ticks": 164,
+      "transition_ticks": 4
+    },
+    "spared": {
+      "events": [],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "stagger": {
+      "events": [{"t": 0.5, "tick": 10, "type": "vfx", "value": "stars"}],
+      "kind": "action",
+      "length": 2.5,
+      "loop": "once",
+      "ticks": 50,
+      "total_ticks": 52,
+      "transition_ticks": 2
+    },
+    "stun": {
+      "events": [],
+      "kind": "action",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 10,
+      "transition_ticks": 2
+    },
+    "stun.loop": {
+      "events": [{"t": 0.1, "tick": 2, "type": "vfx", "value": "stars"}],
+      "kind": "action",
+      "length": 2,
+      "loop": "loop",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "victory": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "work.build": {
+      "events": [],
+      "kind": "action",
+      "length": 0.7,
+      "loop": "once",
+      "ticks": 14,
+      "total_ticks": 16,
+      "transition_ticks": 2
+    },
+    "work.chop": {
+      "events": [],
+      "kind": "action",
+      "length": 0.8,
+      "loop": "once",
+      "ticks": 16,
+      "total_ticks": 18,
+      "transition_ticks": 2
+    },
+    "work.cook": {
+      "events": [],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "work.eat": {
+      "events": [],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "work.fish_cast": {
+      "events": [{"t": 0.55, "tick": 11, "type": "sfx", "value": "minecraft:entity.fishing_bobber.throw"}],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "work.fish_reel": {
+      "events": [
+        {"t": 0.75, "tick": 15, "type": "vfx", "value": "splash"},
+        {"t": 0.75, "tick": 15, "type": "sfx", "value": "minecraft:entity.fishing_bobber.retrieve"}
+      ],
+      "kind": "action",
+      "length": 1.2,
+      "loop": "once",
+      "ticks": 24,
+      "total_ticks": 26,
+      "transition_ticks": 2
+    },
+    "work.fish_wait": {
+      "events": [],
+      "kind": "action",
+      "length": 0.5,
+      "loop": "once",
+      "ticks": 10,
+      "total_ticks": 12,
+      "transition_ticks": 2
+    },
+    "work.fish_wait.loop": {
+      "events": [],
+      "kind": "action",
+      "length": 4,
+      "loop": "loop",
+      "ticks": 80,
+      "total_ticks": 82,
+      "transition_ticks": 2
+    },
+    "work.harvest": {
+      "events": [],
+      "kind": "action",
+      "length": 1.2,
+      "loop": "once",
+      "ticks": 24,
+      "total_ticks": 26,
+      "transition_ticks": 2
+    },
+    "work.mine": {
+      "events": [],
+      "kind": "action",
+      "length": 0.7,
+      "loop": "once",
+      "ticks": 14,
+      "total_ticks": 16,
+      "transition_ticks": 2
+    },
+    "work.plant": {
+      "events": [],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "work.pray": {
+      "events": [],
+      "kind": "action",
+      "length": 3,
+      "loop": "once",
+      "ticks": 60,
+      "total_ticks": 62,
+      "transition_ticks": 2
+    },
+    "work.read": {
+      "events": [],
+      "kind": "action",
+      "length": 2.4,
+      "loop": "once",
+      "ticks": 48,
+      "total_ticks": 50,
+      "transition_ticks": 2
+    },
+    "work.smith": {
+      "events": [{"t": 0.5, "tick": 10, "type": "vfx", "value": "sparks"}],
+      "kind": "action",
+      "length": 1,
+      "loop": "once",
+      "ticks": 20,
+      "total_ticks": 22,
+      "transition_ticks": 2
+    },
+    "work.sweep": {
+      "events": [],
+      "kind": "action",
+      "length": 1.4,
+      "loop": "once",
+      "ticks": 28,
+      "total_ticks": 30,
+      "transition_ticks": 2
+    },
+    "work.tend": {
+      "events": [],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "work.till": {
+      "events": [],
+      "kind": "action",
+      "length": 0.8,
+      "loop": "once",
+      "ticks": 16,
+      "total_ticks": 18,
+      "transition_ticks": 2
     }
   },
   "file": "_core",
   "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "6a6fcf9c5a7f6fb1104ec6a750912af5f809791a4845c74901c2fe5a5e03c526",
+  "source_sha256": "bd81fb1006abd872d6880e9b83178181ceb3a1b334143ba98fececa2603c0412",
   "tick": 0.05
 }

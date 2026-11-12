@@ -1,0 +1,375 @@
+{
+  "_comment": "Poses of the emotes, the personal idle generics and the ceremony actions (G4). Upper-body poses extend stance.relaxed; poses marked as offsets are added over the stance in their recipe ('over').",
+  "poses": {
+    "greet.up": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-2, -4, 2],
+        "neck": [0, 6, 0],
+        "arm_r": [-26, 0, 42],
+        "forearm_r": [-112, 0, 0],
+        "hand_r": [-8, 0, -6]
+      }
+    },
+    "bow.down": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "body": [8, 0, 0],
+        "waist": [10, 0, 0],
+        "chest": [14, 0, 0],
+        "neck": [12, 0, 0],
+        "arm_r": [-16, 0, -10],
+        "forearm_r": [-30, 0, 0],
+        "hand_r": [0, 0, -6],
+        "arm_l": [-16, 0, 10],
+        "forearm_l": [-30, 0, 0],
+        "hand_l": [0, 0, 6]
+      }
+    },
+    "wave.up": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-2, 0, 6],
+        "neck": [-4, 0, 4],
+        "arm_r": [-12, 0, 148],
+        "forearm_r": [-16, 0, 0],
+        "hand_r": [0, 0, 0],
+        "arm_l": [0, 0, -12],
+        "forearm_l": [-10, 0, 0]
+      }
+    },
+    "laugh.back": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "waist": [-4, 0, 0],
+        "chest": [-12, 0, 0],
+        "neck": [-14, 0, 0],
+        "arm_r": [-28, 0, -6],
+        "forearm_r": [-92, 0, 0],
+        "hand_r": [0, 0, -10],
+        "arm_l": [-8, 0, -16],
+        "forearm_l": [-40, 0, 0]
+      }
+    },
+    "laugh.fwd": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "body": [4, 0, 0],
+        "chest": [10, 0, 0],
+        "neck": [4, 0, 0],
+        "arm_r": [-32, 0, -6],
+        "forearm_r": [-96, 0, 0],
+        "hand_r": [0, 0, -10],
+        "arm_l": [-50, 0, -4],
+        "forearm_l": [-60, 0, 0],
+        "hand_l": [20, 0, 0]
+      }
+    },
+    "angry.fists": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [6, 0, 0],
+        "neck": [10, 0, 0],
+        "arm_r": [12, 0, 14],
+        "forearm_r": [-24, 0, 0],
+        "hand_r": [0, 0, -14],
+        "arm_l": [12, 0, -14],
+        "forearm_l": [-24, 0, 0],
+        "hand_l": [0, 0, 14],
+        "ear_r": [-24, 0, 12],
+        "ear_l": [-24, 0, -12],
+        "tail_1": [30, 0, 0]
+      }
+    },
+    "angry.lift": {
+      "_comment": "angry.fists with the right foot lifted for the stamp (absolute legs on a slightly bent left leg).",
+      "extends": "angry.fists",
+      "bones": {
+        "leg_r": [-37.5, 0, 1],
+        "shin_r": [75.9, 0, 0],
+        "foot_r": [-38.4, 0, 0],
+        "leg_l": [-17.3, 0, 0],
+        "shin_l": [36.5, 0, 0],
+        "foot_l": [-19.2, 0, 0]
+      },
+      "fix": ["floor"],
+      "floor": ["foot_l"]
+    },
+    "sad.slump": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "body": [2, 0, 0],
+        "chest": [10, 0, 0],
+        "neck": [20, 0, 0],
+        "arm_r": [6, 0, -4],
+        "forearm_r": [-2, 0, 0],
+        "arm_l": [6, 0, 4],
+        "forearm_l": [-2, 0, 0],
+        "ear_r": [-30, 0, 24],
+        "ear_l": [-30, 0, -24],
+        "tail_1": [-14, 0, 0]
+      }
+    },
+    "sad.sigh": {
+      "extends": "sad.slump",
+      "bones": {
+        "chest": [-4, 0, 0],
+        "neck": [6, 0, 0]
+      }
+    },
+    "think.chin": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [0, 4, 0],
+        "neck": [-10, 10, 8],
+        "arm_r": [-40, 0, -14],
+        "forearm_r": [-124, 0, 0],
+        "hand_r": [10, 0, -10],
+        "arm_l": [-28, 0, 12],
+        "forearm_l": [-96, 0, 0],
+        "hand_l": [0, 0, 10]
+      }
+    },
+    "think.tilt": {
+      "extends": "think.chin",
+      "bones": {
+        "neck": [-12, -8, -8],
+        "chest": [0, -2, 0]
+      }
+    },
+    "think.idea": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-3, 0, 0],
+        "neck": [-6, 0, 0],
+        "arm_r": [-82, 0, 2],
+        "forearm_r": [-118, 0, 0],
+        "hand_r": [-20, 0, 0],
+        "arm_l": [-28, 0, 12],
+        "forearm_l": [-96, 0, 0],
+        "hand_l": [0, 0, 10]
+      }
+    },
+    "cheer.load": {
+      "extends": "react.squat",
+      "bones": {
+        "chest": [8, 0, 0],
+        "neck": [-6, 0, 0],
+        "arm_r": [18, 0, 12],
+        "forearm_r": [-40, 0, 0],
+        "arm_l": [18, 0, -12],
+        "forearm_l": [-40, 0, 0]
+      }
+    },
+    "cheer.up": {
+      "extends": "react.hop",
+      "bones": {
+        "chest": [-6, 0, 0],
+        "neck": [-10, 0, 0],
+        "arm_r": [-14, 0, 156],
+        "forearm_r": [-18, 0, 0],
+        "hand_r": [0, 0, 0],
+        "arm_l": [-14, 0, -156],
+        "forearm_l": [-18, 0, 0],
+        "hand_l": [0, 0, 0],
+        "ear_r": [-8, 0, -6],
+        "ear_l": [-8, 0, 6],
+        "tail_1": [30, 0, 0]
+      }
+    },
+    "cheer.land": {
+      "extends": "cheer.up",
+      "bones": {
+        "leg_r": [-22.2, 0, 0],
+        "shin_r": [47.2, 0, 0],
+        "foot_r": [-25, 0, 0],
+        "leg_l": [-22.2, 0, 0],
+        "shin_l": [47.2, 0, 0],
+        "foot_l": [-25, 0, 0],
+        "chest": [2, 0, 0]
+      },
+      "fix": ["floor"],
+      "floor": ["foot_*"]
+    },
+    "talk.a": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [0, -6, 0],
+        "neck": [0, 4, 0],
+        "arm_r": [-30, 0, 10],
+        "forearm_r": [-70, 0, 0],
+        "hand_r": [0, 0, 16],
+        "arm_l": [-4, 0, -10],
+        "forearm_l": [-16, 0, 0]
+      }
+    },
+    "talk.b": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [0, 4, 0],
+        "neck": [0, -3, 0],
+        "arm_r": [-38, 0, 20],
+        "forearm_r": [-58, 0, 0],
+        "hand_r": [0, 0, 24],
+        "arm_l": [-34, 0, -18],
+        "forearm_l": [-58, 0, 0],
+        "hand_l": [0, 0, -22]
+      }
+    },
+    "shrug.up": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "neck": [-2, 0, 10],
+        "arm_r": [8, 0, 26],
+        "forearm_r": [-82, 0, 0],
+        "hand_r": [0, 0, 34],
+        "arm_l": [8, 0, -26],
+        "forearm_l": [-82, 0, 0],
+        "hand_l": [0, 0, -34]
+      },
+      "position": {
+        "chest": [0, 0.4, 0],
+        "neck": [0, -0.6, 0]
+      }
+    },
+    "stretch.up": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-10, 0, 0],
+        "neck": [-14, 0, 0],
+        "arm_r": [-10, 0, 168],
+        "forearm_r": [-24, 0, 0],
+        "hand_r": [0, 0, -20],
+        "arm_l": [-10, 0, -168],
+        "forearm_l": [-24, 0, 0],
+        "hand_l": [0, 0, 20]
+      },
+      "position": {
+        "chest": [0, 0.3, 0]
+      }
+    },
+    "stretch.side": {
+      "extends": "stretch.up",
+      "bones": {
+        "chest": [-6, 0, 10],
+        "waist": [0, 0, 6],
+        "neck": [-8, 0, 6]
+      }
+    },
+    "look.shade": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-2, 0, 0],
+        "neck": [-6, 0, 0],
+        "arm_r": [-62, 0, -18],
+        "forearm_r": [-132, 0, 0],
+        "hand_r": [-20, 0, -6]
+      }
+    },
+    "scratch.head": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [0, 0, -3],
+        "neck": [6, 0, -10],
+        "arm_r": [-130, 0, 40],
+        "forearm_r": [-120, 0, 0],
+        "hand_r": [-20, 0, 0],
+        "arm_l": [-4, 0, -8]
+      }
+    },
+    "intro.palm": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-4, 0, 0],
+        "neck": [-6, 0, 0],
+        "arm_r": [-52, 0, -22],
+        "forearm_r": [-84, 0, 0],
+        "hand_r": [0, 0, -12],
+        "arm_l": [-50, 0, 20],
+        "forearm_l": [-80, 0, 0],
+        "hand_l": [0, 0, 16]
+      }
+    },
+    "intro.nod": {
+      "extends": "intro.palm",
+      "bones": {
+        "body": [3, 0, 0],
+        "chest": [6, 0, 0],
+        "neck": [10, 0, 0]
+      }
+    },
+    "victory.load": {
+      "extends": "stance.relaxed",
+      "knees": 14,
+      "bones": {
+        "chest": [8, 0, 0],
+        "neck": [-4, 0, 0],
+        "arm_r": [10, 0, 10],
+        "forearm_r": [-90, 0, 0],
+        "arm_l": [0, 0, -18],
+        "forearm_l": [-80, 0, 0]
+      }
+    },
+    "victory.up": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-8, 0, -4],
+        "neck": [-12, 0, 0],
+        "arm_r": [-176, 0, 8],
+        "forearm_r": [-12, 0, 0],
+        "hand_r": [0, 0, 0],
+        "arm_l": [10, 0, -34],
+        "forearm_l": [-96, 0, 0],
+        "hand_l": [0, 0, 20],
+        "ear_r": [-6, 0, -6],
+        "ear_l": [-6, 0, 6],
+        "tail_1": [36, 0, 0]
+      }
+    },
+    "enrage.load": {
+      "extends": "stance.relaxed",
+      "knees": 12,
+      "bones": {
+        "chest": [14, 0, 0],
+        "neck": [8, 0, 0],
+        "arm_r": [-20, 0, 18],
+        "forearm_r": [-70, 0, 0],
+        "hand_r": [0, 0, -14],
+        "arm_l": [-20, 0, -18],
+        "forearm_l": [-70, 0, 0],
+        "hand_l": [0, 0, 14],
+        "ear_r": [-24, 0, 12],
+        "ear_l": [-24, 0, -12]
+      }
+    },
+    "enrage.roar": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "body": [-2, 0, 0],
+        "chest": [-14, 0, 0],
+        "neck": [-18, 0, 0],
+        "arm_r": [18, 0, 26],
+        "forearm_r": [-28, 0, 0],
+        "hand_r": [0, 0, -14],
+        "arm_l": [18, 0, -26],
+        "forearm_l": [-28, 0, 0],
+        "hand_l": [0, 0, 14],
+        "ear_r": [-30, 0, 16],
+        "ear_l": [-30, 0, -16],
+        "tail_1": [40, 0, 0]
+      }
+    },
+    "found.raise": {
+      "extends": "stance.relaxed",
+      "bones": {
+        "chest": [-6, 0, 0],
+        "neck": [-10, 0, 0],
+        "arm_r": [-178, 0, 4],
+        "forearm_r": [-4, 0, 0],
+        "arm_l": [-46, 0, 22],
+        "forearm_l": [-96, 0, 0],
+        "hand_l": [0, 0, 10]
+      }
+    }
+  }
+}

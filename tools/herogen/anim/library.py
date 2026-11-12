@@ -11,6 +11,12 @@ data/factionclash/hero_timings/<file>.json (writer.py). GeckoLib resolves a name
 library, then the core, so every file of that chain is always written (an empty one is valid).
 
 Clips are built on the reference skeleton (skeleton.REFERENCE_BASE) and are the same for every body form.
+
+Restyled reactions (G4): a core recipe with `restyle: true` (hurt.heavy, stagger, stun, interrupt, dodge, intro,
+victory, ...) starts and ends on "@stance", the first frame of the clip it settles on. The core expands it over
+move.idle; every style library with a combat.idle also gets its own copy expanded over that stance (unless the style
+defines the name itself), so a reaction played with the weapon drawn ends on the pose the base controller shows
+and GeckoLib's snap at the action's end (HEROES_V2 4.8) is invisible.
 """
 import functools
 import glob
@@ -61,7 +67,24 @@ def _recipes_in(paths):
                 raise HerogenError("%s: animation %s is also defined in %s" % (rel(path), name, where[name]))
             out[name] = r
             where[name] = rel(path)
+    return _resolve_copies(out)
+
+
+def _resolve_copies(recipes):
+    """A recipe {"copy": name} is that recipe of the same file under its own name (an alias)."""
+    out = dict(recipes)
+    for name, r in recipes.items():
+        if "copy" in r:
+            src = recipes.get(r["copy"])
+            if src is None or "copy" in src:
+                raise HerogenError("animation %s: copy %r is not a recipe of the same library" % (name, r["copy"]))
+            out[name] = dict(src, **{k: v for k, v in r.items() if k not in ("copy",)})
     return out
+
+
+def restyled_recipes():
+    """The core recipes every style with a combat.idle re-expands over its own stance."""
+    return {n: r for n, r in _recipes_in(core_recipe_paths()).items() if r.get("restyle")}
 
 
 def core_recipe_paths():
@@ -77,8 +100,14 @@ def styles_with_recipes():
 
 
 def _order(recipes):
-    """Loops (the base clips actions settle on) first, then the rest; by name within each group."""
-    return sorted(recipes, key=lambda n: (recipes[n].get("loop") not in (True, "loop"), n))
+    """Base loops (the clips actions settle on) first, then action loops (stun.loop: what a one-shot leads into),
+    then the rest; by name within each group."""
+    def group(r):
+        looping = r.get("loop") in (True, "loop")
+        if looping and r.get("kind", "base") == "base":
+            return 0
+        return 1 if looping else 2
+    return sorted(recipes, key=lambda n: (group(recipes[n]), n))
 
 
 def _source_hash(paths):
@@ -172,7 +201,12 @@ def style(style_name):
         recipes = _recipes_in([path])
     c = core()
     settle = "combat.idle" if "combat.idle" in recipes else "move.idle"
-    return _build(style_file(style_name), recipes, pose_library(), [c], settle, _shared_sources() + [path])
+    sources = _shared_sources() + [path]
+    if "combat.idle" in recipes:
+        for name, r in restyled_recipes().items():
+            recipes.setdefault(name, r)
+        sources += core_recipe_paths()
+    return _build(style_file(style_name), recipes, pose_library(), [c], settle, sources)
 
 
 def hero(hero_obj, hero_source=None):

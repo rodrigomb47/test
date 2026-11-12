@@ -18,8 +18,19 @@ A recipe:
   bones       globs: the bones the pose keys and layers may key (an attack that keys only the upper body leaves
               the legs to the base controller, so a hero can swing while it walks); the bake and face_ctrl are not
               filtered
+  steps       (G4) the feet may lift and step (a kneel, a stumble): no planted rule, but a foot on the ground must
+              not slide (quality.check_slide)
+  contact     (G4) "body": the ground rule takes the lowest point of the whole base body (a knee, a seat, a back),
+              not only the soles
+  restyle     (G4) a core action whose keys start and end on "@stance": every style library with a combat.idle
+              gets its own copy expanded over that stance (library.py), so the reaction settles on the style's stance
+  copy        (G4) the name of another recipe of the same library to expand under this name (an alias: `eat` is
+              `work.eat`)
 Pose keys: every bone any key's pose mentions is keyed at every pose key (0 where a pose leaves it out), so a key is
-a whole pose; `ease` (default easeInOutSine) shapes the motion that arrives at the key; `root` adds a root offset;
+a whole pose; the pose "@stance" is the first frame of the clip the action settles on (its authored channels: the
+style's stance for a restyled reaction), and `over: true` adds the key's pose to that stance (bones it leaves out
+keep the stance), `over: [globs]` only for the bones matching them (a kneel's legs absolute under a style's arms)
+(G4); `ease` (default easeInOutSine) shapes the motion that arrives at the key; `root` adds a root offset;
 `overshoot` k pushes the key k x the last change past its pose and adds a return to the pose `overshoot_time`
 (0.1 s) later; `settle` k adds a key `settle_time` (0.15 s) later that relaxes k x the last change back.
 Face keys switch face_ctrl (eyes + 1, mouth + 1, cheeks + 1; 0 = no override, HEROES_V2 4.6) at once, written as
@@ -37,9 +48,10 @@ from face import CHEEK_FRAMES, EYE_FRAMES, MOOD_FRAMES, MOUTH_FRAMES
 from util import HerogenError
 
 KEY_FIELDS = ("t", "pose", "ease", "root", "face", "marker", "sound", "particle", "overshoot", "overshoot_time",
-              "settle", "settle_time")
+              "settle", "settle_time", "over")
 RECIPE_FIELDS = ("length", "loop", "kind", "class", "settle_to", "secondary", "planted", "ground", "poses", "keys",
-                 "layers", "markers", "bones", "description")
+                 "layers", "markers", "bones", "description", "steps", "contact", "restyle", "copy")
+STANCE = "@stance"
 DEFAULT_EASE = "easeInOutSine"
 SETTLE_BLEND = 0.15
 FACE_BONE = "face_ctrl"
@@ -89,6 +101,114 @@ def split_marker(text):
     return instr, sounds
 
 
+GAITS = ("walk_cycle", "run_cycle", "crouch_cycle", "carry_cycle", "swim_cycle", "climb_cycle")
+
+
+def stance_of(clip):
+    """The first frame of a clip's authored channels (not its baked chain bones, not face_ctrl), with the FORM_VAR
+    coefficient of a form-scaled channel under "k:<channel>": the "@stance" pose of an action that settles on it."""
+    if clip is None:
+        return None
+    chain = set(secondary.chain_bones())
+    authored = clip.meta.get("authored") or {}
+    out = {}
+    for (bone, ch), tr in clip.tracks.items():
+        if bone == FACE_BONE:
+            continue
+        if bone in chain:
+            tr = authored.get((bone, ch))
+            if tr is None:
+                continue
+        out.setdefault(bone, {})[ch] = tr.sample(0.0)
+        if tr.scaled():
+            out[bone][P.K_PREFIX + ch] = tr.sample_k(0.0)
+    return out
+
+
+SKIRT_FOLLOW = 30.0         # degrees between a thigh and the hips beyond which skirt panels follow the thighs
+SKIRTS = ("skirt_f", "skirt_b", "skirt_r", "skirt_l")
+
+
+def _thigh_rel(chans, side):
+    """The thigh's swing relative to the hips (legs hang from the root, skirts from the hips): file degrees."""
+    leg = chans.get("leg_" + side, {}).get("rotation", (0.0, 0.0, 0.0))
+    body = chans.get("body", {}).get("rotation", (0.0, 0.0, 0.0))
+    return leg[0] - body[0], leg[2]
+
+
+def _thigh_lift(chans):
+    return max(abs(_thigh_rel(chans, s)[0]) for s in ("r", "l"))
+
+
+def _skirts(chans, stance=None):
+    """Skirt, hakama and coat panels (skirt_f/b/r/l under `body`) laid over the thighs of a sit or a kneel: the
+    front panel follows the thighs when both are forward and a third of a single raised knee, the side panels their
+    thighs, the back panel flares out behind a deep sit so it is not sat through. The thighs count from the stance's
+    (so a key on the stance leaves the panels to the stance's own follow-through). Panels a pose keys are kept."""
+    (rr, rz), (lr, lz) = _thigh_rel(chans, "r"), _thigh_rel(chans, "l")
+    if stance:
+        (sr, srz), (sl, slz) = _thigh_rel(stance, "r"), _thigh_rel(stance, "l")
+        rr, rz, lr, lz = rr - sr, rz - srz, lr - sl, lz - slz
+    fwd, back = min(rr, lr, 0.0), max(rr, lr, 0.0)
+    both = min(max(rr, lr), 0.0)          # how far both thighs are forward (a sit), against one knee up (a climb)
+    out = _copy_chans(chans)
+    want = {"skirt_f": (0.85 * both + 0.35 * (fwd - both), 0.0, 0.0),
+            "skirt_b": (0.6 * back + 0.7 * max(0.0, -fwd - 40.0), 0.0, 0.0),
+            "skirt_r": (0.7 * rr, 0.0, 0.5 * rz), "skirt_l": (0.7 * lr, 0.0, 0.5 * lz)}
+    for b in SKIRTS:
+        if "rotation" not in out.get(b, {}):
+            out.setdefault(b, {})["rotation"] = want[b]
+    return out
+
+
+def _legs_offset(chans, stance):
+    """True when a pose's legs differ from the stance's."""
+    for b in set(chans) | set(stance):
+        if b.startswith(("leg_", "shin_", "foot_")):
+            a = chans.get(b, {}).get("rotation", (0.0, 0.0, 0.0))
+            c = stance.get(b, {}).get("rotation", (0.0, 0.0, 0.0))
+            if max(abs(x - y) for x, y in zip(a, c)) > 1e-6:
+                return True
+    return False
+
+
+def _with_root_y(chans, y, k=0.0):
+    out = _copy_chans(chans)
+    r = list(out.get("root", {}).get("position", (0.0, 0.0, 0.0)))
+    r[1] = y
+    out.setdefault("root", {})["position"] = tuple(r)
+    out["root"].pop(P.K_PREFIX + "position", None)
+    if k:
+        out["root"][P.K_PREFIX + "position"] = (0.0, k, 0.0)
+    return out
+
+
+def _copy_chans(chans):
+    return {b: dict(cs) for b, cs in chans.items()}
+
+
+def _add_chans(base, extra, globs=None):
+    """`extra` added to `base`, channel by channel (rotations add per axis: offsets over a stance). With `globs`,
+    only the bones matching them are offsets over the stance (and keep it where `extra` leaves them out); every other
+    bone takes `extra` as it is (absolute: a kneel's legs under a style's arms)."""
+    def rel(b):
+        return globs is None or any(fnmatch.fnmatchcase(b, g) for g in globs)
+
+    out = {b: dict(cs) for b, cs in base.items() if rel(b)}
+    for b, cs in extra.items():
+        for ch, v in cs.items():
+            if rel(b) and not ch.startswith(P.K_PREFIX):
+                have = out.setdefault(b, {}).get(ch, (0.0, 0.0, 0.0))
+                out[b][ch] = tuple(have[c] + v[c] for c in range(3))
+                kk = P.K_PREFIX + ch
+                if kk in cs:
+                    hk = out[b].get(kk, (0.0, 0.0, 0.0))
+                    out[b][kk] = tuple(hk[c] + cs[kk][c] for c in range(3))
+            elif not rel(b):
+                out.setdefault(b, {})[ch] = v
+    return out
+
+
 class Expander:
     """Turns recipes into clips. `lookup(name)` returns an already built clip (for settle_to)."""
 
@@ -98,6 +218,7 @@ class Expander:
         self.forms = list(forms or [skeleton])
         self.lookup = lookup or (lambda name: None)
         self.default_settle = default_settle
+        self.stance = None
 
     def expand(self, name, recipe, where=None):
         where = where or "animation %s" % name
@@ -114,11 +235,20 @@ class Expander:
         clip = Clip(name, length, loop, {"kind": kind})
         if recipe.get("class"):
             clip.meta["class"] = recipe["class"]
+        base = settle = None
+        if kind == "action":
+            # `over`: the base controller's clip the action plays over (its "@stance", the base of its bake and of
+            # the feet rules); `settle_to`: the clip a one-shot ends on (the same, or the .loop it leads into)
+            clip.meta["over"] = self.default_settle
+            clip.meta["settle_to"] = recipe.get("settle_to", self.default_settle)
+            base = self.lookup(clip.meta["over"])
+            settle = self.lookup(clip.meta["settle_to"])
+        self.stance = stance_of(base)
         lib = self.poses.with_specs(recipe.get("poses"), where) if recipe.get("poses") else self.poses
         self._pose_keys(clip, recipe.get("keys", []), lib, where)
         gait = False
         for i, layer in enumerate(recipe.get("layers", [])):
-            gait |= layer.get("primitive") in ("walk_cycle", "run_cycle")
+            gait |= layer.get("primitive") in GAITS
             self._layer(clip, layer, "%s layers[%d]" % (where, i))
         for i, m in enumerate(recipe.get("markers", [])):
             self._markers(clip, m, "%s markers[%d]" % (where, i))
@@ -127,13 +257,17 @@ class Expander:
             for bc in list(clip.tracks):
                 if not any(fnmatch.fnmatchcase(bc[0], g) for g in globs):
                     del clip.tracks[bc]
-        clip.meta["planted"] = bool(recipe.get("planted", not gait))
+        stepping = bool(recipe.get("steps", False))
+        clip.meta["planted"] = bool(recipe.get("planted", not gait and not stepping))
         clip.meta["ground"] = bool(recipe.get("ground", kind == "base"))
         clip.meta["steps"] = gait
-        base = None
-        if kind == "action":
-            clip.meta["settle_to"] = recipe.get("settle_to", self.default_settle)
-            base = self.lookup(clip.meta["settle_to"])
+        clip.meta["stepping"] = stepping and not gait
+        contact = recipe.get("contact", "soles")
+        if contact not in ("soles", "body"):
+            raise HerogenError("%s: contact must be soles or body" % where)
+        clip.meta["contact"] = contact
+        if recipe.get("restyle"):
+            clip.meta["restyle"] = True
         chain = set(secondary.chain_bones())
         clip.meta["authored"] = {bc: tr.copy() for bc, tr in clip.tracks.items() if bc[0] in chain}
         sec = recipe.get("secondary", True)
@@ -145,8 +279,8 @@ class Expander:
             if kind == "action":
                 movers = {b for b, _ in clip.tracks if b != FACE_BONE}
             secondary.bake(clip, self.skeleton, groups, base=base, movers=movers)
-        if kind == "action":
-            self._settle(clip, base, where)
+        if kind == "action" and loop == "once":
+            self._settle(clip, settle, where)    # a loop closes, a held clip (death) stays on its last frame
         self._finish(clip, where)
         return clip
 
@@ -164,42 +298,133 @@ class Expander:
             t = float(k.get("t", 0))
             if t < 0 or t > clip.length + 1e-9:
                 raise HerogenError("%s: t %.3f is outside the clip (0-%.3f)" % (w, t, clip.length))
-            chans = P.resolve(lib.get(k["pose"]), self.forms) if k.get("pose") else {}
+            chans = {}
+            contact = False                 # False: not on the ground; None: any body point; [globs]
+            if k.get("pose") == STANCE:
+                chans = _copy_chans(self._stance(w))
+                contact = ["foot_*"]
+            elif k.get("pose"):
+                pose = lib.get(k["pose"])
+                chans = P.resolve(pose, self.forms)
+                if "floor" in pose.fixes:
+                    contact = list(pose.floor) if pose.floor else None
+                elif "ground" in pose.fixes:
+                    contact = ["foot_*"]
+                elif k.get("over") is True:
+                    contact = ["foot_*"]     # offsets over the stance: its feet stay on the ground
+            if k.get("root"):
+                contact = False
+            if k.get("over"):
+                globs = None if k["over"] is True else list(k["over"])
+                chans = _add_chans(self._stance(w), chans, globs)
+                if not k.get("root") and _legs_offset(chans, self._stance(w)) and (
+                        globs is None or any(fnmatch.fnmatchcase("leg_r", g) for g in globs)):
+                    # leg offsets over the stance (a knee bend in a style's own footing): its soles back on the
+                    # ground on every form
+                    a, b, _ = P.floor_fit(_with_root_y(chans, 0.0), self.forms, ["foot_*"])
+                    chans = _with_root_y(chans, a, b)
+                    contact = ["foot_*"]
             if k.get("root"):
                 r = list(chans.get("root", {}).get("position", (0.0, 0.0, 0.0)))
                 for c in range(3):
                     r[c] += float(k["root"][c])
                 chans.setdefault("root", {})["position"] = tuple(r)
-            resolved.append((t, k, chans, w))
-        animated = sorted({(b, ch) for _, _, chans, _ in resolved if chans for b, cs in chans.items() for ch in cs})
-        prev = {}
-        for t, k, chans, w in resolved:
-            if k.get("pose") or k.get("root"):
+            resolved.append((t, k, chans, w, contact))
+        if any(_thigh_lift(ch) > SKIRT_FOLLOW for _, _, ch, _, _ in resolved):
+            # the legs leave the hips' line (a sit, a kneel): skirt panels follow the thighs at every pose key
+            resolved = [(t, k, _skirts(ch, self.stance) if ch else ch, w, c) for t, k, ch, w, c in resolved]
+        animated = sorted({(b, ch) for _, _, chans, _, _ in resolved if chans for b, cs in chans.items() for ch in cs
+                           if ch in CHANNELS})
+        prev, prev_k = {}, {}
+        zero = (0.0, 0.0, 0.0)
+        for t, k, chans, w, _ in resolved:
+            if k.get("pose") or k.get("root") or k.get("over"):
                 ez = k.get("ease", DEFAULT_EASE)
                 over = k.get("overshoot")
                 over = 0.15 if over is True else float(over or 0)
                 settle = k.get("settle")
                 settle = 0.1 if settle is True else float(settle or 0)
                 for bc in animated:
-                    v = chans.get(bc[0], {}).get(bc[1], (0.0, 0.0, 0.0))
+                    cs = chans.get(bc[0], {})
+                    v = cs.get(bc[1], zero)
+                    kv = cs.get(P.K_PREFIX + bc[1], zero)
                     tr = clip.track(*bc)
                     p = prev.get(bc, v)
+                    pk = prev_k.get(bc, kv)
                     if over:
                         pushed = tuple(v[c] + over * (v[c] - p[c]) for c in range(3))
-                        tr.set(t, pushed, ez)
-                        tr.set(t + float(k.get("overshoot_time", 0.1)), v, DEFAULT_EASE)
+                        pushed_k = tuple(kv[c] + over * (kv[c] - pk[c]) for c in range(3))
+                        tr.set(t, pushed, ez, k=pushed_k)
+                        tr.set(t + float(k.get("overshoot_time", 0.1)), v, DEFAULT_EASE, k=kv)
                     else:
-                        tr.set(t, v, ez)
+                        tr.set(t, v, ez, k=kv)
                     if settle:
                         back = tuple(v[c] - settle * (v[c] - p[c]) for c in range(3))
-                        tr.set(t + float(k.get("settle_time", 0.15)), back, DEFAULT_EASE)
+                        back_k = tuple(kv[c] - settle * (kv[c] - pk[c]) for c in range(3))
+                        tr.set(t + float(k.get("settle_time", 0.15)), back, DEFAULT_EASE, k=back_k)
                     prev[bc] = v
+                    prev_k[bc] = kv
             if "face" in k:
                 self._face(clip, t, k["face"], w)
             self._markers(clip, k, w)
         for tr in clip.tracks.values():
             if tr.end > clip.length + 1e-9:
                 raise HerogenError("%s: an overshoot or settle key falls after the clip's end" % where)
+        def legs(chans):
+            return sorted((b, ch, tuple(round(x, 6) for x in v)) for b, cs in chans.items() for ch, v in cs.items()
+                          if b == "root" or b.startswith(("leg_", "shin_", "foot_")))
+
+        def planted(chans, contact):
+            """The feet of a key that stand on the ground: "foot_*" narrowed to the soles at its lowest point."""
+            if contact != ["foot_*"]:
+                return contact
+            soles = self.skeleton.soles({b: {c: v for c, v in cs.items() if c in CHANNELS} for b, cs in chans.items()})
+            lows = {s: min(float(p[1]) for p in pts) for s, pts in soles.items()}
+            low = min(lows.values())
+            return sorted("foot_" + s for s, v in lows.items() if v <= low + 0.3)
+        self._follow_floor(clip, [(t, planted(ch, c), legs(ch)) for t, k, ch, _, c in resolved
+                                  if k.get("pose") or k.get("root") or k.get("over")])
+
+    def _follow_floor(self, clip, keys):
+        """Between two pose keys that both stand on the ground (a floor or ground fix, the stance) and whose legs
+        differ, the root height
+        follows the interpolated legs tick by tick, fitted over the forms (form-scaled): angles interpolated
+        linearly bend a leg's length along a curve, so the feet of a squat or a kneel would otherwise sink or float
+        between their keys (G4)."""
+        if ("root", "position") not in clip.tracks:
+            return
+        for (ta, ca, la), (tb, cb, lb) in zip(keys, keys[1:]):
+            if ca is False or cb is False or tb - ta < 2 * TICK - 1e-9 or la == lb:
+                continue                # not both on the ground, or the legs hold still
+            # the contacts held through the segment (a foot that lifts or lands is not one)
+            if ca is None or cb is None:
+                globs = cb if ca is None else ca
+            else:
+                globs = sorted(set(ca) & set(cb))
+                if not globs:
+                    continue
+            n = int(round((tb - ta) / TICK))
+            root = clip.tracks[("root", "position")]
+            for i in range(1, n):
+                t = round(ta + i * TICK, 6)
+                pose = {}
+                for (bone, ch), tr in clip.tracks.items():
+                    if ch == "rotation" and bone != FACE_BONE:
+                        pose.setdefault(bone, {})["rotation"] = tr.sample(t)
+                rx, _, rz = root.sample(t)
+                lifts = []
+                for sk in self.forms:
+                    pose["root"] = {"rotation": pose.get("root", {}).get("rotation", (0.0, 0.0, 0.0)),
+                                    "position": (rx, 0.0, rz)}
+                    low, _ = sk.lowest_body(pose, globs)
+                    lifts.append((sk.d, -low))
+                a, b = primitives.form_fit(lifts)
+                root.set(t, (rx, a, rz), k=(0.0, b, 0.0))
+
+    def _stance(self, where):
+        if self.stance is None:
+            raise HerogenError("%s: \"@stance\" and \"over\" need an action with a clip to settle on" % where)
+        return self.stance
 
     def _face(self, clip, t, face, where):
         v = face_value(face, where)
@@ -244,7 +469,8 @@ class Expander:
             out = Track()
             for t in times:
                 a, b = base.sample(t), tr.sample(t)
-                out.set(t, tuple(a[c] + b[c] for c in range(3)))
+                ka, kb = base.sample_k(t), tr.sample_k(t)
+                out.set(t, tuple(a[c] + b[c] for c in range(3)), k=tuple(ka[c] + kb[c] for c in range(3)))
             clip.tracks[bc] = simplify(out, 0.05 if bc[1] == "rotation" else 0.005)
         for k, v in part.meta.items():
             clip.meta.setdefault(k, v)
@@ -257,9 +483,12 @@ class Expander:
         L = clip.length
         for bc, tr in sorted(clip.tracks.items()):
             goal = target.tracks[bc].sample(0.0) if target is not None and bc in target.tracks else (0.0, 0.0, 0.0)
+            goal_k = target.tracks[bc].sample_k(0.0) if target is not None and bc in target.tracks else (0.0,) * 3
             end = tr.sample(L)
+            end_k = tr.sample_k(L)
             diff = tuple(goal[c] - end[c] for c in range(3))
-            if max(abs(d) for d in diff) < 1e-4 and abs(tr.end - L) < 1e-9:
+            diff_k = tuple(goal_k[c] - end_k[c] for c in range(3))
+            if max(abs(d) for d in diff + diff_k) < 1e-4 and abs(tr.end - L) < 1e-9:
                 continue
             if bc[0] == FACE_BONE:
                 if max(abs(d) for d in diff) >= 1e-4:
@@ -267,19 +496,21 @@ class Expander:
                 else:
                     tr.set(L, goal)
                 continue
-            if max(abs(d) for d in diff) < 1e-4:
-                tr.set(L, goal)
+            if max(abs(d) for d in diff + diff_k) < 1e-4:
+                tr.set(L, goal, k=goal_k)
                 continue
             # blend from the last key at least 0.15 s before the end, so no eased segment is cut in two
             before = [k.t for k in tr.keys if k.t <= L - SETTLE_BLEND + 1e-9]
             t0 = before[-1] if before else 0.0
             fixed = Track(k for k in tr.keys if k.t <= t0 + 1e-9)
             if not fixed.keys:
-                fixed.set(0.0, tr.sample(0.0))
+                fixed.set(0.0, tr.sample(0.0), k=tr.sample_k(0.0))
             for k in dense_track(lambda t: (0.0, 0.0, 0.0), t0, L).keys[1:]:
                 w = smoothstep((k.t - t0) / (L - t0))
                 base = tr.sample(k.t)
-                fixed.set(k.t, tuple(base[c] + diff[c] * w for c in range(3)))
+                base_k = tr.sample_k(k.t)
+                fixed.set(k.t, tuple(base[c] + diff[c] * w for c in range(3)),
+                          k=tuple(base_k[c] + diff_k[c] * w for c in range(3)))
             clip.tracks[bc] = simplify(fixed, 0.05) if fixed.is_linear() else fixed
         clip.meta["settled"] = target.name if target is not None else "rest"
 
@@ -292,11 +523,14 @@ class Expander:
                 del clip.tracks[bc]
                 continue
             if tr.start > 1e-9:
-                tr.put(Key(0.0, tr.keys[0].v))
+                tr.put(Key(0.0, tr.keys[0].v, k=tr.keys[0].k))
             if clip.loop == "loop" and abs(tr.end - L) > 1e-9:
-                tr.put(Key(L, tr.sample(0.0)))
+                tr.put(Key(L, tr.sample(0.0), k=tr.sample_k(0.0)))
             if clip.loop == "loop" and max(abs(a - b) for a, b in zip(tr.keys[0].v, tr.keys[-1].v)) < 1e-6:
                 tr.keys[-1].v = tr.keys[0].v           # rounding noise only: close the loop exactly
+            if clip.loop == "loop" and tr.keys[0].k != tr.keys[-1].k and max(
+                    abs(a - b) for a, b in zip(tr.keys[0].k or (0,) * 3, tr.keys[-1].k or (0,) * 3)) < 1e-6:
+                tr.keys[-1].k = tr.keys[0].k
             for k in tr.keys:
                 k.t = round(k.t, 4)
         clip.events.sort(key=lambda e: (e.t, e.kind, e.value))

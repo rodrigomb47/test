@@ -1,0 +1,481 @@
+{
+  "_comment": "Core library, emotes, the personal idle generics and two ceremony actions (G4; HEROES_V2.md 4.5, appendix D codes 48-63, 23). Each ends on move.idle's first frame; a hero's own personal.1-3 replace the generics.",
+  "animations": {
+    "emote.greet": {
+      "description": "A friendly hello, 1.2 s: the right hand comes up open at shoulder height (0.3 s), a nod (0.45 s), a smile, down by 1.2 s.",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "length": 1.2,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.15,
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {"t": 0.3, "pose": "greet.up", "ease": "easeOutBack"},
+        {"t": 0.45, "pose": "greet.nod"},
+        {"t": 0.62, "pose": "greet.up"},
+        {"t": 0.9, "pose": "greet.up"},
+        {"t": 1.05, "face": "none"},
+        {"t": 1.2, "pose": "@stance"}
+      ],
+      "poses": {
+        "greet.nod": {
+          "extends": "greet.up",
+          "bones": {
+            "neck": [10, 6, 0],
+            "chest": [2, -4, 2]
+          }
+        }
+      }
+    },
+    "emote.bow": {
+      "description": "A polite bow, 1.6 s: hands meet in front, the back bends about 40 degrees from the hips (0.45 s), held with closed eyes, up again by 1.6 s.",
+      "length": 1.6,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.45,
+          "pose": "bow.down",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 2}
+        },
+        {"t": 1.0, "pose": "bow.down"},
+        {
+          "t": 1.35,
+          "pose": "@stance",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {"t": 1.5, "face": "none"},
+        {"t": 1.6, "pose": "@stance"}
+      ]
+    },
+    "emote.wave": {
+      "description": "A big wave overhead, 1.8 s: the right arm swings up (0.3 s, overshoot) and waves side to side three times, a bright face with an open mouth, down by 1.8 s.",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "length": 1.8,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.1,
+          "face": {"eyes": 3, "mouth": 2}
+        },
+        {"t": 0.3, "pose": "wave.up", "ease": "easeOutQuad", "overshoot": 0.1},
+        {"t": 1.4, "pose": "wave.up"},
+        {"t": 1.6, "face": "none"},
+        {"t": 1.8, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "arm_r": [0, 0, 14],
+              "forearm_r": {
+                "amp": [0, 0, 16],
+                "phase": 0.1
+              },
+              "chest": [0, 0, 1.5]
+            },
+            "period": 0.45,
+            "window": [0.35, 0.45, 1.3, 1.45]
+          }
+        }
+      ]
+    },
+    "emote.laugh": {
+      "description": "A belly laugh, 2.0 s: thrown back with a hand on the belly (0.25 s), the shoulders shaking, folding forward still laughing (1.0 s), wiping the eye, back by 2.0 s.",
+      "length": 2.0,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.25,
+          "pose": "laugh.back",
+          "ease": "easeOutQuad",
+          "face": {"eyes": 3, "mouth": 2}
+        },
+        {
+          "t": 0.45,
+          "face": {"eyes": 3, "mouth": 3}
+        },
+        {
+          "t": 0.6,
+          "face": {"eyes": 3, "mouth": 2}
+        },
+        {
+          "t": 0.75,
+          "face": {"eyes": 3, "mouth": 3}
+        },
+        {
+          "t": 1.0,
+          "pose": "laugh.fwd",
+          "face": {"eyes": 3, "mouth": 2}
+        },
+        {
+          "t": 1.2,
+          "face": {"eyes": 3, "mouth": 3}
+        },
+        {
+          "t": 1.4,
+          "pose": "laugh.fwd",
+          "face": {"eyes": 3, "mouth": 1, "cheeks": 3}
+        },
+        {"t": 1.75, "face": "none"},
+        {"t": 2.0, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "chest": [2.5, 0, 0],
+              "neck": {
+                "amp": [2, 0, 0],
+                "phase": 0.2
+              },
+              "arm_r": {
+                "amp": [2, 0, 0],
+                "phase": 0.1
+              },
+              "arm_l": {
+                "amp": [2, 0, 0],
+                "phase": 0.1
+              }
+            },
+            "period": 0.2,
+            "window": [0.3, 0.4, 1.3, 1.5]
+          }
+        }
+      ]
+    },
+    "emote.angry": {
+      "description": "A stamp of anger, 1.5 s: fists down and the head forward with angry eyes and ears back (0.15 s), the right foot lifts and stamps (0.35 s: an anger mark), fists shaking, a huff, back by 1.5 s.",
+      "length": 1.5,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.1,
+          "face": {"eyes": 4, "mouth": 4}
+        },
+        {"t": 0.2, "pose": "angry.lift", "ease": "easeOutQuad"},
+        {
+          "t": 0.35,
+          "pose": "angry.fists",
+          "ease": "easeInQuad",
+          "marker": "vfx:anger",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {
+          "t": 0.6,
+          "pose": "angry.fists",
+          "face": {"eyes": 4, "mouth": 5}
+        },
+        {"t": 1.15, "pose": "angry.fists"},
+        {"t": 1.3, "face": "none"},
+        {"t": 1.5, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "arm_r": [4, 0, 0],
+              "arm_l": [4, 0, 0],
+              "chest": [1, 0, 0]
+            },
+            "period": 0.12,
+            "window": [0.45, 0.55, 1.0, 1.15]
+          }
+        }
+      ]
+    },
+    "emote.sad": {
+      "description": "Sadness, 2.4 s: a breath in (0.4 s) and a long sigh into a slump with the head down, ears and tail drooping, sad eyes and a tear (0.9-1.8 s), back by 2.4 s.",
+      "length": 2.4,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.2,
+          "face": {"eyes": 5, "mouth": 5}
+        },
+        {"t": 0.4, "pose": "sad.sigh", "ease": "easeOutSine"},
+        {
+          "t": 0.9,
+          "pose": "sad.slump",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 5, "mouth": 5, "cheeks": 3}
+        },
+        {
+          "t": 1.8,
+          "pose": "sad.slump",
+          "face": {"eyes": 5, "mouth": 5}
+        },
+        {"t": 2.2, "face": "none"},
+        {"t": 2.4, "pose": "@stance"}
+      ]
+    },
+    "emote.think": {
+      "description": "Thinking it over, 2.4 s: hand to the chin and the head tilted up (0.35 s) with a few taps, the head tilts the other way (1.2 s), then an idea: a raised finger and surprised eyes (1.9 s), back by 2.4 s.",
+      "length": 2.4,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.35,
+          "pose": "think.chin",
+          "ease": "easeOutSine",
+          "face": {"eyes": 1, "mouth": 0}
+        },
+        {"t": 1.0, "pose": "think.chin"},
+        {"t": 1.3, "pose": "think.tilt"},
+        {"t": 1.7, "pose": "think.tilt"},
+        {
+          "t": 1.9,
+          "pose": "think.idea",
+          "ease": "easeOutBack",
+          "face": {"eyes": 6, "mouth": 2}
+        },
+        {"t": 2.2, "face": "none"},
+        {"t": 2.4, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "hand_r": [6, 0, 0]
+            },
+            "period": 0.3,
+            "shape": "pulse",
+            "window": [0.45, 0.5, 0.95, 1.0]
+          }
+        }
+      ]
+    },
+    "emote.cheer": {
+      "description": "A cheer, 1.4 s: a dip (0.2 s), a hop with both fists thrown up (0.4 s), landing on bent knees (0.55 s), a second pump, a bright open-mouthed face, back by 1.4 s.",
+      "length": 1.4,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.2,
+          "pose": "cheer.load",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 3, "mouth": 1}
+        },
+        {
+          "t": 0.4,
+          "pose": "cheer.up",
+          "ease": "easeOutQuad",
+          "root": [0, 1.6, 0],
+          "face": {"eyes": 3, "mouth": 2}
+        },
+        {"t": 0.55, "pose": "cheer.land", "ease": "easeInQuad"},
+        {"t": 0.75, "pose": "cheer.up_ground"},
+        {"t": 0.9, "pose": "cheer.land_arms"},
+        {"t": 1.05, "pose": "cheer.up_ground"},
+        {"t": 1.25, "face": "none"},
+        {"t": 1.4, "pose": "@stance"}
+      ],
+      "poses": {
+        "cheer.up_ground": {
+          "extends": "cheer.up",
+          "fix": ["level_feet", "floor"],
+          "knees": 0
+        },
+        "cheer.land_arms": {
+          "extends": "cheer.up_ground",
+          "bones": {
+            "arm_r": [-30, 0, 128],
+            "arm_l": [-30, 0, -128],
+            "forearm_r": [-50, 0, 0],
+            "forearm_l": [-50, 0, 0]
+          }
+        }
+      }
+    },
+    "emote.talk": {
+      "description": "Talking with the hands, 2.0 s: an open palm presenting (0.3 s), both hands open (0.9 s), back to presenting (1.5 s), small nods; the mouth alternates the talk frames every 3 ticks (HeroFace's own talking cycle also works with it off).",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "length": 2.0,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {"t": 0.3, "pose": "talk.a", "ease": "easeOutSine"},
+        {"t": 0.9, "pose": "talk.b"},
+        {"t": 1.5, "pose": "talk.a"},
+        {
+          "t": 0.15,
+          "face": {"mouth": 2}
+        },
+        {
+          "t": 0.3,
+          "face": {"mouth": 3}
+        },
+        {
+          "t": 0.45,
+          "face": {"mouth": 2}
+        },
+        {
+          "t": 0.6,
+          "face": {"mouth": 0}
+        },
+        {
+          "t": 0.75,
+          "face": {"mouth": 2}
+        },
+        {
+          "t": 0.9,
+          "face": {"mouth": 3}
+        },
+        {
+          "t": 1.05,
+          "face": {"mouth": 2}
+        },
+        {
+          "t": 1.2,
+          "face": {"mouth": 3}
+        },
+        {
+          "t": 1.35,
+          "face": {"mouth": 0}
+        },
+        {
+          "t": 1.5,
+          "face": {"mouth": 2}
+        },
+        {
+          "t": 1.65,
+          "face": {"mouth": 3}
+        },
+        {"t": 1.8, "face": "none"},
+        {"t": 2.0, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "neck": [4, 0, 0]
+            },
+            "period": 0.5,
+            "shape": "pulse",
+            "window": [0.2, 0.3, 1.6, 1.8]
+          }
+        }
+      ]
+    },
+    "emote.shrug": {
+      "description": "A shrug, 1.3 s: the shoulders come up with the head sinking between them, palms turned up and out, the head tilted with a smug look (0.35 s), held, back by 1.3 s.",
+      "length": 1.3,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.35,
+          "pose": "shrug.up",
+          "ease": "easeOutBack",
+          "face": {"eyes": 9, "mouth": 1}
+        },
+        {"t": 0.85, "pose": "shrug.up"},
+        {"t": 1.1, "face": "none"},
+        {"t": 1.3, "pose": "@stance"}
+      ]
+    },
+    "personal.1": {
+      "description": "Generic personal idle 1, a stretch, 2.4 s: arms up overhead with a yawn (0.6 s), a lean to one side, arms down by 2.4 s.",
+      "length": 2.4,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.6,
+          "pose": "stretch.up",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 2, "mouth": 3}
+        },
+        {"t": 1.1, "pose": "stretch.side"},
+        {
+          "t": 1.5,
+          "pose": "stretch.up",
+          "face": {"eyes": 1, "mouth": 0}
+        },
+        {"t": 1.9, "face": "none"},
+        {"t": 2.4, "pose": "@stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "personal.2": {
+      "description": "Generic personal idle 2, looking into the distance, 2.6 s: a hand shades the eyes (0.4 s), the head scans left and right, down by 2.6 s.",
+      "length": 2.6,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.4,
+          "pose": "look.shade",
+          "ease": "easeOutSine",
+          "face": {"eyes": 8}
+        },
+        {"t": 2.2, "pose": "look.shade"},
+        {"t": 2.35, "face": "none"},
+        {"t": 2.6, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "look",
+          "params": {
+            "glances": [
+              [0.5, 0.8, 1.1, 1.4, 30, 0],
+              [1.4, 1.7, 1.9, 2.2, -26, 0]
+            ]
+          }
+        }
+      ]
+    },
+    "personal.3": {
+      "description": "Generic personal idle 3, a sheepish scratch of the head, 2.0 s: the right hand to the back of the head (0.35 s), scratching, a bashful smile and a blush, down by 2.0 s.",
+      "length": 2.0,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.35,
+          "pose": "scratch.head",
+          "ease": "easeOutSine",
+          "face": {"eyes": 3, "mouth": 1, "cheeks": 1}
+        },
+        {"t": 1.5, "pose": "scratch.head"},
+        {"t": 1.75, "face": "none"},
+        {"t": 2.0, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "forearm_r": [6, 0, 0],
+              "hand_r": {
+                "amp": [10, 0, 0],
+                "phase": 0.2
+              }
+            },
+            "period": 0.2,
+            "window": [0.4, 0.5, 1.3, 1.45]
+          }
+        }
+      ]
+    },
+    "founding": {
+      "description": "Action code 23, founding a settlement, 2.0 s: the right fist raised high and held with a proud smile, the left hand on the heart, down by 2.0 s.",
+      "length": 2.0,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.6,
+          "pose": "found.raise",
+          "ease": "easeOutBack",
+          "face": {"eyes": 0, "mouth": 1}
+        },
+        {"t": 1.5, "pose": "found.raise"},
+        {"t": 1.75, "face": "none"},
+        {"t": 2.0, "pose": "@stance"}
+      ]
+    }
+  }
+}
