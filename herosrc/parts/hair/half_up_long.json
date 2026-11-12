@@ -1,0 +1,254 @@
+{
+  "_comment": "Long straight hair half up (G6a): the long back layers of `long_layered` falling to the back, with the top section drawn back from the temples into a small knot at the back of the crown (two rolled boxes and a tie) whose short tail falls over the long hair; a parted fringe with long face-framing locks. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px.",
+  "id": "hair/half_up_long",
+  "category": "hair",
+  "slots": {
+    "main": "hair",
+    "trim": "trim"
+  },
+  "params": {
+    "length": {"default": 17, "max": 24, "min": 8},
+    "locks": {"default": 11, "max": 15, "min": 5}
+  },
+  "occupies": ["hair_top", "hair_back"],
+  "conflicts": ["hair/twin_tails*", "hair/high_ponytail*"],
+  "paint": [
+    {"cubes": ["head"], "faces": ["south"], "slot": "main", "material": "hair"},
+    {
+      "cubes": ["head"],
+      "faces": ["east", "west"],
+      "z": [0.5, 5.5],
+      "slot": "main",
+      "material": "hair"
+    }
+  ],
+  "offset": [0, "head_y", 0],
+  "bones": [
+    {"name": "tail_hair_1", "parent": "head", "pivot": [0, 10.75, 5.25]}
+  ],
+  "cubes": [
+    {
+      "name": "cap",
+      "bone": "hair_top",
+      "origin": [-5.3, 1.5, -5.3],
+      "size": [10.6, 9.0, 10.6],
+      "material": "hair",
+      "faces": ["up", "south", "east", "west"]
+    },
+    {
+      "name": "dome",
+      "bone": "hair_top",
+      "origin": [-4.75, 10.5, -5],
+      "size": [9.5, 0.75, 10],
+      "material": "hair"
+    },
+    {
+      "name": "dome2",
+      "bone": "hair_top",
+      "origin": [-3.5, 11.0, -3.75],
+      "size": [7, 0.75, 7.5],
+      "material": "hair"
+    },
+    {
+      "name": "dome3",
+      "bone": "hair_top",
+      "origin": [-2, 11.6, -2.25],
+      "size": [4, 0.5, 4.5],
+      "material": "hair"
+    },
+    {
+      "name": "fringe_base",
+      "bone": "bangs",
+      "origin": [-5.5, 7.5, -6],
+      "size": [11, 3.25, 1.1],
+      "material": "hair",
+      "cutout": "bangs_jagged_4"
+    },
+    {
+      "name": "back_base",
+      "bone": "hair_back",
+      "origin": [-6, "max(-length * 0.55, 0.5 - head_y)", 5],
+      "size": [12, "10.5 - max(-length * 0.55, 0.5 - head_y)", 1.25],
+      "material": "hair",
+      "cutout": "jagged_6"
+    },
+    {
+      "name": "side_base",
+      "bone": "hair_r",
+      "origin": [-6.25, 1, -4.5],
+      "size": [1, 9.5, 9.75],
+      "material": "hair",
+      "cutout": "jagged_4",
+      "mirror": true
+    },
+    {
+      "name": "knot",
+      "bone": "tail_hair_1",
+      "origin": [-1.75, 9.6, 5.4],
+      "size": [3.5, 2.4, 2.4],
+      "material": "hair",
+      "tone": 1
+    },
+    {
+      "name": "tie",
+      "bone": "tail_hair_1",
+      "origin": [-1.35, 9.2, 5.25],
+      "size": [2.7, 0.8, 2.75],
+      "slot": "trim",
+      "material": "cloth"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, 45],
+      "pivot": [0, 10.9, 6.6],
+      "cubes": [
+        {
+          "name": "knot_roll",
+          "bone": "tail_hair_1",
+          "origin": [-1.5, 9.8, 5.7],
+          "size": [3, 2.2, 2.0],
+          "material": "hair",
+          "fine": true
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "crown",
+      "bone": "hair_top",
+      "path": "arc",
+      "y": 11.6,
+      "radius": [3.4, 3.7],
+      "angles": [-168, 168],
+      "count": 16,
+      "width": 3,
+      "depth": 1,
+      "length": [4.5, 5, 4.75],
+      "flare": 40,
+      "jitter": 0.25,
+      "tone": [0, 1, 0, 0, -1]
+    },
+    {
+      "name": "part",
+      "drop": [-0.3, 0, 0.05, 0, -0.3],
+      "bone": "hair_top",
+      "path": "line",
+      "from": [0, 12.35, -4.2],
+      "to": [0, 12.35, 3.8],
+      "out": [1, 0, 0],
+      "count": 5,
+      "width": 2.1,
+      "depth": 0.9,
+      "length": [5.25, 5.75, 5.5, 5.75, 5.0],
+      "flare": [68, 72, 70, 72, 66],
+      "jitter": 0.25,
+      "mirror": true,
+      "tone": [1, 0, 1, 1, 0]
+    },
+    {
+      "name": "inner",
+      "bone": "hair_top",
+      "path": "arc",
+      "y": 9.5,
+      "radius": [5.45, 5.45],
+      "angles": [60, 300],
+      "count": 10,
+      "width": 2.5,
+      "depth": 0.75,
+      "length": "7.5",
+      "flare": 5,
+      "tone": -1
+    },
+    {
+      "name": "mid",
+      "bone": "hair_top",
+      "path": "arc",
+      "y": 10.25,
+      "radius": [5.75, 5.75],
+      "angles": [52, 308],
+      "count": 13,
+      "width": 2.75,
+      "depth": 1,
+      "length": [6, 6.75, 5.5],
+      "flare": 12,
+      "layers": [0, 0.4],
+      "jitter": 0.5,
+      "tone": [0, -1, 0]
+    },
+    {
+      "name": "fringe",
+      "bone": "bangs",
+      "path": "line",
+      "from": [-5.1, 10.75, -5.85],
+      "to": [5.1, 10.75, -5.85],
+      "count": 8,
+      "width": 1.75,
+      "depth": 1,
+      "length": [5.75, 5.25, 4.5, 3.5, 3.5, 4.5, 5.25, 5.75],
+      "flare": 10,
+      "fan": 30,
+      "layers": [0, 0.3],
+      "taper": 0.3,
+      "clear_face": true,
+      "tone": [0, -1, 0, 0]
+    },
+    {
+      "name": "lock",
+      "bone": "hair_r",
+      "path": "line",
+      "from": [-5.75, 9.75, -4.6],
+      "to": [-5.9, 9.5, -3.1],
+      "out": [-1, 0, -0.35],
+      "count": 2,
+      "width": 1.5,
+      "depth": 1.25,
+      "length": ["locks", "locks - 2.5"],
+      "flare": 3,
+      "fan": 2,
+      "taper": 0.45,
+      "mirror": true,
+      "tone": [0, -1]
+    },
+    {
+      "name": "back",
+      "bone": "hair_back",
+      "path": "arc",
+      "y": 10,
+      "radius": [6, 6.1],
+      "angles": [130, 230],
+      "count": 9,
+      "width": 2.75,
+      "depth": 1.25,
+      "length": ["length", "length - 1.5", "length + 0.5"],
+      "flare": 6,
+      "fan": 8,
+      "layers": [0, 0.55],
+      "jitter": 0.5,
+      "taper": 0.5,
+      "tone": [0, -1, 0, -1]
+    },
+    {
+      "name": "knot_tail",
+      "bone": "tail_hair_1",
+      "path": "arc",
+      "center": [0, 7.2],
+      "radius": [1.0, 0.9],
+      "y": 9.8,
+      "angles": [-150, 150],
+      "count": 5,
+      "width": 1.5,
+      "depth": 1,
+      "length": [5.5, 6.5, 5],
+      "flare": 8,
+      "taper": 0.5,
+      "tone": [0, 1, -1]
+    }
+  ],
+  "secondary": {
+    "chain": ["tail_hair_1"],
+    "damping": 0.6,
+    "stiffness": 0.45
+  }
+}

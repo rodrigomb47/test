@@ -1,5 +1,5 @@
 {
-  "_comment": "A breastplate (style pass 2): a plate shell over chest and bust with a raised centre ridge, a gorget at the neck, a plate band at the waist and a ring of trimmed tassets (faulds) flared from the waist; the cloth under it (arms, waist) in the alt colour.",
+  "_comment": "A breastplate (style pass 2): a plate shell over chest and bust with a raised centre ridge, a gorget at the neck, a plate band at the waist and a ring of trimmed tassets (faulds) flared from the waist; the cloth under it (arms, waist) in the alt colour. The gorget is never as deep as the chest (`min(neck_d + 1.5, chest_d - 0.2)`), so its faces never lie on the chest's.",
   "id": "armour/breastplate",
   "category": "armour",
   "slots": {"main": "metal", "alt": "secondary", "trim": "trim"},
@@ -26,8 +26,8 @@
     {
       "name": "gorget",
       "bone": "chest",
-      "origin": ["-neck_w / 2 - 0.75", "chest_top - 0.75", "-neck_d / 2 - 0.75"],
-      "size": ["neck_w + 1.5", 1.5, "neck_d + 1.5"],
+      "origin": ["-neck_w / 2 - 0.75", "chest_top - 0.75", "-min(neck_d + 1.5, chest_d - 0.2) / 2"],
+      "size": ["neck_w + 1.5", 1.5, "min(neck_d + 1.5, chest_d - 0.2)"],
       "material": "metal",
       "trim": {"slot": "trim", "edge": "top", "width": 1}
     },

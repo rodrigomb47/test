@@ -1,0 +1,123 @@
+{
+  "_comment": "A wide-brimmed pointed hat (G6a, a witch or scholar): a wide brim of two crossed slabs (an octagon) on its own bone (`brim`, so an animation can lift it), a cone of five stacked slabs that leans back and to one side, a tip bent back in two steps, a band in the trim colour with a stitched patch in the detail colour; the whole hat tilted a little. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
+  "id": "headwear/witch_hat",
+  "category": "headwear",
+  "slots": {
+    "main": "accent",
+    "trim": "trim",
+    "detail": "secondary"
+  },
+  "params": {
+    "tilt": {"default": 8, "max": 16, "min": -16}
+  },
+  "occupies": ["hat"],
+  "conflicts": ["headwear/kabuto", "headwear/visored_helm", "headwear/halo_ring"],
+  "offset": [0, "head_y", 0],
+  "bones": [
+    {"name": "brim", "parent": "hat", "pivot": [0, 11.2, 0]}
+  ],
+  "groups": [
+    {
+      "rotation": [-4, 0, "tilt"],
+      "pivot": [0, 11.0, 0],
+      "cubes": [
+        {
+          "name": "brim_a",
+          "bone": "brim",
+          "origin": [-8.75, 10.75, -5.75],
+          "size": [17.5, 0.5, 11.5],
+          "material": "cloth",
+          "trim": {"slot": "main", "edge": "all", "width": 1}
+        },
+        {
+          "name": "brim_b",
+          "bone": "brim",
+          "origin": [-5.6, 10.8, -8.75],
+          "size": [11.2, 0.4, 17.5],
+          "material": "cloth"
+        },
+        {
+          "name": "band",
+          "bone": "hat",
+          "origin": [-4.85, 11.35, -4.85],
+          "size": [9.7, 1.25, 9.7],
+          "slot": "trim",
+          "material": "cloth"
+        },
+        {
+          "name": "patch",
+          "bone": "hat",
+          "origin": [-3.6, 11.0, -5.05],
+          "size": [2.0, 1.8, 0.3],
+          "slot": "detail",
+          "material": "cloth",
+          "fine": true
+        },
+        {
+          "name": "tip",
+          "bone": "hat",
+          "origin": [0.4, 20.0, 3.4],
+          "size": [2.4, 1.2, 2.6],
+          "material": "cloth",
+          "shade": "mass",
+          "tone": -1
+        },
+        {
+          "name": "tip2",
+          "bone": "hat",
+          "origin": [0.8, 20.6, 5.3],
+          "size": [1.6, 1.0, 2.2],
+          "material": "cloth",
+          "shade": "mass",
+          "tone": -1,
+          "taper": 0.4
+        },
+        {
+          "name": "cone0",
+          "bone": "hat",
+          "origin": [-4.7, 11.4, -4.7],
+          "size": [9.4, 2.0, 9.4],
+          "material": "cloth",
+          "shade": "mass",
+          "tone": 0
+        },
+        {
+          "name": "cone1",
+          "bone": "hat",
+          "origin": [-3.75, 13.3, -3.5],
+          "size": [7.9, 2.0, 7.9],
+          "material": "cloth",
+          "shade": "mass",
+          "tone": 0
+        },
+        {
+          "name": "cone2",
+          "bone": "hat",
+          "origin": [-2.75, 15.1, -2.2],
+          "size": [6.4, 2.0, 6.4],
+          "material": "cloth",
+          "shade": "mass",
+          "tone": 1
+        },
+        {
+          "name": "cone3",
+          "bone": "hat",
+          "origin": [-1.75, 16.8, -0.8],
+          "size": [5.0, 2.0, 5.0],
+          "material": "cloth",
+          "shade": "mass",
+          "tone": 1
+        },
+        {
+          "name": "cone4",
+          "bone": "hat",
+          "origin": [-0.7, 18.4, 0.8],
+          "size": [3.6, 1.8, 3.6],
+          "material": "cloth",
+          "shade": "mass",
+          "tone": 0
+        }
+      ]
+    }
+  ]
+}

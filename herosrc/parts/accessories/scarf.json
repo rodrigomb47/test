@@ -13,8 +13,8 @@
     {
       "name": "wrap",
       "bone": "chest",
-      "origin": ["-neck_w / 2 - 1.25", "chest_top - 0.25", "-neck_d / 2 - 1.25"],
-      "size": ["neck_w + 2.5", 2, "neck_d + 2.5"],
+      "origin": ["-neck_w / 2 - 1.4", "chest_top - 0.25", "-neck_d / 2 - 1.4"],
+      "size": ["neck_w + 2.8", 2, "neck_d + 2.8"],
       "pattern": {"type": "stripes", "dir": "h"}
     }
   ],

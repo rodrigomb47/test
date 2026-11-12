@@ -1,0 +1,38 @@
+{
+  "_comment": "A single curved horn on the forehead (G6a): a four-bone chain rising from the forehead through the fringe, sweeping up and curling back, tapering to a point; bone-coloured by default (an oni's red horn: color primary). The chain bones are rigid (no secondary). Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
+  "id": "horns/single_curved",
+  "category": "horns",
+  "slots": {
+    "main": "secondary",
+    "alt": "trim"
+  },
+  "params": {
+    "size": {"default": 1, "max": 1.4, "min": 0.6}
+  },
+  "occupies": ["horn_front"],
+  "offset": [0, "head_y", 0],
+  "chains": [
+    {
+      "name": "horn",
+      "bones": ["horn_1", "horn_2", "horn_3", "horn_4"],
+      "parent": "head",
+      "points": [
+        [0, 9.25, -4.0],
+        [0, "9.25 + 3 * size", "-4.6 - 0.5 * size"],
+        [0, "9.25 + 5.5 * size", "-4.6 - 0.4 * size"],
+        [0, "9.25 + 7.25 * size", "-4.6 + 0.9 * size"],
+        [0, "9.25 + 8.25 * size", "-4.6 + 2.6 * size"]
+      ],
+      "sections": [
+        ["2.3 * size", "2.3 * size"],
+        ["1.9 * size", "1.9 * size"],
+        ["1.5 * size", "1.5 * size"],
+        ["1.1 * size", "1.1 * size"]
+      ],
+      "overlap": 0.3,
+      "material": "bone",
+      "taper_last": 0.6,
+      "tone": [0, 0, 1, 1]
+    }
+  ]
+}

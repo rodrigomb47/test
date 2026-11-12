@@ -1540,3 +1540,144 @@ the dead head rests no more than 2 px into the ground on all six bases. `SettleR
 - **G10**: a broom clip of its own for Ambrose; per-form tool reach (the chibi's broom) if it shows in game.
 - **Polish** (unchanged): bell sleeves show their open end when an arm is raised forward (the axe wind-up, the
   hammer strike, swim, cheer); the hip scabbard when lying.
+
+---
+
+## G6a and G6b: head and body parts, the coplanar rule, `lint` (2026-11-12)
+
+HEROES_V2.md 13.3 (the slice column), 14.2 and 15.2 rows G6a and G6b, on the approved look (style pass 2, rig v3):
+the parts keep the style of the existing library (strand hair kit, stacked-slab ears, chain tails, panel skirts,
+flat painting, trims). As before, the reference models were used only for measurements; every part here is our own.
+
+### The slice first (SLICE_PLAN 3)
+
+| Hero | Parts (new in **bold**) |
+|---|---|
+| Natsuho (cat) | `hair/bob` with the new **`tufts`** and **`ahoge`** params, **`ears/cat_tufted`** (odd ears through the entry's new `left` slots), `tails/cat_long`, `outfit_top/jacket_open` (hem 0.5, the white wrap showing), **`outfit_bottom/shorts`**, `accessories/belt`, **`legwear/tabi_boots`** (`socks` 1: white thigh socks) |
+| Yugen (fox) | **`hair/half_up_long`**, **`ears/fox`**, **`tails/fox`** (`count` 3, up to 9), **`robes/court_robe`**, **`headwear/fox_mask`** (worn on the side), `legwear/socks_shoes` |
+| Benika (oni) | **`hair/wild_mane`** (red tips: the new strand `tip`), **`horns/single_curved`**, **`outfit_top/open_coat`** (chest wraps), `outfit_bottom/hakama` (short), `armour/gauntlets`, **`legwear/foot_wraps`** |
+| Hinae (shrine) | **`hair/hime_long`** (paper tie), **`outfit_top/kimono_top`** (straight sleeves), `outfit_bottom/hakama`, **`legwear/geta`** |
+| Kagenori (samurai) | `hair/high_ponytail_long`, **`outfit_top/haori`**, `outfit_bottom/hakama`, **`armour/sode`**, **`armour/bracers`**, `legwear/tabi_sandals`; phase 2 **`headwear/kabuto`** |
+| Tobimaru (ninja) | `hair/high_ponytail_long` (short), **`headwear/half_mask`**, `accessories/scarf`, **`outfit_top/wrap_top`**, **`outfit_bottom/trousers`** (`wraps` 1), **`armour/bracers`**, **`legwear/tabi_boots`** |
+| Ilsabet (knight) | **`hair/braid_crown`**, `armour/breastplate`, **`outfit_top/tabard`**, `back/cape_short`, `armour/gauntlets`, `legwear/greaves`; phase 2 **`headwear/visored_helm`**, phase 3 **`back/standard`** |
+| Ambrose (witch) | **`hair/messy_medium`**, **`headwear/witch_hat`**, **`robes/long_coat`**, **`outfit_bottom/trousers`**, `legwear/boots` |
+
+These looks are written down as the **sample outfits** (`herosrc/style/outfits.json`, with each hero's palette and
+face from SLICE_PLAN 3). They are not hero files (C1-C4 write those); `lint` builds each on all six bases and the
+sheet `previews/parts/outfits.png` shows them. Small details (the bell choker, prayer beads, talismans, the gourd, the
+vial bandolier, the crow, crests and the calico patches) are G6c's accessories, markings and emblem stamps.
+
+### The rest of the slice column (13.3)
+
+- **Head (30, G6a)**: hair 12 (new: `hime_long`, `wild_mane`, `half_up_long`, `braid_crown`, `messy_medium`), ears 4
+  (new: `fox`, `cat_tufted`), horns 2 (new: `single_curved`, a four-bone chain from the forehead; `twin_short`,
+  stacked slabs on `horn_r`/`horn_l`), tails 3 (new: `fox`), wings 1 (new: `feathered`, three rows of feathers on
+  `wing_r`/`wing_l`, half open), headwear 8 (new: `witch_hat` with its brim on its own bone, `fox_mask`, `half_mask`,
+  `kabuto` with a three-lame neck guard and a V crest, `visored_helm`, `headband`).
+- **Body (34, G6b; the column asks for 29)**: outfit tops 8 (new: `wrap_top`, `kimono_top`, `haori`, `tabard`,
+  `open_coat`), bottoms 6 (new: `shorts`, `trousers`), robes 3 (new: `court_robe`, `long_coat`, `priest_robe`),
+  armour 5 (new: `sode`, `bracers`), legwear 9 (new: `geta`, `foot_wraps`, `tabi_boots`), back 3 (new: `standard`).
+- The visor of `visored_helm` is on its own bone (`visor`) hinged at the brow and raised `visor_up` degrees at rest, so
+  the face stays clear; the hero's `phase.2` lowers it by turning that bone. The fox mask is on its own bone too
+  (`fox_mask`), for a flip over the face. The kabuto and the helm sit over the hair (the hair below the bowl shows).
+
+### Coplanar faces fixed (the G2 review's list, `previews/render/coplanar_faces.png`)
+
+| Where | Cause | Fix |
+|---|---|---|
+| Maren's sash / waist plate (611 px), Garrick's and Tobin's sash / hakama band (495, 250) | the sash obi had exactly the extents of the layer under it | `sash_obi` and `sash_bow` are the **outermost waist layer, 0.6 px out** (skirt bands 0.3-0.4, armour waist plates 0.4); knots and bows moved with it. The sash now shows over Maren's armour (it was hidden in every preview) |
+| Maren's greaves (477) and sabatons; Rowan's and the test rig's boots (foot / shaft) | both legs' shells crossed the centre line in one front plane; foot shells had the shaft's side and back planes | every leg shell's **inner side stops 0.05 px short of the centre line** (`max(0.05, min(e, hip_x - leg_w / 2 - 0.05))`), and **nested shells are 0.15 px apart** (shaft 0.3, foot 0.45, sole 0.6; greave 0.35, sabaton 0.5), in `greaves`, `boots`, `tights_boots`, `socks_shoes`, `thigh_socks`, `tabi_sandals` and the new legwear |
+| ear slabs of Tansy, Tobin, the test rig | inner plates on the slab's front plane; the round ear's discs touching | inner plates 0.1 px proud and thicker; stacked discs overlap by 0.15 px |
+| tail_4 / tail_5 | a chain curling in one plane keeps every side face at +-w/2, and two segments had the same width | the chain generator draws a box 0.1 px narrower (or shallower) when it is within 0.1 of the previous box |
+| Rowan's chest | the scarf wrap on the jacket collar's side planes | the wrap is 0.15 px wider |
+| test rig chest / fine_chest | the sailor bow's back face on the bust's front | the bow sits on the bust (`bust_d`), its back face inside it |
+| Maren's back / chest, arm / arm | the fur mantle's top on the gorget's top; pauldron lames as deep as the cap | the mantle rises 0.25 px over the gorget; lames 0.3 px shallower |
+| Wren's bangs / head, the fallback's sideburns | fringe bases' back faces on the head front; two sideburn strands in one layer | fringe bases reach 0.1 px into the head; the second sideburn is 0.15 px out |
+| found by the new rule | jacket cuffs ending exactly at the wrist (their bottoms on the forearm's: the combat stance shows them), the breastplate's gorget as deep as a teen's chest | cuffs reach 0.1 px past the wrist; the gorget is never deeper than the chest minus 0.2 |
+
+The **layer convention** that came out of it (px out from the body cube, so two parts worn together never share a
+plane; a new part picks a free value): hips: bottoms' waistbands 0.15, top hems 0.25, belt 0.3 (and skirt bands
+0.3-0.4 at the waist), armour waist plate 0.4, sash 0.6 (its depth lands 0.35 out on the hips); arms: sleeve cuffs
+0.3, gauntlet shells 0.35, bracers 0.4 (rims 0.55), sleeve shoulders 0.55 (puffs 0.6), the sode's cap 0.7; legs:
+gathers 0.2, boot shafts and sock cuffs 0.3, trouser thighs and greaves 0.35, foot shells 0.45, sabatons 0.5, wraps
+0.55, soles 0.6; offsets that equal a base's own steps (chest minus arm depth is 0.5-0.75) are avoided.
+
+### The sleeve's open end at 0.45 s of the swing
+
+With the forearm pointing at the camera for one frame, the bell sleeve showed its inside as a lit ring and the light
+cuff frill as a cogwheel. The bell panels' inner faces (`south` in strand space) are now painted two tones darker, the
+frill's inner and bottom faces take the same lining, and the frill pieces are 1.6 px wide so they overlap into one
+ring: end on, the sleeve reads as a shadowed opening round the hand. G4's note (swim, cheer and the recoil of a hit
+raise the arms forward) gets the same look. The motion itself (the arm rising 100 degrees in a tick) is G5's.
+
+### The coplanar rule in `herogen check`
+
+`check` renders each hero (its own and, with `--style`, the fixtures) in its idle stance and, when it has a weapon, in
+the combat stance with it drawn, in every phase it has, from six directions at 6x (`HeroAssets.tie_report`), and any
+pixel where two coplanar faces of different colour tie is an error naming the bone pairs (`preview <id> --ties` shows
+them in magenta). It adds about 1-3 s per hero; `--no-ties` skips it. G7's Java test does not repeat it.
+
+### `herogen lint` (`lint.py`)
+
+For every part (or the globs given): on each of the six bases, alone on a mannequin with short hair and a sword at the
+hip, the whole build, the asset checks, every cube above the ground and the coplanar rule (idle and combat stances);
+on the slim and large builds and at each param's minimum and maximum (smallest and largest base), assembly, packing
+and the geometry checks; once, `conflicts` globs that name parts, declared `occupies`, and exact mirrors. Then the
+eight sample outfits on all six bases with the full checks. Four worker processes; the whole library and the
+outfits take about 10 minutes. The lint palette gives every slot its own colour, so a tie cannot hide.
+
+### Parts format additions (`parts.py`, `gen.py`)
+
+- Cube `tip` `{slot, frac, edge}`: the end of a strand (side-face rows and the end cap) in another slot.
+- Hero entry `left` `{color, trim, alt, detail}`: the mirrored (left-hand) copies take these slots.
+- Chain `copies`, `fan`, `fan_axis`, `copy_scale`, `copy_points`, `copy_sections`: a fan of chains (nine tails at 91
+  bones on a mannequin, inside the 100 budget: the copies use a coarser three-bone chain); each copy gets its own
+  spring chain in `visual.json` `secondary`; the middle copy keeps the rig's `tail_1..5` that the core library bakes.
+- Paint op globs starting with `#` name the part's own cubes (`#bell*`: a lining).
+- A bone named `mask` may sit in front of the face below the eyes plane (validator; a cloth mask covers the mouth,
+  never the eyes).
+- `strands` pass `tip` and `outline` through to their cubes.
+
+### Sheets (`herogen parts-previews [--check]`, `render/partsheet.py`)
+
+`docs/heroes-v2/previews/parts/`: `head_hair.png`, `head_ears_horns.png`, `head_tails_wings.png`, `head_headwear.png`
+(every head part on the six bases, front left, and the back and the side on the teen), `body_tops_robes.png`,
+`body_bottoms_legwear.png`, `body_armour_back.png` (every body part the same way), `outfits.png` (the eight slice
+looks on the six bases and a back view). About 3.5 minutes; `--check` renders them in a temporary folder and fails on
+a stale sheet. Regenerated with them: the G2 set (`render-previews`), the style set (`previews`), G3's and G4's
+animation previews (the fixtures they draw wear the fixed parts). `coplanar_faces.png` is now the evidence of the
+fix: no magenta on any of the seven.
+
+### Tests (245 -> 259)
+
+`tests/test_partslib.py` (14): the slice column's counts (30 head, 34 body); the static lint rules on every part; the
+eight outfits build and pass the checks on chibi_f and adult_m; the sash outside every waist layer by at least
+0.1 px on every base; leg shells short of the centre line for every legwear and bottom on every base; chain boxes of
+different widths; strand tips paint the end rows and the cap; `left` slots on the mirrored copies only; nine fanned
+tails inside the bone budget, one spring chain each, the fan symmetric; `#` paint globs; the bell sleeve's lining
+darker than its outside; a `mask` cube below the eyes passes the clear-face rule, above it (or on another bone) fails;
+sabotage: the G2 review's sash put back fails `check` with `sash/waist`, a sunk cube fails lint's ground rule.
+`test_artdir`'s hair-top rule caught the half-up knot (lowered).
+
+### Decisions
+
+1. **Layering by convention and a check, not by an automatic nudge**: moving a face by a few hundredths in the
+   generator would hide real mistakes (a sash under a waist plate); the rule finds them and the part says where it
+   sits.
+2. **The check renders stances, not every animation frame**: the idle and combat stances from six directions catch
+   the shared planes (they are in the parts, not in the motion); a frame-by-frame check would cost minutes per hero.
+3. **Sample outfits instead of hero files**: the slice's looks are tested and shown now, while C1-C4 still own the
+   heroes (kits, phases, animations).
+4. **Two tops are not stacked**: a hero's inner layer is painted by the outer part (`jacket_open`'s open front shows
+   the wrap top), so `occupies` keeps one torso part; robes take the torso, sleeves and skirt slots together.
+
+### Open items
+
+- **G6c**: Natsuho's bell choker and calico patches, Yugen's prayer beads and the plum robe's crest, Benika's gourd
+  and arm stripes, Hinae's talisman strips, Kagenori's crane crest, Tobimaru's kunai holster, Ilsabet's frost-lily on
+  the tabard and the standard, Ambrose's vial bandolier and crow; the weapons in each hand pose.
+- **A2 / C1-C4**: phase 2 of Ilsabet lowers the helm's `visor` (turn the bone by `visor_up`); Tobimaru's mask is hidden
+  in phase 3 (the phase's `hide`); Yugen's tail count grows by phase (`p2_`/`p3_` copies of `tails/fox`).
+- **G10**: the wings' loops (`sec.wings_*`) and Ambrose's staff-broom.
+- The coplanar rule runs on the standard builds; slim and large builds get the geometry checks only (their widths
+  could bring a part onto another's plane: a later lint option).

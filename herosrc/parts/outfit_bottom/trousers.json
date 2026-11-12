@@ -1,0 +1,54 @@
+{
+  "_comment": "Trousers (G6b): the hips and legs painted in the main colour, a loose shell round each thigh, the cloth gathered at the ankle (a ring above the shoe, inside a boot shaft), a waistband; boots and shoes go over them (they leave `legs_lower` free); `wraps` 1 adds leg wraps over the shins in the alt colour, banded diagonally (a ninja's or a traveller's), up to `wrap_h` of the shin.",
+  "id": "outfit_bottom/trousers",
+  "category": "outfit_bottom",
+  "slots": {
+    "main": "accent",
+    "alt": "secondary",
+    "trim": "accent"
+  },
+  "params": {
+    "wraps": {"default": 0, "max": 1, "min": 0},
+    "wrap_h": {"default": 0.75, "max": 0.95, "min": 0.3}
+  },
+  "occupies": ["skirt", "legs_upper"],
+  "paint": [
+    {"cubes": ["hips", "thigh_*", "shin_*"], "material": "cloth", "slot": "main"}
+  ],
+  "cubes": [
+    {
+      "name": "thigh",
+      "bone": "leg_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.35", "knee_y - 0.5", "-leg_d / 2 - 0.35"],
+      "size": ["leg_w + 0.35 + max(0.05, min(0.35, hip_x - leg_w / 2 - 0.05))", "hip_y - knee_y + 0.25", "leg_d + 0.35 + 0.35"],
+      "mirror": true
+    },
+    {
+      "name": "gather",
+      "bone": "shin_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.2", "ankle_y + 0.6", "-leg_d / 2 - 0.2"],
+      "size": ["leg_w + 0.2 + max(0.05, min(0.2, hip_x - leg_w / 2 - 0.05))", 1.25, "leg_d + 0.2 + 0.2"],
+      "mirror": true,
+      "tone": -1,
+      "skip_if_empty": true
+    },
+    {
+      "name": "wrap",
+      "bone": "shin_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.55", "ankle_y + 0.1", "-leg_d / 2 - 0.55"],
+      "size": ["leg_w + 0.55 + max(0.05, min(0.55, hip_x - leg_w / 2 - 0.05))", "(knee_y - ankle_y) * wrap_h * wraps", "leg_d + 0.55 + 0.55"],
+      "mirror": true,
+      "slot": "alt",
+      "skip_if_empty": true,
+      "pattern": {"type": "stripes", "dir": "d", "slots": ["main"]}
+    },
+    {
+      "name": "band",
+      "bone": "body",
+      "origin": ["-hips_w / 2 - 0.15", "waist_y - 1.25", "-hips_d / 2 - 0.15"],
+      "size": ["hips_w + 0.3", 1.5, "hips_d + 0.3"],
+      "slot": "main",
+      "tone": -1
+    }
+  ]
+}

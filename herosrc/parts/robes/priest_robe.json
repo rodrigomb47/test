@@ -1,0 +1,113 @@
+{
+  "_comment": "A long priest's robe (G6b, a cassock): a closed robe to the ankles, a short shoulder cape (a ring of panels round the shoulders) with a hood folded behind the neck, a cord belt at the waist with two hanging ends, wide straight cuffs, skirt panels in one depth with a slight flare.",
+  "id": "robes/priest_robe",
+  "category": "robes",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "drop": {"default": 1, "max": 1.05, "min": 0.7}
+  },
+  "occupies": ["torso", "sleeves", "skirt", "legs_upper", "back"],
+  "paint": [
+    {
+      "cubes": ["chest", "bust", "waist", "hips", "upper_arm_*", "forearm_*", "thigh_*", "shin_*"],
+      "material": "cloth",
+      "slot": "main"
+    }
+  ],
+  "cubes": [
+    {
+      "name": "cord",
+      "bone": "waist",
+      "origin": ["-waist_w / 2 - 0.35", "waist_y + 0.5", "-waist_d / 2 - 0.35"],
+      "size": ["waist_w + 0.7", 0.6, "waist_d + 0.7"],
+      "slot": "trim",
+      "material": "cloth"
+    },
+    {
+      "name": "cuff",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.6", "wrist_y - 0.25", "-arm_d / 2 - 0.6"],
+      "size": ["arm_w + 1.2", 2.25, "arm_d + 1.2"],
+      "slot": "main",
+      "tone": 1,
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [20, 0, 0],
+      "pivot": [0, "chest_top + 0.5", "chest_d / 2"],
+      "cubes": [
+        {
+          "name": "hood",
+          "bone": "chest",
+          "origin": ["-neck_w / 2 - 2.0", "chest_top - 2.25", "chest_d / 2 - 0.1"],
+          "size": ["neck_w + 4.0", 3.0, 1.6],
+          "slot": "main",
+          "tone": -1,
+          "trim": {"slot": "trim", "edge": "top", "width": 1}
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "cape",
+      "bone": "chest",
+      "path": "arc",
+      "y": "chest_top + 0.5",
+      "radius": ["chest_w / 2 + 0.45", "chest_d / 2 + 0.45"],
+      "angles": [-180, 150],
+      "count": 12,
+      "width": "(chest_w + chest_d) * 0.3 + 0.5",
+      "depth": 0.55,
+      "length": "min(5, (chest_top - chest_y) * 0.55)",
+      "flare": 32,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, 1],
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "cord_end",
+      "bone": "waist",
+      "path": "line",
+      "from": [-1.0, "waist_y + 0.75", "-waist_d / 2 - 0.55"],
+      "to": [-0.2, "waist_y + 0.75", "-waist_d / 2 - 0.55"],
+      "count": 2,
+      "width": 0.5,
+      "depth": 0.5,
+      "length": [4.5, 3.75],
+      "flare": 4,
+      "fan": 8,
+      "material": "cloth",
+      "slot": "trim",
+      "clear_face": false
+    },
+    {
+      "name": "panel",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.25",
+      "radius": ["hips_w / 2 + 0.15", "hips_d / 2 + 0.15"],
+      "angles": [-180, 154.2857],
+      "count": 14,
+      "width": "(hips_w + hips_d) * 0.27 + 0.6",
+      "depth": 0.75,
+      "length": "(waist_y - ankle_y) * drop + 1.25",
+      "flare": 5,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "_comment": "A haori coat (G6b): an open coat over the kimono, the body and arms in the main colour, a broad collar band down each side of the open front (trim), straight square sleeves to the forearm on the `sleeve` bones, and the coat's skirt as panels from the waist to mid-thigh, open in front, on the skirt bones. `length` reaches toward the knee.",
+  "id": "outfit_top/haori",
+  "category": "outfit_top",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "length": {"default": 0.6, "max": 1.0, "min": 0.3},
+    "sleeve": {"default": 0.8, "max": 1.2, "min": 0.4}
+  },
+  "occupies": ["torso", "sleeves", "coat_tails"],
+  "paint": [
+    {
+      "cubes": ["chest", "bust", "waist", "upper_arm_*", "forearm_*"],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": ["chest", "bust", "waist"],
+      "faces": ["north"],
+      "abs_x": [0, 1.25],
+      "material": "cloth",
+      "slot": "alt"
+    },
+    {
+      "cubes": ["#sleeve*", "#bag*"],
+      "faces": ["south"],
+      "y": [-100, "wrist_y - 0.5"],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -1
+    }
+  ],
+  "cubes": [
+    {
+      "name": "band",
+      "bone": "chest",
+      "origin": [-2.75, "waist_y", "-chest_d / 2 - bust_d - 0.45"],
+      "size": [1.4, "chest_top - waist_y + 0.25", 0.45],
+      "slot": "trim",
+      "mirror": true
+    },
+    {
+      "name": "collar",
+      "bone": "chest",
+      "origin": ["-neck_w / 2 - 1.25", "chest_top - 0.25", -0.25],
+      "size": ["neck_w + 2.5", 1.25, "chest_d / 2 + 0.75"],
+      "slot": "trim"
+    },
+    {
+      "name": "shoulder",
+      "bone": "arm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.55", "elbow_y + 1.25", "-arm_d / 2 - 0.55"],
+      "size": ["arm_w + 1.1", "arm_top - elbow_y - 1.0", "arm_d + 1.1"],
+      "mirror": true
+    },
+    {
+      "name": "sleeve",
+      "bone": "sleeve_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 1.4 / 2", "elbow_y + 1.25 - ((elbow_y - wrist_y) * 0.75 + 2 * sleeve)", "-arm_d / 2 - 1.0"],
+      "size": ["arm_w + 1.4", "(elbow_y - wrist_y) * 0.75 + 2 * sleeve", "arm_d + 2.0"],
+      "faces": ["north", "south", "east", "west", "up"],
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "bag",
+      "bone": "sleeve_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 1.4 / 2 + 0.2", "elbow_y + 1.25 - ((elbow_y - wrist_y) * 0.75 + 2 * sleeve) - (1.5 * sleeve)", 0.25],
+      "size": ["arm_w + 1.4 - 0.4", "1.5 * sleeve", "arm_d / 2 + 0.6"],
+      "mirror": true,
+      "skip_if_empty": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "strands": [
+    {
+      "name": "skirt",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.25",
+      "radius": ["hips_w / 2 + 0.55", "hips_d / 2 + 0.55"],
+      "angles": [36, 324],
+      "count": 9,
+      "width": "(hips_w + hips_d) * 0.34 + 0.5",
+      "depth": 0.6,
+      "length": "(waist_y - hip_y) + (hip_y - knee_y) * length + 0.5",
+      "flare": 8,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1, 0],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "front",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.25",
+      "radius": ["hips_w / 2 + 0.95", "hips_d / 2 + 0.95"],
+      "angles": [26, 26],
+      "count": 1,
+      "width": 1.4,
+      "depth": 0.45,
+      "length": "(waist_y - hip_y) + (hip_y - knee_y) * length + 0.5",
+      "flare": 8,
+      "material": "cloth",
+      "slot": "trim",
+      "fine": false,
+      "mirror": true,
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]}
+    }
+  ],
+  "secondary": {
+    "chain": ["sleeve_r", "sleeve_l"],
+    "damping": 0.7,
+    "stiffness": 0.5
+  }
+}

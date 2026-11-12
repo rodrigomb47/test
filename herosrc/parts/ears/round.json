@@ -22,16 +22,16 @@
         {
           "name": "ear_b",
           "bone": "ear_r",
-          "origin": [-6.5, 14.75, 0.0],
-          "size": [4.0, 0.75, 1.75],
+          "origin": [-6.5, 14.6, 0.0],
+          "size": [4.0, 0.9, 1.75],
           "material": "hair",
           "mirror": true
         },
         {
           "name": "ear_inner",
           "bone": "ear_r",
-          "origin": [-6.25, 11.5, -0.5],
-          "size": [3.5, 3.0, 0.25],
+          "origin": [-6.25, 11.5, -0.55],
+          "size": [3.5, 3.0, 0.4],
           "slot": "alt",
           "material": "fur",
           "cutout": "round_top",

@@ -36,8 +36,8 @@
         {
           "name": "lame1",
           "bone": "arm_r",
-          "origin": ["-shoulder_x - arm_w / 2 - 1.5", "arm_top - 3", "-arm_d / 2 - 1.25"],
-          "size": [1, 2.5, "arm_d + 2.5"],
+          "origin": ["-shoulder_x - arm_w / 2 - 1.5", "arm_top - 3", "-arm_d / 2 - 1.1"],
+          "size": [1, 2.5, "arm_d + 2.2"],
           "material": "metal",
           "mirror": true,
           "trim": {"slot": "trim", "edge": "bottom", "width": 1}

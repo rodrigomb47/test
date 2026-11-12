@@ -1789,6 +1789,23 @@ from `hair/high_ponytail_long`):
 `herogen lint` builds every part on every base it allows and checks UV fit, budgets, conflicts and that mirrored parts
 stay symmetric.
 
+**As built (G6a and G6b, 2026-11-12; `notes/artgen.md`, "G6a and G6b")**: the slice column is complete, slice
+heroes' needs first: 30 head parts (hair 12: new `hime_long`, `wild_mane`, `half_up_long`, `braid_crown`,
+`messy_medium`, and `bob` gained `tufts` and `ahoge`; ears 4: new `fox`, `cat_tufted`; horns `single_curved`,
+`twin_short`; tails 3: new `fox`, up to nine fanned copies; wings `feathered`; headwear 8: new `witch_hat`,
+`fox_mask`, `half_mask`, `kabuto`, `visored_helm` with its visor on its own bone, `headband`) and 34 body parts (tops
+8: new `wrap_top`, `kimono_top`, `haori`, `tabard`, `open_coat`; bottoms 6: new `shorts`, `trousers`; robes
+`court_robe`, `long_coat`, `priest_robe`; armour 5: new `sode`, `bracers`; legwear 9: new `geta`, `foot_wraps`,
+`tabi_boots`; back 3: new `standard`). Format additions: strand `tip` (the end in another slot), the entry's `left`
+slots for mirrored copies, chain `copies`/`fan`, paint globs on the part's own cubes (`#bell*`), a `mask` bone that
+may cover the mouth. Layers follow a convention (px out from the body: the sash is the outermost waist layer at 0.6,
+leg shells stop 0.05 px short of the centre line, nested shells are 0.15 px apart) so two parts never share a
+plane. The slice heroes' looks are the sample outfits of `herosrc/style/outfits.json`. `herogen lint` (`lint.py`):
+every part alone on the six bases with a sword at the hip (the build, the asset checks, the ground, the coplanar
+rule in the idle and combat stances), on the slim and large builds and at param extremes (geometry), static rules
+(conflicts name parts, `occupies` declared, exact mirrors), then the sample outfits on the six bases; about 10
+minutes. Sheets: `docs/heroes-v2/previews/parts/` (`herogen parts-previews [--check]`).
+
 ### 13.4 Palette and procedural painting (`paint.py`, `palette.py`)
 
 - **Ramps**: each palette slot becomes a 5-tone ramp in OKLCH: tones -2..+2 change lightness by 0.08 per step; shadows
@@ -1996,7 +2013,8 @@ install):
 | `faces <id>` | every eye, mouth and cheek frame enlarged, plus each mood, and the rendered face strip |
 | `sheet [ids] [--style] --out FILE` | contact sheets, 24 heroes each (`--batch`/`--slice` come with the roster) |
 | `render-previews [--only ...] [--check]` | the owner's G2 set in `docs/heroes-v2/previews/render/`; `--check` renders it in a temporary folder and fails if a committed preview differs (stale) |
-| `lint` | the parts library on every base |
+| `lint [parts]` | the parts library on every base (builds, asset checks, the ground, coplanar faces; builds and param extremes) and the sample outfits (G6a/b, `lint.py`) |
+| `parts-previews [--only ...] [--check]` | the parts sheets in `docs/heroes-v2/previews/parts/` (G6a/b) |
 | `stats` | budgets per hero and library usage |
 | `import-anim <id> <file>` | adopt a Blockbench-polished animation file (sets `animations.source: manual`) |
 
@@ -2032,7 +2050,7 @@ still build. The Java `HeroAssetsTest` (14.2) runs in the normal unit tests with
   check (`raster.coplanar_ties`, `preview --ties`, `previews/render/coplanar_faces.png`): the renderer settles a depth
   tie by draw order, the game z-fights, so two coplanar faces of different colour are drawn a second time in reverse
   order and every pixel that changes is reported (the sash layers of three style fixtures fight their coat or skirt;
-  fixes in G6b, a `check` rule in G7); and `render-previews --check` (two committed GIFs had gone stale).
+  fixed in G6b, where it became a `check` rule); and `render-previews --check` (two committed GIFs had gone stale).
 - **Fidelity check** (task G2, with A2): the test rig in three poses is rendered by the preview and screenshotted in
   game; the silhouettes must match within one pixel at 4x. This guards the sign and order conventions.
 - **Contact sheet**: 24 heroes per sheet (6 x 4 cells); each cell has the 3/4 front view, a small back view, the phase
@@ -2080,7 +2098,9 @@ closed loops (13.6); action animations end on the idle settle key; whole-texel U
 mouth planes and nothing in front of the face below head-local y 5.5, rotated corners included (4.6); at most 130 cubes
 outside `fine_` bones (4.3); the eyes mirror unless the face is asymmetric by design (an eye patch, `iris2`, a
 one-sided mark); `visual.json` move list equals the server move list;
-every file in the chain exists; the build is reproducible (`build --check`).
+every file in the chain exists; the build is reproducible (`build --check`); no two coplanar faces of different colour
+(they z-fight in game) in the idle stance and the combat stance with the weapon drawn, in every phase, from six
+directions at 6x (G6b: `HeroAssets.tie_report`, `check --no-ties` skips it).
 
 Distinctness NOTEs (they feed review gate 2 with numbers instead of impressions): the preview renderer's front and side
 silhouette masks of two heroes of the same archetype overlap more than 90% (intersection over union at 4x); the two
@@ -2198,8 +2218,8 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G3 | Animation generator: poses, primitives, recipes, secondary bake, markers, writer, frames into the server file, quality rules | G1 | L | done 2026-11-12: 181 Python tests; `_core` (idle 24 s, walk, run) and `_style_katana` (`combat.idle`, `attack.1` with its `hit` at tick 8) pass the rules on all six bases; timing files beside them; previews in `docs/heroes-v2/previews/anim/` (A2 plays them in game) |
 | G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs. Done 2026-11-12: 55 animations in `_core` (plus 15 restyled reactions in `_style_katana`) pass `check` on all six bases; form-scaled roots for kneels, sits, sleep and death (`v.fc_dhip`, set by A2); GIFs and sheets in `docs/heroes-v2/previews/anim/core/` reviewed; 245 Python tests. Reviewed 2026-11-12 (`notes/artgen.md`, "G4 review"): checked against GeckoLib's own loader; tool strokes re-solved so chop, till, smith, sweep, fishing and planting read as the work; death fits vanilla's 20 ticks; 255 Python tests |
 | G5 | Style libraries for the slice: fists, focus, hammer, katana, twin_blades, sword_shield, staff | G3, G4 | M | each passes `check`; reviewed as GIFs on two bases |
-| G6a | Parts library, head: hair, ears, horns, tails, wings, headwear (30 parts of 13.3) and `lint` | G1 | M | `lint` clean; the head parts on all six bases reviewed on a sheet |
-| G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first) |
+| G6a | Parts library, head: hair, ears, horns, tails, wings, headwear (30 parts of 13.3) and `lint` | G1 | M | `lint` clean; the head parts on all six bases reviewed on a sheet. Done 2026-11-12: 30 head parts (17 new, the slice heroes' first), strand tips, odd left-hand slots, fanned chain copies (nine tails), the `mask` bone; `herogen lint` clean on the 70 parts and the eight sample outfits; sheets in `docs/heroes-v2/previews/parts/` |
+| G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first). Done 2026-11-12: the G2 review's coplanar faces fixed (sash outermost, leg shells, ears, tail chain, scarf, bow, mantle, lames, fringe bases), the bell sleeve's lining (the swing's frame at 0.45 s), 34 body parts (16 new), the layer convention, the coplanar rule in `herogen check`, the slice looks as sample outfits on all six bases (`outfits.png`) |
 | G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style |
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
 | A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`) |

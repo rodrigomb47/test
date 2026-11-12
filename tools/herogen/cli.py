@@ -3,7 +3,8 @@
 timing agreement to check, `anim` (list the libraries and their timings) and `anim-previews` (filmstrips and GIFs);
 G2 adds `preview`, `gif`, `faces`, `sheet` (written to build/herogen/ unless --out says otherwise) and
 `render-previews` (the owner's set, render/showcase.py). `check --style` also checks the style fixtures in
-herosrc/style (built in memory, never written)."""
+herosrc/style (built in memory, never written). G6a/b add the coplanar-face rule to `check` and `lint` (the parts
+library on every base and the sample outfits, lint.py)."""
 import argparse
 import io
 import json
@@ -109,6 +110,24 @@ def _library_problems():
     return out
 
 
+def tie_problems(hero_id, files, b, hint=True):
+    """The coplanar-face rule (G6b): two coplanar faces of different colour z-fight in game (the preview renderer
+    would hide it by drawing the earlier one), so any such pixel in the hero's stances, from six directions, is an
+    error. `herogen preview <id> --ties` paints them magenta."""
+    from anim import library as animlib
+    from render.scene import HeroAssets
+    files = dict(files)
+    files.update(animlib.core().files())
+    files.update(animlib.style(animlib.style_of(b.hero)).files())
+    pairs = HeroAssets(hero_id, files, b.hero).tie_report()
+    if not pairs:
+        return []
+    worst = sorted(pairs.items(), key=lambda kv: (-kv[1], kv[0]))
+    where = "; herogen preview %s --ties shows them" % hero_id if hint else ""
+    return ["coplanar faces of different colour (they z-fight in game): %s (pixels at 6x over six views%s)"
+            % (", ".join("%s/%s %d" % (k[0], k[1], n) for k, n in worst[:6]), where)]
+
+
 def cmd_check(args):
     bad = 0
     lib = _library_problems() + build.check_library_files(build.library_files())
@@ -124,6 +143,8 @@ def cmd_check(args):
         tex = np.array(Image.open(io.BytesIO(files[paths["texture"]])).convert("RGBA"))
         problems = validate.check_built(geo, tex, asymmetric=b.spec["asymmetric"])
         problems += _anim_problems(hid, b)
+        if not args.no_ties:
+            problems += tie_problems(hid, files, b)
         if hid in build.hero_ids():
             problems += build.check_files(hid, files)
         for p in problems:
@@ -322,6 +343,43 @@ def cmd_render_previews(args):
     return 0
 
 
+def cmd_lint(args):
+    """The parts library on every base and the sample outfits (lint.py)."""
+    import time
+
+    import lint
+    t0 = time.time()
+    count = [0]
+
+    def progress(what, found):
+        count[0] += 1
+        if found or args.verbose:
+            print("%s %s" % ("FAIL" if found else "ok  ", what))
+    problems = lint.run(args.parts or None, ties=not args.no_ties, outfits=not args.no_outfits,
+                        workers=args.jobs, progress=progress)
+    for p in problems:
+        print("ERROR " + p)
+    print("%s: %d builds and checks, %d problems (%.0f s)" % ("OK" if not problems else "FAILED", count[0],
+                                                               len(problems), time.time() - t0))
+    return 1 if problems else 0
+
+
+def cmd_parts_previews(args):
+    """The parts sheets (G6a/b): every head and body part and the sample outfits on the six bases."""
+    from render import partsheet
+    out = args.out or partsheet.OUT_DIR
+    if args.check:
+        problems = partsheet.check(out, args.only or None)
+        for p in problems:
+            print("DIFF " + p)
+        if not problems:
+            print("OK   %s: the committed parts sheets match a fresh render" % out)
+        return 1 if problems else 0
+    for k, p in sorted(partsheet.write_all(out, args.only or None).items()):
+        print("%s: %s" % (k, p))
+    return 0
+
+
 def cmd_stats(args):
     for hid in _ids(args):
         files, b = build.build_files(hid)
@@ -345,6 +403,7 @@ def main(argv=None):
     c.add_argument("ids", nargs="*")
     c.add_argument("--all", action="store_true")
     c.add_argument("--style", action="store_true", help="also check the style fixtures (herosrc/style)")
+    c.add_argument("--no-ties", action="store_true", help="skip the coplanar-face rule (it renders six views)")
     c.set_defaults(fn=cmd_check)
     v = sub.add_parser("previews", help="write the style preview set (bases, lineup, face close-ups, character "
                                         "sheets, test rig, fallback) to docs/heroes-v2/previews/style")
@@ -409,6 +468,21 @@ def main(argv=None):
     rp.add_argument("--check", action="store_true", help="render in a temporary folder and fail if a committed "
                                                          "preview differs (stale)")
     rp.set_defaults(fn=cmd_render_previews)
+    li = sub.add_parser("lint", help="every part on every base (builds, checks, coplanar faces) and the sample "
+                                     "outfits of herosrc/style/outfits.json")
+    li.add_argument("parts", nargs="*", help="part ids or globs (default: the whole library and the outfits)")
+    li.add_argument("--no-ties", action="store_true", help="skip the coplanar-face rule")
+    li.add_argument("--no-outfits", action="store_true", help="skip the sample outfits")
+    li.add_argument("--jobs", type=int, default=None, help="worker processes (default: up to 4)")
+    li.add_argument("-v", "--verbose", action="store_true", help="list every build, not only the failing ones")
+    li.set_defaults(fn=cmd_lint)
+    pp = sub.add_parser("parts-previews", help="write the parts sheets (head parts, body parts, sample outfits on "
+                                              "the six bases) to docs/heroes-v2/previews/parts")
+    pp.add_argument("--out", default=None)
+    pp.add_argument("--only", nargs="*", help="sheet file names (head_hair.png, outfits.png, ...)")
+    pp.add_argument("--check", action="store_true", help="render in a temporary folder and fail if a committed "
+                                                         "sheet differs (stale)")
+    pp.set_defaults(fn=cmd_parts_previews)
     s = sub.add_parser("stats", help="budgets per hero")
     s.add_argument("ids", nargs="*")
     s.add_argument("--style", action="store_true", help="include the style fixtures")

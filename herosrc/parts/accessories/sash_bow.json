@@ -1,5 +1,5 @@
 {
-  "_comment": "The faction sash (painted greyscale, tinted by the renderer) as a wide obi with a big bow at the back (style pass 2): a knot, two loops tilted up and out, two tails hanging and splaying (rotated groups; loops and tails on fine_ bones).",
+  "_comment": "The faction sash (painted greyscale, tinted by the renderer) as a wide obi with a big bow at the back (style pass 2): a knot, two loops tilted up and out, two tails hanging and splaying (rotated groups; loops and tails on fine_ bones). The obi is the outermost waist layer (0.6 px out), so it never shares a plane with a skirt band or an armour waist plate.",
   "id": "accessories/sash_bow",
   "category": "accessories",
   "slots": {"main": "sash"},
@@ -8,20 +8,20 @@
     {
       "name": "obi",
       "bone": "sash",
-      "origin": ["-waist_w / 2 - 0.45", "waist_y - 0.25", "-waist_d / 2 - 0.45"],
-      "size": ["waist_w + 0.9", "min(2.75, chest_y - waist_y + 0.25)", "waist_d + 0.9"]
+      "origin": ["-waist_w / 2 - 0.6", "waist_y - 0.25", "-waist_d / 2 - 0.6"],
+      "size": ["waist_w + 1.2", "min(2.75, chest_y - waist_y + 0.25)", "waist_d + 1.2"]
     },
-    {"name": "knot", "bone": "sash", "origin": [-1, "waist_y + 0.25", "waist_d / 2 + 0.45"], "size": [2, 2, 1.25]}
+    {"name": "knot", "bone": "sash", "origin": [-1, "waist_y + 0.25", "waist_d / 2 + 0.45"], "size": [2, 2, 1.4]}
   ],
   "groups": [
     {
       "rotation": [0, 0, 22],
-      "pivot": [-0.75, "waist_y + 1.25", "waist_d / 2 + 0.9"],
+      "pivot": [-0.75, "waist_y + 1.25", "waist_d / 2 + 1.05"],
       "cubes": [
         {
           "name": "loop",
           "bone": "sash",
-          "origin": [-4.25, "waist_y + 0.25", "waist_d / 2 + 0.6"],
+          "origin": [-4.25, "waist_y + 0.25", "waist_d / 2 + 0.75"],
           "size": [3.5, 2.25, 1],
           "mirror": true,
           "fine": true
@@ -30,12 +30,12 @@
     },
     {
       "rotation": [10, 0, 12],
-      "pivot": [-0.5, "waist_y + 0.5", "waist_d / 2 + 0.9"],
+      "pivot": [-0.5, "waist_y + 0.5", "waist_d / 2 + 1.05"],
       "cubes": [
         {
           "name": "tail",
           "bone": "sash",
-          "origin": [-1.5, "waist_y - 3.75", "waist_d / 2 + 0.7"],
+          "origin": [-1.5, "waist_y - 3.75", "waist_d / 2 + 0.85"],
           "size": [1.5, 4.25, 0.5],
           "mirror": true,
           "fine": true,

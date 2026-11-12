@@ -1,0 +1,77 @@
+{
+  "_comment": "A war standard carried on the back (G6b): a pole rising from the small of the back and leaning back 14 degrees so it clears the head and the hair, a crossbar and a banner hanging from it on its own bone (`banner`, a secondary chain: it sways), trimmed at the top and cut to a point at the bottom; the pole in the alt colour (wood or metal), the banner in the main colour (an emblem stamp comes with G6c).",
+  "id": "back/standard",
+  "category": "back",
+  "slots": {
+    "main": "primary",
+    "alt": "leather",
+    "trim": "trim"
+  },
+  "params": {
+    "height": {"default": 1, "max": 1.3, "min": 0.7}
+  },
+  "occupies": ["back_item"],
+  "bones": [
+    {
+      "name": "banner",
+      "parent": "back",
+      "pivot": [0, "waist_y + 0.9703 * (head_y + 21 * height - waist_y) - 2.5", "chest_d / 2 + 1.0 + 0.2419 * (head_y + 21 * height - waist_y) + 0.3"]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "strap",
+      "bone": "chest",
+      "origin": ["-chest_w / 2 - 0.3", "chest_y + 1.0", "-chest_d / 2 - bust_d - 0.3"],
+      "size": ["chest_w + 0.6", 0.9, "chest_d + bust_d + 0.6"],
+      "slot": "alt",
+      "material": "leather"
+    },
+    {
+      "name": "bar",
+      "bone": "banner",
+      "origin": [-3.0, "waist_y + 0.9703 * (head_y + 21 * height - waist_y) - 2.5", "chest_d / 2 + 1.0 + 0.2419 * (head_y + 21 * height - waist_y) - 0.3"],
+      "size": [6.0, 0.6, 0.6],
+      "slot": "alt",
+      "material": "wood"
+    },
+    {
+      "name": "flag",
+      "bone": "banner",
+      "origin": [-2.75, "waist_y + 0.9703 * (head_y + 21 * height - waist_y) - 2.5 - 7 * height", "chest_d / 2 + 1.0 + 0.2419 * (head_y + 21 * height - waist_y) - 0.15"],
+      "size": [5.5, "7 * height", 0.3],
+      "slot": "main",
+      "cutout": "tri_down",
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [-14, 0, 0],
+      "pivot": [0, "waist_y", "chest_d / 2 + 1.35"],
+      "cubes": [
+        {
+          "name": "pole",
+          "bone": "back",
+          "origin": [-0.35, "waist_y", "chest_d / 2 + 1.0"],
+          "size": [0.7, "(head_y + 21 * height - waist_y)", 0.7],
+          "slot": "alt",
+          "material": "wood"
+        },
+        {
+          "name": "finial",
+          "bone": "back",
+          "origin": [-0.6, "head_y + 21 * height", "chest_d / 2 + 0.75"],
+          "size": [1.2, 1.2, 1.2],
+          "slot": "trim",
+          "material": "metal"
+        }
+      ]
+    }
+  ],
+  "secondary": {
+    "chain": ["banner"],
+    "damping": 0.6,
+    "stiffness": 0.35
+  }
+}

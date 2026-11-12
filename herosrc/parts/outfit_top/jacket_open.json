@@ -21,8 +21,8 @@
     {
       "name": "cuff",
       "bone": "forearm_r",
-      "origin": ["-shoulder_x - arm_w / 2 - 0.5", "wrist_y", "-arm_d / 2 - 0.5"],
-      "size": ["arm_w + 1", 1.75, "arm_d + 1"],
+      "origin": ["-shoulder_x - arm_w / 2 - 0.5", "wrist_y - 0.1", "-arm_d / 2 - 0.5"],
+      "size": ["arm_w + 1", 1.85, "arm_d + 1"],
       "slot": "trim",
       "mirror": true
     },

@@ -1,5 +1,5 @@
 {
-  "_comment": "A kimono-style top with real volume (style pass 2): bell sleeves of eight cloth panels around each forearm on the sleeve bone, flared outward and trimmed at the hem, a frill ring at each cuff, puffed upper sleeves, a crossed V collar painted in two layers (alt edged in trim), a standing back collar and crossed lapel slabs in front.",
+  "_comment": "A kimono-style top with real volume (style pass 2): bell sleeves of eight cloth panels around each forearm on the sleeve bone, flared outward and trimmed at the hem, a frill ring at each cuff, puffed upper sleeves, a crossed V collar painted in two layers (alt edged in trim), a standing back collar and crossed lapel slabs in front. The bell panels' inner faces (the lining, `south` in strand space) are painted two tones darker and the frill's inner faces take the lining too, so a sleeve seen end-on (an arm raised toward the camera) reads as a shadowed opening, not a lit ring.",
   "id": "outfit_top/kimono_wide",
   "category": "outfit_top",
   "slots": {"main": "primary", "alt": "secondary", "trim": "trim"},
@@ -21,7 +21,9 @@
       "material": "cloth",
       "slot": "alt",
       "vee": ["chest_top - 3.25", 0.7]
-    }
+    },
+    {"cubes": ["#bell*"], "faces": ["south"], "material": "cloth", "slot": "main", "tone": -2},
+    {"cubes": ["#cuff_frill*"], "faces": ["south", "down"], "material": "cloth", "slot": "main", "tone": -2}
   ],
   "cubes": [
     {
@@ -98,7 +100,7 @@
       "y": "wrist_y + 0.5",
       "angles": [-180, 144],
       "count": 10,
-      "width": 1.25,
+      "width": 1.6,
       "depth": 0.4,
       "length": 1.25,
       "flare": 45,

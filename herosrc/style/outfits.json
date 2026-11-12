@@ -1,0 +1,366 @@
+{
+  "_comment": "Sample outfits (G6b): the slice heroes' looks (SLICE_PLAN.md section 3) dressed from the parts library, for `herogen lint` (each on all six bases: combinations a single part never shows, such as a sash over a hakama band) and the parts sheet docs/heroes-v2/previews/parts/outfits.png. They are not hero files: the C1-C4 tasks write the heroes (kits, animations, phases); weapons, emblems and small accessories come with G6c. `base` is the base the sheet shows the back view on.",
+  "outfits": [
+    {
+      "id": "natsuho",
+      "name": "Natsuho Komezaki (cat)",
+      "base": "teen_f",
+      "note": "bob with tufts and an ahoge, odd\ntufted ears, cat tail, hooded\njacket, shorts, thigh socks\nand split-toe boots",
+      "art": {
+        "palette": {
+          "skin": "#F5D9C4",
+          "hair": "#EDE6DA",
+          "hair_accent": "#E0823A",
+          "eyes": "#E2A33B",
+          "primary": "#E0823A",
+          "secondary": "#F4EFE6",
+          "accent": "#3A3436",
+          "trim": "#C8323C",
+          "metal": "#C9CED6",
+          "leather": "#2A2526"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {"part": "hair/bob", "color": "hair", "params": {"tufts": 1, "ahoge": 1, "length": 7}},
+          {
+            "part": "ears/cat_tufted",
+            "color": "leather",
+            "alt": "blush",
+            "detail": "secondary",
+            "left": {"color": "primary"}
+          },
+          {"part": "tails/cat_long", "color": "hair", "alt": "hair_accent"},
+          {
+            "part": "outfit_top/jacket_open",
+            "color": "primary",
+            "alt": "secondary",
+            "trim": "trim",
+            "params": {"hem": 0.5}
+          },
+          {"part": "outfit_bottom/shorts", "color": "accent", "trim": "accent"},
+          {"part": "accessories/belt", "color": "leather", "trim": "metal"},
+          {"part": "accessories/sash_obi"},
+          {
+            "part": "legwear/tabi_boots",
+            "color": "leather",
+            "alt": "secondary",
+            "trim": "metal",
+            "params": {"socks": 1}
+          }
+        ],
+        "face": {
+          "eyes": "cat",
+          "pupil": "slit",
+          "lashes": 2,
+          "flick": "up",
+          "brows": "thin_arched",
+          "mouth": "cat",
+          "fang": "left",
+          "blush": "soft"
+        }
+      },
+      "animations": {"blink": "normal"}
+    },
+    {
+      "id": "yugen",
+      "name": "Yugen Kagaribi (fox)",
+      "base": "adult_m",
+      "note": "long hair half up, tall fox\nears, three fox tails, layered\ncourt robe, fox mask on the side",
+      "art": {
+        "palette": {
+          "skin": "#F4DCCB",
+          "hair": "#D8DCE6",
+          "hair_accent": "#F6F6FA",
+          "eyes": "#8FB7FF",
+          "primary": "#6B2148",
+          "secondary": "#D8DCE6",
+          "accent": "#5AA9FF",
+          "trim": "#B23A48",
+          "glow": "#7FC8FF",
+          "leather": "#2A2430"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {"part": "hair/half_up_long", "color": "hair", "trim": "trim"},
+          {"part": "ears/fox", "color": "hair", "alt": "hair_accent", "detail": "leather"},
+          {"part": "tails/fox", "color": "hair", "alt": "hair_accent", "params": {"count": 3}},
+          {"part": "robes/court_robe", "color": "primary", "alt": "secondary", "trim": "trim"},
+          {"part": "headwear/fox_mask", "color": "hair_accent", "detail": "trim", "alt": "leather"},
+          {"part": "accessories/sash_obi"},
+          {
+            "part": "legwear/socks_shoes",
+            "color": "secondary",
+            "alt": "leather",
+            "trim": "trim",
+            "params": {"sock": 0.4}
+          }
+        ],
+        "face": {
+          "eyes": "narrow",
+          "lashes": 1,
+          "flick": "up",
+          "brows": "thin_arched",
+          "mouth": "soft",
+          "highlights": "one"
+        }
+      },
+      "animations": {"blink": "calm"}
+    },
+    {
+      "id": "benika",
+      "name": "Benika Akagane (oni)",
+      "base": "adult_f",
+      "note": "wild black mane with red tips,\na curved red horn, open coat\nover chest wraps, short hakama,\ngauntlets, wrapped feet",
+      "art": {
+        "palette": {
+          "skin": "#E8B89A",
+          "hair": "#1B1717",
+          "hair_accent": "#C0392B",
+          "eyes": "#F2C14E",
+          "primary": "#A3202A",
+          "secondary": "#262121",
+          "accent": "#D4A23A",
+          "trim": "#D4A23A",
+          "metal": "#6D6E73",
+          "glow": "#FF7A2A",
+          "leather": "#E9DCC4"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {"part": "hair/wild_mane", "color": "hair", "alt": "hair_accent"},
+          {"part": "horns/single_curved", "color": "primary", "params": {"size": 1.1}},
+          {"part": "outfit_top/open_coat", "color": "primary", "alt": "leather", "trim": "trim"},
+          {"part": "outfit_bottom/hakama", "color": "secondary", "trim": "trim", "params": {"drop": 0.85}},
+          {"part": "armour/gauntlets", "color": "metal", "trim": "trim"},
+          {"part": "legwear/foot_wraps", "color": "secondary", "alt": "leather", "trim": "secondary"},
+          {"part": "accessories/sash_obi"}
+        ],
+        "face": {
+          "eyes": "sharp",
+          "lashes": 1,
+          "flick": "none",
+          "brows": "bold",
+          "mouth": "wide",
+          "fang": "both"
+        }
+      },
+      "animations": {"blink": "normal"}
+    },
+    {
+      "id": "hinae",
+      "name": "Hinae Shirasuzu (shrine)",
+      "base": "adult_f",
+      "note": "long hair tied low with paper,\na hime fringe, white kimono top\nwith straight sleeves, red\nhakama, tabi and geta",
+      "art": {
+        "palette": {
+          "skin": "#F7DFD0",
+          "hair": "#1C1A22",
+          "eyes": "#B4413A",
+          "primary": "#F6F3EE",
+          "secondary": "#C8323C",
+          "accent": "#D9B44A",
+          "trim": "#EADFC8",
+          "glow": "#FFE9A3",
+          "leather": "#8A6A4A"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {"part": "hair/hime_long", "color": "hair", "trim": "primary"},
+          {"part": "outfit_top/kimono_top", "color": "primary", "alt": "secondary", "trim": "trim"},
+          {
+            "part": "outfit_bottom/hakama",
+            "color": "secondary",
+            "trim": "secondary",
+            "params": {"drop": 1.75}
+          },
+          {"part": "legwear/geta", "color": "leather", "alt": "primary", "trim": "secondary"},
+          {"part": "accessories/sash_bow"}
+        ],
+        "face": {
+          "eyes": "round",
+          "lashes": 2,
+          "flick": "up",
+          "brows": "worried",
+          "mouth": "soft",
+          "blush": "soft"
+        }
+      },
+      "animations": {"blink": "normal"}
+    },
+    {
+      "id": "kagenori",
+      "name": "Kagenori Tsurumine (samurai)",
+      "base": "adult_m",
+      "note": "high ponytail, indigo haori,\nwhite hakama, a steel shoulder\nplate, wrist guards, sandals;\nhelmet in phase 2",
+      "art": {
+        "palette": {
+          "skin": "#F1D3BC",
+          "hair": "#1E1F2A",
+          "eyes": "#6C7BD0",
+          "primary": "#2E3A6B",
+          "secondary": "#E8E4D8",
+          "accent": "#9AA6B2",
+          "trim": "#B8963E",
+          "metal": "#C9CED6",
+          "leather": "#4B3D35"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {"part": "hair/high_ponytail_long", "color": "hair", "trim": "secondary", "params": {"length": 18}},
+          {"part": "outfit_top/haori", "color": "primary", "alt": "secondary", "trim": "trim"},
+          {"part": "outfit_bottom/hakama", "color": "secondary", "trim": "trim"},
+          {"part": "armour/sode", "color": "metal", "trim": "trim"},
+          {"part": "armour/bracers", "color": "metal", "trim": "trim"},
+          {"part": "legwear/tabi_sandals", "color": "secondary", "alt": "leather", "trim": "trim"},
+          {"part": "accessories/sash_obi"},
+          {"part": "headwear/kabuto", "color": "metal", "trim": "trim", "phase": 2}
+        ],
+        "face": {
+          "eyes": "sharp",
+          "lashes": 0,
+          "flick": "none",
+          "brows": "straight_thick",
+          "mouth": "small"
+        },
+        "weapon": {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip"}
+      },
+      "animations": {"blink": "calm"}
+    },
+    {
+      "id": "tobimaru",
+      "name": "Tobimaru Usugumo (ninja)",
+      "base": "adult_m",
+      "note": "short high ponytail, cloth half\nmask, long red scarf, wrap top,\nwrapped trousers, arm guards,\nsplit-toe boots",
+      "art": {
+        "palette": {
+          "skin": "#EFD2BE",
+          "hair": "#1C2233",
+          "eyes": "#9AA4B8",
+          "primary": "#1E2740",
+          "secondary": "#B3262E",
+          "accent": "#4A4E57",
+          "trim": "#4A4E57",
+          "metal": "#AEB4BE",
+          "leather": "#2A2E38"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {
+            "part": "hair/high_ponytail_long",
+            "color": "hair",
+            "trim": "secondary",
+            "params": {"length": 7, "locks": 5}
+          },
+          {"part": "headwear/half_mask", "color": "primary"},
+          {"part": "accessories/scarf", "color": "secondary", "alt": "secondary", "params": {"tail": 12}},
+          {"part": "outfit_top/wrap_top", "color": "primary", "trim": "accent"},
+          {"part": "outfit_bottom/trousers", "color": "primary", "alt": "accent", "params": {"wraps": 1}},
+          {"part": "armour/bracers", "color": "accent", "trim": "metal", "params": {"length": 0.9}},
+          {"part": "legwear/tabi_boots", "color": "leather", "trim": "metal"},
+          {"part": "accessories/sash_obi"}
+        ],
+        "face": {
+          "eyes": "narrow",
+          "lashes": 0,
+          "flick": "none",
+          "brows": "straight",
+          "mouth": "small"
+        }
+      },
+      "animations": {"blink": "calm"}
+    },
+    {
+      "id": "ilsabet",
+      "name": "Ilsabet Frostmere (knight)",
+      "base": "adult_f",
+      "note": "braided crown, breastplate under\na long tabard, short cape,\ngauntlets, greaves; visored helm\nin phase 2, a standard in phase 3",
+      "art": {
+        "palette": {
+          "skin": "#F3D9C9",
+          "hair": "#D9CDB4",
+          "eyes": "#7FB7D9",
+          "primary": "#B8C7D6",
+          "secondary": "#EEF3F7",
+          "accent": "#3D6FA8",
+          "trim": "#CFAF5A",
+          "metal": "#C9D1D9",
+          "glow": "#A8E6FF",
+          "leather": "#5E4031"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {"part": "hair/braid_crown", "color": "hair"},
+          {"part": "armour/breastplate", "color": "metal", "alt": "secondary", "trim": "trim"},
+          {"part": "outfit_top/tabard", "color": "accent", "alt": "secondary", "trim": "trim"},
+          {"part": "back/cape_short", "color": "accent", "trim": "trim", "params": {"length": 6}},
+          {"part": "armour/gauntlets", "color": "metal", "trim": "trim"},
+          {"part": "legwear/greaves", "color": "metal", "alt": "accent", "trim": "trim"},
+          {"part": "accessories/sash_obi"},
+          {"part": "headwear/visored_helm", "color": "metal", "trim": "trim", "phase": 2},
+          {
+            "part": "back/standard",
+            "color": "accent",
+            "alt": "metal",
+            "trim": "trim",
+            "phase": 3
+          }
+        ],
+        "face": {
+          "eyes": "almond",
+          "lashes": 2,
+          "flick": "up",
+          "brows": "straight",
+          "mouth": "soft"
+        },
+        "weapon": {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip"}
+      },
+      "animations": {"blink": "normal"}
+    },
+    {
+      "id": "ambrose",
+      "name": "Ambrose Nettlewick (witch)",
+      "base": "adult_m",
+      "note": "messy medium hair, wide-brimmed\npointed hat, round glasses, long\nbuttoned coat, dark trousers,\nboots",
+      "art": {
+        "palette": {
+          "skin": "#EBCFB8",
+          "hair": "#23302A",
+          "eyes": "#7BCB5E",
+          "primary": "#5B3A86",
+          "secondary": "#1F1A26",
+          "accent": "#7BCB5E",
+          "trim": "#C69C4E",
+          "leather": "#6B4A33",
+          "glow": "#9DFF6B",
+          "metal": "#C69C4E"
+        },
+        "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+        "parts": [
+          {"part": "hair/messy_medium", "color": "hair"},
+          {"part": "headwear/witch_hat", "color": "secondary", "trim": "trim", "detail": "primary"},
+          {
+            "part": "robes/long_coat",
+            "color": "primary",
+            "alt": "secondary",
+            "trim": "trim",
+            "detail": "trim"
+          },
+          {"part": "outfit_bottom/trousers", "color": "secondary"},
+          {"part": "legwear/boots", "color": "leather", "trim": "trim"},
+          {"part": "accessories/sash_obi"}
+        ],
+        "face": {
+          "eyes": "wide",
+          "lashes": 1,
+          "flick": "none",
+          "brows": "bold",
+          "mouth": "wide",
+          "glasses": "round",
+          "glasses_color": "metal",
+          "marks": ["freckles"]
+        }
+      },
+      "animations": {"blink": "nervous"}
+    }
+  ]
+}

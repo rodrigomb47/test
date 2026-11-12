@@ -1,0 +1,66 @@
+{
+  "_comment": "A wrap top (G6b): fitted, crossed at the front from the right shoulder to the left hip (a rotated panel over a painted V), with a folded edge in the trim colour, fitted sleeves to `sleeve` (1: the wrist) ending in a cuff, and a short skirt of the top below the waist. Natsuho's white top under her jacket, Tobimaru's navy one.",
+  "id": "outfit_top/wrap_top",
+  "category": "outfit_top",
+  "slots": {
+    "main": "secondary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "sleeve": {"default": 1, "max": 1, "min": 0.4}
+  },
+  "occupies": ["torso", "sleeves"],
+  "paint": [
+    {"cubes": ["chest", "bust", "waist"], "material": "cloth", "slot": "main"},
+    {"cubes": ["upper_arm_*"], "material": "cloth", "slot": "main"},
+    {
+      "cubes": ["forearm_*"],
+      "y": ["elbow_y - (elbow_y - wrist_y) * sleeve", 200],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "trim",
+      "vee": ["chest_top - 4.5", 0.65]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "cuff",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "elbow_y - (elbow_y - wrist_y) * sleeve - 0.1", "-arm_d / 2 - 0.3"],
+      "size": ["arm_w + 0.6", 1.25, "arm_d + 0.6"],
+      "slot": "trim",
+      "mirror": true
+    },
+    {
+      "name": "hem",
+      "bone": "body",
+      "origin": ["-hips_w / 2 - 0.25", "waist_y - 1.25", "-hips_d / 2 - 0.25"],
+      "size": ["hips_w + 0.5", 2.0, "hips_d + 0.5"],
+      "slot": "main",
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, -34],
+      "pivot": [-1.5, "chest_top - 0.5", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "fold",
+          "bone": "chest",
+          "origin": [-2.25, "chest_top - 7.5", "-chest_d / 2 - bust_d - 0.4"],
+          "size": [1.5, 7.25, 0.4],
+          "slot": "main",
+          "tone": 1,
+          "trim": {"slot": "trim", "edge": "all", "width": 1}
+        }
+      ]
+    }
+  ]
+}

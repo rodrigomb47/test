@@ -1,0 +1,122 @@
+{
+  "_comment": "Tufted cat ears (G6a): the stacked slabs of `ears/cat` with a lynx tuft (a thin fur strand) standing from each tip and a fuller fur tuft inside; for odd ears (one orange, one black) give the hero entry `left: {\"color\": ...}`. Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
+  "id": "ears/cat_tufted",
+  "category": "ears",
+  "slots": {
+    "main": "hair",
+    "alt": "blush",
+    "detail": "hair_accent"
+  },
+  "occupies": ["ears"],
+  "offset": [0, "head_y", 0],
+  "groups": [
+    {
+      "rotation": [-10, 0, -18],
+      "pivot": [-4.0, 11.25, 0.75],
+      "cubes": [
+        {
+          "name": "ear_0",
+          "shade": "mass",
+          "bone": "ear_r",
+          "origin": [-6.875, 11.0, -0.75],
+          "size": [5.75, 1.0, 3.0],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_1",
+          "shade": "mass",
+          "bone": "ear_r",
+          "origin": [-6.5, 12.0, -0.625],
+          "size": [5.0, 1.0, 2.75],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_2",
+          "shade": "mass",
+          "bone": "ear_r",
+          "origin": [-6.125, 13.0, -0.5],
+          "size": [4.25, 1.0, 2.5],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_3",
+          "shade": "mass",
+          "bone": "ear_r",
+          "origin": [-5.75, 14.0, -0.375],
+          "size": [3.5, 1.0, 2.25],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_4",
+          "shade": "mass",
+          "bone": "ear_r",
+          "origin": [-5.375, 15.0, -0.25],
+          "size": [2.75, 1.0, 2.0],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_5",
+          "shade": "mass",
+          "bone": "ear_r",
+          "origin": [-5.0, 16.0, -0.125],
+          "size": [2.0, 1.0, 1.75],
+          "material": "hair",
+          "mirror": true,
+          "tone": -1
+        },
+        {
+          "name": "ear_6",
+          "shade": "mass",
+          "bone": "ear_r",
+          "origin": [-4.625, 17.0, 0.0],
+          "size": [1.25, 1.0, 1.5],
+          "material": "hair",
+          "mirror": true,
+          "tone": -2
+        },
+        {
+          "name": "ear_inner",
+          "bone": "ear_r",
+          "origin": [-6.0, 11.25, -0.85],
+          "size": [4, 5.25, 0.3],
+          "slot": "alt",
+          "material": "fur",
+          "cutout": "tri_up",
+          "mirror": true
+        },
+        {
+          "name": "ear_tuft",
+          "bone": "ear_r",
+          "origin": [-5.85, 11.0, -1.15],
+          "size": [3.75, 2.25, 0.5],
+          "slot": "detail",
+          "material": "fur",
+          "cutout": "fur_tips",
+          "fine": true,
+          "mirror": true
+        },
+        {
+          "name": "lynx",
+          "bone": "ear_r",
+          "origin": [-4.4, 17.75, 0.25],
+          "size": [0.6, 1.75, 0.6],
+          "material": "hair",
+          "tone": -2,
+          "taper": 0.5,
+          "fine": true,
+          "mirror": true
+        }
+      ]
+    }
+  ],
+  "secondary": {
+    "chain": ["ear_r", "ear_l"],
+    "damping": 0.6,
+    "stiffness": 0.6
+  }
+}

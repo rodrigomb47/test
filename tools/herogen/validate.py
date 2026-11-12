@@ -8,8 +8,8 @@ and, where a plane edge covers painted head front, identical texels; every eye, 
 distinct; the eyes mirror (frame 9 may raise one brow; a face with an eye patch, heterochromia or a one-sided mark
 is asymmetric by design); no face of any cube, rotation included, in front of the face below the lash line (rig
 face.clear_below_y, head-local) within |x| < face.clear_half_width (bangs may cover the forehead and the brows, never
-the eyes; side locks hang outside that width); at most budgets.lod_cubes cubes outside fine_ bones (what is still
-drawn beyond the fine distance).
+the eyes; side locks hang outside that width; a face cover on a `mask` bone may sit below the eyes plane); at most
+budgets.lod_cubes cubes outside fine_ bones (what is still drawn beyond the fine distance).
 """
 import math
 import re
@@ -138,20 +138,29 @@ def _face_points(c, face):
     return [tuple(pv + m @ (np.array(p) - pv)) for p in corners]
 
 
+MASK_BONE = re.compile(r"^(?:p[23]_)?(?:fine_)?mask$")
+
+
 def _check_clear_face(geo, rig):
     """No face of any cube (the face planes aside) may sit in front of the face between the chin and the lash line
-    within |x| < clear_half_width (4.6). Faces, not bounding boxes: a hair cap open at the front is fine."""
+    within |x| < clear_half_width (4.6). Faces, not bounding boxes: a hair cap open at the front is fine. A face
+    cover on a bone named `mask` (G6a: a cloth half mask) may cover the mouth, never the eyes: its faces must stay
+    below the eyes plane."""
     out = []
     head_y = geo.bones["head"]["pivot"][1]
     front = rig["head"]["front_z"]
     lim_y = head_y + rig["face"]["clear_below_y"]
     half = rig["face"]["clear_half_width"]
+    eyes_bottom = head_y + rig["face"]["planes"]["eyes"]["origin"][1]
     flagged = set()
     for c in geo.cubes:
         if c.bone in ("eyes", "mouth", "cheeks", "head"):
             continue
+        cover = bool(MASK_BONE.match(c.bone))
         for face in c.uv:
             xs, ys, zs = zip(*_face_points(c, face))
+            if cover and max(ys) <= eyes_bottom + 1e-6:
+                continue
             if min(zs) < front - 1e-6 and min(ys) < lim_y - 1e-6 and max(ys) > head_y + 1e-6 \
                     and min(xs) < half - 1e-6 and max(xs) > -half + 1e-6 and c.bone not in flagged:
                 flagged.add(c.bone)

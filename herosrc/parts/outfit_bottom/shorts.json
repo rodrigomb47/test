@@ -1,0 +1,49 @@
+{
+  "_comment": "Shorts (G6b): the hips and the thighs down to `length` painted in the main colour, a fitted shell round each thigh with a turned-up cuff at the hem (trim), a waistband; wear `accessories/belt` for a belt. Leg shells stop 0.05 px short of the centre line (no shared planes between the legs).",
+  "id": "outfit_bottom/shorts",
+  "category": "outfit_bottom",
+  "slots": {
+    "main": "accent",
+    "trim": "accent"
+  },
+  "params": {
+    "length": {"default": 0.45, "max": 0.8, "min": 0.25}
+  },
+  "occupies": ["skirt", "legs_upper"],
+  "paint": [
+    {"cubes": ["hips"], "material": "cloth", "slot": "main"},
+    {
+      "cubes": ["thigh_*"],
+      "y": ["hip_y - (hip_y - knee_y) * length", 200],
+      "material": "cloth",
+      "slot": "main"
+    }
+  ],
+  "cubes": [
+    {
+      "name": "leg",
+      "bone": "leg_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.25", "hip_y - (hip_y - knee_y) * length", "-leg_d / 2 - 0.25"],
+      "size": ["leg_w + 0.25 + max(0.05, min(0.25, hip_x - leg_w / 2 - 0.05))", "(hip_y - knee_y) * length - 0.5", "leg_d + 0.25 + 0.25"],
+      "mirror": true
+    },
+    {
+      "name": "cuff",
+      "bone": "leg_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.45", "hip_y - (hip_y - knee_y) * length - 0.25", "-leg_d / 2 - 0.45"],
+      "size": ["leg_w + 0.45 + max(0.05, min(0.45, hip_x - leg_w / 2 - 0.05))", 1.25, "leg_d + 0.45 + 0.45"],
+      "mirror": true,
+      "slot": "trim",
+      "tone": 1,
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "band",
+      "bone": "body",
+      "origin": ["-hips_w / 2 - 0.15", "waist_y - 1.5", "-hips_d / 2 - 0.15"],
+      "size": ["hips_w + 0.3", 1.75, "hips_d + 0.3"],
+      "slot": "main",
+      "tone": -1
+    }
+  ]
+}

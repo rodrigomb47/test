@@ -1,0 +1,162 @@
+{
+  "_comment": "A plain samurai helmet (G6a): a bowl of three stacked slabs over the hair with a knob on top, a short visor tilted down over the brow, a neck guard of three lames flaring out round the sides and back (open at the face), turned-back side flaps, and a V-shaped crest in the trim colour on the front. Lacquered metal by default. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
+  "id": "headwear/kabuto",
+  "category": "headwear",
+  "slots": {
+    "main": "metal",
+    "trim": "trim"
+  },
+  "occupies": ["hat"],
+  "conflicts": ["headwear/witch_hat", "headwear/visored_helm", "headwear/halo_ring"],
+  "offset": [0, "head_y", 0],
+  "cubes": [
+    {
+      "name": "bowl",
+      "bone": "hat",
+      "origin": [-7.25, 8.75, -7.25],
+      "size": [14.5, 2.5, 14.5],
+      "material": "lacquer",
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "bowl2",
+      "bone": "hat",
+      "origin": [-6.4, 11.25, -6.4],
+      "size": [12.8, 1.75, 12.8],
+      "material": "lacquer"
+    },
+    {
+      "name": "bowl3",
+      "bone": "hat",
+      "origin": [-4.9, 13.0, -4.9],
+      "size": [9.8, 1.1, 9.8],
+      "material": "lacquer",
+      "tone": 1
+    },
+    {
+      "name": "knob",
+      "bone": "hat",
+      "origin": [-1.25, 14.1, -1.25],
+      "size": [2.5, 0.75, 2.5],
+      "slot": "trim",
+      "material": "metal"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [-18, 0, 0],
+      "pivot": [0, 9.0, -7.25],
+      "cubes": [
+        {
+          "name": "visor",
+          "bone": "hat",
+          "origin": [-6.5, 8.75, -10.0],
+          "size": [13.0, 0.5, 2.85],
+          "material": "lacquer",
+          "tone": -1
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, 22],
+      "pivot": [0, 13.2, -6.9],
+      "cubes": [
+        {
+          "name": "crest_r",
+          "bone": "hat",
+          "origin": [-0.3, 13.0, -7.3],
+          "size": [0.6, 4.5, 0.45],
+          "slot": "trim",
+          "material": "metal",
+          "taper": 0.5,
+          "fine": true
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, -22],
+      "pivot": [0, 13.2, -6.9],
+      "cubes": [
+        {
+          "name": "crest_l",
+          "bone": "hat",
+          "origin": [-0.3, 13.0, -7.3],
+          "size": [0.6, 4.5, 0.45],
+          "slot": "trim",
+          "material": "metal",
+          "taper": 0.5,
+          "fine": true
+        }
+      ]
+    },
+    {
+      "rotation": [0, 30, 0],
+      "pivot": [-7.4, 8.75, -6.0],
+      "cubes": [
+        {
+          "name": "flap",
+          "bone": "hat",
+          "origin": [-7.9, 6.75, -7.75],
+          "size": [0.5, 2.5, 3.0],
+          "material": "lacquer",
+          "mirror": true,
+          "trim": {"slot": "trim", "edge": "all", "width": 1}
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "bone": "hat",
+      "path": "arc",
+      "angles": [62, 298],
+      "count": 9,
+      "width": 4.4,
+      "depth": 0.5,
+      "length": 2.4,
+      "material": "lacquer",
+      "slot": "main",
+      "fine": false,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1},
+      "name": "lame1",
+      "y": 9.0,
+      "radius": [7.35, 7.35],
+      "flare": 26
+    },
+    {
+      "bone": "hat",
+      "path": "arc",
+      "angles": [64, 296],
+      "count": 10,
+      "width": 4.4,
+      "depth": 0.5,
+      "length": 2.4,
+      "material": "lacquer",
+      "slot": "main",
+      "fine": false,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1},
+      "name": "lame2",
+      "y": 7.0,
+      "radius": [8.25, 8.25],
+      "flare": 34,
+      "tone": -1
+    },
+    {
+      "bone": "hat",
+      "path": "arc",
+      "angles": [66, 294],
+      "count": 11,
+      "width": 4.4,
+      "depth": 0.5,
+      "length": 2.4,
+      "material": "lacquer",
+      "slot": "main",
+      "fine": false,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1},
+      "name": "lame3",
+      "y": 5.0,
+      "radius": [9.3, 9.3],
+      "flare": 40
+    }
+  ]
+}

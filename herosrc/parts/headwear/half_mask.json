@@ -1,0 +1,75 @@
+{
+  "_comment": "A cloth half mask (G6a, a ninja's): a band of cloth over the mouth and the jaw (never above the eyes plane: the clear-face rule allows a `mask` bone below it), wrapping round the head to a knot at the back with two short tails; a fold over the nose bridge. It hides the mouth and cheek frames; a hero can drop it in a later phase (the phase's `hide`). Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
+  "id": "headwear/half_mask",
+  "category": "headwear",
+  "slots": {
+    "main": "primary",
+    "alt": "accent"
+  },
+  "occupies": ["face_lower"],
+  "offset": [0, "head_y", 0],
+  "bones": [
+    {"name": "mask", "parent": "head", "pivot": [0, 0.5, 0]}
+  ],
+  "cubes": [
+    {
+      "name": "front",
+      "bone": "mask",
+      "origin": [-5.4, -0.75, -5.75],
+      "size": [10.8, 2.25, 0.55],
+      "material": "cloth"
+    },
+    {
+      "name": "bridge",
+      "bone": "mask",
+      "origin": [-1.25, 0.6, -6.0],
+      "size": [2.5, 0.9, 0.3],
+      "material": "cloth",
+      "tone": 1,
+      "fine": true
+    },
+    {
+      "name": "wrap",
+      "bone": "mask",
+      "origin": [-5.95, -0.75, -5.75],
+      "size": [0.45, 2.25, 12.5],
+      "material": "cloth",
+      "mirror": true
+    },
+    {
+      "name": "back",
+      "bone": "mask",
+      "origin": [-5.4, -0.75, 6.35],
+      "size": [10.8, 2.25, 0.4],
+      "material": "cloth"
+    },
+    {
+      "name": "knot",
+      "bone": "mask",
+      "origin": [-1.0, -0.5, 6.6],
+      "size": [2.0, 1.75, 1.0],
+      "material": "cloth",
+      "tone": -1
+    }
+  ],
+  "strands": [
+    {
+      "name": "tail",
+      "bone": "mask",
+      "path": "line",
+      "from": [-0.5, 0.75, 7.2],
+      "to": [0.5, 0.75, 7.2],
+      "out": [0, 0, 1],
+      "count": 2,
+      "width": 1.1,
+      "depth": 0.3,
+      "length": [4, 3.25],
+      "flare": 24,
+      "fan": 24,
+      "material": "cloth",
+      "slot": "main",
+      "taper": 0.3,
+      "cutout": "tip_jagged_1"
+    }
+  ]
+}

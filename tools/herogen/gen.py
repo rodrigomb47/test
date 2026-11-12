@@ -21,10 +21,12 @@ hand would make 250-cube heroes unmaintainable, so a part can carry generators n
   - "bones_by_angle" {bone: [a0, a1]} (arc only): each strand goes to the bone whose sector holds its angle (skirt
     panels on skirt_f, skirt_b, skirt_l, skirt_r).
   - cube fields shared by the group: bone, slot, material (default hair), taper, cutout, trim, shade, density,
-    inflate, fine (default true: strands are level-of-detail), mirror (a mirrored copy, for side groups), name.
+    inflate, tip, outline, fine (default true: strands are level-of-detail), mirror (a mirrored copy, for side
+    groups), name.
 `chains` (a list): bones along a polyline and a box per segment aligned with it, with optional extra boxes rolled
   about the segment axis ("extra": [{"roll": 30, "scale": 0.85}]) to round the cross-section (big tails), and the
-  last segment optionally tapered ("taper_last", "cutout_last", "slot_last").
+  last segment optionally tapered ("taper_last", "cutout_last", "slot_last"); "copies", "fan", "fan_axis" and
+  "copy_scale" build a fan of several chains (G6a: a fox's three to nine tails).
   - "bones" [names], "parent", "points" (one more than bones), "sections" [[w, d]] per segment, "overlap" (each box
     reaches this far past both ends of its segment), "slots" (cycled), material, fine_extra (extra boxes on fine_).
 `groups` (a list): {"rotation", "pivot", "cubes": [...]}: plain cubes that share one rotation about one pivot (an
@@ -165,7 +167,7 @@ def strands(ctx, add_cube):
         sector = g.get("bones_by_angle")
         clear_face = bool(g.get("clear_face", True))
         base = {k: v for k, v in g.items() if k in ("slot", "material", "taper", "cutout", "trim", "shade",
-                                                     "density", "inflate", "glow", "faces")}
+                                                     "density", "inflate", "glow", "faces", "tip", "outline")}
         base.setdefault("material", "hair")
         for i, (p, o_xz, ang) in enumerate(anchors):
             w, d = _cycle(width, i), _cycle(depth, i)
@@ -214,49 +216,95 @@ def groups(ctx):
 
 
 def chains(ctx, declare, add_cube):
-    """Bones along a polyline and boxes aligned with each segment (big tails, ponytails)."""
+    """Bones along a polyline and boxes aligned with each segment (big tails, ponytails). With "copies" n (an
+    expression, G6a) the chain is built n times, fanned "fan" degrees in all about "fan_axis" (default [0, 0, 1], the
+    axis pointing back from the root) through its first point: the copy nearest the middle keeps the bone names, the
+    others get "<bone>_b", "_c", ... and each copy beyond the first is scaled by "copy_scale" (a fox's tails, up to
+    nine). "copy_points" (indices into "points") gives the copies beyond the first a coarser chain, and
+    "copy_sections" their sections (indices into "sections"), so nine tails stay inside the bone budget. Returns
+    {tuple(first copy's bones): [each copy's bones]} for the secondary chains."""
+    copies_of = {}
     for ci, ch in enumerate(ctx.part.get("chains", [])):
         if not _wanted(ctx, ch):
             continue
         names = ch["bones"]
-        pts = [np.array(ctx.at(p), dtype=float) for p in ch["points"]]
-        if len(pts) != len(names) + 1:
+        pts0 = [np.array(ctx.at(p), dtype=float) for p in ch["points"]]
+        if len(pts0) != len(names) + 1:
             raise HerogenError("%s: chain %d needs one more point than bones" % (ctx.where, ci))
-        sections = [ctx.ev(s) for s in ch["sections"]]
-        overlap = float(ctx.ev(ch.get("overlap", 0.5)))
-        slots = ch.get("slots", "main")
-        parent = ch.get("parent", "body")
-        for i, name in enumerate(names):
-            declare(name, parent if i == 0 else names[i - 1], tuple(pts[i]))
-        extra = ch.get("extra", [])
-        for i, name in enumerate(names):
-            a, b = pts[i], pts[i + 1]
-            u = b - a
-            ln = float(np.linalg.norm(u))
-            if ln < 1e-6:
-                raise HerogenError("%s: chain %d has a zero-length segment" % (ctx.where, ci))
-            u = u / ln
-            w, d = _cycle(sections, i)
-            L = ln + 2 * overlap
-            last = i == len(names) - 1
-            base_m = align((0.0, -1.0, 0.0), u)
-            boxes = [(1.0, 0.0, False)] + [(float(e.get("scale", 0.85)), float(e.get("roll", 0)), True)
-                                           for e in extra]
-            for k, (sc, roll, is_extra) in enumerate(boxes):
-                if last and is_extra and not ch.get("extra_last", False):
-                    continue
-                m = about(u, roll) @ base_m if roll else base_m
-                ww, dd = w * sc, d * sc
-                origin = (a[0] - ww / 2.0, a[1] - L + overlap, a[2] - dd / 2.0)
-                spec = {"slot": ch.get("slot_last", _cycle(slots, i)) if last else _cycle(slots, i),
-                        "material": ch.get("material", "fur"), "fine": bool(is_extra and ch.get("fine_extra")),
-                        "tone": int(_cycle(ch.get("tone", 0), i)), "shade": "flat", "outline": last}
-                if last and "taper_last" in ch:
-                    spec["taper"] = ch["taper_last"]
-                if last and "cutout_last" in ch:
-                    spec["cutout"] = ch["cutout_last"]
-                add_cube(spec, origin, (ww, L, dd), file_angles(m), tuple(a), name,
-                         "%s#%s%d_%d" % (ctx.pid, ch.get("name", "c%d_" % ci), i, k), False)
+        n_copies = int(round(float(ctx.ev(ch.get("copies", 1)))))
+        if not 1 <= n_copies <= 11:
+            raise HerogenError("%s: chain %d copies must be 1..11" % (ctx.where, ci))
+        fan = float(ctx.ev(ch.get("fan", 0)))
+        axis = np.array(ctx.ev(ch.get("fan_axis", [0, 0, 1])), dtype=float)
+        axis = axis / (np.linalg.norm(axis) or 1.0)
+        angles = [0.0] if n_copies == 1 else [fan * (j / float(n_copies - 1) - 0.5) for j in range(n_copies)]
+        order = sorted(range(n_copies), key=lambda j: (abs(angles[j]), angles[j]))
+        copy_scale = float(ctx.ev(ch.get("copy_scale", 1.0)))
+        cpts = ch.get("copy_points", list(range(len(pts0))))
+        csec = ch.get("copy_sections", list(range(len(names))))
+        if len(csec) != len(cpts) - 1 or any(not 0 <= i < len(pts0) for i in cpts):
+            raise HerogenError("%s: chain %d copy_points / copy_sections do not match" % (ctx.where, ci))
+        all_names = []
+        for k, j in enumerate(order):
+            suffix = "" if k == 0 else "_" + "bcdefghijk"[k - 1]
+            idx = list(range(len(pts0))) if k == 0 else cpts
+            cnames = [nm + suffix for nm in (names if k == 0 else names[:len(cpts) - 1])]
+            sections = ch["sections"] if k == 0 else [ch["sections"][i % len(ch["sections"])] for i in csec]
+            rot = about(axis, angles[j]) if angles[j] else np.eye(3)
+            sc = 1.0 if k == 0 else copy_scale
+            pts = [pts0[0] + rot @ ((pts0[i] - pts0[0]) * sc) for i in idx]
+            _one_chain(ctx, ch, ci, cnames, pts, sections, sc, suffix, declare, add_cube)
+            all_names.append(cnames)
+        copies_of[tuple(names)] = all_names
+    return copies_of
+
+
+def _one_chain(ctx, ch, ci, names, pts, sections, scale, suffix, declare, add_cube):
+    sections = [[v * scale for v in ctx.ev(s)] for s in sections]
+    overlap = float(ctx.ev(ch.get("overlap", 0.5)))
+    slots = ch.get("slots", "main")
+    parent = ch.get("parent", "body")
+    for i, name in enumerate(names):
+        declare(name, parent if i == 0 else names[i - 1], tuple(pts[i]))
+    extra = ch.get("extra", [])
+    prev = None
+    for i, name in enumerate(names):
+        a, b = pts[i], pts[i + 1]
+        u = b - a
+        ln = float(np.linalg.norm(u))
+        if ln < 1e-6:
+            raise HerogenError("%s: chain %d has a zero-length segment" % (ctx.where, ci))
+        u = u / ln
+        w, d = _cycle(sections, i)
+        if prev is not None:
+            # two overlapping boxes of one width have their side faces in one plane wherever the chain stays in
+            # a plane (a tail curling in yz keeps every x face at +-w/2): a different colour there z-fights in
+            # game, so a box as wide (or deep) as the one before it is drawn 0.1 px narrower (or shallower)
+            if abs(w - prev[0]) < 0.1 - 1e-9:
+                w = prev[0] - 0.1
+            if abs(d - prev[1]) < 0.1 - 1e-9:
+                d = prev[1] - 0.1
+        prev = (w, d)
+        L = ln + 2 * overlap
+        last = i == len(names) - 1
+        base_m = align((0.0, -1.0, 0.0), u)
+        boxes = [(1.0, 0.0, False)] + [(float(e.get("scale", 0.85)), float(e.get("roll", 0)), True)
+                                       for e in extra]
+        for k, (sc, roll, is_extra) in enumerate(boxes):
+            if last and is_extra and not ch.get("extra_last", False):
+                continue
+            m = about(u, roll) @ base_m if roll else base_m
+            ww, dd = w * sc, d * sc
+            origin = (a[0] - ww / 2.0, a[1] - L + overlap, a[2] - dd / 2.0)
+            spec = {"slot": ch.get("slot_last", _cycle(slots, i)) if last else _cycle(slots, i),
+                    "material": ch.get("material", "fur"), "fine": bool(is_extra and ch.get("fine_extra")),
+                    "tone": int(_cycle(ch.get("tone", 0), i)), "shade": "flat", "outline": last}
+            if last and "taper_last" in ch:
+                spec["taper"] = ch["taper_last"]
+            if last and "cutout_last" in ch:
+                spec["cutout"] = ch["cutout_last"]
+            add_cube(spec, origin, (ww, L, dd), file_angles(m), tuple(a), name,
+                     "%s#%s%d_%d%s" % (ctx.pid, ch.get("name", "c%d_" % ci), i, k, suffix), False)
 
 
 def check_matrix(angles):

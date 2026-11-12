@@ -1,0 +1,53 @@
+{
+  "_comment": "A lamellar shoulder plate on the right shoulder (G6b, a sode): three rows of lames hanging from the shoulder outside the arm, each row a little wider and flared further out, laced in the trim colour (their top rows), over a padded cap (0.7 px out, over a sleeve's shoulder at 0.55); on `arm_r` only (Kagenori's single plate).",
+  "id": "armour/sode",
+  "category": "armour",
+  "slots": {
+    "main": "metal",
+    "trim": "trim"
+  },
+  "occupies": ["shoulder_r"],
+  "cubes": [
+    {
+      "name": "cap",
+      "bone": "arm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.7", "arm_top - 1.25", "-arm_d / 2 - 0.7"],
+      "size": ["arm_w + 1.4", 1.75, "arm_d + 1.4"],
+      "material": "lacquer",
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, -14],
+      "pivot": ["-shoulder_x - arm_w / 2 - 0.6", "arm_top - 0.5", 0],
+      "cubes": [
+        {
+          "name": "lame1",
+          "bone": "arm_r",
+          "origin": ["-shoulder_x - arm_w / 2 - 1.1", "arm_top - 2.75", "-arm_d / 2 - 1.2"],
+          "size": [0.55, 2.5, "arm_d + 2.4"],
+          "material": "lacquer",
+          "trim": {"slot": "trim", "edge": "top", "width": 1}
+        },
+        {
+          "name": "lame2",
+          "bone": "arm_r",
+          "origin": ["-shoulder_x - arm_w / 2 - 1.5", "arm_top - 5.0", "-arm_d / 2 - 1.35"],
+          "size": [0.55, 2.5, "arm_d + 2.7"],
+          "material": "lacquer",
+          "tone": -1,
+          "trim": {"slot": "trim", "edge": "top", "width": 1}
+        },
+        {
+          "name": "lame3",
+          "bone": "arm_r",
+          "origin": ["-shoulder_x - arm_w / 2 - 1.9", "arm_top - 7.25", "-arm_d / 2 - 1.5"],
+          "size": [0.55, 2.5, "arm_d + 3.0"],
+          "material": "lacquer",
+          "trim": {"slot": "trim", "edge": "both", "width": 1}
+        }
+      ]
+    }
+  ]
+}

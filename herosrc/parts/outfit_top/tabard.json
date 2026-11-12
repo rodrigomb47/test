@@ -1,0 +1,84 @@
+{
+  "_comment": "A long tabard (G6b, a knight's surcoat): front and back panels hanging from the shoulders over the armour, held at the waist and falling to the knees on the skirt bones (front and back swing apart in a stride), a broad stripe down the middle in the alt colour, trimmed edges and shoulder straps. `drop` = how far toward the knee; `over` the standoff from the chest (1 clears a breastplate).",
+  "id": "outfit_top/tabard",
+  "category": "outfit_top",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "drop": {"default": 0.85, "max": 1.0, "min": 0.4},
+    "over": {"default": 1, "max": 1, "min": 0}
+  },
+  "occupies": ["tabard"],
+  "paint": [
+    {
+      "cubes": ["#upper*", "#lower*"],
+      "faces": ["north", "south"],
+      "x": [-1.0, 1.0],
+      "material": "cloth",
+      "slot": "alt"
+    }
+  ],
+  "cubes": [
+    {
+      "name": "upper_f",
+      "bone": "chest",
+      "origin": ["-chest_w / 2 + 0.5", "waist_y + 0.5", "-chest_d / 2 - bust_d - 0.55 - 0.45 * over"],
+      "size": ["chest_w - 1", "chest_top - waist_y - 0.25", 0.4],
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "upper_b",
+      "bone": "chest",
+      "origin": ["-chest_w / 2 + 0.5", "waist_y + 0.5", "chest_d / 2 + 0.15 + 0.45 * over"],
+      "size": ["chest_w - 1", "chest_top - waist_y - 0.25", 0.4],
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "strap",
+      "bone": "chest",
+      "origin": ["-chest_w / 2 + 0.5", "chest_top - 0.2", "-chest_d / 2 - 0.15 - 0.45 * over"],
+      "size": [1.6, 0.55, "chest_d + 0.3 + 0.9 * over"],
+      "slot": "main",
+      "mirror": true
+    },
+    {
+      "name": "belt",
+      "bone": "waist",
+      "origin": ["-waist_w / 2 - 0.45 - 0.45 * over", "waist_y + 0.25", "-waist_d / 2 - 0.45 - 0.45 * over"],
+      "size": ["waist_w + 0.9 + 0.9 * over", 0.9, "waist_d + 0.9 + 0.9 * over"],
+      "slot": "trim",
+      "material": "leather"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [-5, 0, 0],
+      "pivot": [0, "waist_y + 0.5", "-hips_d / 2 - 0.5 - 0.45 * over"],
+      "cubes": [
+        {
+          "name": "lower_f",
+          "bone": "skirt_f",
+          "origin": ["-chest_w / 2 + 0.75", "waist_y + 0.75 - (waist_y - knee_y) * drop", "-hips_d / 2 - 0.85 - 0.45 * over"],
+          "size": ["chest_w - 1.5", "(waist_y - knee_y) * drop", 0.4],
+          "trim": {"slot": "trim", "edge": "both", "width": 1}
+        }
+      ]
+    },
+    {
+      "rotation": [5, 0, 0],
+      "pivot": [0, "waist_y + 0.5", "hips_d / 2 + 0.5 + 0.45 * over"],
+      "cubes": [
+        {
+          "name": "lower_b",
+          "bone": "skirt_b",
+          "origin": ["-chest_w / 2 + 0.75", "waist_y + 0.75 - (waist_y - knee_y) * drop", "hips_d / 2 + 0.45 + 0.45 * over"],
+          "size": ["chest_w - 1.5", "(waist_y - knee_y) * drop", 0.4],
+          "trim": {"slot": "trim", "edge": "both", "width": 1}
+        }
+      ]
+    }
+  ]
+}

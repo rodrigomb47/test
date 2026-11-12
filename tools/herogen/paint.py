@@ -149,6 +149,17 @@ class Painter:
             if hit:
                 slot, mat = cube.trim["slot"], cube.trim.get("material", mat)
                 pattern, is_trim = None, True
+        tip = cube.tip
+        if tip is not None:
+            cap = "down" if tip["edge"] == "bottom" else "up"
+            if face == cap:
+                slot = tip["slot"]
+            elif face in SIDE_FACES and row is not None:
+                n = max(1, int(round(rows * tip["frac"])))
+                if (tip["edge"] == "bottom" and row >= rows - n) or (tip["edge"] == "top" and row < n):
+                    slot = tip["slot"]
+            if slot == tip["slot"] and cube.material == "hair":
+                group = ("hair", slot)
         x, y, z = p
         for op, names in zip(self.ops, self.op_cubes):
             if cube.name not in names:

@@ -1,0 +1,104 @@
+{
+  "_comment": "A long open coat (G6b): the coat painted over the torso and arms with the chest showing in a wide open front (`alt`, wrapped in bands: Benika's chest wraps), broad lapels folded back, a standing collar, sleeves pushed up to the elbow with a turned cuff (the forearms bare), and long coat skirts from the waist toward the calves, open at the front, on the skirt bones outside a hakama.",
+  "id": "outfit_top/open_coat",
+  "category": "outfit_top",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "length": {"default": 1.3, "max": 1.7, "min": 0.6}
+  },
+  "occupies": ["torso", "sleeves", "coat_tails"],
+  "paint": [
+    {
+      "cubes": ["chest", "bust", "waist", "upper_arm_*"],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": ["chest", "bust", "waist"],
+      "faces": ["north"],
+      "abs_x": [0, 2.0],
+      "material": "cloth",
+      "slot": "alt",
+      "pattern": {"type": "stripes", "dir": "h", "slots": ["trim"]}
+    },
+    {"cubes": ["forearm_*"], "y": ["elbow_y - 1.5", 200], "material": "cloth", "slot": "main"}
+  ],
+  "cubes": [
+    {
+      "name": "collar",
+      "bone": "chest",
+      "origin": ["-neck_w / 2 - 1.5", "chest_top - 0.5", "-chest_d / 2 + 0.25"],
+      "size": ["neck_w + 3", 1.75, "chest_d - 0.1"],
+      "slot": "main",
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "cuff",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.45", "elbow_y - 2.25", "-arm_d / 2 - 0.45"],
+      "size": ["arm_w + 0.9", 1.6, "arm_d + 0.9"],
+      "slot": "main",
+      "tone": 1,
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, -15],
+      "pivot": [-2.4, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_r",
+          "bone": "chest",
+          "origin": [-3.6, "waist_y + 1.0", "-chest_d / 2 - bust_d - 0.5"],
+          "size": [1.9, "chest_top - waist_y - 1.0", 0.5],
+          "slot": "main",
+          "tone": 1,
+          "trim": {"slot": "trim", "edge": "all", "width": 1}
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, 15],
+      "pivot": [2.4, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_l",
+          "bone": "chest",
+          "origin": [1.7, "waist_y + 1.0", "-chest_d / 2 - bust_d - 0.62"],
+          "size": [1.9, "chest_top - waist_y - 1.0", 0.5],
+          "slot": "main",
+          "tone": 1,
+          "trim": {"slot": "trim", "edge": "all", "width": 1}
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "skirt",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.5",
+      "radius": ["hips_w / 2 + 0.9", "hips_d / 2 + 0.9"],
+      "angles": [34, 326],
+      "count": 9,
+      "width": "(hips_w + hips_d) * 0.36 + 0.5",
+      "depth": 0.6,
+      "length": "(waist_y - knee_y) * length * 0.75 + 1",
+      "flare": 11,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1, 0],
+      "layers": [0, 0.3],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ]
+}

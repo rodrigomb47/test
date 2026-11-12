@@ -1,0 +1,51 @@
+{
+  "_comment": "Bracers (G6b, wrist and arm guards): a plate shell round each forearm from the wrist up `length` of the forearm, a raised rim at each end in the trim colour and two lacing bands; the hands bare; 0.4 px out, over a sleeve's cuff (0.3). Kagenori's wrist guards, Tobimaru's arm guards.",
+  "id": "armour/bracers",
+  "category": "armour",
+  "slots": {
+    "main": "leather",
+    "trim": "metal"
+  },
+  "params": {
+    "length": {"default": 0.7, "max": 0.95, "min": 0.4}
+  },
+  "occupies": ["forearms"],
+  "cubes": [
+    {
+      "name": "shell",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.4", "wrist_y + 0.1", "-arm_d / 2 - 0.4"],
+      "size": ["arm_w + 0.8", "(elbow_y - wrist_y) * length - 0.2", "arm_d + 0.8"],
+      "material": "leather",
+      "mirror": true
+    },
+    {
+      "name": "rim_low",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.55", "wrist_y", "-arm_d / 2 - 0.55"],
+      "size": ["arm_w + 1.1", 0.8, "arm_d + 1.1"],
+      "slot": "trim",
+      "material": "metal",
+      "mirror": true
+    },
+    {
+      "name": "rim_high",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.55", "wrist_y + (elbow_y - wrist_y) * length - 0.8", "-arm_d / 2 - 0.55"],
+      "size": ["arm_w + 1.1", 0.8, "arm_d + 1.1"],
+      "slot": "trim",
+      "material": "metal",
+      "mirror": true
+    },
+    {
+      "name": "lace",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.5", "wrist_y + (elbow_y - wrist_y) * length * 0.45", "-arm_d / 2 - 0.5"],
+      "size": ["arm_w + 1.0", 0.5, "arm_d + 1.0"],
+      "slot": "main",
+      "tone": -2,
+      "fine": true,
+      "mirror": true
+    }
+  ]
+}

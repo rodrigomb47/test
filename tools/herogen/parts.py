@@ -16,8 +16,12 @@ Cube fields: bone, origin, size (numbers or expressions over params and base dim
   and the top face lit like the sides, for the stacked slabs of one solid such as an ear, whose dark 1 px sides and
   lit ledges would otherwise read as stripes), skip_if_empty (leave the cube out when a param makes one of its sizes
   0, for optional pieces such as an ahoge), outline (false: no dark hem row, for a
-  segment that continues into the next one).
-Paint op fields (paint over existing cubes, usually the base body): cubes [glob...], faces [...], y [lo, hi],
+  segment that continues into the next one), tip {slot, frac, edge} (G6a: the bottom (or top) fraction of a strand's
+  side faces and its end cap in another slot: red tips on a black mane, black tips on fox ears).
+Hero entry fields besides part/color/trim/alt/detail/params/phase: left {color, trim, alt, detail} (G6a: the mirrored
+  left-hand copies take these slots, for odd-coloured ears or a two-tone pair).
+Paint op fields (paint over existing cubes, usually the base body, or the part's own cubes with a glob starting
+  with "#": "#bell*" is every cube the part named bell..., a sleeve's lining): cubes [glob...], faces [...], y [lo, hi],
   x [lo, hi], z [lo, hi], abs_x [lo, hi] (|x|, for symmetric regions), side r|l, vee [y_tip, slope] (only where
   |x| <= (y - y_tip) * slope: a V neckline), slot, material, pattern, trim {slot, edge, width}, tone. Ranges are
   model pixels at rest, lower bound inclusive.
@@ -92,6 +96,13 @@ class _Ctx:
         for logical, key in (("main", "color"), ("trim", "trim"), ("alt", "alt"), ("detail", "detail")):
             if entry.get(key):
                 self.slots[logical] = entry[key]
+        # "left": {"color": ..., "alt": ...} recolours the mirrored (left-hand) copies only: odd ears, a calico tail
+        self.left_slots = dict(self.slots)
+        for logical, key in (("main", "color"), ("trim", "trim"), ("alt", "alt"), ("detail", "detail")):
+            if (entry.get("left") or {}).get(key):
+                self.left_slots[logical] = entry["left"][key]
+        self.side = "r"
+        self.copies = {}
         phase = entry.get("phase")
         if phase not in (None, 1, 2, 3):
             raise HerogenError("%s: phase must be 1, 2 or 3" % self.where)
@@ -107,7 +118,7 @@ class _Ctx:
             raise HerogenError("%s: density must be 1 or 2" % self.where)
 
     def slot(self, name):
-        name = self.slots.get(name, name)
+        name = (self.left_slots if self.side == "l" else self.slots).get(name, name)
         if name in SLOTS or name in FIXED or name in BASE_SLOTS:
             return name
         if name in LOGICAL_SLOTS:
@@ -235,7 +246,21 @@ def _cube_from_spec(ctx, spec, n, bone, origin, size, name_suffix=""):
                 pattern=ctx.pattern(spec.get("pattern")), cutout=spec.get("cutout"),
                 taper=float(spec["taper"]) if "taper" in spec else None, trim=ctx.trim(spec.get("trim")),
                 glow=bool(spec.get("glow")) or spec.get("material") == "glow", tone=int(spec.get("tone", 0)),
-                density=density, shade=shade, outline=bool(spec.get("outline", True)))
+                density=density, shade=shade, outline=bool(spec.get("outline", True)), tip=_tip(ctx, spec.get("tip")))
+
+
+def _tip(ctx, spec):
+    """A strand's end in another colour ({"slot", "frac" of the side faces' rows, "edge" bottom or top}): red tips on
+    black hair, dark tips on fox ears."""
+    if spec is None:
+        return None
+    edge = spec.get("edge", "bottom")
+    if edge not in ("bottom", "top"):
+        raise HerogenError("%s: tip edge %r is unknown (bottom, top)" % (ctx.where, edge))
+    frac = float(ctx.ev(spec.get("frac", 0.3)))
+    if not 0 < frac <= 1:
+        raise HerogenError("%s: tip frac must be in 0..1" % ctx.where)
+    return {"slot": ctx.slot(spec.get("slot", "alt")), "frac": frac, "edge": edge}
 
 
 def _place(ctx, spec, name, bone, origin, size, rotation=None, pivot=None, mirror=False):
@@ -252,7 +277,11 @@ def _place(ctx, spec, name, bone, origin, size, rotation=None, pivot=None, mirro
     if mirror:
         mbone = _mirror_bone(ctx, bone)
         morigin = (-(origin[0] + size[0]), origin[1], origin[2])
-        mc = _cube_from_spec(ctx, spec, 0, mbone, morigin, size, ":l")
+        ctx.side = "l"
+        try:
+            mc = _cube_from_spec(ctx, spec, 0, mbone, morigin, size, ":l")
+        finally:
+            ctx.side = "r"
         if cube.rotation is not None:
             mc.rotation = (cube.rotation[0], -cube.rotation[1], -cube.rotation[2])
             mc.pivot = (-cube.pivot[0], cube.pivot[1], cube.pivot[2])
@@ -280,14 +309,16 @@ def _add_cubes(ctx):
     def add(spec, origin, size, rotation, pivot, bone, name, mirror):
         _place(ctx, spec, name, bone, origin, size, rotation, pivot, mirror)
 
-    gen.chains(ctx, lambda name, parent, pivot: _declare_one(ctx, name, parent, pivot), add)
+    ctx.copies = gen.chains(ctx, lambda name, parent, pivot: _declare_one(ctx, name, parent, pivot), add)
     gen.strands(ctx, add)
 
 
 def _paint_ops(ctx):
     model = ctx.model
     for n, op in enumerate(ctx.part.get("paint", [])):
-        rec = {"part": ctx.pid, "cubes": list(op.get("cubes", ["*"])), "faces": op.get("faces"),
+        # a glob starting with "#" names the part's own cubes ("#bell*": every bell panel, mirrored copies too)
+        globs = [ctx.prefix + ctx.pid + g if g.startswith("#") else g for g in op.get("cubes", ["*"])]
+        rec = {"part": ctx.pid, "cubes": globs, "faces": op.get("faces"),
                "slot": ctx.slot(op.get("slot", "main")), "material": _material(ctx, op.get("material", "cloth")),
                "pattern": ctx.pattern(op.get("pattern")), "side": op.get("side"), "tone": int(op.get("tone", 0)),
                "trim": ctx.trim(op.get("trim")), "order": (ctx.index, n)}
@@ -348,9 +379,9 @@ def apply_part(model, entry, index):
         b.pivot = ctx.at(pos)
     if part.get("secondary"):
         sec = dict(part["secondary"])
-        sec["chain"] = [ctx.renames.get(c, c) for c in sec.get("chain", [])]
-        sec["part"] = ctx.pid
-        model.secondary.append(sec)
+        # a chain built several times ("copies": a fox's tails) declares one spring chain per copy
+        for chain in ctx.copies.get(tuple(sec.get("chain", [])), [sec.get("chain", [])]):
+            model.secondary.append(dict(sec, part=ctx.pid, chain=[ctx.renames.get(c, c) for c in chain]))
     model.parts_used.append(ctx.pid)
     return ctx
 

@@ -1,0 +1,100 @@
+{
+  "_comment": "Split-toe boots (G6b, jika-tabi): a soft boot shell over the foot with the split between the big toe and the others marked by a dark groove at the front, a shaft up the shin to `boot`, a row of clasp marks up the back, a thin dark rubber sole; `socks` 1 paints the legs above in the alt colour to `sock` up the thigh with a band at the top (Natsuho's white thigh socks). Shells 0.15 px apart, inner sides short of the centre line.",
+  "id": "legwear/tabi_boots",
+  "category": "legwear",
+  "slots": {
+    "main": "accent",
+    "alt": "secondary",
+    "trim": "accent"
+  },
+  "params": {
+    "boot": {"default": 0.55, "max": 0.9, "min": 0.25},
+    "socks": {"default": 0, "max": 1, "min": 0},
+    "sock": {"default": 0.65, "max": 0.9, "min": 0.2}
+  },
+  "occupies": ["legs_lower", "feet"],
+  "paint": [
+    {"cubes": ["shin_*"], "y": [0, "200 * socks"], "material": "cloth", "slot": "alt"},
+    {
+      "cubes": ["thigh_*"],
+      "y": [0, "(knee_y + (hip_y - knee_y) * sock) * socks"],
+      "material": "cloth",
+      "slot": "alt"
+    },
+    {
+      "cubes": ["#foot*"],
+      "faces": ["north", "up"],
+      "x": ["-hip_x - leg_w / 2 + leg_w * 0.3", "-hip_x - leg_w / 2 + leg_w * 0.3 + 0.5"],
+      "z": [-100, "-leg_d / 2 + 0.25"],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -2
+    },
+    {
+      "cubes": ["#foot*"],
+      "faces": ["north", "up"],
+      "x": ["hip_x + leg_w / 2 - leg_w * 0.3 - 0.5", "hip_x + leg_w / 2 - leg_w * 0.3"],
+      "z": [-100, "-leg_d / 2 + 0.25"],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -2
+    }
+  ],
+  "cubes": [
+    {
+      "name": "shaft",
+      "bone": "shin_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.3", "ankle_y - 0.1", "-leg_d / 2 - 0.3"],
+      "size": ["leg_w + 0.3 + max(0.05, min(0.3, hip_x - leg_w / 2 - 0.05))", "(knee_y - ankle_y) * boot", "leg_d + 0.3 + 0.3"],
+      "mirror": true,
+      "material": "cloth"
+    },
+    {
+      "name": "foot",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.45", 0, "-leg_d / 2 - toe - 0.5"],
+      "size": ["leg_w + 0.45 + max(0.05, min(0.45, hip_x - leg_w / 2 - 0.05))", "ankle_y + 0.1", "leg_d + toe + 0.5 + 0.45"],
+      "mirror": true,
+      "material": "cloth"
+    },
+    {
+      "name": "sole",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.6", 0, "-leg_d / 2 - toe - 0.65"],
+      "size": ["leg_w + 0.6 + max(0.05, min(0.6, hip_x - leg_w / 2 - 0.05))", 0.45, "leg_d + toe + 0.65 + 0.6"],
+      "mirror": true,
+      "material": "leather",
+      "tone": -2,
+      "fine": true
+    },
+    {
+      "name": "band",
+      "bone": "leg_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.3", "(knee_y + (hip_y - knee_y) * sock - 0.75) * socks", "-leg_d / 2 - 0.3"],
+      "size": ["leg_w + 0.3 + max(0.05, min(0.3, hip_x - leg_w / 2 - 0.05))", "1.0 * socks", "leg_d + 0.3 + 0.3"],
+      "mirror": true,
+      "slot": "alt",
+      "tone": -1,
+      "skip_if_empty": true
+    }
+  ],
+  "strands": [
+    {
+      "name": "clasp",
+      "bone": "shin_r",
+      "path": "line",
+      "from": ["-hip_x", "ankle_y + 0.75", "leg_d / 2 + 0.3"],
+      "to": ["-hip_x", "ankle_y + (knee_y - ankle_y) * boot - 0.5", "leg_d / 2 + 0.3"],
+      "out": [0, 0, 1],
+      "count": 3,
+      "width": 0.9,
+      "depth": 0.2,
+      "length": 0.4,
+      "flare": 0,
+      "material": "metal",
+      "slot": "trim",
+      "mirror": true,
+      "clear_face": false
+    }
+  ]
+}

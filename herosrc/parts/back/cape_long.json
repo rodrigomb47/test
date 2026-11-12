@@ -14,7 +14,7 @@
       "name": "mantle",
       "bone": "back",
       "origin": ["-chest_w / 2 - 1", "chest_top - 1.5", "-chest_d / 2 - 0.75"],
-      "size": ["chest_w + 2", 2.25, "chest_d + 1.75"],
+      "size": ["chest_w + 2", 2.5, "chest_d + 1.75"],
       "slot": "alt",
       "material": "fur"
     }

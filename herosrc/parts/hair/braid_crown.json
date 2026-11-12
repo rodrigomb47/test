@@ -1,0 +1,209 @@
+{
+  "_comment": "A braided crown (G6a): neat hair drawn back, a soft side-swept fringe, short tucked layers at the nape, and a braid wound round the head from ear to ear over the crown, built as two rows of short boxes tilted alternately (zigzag) so they read as the braid's interlocking strands; the braid in a lighter tone of the hair. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px.",
+  "id": "hair/braid_crown",
+  "category": "hair",
+  "slots": {
+    "main": "hair"
+  },
+  "params": {
+    "locks": {"default": 6, "max": 10, "min": 3}
+  },
+  "occupies": ["hair_top", "hair_back"],
+  "paint": [
+    {"cubes": ["head"], "faces": ["south"], "slot": "main", "material": "hair"},
+    {
+      "cubes": ["head"],
+      "faces": ["east", "west"],
+      "z": [0.5, 5.5],
+      "slot": "main",
+      "material": "hair"
+    }
+  ],
+  "offset": [0, "head_y", 0],
+  "cubes": [
+    {
+      "name": "cap",
+      "bone": "hair_top",
+      "origin": [-5.3, 2.5, -5.3],
+      "size": [10.6, 8.0, 10.6],
+      "material": "hair",
+      "faces": ["up", "south", "east", "west"]
+    },
+    {
+      "name": "dome",
+      "bone": "hair_top",
+      "origin": [-4.75, 10.5, -5],
+      "size": [9.5, 0.75, 10],
+      "material": "hair"
+    },
+    {
+      "name": "dome2",
+      "bone": "hair_top",
+      "origin": [-3.5, 11.0, -3.75],
+      "size": [7, 0.75, 7.5],
+      "material": "hair"
+    },
+    {
+      "name": "dome3",
+      "bone": "hair_top",
+      "origin": [-2, 11.6, -2.25],
+      "size": [4, 0.5, 4.5],
+      "material": "hair"
+    },
+    {
+      "name": "fringe_base",
+      "bone": "bangs",
+      "origin": [-5.5, 8, -6],
+      "size": [11, 2.75, 1.1],
+      "material": "hair",
+      "cutout": "bangs_jagged_4"
+    },
+    {
+      "name": "back_base",
+      "bone": "hair_back",
+      "origin": [-5.75, 2, 5],
+      "size": [11.5, 8.5, 1.25],
+      "material": "hair"
+    }
+  ],
+  "strands": [
+    {
+      "name": "crown",
+      "bone": "hair_top",
+      "path": "arc",
+      "y": 11.6,
+      "radius": [3.4, 3.7],
+      "angles": [-168, 168],
+      "count": 16,
+      "width": 3,
+      "depth": 1,
+      "length": [3.25, 3.5, 3.25],
+      "flare": 30,
+      "jitter": 0.25,
+      "tone": [0, 1, 0, 0, -1]
+    },
+    {
+      "name": "part",
+      "drop": [-0.3, 0, 0.05, 0, -0.3],
+      "bone": "hair_top",
+      "path": "line",
+      "from": [0, 12.35, -4.2],
+      "to": [0, 12.35, 3.8],
+      "out": [1, 0, 0],
+      "count": 5,
+      "width": 2.1,
+      "depth": 0.9,
+      "length": [5.25, 5.75, 5.5, 5.75, 5.0],
+      "flare": [68, 72, 70, 72, 66],
+      "jitter": 0.25,
+      "mirror": true,
+      "tone": [1, 0, 1, 1, 0]
+    },
+    {
+      "name": "inner",
+      "bone": "hair_top",
+      "path": "arc",
+      "y": 9.5,
+      "radius": [5.45, 5.45],
+      "angles": [60, 300],
+      "count": 10,
+      "width": 2.5,
+      "depth": 0.75,
+      "length": "5",
+      "flare": 5,
+      "tone": -1
+    },
+    {
+      "name": "mid",
+      "bone": "hair_top",
+      "path": "arc",
+      "y": 10.25,
+      "radius": [5.55, 5.55],
+      "angles": [55, 305],
+      "count": 12,
+      "width": 2.75,
+      "depth": 1,
+      "length": [5.25, 5.75, 5],
+      "flare": 4,
+      "tone": [0, -1, 0]
+    },
+    {
+      "bone": "hair_top",
+      "path": "arc",
+      "radius": [6.35, 6.4],
+      "count": 15,
+      "width": 2.2,
+      "depth": 1.4,
+      "length": 2.0,
+      "flare": 14,
+      "zigzag": 32,
+      "tone": [2, 1],
+      "name": "braid_a",
+      "y": 11.2,
+      "angles": [-104, 104]
+    },
+    {
+      "bone": "hair_top",
+      "path": "arc",
+      "radius": [6.35, 6.4],
+      "count": 15,
+      "width": 2.2,
+      "depth": 1.4,
+      "length": 2.0,
+      "flare": 14,
+      "zigzag": -32,
+      "tone": [1, 2],
+      "name": "braid_b",
+      "y": 10.0,
+      "angles": [-98, 110],
+      "layers": [0.15]
+    },
+    {
+      "name": "fringe",
+      "bone": "bangs",
+      "path": "line",
+      "from": [-5.1, 10.75, -5.85],
+      "to": [5.1, 10.75, -5.85],
+      "count": 7,
+      "width": 2,
+      "depth": 1,
+      "length": [3.5, 4.25, 5, 5.5, 5.75, 5.5, 5],
+      "flare": 12,
+      "lean": -18,
+      "layers": [0, 0.35],
+      "taper": 0.3,
+      "clear_face": true,
+      "tone": [0, -1, 0]
+    },
+    {
+      "name": "wisp",
+      "bone": "hair_r",
+      "path": "line",
+      "from": [-5.7, 9.5, -4.4],
+      "to": [-5.7, 9.5, -4.4],
+      "out": [-1, 0, -0.3],
+      "count": 1,
+      "width": 1.25,
+      "depth": 1,
+      "length": "locks",
+      "flare": 4,
+      "taper": 0.5,
+      "mirror": true
+    },
+    {
+      "name": "nape",
+      "bone": "hair_back",
+      "path": "arc",
+      "y": 6.5,
+      "radius": [5.9, 6],
+      "angles": [140, 220],
+      "count": 5,
+      "width": 2.25,
+      "depth": 1,
+      "length": [4.5, 5, 4],
+      "flare": 10,
+      "taper": 0.4,
+      "tone": [-1, 0]
+    }
+  ]
+}

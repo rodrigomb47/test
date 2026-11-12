@@ -1,0 +1,93 @@
+{
+  "_comment": "A knight's helm with a visor (G6a): a rounded skull of stacked slabs over the hair, cheek plates and a back plate down to the jaw, a crest ridge in the trim colour, and a visor with an eye slit on its own bone (`visor`) pivoting at the temples. At rest the visor is raised `visor_up` degrees about its hinge at the brow, so the face stays clear; the hero's own animation lowers it (rotate the `visor` bone about x by +`visor_up`: the `phase.2` visor snap); lowered, an eye slit separates its upper and lower plates at the lash line. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
+  "id": "headwear/visored_helm",
+  "category": "headwear",
+  "slots": {
+    "main": "metal",
+    "trim": "trim"
+  },
+  "occupies": ["hat"],
+  "conflicts": ["headwear/witch_hat", "headwear/kabuto", "headwear/halo_ring"],
+  "offset": [0, "head_y", 0],
+  "bones": [
+    {"name": "visor", "parent": "hat", "pivot": [0, 10.75, -6.9]}
+  ],
+  "cubes": [
+    {
+      "name": "skull",
+      "bone": "hat",
+      "origin": [-6.6, 8.5, -6.6],
+      "size": [13.2, 2.75, 13.2],
+      "material": "metal",
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "skull2",
+      "bone": "hat",
+      "origin": [-5.8, 11.25, -5.8],
+      "size": [11.6, 1.5, 11.6],
+      "material": "metal"
+    },
+    {
+      "name": "skull3",
+      "bone": "hat",
+      "origin": [-4.3, 12.75, -4.3],
+      "size": [8.6, 0.85, 8.6],
+      "material": "metal",
+      "tone": 1
+    },
+    {
+      "name": "ridge",
+      "bone": "hat",
+      "origin": [-0.5, 12.75, -5.0],
+      "size": [1.0, 1.35, 10.0],
+      "slot": "trim",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "cheek",
+      "bone": "hat",
+      "origin": [-6.85, 0.5, -5.5],
+      "size": [0.6, 8.0, 7.5],
+      "material": "metal",
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "back",
+      "bone": "hat",
+      "origin": [-6.6, 0.0, 6.0],
+      "size": [13.2, 8.5, 0.6],
+      "material": "metal",
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": ["-visor_up", 0, 0],
+      "pivot": [0, 10.75, -6.9],
+      "cubes": [
+        {
+          "name": "visor_top",
+          "bone": "visor",
+          "origin": [-6.4, 5.4, -7.5],
+          "size": [12.8, 5.35, 0.6],
+          "material": "metal",
+          "trim": {"slot": "trim", "edge": "top", "width": 1}
+        },
+        {
+          "name": "visor_low",
+          "bone": "visor",
+          "origin": [-6.2, 0.75, -7.6],
+          "size": [12.4, 4.25, 0.7],
+          "material": "metal",
+          "tone": -1
+        }
+      ]
+    }
+  ],
+  "params": {
+    "visor_up": {"default": 75, "max": 110, "min": 65}
+  }
+}

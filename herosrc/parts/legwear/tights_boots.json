@@ -1,5 +1,5 @@
 {
-  "_comment": "Tights and ankle boots (style pass 2): tights painted on the legs, short boots with a cuff and a sole.",
+  "_comment": "Tights and ankle boots (style pass 2): tights painted on the legs, short boots with a cuff and a sole (layers 0.15 px apart, inner sides 0.05 px short of the centre line, as `boots`).",
   "id": "legwear/tights_boots",
   "category": "legwear",
   "slots": {"main": "accent", "alt": "leather", "trim": "trim"},
@@ -11,7 +11,7 @@
       "name": "shaft",
       "bone": "shin_r",
       "origin": ["-hip_x - leg_w / 2 - 0.3", "ankle_y - 0.1", "-leg_d / 2 - 0.3"],
-      "size": ["leg_w + 0.6", "(knee_y - ankle_y) * boot + 0.1", "leg_d + 0.6"],
+      "size": ["leg_w + 0.3 + max(0.05, min(0.3, hip_x - leg_w / 2 - 0.05))", "(knee_y - ankle_y) * boot + 0.1", "leg_d + 0.6"],
       "slot": "alt",
       "material": "leather",
       "mirror": true,
@@ -20,8 +20,8 @@
     {
       "name": "foot",
       "bone": "foot_r",
-      "origin": ["-hip_x - leg_w / 2 - 0.3", 0, "-leg_d / 2 - toe - 0.5"],
-      "size": ["leg_w + 0.6", "ankle_y + 0.1", "leg_d + toe + 0.8"],
+      "origin": ["-hip_x - leg_w / 2 - 0.45", 0, "-leg_d / 2 - toe - 0.5"],
+      "size": ["leg_w + 0.45 + max(0.05, min(0.45, hip_x - leg_w / 2 - 0.05))", "ankle_y + 0.1", "leg_d + toe + 0.95"],
       "slot": "alt",
       "material": "leather",
       "mirror": true
@@ -29,8 +29,8 @@
     {
       "name": "sole",
       "bone": "foot_r",
-      "origin": ["-hip_x - leg_w / 2 - 0.4", 0, "-leg_d / 2 - toe - 0.6"],
-      "size": ["leg_w + 0.8", 0.5, "leg_d + toe + 1"],
+      "origin": ["-hip_x - leg_w / 2 - 0.6", 0, "-leg_d / 2 - toe - 0.65"],
+      "size": ["leg_w + 0.6 + max(0.05, min(0.6, hip_x - leg_w / 2 - 0.05))", 0.5, "leg_d + toe + 1.25"],
       "slot": "alt",
       "material": "leather",
       "tone": -2,

@@ -31,7 +31,7 @@
       "name": "fringe_base",
       "bone": "bangs",
       "origin": [-5.5, 7.75, -6],
-      "size": [11, 3, 1],
+      "size": [11, 3, 1.1],
       "material": "hair",
       "cutout": "bangs_jagged_4"
     },

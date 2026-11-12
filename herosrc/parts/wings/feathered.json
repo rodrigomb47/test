@@ -1,0 +1,81 @@
+{
+  "_comment": "Small paired feathered wings (G6a): each wing (`wing_r`, `wing_l`) a fan of three rows of feathers hung from a line rising out and back from the shoulder blades: short light scapulars on top, coverts, and long tapered primaries behind them, folded half open at rest; colour by slot (crow black, white, ember). Body-anchored (not head-local).",
+  "id": "wings/feathered",
+  "category": "wings",
+  "slots": {
+    "main": "secondary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "span": {"default": 1, "max": 1.4, "min": 0.6}
+  },
+  "occupies": ["wings"],
+  "strands": [
+    {
+      "name": "scapular",
+      "bone": "wing_r",
+      "path": "line",
+      "from": [-1.5, "chest_top - 0.5 + 0.75", "chest_d / 2 + 0.75"],
+      "to": [-9.5, "chest_top + 3.5 + 0.75", "chest_d / 2 + 2.75"],
+      "out": [-0.15, 0, 1],
+      "count": 6,
+      "width": 2.25,
+      "depth": 0.7,
+      "length": [2.75, 3, 3.25, 3, 2.75, 2.5],
+      "flare": 12,
+      "fan": -10,
+      "layers": [0.0],
+      "material": "cloth",
+      "slot": "main",
+      "taper": 0.35,
+      "tone": [1, 1, 0],
+      "mirror": true
+    },
+    {
+      "name": "covert",
+      "bone": "wing_r",
+      "path": "line",
+      "from": [-1.5, "chest_top - 0.5 + 0", "chest_d / 2 + 0.75"],
+      "to": [-9.5, "chest_top + 3.5 + 0", "chest_d / 2 + 2.75"],
+      "out": [-0.15, 0, 1],
+      "count": 6,
+      "width": 2.0,
+      "depth": 0.55,
+      "length": ["4.5 * span", "5 * span", "5.5 * span", "5 * span", "4.5 * span", "4 * span"],
+      "flare": 14,
+      "fan": -10,
+      "layers": [0.35],
+      "material": "cloth",
+      "slot": "main",
+      "taper": 0.35,
+      "tone": [0, 0, -1],
+      "mirror": true
+    },
+    {
+      "name": "primary",
+      "bone": "wing_r",
+      "path": "line",
+      "from": [-1.5, "chest_top - 0.5 + -0.5", "chest_d / 2 + 0.75"],
+      "to": [-9.5, "chest_top + 3.5 + -0.5", "chest_d / 2 + 2.75"],
+      "out": [-0.15, 0, 1],
+      "count": 7,
+      "width": 1.9,
+      "depth": 0.45,
+      "length": ["8 * span", "9.5 * span", "10.5 * span", "11 * span", "10.5 * span", "9.5 * span", "8.5 * span"],
+      "flare": 18,
+      "fan": -10,
+      "layers": [0.7],
+      "material": "cloth",
+      "slot": "main",
+      "taper": 0.35,
+      "tone": [-1, 0],
+      "mirror": true
+    }
+  ],
+  "secondary": {
+    "chain": ["wing_r", "wing_l"],
+    "damping": 0.6,
+    "stiffness": 0.5
+  }
+}

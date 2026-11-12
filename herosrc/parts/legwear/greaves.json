@@ -1,5 +1,5 @@
 {
-  "_comment": "Greaves and sabatons (style pass 2): plate shells over the shins with a knee cop tilted forward, plated shoes with a sole, the thighs in the alt cloth.",
+  "_comment": "Greaves and sabatons (style pass 2): plate shells over the shins with a knee cop tilted forward, plated shoes with a sole, the thighs in the alt cloth. Shells never share a plane: the sabaton is 0.15 px wider than the greave above it, and on the inner side each shell stops 0.05 px short of the hero's centre line (`max(0.05, min(0.35, hip_x - leg_w / 2 - 0.05))`), so the two greaves cannot overlap in one front plane on bases whose legs nearly touch.",
   "id": "legwear/greaves",
   "category": "legwear",
   "slots": {"main": "metal", "alt": "accent", "trim": "trim"},
@@ -9,8 +9,8 @@
     {
       "name": "shin",
       "bone": "shin_r",
-      "origin": ["-hip_x - leg_w / 2 - 0.35", "ankle_y", "-leg_d / 2 - 0.4"],
-      "size": ["leg_w + 0.7", "knee_y - ankle_y - 0.25", "leg_d + 0.75"],
+      "origin": ["-hip_x - leg_w / 2 - 0.35", "ankle_y + 0.1", "-leg_d / 2 - 0.4"],
+      "size": ["leg_w + 0.35 + max(0.05, min(0.35, hip_x - leg_w / 2 - 0.05))", "knee_y - ankle_y - 0.35", "leg_d + 0.75"],
       "material": "metal",
       "mirror": true,
       "trim": {"slot": "trim", "edge": "top", "width": 1}
@@ -18,8 +18,8 @@
     {
       "name": "sabaton",
       "bone": "foot_r",
-      "origin": ["-hip_x - leg_w / 2 - 0.35", 0, "-leg_d / 2 - toe - 0.6"],
-      "size": ["leg_w + 0.7", "ankle_y + 0.25", "leg_d + toe + 0.95"],
+      "origin": ["-hip_x - leg_w / 2 - 0.5", 0, "-leg_d / 2 - toe - 0.6"],
+      "size": ["leg_w + 0.5 + max(0.05, min(0.35, hip_x - leg_w / 2 - 0.05))", "ankle_y + 0.35", "leg_d + toe + 1.1"],
       "material": "metal",
       "tone": -1,
       "mirror": true

@@ -1,0 +1,165 @@
+{
+  "_comment": "A layered court robe (G6b): a long robe to the ankles, the body and arms in the main colour, three collar layers at the neck (alt, trim, main: the layered look), bell sleeves to below the wrist on the `sleeve` bones with the lining darker, a broad sash band at the waist under the faction sash, skirt panels to the ankles in two depths with a front overlap edge in the trim colour.",
+  "id": "robes/court_robe",
+  "category": "robes",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "sleeve": {"default": 1, "max": 1.5, "min": 0.5},
+    "drop": {"default": 1, "max": 1.05, "min": 0.7}
+  },
+  "occupies": ["torso", "sleeves", "skirt", "legs_upper"],
+  "paint": [
+    {
+      "cubes": ["chest", "bust", "waist", "hips", "upper_arm_*", "forearm_*", "thigh_*", "shin_*"],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "alt",
+      "vee": ["chest_top - 5.75", 0.7]
+    },
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "trim",
+      "vee": ["chest_top - 4.75", 0.7]
+    },
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "alt",
+      "vee": ["chest_top - 3.75", 0.7]
+    },
+    {
+      "cubes": ["#bell*"],
+      "faces": ["south"],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -2
+    }
+  ],
+  "cubes": [
+    {
+      "name": "collar",
+      "bone": "chest",
+      "origin": ["-neck_w / 2 - 1", "chest_top - 0.25", -0.5],
+      "size": ["neck_w + 2", 1.5, "chest_d / 2 + 0.75"],
+      "slot": "alt"
+    },
+    {
+      "name": "band",
+      "bone": "waist",
+      "origin": ["-waist_w / 2 - 0.4", "waist_y - 0.5", "-waist_d / 2 - 0.4"],
+      "size": ["waist_w + 0.8", "min(3, chest_y - waist_y + 0.5)", "waist_d + 0.8"],
+      "slot": "alt"
+    },
+    {
+      "name": "puff",
+      "bone": "arm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.6", "elbow_y + 1", "-arm_d / 2 - 0.6"],
+      "size": ["arm_w + 1.2", "arm_top - elbow_y - 0.75", "arm_d + 1.2"],
+      "mirror": true
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, -22],
+      "pivot": [-2.25, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_r",
+          "bone": "chest",
+          "origin": [-2.875, "chest_top - 6.5", "-chest_d / 2 - 0.45 + bust_d"],
+          "size": [1.25, 6.5, 0.45],
+          "slot": "alt",
+          "fine": true
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, 22],
+      "pivot": [2.25, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_l",
+          "bone": "chest",
+          "origin": [1.625, "chest_top - 6.5", "-chest_d / 2 - 0.45 + bust_d - 0.12"],
+          "size": [1.25, 6.5, 0.45],
+          "slot": "alt",
+          "fine": true
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "bell",
+      "bone": "sleeve_r",
+      "path": "arc",
+      "center": ["-shoulder_x", 0],
+      "radius": ["arm_w / 2 + 0.6", "arm_d / 2 + 0.6"],
+      "y": "elbow_y + 1",
+      "angles": [-180, 135],
+      "count": 8,
+      "width": "arm_w * 0.95 + 0.5",
+      "depth": 0.75,
+      "length": "(elbow_y - wrist_y) * (0.9 + 0.4 * sleeve) + 2",
+      "flare": "8 + 8 * sleeve",
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "panel",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.25",
+      "radius": ["hips_w / 2 + 0.15", "hips_d / 2 + 0.15"],
+      "angles": [-180, 179.999],
+      "count": 16,
+      "width": "(hips_w + hips_d) * 0.24 + 0.6",
+      "depth": 0.75,
+      "length": "(waist_y - ankle_y) * drop + 1.25",
+      "flare": 6,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1],
+      "layers": [0, 0.3],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "alt", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "overlap",
+      "bone": "skirt_f",
+      "path": "arc",
+      "y": "waist_y + 0.25",
+      "radius": ["hips_w / 2 + 0.95", "hips_d / 2 + 0.95"],
+      "angles": [-14, -14],
+      "count": 1,
+      "width": 1.5,
+      "depth": 0.45,
+      "length": "(waist_y - ankle_y) * drop + 1.25",
+      "flare": 6,
+      "material": "cloth",
+      "slot": "trim",
+      "fine": false
+    }
+  ],
+  "secondary": {
+    "chain": ["sleeve_r", "sleeve_l"],
+    "damping": 0.7,
+    "stiffness": 0.5
+  }
+}

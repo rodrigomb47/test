@@ -150,6 +150,7 @@ class Cube:
     glow: bool = False
     tone: int = 0
     outline: bool = True                          # dark hem row and lower band at the bottom of side faces
+    tip: Optional[dict] = None                    # {slot, frac, edge}: the end of a strand in another colour
     uv: dict = field(default_factory=dict)        # face -> (u, v, w, h) in whole texels, net orientation
     order: int = 0
 

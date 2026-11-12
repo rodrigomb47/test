@@ -1,0 +1,99 @@
+{
+  "_comment": "A long buttoned coat (G6b, a scholar's or a warlock's): the coat over the torso and arms in the main colour, a high standing collar, a row of buttons (detail) down the front and two pockets, turned cuffs at the wrists, and long skirts from the waist to below the knee, split at the back into two tails and open at the front below the waist, on the skirt bones.",
+  "id": "robes/long_coat",
+  "category": "robes",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim",
+    "detail": "trim"
+  },
+  "params": {
+    "length": {"default": 1.15, "max": 1.6, "min": 0.6}
+  },
+  "occupies": ["torso", "sleeves", "coat_tails"],
+  "paint": [
+    {
+      "cubes": ["chest", "bust", "waist", "upper_arm_*", "forearm_*"],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": ["chest", "bust", "waist"],
+      "faces": ["north"],
+      "abs_x": [0, 0.5],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -1
+    }
+  ],
+  "cubes": [
+    {
+      "name": "collar",
+      "bone": "chest",
+      "origin": ["-min(neck_w / 2 + 1.0, chest_w / 2 - 0.15)", "chest_top - 0.5", "-min(neck_d / 2 + 1.0, chest_d / 2 - 0.15)"],
+      "size": ["2 * min(neck_w / 2 + 1.0, chest_w / 2 - 0.15)", 2.25, "2 * min(neck_d / 2 + 1.0, chest_d / 2 - 0.15)"],
+      "slot": "main",
+      "tone": 1,
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "cuff",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.45", "wrist_y - 0.1", "-arm_d / 2 - 0.45"],
+      "size": ["arm_w + 0.9", 2.1, "arm_d + 0.9"],
+      "slot": "main",
+      "tone": 1,
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "pocket",
+      "bone": "waist",
+      "origin": ["-waist_w / 2 + 0.2", "waist_y + 0.4", "-waist_d / 2 - 0.35"],
+      "size": [1.75, 1.4, 0.35],
+      "slot": "main",
+      "tone": -1,
+      "fine": true,
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    }
+  ],
+  "strands": [
+    {
+      "name": "button",
+      "bone": "chest",
+      "path": "line",
+      "from": [0, "chest_top - 1.75", "-chest_d / 2 - bust_d"],
+      "to": [0, "waist_y + 1.25", "-chest_d / 2 - bust_d"],
+      "count": 4,
+      "width": 0.7,
+      "depth": 0.35,
+      "length": 0.7,
+      "flare": 0,
+      "material": "metal",
+      "slot": "detail",
+      "clear_face": false
+    },
+    {
+      "name": "skirt",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.5",
+      "radius": ["hips_w / 2 + 0.45", "hips_d / 2 + 0.45"],
+      "angles": [30, 330],
+      "count": 10,
+      "width": "(hips_w + hips_d) * 0.33 + 0.5",
+      "depth": 0.6,
+      "length": "(waist_y - knee_y) * length * 0.75 + 1",
+      "flare": 9,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1, 0, 0, -1],
+      "layers": [0, 0.3],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ]
+}

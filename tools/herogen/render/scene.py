@@ -22,6 +22,10 @@ from util import ROOT
 
 SASH_TINT = (74, 118, 196)          # a faction blue for the previews
 PITCH = 10.0
+# the coplanar-face check (G6b): six directions round the hero at 6x (a tie must be 2 screen pixels wide to count,
+# so at 6x a band 1/3 px wide is found; the G2 review found the sash ties at this scale)
+TIE_YAWS = (0.0, -40.0, 40.0, 90.0, -90.0, 180.0)
+TIE_SCALE = 6
 
 
 def _png(data):
@@ -165,6 +169,24 @@ class HeroAssets:
         tex, _ = self.textures(phase)
         return raster.coplanar_ties(self.geo, tex, view, pose=pose, hidden=self.hidden(phase, drawn, far),
                                     uv_shift=self.face_shift(*face), tint=self.tint(), bounds=bounds, pad=pad)
+
+    def tie_report(self, scale=TIE_SCALE, yaws=TIE_YAWS, pitch=PITCH):
+        """Coplanar faces of different colour (raster.coplanar_ties: they z-fight in game) in the stances the hero
+        is seen in most, from six directions round it: the idle stance, and the combat stance with the weapon drawn
+        when it has one, in every phase it has. Returns {(bone, bone): pixels} summed over the views (empty when
+        clean); `herogen check` reports any as an error, `preview --ties` shows where."""
+        out = {}
+        stances = [(False, self.stance(False))]
+        if self.bones("weapon_drawn"):
+            stances.append((True, self.stance(True)))
+        phases = sorted({1} | set(self.visual["bones"].get("phase", {}).values()))
+        for phase in phases:
+            for drawn, pose in stances:
+                for yaw in yaws:
+                    _, pairs, _ = self.ties(raster.View(yaw, pitch, scale), pose, phase=phase, drawn=drawn)
+                    for k, n in pairs.items():
+                        out[k] = out.get(k, 0) + n
+        return out
 
     def bounds(self, views, poses=(None,), phase=1, drawn=False, far=False):
         """Common bounds of several views and poses."""

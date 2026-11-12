@@ -1,0 +1,114 @@
+{
+  "_comment": "A fox mask worn on the side of the head (G6a, festival style): a face plate with a short snout and two pointed ears, slit eyes and red marks painted on it, tied above the hero's left ear and tipped up and back; white with red marks by default. Its own bone (`fox_mask`), so an animation can flip it over the face. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10).",
+  "id": "headwear/fox_mask",
+  "category": "headwear",
+  "slots": {
+    "main": "secondary",
+    "detail": "trim",
+    "alt": "accent"
+  },
+  "occupies": ["hair_ornament"],
+  "offset": [0, "head_y", 0],
+  "bones": [
+    {"name": "fox_mask", "parent": "head", "pivot": [6.2, 9, 0]}
+  ],
+  "paint": [
+    {
+      "cubes": ["#plate"],
+      "faces": ["west"],
+      "y": [9.75, 10.25],
+      "z": [-2.0, -0.9],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "cubes": ["#plate"],
+      "faces": ["west"],
+      "y": [9.75, 10.25],
+      "z": [0.9, 2.0],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "cubes": ["#plate"],
+      "faces": ["west"],
+      "y": [7.75, 9.25],
+      "z": [-2.25, -1.75],
+      "slot": "detail",
+      "material": "lacquer"
+    },
+    {
+      "cubes": ["#plate"],
+      "faces": ["west"],
+      "y": [7.75, 9.25],
+      "z": [1.75, 2.25],
+      "slot": "detail",
+      "material": "lacquer"
+    },
+    {
+      "cubes": ["#plate"],
+      "faces": ["west"],
+      "y": [10.75, 12.0],
+      "z": [-0.25, 0.25],
+      "slot": "detail",
+      "material": "lacquer"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 20, -14],
+      "pivot": [6.2, 9, 0],
+      "cubes": [
+        {
+          "name": "plate",
+          "bone": "fox_mask",
+          "origin": [6.1, 6.75, -2.75],
+          "size": [0.9, 5.5, 5.5],
+          "material": "lacquer"
+        },
+        {
+          "name": "snout",
+          "bone": "fox_mask",
+          "origin": [6.9, 7.0, -1.0],
+          "size": [1.2, 1.75, 2.0],
+          "material": "lacquer",
+          "tone": 1
+        },
+        {
+          "name": "nose",
+          "bone": "fox_mask",
+          "origin": [7.95, 8.1, -0.4],
+          "size": [0.4, 0.6, 0.8],
+          "slot": "alt",
+          "material": "lacquer",
+          "fine": true
+        },
+        {
+          "name": "ear",
+          "bone": "fox_mask",
+          "origin": [6.2, 12.0, -2.75],
+          "size": [0.75, 2.25, 1.75],
+          "material": "lacquer",
+          "cutout": "peak"
+        },
+        {
+          "name": "ear_b",
+          "bone": "fox_mask",
+          "origin": [6.2, 12.0, 1.0],
+          "size": [0.75, 2.25, 1.75],
+          "material": "lacquer",
+          "cutout": "peak"
+        },
+        {
+          "name": "cord",
+          "bone": "fox_mask",
+          "origin": [5.9, 9.0, -3.25],
+          "size": [0.5, 0.5, 6.5],
+          "slot": "detail",
+          "material": "cloth",
+          "fine": true
+        }
+      ]
+    }
+  ]
+}

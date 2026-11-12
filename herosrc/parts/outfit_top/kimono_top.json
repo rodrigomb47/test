@@ -1,0 +1,112 @@
+{
+  "_comment": "A kimono top with straight sleeves (G6b, a shrine maiden's): the body and arms in the main colour, a crossed V collar (alt edged in trim) with lapel slabs, and straight square sleeves on the `sleeve` bones: a box round the forearm open at the wrist, with the sleeve's bag hanging behind it, trimmed at the hem; the lining under the opening one tone darker. `sleeve` scales the sleeve's length and bag.",
+  "id": "outfit_top/kimono_top",
+  "category": "outfit_top",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "sleeve": {"default": 1, "max": 1.5, "min": 0.5}
+  },
+  "occupies": ["torso", "sleeves"],
+  "paint": [
+    {
+      "cubes": ["chest", "bust", "waist", "upper_arm_*", "forearm_*"],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "trim",
+      "vee": ["chest_top - 4.75", 0.7]
+    },
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north"],
+      "material": "cloth",
+      "slot": "alt",
+      "vee": ["chest_top - 3.75", 0.7]
+    },
+    {
+      "cubes": ["#sleeve*", "#bag*"],
+      "faces": ["south"],
+      "y": [-100, "wrist_y - 0.5"],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -1
+    }
+  ],
+  "cubes": [
+    {
+      "name": "collar",
+      "bone": "chest",
+      "origin": ["-neck_w / 2 - 1", "chest_top - 0.25", -0.5],
+      "size": ["neck_w + 2", 1.25, "chest_d / 2 + 0.75"],
+      "slot": "trim"
+    },
+    {
+      "name": "shoulder",
+      "bone": "arm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.55", "elbow_y + 1.25", "-arm_d / 2 - 0.55"],
+      "size": ["arm_w + 1.1", "arm_top - elbow_y - 1.0", "arm_d + 1.1"],
+      "mirror": true
+    },
+    {
+      "name": "sleeve",
+      "bone": "sleeve_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 1.6 / 2", "elbow_y + 1.25 - ((elbow_y - wrist_y) * 0.9 + 3 * sleeve)", "-arm_d / 2 - 1.0"],
+      "size": ["arm_w + 1.6", "(elbow_y - wrist_y) * 0.9 + 3 * sleeve", "arm_d + 2.0"],
+      "faces": ["north", "south", "east", "west", "up"],
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    },
+    {
+      "name": "bag",
+      "bone": "sleeve_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 1.6 / 2 + 0.2", "elbow_y + 1.25 - ((elbow_y - wrist_y) * 0.9 + 3 * sleeve) - (2.5 * sleeve)", 0.25],
+      "size": ["arm_w + 1.6 - 0.4", "2.5 * sleeve", "arm_d / 2 + 0.6"],
+      "mirror": true,
+      "skip_if_empty": true,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, -22],
+      "pivot": [-2.25, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_r",
+          "bone": "chest",
+          "origin": [-2.875, "chest_top - 5.75", "-chest_d / 2 - 0.45 + bust_d"],
+          "size": [1.25, 5.75, 0.45],
+          "slot": "trim",
+          "fine": true
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, 22],
+      "pivot": [2.25, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_l",
+          "bone": "chest",
+          "origin": [1.625, "chest_top - 5.75", "-chest_d / 2 - 0.45 + bust_d - 0.12"],
+          "size": [1.25, 5.75, 0.45],
+          "slot": "trim",
+          "fine": true
+        }
+      ]
+    }
+  ],
+  "secondary": {
+    "chain": ["sleeve_r", "sleeve_l"],
+    "damping": 0.7,
+    "stiffness": 0.5
+  }
+}
