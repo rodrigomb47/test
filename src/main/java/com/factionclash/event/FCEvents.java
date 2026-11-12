@@ -132,6 +132,9 @@ public final class FCEvents {
         }
         CampaignData data = CampaignData.get(p.server);
         BaseState b = baseAt(data, event.getPos());
+        if (b != null && b.intruderBlocks.remove(event.getPos().asLong())) {
+            data.setDirty();
+        }
         if (b != null && data.players.get(p.getUUID()) == b.faction && b.planIndex().containsKey(event.getPos().asLong())) {
             b.playerEdits.add(event.getPos().asLong());
             b.pendingRepairs.remove(event.getPos().asLong());
@@ -148,9 +151,15 @@ public final class FCEvents {
         BaseState b = baseAt(data, event.getPos());
         if (b != null && data.players.get(p.getUUID()) == b.faction) {
             b.pendingRepairs.remove(event.getPos().asLong());
+            b.intruderBlocks.remove(event.getPos().asLong());
             if (b.planIndex().containsKey(event.getPos().asLong())) {
                 b.playerEdits.add(event.getPos().asLong());
             }
+            data.setDirty();
+        } else if (b != null && !p.isCreative() && com.factionclash.campaign.Diplomacy.hostile(p.server, data.players.get(p.getUUID()), b.faction)
+                && b.intruderBlocks.size() < BaseState.MAX_INTRUDER_BLOCKS) {
+            // an enemy building in the base (a block in a doorway, a pillar to stand on): its soldiers may break it
+            b.intruderBlocks.add(event.getPos().asLong());
             data.setDirty();
         }
     }

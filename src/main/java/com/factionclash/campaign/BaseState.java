@@ -62,6 +62,12 @@ public final class BaseState {
     public final List<StructureRecord> structures = new ArrayList<>();
     /** Positions players deliberately changed; repairs leave them alone (spec 11). */
     public final Set<Long> playerEdits = new HashSet<>();
+    /**
+     * Blocks a hostile player placed in the base's land (outside its plan): the only unplanned blocks the base's own
+     * soldiers may break to reach an enemy there. Capped at {@link #MAX_INTRUDER_BLOCKS}.
+     */
+    public final Set<Long> intruderBlocks = new HashSet<>();
+    public static final int MAX_INTRUDER_BLOCKS = 4096;
     /** Known damaged plan positions waiting for a builder. */
     public final LinkedHashSet<Long> pendingRepairs = new LinkedHashSet<>();
     /** Logistics: stock of each tracked resource over time, and the resources currently short. */
@@ -198,6 +204,7 @@ public final class BaseState {
         t.put("structures", structs);
         t.putLongArray("playerEdits", playerEdits.stream().mapToLong(Long::longValue).toArray());
         t.putLongArray("pendingRepairs", pendingRepairs.stream().mapToLong(Long::longValue).toArray());
+        t.putLongArray("intruderBlocks", intruderBlocks.stream().mapToLong(Long::longValue).toArray());
         ListTag projs = new ListTag();
         for (Project p : projects) {
             projs.add(p.save());
@@ -278,6 +285,9 @@ public final class BaseState {
         }
         for (long l : t.getLongArray("pendingRepairs")) {
             b.pendingRepairs.add(l);
+        }
+        for (long l : t.getLongArray("intruderBlocks")) {
+            b.intruderBlocks.add(l);
         }
         ListTag projs = t.getList("projects", Tag.TAG_COMPOUND);
         for (int i = 0; i < projs.size(); i++) {

@@ -48,6 +48,11 @@ commits, language and testing are in `/CLAUDE.md`.
 6. **Tall trees** (the owner's goal from request 4: woodcutters "can cut and replant any tree as they like"): trees too
    tall to fell from the ground are felled from a scaffold pillar, as a player nerd-poles (see §6 and
    `docs/design/notes/tall-trees.md`).
+7. **Soldiers that cannot reach a player** (owner, playing: a player in an animal pen, or behind a broken door with a
+   block put in the doorway, killed soldiers that stood within reach unable to do anything). Soldiers now open fence
+   gates (closing them behind), break blocks in the way that are not anyone's planned building, build themselves up or
+   break the block under a player on a pillar, and otherwise wait out of reach, watching, calling the archers
+   (`docs/design/notes/combat-unreachable.md`).
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
@@ -58,7 +63,7 @@ commits, language and testing are in `/CLAUDE.md`.
 | `logic/` | Pure, unit-tested rules (no Minecraft classes): `SpiralMine` (shaft + branch geometry), `MinePlanner` (which layer next), `MineSiteRules`, `LegacyMine` (old hut-mine maths, migration only), `TreeShape`, `ForestRules`, `FishingWater`, `EscapeRoute`, `StructureRules`, `Zones`, `CaveSurvey`, `NpcHunger`, `Ledger`, `FoodPayment`, `AffixRoller`, `XpLevels`, `StuckRecovery`, `ScoutRules`, `Pads`. |
 | `npc/` | `FactionNpc` (the entity: inventory, hunger, gear, affixes, role changes release workplaces), `NpcNavigator` (travel/ARRIVED/MOVING/FAILED, stall and no-progress watchdogs, danger-zone waypoints), `DigOut` (digging/bridging/pillaring out when stuck; `perched` also knows a bare pillar), `NpcRole`, `ToolKind`. |
 | `structure/` | `BaseLayout` (settlement blueprint: 49x49 walls, gates W/E, grove pad W, 10-block landing E, `WORK_AREA_WEST/EAST`), `Blueprint`, `Terrain` (level/skirt pads), `SiteFinder` (base sites), `MineLayout` (per-level mine geometry, `nearStairs`), `TreePlotLayout` (legacy fences only), `LairLayout`, `ProjectLayouts`. |
-| `combat/` | Goals and rules: `CombatRules` (who is hostile, `sameSide` incl. pact allies), melee/ranged goals, `CivilianFleeGoal`, `CreeperEvadeGoal`, `WithdrawGoal`, `Alerts`. |
+| `combat/` | Goals and rules: `CombatRules` (who is hostile, `sameSide` incl. pact allies), melee/ranged goals, `CivilianFleeGoal`, `CreeperEvadeGoal`, `WithdrawGoal`, `Alerts`. `Pursuit` (per NPC: a target it cannot walk up to: work through a `logic/ReachPlanner` plan or wait out of reach), `Reach` (what a fighter may break or build), `OpenGateGoal` (fence gates on a fighting NPC's path; `npc/NpcPathNavigation` makes them passable while fighting). |
 | `command/` | `FCCommands`: `/fc start [radius]`, `/fc status|join|leave|base|info|map|achievements`, admin: `/fc admin dump|npcs|spawn|recruit|info|probe|mine <id>|blocks <from> <to>|destroy`. |
 | `config/` | `FCConfig` (NeoForge common config; sections campaign, movement, survival, achievements, workplaces, recruitment, war). |
 | `info/`, `net/`, `client/` | Station/info screen text (`BaseInfo`), map payload (`MapPayload` marker kinds: … VILLAGE 7, PILLAGER_OUTPOST 8, WOODLAND_MANSION 9, STALE flag 16), client screens (`MapScreen`, `InfoScreen`). |
@@ -126,6 +131,10 @@ python3 tools/rcon.py "stop"
 - Builders keep 24 cobblestone/cobbled deepslate/blackstone for stone tools (a base once built its last cobble
   away and its mine rested forever).
 
+- Soldiers against a target they cannot walk up to (request 7, `docs/design/notes/combat-unreachable.md`): tested
+  (173 unit tests, 123 GameTests, a sabotage check), not yet checked in a campaign or against a real player. Found on
+  the way: the melee swing cooldown is 20 ticks for every weapon (vanilla's goal ignored the weapon interval the
+  docs describe); kept, the owner's choice. A gate left open by an NPC that dies in it stays open.
 - A base keeps at most `maxOpenMines` (3) active mines. Roadmap phase 1: a miner left without a site now helps in
   an open mine of its base, on another level (`docs/design/notes/phase1.md`, "Two miners share a mine"); it is still
   retrained after half a day without a mine of its own when the base needs another role. Tested (160 unit tests,

@@ -161,17 +161,45 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.goalSelector.addGoal(3, new NpcRangedAttackGoal(this));
         this.goalSelector.addGoal(3, new NpcMeleeAttackGoal(this));
         this.goalSelector.addGoal(4, new OpenDoorGoal(this, true));
+        gateGoal = new com.factionclash.combat.OpenGateGoal(this); // (registerGoals runs before field initialisers)
+        this.goalSelector.addGoal(4, gateGoal);
         this.goalSelector.addGoal(5, new WorkGoal(this));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new FactionHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
-                e -> isGuardDuty() && CombatRules.isHostileMonster(e)));
+                e -> isGuardDuty() && CombatRules.isHostileMonster(e) && !pursuit.ignores(e)));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, FactionNpc.class, 10, true, false,
-                e -> isGuardDuty() && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), o.getFaction())));
+                e -> isGuardDuty() && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), o.getFaction())
+                        && !pursuit.ignores(e)));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
-                e -> isGuardDuty() && e instanceof ServerPlayer p && CombatRules.isEnemyPlayer(this, p)));
+                e -> isGuardDuty() && e instanceof ServerPlayer p && CombatRules.isEnemyPlayer(this, p) && !pursuit.ignores(e)));
+    }
+
+    /** What it does about a target it cannot walk up to and hit (break, build, or wait out of reach). */
+    private final com.factionclash.combat.Pursuit pursuit = new com.factionclash.combat.Pursuit(this);
+
+    public com.factionclash.combat.Pursuit pursuit() {
+        return pursuit;
+    }
+
+    /** The tick of its last landed blow or shot. */
+    public long lastAttackTick() {
+        return lastAttackTime;
+    }
+
+    /** Opens a fence gate on a fighting NPC's path and closes it behind it. */
+    private com.factionclash.combat.OpenGateGoal gateGoal;
+
+    public com.factionclash.combat.OpenGateGoal gateGoal() {
+        return gateGoal;
+    }
+
+    /** Vanilla ground navigation that, while fighting, also counts closed fence gates as gates it can open. */
+    @Override
+    protected net.minecraft.world.entity.ai.navigation.PathNavigation createNavigation(Level level) {
+        return new NpcPathNavigation(this, level);
     }
 
     /** Combatants actively look for enemies; civilians only defend themselves. */
@@ -563,10 +591,12 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         }
         hungerTick();
         // Stale targets must not freeze work: civilians only defend at close range, and anyone gives up on a
-        // target after 10 s without trading blows (e.g. a visible but unreachable mob).
+        // target after 10 s without trading blows - unless it is working its way to it, or waiting out of its reach
+        // with the target in sight (a player in a pen it cannot get into stays watched)
         LivingEntity t = getTarget();
         if (t != null) {
-            boolean stale = tickCount - Math.max(lastHurtTime, lastAttackTime) > 200 && tickCount - targetSetAt > 200;
+            long busy = Math.max(Math.max(lastHurtTime, lastAttackTime), pursuit.engagedAt);
+            boolean stale = tickCount - busy > 200 && tickCount - targetSetAt > 200;
             boolean farForCivilian = getRole().isCivilian() && distanceToSqr(t) > 100;
             if (!t.isAlive() || stale || farForCivilian) {
                 setTarget(null);

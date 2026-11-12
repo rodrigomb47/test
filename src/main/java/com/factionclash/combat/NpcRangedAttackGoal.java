@@ -81,6 +81,7 @@ public class NpcRangedAttackGoal extends Goal {
         npc.setAiming(false);
         npc.stopUsingItem();
         seeTime = 0;
+        npc.pursuit().reset();
     }
 
     @Override
@@ -99,6 +100,7 @@ public class NpcRangedAttackGoal extends Goal {
             retarget = 0;
             t = focus(t, range);
         }
+        npc.pursuit().bind(t, true);
         double d2 = npc.distanceToSqr(t);
         boolean sees = npc.getSensing().hasLineOfSight(t);
         seeTime = sees ? seeTime + 1 : 0;
@@ -114,7 +116,8 @@ public class NpcRangedAttackGoal extends Goal {
                 }
             }
         } else if (d2 > range * range || seeTime < 5) {
-            npc.getNavigation().moveTo(t, 1.0);
+            // toward it if there is a way; if not, a spot out of its reach (in sight of it), never up to the fence
+            npc.pursuit().approachRanged(t);
         } else {
             npc.getNavigation().stop();
         }

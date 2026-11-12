@@ -501,6 +501,35 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 * Raids: rally point 28 blocks short of the target toward home; the assault starts when 70% of the living raiders
   are within 12 blocks of it or after 6000 ticks; a raid that has lost more than half its party is called off.
 
+## Reaching a target (`Pursuit`, `ReachPlanner`, `Reach`, `OpenGateGoal`)
+A fighter whose path to its target comes back partial (it cannot walk up to it and hit it) plans a way or waits out
+of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
+* Gates: while fighting, a closed fence gate counts as a door on the path. Opened when the path's next nodes reach it
+  within 2.25 blocks; closed once the NPC is through (far side), 3 blocks away or 80 ticks after opening, never while
+  anyone stands in the gateway; then 20 ticks before that NPC opens a gate again.
+* Planner: only for a target within 12 blocks (horizontal) and 5 up or down; box 4 blocks round both, 3 down.
+  Costs in rough ticks: walk 5, step up 8, drop 5 + depth (at most 3), build up a block 12, plus breaking. A plan
+  over 600 ticks is no plan. At most 16 blocks broken per target, at most 3 built up per climb, never higher than the
+  target and only within 2 blocks of its column. Strikes from beside the target's column (diagonals with an open
+  side at eye level), at most 1 block up or down. Breaking the block under a target 2+ up from within 4.5 blocks of
+  the eyes.
+* Breaking (`Reach.mayBreak`): never a planned block, a block entity, a block in or beside a fluid, a mine's stairs,
+  a base's ground (its walls box + 1, below its floor), or anything over 100 ticks to break with the held item; a
+  foreign block in a planned cell yes (not an own player's edit for its own faction); in a base of its own side an
+  unplanned block only if a hostile player placed it (`intruderBlocks`, at most 4096 per base).
+* Building up (`Reach.mayPlace`): an empty cell outside every plan, not in a base of its own side (walls box + 1).
+* Waiting: on a ring 6.5 blocks round the target (archers 9, in sight of it), at least 5 blocks away horizontally,
+  nearest the end of the path toward it, 2+ blocks from another fighter's spot; staying put when already 5 to 9 away.
+  One path search toward the target every 40 ticks (then the planner again), a new spot at most once a second when
+  the target moved 2 blocks (at once when it is within 4.7), at most 3 path searches per new spot. Archers are called
+  (32 blocks, those with no target) on starting and every 100 ticks. Close to the target (3 blocks) for 60 ticks
+  without a blow although the path reaches it: treated as out of reach. Away from home (more than 16 blocks outside
+  its walls) a fighter gives up after 1200 ticks and ignores that target for 1200. A civilian stops fighting instead.
+* Stale targets: the 10 s without trading blows rule counts working toward the target and waiting in sight of it
+  (within 24 blocks) as engaged.
+* Guards carry up to 8 dirt, cobblestone or cobbled deepslate (each kind) for building up, taken only while the
+  storehouse keeps 64 of that block.
+
 ## Hauler (`HaulerJob`)
 * Recruited once a base has 12 NPCs. Picks up items that have lain inside the walls for 10 seconds (not in the
   farm or pen, whose workers collect their own), and moves stacks out of the overflow chest or a wrong chest into
@@ -592,8 +621,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 * XP: ore XP above (stone 0); 1 per log/harvest/breeding feed; 2 per butchered animal; 20 per mine layer reached or opened and per lengthening round; 1 per repaired block; 25 + blocks/20 per project; scouts: report base value (enemy base 12, lair 12, woodland mansion 12, pillager outpost 10, cave 8, village 8, ore 6, hostiles 4) + 1 per 32 blocks from home. Trees and water are not reported.
 
 ## Soldiers (`NpcMeleeAttackGoal`, `NpcRangedAttackGoal`)
-* Melee: one hit every 20 / attack speed ticks (the player's attack speed, set by the held weapon), clamped to
-  10–40 ticks: swords 12–13, axes 20–25, bare hands 10.
+* Melee: the held weapon sets the player's attack speed attribute (swords 1.6, axes 0.8–1.0, bare hands 4), and
+  `getAttackInterval` turns it into 20 / speed ticks clamped to 10–40 (swords 12–13, axes 20–25, bare hands 10). Note:
+  the swing cooldown actually used has always been 20 ticks for every weapon (vanilla's melee goal ignored that
+  interval); the rewritten goal keeps 20 so the war balance does not shift. Using the interval is an open choice.
 * Bows: full draw (20 ticks), shot speed 1.6, range 16, 20 ticks between shots. Crossbows: real charge time
   (25 ticks, shortened by Quick Charge), bolt speed 2.2 with less spread (more damage), range 20, 20 ticks
   between shots. Both use the one equipped arrow that is never used up.

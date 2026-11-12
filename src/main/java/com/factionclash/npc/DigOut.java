@@ -331,8 +331,8 @@ public final class DigOut {
         return true;
     }
 
-    /** Backpack slot of a block to build with: stone or earth first, else any full solid block. */
-    private static int blockSlot(ServerLevel level, FactionNpc npc) {
+    /** Backpack slot of a block to build with: stone or earth first, else any full solid block; -1 if none. */
+    public static int blockSlot(ServerLevel level, FactionNpc npc) {
         for (int i = 0; i < npc.inventory().getContainerSize(); i++) {
             if (BRIDGE.contains(npc.inventory().getItem(i).getItem())) {
                 return i;

@@ -73,6 +73,7 @@ public class GuardJob extends Job {
                 if (Inv.count(npc.inventory(), x -> x.is(net.minecraft.world.item.Items.GOLDEN_APPLE)) == 0) {
                     takeFromStorage(x -> x.is(net.minecraft.world.item.Items.GOLDEN_APPLE), 1); // for a bad fight
                 }
+                stockClimbingBlocks();
                 lastStorage = now();
                 state = State.PATROL;
                 post = null;
@@ -96,7 +97,36 @@ public class GuardJob extends Job {
 
     @Override
     protected int keep(net.minecraft.world.item.ItemStack stack) {
+        if (CLIMBING_BLOCKS.contains(stack.getItem())) {
+            return CARRIED_BLOCKS;
+        }
         return stack.is(net.minecraft.world.item.Items.GOLDEN_APPLE) ? 1 : 0;
+    }
+
+    /** PROPOSED: blocks a soldier carries to build itself up to an enemy standing out of reach (as a player carries a stack). */
+    static final int CARRIED_BLOCKS = 8;
+    /** PROPOSED: it only takes them while the storehouse keeps at least this many of that block for the builders. */
+    static final int STOCK_FLOOR = 64;
+    static final java.util.Set<net.minecraft.world.item.Item> CLIMBING_BLOCKS = java.util.Set.of(net.minecraft.world.item.Items.DIRT,
+            net.minecraft.world.item.Items.COBBLESTONE, net.minecraft.world.item.Items.COBBLED_DEEPSLATE);
+
+    /**
+     * Like a player heading out with a stack of blocks: a few blocks of dirt or cobblestone to build itself up a block or
+     * two to an enemy standing out of reach ({@link com.factionclash.combat.Pursuit}). Only from a storehouse with
+     * plenty of that block, so builders and the blacksmith never go short.
+     */
+    private void stockClimbingBlocks() {
+        int have = Inv.count(npc.inventory(), x -> CLIMBING_BLOCKS.contains(x.getItem()));
+        for (net.minecraft.world.item.Item item : List.of(net.minecraft.world.item.Items.DIRT, net.minecraft.world.item.Items.COBBLESTONE,
+                net.minecraft.world.item.Items.COBBLED_DEEPSLATE)) {
+            if (have >= CARRIED_BLOCKS) {
+                return;
+            }
+            int stock = FactionStorage.count(level(), base(), x -> x.is(item));
+            if (stock - (CARRIED_BLOCKS - have) >= STOCK_FLOOR) {
+                have += takeFromStorage(x -> x.is(item), CARRIED_BLOCKS - have);
+            }
+        }
     }
 
     private void patrol(BaseState home) {
