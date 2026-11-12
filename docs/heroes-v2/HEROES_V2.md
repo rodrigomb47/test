@@ -498,9 +498,20 @@ sheet lists it. The phase look uses `p2_`/`p3_` bones and, when the art spec ask
   `data/factionclash/hero_timings/<file>.json` (`_core`, `_style_<style>`, `<hero>`, the client's chain), listing per
   animation its length and ticks, loop mode, kind, class, every marker with its tick, and for one with `hit` or `cast`
   markers its `frames` and `frame_ticks` (basic attacks live in style libraries, so the server needs those too); the
-  server definition's `generated.moves` comes from the same clips (`anim/timing.py`). Markers sit on whole ticks.
+  server definition's `generated.moves` comes from the same clips (`anim/timing.py`). Markers sit on whole ticks,
+  before a clip's last tick (GeckoLib ends a clip on that frame before it fires the frame's events).
+- **The controller blend comes first (G3 review, read in GeckoLib 4.9.3's `AnimationController`).** A controller that
+  starts an animation first blends from the current pose to the clip's first frame for its transition length T
+  (`action` 2 ticks, `base` 4), then plays the clip from 0; keyframe events are not delayed (they fire once clip tick +
+  T reaches the event's tick). So a pose at clip time p shows T after the start, and an event written at p would fire
+  T early: the server's hit would land 2 ticks before the swing shows it. The generator therefore writes every event
+  at p + T, and timing files and `frames` count from the action's start (the server's frame of reference):
+  `attack.1` cuts at clip time 0.40 s, its `hit` is written at 0.50 s, and its server wind-up is 10 ticks.
+  Timing files (format 2) state each animation's `transition_ticks` and `total_ticks`; `HeroModel`'s controllers must
+  use these transition lengths, and the Java test compares them.
 - **Speed**: haste, slowness and the attack-speed stat divide wind-up and recovery by `s` (0.5-2.0) on the server and
-  send `speed = s`, so the `hit` marker still lands on the server's hit tick.
+  send `speed = s`, so the `hit` marker still lands on the server's hit tick (GeckoLib scales the whole controller
+  clock, the blend included, so the frames above divide by `s` exactly).
 - **Latency**: the client starts one tick plus ping after the server; the damage the server applies at the wind-up's
   end reaches the client after the same delay, so the swing and the hurt flash line up on screen.
 - **Interrupts**: a stun or a knockback above 0.5 during a wind-up cancels it (v1 rule, half the cooldown back) and
@@ -1779,8 +1790,9 @@ stay symmetric.
   semantics and easings), `skeleton.py` (forward kinematics), `poses.py`, `primitives.py`, `recipes.py`,
   `secondary.py`, `writer.py` (animation and timing files), `quality.py`, `library.py`, `timing.py`, `preview.py`;
   sources `herosrc/anim/{poses,core,styles}/*.json` and `herosrc/anim/secondary.json`. Generated: `_core` (`move.idle`
-  24 s, `move.walk` 1.0 s, `move.run` 0.6 s) and `_style_katana` (`combat.idle`, `attack.1` with its `hit` at 0.40 s,
-  tick 8). One file serves every form: bone names are shared, and pixel offsets that depend on leg length (the root
+  24 s, `move.walk` 1.0 s, `move.run` 0.6 s) and `_style_katana` (`combat.idle`, `attack.1` with its cut at clip time
+  0.40 s; its `hit` is written at 0.50 s, tick 10 from the action's start, after the action controller's 2-tick blend:
+  4.8). One file serves every form: bone names are shared, and pixel offsets that depend on leg length (the root
   height of a gait, the leg tilt under a weight shift, a knee bend) are solved over the three forms as the compromise
   with the smallest worst error (within 0.5 px on all six bases). The sign conventions (a forward limb swing is
   negative rx, elbow flexion negative rx, knee flexion positive rx, +ry turns right, +rz raises `arm_r` sideways) are
@@ -1808,7 +1820,11 @@ stay symmetric.
   `hair_back/l/r`, `sleeve_*`, `skirt_f/b/r/l`, `cape_1/2`) with the group settings of `herosrc/anim/secondary.json`;
   the spring answers the parent's motion only (a bone's own authored turn, an ear twitch, is kept sharp) and `hang`
   pulls sleeves, capes, ponytails, skirts and hair toward their bind direction like gravity; the chains a hero's parts
-  declare and their stiffness and damping go to `visual.json` `secondary` for the procedural lag (4.4).
+  declare and their stiffness and damping go to `visual.json` `secondary` for the procedural lag (4.4). G3 review: an
+  action is baked over its settle clip as authored (that clip's own follow-through is not counted twice), bakes only
+  the chain bones below the bones it keys (a swing leaves the skirt panels and the tail to the walk under it), and a
+  bell sleeve's `hang` fades out (`hang_fade`) while the forearm is raised well above horizontal, with its lag behind
+  the hang capped (`lag`), so its open end does not face the viewer as a disc.
 - **Markers**: `hit`, `vfx:<id>`, `sfx:<sound>` become GeckoLib custom-instruction keyframes in `timeline`, sound
   keyframes in `sound_effects`, particle keyframes in `particle_effects`. Several instructions at one time are joined
   with `;`.
@@ -1825,7 +1841,9 @@ stay symmetric.
   because GeckoLib snaps rather than blends when the action controller stops (4.8); `face_ctrl` keys are whole numbers.
   As built (G3), on all six bases: planted clips keep every sole corner within 0.5 px, grounded clips keep the lowest
   sole within 0.6 px of the ground, gaits never sink a sole more than 0.6 px; root x and z within 1.5 px; neck yaw ±60
-  and pitch ±40 added; face_ctrl changes are jumps; the timing file agrees with the markers.
+  and pitch ±40 added; face_ctrl changes are jumps; the timing file agrees with the markers. G3 review: an action
+  that starts on its settle clip's pose starts there on its baked chain bones too; markers come before the last tick;
+  timing files state the controller blend.
 
 **Core library** (`_core.animation.json`, about 45 animations): `move.idle`, `move.walk`, `move.run`, `move.swim`,
 `move.fall`, `move.climb`, `move.crouch`, `rest.sit`, `rest.sleep`, `carry.loop`, the 16 `work.*` of section 7.3, 10

@@ -13,26 +13,53 @@ A key is {"vector": [x, y, z]} (linear), {"vector": [...], "easing": "easeOutCub
 {"pre": [x, y, z], "post": [x, y, z]}. Times are strings ("0.0", "0.45", "24.0") and every keyframe map is written
 in ascending time order (GeckoLib reads them in file order).
 
+Event times and the controller blend (GeckoLib 4.9.3, AnimationController.process and processCurrentAnimation, read
+with `javap -c`): when a controller starts an animation it first blends from the current pose to the animation's
+first frame for its transition length T, then plays the clip from 0, so the pose of clip time p shows T after the
+start. Keyframe events (timeline, sound, particle) are not delayed: they fire once `clip tick + T >= event tick`,
+on every pass of a loop too. An event written at clip time p would therefore fire T before its pose, and the hit
+would land on the server T before the swing shows it. herogen writes every event at p + T (T = TRANSITION_TICKS of
+the clip's controller, HEROES_V2 4.4): the event then fires on the tick its pose shows, and the file's event time is
+the time since the controller started the animation, the frame of reference of the server, which sets the action
+code on the wind-up's first tick. A playback speed s scales the controller's whole clock, the blend included
+(adjustTick multiplies it), so both then come at (T + p) / s. Clips and recipes keep clip time.
+
 Server timing file (src/main/resources/data/factionclash/hero_timings/<file>.json, one per animation file; the
 server resolves an animation through the same chain as the client: the hero's file, its style library, the core):
-  {"format": 1, "generator", "file", "source_sha256", "tick": 0.05,
-   "animations": {name: {"length", "ticks", "loop", "kind", "class",
+  {"format": 2, "generator", "file", "source_sha256", "tick": 0.05,
+   "animations": {name: {"length", "ticks", "loop", "kind", "class", "transition_ticks", "total_ticks",
                          "events": [{"t", "tick", "type", "value"}],
                          "hits": [t, ...],
                          "frames": {"windup", "active", "recovery"}, "frame_ticks": {...}}}}
-`frames` (only for animations with a hit or cast marker) is what HEROES_V2 4.8 and 12.18 define: wind-up = the first
-hit, active = last hit - first hit + one tick, recovery = length - wind-up - active.
+Times are the file's event times (clip time + the blend, so the time since the action started); `length` and
+`ticks` are the clip's, `total_ticks` = ticks + transition_ticks (the blend and the clip). `frames` (only for
+animations with a hit or cast marker) is what HEROES_V2 4.8 and 12.18 define, from the action's start: wind-up = the
+first hit, active = last hit - first hit + one tick, recovery = the rest of the blend and the clip. At a playback
+speed s every frame divides by s (4.8), the blend included, as GeckoLib's clock does.
 """
 from anim.clip import TICK, fmt_time
 from util import GENERATOR, Ordered
 
 ANIM_FORMAT = "1.8.0"
-TIMING_FORMAT = 1
+TIMING_FORMAT = 2
 LOOP_JSON = {"loop": True, "hold": "hold_on_last_frame"}
+# The controllers' transition lengths in ticks (HEROES_V2 4.4: base 4, action 2). HeroModel's controllers must use
+# these; every timing file states its animations' value (transition_ticks) so a Java test can compare.
+TRANSITION_TICKS = {"base": 4, "action": 2}
+
+
+def transition(clip):
+    """The blend (s) GeckoLib plays before this clip: its controller's transition length."""
+    return TRANSITION_TICKS[clip.meta.get("kind", "base")] * TICK
+
+
+def file_time(clip, t):
+    """Where an event of clip time t is written (module docstring): t plus the controller's blend."""
+    return round(t + transition(clip), 4)
 
 
 def _key_json(k):
-    if k.pre is not None:
+    if k.pre is not None and k.t > 0:          # a jump at 0 has nothing before it: GeckoLib shows `post` from 0
         return {"pre": list(k.pre), "post": list(k.v)}
     d = {"vector": list(k.v)}
     if k.ease != "linear":
@@ -50,13 +77,13 @@ def clip_json(clip):
     d["bones"] = bones
     instr = clip.instructions()
     if instr:
-        d["timeline"] = Ordered((fmt_time(t), ";".join(v)) for t, v in sorted(instr.items()))
-    sounds = sorted((e.t, e.value) for e in clip.events if e.kind == "sound")
+        d["timeline"] = Ordered((fmt_time(file_time(clip, t)), ";".join(v)) for t, v in sorted(instr.items()))
+    sounds = sorted((file_time(clip, e.t), e.value) for e in clip.events if e.kind == "sound")
     if sounds:
         if len({t for t, _ in sounds}) != len(sounds):
             raise ValueError("%s: two sounds at one time" % clip.name)
         d["sound_effects"] = Ordered((fmt_time(t), {"effect": v}) for t, v in sounds)
-    parts = sorted((e.t, e.value, e.locator or "") for e in clip.events if e.kind == "particle")
+    parts = sorted((file_time(clip, e.t), e.value, e.locator or "") for e in clip.events if e.kind == "particle")
     if parts:
         if len({t for t, _, _ in parts}) != len(parts):
             raise ValueError("%s: two particle keys at one time" % clip.name)
@@ -74,14 +101,16 @@ def ticks(t):
 
 
 def frames_of(clip):
-    """{windup, active, recovery} in seconds from the clip's hit and cast markers, or None."""
+    """{windup, active, recovery} in seconds from the action's start (the controller's blend included) by the clip's
+    hit and cast markers, or None."""
     hits = clip.hits()
     if not hits:
         return None
-    windup = hits[0]
+    blend = transition(clip)
+    windup = hits[0] + blend
     active = hits[-1] - hits[0] + TICK
     return {"windup": round(windup, 4), "active": round(active, 4),
-            "recovery": round(clip.length - windup - active, 4)}
+            "recovery": round(clip.length + blend - windup - active, 4)}
 
 
 def clip_timing(clip):
@@ -92,18 +121,21 @@ def clip_timing(clip):
         if typ is None:
             typ, _, rest = e.value.partition(":")
             value = rest
-        ev = {"t": round(e.t, 4), "tick": ticks(e.t), "type": typ}
+        ft = file_time(clip, e.t)
+        ev = {"t": ft, "tick": ticks(ft), "type": typ}
         if value:
             ev["value"] = value
         events.append(ev)
+    blend = ticks(transition(clip))
     d = {"length": clip.length, "ticks": ticks(clip.length), "loop": {"loop": "loop", "hold": "hold"}.get(clip.loop,
                                                                                                    "once"),
-         "kind": clip.meta.get("kind", "base"), "events": events}
+         "kind": clip.meta.get("kind", "base"), "transition_ticks": blend,
+         "total_ticks": ticks(clip.length) + blend, "events": events}
     if clip.meta.get("class"):
         d["class"] = clip.meta["class"]
     fr = frames_of(clip)
     if fr:
-        d["hits"] = [round(t, 4) for t in clip.hits()]
+        d["hits"] = [file_time(clip, t) for t in clip.hits()]
         d["frames"] = fr
         d["frame_ticks"] = {k: ticks(v) for k, v in fr.items()}
     return d

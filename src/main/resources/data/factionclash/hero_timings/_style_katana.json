@@ -3,23 +3,33 @@
     "attack.1": {
       "class": "light",
       "events": [
-        {"t": 0.3, "tick": 6, "type": "sfx", "value": "minecraft:entity.player.attack.sweep"},
-        {"t": 0.4, "tick": 8, "type": "hit"},
-        {"t": 0.4, "tick": 8, "type": "vfx", "value": "slash_arc"}
+        {"t": 0.4, "tick": 8, "type": "sfx", "value": "minecraft:entity.player.attack.sweep"},
+        {"t": 0.5, "tick": 10, "type": "hit"},
+        {"t": 0.5, "tick": 10, "type": "vfx", "value": "slash_arc"}
       ],
-      "frame_ticks": {"active": 1, "recovery": 9, "windup": 8},
-      "frames": {"active": 0.05, "recovery": 0.45, "windup": 0.4},
-      "hits": [0.4],
+      "frame_ticks": {"active": 1, "recovery": 9, "windup": 10},
+      "frames": {"active": 0.05, "recovery": 0.45, "windup": 0.5},
+      "hits": [0.5],
       "kind": "action",
       "length": 0.9,
       "loop": "once",
-      "ticks": 18
+      "ticks": 18,
+      "total_ticks": 20,
+      "transition_ticks": 2
     },
-    "combat.idle": {"events": [], "kind": "base", "length": 3, "loop": "loop", "ticks": 60}
+    "combat.idle": {
+      "events": [],
+      "kind": "base",
+      "length": 3,
+      "loop": "loop",
+      "ticks": 60,
+      "total_ticks": 64,
+      "transition_ticks": 4
+    }
   },
   "file": "_style_katana",
-  "format": 1,
+  "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "afd35a08c606ed96d343149bf89c7b83236885bf52f4761a46c5f0bd241f7062",
+  "source_sha256": "be80f939bf2fb280ac0948ec5fef70a84b1adbd042075fa655cf4bb982729d85",
   "tick": 0.05
 }

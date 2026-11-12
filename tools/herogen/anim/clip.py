@@ -158,8 +158,8 @@ class Track:
     def _expanded(self):
         out = []
         for k in self.keys:
-            if k.pre is not None:
-                out.append((k.t if k.t <= 0 else k.t - 0.001, k.pre, "linear"))
+            if k.pre is not None and k.t > 0:     # GeckoLib shows a jump at 0 as its `post` value from the start
+                out.append((k.t - 0.001, k.pre, "linear"))
             out.append((k.t, k.v, k.ease))
         return out
 

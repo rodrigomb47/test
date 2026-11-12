@@ -824,12 +824,13 @@ blade targets on the teen and written into the pose file as plain numbers.
 | `move.walk` | `_core` | 1.0 s loop | legs +-21 degrees, a 42 degree knee lift in the swing, heel strike and toe-off, the root following the lower foot, hips turning 4 and tipping 1.6 degrees, shoulders counter-turning, arms +-17 with the elbows bending as they come forward, skirt panels following the legs, a 4 degree tail sway |
 | `move.run` | `_core` | 0.6 s loop | legs +-36, a 96 degree knee in the swing, a 9 degree forward lean (the head kept up), elbows at 72-86, arms +-32, a flight phase after each push-off (both feet up to 0.9 px off the ground on the teen) |
 | `combat.idle` | `_style_katana` | 3.0 s loop | the ready stance: knees bent 10 degrees with level feet on the ground, right foot forward, the right shoulder leading, the blade forward-up at about 45 degrees; breathing twice as fast |
-| `attack.1` | `_style_katana` | 0.9 s | wind-up to 0.20 s (easeOutCubic) and a stretch to 0.30 s, the shoulder sweeps about 130 degrees through the cut, which lands at **0.40 s** (`hit;vfx:slash_arc`, tick 8), follow-through to 0.55 s, back on `combat.idle` at 0.90 s; a sweep sound at 0.30 s; the face goes focused at 0.05 s, angry eyes with a shout at the hit, no override from 0.70 s; upper body only (waist, chest, neck, arms) |
+| `attack.1` | `_style_katana` | 0.9 s | wind-up to 0.20 s (easeOutCubic) and a stretch to 0.30 s, the shoulder sweeps about 130 degrees through the cut, which lands at **0.40 s** clip time (`hit;vfx:slash_arc`, written at 0.50 s, tick 10 from the action's start: G3 review), follow-through to 0.55 s, back on `combat.idle` at 0.90 s; a sweep sound at 0.30 s clip time; the face goes focused at 0.05 s, angry eyes with a shout at the hit, no override from 0.70 s; upper body only (waist, chest, neck, arms) |
 
 The idle keys `neck`, never `head`: the head is left to the procedural head look of `HeroModel.setCustomAnimations`.
 `attack.1` keys no leg, `body` or `root` bone, so a hero can swing while the base controller walks it (the references
-also split the arm layer from the locomotion). Its timing file says `frames: windup 0.4, active 0.05, recovery 0.45`
-(ticks 8 / 1 / 9): class light, at the 6.4 minimums (0.4 / 0.3).
+also split the arm layer from the locomotion). Its timing file says `frames: windup 0.5, active 0.05, recovery 0.45`
+(ticks 10 / 1 / 9, from the action's start with the 2-tick blend; G3 review): class light, the clip's own wind-up at
+the 6.4 minimums (0.4 / 0.3).
 
 ### Every body form, one file
 
@@ -868,14 +869,13 @@ residual so they close exactly.
 | ponytail | `tail_hair_1..3` (chain) | 0.35 / 0.6 | 0.6 | 40 | 1 / 8 / 17 |
 | ears | `ear_r`, `ear_l` | 0.65 / 0.6 | - | 10 | - / 2.5 / 10 |
 | hair | `hair_back`, `hair_l`, `hair_r` | 0.8 / 0.75 | 0.4 | 6 | - / 1 / 6 |
-| sleeves | `sleeve_r`, `sleeve_l` | 0.5 / 0.7 | 1.0 | 85 | 34 / 85 / 79 (mostly hanging) |
-| skirt | `skirt_f/b/r/l` | 0.6 / 0.7 | 0.5 | 12 | 1.5 / 5.6 / 1.5 |
+| sleeves | `sleeve_r`, `sleeve_l` | 0.5 / 0.7 | 1.0, fading out (`hang_fade` -0.6..-0.3) as the forearm rises above horizontal; lag 30 | 85 | 34 / 85 / 82 (mostly hanging) |
+| skirt | `skirt_f/b/r/l` | 0.6 / 0.7 | 0.5 | 12 | 1.5 / 5.6 / - (not under a bone the swing keys) |
 | cape | `cape_1`, `cape_2` (chain) | 0.35 / 0.6 | 0.7 | 45 | 2 / 10 / 11 |
 
 The tail's first tuning (0.3 / 0.55, the cat tail part's own numbers) resonated with the walk's 2 Hz bob and pinned
-the tip at its limit; 0.4 / 0.75 moves it to 2.2 Hz and a 21 degree peak. A wide sleeve still lags for a tick or two
-in the fastest part of the cut (the shoulder turns about 130 degrees in 0.1 s), so its open end faces the viewer for a
-frame: physically right for a whipping sleeve, and the open end could be painted darker (G6b).
+the tip at its limit; 0.4 / 0.75 moves it to 2.2 Hz and a 21 degree peak. (The sleeve's open end facing the viewer
+through the swing was a bake bug and the hang model, fixed in the G3 review below.)
 
 **Runtime cost.** GeckoLib samples only keyed channels, every frame, per animated hero: `move.walk` keys 31 bones
 (447 keys), `move.run` 36 (336), `move.idle` 30 (820 keys over 24 s), `combat.idle` 29, `attack.1` 26. Interpolating
@@ -993,3 +993,88 @@ budget; a pose position moves the render.
   amount of tail and sleeve follow-through.
 - **Polish**: the sleeve's open end during the fastest frames of a swing (above); the idle's motions are deliberately
   small (0.4 px hip shift, 1-2 degree tilts), worth a look in game at normal distance.
+
+## G3 review: GeckoLib semantics, timing, the action bake (2026-11-12)
+
+An adversarial review of commit c7a3326 against the GeckoLib 4.9.3 jar (`javap -c` of `BakedAnimationsAdapter`,
+`KeyFramesAdapter`, `EasingType`, `Animation$LoopType` and `AnimationController`, jar SHA-256 20a1995e...1c47), the
+frame renders and the tests. No reference model was opened for this pass.
+
+### Confirmed correct
+
+`format_version` 1.8.0 (GeckoLib does not read it); `animation_length` in seconds (read x 20); `loop` true /
+`"hold_on_last_frame"` / absent (absent and any non-primitive are play-once); keys as `{"vector"}`, `{"vector",
+"easing"}` or `{"pre", "post"}` (pre placed 0.001 s early, a `lerp_mode` on post becomes its easing); the easing shapes
+the segment arriving at its key; time strings parsed with `NumberUtils.isCreatable`; a `"0"` key after another key
+throws; rotation constants negated on x and y and converted to radians at load; `timeline` values are strings (an
+array would become "[a, b]"), `sound_effects` `{"effect"}`, `particle_effects` `{"effect", "locator",
+"pre_effect_script"}`; event times x 20 = ticks. The writer's output matched on every point.
+
+### Found and fixed
+
+1. **Events fired 2 ticks before their pose, and the server's hit 2 ticks before the swing.** `AnimationController`
+   blends for its transition length T before it plays a clip from 0 (state TRANSITIONING, then `adjustTick` restarts
+   the clock), but `processCurrentAnimation` fires keyframe events when `clip tick + T >= event tick` (it adds
+   `transitionLength` before the event loops, on every pass of a loop too). So the pose of clip time p shows at T + p
+   from the start, an event written at p fires at p: the `hit` instruction and the sweep sound came 2 ticks (the action
+   controller's T) before the cut showed, and the server, whose wind-up was the marker time, damaged the target 0.1 s
+   before the blade arrived. Fix: the writer writes every event at p + T (`writer.TRANSITION_TICKS`: action 2, base 4,
+   HEROES_V2 4.4), so it fires on the frame its pose shows; timing files (format 2) count from the action's start and
+   state `transition_ticks` and `total_ticks`; `frames` include the blend (`attack.1`: wind-up 0.50 s, ticks 10 / 1 /
+   9 = 20 = the blend and the clip); move frames in `generated` carry `transition_ticks`. GeckoLib's speed modifier
+   scales the whole clock, the blend included, so dividing every frame by the speed (4.8) stays exact. Recipes,
+   clips and the class minimums keep clip time (the minimums count the clip's own anticipation, not the blend).
+2. **A marker on a clip's last tick never fires.** When a clip reaches its length, GeckoLib ends it (or restarts a
+   loop and resets the fired events) and returns before that frame's events. Recipes and the quality rules now reject
+   markers after `length - 1 tick`.
+3. **The action bake counted the base's follow-through twice.** `attack.1` was simulated over `combat.idle` as baked,
+   so a chain bone's "authored" value under the action was combat.idle's own spring and hang result, and the action's
+   bake added its full offset on top: at t = 0 the right sleeve hung 130 degrees off the forearm (combat.idle: 65), the
+   left 29 (14.5), and capes, hair, skirt panels and the ponytail started at twice their offset. The action controller's
+   2-tick blend turned that into a visible pop at every swing, and through the swing the doubled hang stood the bell
+   sleeve off the arm as a disc (Garrick's and Tansy's frames at 0.10, 0.20 and 0.40 s). Fix: each clip keeps its
+   pre-bake chain tracks (`meta["authored"]`), and an action is baked over that authored view (`secondary.authored_view`).
+4. **The swing keyed the skirt panels.** The bake keyed every chain bone that moved more than 0.5 degrees, including
+   bones the swing never moves (skirt panels under `body`): GeckoLib overrides per bone, so swinging while walking would
+   have frozen the walk's skirt sway. Fix: an action bakes only the chain bones below the bones it keys (`movers`);
+   `attack.1` now keys 22 bones (was 26) with 193 keys (was 213), never `skirt_*` or `tail_*`.
+5. **A bell sleeve on a raised forearm showed its open end.** With `hang` 1 and an 85-degree limit, a forearm pointing up
+   swung the sleeve 85 degrees off it (horizontal), and in the cut it trailed 85 degrees behind. Fix (secondary.json):
+   `hang_fade` [-0.6, -0.3] fades the pull out as the forearm rises from about 17 to 37 degrees above horizontal (the
+   cosine of the carried direction to the bind direction), so a sleeve on a raised arm stays around it like a tube; it
+   hangs again as the forearm comes down; `lag` 30 caps the spring's trail behind its target. The walk and the run are
+   unchanged (their forearms stay below the fade: the run's highest is 15 degrees above horizontal; a narrower fade
+   made the run's pumping sleeve face forward as a ring on Tansy).
+6. A jump key at 0 is now written as a plain vector (GeckoLib shows its `post` from 0; herogen's sampler showed `pre`).
+
+### Tests (181 -> 187)
+
+The clock port (`test_events_fire_on_the_tick_their_pose_shows`): GeckoLib's controller clock at speeds 1, 2, 0.5 and
+1.25, with render frames between ticks; the written hit fires on the frame the clip shows the cut, at the timing
+file's wind-up divided by the speed (unshifted events fail it). The attack's hit (clip 0.40 s; file 0.50 s, tick 10;
+frames 10 / 1 / 9 = total 20) and `combat.idle`'s blend (4). A marker on the last tick fails in recipes and in the
+quality rules. The action starts on `combat.idle` on every channel; sabotage: the old double bake fails the new start
+rule. The swing bakes sleeves, ears, ponytail and cape, never skirt or tail (sabotage: baking all chains fails). The
+raised sleeve stays within 35 degrees of the forearm through the wind-up and hangs again in the recovery (sabotage:
+no fade fails). A jump at 0 is its post value. Updated: the signature move's frames (0.95 / 0.05 / 0.9), its timeline
+(0.95 s), the frames of several hits, the moved-marker sabotage.
+
+### Decisions
+
+1. **Events carry the controller blend** in the written files rather than leaving the server to add it: the client's
+   own `hit`, sounds and particles must fire on their pose too, and GeckoLib gives no hook to delay them. The cost: a
+   file's event time is 2 ticks (actions) or 4 (base loops) after its pose's time; the writer docstring says so.
+2. **Timing format 2**: `t`, `tick`, `hits` and `frames` count from the action's start; `length` and `ticks` stay the
+   clip's; `transition_ticks` and `total_ticks` are new. `HeroModel` must use exactly these transition lengths; the Java
+   test (G7) compares them.
+3. **The class minimums apply to the clip's own wind-up** (the blend is a pose blend, not readable anticipation).
+4. **Sleeve hang** fades by the forearm's angle rather than a smaller limit: a smaller limit would leave a level
+   forearm's sleeve sticking out forward; the fade keeps the stance and the run hanging and the raised arm tidy.
+
+### Open items
+
+- **A2**: controllers with transition lengths 4 (base) and 2 (action) as the timing files say; the server's hit tick =
+  `frame_ticks.windup` / speed. The idle always restarts at 0 when a hero stops, so heroes that stop together twitch
+  their ears together at 5 s: start `move.idle` at a per-entity offset if GeckoLib allows, or accept it.
+- **G4/G5**: footstep or work sounds in base loops will be written 4 ticks after their pose (automatic).
+- **G6b**: paint the inside of a bell sleeve darker; the cut still shows the sleeve's inside for a frame at 0.35 s.

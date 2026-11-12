@@ -1,5 +1,5 @@
 {
-  "_comment": "Spring groups of the secondary-motion bake (tools/herogen/anim/secondary.py, HEROES_V2.md 13.6). 'chain': links solved root first, each pointing at the next link's pivot (the last at 'tip'); 'bones': independent links pointing along 'tip' ('mirror_x' flips its x on the hero's right side). stiffness 0-1 sets the frequency (0.8 + 3.5 x stiffness Hz), damping 0-1 the damping ratio (0.8 x damping); limit caps the turn away from the authored pose in degrees; hang (0-1) pulls the tip toward its bind direction in the world, like gravity (wide sleeves, capes, ponytails). Bones a hero lacks are skipped (GeckoLib ignores keys for missing bones).",
+  "_comment": "Spring groups of the secondary-motion bake (tools/herogen/anim/secondary.py, HEROES_V2.md 13.6). 'chain': links solved root first, each pointing at the next link's pivot (the last at 'tip'); 'bones': independent links pointing along 'tip' ('mirror_x' flips its x on the hero's right side). stiffness 0-1 sets the frequency (0.8 + 3.5 x stiffness Hz), damping 0-1 the damping ratio (0.8 x damping); limit caps the turn away from the authored pose in degrees and lag (default: limit) the swing behind the spring's target; hang (0-1) pulls the tip toward its bind direction in the world, like gravity (wide sleeves, capes, ponytails), and hang_fade [lo, hi] fades that pull out as the cosine between the carried and the bind direction falls from hi to lo (a bell sleeve stays around a forearm raised overhead instead of standing off it as a disc). Bones a hero lacks are skipped (GeckoLib ignores keys for missing bones).",
   "groups": {
     "tail": {
       "chain": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"],
@@ -42,7 +42,9 @@
       "stiffness": 0.5,
       "damping": 0.7,
       "limit": 85,
-      "hang": 1
+      "lag": 30,
+      "hang": 1,
+      "hang_fade": [-0.6, -0.3]
     },
     "skirt": {
       "bones": ["skirt_f", "skirt_b", "skirt_r", "skirt_l"],

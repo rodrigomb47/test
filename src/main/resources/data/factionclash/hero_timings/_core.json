@@ -1,12 +1,36 @@
 {
   "animations": {
-    "move.idle": {"events": [], "kind": "base", "length": 24, "loop": "loop", "ticks": 480},
-    "move.run": {"events": [], "kind": "base", "length": 0.6, "loop": "loop", "ticks": 12},
-    "move.walk": {"events": [], "kind": "base", "length": 1, "loop": "loop", "ticks": 20}
+    "move.idle": {
+      "events": [],
+      "kind": "base",
+      "length": 24,
+      "loop": "loop",
+      "ticks": 480,
+      "total_ticks": 484,
+      "transition_ticks": 4
+    },
+    "move.run": {
+      "events": [],
+      "kind": "base",
+      "length": 0.6,
+      "loop": "loop",
+      "ticks": 12,
+      "total_ticks": 16,
+      "transition_ticks": 4
+    },
+    "move.walk": {
+      "events": [],
+      "kind": "base",
+      "length": 1,
+      "loop": "loop",
+      "ticks": 20,
+      "total_ticks": 24,
+      "transition_ticks": 4
+    }
   },
   "file": "_core",
-  "format": 1,
+  "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "d4dfa057517207ffb14bd2ec65659133eaed1290e93dba11d1aa6f22b6550ac7",
+  "source_sha256": "6a6fcf9c5a7f6fb1104ec6a750912af5f809791a4845c74901c2fe5a5e03c526",
   "tick": 0.05
 }

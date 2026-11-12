@@ -3,7 +3,7 @@
 Per clip:
   keys        every channel has a key at 0 and none after the end; values are finite; easings are GeckoLib names
   loop        a loop's channels end where they start (first key = last key)
-  markers     on whole ticks, inside the clip; the clip is not shorter than its last marker
+  markers     on whole ticks, before the clip's last tick (GeckoLib never fires an event on the frame a clip ends)
   class       the first hit or cast comes at least the class's minimum wind-up after the start, and the recovery after
               the last one is at least the class's minimum (6.4: light 0.4 / 0.3, heavy 0.8 / 0.8, area 1.0 / 0.8,
               ultimate 1.5 / 1.5)
@@ -14,6 +14,8 @@ Per clip:
   settle      an action ends, on every channel it keys, on the first key of the clip it settles on (the style's
               combat.idle or the core's move.idle) or on the rest pose where that clip keys nothing: GeckoLib snaps,
               not blends, when the action controller stops (4.8)
+  start       an action that starts on that clip's pose on every channel it authors starts on it on its baked
+              chain bones too (a bake that counted the base's follow-through twice pops a sleeve at the start)
   feet        on all six bases: a planted clip (idles, stances, actions over them) keeps every sole corner within
               0.5 px of where it starts; a grounded clip keeps its lowest sole within 0.6 px of the ground; a gait
               never sinks a sole more than 0.6 px below it
@@ -27,6 +29,7 @@ import math
 from anim import skeleton as S
 from anim.clip import TICK, layered, on_tick
 from anim.recipes import FACE_BONE
+from anim.writer import TRANSITION_TICKS
 from face import CHEEK_FRAMES, EYE_FRAMES, MOUTH_FRAMES
 from rig import BASE_IDS, load_rig
 
@@ -75,8 +78,11 @@ def check_markers(clip):
     for e in clip.events:
         if not on_tick(e.t):
             out.append("%s: marker %s at %.3f s is not on a whole tick" % (clip.name, e.value, e.t))
-        if e.t > clip.length + 1e-9:
-            out.append("%s: marker %s at %.3f s is after the end" % (clip.name, e.value, e.t))
+        if e.t > clip.length - TICK + 1e-9:
+            # GeckoLib ends (or restarts) a clip on the frame it reaches its length before it fires that frame's
+            # events, so a marker on the last tick never fires
+            out.append("%s: marker %s at %.3f s is not before the last tick (it would never fire)" % (
+                clip.name, e.value, e.t))
     hits = clip.hits()
     cls = clip.meta.get("class")
     if hits and cls:
@@ -166,6 +172,37 @@ def check_settle(clip, target):
     return out
 
 
+def check_start(clip, target):
+    """An action that starts on its settle clip's pose (every channel it authors within 0.5 degrees or 0.05 px of
+    that clip's first key) starts there on its baked chain bones too: a follow-through bake that counted the base's
+    own bake again would pop a sleeve or a ponytail through the 2-tick blend into the action."""
+    if clip.meta.get("kind") != "action" or target is None:
+        return []
+    chain = set(secondary_chain_bones())
+
+    def first(tr):
+        return tr.sample(0.0)
+
+    def goal(bc):
+        return first(target.tracks[bc]) if bc in target.tracks else (0.0, 0.0, 0.0)
+
+    def off(bc, tr):
+        g = goal(bc)
+        return max(abs(a - b) for a, b in zip(first(tr), g))
+
+    authored = [(bc, tr) for bc, tr in clip.tracks.items() if bc[0] not in chain and bc[0] != FACE_BONE]
+    if any(off(bc, tr) > (0.5 if bc[1] == "rotation" else 0.05) for bc, tr in authored):
+        return []
+    return ["%s: %s.%s starts %.1f degrees off %s's first key, though every authored channel starts on it" % (
+        clip.name, bc[0], bc[1], off(bc, tr), target.name)
+        for bc, tr in sorted(clip.tracks.items()) if bc[0] in chain and off(bc, tr) > 1.0]
+
+
+def secondary_chain_bones():
+    from anim.secondary import chain_bones
+    return chain_bones()
+
+
 def _pose_fn(clip, base):
     if base is None or clip.meta.get("kind") != "action":
         return clip.sample
@@ -233,7 +270,7 @@ def check_bones(clip, known):
 def check_clip(clip, settle_target=None, known_bones=None, feet=True):
     out = check_keys(clip) + check_markers(clip) + check_face(clip) + check_joints(clip) + check_root(clip)
     if clip.meta.get("kind") == "action":
-        out += check_settle(clip, settle_target)
+        out += check_settle(clip, settle_target) + check_start(clip, settle_target)
     if known_bones is not None:
         out += check_bones(clip, known_bones)
     if feet:
@@ -261,7 +298,8 @@ def check_built(built, lookup, extra_bones=(), own_file=False, feet=True):
 
 
 def check_timing(anim_json, timing_json):
-    """The timing file agrees with the animation file's markers (the HeroAssetsTest rule, within one tick)."""
+    """The timing file agrees with the animation file's markers (the HeroAssetsTest rule, within one tick). Both
+    count from the controller's start: the file's event times include its blend (writer.py)."""
     out = []
     anims = anim_json.get("animations", {})
     timed = timing_json.get("animations", {})
@@ -292,6 +330,14 @@ def check_timing(anim_json, timing_json):
         if sorted(marks) != sorted(timed_marks):
             out.append("%s: markers %s in the animation, %s in the timing file" % (name, sorted(marks),
                                                                                    sorted(timed_marks)))
+        kind = t.get("kind", "base")
+        blend = t.get("transition_ticks")
+        if blend != TRANSITION_TICKS.get(kind):
+            out.append("%s: transition_ticks %s, the %s controller blends %s ticks" % (
+                name, blend, kind, TRANSITION_TICKS.get(kind)))
+            continue
+        if t.get("total_ticks") != t.get("ticks", -1) + blend:
+            out.append("%s: total_ticks %s is not ticks + transition_ticks" % (name, t.get("total_ticks")))
         hits = sorted(ts for ts, m in marks if m in ("hit", "cast"))
         if hits:
             fr = t.get("frames")
@@ -300,8 +346,8 @@ def check_timing(anim_json, timing_json):
             elif abs(fr["windup"] - hits[0]) > TICK + 1e-9:
                 out.append("%s: wind-up %.2f s in the timing file, first hit at %.2f s" % (name, fr["windup"],
                                                                                          hits[0]))
-            elif abs(fr["windup"] + fr["active"] + fr["recovery"] - t["length"]) > 1e-6:
-                out.append("%s: frames do not add up to the length" % name)
+            elif abs(fr["windup"] + fr["active"] + fr["recovery"] - t["length"] - blend * TICK) > 1e-6:
+                out.append("%s: frames do not add up to the blend and the length" % name)
         elif t.get("frames"):
             out.append("%s: frames in the timing file but no hit markers" % name)
     return out

@@ -115,6 +115,15 @@ class ClipSemanticsTest(unittest.TestCase):
             t = i / 200
             self.assertLess(abs(simple.sample(t)[0] - dense.sample(t)[0]), 0.1 + 1e-9)
 
+    def test_a_jump_at_zero_is_its_post_value(self):
+        """GeckoLib puts a pre key at 0 at 0 too, so a jump at 0 shows its post value from the start."""
+        tr = Track([Key(0.0, (3, 0, 0), pre=(1, 0, 0)), Key(1.0, (5, 0, 0))])
+        self.assertEqual(tr.sample(0.0)[0], 3.0)
+        c = Clip("j", 1.0, "once")
+        c.tracks[("face_ctrl", "position")] = tr
+        key = animation_file([c])["animations"]["j"]["bones"]["face_ctrl"]["position"]["0.0"]
+        self.assertEqual(key, {"vector": [3.0, 0.0, 0.0]})
+
     def test_time_format(self):
         self.assertEqual([fmt_time(t) for t in (0, 0.05, 0.1, 1, 24, 13.1)], ["0.0", "0.05", "0.1", "1.0", "24.0",
                                                                              "13.1"])
@@ -154,8 +163,9 @@ class WriterTest(unittest.TestCase):
         doc, _ = lib_json(library.style("katana"))
         attack = as_dict(dict(dict(doc)["animations"])["attack.1"])
         self.assertNotIn("loop", attack)                                # play once
-        self.assertEqual(attack["timeline"], {"0.4": "hit;vfx:slash_arc"})
-        self.assertEqual(attack["sound_effects"], {"0.3": {"effect": "minecraft:entity.player.attack.sweep"}})
+        # events are written 2 ticks (the action controller's blend) after their pose: writer.py
+        self.assertEqual(attack["timeline"], {"0.5": "hit;vfx:slash_arc"})
+        self.assertEqual(attack["sound_effects"], {"0.4": {"effect": "minecraft:entity.player.attack.sweep"}})
         face = attack["bones"]["face_ctrl"]["position"]
         jumps = [v for v in face.values() if "pre" in v]
         self.assertGreaterEqual(len(jumps), 3)
@@ -175,14 +185,54 @@ class WriterTest(unittest.TestCase):
 
 class TimingTest(unittest.TestCase):
     def test_attack_hit_marker_and_frames(self):
+        """The cut lands at clip time 0.40 s (tick 8); the action controller blends 2 ticks into the clip first, so
+        from the action's start (the server's frame) the hit is at 0.50 s, tick 10."""
+        self.assertEqual(katana_clip("attack.1").hits(), [0.4])
         _, t = lib_json(library.style("katana"))
         a = t["animations"]["attack.1"]
-        self.assertEqual(a["hits"], [0.4])
-        self.assertEqual([e for e in a["events"] if e["type"] == "hit"], [{"t": 0.4, "tick": 8, "type": "hit"}])
-        self.assertEqual(a["frames"], {"windup": 0.4, "active": 0.05, "recovery": 0.45})
-        self.assertEqual(a["frame_ticks"], {"windup": 8, "active": 1, "recovery": 9})
-        self.assertEqual(sum(a["frame_ticks"].values()), a["ticks"])
+        self.assertEqual((a["transition_ticks"], a["ticks"], a["total_ticks"]), (2, 18, 20))
+        self.assertEqual(a["hits"], [0.5])
+        self.assertEqual([e for e in a["events"] if e["type"] == "hit"], [{"t": 0.5, "tick": 10, "type": "hit"}])
+        self.assertEqual(a["frames"], {"windup": 0.5, "active": 0.05, "recovery": 0.45})
+        self.assertEqual(a["frame_ticks"], {"windup": 10, "active": 1, "recovery": 9})
+        self.assertEqual(sum(a["frame_ticks"].values()), a["total_ticks"])
         self.assertEqual(a["class"], "light")
+        ci = t["animations"]["combat.idle"]
+        self.assertEqual((ci["kind"], ci["transition_ticks"], ci["total_ticks"]), ("base", 4, 64))
+
+    def test_events_fire_on_the_tick_their_pose_shows(self):
+        """A port of GeckoLib 4.9.3's controller clock (AnimationController.process, processCurrentAnimation,
+        adjustTick): the clock runs at speed s from the start; the controller blends until it reaches the
+        transition length T, restarts it at 0 and plays the clip, and fires a keyframe event once clip tick + T >=
+        the event's tick. The written hit fires on the frame on which the clip shows the cut, and that is the timing
+        file's wind-up divided by the speed (4.8)."""
+        built = library.style("katana")
+        doc, tim = lib_json(built)
+        attack = as_dict(dict(dict(doc)["animations"])["attack.1"])
+        frames = tim["animations"]["attack.1"]["frame_ticks"]
+        T = tim["animations"]["attack.1"]["transition_ticks"]
+        hit_file_tick = round(float(next(iter(attack["timeline"]))) * 20)
+        pose_hit_tick = round(katana_clip("attack.1").hits()[0] * 20)
+        step = 0.05                                                 # render frames between game ticks
+        for speed in (1.0, 2.0, 0.5, 1.25):
+            fired = shown = running_since = None
+            wall = 0.0
+            while fired is None or shown is None:
+                wall += step
+                if running_since is None:
+                    if wall * speed < T:
+                        continue                                    # TRANSITIONING: no events, no clip time
+                    running_since = wall                            # RUNNING from this frame, clip tick 0
+                clip_tick = (wall - running_since) * speed
+                if fired is None and clip_tick + T >= hit_file_tick - 1e-9:
+                    fired = wall
+                if shown is None and clip_tick >= pose_hit_tick - 1e-9:
+                    shown = wall
+            self.assertAlmostEqual(fired, shown, delta=step + 1e-9, msg="speed %s" % speed)
+            self.assertAlmostEqual(shown, frames["windup"] / speed, delta=2 * step + 1e-9, msg="speed %s" % speed)
+        self.assertEqual(frames["windup"], T + pose_hit_tick)
+        # the bug this guards against: an event at its pose time fires T ticks before the pose shows
+        self.assertEqual(hit_file_tick - pose_hit_tick, T)
 
     def test_timing_files_agree_with_the_animation_files(self):
         for built in [library.core()] + [library.style(s) for s in build.library_styles()]:
@@ -196,7 +246,7 @@ class TimingTest(unittest.TestCase):
         p = library.out_paths("_style_katana")
         anim, tim = json.loads(files[p["animation"]]), json.loads(files[p["timing"]])
         moved = json.loads(json.dumps(anim))
-        moved["animations"]["attack.1"]["timeline"] = {"0.5": "hit;vfx:slash_arc"}
+        moved["animations"]["attack.1"]["timeline"] = {"0.6": "hit;vfx:slash_arc"}
         self.assertTrue(quality.check_timing(moved, tim))
         self.assertTrue(any("wind-up" in m or "markers" in m for m in quality.check_timing(moved, tim)))
         early = library.style("katana").by_name["attack.1"].copy()
@@ -205,12 +255,17 @@ class TimingTest(unittest.TestCase):
         ex = recipes.Expander(library.pose_library(), library.reference_skeleton())
         with self.assertRaises(HerogenError):
             ex.expand("x", {"length": 1.0, "secondary": False, "keys": [{"t": 0.42, "marker": "hit"}]})
+        with self.assertRaises(HerogenError):          # on the last tick: GeckoLib ends the clip before firing it
+            ex.expand("x", {"length": 1.0, "secondary": False, "keys": [{"t": 1.0, "sound": "minecraft:x"}]})
+        last = library.style("katana").by_name["attack.1"].copy()
+        last.events = [Event(0.9, "sound", "minecraft:x")]
+        self.assertTrue(any("never fire" in m for m in quality.check_markers(last)))
 
     def test_frames_of_several_hits(self):
         c = Clip("move.flurry", 1.5, "once", {"kind": "action", "class": "light"})
         c.events = [Event(0.5, "instruction", "hit"), Event(0.7, "instruction", "hit"), Event(0.6, "sound", "x")]
-        self.assertEqual(frames_of(c), {"windup": 0.5, "active": 0.25, "recovery": 0.75})
-        self.assertEqual(clip_timing(c)["frame_ticks"], {"windup": 10, "active": 5, "recovery": 15})
+        self.assertEqual(frames_of(c), {"windup": 0.6, "active": 0.25, "recovery": 0.75})      # + the 2-tick blend
+        self.assertEqual(clip_timing(c)["frame_ticks"], {"windup": 12, "active": 5, "recovery": 15})
 
     def test_move_frames_come_from_the_signature(self):
         hero = signature_hero()
@@ -219,7 +274,8 @@ class TimingTest(unittest.TestCase):
         move = gen["moves"][0]
         self.assertEqual((move["id"], move["anim"], move["file"], move["class"]),
                          ("quick_cut", "move.quick_cut", "t_signature", "heavy"))
-        self.assertEqual(move["frames"], {"windup": 0.85, "active": 0.05, "recovery": 0.9})
+        self.assertEqual(move["frames"], {"windup": 0.95, "active": 0.05, "recovery": 0.9})
+        self.assertEqual(move["transition_ticks"], 2)
         hero["moves"].append({"id": "missing", "form": "melee"})
         self.assertTrue(any("no animation move.missing" in n for n in timing.generated(hero)["notes"]))
 
@@ -531,6 +587,56 @@ class SecondaryTest(unittest.TestCase):
         down = r @ np.array([0.0, -1.0, 0.0])
         self.assertLess(down[1], -0.9)
 
+    def test_an_action_starts_on_its_base(self):
+        """attack.1 starts where combat.idle starts on every channel, baked chain bones included: the action's bake
+        runs over the base as authored, so the base's own follow-through is not added a second time."""
+        attack, ci = katana_clip("attack.1"), katana_clip("combat.idle")
+        for bc, tr in attack.tracks.items():
+            goal = ci.tracks[bc].sample(0.0) if bc in ci.tracks else (0.0, 0.0, 0.0)
+            self.assertLess(max(abs(a - b) for a, b in zip(tr.sample(0.0), goal)), 0.5, bc)
+
+    def test_a_double_bake_fails_the_start_rule(self):
+        """Sabotage: baking the attack over the baked combat.idle (the G3 bug) hangs the sleeve twice at the start,
+        and the start rule says so."""
+        from unittest import mock
+        kat = library.style("katana")
+        with open(library.style_recipe_path("katana")) as f:
+            recipe = json.load(f)["animations"]["attack.1"]
+        ex = recipes.Expander(library.pose_library(), library.reference_skeleton(), kat.by_name.get, "combat.idle",
+                              library.form_skeletons())
+        with mock.patch.object(secondary, "authored_view", lambda clip: clip):
+            bad = ex.expand("attack.1", recipe)
+        msgs = quality.check_start(bad, kat.by_name["combat.idle"])
+        self.assertTrue(any("sleeve_r.rotation starts" in m for m in msgs), msgs)
+        self.assertEqual(quality.check_start(kat.by_name["attack.1"], kat.by_name["combat.idle"]), [])
+
+    def test_an_action_bakes_only_the_chains_it_moves(self):
+        """The swing keys the upper body, so it bakes the sleeves, ears, hair, ponytail and cape, never the skirt
+        panels or the tail: those keep the walk's follow-through when a hero swings while walking (GeckoLib
+        overrides per bone)."""
+        bones = set(katana_clip("attack.1").bones())
+        self.assertTrue({"sleeve_r", "ear_r", "tail_hair_3", "cape_1"} <= bones, bones)
+        self.assertEqual({b for b in bones if b.startswith(("skirt", "tail_"))} - {"tail_hair_1", "tail_hair_2",
+                                                                                   "tail_hair_3"}, set())
+
+    def test_a_raised_sleeve_stays_around_the_forearm(self):
+        """With the forearm raised overhead the bell sleeve does not hang 85 degrees off it (its open end would face
+        the viewer as a disc): hang_fade keeps it within the lag of the forearm through the wind-up, and it hangs
+        again once the forearm comes down."""
+        attack, ci = katana_clip("attack.1"), katana_clip("combat.idle")
+        sk = library.reference_skeleton()
+
+        def angles(t):
+            w = sk.world(layered(ci, attack, t, t % ci.length))
+            fa = w["forearm_r"][0] @ np.array([0.0, -1.0, 0.0])
+            sl = w["sleeve_r"][0] @ np.array([0.0, -1.0, 0.0])
+            return math.degrees(math.acos(np.clip(fa @ sl, -1, 1))), -sl[1]
+
+        for t in (0.15, 0.2, 0.25, 0.3):
+            self.assertLess(angles(t)[0], 35.0, t)                 # wind-up: around the raised forearm
+        self.assertGreater(angles(0.7)[1], 0.95)                    # recovery: hanging again
+        self.assertGreater(angles(0.0)[1], 0.99)                    # the stance: hanging
+
     def test_part_chains_go_to_visual_json(self):
         files, _ = build.build_files("test_rig")
         v = json.loads(files[build.out_paths("test_rig")["visual"]])
@@ -565,7 +671,7 @@ class HeroFileTest(unittest.TestCase):
 
         self.assertEqual(quality.check_built(built, lookup, own_file=True), [])
         doc = animation_file(built.clips)
-        self.assertEqual(doc["animations"]["move.quick_cut"]["timeline"], {"0.85": "hit"})
+        self.assertEqual(doc["animations"]["move.quick_cut"]["timeline"], {"0.95": "hit"})    # 0.85 + the blend
 
     def test_own_file_budget(self):
         hero = signature_hero()

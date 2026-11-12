@@ -134,12 +134,17 @@ class Expander:
         if kind == "action":
             clip.meta["settle_to"] = recipe.get("settle_to", self.default_settle)
             base = self.lookup(clip.meta["settle_to"])
+        chain = set(secondary.chain_bones())
+        clip.meta["authored"] = {bc: tr.copy() for bc, tr in clip.tracks.items() if bc[0] in chain}
         sec = recipe.get("secondary", True)
         if sec:
             groups = secondary.load_groups(self.skeleton)
             if isinstance(sec, list):
                 groups = [g for g in groups if g.name in sec]
-            secondary.bake(clip, self.skeleton, groups, base=base)
+            movers = None
+            if kind == "action":
+                movers = {b for b, _ in clip.tracks if b != FACE_BONE}
+            secondary.bake(clip, self.skeleton, groups, base=base, movers=movers)
         if kind == "action":
             self._settle(clip, base, where)
         self._finish(clip, where)
@@ -296,5 +301,6 @@ class Expander:
                 k.t = round(k.t, 4)
         clip.events.sort(key=lambda e: (e.t, e.kind, e.value))
         for e in clip.events:
-            if e.t > L + 1e-9:
-                raise HerogenError("%s: a marker at %.3f s is after the clip's end" % (where, e.t))
+            if e.t > L - TICK + 1e-9:
+                raise HerogenError("%s: a marker at %.3f s is not before the clip's last tick: GeckoLib ends the "
+                                   "clip on that frame before it fires the frame's events" % (where, e.t))

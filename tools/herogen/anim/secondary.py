@@ -8,10 +8,13 @@ steady motion produces no lag and every acceleration of the parent (a step, a bo
 behind and lets it swing through. The spring answers the parent's motion only: the bone's own authored rotation (an
 ear twitch, the walk's tail sway) is intended and is added on top unchanged, while the bones below it feel it.
 A group with `hang` (0-1) also pulls its tip toward the bind direction in the world, as gravity does: a wide sleeve
-keeps hanging when the forearm is raised, a cape and a ponytail fall back toward vertical when the body leans. The tip stays at the link's length from the pivot. The bone's extra rotation is
-the turn from the authored direction to the simulated one (clamped to the group's limit), expressed in the bone's own
-frame as file angles and added to the authored angles, as GeckoLib adds animation angles. Links of a chain (a tail,
-a ponytail, a cape) are solved root first, so each one hangs from the swung one before it.
+keeps hanging when the forearm is raised, a cape and a ponytail fall back toward vertical when the body leans
+(`hang_fade` fades that pull out as the parent points the link up, so a bell sleeve on a raised arm stays around it;
+`lag` caps how far the spring trails its target). The tip stays at the link's length from the pivot. The bone's
+extra rotation is the turn from the authored direction to the simulated one (clamped to the group's limit),
+expressed in the bone's own frame as file angles and added to the authored angles, as GeckoLib adds animation
+angles. Links of a chain (a tail, a ponytail, a cape) are solved root first, so each one hangs from the swung one
+before it.
 
 The input is sampled every tick (20 Hz, the game's rate) with 4 sub-steps; the result is keyed every 2 ticks (plus
 the authored keys' own times) and simplified: keys a straight line reproduces within 0.5 degrees are dropped, and a
@@ -19,7 +22,9 @@ bone whose follow-through stays under 0.5 degrees gets no keys at all. A loop is
 cycles (3 s) to reach its steady swing, then its residual is spread over the cycle so the loop closes exactly.
 
 The library bakes the rig's chain bones (tail_*, tail_hair_*, ear_*, hair_back/l/r, sleeve_*, skirt_*, cape_*) on
-the reference skeleton (rig pivots of the teen form): rotations transfer to every form. A part's own chain bones
+the reference skeleton (rig pivots of the teen form): rotations transfer to every form. An action is simulated over
+its settle clip as authored (authored_view: that clip's own bake is not counted twice) and bakes only the chain bones
+below the bones it keys (the others keep the base controller's follow-through). A part's own chain bones
 (twin tails, scarf ends) and its stiffness and damping are written to visual.json for the procedural lag (A2).
 """
 import math
@@ -54,6 +59,9 @@ class Group:
         self.stiffness = float(spec["stiffness"])
         self.damping = float(spec["damping"])
         self.limit = float(spec["limit"])
+        self.lag = float(spec.get("lag", self.limit))
+        fade = spec.get("hang_fade")
+        self.hang_fade = (float(fade[0]), float(fade[1])) if fade else None
         self.omega = 2.0 * math.pi * (0.8 + 3.5 * self.stiffness)
         self.zeta = 0.8 * self.damping
         tip = np.asarray(spec["tip"], dtype=float)
@@ -77,6 +85,7 @@ class Group:
 
 
 def load_groups(skeleton, path=CONFIG):
+    check_config(path)
     spec = load_json(path)["groups"]
     return [Group(name, spec[name], skeleton) for name in sorted(spec)]
 
@@ -110,6 +119,43 @@ def _rotate_toward(a, b, max_deg):
     return about(axis / n, max_deg) @ a
 
 
+def authored_view(clip):
+    """The clip as authored, before its own bake: its chain bones carry only the keys its recipe gave them (an ear
+    twitch), not the follow-through baked into them. An action is simulated over this view of the clip it plays
+    over, because its own bake recomputes the follow-through from the whole pose: over the baked base it would add
+    the base's lag and hang a second time (a wide sleeve hanging 130 degrees off the forearm instead of 65)."""
+    authored = clip.meta.get("authored")
+    if authored is None:
+        return clip
+    view = clip.copy()
+    chain = set(chain_bones())
+    for bc in [bc for bc in view.tracks if bc[0] in chain]:
+        del view.tracks[bc]
+    for bc, tr in authored.items():
+        view.tracks[bc] = tr
+    return view
+
+
+def hang_weight(group, carried, bind):
+    """How strongly gravity pulls this link toward its bind direction. With `hang_fade` [lo, hi] the pull fades out
+    as the carried direction turns up past the bind's horizontal (the cosine to the bind direction from hi down to
+    lo): a rigid bell sleeve on a forearm raised overhead stays around the forearm, because hanging it 85 degrees off
+    the arm shows its open end as a disc; it droops once the forearm comes down toward horizontal."""
+    if not group.hang:
+        return 0.0
+    if group.hang_fade is None:
+        return group.hang
+    lo, hi = group.hang_fade
+    x = (float(np.dot(carried, bind)) - lo) / (hi - lo)
+    x = min(1.0, max(0.0, x))
+    return group.hang * x * x * (3.0 - 2.0 * x)
+
+
+def below(skeleton, bone, movers):
+    """True when the bone or one of its ancestors is in `movers` (the bones an action keys)."""
+    return any(b in movers for b in skeleton.chain_to_root(bone))
+
+
 def pose_function(clip, base=None):
     """The pose shown at time t: the clip alone, or the clip over a base clip (an action over its idle)."""
     if base is None:
@@ -120,10 +166,12 @@ def pose_function(clip, base=None):
     return pose
 
 
-def simulate(clip, skeleton, groups, base=None):
-    """{bone: [offset (rx, ry, rz) per tick 0..N]} for the clip's length (N = length / tick)."""
+def simulate(clip, skeleton, groups, base=None, movers=None):
+    """{bone: [offset (rx, ry, rz) per tick 0..N]} for the clip's length (N = length / tick). `base` is the clip an
+    action plays over (its authored view, see authored_view); with `movers`, only the links below those bones are
+    simulated."""
     pose_at = pose_function(clip, base)
-    links = [ln for g in groups for ln in g.links]
+    links = [ln for g in groups for ln in g.links if movers is None or below(skeleton, ln.bone, movers)]
     if not links:
         return {}
     n_ticks = int(round(clip.length / TICK))
@@ -149,7 +197,8 @@ def simulate(clip, skeleton, groups, base=None):
             r_link = rp @ file_matrix(skeleton.rest[ln.bone])
             pivot = rp @ (np.asarray(apos) + skeleton.pivot[ln.bone]) + tp
             carried = r_link @ ln.dir
-            if g_hang := ln.group.hang:
+            g_hang = hang_weight(ln.group, carried, ln.dir)
+            if g_hang > 0.0:
                 # a hanging part (a wide sleeve, a cape, a ponytail) also leans toward its bind direction in the
                 # world, as gravity would pull it when the parent lifts or tips it
                 want = (1.0 - g_hang) * carried + g_hang * ln.dir
@@ -181,7 +230,8 @@ def simulate(clip, skeleton, groups, base=None):
                     v = v - u * float(np.dot(rel, u))
             da = r_link @ ln.dir                    # where the authored pose carries the tip
             db = (x - pivot) / ln.length
-            db = _rotate_toward(da, db / np.linalg.norm(db), g.limit)
+            db = _rotate_toward(carried, db / np.linalg.norm(db), g.lag)      # the lag behind the target
+            db = _rotate_toward(da, db, g.limit)                               # the turn off the authored pose
             x = pivot + db * ln.length
             state[ln.bone] = (x, v)
             prev[ln.bone] = (pivot, target)
@@ -201,11 +251,16 @@ def simulate(clip, skeleton, groups, base=None):
     return out
 
 
-def bake(clip, skeleton, groups=None, tol=TOL, base=None):
+def bake(clip, skeleton, groups=None, tol=TOL, base=None, movers=None):
     """Add the follow-through to the clip's chain bones (in place); with `base`, the clip is an action simulated over
-    that clip and a chain bone it does not key starts from the base's keys. Returns {bone: peak offset}."""
+    that clip (as authored: authored_view) and a chain bone it does not key starts from the base's authored keys.
+    With `movers` (an action: the bones it keys), only the chain bones below them are baked; the others keep the
+    base controller's own follow-through (GeckoLib overrides per bone, so an action that keyed the skirt panels
+    would freeze the walk's skirt sway under a swing). Returns {bone: peak offset}."""
     groups = groups if groups is not None else load_groups(skeleton)
-    offsets = simulate(clip, skeleton, groups, base)
+    if base is not None:
+        base = authored_view(base)
+    offsets = simulate(clip, skeleton, groups, base, movers)
     peaks = {}
     n_ticks = int(round(clip.length / TICK))
     for bone, offs in sorted(offsets.items()):
@@ -274,3 +329,6 @@ def check_config(path=CONFIG):
                 raise HerogenError("%s: group %s has no %s" % (path, name, k))
         if ("chain" in g) == ("bones" in g):
             raise HerogenError("%s: group %s needs exactly one of chain, bones" % (path, name))
+        fade = g.get("hang_fade")
+        if fade is not None and not (len(fade) == 2 and -1.0 <= fade[0] < fade[1] <= 1.0):
+            raise HerogenError("%s: group %s hang_fade must be [lo, hi] cosines with lo < hi" % (path, name))

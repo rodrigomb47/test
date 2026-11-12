@@ -208,7 +208,8 @@ def write_all(out=ANIM_PREVIEW_DIR, gifs=True):
     p = os.path.join(out, "filmstrip_attack.png")
     filmstrip(swing, "attack.1", [0.0, 0.1, 0.2, 0.3, 0.35, 0.4, 0.45, 0.55, 0.7, 0.9],
               views=(("3/4", -34.0), ("side", -90.0)), scale=3,
-              title="attack.1 (katana, 0.9 s): wind-up to 0.30, the cut lands at 0.40 (hit marker, tick 8), "
+              title="attack.1 (katana, 0.9 s, clip time): wind-up to 0.30, the cut lands at 0.40 (the hit marker "
+                    "fires there; written at 0.50 s, tick 10 from the action's start, after the 2-tick blend), "
                     "follow-through, back on combat.idle at 0.90", path=p)
     paths["filmstrip_attack"] = p
     if gifs:

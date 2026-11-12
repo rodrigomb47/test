@@ -1,8 +1,8 @@
 {
   "animations": {},
   "file": "_fallback",
-  "format": 1,
+  "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "507067ee6e0a56d4e1d2ffba010ecd863dd27966cb8be0c70db1e754f15ef209",
+  "source_sha256": "71a368bf33a37101c6217abf24049f4d3bd73915328ef44f26f8fe49d7de9acf",
   "tick": 0.05
 }

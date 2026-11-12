@@ -1,8 +1,8 @@
 {
   "animations": {},
   "file": "test_rig",
-  "format": 1,
+  "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "9222468d26857446340cd459a6864415581ae5ce1ca1a381f7c4b811f7792c82",
+  "source_sha256": "42f87694ea70961ff9e5bfd33747a7c2627ae4bd229b9b53067ff69ef12c4c93",
   "tick": 0.05
 }
