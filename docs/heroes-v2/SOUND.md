@@ -490,8 +490,9 @@ For the 200-hero roster that rate would be about 45 MB, so batch heroes follow a
   phase moments made from kit sounds with `use`; the voice either its own 4 syllables or an alias of an existing
   voice at a new pitch; moves from the kit, vanilla and aliases;
 - that gives about 0.6 MB for the cues and kit, 2.1 MB for the slice and 4.6 MB for 192 heroes: roughly 7 MB of
-  sound. HEROES_V2 11 budgets the whole jar at 12 MB without sound; the owner decides between a larger jar (about
-  19 MB) and fewer per-hero sounds (open item).
+  sound. Owner decision (2026-11-12): keep the per-hero sounds; a jar of about 19 MB is fine, "even if it needs to
+  get even bigger". The per-hero 24 KB figure is a guide for file count, not a hard limit: a batch hero that needs
+  more unique sounds to be recognisable by ear may have them (HEROES_V2 11).
 
 ## 12. Previews for the owner
 

@@ -1256,7 +1256,7 @@ a second, under 100 bytes/s per hero per watching player. A telegraph decal is o
 | 20 heroes on screen | under 3 ms per frame | as above | same |
 | Client memory (all 200 baked at resource load) | under 60 MB | JSON sizes from the generator, shared libraries | heap histogram after a resource reload; if over 100 MB, move hero geometry out of the scanned folder and bake on first sight |
 | Resource reload | under +3 s | | timed in the client log |
-| Jar | under 12 MB (0.9 MB today) | 256x128 textures (about 10-20 KB each as PNG), compressed JSON, shared animations | `ls -l` in the release checklist |
+| Jar | under 12 MB without sound (0.9 MB today); with sound about 19 MB and larger is fine (owner, 2026-11-12; `SOUND.md` 11) | 256x128 textures (about 10-20 KB each as PNG), compressed JSON, shared animations | `ls -l` in the release checklist |
 | Network | section 10.4 | | |
 
 ---
