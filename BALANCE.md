@@ -730,6 +730,8 @@ Only the test model ships so far; an operator gives a hero to a faction with `/f
   `move.run` at ground speed / **0.20** (PROPOSED, by eye: about 2x for a walking NPC, 1.4x for a sprint), clamped to
   **0.6-2.2** in steps of 0.1, changed only by **0.3** or more. Falling: off the ground and dropping faster than
   **0.25** blocks/tick. Controller blends **4 / 2 / 6** ticks (base, action, secondary; the timing files' own).
+  A move of more than **3** blocks across the ground in one tick is a teleport and is left out of the ground speed
+  (`HeroClips.TELEPORT_STEP`). Form-scaled keys (`FormScale`): `v.fc_dhip` = the model's hip height minus **18.25** px.
 * Face (`FaceRules`, `BlinkSchedule`, `FaceClock`): blinks every **2.5-6 s** (nervous 1.5-3.5, calm 4-7, sleepy 3-5;
   from the hero's visual file), half/closed/half **1/2/1** ticks (sleepy 2/4/2), **15%** double blinks two open ticks
   apart, none during a wind-up or channel and an overdue blink **6** ticks after it; talking beats of **2-3** ticks

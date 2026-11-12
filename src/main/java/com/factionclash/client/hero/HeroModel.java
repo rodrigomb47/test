@@ -6,6 +6,7 @@ import com.factionclash.hero.HeroEntity;
 import com.factionclash.hero.HeroEntry;
 import com.factionclash.hero.HeroLook;
 import com.factionclash.hero.HeroRegistry;
+import com.factionclash.logic.hero.FormScale;
 import com.factionclash.logic.hero.HeroActions;
 import com.factionclash.logic.hero.HeroIdentity;
 import com.factionclash.logic.hero.HeroLod;
@@ -18,6 +19,7 @@ import software.bernie.geckolib.cache.GeckoLibCache;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.constant.DataTickets;
+import software.bernie.geckolib.loading.math.MathParser;
 import software.bernie.geckolib.loading.object.BakedAnimations;
 import software.bernie.geckolib.model.GeoModel;
 import software.bernie.geckolib.model.data.EntityModelData;
@@ -178,6 +180,22 @@ public class HeroModel extends GeoModel<HeroEntity> {
                 FactionClash.LOGGER.warn(message);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ before the animation pass
+
+    /**
+     * Form-scaled keys (HEROES_V2 4.4, G4): the core library writes the root heights of kneels, sits, sleep and death
+     * as {@code "v + k * v.fc_dhip"}; the variable is this model's hip height (the {@code leg_r} pivot) minus the middle
+     * of the forms' hip heights. GeckoLib's variables are global, so it is set for the hero about to be animated
+     * (applyMolangQueries runs before its controllers); a model without {@code leg_r} plays the middle-form value.
+     */
+    @Override
+    public void applyMolangQueries(AnimationState<HeroEntity> state, double animTime) {
+        super.applyMolangQueries(state, animTime);
+        GeoBone leg = bone("leg_r");
+        double dhip = leg == null ? 0 : FormScale.of(leg.getPivotY());
+        MathParser.setVariable(FormScale.VARIABLE, () -> dhip);
     }
 
     // ------------------------------------------------------------------ after the animation pass

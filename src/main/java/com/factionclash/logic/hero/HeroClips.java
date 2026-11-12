@@ -40,6 +40,17 @@ public final class HeroClips {
     public static final double MIN_PLAYBACK = 0.6, MAX_PLAYBACK = 2.2;
     /** Falling faster than this (blocks per tick, downward) off the ground plays the fall clip. */
     public static final double FALLING = 0.25;
+    /**
+     * A move of more than this many blocks across the ground in one tick is a teleport (a command, stuck recovery, a
+     * revival), not running: it is left out of the ground speed, or the base clip would flash to the run, then the walk,
+     * and restart the idle (seen in game at checkpoint 1). Far above any walk, sprint or dash.
+     */
+    public static final double TELEPORT_STEP = 3.0;
+
+    /** Whether a step of {@code blocks} across the ground in one tick is a teleport. */
+    public static boolean isTeleport(double blocks) {
+        return !(blocks <= TELEPORT_STEP);
+    }
 
     /** How the hero moves this frame (client side; ground speed smoothed over a few ticks). */
     public record Motion(double groundSpeed, double verticalSpeed, boolean onGround, boolean inWater, boolean crouching,

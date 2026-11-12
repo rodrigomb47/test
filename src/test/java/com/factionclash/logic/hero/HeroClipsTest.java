@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,5 +112,13 @@ class HeroClipsTest {
         assertEquals(List.of("attack.1"), HeroClips.swingCandidates(HeroClips.Held.WEAPON, true));
         assertNull(HeroClips.first(HeroClips.swingCandidates(HeroClips.Held.WEAPON, true), Set.of("move.idle")::contains),
                 "a fists hero with an empty style library plays nothing");
+    }
+
+    @Test
+    void aTeleportIsNotRunning() {
+        assertFalse(HeroClips.isTeleport(0.28), "a sprint");
+        assertFalse(HeroClips.isTeleport(HeroClips.TELEPORT_STEP), "the limit itself still counts as motion");
+        assertTrue(HeroClips.isTeleport(8.0), "a /tp or a stuck recovery jump");
+        assertTrue(HeroClips.isTeleport(Double.NaN));
     }
 }

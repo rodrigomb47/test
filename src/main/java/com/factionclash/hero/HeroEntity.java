@@ -1,5 +1,6 @@
 package com.factionclash.hero;
 
+import com.factionclash.FactionClash;
 import com.factionclash.logic.hero.HeroActions;
 import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.logic.hero.HeroSize;
@@ -26,6 +27,9 @@ import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
+
+import java.util.Arrays;
+import java.util.Locale;
 
 /**
  * A hero (HEROES_V2 3): a faction NPC with everything a faction NPC has (inventory, hunger, gear and wear, traits,
@@ -75,6 +79,11 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     private int forcedWeapon = -1;
     /** The tick the played action's clip ends (the code is then cleared), or -1. */
     private int actionEndsAt = -1;
+    /** With the marker log on ({@link HeroAnimator#LOG_MARKERS}): the played action's clip, start tick and hit ticks. */
+    private String actionLogClip;
+    private int actionLogStart;
+    private double actionLogSpeed = 1.0;
+    private int[] actionLogHits = new int[0];
     /** The client renderer's per-hero state (face clocks, level of detail, sway); null on a server. */
     private Object clientState;
 
@@ -185,6 +194,28 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         HeroTimings.Clip t = clip == null ? null : HeroTimingFiles.clip(entry(), clip);
         if (t != null && !t.loops() && HeroTimingFiles.clip(entry(), clip + ".loop") == null && t.totalTicks() > 0) {
             actionEndsAt = tickCount + HeroTimings.ticksAt(t.totalTicks(), HeroActions.speed(packed));
+        }
+        actionLogHits = new int[0];
+        if (HeroAnimator.LOG_MARKERS && t != null && !level().isClientSide) {
+            double played = HeroActions.speed(packed);
+            actionLogClip = clip;
+            actionLogStart = tickCount;
+            actionLogSpeed = played;
+            actionLogHits = t.events().stream().filter(e -> "hit".equals(e.type()))
+                    .mapToInt(e -> HeroTimings.ticksAt(e.tick(), played)).toArray();
+            FactionClash.LOGGER.info("[Heroes] {} server starts {} at speed {} (server tick {}; hit at +{})", heroId(),
+                    clip, String.format(Locale.ROOT, "%.2f", played), tickCount, Arrays.toString(actionLogHits));
+        }
+    }
+
+    /** The marker log's server side: the timing file's hits, on the tick the server counts them (4.8). */
+    private void logServerHits() {
+        int since = tickCount - actionLogStart;
+        for (int hit : actionLogHits) {
+            if (since == hit) {
+                FactionClash.LOGGER.info("[Heroes] {} server {} hit at +{} ticks (server tick {}, speed {})", heroId(),
+                        actionLogClip, since, tickCount, String.format(Locale.ROOT, "%.2f", actionLogSpeed));
+            }
         }
     }
 
@@ -300,6 +331,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         byte moodByte = mood();
         if (HeroActions.mood(moodByte) != mood) {
             setMood((byte) ((moodByte & ~0xF) | mood));
+        }
+        if (actionLogHits.length > 0) {
+            logServerHits();
         }
         if (actionEndsAt >= 0 && tickCount >= actionEndsAt) {
             stopAction();

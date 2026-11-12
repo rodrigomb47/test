@@ -2336,6 +2336,49 @@ A2 as built (2026-11-12), where it goes beyond or differs from 4.4-4.9 and the r
   test rig because its mask glows outside the face); the 0.1-0.25 ms estimate of section 11 is for a real GPU and is
   still to be measured there (V2).
 
+Checkpoint 1 in game (2026-11-12; screenshots and GIFs in `docs/heroes-v2/previews/game/cp1/`). The test rig and the
+six style fixtures (built from the current `herosrc/style` with the pipeline's own `build_files`/`write_files` into a
+scratch folder, as in A2) were checked on a dedicated server from `tools/setup_server.sh` (the A1a world) with the Xvfb
+`clientViewer` (window 1280x720, FOV 70, `fovEffectScale` 0, view bobbing off), on a grass stage at y 120:
+- **Seen working:** the lineup front and back; walk and run (forced in place, `pose base walk|run`); the katana swing
+  at 1x and 2x; blinks (half, closed, closed, half; three in 16 s); all 12 moods; the talking mouth; the sash in four
+  faction colours; a pickaxe, axe, hoe, rod, shovel (on the chibi Tansy), torch and shield in the hands; the `fine_` bones
+  dropping between 19.5 and 21.6 blocks and back at 19; no vanishing at the screen edge (the hero stays drawn while
+  any part of it is on screen); the campaign hero's death (the `death` clip lies flat, no sideways roll) and its revival
+  as a new entity (one campaign entity throughout); after `save-all` and a restart the campaign hero and the preview
+  copies came back with the same UUIDs, kit and record. No z-fighting on the face planes up close at 45 degrees; the eyes
+  sit where the previews put them.
+- **Hit marker:** the server now logs a played action's timing-file hits with `-Dfactionclash.heroMarkers=true`
+  (`[Heroes] <id> server <clip> hit at +N ticks`): `attack.1` hits at +10 at 1x and +5 at 2x, as agreed. The client's
+  marker fired 10.5-12.5 game ticks after the client saw the action at 1x and 6.4-7.0 at 2x, with the viewer at 5-12
+  frames a second (1.7-4 ticks a frame); recheck within one tick at 60 fps on a real GPU (A5, V2).
+- **G2 fidelity test** (13.8): with the server frozen (`tick freeze` / `tick step`) the test rig was shot from three
+  cameras (front and 3/4 at 10 degrees above, side level; 4 screen pixels per model pixel at the target) in three poses,
+  and `tools/herogen`'s renderer drew the same poses with its perspective camera (read-only, outputs in a scratch
+  folder): a `move.idle` frame, an `attack.1` frame over `combat.idle` (the arm's logged angles fix its clip time,
+  0.438 s), and the idle with the head pitched 30 degrees down by the head look. **Every silhouette matches within one
+  pixel** in all nine views (`fidelity_game_vs_preview.png`); the preview's outline is about half a pixel fuller (110-145
+  edge pixels against 7-54 the other way: the two rasterisers' edge rules). The head-look test also confirms its sign
+  (GeckoLib hands the model data the negated pitch, so a positive pitch looks down, as in the preview at +30).
+- **Found and fixed (Java):** `v.fc_dhip` was never set (G4's form-scaled kneels, sits, sleep and death played the
+  middle form; `HeroModel.applyMolangQueries` now sets it from `leg_r`, pure rule `logic/hero/FormScale`);
+  `getDeathMaxRotation` was GeckoLib's 90 degrees (now 0: the clip lays the body down); the face planes took GeckoLib's
+  flat-cube normal fix, so a face looking down showed a bright band across the eyes (G2's finding; `HeroRenderer`
+  now draws the `eyes`, `mouth` and `cheeks` cubes with their true normals); left-hand items were rendered with the
+  right hand's mirror (GeckoLib always passes `leftHand = false`: a shield lay flat on the ground, a torch pointed
+  the wrong way; `HeroItemLayer` passes the hand, and A2's shield offset is gone); a teleport counted as running for a
+  tick (the base clip flashed to the run and restarted the idle; a step over 3 blocks a tick, `HeroClips.TELEPORT_STEP`,
+  is now left out of the ground speed). The render statistics line also gives the frames per second.
+- **Render cost (software GL: Mesa llvmpipe on 4 CPU cores, load average 6-9 from the other workflows; not a GPU
+  measurement):** a grid of test rigs 3-21 blocks from the camera, full detail. Frames per second (F3): no hero 10, 1
+  hero 7-9, 16 heroes 5-7, 64 heroes 4-6 (100, 110-140, 150-200, 170-250 ms a frame). `heroRenderStats` (CPU time in
+  the renderer per hero): 5.0 ms with one hero, 2.1-2.9 ms with 16, 0.93-1.29 ms with 64. Section 11's 0.1-0.25 ms and
+  "20 heroes under 3 ms" are for a real GPU and stay to be measured on one (V2).
+- **For the art pipeline (no Java change):** the renderer still applies the flat-cube fix to the face planes, so its
+  previews of a face turned down or to its right are lit unlike the game now (light only; silhouettes match); with
+  vanilla-size tools on the adult test rig the pickaxe and axe read well, on the chibi a shovel is nearly as long as
+  the body (A2's open item); the test rig's hair loses much of its volume beyond 20 blocks (A2's open item).
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |

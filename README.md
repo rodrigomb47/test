@@ -426,8 +426,9 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 230 JUnit tests for the pure rules (a hero's hitbox from its model, its synced fields and revival time,
-  its face (which frame each plane shows, blink timing, the talking mouth, the mood hold), which animation clip plays,
+* `./gradlew test` — 233 JUnit tests for the pure rules (a hero's hitbox from its model, its synced fields and revival time,
+  its face (which frame each plane shows, blink timing, the talking mouth, the mood hold), which animation clip plays
+  (a teleport is not running), the form-scaled animation keys' variable,
   the level of detail by distance, the chain sway, its mood, and the animation timing files; how a soldier reaches a target it cannot walk up to: break,
   build up, undermine or nothing; spiral mine and branch-mine geometry, the mine layer
   planner and the level a helper takes in a shared mine, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule, the

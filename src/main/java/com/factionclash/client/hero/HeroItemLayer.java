@@ -7,10 +7,10 @@ import com.factionclash.logic.hero.HeroActions;
 import com.factionclash.npc.ToolKind;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ShieldItem;
 import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoRenderer;
 import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
@@ -60,6 +60,13 @@ public class HeroItemLayer extends BlockAndItemGeoLayer<HeroEntity> {
         return "item_l".equals(bone.getName()) ? ItemDisplayContext.THIRD_PERSON_LEFT_HAND : ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
     }
 
+    /**
+     * Vanilla's third-person hand frame at the grip: the item is scaled back to vanilla size and turned like vanilla's
+     * {@code ItemInHandLayer} (its -90 degrees about x and 180 about y in the flipped humanoid space are this one -90
+     * about x in GeckoLib's unflipped space). GeckoLib's own call always renders as a right hand, so a left-hand item took
+     * the right hand's mirror (a shield lay on the ground, a torch pointed the wrong way); the left flag goes to vanilla
+     * here, which mirrors the item model's left-hand transform as it does for a player.
+     */
     @Override
     protected void renderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack, HeroEntity hero, MultiBufferSource bufferSource,
                                       float partialTick, int packedLight, int packedOverlay) {
@@ -67,14 +74,9 @@ public class HeroItemLayer extends BlockAndItemGeoLayer<HeroEntity> {
         float back = (float) (1.0 / hero.entry().visual().renderScale());
         poseStack.scale(back, back, back);
         poseStack.mulPose(Axis.XP.rotationDegrees(-90F));
-        if (stack.getItem() instanceof ShieldItem) {
-            boolean left = "item_l".equals(bone.getName());
-            poseStack.translate(0, 0.125, left ? 0.25 : -0.25);
-            if (left) {
-                poseStack.mulPose(Axis.YP.rotationDegrees(180F));
-            }
-        }
-        super.renderStackForBone(poseStack, bone, stack, hero, bufferSource, partialTick, packedLight, packedOverlay);
+        boolean left = "item_l".equals(bone.getName());
+        Minecraft.getInstance().getItemRenderer().renderStatic(hero, stack, getTransformTypeForStack(bone, stack, hero), left, poseStack,
+                bufferSource, hero.level(), packedLight, packedOverlay, hero.getId());
         poseStack.popPose();
     }
 }

@@ -10,14 +10,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.cache.object.GeoCube;
 import software.bernie.geckolib.cache.object.GeoQuad;
 import software.bernie.geckolib.cache.object.GeoVertex;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.util.RenderUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,13 +42,16 @@ import java.util.Map;
  *   frustum culling uses the entity's inflated culling box (1.5 blocks, 3.1).</li>
  * </ul>
  *
- * {@code -Dfactionclash.heroRenderStats=true} logs the average time per hero render every 600 renders (HEROES_V2 11).
+ * {@code -Dfactionclash.heroRenderStats=true} logs the average time per hero render every 600 renders, with the client's
+ * frames per second at that moment (HEROES_V2 11, 14.7).
  */
 public class HeroRenderer extends GeoEntityRenderer<HeroEntity> {
     private static final boolean STATS = Boolean.getBoolean("factionclash.heroRenderStats");
     private static final Map<ResourceLocation, Boolean> EXISTS = new HashMap<>();
 
     private float shiftU, shiftV;
+    /** The bone being drawn is a face plane: its normals skip GeckoLib's flat-cube fix (see {@link #renderCube}). */
+    private boolean facePlane;
     private BakedGeoModel drawing;
     private long statNanos;
     private int statCount;
@@ -64,12 +70,23 @@ public class HeroRenderer extends GeoEntityRenderer<HeroEntity> {
         if (STATS) {
             statNanos += System.nanoTime() - t0;
             if (++statCount >= 600) {
-                FactionClash.LOGGER.info("[Heroes] render: {} us per hero over {} renders", String.format(java.util.Locale.ROOT, "%.1f",
-                        statNanos / 1000.0 / statCount), statCount);
+                int fps = Minecraft.getInstance().getFps();
+                FactionClash.LOGGER.info("[Heroes] render: {} us per hero over {} renders; {} fps ({} ms a frame)",
+                        String.format(java.util.Locale.ROOT, "%.1f", statNanos / 1000.0 / statCount), statCount, fps,
+                        fps > 0 ? String.format(java.util.Locale.ROOT, "%.1f", 1000.0 / fps) : "-");
                 statNanos = 0;
                 statCount = 0;
             }
         }
+    }
+
+    /**
+     * The {@code death} clip lays the body down itself (G4); GeckoLib's own death roll would turn it another 90 degrees
+     * onto its side.
+     */
+    @Override
+    protected float getDeathMaxRotation(HeroEntity hero) {
+        return 0F;
     }
 
     @Override
@@ -122,11 +139,38 @@ public class HeroRenderer extends GeoEntityRenderer<HeroEntity> {
             shiftU = region.shiftU(frame, HeroModel.textureWidth(drawing));
             shiftV = region.shiftV(frame, HeroModel.textureHeight(drawing));
         }
+        facePlane = region != null;
         try {
             super.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, c);
         } finally {
             shiftU = 0;
             shiftV = 0;
+            facePlane = false;
+        }
+    }
+
+    /**
+     * GeckoLib's cube drawing, except that the face planes ({@code eyes}, {@code mouth}, {@code cheeks}: zero thickness)
+     * keep their true normal. GeckoLib's {@code fixInvertedFlatCube} turns a negative x or y normal of a flat cube
+     * positive, so a face looking down was lit like one looking up: a bright band across the eyes, against the darker
+     * head front around it (found by the G2 preview renderer, seen in game at checkpoint 1). The planes' one textured
+     * quad faces out of the head, so its normal needs no fix.
+     */
+    @Override
+    public void renderCube(PoseStack poseStack, GeoCube cube, VertexConsumer buffer, int packedLight, int packedOverlay, int colour) {
+        if (!facePlane) {
+            super.renderCube(poseStack, cube, buffer, packedLight, packedOverlay, colour);
+            return;
+        }
+        RenderUtil.translateToPivotPoint(poseStack, cube);
+        RenderUtil.rotateMatrixAroundCube(poseStack, cube);
+        RenderUtil.translateAwayFromPivotPoint(poseStack, cube);
+        Matrix3f normals = poseStack.last().normal();
+        Matrix4f pose = new Matrix4f(poseStack.last().pose());
+        for (GeoQuad quad : cube.quads()) {
+            if (quad != null) {
+                createVerticesOfQuad(quad, pose, normals.transform(new Vector3f(quad.normal())), buffer, packedLight, packedOverlay, colour);
+            }
         }
     }
 

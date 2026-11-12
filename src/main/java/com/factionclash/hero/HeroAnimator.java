@@ -174,6 +174,9 @@ public final class HeroAnimator {
         double dx = hero.getX() - hero.xo, dz = hero.getZ() - hero.zo;
         double h = Math.sqrt(dx * dx + dz * dz);
         double v = hero.getY() - hero.yo;
+        if (HeroClips.isTeleport(h)) {
+            return; // a teleport keeps the speed it had (HeroClips.TELEPORT_STEP)
+        }
         if (first) {
             groundSpeed = h;
             verticalSpeed = v;
