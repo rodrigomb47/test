@@ -567,7 +567,7 @@ shake, crow peck.
   their fishery and mine, Ambrose at the enchanting table once the base has one; Yugen's and Tobimaru's first talents
   belong to travelling jobs, trader and scout, which a leader never takes, so they patrol and stand at the station with
   the others); answers alarms; raids as its biases say; dies
-  and returns after 15 minutes at the capital; announcements in its voice.
+  and returns after 10 minutes at the capital (every hero, HEROES_V2 3.4); announcements in its voice.
 - **Decisions**: `LeaderBiases` sets the raid interval and first-raid delay, the counter-attack window and odds, the
   attack odds, the garrison share and minimum, the fallback point, whether the leader joins raids, the soldier cap,
   home swordsmen, ranged share, trader and enchanter thresholds, recruitment interval, food reserve, need order, house
@@ -638,7 +638,7 @@ shake, crow peck.
 
 16. `/fc start 256` creates four factions whose names, colours, banners, base styles and station signs come from their
     leaders; the same seed reproduces the same cast; the draft rules hold (unit tests and the start log).
-17. Leaders spawn at the station, keep `court` duty, answer alarms, and return 15 minutes after death at the capital.
+17. Leaders spawn at the station, keep `court` duty, answer alarms, and return 10 minutes after death at the capital (HEROES_V2 3.4).
 18. Personality shows in the numbers (run A, section 6.4): the battle maniac launches at least twice as many raids as the
     sweet-natured leader by day 6; every faction's garrison share, soldier cap, ranged share and trader threshold, as
     printed daily by `sim.py`, equal the `LeaderBiases` values for its leader within rounding.
