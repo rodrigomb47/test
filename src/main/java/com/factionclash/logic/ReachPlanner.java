@@ -26,8 +26,11 @@ public final class ReachPlanner {
     static final int WALK = 5, CLIMB = 8, PILLAR = 12;
     /** PROPOSED: how far around the fighter and the target the search looks, and how far down it drops at most. */
     public static final int MARGIN = 4, MAX_DROP = 3;
-    /** Within a player's block reach (4.5 from the eyes), as a fighter breaking a block under the target must be. */
-    static final double BLOCK_REACH = 4.5;
+    /**
+     * A fighter breaking the block under the target must be within a player's block reach of it (4.5 from the eyes);
+     * planned half a block short of that, as it may stand anywhere in its cell, not only in the middle.
+     */
+    static final double BLOCK_REACH = 4.0;
 
     private ReachPlanner() {
     }

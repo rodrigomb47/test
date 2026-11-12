@@ -191,6 +191,18 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     /** Opens a fence gate on a fighting NPC's path and closes it behind it. */
     private com.factionclash.combat.OpenGateGoal gateGoal;
+    /**
+     * Until this tick its paths may still lead through closed fence gates after a fight: one that went through a
+     * gate after its target (into an animal pen) walks out the same way when the fight is over, instead of standing
+     * at the fence until the stuck recovery hops it over.
+     */
+    public int gatesUntil;
+
+    /** Whether paths searched now may lead through closed fence gates (it opens them on the way): while fighting, and a while after going through one. */
+    public boolean opensGates() {
+        LivingEntity t = getTarget();
+        return t != null && t.isAlive() || tickCount < gatesUntil;
+    }
 
     public com.factionclash.combat.OpenGateGoal gateGoal() {
         return gateGoal;
@@ -685,6 +697,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         }
         if (r) {
             lastAttackTime = tickCount;
+            pursuit.landed(target);
             exhaust(0.1F); // a player's attack costs 0.1 exhaustion
             // the weapon wears like a player's: a sword 1 per hit, a tool used as a weapon 2
             if (com.factionclash.config.FCConfig.TOOL_WEAR.get() && target instanceof LivingEntity victim && !weapon.isEmpty()
@@ -795,6 +808,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (r) {
             lastHurtTime = tickCount;
             exhaust(source.getFoodExhaustion());
+            if (isAlive()) {
+                pursuit.onHurt(source);
+            }
         }
         return r;
     }

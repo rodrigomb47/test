@@ -17,8 +17,8 @@ import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import java.util.Set;
 
 /**
- * The faction NPC's ground navigation. While it is fighting (it has a living target) a closed fence gate counts as a
- * wooden door it can open, as it is for a player chasing someone into an animal pen; {@link
+ * The faction NPC's ground navigation. While it is fighting (it has a living target), and for a while after it went
+ * through a gate in a fight (so it walks back out of the pen), a closed fence gate counts as a wooden door it can open, as it is for a player chasing someone into an animal pen; {@link
  * com.factionclash.combat.OpenGateGoal} opens the gate when the path reaches it and closes it behind. At work, a
  * closed gate stays a fence, so workers never walk through a pen (only the animal carer and butcher go in, through
  * their own gate handling). It also counts its path searches, so tests can check that a fight keeps them few.
@@ -40,7 +40,7 @@ public class NpcPathNavigation extends GroundPathNavigation {
             @Override
             public Path findPath(PathNavigationRegion region, Mob mob, Set<BlockPos> targets, float maxRange, int accuracy, float searchDepthMultiplier) {
                 LivingEntity t = mob.getTarget();
-                e.gates = t != null && t.isAlive();
+                e.gates = mob instanceof FactionNpc n ? n.opensGates() : t != null && t.isAlive();
                 searches++;
                 return super.findPath(region, mob, targets, maxRange, accuracy, searchDepthMultiplier);
             }

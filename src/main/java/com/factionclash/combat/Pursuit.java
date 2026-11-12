@@ -9,6 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.item.BlockItem;
@@ -23,7 +25,12 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * What a fighter does about a target it cannot walk up to and hit (the owner's report: a player in an animal pen, or
@@ -62,6 +69,27 @@ public final class Pursuit {
      * (within 16 blocks of its walls) it keeps watch for as long as the target stays in sight.
      */
     static final int GIVE_UP_AWAY = 1200, IGNORE_TICKS = 1200;
+    /**
+     * PROPOSED: blows it takes from its target without being able to hit back (while working its way in, or with no
+     * path to it) before it counts that spot of the target's as one it cannot get at from here: it backs off out of
+     * reach and does not walk up to it again (a player hitting soldiers from just behind a fence, through the gap
+     * above a block in a doorway, or from a spot the planner thought it could strike from).
+     */
+    static final int UNANSWERED = 3;
+    /**
+     * PROPOSED: unanswered blows from one target in all (a player stepping from spot to spot behind a fence it is
+     * breaking) after which it plans no more breaking or building toward that target: it waits out of reach until a
+     * blow lands or a path opens.
+     */
+    static final int UNANSWERED_TOTAL = 6;
+    /** PROPOSED: close and not landing a blow this long, with the target well above or below it: it cannot. */
+    static final int STUCK_VERTICAL = 20;
+    /** PROPOSED: how long it remembers a target's spots it cannot get at, and the blocks it broke for that target. */
+    static final int MEMORY = 6000;
+    /** PROPOSED: the farther ring a waiting fighter backs off to when its target shoots at it and there is no cover nearer. */
+    static final double COVER_RING = 10.0;
+    /** PROPOSED: a worker steps out of reach of a target it cannot get at for at most this long, then lets it be. */
+    static final int CIVILIAN_STEP_AWAY = 100;
 
     private final FactionNpc npc;
     private Mode mode = Mode.CHASE;
@@ -76,6 +104,8 @@ public final class Pursuit {
     private Vec3 holdFrom;
     private int holdAge;
     private int closeNoHit;
+    /** The fewest path steps it had left since it came close without landing a blow (it is stuck unless that drops). */
+    private int fewestLeft;
     private int broken;
     private int alarmIn;
     private boolean archer;
@@ -83,6 +113,22 @@ public final class Pursuit {
     public int engagedAt = Integer.MIN_VALUE / 2;
     /** Counters for tests: planner runs, times it started waiting, blocks broken and built. */
     public int plans, holds, breaks, pillars;
+    /**
+     * What it learnt about one target (kept while the target leaves and comes back, until {@link #MEMORY} ticks after
+     * it last learnt something, or a blow lands): the target's cells it cannot get at (true when a path reached the
+     * cell then, so only a new block in the way changes that; false when there was no path, so a path opening clears
+     * it), and the blocks it broke on the way (one put back is not broken again).
+     */
+    private final Map<Long, Boolean> futile = new HashMap<>();
+    private final Set<Long> brokenCells = new HashSet<>();
+    private UUID memoryOf;
+    private int memoryAt;
+    /** Whether the last path searched toward the target reached it. */
+    private boolean pathReach = true;
+    /** Blows taken from the target since it last landed one, while it could not hit back: at the current spot, and in all. */
+    private int unanswered, unansweredTotal;
+    /** Shot at by its target while waiting: it waits out of the target's sight (or farther) instead. */
+    private boolean cover;
 
     public Pursuit(FactionNpc npc) {
         this.npc = npc;
@@ -116,15 +162,100 @@ public final class Pursuit {
         broken = 0;
         alarmIn = 0;
         heldFor = 0;
+        unanswered = 0;
+        cover = false;
+        pathReach = true;
     }
 
-    /** Ties the state to this target; a different one starts afresh. */
+    /**
+     * Ties the state to this target; a different one starts afresh. What it learnt about a target (spots it cannot get
+     * at, blocks put back) is kept when the same target comes back, so a player hiding in a hole is not walked up to
+     * again each time a guard is sent after it.
+     */
     public void bind(LivingEntity t, boolean ranged) {
         if (t != target) {
             reset();
             target = t;
+            if (t != null && (!t.getUUID().equals(memoryOf) || npc.tickCount - memoryAt > MEMORY)) {
+                futile.clear();
+                brokenCells.clear();
+                unansweredTotal = 0;
+                memoryOf = t.getUUID();
+                memoryAt = npc.tickCount;
+            }
         }
         archer = ranged;
+    }
+
+    /** It landed a blow on {@code victim}: the target can be got at after all. */
+    public void landed(Entity victim) {
+        if (victim == target) {
+            unanswered = 0;
+            unansweredTotal = 0;
+            futile.clear();
+        }
+    }
+
+    /**
+     * Whether the target stands in a cell it found it cannot get at. {@code reachNow}: a path searched just now
+     * reaches the target; that clears a cell marked when there was no path (a way in opened).
+     */
+    public boolean futile(LivingEntity t, boolean reachNow) {
+        long key = t.blockPosition().asLong();
+        Boolean then = futile.get(key);
+        if (then == null) {
+            return false;
+        }
+        if (reachNow && !then) {
+            futile.remove(key);
+            return false;
+        }
+        return true;
+    }
+
+    private void markFutile(LivingEntity t) {
+        if (futile.size() < 64) {
+            futile.put(t.blockPosition().asLong(), pathReach);
+        }
+        memoryAt = npc.tickCount;
+    }
+
+    /** The path searched toward the target reached it (and the target is not in a cell it found it cannot get at). */
+    public void reachable() {
+        pathReach = true;
+    }
+
+    /**
+     * It was hurt. Blows from its target that it cannot answer while it works its way in, has no path to it, or
+     * stands close below or above it are counted, and after {@link #UNANSWERED} it backs off out of reach and keeps
+     * away from that spot of the target's; an arrow from its target while it waits sends it into cover.
+     */
+    public void onHurt(DamageSource source) {
+        Entity e = source.getEntity();
+        if (archer || target == null || e != target || !target.isAlive() || canStrikeNow(target)) {
+            return;
+        }
+        boolean projectile = source.getDirectEntity() != null && source.getDirectEntity() != e;
+        if (mode == Mode.HOLD) {
+            if (projectile && !cover) {
+                cover = true;
+                holdAge = 1000; // a new spot at once
+            }
+            return;
+        }
+        // working its way in, no path, or close below or above the target (the edge of a hole, the foot of a ledge)
+        boolean blocked = mode == Mode.WORK || !pathReach
+                || Math.abs(target.getY() - npc.getY()) >= 1.5 && horizontal(npc, target) <= 3.0;
+        if (blocked) {
+            unansweredTotal++;
+            memoryAt = npc.tickCount;
+        }
+        if (blocked && ++unanswered >= UNANSWERED) {
+            unanswered = 0;
+            markFutile(target);
+            cover |= projectile;
+            hold(target);
+        }
     }
 
     private ServerLevel level() {
@@ -150,24 +281,42 @@ public final class Pursuit {
     public void unreachable(LivingEntity t, Path partial) {
         Node end = partial == null ? null : partial.getEndNode();
         exit = end == null ? npc.blockPosition() : end.asBlockPos();
+        pathReach = partial != null && partial.canReach();
         if (horizontal(npc, t) > PLAN_RANGE || Math.abs(t.getY() - npc.getY()) > PLAN_HEIGHT) {
             return;
         }
         decide(t);
     }
 
-    /** Close and not landing a blow for a while although the path says it can reach: treat it as unreachable. */
+    /**
+     * Close and not landing a blow for a while although the path says it can reach (a player in a 1x1 hole two deep,
+     * just behind a fence): treat it as unreachable; when nothing can be done about it from here, that spot of the
+     * target's is one it does not walk up to again.
+     */
     public void watchStuck(LivingEntity t, boolean struckOrCanStrike) {
         if (mode != Mode.CHASE || struckOrCanStrike || horizontal(npc, t) > 3.0) {
             closeNoHit = 0;
             return;
         }
-        if (++closeNoHit >= STUCK) {
+        int remaining = pathLeft();
+        if (closeNoHit == 0) {
+            fewestLeft = remaining;
+        } else if (remaining < fewestLeft - 1) {
+            // still getting along its path (round to the stairs of a wall the target stands on): not stuck. Being
+            // knocked back from the edge of a hole is no progress: the path's last steps are still to go.
+            closeNoHit = 0;
+            return;
+        }
+        int limit = Math.abs(t.getY() - npc.getY()) >= 1.5 ? STUCK_VERTICAL : STUCK;
+        if (++closeNoHit >= limit) {
             closeNoHit = 0;
             if (exit == null) {
                 exit = npc.blockPosition();
             }
             decide(t);
+            if (mode == Mode.HOLD) {
+                markFutile(t);
+            }
         }
     }
 
@@ -179,10 +328,17 @@ public final class Pursuit {
         if (!npc.onGround() && !npc.isInWater()) {
             return; // mid-jump: its cell is not where it stands; the next look decides
         }
+        if (!supported(t)) {
+            mode = Mode.CHASE; // a target in the air (a flying monster, a fall): chased as always, nothing built toward it
+            return;
+        }
+        boolean known = futile(t, pathReach);
         plan = null;
-        if (broken < MAX_BREAKS && npc.onGround()) {
+        // a worker defends itself but does not break or build its way to anyone
+        if (!known && !npc.getRole().isCivilian() && broken < MAX_BREAKS && unansweredTotal < UNANSWERED_TOTAL && npc.onGround()) {
             int blocks = Math.min(MAX_PILLAR, pillarBlocks());
-            plan = ReachPlanner.plan(Reach.world(level(), npc), cell(npc.blockPosition()), cell(t.blockPosition()), blocks, true, MAX_PLAN_COST);
+            plan = ReachPlanner.plan(Reach.world(level(), npc, k -> brokenCells.contains(k)), cell(standCell()), cell(t.blockPosition()),
+                    blocks, true, MAX_PLAN_COST);
             plans++;
         }
         if (plan != null && !plan.steps().isEmpty()) {
@@ -191,16 +347,84 @@ public final class Pursuit {
             walkTicks = 0;
             mode = Mode.WORK;
             engagedAt = npc.tickCount;
+            npc.getNavigation().stop(); // off the chase's path: the first work tick walks to where the work is
             return;
         }
         if (plan != null) {
-            mode = Mode.CHASE; // it can strike from where it stands
+            // the plan says it can strike from where it stands, but the swing does not land (its hit box a little
+            // short of a target at the far side of its cell): one short go, then this spot counts as out of reach
+            markFutile(t);
+            mode = Mode.CHASE;
+            closeNoHit = STUCK - STUCK_VERTICAL;
+            fewestLeft = pathLeft();
             return;
         }
         hold(t);
     }
 
+    /** Path steps it has left to walk (0 with no path). */
+    private int pathLeft() {
+        Path path = npc.getNavigation().getPath();
+        return path == null || path.isDone() ? 0 : path.getNodeCount() - path.getNextNodeIndex();
+    }
+
+    /** Something under the target within two blocks (it stands, or jumps): not a flying or falling one. */
+    private boolean supported(LivingEntity t) {
+        if (t.onGround() || t.isInWater()) {
+            return true;
+        }
+        BlockPos f = t.blockPosition();
+        for (int k = 0; k <= 2; k++) {
+            BlockPos b = f.below(k);
+            if (!level().getBlockState(b).getCollisionShape(level(), b).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The cell it stands in for planning. Its feet's block position, unless that holds something it is only pressed
+     * against (a fence post its middle has slid over): then the open cell beside it that its body is mostly in; or,
+     * standing on top of a low block (a slab, a path), the cell above it.
+     */
+    private BlockPos standCell() {
+        ServerLevel level = level();
+        BlockPos b = npc.blockPosition();
+        if (open(b) && open(b.above())) {
+            return b;
+        }
+        BlockState s = level.getBlockState(b);
+        var shape = s.getCollisionShape(level, b);
+        if (!shape.isEmpty() && shape.max(net.minecraft.core.Direction.Axis.Y) <= npc.getY() - b.getY() + 1.0E-3
+                && open(b.above()) && open(b.above(2))) {
+            return b.above();
+        }
+        BlockPos best = b;
+        double bestD = Double.MAX_VALUE;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                BlockPos n = b.offset(dx, 0, dz);
+                if ((dx != 0 || dz != 0) && open(n) && open(n.above())) {
+                    double d = npc.position().distanceToSqr(n.getX() + 0.5, npc.getY(), n.getZ() + 0.5);
+                    if (d < bestD) {
+                        bestD = d;
+                        best = n;
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    private boolean open(BlockPos p) {
+        return Reach.passable(level(), p, level().getBlockState(p));
+    }
+
     private void hold(LivingEntity t) {
+        if (mode == Mode.WORK) {
+            breaker.reset(npc);
+        }
         if (mode != Mode.HOLD) {
             holds++;
             mode = Mode.HOLD;
@@ -212,15 +436,6 @@ public final class Pursuit {
             heldFor = 1;
         }
         recheck = RECHECK;
-        if (npc.getRole().isCivilian()) {
-            // a worker does not stand guard: it lets the target be and gets out of its way (its job takes over)
-            Vec3 away = DefaultRandomPos.getPosAway(npc, 8, 4, t.position());
-            if (away != null && horizontal(npc, t) < HOLD_MIN) {
-                npc.getNavigation().moveTo(away.x, away.y, away.z, 1.2);
-            }
-            npc.setTarget(null);
-            reset();
-        }
     }
 
     private static ReachPlanner.Cell cell(BlockPos p) {
@@ -284,19 +499,25 @@ public final class Pursuit {
             if (Reach.passable(level(), b, s)) {
                 continue; // already gone (or it was only a door after all)
             }
-            if (!Reach.mayBreak(level(), b, npc) || !BlockWork.inReach(npc, b, 4.5)) {
-                decide(t); // the world changed: plan again
+            if (brokenCells.contains(b.asLong()) || !Reach.mayBreak(level(), b, npc) || !BlockWork.inReach(npc, b, 4.5)) {
+                // the world changed (a block put back where it broke one, something it may not break): wait out of
+                // reach and plan again at the next look, never again on the spot every tick
+                hold(t);
                 return;
             }
             if (breaker.tick(npc, b)) {
                 breaks++;
                 broken++;
+                if (brokenCells.size() < 256) {
+                    brokenCells.add(b.asLong());
+                }
+                memoryAt = npc.tickCount;
                 Reach.forget(level(), b);
             }
             return; // one block at a time, at a player's speed
         }
         if (step.pillar() && !pillarUp(origin)) {
-            decide(t);
+            hold(t); // someone stands where the block goes, or no room above: look again later
             return;
         }
         mode = Mode.CHASE; // this step is done: the attack goal searches again, and plans the next one if needed
@@ -361,6 +582,16 @@ public final class Pursuit {
     }
 
     private void holdTick(LivingEntity t) {
+        if (npc.getRole().isCivilian()) {
+            // a worker does not stand guard: it steps out of the target's reach, then lets it be (its job takes over)
+            if (horizontal(npc, t) >= HOLD_MIN || ++heldFor > CIVILIAN_STEP_AWAY) {
+                npc.setTarget(null);
+                reset();
+                return;
+            }
+            goToHoldSpot(t, 1.2);
+            return;
+        }
         if (++heldFor > GIVE_UP_AWAY && !atHome()) {
             ignored = t.getUUID();
             ignoredUntil = npc.tickCount + IGNORE_TICKS;
@@ -369,8 +600,10 @@ public final class Pursuit {
             return;
         }
         boolean sees = npc.getSensing().hasLineOfSight(t);
-        if (sees && npc.distanceTo(t) < 24) {
-            engagedAt = npc.tickCount; // keeps watching: the target does not go stale while it waits in sight of it
+        // keeps watching: the target does not go stale while it waits in sight of it, in cover from it, or at home
+        // (an intruder hiding in a hole in its base is still there)
+        if ((sees || cover || atHome()) && npc.distanceTo(t) < 24) {
+            engagedAt = npc.tickCount;
         }
         npc.getLookControl().setLookAt(t, 30.0F, 30.0F);
         if (--alarmIn <= 0) {
@@ -380,17 +613,21 @@ public final class Pursuit {
         if (--recheck <= 0) {
             recheck = RECHECK;
             Path p = npc.getNavigation().createPath(t, 0);
-            if (p != null && p.canReach()) {
+            boolean reach = p != null && p.canReach();
+            pathReach = reach;
+            if (reach && !futile(t, true)) {
                 mode = Mode.CHASE; // a way in: go
                 holdSpot = null;
+                cover = false;
                 return;
             }
             Node end = p == null ? null : p.getEndNode();
-            if (end != null) {
+            if (end != null && !reach) {
                 exit = end.asBlockPos();
             }
             decide(t);
             if (mode != Mode.HOLD) {
+                cover = false;
                 return;
             }
         }
@@ -437,29 +674,41 @@ public final class Pursuit {
         holdAge = 0;
         holdFrom = t.position();
         double hd = horizontal(npc, t);
-        double ring = archer ? ARCHER_RING : HOLD_RING;
-        if (hd >= HOLD_MIN && hd <= (archer ? 14 : HOLD_MAX) && npc.onGround() && !crowded(npc.blockPosition())
-                && (!archer || npc.getSensing().hasLineOfSight(t))) {
+        List<BlockPos> others = othersHoldSpots();
+        if (hd >= HOLD_MIN && hd <= (archer ? 14 : HOLD_MAX) && npc.onGround() && !crowded(others, npc.blockPosition())
+                && (!archer || npc.getSensing().hasLineOfSight(t)) && (!cover || !npc.getSensing().hasLineOfSight(t))) {
             holdSpot = npc.blockPosition();
             return;
         }
         BlockPos anchor = exit != null ? exit : npc.blockPosition();
         List<BlockPos> spots = new ArrayList<>();
-        for (int i = 0; i < 16; i++) {
-            double a = i * Math.PI / 8;
-            int x = (int) Math.floor(t.getX() + Math.cos(a) * ring), z = (int) Math.floor(t.getZ() + Math.sin(a) * ring);
-            for (int dy : new int[]{0, 1, -1, 2, -2}) {
-                BlockPos f = new BlockPos(x, anchor.getY() + dy, z);
-                if (NpcNavigator.isSafeStandingSpot(level(), npc, f)) {
-                    double dx = f.getX() + 0.5 - t.getX(), dz = f.getZ() + 0.5 - t.getZ();
-                    if (dx * dx + dz * dz >= HOLD_MIN * HOLD_MIN) {
-                        spots.add(f);
+        Map<BlockPos, Double> score = new HashMap<>();
+        for (double ring : archer ? new double[]{ARCHER_RING} : cover ? new double[]{HOLD_RING, COVER_RING} : new double[]{HOLD_RING}) {
+            for (int i = 0; i < 16; i++) {
+                double a = i * Math.PI / 8;
+                int x = (int) Math.floor(t.getX() + Math.cos(a) * ring), z = (int) Math.floor(t.getZ() + Math.sin(a) * ring);
+                for (int dy : new int[]{0, 1, -1, 2, -2}) {
+                    BlockPos f = new BlockPos(x, anchor.getY() + dy, z);
+                    if (NpcNavigator.isSafeStandingSpot(level(), npc, f)) {
+                        double dx = f.getX() + 0.5 - t.getX(), dz = f.getZ() + 0.5 - t.getZ();
+                        if (dx * dx + dz * dz >= HOLD_MIN * HOLD_MIN && !score.containsKey(f)) {
+                            // nearest the way out, apart from the others; an archer in sight of the target, a fighter
+                            // being shot at out of it (or at least farther off)
+                            double v = f.distSqr(anchor) + (crowded(others, f) ? 400 : 0);
+                            if (archer && !sight(f, t)) {
+                                v += 900;
+                            } else if (cover) {
+                                v += (sight(f, t) ? 900 : 0) - (dx * dx + dz * dz);
+                            }
+                            spots.add(f);
+                            score.put(f, v);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }
-        spots.sort(Comparator.comparingDouble(f -> f.distSqr(anchor) + (crowded(f) ? 400 : 0) + (archer && !sight(f, t) ? 900 : 0)));
+        spots.sort(Comparator.comparingDouble(score::get));
         for (int i = 0; i < Math.min(3, spots.size()); i++) {
             Path p = npc.getNavigation().createPath(spots.get(i), 0);
             if (p != null && p.canReach()) {
@@ -469,8 +718,8 @@ public final class Pursuit {
             }
         }
         holdSpot = null;
-        if (hd < HOLD_MIN) {
-            Vec3 away = DefaultRandomPos.getPosAway(npc, 8, 4, t.position());
+        if (hd < HOLD_MIN || cover) {
+            Vec3 away = DefaultRandomPos.getPosAway(npc, cover ? 12 : 8, 4, t.position());
             if (away != null) {
                 holdSpot = BlockPos.containing(away);
                 npc.getNavigation().moveTo(away.x, away.y, away.z, 1.2);
@@ -478,12 +727,23 @@ public final class Pursuit {
         }
     }
 
-    /** Another fighter of its faction already waits within two blocks of {@code p}. */
-    private boolean crowded(BlockPos p) {
+    /** The spots other fighters of its faction nearby wait at. */
+    private List<BlockPos> othersHoldSpots() {
+        List<BlockPos> out = new ArrayList<>();
         for (FactionNpc o : npc.level().getEntitiesOfClass(FactionNpc.class, npc.getBoundingBox().inflate(16),
                 o -> o != npc && o.isAlive() && o.getFaction() == npc.getFaction())) {
             BlockPos s = o.pursuit().holdSpot();
-            if (s != null && s.distSqr(p) <= 4) {
+            if (s != null) {
+                out.add(s);
+            }
+        }
+        return out;
+    }
+
+    /** Another fighter of its faction already waits within two blocks of {@code p}. */
+    private static boolean crowded(List<BlockPos> others, BlockPos p) {
+        for (BlockPos s : others) {
+            if (s.distSqr(p) <= 4) {
                 return true;
             }
         }

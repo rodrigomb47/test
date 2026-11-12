@@ -194,4 +194,21 @@ class ReachPlannerTest {
         // the only way: break the block in front (15) and ... the doorway block itself is fixed: no way through
         assertNull(ReachPlanner.plan(g, new Cell(0, 1, 0), new Cell(0, 1, 5), 0, true, CAP));
     }
+
+    @Test
+    void underminesOnlyFromHalfABlockWithinReach() {
+        // a fixed tower with a breakable top block under the target; no blocks to climb with
+        Grid g = new Grid();
+        for (int y = 1; y <= 4; y++) {
+            g.set(3, y, 0, ReachPlanner.FIXED);
+        }
+        g.set(3, 5, 0, 15);
+        Plan p = ReachPlanner.plan(g, new Cell(0, 1, 0), new Cell(3, 6, 0), 0, true, CAP);
+        assertNotNull(p, "the block under a target five up is 3 blocks from the eyes beside the tower");
+        assertTrue(p.undermine());
+        // one higher: 4.0 blocks from the eyes beside it, within a player's 4.5 only from the middle of the cell
+        g.set(3, 5, 0, ReachPlanner.FIXED).set(3, 6, 0, 15);
+        assertNull(ReachPlanner.plan(g, new Cell(0, 1, 0), new Cell(3, 7, 0), 0, true, CAP),
+                "planned only half a block within reach, as the fighter stands anywhere in its cell");
+    }
 }

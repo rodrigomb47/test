@@ -454,6 +454,24 @@ public final class CombatReachGameTests {
             h.assertFalse(may.test(own, a) || may.test(foe, a), "a planned block must never be broken");
             h.assertTrue(may.test(own, b) && may.test(foe, b), "a foreign block in a planned cell may be broken");
             h.assertFalse(may.test(own, c), "an own player's edit must be left to the own side");
+            var data = CampaignData.get(level.getServer());
+            FactionType against = data.pactAgainst;
+            java.util.Set<FactionType> members = java.util.EnumSet.noneOf(FactionType.class);
+            members.addAll(data.pactMembers);
+            try {
+                data.pactAgainst = FactionType.STONEGUARD; // Ember and Tide in a pact: allies
+                data.pactMembers.clear();
+                data.pactMembers.add(FactionType.EMBER_LEGION);
+                data.pactMembers.add(FactionType.TIDE_ALLIANCE);
+                FactionNpc ally = t.track(soldier(h, 8, 20, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN));
+                h.assertFalse(may.test(ally, c), "an ally must leave the base's own player's edit too");
+                h.assertFalse(may.test(ally, d), "an unplanned block in an ally's base is not its to break either");
+                h.assertTrue(may.test(ally, e), "an ally may break a hostile player's block");
+            } finally {
+                data.pactAgainst = against;
+                data.pactMembers.clear();
+                data.pactMembers.addAll(members);
+            }
             h.assertTrue(may.test(foe, c), "an enemy may break an edit of the base's players");
             h.assertFalse(may.test(own, d), "an unplanned block in its own base is not its to break");
             h.assertTrue(may.test(foe, d), "an enemy may break an unplanned block in the base");
@@ -467,9 +485,280 @@ public final class CombatReachGameTests {
             h.assertTrue(place.test(foe, air), "an enemy may build itself up in the base");
             h.assertTrue(place.test(own, out), "anyone may build up outside the bases");
             h.assertFalse(place.test(foe, gap), "never a block into a planned cell (a gap in a wall stays for the builders)");
+            t.addWorkplace(com.factionclash.campaign.WorkplaceState.Type.MINE, h.absolutePos(new BlockPos(18, 3, 4)));
+            h.assertFalse(place.test(foe, new BlockPos(19, 2, 4)) || place.test(own, new BlockPos(19, 2, 4)),
+                    "never a pillar block in a mine's stairwell");
         } finally {
             t.cleanup();
         }
         h.succeed();
     }
+
+    /**
+     * The mock player strikes back like a real one: every 12 ticks (a sword's pace) it hits each soldier within its reach
+     * and sight for 1 damage. Counts, per soldier, the blows landed in a row without the player being hurt by a faction
+     * NPC in between ("unanswered": the soldier stood there and took them), and keeps the worst run in {@code worst[0]}.
+     */
+    static void playerStrikesBack(GameTestHelper h, ServerPlayer p, List<FactionNpc> npcs, int[] worst) {
+        Map<FactionNpc, Integer> run = new HashMap<>();
+        float[] hp = {p.getHealth()};
+        h.onEachTick(() -> {
+            if (p.isRemoved()) {
+                return;
+            }
+            if (p.getHealth() < hp[0]) {
+                hp[0] = p.getHealth();
+                run.clear(); // a soldier hit back
+            }
+            if (h.getTick() % 12 != 0) {
+                return;
+            }
+            for (FactionNpc n : npcs) {
+                if (n.isAlive() && inPlayersReach(p, n) && p.hasLineOfSight(n)
+                        && n.hurt(h.getLevel().damageSources().playerAttack(p), 1.0F)) {
+                    int r = run.merge(n, 1, Integer::sum);
+                    worst[0] = Math.max(worst[0], r);
+                }
+            }
+        });
+    }
+
+    /**
+     * A player in a 1x1 hole two blocks deep in stone, hitting whoever stands at its edge: a soldier there cannot hit
+     * back (its swing does not reach down) nor dig down beside it with a sword. It takes a few blows at most, then
+     * keeps out of reach and does not walk up to the hole again.
+     */
+    @GameTest(template = "platform", timeoutTicks = 500, batch = "reach_hole")
+    public static void soldiersDoNotTradeBlowsWithAPlayerInAHole(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 500);
+        for (int x = 6; x <= 18; x++) {
+            h.setBlock(new BlockPos(x, 2, 9), Blocks.STONE); // a step up onto the plateau
+            for (int z = 10; z <= 20; z++) {
+                for (int y = 2; y <= 3; y++) {
+                    if (x != 12 || z != 14) {
+                        h.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                    }
+                }
+            }
+        }
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 2, 14), FactionType.GROVE_COVENANT);
+        t.onCleanup(() -> remove(h, p));
+        // soldiers of the base the hole is in, going about their guard duty around it
+        List<FactionNpc> npcs = List.of(t.register(soldier(h, 10, 4, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN)),
+                t.register(soldier(h, 14, 4, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN)));
+        npcs.forEach(n -> n.setTarget(p));
+        int[] worst = {0};
+        playerStrikesBack(h, p, npcs, worst);
+        int[] late = {0};
+        t.onEachTick(() -> {
+            if (h.getTick() >= 300) {
+                for (FactionNpc n : npcs) {
+                    if (inPlayersReach(p, n) && !hurtByNpc(p)) {
+                        late[0]++;
+                    }
+                }
+            }
+            if (worst[0] > 4) {
+                t.fail("a soldier took " + worst[0] + " blows in a row from the player in the hole: " + describe(h, p, npcs));
+            }
+            if (h.getTick() == 495) {
+                t.assertTrue(late[0] <= 20, "soldiers still stood by the hole within the player's reach for " + late[0]
+                        + " ticks after tick 300: " + describe(h, p, npcs));
+                // (a target out of sight in its hole may be let go: vanilla's target memory drops an unseen attacker
+                // after 3 s; what matters is that nobody comes back within its reach)
+                t.assertTrue(npcs.stream().allMatch(FactionNpc::isAlive), "a soldier died: " + describe(h, p, npcs));
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * A player behind a broken doorway who puts its block back each time a soldier breaks it, hitting the soldier
+     * through the gap above while it works: the soldier breaks it once, not again and again within the player's
+     * reach; it waits out of reach (the archers' turn). The planned wall stays.
+     */
+    @GameTest(template = "platform", timeoutTicks = 500, batch = "reach_reblock")
+    public static void soldiersDoNotKeepBreakingABlockThePlayerPutsBack(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 500);
+        Map<BlockPos, BlockState> plan = new HashMap<>();
+        Direction south = h.getTestRotation().rotate(Direction.SOUTH);
+        for (int x = 0; x <= 23; x++) {
+            for (int y = 2; y <= 4; y++) {
+                BlockPos r = new BlockPos(x, y, 9);
+                BlockPos a = h.absolutePos(r);
+                if (x == 12 && y <= 3) {
+                    plan.put(a, Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.FACING, south)
+                            .setValue(DoorBlock.HALF, y == 2 ? DoubleBlockHalf.LOWER : DoubleBlockHalf.UPPER));
+                    continue;
+                }
+                h.setBlock(r, Blocks.STONE);
+                plan.put(a, Blocks.STONE.defaultBlockState());
+            }
+        }
+        t.base.structures.add(StructureRecord.of("Test wall", plan));
+        t.base.invalidatePlanIndex();
+        BlockPos dirt = new BlockPos(12, 2, 9);
+        h.setBlock(dirt, Blocks.DIRT);
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 2, 11), FactionType.GROVE_COVENANT);
+        t.onCleanup(() -> remove(h, p));
+        List<FactionNpc> npcs = List.of(t.register(soldier(h, 10, 4, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN)));
+        npcs.forEach(n -> n.setTarget(p));
+        int[] worst = {0};
+        playerStrikesBack(h, p, npcs, worst);
+        int[] broken = {0};
+        int[] late = {0};
+        t.onEachTick(() -> {
+            if (h.getBlockState(dirt).isAir()) {
+                broken[0]++;
+                AABB cell = new AABB(h.absolutePos(dirt));
+                if (npcs.stream().noneMatch(n -> n.getBoundingBox().intersects(cell))) {
+                    h.setBlock(dirt, Blocks.DIRT); // the player puts it back at once
+                }
+            }
+            if (h.getTick() >= 300 && npcs.stream().anyMatch(n -> inPlayersReach(p, n))) {
+                late[0]++;
+            }
+            for (Map.Entry<BlockPos, BlockState> e : plan.entrySet()) {
+                if (e.getValue().is(Blocks.STONE) && !h.getLevel().getBlockState(e.getKey()).is(Blocks.STONE)) {
+                    t.fail("a planned wall block was broken at " + h.relativePos(e.getKey()).toShortString());
+                }
+            }
+            if (broken[0] > 2) {
+                t.fail("the soldier broke the block the player keeps putting back " + broken[0] + " times: " + describe(h, p, npcs));
+            }
+            if (worst[0] > 4) {
+                t.fail("the soldier took " + worst[0] + " blows in a row breaking its way in: " + describe(h, p, npcs));
+            }
+            if (h.getTick() == 495) {
+                t.assertTrue(late[0] <= 20, "the soldier still stood within the player's reach for " + late[0] + " ticks after tick 300: "
+                        + describe(h, p, npcs));
+                t.assertTrue(npcs.get(0).isAlive() && npcs.get(0).getTarget() == p, "the soldier died or stopped watching: " + describe(h, p, npcs));
+                t.succeed();
+            }
+        });
+    }
+
+    /**
+     * After a fight in the pen (the player killed), soldiers walk out through the gate they came in by, opening it and
+     * closing it behind them, instead of standing at the fence: their paths may use gates for a while after a fight.
+     */
+    @GameTest(template = "platform", timeoutTicks = 600, batch = "reach_pen_out")
+    public static void soldiersLeaveThePenThroughTheGateAfterTheFight(GameTestHelper h) {
+        pen(h, 7, 9, 17, 19, 12);
+        BlockPos gate = h.absolutePos(new BlockPos(12, 2, 9));
+        Cow cow = h.spawn(EntityType.COW, new BlockPos(9, 2, 17));
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 2, 15), FactionType.GROVE_COVENANT);
+        List<FactionNpc> npcs = List.of(soldier(h, 9, 3, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN),
+                soldier(h, 15, 3, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN));
+        npcs.forEach(n -> n.setTarget(p));
+        AABB inside = new AABB(h.absolutePos(new BlockPos(8, 1, 10))).minmax(new AABB(h.absolutePos(new BlockPos(16, 4, 18))));
+        BlockPos out = h.absolutePos(new BlockPos(12, 2, 4));
+        long[] over = {-1};
+        h.onEachTick(() -> {
+            if (over[0] < 0 && hurtByNpc(p) && npcs.stream().allMatch(n -> inside.contains(n.position()))) {
+                over[0] = h.getTick();
+                remove(h, p); // the player is dead: the fight is over, both soldiers in the pen
+            }
+            if (over[0] >= 0) {
+                for (FactionNpc n : npcs) {
+                    if (inside.contains(n.position()) && n.getNavigation().isDone()) {
+                        n.getNavigation().moveTo(out.getX() + 0.5, out.getY(), out.getZ() + 0.5, 1.0); // back to its post
+                    }
+                }
+            }
+        });
+        h.runAtTickTime(597, () -> {
+            remove(h, p);
+            h.fail(over[0] < 0 ? "the soldiers never both got into the pen to the player: " + describe(h, p, npcs)
+                    : "the soldiers did not get out of the pen after the fight: " + describe(h, p, npcs) + "; gate open "
+                    + h.getLevel().getBlockState(gate).getValue(FenceGateBlock.OPEN));
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(over[0] >= 0, "the fight is not over yet");
+            h.assertTrue(npcs.stream().noneMatch(n -> inside.contains(n.position())), "a soldier is still in the pen");
+            boolean inGate = npcs.stream().anyMatch(n -> n.getBoundingBox().intersects(new AABB(gate)));
+            h.assertTrue(!inGate && !h.getLevel().getBlockState(gate).getValue(FenceGateBlock.OPEN), "the gate is still open");
+            if (!inside.contains(cow.position())) {
+                h.fail("the cow got out of the pen");
+            }
+        });
+    }
+
+    /**
+     * A soldier waiting out of reach of a player it cannot get at, shot at by that player: it moves out of the
+     * player's sight (behind a wall here) or farther off, and keeps the player as its target.
+     */
+    @GameTest(template = "platform", timeoutTicks = 500, batch = "reach_cover")
+    public static void aWaitingSoldierTakesCoverWhenShotAt(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 500);
+        List<BlockPos> fence = pen(h, 7, 9, 17, 19, -1);
+        Map<BlockPos, BlockState> plan = new HashMap<>();
+        for (BlockPos r : fence) {
+            plan.put(h.absolutePos(r), Blocks.OAK_FENCE.defaultBlockState());
+        }
+        t.base.structures.add(StructureRecord.of("Test pen", plan));
+        t.base.invalidatePlanIndex();
+        for (int x = 6; x <= 18; x++) {
+            for (int y = 2; y <= 3; y++) {
+                h.setBlock(new BlockPos(x, y, 3), Blocks.STONE); // a wall to take cover behind
+            }
+        }
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 2, 11), FactionType.GROVE_COVENANT);
+        t.onCleanup(() -> remove(h, p));
+        FactionNpc n = t.register(soldier(h, 12, 7, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN));
+        n.setTarget(p);
+        long[] shotAt = {-1};
+        t.onEachTick(() -> {
+            long tick = h.getTick();
+            if (shotAt[0] < 0 && tick >= 100 && n.pursuit().mode() == com.factionclash.combat.Pursuit.Mode.HOLD) {
+                t.assertTrue(p.hasLineOfSight(n), "the soldier should wait in sight of the player before it is shot at: " + describe(h, p, List.of(n)));
+                var arrow = new net.minecraft.world.entity.projectile.Arrow(h.getLevel(), p, new ItemStack(Items.ARROW), null);
+                n.hurt(h.getLevel().damageSources().arrow(arrow, p), 1.0F);
+                arrow.discard();
+                shotAt[0] = tick;
+            }
+            if (shotAt[0] >= 0 && tick - shotAt[0] > 30 && n.getNavigation().isDone()) {
+                double dx = n.getX() - p.getX(), dz = n.getZ() - p.getZ();
+                if (!p.hasLineOfSight(n) || dx * dx + dz * dz >= 9.0 * 9.0) {
+                    t.assertTrue(n.getTarget() == p, "it took cover but forgot the player: " + describe(h, p, List.of(n)));
+                    t.succeed();
+                }
+            }
+            if (tick == 495) {
+                t.fail(shotAt[0] < 0 ? "the soldier never waited out of reach: " + describe(h, p, List.of(n))
+                        : "the soldier stayed in the open in the player's sight after being shot at: " + describe(h, p, List.of(n)));
+            }
+        });
+    }
+
+    /**
+     * A worker (a farmer) hit by a player it cannot get at does not stand at the fence within the player's reach: it
+     * steps out of reach and lets the player be.
+     */
+    @GameTest(template = "platform", timeoutTicks = 300, batch = "reach_civilian")
+    public static void aWorkerStepsOutOfReachOfAPlayerItCannotGetAt(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 2, 11, 300);
+        List<BlockPos> fence = pen(h, 7, 9, 17, 19, -1);
+        Map<BlockPos, BlockState> plan = new HashMap<>();
+        for (BlockPos r : fence) {
+            plan.put(h.absolutePos(r), Blocks.OAK_FENCE.defaultBlockState());
+        }
+        t.base.structures.add(StructureRecord.of("Test pen", plan));
+        t.base.invalidatePlanIndex();
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 2, 11), FactionType.GROVE_COVENANT);
+        t.onCleanup(() -> remove(h, p));
+        FactionNpc n = t.track(soldier(h, 12, 8, FactionType.EMBER_LEGION, NpcRole.FARMER));
+        n.equip(new ItemStack(Items.IRON_HOE));
+        n.setTarget(p);
+        t.onEachTick(() -> {
+            if (h.getTick() == 1) {
+                t.assertTrue(inPlayersReach(p, n), "the farmer should start within the player's reach");
+            }
+            if (h.getTick() >= 150) {
+                t.assertTrue(!inPlayersReach(p, n), "the farmer still stands within the player's reach: " + describe(h, p, List.of(n)));
+                t.succeed();
+            }
+        });
+    }
+
 }

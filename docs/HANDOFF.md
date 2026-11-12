@@ -132,9 +132,12 @@ python3 tools/rcon.py "stop"
   away and its mine rested forever).
 
 - Soldiers against a target they cannot walk up to (request 7, `docs/design/notes/combat-unreachable.md`): tested
-  (173 unit tests, 123 GameTests, a sabotage check), not yet checked in a campaign or against a real player. Found on
-  the way: the melee swing cooldown is 20 ticks for every weapon (vanilla's goal ignored the weapon interval the
-  docs describe); kept, the owner's choice. A gate left open by an NPC that dies in it stays open.
+  (174 unit tests, 128 GameTests, two sabotage checks), reviewed (a server crash in `OpenGateGoal` fixed; a 1x1 hole,
+  a block put back in a doorway, a player just behind a fence, soldiers shut in a pen after the fight, arrows while
+  waiting, workers, allies' edits: see the notes' "Review" section), not yet checked in a campaign or against a real
+  player. Found on the way: the melee swing cooldown is 20 ticks for every weapon (vanilla's goal ignored the weapon
+  interval the docs describe); kept, the owner's choice. A gate left open by an NPC that dies in it stays open until
+  the animal carer next goes through it.
 - A base keeps at most `maxOpenMines` (3) active mines. Roadmap phase 1: a miner left without a site now helps in
   an open mine of its base, on another level (`docs/design/notes/phase1.md`, "Two miners share a mine"); it is still
   retrained after half a day without a mine of its own when the base needs another role. Tested (160 unit tests,

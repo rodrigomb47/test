@@ -118,8 +118,10 @@ public class NpcMeleeAttackGoal extends Goal {
         npc.pursuit().bind(t, false);
         if (path != null) {
             npc.getNavigation().moveTo(path, SPEED);
-            if (!path.canReach()) {
+            if (!path.canReach() || npc.pursuit().futile(t, true)) {
                 npc.pursuit().unreachable(t, path);
+            } else {
+                npc.pursuit().reachable();
             }
         }
         npc.setAggressive(true);
@@ -188,7 +190,8 @@ public class NpcMeleeAttackGoal extends Goal {
         }
         Path p = npc.getNavigation().createPath(t, 0);
         repath = adjustedTickDelay(repath);
-        if (p != null && !p.canReach()) {
+        // a path that reaches a spot of the target's it found it cannot get at (a 1x1 hole) counts as none
+        if (p != null && (!p.canReach() || npc.pursuit().futile(t, true))) {
             repath += 15; // out of reach: searching again every few ticks would find the same
             Pursuit pursuit = npc.pursuit();
             pursuit.unreachable(t, p);
@@ -199,6 +202,9 @@ public class NpcMeleeAttackGoal extends Goal {
                 npc.getNavigation().stop(); // in reach where it stands (on its pillar, at the fence): stay
                 return;
             }
+        }
+        if (p != null && p.canReach()) {
+            npc.pursuit().reachable();
         }
         if (p == null || !npc.getNavigation().moveTo(p, SPEED)) {
             repath += 15;

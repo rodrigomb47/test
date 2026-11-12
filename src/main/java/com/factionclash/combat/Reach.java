@@ -38,7 +38,7 @@ public final class Reach {
     /**
      * True if {@code npc} may break the block at {@code pos} in a fight. The planned block of a base never; another
      * block standing in a planned cell (a raider's dirt in a doorway) yes, unless a player of the base's own faction
-     * put it there (a deliberate edit) and the fighter is of that faction. Unplanned blocks in the walls box of a base
+     * put it there (a deliberate edit) and the fighter is of that faction or an ally. Unplanned blocks in the walls box of a base
      * of its own side (its own or an ally's) only when a hostile player placed them; the ground of any base (from its
      * floor down) never.
      */
@@ -63,8 +63,8 @@ public final class Reach {
                 if (planned.getBlock() == s.getBlock()) {
                     return false; // a faction's own building
                 }
-                if (b.faction == npc.getFaction() && b.playerEdits.contains(key)) {
-                    return false; // what its own faction's player chose to put there
+                if (b.playerEdits.contains(key) && !Diplomacy.hostile(level.getServer(), npc.getFaction(), b.faction)) {
+                    return false; // what the base's own player chose to put there: not for its own side to undo
                 }
                 continue;
             }
@@ -79,17 +79,22 @@ public final class Reach {
                 return false; // its own side's base: only what an enemy built there
             }
         }
+        return !mineStairs(data, pos);
+    }
+
+    /** A mine's spiral stairs or the rock holding them up. */
+    private static boolean mineStairs(CampaignData data, BlockPos pos) {
         for (WorkplaceState w : data.workplaces.values()) {
             if (w.type == WorkplaceState.Type.MINE && w.origin != null && Math.abs(pos.getX() - w.origin.getX()) <= 6
                     && Math.abs(pos.getZ() - w.origin.getZ()) <= 6 && MineLayout.nearStairs(w, pos)) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /** A cell that can be walked through: nothing solid in it (or only something as low as a carpet), a wooden door or a gate. */
-    static boolean passable(ServerLevel level, BlockPos p, BlockState s) {
+    public static boolean passable(ServerLevel level, BlockPos p, BlockState s) {
         if (s.getBlock() instanceof DoorBlock d) {
             return d.type().canOpenByHand();
         }
@@ -100,8 +105,12 @@ public final class Reach {
         return shape.isEmpty() || shape.max(Direction.Axis.Y) <= LOW;
     }
 
-    /** The planner's view of the world for this fighter. */
-    public static ReachPlanner.World world(ServerLevel level, FactionNpc npc) {
+    /**
+     * The planner's view of the world for this fighter. {@code refused}: cells (as {@link BlockPos#asLong}) not to
+     * break again, the blocks it already broke for this target (a block put back there is the target's choice: it
+     * does not keep breaking it within the target's reach).
+     */
+    public static ReachPlanner.World world(ServerLevel level, FactionNpc npc, java.util.function.LongPredicate refused) {
         return new ReachPlanner.World() {
             private final BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
 
@@ -118,7 +127,7 @@ public final class Reach {
                 if (passable(level, p, s)) {
                     return s.getBlock() instanceof DoorBlock d && !d.type().canOpenByHand() ? ReachPlanner.FIXED : ReachPlanner.OPEN;
                 }
-                if (!mayBreak(level, p, npc)) {
+                if (refused.test(p.asLong()) || !mayBreak(level, p, npc)) {
                     return ReachPlanner.FIXED;
                 }
                 int t = BlockWork.ticksToBreak(npc, s, p, npc.getMainHandItem());
@@ -153,7 +162,8 @@ public final class Reach {
 
     /**
      * Whether the fighter may build itself up with a block at {@code pos}: an empty cell (air, grass) outside every
-     * base's plan, and not in a base of its own side (it would leave a pillar in its own yard).
+     * base's plan, not in a base of its own side (it would leave a pillar in its own yard), and not in a mine's
+     * stairwell (the miners' way up and down).
      */
     public static boolean mayPlace(ServerLevel level, BlockPos pos, FactionNpc npc) {
         if (!level.isLoaded(pos)) {
@@ -175,7 +185,7 @@ public final class Reach {
                 return false;
             }
         }
-        return true;
+        return !mineStairs(data, pos);
     }
 
     /** A block broken in a fight is no longer an intruder's block anywhere. */

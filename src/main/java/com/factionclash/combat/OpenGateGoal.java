@@ -40,9 +40,11 @@ public class OpenGateGoal extends Goal {
         this.npc = npc;
     }
 
+    /** PROPOSED: after going through a gate in a fight, its paths may still use gates this long (to walk back out). */
+    static final int GATE_MEMORY = 600;
+
     private boolean fighting() {
-        LivingEntity t = npc.getTarget();
-        return t != null && t.isAlive();
+        return npc.opensGates();
     }
 
     @Override
@@ -77,6 +79,7 @@ public class OpenGateGoal extends Goal {
 
     @Override
     public void start() {
+        npc.gatesUntil = npc.tickCount + GATE_MEMORY;
         ticks = 0;
         entered = false;
         dirX = (float) (gate.getX() + 0.5 - npc.getX());
@@ -97,6 +100,11 @@ public class OpenGateGoal extends Goal {
 
     @Override
     public void tick() {
+        if (gate == null) {
+            // shut on the last tick: vanilla ticks running goals every tick but checks canContinueToUse only every
+            // other tick, so it gets here once more before it stops (a crash on a dedicated server)
+            return;
+        }
         ticks++;
         AABB cell = new AABB(gate);
         if (npc.getBoundingBox().intersects(cell)) {

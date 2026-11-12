@@ -156,3 +156,82 @@ Not yet checked in a campaign on a dedicated server (the owner asked for no serv
 - Pillar blocks built outside the bases are left standing, as a player's would be.
 - A soldier with only a sword does not break cobblestone or stone (over 5 s); it waits and calls the archers. Giving
   soldiers a pickaxe for that would be a further step.
+
+## Review
+
+An adversarial review of the commit above (43ab107): its code paths read against the owner's two reports and the
+other ways a player could farm soldiers it cannot reach (a 1x1 hole, a 2-3 high pillar, water, a fence with no gate,
+a roof, a block put back), and against new harm (griefing, gates left open, loops, stuck NPCs, cost). Found and fixed:
+
+1. **A server crash in `OpenGateGoal`.** Vanilla ticks running goals every tick but checks `canContinueToUse` only
+   every other tick. After the goal shut a gate (and cleared it) on a full tick, the next tick ran `tick()` again on
+   the cleared gate: a `NullPointerException` in an entity tick, which stops a dedicated server. About every second
+   gate closing could do it; the earlier runs were lucky. The new pen-exit test crashed the test server with it.
+   `tick()` now returns when the gate is cleared.
+2. **A player in a 1x1 hole two deep** (in stone, or in a base's yard, where nothing may be dug). The path reaches the
+   player's cell, so the soldier walked to the edge, where it cannot hit down and the player hits it. After 60 ticks
+   it backed off, and 40 ticks later the "reachable" path sent it back, again and again (the GameTest counted 5 and
+   more blows in a row). Now: close below or above the target (1.5+ blocks) it gives up walking up after 20 ticks
+   without getting 2 path steps further (being knocked back is no progress), and that cell of the target's is
+   remembered as one it cannot get at: a path that "reaches" it no longer counts (`Pursuit.futile`), at most 3 blows.
+3. **A block the player puts back.** The soldier broke the dirt in the doorway, the player put it back, and the
+   soldier broke it again, within the player's reach every time. Now a cell it broke for a target and that is filled
+   again is fixed for that target (`Reach.world`'s `refused`), and a failure while working (a block put back, out of
+   reach, someone in the pillar cell) waits out of reach and plans again 2 s later instead of re-planning at once
+   (which could also run the planner every tick: a cost spike).
+4. **Blows it cannot answer.** A general net for geometries nobody listed: 3 blows from its target while it works its
+   way in, has no path, or stands close below or above it, and the soldier backs off and marks that cell; after 6 in
+   all from one target it plans no more breaking or building toward it. A landed blow clears all of it. What it
+   learnt is kept per target for 5 minutes, also when the target goes stale and comes back (otherwise every guard
+   sent by the defence alarm walked up to the hole again).
+5. **Planner and the swing disagreeing.** The planner counts any cell next to the target as striking; the real hit
+   box is short of a target at the far side of its cell. The planner said "strike from here", the swing missed, and
+   the soldier stayed in CHASE in the player's reach. Now that gives one 20-tick try, then the cell is marked. The
+   planner's start was also the NPC's block position, which is the fence's cell when it is pressed against a fence
+   (its middle slides past the post): now the open cell its body is in. Breaking the block under a target is planned
+   from 4.0 blocks (it may stand anywhere in its cell; the check when breaking stays a player's 4.5).
+6. **Shut in the pen after the fight.** Gates were passable only while the NPC had a target, so soldiers that killed
+   the player inside a pen could not path out; they stood at the fence until the stuck recovery hopped them over it.
+   For 600 ticks after going through a gate in a fight their paths may still use gates (`FactionNpc.gatesUntil`), so
+   they walk out the way they came and shut the gate.
+7. **Workers.** A civilian "stepping away" was cancelled the same tick (the attack goal stopped and stopped the
+   navigation), so it stayed at the fence in the player's reach. Workers now never plan (no breaking or building
+   toward anyone): they step out of reach (at most 5 s) and then let the target be.
+8. **Arrows while waiting.** A soldier waiting 6.5 blocks off in plain sight was easy to shoot from a box. Shot by its
+   target while waiting, it now waits out of the target's sight (or farther off), keeping the target.
+9. **Smaller things.** An ally's soldier could break the base's own player's edit in a planned cell (now any fighter
+   of the base's side leaves it); a pillar block could go into a mine's stairwell (now never); a flying or falling
+   target (no block under it within 2) is chased as before, never built or dug toward; at home, a waiting guard keeps
+   an intruder it cannot see (in a hole) as its target while it is within 24 blocks; the hold spot search no longer
+   queries the nearby fighters and casts rays inside the sort comparator (up to ~130 entity queries per pick).
+
+Checked and left as they are: gates open only on a fighting path, so working NPCs never walk through pens; a pen
+gate opened by a soldier closes behind it, not on anyone in the gateway, with a cooldown against flapping; planned
+blocks, containers, fluids, mine stairs and base ground are never broken; pillars are never built in a base of its
+own side; the planner is bounded (a box of at most ~21x21x14 cells, a 600-tick budget) and runs at most once per
+partial path search (every 19+ ticks) or per 40-tick check while waiting; water (paths swim), a fence with no gate
+(planned: wait; a player's own: broken, 60 ticks with a sword), a roof (planned: wait and call the archers).
+
+### Tests
+
+- New GameTests (`CombatReachGameTests`), each with the mock player striking back every 12 ticks when a soldier is in
+  its reach and sight: `soldiersDoNotTradeBlowsWithAPlayerInAHole` (at most 4 blows in a row, nobody in reach after
+  tick 300), `soldiersDoNotKeepBreakingABlockThePlayerPutsBack` (broken at most twice, at most 4 blows in a row, the
+  wall intact, out of reach after tick 300), `soldiersLeaveThePenThroughTheGateAfterTheFight` (out through the gate,
+  shut behind them, the cow still in), `aWaitingSoldierTakesCoverWhenShotAt` (behind a wall or 9+ blocks off, still
+  targeting), `aWorkerStepsOutOfReachOfAPlayerItCannotGetAt`; the static rules test also checks an ally and a mine's
+  stairwell. New unit test `underminesOnlyFromHalfABlockWithinReach`.
+- **Sabotage check**: with the review's memory, refused cells, blow counting, gate memory and the workers' step-away
+  switched off, all five new behaviour tests fail (`review/gt_sabotage.log` in the session scratchpad; one mining test,
+  `secondMinerHelpsInAMineAtTheCap`, also failed once there and passed in all the other runs).
+- Final: unit tests 174, GameTests "All 128 required tests passed" in six runs (`review/gt5.log` to `gt9.log` and
+  `gt_final.log`; the last two with every change, the first four before the ally rule and the 6-blow budget).
+
+### Still open
+
+- Not checked in a campaign or against a real player (pens, doorways, holes, perches, walls, arrows).
+- Vanilla's hurt-by target memory still lets go of an attacker that has been out of sight for 3 s, so a guard
+  watching a player in a hole goes back to its post; the next time it is hit it goes straight back to waiting.
+- A player hopping along a 2-deep trench gets at most one short walk-up (about 1-2 blows) per cell per soldier.
+- A guard that took 3 blows from a player on a ledge it could reach by a long way round (stairs outside the
+  planner's box) does not walk up to that spot again while the player stays there; the archers deal with it.

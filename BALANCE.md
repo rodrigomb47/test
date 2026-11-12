@@ -504,29 +504,44 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 ## Reaching a target (`Pursuit`, `ReachPlanner`, `Reach`, `OpenGateGoal`)
 A fighter whose path to its target comes back partial (it cannot walk up to it and hit it) plans a way or waits out
 of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
-* Gates: while fighting, a closed fence gate counts as a door on the path. Opened when the path's next nodes reach it
-  within 2.25 blocks; closed once the NPC is through (far side), 3 blocks away or 80 ticks after opening, never while
-  anyone stands in the gateway; then 20 ticks before that NPC opens a gate again.
+* Gates: while fighting, and for 600 ticks after it went through a gate in a fight (so it walks back out of the pen
+  when the fight is over), a closed fence gate counts as a door on the path. Opened when the path's next nodes reach
+  it within 2.25 blocks; closed once the NPC is through (far side), 3 blocks away or 80 ticks after opening, never
+  while anyone stands in the gateway; then 20 ticks before that NPC opens a gate again.
 * Planner: only for a target within 12 blocks (horizontal) and 5 up or down; box 4 blocks round both, 3 down.
   Costs in rough ticks: walk 5, step up 8, drop 5 + depth (at most 3), build up a block 12, plus breaking. A plan
   over 600 ticks is no plan. At most 16 blocks broken per target, at most 3 built up per climb, never higher than the
   target and only within 2 blocks of its column. Strikes from beside the target's column (diagonals with an open
-  side at eye level), at most 1 block up or down. Breaking the block under a target 2+ up from within 4.5 blocks of
-  the eyes.
+  side at eye level), at most 1 block up or down. Breaking the block under a target 2+ up: planned from within
+  4.0 blocks of the eyes (the cell's middle), done from within 4.5 (a player's block reach). A worker (civilian)
+  never plans: it steps out of reach (at most 100 ticks) and lets the target be.
 * Breaking (`Reach.mayBreak`): never a planned block, a block entity, a block in or beside a fluid, a mine's stairs,
   a base's ground (its walls box + 1, below its floor), or anything over 100 ticks to break with the held item; a
-  foreign block in a planned cell yes (not an own player's edit for its own faction); in a base of its own side an
-  unplanned block only if a hostile player placed it (`intruderBlocks`, at most 4096 per base).
-* Building up (`Reach.mayPlace`): an empty cell outside every plan, not in a base of its own side (walls box + 1).
+  foreign block in a planned cell yes (not the base's own player's edit for that faction or its allies); in a base of
+  its own side an unplanned block only if a hostile player placed it (`intruderBlocks`, at most 4096 per base). A
+  block it broke for a target and that is put back is not broken again for that target.
+* Building up (`Reach.mayPlace`): an empty cell outside every plan, not in a base of its own side (walls box + 1), not
+  in a mine's stairwell.
 * Waiting: on a ring 6.5 blocks round the target (archers 9, in sight of it), at least 5 blocks away horizontally,
   nearest the end of the path toward it, 2+ blocks from another fighter's spot; staying put when already 5 to 9 away.
   One path search toward the target every 40 ticks (then the planner again), a new spot at most once a second when
   the target moved 2 blocks (at once when it is within 4.7), at most 3 path searches per new spot. Archers are called
   (32 blocks, those with no target) on starting and every 100 ticks. Close to the target (3 blocks) for 60 ticks
-  without a blow although the path reaches it: treated as out of reach. Away from home (more than 16 blocks outside
-  its walls) a fighter gives up after 1200 ticks and ignores that target for 1200. A civilian stops fighting instead.
-* Stale targets: the 10 s without trading blows rule counts working toward the target and waiting in sight of it
-  (within 24 blocks) as engaged.
+  without a blow although the path reaches it (20 ticks when the target is 1.5+ blocks above or below, as in a 1x1
+  hole), not getting 2 path steps further meanwhile: treated as out of reach. Away from home (more than 16 blocks
+  outside its walls) a fighter gives up after 1200 ticks and ignores that target for 1200. A civilian stops fighting
+  instead.
+* Spots it cannot get at (review): when walking up did not work (the stuck rule above), the planner said it could
+  strike where the swing does not land (one 20-tick try), or it took 3 blows from the target it could not answer
+  (working its way in, no path, or 1.5+ blocks below/above within 3), the target's cell is remembered: it waits out
+  of reach and does not walk up to that cell again; a cell marked with no path to it is cleared when a path opens.
+  After 6 such blows from one target in all it plans no more breaking or building toward it. Kept per target for
+  6000 ticks after it last learnt something (also when the target leaves and comes back); a landed blow clears it.
+* Cover (review): a waiting melee fighter shot by its target waits out of the target's sight (900 penalty for a spot
+  in sight, rings 6.5 and 10, farther preferred), or 12 blocks off when there is no such spot.
+* Stale targets: the 10 s without trading blows rule counts working toward the target, waiting in sight of it, in
+  cover from it, or at home (within 24 blocks) as engaged. Vanilla's hurt-by target memory still lets go of an
+  attacker unseen for 3 s.
 * Guards carry up to 8 dirt, cobblestone or cobbled deepslate (each kind) for building up, taken only while the
   storehouse keeps 64 of that block.
 
