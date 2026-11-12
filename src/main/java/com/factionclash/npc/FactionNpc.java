@@ -612,6 +612,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             boolean stale = tickCount - busy > 200 && tickCount - targetSetAt > 200;
             boolean farForCivilian = getRole().isCivilian() && distanceToSqr(t) > 100;
             if (!t.isAlive() || stale || farForCivilian) {
+                if (stale) {
+                    pursuit.staleTarget(t);
+                }
                 setTarget(null);
             } else if (tickCount < gatesUntil || level().getBlockState(blockPosition()).getBlock()
                     instanceof net.minecraft.world.level.block.FenceGateBlock) {

@@ -98,7 +98,7 @@ public class NpcMeleeAttackGoal extends Goal {
             path = null;
             return true; // already working or waiting on this one: no new search
         }
-        path = npc.getNavigation().createPath(t, 0);
+        path = npc.pursuit().pathTo(t);
         // no path is searched while it is in the air (knocked up by a blow): a target close by is still fought (live
         // check: in a pit, bounced by the player's blows from the edge, it never took up the fight at all)
         return path != null || npc.isWithinMeleeAttackRange(t)
@@ -209,7 +209,7 @@ public class NpcMeleeAttackGoal extends Goal {
         } else if (d > 256.0) {
             repath += 5;
         }
-        Path p = npc.getNavigation().createPath(t, 0);
+        Path p = npc.pursuit().pathTo(t);
         repath = adjustedTickDelay(repath);
         // a path that reaches a spot of the target's it found it cannot get at (a 1x1 hole) counts as none
         if (p != null && (!p.canReach() || npc.pursuit().futile(t, true))) {

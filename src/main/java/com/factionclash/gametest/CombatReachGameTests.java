@@ -961,6 +961,206 @@ public final class CombatReachGameTests {
         });
     }
 
+    /**
+     * Live check: a player pressed against the far fence of a pen stands, by its block position, in the fence's cell.
+     * A soldier coming from that side took the cell just outside the fence as "next to" the player, walked there, could
+     * not hit across the fence (the player could), took three blows and then waited out of reach for good with that
+     * spot marked as one it cannot get at. Paths and plans now aim at the open cell the player's body is in: it goes
+     * round through the gate and fights the player in the pen.
+     */
+    @GameTest(template = "platform", timeoutTicks = 500, batch = "reach_pen_fence")
+    public static void soldiersGoRoundThroughTheGateToAPlayerPressedAgainstTheFence(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 6, 11, 500);
+        List<BlockPos> fences = pen(h, 7, 9, 17, 19, 12);
+        // the pen is the base's planned pen, as in every real base: its fences are never broken
+        Map<BlockPos, BlockState> plan = new HashMap<>();
+        for (BlockPos r : fences) {
+            plan.put(h.absolutePos(r), h.getBlockState(r));
+        }
+        t.base.structures.add(StructureRecord.of("Test pen", plan));
+        t.base.invalidatePlanIndex();
+        BlockPos gate = h.absolutePos(new BlockPos(12, 2, 9));
+        Cow cow = h.spawn(EntityType.COW, new BlockPos(9, 2, 11));
+        BlockPos in = h.absolutePos(new BlockPos(16, 2, 18)), fence = h.absolutePos(new BlockPos(16, 2, 19));
+        ServerPlayer p = enemyPlayer(h, new BlockPos(16, 2, 18), FactionType.GROVE_COVENANT);
+        t.onCleanup(() -> remove(h, p));
+        // pressed against the fence: its middle just over the line into the fence's cell, as a real player stands there
+        p.teleportTo(h.getLevel(), in.getX() + 0.5 + (fence.getX() - in.getX()) * 0.57, in.getY(),
+                in.getZ() + 0.5 + (fence.getZ() - in.getZ()) * 0.57, 0F, 0F);
+        t.assertTrue(p.blockPosition().equals(fence), "the player should stand in the fence's cell, not " + p.blockPosition());
+        // the soldier comes from outside the far corner: the cell outside the fence is as near the player's as the one
+        // inside, and the gate is on the other side of the pen
+        List<FactionNpc> npcs = List.of(t.register(soldier(h, 20, 22, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN)));
+        npcs.forEach(n -> n.setTarget(p));
+        AABB inside = new AABB(h.absolutePos(new BlockPos(8, 1, 10))).minmax(new AABB(h.absolutePos(new BlockPos(16, 4, 18))));
+        FactionNpc n = npcs.get(0);
+        int[] acrossFence = {0};
+        t.onEachTick(() -> {
+            // the player hits the soldier across the fence whenever it can: every 12 ticks (a sword's pace), within 3
+            // blocks of its eyes (what a real player's client picks). Inside the pen it is a fair fight, not tested here
+            // (a lone soldier walking straight at a player hitting it every 12 ticks is kept off by the knock-back, as
+            // any mob is).
+            if (h.getTick() % 12 == 0 && !inside.contains(n.position()) && n.isAlive()
+                    && n.getBoundingBox().distanceToSqr(p.getEyePosition()) <= 3.0 * 3.0 && p.hasLineOfSight(n)
+                    && n.hurt(h.getLevel().damageSources().playerAttack(p), 1.0F)) {
+                acrossFence[0]++;
+            }
+            // walking round the pen it passes within the player's reach for a moment: a blow or two
+            if (acrossFence[0] > 3) {
+                t.fail("the soldier took " + acrossFence[0] + " blows across the fence: " + describe(h, p, npcs));
+            }
+            if (hurtByNpc(p) && inside.contains(n.position())) {
+                boolean inGate = n.getBoundingBox().intersects(new AABB(gate));
+                if (!inGate && !h.getLevel().getBlockState(gate).getValue(FenceGateBlock.OPEN)) {
+                    t.assertTrue(inside.contains(cow.position()), "the cow got out of the pen");
+                    t.assertTrue(fences.stream().allMatch(r -> !h.getBlockState(r).isAir()), "a fence of the pen was broken");
+                    t.succeed();
+                }
+            }
+            if (h.getTick() >= 490) {
+                t.fail("the soldier did not get to the player in the pen: " + describe(h, p, npcs) + "; blows across the fence "
+                        + acrossFence[0] + ", gates " + n.gateGoal().cycles + ", plans " + n.pursuit().plans + ", holds "
+                        + n.pursuit().holds);
+            }
+        });
+    }
+
+    /**
+     * A test base with a plan, a creeper on a planned three-high stone perch in its yard (in sight, out of reach: a guard
+     * may not break planned blocks nor build in its own base), and a guard of the base after it.
+     */
+    private static FactionNpc guardOnAMonster(GameTestHelper h, GameTestBases.Handle t, net.minecraft.world.entity.monster.Creeper[] out,
+                                              boolean boxed) {
+        Map<BlockPos, BlockState> plan = new HashMap<>();
+        for (int y = 2; y <= 4; y++) {
+            h.setBlock(new BlockPos(15, y, 15), Blocks.STONE);
+            plan.put(h.absolutePos(new BlockPos(15, y, 15)), Blocks.STONE.defaultBlockState());
+        }
+        if (boxed) {
+            // shut in glass on its perch: out of sight too (a creeper in a pocket of the ground under the yard)
+            for (int x = 14; x <= 16; x++) {
+                for (int z = 14; z <= 16; z++) {
+                    for (int y = 5; y <= 7; y++) {
+                        if (x != 15 || z != 15 || y == 7) {
+                            h.setBlock(new BlockPos(x, y, z), Blocks.GLASS);
+                        }
+                    }
+                }
+            }
+        }
+        t.base.structures.add(StructureRecord.of("Test perch", plan));
+        t.base.invalidatePlanIndex();
+        out[0] = h.spawn(EntityType.CREEPER, new BlockPos(15, 5, 15));
+        out[0].setNoAi(true);
+        net.minecraft.world.entity.monster.Creeper c = out[0];
+        t.onCleanup(c::discard);
+        FactionNpc guard = t.register(soldier(h, 8, 8, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN));
+        guard.setTarget(c);
+        return guard;
+    }
+
+    /**
+     * Live check: two guards waited at home for good on a creeper they could not get at (shut in a pocket of the
+     * ground under their yard), while an enemy player was in the base. Waiting on a monster it cannot get at, a guard
+     * turns to an enemy player in sight close by.
+     */
+    @GameTest(template = "platform", timeoutTicks = 300, batch = "reach_intruder")
+    public static void aGuardWaitingOnAMonsterTurnsToAnIntruder(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 6, 11, 300);
+        net.minecraft.world.entity.monster.Creeper[] creeper = {null};
+        FactionNpc guard = guardOnAMonster(h, t, creeper, false);
+        // the intruder waits far off (out of the guard's sight and range) until it walks in at tick 100
+        ServerPlayer p = enemyPlayer(h, new BlockPos(7, 2, 16), FactionType.GROVE_COVENANT);
+        BlockPos entry = h.absolutePos(new BlockPos(7, 2, 16));
+        p.teleportTo(h.getLevel(), entry.getX() + 0.5, entry.getY() + 30, entry.getZ() + 40.5, 0F, 0F);
+        p.setNoGravity(true);
+        t.onCleanup(() -> remove(h, p));
+        t.onEachTick(() -> {
+            if (h.getTick() == 100) {
+                t.assertTrue(guard.getTarget() == creeper[0] && guard.pursuit().mode() == com.factionclash.combat.Pursuit.Mode.HOLD,
+                        "the guard should be waiting on the creeper: " + guard.pursuit().mode() + " target " + guard.getTarget());
+                p.teleportTo(h.getLevel(), entry.getX() + 0.5, entry.getY(), entry.getZ() + 0.5, 0F, 0F); // an intruder walks in
+            }
+            if (h.getTick() > 100 && hurtByNpc(p)) {
+                t.succeed();
+            }
+            if (h.getTick() >= 290) {
+                t.fail("the guard did not turn to the intruder: target " + guard.getTarget() + ", mode " + guard.pursuit().mode()
+                        + "; " + describe(h, p, List.of(guard)));
+            }
+        });
+    }
+
+    /**
+     * Live check (the same creeper): at home a guard kept a target it could neither see nor get at for good, and the
+     * base's defence alarm handed it back each time it went stale. Only an intruder (a player or an enemy soldier)
+     * hiding in the base is kept out of sight; such a monster is let go and given up for a minute.
+     */
+    @GameTest(template = "platform", timeoutTicks = 400, batch = "reach_unseen_monster")
+    public static void aGuardLetsGoOfAMonsterItCanNeitherSeeNorGetAt(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 6, 11, 400);
+        net.minecraft.world.entity.monster.Creeper[] creeper = {null};
+        FactionNpc guard = guardOnAMonster(h, t, creeper, true);
+        boolean[] held = {false};
+        t.onEachTick(() -> {
+            held[0] |= guard.getTarget() == creeper[0] && guard.pursuit().mode() == com.factionclash.combat.Pursuit.Mode.HOLD;
+            if (held[0] && guard.getTarget() != creeper[0]) {
+                // and it is given up for a while: the base's defence alarm (which hands intruders to free guards without
+                // line of sight) does not hand it straight back
+                t.assertTrue(guard.pursuit().ignores(creeper[0]), "the creeper was let go but not given up");
+                t.succeed();
+            }
+            if (h.getTick() >= 390) {
+                t.fail("the guard still waits on the creeper it cannot see (or never waited): target " + guard.getTarget() + ", mode "
+                        + guard.pursuit().mode() + ", held " + held[0]);
+            }
+        });
+    }
+
+    /**
+     * Live check: workers hit by a player standing in a 1x1 pit two deep in their yard jumped in after it, were wounded,
+     * could not flee (no way up) and stood there until killed. A wounded worker with no way away from a threat beside it
+     * uses the stuck recovery to get out.
+     */
+    @GameTest(template = "platform", timeoutTicks = 300, batch = "reach_pit_worker")
+    public static void aWoundedWorkerInAPitWithThePlayerGetsOut(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 6, 11, 300);
+        t.base.center = h.absolutePos(new BlockPos(12, 4, 12)); // the plateau top is the yard floor
+        for (int x = 4; x <= 20; x++) {
+            for (int z = 4; z <= 20; z++) {
+                for (int y = 2; y <= 3; y++) {
+                    if (x != 12 || z != 12) {
+                        h.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                    }
+                }
+            }
+        }
+        h.setBlock(new BlockPos(16, 4, 16), Blocks.STONE);
+        t.base.structures.add(StructureRecord.of("Test plan", Map.of(h.absolutePos(new BlockPos(16, 4, 16)), Blocks.STONE.defaultBlockState())));
+        t.base.invalidatePlanIndex();
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 2, 12), FactionType.GROVE_COVENANT); // in the pit
+        t.onCleanup(() -> remove(h, p));
+        FactionNpc worker = t.npc(12, 12, NpcRole.FARMER); // jumped in after it
+        worker.setHealth(worker.getMaxHealth() * 0.4F);
+        worker.setTarget(p);
+        int[] worst = {0};
+        playerStrikesBack(h, p, List.of(worker), worst);
+        int floor = h.absolutePos(new BlockPos(12, 4, 12)).getY();
+        t.onEachTick(() -> {
+            if (!worker.isAlive()) {
+                t.fail("the worker was killed in the pit (" + worst[0] + " blows in a row)");
+            }
+            if (worker.onGround() && worker.getY() > floor - 0.5) {
+                t.assertTrue(worker.navigator().recoveries >= 1, "it should have got out by the stuck recovery");
+                t.succeed();
+            }
+            if (h.getTick() >= 290) {
+                t.fail("the wounded worker did not get out of the pit: hp " + worker.getHealth() + ", y " + worker.getY()
+                        + ", status '" + worker.status() + "', blows " + worst[0]);
+            }
+        });
+    }
+
     /** {@code p} puts a block of dirt at relative {@code rel}, as the server sees a player placing one. */
     private static void placeAs(GameTestHelper h, ServerPlayer p, BlockPos rel) {
         BlockPos abs = h.absolutePos(rel);

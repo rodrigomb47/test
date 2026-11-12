@@ -73,8 +73,33 @@ public class CivilianFleeGoal extends Goal {
             Alerts.callGuards(npc, threat, 32);
             if (npc.getNavigation().isDone()) {
                 flee();
+                if (npc.getNavigation().isDone() && threat != null && npc.distanceTo(threat) < UNBOX_RANGE) {
+                    // no way away and the threat still beside it (live check: workers that had jumped into a 1x1 pit two
+                    // deep after a player who hit them stood there, wounded, until killed): the stuck recovery, the one
+                    // hop player-like NPCs allow themselves, toward safety
+                    npc.navigator().recoverToward(safeGoal());
+                }
             }
         }
+    }
+
+    /** PROPOSED: a fleeing worker with no way away from a threat this close uses the stuck recovery. */
+    static final double UNBOX_RANGE = 4.0;
+
+    /** Where it flees to: the station stand, or a spot 8 blocks away from the threat. */
+    private Vec3 safeGoal() {
+        BaseState b = npc.base();
+        BlockPos safe = b == null ? null : b.point(BaseState.STATION_STAND);
+        if (safe != null) {
+            return Vec3.atBottomCenterOf(safe);
+        }
+        double dx = npc.getX() - threat.getX(), dz = npc.getZ() - threat.getZ(), len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.5) { // (in the same spot as the threat: the way it faces)
+            dx = -Math.sin(npc.getYRot() * Math.PI / 180);
+            dz = Math.cos(npc.getYRot() * Math.PI / 180);
+            len = 1;
+        }
+        return new Vec3(npc.getX() + dx / len * 8, npc.getY(), npc.getZ() + dz / len * 8);
     }
 
     private void flee() {

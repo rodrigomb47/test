@@ -47,6 +47,30 @@ public class NpcPathNavigation extends GroundPathNavigation {
         };
     }
 
+    /** While set (above 0): how far the path search running now may wander, in blocks walked (vanilla: the follow range). */
+    private float rangeOverride;
+
+    /**
+     * A path search as {@link #createPath(BlockPos, int)}, but one that may wander up to {@code range} blocks walked.
+     * Vanilla's search stops at the follow range, and it overwrites a node's walked distance with a worse one whenever a
+     * dead end next to the target is explored, so a way round an obstacle well within the follow range can be cut off
+     * (live check: a soldier outside an animal pen, across the fence from the player, never found the gate on the far
+     * side). The node budget, and so the cost of a search that fails, is unchanged.
+     */
+    public Path createLongPath(BlockPos pos, int accuracy, float range) {
+        rangeOverride = range;
+        try {
+            return createPath(pos, accuracy);
+        } finally {
+            rangeOverride = 0;
+        }
+    }
+
+    @Override
+    protected Path createPath(Set<BlockPos> targets, int regionOffset, boolean offsetUpward, int accuracy, float followRange) {
+        return super.createPath(targets, regionOffset, offsetUpward, accuracy, Math.max(followRange, rangeOverride));
+    }
+
     /** Whether paths searched now may lead through closed fence gates. */
     public boolean gatesOpen() {
         return nodeEvaluator instanceof GateEvaluator g && g.gates;

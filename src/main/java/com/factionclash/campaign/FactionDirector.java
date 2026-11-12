@@ -424,7 +424,10 @@ public final class FactionDirector {
         AABB walls = new AABB(b.center).inflate(com.factionclash.structure.BaseLayout.HALF + 4, 12, com.factionclash.structure.BaseLayout.HALF + 4);
         List<net.minecraft.world.entity.LivingEntity> intruders = level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, walls,
                 e -> e.isAlive() && ((e instanceof FactionNpc n && Diplomacy.hostile(level.getServer(), n.getFaction(), b.faction))
-                        || (e instanceof net.minecraft.world.entity.monster.Monster m && com.factionclash.combat.CombatRules.isHostileMonster(m))
+                        // a monster only in the yard or close to it, not in a cave under the base (live check: a creeper
+                        // shut in a pocket of the ground five blocks under the yard was handed to the guards over and over)
+                        || (e instanceof net.minecraft.world.entity.monster.Monster m && com.factionclash.combat.CombatRules.isHostileMonster(m)
+                        && m.getY() >= b.center.getY() - 2)
                         || (e instanceof net.minecraft.server.level.ServerPlayer p && !p.isCreative() && !p.isSpectator()
                         && CampaignData.get(level.getServer()).players.get(p.getUUID()) != null
                         && Diplomacy.hostile(level.getServer(), CampaignData.get(level.getServer()).players.get(p.getUUID()), b.faction))));
@@ -433,6 +436,8 @@ public final class FactionDirector {
         }
         List<FactionNpc> guards = level.getEntitiesOfClass(FactionNpc.class, walls.inflate(24, 8, 24),
                 g -> g.isAlive() && g.getFaction() == b.faction && g.getRole().combatant);
+        // raiders and enemy players first, then monsters: two guards on a monster must not leave an intruder unattended
+        intruders.sort(Comparator.comparingInt(e -> e instanceof net.minecraft.world.entity.monster.Monster ? 1 : 0));
         int assigned = 0;
         for (net.minecraft.world.entity.LivingEntity intruder : intruders) {
             boolean atHeart = heart != null && intruder.blockPosition().closerThan(heart, 8);
@@ -444,7 +449,7 @@ public final class FactionDirector {
                 }
                 net.minecraft.world.entity.LivingEntity cur = g.getTarget();
                 boolean busy = cur != null && cur.isAlive() && !(atHeart && !cur.blockPosition().closerThan(heart, 8));
-                if (!busy) {
+                if (!busy && !g.pursuit().ignores(intruder)) { // (not one it gave up on: a monster it cannot get at)
                     g.setTarget(intruder);
                     assigned++;
                 }

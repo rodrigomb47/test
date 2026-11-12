@@ -96,6 +96,11 @@ public final class Pursuit {
      * recovery to get out toward the waiting ring. At most {@link #MAX_UNBOX} times per target.
      */
     static final int BOXED_IN = 30, MAX_UNBOX = 3;
+    /**
+     * PROPOSED: how far (blocks walked) a path search toward the target may wander: the way round an animal pen to its
+     * gate on the far side was cut off at vanilla's 48 (see {@link #pathTo}); the search's node budget is unchanged.
+     */
+    static final float PATH_RANGE = 64;
 
     private final FactionNpc npc;
     private Mode mode = Mode.CHASE;
@@ -411,7 +416,7 @@ public final class Pursuit {
         // a worker defends itself but does not break or build its way to anyone
         if (!known && !npc.getRole().isCivilian() && broken < MAX_BREAKS && unansweredTotal < UNANSWERED_TOTAL && npc.onGround()) {
             int blocks = Math.min(MAX_PILLAR, pillarBlocks());
-            plan = ReachPlanner.plan(Reach.world(level(), npc, k -> brokenCells.contains(k)), cell(standCell()), cell(t.blockPosition()),
+            plan = ReachPlanner.plan(Reach.world(level(), npc, k -> brokenCells.contains(k)), cell(standCell()), cell(targetCell(t)),
                     blocks, true, MAX_PLAN_COST);
             plans++;
         }
@@ -463,14 +468,19 @@ public final class Pursuit {
      * standing on top of a low block (a slab, a path), the cell above it.
      */
     private BlockPos standCell() {
+        return bodyCell(npc);
+    }
+
+    /** {@link #standCell()} for any entity. */
+    private BlockPos bodyCell(Entity e) {
         ServerLevel level = level();
-        BlockPos b = npc.blockPosition();
+        BlockPos b = e.blockPosition();
         if (open(b) && open(b.above())) {
             return b;
         }
         BlockState s = level.getBlockState(b);
         var shape = s.getCollisionShape(level, b);
-        if (!shape.isEmpty() && shape.max(net.minecraft.core.Direction.Axis.Y) <= npc.getY() - b.getY() + 1.0E-3
+        if (!shape.isEmpty() && shape.max(net.minecraft.core.Direction.Axis.Y) <= e.getY() - b.getY() + 1.0E-3
                 && open(b.above()) && open(b.above(2))) {
             return b.above();
         }
@@ -480,7 +490,7 @@ public final class Pursuit {
             for (int dz = -1; dz <= 1; dz++) {
                 BlockPos n = b.offset(dx, 0, dz);
                 if ((dx != 0 || dz != 0) && open(n) && open(n.above())) {
-                    double d = npc.position().distanceToSqr(n.getX() + 0.5, npc.getY(), n.getZ() + 0.5);
+                    double d = e.position().distanceToSqr(n.getX() + 0.5, e.getY(), n.getZ() + 0.5);
                     if (d < bestD) {
                         bestD = d;
                         best = n;
@@ -489,6 +499,30 @@ public final class Pursuit {
             }
         }
         return best;
+    }
+
+    /**
+     * The cell paths and plans aim at for the target: its block position, unless that holds a fence, wall or pane it
+     * is only pressed against: then the open cell beside it that its body is mostly in (a low block it stands on keeps
+     * its block position, where the path search puts it too). Live check: a player pressed against a pen's far fence
+     * stood "in" the fence's cell, and the cell just outside the fence was as near to it as the one inside; a soldier
+     * coming from outside walked round to there, could not hit across the fence, took the player's blows and then
+     * waited out of reach for good.
+     */
+    public BlockPos targetCell(LivingEntity t) {
+        BlockPos b = t.blockPosition();
+        BlockPos c = bodyCell(t);
+        return c.getY() == b.getY() ? c : b;
+    }
+
+    /**
+     * A path search toward the target ({@link #targetCell}), as the attack goal's own search, but one that may wander
+     * up to {@link #PATH_RANGE} blocks walked ({@link com.factionclash.npc.NpcPathNavigation#createLongPath}).
+     */
+    public Path pathTo(LivingEntity t) {
+        BlockPos c = targetCell(t);
+        return npc.getNavigation() instanceof com.factionclash.npc.NpcPathNavigation nav ? nav.createLongPath(c, 0, PATH_RANGE)
+                : npc.getNavigation().createPath(c, 0);
     }
 
     private boolean open(BlockPos p) {
@@ -660,6 +694,19 @@ public final class Pursuit {
     private java.util.UUID ignored;
     private int ignoredUntil;
 
+    /**
+     * The target went stale (unseen, no blows) while it waited out of reach: a monster is given up for
+     * {@link #IGNORE_TICKS} too, so the base's defence alarm, which hands intruders to free guards without line of
+     * sight, does not hand it straight back (live check: a creeper shut in a pocket of the ground under the yard kept
+     * the home guards waiting on it, round after round). An intruder (a player, an enemy soldier) is not.
+     */
+    public void staleTarget(LivingEntity t) {
+        if (mode == Mode.HOLD && !(t instanceof net.minecraft.world.entity.player.Player) && !(t instanceof FactionNpc)) {
+            ignored = t.getUUID();
+            ignoredUntil = npc.tickCount + IGNORE_TICKS;
+        }
+    }
+
     /** A target it gave up on a little while ago (it does not pick it again until then). */
     public boolean ignores(net.minecraft.world.entity.Entity e) {
         return ignored != null && e.getUUID().equals(ignored) && npc.tickCount < ignoredUntil;
@@ -681,7 +728,11 @@ public final class Pursuit {
             goToHoldSpot(t, 1.2);
             return;
         }
-        if (++heldFor > GIVE_UP_AWAY && !atHome()) {
+        // at home it keeps watch over an intruder (a player or an enemy soldier) for as long as it is there; a monster it
+        // cannot get at (live check: a creeper shut in a pocket of the ground under the yard held two guards for good,
+        // while an enemy player was in the base) is given up after a minute, as away from home
+        boolean intruder = t instanceof net.minecraft.world.entity.player.Player || t instanceof FactionNpc;
+        if (++heldFor > GIVE_UP_AWAY && (!atHome() || !intruder)) {
             ignored = t.getUUID();
             ignoredUntil = npc.tickCount + IGNORE_TICKS;
             npc.setTarget(null);
@@ -689,9 +740,9 @@ public final class Pursuit {
             return;
         }
         boolean sees = npc.getSensing().hasLineOfSight(t);
-        // keeps watching: the target does not go stale while it waits in sight of it, in cover from it, or at home
-        // (an intruder hiding in a hole in its base is still there)
-        if ((sees || cover || atHome()) && npc.distanceTo(t) < 24) {
+        // keeps watching: the target does not go stale while it waits in sight of it, in cover from it, or, an
+        // intruder, at home (an intruder hiding in a hole in its base is still there)
+        if ((sees || cover || intruder && atHome()) && npc.distanceTo(t) < 24) {
             engagedAt = npc.tickCount;
         }
         npc.getLookControl().setLookAt(t, 30.0F, 30.0F);
@@ -701,7 +752,14 @@ public final class Pursuit {
         }
         if (--recheck <= 0) {
             recheck = RECHECK;
-            Path p = npc.getNavigation().createPath(t, 0);
+            LivingEntity other = intruder ? null : intruderInSight();
+            if (other != null) {
+                // waiting on a monster it cannot get at, it turns to an enemy player or soldier it sees close by
+                npc.setTarget(other);
+                reset();
+                return;
+            }
+            Path p = pathTo(t);
             boolean reach = p != null && p.canReach();
             pathReach = reach;
             if (reach && !futile(t, true)) {
@@ -721,6 +779,25 @@ public final class Pursuit {
             }
         }
         goToHoldSpot(t, 1.1);
+    }
+
+    /** PROPOSED: how far a fighter waiting on a monster it cannot get at looks for an intruder to turn to instead. */
+    static final double INTRUDER_RANGE = 16;
+
+    /** The nearest enemy player or enemy soldier in sight within {@link #INTRUDER_RANGE} (one it has not given up on). */
+    private LivingEntity intruderInSight() {
+        LivingEntity best = null;
+        double bestD = INTRUDER_RANGE * INTRUDER_RANGE;
+        for (LivingEntity e : npc.level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(INTRUDER_RANGE),
+                e -> e.isAlive() && !ignores(e) && (e instanceof net.minecraft.server.level.ServerPlayer p && CombatRules.isEnemyPlayer(npc, p)
+                        || e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), o.getFaction())))) {
+            double d = npc.distanceToSqr(e);
+            if (d < bestD && npc.getSensing().hasLineOfSight(e)) {
+                best = e;
+                bestD = d;
+            }
+        }
+        return best;
     }
 
     /**
@@ -857,7 +934,7 @@ public final class Pursuit {
     public void approachRanged(LivingEntity t) {
         if (--recheck <= 0) {
             recheck = RECHECK;
-            Path p = npc.getNavigation().createPath(t, 0);
+            Path p = pathTo(t);
             rangedReachable = p != null && p.canReach();
             if (!rangedReachable) {
                 Node end = p == null ? null : p.getEndNode();
