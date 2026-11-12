@@ -12,8 +12,10 @@ Part file fields:
 Cube fields: bone, origin, size (numbers or expressions over params and base dims), slot, material, pattern, cutout,
   taper, trim {slot, edge, width}, mirror (build the left copy from the right), fine (own fine_ bone for level of
   detail), inflate, rotation + pivot (cube rotation, degrees), faces (subset), glow, tone, name, density, shade
-  ("vertical": lit top, darker tip, the default for hair; "flat": none), skip_if_empty (leave the cube out when a
-  param makes one of its sizes 0, for optional pieces such as an ahoge), outline (false: no dark hem row, for a
+  ("vertical": lit top, darker tip, the default for hair; "flat": none; "mass": no vertical shading, no hem outline
+  and the top face lit like the sides, for the stacked slabs of one solid such as an ear, whose dark 1 px sides and
+  lit ledges would otherwise read as stripes), skip_if_empty (leave the cube out when a param makes one of its sizes
+  0, for optional pieces such as an ahoge), outline (false: no dark hem row, for a
   segment that continues into the next one).
 Paint op fields (paint over existing cubes, usually the base body): cubes [glob...], faces [...], y [lo, hi],
   x [lo, hi], z [lo, hi], abs_x [lo, hi] (|x|, for symmetric regions), side r|l, vee [y_tip, slope] (only where
@@ -40,7 +42,7 @@ PATTERNS = ("stripes", "checks", "plaid", "dots", "pleats")
 TONE_PATTERNS = ("pleats",)          # patterns that only shade, without a second colour
 CUTOUT_PREFIXES = ("jagged_", "tip_jagged_", "bangs_jagged_")
 CUTOUTS = ("tri_up", "tri_down", "peak", "round_bottom", "round_top", "fur_tips", "torn")
-SHADES = ("vertical", "flat")
+SHADES = ("vertical", "flat", "mass")
 
 
 def part_path(part_id):

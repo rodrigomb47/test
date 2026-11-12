@@ -625,3 +625,125 @@ and bosses up to 300. The per-cube cost is still to be measured (HEROES_V2 14.7)
   Sway wrapper bones (study 11.7) are not added yet.
 - **G7**: a distinctness NOTE from `face.distinct` across a batch of heroes; a second LOD tier (study 11.5 LOD2) if the
   measurement asks for it.
+
+---
+
+## Art direction pass 2: review of style pass 2 against the references (2026-11-12)
+
+An art-director review of the style pass 2 previews (commit 6cc6cba). The previews were put side by side with the
+owner's three screenshots and the ranges in `reference-survey.md` and `reference-study.md`, and judged the way the owner
+would: head size, distinct faces, hair density and layering, ear and tail volume, outfit detail and silhouette, shading
+and colour appeal, distinct body forms, glitches. Generator fixes followed, with two re-render rounds after the first
+fix list. As before, the reference models were used only for measurements and techniques. Nothing of their geometry,
+textures, animations or designs is in the repository. Where this section and the earlier ones differ, this one holds.
+
+Before and after: `docs/heroes-v2/notes/previews/artdir2_before_after.png` (the three-forms shot of 6cc6cba next to the
+new one). The style set in `docs/heroes-v2/previews/style/` is regenerated.
+
+### What the review found (style pass 2 as committed)
+
+| Area | Finding | Weight |
+|---|---|---|
+| Hair, crown | The top of every head was a radial pinwheel. Eight near-flat "whorl" strands met at one point, with a dark hole in the middle, over a second ring of 7 strands and three stepped dome slabs. At the usual camera pitch this read as a spider web, or a pot lid, with seams. The references' crowns read as a mass of chunky strands. | high: every hero, every view |
+| Hair, shading | The hair was nearly flat. The 0.08-per-step ramp, the blue-violet shadow shift that loses chroma, and a lit band only on the top fifth of each strand left purple, red and brown masses with little strand-to-strand variation. The references' hair is their most striking element: a pale lit root, a gold middle and orange-red tips. Black and navy hair read as one dark blob. | high |
+| Hair, nape | The cap starts 1.5 px above the chin, and the head's back face was skin. Every short or tied style showed a bald skin strip at the nape from the back and the side, with jag teeth over it. | high (looks like a glitch) |
+| Head size | The visual head share (hair top to chin over the hair top), measured on the fixtures, was 0.24 (adult), 0.28-0.29 (teen) and 0.35 (chibi). On the owner's screenshot the same measure is about 0.20-0.22, 0.25-0.26 and 0.32-0.35. The heads were still a little big, mostly because the hair rose 3.4 px over the head, and up to 4.5 px with Rowan's spikes. | medium |
+| Spiky hair | Rowan's six up-spikes were 2.25 px boxes 2-3 px tall. They read as wooden crates on his head. | medium |
+| Faces | The faces are clearly distinct (feedback point 2 is met): every pair differs in 5+ features. Defects: the stubble was every other texel on the chin row, which read as stitches; the plaster sat under the outer eye corner, 3 x 2 texels, and read as a tear streak; the cat mouth (ω) used the light mouth line and only diagonal steps, so it read as loose dots. | medium |
+| Skin | Fixture skins at OKLCH L 0.85-0.91 and hue 57-61 looked beige-grey on the front face, which the renderer draws at 0.8, as entity lighting does at about 0.74. The references' skin is a light pink-peach. | medium |
+| Ears | Each stacked 1 px slab of a cat ear got a lit +1 top and a -2 hem outline on its 1-texel sides, because the slab below is rotated and the painter cannot see it. From behind, the ears were striped "Christmas trees". | medium |
+| Barcode glitch | Jagged slabs (back and side covers) cut their outermost columns. Their narrow side faces follow those columns, so the slab's side opened at the bottom and its toothed bottom face showed through from inside. In side views this appeared as a black-and-clear striped "barcode" at the hair hem (Wren, Rowan, Tansy). Cull-free entity rendering would show it in game too. | medium |
+| Twin tails, back | The back of the twin-tail style was one flat slab with a jagged hem. With the nape fix it showed a row of dark "windows". | low |
+| Outfits, silhouettes, forms | Bell sleeves, panel skirts, frills, collars, capes and armour give the references' layered look, and every silhouette differs. The three forms are clearly distinct. No change. | ok |
+| Tails | Tobin's five-segment tail has the references' volume. Tansy's cat tail is slender by design. No change. | ok |
+
+### Fixes (generator and parts)
+
+1. **Hair ramp** (`palette.py`, `ramp(kind="hair")`, used for the `hair` and `hair_accent` slots, so ears and tails in
+   the hair colour get it too):
+   - Steps are 0.085 L down and 0.095 L up (cloth: 0.08).
+   - Shadows keep their chroma, plus 6% per step. They lean toward orange-red (OKLCH hue 35) for warm hair (hues
+     below 115 or above 345: gold, brown, ginger, red) and toward blue-violet for cool hair, 7 degrees per step.
+   - Dark hair (L below 0.42) takes 0.06 down and 0.12 up, and its highlights turn toward a cool blue (hue 255, 18
+     degrees per step) with at least 0.02 chroma per step. Black and navy strands then show a blue sheen.
+   - Example: gold #D9B04C gives #B07300 / #C79021 / #D9B04C / #F0D277 / #FFF4C6, the references' gold-to-orange.
+   - Cloth, metal and the other slots keep the old ramp.
+2. **Strand gradient** (`paint.py`): the lit root now covers the top 30% of a hair side face (was the top fifth, and it
+   now applies from 3 texels tall). The darker band covers the lowest 40% (was a third) of hair faces 4 or more texels
+   tall. With the -2 tip row, a strand reads lit root, mid tone, darker lower part, dark tip.
+3. **Parted crown**: the `whorl` (8 strands) and `crown_top` (7) were removed from all seven hair styles. A `part`
+   group replaces them: 5 strands on each side of a centre line from the front to the back of the crown (mirrored),
+   2.1 x 0.9 px, 5-5.75 px long, lying 66-72 degrees out over the dome, with the end strands dropped 0.3 px for a
+   rounder profile. The top now reads as hair combed from a parting. The crown ring moved down to y 11.6 (was 12.1),
+   the dome slabs to 11.0 and 11.6, and the part line sits at 12.35. Each style has 5 fewer cubes.
+4. **Covered nape**: every hair style paints the head's back face, and the back of its side faces (head-local z 0.5 to
+   5.5), as hair (paint ops). The temples in front of the ears stay skin. The hair's lower band and hem row give the
+   nape a shadow line.
+5. **Lower crown, smaller visual head**: the hair top is now 2.8 px over the head on every style except the spiky one
+   (was 3.4). The visual head share is 0.234 (adult), 0.268 (teen, Rowan 0.283) and 0.339 (chibi), down from 0.242,
+   0.277-0.293 and 0.349. This is within the references' range for teen and chibi and 0.01-0.03 above it for the adult
+   (see the open item).
+6. **Spikes** (`messy_short`): six 1.5 x 1 px spikes, 2.5-3.25 px long, tilted 52-60 degrees outward on the back
+   two-thirds of the crown (angles -110 to 130). They read as cowlicks, not crates, and the hair top dropped to 3.8 px
+   over the head.
+7. **Faces** (`face.py`):
+   - `stubble` is a solid soft shadow along the whole chin row and the jaw corners (`stubble_soft`, the skin and the
+     stubble colour at 55%), a little darker on the chin. It is no longer every other texel.
+   - The plaster (`bandage`) is 4 x 2 texels with a 2 x 2 pad, low on the cheek and inside the face. It reads as a
+     plaster across the cheek.
+   - The cat mouth (ω) uses a bolder line (`mouth_line_bold`: the skin shadow and the mouth's dark colour at 80%).
+8. **Ears**: a new cube shade `mass` means no vertical shading, no hem outline, and a top face lit like the sides. Each
+   cat-ear slab uses it, the slab under the dark tip is one tone darker, and the tip two. From behind, an ear reads as
+   one stepped solid in the hair colour with a dark tip, as in the reference technique, and no longer as stripes.
+9. **Jagged slabs keep their outer columns** (`paint.jag_depth`): the outermost column on each side is never cut (for
+   faces 3 or more texels wide). The narrow side faces, which follow those columns, stay whole. The bottom face can no
+   longer show through from inside, so the barcode is gone. The broad face is still jagged inside.
+10. **Twin tails**: a `nape` group of 6 tapered strands, 6.25-7 px long, hangs over the back slab and its hem. This adds
+    6 cubes.
+11. **Skin** (the six fixtures' palettes, OKLCH): Tansy, Wren, Tobin and Maren are lighter and pinker (L 0.91-0.935,
+    hue 45-52). Rowan is a little warmer (L 0.905), and Garrick stays the tan one (L 0.86). There is still a range of
+    skin tones across the cast.
+
+Cubes per fixture: 131-225 (Rowan 131, Wren 163, Garrick 168, Maren 173, Tobin 174, Tansy 225). Hair strands: 68-90.
+Beyond the fine distance: 54-92. Bones: 51-75. All are inside the budgets (300 / 130 / 100). The budget reasoning
+in "Cube budget" above is unchanged.
+
+### Tests (123 -> 136)
+
+`tests/test_artdir.py`:
+- the hair ramp: warm hair shades toward orange and keeps its chroma, cool hair toward violet, dark hair gets a cool
+  sheen at least 0.11 L brighter, and only the hair slots use it;
+- every hair style has the 5 + 5 part strands and no whorl, its hair top is at most 3 px over the head (spikes and
+  ahoge aside), and the head's back face is hair while the temple stays skin;
+- a long strand reads root lighter than its middle, and its middle lighter than its tip;
+- jag outer columns stay uncut, and a jagged slab's narrow faces are whole;
+- the ear slabs' ledges have the same tone as their fronts, with a dark tip;
+- the stubble has no every-other-texel pattern, the plaster is wider than tall and inside the face, and the cat mouth
+  uses the bold line.
+`herogen check --style` passes for all 8 models, and `herogen build --check` matches (test_rig and _fallback were rebuilt:
+their hair uses the new kit and ramp).
+
+### Decisions
+
+1. **The rig is unchanged.** The adult's visual head share (0.234) is 0.01-0.03 above the owner's screenshot (about
+   0.20-0.22). Closing that gap needs a longer body, not a smaller head. For example: the adult head top at 56 px
+   instead of 52, the teen at 48, the chibi at 37, with the render scale lowered to about 0.52 to keep the world
+   heights. That changes the rig, the bases, the hitbox numbers for A1 and every proportion test, so it is left to
+   the owner's decision after seeing these previews.
+2. **Flat painting stays, with a stronger hair ramp.** The study measured 2-3 tones per hair face. A wider, warmer
+   ramp gives those tones the references' contrast without adding strand lines.
+3. **Ears keep the stacked-slab construction** (the references' technique). Only their painting changed, so they stay
+   solid from every side. A two-plate triangular ear would open at the slanted edges in side views.
+4. **Skin is lighter on most fixtures**, not on all: Garrick keeps a tan skin and Rowan a warm one.
+
+### Open items
+
+- **Owner review**: the head size after this pass (adult 0.234, teen 0.268-0.283, chibi 0.339 with hair). If the
+  adult should match the screenshot exactly, take the longer-body option in decision 1.
+- **G2**: confirm in game that the hair ramp's contrast survives vanilla entity lighting. The front faces are lit at
+  about 0.74 and the sides at about 0.5. The preview renderer uses 0.8 and 0.6.
+- **Polish not done**:
+  - The twin tails' bundles show their hollow top ring when seen from above.
+  - Seen at a grazing angle, the inside of a jagged slab still shows between its teeth.
+  - Outfits have no fabric patterns yet: no hero-level pattern override exists, and the parts library has none on
+    its panels.

@@ -92,7 +92,7 @@
   "render_scale": 0.56,
   "rig": "hero_rig_v3",
   "scale": 1,
-  "source_sha256": "ed7b8ad5e042d75f7da4cb81eef15b7cf54fcaa5e7a1369f23968f68fff1c799",
+  "source_sha256": "9af5c772e8f2ec35b813b987c330197f6573806d818e93050cc0ee677143a06c",
   "states": [],
   "style": "katana",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": true, "width": 256},

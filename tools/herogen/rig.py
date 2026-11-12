@@ -143,7 +143,7 @@ class Cube:
     fixed: dict = field(default_factory=dict)     # face -> uv_template region name
     density: int = 1
     pattern: Optional[dict] = None
-    shade: Optional[str] = None                   # extra light ramp: "vertical" (top lit, tip dark)
+    shade: Optional[str] = None                   # "vertical" (top lit, tip dark), "flat", "mass" (ledges unlit)
     cutout: Optional[str] = None
     taper: Optional[float] = None
     trim: Optional[dict] = None

@@ -311,6 +311,7 @@ class FaceColours:
         self.shine = mix(self.white, self.iris[4], 0.45)
         self.shine2 = mix(self.white, self.iris2[4], 0.45)
         self.mouth_line = mix(skin[0], ramps["mouth_dark"][2], 0.5)
+        self.mouth_line_bold = mix(skin[0], ramps["mouth_dark"][2], 0.8)
         self.mouth_soft = skin[0]
         self.lip = mix(skin[1], ramps["blush"][2], 0.35)
         self.mouth_dark = ramps["mouth_dark"][2]
@@ -326,7 +327,8 @@ class FaceColours:
         self.mole = mix(self.lash, skin[0], 0.25)
         self.scar = mix(skin[0], ramps["blush"][1], 0.4)
         self.scar_light = mix(skin[3], ramps["blush"][3], 0.25)
-        self.stubble = mix(skin[1], parse_hex(palette_hex["hair"]), 0.35)
+        self.stubble = mix(skin[1], parse_hex(palette_hex["hair"]), 0.3)
+        self.stubble_soft = mix(self.skin, self.stubble, 0.55)
         self.bandage = (244, 240, 230)
         self.bandage_pad = mix((214, 186, 150), skin[0], 0.3)
         self.rim = ramps[spec["glasses_color"]][1] if spec.get("glasses") else None
@@ -421,19 +423,24 @@ def skin_layer(spec, col):
                     for (r, x) in ((17, 0), (18, 1), (17, 2)):
                         put(r, fc(x), paint)
             elif t == "stubble":
-                # a soft shadow along the jaw and the chin, every other texel
-                for c in range(1, 19):
-                    if c % 2 == 1:
-                        put(19, c, col.stubble)
-                for c in (0, 19):
-                    put(18, c, col.stubble)
+                # a soft solid shadow along the jaw and the chin (art direction pass 2: the old every-other-texel row
+                # read as stitches), a touch darker on the chin
+                for c in range(0, FACE):
+                    put(19, c, col.stubble_soft)
+                for c in (0, 1, 2, FACE - 3, FACE - 2, FACE - 1):
+                    put(18, c, col.stubble_soft)
+                for c in range(FACE // 2 - 2, FACE // 2 + 2):
+                    put(19, c, col.stubble)
                 break                                      # both sides done at once
             elif t == "bandage":
-                for x in (0, 1, 2):
-                    put(17, fc(x), col.bandage)
+                # a plaster lying across the cheek (4 x 2 texels, the pad in the middle): wider than tall, so it reads
+                # as a plaster and not as a tear streak under the eye
+                for x in (1, 2, 3, 4):
                     put(18, fc(x), col.bandage)
-                put(17, fc(1), col.bandage_pad)
-                put(18, fc(1), col.bandage_pad)
+                    put(19, fc(x), col.bandage)
+                for x in (2, 3):
+                    put(18, fc(x), col.bandage_pad)
+                    put(19, fc(x), col.bandage_pad)
     # glasses: the bottom rims sit just under the eyes plane, on the skin (the planes carry the rest)
     if spec.get("glasses") in ("round", "square"):
         for side in ("r", "l"):
@@ -935,7 +942,8 @@ def mouth_frame(spec, col, frame, skin=None):
     w = MOUTHS[t]
     c0 = 4 - (w + 1) // 2 if t != "smirk" else 3
     c1 = c0 + w - 1
-    line = col.mouth_soft if t == "soft" else col.mouth_line
+    # the cat mouth is drawn with diagonal steps only, so it takes the darker line or it reads as loose dots
+    line = col.mouth_soft if t == "soft" else (col.mouth_line_bold if t == "cat" else col.mouth_line)
     name = MOUTH_FRAMES[frame]
     fang = spec["fang"]
 

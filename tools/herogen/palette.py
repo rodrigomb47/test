@@ -6,6 +6,10 @@ Every palette slot becomes a 5-tone ramp in OKLCH, tones -2..+2:
   red instead and keep their chroma;
 - highlights shift toward yellow by up to 8 degrees (4 per step);
 - tone 0 is the authored colour, exactly.
+Hair (and the fur and ears painted in the hair colour) gets its own ramp, `kind="hair"` (art direction pass 2): the
+owner's references shade hair strongly, gold to orange, with a pale lit root, so hair steps are larger, shadows keep
+their chroma and lean warm (orange-red) for warm hair or blue-violet for cool hair, and dark hair gets a wider, cooler
+highlight step so a black or navy mass still shows its strands (anime blue sheen).
 Lightness is clamped so no ramp reaches pure black or pure white (those are kept for eye highlights).
 """
 import math
@@ -16,8 +20,12 @@ SHADOW_HUE = 285.0       # OKLCH hue of blue-violet
 SKIN_SHADOW_HUE = 28.0   # OKLCH hue of a warm red
 HIGHLIGHT_HUE = 100.0    # OKLCH hue of yellow
 STEP_L = 0.08
+HAIR_WARM_HUE = 35.0     # OKLCH hue of a warm orange-red: where gold, brown, ginger and red hair shade toward
+HAIR_SHEEN_HUE = 255.0   # OKLCH hue of a cool blue: the sheen of dark (black, navy) hair
+HAIR_DOWN, HAIR_UP = 0.085, 0.095
 L_MIN, L_MAX = 0.14, 0.965
 
+HAIR_SLOTS = ("hair", "hair_accent")
 SLOTS = ["skin", "skin_shade", "hair", "hair_accent", "eyes", "primary", "secondary", "accent", "trim", "metal",
          "leather", "glow"]
 
@@ -174,9 +182,39 @@ def _shift_hue(h, target, amount):
     return (h + math.copysign(amount, d)) % 360.0
 
 
+def _hair_ramp(base):
+    L, C, h = rgb_to_oklch(base)
+    warm = h < 115.0 or h > 345.0
+    dark = L < 0.42
+    out = []
+    for t in (-2, -1, 0, 1, 2):
+        if t == 0:
+            out.append(base)
+            continue
+        if t < 0:
+            Lt = max(L_MIN, L + (0.06 if dark else HAIR_DOWN) * t)
+            ht = _shift_hue(h, HAIR_WARM_HUE if warm else SHADOW_HUE, 7.0 * -t)
+            Ct = C * (1.0 + 0.06 * -t)
+            if C < 0.02:
+                ht, Ct = SHADOW_HUE, max(Ct, 0.008 * -t)
+        else:
+            Lt = min(L_MAX, L + (0.12 if dark else HAIR_UP) * t)
+            if dark:
+                # black and navy hair: a cool sheen, a little more chroma, so the lit strands read
+                ht = _shift_hue(h, HAIR_SHEEN_HUE, 18.0 * t) if C >= 0.012 else HAIR_SHEEN_HUE
+                Ct = max(C * (1.0 + 0.1 * t), 0.02 * t)
+            else:
+                ht = _shift_hue(h, HIGHLIGHT_HUE, 5.0 * t)
+                Ct = C * (1.0 - 0.08 * t)
+        out.append(oklch_to_rgb(Lt, Ct, ht))
+    return out
+
+
 def ramp(colour, kind="default"):
-    """Five RGB tuples for tones -2..+2 (index tone + 2)."""
+    """Five RGB tuples for tones -2..+2 (index tone + 2). `kind`: "default", "skin" or "hair"."""
     base = parse_hex(colour)
+    if kind == "hair":
+        return _hair_ramp(base)
     L, C, h = rgb_to_oklch(base)
     out = []
     for t in (-2, -1, 0, 1, 2):
@@ -215,7 +253,7 @@ def resolve(art_palette, family="female"):
     for k, v in pal.items():
         if k == "skin_shade":
             continue
-        ramps[k] = ramp(v, "skin" if k == "skin" else "default")
+        ramps[k] = ramp(v, "skin" if k == "skin" else ("hair" if k in HAIR_SLOTS else "default"))
     if "skin_shade" in pal:
         shade = parse_hex(pal["skin_shade"])
         ramps["skin"][1] = shade

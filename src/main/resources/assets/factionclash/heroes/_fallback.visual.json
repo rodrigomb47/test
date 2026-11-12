@@ -80,7 +80,7 @@
   "render_scale": 0.56,
   "rig": "hero_rig_v3",
   "scale": 1,
-  "source_sha256": "29654f28ef04d587c3a90308589181a93a4403aff12c77a81d4976e9d5cb6cbe",
+  "source_sha256": "9ae87efcb5e2a032ec7acac59d0f1cd3f491a1a6897a3a7fd16ea76af08362f3",
   "states": [],
   "style": "fists",
   "texture": {"glow_outside_face": false, "glowmask": true, "height": 128, "p2": false, "width": 256},

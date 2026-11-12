@@ -5,6 +5,10 @@
   "slots": {"main": "hair"},
   "params": {"length": {"default": 16, "max": 24, "min": 6}, "locks": {"default": 9, "max": 14, "min": 2}},
   "occupies": ["hair_top", "hair_back"],
+  "paint": [
+    {"cubes": ["head"], "faces": ["south"], "slot": "main", "material": "hair"},
+    {"cubes": ["head"], "faces": ["east", "west"], "z": [0.5, 5.5], "slot": "main", "material": "hair"}
+  ],
   "conflicts": ["hair/twin_tails*"],
   "offset": [0, "head_y", 0],
   "bones": [
@@ -21,8 +25,8 @@
       "faces": ["up", "south", "east", "west"]
     },
     {"name": "dome", "bone": "hair_top", "origin": [-4.75, 10.5, -5], "size": [9.5, 0.75, 10], "material": "hair"},
-    {"name": "dome2", "bone": "hair_top", "origin": [-3.5, 11.25, -3.75], "size": [7, 0.75, 7.5], "material": "hair"},
-    {"name": "dome3", "bone": "hair_top", "origin": [-2, 12, -2.25], "size": [4, 0.5, 4.5], "material": "hair"},
+    {"name": "dome2", "bone": "hair_top", "origin": [-3.5, 11.0, -3.75], "size": [7, 0.75, 7.5], "material": "hair"},
+    {"name": "dome3", "bone": "hair_top", "origin": [-2, 11.6, -2.25], "size": [4, 0.5, 4.5], "material": "hair"},
     {
       "name": "fringe_base",
       "bone": "bangs",
@@ -54,7 +58,7 @@
       "name": "crown",
       "bone": "hair_top",
       "path": "arc",
-      "y": 12.1,
+      "y": 11.6,
       "radius": [3.4, 3.7],
       "angles": [-168, 168],
       "count": 16,
@@ -66,32 +70,21 @@
       "tone": [0, 1, 0, 0, -1]
     },
     {
-      "name": "crown_top",
+      "name": "part",
+      "drop": [-0.3, 0, 0.05, 0, -0.3],
       "bone": "hair_top",
-      "path": "arc",
-      "y": 12.6,
-      "radius": [1.75, 2],
-      "angles": [-150, 150],
-      "count": 7,
-      "width": 3,
-      "depth": 1,
-      "length": 3.5,
-      "flare": 26,
-      "tone": [1, 0]
-    },
-    {
-      "name": "whorl",
-      "bone": "hair_top",
-      "path": "arc",
-      "y": 12.9,
-      "radius": [0.6, 0.6],
-      "angles": [-157.5, 157.5],
-      "count": 8,
-      "width": 2.5,
-      "depth": 0.75,
-      "length": 4.25,
-      "flare": 74,
-      "tone": [1, 0]
+      "path": "line",
+      "from": [0, 12.35, -4.2],
+      "to": [0, 12.35, 3.8],
+      "out": [1, 0, 0],
+      "count": 5,
+      "width": 2.1,
+      "depth": 0.9,
+      "length": [5.25, 5.75, 5.5, 5.75, 5.0],
+      "flare": [68, 72, 70, 72, 66],
+      "jitter": 0.25,
+      "mirror": true,
+      "tone": [1, 0, 1, 1, 0]
     },
     {
       "name": "inner",

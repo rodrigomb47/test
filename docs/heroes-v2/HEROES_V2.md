@@ -271,6 +271,12 @@ on the owner's references and other creators' models (`notes/reference-study.md`
 | `teen` | 45 px | 0.27 (0.25) | 20 | 2.5 + 3 + 7 | 31.5 to 16.5 (upper thigh) | 1.58 blocks | petite |
 | `adult` | 52 px | 0.24 (0.22-0.24) | 24.5 | 3 + 3.5 + 8.5 | 38.5 to 19.5 (mid-thigh) | 1.82 blocks | about player height, long legs |
 
+Measured on the fixtures after the art direction pass 2 (`notes/artgen.md`), the hair top is 2.8 px over the head on
+every style except the spiky one. The visual head shares are 0.234 (adult), 0.268 (teen; spiky hair 0.283) and 0.339
+(chibi). The owner's screenshot gives about 0.20-0.22, 0.25-0.26 and 0.32-0.35. Closing the adult's remaining gap
+needs a longer body (PROPOSED for the owner's decision: head tops 56 / 48 / 37 px at a render scale of about 0.52),
+not a smaller head.
+
 Two-segment arms and legs, a 1.5-2.5 px neck, 2.5-3.5 px "mitten" hands, a 1-1.5 px toe. Every height is a base dim (`hip_y`, `knee_y`,
 `waist_y`, `chest_y`, `chest_top`, `head_y`, `shoulder_y`, `elbow_y`, `wrist_y`, ...), so pivots are expressions over
 the dims and differ by form, while **bone names are the same on every base**: an animation keyed for one base plays on
@@ -335,7 +341,7 @@ uses it (a hero without wings has no `wing_*` bones). Extra tails beyond the fir
 (`tail_b_1`, `tail_b_2`, ...), and every `p2_`/`p3_`/`fine_` group is its own bone, because visibility is per bone.
 
 **Budgets** (validator, PROPOSED, style pass 2): at most **100 bones** (typical 50-80; generators add chain and
-`fine_` bones), at most **300 cubes** (typical 130-230; the six style fixtures use 136-224, of which 68-89 are hair
+`fine_` bones), at most **300 cubes** (typical 130-230; the six style fixtures use 131-225, of which 68-90 are hair
 strands) and at most **130 cubes outside `fine_` bones** (what is still drawn beyond the fine distance; the fixtures
 54-92); texture 256x128 (every fixture fits) or 256x256 for winged heroes, many tails or very large weapons; at most 24
 animations in a hero's own file. Why 300 and not the references' 300-500: up to about 50 heroes on screen, each vertex
@@ -503,7 +509,7 @@ sheet lists it. The phase look uses `p2_`/`p3_` bones and, when the art spec ask
 ### 4.9 Level of detail and culling
 
 `fine_` bones hidden beyond 20 blocks (style pass 2: hair strands, rolled tail boxes, frills, bows and small plates
-are `fine_`; at most 130 cubes stay, the fixtures keep 54-92 of 136-224, about 45-60% fewer), face frozen beyond 16,
+are `fine_`; at most 130 cubes stay, the fixtures keep 54-92 of 131-225, about 45-60% fewer), face frozen beyond 16,
 `secondary` controller
 paused beyond 32, locator tracking off beyond 24, vanilla frustum culling with the inflated box (section 3.1). An
 unknown hero id on the client renders `_fallback.geo.json` (the neutral rig) tinted with the faction colour.
@@ -1625,13 +1631,18 @@ from `hair/high_ponytail_long`):
   renders `entityCutoutNoCull`, so cut-outs show from both sides.
 - **Secondary** declares a chain for the follow-through bake (13.6).
 - **Rig v2 additions** (all in `parts.py`'s docstring): part `offset` and `density`; cube `density`, `shade`
-  (`vertical`: lit top and darker tip, the default for hair; `flat`), `skip_if_empty` (an optional piece a param can
+  (`vertical`: lit top and darker tip, the default for hair; `flat`; `mass`: no vertical shading or hem outline, top
+  lit like the sides, for the stacked slabs of one solid such as an ear), `skip_if_empty` (an optional piece a param can
   switch off, such as an ahoge); paint op `vee` `[y_tip, slope]` (a V neckline); cutouts `tri_down`, `peak` (an animal
   ear: full width at the base, a point on top) and `round_top`. A cutout without a taper is cut through the cube's broad
-  faces and the narrow faces and caps follow it, so an ear has no full-height strip on its sides.
-- **The hair kit** (style guide in `notes/artgen.md`): every hair style is built from a cap open at the front, a stepped
-  dome, a fringe block over the forehead, 3-5 strand cubes over it whose tips stop at the lash line, side cover, back
-  cover and the style's own pieces (long side locks, layered back strands, ponytails and twin tails on chains, an
+  faces and the narrow faces and caps follow it, so an ear has no full-height strip on its sides. A `jagged_N` cut never
+  cuts the outermost column on either side, so a jagged slab's narrow faces stay whole and its bottom face cannot show
+  through them as a striped "barcode".
+- **The hair kit** (style guide in `notes/artgen.md`; art direction pass 2: the crown is **parted**, 5 strands on each
+  side of a centre line lying over the dome, replacing the radial whorl that read as a pinwheel; the crown is 0.5 px
+  lower; every style paints the back of the head as hair so the nape is never bald): every hair style is built from a
+  cap open at the front, a stepped dome, a fringe block over the forehead, 3-5 strand cubes over it whose tips stop at
+  the lash line, side cover, back cover and the style's own pieces (long side locks, layered back strands, ponytails and twin tails on chains, an
   ahoge). Touching hair cubes of one colour are painted as one mass (no outline between them).
 - **Style pass 2 additions** (rig v3, `gen.py`, `notes/artgen.md`): **generators** next to plain cubes: `strands` (rows
   of rotated boxes along a line or an arc, each hanging from an anchor or standing on it, with `flare` outward, `fan`,
@@ -1681,10 +1692,14 @@ stay symmetric.
 
 - **Ramps**: each palette slot becomes a 5-tone ramp in OKLCH: tones -2..+2 change lightness by 0.08 per step; shadows
   shift hue toward blue-violet by up to 12 degrees and lose chroma, highlights shift toward yellow by up to 8 degrees
-  (the hue-shifting of pixel-art shading). Skin ramps shift shadows toward red instead.
+  (the hue-shifting of pixel-art shading). Skin ramps shift shadows toward red instead. **Hair ramps** (art direction
+  pass 2, the `hair` and `hair_accent` slots) step 0.085 down and 0.095 up. Their shadows keep their chroma and lean
+  orange-red for warm hair, or blue-violet for cool hair, so gold reads as gold-to-orange as in the references. Dark
+  hair (L below 0.42) steps 0.12 up toward a cool blue sheen, so a black mass still shows its strands.
 - **Materials** decide how a face of a cube is painted: `cloth` (soft vertical gradient, folds every 3-4 texels on long
   faces), `skin` (soft, blush region on the face plane only), `hair` (style pass 2: painted flat, 2-3 tones per face
-  and no strand lines, the strands being cubes; earlier: every strand cube lit at the top fifth,
+  and no strand lines, the strands being cubes; art direction pass 2: the top 30% of a strand's side lit, the lowest
+  40% one tone darker, the tip row the darkest; earlier: every strand cube lit at the top fifth,
   darker in its lower third, outlined at its tip; strand lines every 4 texels at 2x and short highlight streaks; no
   crown ring), `metal` (high contrast, a specular band, rim light), `leather` (mid contrast, stitch lines), `fur` (noise
   tufts, cut-out tips), `scale` (overlapping arcs), `wood`, `paper` (flat, ink marks), `lacquer` (glossy, sharp
@@ -2004,6 +2019,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G1 | herogen core: rig v1, 6 bases, UV template, packer, palette ramps, painter, face painter, geo writer, `visual.json`, determinism | - | L | Python tests; a test rig with face frames builds byte-identically twice |
 | G1s | Style pass after the owner's reference: rig v2 (three forms x two families x three builds, 10 px head, 20x20 face), larger eye frames, the layered hair kit, volumetric ears and tails, outfit volume parts, six original style fixtures, the style preview set | G1 | L | done 2026-11-12: all parts on all six bases pass the checks; previews in `docs/heroes-v2/previews/style/` |
 | G1s2 | Style pass 2 after the owner's feedback ("head too big, faces similar") and the reference measurements: rig v3 (longer bodies, render scale 0.56, low wide-set eyes), part generators (strands, chains, groups) and the strand hair kit, layered ears and five-bone tails, detailed outfits, the face system, six redesigned fixtures, budgets 300 cubes / 130 outside `fine_` / 100 bones | G1s | L | done 2026-11-12: 123 Python tests; every part on every base passes the checks; the six faces differ pairwise in 5+ features; previews regenerated |
+| G1s3 | Art direction pass 2: review of the style pass 2 previews against the references; hair ramp and strand gradient, parted crown, covered nape, lower crown, spikes, stubble, plaster and cat mouth, ear slabs as one mass, jag edges without the barcode, twin-tail nape strands, lighter fixture skins | G1s2 | M | done 2026-11-12: 136 Python tests; previews regenerated; before and after in `notes/previews/artdir2_before_after.png` |
 | G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px |
 | G3 | Animation generator: poses, primitives, recipes, secondary bake, markers, writer, frames into the server file, quality rules | G1 | L | Python tests; the test rig's idle, walk and a swing with a `hit` marker are generated (A2 plays them in game) |
 | G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs |

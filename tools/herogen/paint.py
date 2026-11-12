@@ -4,7 +4,8 @@ Per texel: the slot and material come from the cube (or the base layer) and the 
 that point; the tone (-2..+2 on the slot's ramp) is the sum of
 - light by face direction: top +1, front and back 0, the hero's left side 0, right side -1, bottom -2 (light from the
   hero's front-left);
-- a one-tone darker band on the lowest third of tall faces (5+ texels) for cloth, hair, leather, fur, scale, wood,
+- a one-tone darker band on the lowest third of tall faces (5+ texels; hair: the lowest 40% of faces 4+ texels tall)
+  for cloth, hair, leather, fur, scale, wood,
   only where the region ends at the face's bottom edge (a garment that continues onto the cube below is shaded once, at
   its hem, not once per body cube, which would read as stripes);
 - ambient occlusion: -1 on the top row of a cube that sits under a cube at least as wide (cuffs, collars, belts),
@@ -12,7 +13,7 @@ that point; the tone (-2..+2 on the slot's ramp) is the sum of
 - an outline: -2 on the last row of a clothing or hair region (hems, sleeve ends, bangs) and on the lowest texel a
   cutout leaves in a column (jagged tips), never on skin;
 - material detail (one soft fold on big cloth faces, metal specular band, leather stitches, fur noise...);
-- vertical shading (`shade: vertical`, the default for hair): the top fifth of a side face one tone lighter, so every
+- vertical shading (`shade: vertical`, the default for hair): the top 30% of a side face one tone lighter, so every
   strand or lock reads lit at the root and dark at the tip, as pixel-art hair is drawn;
 - pattern tone and the op's or cube's own tone.
 Style pass 2 paints flat, the way the references do (2-3 tones per face): hair has no painted strand lines (the strands
@@ -40,6 +41,16 @@ NORMALS = {"north": (0, 0, -1), "south": (0, 0, 1), "east": (-1, 0, 0), "west": 
            "down": (0, -1, 0)}
 
 
+ROOT_LIT = 0.3           # vertical shading: this share of a strand's side face, from the root, is one tone lighter
+
+
+def _band_rows(mat, H):
+    """Rows of the darker band at the bottom of a tall face: the lowest third, for hair the lowest 40% (art direction
+    pass 2: a strand reads lit root, mid tone, dark lower part and a darker tip, the references' gold-to-orange
+    strands)."""
+    return max(1, (H * 2) // 5) if mat == "hair" else H // 3
+
+
 def face_light(cube, face):
     """Baked light of a face: by the direction it faces once the cube's own rotation is applied (a tail segment
     turned upside down gets its light from below, not from its local top)."""
@@ -56,7 +67,11 @@ def _in(rng, v):
 
 def jag_depth(n, i, W, dmax):
     """Rows cut from the bottom of column i for n teeth across W columns: each tooth is a whole number of columns
-    with its tip (depth 0) on its middle column and the cut deepening toward its edges."""
+    with its tip (depth 0) on its middle column and the cut deepening toward its edges. The two outermost columns are
+    never cut (art direction pass 2): a slab's narrow side faces follow those columns, and a cut there opened the
+    slab's side so its bottom face showed through from inside as a striped "barcode" in side views."""
+    if W >= 3 and i in (0, W - 1):
+        return 0
     teeth = max(1, min(n, W // 2 if W >= 2 else 1))
     tw = W / float(teeth)
     k = int(np.floor((i + 0.5) / tw))
@@ -335,9 +350,9 @@ class Painter:
                 pslot, ptone = self.pattern_at(pattern, face, p, cube.density)
                 if pslot:
                     slot = pslot
-                t = face_light(cube, face) + tone + ptone
-                if side and cube.outline:
-                    if mat in BANDED and H >= 5 and j >= H - H // 3 and ends[i] \
+                t = (0 if face == "up" and cube.shade == "mass" else face_light(cube, face)) + tone + ptone
+                if side and cube.outline and cube.shade != "mass":
+                    if mat in BANDED and H >= (4 if mat == "hair" else 5) and j >= H - _band_rows(mat, H) and ends[i] \
                             and all(grid[k][i][6] == group for k in range(j, H)):
                         t -= 1
                     if j == 0 and self._ao[cube.name] and self._ao_differs(cube, face, p, group):
@@ -347,8 +362,8 @@ class Painter:
                             or (H >= 3 and j + 1 < H and not kept[j + 1][i])):
                         # a cloth edge lying against the body (the bust, a collar) is a soft shadow, not a hem line
                         t -= 1 if mat in RESTING and self._rests_on_body(cube, face, p) else 2
-                if side and H >= 4 and (cube.shade == "vertical" or (cube.shade is None and mat == "hair")) \
-                        and (j + 0.5) / H < 0.2:
+                if side and H >= 3 and (cube.shade == "vertical" or (cube.shade is None and mat == "hair")) \
+                        and (j + 0.5) / H < ROOT_LIT:
                     t += 1
                 t += self.material_tone(cube, mat, face, i, j, W, H, p)
                 t = max(-2, min(2, t))
