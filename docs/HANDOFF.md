@@ -73,7 +73,7 @@ commits, language and testing are in `/CLAUDE.md`.
 | `config/` | `FCConfig` (NeoForge common config; sections campaign, movement, survival, achievements, workplaces, recruitment, war). |
 | `info/`, `net/`, `client/` | Station/info screen text (`BaseInfo`), map payload (`MapPayload` marker kinds: … VILLAGE 7, PILLAGER_OUTPOST 8, WOODLAND_MANSION 9, STALE flag 16), client screens (`MapScreen`, `InfoScreen`). |
 | `gametest/` | `FCGameTests` (all GameTests), `GameTestBases` (register an isolated test base, clean-up). |
-| `hero/` (Heroes v2, `docs/heroes-v2/HEROES_V2.md`) | `HeroEntity` (a `FactionNpc` subclass and GeckoLib `GeoEntity`: hero id and the synced fields `DATA_HERO/ACTION/STATE/MOOD/LOCO`, hitbox from the model, kit never dropped, `FcHero` NBT), `HeroRegistry` (every `assets/factionclash/heroes/*.visual.json` read from the mod file, config overrides in `config/factionclash/heroes/`, `registerTransient` fixtures for GameTests), `HeroVisual`/`HeroEntry` (what a hero looks like and where its files are), `HeroManager` (give, release, death and revival after `heroes.reviveSeconds`, one living entity per id, preview copies), `HeroKit`, `HeroEvents`, `HeroLook` (the visual file's bone groups, face table, blink, phases, move names, chains), `HeroAnimator` (the three GeckoLib controllers, common code), `HeroTimingFiles` (the server timing files through a hero's chain). Preview fixtures: `config/factionclash/hero_fixtures/*.visual.json` on a server. Campaign record: `campaign/HeroState` in `CampaignData.heroes` (format 3); a hero's roster `NpcRecord` has `heroId`. Pure rules in `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`, `FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`, `FormScale`); commands in `command/HeroCommands` (`/fc hero list\|info`, `/fc admin hero give\|release\|revive\|preview\|lineup\|pose`); GameTests in `gametest/HeroGameTests` and `HeroLookGameTests`. |
+| `hero/` (Heroes v2, `docs/heroes-v2/HEROES_V2.md`) | `HeroEntity` (a `FactionNpc` subclass and GeckoLib `GeoEntity`: hero id and the synced fields `DATA_HERO/ACTION/STATE/MOOD/LOCO`, hitbox from the model, kit never dropped, `FcHero` NBT), `HeroRegistry` (every `assets/factionclash/heroes/*.visual.json` read from the mod file, config overrides in `config/factionclash/heroes/`, `registerTransient` fixtures for GameTests), `HeroVisual`/`HeroEntry` (what a hero looks like and where its files are), `HeroManager` (give, release, death and revival after `heroes.reviveSeconds`, one living entity per id, preview copies), `HeroKit`, `HeroEvents`, `HeroLook` (the visual file's bone groups, face table, blink, phases, move names, chains), `HeroAnimator` (the three GeckoLib controllers, common code), `HeroTimingFiles` (the server timing files through a hero's chain). Preview fixtures: `config/factionclash/hero_fixtures/*.visual.json` on a server. Campaign record: `campaign/HeroState` in `CampaignData.heroes` (format 3); a hero's roster `NpcRecord` has `heroId`. Pure rules in `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`, `FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`, `FormScale`); commands in `command/HeroCommands` (`/fc hero list\|info`, `/fc admin hero give\|release\|revive\|preview\|lineup\|pose`); GameTests in `gametest/HeroGameTests` and `HeroLookGameTests`. How to see a hero in game: section 4, "Seeing a hero in game". |
 | `client/hero/` | `HeroModel` (files and the animation chain with missing files dropped, `_fallback` for a missing model; after the animation pass: head look, face, flinch, ears, chain sway, bone visibility, LOD), `HeroRenderer` (face-frame UV shift, sash tint, layers, `-Dfactionclash.heroRenderStats`), `HeroFace`, `HeroClientState`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals` (a resource pack's hero visual files become preview fixtures on the client). HEROES_V2 15.2 "A2 as built". |
 | `tools/` (repo root) | `sim.py` (drive a server over RCON, print campaign summaries), `rcon.py`, `days.sh`, `setup_server.sh`, `gen_assets.py`. |
 | `libs/maven/` (repo root) | Vendored GeckoLib 4.9.3 (the hero models' animation library; jar, POM, `.module`, a hand-written `maven-metadata.xml`, `LICENSE-geckolib.txt`). The build reads the group `software.bernie.geckolib` only from here and embeds the jar (jar-in-jar). Hashes in section 5. |
@@ -113,6 +113,18 @@ python3 tools/rcon.py "stop"
   root shot.png`; the game window is the 854x480 box at (213,120) of the 1280x720 screen.
 - `/locate structure minecraft:pillager_outpost` (or `#minecraft:village`, `minecraft:mansion`) via RCON finds
   structures to test scouts; a scout can be teleported next to one (`tp <uuid> x y z`) and back home to deliver.
+- **Seeing a hero in game** (Heroes v2; only the art pipeline's `test_rig` ships so far). With the server up and a
+  campaign started (`fc start 256`): `python3 tools/rcon.py "fc admin hero give test_rig ember_legion"` puts the
+  campaign's hero at Ember's spawn point (from RCON; a player operator gets it beside them, `[pos]` anywhere in the
+  overworld); `fc hero info test_rig` prints where it is (operators and its own faction only). Join with the Xvfb
+  viewer as above, `op Viewer`, `gamemode spectator Viewer`, `tp Viewer <x> <y+1> <z-4> 0 10` to stand in front of it.
+  For screenshots: `execute as Viewer at Viewer run fc admin hero lineup` stands display copies of every hero (and of
+  the preview fixtures) 4 blocks in front of the viewer, facing it; `fc admin hero pose test_rig base walk` walks it in
+  place, `pose test_rig action attack.1 [speed]` swings, `pose test_rig mood <mood>` (12 moods), `talk on`, `phase 2`,
+  `weapon drawn`, `pose all clear` undoes it all; `fc admin hero lineup clear` removes the copies. Add
+  `-Dfactionclash.heroMarkers=true` to the server's `user_jvm_args.txt` for the server side of the hit timing; the
+  `clientViewer` run already logs markers and render times. The style fixtures need their files built first (section 5,
+  "The hero client model"). F3+B shows the hitbox (1.82 blocks for the test rig).
 
 ## 5. State at handoff (branch head after commit 9ee3f4a + this handoff)
 
@@ -209,6 +221,21 @@ python3 tools/rcon.py "stop"
   left hand, a teleport is not running (`HeroClips.TELEPORT_STEP`); the server logs timing-file hits under
   `-Dfactionclash.heroMarkers=true` (add it to a test server's `user_jvm_args.txt`). **233 unit tests, 149 GameTests.**
   Software-GL frame rates: no hero 10 fps, 1 hero 7-9, 16 heroes 5-7, 64 heroes 4-6 (a loaded 4-core machine).
+- **Review of A0-A2 and checkpoint 1** (2026-11-12; `HEROES_V2.md` 15.2 "Review of A0-A2"). An adversarial review of
+  everything since `67317d8`, GeckoLib read in the decompiled 4.9.3 jar (Vineflower is in the Gradle cache:
+  `java -jar ~/.gradle/caches/modules-2/files-2.1/org.vineflower/vineflower/1.10.1/*/vineflower-1.10.1.jar <jar> <out>`).
+  Fixed: `/fc hero info` showed every player an enemy hero's position and its home's coordinates (now operators and its
+  own faction only); a hero saved during its death animation came back as a dying copy that revived its record, so the
+  hero never returned (a dead or dying copy is now discarded on joining); per-frame allocations in the render path
+  (chain lookups, the visibility plan, resource ids, the glow mask, the Molang supplier, the base candidates; now
+  cached); `give` from another dimension; a preview's death announced to its sash faction; and, seen in the viewer,
+  the campaign hero flipping between walk and run several times a second at its ordinary pace (now a 0.20 band and a
+  6-tick hold, `HeroClips.PaceGate`). Tests strengthened: uniqueness on the chunk-load path
+  (`ServerLevel.addLegacyChunkEntities`), the dead copy, a real blow for the 5 s weapon rule, three new unit tests;
+  four sabotage checks each caught. Re-checked in the Xvfb viewer (lineup, walk, swing, moods, weapon bones, the hero's
+  own walking, `/fc hero info` typed by a non-operator in and out of Ember). Confirmed: no client class on the server
+  path, synced ids, face UVs over the baked texture size, GeckoLib scaling the blend with the speed (the checkpoint's
+  2x hit excess is frame timing), old worlds, the director rule. Checkpoint 1 stands. **236 unit tests, 149 GameTests.**
 
 ## 6. Known open items and ideas (none blocking)
 

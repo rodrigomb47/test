@@ -998,7 +998,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     @Override
     public void die(DamageSource source) {
         super.die(source);
-        if (level() instanceof ServerLevel sl) {
+        if (level() instanceof ServerLevel sl && !isDisplayOnly()) { // (a display copy's end is no faction news)
             CampaignData data = CampaignData.get(sl.getServer());
             NpcRecord rec = record();
             if (rec != null) {

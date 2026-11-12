@@ -370,7 +370,11 @@ public final class HeroCommands {
         return StringArgumentType.getString(c, "id").toLowerCase(Locale.ROOT);
     }
 
-    /** A player giving the command gets the hero beside them; the server console or RCON at the base's spawn point. */
+    /**
+     * A player giving the command gets the hero beside them; the server console or RCON at the base's spawn point.
+     * Heroes live in the overworld (where the bases are): from another dimension the hero goes to the base's spawn point,
+     * and a position given there is refused, since it would be read as overworld coordinates.
+     */
     private static int give(CommandContext<CommandSourceStack> c, BlockPos pos) {
         FactionType f = FactionType.byId(StringArgumentType.getString(c, "faction"));
         if (f == null || !f.human) {
@@ -378,7 +382,13 @@ public final class HeroCommands {
                     Arrays.stream(FactionType.humans()).map(x -> x.id).toList())));
             return 0;
         }
-        BlockPos at = pos != null ? pos : c.getSource().getEntity() instanceof Player p ? p.blockPosition() : null;
+        boolean overworld = c.getSource().getLevel() == c.getSource().getServer().overworld();
+        if (pos != null && !overworld) {
+            c.getSource().sendFailure(Component.literal("Heroes live in the overworld: give a position from there, or leave it out "
+                    + "for the base's spawn point."));
+            return 0;
+        }
+        BlockPos at = pos != null ? pos : overworld && c.getSource().getEntity() instanceof Player p ? p.blockPosition() : null;
         return report(c, HeroManager.give(c.getSource().getServer(), id(c), f, null, at));
     }
 
@@ -426,6 +436,20 @@ public final class HeroCommands {
         return s.owner.displayName + ", " + life + ", level " + s.level;
     }
 
+    /**
+     * Whether this source may see where a hero is (its entity, health and home coordinates): operators (and the server
+     * console or RCON) always, a player only for a hero serving the player's own faction.
+     */
+    static boolean mayLocate(CommandSourceStack source, HeroState s) {
+        if (source.hasPermission(2)) {
+            return true;
+        }
+        if (s == null || s.owner == null || !(source.getEntity() instanceof net.minecraft.server.level.ServerPlayer p)) {
+            return false;
+        }
+        return CampaignData.get(source.getServer()).players.get(p.getUUID()) == s.owner;
+    }
+
     /** The hero sheet as text (the screen comes with A1b). */
     private static int info(CommandContext<CommandSourceStack> c) {
         MinecraftServer server = c.getSource().getServer();
@@ -441,12 +465,18 @@ public final class HeroCommands {
         HeroEntry shown = e != null ? e : HeroRegistry.fallback();
         lines.add((e != null ? e.name() : HeroManager.nameOf(id)) + (e != null && !e.title().isEmpty() ? " · " + e.title() : "") + " (" + id + ")");
         lines.add(" Serves: " + status(s, now));
+        // where the hero and its home are is intelligence (players learn other factions' bases from their scouts): only
+        // operators and the hero's own faction see it
+        boolean insider = mayLocate(c.getSource(), s);
         if (s != null && s.owner != null) {
             BaseState b = CampaignData.get(server).base(s.baseId);
-            lines.add(" Home: " + (b == null ? "none" : b.name + " at " + b.center.toShortString()) + "; fallen " + s.deaths + " time(s)");
+            lines.add(" Home: " + (b == null ? "none" : insider ? b.name + " at " + b.center.toShortString() : b.name)
+                    + "; fallen " + s.deaths + " time(s)");
         }
         HeroEntity h = HeroManager.entity(server, id);
-        if (h != null) {
+        if (h != null && !insider) {
+            lines.add(" In the world: only its own faction and operators see where");
+        } else if (h != null) {
             lines.add(String.format(Locale.ROOT, " In the world: %s, %.0f/%.0f health, %s, holding %s (entity %s)", h.blockPosition().toShortString(),
                     h.getHealth(), h.getMaxHealth(), h.status(), h.getMainHandItem().isEmpty() ? "nothing" : h.getMainHandItem().getHoverName().getString(),
                     h.getUUID()));

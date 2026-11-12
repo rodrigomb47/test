@@ -327,6 +327,13 @@ public final class HeroGameTests {
             boolean joined = h.getLevel().addFreshEntity(copy);
             ember.assertTrue(!joined && h.getLevel().getEntity(copy.getUUID()) == null, "a second test rig joined the level");
             ember.assertTrue(countRigs(h) == 1, "living test rigs: " + countRigs(h));
+            // the same copy coming in with a chunk loaded from disk (the path an old chunk takes, not a fresh spawn)
+            HeroEntity fromDisk = ModEntities.HERO.get().create(h.getLevel());
+            fromDisk.load(copy.saveWithoutId(new CompoundTag()));
+            fromDisk.setUUID(UUID.randomUUID());
+            h.getLevel().addLegacyChunkEntities(java.util.stream.Stream.of(fromDisk));
+            ember.assertTrue(h.getLevel().getEntity(fromDisk.getUUID()) == null && countRigs(h) == 1,
+                    "a test rig loaded with a chunk joined beside the living one: " + countRigs(h));
             // released: its entity leaves; a copy of exactly that entity loading later is turned away too
             CompoundTag saved = second.saveWithoutId(new CompoundTag());
             HeroManager.Result r = HeroManager.release(server, "test_rig");
@@ -442,6 +449,18 @@ public final class HeroGameTests {
             for (ItemEntity item : h.getLevel().getEntitiesOfClass(ItemEntity.class, around)) {
                 t.assertTrue(!HeroKit.isKit(item.getItem()) && !item.getItem().is(Items.STONE_SWORD), "the kit dropped: " + item.getItem());
             }
+            // saved in its death animation (a stop or a chunk unload within the second after it fell) and loaded again:
+            // the dead copy never joins and never brings the record back to life (it would vanish a second later and
+            // leave the hero "alive" with no entity, never returning and refusing revive)
+            CompoundTag dying = hero.saveWithoutId(new CompoundTag());
+            hero.discard();
+            HeroEntity corpse = ModEntities.HERO.get().create(h.getLevel());
+            corpse.load(dying);
+            t.assertTrue(corpse.isDeadOrDying() && corpse.getUUID().equals(firstId), "the saved copy is not the dying hero");
+            h.getLevel().addLegacyChunkEntities(java.util.stream.Stream.of(corpse));
+            t.assertTrue(h.getLevel().getEntity(firstId) == null, "the dead copy joined the level");
+            t.assertTrue(!s.alive && s.deaths == 1 && Math.abs(s.reviveAt - expected) <= 1 && !old.alive,
+                    "the dead copy changed the record: alive " + s.alive + ", deaths " + s.deaths + ", roster alive " + old.alive);
             HeroManager.tick(server);
             t.assertTrue(HeroManager.entity(server, "fixture_revive") == null, "it came back before its time");
             s.reviveAt = h.getLevel().getGameTime(); // its ten minutes are over

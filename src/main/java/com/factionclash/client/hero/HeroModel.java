@@ -27,9 +27,11 @@ import software.bernie.geckolib.model.data.EntityModelData;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.DoubleSupplier;
 
 /**
  * The one GeckoLib model every hero is drawn with (HEROES_V2 4.4, 4.5, 4.9).
@@ -54,12 +56,34 @@ public class HeroModel extends GeoModel<HeroEntity> {
 
     /** The resolved chain of each animation chain (by its file names), valid for one GeckoLib cache. */
     private static final Map<List<String>, ResourceLocation[]> CHAINS = new HashMap<>();
-    private static final Map<String, Boolean> HAS = new HashMap<>();
+    /**
+     * What each resolved chain has, by animation name. Keyed by the chain array itself (by identity: {@link #chain}
+     * hands out one array per chain until the cache changes), so asking costs two map lookups and no allocation: the
+     * controllers ask on every frame.
+     */
+    private static final Map<ResourceLocation[], Map<String, Boolean>> HAS = new IdentityHashMap<>();
     private static final Set<String> WARNED = new HashSet<>();
     private static Map<ResourceLocation, BakedAnimations> resolvedFor;
 
+    /** {@code v.fc_dhip} of the hero being animated (one supplier, set once per frame, read by GeckoLib's Molang). */
+    private static double dhip;
+    private static final DoubleSupplier DHIP = () -> dhip;
+
+    /** The bones of the chain being swayed (reused: one model serves every hero, on the render thread). */
+    private final List<GeoBone> chainBones = new ArrayList<>();
+
     public HeroModel() {
-        HeroAnimator.setLibrary(this::has);
+        HeroAnimator.setLibrary(new HeroAnimator.Library() {
+            @Override
+            public boolean has(HeroEntity hero, String animation) {
+                return HeroModel.this.has(hero, animation);
+            }
+
+            @Override
+            public Object version(HeroEntity hero) {
+                return chain(hero);
+            }
+        });
     }
 
     /** Forgets every resolved chain (a resource reload). */
@@ -98,7 +122,7 @@ public class HeroModel extends GeoModel<HeroEntity> {
         }
         HeroEntry e = hero.entry();
         if (e.visual().phaseTexture() && HeroActions.phase(hero.state()) >= 2) {
-            ResourceLocation p2 = rl("textures/entity/hero/" + e.modelId() + "_p2.png");
+            ResourceLocation p2 = e.phase2Texture();
             if (HeroRenderer.resourceExists(p2)) {
                 return p2;
             }
@@ -152,12 +176,12 @@ public class HeroModel extends GeoModel<HeroEntity> {
         }
     }
 
-    /** Whether the hero's chain has an animation (asked by the controllers; cached per chain). */
+    /** Whether the hero's chain has an animation (asked by the controllers; cached per resolved chain). */
     boolean has(HeroEntity hero, String animation) {
         ResourceLocation[] c = chain(hero);
-        String key = String.join(",", java.util.Arrays.stream(c).map(ResourceLocation::getPath).toList()) + "|" + animation;
         synchronized (CHAINS) {
-            Boolean b = HAS.get(key);
+            Map<String, Boolean> known = HAS.computeIfAbsent(c, k -> new HashMap<>());
+            Boolean b = known.get(animation);
             if (b == null) {
                 b = false;
                 Map<ResourceLocation, BakedAnimations> cache = GeckoLibCache.getBakedAnimations();
@@ -168,7 +192,7 @@ public class HeroModel extends GeoModel<HeroEntity> {
                         break;
                     }
                 }
-                HAS.put(key, b);
+                known.put(animation, b);
             }
             return b;
         }
@@ -194,8 +218,8 @@ public class HeroModel extends GeoModel<HeroEntity> {
     public void applyMolangQueries(AnimationState<HeroEntity> state, double animTime) {
         super.applyMolangQueries(state, animTime);
         GeoBone leg = bone("leg_r");
-        double dhip = leg == null ? 0 : FormScale.of(leg.getPivotY());
-        MathParser.setVariable(FormScale.VARIABLE, () -> dhip);
+        dhip = leg == null ? 0 : FormScale.of(leg.getPivotY());
+        MathParser.setVariable(FormScale.VARIABLE, DHIP);
     }
 
     // ------------------------------------------------------------------ after the animation pass
@@ -277,9 +301,10 @@ public class HeroModel extends GeoModel<HeroEntity> {
         if (names.size() < 2 || Math.abs(lagDegrees) < 0.05F) {
             return;
         }
-        List<GeoBone> bones = new ArrayList<>(names.size());
-        for (String n : names) {
-            GeoBone b = bone(n);
+        List<GeoBone> bones = chainBones;
+        bones.clear();
+        for (int i = 0; i < names.size(); i++) {
+            GeoBone b = bone(names.get(i));
             if (b == null || !bones.isEmpty() && b.getParent() != bones.get(bones.size() - 1)) {
                 return; // not a parent-to-child chain on this model
             }
@@ -289,7 +314,8 @@ public class HeroModel extends GeoModel<HeroEntity> {
         float dy = Math.abs(last.getPivotY() - first.getPivotY());
         float dh = (float) Math.hypot(last.getPivotX() - first.getPivotX(), last.getPivotZ() - first.getPivotZ());
         float share = -lagDegrees * Mth.DEG_TO_RAD / bones.size();
-        for (GeoBone b : bones) {
+        for (int i = 0; i < bones.size(); i++) {
+            GeoBone b = bones.get(i);
             if (dy > dh) {
                 b.setRotZ(b.getRotZ() + share);
             } else {
@@ -299,12 +325,47 @@ public class HeroModel extends GeoModel<HeroEntity> {
     }
 
     /**
-     * Bone visibility for this hero (the model's bones are shared, so this runs every frame): a bone shows when its phase
-     * rule, its level of detail and its weapon rule all let it. Phase rule: a {@code pN_} bone (or one the visual file
-     * lists with a phase) from phase N on, a {@code p1_} bone only in phase 1, then each phase look up to the current
-     * phase shows and hides its own lists, the later phase winning.
+     * Bone visibility for this hero (the model's bones are shared, so it is applied every frame): a bone shows when its
+     * phase rule, its level of detail and its weapon rule all let it. The plan (which bones, shown or hidden) depends
+     * only on the model, the phase, the fine and face levels of detail and the weapon flag, so it is worked out again
+     * only when one of those changes ({@link #plan}); each frame just applies it.
      */
     private void visibility(HeroEntity hero, HeroClientState s, HeroLook look, int phase) {
+        boolean drawn = hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN);
+        int key = phase & 7 | (s.lod.fine() ? 8 : 0) | (s.lod.face() ? 16 : 0) | (drawn ? 32 : 0);
+        BakedGeoModel model = GeckoLibCache.getBakedModels().get(getModelResource(hero));
+        if (key != s.visKey || model != s.visModel || s.visNames == null) {
+            Map<String, Boolean> visible = plan(s, look, phase, drawn);
+            s.visNames = visible.keySet().toArray(new String[0]);
+            s.visShown = new boolean[s.visNames.length];
+            for (int i = 0; i < s.visNames.length; i++) {
+                s.visShown[i] = visible.get(s.visNames[i]);
+            }
+            s.visKey = key;
+            s.visModel = model;
+        }
+        for (int i = 0; i < s.visNames.length; i++) {
+            GeoBone b = bone(s.visNames[i]);
+            if (b != null) {
+                b.setHidden(!s.visShown[i]);
+            }
+        }
+        List<String> locators = look.locators();
+        for (int i = 0; i < locators.size(); i++) {
+            GeoBone b = bone(locators.get(i));
+            if (b != null) {
+                b.setTrackingMatrices(s.lod.locators());
+            }
+        }
+    }
+
+    /**
+     * Which bones show (see {@link #visibility}). Phase rule: a {@code pN_} bone (or one the visual file lists with a
+     * phase) from phase N on, a {@code p1_} bone only in phase 1, then each phase look up to the current phase shows and
+     * hides its own lists, the later phase winning; {@code fine_} bones by distance; the weapon's drawn and sheathed
+     * bones by the weapon flag; the cheeks with the face.
+     */
+    private Map<String, Boolean> plan(HeroClientState s, HeroLook look, int phase, boolean drawn) {
         Map<String, Boolean> byPhase = new HashMap<>();
         for (Map.Entry<String, Integer> e : look.phaseBones().entrySet()) {
             int p = e.getValue();
@@ -334,7 +395,6 @@ public class HeroModel extends GeoModel<HeroEntity> {
                 }
             }
         }
-        boolean drawn = hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN);
         for (String b : look.weaponDrawn()) {
             visible.merge(b, drawn, Boolean::logicalAnd);
         }
@@ -342,18 +402,7 @@ public class HeroModel extends GeoModel<HeroEntity> {
             visible.merge(b, !drawn, Boolean::logicalAnd);
         }
         visible.merge("cheeks", s.lod.face(), Boolean::logicalAnd);
-        for (Map.Entry<String, Boolean> e : visible.entrySet()) {
-            GeoBone b = bone(e.getKey());
-            if (b != null) {
-                b.setHidden(!e.getValue());
-            }
-        }
-        for (String l : look.locators()) {
-            GeoBone b = bone(l);
-            if (b != null) {
-                b.setTrackingMatrices(s.lod.locators());
-            }
-        }
+        return visible;
     }
 
     private GeoBone bone(String name) {

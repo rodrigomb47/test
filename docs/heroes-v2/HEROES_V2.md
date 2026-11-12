@@ -2200,7 +2200,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
-| A0 | Reach `dl.cloudsmith.io` (answered on 2026-11-12; if refused, the owner approves the environment prompt); vendor GeckoLib 4.9.3 (jar, POM, `.module`, metadata, licence) into `libs/maven` and check the hashes of 4.2; build lines, mods.toml dependency, licence | - | S | 4.2 step 7 checks pass; 145 unit tests and 108 GameTests still green. Done 2026-11-12: downloaded from `dl.cloudsmith.io` (HTTP 200), every hash of 4.2 re-checked and equal (HANDOFF section 5); the jar embeds `META-INF/jarjar/geckolib-neoforge-1.21.1-4.9.3.jar` (range `[4.9.3,4.10)`); 174 unit tests and 137 GameTests green; a dedicated server with only our jar loads GeckoLib through jar-in-jar and the Xvfb viewer joins it |
+| A0 | Reach `dl.cloudsmith.io` (answered on 2026-11-12; if refused, the owner approves the environment prompt); vendor GeckoLib 4.9.3 (jar, POM, `.module`, metadata, licence) into `libs/maven` and check the hashes of 4.2; build lines, mods.toml dependency, licence | - | S | 4.2 step 7 checks pass; 145 unit tests and 108 GameTests still green. Done 2026-11-12: downloaded from `dl.cloudsmith.io` (HTTP 200), every hash of 4.2 re-checked and equal (HANDOFF section 5); the jar embeds `META-INF/jarjar/geckolib-neoforge-1.21.1-4.9.3.jar` (range `[4.9.3,4.10)`); 174 unit tests and 137 GameTests green; a dedicated server with only our jar loads GeckoLib through jar-in-jar and the Xvfb viewer joins it. Reviewed 2026-11-12 (hashes, jar-in-jar range, licence copies: no change; "Review of A0-A2" below) |
 
 ### 15.2 Milestone 1: the vertical slice (SLICE_PLAN.md)
 
@@ -2222,9 +2222,9 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first). Done 2026-11-12: the G2 review's coplanar faces fixed (sash outermost, leg shells, ears, tail chain, scarf, bow, mantle, lames, fringe bases), the bell sleeve's lining (the swing's frame at 0.45 s), 34 body parts (16 new), the layer convention, the coplanar rule in `herogen check`, the slice looks as sample outfits on all six bases (`outfits.png`) |
 | G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style |
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
-| A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`) |
+| A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`). Reviewed 2026-11-12: a dead copy no longer revives the record, `/fc hero info` shows where a hero is only to its faction and operators, `give` from another dimension fixed; uniqueness now also tested on the chunk-load path ("Review of A0-A2" below) |
 | A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file |
-| A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash. Done 2026-11-12: `client/hero/` (`HeroModel`, `HeroRenderer`, `HeroFace`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals`), `hero/HeroAnimator` (the three controllers), `hero/HeroLook`, `hero/HeroTimingFiles`, pure `logic/hero/` (`FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); 230 unit tests (39 new) and 149 GameTests (4 new); in the Xvfb viewer the test rig idles, walks, swings (`hit` logged at animation tick 10.4-10.7 for the file's 10), blinks, shows all 12 moods, talks, tints its sash per faction, holds a pickaxe and mines, shows its phase-2 halo and glowing eyes, and drops its `fine_` bones beyond 20 blocks; the six style fixtures stand beside it (`docs/screenshots/hero_a2_*`) |
+| A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash. Done 2026-11-12: `client/hero/` (`HeroModel`, `HeroRenderer`, `HeroFace`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals`), `hero/HeroAnimator` (the three controllers), `hero/HeroLook`, `hero/HeroTimingFiles`, pure `logic/hero/` (`FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); 230 unit tests (39 new) and 149 GameTests (4 new); in the Xvfb viewer the test rig idles, walks, swings (`hit` logged at animation tick 10.4-10.7 for the file's 10), blinks, shows all 12 moods, talks, tints its sash per faction, holds a pickaxe and mines, shows its phase-2 halo and glowing eyes, and drops its `fine_` bones beyond 20 blocks; the six style fixtures stand beside it (`docs/screenshots/hero_a2_*`). Reviewed 2026-11-12: the per-frame allocations of the render path removed, the walk/run flicker at an NPC's travel pace fixed ("Review of A0-A2" below); checkpoint 1 stands |
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5 |
 | A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5 |
@@ -2411,6 +2411,63 @@ scratch folder, as in A2) were checked on a dedicated server from `tools/setup_s
   previews of a face turned down or to its right are lit unlike the game now (light only; silhouettes match); with
   vanilla-size tools on the adult test rig the pickaxe and axe read well, on the chibi a shovel is nearly as long as
   the body (A2's open item); the test rig's hair loses much of its volume beyond 20 blocks (A2's open item).
+
+Review of A0-A2 and checkpoint 1 (2026-11-12, an adversarial review of everything since `67317d8`, GeckoLib's classes
+read in the decompiled 4.9.3 jar):
+- **Checked, no change needed.** Dedicated-server safety: nothing in `hero/`, `campaign/` or `command/` reaches a
+  client class; `HeroAnimator` uses GeckoLib's common animation classes, `Level.playLocalSound` and the common
+  registries only, and GeckoLib builds a hero's controllers only when its manager is first asked for (the renderer).
+  Synced data: the hero's six ids follow `FactionNpc`'s four in the class chain, and GeckoLib defines none (its mixins
+  add no entity data). Face frames: GeckoLib bakes UVs as texel / the geo file's `texture_width` and `texture_height`
+  (`GeoQuad.build` with `ModelProperties`), which `HeroRenderer` divides the shift by, so a 256-high texture works as a
+  128-high one does. Speed: `AnimationController.adjustTick` multiplies the speed into the tick it compares with the
+  transition length, so 4.8's "GeckoLib scales the whole controller clock, the blend included" holds; the checkpoint's
+  +2 ticks at 2x is the viewer's 5-12 frames a second, not an unscaled blend (that open item is closed). `setHidden`
+  also hides a bone's children; `saveInitialSnapshot` runs once per bone, so the shared bones' rest poses stay right
+  when heroes with different models alternate. Old worlds: a format 2 campaign loads with no heroes and a roster record
+  without `hero`; nothing reads the format as a gate. The director rule (counted in the garrison and the war council,
+  never in the soldier sort, never retrained), blink determinism (seeded per UUID; low frame rates show a blink late,
+  never drop it), the LOD bands, the admin commands' permission level 2, and A0's hashes, jar-in-jar range and the MIT
+  licence copies (byte-identical to the jar's own) are as designed.
+- **Found and fixed.** (1) `/fc hero info`, open to every player, printed an enemy hero's position, health and entity
+  UUID and its home base's coordinates, intelligence players otherwise get only from their scouts; now only operators
+  and the hero's own faction see where it and its home are. (2) A hero saved during its death animation (a stop, or its
+  chunk unloading, within the second after it fell) loaded as a dying copy that the uniqueness rule took for a hero
+  "presumed lost and back": its record turned alive, the copy vanished a second later without dying again, and the
+  hero never returned (`revive` refused it as alive); a dead or dying hero entity is now discarded when it joins.
+  (3) Per-frame allocations in the render path: the controllers' `has` built a string key with a stream on every call
+  (several per hero per frame), bone visibility built two maps, a list and a sort per hero per frame, model, texture and
+  phase-2 texture ids were new strings and `ResourceLocation`s on every call (four or more per hero per frame), and so
+  were the glow mask id, the `v.fc_dhip` supplier, the sway chain's list and the base controller's candidate list. Now
+  `has` answers from a map per resolved chain, the visibility plan is kept per model, phase, fine and face detail and
+  weapon flag and only applied each frame, the ids are cached, one Molang supplier serves every hero, the chain list is
+  reused, the base clip is resolved again only when the motion's class (`HeroClips.baseKey`) or the chain changes, and
+  the renderer looks the hero's client state up once per render instead of once per bone. (4) `/fc admin hero give`
+  from another dimension put the hero at the operator's coordinates in the overworld; there it now goes to the base's
+  spawn point, and a position given from another dimension is refused. (5) A preview copy that died (`/kill`, an
+  elimination) told its sash faction "was killed". (6) Seen in the viewer while checking these fixes: the campaign
+  hero, travelling at its ordinary 0.24-0.26 blocks a tick (dips to 0.15 at corners), flipped between `move.walk` and
+  `move.run` about a dozen times in 5 s, each flip restarting the clip with a blend; a run now holds down to 0.20
+  (`HeroClips.RUN_TO_WALK`) and a walk/run change shows only after 6 ticks (`PACE_HOLD`, both PROPOSED; `PaceGate`, one
+  per hero), and 90 s of patrol showed no flip.
+- **Tests.** `heroUniquePerId` also loads a stale copy through the chunk-load path (`ServerLevel.addLegacyChunkEntities`,
+  NeoForge's `loadedFromDisk` join event; before, only fresh spawns were tested); `heroDiesAndRevives` loads the dying
+  copy and checks the record stays fallen; `heroWeaponAndMoodFollowTheFight` lands a real blow and checks the weapon
+  stays out 5 s after it (it passed before with the 5 s rule removed: there was no blow); new unit tests
+  `motionsWithOneKeyGetTheSameCandidates` (over every motion), `everyClipIsWrittenForTheControllerThatPlaysIt`
+  (each clip of the timing files is a base or action clip as the controller that plays it needs) and
+  `walkAndRunDoNotFlipAboutTheThreshold`. In the Xvfb viewer on the A1a world's dedicated server, after the render-path
+  changes: the lineup of the test rig and the six fixtures draws as before, the forced walk, the swing (its `hit` marker
+  at animation tick 10.06 for the file's 10) and the moods play, the weapon bones follow the drawn flag, the campaign
+  hero walks, stops and idles on its own; typed by a non-operator player outside Ember, `/fc hero info test_rig` hides
+  where it is, inside Ember it shows it. Renderer time per hero 0.6-0.9 ms with one to seven heroes on software GL
+  (5.0 ms with one at the checkpoint, on a busier machine: not a controlled comparison). Sabotage checks,
+  each caught by its test: drafting heroes like soldiers (`heroNotDraftedIntoRaidByDefault`), letting a dead copy join
+  (`heroDiesAndRevives`), checking only fresh spawns, not chunk loads (`heroUniquePerId` at the new assertion), and
+  dropping the 5 s weapon rule (`heroWeaponAndMoodFollowTheFight`).
+- **Checkpoint 1 stands:** A0, A1a and A2 are done and reviewed; the test rig renders, blinks and walks in game. Left
+  as noted: the hero drawn with `_fallback` geometry when a client lacks its own keeps its own look's bone lists
+  (harmless while every hero shares the rig's names and face regions); the live check's open items above.
 
 ### 15.3 Milestone 2: systems breadth
 

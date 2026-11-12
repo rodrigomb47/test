@@ -49,10 +49,15 @@ public class HeroRenderer extends GeoEntityRenderer<HeroEntity> {
     private static final boolean STATS = Boolean.getBoolean("factionclash.heroRenderStats");
     private static final Map<ResourceLocation, Boolean> EXISTS = new HashMap<>();
 
+    /** Each texture's glow mask ({@code <texture>_glowmask.png}), made once (cleared with {@link #EXISTS}). */
+    private static final Map<ResourceLocation, ResourceLocation> GLOW_MASKS = new HashMap<>();
+
     private float shiftU, shiftV;
     /** The bone being drawn is a face plane: its normals skip GeckoLib's flat-cube fix (see {@link #renderCube}). */
     private boolean facePlane;
     private BakedGeoModel drawing;
+    /** The hero being drawn's client state, looked up once per render (not once per bone). */
+    private HeroClientState drawingState;
     private long statNanos;
     private int statCount;
 
@@ -93,6 +98,7 @@ public class HeroRenderer extends GeoEntityRenderer<HeroEntity> {
     public void preRender(PoseStack poseStack, HeroEntity hero, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer,
                           boolean isReRender, float partialTick, int packedLight, int packedOverlay, int colour) {
         drawing = model;
+        drawingState = HeroClientState.of(hero);
         if (!isReRender) {
             HeroModel.updateLod(hero, Math.sqrt(this.entityRenderDispatcher.distanceToSqr(hero)));
         }
@@ -106,11 +112,11 @@ public class HeroRenderer extends GeoEntityRenderer<HeroEntity> {
     @Override
     public void renderCubesOfBone(PoseStack poseStack, GeoBone bone, VertexConsumer buffer, int packedLight, int packedOverlay, int colour) {
         HeroEntity hero = getAnimatable();
-        if (hero == null || bone.isHidden() || bone.getCubes().isEmpty()) {
+        HeroClientState s = drawingState;
+        if (hero == null || s == null || bone.isHidden() || bone.getCubes().isEmpty()) {
             super.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, colour);
             return;
         }
-        HeroClientState s = HeroClientState.of(hero);
         String name = bone.getName();
         int c = colour;
         FaceRules.Region region = null;
@@ -208,6 +214,15 @@ public class HeroRenderer extends GeoEntityRenderer<HeroEntity> {
     static void forgetResources() {
         synchronized (EXISTS) {
             EXISTS.clear();
+            GLOW_MASKS.clear();
+        }
+    }
+
+    /** The glow mask of a texture: {@code <path>_glowmask.png} beside it (GeckoLib's own naming). */
+    static ResourceLocation glowMask(ResourceLocation texture) {
+        synchronized (EXISTS) {
+            return GLOW_MASKS.computeIfAbsent(texture, t -> ResourceLocation.fromNamespaceAndPath(t.getNamespace(),
+                    t.getPath().substring(0, t.getPath().length() - 4) + "_glowmask.png"));
         }
     }
 }

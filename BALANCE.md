@@ -724,9 +724,13 @@ Only the test model ships so far; an operator gives a hero to a faction with `/f
 * Death: `heroes.reviveSeconds` **600** (30-3600) later the hero returns at its home base's spawn point (or its
   faction's first standing base), at full health with its kit, level, experience and traits, as a new entity; a faction
   with no standing base loses it (released). A hero the director finds missing (gone from a loaded area for 2400
-  ticks) counts as fallen. One living entity per hero id: any other copy is discarded when it joins the level.
+  ticks) counts as fallen. One living entity per hero id: any other copy is discarded when it joins the level
+  (spawned or loaded with a chunk), and so is a dead or dying copy (saved within the second after its fall).
 * Animation (`HeroClips`, client): standing below a ground speed of **0.015** blocks/tick, running from **0.245**
-  (PROPOSED: between an NPC's walk, 0.216, and its sprint, 0.28). `move.walk` plays at ground speed / **0.11** and
+  (PROPOSED: between an NPC's walk, 0.216, and its sprint, 0.28); a run keeps running down to **0.20**
+  (`RUN_TO_WALK`, PROPOSED) and a change between walk and run shows only after the new pace has held **6** ticks
+  (`PACE_HOLD`, PROPOSED; starting and stopping show at once), because NPCs travel at about 0.24-0.26 and the clip
+  otherwise flipped between walk and run several times a second. `move.walk` plays at ground speed / **0.11** and
   `move.run` at ground speed / **0.20** (PROPOSED, by eye: about 2x for a walking NPC, 1.4x for a sprint), clamped to
   **0.6-2.2** in steps of 0.1, changed only by **0.3** or more. Falling: off the ground and dropping faster than
   **0.25** blocks/tick. Controller blends **4 / 2 / 6** ticks (base, action, secondary; the timing files' own).

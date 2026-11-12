@@ -47,6 +47,70 @@ public final class HeroClips {
      */
     public static final double TELEPORT_STEP = 3.0;
 
+    /**
+     * A run drops back to a walk only below this ground speed (PROPOSED): a band under {@link #RUNNING}, because NPCs
+     * travel right about it (0.24-0.26 blocks a tick seen in game, with dips to 0.15 at corners and doors), and without
+     * the band the hero flipped between walk and run several times a second, each flip restarting the clip.
+     */
+    public static final double RUN_TO_WALK = 0.20;
+    /** A change between walking and running shows only once the new pace has held this many ticks (PROPOSED). */
+    public static final int PACE_HOLD = 6;
+    /** Paces: standing, walking, running. */
+    public static final int STAND = 0, WALK = 1, RUN = 2;
+
+    /**
+     * The pace a ground speed asks for after {@code previous}: standing below {@link #MOVING}, running from
+     * {@link #RUNNING}, and a run keeps running down to {@link #RUN_TO_WALK}.
+     */
+    public static int pace(double ground, int previous) {
+        if (!(ground >= MOVING)) {
+            return STAND;
+        }
+        if (ground >= RUNNING) {
+            return RUN;
+        }
+        return previous == RUN && ground >= RUN_TO_WALK ? RUN : WALK;
+    }
+
+    /**
+     * A ground speed that stands for {@code pace} in the clip choice ({@link #baseCandidates}, {@link #baseKey}): the
+     * real speed moved just inside the pace's range. The clip's playback speed still follows the real speed.
+     */
+    public static double paceSpeed(int pace, double ground) {
+        return switch (pace) {
+            case RUN -> Math.max(ground, RUNNING);
+            case WALK -> Math.max(MOVING, Math.min(ground, RUNNING - 1e-3));
+            default -> 0.0;
+        };
+    }
+
+    /**
+     * The pace one hero shows (one per hero, fed once a tick with its smoothed ground speed): the band of {@link #pace},
+     * and a change between walking and running waits until the new pace has held {@link #PACE_HOLD} ticks; starting and
+     * stopping show at once. Pure ({@code HeroClipsTest}).
+     */
+    public static final class PaceGate {
+        private int shown = STAND;
+        private int wanted = STAND;
+        private long since;
+
+        public int update(double ground, long tick) {
+            int w = pace(ground, shown);
+            if (w != wanted) {
+                wanted = w;
+                since = tick;
+            }
+            if (w != shown && (w == STAND || shown == STAND || tick - since >= PACE_HOLD)) {
+                shown = w;
+            }
+            return shown;
+        }
+
+        public int shown() {
+            return shown;
+        }
+    }
+
     /** Whether a step of {@code blocks} across the ground in one tick is a teleport. */
     public static boolean isTeleport(double blocks) {
         return !(blocks <= TELEPORT_STEP);
@@ -92,6 +156,26 @@ public final class HeroClips {
         }
         out.add("move.idle");
         return out;
+    }
+
+    /**
+     * Everything {@link #baseCandidates} decides on, as one number: two motions with the same key get the same
+     * candidates, so the {@code base} controller resolves its clip again only when the key changes (or the hero's
+     * animation chain does), not every frame. Forced poses ({@link #FORCED}) have keys of their own.
+     */
+    public static int baseKey(Motion m) {
+        int mode = m.locoMode() & 0xF;
+        int locoClip = mode > 0 && mode < LOCO_CLIPS.length && LOCO_CLIPS[mode] != null ? mode : 0;
+        int pace = m.groundSpeed() >= RUNNING ? 2 : m.groundSpeed() >= MOVING ? 1 : 0;
+        boolean swimming = m.inWater() && !m.onGround();
+        boolean falling = !swimming && !m.onGround() && m.verticalSpeed() < -FALLING;
+        return (m.sleeping() ? 1 : 0) | (m.sitting() ? 2 : 0) | locoClip << 2 | (swimming ? 1 << 6 : 0) | (falling ? 1 << 7 : 0)
+                | (m.crouching() ? 1 << 8 : 0) | pace << 9 | (pace == 0 && m.weaponDrawn() ? 1 << 11 : 0);
+    }
+
+    /** The key of a forced pose (never equal to a motion's {@link #baseKey}). */
+    public static int forcedKey(int code) {
+        return 1 << 20 | code & 0xFF;
     }
 
     /**

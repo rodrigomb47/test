@@ -6,6 +6,8 @@ import com.factionclash.npc.NpcRole;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * One hero the registry knows: its id, the name and title it goes by, its visual side and where its client files
@@ -37,13 +39,25 @@ public record HeroEntry(String id, String name, String title, HeroVisual visual,
         return r == null ? NpcRole.SWORDSMAN : r;
     }
 
+    /**
+     * The client asks for these every frame (model, texture, the phase-2 texture), so each is made once per model id
+     * and kept (a few heroes' worth of entries) instead of a new string and {@code ResourceLocation} per call.
+     */
+    private static final Map<String, ResourceLocation> MODELS = new ConcurrentHashMap<>(), TEXTURES = new ConcurrentHashMap<>(),
+            PHASE2_TEXTURES = new ConcurrentHashMap<>();
+
     /** The geometry the client draws. */
     public ResourceLocation model() {
-        return rl("geo/hero/" + modelId() + ".geo.json");
+        return MODELS.computeIfAbsent(modelId(), m -> rl("geo/hero/" + m + ".geo.json"));
     }
 
     public ResourceLocation texture() {
-        return rl("textures/entity/hero/" + modelId() + ".png");
+        return TEXTURES.computeIfAbsent(modelId(), m -> rl("textures/entity/hero/" + m + ".png"));
+    }
+
+    /** The phase-2 texture ({@code <model>_p2.png}; drawn from phase 2 on when the visual file says it has one). */
+    public ResourceLocation phase2Texture() {
+        return PHASE2_TEXTURES.computeIfAbsent(modelId(), m -> rl("textures/entity/hero/" + m + "_p2.png"));
     }
 
     /** The first file of the animation chain (the hero's own); the rest are {@link #animationFallbacks()}. */

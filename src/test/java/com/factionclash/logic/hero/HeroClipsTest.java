@@ -121,4 +121,80 @@ class HeroClipsTest {
         assertTrue(HeroClips.isTeleport(8.0), "a /tp or a stuck recovery jump");
         assertTrue(HeroClips.isTeleport(Double.NaN));
     }
+
+    /**
+     * The base controller resolves its clip again only when the motion's key changes (HeroAnimator): so two motions
+     * with one key must get the same candidates. Checked over every combination of the inputs, at speeds and fall rates
+     * on both sides of each limit; and a change that matters changes the key.
+     */
+    @Test
+    void motionsWithOneKeyGetTheSameCandidates() {
+        double[] speeds = {0, HeroClips.MOVING - 0.001, HeroClips.MOVING, 0.1, HeroClips.RUNNING - 0.001, HeroClips.RUNNING, 0.5};
+        double[] falls = {0.5, 0, -HeroClips.FALLING, -HeroClips.FALLING - 0.01, -1};
+        java.util.Map<Integer, List<String>> byKey = new java.util.HashMap<>();
+        int motions = 0;
+        for (double speed : speeds) {
+            for (double fall : falls) {
+                for (int flags = 0; flags < 64; flags++) {
+                    for (int mode = 0; mode < 16; mode++) {
+                        HeroClips.Motion m = new HeroClips.Motion(speed, fall, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0,
+                                (flags & 8) != 0, (flags & 16) != 0, (flags & 32) != 0, mode);
+                        List<String> c = HeroClips.baseCandidates(m);
+                        List<String> before = byKey.putIfAbsent(HeroClips.baseKey(m), c);
+                        assertTrue(before == null || before.equals(c), m + ": key " + HeroClips.baseKey(m) + " was " + before + ", now " + c);
+                        motions++;
+                    }
+                }
+            }
+        }
+        assertTrue(motions > 30000 && byKey.size() > 100, motions + " motions, " + byKey.size() + " keys");
+        assertTrue(HeroClips.baseKey(stand(false)) != HeroClips.baseKey(stand(true)), "drawing the weapon changes the idle");
+        assertTrue(HeroClips.baseKey(moving(0.1)) != HeroClips.baseKey(moving(0.3)), "walk and run");
+        assertEquals(HeroClips.baseKey(moving(0.1)), HeroClips.baseKey(moving(0.2)), "two walking speeds, one walk");
+        for (int code = 0; code < HeroClips.FORCED.size(); code++) {
+            assertFalse(byKey.containsKey(HeroClips.forcedKey(code)), "a forced pose's key is a motion's: " + code);
+        }
+    }
+
+    /**
+     * Walk and run do not flip while an NPC travels about the run threshold (in game: 0.24-0.26 blocks a tick with dips
+     * to 0.15 for a few ticks, which flipped the clip several times a second): a run holds down to RUN_TO_WALK, a
+     * change between walk and run waits PACE_HOLD ticks, and starting and stopping show at once.
+     */
+    @Test
+    void walkAndRunDoNotFlipAboutTheThreshold() {
+        assertEquals(HeroClips.RUN, HeroClips.pace(0.21, HeroClips.RUN), "a run holds inside the band");
+        assertEquals(HeroClips.WALK, HeroClips.pace(0.21, HeroClips.WALK));
+        assertEquals(HeroClips.WALK, HeroClips.pace(0.19, HeroClips.RUN), "below the band it walks");
+        assertEquals(HeroClips.STAND, HeroClips.pace(0.01, HeroClips.RUN));
+        assertEquals(HeroClips.STAND, HeroClips.pace(Double.NaN, HeroClips.WALK));
+
+        HeroClips.PaceGate gate = new HeroClips.PaceGate();
+        long t = 0;
+        assertEquals(HeroClips.RUN, gate.update(0.25, t++), "starting shows at once");
+        // travelling about the threshold, with dips at corners: no flip
+        double[] travel = {0.25, 0.24, 0.26, 0.15, 0.16, 0.15, 0.25, 0.243, 0.252, 0.158, 0.25, 0.233, 0.25};
+        int flips = 0, last = gate.shown();
+        for (int round = 0; round < 10; round++) {
+            for (double g : travel) {
+                int p = gate.update(g, t++);
+                flips += p != last ? 1 : 0;
+                last = p;
+            }
+        }
+        assertEquals(0, flips, "flips while travelling");
+        // a real slow-down shows after the hold
+        int walkedAt = -1;
+        for (int i = 0; i < 20; i++) {
+            if (gate.update(0.15, t++) == HeroClips.WALK && walkedAt < 0) {
+                walkedAt = i;
+            }
+        }
+        assertTrue(walkedAt >= HeroClips.PACE_HOLD - 1 && walkedAt <= HeroClips.PACE_HOLD + 1, "walked after " + walkedAt + " ticks");
+        assertEquals(HeroClips.STAND, gate.update(0.0, t++), "stopping shows at once");
+        // the clip choice by pace: inside the pace's range whatever the real speed
+        assertEquals("move.run", HeroClips.first(HeroClips.baseCandidates(moving(HeroClips.paceSpeed(HeroClips.RUN, 0.21))), RIG));
+        assertEquals("move.walk", HeroClips.first(HeroClips.baseCandidates(moving(HeroClips.paceSpeed(HeroClips.WALK, 0.26))), RIG));
+        assertEquals("move.idle", HeroClips.first(HeroClips.baseCandidates(moving(HeroClips.paceSpeed(HeroClips.STAND, 0.3))), RIG));
+    }
 }

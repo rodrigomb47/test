@@ -278,6 +278,14 @@ public final class HeroManager {
         if (id.isEmpty() || h.isPreview()) {
             return true; // a display copy is never the campaign's hero
         }
+        if (h.isDeadOrDying()) {
+            // saved during its death animation (the server stopped, or its chunk unloaded, within the second after it
+            // fell): the fall was already counted and its return is timed; a dead copy joining would bring the record
+            // back to life ("presumed lost ... back" below) for an entity that vanishes a second later, and the hero
+            // would never return (alive with no entity) and could not be revived
+            FactionClash.LOGGER.info("Discarding a dead copy of hero {} ({})", id, h.getUUID());
+            return false;
+        }
         CampaignData data = CampaignData.get(server);
         HeroState s = data.heroes.get(id);
         if (s == null) {

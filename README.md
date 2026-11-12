@@ -40,7 +40,7 @@ No other mods are required. Build from source with `./gradlew build` (jar in `bu
 | `/fc info`, `/fc map` | member | Base report and your faction's delivered map knowledge |
 | `/fc achievements [faction]` | anyone | The vanilla advancements a faction has made (day, who) and its progress on the long ones |
 | `/fc admin dump\|npcs\|info <f>\|spawn <f> <role>\|recruit <f> <role>\|probe <x> <z>\|mine <id>\|blocks <from> <to>\|destroy <id>` | op | Diagnostics, kept separate from player commands |
-| `/fc hero list`, `/fc hero info <id>` | all | Heroes (in development: only the test model `test_rig` ships so far): whom each serves, alive or "returns in m:ss", level; one hero's body, size, model and place in the world |
+| `/fc hero list`, `/fc hero info <id>` | all | Heroes (in development: only the test model `test_rig` ships so far): whom each serves, alive or "returns in m:ss", level; one hero's body, size and model, and where it and its home are (that part only for its own faction and operators) |
 | `/fc admin hero give <id> <faction> [pos]\|release <id>\|revive <id>` | op | A hero joins a faction (beside you, at the position given, or at the faction's base from the console), leaves it, or returns at once after a death |
 | `/fc admin hero preview <id> [faction] [pos] [yaw]\|lineup [first] [count] [spacing] [faction]\|preview clear [id]` | op | Screenshot tools: stand display copies of heroes (no AI, cannot be hurt, never part of the campaign), one or a row in front of you facing you; the faction gives the sash colour |
 | `/fc admin hero pose <id\|all> mood <mood>\|action <name> [speed]\|base <pose>\|weapon <drawn\|sheathed\|auto>\|phase <n>\|talk\|windup\|blush\|glow <on\|off>\|stop\|clear` | op | Force what a hero's model shows on every loaded copy of it (a mood, an animation at a speed, a walk in place, the drawn weapon, a phase look, the talking mouth...) |
@@ -426,17 +426,18 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 233 JUnit tests for the pure rules (a hero's hitbox from its model, its synced fields and revival time,
+* `./gradlew test` — 236 JUnit tests for the pure rules (a hero's hitbox from its model, its synced fields and revival time,
   its face (which frame each plane shows, blink timing, the talking mouth, the mood hold), which animation clip plays
-  (a teleport is not running), the form-scaled animation keys' variable,
-  the level of detail by distance, the chain sway, its mood, and the animation timing files; how a soldier reaches a target it cannot walk up to: break,
+  (a teleport is not running; one clip per motion class; walk and run do not flip about the threshold), the form-scaled animation keys' variable,
+  the level of detail by distance, the chain sway, its mood, and the animation timing files, each clip written for the
+  controller that plays it; how a soldier reaches a target it cannot walk up to: break,
   build up, undermine or nothing; spiral mine and branch-mine geometry, the mine layer
   planner and the level a helper takes in a shared mine, mine site rules and corridors, the migration of old hut mines, tree shapes and the felling rule, the
   scaffold pillar's column and height for tall trees, the dirt patches a woodcutter digs for one (one block deep, a
   step out from every cell, never beside water, a drop or an earlier patch), branch ends in protected wood, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 149 GameTests on a real headless server, including **heroes** (the shipped hero files load; a hero's synced fields, hitbox and its 1.98 cap; never drafted into a raid party; one entity per hero; it fights, saves and reloads, falls and returns; its look and timings load; a preview copy is never the campaign's hero; a pose drives the synced fields and a played swing is cleared after its clip; fighting draws the weapon and sets the mood), **soldiers against a player
+* `./gradlew runGameTestServer` — 149 GameTests on a real headless server, including **heroes** (the shipped hero files load; a hero's synced fields, hitbox and its 1.98 cap; never drafted into a raid party; one entity per hero, a copy from a loaded chunk or a dead copy turned away; it fights, saves and reloads, falls and returns; its look and timings load; a preview copy is never the campaign's hero; a pose drives the synced fields and a played swing is cleared after its clip; fighting draws the weapon for 5 s after the last blow and sets the mood), **soldiers against a player
   they cannot reach** (open a pen's gate and close it behind them with the cow still in, and walk out through it after
   the fight, also after a fight longer than the gate memory; break a player's block in a broken doorway and never the
   wall, and go straight in once it is broken, but not again and again when the player puts it back; break the block

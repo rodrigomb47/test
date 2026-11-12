@@ -26,6 +26,14 @@ final class HeroClientState {
     double lastFrameSeconds = -1;
     float hurtFlinch;
     float earsDown;
+    /**
+     * The bone visibility plan ({@code HeroModel.visibility}): the bones it sets and whether each shows, for the model,
+     * phase, level of detail and weapon flag in {@link #visKey}/{@link #visModel}; worked out again when those change.
+     */
+    int visKey = -1;
+    Object visModel;
+    String[] visNames;
+    boolean[] visShown;
 
     private HeroClientState(HeroEntity hero, HeroLook look) {
         this.look = look;

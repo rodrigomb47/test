@@ -218,8 +218,8 @@ public final class HeroLookGameTests {
 
     /**
      * The fight drives the face and the weapon (HEROES_V2 4.6 moods, 4.3 weapon bones): with a target the hero draws its
-     * weapon and looks determined; a hit shows the hurt wince; without a target the weapon goes back 5 s after the last
-     * blow and the face is calm again.
+     * weapon and looks determined; a hit shows the hurt wince; without a target the face is calm again at once and the
+     * weapon goes back 5 s after its last blow (still out at 2.6 s, away at 6.1 s).
      */
     @GameTest(template = "platform", timeoutTicks = 200, batch = "hero_flags")
     public static void heroWeaponAndMoodFollowTheFight(GameTestHelper h) {
@@ -252,11 +252,15 @@ public final class HeroLookGameTests {
             }));
             h.runAtTickTime(8, t.guard(() -> {
                 t.assertTrue(HeroActions.mood(hero.mood()) == MoodRules.HURT, "no hurt wince: " + HeroActions.mood(hero.mood()));
+                t.assertTrue(hero.doHurtTarget(husk), "the hero's blow did not land");
                 hero.setTarget(null);
                 husk.discard();
             }));
             h.runAtTickTime(30, t.guard(() -> t.assertTrue(HeroActions.mood(hero.mood()) == MoodRules.CALM,
                     "calm again after the fight: " + HeroActions.mood(hero.mood()))));
+            // no target since tick 8, but its last blow was at tick 8: the weapon stays out for 5 s after it
+            h.runAtTickTime(60, t.guard(() -> t.assertTrue(hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN),
+                    "the weapon went back before 5 s had passed since the last blow")));
             h.runAtTickTime(130, t.guard(() -> {
                 t.assertTrue(!hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN), "the weapon stays drawn long after the fight");
                 t.succeed();

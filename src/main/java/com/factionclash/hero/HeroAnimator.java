@@ -35,6 +35,14 @@ public final class HeroAnimator {
     /** What animations a hero's model can play (installed by the client model; nothing on a server). */
     public interface Library {
         boolean has(HeroEntity hero, String animation);
+
+        /**
+         * An object that changes whenever {@link #has} may answer differently for this hero (its resolved animation
+         * chain: another chain, or the same names after a resource reload); compared by identity.
+         */
+        default Object version(HeroEntity hero) {
+            return this;
+        }
     }
 
     private static volatile Library library = (h, n) -> false;
@@ -50,11 +58,17 @@ public final class HeroAnimator {
 
     // base
     private String baseClip;
+    /** The clip the last motion key resolved to (null: none), the key and the library version it was resolved with. */
+    private String baseChoice;
+    private int baseKey = -1;
+    private Object baseVersion;
     private RawAnimation baseRaw;
     private double basePlayback = 1.0;
     private double groundSpeed;
     private double verticalSpeed;
     private int speedTick = Integer.MIN_VALUE;
+    /** Walk or run, with its band and hold (the hero's own motion; a forced pose bypasses it). */
+    private final HeroClips.PaceGate pace = new HeroClips.PaceGate();
 
     // action
     private int lastSequence = -1;
@@ -130,18 +144,29 @@ public final class HeroAnimator {
         }
         updateSpeed();
         int forced = hero.forcedPose();
-        List<String> candidates;
         double ground = groundSpeed;
+        HeroClips.Motion motion = null;
+        int key;
         if (forced > 0) {
-            candidates = HeroClips.forced(forced);
+            key = HeroClips.forcedKey(forced);
             ground = HeroClips.forcedSpeed(forced);
         } else {
             boolean sitting = hero.isPassenger() || hero.getPose() == Pose.SITTING;
-            candidates = HeroClips.baseCandidates(new HeroClips.Motion(groundSpeed, verticalSpeed, hero.onGround(), hero.isInWater(),
-                    hero.isCrouching(), hero.isSleeping(), sitting, hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN),
-                    HeroActions.locoMode(hero.loco())));
+            double paced = HeroClips.paceSpeed(pace.shown(), groundSpeed); // the clip choice by pace, the playback by speed
+            motion = new HeroClips.Motion(paced, verticalSpeed, hero.onGround(), hero.isInWater(), hero.isCrouching(),
+                    hero.isSleeping(), sitting, hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN), HeroActions.locoMode(hero.loco()));
+            key = HeroClips.baseKey(motion);
         }
-        String clip = HeroClips.first(candidates, this::has);
+        // the candidates (and the chain lookups behind them) only when the motion's class or the chain changes, not
+        // every frame
+        Object version = library.version(hero);
+        if (key != baseKey || version != baseVersion) {
+            List<String> candidates = forced > 0 ? HeroClips.forced(forced) : HeroClips.baseCandidates(motion);
+            baseChoice = HeroClips.first(candidates, this::has);
+            baseKey = key;
+            baseVersion = version;
+        }
+        String clip = baseChoice;
         if (clip == null) {
             baseClip = null;
             return PlayState.STOP;
@@ -184,6 +209,7 @@ public final class HeroAnimator {
             groundSpeed = groundSpeed * 0.6 + h * 0.4;
             verticalSpeed = verticalSpeed * 0.5 + v * 0.5;
         }
+        pace.update(groundSpeed, hero.tickCount);
     }
 
     // ------------------------------------------------------------------ action

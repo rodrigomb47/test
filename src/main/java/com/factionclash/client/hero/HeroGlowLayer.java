@@ -29,9 +29,7 @@ public class HeroGlowLayer extends AutoGlowingGeoLayer<HeroEntity> {
         if (!hero.entry().visual().glowmask() && hero.entry().ownModel()) {
             return;
         }
-        ResourceLocation texture = getTextureResource(hero);
-        String path = texture.getPath();
-        ResourceLocation mask = ResourceLocation.fromNamespaceAndPath(texture.getNamespace(), path.substring(0, path.length() - 4) + "_glowmask.png");
+        ResourceLocation mask = HeroRenderer.glowMask(getTextureResource(hero));
         if (!HeroRenderer.resourceExists(mask)) {
             return;
         }
