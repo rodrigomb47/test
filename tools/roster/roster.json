@@ -13,6 +13,17 @@
   "name": "Natsuho Komezaki",
   "sig": "Pounce that bleeds; at 30% 'nine lives' rolls away with a shield and speed",
   "look": "bob cut, tufted ears, bell choker; calico white/orange/black",
+  "work": "fisherman: Luck of the Sea and Lure +1-3; hops rock to rock and climbs pier pilings to deep water",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "natsuho_komezaki",
   "rarity": "epic",
   "slice": true,
@@ -34,6 +45,17 @@
   "name": "Shirotae Mikage",
   "sig": "Cat's-cradle threads tether foes between two marks; naps to heal (breakable channel)",
   "look": "long white low tails, droopy ears, big cardigan; white/lavender",
+  "work": "scout: scouts 15-35% faster, never loses the way home; climbs cliffs for a lookout",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "shirotae_mikage",
   "rarity": "epic",
   "slice": false,
@@ -55,6 +77,17 @@
   "name": "Kuroha Yamikane",
   "sig": "Night eyes: marked foes glow and take more from her bolts in darkness",
   "look": "hooded black coat with ear slits, one fang; black/gold",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; climbs walls and works clinging",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "kuroha_yamikane",
   "rarity": "common",
   "slice": false,
@@ -76,6 +109,17 @@
   "name": "Rokusuke Amanawa",
   "sig": "Alley king: three street cats answer his whistle; static fur shocks whoever hits him",
   "look": "broad tabby, headband, bell on a cord; grey tabby/red",
+  "work": "animal_carer: grows calves by feeding them, 2-4 pairs a round, extra wool; vaults the pen fence instead of the gate",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "rokusuke_amanawa",
   "rarity": "rare",
   "slice": false,
@@ -97,6 +141,17 @@
   "name": "Torakichi Fumizuki",
   "sig": "Afterimage pounce: three dashes, each leaves a smoke decoy",
   "look": "messy hair, torn ear, striped scarf; tuxedo black/white/green",
+  "work": "scout: nears rival walls unseen, names the heroes it sees; double-jumps ravines",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "torakichi_fumizuki",
   "rarity": "common",
   "slice": false,
@@ -118,6 +173,17 @@
   "name": "Yugen Kagaribi",
   "sig": "Foxfire volleys; tails 3, 6, 9 by phase; decoys that cast no shadow",
   "look": "silver half-up hair, fox mask on the side, plum court robe; plum/silver",
+  "work": "trader: prices -10 to -30%, carries 30-36 slots; village trips at a run, hops field fences",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "yugen_kagaribi",
   "rarity": "epic",
   "slice": true,
@@ -139,6 +205,17 @@
   "name": "Inaho Kogane",
   "sig": "Fox-wedding rain: sunshower zones heal allies and scorch foes, stronger in rain",
   "look": "red-gold hair, four fluffy tails, rice-straw hairpin; vermilion/white/gold",
+  "work": "farmer: Fortune +1-3 on crops, replants as it reaps; glides down from heights to its work",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "inaho_kogane",
   "rarity": "legendary",
   "slice": false,
@@ -160,6 +237,17 @@
   "name": "Kazato Kurobi",
   "sig": "Zigzag dashes: three Z-pattern spear thrusts, ears perk before each",
   "look": "spiky black hair, crimson tail tips, short coat; black/crimson",
+  "work": "scout: scouts 15-35% faster, never loses the way home; covers ground at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "kazato_kurobi",
   "rarity": "rare",
   "slice": false,
@@ -181,6 +269,17 @@
   "name": "Sayoe Kagamura",
   "sig": "Mirror decoys repeat her casts; the real one carries the cracked mirror",
   "look": "black hime cut, black ears with white tips; black/plum/silver",
+  "work": "guard: talent a tier up while home; pacts carried in person +0.1-0.2; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "sayoe_kagamura",
   "rarity": "epic",
   "slice": false,
@@ -202,6 +301,17 @@
   "name": "Hakuen Toriimae",
   "sig": "Paper fox familiars; a staff ring calls them back to shield him",
   "look": "white fox priest, red eye-liner marks; white/red/gold",
+  "work": "guard: talent a tier up while home; revived allies rise with absorption; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "hakuen_toriimae",
   "rarity": "rare",
   "slice": false,
@@ -223,6 +333,17 @@
   "name": "Torvald Ashpelt",
   "sig": "Two named wolves flank his marks; if both fall he staggers (broken bond)",
   "look": "grey shaggy hair, scar, frost-rimed fur cloak; grey/navy",
+  "work": "animal_carer: grows calves by feeding them, 2-4 pairs a round, extra wool; errands at a run, steps up blocks",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 1
+   }
+  },
   "id": "torvald_ashpelt",
   "rarity": "common",
   "slice": false,
@@ -244,6 +365,17 @@
   "name": "Ylva Rimeclaw",
   "sig": "Moon frenzy: at night or under half health she grows, locks skills and never stops swinging",
   "look": "white wild hair, amber eyes, snow-fur mantle; white/amber",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); runs between far groves",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 2
+   }
+  },
   "id": "ylva_rimeclaw",
   "rarity": "epic",
   "slice": false,
@@ -265,6 +397,17 @@
   "name": "Rusca Brannick",
   "sig": "Scent marks leave glowing tracks; she dashes to the most-marked foe",
   "look": "russet braid, notched ear, hunter's hood; russet/black",
+  "work": "scout: scouts 32-64 blocks farther, maps 5x5 sectors; covers ground at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "rusca_brannick",
   "rarity": "common",
   "slice": false,
@@ -286,6 +429,17 @@
   "name": "Hyogo Arashiba",
   "sig": "Den horn: a howl strengthens his pack; whoever wounds his favoured ally becomes his only target",
   "look": "charcoal mane, broad build, bone horn on a strap; charcoal/ember orange",
+  "work": "guard: talent a tier up while home; 15-35% chance a recruit payment brings two; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "hyogo_arashiba",
   "rarity": "rare",
   "slice": false,
@@ -307,6 +461,17 @@
   "name": "Tonbei Morikawa",
   "sig": "Belly drum: a booming ring knocks foes back and speeds allies; two belly pats are the tell",
   "look": "round build, straw hat, leaf on his head; brown/leaf green",
+  "work": "chef: smoker 20-40% faster, 15-35% chance of a second dish; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "tonbei_morikawa",
   "rarity": "common",
   "slice": false,
@@ -328,6 +493,17 @@
   "name": "Mamemi Tsuzumi",
   "sig": "Giant form in phase 2 shrugs off knockback; a belly-flop slam; sake-mist puddles",
   "look": "short brown bob, round ears, oversized merchant coat; brown/teal",
+  "work": "trader: prices -10 to -30%, carries 30-36 slots; bounds over fences and streams on village trips",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "mamemi_tsuzumi",
   "rarity": "rare",
   "slice": false,
@@ -349,6 +525,17 @@
   "name": "Kobun Hachiya",
   "sig": "Leaf fan conjures three tanuki helpers that bite, then pop like decoys",
   "look": "huge straw hat, round belly sash; brown/red",
+  "work": "hauler: carries 30-36 slots, sorts 25-55% faster; glides down from the walls to loot",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "kobun_hachiya",
   "rarity": "common",
   "slice": false,
@@ -370,6 +557,17 @@
   "name": "Kinue Mochizuki",
   "sig": "Moon drop: a huge leap with a growing shadow; the mallet sticks after",
   "look": "long white hair, one floppy ear, short kimono; white/pink",
+  "work": "chef: smoker 20-40% faster, 15-35% chance of a second dish; bounds over gaps instead of bridging",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "kinue_mochizuki",
   "rarity": "rare",
   "slice": false,
@@ -391,6 +589,17 @@
   "name": "Tsukime Hanagata",
   "sig": "Moon-bunny helpers pound rice cakes that heal allies and kick foes",
   "look": "silver twin buns, ribbons on the ears, kimono apron; silver/peach",
+  "work": "farmer: Fortune +1-3 on crops, replants as it reaps; hops the irrigation ditches",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "tsukime_hanagata",
   "rarity": "common",
   "slice": false,
@@ -412,6 +621,17 @@
   "name": "Shogetsu Tobita",
   "sig": "Crescent volley lands as a crescent of frost zones; jumpy until an ally falls, then steady",
   "look": "tall white ears, navy hooded cloak; navy/white",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "shogetsu_tobita",
   "rarity": "rare",
   "slice": false,
@@ -433,6 +653,17 @@
   "name": "Tetsuhei Hanetsuki",
   "sig": "Hopping draw-cuts: each leap ends in a falling slash, higher each time",
   "look": "short black hair, black ears, track jacket over a sash; black/red",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "tetsuhei_hanetsuki",
   "rarity": "common",
   "slice": false,
@@ -454,6 +685,17 @@
   "name": "Benika Akagane",
   "sig": "Overhead club slam (the club sticks); phase 2 rage; phase 3 grab and throw",
   "look": "single red horn, wild black hair, crimson coat over wraps; crimson/black",
+  "work": "miner: Fortune +1-3 on the ores it mines; takes mine stairs loaded without slowing",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "benika_akagane",
   "rarity": "epic",
   "slice": true,
@@ -475,6 +717,17 @@
   "name": "Sekka Aoizumi",
   "sig": "Frost-breath cone, then she plants the blade; ice armour that breaks after enough hits",
   "look": "twin small blue horns, white hair, indigo trousers; ice blue/indigo",
+  "work": "builder: builds 20-40% faster, places 2-4 blocks up without scaffolds; carries full loads up steps",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 2
+   }
+  },
   "id": "sekka_aoizumi",
   "rarity": "epic",
   "slice": false,
@@ -496,6 +749,17 @@
   "name": "Kiyome Hanakado",
   "sig": "Rolling shoulder charges; slam her into a wall to stagger her",
   "look": "two short yellow horns, high ponytail, rope belt; mustard/charcoal",
+  "work": "hauler: carries 30-36 slots, sorts 25-55% faster; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "kiyome_hanakado",
   "rarity": "rare",
   "slice": false,
@@ -517,6 +781,14 @@
   "name": "Ganzo Ishidoro",
   "sig": "Door-shield wall: the planted door shelters allies; attack his sides",
   "look": "huge build, two curved green horns, straw cape; moss green/brown",
+  "work": "builder: builds 20-40% faster, places 2-4 blocks up without scaffolds; carries full loads up steps",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "ganzo_ishidoro",
   "rarity": "common",
   "slice": false,
@@ -538,6 +810,17 @@
   "name": "Gonroku Sakabayashi",
   "sig": "Throwing hatchets on an off-beat rhythm; a poisoned mist cone from his gourd",
   "look": "blue skin tint, one broken horn, open festival coat; blue/white",
+  "work": "guard: talent a tier up while home; Looting +1-3 on its own kills; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "gonroku_sakabayashi",
   "rarity": "rare",
   "slice": false,
@@ -559,6 +842,15 @@
   "name": "Kagehisa Tobikiri",
   "sig": "Gale-fan cones push foes; dives from above onto a landing marker",
   "look": "black crow wings, small black cap, one-tooth clogs; black/red",
+  "work": "scout: scouts 32-64 blocks farther, maps 5x5 sectors; scouts from the air, sees farther",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "crow wings"
+  },
   "id": "kagehisa_tobikiri",
   "rarity": "common",
   "slice": false,
@@ -580,6 +872,15 @@
   "name": "Tsubame Kakeyama",
   "sig": "Arrows call harmless lightning flashes on marked foes, then a bolt chain",
   "look": "red long-nosed mask pushed up, white hair, crow wings; red/white",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "crow wings"
+  },
   "id": "tsubame_kakeyama",
   "rarity": "rare",
   "slice": false,
@@ -601,6 +902,15 @@
   "name": "Shizuki Minekaze",
   "sig": "Healing gusts from her feather fan carry cleanses along a line; meditates mid-fight (breakable)",
   "look": "pom-pom sash, small cap, white robe, grey wings; white/sage",
+  "work": "guard: talent a tier up while home; heals the most hurt NPC by hand every 20 s; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 1
+   },
+   "secondary": null,
+   "carrier": "crow wings"
+  },
   "id": "shizuki_minekaze",
   "rarity": "common",
   "slice": false,
@@ -622,6 +932,18 @@
   "name": "Ojin Atagomaru",
   "sig": "Wind wall turns arrows aside while he advances; get round it",
   "look": "red long-nosed mask, huge brown wings, monk armour; brown/gold",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "carrier": "crow wings"
+  },
   "id": "ojin_atagomaru",
   "rarity": "epic",
   "slice": false,
@@ -643,6 +965,17 @@
   "name": "Sayuki Shimotsuki",
   "sig": "Whiteout: freezing zones and a breath cone; she drifts back as you close in",
   "look": "very long white hair, snowflake kimono, floating hem; white/ice blue",
+  "work": "guard: talent a tier up while home; also cleanses member players; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 2
+   }
+  },
   "id": "sayuki_shimotsuki",
   "rarity": "common",
   "slice": false,
@@ -664,6 +997,17 @@
   "name": "Koyuki Wataboshi",
   "sig": "Snow children (snow golems drawn as sprites) shield her; she turns brave when they fall",
   "look": "short white bob, snow-rabbit hood, mittens; white/pink",
+  "work": "hauler: carries 30-36 slots, sorts 25-55% faster; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 1
+   }
+  },
   "id": "koyuki_wataboshi",
   "rarity": "rare",
   "slice": false,
@@ -685,6 +1029,17 @@
   "name": "Itetsu Shirane",
   "sig": "Hurls ice javelins that leave frozen ground; a glacier-skin shell when cornered",
   "look": "tall, pale, crown of ice shards; pale blue/grey",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 1
+   }
+  },
   "id": "itetsu_shirane",
   "rarity": "epic",
   "slice": false,
@@ -706,6 +1061,17 @@
   "name": "Genkichi Kawabe",
   "sig": "Shell wall; a critical hit from above spills his head-dish and staggers him",
   "look": "green-tinted skin, shell on the back, dish on his head; green/yellow",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; guards the shore and the water gate",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "genkichi_kawabe",
   "rarity": "rare",
   "slice": false,
@@ -727,6 +1093,17 @@
   "name": "Minamo Kawazoe",
   "sig": "Slides fast along water; reels foes in with a fishing line (tether)",
   "look": "teal bob with a dish hairclip, shell backpack, raincoat; teal/yellow",
+  "work": "fisherman: Luck of the Sea and Lure +1-3; swims to the deepest water",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "minamo_kawazoe",
   "rarity": "common",
   "slice": false,
@@ -748,6 +1125,14 @@
   "name": "Soan Kawaguchi",
   "sig": "Bone-setter: heals by holding an ally still; slime puddles slow foes",
   "look": "lotus-leaf hat, shell, medicine box; green/white",
+  "work": "guard: talent a tier up while home; carries its own 2-4 triage meals; guards the shore and the water gate",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "soan_kawaguchi",
   "rarity": "rare",
   "slice": false,
@@ -769,6 +1154,14 @@
   "name": "Ayaori Kumode",
   "sig": "Web fields tether; six spectral legs wind up an unblockable grab",
   "look": "black-and-gold kimono, six thin legs on the back, hime cut; black/gold",
+  "work": "hauler: own hardy +2-4 stacks over the cap; climbs for loot stuck on roofs",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 3
+   },
+   "secondary": null
+  },
   "id": "ayaori_kumode",
   "rarity": "epic",
   "slice": false,
@@ -790,6 +1183,17 @@
   "name": "Itoha Kurozome",
   "sig": "Drops on a thread from above and retreats up it; hidden traps",
   "look": "pale, black braid, eye-motif hair ornaments; black/violet",
+  "work": "scout: nears rival walls unseen, names the heroes it sees; climbs cliffs for a lookout",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "itoha_kurozome",
   "rarity": "rare",
   "slice": false,
@@ -811,6 +1215,14 @@
   "name": "Joroku Itosaki",
   "sig": "Spiderling broods hatch from web sacs; reeling silk drags them onto his mark",
   "look": "tall, white hair with a black streak, grey robes; grey/black",
+  "work": "trader: prices -10 to -20%, larger tribute loads; climbs over cliffs on village trips",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "joroku_itosaki",
   "rarity": "common",
   "slice": false,
@@ -832,6 +1244,18 @@
   "name": "Mizuchi Haruaki",
   "sig": "An orbiting pearl heals allies it passes and strikes foes",
   "look": "long antlered horns, flowing jade hair, whiskers; jade/gold",
+  "work": "farmer: Fortune +1-3 on crops, replants as it reaps; rides its cloud over terraced fields, lands without trampling",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "carrier": "cloud"
+  },
   "id": "mizuchi_haruaki",
   "rarity": "legendary",
   "slice": false,
@@ -853,6 +1277,17 @@
   "name": "Shotatsu Korin",
   "sig": "Pearl-roar cone; coils with super armour before a spinning cleave",
   "look": "red antlers, red scales on the cheeks, golden robe; red/gold",
+  "work": "blacksmith: crafts 25-55% faster, repairs 30-40% per material; swims rivers and lakes, never detours",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "shotatsu_korin",
   "rarity": "epic",
   "slice": false,
@@ -874,6 +1309,15 @@
   "name": "Raishin Kumokiri",
   "sig": "Storm arrows chain lightning between wet targets (rain, water)",
   "look": "black hair, short horns, scholar's robe; black/teal",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; flies up to the library's high shelves",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "cloud"
+  },
   "id": "raishin_kumokiri",
   "rarity": "rare",
   "slice": false,
@@ -895,6 +1339,18 @@
   "name": "Seika Ryugasaki",
   "sig": "Two cloud-serpent wisps orbit her and strike where her sword points",
   "look": "tall, white hair with blue tips, long horns; white/azure",
+  "work": "guard: talent a tier up while home; pacts carried in person +0.1-0.2; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   },
+   "carrier": "cloud"
+  },
   "id": "seika_ryugasaki",
   "rarity": "legendary",
   "slice": false,
@@ -916,6 +1372,17 @@
   "name": "Shion Mikumari",
   "sig": "Dragon-palm string ends in a rising uppercut; a tail sweep catches jumpers",
   "look": "short teal hair, horn nubs, sleeveless training top; teal/orange",
+  "work": "guard: talent a tier up while home; its talents at full tier at a stewarded base; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "shion_mikumari",
   "rarity": "rare",
   "slice": false,
@@ -937,6 +1404,17 @@
   "name": "Vexa Thornscale",
   "sig": "Tail-sweep circle and an acid wing buffet; chained hop-slams in phase 3",
   "look": "curled horns, green scales, dark armour; emerald/bronze",
+  "work": "miner: Fortune +1-3 on the ores it mines; bounds up shaft steps, leaps cave gaps",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "glider",
+    "tier": 1
+   }
+  },
   "id": "vexa_thornscale",
   "rarity": "epic",
   "slice": false,
@@ -958,6 +1436,18 @@
   "name": "Ignatia Vermillor",
   "sig": "Every third bolt bursts into a fire cone; she strikes a pose and announces her ultimate by name before it fires",
   "look": "black hair with red streaks, small horns, a too-long high-collared scarlet cape; black/scarlet",
+  "work": "smelter: furnaces 25-55% faster on the same fuel, 1-2 more; works on the ground, flies between jobs",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 1
+   },
+   "carrier": "dragon wings"
+  },
   "id": "ignatia_vermillor",
   "rarity": "rare",
   "slice": false,
@@ -979,6 +1469,17 @@
   "name": "Brannoc Emberhide",
   "sig": "Molten core: fire builds heat stacks, then an eruption ring",
   "look": "crown-like horns, glowing magma cracks; black/orange",
+  "work": "blacksmith: crafts 25-55% faster, repairs 30-40% per material; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 2
+   }
+  },
   "id": "brannoc_emberhide",
   "rarity": "common",
   "slice": false,
@@ -1000,6 +1501,15 @@
   "name": "Aurelian Wyrmholt",
   "sig": "Hatchling drakes orbit him and breathe sparks at his marks",
   "look": "scholar's coat, small wings, monocle, silver hair; silver/purple",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; flies up to the library's high shelves",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "dragon wings"
+  },
   "id": "aurelian_wyrmholt",
   "rarity": "epic",
   "slice": false,
@@ -1021,6 +1531,17 @@
   "name": "Goen Ishigaki",
   "sig": "Open-mouthed roar cone; stone skin while he stands still",
   "look": "curly mane, stone grey with moss, shrine rope; stone/moss",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "goen_ishigaki",
   "rarity": "common",
   "slice": false,
@@ -1042,6 +1563,17 @@
   "name": "Unme Ishigaki",
   "sig": "Closed-mouth seal: a silence aura on enemy heroes; her tablet shield shelters allies",
   "look": "curly-mane bob, stone grey with red rope; stone/red",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "unme_ishigaki",
   "rarity": "rare",
   "slice": false,
@@ -1063,6 +1595,17 @@
   "name": "Koshi Kagurazaka",
   "sig": "Lion-dance bites on a drum rhythm; the cymbal crash stuns",
   "look": "big red lion-dance head over his shoulder, green cloth; red/green",
+  "work": "guard: talent a tier up while home; its festivals last 25-50% longer; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "koshi_kagurazaka",
   "rarity": "common",
   "slice": false,
@@ -1084,6 +1627,17 @@
   "name": "Hanae Momozono",
   "sig": "Root wall: plants herself and grows bark armour; flowers bloom on allies she shelters",
   "look": "flower crown, leafy hair with petals, petal dress; pink/leaf green",
+  "work": "farmer: Fortune +1-3 on crops, replants as it reaps; carries whole harvests without slowing",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "hanae_momozono",
   "rarity": "rare",
   "slice": false,
@@ -1105,6 +1659,17 @@
   "name": "Corwin Barkhollow",
   "sig": "Thorn-whip lashes from four blocks away; when an ally falls he roots, blooms and turns bold",
   "look": "bark-skin arms, moss hair, small branch antlers; brown/green",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); fells tall trees from the trunk, no scaffold",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "corwin_barkhollow",
   "rarity": "common",
   "slice": false,
@@ -1126,6 +1691,17 @@
   "name": "Calyx Wren",
   "sig": "Seedling sprites sprout where her flute notes land; vines tether whoever stays",
   "look": "orchid hair, vine-lace sleeves; violet/green",
+  "work": "woodcutter: own regrowth +2-4 stacks over the cap; glides down from heights to its work",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "calyx_wren",
   "rarity": "rare",
   "slice": false,
@@ -1147,6 +1723,17 @@
   "name": "Morel Underbough",
   "sig": "Spore sprites rise from his rot zones",
   "look": "big mushroom-cap hat, mossy cloak, glowing spots; brown/teal",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); glides down from heights to its work",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "morel_underbough",
   "rarity": "common",
   "slice": false,
@@ -1168,6 +1755,17 @@
   "name": "Hinae Shirasuzu",
   "sig": "Talisman fans and sealing circles; a barrier of seven talismans in phase 2",
   "look": "long black hair tied low with white paper, red trousers, bell cluster; red/white",
+  "work": "guard: talent a tier up while home; heals the most hurt NPC by hand every 20 s; runs the shrine steps to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "hinae_shirasuzu",
   "rarity": "epic",
   "slice": true,
@@ -1189,6 +1787,17 @@
   "name": "Yuzuri Hojo",
   "sig": "Bell rings stun spirits; rotating rings of bells form zones",
   "look": "silver hair, white kimono with gold, bell staff; white/gold",
+  "work": "guard: talent a tier up while home; also cleanses member players; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "yuzuri_hojo",
   "rarity": "epic",
   "slice": false,
@@ -1210,6 +1819,17 @@
   "name": "Chigusa Hiwada",
   "sig": "Purifying-flame glaive sweeps; a kneeling vow before her ultimate",
   "look": "high ponytail, tied-back sleeves, headband; red/black",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "chigusa_hiwada",
   "rarity": "rare",
   "slice": false,
@@ -1231,6 +1851,17 @@
   "name": "Masaomi Tomine",
   "sig": "Purifying sweep dispels foes and cleanses allies; prays (breakable)",
   "look": "pale blue robe, purple trousers, streamer wand; pale blue/purple",
+  "work": "guard: talent a tier up while home; revived allies rise with absorption; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "masaomi_tomine",
   "rarity": "common",
   "slice": false,
@@ -1252,6 +1883,14 @@
   "name": "Kozen Torii",
   "sig": "Sacred rope binds foes inside a boundary; holds the gate",
   "look": "shaved head, sacred rope over the shoulders, white robes; white/straw",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "kozen_torii",
   "rarity": "rare",
   "slice": false,
@@ -1273,6 +1912,17 @@
   "name": "Harutaka Hoshinomiya",
   "sig": "Shadow-paper beasts fight for him; a five-point seal binds the arena edge",
   "look": "tall black court cap, white and indigo hunting robe; white/indigo",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; glides down from heights to its work",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "harutaka_hoshinomiya",
   "rarity": "epic",
   "slice": false,
@@ -1294,6 +1944,17 @@
   "name": "Tsukasa Yomei",
   "sig": "Five phases: her element cycles each cast; the robe colour shows which",
   "look": "violet court cap tilted, round glasses, star-embroidered robe; violet/white",
+  "work": "miner: own prospector +2-4 stacks over the cap; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "tsukasa_yomei",
   "rarity": "epic",
   "slice": false,
@@ -1315,6 +1976,15 @@
   "name": "Kotoyo Kamo",
   "sig": "Paper cranes fold out of her fan; divination marks the next foe to strike",
   "look": "long grey hair, youthful face, black court robe; black/gold",
+  "work": "farmer: Fortune +1-3 on crops, replants as it reaps; rides her paper crane between far fields",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": null,
+   "carrier": "paper crane"
+  },
   "id": "kotoyo_kamo",
   "rarity": "legendary",
   "slice": false,
@@ -1336,6 +2006,17 @@
   "name": "Seimon Hoshikage",
   "sig": "Star prison: a five-point zone stuns when its lines close; stay outside them",
   "look": "white hair, star-map robe, eye patch; black/silver",
+  "work": "scout: nears rival walls unseen, names the heroes it sees; glides off ridges into valleys",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "seimon_hoshikage",
   "rarity": "epic",
   "slice": false,
@@ -1357,6 +2038,17 @@
   "name": "Kagenori Tsurumine",
   "sig": "Quick-draw counter stance and a thunderclap draw; helmet in phase 2, two swords in phase 3",
   "look": "high ponytail, indigo coat with crane crest; indigo/white",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "kagenori_tsurumine",
   "rarity": "epic",
   "slice": true,
@@ -1378,6 +2070,17 @@
   "name": "Chiyo Akazonae",
   "sig": "Lord's-banner zone strengthens allies; a spear-wall sweep",
   "look": "red lacquer armour, wave-crest helmet; red/black",
+  "work": "guard: talent a tier up while home; 15-35% chance a recruit payment brings two; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "chiyo_akazonae",
   "rarity": "rare",
   "slice": false,
@@ -1399,6 +2102,17 @@
   "name": "Asahi Nagakura",
   "sig": "Rising-sun cut: a spinning cleave with a fire trail; enrages early",
   "look": "short red hair, white trousers, long sword on the back; white/red",
+  "work": "guard: talent a tier up while home; same-job NPCs near it work 5-10% faster; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "asahi_nagakura",
   "rarity": "epic",
   "slice": false,
@@ -1420,6 +2134,17 @@
   "name": "Shiori Mitsukado",
   "sig": "Kneel-and-aim piercing shots; each miss sharpens her focus",
   "look": "long black hair tied with purple cord, archery chest guard; black/purple",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "shiori_mitsukado",
   "rarity": "rare",
   "slice": false,
@@ -1441,6 +2166,14 @@
   "name": "Sokichi Ishizumi",
   "sig": "Ink strokes from his blade write zones that bless allies or curse foes; a tea ceremony heals all",
   "look": "neat side-part, black formal vest; black/beige",
+  "work": "guard: talent a tier up while home; same-job NPCs near it work 5-10% faster; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "sokichi_ishizumi",
   "rarity": "common",
   "slice": false,
@@ -1462,6 +2195,17 @@
   "name": "Saburo Kazamaki",
   "sig": "Single stroke: 1.5 s of stillness, then a line cut; the re-sheathe is the opening",
   "look": "wide straw hat, worn brown kimono, chin scar; brown/teal",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); runs between far groves",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "saburo_kazamaki",
   "rarity": "epic",
   "slice": false,
@@ -1483,6 +2227,17 @@
   "name": "Kozue Hagino",
   "sig": "Petal step: slips past foes leaving petal cuts; the veiled hat flips first",
   "look": "veiled travelling hat, dusty-rose kimono; dusty rose/grey",
+  "work": "scout: scouts 15-35% faster, never loses the way home; double-jumps ravines",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "kozue_hagino",
   "rarity": "common",
   "slice": false,
@@ -1504,6 +2259,17 @@
   "name": "Rindo Akizuki",
   "sig": "Wide sweeps with long recoveries; drinks between bouts",
   "look": "tall, scar across the nose, travelling cloak; ochre/black",
+  "work": "guard: own duelist +2-4 stacks over the cap; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "rindo_akizuki",
   "rarity": "rare",
   "slice": false,
@@ -1525,6 +2291,14 @@
   "name": "Teppei Hinawa",
   "sig": "Slow aim with a glint tell, one heavy shot, a long reload to punish",
   "look": "unshaven, black coat, matchlock on the shoulder; black/rust",
+  "work": "guard: talent a tier up while home; raiders seeing it fall back sooner; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "teppei_hinawa",
   "rarity": "common",
   "slice": false,
@@ -1546,6 +2320,17 @@
   "name": "Tobimaru Usugumo",
   "sig": "Vanishes (footstep puffs give him away), strikes from behind; decoys in phase 2",
   "look": "navy mask, long red scarf, high ponytail; navy/red",
+  "work": "scout: scouts 32-64 blocks farther, maps 5x5 sectors; double-jumps ravines, climbs cliffs for a lookout",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 2
+   }
+  },
   "id": "tobimaru_usugumo",
   "rarity": "epic",
   "slice": true,
@@ -1567,6 +2352,17 @@
   "name": "Sumire Ayatsuki",
   "sig": "Poisoned star fans and caltrop fields; she stops mid-fight for a snack (punish window)",
   "look": "lavender hair, short scarf, star pouch; lavender/black",
+  "work": "scout: scouts 15-35% faster, never loses the way home; double-jumps ravines",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "sumire_ayatsuki",
   "rarity": "common",
   "slice": false,
@@ -1588,6 +2384,17 @@
   "name": "Iori Shinobazu",
   "sig": "Smoke field darkens; her chain sickle drags foes into it",
   "look": "black bob, half mask, coiled chain; black/yellow",
+  "work": "scout: nears rival walls unseen, names the heroes it sees; climbs cliffs for a lookout",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "iori_shinobazu",
   "rarity": "rare",
   "slice": false,
@@ -1609,6 +2416,17 @@
   "name": "Mayu Hyosa",
   "sig": "Frost sickle chain pulls and cuts; an ice-slide dash closes the gap",
   "look": "white braid, pale blue scarf; white/ice blue",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 2
+   }
+  },
   "id": "mayu_hyosa",
   "rarity": "common",
   "slice": false,
@@ -1630,6 +2448,17 @@
   "name": "Zenji Karakuri",
   "sig": "Tripwire grid: shock lines between posts; a smoke escape",
   "look": "goggles on the forehead, utility vest; olive/brown",
+  "work": "guard: talent a tier up while home; raid parties with it keep formation; glides from the walls to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "zenji_karakuri",
   "rarity": "rare",
   "slice": false,
@@ -1651,6 +2480,14 @@
   "name": "Kakuzen Toyama",
   "sig": "Iron body: shield and taunt; a half-circle glaive sweep",
   "look": "white head wrap, robes over armour, big prayer beads; white/saffron",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "kakuzen_toyama",
   "rarity": "common",
   "slice": false,
@@ -1672,6 +2509,17 @@
   "name": "Jikai Morino",
   "sig": "Chanting aura heals; meditation stance answers melee",
   "look": "bald, saffron robes, prayer beads; saffron/brown",
+  "work": "guard: talent a tier up while home; heals the most hurt NPC by hand every 20 s; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "jikai_morino",
   "rarity": "rare",
   "slice": false,
@@ -1693,6 +2541,17 @@
   "name": "Soka Yamanobe",
   "sig": "Staff-spin barrage and a pole-vault leap",
   "look": "short hair, white ascetic robe, beads; white/teal",
+  "work": "scout: scouts 15-35% faster, never loses the way home; bounds over gaps and fences",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "soka_yamanobe",
   "rarity": "common",
   "slice": false,
@@ -1714,6 +2573,17 @@
   "name": "Kotoha Fujinami",
   "sig": "Petal dance: rotating cones; charmed soldiers briefly turn on their own side",
   "look": "updo with hairpins, long-sleeved layered kimono; pink/gold",
+  "work": "guard: talent a tier up while home; pacts carried in person +0.1-0.2; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "glider",
+    "tier": 1
+   }
+  },
   "id": "kotoha_fujinami",
   "rarity": "epic",
   "slice": false,
@@ -1735,6 +2605,17 @@
   "name": "Natsuri Hanabishi",
   "sig": "Festival dance: ally buffs pulse on each beat; tempo builds",
   "look": "twin ponytails with ribbons, festival coat; red/white",
+  "work": "guard: talent a tier up while home; its festivals last 25-50% longer; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "natsuri_hanabishi",
   "rarity": "common",
   "slice": false,
@@ -1756,6 +2637,17 @@
   "name": "Kikuzo Hanaoka",
   "sig": "Frozen-pose counter, then a whirling fan dash",
   "look": "stage face-paint stripes, flowing mane wig; red/black",
+  "work": "guard: talent a tier up while home; Looting +1-3 on its own kills; glides from the walls to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "kikuzo_hanaoka",
   "rarity": "rare",
   "slice": false,
@@ -1777,6 +2669,17 @@
   "name": "Sakie Kurogami",
   "sig": "Turf war: stronger inside her walls; calls her crew of guards",
   "look": "long sailor skirt, mask pulled down, bleached hair; navy/yellow",
+  "work": "guard: talent a tier up while home; raiders seeing it fall back sooner; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "sakie_kurogami",
   "rarity": "common",
   "slice": false,
@@ -1798,6 +2701,17 @@
   "name": "Gosuke Banba",
   "sig": "Coat-cape fling blinds; a crackling flying headbutt; a counter-taunt",
   "look": "pompadour, long school coat worn as a cape; black/gold",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "gosuke_banba",
   "rarity": "rare",
   "slice": false,
@@ -1819,6 +2733,17 @@
   "name": "Daimon Sakaishi",
   "sig": "Calls the whole crew (real guards) with a raised wooden sword and orders them to surround the target",
   "look": "spiky white hair, leather jacket; white/purple",
+  "work": "guard: talent a tier up while home; Looting +1-3 on its own kills; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "daimon_sakaishi",
   "rarity": "common",
   "slice": false,
@@ -1840,6 +2765,14 @@
   "name": "Koshiro Nabeyama",
   "sig": "Knife flurry; a wok-toss fire cone",
   "look": "tall chef's hat, white coat, bandana; white/red",
+  "work": "chef: smoker 20-40% faster, 15-35% chance of a second dish; errands at a run, steps up blocks",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "koshiro_nabeyama",
   "rarity": "rare",
   "slice": false,
@@ -1861,6 +2794,14 @@
   "name": "Hotaru Nabeshima",
   "sig": "Frying-pan wall: parries, then a lunch-box toss heals allies",
   "look": "ponytail, patched apron, oven mitt; yellow/white",
+  "work": "chef: smoker 20-40% faster, 15-35% chance of a second dish; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "hotaru_nabeshima",
   "rarity": "common",
   "slice": false,
@@ -1882,6 +2823,14 @@
   "name": "Ryuzo Kosho",
   "sig": "Spice-dusted cuts weaken and slow; a judging glare marks the sloppy",
   "look": "glasses, black chef coat, knife roll; black/green",
+  "work": "hauler: carries 30-36 slots, sorts 25-55% faster; hauls at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "ryuzo_kosho",
   "rarity": "rare",
   "slice": false,
@@ -1903,6 +2852,17 @@
   "name": "Raijiro Ikazuchi",
   "sig": "Drum-beat waves: expanding shock rings to jump over",
   "look": "ring of drums on the back, lightning tattoo; yellow/black",
+  "work": "guard: talent a tier up while home; its drum speeds defenders 5-10%; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "raijiro_ikazuchi",
   "rarity": "epic",
   "slice": false,
@@ -1924,6 +2884,14 @@
   "name": "Tsuzumi Otowa",
   "sig": "Rhythm: allies attack faster on her beat; the raised stick is the tell",
   "look": "festival headband, short coat; blue/white",
+  "work": "guard: talent a tier up while home; its drum speeds defenders 5-10%; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "tsuzumi_otowa",
   "rarity": "rare",
   "slice": false,
@@ -1945,6 +2913,17 @@
   "name": "Futa Kazabukuro",
   "sig": "Wind-sack gusts push in cones; a vacuum pulls foes back",
   "look": "cloud scarf, wind sack over the shoulder; green/white",
+  "work": "scout: scouts 15-35% faster, never loses the way home; glides off ridges into valleys",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "futa_kazabukuro",
   "rarity": "common",
   "slice": false,
@@ -1966,6 +2945,15 @@
   "name": "Lin Mingxuan",
   "sig": "Sword array: orbiting swords launch one after another",
   "look": "white-blue robe, hair crown; white/azure",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; rides his sword to the library's high shelves",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": null,
+   "carrier": "flying sword"
+  },
   "id": "lin_mingxuan",
   "rarity": "epic",
   "slice": false,
@@ -1987,6 +2975,17 @@
   "name": "Bai Yunxi",
   "sig": "Qi mending and a lotus barrier; a breakthrough glow in phase 3",
   "look": "white hair bun with jade pin, white robes; white/jade",
+  "work": "guard: talent a tier up while home; revived allies rise with absorption; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 2
+   }
+  },
   "id": "bai_yunxi",
   "rarity": "legendary",
   "slice": false,
@@ -2008,6 +3007,17 @@
   "name": "Qiao Yanling",
   "sig": "Lightning sword-heart: each parried hit charges a thunder thrust",
   "look": "high ponytail with a silver crescent pin, violet robes with silver cloud trim; violet/silver",
+  "work": "guard: talent a tier up while home; same-job NPCs near it work 5-10% faster; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "qiao_yanling",
   "rarity": "epic",
   "slice": false,
@@ -2029,6 +3039,14 @@
   "name": "Zhou Wenshan",
   "sig": "Plants four banners; the square between them becomes a slowing formation",
   "look": "scholar's hat, scroll case; grey/indigo",
+  "work": "guard: talent a tier up while home; raid parties with it keep formation; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "zhou_wenshan",
   "rarity": "common",
   "slice": false,
@@ -2050,6 +3068,17 @@
   "name": "Hua Lianmei",
   "sig": "Eight-trigram palms: counter stance into palm-push strings",
   "look": "single high bun tied with red cord, sleeveless plum training vest with frog buttons, wide white trousers; plum/white",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "hua_lianmei",
   "rarity": "rare",
   "slice": false,
@@ -2071,6 +3100,17 @@
   "name": "Mei Xiaodie",
   "sig": "Butterfly-sword flurry and a wall-run kick",
   "look": "short bob, green training clothes; green/white",
+  "work": "scout: scouts 15-35% faster, never loses the way home; double-jumps ravines",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 2
+   }
+  },
   "id": "mei_xiaodie",
   "rarity": "common",
   "slice": false,
@@ -2092,6 +3132,17 @@
   "name": "Shi Gangtie",
   "sig": "Qi palms: each strike heals the ally behind its target; iron-shirt stance while he stands still",
   "look": "shaved sides, topknot, bandaged chest; bronze/brown",
+  "work": "guard: talent a tier up while home; same-job NPCs near it work 5-10% faster; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "shi_gangtie",
   "rarity": "rare",
   "slice": false,
@@ -2113,6 +3164,17 @@
   "name": "Liu Zuixian",
   "sig": "Off-rhythm staff string; a gourd-breath cone",
   "look": "red cheeks, gourd at the hip, loose robe; brown/orange",
+  "work": "guard: talent a tier up while home; its festivals last 25-50% longer; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "liu_zuixian",
   "rarity": "common",
   "slice": false,
@@ -2134,6 +3196,14 @@
   "name": "Lu Ningshuang",
   "sig": "Hops in chains; striking the talisman on her forehead stuns her",
   "look": "official's hat with talisman, long sleeves; dark blue/red",
+  "work": "hauler: own hardy +2-4 stacks over the cap; bounds over gaps instead of bridging",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "lu_ningshuang",
   "rarity": "rare",
   "slice": false,
@@ -2155,6 +3225,17 @@
   "name": "Yin Suling",
   "sig": "Her bell guides two hopping servants",
   "look": "white mourning robes, pale, bell; white/grey",
+  "work": "guard: talent a tier up while home; revived allies rise with absorption; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "hover",
+    "tier": 1
+   }
+  },
   "id": "yin_suling",
   "rarity": "common",
   "slice": false,
@@ -2176,6 +3257,17 @@
   "name": "Gao Qinglong",
   "sig": "Coffin wall; each blocked hit drains life back",
   "look": "general's armour, talisman, grey skin; grey/teal",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "gao_qinglong",
   "rarity": "epic",
   "slice": false,
@@ -2197,6 +3289,18 @@
   "name": "Feng Zhaoming",
   "sig": "Rebirth once per fight as a final phase; flaming wing dives",
   "look": "flame-red hair, feather cape that becomes wings; red/gold",
+  "work": "smelter: furnaces 25-55% faster on the same fuel, 1-2 more; works on the ground, flies between jobs",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 2
+   },
+   "carrier": "ember wings"
+  },
   "id": "feng_zhaoming",
   "rarity": "legendary",
   "slice": false,
@@ -2218,6 +3322,18 @@
   "name": "Huang Jinlu",
   "sig": "Rebirth ward: an ally's next lethal hit is stopped once",
   "look": "gold feather hair ornaments, white-gold dress; gold/white",
+  "work": "guard: talent a tier up while home; revived allies rise with absorption; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 1
+   },
+   "carrier": "ember wings"
+  },
   "id": "huang_jinlu",
   "rarity": "epic",
   "slice": false,
@@ -2239,6 +3355,18 @@
   "name": "Zhu Yanchi",
   "sig": "Sun-arrow rain leaves burning ground",
   "look": "gold crown feathers, crimson coat; crimson/gold",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 1
+   },
+   "carrier": "ember wings"
+  },
   "id": "zhu_yanchi",
   "rarity": "common",
   "slice": false,
@@ -2260,6 +3388,17 @@
   "name": "Ilsabet Frostmere",
   "sig": "Shield wall and bash; visor down and a charge in phase 2; a frozen standard in phase 3",
   "look": "steel plate, braided crown of ash-blonde hair, blue-white tabard; steel/frost blue",
+  "work": "guard: talent a tier up while home; 15-35% chance a recruit payment brings two; holds the gate, ignores cobwebs",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 1
+   }
+  },
   "id": "ilsabet_frostmere",
   "rarity": "epic",
   "slice": true,
@@ -2281,6 +3420,14 @@
   "name": "Odile Varenne",
   "sig": "Oath of the blade: blocked hits stack resolve; at five, a crescent cleave wave",
   "look": "silver plate, scarlet cape, short black hair; silver/scarlet",
+  "work": "blacksmith: crafts 25-55% faster, repairs 30-40% per material; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "odile_varenne",
   "rarity": "common",
   "slice": false,
@@ -2302,6 +3449,17 @@
   "name": "Tamsin Rook",
   "sig": "War banner: the planted banner shelters allies and calls guards; a lance wall",
   "look": "red ponytail, banner, light armour; red/white",
+  "work": "guard: talent a tier up while home; 15-35% chance a recruit payment brings two; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "tamsin_rook",
   "rarity": "rare",
   "slice": false,
@@ -2323,6 +3481,14 @@
   "name": "Barnaby Thistledown",
   "sig": "Tower-shield advance; his bell helmet rings and stuns whoever strikes it",
   "look": "visored great helm with plume, round build; brass/green",
+  "work": "builder: own mason +2-4 stacks over the cap; carries full loads up steps",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "barnaby_thistledown",
   "rarity": "common",
   "slice": false,
@@ -2344,6 +3510,17 @@
   "name": "Corvin Ashlocke",
   "sig": "Cursed cleaves drain; a fallen-knight stance in phase 2",
   "look": "black armour, torn cape, white hair; black/grey",
+  "work": "guard: talent a tier up while home; same-job NPCs near it work 5-10% faster; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "corvin_ashlocke",
   "rarity": "epic",
   "slice": false,
@@ -2365,6 +3542,15 @@
   "name": "Celestine Brightwater",
   "sig": "Consecrated ground and healing touch; wings of light in phase 2",
   "look": "white-gold armour, halo-like crest, long golden hair; white/gold",
+  "work": "guard: talent a tier up while home; heals the most hurt NPC by hand every 20 s; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "light wings"
+  },
   "id": "celestine_brightwater",
   "rarity": "epic",
   "slice": false,
@@ -2386,6 +3572,14 @@
   "name": "Aldric Dawnmere",
   "sig": "Radiant pillars ring the arena; a dawn shield",
   "look": "gold armour, white cloak, short blond hair; gold/white",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "aldric_dawnmere",
   "rarity": "rare",
   "slice": false,
@@ -2407,6 +3601,17 @@
   "name": "Lucan Pyreholt",
   "sig": "Judgement brands the guilty, then detonates the brands",
   "look": "red-white surcoat, bucket helm; red/white",
+  "work": "guard: talent a tier up while home; raiders seeing it fall back sooner; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "lucan_pyreholt",
   "rarity": "common",
   "slice": false,
@@ -2428,6 +3633,17 @@
   "name": "Ottilie Lanthorn",
   "sig": "Two spectral squires guard her; the lantern on her blade calls them back",
   "look": "tall, white veil helm, lantern; white/silver",
+  "work": "guard: talent a tier up while home; 15-35% chance a recruit payment brings two; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "ottilie_lanthorn",
   "rarity": "rare",
   "slice": false,
@@ -2449,6 +3665,17 @@
   "name": "Agathe Morrow",
   "sig": "Heals with her tome in phase 1; snaps it shut and takes up the mace in phase 2",
   "look": "habit and veil, tome on a chain; black/white",
+  "work": "guard: talent a tier up while home; also cleanses member players; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "agathe_morrow",
   "rarity": "common",
   "slice": false,
@@ -2470,6 +3697,14 @@
   "name": "Matthias Grell",
   "sig": "Holy bolts heal allies they pass and burn foes",
   "look": "cassock, bandolier, stubble; black/purple",
+  "work": "guard: talent a tier up while home; carries its own 2-4 triage meals; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "matthias_grell",
   "rarity": "rare",
   "slice": false,
@@ -2491,6 +3726,17 @@
   "name": "Ilse Rabenmark",
   "sig": "Lancet thrusts inject antidote into allies and poison into foes",
   "look": "beaked mask, long coat; black/teal",
+  "work": "guard: talent a tier up while home; carries its own 2-4 triage meals; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "ilse_rabenmark",
   "rarity": "common",
   "slice": false,
@@ -2512,6 +3758,17 @@
   "name": "Ansel Kade",
   "sig": "Exorcism strings with twin daggers; a rosary chain pull",
   "look": "short hair, cassock with rolled sleeves, rosary; black/gold",
+  "work": "guard: talent a tier up while home; also cleanses member players; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "ansel_kade",
   "rarity": "rare",
   "slice": false,
@@ -2533,6 +3790,15 @@
   "name": "Ambrose Nettlewick",
   "sig": "Potion barrage (the colour is the tell); cauldron zones; broom hops in phase 2",
   "look": "tilted wide-brimmed hat, purple coat with vials, round glasses, crow on the shoulder; purple/green",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; rides his staff-broom to the library's high shelves",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "broom"
+  },
   "id": "ambrose_nettlewick",
   "rarity": "epic",
   "slice": true,
@@ -2554,6 +3820,15 @@
   "name": "Pippa Hexley",
   "sig": "Hex bubbles trap and pop; a mirror hex repeats her last cast",
   "look": "short purple twin tails, small witch hat, cape; violet/pink",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; flies up to the library's high shelves",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "broom"
+  },
   "id": "pippa_hexley",
   "rarity": "rare",
   "slice": false,
@@ -2575,6 +3850,15 @@
   "name": "Hazel Brambleworth",
   "sig": "Herbal brews heal allies and poison foes; her sickle reaps the marks",
   "look": "freckles, straw witch hat with flowers, apron; green/brown",
+  "work": "farmer: own green thumb +2-4 stacks over the cap; flies between far fields, lands without trampling",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 1
+   },
+   "secondary": null,
+   "carrier": "broom"
+  },
   "id": "hazel_brambleworth",
   "rarity": "common",
   "slice": false,
@@ -2596,6 +3880,17 @@
   "name": "Corvina Blackfen",
   "sig": "A crow swarm pecks and blinds; ritual knives mark its next target",
   "look": "black hair, crow-feather cloak; black/teal",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; glides from the walls to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "corvina_blackfen",
   "rarity": "rare",
   "slice": false,
@@ -2617,6 +3912,17 @@
   "name": "Cassius Vane",
   "sig": "Rune circles: delayed glyph traps",
   "look": "cropped ash hair, high-collared black robes, grimoire; black/silver",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "cassius_vane",
   "rarity": "epic",
   "slice": false,
@@ -2638,6 +3944,17 @@
   "name": "Aelwyn Sylvaris",
   "sig": "Hunter's mark, then a piercing shot",
   "look": "long pointed ears, green hooded cloak, blonde braid; green/silver",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); runs between far groves",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "aelwyn_sylvaris",
   "rarity": "rare",
   "slice": false,
@@ -2659,6 +3976,17 @@
   "name": "Nyxara Duskveil",
   "sig": "Spellblade state: blight blades; a shadow step",
   "look": "dusky skin, white hair, violet runes; grey/violet",
+  "work": "scout: nears rival walls unseen, names the heroes it sees; double-jumps ravines",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "nyxara_duskveil",
   "rarity": "epic",
   "slice": false,
@@ -2680,6 +4008,17 @@
   "name": "Lirielle Fernsong",
   "sig": "Healing arrows for allies, thorn arrows for foes",
   "look": "pink-blonde hair, flower circlet; white/pink",
+  "work": "woodcutter: own regrowth +2-4 stacks over the cap; runs between far groves",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "lirielle_fernsong",
   "rarity": "rare",
   "slice": false,
@@ -2701,6 +4040,17 @@
   "name": "Faelan Oakshade",
   "sig": "Entangling roots and a thorn wall",
   "look": "antler circlet, long brown hair, leaf cloak; brown/green",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); fells tall trees from the trunk, no scaffold",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "faelan_oakshade",
   "rarity": "common",
   "slice": false,
@@ -2722,6 +4072,17 @@
   "name": "Caedric Wintersong",
   "sig": "Rime arrows stack freeze; vaulting backflips",
   "look": "silver hair, blue cloak; blue/silver",
+  "work": "scout: scouts 32-64 blocks farther, maps 5x5 sectors; double-jumps ravines",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "snowstride",
+    "tier": 1
+   }
+  },
   "id": "caedric_wintersong",
   "rarity": "rare",
   "slice": false,
@@ -2743,6 +4104,18 @@
   "name": "Ottavia Sanguine",
   "sig": "Draining cuts and a bat-swarm dash",
   "look": "silver ringlets, crimson coat, red eyes; crimson/black",
+  "work": "guard: talent a tier up while home; pacts carried in person +0.1-0.2; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   },
+   "carrier": "bat wings"
+  },
   "id": "ottavia_sanguine",
   "rarity": "epic",
   "slice": false,
@@ -2764,6 +4137,17 @@
   "name": "Lazare Vespertine",
   "sig": "Blood-moon zone drains; charmed foes falter",
   "look": "slicked black hair, high-collared cape; black/wine",
+  "work": "trader: prices -10 to -30%, carries 30-36 slots; glides down to valley villages",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "lazare_vespertine",
   "rarity": "rare",
   "slice": false,
@@ -2785,6 +4169,17 @@
   "name": "Bettina Nachtigall",
   "sig": "Sleepy by day, bold at night; bat swarms blind",
   "look": "short black hair, bat hair clips, cardigan; black/purple",
+  "work": "smelter: own thrifty +2-4 stacks over the cap; glides down from heights to its work",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "bettina_nachtigall",
   "rarity": "common",
   "slice": false,
@@ -2806,6 +4201,14 @@
   "name": "Radomir Grauwald",
   "sig": "Blood arrows fill a pool he drinks from to heal; a blood-armour shell",
   "look": "white hair, scarred, crimson plate; crimson/white",
+  "work": "guard: talent a tier up while home; raiders seeing it fall back sooner; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "radomir_grauwald",
   "rarity": "rare",
   "slice": false,
@@ -2827,6 +4230,18 @@
   "name": "Belphira Ashenthrone",
   "sig": "Hellfire sigils rain; imps answer her call",
   "look": "curled ram horns, black-red regal coat, spade tail; black/crimson",
+  "work": "trader: prices -10 to -20%, larger tribute loads; flies to villages, lands outside",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 2
+   },
+   "carrier": "demon wings"
+  },
   "id": "belphira_ashenthrone",
   "rarity": "legendary",
   "slice": false,
@@ -2848,6 +4263,17 @@
   "name": "Pim Brimsby",
   "sig": "Prank hops and dagger pokes; a tail grab",
   "look": "teal hair, tiny horns, tail; teal/black",
+  "work": "guard: talent a tier up while home; Looting +1-3 on its own kills; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "pim_brimsby",
   "rarity": "rare",
   "slice": false,
@@ -2869,6 +4295,17 @@
   "name": "Malrecht Vorthane",
   "sig": "Throne-step dashes; scythe arcs leave fire trails",
   "look": "tall, long black horns, black armour, cloak; black/purple",
+  "work": "guard: talent a tier up while home; raiders seeing it fall back sooner; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 2
+   }
+  },
   "id": "malrecht_vorthane",
   "rarity": "legendary",
   "slice": false,
@@ -2890,6 +4327,17 @@
   "name": "Mephis Gallow",
   "sig": "Contract seals bind imps to fight for him; breaking a seal staggers him",
   "look": "noble coat, swept horns; red/black",
+  "work": "trader: prices -10 to -20%, larger tribute loads; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "mephis_gallow",
   "rarity": "rare",
   "slice": false,
@@ -2911,6 +4359,15 @@
   "name": "Amariel Lumen",
   "sig": "Halo barrier on allies; a feather rain heals",
   "look": "white wings, halo, long blonde hair; white/gold",
+  "work": "guard: talent a tier up while home; heals the most hurt NPC by hand every 20 s; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": null,
+   "carrier": "feathered wings"
+  },
   "id": "amariel_lumen",
   "rarity": "legendary",
   "slice": false,
@@ -2932,6 +4389,15 @@
   "name": "Ishara Morn",
   "sig": "Fallen dive and a black-feather volley",
   "look": "black wings, broken halo, white hair; black/silver",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "feathered wings"
+  },
   "id": "ishara_morn",
   "rarity": "rare",
   "slice": false,
@@ -2953,6 +4419,18 @@
   "name": "Ariston Highgate",
   "sig": "Gate guardian: flaming sweeps; the aegis turns bolts aside",
   "look": "two pairs of small wings, gold armour; gold/red",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "carrier": "feathered wings"
+  },
   "id": "ariston_highgate",
   "rarity": "legendary",
   "slice": false,
@@ -2974,6 +4452,15 @@
   "name": "Halvard Skye",
   "sig": "Judgement arrows fall from above",
   "look": "white hair, two small wings, visor; white/blue",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "feathered wings"
+  },
   "id": "halvard_skye",
   "rarity": "rare",
   "slice": false,
@@ -2995,6 +4482,14 @@
   "name": "Mortlake Vey",
   "sig": "Soul lantern marks; the scythe sweep reaps marked foes",
   "look": "hooded black cloak, lantern, pale; black/teal",
+  "work": "guard: talent a tier up while home; revived allies rise with absorption; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 3
+   },
+   "secondary": null
+  },
   "id": "mortlake_vey",
   "rarity": "epic",
   "slice": false,
@@ -3016,6 +4511,14 @@
   "name": "Elowen Hollowmere",
   "sig": "The soul lantern on her scythe slows and tethers",
   "look": "short navy hair, oversized hood; navy/pale blue",
+  "work": "guard: talent a tier up while home; also cleanses member players; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "elowen_hollowmere",
   "rarity": "rare",
   "slice": false,
@@ -3037,6 +4540,14 @@
   "name": "Silas Underhill",
   "sig": "Grave mounds rise to shield allies; shovelled frost waves slow foes",
   "look": "top hat, long coat, spade; grey/brown",
+  "work": "builder: builds 20-40% faster, places 2-4 blocks up without scaffolds; drifts across mud and water with materials",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "silas_underhill",
   "rarity": "common",
   "slice": false,
@@ -3058,6 +4569,14 @@
   "name": "Morden Kesh",
   "sig": "Raises two skeleton servants; bone spears",
   "look": "hood, ribcage armour, green fire; black/green",
+  "work": "enchanter: takes the best of three offers, rerolls with a book; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "morden_kesh",
   "rarity": "epic",
   "slice": false,
@@ -3079,6 +4598,14 @@
   "name": "Hespera Gravesend",
   "sig": "Zombie servants and rot zones",
   "look": "black twin braids, skull hairpin; black/sickly green",
+  "work": "hauler: carries 30-36 slots, sorts 25-55% faster; drifts over mud and water with full loads",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "hespera_gravesend",
   "rarity": "common",
   "slice": false,
@@ -3100,6 +4627,14 @@
   "name": "Osric Mallow",
   "sig": "Bone-flute march slows the living",
   "look": "thin, patched coat, bone flute; grey/green",
+  "work": "enchanter: best-of-three enchanting now, faster brewing later; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "osric_mallow",
   "rarity": "rare",
   "slice": false,
@@ -3121,6 +4656,17 @@
   "name": "Wren Halloway",
   "sig": "Commands two wolves; a whip crack taunts",
   "look": "fur hat, whip, ranger coat; tan/red",
+  "work": "animal_carer: grows calves by feeding them, 2-4 pairs a round, extra wool; errands at a run, steps up blocks",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "wren_halloway",
   "rarity": "common",
   "slice": false,
@@ -3142,6 +4688,17 @@
   "name": "Merith Talon",
   "sig": "Her hawk dives at marked foes",
   "look": "leather glove, feathered hood; brown/sky blue",
+  "work": "scout: scouts 32-64 blocks farther, maps 5x5 sectors; covers ground at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "merith_talon",
   "rarity": "rare",
   "slice": false,
@@ -3163,6 +4720,17 @@
   "name": "Bjarke Honeyford",
   "sig": "A bear companion (iron golem drawn as a bear)",
   "look": "bear-pelt cloak, braided beard; brown/honey",
+  "work": "animal_carer: grows calves by feeding them, 2-4 pairs a round, extra wool; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "bjarke_honeyford",
   "rarity": "common",
   "slice": false,
@@ -3184,6 +4752,17 @@
   "name": "Torin Highspear",
   "sig": "Jump: leaves the ground high and lands with a shockwave on a marker",
   "look": "dragon helm, scale armour; red/black",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "glider",
+    "tier": 1
+   }
+  },
   "id": "torin_highspear",
   "rarity": "epic",
   "slice": false,
@@ -3205,6 +4784,17 @@
   "name": "Kestrel Ardent",
   "sig": "Diving-thrust chain; each dive goes higher",
   "look": "silver ponytail, wyvern helm; silver/teal",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "kestrel_ardent",
   "rarity": "common",
   "slice": false,
@@ -3226,6 +4816,14 @@
   "name": "Roderic Lancefield",
   "sig": "Lance charge across the arena; stops hard against walls",
   "look": "plumed helm, heavy lance; steel/green",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "roderic_lancefield",
   "rarity": "rare",
   "slice": false,
@@ -3247,6 +4845,17 @@
   "name": "Hrafn Bloodmane",
   "sig": "Rage: damage taken becomes attack; never retreats",
   "look": "wild red beard, fur cloak, war paint; red/brown",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); hauls full log loads without slowing",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "hrafn_bloodmane",
   "rarity": "common",
   "slice": false,
@@ -3268,6 +4877,17 @@
   "name": "Runa Ironvow",
   "sig": "Shield-maiden: trembles at first, then her war cry turns every block into a counter",
   "look": "blonde braids, bear pelt, round shield; brown/blue",
+  "work": "woodcutter: Fortune +1-3 on leaves (saplings, apples); hauls full log loads without slowing",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "runa_ironvow",
   "rarity": "rare",
   "slice": false,
@@ -3289,6 +4909,17 @@
   "name": "Ulfgar Stonejaw",
   "sig": "Hatchets that return like boomerangs; a thunder leap to close in",
   "look": "shaggy hair, stone-studded armour; grey/brown",
+  "work": "miner: Fortune +1-3 on the ores it mines; bounds up shaft steps, leaps cave gaps",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "ulfgar_stonejaw",
   "rarity": "common",
   "slice": false,
@@ -3310,6 +4941,17 @@
   "name": "Clementine Vask",
   "sig": "Bolt barrage, then a piercing bolt",
   "look": "goggles, long coat, ponytail; brown/brass",
+  "work": "guard: own marksman +2-4 stacks over the cap; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "clementine_vask",
   "rarity": "rare",
   "slice": false,
@@ -3331,6 +4973,14 @@
   "name": "Odessa Quarrel",
   "sig": "Poison bolts from behind a planted pavise",
   "look": "heavy coat, helm, pavise; olive/steel",
+  "work": "guard: talent a tier up while home; repairs breaches itself, 1.5x builder speed; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "odessa_quarrel",
   "rarity": "common",
   "slice": false,
@@ -3352,6 +5002,14 @@
   "name": "Fennick Brass",
   "sig": "Net bolts tether; shock nets",
   "look": "goggles, brass arm brace; brass/blue",
+  "work": "builder: builds 10-30% faster, faster rails later; builds walls while clinging",
+  "mobility": {
+   "primary": {
+    "trait": "climber",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "fennick_brass",
   "rarity": "rare",
   "slice": false,
@@ -3373,6 +5031,17 @@
   "name": "Ezra Blackwake",
   "sig": "Storm captain: each cutlass hit sings a shanty buff; he calls guards as his crew",
   "look": "tricorne, long coat, eye scar; navy/gold",
+  "work": "trader: prices -10 to -30%, carries 30-36 slots; swims rivers on village trips",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "ezra_blackwake",
   "rarity": "common",
   "slice": false,
@@ -3394,6 +5063,17 @@
   "name": "Nerys Saltmarsh",
   "sig": "Harpoon tether pulls foes in",
   "look": "harpoon, sea coat, braided hair; teal/sand",
+  "work": "fisherman: Luck of the Sea and Lure +1-3; swims to the deepest water",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "nerys_saltmarsh",
   "rarity": "rare",
   "slice": false,
@@ -3415,6 +5095,17 @@
   "name": "Jory Flint",
   "sig": "Powder shots leave fuse kegs that burst (no block damage)",
   "look": "bandana, bomb belt; red/brown",
+  "work": "trader: prices -10 to -20%, larger tribute loads; swims rivers on village trips",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "jory_flint",
   "rarity": "common",
   "slice": false,
@@ -3436,6 +5127,14 @@
   "name": "Florian Ashvale",
   "sig": "Ballads buff allies; a discord chord weakens foes",
   "look": "feathered cap, red doublet; red/cream",
+  "work": "guard: talent a tier up while home; pacts carried in person +0.1-0.2; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "florian_ashvale",
   "rarity": "rare",
   "slice": false,
@@ -3457,6 +5156,17 @@
   "name": "Linnea Harrowgate",
   "sig": "Harp-bow notes arc like arrows; a lullaby cone puts foes to sleep (stun)",
   "look": "long wavy hair, harp; ice blue/silver",
+  "work": "guard: talent a tier up while home; its festivals last 25-50% longer; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "swimmer",
+    "tier": 1
+   }
+  },
   "id": "linnea_harrowgate",
   "rarity": "common",
   "slice": false,
@@ -3478,6 +5188,17 @@
   "name": "Pell Wickham",
   "sig": "Flute trills mark foes; stiletto lunges at the marks",
   "look": "patchwork coat, flute; brown/green",
+  "work": "scout: nears rival walls unseen, names the heroes it sees; double-jumps ravines",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "pell_wickham",
   "rarity": "rare",
   "slice": false,
@@ -3499,6 +5220,14 @@
   "name": "Ottoline Brassbury",
   "sig": "Acid flasks burn over time; foam flasks slow",
   "look": "goggles, lab coat, braid; white/green",
+  "work": "enchanter: best-of-three enchanting now, faster brewing later; bounds over gaps instead of bridging",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "ottoline_brassbury",
   "rarity": "common",
   "slice": false,
@@ -3520,6 +5249,14 @@
   "name": "Dorothea Mixwell",
   "sig": "Medicine bolts heal allies at range",
   "look": "white coat, satchel; white/pink",
+  "work": "guard: talent a tier up while home; carries its own 2-4 triage meals; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "dorothea_mixwell",
   "rarity": "rare",
   "slice": false,
@@ -3541,6 +5278,14 @@
   "name": "Ignaz Coggleby",
   "sig": "A clockwork golem (iron golem drawn as clockwork)",
   "look": "goggles on the head, leather apron; copper/brown",
+  "work": "builder: builds 10-30% faster, faster rails later; bounds up scaffolds two blocks at a time",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "ignaz_coggleby",
   "rarity": "common",
   "slice": false,
@@ -3562,6 +5307,14 @@
   "name": "Maris Coralline",
   "sig": "Siren song pulls foes in; tidal waves",
   "look": "teal hair, fin ears, scale skirt; teal/pearl",
+  "work": "fisherman: Luck of the Sea and Lure +1-3; swims to the deepest water",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "maris_coralline",
   "rarity": "rare",
   "slice": false,
@@ -3583,6 +5336,14 @@
   "name": "Ondine Shellbright",
   "sig": "Dolphin spirits leap from her song to shield allies",
   "look": "pearl hair beads, coral staff; coral/white",
+  "work": "guard: talent a tier up while home; heals the most hurt NPC by hand every 20 s; guards the shore and the water gate",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "ondine_shellbright",
   "rarity": "common",
   "slice": false,
@@ -3604,6 +5365,17 @@
   "name": "Thalassor Wake",
   "sig": "Throws tridents that drag foes in a whirlpool; a tidal charge",
   "look": "fin ears, scale armour, trident; deep blue/silver",
+  "work": "fisherman: Luck of the Sea and Lure +1-3; swims to the deepest water",
+  "mobility": {
+   "primary": {
+    "trait": "swimmer",
+    "tier": 3
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "thalassor_wake",
   "rarity": "epic",
   "slice": false,
@@ -3625,6 +5397,17 @@
   "name": "Hoshimi Utano",
   "sig": "Encore: buffs grow with her combo; a spotlight zone",
   "look": "pink twin tails, star hair clips, stage dress; pink/white",
+  "work": "guard: talent a tier up while home; its festivals last 25-50% longer; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "hoshimi_utano",
   "rarity": "common",
   "slice": false,
@@ -3646,6 +5429,17 @@
   "name": "Kyoka Sonare",
   "sig": "Feedback waves from the microphone stand",
   "look": "black bob, rock-stage jacket; black/electric blue",
+  "work": "guard: talent a tier up while home; Looting +1-3 on its own kills; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "kyoka_sonare",
   "rarity": "rare",
   "slice": false,
@@ -3667,6 +5461,14 @@
   "name": "Haru Kanade",
   "sig": "Shadow-dance strings of spin kicks; a pose counter",
   "look": "styled hair, tailed stage jacket; white/purple",
+  "work": "guard: talent a tier up while home; Looting +1-3 on its own kills; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "haru_kanade",
   "rarity": "common",
   "slice": false,
@@ -3688,6 +5490,14 @@
   "name": "Lucas Miyabe",
   "sig": "Cold-light beams sweep the stage and leave frosted ground",
   "look": "slick silver hair, sequined coat; silver/ice blue",
+  "work": "guard: talent a tier up while home; its festivals last 25-50% longer; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "lucas_miyabe",
   "rarity": "rare",
   "slice": false,
@@ -3709,6 +5519,15 @@
   "name": "Momoka Akebono",
   "sig": "Transformation at 60%: a new outfit and a ribbon bind",
   "look": "pink-red curls, frilly outfit; red/white",
+  "work": "guard: talent a tier up while home; same-job NPCs near it work 5-10% faster; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "star wings"
+  },
   "id": "momoka_akebono",
   "rarity": "common",
   "slice": false,
@@ -3730,6 +5549,14 @@
   "name": "Sorane Hoshizaki",
   "sig": "Heart-shield bash; ribbons bind whoever strikes her shield",
   "look": "twin tails, long ribbon; blue/yellow",
+  "work": "guard: talent a tier up while home; pacts carried in person +0.1-0.2; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "sorane_hoshizaki",
   "rarity": "rare",
   "slice": false,
@@ -3751,6 +5578,17 @@
   "name": "Sho Kagayaki",
   "sig": "Armour forms at 60%; it grows stronger with each hit he blocks",
   "look": "spiky hair, visor, armour; white/red",
+  "work": "guard: talent a tier up while home; 15-35% chance a recruit payment brings two; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "leaper",
+    "tier": 1
+   }
+  },
   "id": "sho_kagayaki",
   "rarity": "epic",
   "slice": false,
@@ -3772,6 +5610,15 @@
   "name": "Akito Hoshinaga",
   "sig": "Star familiars orbit him and fire on his marks",
   "look": "soft hair, star cape; navy/gold",
+  "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; patrols above its own walls",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": null,
+   "carrier": "star wings"
+  },
   "id": "akito_hoshinaga",
   "rarity": "rare",
   "slice": false,
@@ -3793,6 +5640,17 @@
   "name": "Edith Lindell",
   "sig": "Sweeping strings and a dust cloud that blinds",
   "look": "classic long maid dress, headdress, glasses; black/navy",
+  "work": "hauler: carries 30-36 slots, sorts 25-55% faster; hauls at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "edith_lindell",
   "rarity": "common",
   "slice": false,
@@ -3814,6 +5672,14 @@
   "name": "Marianne Tilly",
   "sig": "Head maid: rings for the house staff (guards) and two teapot helpers",
   "look": "short maid dress, apron, teapot; pink/white",
+  "work": "chef: smoker 20-40% faster, 15-35% chance of a second dish; errands at a run, steps up blocks",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "marianne_tilly",
   "rarity": "rare",
   "slice": false,
@@ -3835,6 +5701,17 @@
   "name": "Alistair Penwright",
   "sig": "Guards his leader: parries and counters, never leaves his side",
   "look": "tailcoat, white gloves, monocle; black/white",
+  "work": "hauler: carries 30-36 slots, sorts 25-55% faster; hauls at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "alistair_penwright",
   "rarity": "common",
   "slice": false,
@@ -3856,6 +5733,17 @@
   "name": "Reginald Ashby",
   "sig": "Precise cane-crossbow shots; a polite bow before each",
   "look": "tailcoat, cane; grey/burgundy",
+  "work": "guard: talent a tier up while home; raid parties with it keep formation; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "reginald_ashby",
   "rarity": "rare",
   "slice": false,
@@ -3877,6 +5765,17 @@
   "name": "Lavinia de Montclair",
   "sig": "Riposte and a lunge chain; her ringlets bounce on each lunge",
   "look": "ringlet curls, ruffled coat; lilac/white",
+  "work": "guard: talent a tier up while home; its talents at full tier at a stewarded base; vaults to any alarm",
+  "mobility": {
+   "primary": {
+    "trait": "acrobat",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "runner",
+    "tier": 1
+   }
+  },
   "id": "lavinia_de_montclair",
   "rarity": "common",
   "slice": false,
@@ -3898,6 +5797,17 @@
   "name": "Armand Valcourt",
   "sig": "Duel challenge: marks one foe and fights it better",
   "look": "blond hair, blue doublet; blue/gold",
+  "work": "guard: own duelist +2-4 stacks over the cap; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "acrobat",
+    "tier": 1
+   }
+  },
   "id": "armand_valcourt",
   "rarity": "rare",
   "slice": false,
@@ -3919,6 +5829,14 @@
   "name": "Percival Kingsley",
   "sig": "Cane-sword trips stun; a monocle mark",
   "look": "monocle, top hat, cane; grey/plum",
+  "work": "guard: talent a tier up while home; its talents at full tier at a stewarded base; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "percival_kingsley",
   "rarity": "common",
   "slice": false,
@@ -3940,6 +5858,17 @@
   "name": "Selene-7",
   "sig": "Shield matrix breaks after enough hits; the visor slides down",
   "look": "white synthetic skin seams, long straight cyan-tinted hair, a halo-ring antenna; white/cyan",
+  "work": "builder: own diligence +2-4 stacks over the cap; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "selene_7",
   "rarity": "rare",
   "slice": false,
@@ -3961,6 +5890,14 @@
   "name": "Vesta Mk II",
   "sig": "Shoulder-lens beam with a long charge tell; her fear protocol overheats, then she steadies",
   "look": "metal panels, cable ponytail, a round lens over one eye; grey/lilac",
+  "work": "builder: builds 10-30% faster, faster rails later; glides down from heights to its work",
+  "mobility": {
+   "primary": {
+    "trait": "glider",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "vesta_mk_ii",
   "rarity": "common",
   "slice": false,
@@ -3982,6 +5919,14 @@
   "name": "Orrin-4",
   "sig": "Repair drones heal allies",
   "look": "boxy frame, antenna; teal/white",
+  "work": "guard: talent a tier up while home; carries its own 2-4 triage meals; drifts over water, mud and gaps",
+  "mobility": {
+   "primary": {
+    "trait": "hover",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "orrin_4",
   "rarity": "rare",
   "slice": false,
@@ -4003,6 +5948,18 @@
   "name": "Tetsu-9",
   "sig": "Rocket-punch shots and a rush",
   "look": "heavy frame, exhaust ports; red/steel",
+  "work": "miner: Fortune +1-3 on the ores it mines; flies to far mine sites, walks the shafts",
+  "mobility": {
+   "primary": {
+    "trait": "flyer",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "carrier": "jets"
+  },
   "id": "tetsu_9",
   "rarity": "common",
   "slice": false,
@@ -4024,6 +5981,14 @@
   "name": "Sophia Glasswick",
   "sig": "Board control: marked squares become zones",
   "look": "glasses, long coat, chess-piece pin; black/white",
+  "work": "guard: talent a tier up while home; raid parties with it keep formation; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "sophia_glasswick",
   "rarity": "rare",
   "slice": false,
@@ -4045,6 +6010,17 @@
   "name": "Kasimir Vell",
   "sig": "Orders: allies gain buffs; guards form up",
   "look": "military coat, flags; navy/red",
+  "work": "guard: talent a tier up while home; its talents at full tier at a stewarded base; answers alarms at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "kasimir_vell",
   "rarity": "common",
   "slice": false,
@@ -4066,6 +6042,17 @@
   "name": "Ione Marchetti",
   "sig": "Predicts a foe's dodge and fires where it will be",
   "look": "glasses, scarf, notebook; green/grey",
+  "work": "scout: nears rival walls unseen, names the heroes it sees; covers ground at a run",
+  "mobility": {
+   "primary": {
+    "trait": "runner",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "climber",
+    "tier": 1
+   }
+  },
   "id": "ione_marchetti",
   "rarity": "rare",
   "slice": false,
@@ -4087,6 +6074,17 @@
   "name": "Dunstan Hearthe",
   "sig": "Rivet bolts heat-stack; an anvil-drop finisher",
   "look": "leather apron, burn scars; brown/orange",
+  "work": "blacksmith: crafts 25-55% faster, repairs 30-40% per material; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 1
+   }
+  },
   "id": "dunstan_hearthe",
   "rarity": "common",
   "slice": false,
@@ -4108,6 +6106,17 @@
   "name": "Hilde Coalbright",
   "sig": "Heat stacks make her hammer glow; a quench burst",
   "look": "short hair, soot, apron; black/orange",
+  "work": "blacksmith: crafts 25-55% faster, repairs 30-40% per material; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "ember_stride",
+    "tier": 1
+   }
+  },
   "id": "hilde_coalbright",
   "rarity": "rare",
   "slice": false,
@@ -4129,6 +6138,14 @@
   "name": "Ewald Runeforge",
   "sig": "Rune armour on allies (shields)",
   "look": "braided beard, runic apron; grey/blue",
+  "work": "blacksmith: crafts 25-55% faster, repairs 30-40% per material; sure-footed under heavy loads",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 1
+   },
+   "secondary": null
+  },
   "id": "ewald_runeforge",
   "rarity": "common",
   "slice": false,
@@ -4150,6 +6167,17 @@
   "name": "Paloma Brava",
   "sig": "Grab-throws, a slam, and a flexing taunt",
   "look": "wrestling mask, cape; red/gold",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; bounds up to the wall walk",
+  "mobility": {
+   "primary": {
+    "trait": "leaper",
+    "tier": 2
+   },
+   "secondary": {
+    "trait": "charger",
+    "tier": 1
+   }
+  },
   "id": "paloma_brava",
   "rarity": "rare",
   "slice": false,
@@ -4171,6 +6199,14 @@
   "name": "Nagisa Kurogane",
   "sig": "Counter throws and grabs",
   "look": "training uniform, black belt; white/black",
+  "work": "guard: talent a tier up while home; same-job NPCs near it work 5-10% faster; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "nagisa_kurogane",
   "rarity": "common",
   "slice": false,
@@ -4192,6 +6228,14 @@
   "name": "Daisuke Onoyama",
   "sig": "Slap barrage, belly push; a salt toss cleanses",
   "look": "topknot, wrestling belt; white/navy",
+  "work": "guard: talent a tier up while home; spars at dawn: 2-4 soldiers gain XP; holds the gate, shrugs off knockback",
+  "mobility": {
+   "primary": {
+    "trait": "charger",
+    "tier": 2
+   },
+   "secondary": null
+  },
   "id": "daisuke_onoyama",
   "rarity": "rare",
   "slice": false,

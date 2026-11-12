@@ -11,6 +11,8 @@ format-1 reference.
 Companion files (this folder):
 - `ROSTER_PLAN.md`: the 200 heroes (100 female, 100 male), generated and checked by `roster/`.
 - `SLICE_PLAN.md`: the first milestone, 8 complete heroes and hero-led factions in a real campaign.
+- `MOBILITY_AND_WORK.md`: heroes' superhuman mobility (jumps, climbing, gliding, flight, swimming) and work mastery;
+  it wins over this document on those two subjects.
 - `research-archetypes.md`, `research-animation.md`, `research-systems.md`: the three studies this design merges.
   Where a study and this document differ, this document wins.
 
@@ -75,13 +77,20 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
     batches of 24, each gated by checks, a contact sheet, in-game screenshots and a short campaign.
 11. **Player-like rules hold.** No teleporting (decoys are visual and pop; dashes, leaps and charges are physical
     pushes), abilities never place, break or ignite blocks, kit items are vanilla items bound to the hero, damage goes
-    through vanilla armour, shields and enchantments, NPC wars never see boss numbers.
+    through vanilla armour, shields and enchantments, NPC wars never see boss numbers. Superhuman mobility (decision
+    15) is physical movement too, so it keeps this rule.
 12. **The v1 owner-hero workflow is retired** (open question 2): no hero folder with owner skins, no skin payloads. The
     config folder stays for operators to override a built-in hero's kit or personality; a format-1 file still loads
     and uses a neutral fallback model.
 13. **All heroes are adults with modest outfits.** Youthful looks are a drawing style, not an age.
 14. **No recorded voices.** Dialogue is text (chat line and a speech bubble) with a talking mouth and pitched vanilla
     "voice blips". Recording voices for 200 original characters is out of scope.
+15. **Heroes move and work better than players** (the owner's request of 2026-11-12; this reverses the earlier "heroes
+    move like players, nobody flies"): each hero has a mobility trait with a tier (runner, charger, leaper, acrobat,
+    climber, glider, flyer, hover, swimmer; snow and fire footings), about 13% of the roster flies with a stamina bar,
+    and every hero works its duty with a proficiency plus a specialty from its primary talent. Fairness is enforced by
+    the mod (flyers land to strike, can be shot down, never cross a hostile base's walls), teleporting stays out, and
+    workers and soldiers stay player-like. `MOBILITY_AND_WORK.md`.
 
 ---
 
@@ -97,7 +106,8 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
 | Kit | 4 skills, ultimate, 4 passives, empowered state | up to 12 moves with frames, bands and phases; 8 new forms, 7 new effects; up to 3 states; v1 files still load |
 | Boss | a boss bar while it fights | boss mode (section 6) |
 | Factions | a starter hero per fixed faction | the leader founds the faction; identity and director decisions come from it |
-| Non-combat | 5 base abilities | 35 talents, duty, `court`, edicts (M2) |
+| Non-combat | 5 base abilities | 35 talents, duty, `court`, edicts (M2); work mastery (`MOBILITY_AND_WORK.md` part 2) |
+| Movement | player-like walking | a mobility trait per hero, flight included (`MOBILITY_AND_WORK.md` part 1); workers unchanged |
 | Network | four skin payloads | none for art (assets are in the jar); four synced entity fields; a faction identity payload |
 | Validation | kit validator | the same pipeline extended, plus an asset validator, a roster checker and review gates |
 
@@ -848,6 +858,9 @@ pick by weighted random among candidates with score > 0; none -> keep spacing an
 | `counter` | the attacker | `stance` 0.8-2 s, `absorb` 50-90% (80), `ranged` false | a `HeroStatus` stance flag read in `onIncomingDamage`; the stance is the move's wind-up for the class minimum and the riposte is instant; the riposte's effects stay within the skill cap; arrows are not countered unless `ranged` | riposte x 0.75 |
 | `barrage` | the target, shot after shot | `count` 3-10 (5), `interval` 0.15-0.6 s, `projectile`, optional `per_shot` effect lists (cycled) | sequential v1 `shot`s re-aimed at fire time | damage x count x 0.75 |
 
+A ninth form, `dive` (from the air or the top of a jump onto a growing landing decal), belongs to heroes with an
+airborne mobility trait: `MOBILITY_AND_WORK.md` section 7.3, with the new conditions of 7.5 there.
+
 ### 6.6 New effects, conditions and triggers
 
 | Effect | Fields | What it does |
@@ -995,6 +1008,9 @@ and a passed chance replaces the next pick (never a move in progress).
 5. Hazard-aware knockback (6.12).
 6. Boss mode never starts against creative or spectator players; the damage cap applies only to player sources, so NPC
    wars are unaffected.
+7. Mobility: an air budget per take-off, melee only on the ground or as a telegraphed `dive`, no hovering out of reach,
+   air poise (shot down by arrows, bolts, tridents, wind charges), no climbing or flying over hostile walls, travel
+   bonuses off in fights (`MOBILITY_AND_WORK.md` section 5).
 
 ---
 
@@ -1002,8 +1018,10 @@ and a passed chance replaces the next pick (never a move in progress).
 
 ### 7.1 Duty and court
 
-Every hero has a `duty` (v1 §8: guard, scout or any worker job). It does that job with today's code, at player speed,
-counts as that worker for its base's needs, and is never retrained. A leader's duty becomes `court` while it leads
+Every hero has a `duty` (v1 §8: guard, scout or any worker job). It does that job with today's code, with player-like
+actions (blocks take ticks to break, real furnaces, vanilla loot) but better than a worker (work mastery: a proficiency
+and a specialty from its primary talent, `MOBILITY_AND_WORK.md` part 2), counts as that worker for its base's needs,
+and is never retrained. A leader's duty becomes `court` while it leads
 (section 5.6). Every hero, whatever its duty, answers alarms and fights.
 
 **A leader's day** (court duty; PROPOSED): dawn, a short stop at the station (milestone 2: the council runs here);
@@ -1150,6 +1168,7 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
 | `DATA_ACTION` | Integer | bits 0-7 action code (appendix D); 8-11 sequence (+1 per new action, so a repeat restarts); 12-17 speed (`0.5 + n x 1.5 / 63`); 18-23 variant (combo step or a random variant); 24-31 reserved |
 | `DATA_STATE` | Byte | bits 0-1 phase - 1; 2 enraged; 3 super armour; 4 weapon drawn; 5 talking; 6 in a wind-up or channel (no blinking); 7 yielding |
 | `DATA_MOOD` | Byte | bits 0-3 mood (12 values); 4-5 intensity; 6 blush; 7 eyes glow |
+| `DATA_LOCO` | Byte | locomotion mode (fly, glide, climb, hover...), one-shot and sequence bits, tired: `MOBILITY_AND_WORK.md` 4.2 |
 
 Faction, role and variant stay in the existing `FactionNpc` fields.
 
@@ -1243,6 +1262,7 @@ strict reporting). Added: colours are `"#RRGGBB"`; part ids are `<category>/<nam
 | `voice` | no | by gender and temperament | 12.14 |
 | `lines` | no | temperament banks | 12.15 |
 | `recruit`, `relationships` | no | by temperament / none | 12.16 (read from milestone 1, used from milestone 3) |
+| `mobility` | no | from archetype (tier 1) | primary and secondary trait with tier ceilings, carrier, aerial phases, travel, avoid: `MOBILITY_AND_WORK.md` section 8 |
 | `art` | yes (source) | - | 12.5 (source file only) |
 | `animations` | yes (source) | - | 12.6 (source file only) |
 
@@ -2111,7 +2131,13 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | C2 | Slice heroes: Benika Akagane and Yugen Kagaribi | C1 | M | same |
 | C3 | Slice heroes: Kagenori Tsurumine and Ambrose Nettlewick | C1 | M | same |
 | C4 | Slice heroes: Ilsabet Frostmere and Tobimaru Usugumo | C1 | M | same |
-| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, L1-L5, C1-C4 | M | every existing GameTest plus the about 81 new ones pass |
+| F5 | Mobility and work-mastery pure logic: `MobilityRules`, `LeapSolver`, `FlightPlanner`, link rules, `WorkMastery`; the `mobility` block and the `dive` form in the catalogue and validator (`MOBILITY_AND_WORK.md` 18.1) | F1, F2 | M | `MobilityRulesTest`, `LeapSolverTest`, `FlightPlannerTest`, `HeroLinksTest`, `WorkMasteryTest` |
+| A10 | Mobility engine: tiered attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2 |
+| A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, hostile airspace, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day |
+| A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids (scout and harass, no wall crossing), the fairness rules | A6, A10, A11 | M | the boss mobility GameTests |
+| G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases |
+| L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
+| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 81 new ones and the 27 of `MOBILITY_AND_WORK.md` 17.2 pass |
 | V2 | Screenshot session for the owner (SLICE_PLAN.md section 7) and render measurements | A2, C1-C4 | M | the gallery exists; numbers recorded |
 | V3 | Campaign runs A and B (8 days each), C (3 + 3 days), the 2-day baseline, the old-world load, tick time (SLICE_PLAN.md 6.4) | all | L | SLICE_PLAN.md section 6 criteria met |
 | V4 | Adversarial review and fixes | V1-V3 | M | review findings closed |
@@ -2119,7 +2145,10 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 
 Order: A0, F1, F4, G1 and L1 can start at once (L1 does not need GeckoLib). The critical path is F1 -> F2 -> A1 -> A3
 -> A5 -> A6 -> V1 -> V3 (six L tasks in a row before the campaign runs; A0 is small and runs beside F1), with G1 -> G3
--> G4 -> G5, G1 -> G6a-c and then C1-C4 alongside.
+-> G4 -> G5, G1 -> G6a-c and then C1-C4 alongside. Mobility and work mastery (F5, A10-A12, G10, L5m) are in this
+milestone because the slice must prove them before batches are authored and its heroes use them (Ambrose flies); A10
+and A11 need only A1 and run beside A3-A6, G10 beside G5, L5m beside L5, so only A12 (after A6, before V1) lengthens
+the critical path (`MOBILITY_AND_WORK.md` 18.1).
 
 ### 15.3 Milestone 2: systems breadth
 
@@ -2134,6 +2163,9 @@ Order: A0, F1, F4, G1 and L1 can start at once (L1 does not need GeckoLib). The 
 | A9 | Custom projectile models (talismans, kunai, stars, foxfire, flasks, notes) through one GeckoLib projectile renderer | A2, G1 | M |
 | G8 | The other 9 style libraries; parts library to the full size of 13.3 | G5, G6 | L |
 | G9 | Ten more base styles (appendix B) | L4 | M |
+| A13 | Mobility breadth: `hover`, swimmer II-III (amphibious navigation, diving), lava and snow footings II, fixture heroes for them (`MOBILITY_AND_WORK.md` 18.2) | A11 | M |
+| L10m | Specialties of the 17 milestone-2 talents | L10, L5m | S |
+| G10b | The other carriers (cloud, sword, paper crane, jets, kite, canopies, light wings) and the swim and hover animations | G10, G8 | M |
 | V6 | Review, a campaign check with diplomacy on, docs, jar | all of M2 | M |
 
 ### 15.4 Milestones 3-10: content batches (ROSTER_PLAN.md section 6)
@@ -2189,6 +2221,8 @@ reload time, a 64-hero lineup); the 30-day soak; adversarial review; docs; relea
    and answered on 2026-11-12, so you may see no prompt at all; if it is refused again when the work starts, you will
    see a prompt to allow it once. After that the library is stored in the repository and the host is no longer needed.
    (An action for you, not a design choice.)
+5. **Mobility and work mastery.** Four questions in `MOBILITY_AND_WORK.md` section 19: flyers never crossing a hostile
+   base's walls, which archetypes fly (27 of 200), tiers growing with level, and the size of the extra output.
 
 ---
 

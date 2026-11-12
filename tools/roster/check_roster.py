@@ -12,7 +12,15 @@ Rules (HEROES_V2.md section 14.3 and ROSTER_PLAN.md sections 2 and 8):
 - balance: each role 28-30 with a gender split within 1, each element 24-26, each weapon style 9-17,
   each temperament 5-9, each talent at least 2 and at most 12, each duel style at least 4 times;
 - the slice: 4 F + 4 M, all eight elements, eight different temperaments;
-- no name uses a token rejected by a clearance review (REJECTED_TOKENS; ROSTER_PLAN.md section 8, step 4).
+- no name uses a token rejected by a clearance review (REJECTED_TOKENS; ROSTER_PLAN.md section 8, step 4);
+- mobility (MOBILITY_AND_WORK.md sections 1 and 14): a primary trait the archetype allows (ARCH_MOBILITY) with tier 1-3,
+  an optional secondary of another family with tier 1-2 and at most the primary's; tier 3 only for epic and legendary
+  heroes; flight only for archetypes with a flight carrier and never with a glider or hover secondary; hover and glider
+  never together; snowstride needs frost (or a snow spirit), ember_stride fire (or a phoenix); a look with wings flies
+  or glides; a signature that leaps, hops, pounces, vaults, wall-runs or dives has an airborne trait, one that charges
+  has charger; flyers are 10-15% of the roster with a gender split within 3; every primary family 8-50 heroes; the
+  slice's primaries cover at least 5 families and include a flyer;
+- work mastery: a line starting with the hero's duty, 20-170 characters.
 """
 import collections
 import importlib.util
@@ -70,6 +78,45 @@ TALENT_DUTY = {"master_chef": "chef", "forgemaster": "blacksmith", "surveyor": "
                "engineer": "builder", "aura_prospector": "miner", "aura_green_thumb": "farmer",
                "aura_regrowth": "woodcutter", "aura_mason": "builder", "aura_diligence": "builder",
                "aura_hardy": "hauler", "aura_thrifty": "smelter", "aura_marksman": "guard", "aura_duelist": "guard"}
+# Mobility (MOBILITY_AND_WORK.md section 1). Primary families, and the secondary-only elemental footings.
+MOBILITY_PRIMARY = ["runner", "charger", "leaper", "acrobat", "climber", "glider", "flyer", "hover", "swimmer"]
+MOBILITY_SECONDARY = [m for m in MOBILITY_PRIMARY if m != "flyer"] + ["snowstride", "ember_stride"]
+AIRBORNE = {"leaper", "acrobat", "glider", "flyer"}
+# Primary traits each archetype may take (the first is the format-2 default when a hero file has no mobility block).
+ARCH_MOBILITY = {
+    "cat": ["acrobat", "climber", "runner"], "fox": ["runner", "leaper", "glider", "acrobat"],
+    "wolf": ["runner", "charger"], "tanuki": ["charger", "leaper", "glider", "runner"],
+    "moon_rabbit": ["leaper", "acrobat"], "oni": ["charger", "runner", "leaper"], "tengu": ["flyer", "glider"],
+    "snow_spirit": ["hover"], "kappa": ["swimmer"], "spider_weaver": ["climber"],
+    "east_dragon": ["flyer", "swimmer", "acrobat"], "west_dragon": ["flyer", "glider", "leaper", "charger"],
+    "komainu": ["charger", "leaper", "acrobat"], "plant_spirit": ["climber", "glider", "charger"],
+    "shrine": ["runner", "leaper", "charger"], "onmyoji": ["glider", "hover", "flyer"],
+    "samurai": ["charger", "leaper", "runner"], "wanderer": ["runner", "acrobat", "charger"],
+    "ninja": ["acrobat", "climber", "glider"], "warrior_monk": ["charger", "leaper", "runner", "acrobat"],
+    "fan_dancer": ["acrobat", "glider"], "delinquent": ["runner", "charger", "leaper"],
+    "battle_chef": ["runner", "charger"], "storm_drummer": ["leaper", "runner", "glider"],
+    "sword_cultivator": ["flyer", "hover", "acrobat", "runner"], "martial_artist": ["acrobat", "leaper", "charger"],
+    "jiangshi": ["leaper", "charger"], "phoenix": ["flyer"], "knight": ["charger"], "paladin": ["charger", "flyer"],
+    "battle_priest": ["runner", "charger"], "witch": ["flyer", "glider", "hover"],
+    "elf": ["runner", "climber", "acrobat"], "vampire": ["flyer", "glider", "charger"],
+    "demon_lord": ["flyer", "acrobat", "runner", "hover"], "angel": ["flyer"], "reaper": ["hover", "runner"],
+    "necromancer": ["hover", "runner"], "beast_tamer": ["runner", "charger"], "dragoon": ["leaper", "charger"],
+    "berserker": ["charger", "leaper"], "arbalist": ["runner", "charger", "climber"], "corsair": ["swimmer"],
+    "bard": ["runner", "acrobat"], "alchemist": ["runner", "leaper"], "siren": ["swimmer"],
+    "idol": ["acrobat", "runner"], "magical": ["flyer", "hover", "charger"], "maid_butler": ["runner"],
+    "noble_fencer": ["acrobat", "runner"], "android": ["hover", "glider", "flyer"], "tactician": ["runner"],
+    "smith": ["charger"], "grappler": ["leaper", "charger", "runner"],
+}
+# What carries a flyer (a part of the parts library: wings, or a `mounts/` part; MOBILITY_AND_WORK.md 2.5, 4.3).
+FLIGHT_CARRIER = {"tengu": "crow wings", "east_dragon": "cloud", "west_dragon": "dragon wings",
+                  "onmyoji": "paper crane", "sword_cultivator": "flying sword", "phoenix": "ember wings",
+                  "paladin": "light wings", "witch": "broom", "vampire": "bat wings", "demon_lord": "demon wings",
+                  "angel": "feathered wings", "magical": "star wings", "android": "jets"}
+SIG_AIRBORNE = re.compile(r"\b(leap|leaps|hop|hops|hopping|jump|pounce|vault|vaulting|wall-run|backflips?|"
+                          r"diving|dives from|wing dives|fallen dive)\b", re.I)
+SIG_CHARGE = re.compile(r"(?<!long )\bcharges?\b(?! (?:a |tell))", re.I)  # a run, not charging a spell or a beam
+# Rows whose signature words describe something other than the hero itself.
+FIT_EXEMPT = {171: "the dolphin spirits leap from her song, not she"}
 # Name parts rejected by a clearance review (desk review 2026-11-12, CRITIQUE.md): each matched a known character or
 # a real performer in the same archetype, so no later row may reuse it as a given name or surname.
 REJECTED_TOKENS = {"kagetora", "kagero", "hanayagi", "kikunosuke", "goji", "thalorien", "noctis", "copperpot",
@@ -87,17 +134,92 @@ def load_rows():
     rows = []
     for line in mod.ROWS.strip().splitlines():
         p = [x.strip() for x in line.split("|")]
-        if len(p) != 13:
+        if len(p) != 15:
             raise SystemExit(f"bad row ({len(p)} fields): {line}")
-        n, g, arch, role, style, prop, elem, temp, talent, duel, name, sig, look = p
+        n, g, arch, role, style, prop, elem, temp, talent, duel, name, sig, look, mob, work = p
         n = int(n)
         rows.append(dict(n=n, g=g, arch=arch, role=role, style=style, prop=prop, elem=elem, temp=temp,
-                         talent=talent, duel=duel, name=name, sig=sig, look=look,
+                         talent=talent, duel=duel, name=name, sig=sig, look=look, mob=mob, work=work,
+                         mobility=parse_mobility(mob),
                          id=re.sub(r"[^a-z0-9]+", "_", name.lower().replace("'", "")).strip("_"),
                          rarity="legendary" if n in LEGENDARY else "epic" if n in EPIC
                          else ("rare" if n % 2 == 0 else "common"),
                          slice=n in SLICE))
     return rows
+
+
+def parse_mobility(text):
+    """'acrobat:3+climber:1' -> {'primary': {'trait': 'acrobat', 'tier': 3}, 'secondary': {...} or None}."""
+    parts = []
+    for chunk in text.split("+"):
+        m = re.fullmatch(r"([a-z_]+):([0-9])", chunk.strip())
+        parts.append({"trait": m.group(1), "tier": int(m.group(2))} if m else {"trait": chunk.strip(), "tier": 0})
+    return {"primary": parts[0], "secondary": parts[1] if len(parts) > 1 else None, "extra": parts[2:]}
+
+
+def mobility_traits(r):
+    m = r["mobility"]
+    return {m["primary"]["trait"]} | ({m["secondary"]["trait"]} if m["secondary"] else set())
+
+
+def check_mobility(rows):
+    errs = []
+    for r in rows:
+        m, n = r["mobility"], r["n"]
+        pri, sec = m["primary"], m["secondary"]
+        if m["extra"]:
+            errs.append(f"{n}: mobility has more than a primary and a secondary ({r['mob']})")
+        if pri["trait"] not in MOBILITY_PRIMARY:
+            errs.append(f"{n}: unknown primary mobility {pri['trait']}")
+            continue
+        if not 1 <= pri["tier"] <= 3:
+            errs.append(f"{n}: primary mobility tier {pri['tier']} (1-3)")
+        if pri["trait"] not in ARCH_MOBILITY[r["arch"]]:
+            errs.append(f"{n}: {r['arch']} may not take {pri['trait']} (allowed {ARCH_MOBILITY[r['arch']]})")
+        if pri["tier"] == 3 and r["rarity"] not in ("epic", "legendary"):
+            errs.append(f"{n}: tier 3 mobility on a {r['rarity']} hero (epic and legendary only)")
+        if sec:
+            if sec["trait"] not in MOBILITY_SECONDARY:
+                errs.append(f"{n}: unknown or primary-only secondary mobility {sec['trait']}")
+            if sec["trait"] == pri["trait"]:
+                errs.append(f"{n}: secondary mobility repeats the primary")
+            if not 1 <= sec["tier"] <= 2 or sec["tier"] > pri["tier"]:
+                errs.append(f"{n}: secondary tier {sec['tier']} (1-2, at most the primary's {pri['tier']})")
+            if pri["trait"] == "flyer" and sec["trait"] in ("glider", "hover"):
+                errs.append(f"{n}: a flyer already glides and needs no {sec['trait']} secondary")
+            if {pri["trait"], sec["trait"]} == {"glider", "hover"}:
+                errs.append(f"{n}: hover and glider never together")
+            if sec["trait"] == "snowstride" and r["elem"] != "frost" and r["arch"] != "snow_spirit":
+                errs.append(f"{n}: snowstride needs the frost element")
+            if sec["trait"] == "ember_stride" and r["elem"] != "fire" and r["arch"] != "phoenix":
+                errs.append(f"{n}: ember_stride needs the fire element")
+        if pri["trait"] == "flyer" and r["arch"] not in FLIGHT_CARRIER:
+            errs.append(f"{n}: a flyer needs an archetype with a flight carrier")
+        traits = mobility_traits(r)
+        if "wings" in r["look"].lower() and not traits & {"flyer", "glider"}:
+            errs.append(f"{n}: the look has wings, so it flies or glides")
+        if SIG_AIRBORNE.search(r["sig"]) and not traits & AIRBORNE and n not in FIT_EXEMPT:
+            errs.append(f"{n}: the signature leaves the ground, so it needs one of {sorted(AIRBORNE)}")
+        if SIG_CHARGE.search(r["sig"]) and "charger" not in traits:
+            errs.append(f"{n}: the signature charges, so it needs charger")
+        duty = TALENT_DUTY.get(r["talent"], "guard")
+        if not r["work"].startswith(duty + ": ") or not 20 <= len(r["work"]) <= 170:
+            errs.append(f"{n}: work mastery line must start with '{duty}: ' and be 20-170 characters")
+    pc = collections.Counter(r["mobility"]["primary"]["trait"] for r in rows)
+    for t in MOBILITY_PRIMARY:
+        if not 8 <= pc[t] <= 50:
+            errs.append(f"primary mobility {t}: {pc[t]} want 8-50")
+    fly = [r for r in rows if r["mobility"]["primary"]["trait"] == "flyer"]
+    fg = collections.Counter(r["g"] for r in fly)
+    if not 20 <= len(fly) <= 30:
+        errs.append(f"flyers: {len(fly)} want 20-30 (10-15%)")
+    if abs(fg["F"] - fg["M"]) > 3:
+        errs.append(f"flyers' gender split {dict(fg)} (within 3)")
+    sl = [r for r in rows if r["slice"]]
+    sp = {r["mobility"]["primary"]["trait"] for r in sl}
+    if len(sp) < 5 or "flyer" not in sp:
+        errs.append(f"slice primaries {sorted(sp)}: at least 5 families and a flyer")
+    return errs, pc
 
 
 def talent_base(t):
@@ -163,12 +285,14 @@ def check(rows, strict):
         bad = REJECTED_TOKENS & set(re.split(r"[^a-z0-9]+", r["name"].lower()))
         if bad:
             errs.append(f"{r['n']}: name uses a rejected token {sorted(bad)}")
+    merrs, mob = check_mobility(rows)
+    errs += merrs
     sl = [r for r in rows if r["slice"]]
     if collections.Counter(r["g"] for r in sl) != collections.Counter({"F": 4, "M": 4}):
         errs.append("slice must be 4 F + 4 M")
     if len({r["elem"] for r in sl}) != 8: errs.append("slice must use all 8 elements")
     if len({r["temp"] for r in sl}) != 8: errs.append("slice temperaments must differ")
-    return errs, dict(role_g=role_g, el=el, st=st, te=te, ta=ta, du=du)
+    return errs, dict(role_g=role_g, el=el, st=st, te=te, ta=ta, du=du, mob=mob)
 
 
 def batches(rows):
@@ -192,6 +316,7 @@ def main():
     print("temperaments:", dict(sorted(s["te"].items(), key=lambda x: x[1])))
     print("talents:", dict(sorted(s["ta"].items(), key=lambda x: x[1])))
     print("duel:", dict(s["du"]))
+    print("mobility (primary):", dict(s["mob"]))
     b = batches(rows)
     bc = collections.Counter(b.values())
     print("batches:", dict(bc))
@@ -202,6 +327,10 @@ def main():
             r["batch"] = 0 if r["slice"] else b[r["n"]]
             r["mech"] = STYLE_MECH[r["style"]]
             r["duty"] = TALENT_DUTY.get(r["talent"], "guard")
+            r["mobility"].pop("extra", None)
+            if r["mobility"]["primary"]["trait"] == "flyer":
+                r["mobility"]["carrier"] = FLIGHT_CARRIER[r["arch"]]
+            del r["mob"]
         with open(os.path.join(HERE, "roster.json"), "w") as f:
             json.dump(rows, f, indent=1)
     print("OK" if not errs else f"{len(errs)} problems")

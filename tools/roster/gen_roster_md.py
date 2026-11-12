@@ -66,6 +66,20 @@ DUEL_TEXT = {
     "summoner": "fights through allies or summons; kill them or dive the summoner",
 }
 RARITY_CODE = {"legendary": "L", "epic": "E", "rare": "R", "common": "C"}
+ROMAN = {1: "I", 2: "II", 3: "III"}
+MOBILITY_TEXT = {
+    "runner": "fleet of foot: faster travel, steps up blocks, crosses soul sand and honey unslowed",
+    "charger": "heavy ground mover: sure footing, knockback resistance on the move, traversal charges, shrugs off cobwebs",
+    "leaper": "big bounds: jumps 1.8 / 2.5 / 3.5 blocks high, leaps 3 / 4 / 6-block gaps, lands long falls",
+    "acrobat": "air jumps (double, then triple), wall kicks, mantles, takes no fall damage at III",
+    "climber": "climbs walls and trunks (6 / 16 / any blocks), clings and works while clinging",
+    "glider": "glides from heights (2.3 / 3.3 / 5 blocks forward per block of drop), gusts at II-III",
+    "flyer": "true flight with a stamina bar (30 / 45 / 60 s), lands to strike, can be shot down",
+    "hover": "floats 0.5 / 1 / 1.5 blocks above ground or water, drifts over gaps, never tramples farmland",
+    "swimmer": "fast swimming, long breath, dives and mines under water (II), breathes water (III)",
+    "snowstride": "(secondary) never freezes, powder snow does not slow it; faster on snow and ice at II",
+    "ember_stride": "(secondary) fire- and lava-proof; walks on lava like a strider at II",
+}
 
 
 def talent_text(t):
@@ -78,17 +92,26 @@ def esc(s):
     return s.replace("|", "/")
 
 
+def mob_text(r):
+    m = r["mobility"]
+    out = f"{m['primary']['trait']} {ROMAN[m['primary']['tier']]}"
+    if m["secondary"]:
+        out += f" + {m['secondary']['trait']} {ROMAN[m['secondary']['tier']]}"
+    return out
+
+
 def table(rows):
     out = ["| # | Working name | G | Archetype | Role | Weapon (style: prop) | Element | Temperament "
-           "| Specialty (talent, duty) | Duel | R | B | Signature | Look (silhouette; palette) | Leader seed |",
-           "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+           "| Specialty (talent, duty) | Duel | Mobility | R | B | Signature | Look (silhouette; palette) | Leader seed "
+           "| Work mastery (duty: specialty; mobility at work) |",
+           "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         mark = " **[S]**" if r["slice"] else ""
         out.append(
             f"| {r['n']} | {esc(r['name'])}{mark} | {r['g']} | {r['arch']} | {r['role']} | {r['style']}: "
             f"{esc(r['prop'])} | {r['elem']} | {r['temp']} | {talent_text(r['talent'])}, {r['duty']} | "
-            f"{r['duel']} | {RARITY_CODE[r['rarity']]} | {r['batch'] or 'S'} | {esc(r['sig'])} | {esc(r['look'])} | "
-            f"{GROUP_NOUN[r['temp']]} · {BASE_STYLE[r['arch']]} |")
+            f"{r['duel']} | {mob_text(r)} | {RARITY_CODE[r['rarity']]} | {r['batch'] or 'S'} | {esc(r['sig'])} | "
+            f"{esc(r['look'])} | {GROUP_NOUN[r['temp']]} · {BASE_STYLE[r['arch']]} | {esc(r['work'])} |")
     return "\n".join(out)
 
 
@@ -123,7 +146,8 @@ def main():
     w = md.append
     w("# Heroes v2: roster plan (200 original heroes)")
     w("")
-    w("Status: plan, 2026-11-12. Companion of `HEROES_V2.md` (the design) and `SLICE_PLAN.md` (the first milestone). "
+    w("Status: plan, 2026-11-12. Companion of `HEROES_V2.md` (the design), `SLICE_PLAN.md` (the first milestone) and "
+      "`MOBILITY_AND_WORK.md` (mobility and work mastery). "
       "The tables are generated from `roster/roster_data.py` by `roster/gen_roster_md.py`; `roster/check_roster.py` "
       "enforces every count and uniqueness rule below and prints `OK` for this version. `roster/roster.json` is the "
       "machine-readable copy that the hero scaffolder (`herogen new <n>`, HEROES_V2.md section 13.7) reads.")
@@ -149,7 +173,18 @@ def main():
     w("- **Working names.** Names follow the hero's culture (Japanese-style for yokai and Japanese archetypes, "
       "Chinese-style for wuxia, invented European-style for Western fantasy, mixed for modern ones). They are working "
       "names until the clearance step of section 8 passes for the batch.")
-    w("- **The slice heroes are marked [S]**; they are designed in full in `SLICE_PLAN.md`.")
+    w("- **Superhuman mobility, heroes only** (the owner's request of 2026-11-12, `MOBILITY_AND_WORK.md`): every hero has a "
+      "primary mobility trait with a tier ceiling (I-III; III only for epic and legendary heroes) and may have a "
+      "secondary of another family (tier I-II, at most the primary's). The trait fits the archetype "
+      "(`check_roster.py` `ARCH_MOBILITY`) and the kit: a look with wings flies or glides, a signature that leaves the "
+      "ground has an airborne trait, one that charges has `charger`. Flyers are a minority (10-15%, gender split within "
+      "3) and every flyer has a flight carrier (wings, broom, cloud, sword, paper crane, jets). Ordinary NPCs stay "
+      "player-like.")
+    w("- **Work mastery**: heroes work their duty better than ordinary NPCs (a proficiency every hero has) and their "
+      "primary talent adds a much stronger specialty; the last column says what it is and what the hero's mobility "
+      "does at that work (`MOBILITY_AND_WORK.md` part 2).")
+    w("- **The slice heroes are marked [S]**; they are designed in full in `SLICE_PLAN.md`, their mobility in "
+      "`MOBILITY_AND_WORK.md` section 15.")
     w("")
     w("## 2. Balance summary (generated)")
     w("")
@@ -199,6 +234,30 @@ def main():
       "HEROES_V2.md section 7.2). `alchemist` and `engineer` stay inactive until the brewing and rail jobs exist "
       "(ROADMAP phases 2 and 3); the heroes that carry them get a working second talent.")
     w("")
+    w("### 2.5 Mobility (primary trait, tier ceiling, secondary)")
+    w("")
+    mo = by_g(rows, lambda r: r["mobility"]["primary"]["trait"])
+    w(count_table("Primary mobility", mo, cr.MOBILITY_PRIMARY))
+    w("")
+    out = ["| Primary | Tier I | Tier II | Tier III | Secondaries it carries |", "|---|---|---|---|---|"]
+    for t in cr.MOBILITY_PRIMARY:
+        grp = [r for r in rows if r["mobility"]["primary"]["trait"] == t]
+        tc = collections.Counter(r["mobility"]["primary"]["tier"] for r in grp)
+        sc = collections.Counter(r["mobility"]["secondary"]["trait"] for r in grp if r["mobility"]["secondary"])
+        none = sum(1 for r in grp if not r["mobility"]["secondary"])
+        secs = ", ".join(f"{k} {v}" for k, v in sorted(sc.items(), key=lambda x: (-x[1], x[0])))
+        out.append(f"| {t} | {tc[1]} | {tc[2]} | {tc[3]} | {secs}{', ' if secs and none else ''}"
+                   f"{f'none {none}' if none else ''} |")
+    w("\n".join(out))
+    w("")
+    fly = [r for r in rows if r["mobility"]["primary"]["trait"] == "flyer"]
+    w(f"**Flyers** ({len(fly)}, {100 * len(fly) // len(rows)}% of the roster; "
+      f"{sum(1 for r in fly if r['g'] == 'F')} F, {sum(1 for r in fly if r['g'] == 'M')} M) and what carries them: "
+      + "; ".join(f"{r['n']} {r['name']} ({cr.FLIGHT_CARRIER[r['arch']]})" for r in fly) + ".")
+    w("")
+    w("The tier is a ceiling: a hero has tier I from level 1, II from level 10 and III from level 20, up to its "
+      "ceiling (the talent tiers' levels). Tier III is reserved for epic and legendary heroes.")
+    w("")
     w("## 3. Column legend")
     w("")
     w("**Weapon styles.** The style picks the shared animation library (HEROES_V2.md section 13.6) and the mechanical "
@@ -216,6 +275,17 @@ def main():
     for d in cr.DUELS:
         w(f"- `{d}`: {DUEL_TEXT[d]}.")
     w("")
+    w("**Mobility** (`MOBILITY_AND_WORK.md` section 1; the numbers are tiers I / II / III):")
+    w("")
+    for t, text in MOBILITY_TEXT.items():
+        w(f"- `{t}`: {text}.")
+    w("")
+    w("**Work mastery** (`MOBILITY_AND_WORK.md` part 2): every hero works its duty with a proficiency (work speed "
+      "+15/25/35%, a larger backpack, longer reach, less tool wear and hunger); the column gives the duty, the "
+      "specialty its primary talent adds when the hero does that work itself (guard and court talents instead count "
+      "one tier higher while the hero is home, plus a personal effect), and what its mobility does at that work. "
+      "Ranges such as +1-3 are tiers I-III.")
+    w("")
     w("**Specialty** is the hero's primary non-combat talent (HEROES_V2.md section 7.2), then the duty it works when it "
       "is not leading (`court` replaces the duty while it leads). **R** is the rarity (L, E, R, C). **B** is the "
       "content batch (S = the slice, 1-8 = section 6). **Leader seed** is the faction group noun its temperament "
@@ -225,20 +295,22 @@ def main():
     w("## 4. The vertical slice (8 heroes, 4 female and 4 male)")
     w("")
     sl = [r for r in rows if r["slice"]]
-    out = ["| # | Name | G | Archetype | Role | Style | Element | Temperament | Faction it leads (SLICE_PLAN.md) |",
-           "|---|---|---|---|---|---|---|---|---|"]
+    out = ["| # | Name | G | Archetype | Role | Style | Element | Temperament | Mobility | Faction it leads (SLICE_PLAN.md) |",
+           "|---|---|---|---|---|---|---|---|---|---|"]
     fac = {1: "Bellwhisker Harbour", 6: "Veiled Lantern Exchange", 22: "Crimson Anvil Warband",
            56: "Hearth of the White Bell", 65: "House of the Still Crane", 74: "Quiet Ash Clan",
            108: "Order of the Rime Vow", 121: "Nettlewick Conclave"}
     for r in sl:
         out.append(f"| {r['n']} | {r['name']} | {r['g']} | {r['arch']} | {r['role']} | {r['style']} | {r['elem']} | "
-                   f"{r['temp']} | {fac[r['n']]} |")
+                   f"{r['temp']} | {mob_text(r)} | {fac[r['n']]} |")
     w("\n".join(out))
     w("")
     w("They cover all eight elements, five of the eight duel styles (rushdown, zoner, grappler, counter, trapper), six of the seven roles (two vanguards and two "
       "strikers in different duel styles; the summoner role is first exercised by batch 1), eight different "
       "temperaments chosen for contrast as leaders, and seven weapon styles (fists, focus, hammer, katana, "
-      "twin_blades, sword_shield, staff).")
+      "twin_blades, sword_shield, staff). Their primary mobility covers five families (acrobat, runner, charger, "
+      "leaper and one flyer, Ambrose on his staff-broom) and their secondaries three more (climber, swimmer, "
+      "snowstride), so milestone 1 proves flight, climbing and air jumps before any batch is authored.")
     w("")
     w("## 5. The 200 heroes")
     w("")
