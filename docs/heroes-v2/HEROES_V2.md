@@ -2098,7 +2098,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
-| A0 | Reach `dl.cloudsmith.io` (answered on 2026-11-12; if refused, the owner approves the environment prompt); vendor GeckoLib 4.9.3 (jar, POM, `.module`, metadata, licence) into `libs/maven` and check the hashes of 4.2; build lines, mods.toml dependency, licence | - | S | 4.2 step 7 checks pass; 145 unit tests and 108 GameTests still green |
+| A0 | Reach `dl.cloudsmith.io` (answered on 2026-11-12; if refused, the owner approves the environment prompt); vendor GeckoLib 4.9.3 (jar, POM, `.module`, metadata, licence) into `libs/maven` and check the hashes of 4.2; build lines, mods.toml dependency, licence | - | S | 4.2 step 7 checks pass; 145 unit tests and 108 GameTests still green. Done 2026-11-12: downloaded from `dl.cloudsmith.io` (HTTP 200), every hash of 4.2 re-checked and equal (HANDOFF section 5); the jar embeds `META-INF/jarjar/geckolib-neoforge-1.21.1-4.9.3.jar` (range `[4.9.3,4.10)`); 174 unit tests and 137 GameTests green; a dedicated server with only our jar loads GeckoLib through jar-in-jar and the Xvfb viewer joins it |
 
 ### 15.2 Milestone 1: the vertical slice (SLICE_PLAN.md)
 
@@ -2120,8 +2120,9 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first) |
 | G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style |
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
-| A1 | `HeroEntity`, registration, synced fields, `FcHero` saving, `HeroState`, `HeroRegistry` (resources + config overlay, `registerTransient` for fixtures), `/fc hero list/info/check/reload`, `/fc admin hero give/release/revive`, basic attacks, the director's hero rule (3.2), name tags, dialogue lines and speech bubbles; `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F2, A0 | L | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads |
-| A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash |
+| A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads |
+| A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file |
+| A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash |
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5 |
 | A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5 |
@@ -2154,6 +2155,11 @@ Order: A0, F1, F4, G1 and L1 can start at once (L1 does not need GeckoLib). The 
 milestone because the slice must prove them before batches are authored and its heroes use them (Ambrose flies); A10
 and A11 need only A1 and run beside A3-A6, G10 beside G5, L5m beside L5, so only A12 (after A6, before V1) lengthens
 the critical path (`MOBILITY_AND_WORK.md` 18.1).
+
+Plan change (2026-11-12, the implementation workflow): A1 is split into A1a (the entity and its visual side, which needs
+only A0) and A1b (the kit-backed parts, after F1 and F2), so the test rig can render in game before the format work
+lands. Checkpoint 1 ("pipeline alive": the test rig renders in game, blinks and walks) is reached with A0 + A1a + A2.
+Elsewhere in this section, "A1" as a dependency means both halves.
 
 ### 15.3 Milestone 2: systems breadth
 

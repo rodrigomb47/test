@@ -1,0 +1,100 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "software.bernie.geckolib",
+    "module": "geckolib-neoforge-1.21.1",
+    "version": "4.9.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "9.7.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "geckolib-neoforge-1.21.1-4.9.3.jar",
+          "url": "geckolib-neoforge-1.21.1-4.9.3.jar",
+          "size": 634531,
+          "sha512": "8dfa5f8c57224a5e34e5098367ea9819ca6dc9c11357cd3062c16da3455c8bd1a483098af7383debc4b9ce8e4d7ab3fdc799b415644eb829da83eb72a7335dfd",
+          "sha256": "20a1995e4074f387ff549e2c57ea79dd7d41ee83c6afb9dd6a6e840e592d1c47",
+          "sha1": "5cfe835472a5c5457ae9ac192d9d7b317454d5ac",
+          "md5": "ddb8a5ef680c3a1df09ef98dc8b7c116"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 21,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "geckolib-neoforge-1.21.1-4.9.3.jar",
+          "url": "geckolib-neoforge-1.21.1-4.9.3.jar",
+          "size": 634531,
+          "sha512": "8dfa5f8c57224a5e34e5098367ea9819ca6dc9c11357cd3062c16da3455c8bd1a483098af7383debc4b9ce8e4d7ab3fdc799b415644eb829da83eb72a7335dfd",
+          "sha256": "20a1995e4074f387ff549e2c57ea79dd7d41ee83c6afb9dd6a6e840e592d1c47",
+          "sha1": "5cfe835472a5c5457ae9ac192d9d7b317454d5ac",
+          "md5": "ddb8a5ef680c3a1df09ef98dc8b7c116"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "geckolib-neoforge-1.21.1-4.9.3-sources.jar",
+          "url": "geckolib-neoforge-1.21.1-4.9.3-sources.jar",
+          "size": 405343,
+          "sha512": "eb28f5fa31f2fb91778b9e8cd5b6060e5fd1b18e8268b22c01e9be9a9c9cf3b867beda258cc5e0dd02f588efed9faac1ab8ad1fb3727a35cdb96abb99302792f",
+          "sha256": "2bf9bfc42406df11af3bb9b9fdf31cc27f50a2832953dcc3395b5c610ffc2ef5",
+          "sha1": "e2e10d33dbda2004a334840a1d96220451cf14a8",
+          "md5": "f7fd73e47f13688dd97dbbcb35530e87"
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "geckolib-neoforge-1.21.1-4.9.3-javadoc.jar",
+          "url": "geckolib-neoforge-1.21.1-4.9.3-javadoc.jar",
+          "size": 1313785,
+          "sha512": "eb5e7da8d9f17fd95b59423435d014000c9437b6a0ee221e20c9dcdd43713e468e288b6a0f4298f5bdde408c6ee811f4a867c5f370cb2208d0bdad6f1a1bc49a",
+          "sha256": "bf1be406abcb338b8b39646ba3ef699eb4cee6859ace32f99a1dbf2ba75c2aaa",
+          "sha1": "714c39265286f93635b29084c0d2b414af865ccd",
+          "md5": "6eaf5012a0cdbed6152e06e040404503"
+        }
+      ]
+    }
+  ]
+}

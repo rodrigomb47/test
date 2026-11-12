@@ -52,7 +52,7 @@ jumps, flight for some) and work better than ordinary NPCs outside battle (`docs
 | Milestone | Status |
 |---|---|
 | Research and design (archetypes, animation stack, hero-led factions, boss mechanics, roster of 200, slice plan) | done |
-| Vertical slice: engine (hero entity, GeckoLib models and faces, kits and boss mode, hero-led factions) + 8 heroes, screenshots for the owner | planned |
+| Vertical slice: engine (hero entity, GeckoLib models and faces, kits and boss mode, hero-led factions) + 8 heroes, screenshots for the owner | in progress: GeckoLib 4.9.3 vendored and embedded in the jar (A0, 2026-11-12); next the hero entity (A1a) and its client model (A2) for checkpoint 1 |
 | Batches 1-8 of 24 heroes each, reviewed and arena-tested | planned |
 | Campaign checks and balance | planned |
 

@@ -74,6 +74,7 @@ commits, language and testing are in `/CLAUDE.md`.
 | `info/`, `net/`, `client/` | Station/info screen text (`BaseInfo`), map payload (`MapPayload` marker kinds: … VILLAGE 7, PILLAGER_OUTPOST 8, WOODLAND_MANSION 9, STALE flag 16), client screens (`MapScreen`, `InfoScreen`). |
 | `gametest/` | `FCGameTests` (all GameTests), `GameTestBases` (register an isolated test base, clean-up). |
 | `tools/` (repo root) | `sim.py` (drive a server over RCON, print campaign summaries), `rcon.py`, `days.sh`, `setup_server.sh`, `gen_assets.py`. |
+| `libs/maven/` (repo root) | Vendored GeckoLib 4.9.3 (the hero models' animation library; jar, POM, `.module`, a hand-written `maven-metadata.xml`, `LICENSE-geckolib.txt`). The build reads the group `software.bernie.geckolib` only from here and embeds the jar (jar-in-jar). Hashes in section 5. |
 
 ## 4. Campaign verification (do this for any behaviour change)
 
@@ -125,6 +126,34 @@ python3 tools/rcon.py "stop"
   village (2 traders) and, when placed by an outpost by hand, the outpost; 4.6-10.4 ms per tick.
 - An old-format world (day 19 of an earlier campaign) loaded and converted: hut mine levels migrated and worked on,
   fences taken down, fishing spots moved off the farm.
+- **GeckoLib vendored and embedded** (Heroes v2 task A0, 2026-11-12, `docs/heroes-v2/HEROES_V2.md` 4.2). Downloaded
+  once from `https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/` (HTTP 200) into
+  `libs/maven/software/bernie/geckolib/geckolib-neoforge-1.21.1/4.9.3/`. Checked after the download, all equal to the
+  values the design recorded and to the published `.sha1`/`.md5` files:
+  - `geckolib-neoforge-1.21.1-4.9.3.jar`: 634,531 bytes, SHA-1 `5cfe835472a5c5457ae9ac192d9d7b317454d5ac`,
+    SHA-256 `20a1995e4074f387ff549e2c57ea79dd7d41ee83c6afb9dd6a6e840e592d1c47`, MD5 `ddb8a5ef680c3a1df09ef98dc8b7c116`
+    (its `.module` file lists the same SHA-1, SHA-256 and MD5);
+  - `.pom`: SHA-1 `1584949c103cdc35f1cc4f74943a43be2b06210e`, SHA-256
+    `eedbe316a4139d5e3bee192dde83eda793a26a1b3c9e91810dbb9ee22c95207f`;
+  - `.module`: SHA-1 `dac3d3e8823ea8008a8216269416a776f8d62bc0`, SHA-256
+    `620d417479935e29fc6b8474a653824853b3f543bbdea206d3adb0216d9f2b7d` (no dependencies in any variant);
+  - `maven-metadata.xml` is hand-written (lists only 4.9.3); `libs/maven/LICENSE-geckolib.txt` and
+    `src/main/resources/META-INF/licenses/geckolib-LICENSE.txt` are the jar's own `GECKOLIB_LICENSE` (MIT).
+
+  Re-check with `sha256sum libs/maven/software/bernie/geckolib/geckolib-neoforge-1.21.1/4.9.3/*`. Versions:
+  `geckolib_version=4.9.3` and `geckolib_version_range=[4.9.3,4.10)` in `gradle.properties`; the mods.toml template
+  (`src/main/templates/META-INF/neoforge.mods.toml`) requires `geckolib` in that range on both sides. The mod jar
+  carries `META-INF/jarjar/geckolib-neoforge-1.21.1-4.9.3.jar` (byte-identical to the vendored one, 0.63 MB of the
+  jar's 1.64 MB). Verified: 174 unit tests and 137 GameTests green (one earlier run lost
+  `soldiersLeaveThePenThroughTheGateAfterALongFight`, the known flake of `docs/design/notes/combat-unreachable.md`,
+  while a server was starting beside it; the next two runs passed); a dedicated server from `tools/setup_server.sh`
+  with only our jar in `mods/` logs `Found mod file "geckolib-neoforge-1.21.1-4.9.3.jar" [parent: factionclash-0.1.0.jar,
+  locator: jarinjar ...]` and lists `GeckoLib 4 4.9.3 (geckolib)`; the Xvfb `clientViewer` loads GeckoLib and joins
+  it. In development runs (`runClient`, `runClientViewer`, `runGameTestServer`) GeckoLib comes from the classpath (the
+  vendored jar), not from inside our jar; only an installed server or client uses the jar-in-jar copy. GeckoLib's
+  log line `Reference map 'geckolib.refmap.json' ... could not be read` appears in both and is harmless (NeoForge runs on
+  Mojang's names, so no reference map is needed). The download jar (README line 13) was not rebuilt for this: it has no
+  GeckoLib until the next release.
 
 ## 6. Known open items and ideas (none blocking)
 

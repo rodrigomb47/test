@@ -635,3 +635,12 @@ fixed-seed results came from the old layout and are historical.
 
 The original project's source, saves and balance numbers were not available, so this is a fresh implementation;
 existing old-mod saves are not compatible with it.
+
+## Credits
+
+* **[GeckoLib](https://github.com/bernie-g/geckolib) 4.9.3** by Gecko, Eliot, AzureDoom, DerToaster, Tslat and Witixin
+  (MIT licence), the animation engine for the upcoming hero models. Builds from this source embed it inside the mod
+  jar (NeoForge jar-in-jar), so there is still only one file to install; its licence text ships in the jar as
+  `META-INF/licenses/geckolib-LICENSE.txt`. If another mod brings its own GeckoLib, NeoForge keeps a single copy;
+  Faction Clash needs a GeckoLib 4.9.x from 4.9.3 on. The download above was built before GeckoLib was added and does
+  not contain it yet.
