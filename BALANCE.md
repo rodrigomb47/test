@@ -550,8 +550,24 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
 * Cover (review): a waiting melee fighter shot by its target waits out of the target's sight (900 penalty for a spot
   in sight, rings 6.5 and 10, farther preferred), or 12 blocks off when there is no such spot.
 * Stale targets: the 10 s without trading blows rule counts working toward the target, waiting in sight of it, in
-  cover from it, or at home (within 24 blocks) as engaged. Vanilla's hurt-by target memory still lets go of an
-  attacker unseen for 3 s.
+  cover from it, or, for an intruder (a player or an enemy soldier), at home (within 24 blocks) as engaged. Vanilla's
+  hurt-by target memory still lets go of an attacker unseen for 3 s. Live check 2: a monster it waits on (HOLD) and
+  that goes stale is also ignored for 1200 ticks (IGNORE_TICKS), and at home a monster it cannot get at is given up
+  after 1200 ticks of waiting as away from home (a creeper shut in a pocket of the ground under the yard held two
+  guards for good). Waiting on a monster, at each 40-tick look it turns to the nearest enemy player or enemy soldier
+  in sight within 16 blocks (INTRUDER_RANGE).
+* Defence alarm (live check 2): raiders and enemy players are handed to free guards before monsters; a monster counts
+  only when it is no more than 2 blocks below the yard floor (not in a cave under the base), and a guard is not
+  handed a target it gave up on.
+* Target cell (live check 2): paths and plans aim at the target's block position, unless that holds a fence, wall or
+  pane it is only pressed against: then the open cell beside it that its body is mostly in (a player against a pen's
+  far fence was "in" the fence cell, and the cell outside the fence was as near as the one inside). A fighter's path
+  search toward its target may wander 64 blocks walked (PATH_RANGE; vanilla stops at the follow range, 48, and
+  overwrites walked distances while exploring a dead end, which cut off the way round a pen to its gate); the node
+  budget is unchanged.
+* Wounded workers (live check 2): a fleeing worker with no way away and its threat within 4 blocks (UNBOX_RANGE, a 1x1
+  pit it jumped into after a player) uses the stuck recovery toward the station stand (or 8 blocks away from the
+  threat), at most once per 40-tick look.
 * Guards carry up to 8 dirt, cobblestone or cobbled deepslate (each kind) for building up, taken only while the
   storehouse keeps 64 of that block.
 * Repairs (live check: a door a raider broke was never put back when the storehouse held no door): a builder fetching

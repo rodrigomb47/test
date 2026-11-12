@@ -312,3 +312,66 @@ Seen and left as it is:
 - The player's melee damage against a soldier that is breaking its way in is real: a soldier in the doorway breaking
   the dirt takes the blows of a player standing behind it for about 1 s, as a raiding player would.
 - Archers walk into a 1x1 hole after the player like the swordsmen (they then shoot at point blank).
+
+## Live check 2 (a fresh campaign, the final code, a real client as the player)
+
+A new campaign (`fc start 256`, one day sprinted), the Viewer client in survival with diamond armour, Resistance III and
+Regeneration II, a member of Ember Legion, in Grove Covenant's base. The previous run's fixes (above) were reviewed,
+tested (174 unit tests, 133 GameTests) and committed first ("Live fixes: pit trap, pen exit after a long fight,
+outsiders' blocks, doorway wait, door repair"). The player script (`player.py` in the session scratchpad) read the
+NPCs every 0.3-0.6 s and left-clicked in the client at any faction NPC within 3 blocks of the eyes; blocks were
+broken and placed with the client's own clicks. To set a case up, the NPCs nearby were frozen (`NoAI`) for a few
+seconds and the soldiers put where they would come from.
+
+| Case | Seen |
+|---|---|
+| Player in the pen, gate shut | Soldiers opened the gate, went in, shut it and fought; the gate was shut at every 4 s check. Wounded soldiers fell back out through the gate (opening and shutting it) and came back healed; a Grove archer shot from outside the pen. With five fighters going in and out over several fights, two cows got out of the pen at some point (the animal carer leads strays back). |
+| Player pressed against the pen's far fence, soldiers coming from that side | **Fault, fixed** (1 below). With the fix: a soldier started outside the far corner, took one blow passing the fence, walked round to the gate on the other side and in (its path ended in the cell inside, "reach"); 67 of the player's 70 clicks were on soldiers inside the pen. |
+| Door broken and the player's dirt in the doorway (the owner's second report) | An axe fighter broke the dirt about 3 s after the soldiers arrived, they came in and fought; the builder put the door back about 40 s later, and soldiers coming later opened it and came in. |
+| Player on a 2-high pillar of his dirt by the west wall | The top block was broken within 4 s, the bottom within 8 s; they fought him on the ground. |
+| Player in a 1x1 hole two deep in the yard | Soldiers, and workers the player had hit, dropped into the hole with him and fought at close quarters (the player was hit). **Fault, fixed** (3 below) for the wounded workers. |
+| Monsters | **Fault, fixed** (2 below): two home guards waited on a creeper shut in a pocket of the ground under the yard. |
+
+Faults found and fixed (commit "Live fixes: pen gate on the far side, monsters held at home, workers in a pit"):
+
+1. **The pen's far fence.** A player pressed against a fence stands, by its block position, in the fence's cell. From
+   outside, the cell just outside the fence was as near to that cell as the one inside, so the attack path ended
+   outside; the planner took that cell as "next to" the player, the soldier walked there, could not hit across the
+   fence (the player could), took three blows and then waited out of reach for good, that spot of the player's marked
+   as one it cannot get at. Paths and plans now aim at the target's body cell (`Pursuit.targetCell`: the open cell its
+   body is mostly in when its block position holds a fence, wall or pane). That alone was not enough: vanilla's path
+   search overwrites a node's walked distance with a worse one while it explores the dead end by the fence, and the
+   way round to the gate (32 steps) was cut off at the follow range (48); with 64 it is found
+   (`NpcPathNavigation.createLongPath`, `Pursuit.PATH_RANGE`; the node budget, and so the cost of a failing search, is
+   unchanged). GameTest `soldiersGoRoundThroughTheGateToAPlayerPressedAgainstTheFence` (the player hits across the
+   fence; fails with the old aim: 4 blows across the fence, then waiting).
+2. **Monsters held at home.** At home a target was kept engaged even out of sight (meant for an intruder hiding in the
+   base), so two guards waited on a creeper shut in the ground five blocks under the yard; when it went stale the
+   defence alarm (which hands intruders to free guards without line of sight) handed it straight back, while an
+   enemy player was in the base. Now only an intruder (a player or an enemy soldier) is kept unseen at home; a
+   monster it waits on is ignored for a minute when it goes stale, and given up after a minute of waiting at home as
+   away; a guard waiting on a monster turns to an enemy player or soldier in sight within 16 blocks; the alarm hands
+   out raiders and players before monsters, skips monsters more than 2 blocks below the yard and guards that gave the
+   monster up. GameTests `aGuardWaitingOnAMonsterTurnsToAnIntruder` and `aGuardLetsGoOfAMonsterItCanNeitherSeeNorGetAt`
+   (both fail with the old rules).
+3. **Wounded workers in a pit.** Workers the player hit while it stood in a 1x1 pit two deep jumped in after it,
+   were wounded and could not flee (no way up): a cave explorer went from 8 to 2 hp there. A fleeing worker with no
+   way away and its threat within 4 blocks now uses the stuck recovery toward the station stand. GameTest
+   `aWoundedWorkerInAPitWithThePlayerGetsOut` (killed in the pit without it).
+
+Seen and left as it is:
+
+- **Knock-back.** A lone soldier walking straight at a player who hits it every 12 ticks is knocked back each time
+  and closes in very slowly (a GameTest showed 18 blows in a row inside the pen against a player pressed into the
+  fence); a mob's melee reach is shorter than a player's 3 blocks. Vanilla mobs have the same weakness and several
+  soldiers together break it (live, the soldiers in the pen hit the player regularly). Giving soldiers a player's
+  3-block melee reach would end it but changes the balance of every fight: the owner's call.
+- Animals can slip out of the pen while many soldiers go in and out over a long fight (the gate is shut behind each
+  of them and never on anyone in the gateway); the animal carer brings strays back.
+- A 1-deep hole right in front of a doorway (dug by the player) made soldiers stand in it, unable to path up into the
+  doorway for a moment, and take a blow or two before backing off and coming round again.
+- Flakes over 34 full GameTest runs here: `soldiersLeaveThePenThroughTheGateAfterALongFight` once (noted above),
+  `soldiersDoNotKeepBreakingABlockThePlayerPutsBack` once (the soldier let go of the player: vanilla's 3 s unseen
+  rule, noted above), `soldiersHoldOutOfReachOfAPlayerTheyCannotReach` once with intermediate code, and the mining
+  test `minerClearsAFloodedTunnelCell` twice (it also failed now and then in earlier sessions' logs; not touched by
+  these changes).

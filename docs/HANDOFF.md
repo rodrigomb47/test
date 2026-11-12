@@ -54,7 +54,10 @@ commits, language and testing are in `/CLAUDE.md`.
    break the block under a player on a pillar, and otherwise wait out of reach, watching, calling the archers
    (`docs/design/notes/combat-unreachable.md`). Checked live with a real client as the player (that note's "Live
    check"): pen, broken doorway, pillar, hole; five faults found there were fixed (pen exit after a long fight, a
-   factionless player's blocks, the pit trap, standing in the opened doorway, broken doors never repaired).
+   factionless player's blocks, the pit trap, standing in the opened doorway, broken doors never repaired). A second
+   live check in a fresh campaign ("Live check 2") fixed three more: a player against a pen's far fence (soldiers now
+   go round through the gate), home guards held for good on a monster they could not get at, and wounded workers
+   shut in a pit with the player.
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
@@ -134,7 +137,7 @@ python3 tools/rcon.py "stop"
   away and its mine rested forever).
 
 - Soldiers against a target they cannot walk up to (request 7, `docs/design/notes/combat-unreachable.md`): tested
-  (174 unit tests, 133 GameTests, sabotage checks), reviewed (a server crash in `OpenGateGoal` fixed; a 1x1 hole,
+  (174 unit tests, 137 GameTests, sabotage checks), reviewed (a server crash in `OpenGateGoal` fixed; a 1x1 hole,
   a block put back in a doorway, a player just behind a fence, soldiers shut in a pen after the fight, arrows while
   waiting, workers, allies' edits: see the notes' "Review" section), and **checked live with a real client as the
   player** (the notes' "Live check": pen, doorway, pillar, hole, pit; the pit trap, the pen exit after a long fight,
@@ -143,7 +146,11 @@ python3 tools/rcon.py "stop"
   swing cooldown is 20 ticks for every weapon (vanilla's goal ignored the weapon interval the docs describe); kept, the
   owner's choice. A gate left open by an NPC that dies in it stays open until the animal carer next goes through it.
   Soldiers (and archers) jump into a player's 1x1 hole and fight there; a pit left in a yard is not repaired (not
-  part of any plan). Live testing tip: `/fc admin dump` now gives each NPC's exact position (`xyz`), its `pursuit`
+  part of any plan). Second live check ("Live check 2"): fixed the pen's far fence, monsters held at home and wounded
+  workers in a pit; left for the owner: a lone soldier walking straight at a player who hits it every 12 ticks is
+  kept off by the knock-back (vanilla mobs too; a player's 3-block melee reach for soldiers would end it but changes
+  every fight's balance), and animals can slip out of a pen while many soldiers go in and out over a long fight (the
+  carer brings them back). Live testing tip: `/fc admin dump` now gives each NPC's exact position (`xyz`), its `pursuit`
   mode and counters and its `path`; a client can be driven with `xdotool` (installable with apt) to place blocks and
   hit (`tp` with explicit yaw/pitch to aim; `tp ... facing` takes the feet, not the eyes).
 - A base keeps at most `maxOpenMines` (3) active mines. Roadmap phase 1: a miner left without a site now helps in
