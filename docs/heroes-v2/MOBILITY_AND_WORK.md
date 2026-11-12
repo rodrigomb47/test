@@ -35,9 +35,9 @@ This overrides the earlier choice that heroes move like players and nobody flies
    `ember_stride`). Each hero has one primary trait and may have one secondary (section 1). The authored tier (I-III)
    is the hero's ceiling, not an unlock gate: the hero has every feature up to its ceiling from hero level 1 (double and
    triple jumps, wall kicks, climbing, gliding, flight, the `dive`, swimming features), and the numbers (jump height,
-   gap length, climb height, flight stamina and speed, swim speed) grow from 60% at level 1 to 100% at level 20 (1.1;
-   the owner's answer of 2026-11-12, "all abilities but not full power"). Tier III is for epic and legendary heroes
-   only.
+   gap length, climb height, flight stamina and speed, swim speed) grow from 60% at level 1 to 100% at level 20, never
+   below what a feature needs to work at all (1.1; the owner's answer of 2026-11-12, "all abilities but not full
+   power"). Tier III is for epic and legendary heroes only.
 4. **Flight is in, with a stamina bar.** About 13% of the roster flies (27 of 200, 14 female and 13 male; the owner
    kept the list), always on something the model shows: wings, a broom, a cloud, a sword, a paper crane, jets. Flyers
    land to strike, can be shot down and, while fighting, do not stay out of reach for long (sections 2 and 5).
@@ -64,10 +64,11 @@ This overrides the earlier choice that heroes move like players and nobody flies
    milestone 2.
 10. **Every hero in the roster has its mobility and work-mastery line** (`roster/roster_data.py`, checked by
     `check_roster.py`, listed in `ROSTER_PLAN.md`); the eight slice heroes are designed in full in section 15.
-11. **Escape** (the owner's answer of 2026-11-12). A hero that escapes (low health in field mode, a refused yield, a
-    lost raid, a scout evading, a leader saving itself) may use any mobility, even where no pursuer can follow. While
-    fighting it still wants to win and comes back, so a boss fight never becomes a chase. An escape ends the fight
-    with no rewards, keeps the hero away for 5 minutes and happens at most once in 10 minutes (7.7).
+11. **Escape** (the owner's answer of 2026-11-12). A hero that escapes (low health in field mode away from home, a
+    refused yield, a lost raid, a leader saving itself) may use any mobility, even where no pursuer can follow, and so
+    may a scout stepping aside. While fighting it still wants to win and comes back, so a boss fight never becomes a
+    chase. An escape ends the fight with no rewards, keeps the hero away for 5 minutes and happens at most once in 10
+    minutes; within that window the hero withdraws, kneels or goes home as the first draft had it (7.7).
 
 ---
 
@@ -99,10 +100,18 @@ This overrides the earlier choice that heroes move like players and nobody flies
   Link sizes (gaps, jump-ups, climbs) round down to whole blocks: a 6-block gap ceiling at 79% is 4.7, so 4. Counts (air
   jumps, gusts, dives) are features: a ceiling-III acrobat has its two air jumps at level 1, each lower than at level
   20. Section 15.9 shows the result for the eight slice heroes.
-- A ceiling-I hero starts at 60% of the tier-I numbers (the first draft gave it full tier I at level 1); a ceiling-III
-  hero starts with every tier-III feature and 60% of its numbers, so it is much stronger at level 1 than in the first
-  draft. Some thresholds come with level rather than with a feature: a leaper I clears 1.5-block fences (jump height
-  minus 0.3, 3.2) only at level 20. `mobility.levelPowerAtOne` and `mobility.fullPowerLevel` (8.5) tune the curve.
+- **Floors.** Scaling never takes a number below the smallest use of its feature, so "every feature from level 1"
+  holds in play and not only on paper: a leaper's jump height is at least 1.8 blocks (the smallest jump-up link of
+  3.2 is 1.5 blocks, a field fence: without the floor a leaper I, 1.58 at level 1, would have no jump-up link until
+  level 20), and a gap or hover-gap reach is at least 2 blocks (the smallest gap link; a hover I's 2-block drift is
+  1.2 at level 1). Every other feature already works at 60% (15.9: a climber I climbs 3 blocks, a flyer I has 18 s of
+  stamina and takes off at 50%, an acrobat I jumps up 1.5-block fences, a glider I glides 1.2 blocks per block of
+  drop). `MobilityRulesTest` checks every family and ceiling at level 1 for a usable feature.
+- A ceiling-I hero starts at 60% of the tier-I numbers, floors aside (the first draft gave it full tier I at level 1);
+  a ceiling-III hero starts with every tier-III feature and 60% of its numbers, so it is much stronger at level 1 than
+  in the first draft. Larger links within a feature come with level: a ceiling-I climber scales a 5-high base wall from
+  level 13, Kagenori (leaper II) takes 2-block ledges from level 13. `mobility.levelPowerAtOne` and
+  `mobility.fullPowerLevel` (8.5) tune the curve.
 - A level change or a config reload re-applies the hero's attribute modifiers, all named
   `factionclash:mobility_<trait>`, so they never stack with themselves and are removed cleanly.
 - `heroes.mobility.enabled = false` (section 8.5) removes every modifier: heroes then move exactly like workers, which
@@ -514,11 +523,26 @@ The owner accepts that heroes' abilities make things "unfair", so a hero's mobil
   berth (path and plan cost x3 within their walls box plus 16 blocks, PROPOSED), because defenders shoot at what
   crosses; a travelling trader does not fly over an enemy's yard by chance.
 - **Reaching a target at once.** A hero whose target cannot be reached on foot (a player on a pillar, in a pen, behind
-  a wall or across a gap; an archer on a ledge or a wall walk) uses its mobility as the first step: climb, jump-up, gap
-  leap, chimney, glide or flight, whichever reaches (`ReachPlanner`, 3.8). There is no far-band wait and no 10 s timer
-  for it; §6.12's steps (far-band moves, then after 10 s `DigOut` and `BlockWork` at player speed) remain for a hero
-  with no link that reaches and for soldiers, who still wait the 10 s. The boss altitude ceiling counts from the
-  highest engaged player standing on a block (2.3), so a flyer reaches a player on a 20-block pillar.
+  a wall or across a gap; an archer on a ledge or a wall walk) uses its mobility as the first step: climb, jump-up,
+  gap leap, chimney, glide or flight, whichever reaches (`ReachPlanner`, 3.8). There is no far-band wait and no 10 s
+  timer for it; §6.12's steps (far-band moves, then after 10 s `DigOut` and `BlockWork` at player speed) remain only
+  for a hero with no link that reaches. Soldiers keep today's `Pursuit` exactly (a breach, a pillar of at most 3
+  blocks or undermining planned at once by `ReachPlanner`, else waiting out of reach and calling the archers): the
+  10 s step was never theirs, it is §6.12's hero rule. The boss altitude ceiling counts from the highest engaged player
+  standing on a block (2.3), so a flyer can rise to a player on a 20-block pillar (over more than one take-off at low
+  levels: Ambrose climbs 1.8 b/s at level 1, about 16 blocks in his 8 s with the take-off push).
+- **Striking what it reached.** Rules 5.1.5 (melee only on the ground) and 5.1.8 (nothing starts while clinging) keep
+  their counterplay for moves, but alone they would make the reach hollow: a player on a 1x1 pillar leaves no
+  standable cell beside him. So where the target stands with no standable cell for the hero within melee reach (a 1x1
+  pillar top, a 1-wide wall top, a ledge just big enough for the player), the hero's **basic attack** (never a move)
+  may land from where its mobility holds it: a climber clinging just below the target's feet, a leaper or acrobat at
+  the apex of its jump, a flyer beside the target. The counterplay is unchanged: any hit or knockback of 0.5 knocks
+  the climber off (5.1.8), blows and arrows add air poise to the flyer (2.4), and the air budget brings the flyer
+  down. A climber II-III, which works while clinging, may instead break the block under the target's feet at player
+  speed (`BlockWork`, under `Reach`'s may-break rule: what a soldier's undermining may break).
+- **Reach flights.** Outside its aerial phases (7.4) a flyer takes off in boss mode only to reach a target that no walk
+  or other link reaches: no moves in the air, basic attacks only as above, the same per-take-off budget, reach clock
+  and ground time (5.1.4, 5.1.6). So Ambrose, aerial only in phase 2, still rises to a pillar player in phases 1 and 3.
 - **Player builds outside faction bases** (a player's own fort, a pillar, a pit) are terrain, as before.
 - **The counterplay stays** and is not a crossing rule: air poise and downing (2.4), archers that shoot an airborne
   hero first, interception (5.2), flyers landing to strike or diving with a tell (5.1.5), the air budget (5.1.4), all
@@ -533,8 +557,11 @@ The owner accepts that heroes' abilities make things "unfair", so a hero's mobil
 - `DigOut` (pillaring and bridging) and `Scaffold` (tall trees): a hero first tries its links (a climber climbs, a
   leaper leaps, a flyer flies); only when none applies does it pillar or bridge at player speed as today.
 - `Reach` and `ReachPlanner` (unreachable targets): for a hero the plan gains mobility options before tools, tried at
-  once without the 10 s wait (3.7): climb, jump-up, gap leap, glide, a flight within the air rules (5.1), then breach
-  and pillar. A soldier's plan is today's.
+  once without the 10 s wait (3.7): climb, jump-up, gap leap, glide, a flight within the air rules (5.1, a reach
+  flight outside aerial phases), then breach and pillar; the plan's end may be a strike from a link (3.7). A soldier's
+  plan and `Pursuit` are today's, with one targeting rule: an airborne enemy hero (its `DATA_LOCO` mode is airborne,
+  glide or fly) is held for, not planned toward (no pillar toward something that moves in the air; the soldier waits
+  under it out of reach and calls the archers, as `Pursuit` does for a target it cannot plan for) until it lands.
 - Stuck recovery: unchanged and still the only teleport. A hero stuck mid-air (a flyer wedged under leaves) lands or
   glides first; the recovery then runs as for any NPC.
 
@@ -641,12 +668,15 @@ would shadow the core animation (§4.5). The validator refuses such an id (NOT L
    only the stamina limit.
 5. **Strikes**: melee only on the ground or as a `dive` (7.3: heavy, a landing decal that grows over the wind-up, at
    least 1.0 s of recovery on the ground). In the air a hero may only cast light ranged moves (`shot`, `volley`,
-   `bolt`, `barrage`; at most 3 per take-off) and wind up a telegraphed `dive` or `rain`.
+   `bolt`, `barrage`; at most 3 per take-off) and wind up a telegraphed `dive` or `rain`. One exception, so that the
+   reach of 3.7 is real: a basic attack (never a move) on a target that stands with no standable cell for the hero
+   within melee reach (a 1x1 pillar top) may land from the air, the apex of a jump or a cling (3.7).
 6. **Reach**: while fighting in boss mode, at most 4 s per take-off where no engaged player can hit it in melee (more
    than 3 blocks above every engaged player's standing height), unless it is winding up a telegraphed move. The
    airborne case of rule 15; it does not apply while escaping.
 7. **Shot down**: air poise and downing (2.4), escaping included.
-8. **Climbing**: a hit or a knockback of 0.5 or more knocks a climber off; nothing starts while clinging.
+8. **Climbing**: a hit or a knockback of 0.5 or more knocks a climber off; no move starts while clinging (the basic
+   attack of 3.7's pillar case, and a climber II-III's work, may).
 9. **Places players cannot follow**: while fighting in boss mode, deep water (swimmers) and lava (ember stride) count as
    unreachable after 4 s and 2 s; the hero comes back (rule 15). While escaping they are refuges (7.7).
 10. **Travel bonuses off in fights**: runner speed and sprint, the charger's traversal charge and knockback bonus.
@@ -672,50 +702,92 @@ would shadow the core animation (§4.5). The validator refuses such an id (NOT L
 Heroes cross walls (3.7); the AI decides what for. Soldiers still go through the gate or a breach, so a hero inside is
 worth most when it helps them in.
 
-**Scouting ahead.** A flyer hero on a raid scouts first: it circles the target at 8-24 blocks, over the walls when it
-chooses, and its sightings count as a scout report (garrison count, heroes seen, the leader at home, where the heart
-and the storehouse are), because the faction only knows what someone saw. A scouting hero on its duty round (a climber
-up a rival's wall, a flyer over the yard, a leaper onto a tower) may look inside the same way; the base's sight alarm
-can see it too.
+**Today's walls** (`BaseLayout`): a 49x49 ring, 5 blocks high and 1 thick, crenellated on top (a merlon on every
+second block, so a figure can stand on the top between merlons), with no wall walk and no stairs, and two gates of
+wooden double doors that players and every NPC open (vanilla `OpenDoorGoal`, which shuts them behind it); monsters
+cannot. So any faction base's gate is always a way out from inside, and soldiers need no help with an unchanged gate.
+Players may change all of this (iron doors, blocked gateways, their own forts), and base styles may add walks and
+towers later; the rules below read the blocks, not the layout.
 
-**Entry** (`logic/hero/WallEntry`, pure; chosen when the party is 24 blocks from the walls, PROPOSED):
+**A hero on a raid** (it joins one only as §3.2 allows) is in the party's `f.raiders`, so the muster, the party size and
+the director's fall-back share count it as one raider, as a soldier; its losses count the same way. It musters with
+the party at the rally point (`GuardJob.raidTravel`), and only after the muster runs its own raid layer
+(`hero/HeroRaid`, whatever its duty: the way in, one goal inside, then the heart with the party, `RAID_LOOT`'s looting
+after a victory, the way home). The raid ends as today (the heart destroyed, the party beaten back by the fall-back
+share, the 72000-tick limit) or by its leader's death (§5.6); a hero's goal never decides when it ends. When the
+raid ends without a victory it goes home (an escape when it is in or near the target: 7.7); after a victory it loots
+and goes home as the soldiers do.
+
+**Scouting ahead.** A flyer hero on a raid scouts first: it circles the target at 8-24 blocks, over the walls when it
+chooses, and its sightings go into the faction's report of that base (`ScoutJob.observe`'s count of the base's NPCs it
+sees, plus the heroes it saw by name, so a leader it saw is known to be home), because the faction only knows what
+someone saw. A scouting hero on its duty round (a climber up a rival's wall, a flyer over the yard, a leaper onto a
+tower) may look inside the same way; the base's alarm sees it as any intruder (below), and its step aside or retreat is
+an escape's movement (7.7).
+
+**Entry** (`logic/hero/WallEntry`, pure; chosen after the muster, when the party is 24 blocks from the walls, PROPOSED).
+A way over the wall is a whole route (up, over, and down inside within its safe fall, by a climb down or a glide) and
+is chosen only when the hero also has a **way out** (below):
 
 | Family | Way in |
 |---|---|
 | flyer | over the wall ring at the field ceiling, landing inside near its goal |
-| glider | from a height outside (a ridge, a tree, a tower, its own jump apex for ceilings II-III) when the glide carries over the wall; otherwise the gate with the soldiers |
-| climber | up the wall face nearest its goal, when the wall is within its current climb height (a base wall is 5 high: a ceiling-II climber from level 1, a ceiling-I climber from level 13) |
-| leaper, acrobat | onto the wall by jump-up links or the mantle when the wall top is within its reach; otherwise the gate |
+| glider | from a height outside (a ridge, a tree, a tower, its own jump apex for ceilings II-III) when the glide carries over the wall; otherwise the gate with the soldiers. It leaves by the gate (a glide only goes down) |
+| climber | up the wall face nearest its goal and down the inside, when the wall is within its current climb height (a 5-high base wall: a ceiling-II climber from level 1, a ceiling-I climber from level 13) |
+| leaper, acrobat | onto the wall by a jump-up link (at most 3 blocks, so not today's 5-high walls: a lower or broken wall, a player's fort, or a gap link onto the top from higher ground outside) and down inside by a drop link; otherwise the gate |
 | runner, charger, hover, swimmer | the gate or the breach at the head of the soldiers (a charger leads the breach) |
 
-**Goal inside** (one per raid, by role and personality, PROPOSED; shown on its status line and in `sim.py`):
+**The way out** (a hero never ends up shut inside). `WallEntry` picks a way over the wall only when one of these is
+open from inside: the gate (doors and fence gates any NPC opens, a button or lever beside an iron door, or a gateway
+blocked only by blocks it may break under `Reach`'s rule), or its own mobility (a flyer whose stamina, after the field
+budget of the way in, regains its take-off threshold within 20 s on the ground; a climber whose climb height covers the
+inside face; a jump-up link from inside). If the way out closes while it is inside (a player bricks up the gate, a
+downing grounds a flyer), it tries its links, the gate, then breaking at player speed what `Reach` allows, then
+`NpcNavigator`'s stall watchdog and stuck recovery, as any NPC. The campaign check counts heroes still inside a hostile
+base 60 s after their raid ended (17.3, must be 0).
+
+**Goal inside** (one per raid, by role and personality, PROPOSED; shown on its status line and in `sim.py`). Every goal
+ends, so a hero never holds up its raid: on its own end condition, when the raid ends, or after 60 s without progress
+(PROPOSED). Then the hero joins the party at the heart (`RAID_ASSAULT`, which it may strike like any raider).
 
 1. **Open the way** (the default while soldiers of its party are held outside: a door they cannot open, an iron door
-   worked from inside, a player's blocked gateway, or defenders holding the doorway): it goes to the inside of the gate
-   and opens it as a player would (the door itself, a button or a lever; a player's blocking blocks broken at player
-   speed under `Reach`'s may-break rule) or attacks the defenders holding it from behind, and stays at the gate until
-   its party is through.
+   worked from inside, a player's blocked gateway, or defenders holding the doorway; with an unchanged gate of wooden
+   doors the soldiers need no help and the hero takes another goal): it goes to the inside of the gate and opens it as
+   a player would (the door itself, a button or a lever; a player's blocking blocks broken at player speed under
+   `Reach`'s may-break rule) or attacks the defenders holding it from behind. Done when every living raider is inside
+   the walls box.
 2. **Hunt the hero** (`heroes_first` focus temperaments, or a defending hero seen inside): it goes for the home hero or
-   the leader.
-3. **The heart or the storehouse**: the raid's goal, the heart, by default; a greedy hero (g at least 0.65) goes for
-   the storehouse and carries off loot as raiders do in `GuardJob`'s `RAID_LOOT`.
-4. **Clear the walls** (marksman and zoner heroes): it shoots the archers on the walls for its party, from inside or
-   from the air within the field air budget (5.1.4).
+   the leader. Done when that hero is dead, has yielded or escaped, or is not seen inside within 60 s.
+3. **The heart or the storehouse**: the raid's goal, the heart, by default. A greedy hero (g at least 0.65) goes for
+   the storehouse first and takes one backpack of loot as `GuardJob`'s `RAID_LOOT` does (the storehouse of a base still
+   standing: today's raiders loot only after the heart falls); then it carries the loot home (`RAID_RETURN`, counted in
+   the party until it unloads at home, as looting raiders are today, so its going does not beat the raid back).
+4. **Clear the archers** (marksman and zoner heroes): it shoots the defending archers and crossbowmen for its party
+   (today's archers stand at the gate posts, the station and the plaza: `GuardJob.choosePost`), from the wall top,
+   from inside or from the air within the field air budget (5.1.4). Done when none is in its range.
 
 **Defenders' response** (the defending base's AI; ordinary NPCs get no new movement):
 
-- **Archers first at an airborne hero.** NPC archers and crossbowmen pick an airborne hero within range over any other
-  target, then an intruding hero on the walls or inside, then the rest; each arrow adds air poise (2.4), so a volley
-  of five downs a flyer.
-- **Interception.** A hostile hero inside the walls or on them is an intruder for today's `defenceAlarm`: the alarm
-  sounds and the two nearest free guards go for it; the home hero (any hero of the base that is home) joins them
-  against an enemy hero; anything at the heart still draws every guard. The alarm box reaches up to the field ceiling
-  over the walls, so a flyer over the yard counts. A hero coming over the wall is also seen by any NPC with a line of
-  sight within 24 blocks (`Alerts`; `lookout` widens it), so only an approach out of sight surprises the base.
-- **Defending heroes**: flyers patrol over their own walls and intercept in the air; climbers and leapers reach the
-  wall walk at once.
+- **Archers first at an airborne hero.** A new target goal for ranged roles (`AirborneHeroTargetGoal`, above
+  today's `NearestAttackableTargetGoal`s): an enemy hero in the air (`DATA_LOCO` airborne, glide or fly) within bow
+  range and in sight is taken over any other target, then an intruding hero on the walls or inside, then the rest. It
+  keeps the hero as its target for at least 3 s (PROPOSED), so archers do not switch as a flyer lands and takes off.
+  Each arrow adds air poise (2.4), so a volley of five downs a flyer.
+- **Interception.** A hostile hero inside the walls or on them is an intruder for today's `defenceAlarm` (every 20
+  ticks, no sight needed, hostile `FactionNpc`s included, so heroes already are): the alarm sounds and the two nearest
+  free guards go for it; new: the home hero (any hero of the base that is home) joins them against an enemy hero.
+  Anything at the heart still draws every guard. Today's alarm box is the walls plus 4 blocks, 12 blocks up and down
+  from the centre; it grows to 16 up (PROPOSED), so a flyer at the field ceiling over the 5-high wall counts.
+  Swordsmen sent after an airborne hero wait under it out of reach and call the archers (`Pursuit`, 3.8) and strike
+  when it lands. New on the approach: a base NPC with a line of sight to an enemy hero within 24 blocks raises the
+  alarm before the hero reaches the box (a check in the same sweep, a few line-of-sight tests per second per base;
+  `lookout` widens it), so only an approach out of sight reaches the wall unannounced.
+- **Defending heroes**: flyers patrol over their own walls and meet an airborne intruder with their light ranged moves
+  and dives (5.1.5); climbers reach the wall top and acrobats and leapers roofs and ledges at once (a wall walk or a
+  tower where a base style has one).
 - **Gates**: a gate an intruder opened is shut again by the nearest guard once the intruder is dead or gone (a small
-  new step beside `OpenGateGoal`, which today closes only the gates an NPC opened itself).
+  new step beside `OpenGateGoal`, which today closes only the gates an NPC opened itself; wooden doors close behind the
+  NPC that passes, as vanilla's `OpenDoorGoal` does).
 - The director still counts a hero as one soldier of its role (§3.2). What a wall-crossing hero adds is not priced into
   the attack odds (PROPOSED: the campaign checks of 17.3 count the raids a hero's entry decided, and the odds are
   tuned if heroes make raids too easy).
@@ -742,14 +814,14 @@ can see it too.
 | Activity | What mobility changes |
 |---|---|
 | Travel (every trip) | runners faster; leapers and acrobats take ravines, streams, fences and ledges without detours or bridges; flyers fly long legs (3.5); gliders launch from ridges; swimmers cross water; hover heroes drift over water and mud |
-| Scouting (`ScoutJob`) | flyers see from the air and climbers from cliffs and treetops: +16 sighting radius from 12+ blocks above the ground around them; heroes may cross a rival's walls or look down into its yard (5.2); faster trips extend the round a scout completes in a day; evading is an escape (7.7) |
+| Scouting (`ScoutJob`) | flyers see from the air and climbers from cliffs and treetops: +16 sighting radius from 12+ blocks above the ground around them; heroes may cross a rival's walls or look down into its yard (5.2); faster trips extend the round a scout completes in a day; stepping aside or retreating uses an escape's movement (7.7) |
 | Reaching ore | climbers and flyers reach cliff-face outcrops a scout or cave explorer reported; swimmers II+ mine under water at full speed; climbers climb out of shafts instead of pillaring |
 | Reaching trees | climbers fell tall and mega trees from the trunk and flyers from the top instead of the scaffold pillar; leapers bound onto stumps |
 | Crossing rivers | swimmers swim, leapers and acrobats jump narrow ones, flyers and hover heroes cross; others bridge as today |
 | Farming, pens | hover heroes never trample farmland; acrobats vault the pen fence (the gate stays shut) |
 | Fishing | acrobats and climbers reach rocks and piers; swimmers the deepest water; hover heroes fish from the surface |
 | Hauling, trading | chargers carry full loads up steps unslowed; flyers carry at x1.5 stamina drain when loaded; runners trade at a run |
-| Guard duty | flyers patrol over their own walls; leapers and acrobats reach the wall walk directly; chargers hold the gate; every guard hero joins the interception of an intruding enemy hero (5.2) |
+| Guard duty | flyers patrol over their own walls; climbers reach the wall top and leapers and acrobats roofs and ledges directly (a wall walk where a base style has one: today's 5-high wall is beyond any jump-up link); chargers hold the gate; every guard hero joins the interception of an intruding enemy hero (5.2) |
 
 Workers around a hero gain nothing from its mobility; a builder hero does not lift other builders.
 
@@ -761,7 +833,8 @@ Workers around a hero gain nothing from its mobility; a builder hero does not li
 
 Mobility is used for approach, entry and spacing: leapers and acrobats close over broken ground, climbers reach archers
 on ledges and walls, flyers and gliders cross walls and harass within the field air budget (5.2), chargers hold their
-footing. Air poise applies to NPC arrows. A hero under its `retreat_below` escapes (7.7). No numbers of the kit change.
+footing. Air poise applies to NPC arrows. Away from its home base a hero under its `retreat_below` escapes (7.7); at
+home it withdraws as soldiers do. No numbers of the kit change.
 
 ### 7.2 Boss mode: what stays, what turns off
 
@@ -801,7 +874,9 @@ NEUTRAL (ground) --take-off (0.6 s tell)--> AIR (at most 8 s, at most 6 blocks u
 - Phase transitions happen on the ground: a hero that crosses a threshold in the air lands first (0.4 s), then plays
   the transition.
 - Default phases: none for gliders; for flyers phase 2 onward (all phases for legendary flyers). An author may give a
-  grounded flyer no aerial phases at all (it then flies only outside fights).
+  grounded flyer no aerial phases at all (it then flies in fights only for reach flights).
+- Outside its aerial phases a flyer takes off only for a reach flight (3.7): to a target no walk or other link
+  reaches, with no moves in the air and the same budget, reach clock and ground time.
 
 ### 7.5 Conditions, reactions, arena awareness
 
@@ -831,11 +906,23 @@ keeps a boss fight from turning into an endless chase (`logic/hero/EscapeRules`,
 
 | Trigger | Mode | When | Refuge |
 |---|---|---|---|
-| Low health | field mode (NPC wars, raids) | health under its `retreat_below` (personality, 0-60%: §5.4); today's `WithdrawGoal`, which now escapes with any mobility | its home base |
-| Refused yield | boss mode | a killing blow would start the yield (§6.13) and the hero refuses to kneel: honour 30 or less (kneeling is a promise it does not keep), or a leader with caution 70 or more | its home base; a leader's: the capital, else the nearest standing base |
-| Lost raid | any (the faction's order wins over boss mode) | its raid party falls back (the director's fall-back share, §5.5) | its home base |
-| Scout evading | outside boss mode (a player who engages it gets a fight) | what makes `ScoutJob` step aside or retreat today (enemy soldiers seen, badly hurt under 40%, a monster in the way) | out of sight, then on with the round; home when retreating |
-| A leader saving itself | field mode | the base it is in falls (its heart is destroyed), or it is under 50% health at its heart with no guard left beside it | the capital, else the nearest standing base |
+| Low health | field mode (NPC wars, raids), away from its home base (outside its walls box plus 16 blocks) | health under its `retreat_below` (personality, 0-60%: §5.4); a hero's `WithdrawGoal` hands over to the escape instead of returning to the fight at 60% | its home base |
+| Refused yield | boss mode | a killing blow would start the yield (§6.13) and the hero refuses to kneel: honour 30 or less (kneeling is a promise it does not keep), or a leader with caution 70 or more | its home base; a leader's: as below |
+| Lost raid | any (the faction's order wins over boss mode) | its raid falls back (beaten back by the fall-back share of §5.5, or its leader fell: §5.6) while the hero is in or near the target (its walls box plus 16 blocks) or fighting; elsewhere it walks home with the party | its home base |
+| A leader saving itself | field mode | the base it is in falls (its heart is destroyed), or it is under 50% health at its heart with no guard left beside it | as below |
+
+**Refuge.** The refuge is never the base it flees. A leader's is the capital when the capital stands and is not that
+base, else the nearest other standing base of its faction; with none, a leader does not escape (it fights at its heart,
+and a fall that leaves no base is the elimination rule of §5.6). A home base that has fallen is replaced by the
+nearest standing base of its faction (`HeroState.baseId` moves there).
+
+**Not escapes.** At its home base a hero under its `retreat_below` withdraws as soldiers do today (`WithdrawGoal`: away
+from the attacker within the base, eating, back at 60%; its links allowed, as in any field fight): its refuge is
+where it stands, so there is nothing to escape to. A scout's step aside or retreat (`ScoutJob`: enemy soldiers seen,
+badly hurt under 40% among monsters, a monster in the way; outside boss mode, since a player who engages it gets a
+fight) uses an escape's movement (below) but none of the rest: no boss bar, no stay-away, no window spent, no morale,
+no line; it goes out of sight and on with its round, or home when retreating. A raid that ends in victory or by the
+time limit sends the hero home as the soldiers go.
 
 In boss mode there is no low-health trigger: `WithdrawGoal` still never runs while boss mode is on (§3.5), so a hero
 fights to the yield and either kneels or refuses it (a lost raid is the one order that pulls it out of a boss fight).
@@ -844,23 +931,29 @@ fights to the yield and either kneels or refuses it (a lost raid is the one orde
 
 - Any mobility: links, climbs, chimneys, glides, flight with the stamina limit only (no air budget, no altitude ceiling
   but the travel one, 2.3), deep water for swimmers, lava for fire-proof heroes, risky gaps with a wide landing (3.3).
-  Rules 5.1.4, 5.1.6, 5.1.9 and 5.1.15 do not apply; no teleporting (5.1.1), air poise and downing (5.1.7), no carrying
-  (5.1.12) and the hazard rules (5.1.13) still do.
-- It starts no moves and no basic attacks; it runs.
+  Rules 5.1.4, 5.1.6, 5.1.9 and 5.1.15 do not apply; no teleporting (5.1.1: stuck recovery is never used to get away),
+  air poise and downing (5.1.7), no carrying (5.1.12) and the hazard rules (5.1.13) still do.
+- It starts no moves and no basic attacks; it runs. **Cornered** (no path or link away from its pursuers for 3 s,
+  PROPOSED), it fights back where it stands and runs again as soon as a way opens.
+- **Pursuers** are the players engaged in the fight it fled and the NPCs whose target it is; a raid it fled is left,
+  and it is out of `f.raiders`.
 - **Boss mode ends** when the escape starts: the bar shows `★ Name · fled` for 3 s and goes, the health keeps its share
   (at least 1), and boss mode does not start again while it escapes. Hits on it are field-mode hits (no per-hit cap,
   no poise, no yield): a hero that refused the yield is at 1 health, so the next arrow, bolt or trident that reaches it
   kills it. Shooting it down is the catcher's answer.
 - The escape ends when it is inside its refuge's walls, or when no pursuer has been within 48 blocks for 10 s; it then
-  travels home as usual.
+  travels home as usual (the refuge is its home base unless that fell, or it is a leader).
 
 **After an escape**
 
 - **Stays away** for `heroes.escapeAwaySeconds` (300 s) and until it is above 50% health: it rests at its refuge (the
   out-of-combat regeneration of §6.10), does not re-engage the players or NPCs it fled and does not rejoin the raid or
-  fight it left. Attacked at its refuge, it defends itself and its heart; that is a new fight.
-- **Once in 10 minutes** (`heroes.escapeCooldownSeconds`, 600 s): within that window every trigger is ignored, so a
-  player who follows it home gets a real fight that ends in the yield (it kneels; the refusal is spent).
+  fight it left. Attacked there or on the way, it defends itself (and its heart); that is a new fight.
+- **Once in 10 minutes** (`heroes.escapeCooldownSeconds`, 600 s, counted from the escape's start): within that window
+  no trigger starts an escape, and each falls back to what soldiers and the first draft did: low health away from home
+  withdraws as `WithdrawGoal` does today (back at 60%, walking within the fight rules), a refused yield becomes the
+  yield (it kneels), a lost raid sends it home with the party, and a leader fights at its heart. So a player who
+  follows it home, or catches it on the way, gets a real fight that ends in the yield.
 - Then it goes back to its duty (a leader to `court`).
 - **Loot and rewards**: an escape is neither a death nor a defeat. Nothing drops, the players who fought it get no XP
   orbs, crest or token fragment (§6.13), and it keeps its gear and whatever it carries (raid loot included).
@@ -871,6 +964,13 @@ fights to the yield and either kneels or refuses it (a lost raid is the one orde
   engaged players: "Name fled".
 - Its home base is gone: the nearest standing base of its faction; no base left: the elimination rule of §5.6 (an
   exiled free hero).
+
+**Why it cannot loop.** An escape is followed by at least 300 s away and above 50% health, during which it starts
+nothing against those it fled, and by a 600 s window in which no trigger escapes, with the fallbacks above; after the
+window a new escape needs a new trigger (another fight brought to the yield, another lost raid). Low health never
+triggers in boss mode or at home, and the refuge is never the base it flees, so escape, return, escape cannot cycle
+within a fight, and an escape always ends: at the refuge, 10 s clear of pursuers, or by its death.
+`EscapeRulesTest` walks these sequences.
 
 ---
 
@@ -1111,7 +1211,7 @@ levels to `Block.getDrops` and the loot parameters.
 | `TraderJob` | backpack | `merchant_prince`, `tribute_master` | runners, flyers, swimmers on the trip |
 | `ScoutJob`, `StructureSightings` | | `cartographer`, `spymaster`, `pathfinder` | altitude sighting bonus |
 | `AnimalCarerJob`, `ButcherJob`, `PenJob` | | `beastmaster` | acrobats vault the fence |
-| `GuardJob`, `Recruitment`, the defence | alarm reach | Presence talents (11.2), `aura_marksman`, `aura_duelist` | flyers patrol, leapers reach the wall walk |
+| `GuardJob`, `Recruitment`, the defence | alarm reach | Presence talents (11.2), `aura_marksman`, `aura_duelist` | flyers patrol, climbers reach the wall top |
 | `CaveExplorerJob` | travel | | climbers and acrobats explore vertical caves |
 
 ## 13. Caps and balance checks (PROPOSED)
@@ -1210,16 +1310,15 @@ it. Proposed kit changes are marked for the authoring tasks C1-C4.
 ### 15.2 Yugen Kagaribi (fox): runner III + leaper I; trader
 
 - **Mobility**: from level 1 step 1.0 and the sprint burst; travel speed (+12% at level 1, +20% at 20), movement
-  efficiency, the travel-hunger cut and the burst grow with level. Leaper I: jump 1.58 blocks at level 1 and 1.8 at
-  20 (field fences from level 20), gaps 3 to 5, safe fall 4.8 to 6 (15.9).
-- **At work**: `merchant_prince`: prices -10 / 20 / 30%, backpack 30 / 33 / 36, one more trip a day at III. A 300-block
-  village trip is about a fifth shorter in time at III (speed, no fence detours).
+  efficiency, the travel-hunger cut and the burst grow with level. Leaper I: jump 1.8 blocks from level 1 (the floor
+  of 1.1, so he hops field fences as his roster line says), gaps 3 to 5, safe fall 4.8 to 6 (15.9).
+- **At work**: `merchant_prince`: prices -10 / 20 / 30%, backpack 30 / 33 / 36, one more trip every 3 / 2 / 1 days
+  (11.1). A 300-block village trip is about a fifth shorter in time at III (speed, no fence detours).
 - **In a fight**: a zoner (`keep_distance` 10); travel bonuses off in boss mode; leaper I lets him hop onto fences and
-  1.5-block ledges (from level 20) while keeping distance, and he comes back within 4 s from ground a player cannot
-  reach (5.1.15). As a trader caught on the road he escapes at his `retreat_below` with a fox's turn of speed (7.7).
-  With honour 20 (a schemer) he is the slice's one hero who refuses the yield: at the killing blow he runs at 1 health
-  instead of kneeling, so the slice's yield screenshots use another hero, and the escape test and boss session use
-  him.
+  1.5-block ledges while keeping distance, and he comes back within 4 s from ground a player cannot reach (5.1.15). As
+  a trader caught on the road he escapes at his `retreat_below` with a fox's turn of speed (7.7). With honour 20 (a
+  schemer) he is the slice's one hero who refuses the yield: at the killing blow he runs at 1 health instead of
+  kneeling, so the slice's yield screenshots use another hero, and the escape test and boss session use him.
 - **Animations**: `move.sprint` as a fox lope (an override in his file).
 
 ### 15.3 Benika Akagane (oni): charger III + leaper I; miner
@@ -1228,7 +1327,7 @@ it. Proposed kit changes are marked for the authoring tasks C1-C4.
   knockback bonus while moving (field mode), safe fall, movement efficiency and the charge grow with level (charge
   +36% every 20 s at level 1, +60% every 12 s at 20: 15.9); leaper I as Yugen's.
 - **At work**: `surveyor`: virtual Fortune +1 / +2 / +3 on the ores she mines (at most Fortune III with her pickaxe's
-  own), vein following one block wider at II-III; loaded mine stairs without slowing.
+  own), vein following one block wider from tier I (11.1); loaded mine stairs without slowing.
 - **In a fight**: `shoulder_charge` and `meteor_club` unchanged; in boss mode her knockback bonus and traversal charge
   are off; a player's cobweb trap does not hold her from level 1 (her `snowball` weak point is the answer).
 
@@ -1261,9 +1360,9 @@ it. Proposed kit changes are marked for the authoring tasks C1-C4.
   while he clings.
 - **Walls**: scouting, he climbs a rival's wall or a tree beside it and looks into the yard, so his report carries the
   garrison, the heroes and where the heart and the storehouse are (5.2). On a raid he is his party's way in: up the
-  wall out of the guards' sight, then the gate from inside. The answer is the defenders' (archers, the two guards and
-  the home hero that intercept him, a hit that knocks him off the wall); evading, he climbs where no one follows
-  (7.7).
+  wall away from the archers' posts, then the gate from inside when his party needs it opened (5.2). The answer is the
+  defenders' (the alarm, which sounds once he is on the wall, archers, the two guards and the home hero that intercept
+  him, a hit that knocks him off the wall); stepping aside, he climbs where no one follows (7.7).
 
 ### 15.7 Ilsabet Frostmere (knight): charger III + snowstride I; guard
 
@@ -1282,8 +1381,8 @@ it. Proposed kit changes are marked for the authoring tasks C1-C4.
 - **Carrier**: his gnarled cauldron staff is the broom (the herb bundle at its foot is the bristles): on take-off it
   moves from his hand to the `mount` locator and he rides side-saddle (`move.ride`), casting with his free hand
   (`move.ride_cast`); his crow flaps beside him. `carrier: { kind: broom, part: weapon }` (8.4).
-- **At work**: `sage_of_letters`: best of three offers, 0 / 1 / 2 rerolls with a book; he flies to the library's high
-  shelves and back from errands outside the walls; as a leader (`court`) he mostly stays home.
+- **At work**: `sage_of_letters`: best of three offers, 0.5 / 1 / 2 rerolls with a book (11.1); he flies to the
+  library's high shelves and back from errands outside the walls; as a leader (`court`) he mostly stays home.
 - **In a fight** (proposal for C3): phase 1 on the ground as written. Phase 2 (`aerial.phases: [2]`): `broom_hops`
   becomes `broom_dive` (form `dive`, `from: air`, range 8, radius 2, the same venom damage and puddle) inside an aerial
   window: take-off (0.6 s: he mounts the staff, the crow caws), at most 8 s at most 6 blocks up (the boss ceiling,
@@ -1299,8 +1398,8 @@ it. Proposed kit changes are marked for the authoring tasks C1-C4.
 
 Power 60% at level 1, 79% at level 10, 100% from level 20 (1.1). Features are whole from level 1; numbers follow the
 three kinds of 1.1 (a bonus over a worker's value, a reach from zero, a wait divided by the power); link sizes round
-down to whole blocks. Jump heights are apexes in the vanilla air simulation (1.2); a jump-up link needs the jump
-height minus 0.3.
+down to whole blocks, and no number goes below its feature's floor (1.1: a leaper's jump of 1.8, a gap of 2). Jump
+heights are apexes in the vanilla air simulation (1.2); a jump-up link needs the jump height minus 0.3.
 
 | Hero (ceilings) | Features from level 1 | Number | Level 1 | Level 10 | Level 20+ |
 |---|---|---|---|---|---|
@@ -1313,7 +1412,7 @@ height minus 0.3.
 | | | movement efficiency | 0.60 | 0.79 | 1.00 |
 | | | travel hunger | -30% | -39% | -50% |
 | | | sprint burst | +24% every 25 s | +32% every 19 s | +40% every 15 s |
-| | | jump height (blocks; fences need 1.8) | 1.58 | 1.68 | 1.80 |
+| | | jump height (blocks; the floor of 1.1: fences from level 1) | 1.80 | 1.80 | 1.80 |
 | | | gap (blocks) | 3 | 3 | 5 |
 | | | safe fall (blocks) | 4.8 | 5.4 | 6.0 |
 | Benika (charger III + leaper I) | step 1.0, traversal charge, cobwebs and berry bushes never slow her (boss mode too) | knockback resistance while moving | +0.18 | +0.24 | +0.30 |
@@ -1360,13 +1459,13 @@ same for every hero.
 
 | Test | Covers |
 |---|---|
-| `MobilityRulesTest` | the power curve (60 / 79 / 100% at levels 1, 10, 20; flat above 20; the two config keys); every feature of the ceiling present at level 1 and none above it; the three kinds of scaling of 1.1 and the rounding of link sizes; the table of 15.9 at levels 1, 10 and 20; combining primary and secondary; stamina drain and regain; the air budget windows; the validator's ADJUSTED cases |
+| `MobilityRulesTest` | the power curve (60 / 79 / 100% at levels 1, 10, 20; flat above 20; the two config keys); every feature of the ceiling present at level 1 and none above it; the three kinds of scaling of 1.1, the rounding of link sizes and the floors (every family and ceiling has a usable feature at level 1: a leaper I's 1.5-block jump-up, a hover I's 2-block gap); the table of 15.9 at levels 1, 10 and 20; combining primary and secondary; stamina drain and regain; the air budget windows; the validator's ADJUSTED cases |
 | `LeapSolverTest` | every gap and rise in each tier's range lands within 0.15 blocks of the cell centre in the vanilla air simulation (the impulses of 1.6 included); impossible links are refused; honey, soul sand, water and arc-changing effects refuse a take-off; jump heights match 1.2 (1.25 / 1.84 / 2.52 / 3.54) |
 | `FlightPlannerTest` | cruise layer clearance (a 1-block spire between samples is caught by the 3-wide sampling), altitude ceilings (the boss ceiling following the highest engaged player on a block), the stamina reserve to the best landing seen, unloaded samples end the plan, a hostile base crossed on a raid and skirted on a trip (the x3 cost) |
-| `HeroLinksTest` | link generation on a pure grid model: jump-up, gap, drop, climb, chimney, glide, with limits from ceiling and level; the 8-link cap; hazards refused; a hostile wall climbed and leapt like any wall; risky gaps refused in a fight and allowed with a wide landing out of one or while escaping; the fight-reach clock of 5.1.15 (a link that leaves every engaged player behind starts it, the hero is back within 4 s) and no clock while escaping |
+| `HeroLinksTest` | link generation on a pure grid model: jump-up, gap, drop, climb, chimney, glide, with limits from ceiling and level; the 8-link cap; hazards refused; a hostile wall climbed and leapt like any wall; risky gaps refused in a fight and allowed with a wide landing out of one or while escaping; the fight-reach clock of 5.1.15 (a link that leaves every engaged player behind starts it, the hero is back within 4 s) and no clock while escaping; the strike from a link of 3.7 (only a basic attack, only with no standable cell in reach) |
 | `WorkMasteryTest` | proficiency and specialty numbers (no part missing at tier I: 11.1), Presence tiers, every cap of 13, combining with affixes (virtual levels and an extra roll never on the same drop; the worked 2.75x day of 13 stays under the flag); workers' values unchanged |
-| `WallEntryTest` | the way in by family, ceiling, level and wall height (5.2: a 5-high wall for a ceiling-I climber only from level 13); the goal inside by role, personality and the party's state |
-| `EscapeRulesTest` | each trigger of 7.7 (the refused yield by honour and a cautious leader; none in boss mode for low health); the refuge; the rules lifted while escaping and the ones kept; the end of an escape; stay-away and the 10-minute window; no rewards; morale deltas |
+| `WallEntryTest` | the way in by family, ceiling, level and wall height (5.2: a 5-high wall for a ceiling-I climber only from level 13, never by a jump-up link); no way over without a way out (a glider's gate, a flyer's stamina, a climber's inside face); the goal inside by role, personality and the party's state, and every goal's end (its condition, the raid's end, 60 s without progress) |
+| `EscapeRulesTest` | each trigger of 7.7 (the refused yield by honour and a cautious leader; none in boss mode or at home for low health; a lost raid only in or near the target); the refuge (never the base it flees; a leader with no other base fights); the scout's step aside as movement only; the rules lifted while escaping and the ones kept; cornered; the end of an escape; stay-away, the 10-minute window and each trigger's fallback inside it; sequences that would loop (escape, return, trigger again) end in a withdrawal, a yield or a walk home; no rewards; morale deltas |
 
 Python: `check_roster.py` (section 14).
 
@@ -1387,7 +1486,7 @@ and, for the owner's answers of 2026-11-12:
   leaper its landing roll (no unlock on level-up, only numbers);
 - `heroRaiderFliesInAndOpensTheWay` (a test base whose gate is an iron door with a button inside, a hostile flyer hero
   and two soldiers outside: the hero flies over the wall, presses the button, the soldiers walk in through the gate,
-  and neither soldier crosses the wall);
+  and neither soldier crosses the wall; the test then ends the raid, and the hero is out of the walls within 30 s);
 - `climberRaiderScalesHostileWall` (a climber II hero climbs a test base's 5-high wall into the yard; the base's alarm
   sounds within 2 s of it topping the wall);
 - `archersShootAirborneHeroFirst` (two defending archers with a hostile soldier and a flying hero in range shoot the
@@ -1396,8 +1495,10 @@ and, for the owner's answers of 2026-11-12:
   take it as their target within 2 s; the other guards stay at the gate);
 - `heroScoutReportsFromInsideWalls` (a scouting climber hero looks into a rival test base: its report carries the
   garrison count and the heroes seen inside);
-- `heroReachesPillarPlayerAtOnce` (a fake engaged player on a 5-block pillar: a climber and a flyer hero are in melee
-  reach within 4 s, with no far-band wait; a soldier in the same test still waits its 10 s before pillaring);
+- `heroReachesPillarPlayerAtOnce` (a fake engaged player on a 1x1, 5-block pillar: a climber and a flyer hero (the
+  flyer outside its aerial phases, so on a reach flight) are in melee reach within 4 s, with no far-band wait, and land
+  basic attacks from the cling and from the air; a soldier in the same test does what `Pursuit` does today, with no
+  link);
 - `fightingHeroComesBack` (rewrites the first draft's `bossLeaperNoEscapeAcrossGap`: a 5-block gap between the hero and
   a fake engaged player; the hero may leap across, but it is back within the player's reach within 4 s, every time,
   for 60 s);
@@ -1420,14 +1521,15 @@ fixed seed: more drops than the same pickaxe in a worker's hand, the pickaxe unc
 In the two 8-day slice runs (`SLICE_PLAN.md` section 6): `sim.py` hero lines add flights, landings, downings, links
 used and failed, stuck recoveries (no more than a worker's rate) and the output ratio of 13; the first draft's
 "hostile-airspace violations must be 0" is gone (3.7). In its place, what heroes do with the freedom: wall crossings
-by family and by goal (the way opened, a hero hunted, the heart, the storehouse, the walls cleared), how many crossing
-heroes were downed or intercepted, and the raids a hero's entry decided (raids won with and without a hero, against
-the director's odds); escapes by trigger, refuge reached or killed on the way, time away; two counters that must stay
-at 0: a hero re-engaging those it fled within its stay-away time or escaping twice within 10 minutes, and a soldier or
-worker crossing a wall without a gate or a breach (ordinary NPCs stay player-like). A boss session on the real client
-(`SLICE_PLAN.md` 6.5) fights Ambrose's aerial phase with a bow, a crossbow and a wind charge, Tobimaru and Natsuho in a
-walled arena, a climber and a flyer against the player on a 6-block pillar (reached at once), and Yugen refusing his
-yield, shot down as he flees (and, in a second fight, getting away).
+by family and by goal (the way opened, a hero hunted, the heart, the storehouse, the archers cleared), how many
+crossing heroes were downed or intercepted, and the raids a hero's entry decided (raids won with and without a hero,
+against the director's odds); escapes by trigger, refuge reached or killed on the way, time away; three counters that
+must stay at 0: a hero re-engaging those it fled within its stay-away time or escaping twice within 10 minutes, a hero
+still inside a hostile base's walls 60 s after its raid ended (5.2, the way out), and a soldier or worker crossing a
+wall without a gate or a breach (ordinary NPCs stay player-like). A boss session on the real client (`SLICE_PLAN.md`
+6.5) fights Ambrose's aerial phase with a bow, a crossbow and a wind charge, Tobimaru and Natsuho in a walled arena, a
+climber and a flyer against the player on a 1x1, 6-block pillar (reached at once and struck from the cling and the
+air), and Yugen refusing his yield, shot down as he flees (and, in a second fight, getting away).
 
 ## 18. Work breakdown and milestone placement
 
@@ -1437,8 +1539,8 @@ yield, shot down as he flees (and, in a second fight, getting away).
 |---|---|---|---|---|
 | F5 | `logic/hero/MobilityRules` (ceilings and the level power of 1.1), `LeapSolver`, `FlightPlanner`, link rules, `WallEntry`, `EscapeRules`, `WorkMastery`; the format-2 `mobility` block and the `dive` form in the catalogue and validator | F1, F2 | M | the unit tests of 17.1 |
 | A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, mantle, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO`, NBT | A1, F5 | L | the ground and air GameTests of 17.2, `mobilityScalesWithLevel` |
-| A11 | Navigation: `HeroNodeEvaluator` links and their follower, climb links, the flight mode with the cruise planner and the ground fallback, walls as terrain and the hostile-base travel cost (3.7), `NpcNavigator`, `DigOut`, `Scaffold` and `Reach` integration (mobility first, no 10 s wait), budgets | A10 | L | the link and flight GameTests, `heroReachesPillarPlayerAtOnce`; a campaign day with no more stuck recoveries than workers |
-| A12 | Combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, every rule of 5.1 (fighting versus escaping), raids and scouting over walls (entry, the goal inside, opening the way), the defenders' response (archers' priority, interception with the home hero, the alarm box), escape (7.7: triggers, the refused yield, boss bar, stay-away, rewards, `escape` lines) | A6, A10, A11 | M | the boss mobility, wall and escape GameTests of 17.2 |
+| A11 | Navigation: `HeroNodeEvaluator` links and their follower, climb links, the flight mode with the cruise planner and the ground fallback, walls as terrain and the hostile-base travel cost (3.7), `NpcNavigator`, `DigOut`, `Scaffold` and `Reach` integration (mobility first, no 10 s wait, the strike from a link and reach flights; soldiers' `Pursuit` holds for an airborne hero), budgets | A10 | L | the link and flight GameTests, `heroReachesPillarPlayerAtOnce`; a campaign day with no more stuck recoveries than workers |
+| A12 | Combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, every rule of 5.1 (fighting versus escaping), raids and scouting over walls (`HeroRaid`: entry, the way out, the goal inside and its end, opening the way), the defenders' response (`AirborneHeroTargetGoal`, interception with the home hero, the taller alarm box and the approach sighting, shutting an opened gate), escape (7.7: triggers, refuges, the refused yield, boss bar, stay-away, the window's fallbacks, rewards, `escape` lines) | A6, A10, A11 | M | the boss mobility, wall and escape GameTests of 17.2 |
 | G10 | The locomotion set of 4.1 in the core library, wing loops, the `mount` locator and the broom (as a weapon-mount for Ambrose and a `mounts/broom` part), `herogen check` rules for locomotion | G4, G6a | M | each passes `check`; GIFs reviewed on two bases |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, the virtual-enchantment scope, furnace progress (access transformer), `sim.py` output lines | A1, L5, F5 | M | the work GameTests; workers unchanged |
 
@@ -1513,26 +1615,29 @@ What each changed (the reading told to the owner, applied here):
 
 1. **Walls and reach.** The rule that heroes never fly, glide, leap or climb over a hostile base's walls is reversed:
    heroes cross walls in raids, sieges, scouting rounds and fights, and use their mobility at once to reach a player
-   on a pillar, in a pen or behind a wall, with no 10 s wait (that step stays for soldiers). Ordinary NPCs still need
-   the gate or a breach. The hostile-airspace margins, the "pushed in" bookkeeping and the campaign check that
-   voluntary crossings stay at 0 are gone; in their place, what the AI does with the freedom (5.2: entry, opening the
-   way, hunting the hero, the heart or the storehouse) and the defenders' answer (archers shoot an airborne hero first,
-   guards and the home hero intercept, alarms), with GameTests and campaign counters (17). The counterplay that is not
-   a crossing rule stays as PROPOSED numbers: shoot-down and air poise, flyers landing to strike or diving with a tell,
-   the air budget. Rules loosened because their only purpose was to stop crossing or reaching: the boss altitude
-   ceiling now also counts from the highest engaged player standing on a block (2.3), and the "no escape links" rule
-   is now the fight-reach rule of 5.1.15 (a hero may take any position but comes back within 4 s). Sections 0, 1.6-1.9,
-   2.2-2.4, 3.2, 3.5, 3.7, 3.8, 5.1, 5.2, 6, 7.1-7.5, 8.5, 15.6, 17, 18.
+   on a pillar, in a pen or behind a wall, with no 10 s wait (that step, §6.12's, now applies only to a hero no link
+   helps; soldiers keep today's `Pursuit`, which never had it), and strike it from where their mobility holds them
+   (3.7). Ordinary NPCs still need the gate or a breach. The hostile-airspace margins, the "pushed in" bookkeeping and
+   the campaign check that voluntary crossings stay at 0 are gone; in their place, what the AI does with the freedom
+   (5.2: entry, opening the way, hunting the hero, the heart or the storehouse) and the defenders' answer (archers
+   shoot an airborne hero first, guards and the home hero intercept, alarms), with GameTests and campaign counters
+   (17). The counterplay that is not a crossing rule stays as PROPOSED numbers: shoot-down and air poise, flyers
+   landing to strike or diving with a tell, the air budget. Rules loosened because their only purpose was to stop
+   crossing or reaching: the boss altitude ceiling now also counts from the highest engaged player standing on a block
+   (2.3), and the "no escape links" rule is now the fight-reach rule of 5.1.15 (a hero may take any position but comes
+   back within 4 s); "melee only on the ground" and "nothing while clinging" gained the pillar exception for basic
+   attacks, and flyers the reach flight outside aerial phases (3.7). Sections 0, 1.6-1.9, 2.2-2.4, 3.2, 3.5, 3.7, 3.8,
+   5.1, 5.2, 6, 7.1-7.5, 8.5, 15.6, 17, 18.
 2. **Flyers.** The 27 stay; the roster did not change.
 3. **Progression.** Tiers are the authored ceiling, not unlock gates: every hero has every mobility feature up to its
-   ceiling from level 1, and its numbers grow from 60% at level 1 to 100% at level 20 (1.1; the slice heroes in 15.9).
-   The same principle was applied wherever the design gated something by hero level (each change recorded where it
-   is made): in `HEROES_V2.md`, moves no longer wait for `unlock_level` (§8, §12.7), an authored third phase of a
-   common or rare hero is there from level 1 (§6.7, §12.10), an authored awakened ultimate stands beside the first
-   from level 1 instead of replacing it at 25 (§8, §12.8), and two talent parts that were missing at tier I start
-   there with a smaller number (`mentor`'s recruit level, `spymaster`'s raid warning: §7.2); here, three specialty
-   parts likewise (11.1). Power keeps growing with level as before (v1 growth and ability power, talent tiers at 10 and
-   20). No new gate was added.
+   ceiling from level 1, and its numbers grow from 60% at level 1 to 100% at level 20, never below what a feature
+   needs to work (1.1; the slice heroes in 15.9). The same principle was applied wherever the design gated something
+   by hero level (each change recorded where it is made): in `HEROES_V2.md`, moves and passives no longer wait for
+   `unlock_level` (§8, §12.7), an authored third phase of a common or rare hero is there from level 1 (§6.7, §12.10),
+   an authored awakened ultimate stands beside the first from level 1 instead of replacing it at 25 (§8, §12.8), and
+   two talent parts that were missing at tier I start there with a smaller number (`mentor`'s recruit level,
+   `spymaster`'s raid warning: §7.2); here, three specialty parts likewise (11.1). Power keeps growing with level as
+   before (v1 growth and ability power, talent tiers at 10 and 20). No new gate was added.
 4. **Extra output** (not answered): the numbers of sections 11-13 stay and are tuned after the owner plays.
 
 The owner added a fourth point, on escaping: an escaping hero may use any mobility, even making pursuit impossible,
@@ -1605,3 +1710,31 @@ families with Ambrose as its flyer. Ordinary NPCs keep every player-like rule.
 - `SLICE_PLAN.md` section 3 (outside this file's owner) still needs each slice hero's mobility line and Ambrose's
   phase-2 `broom_dive`; the art sections (§4.4, §13.3, §13.6) need the locomotion set, `DATA_LOCO`, wing loops, the
   `mounts` category and the summoned-versus-worn wings rule of 2.5.
+- `SLICE_PLAN.md` also needs, since the owner's answers: yield screenshots and tests with a hero other than Yugen (he
+  refuses the yield), the 1x1 pillar of the boss session, and the escape session.
+- The roster's leaper guards say "bounds up to the wall walk" (`roster_data.py` work lines), but today's base wall has
+  no wall walk and is beyond any jump-up link (5.2): a later roster pass rewords them, or a base style adds a walk.
+- The strike from a link (3.7) is a new exception to "melee only on the ground": the boss sessions judge whether a
+  flyer's or a clinging climber's basic attacks on a pillar player read fairly. The approach sighting and the archers'
+  target goal (5.2) are new per-base costs for V3's tick-time run.
+
+**Review of the owner answers (2026-11-12).** A second pass over this file, `HEROES_V2.md` (outside §4 and §13),
+`ROSTER_PLAN.md` and the roster tools once the answers were applied, against today's `BaseLayout`, `defenceAlarm`,
+`GuardJob` raids, `Pursuit`/`ReachPlanner`, `OpenGateGoal`, `WithdrawGoal` and `ScoutJob`. Held: nothing left says that
+heroes may not cross walls, must wait the unreachable step or may not escape; the 15.9 numbers recompute from p(L);
+ordinary NPCs keep every player-like rule (their only change is targeting: archers' priority, interception, holding
+under an airborne hero); the GameTest count (39) agrees with `HEROES_V2.md` V1; `check_roster.py` prints OK. Fixed:
+"all abilities" held only on paper for a leaper I (no jump-up link before level 20) and a hover I (no gap drift), so
+scaling now has floors (1.1, 15.2, 15.9); the reach to a pillar player was hollow (melee only on the ground, nothing
+while clinging and phase-gated aerial windows left no way to hit a player on a 1x1 pillar), so basic attacks may land
+from a cling, an apex or the air and flyers make reach flights (3.7, 5.1, 7.4); soldiers never had a 10 s wait
+(`Pursuit` plans at once; the 10 s step is §6.12's hero rule), so neither the text nor `heroReachesPillarPlayerAtOnce`
+claims one; raids now say how a hero is counted in `f.raiders`, that it enters after the muster, that it goes over a
+wall only with a way out (a glider leaves by the gate), that every goal inside ends and a greedy hero's loot run does
+not beat the raid back, and what today's walls allow (5 high, 1 thick, no wall walk, wooden doors every NPC opens: no
+leaper gets onto them); defenders get a concrete archers' target goal with a 3 s hold, an alarm box raised over the
+field ceiling (today 12 blocks), swordsmen who wait under a flyer instead of pillaring, and the approach sighting marked
+as new (3.8, 5.2); escape has no low-health trigger at home, a refuge that is never the base it flees, a scout's step
+aside as movement only, a cornered rule, each trigger's fallback inside the 10-minute window and the reason nothing
+loops (7.7); and stale lines (15.2, 15.3 and 15.8 quoted first-draft specialty tiers; `HEROES_V2.md` left a passive's
+`unlock_level` and v1's `unlock` line event) now match.

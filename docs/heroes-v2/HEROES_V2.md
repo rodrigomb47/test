@@ -200,7 +200,7 @@ it has the `court` duty it is never sent alone. GameTest `heroNotDraftedIntoRaid
 | 1 | `HeroYieldGoal` | kneels, passive, while yielding |
 | 2 | `HeroMoveGoal` | replaces v1's `HeroAbilityGoal`: picks and runs moves in both modes (section 6.3); MOVE+LOOK while a move runs |
 | 3 | `NpcMeleeAttackGoal` / `NpcRangedAttackGoal` / `HeroThrowGoal` | basic attacks, leash from aggression (v1 §8), skirmisher step-back, `keep_distance` |
-| 4 | `WithdrawGoal` | `retreat_below` from personality (section 5.4); never while boss mode is on; the withdrawal is an escape with any mobility (`MOBILITY_AND_WORK.md` 7.7) |
+| 4 | `WithdrawGoal` | `retreat_below` from personality (section 5.4); never while boss mode is on; away from its home base the withdrawal is an escape with any mobility (`MOBILITY_AND_WORK.md` 7.7); at home, and within 10 minutes of an escape, it withdraws as soldiers do |
 | 5+ | `WorkGoal` | its duty, or `court` for a leader |
 | target | `HeroTargetGoal` | focus, protects, aggression radius (v1 §8), attack tokens (section 6.2) |
 
@@ -981,11 +981,13 @@ and a passed chance replaces the next pick (never a move in progress).
   along a path (dashes and charges stop short), open sky (needed by visual lightning and `rain` outdoors).
 - **Hazard-aware knockback** on players: if the landing area 4 blocks away has lava, fire, a drop over 6 or the void,
   the push is cut to 0.5 strength. No cheap deaths.
-- **Unreachable target**: a hero first uses its mobility, at once, to reach a player on a pillar, in a pen or behind
-  a wall (climb, leap, glide, flight: `MOBILITY_AND_WORK.md` 3.7, the owner's answer of 2026-11-12). When no link
-  reaches (no path, or no melee reach for 5 s): far-band moves; after 10 s the hero uses the NPCs' own tools at player
-  speed (`DigOut` pillaring and bridging, `BlockWork` breaking) to reach the player, exactly as a player would; after
-  30 s it disengages with a taunt line and resets. A hero without any far-band move gets a NOTE.
+- **Unreachable target**: a hero first uses its mobility, at once, to reach a player on a pillar, in a pen or behind a
+  wall (climb, leap, glide, flight, a reach flight outside aerial phases; on a player who left no cell beside him, a
+  basic attack from the cling, the jump's apex or the air: `MOBILITY_AND_WORK.md` 3.7, the owner's answer of
+  2026-11-12). When no link reaches (no path, or no melee reach for 5 s): far-band moves; after 10 s the hero uses the
+  NPCs' own tools at player speed (`DigOut` pillaring and bridging, `BlockWork` breaking) to reach the player, exactly
+  as a player would; after 30 s it disengages with a taunt line and resets. A hero without any far-band move gets a
+  NOTE.
 - **Home ground**: the `in_home_base` condition lets a hero use its walls (a bell rung to call guards, a stand at the
   heart).
 
@@ -1018,10 +1020,11 @@ and a passed chance replaces the next pick (never a move in progress).
 6. Boss mode never starts against creative or spectator players; the damage cap applies only to player sources, so NPC
    wars are unaffected.
 7. Mobility, as counterplay rather than limits on where a hero may go (the owner accepts "unfair" abilities,
-   2026-11-12): an air budget per take-off, melee only on the ground or as a telegraphed `dive`, air poise (shot down
-   by arrows, bolts, tridents, wind charges), travel bonuses off in fights, and while fighting at most 4 s at a time
-   where no engaged player can reach it before it comes back. Heroes may cross any base's walls and reach players
-   anywhere, and an escaping hero may go where no one can follow (`MOBILITY_AND_WORK.md` sections 3.7, 5 and 7.7).
+   2026-11-12): an air budget per take-off, melee only on the ground or as a telegraphed `dive` (a basic attack may
+   land from the air or a cling on a player who left no standable cell beside him), air poise (shot down by arrows,
+   bolts, tridents, wind charges), travel bonuses off in fights, and while fighting at most 4 s at a time where no
+   engaged player can reach it before it comes back. Heroes may cross any base's walls and reach players anywhere, and
+   an escaping hero may go where no one can follow (`MOBILITY_AND_WORK.md` sections 3.7, 5 and 7.7).
 
 ---
 
@@ -1131,14 +1134,14 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
   Each level rolls an affix from its duty job, as for any NPC.
 - **Growth** profiles of v1 §5.3; `controller` and `summoner` default to `mystic`.
 - **All abilities from level 1, power growing with level** (the owner's answer of 2026-11-12: "they should have all
-  abilities but not full power"). Nothing in a format-2 hero is gated by level: every move, every authored phase and
-  both ultimates are there at level 1, and so is every mobility feature up to its ceiling (`MOBILITY_AND_WORK.md`
-  1.1). Power grows: stats and ability power by the growth profile (v1 §5.3), talent numbers by tier (II at level 10,
-  III at 20; 7.2), work proficiency, and mobility numbers (60% at level 1 to 100% at level 20). The first draft's
-  gates, changed: moves by `unlock_level` (now read and ignored with a NOTE, 12.7), a common or rare hero's third
-  phase at level 15 (now there from level 1 when authored, 6.7), and an **awakened ultimate** (`ultimate.awakened`)
-  replacing the first at level 25 (now a second ultimate beside the first from level 1, 12.8). Format-1 files keep
-  v1 §22.3.
+  abilities but not full power"). Nothing in a format-2 hero is gated by level: every move and passive, every authored
+  phase and both ultimates are there at level 1, and so is every mobility feature up to its ceiling
+  (`MOBILITY_AND_WORK.md` 1.1, never below what the feature needs to work). Power grows: stats and ability power by
+  the growth profile (v1 §5.3), talent numbers by tier (II at level 10, III at 20; 7.2), work proficiency, and
+  mobility numbers (60% at level 1 to 100% at level 20). The first draft's gates, changed: moves and passives by
+  `unlock_level` (now read and ignored with a NOTE, 12.7), a common or rare hero's third phase at level 15 (now there
+  from level 1 when authored, 6.7), and an **awakened ultimate** (`ultimate.awakened`) replacing the first at level 25
+  (now a second ultimate beside the first from level 1, 12.8). Format-1 files keep v1 §22.3.
 - **Heroes per faction** (milestone 3): `heroes.maxPerFaction` 6 (the leader plus five); non-leaders take posts the
   leader assigns (general, steward, envoy, warden) or their own duty.
 - **Recruiting more heroes** (milestone 3): v1 tokens; wandering heroes with a personality-driven join condition
@@ -1331,8 +1334,8 @@ Synonyms (ADJUSTED) add `crowd_control`, `cc`, `debuffer`, `trapper` → control
 ### 12.7 `moves`
 
 A move is a v1 ability (v1 §10: `name`, `form` and form fields, `effects`, `look`, `line`, `use_when`, `cooldown`,
-`charges`, `energy_gain`; a v1 `unlock_level` is read and ignored with a NOTE, because every move is there from level
-1: section 8) plus:
+`charges`, `energy_gain`; a v1 `unlock_level`, here or on the ultimate or a passive, is read and ignored with a NOTE,
+because everything is there from level 1: section 8) plus:
 
 | Field | Type | Default | Meaning |
 |---|---|---|---|
@@ -1430,10 +1433,12 @@ v1 §23 events and rules, plus:
 | `phase_2`, `phase_3` | phase transitions | `{name}` |
 | `enrage`, `stagger`, `counter` | those moments (rate-limited) | `{name}`, `{enemy}` |
 | `yield`, `spared` | the defeat beat; spared | `{name}`, `{player}` |
-| `escape` | it escapes: a refused yield, low health, a lost raid (`MOBILITY_AND_WORK.md` 7.7) | `{name}`, `{enemy}` |
+| `escape` | it escapes: a refused yield, low health away from home, a lost raid, a leader saving itself (`MOBILITY_AND_WORK.md` 7.7) | `{name}`, `{enemy}` |
 | `raid_announce`, `base_lost`, `hero_fallen` | leader announcements | `{name}`, `{faction}`, `{target_faction}` |
 | `work`, `night`, `small_talk` | idle moments at home | `{name}`, `{player}` |
 | `pact_offer`, `pact_accepted`, `pact_refused`, `peace_offer`, `declare_war`, `betrayal`, `betrayed`, `stranger_warning`, `welcome`, `gift_liked`, `gift_disliked` | milestone 2 and 3 events (read now, used later) | as they need, plus `{item}` |
+
+v1's `unlock` event never fires for a format-2 hero (nothing unlocks: section 8); format-1 files keep it.
 
 Each temperament has a fallback bank (`herosrc/temperaments/<t>.json`, 2-4 lines per event), so a hero needs only its
 own voice for the events that matter: the authoring target is 40-60 lines per hero.
