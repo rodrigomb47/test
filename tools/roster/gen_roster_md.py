@@ -70,7 +70,7 @@ ROMAN = {1: "I", 2: "II", 3: "III"}
 MOBILITY_TEXT = {
     "runner": "fleet of foot: faster travel, steps up blocks, crosses soul sand and honey unslowed",
     "charger": "heavy ground mover: sure footing, knockback resistance on the move, traversal charges, shrugs off cobwebs",
-    "leaper": "big bounds: jumps 1.8 / 2.5 / 3.5 blocks high, leaps 3 / 4 / 6-block gaps, lands long falls",
+    "leaper": "big bounds: jumps 1.8 / 2.5 / 3.5 blocks high, leaps 5 / 6 / 8-block gaps, lands long falls",
     "acrobat": "air jumps (double, then triple), wall kicks, mantles, takes no fall damage at III",
     "climber": "climbs walls and trunks (6 / 16 / any blocks), clings and works while clinging",
     "glider": "glides from heights (2.3 / 3.3 / 5 blocks forward per block of drop), gusts at II-III",
@@ -178,8 +178,9 @@ def main():
       "secondary of another family (tier I-II, at most the primary's). The trait fits the archetype "
       "(`check_roster.py` `ARCH_MOBILITY`) and the kit: a look with wings flies or glides, a signature that leaves the "
       "ground has an airborne trait, one that charges has `charger`. Flyers are a minority (10-15%, gender split within "
-      "3) and every flyer has a flight carrier (wings, broom, cloud, sword, paper crane, jets). Ordinary NPCs stay "
-      "player-like.")
+      "3) and every flyer has a flight carrier (wings, broom, cloud, sword, paper crane, jets); worn wings are named in "
+      "the look, and every glider names what it glides on (wings, a cape or cloak, fans, a kite, a wind sack, a "
+      "parasol, a mushroom cap). Ordinary NPCs stay player-like.")
     w("- **Work mastery**: heroes work their duty better than ordinary NPCs (a proficiency every hero has) and their "
       "primary talent adds a much stronger specialty; the last column says what it is and what the hero's mobility "
       "does at that work (`MOBILITY_AND_WORK.md` part 2).")

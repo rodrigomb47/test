@@ -214,7 +214,8 @@
    "secondary": {
     "trait": "runner",
     "tier": 1
-   }
+   },
+   "carrier": "fans"
   },
   "id": "inaho_kogane",
   "rarity": "legendary",
@@ -534,7 +535,8 @@
    "secondary": {
     "trait": "runner",
     "tier": 1
-   }
+   },
+   "carrier": "fans"
   },
   "id": "kobun_hachiya",
   "rarity": "common",
@@ -1403,7 +1405,7 @@
   "duel": "all_rounder",
   "name": "Vexa Thornscale",
   "sig": "Tail-sweep circle and an acid wing buffet; chained hop-slams in phase 3",
-  "look": "curled horns, green scales, dark armour; emerald/bronze",
+  "look": "curled horns, green scales, leathery wings, dark armour; emerald/bronze",
   "work": "miner: Fortune +1-3 on the ores it mines; bounds up shaft steps, leaps cave gaps",
   "mobility": {
    "primary": {
@@ -1413,7 +1415,8 @@
    "secondary": {
     "trait": "glider",
     "tier": 1
-   }
+   },
+   "carrier": "wings"
   },
   "id": "vexa_thornscale",
   "rarity": "epic",
@@ -1435,7 +1438,7 @@
   "duel": "zoner",
   "name": "Ignatia Vermillor",
   "sig": "Every third bolt bursts into a fire cone; she strikes a pose and announces her ultimate by name before it fires",
-  "look": "black hair with red streaks, small horns, a too-long high-collared scarlet cape; black/scarlet",
+  "look": "black hair with red streaks, small horns, folded dragon wings under a too-long high-collared scarlet cape; black/scarlet",
   "work": "smelter: furnaces 25-55% faster on the same fuel, 1-2 more; works on the ground, flies between jobs",
   "mobility": {
    "primary": {
@@ -1690,7 +1693,7 @@
   "duel": "summoner",
   "name": "Calyx Wren",
   "sig": "Seedling sprites sprout where her flute notes land; vines tether whoever stays",
-  "look": "orchid hair, vine-lace sleeves; violet/green",
+  "look": "orchid hair, vine-lace sleeves, a dandelion-seed parasol; violet/green",
   "work": "woodcutter: own regrowth +2-4 stacks over the cap; glides down from heights to its work",
   "mobility": {
    "primary": {
@@ -1700,7 +1703,8 @@
    "secondary": {
     "trait": "climber",
     "tier": 1
-   }
+   },
+   "carrier": "parasol"
   },
   "id": "calyx_wren",
   "rarity": "rare",
@@ -1732,7 +1736,8 @@
    "secondary": {
     "trait": "climber",
     "tier": 1
-   }
+   },
+   "carrier": "mushroom-cap"
   },
   "id": "morel_underbough",
   "rarity": "common",
@@ -1911,7 +1916,7 @@
   "duel": "summoner",
   "name": "Harutaka Hoshinomiya",
   "sig": "Shadow-paper beasts fight for him; a five-point seal binds the arena edge",
-  "look": "tall black court cap, white and indigo hunting robe; white/indigo",
+  "look": "tall black court cap, white and indigo hunting robe, a folded paper kite on his back; white/indigo",
   "work": "enchanter: takes the best of three offers, rerolls with a book; glides down from heights to its work",
   "mobility": {
    "primary": {
@@ -1921,7 +1926,8 @@
    "secondary": {
     "trait": "runner",
     "tier": 1
-   }
+   },
+   "carrier": "kite"
   },
   "id": "harutaka_hoshinomiya",
   "rarity": "epic",
@@ -2005,7 +2011,7 @@
   "duel": "trapper",
   "name": "Seimon Hoshikage",
   "sig": "Star prison: a five-point zone stuns when its lines close; stay outside them",
-  "look": "white hair, star-map robe, eye patch; black/silver",
+  "look": "white hair, star-map cloak, eye patch; black/silver",
   "work": "scout: nears rival walls unseen, names the heroes it sees; glides off ridges into valleys",
   "mobility": {
    "primary": {
@@ -2015,7 +2021,8 @@
    "secondary": {
     "trait": "runner",
     "tier": 1
-   }
+   },
+   "carrier": "cloak"
   },
   "id": "seimon_hoshikage",
   "rarity": "epic",
@@ -2447,7 +2454,7 @@
   "duel": "trapper",
   "name": "Zenji Karakuri",
   "sig": "Tripwire grid: shock lines between posts; a smoke escape",
-  "look": "goggles on the forehead, utility vest; olive/brown",
+  "look": "goggles on the forehead, utility vest, a folding kite glider; olive/brown",
   "work": "guard: talent a tier up while home; raid parties with it keep formation; glides from the walls to any alarm",
   "mobility": {
    "primary": {
@@ -2457,7 +2464,8 @@
    "secondary": {
     "trait": "climber",
     "tier": 1
-   }
+   },
+   "carrier": "kite"
   },
   "id": "zenji_karakuri",
   "rarity": "rare",
@@ -2582,7 +2590,8 @@
    "secondary": {
     "trait": "glider",
     "tier": 1
-   }
+   },
+   "carrier": "fans"
   },
   "id": "kotoha_fujinami",
   "rarity": "epic",
@@ -2646,7 +2655,8 @@
    "secondary": {
     "trait": "acrobat",
     "tier": 1
-   }
+   },
+   "carrier": "fans"
   },
   "id": "kikuzo_hanaoka",
   "rarity": "rare",
@@ -2922,7 +2932,8 @@
    "secondary": {
     "trait": "leaper",
     "tier": 1
-   }
+   },
+   "carrier": "wind sack"
   },
   "id": "futa_kazabukuro",
   "rarity": "common",
@@ -3889,7 +3900,8 @@
    "secondary": {
     "trait": "climber",
     "tier": 1
-   }
+   },
+   "carrier": "cloak"
   },
   "id": "corvina_blackfen",
   "rarity": "rare",
@@ -4103,7 +4115,7 @@
   "duel": "counter",
   "name": "Ottavia Sanguine",
   "sig": "Draining cuts and a bat-swarm dash",
-  "look": "silver ringlets, crimson coat, red eyes; crimson/black",
+  "look": "silver ringlets, crimson coat, folded bat wings, red eyes; crimson/black",
   "work": "guard: talent a tier up while home; pacts carried in person +0.1-0.2; patrols above its own walls",
   "mobility": {
    "primary": {
@@ -4146,7 +4158,8 @@
    "secondary": {
     "trait": "climber",
     "tier": 1
-   }
+   },
+   "carrier": "cape"
   },
   "id": "lazare_vespertine",
   "rarity": "rare",
@@ -4178,7 +4191,8 @@
    "secondary": {
     "trait": "climber",
     "tier": 1
-   }
+   },
+   "carrier": "fans"
   },
   "id": "bettina_nachtigall",
   "rarity": "common",
@@ -4229,7 +4243,7 @@
   "duel": "zoner",
   "name": "Belphira Ashenthrone",
   "sig": "Hellfire sigils rain; imps answer her call",
-  "look": "curled ram horns, black-red regal coat, spade tail; black/crimson",
+  "look": "curled ram horns, black-red regal coat, demon wings, spade tail; black/crimson",
   "work": "trader: prices -10 to -20%, larger tribute loads; flies to villages, lands outside",
   "mobility": {
    "primary": {
@@ -4751,7 +4765,7 @@
   "duel": "rushdown",
   "name": "Torin Highspear",
   "sig": "Jump: leaves the ground high and lands with a shockwave on a marker",
-  "look": "dragon helm, scale armour; red/black",
+  "look": "dragon helm, scale armour, a long tattered cape; red/black",
   "work": "guard: talent a tier up while home; alarm +16 blocks from high ground; bounds up to the wall walk",
   "mobility": {
    "primary": {
@@ -4761,7 +4775,8 @@
    "secondary": {
     "trait": "glider",
     "tier": 1
-   }
+   },
+   "carrier": "cape"
   },
   "id": "torin_highspear",
   "rarity": "epic",
@@ -5889,14 +5904,15 @@
   "duel": "zoner",
   "name": "Vesta Mk II",
   "sig": "Shoulder-lens beam with a long charge tell; her fear protocol overheats, then she steadies",
-  "look": "metal panels, cable ponytail, a round lens over one eye; grey/lilac",
+  "look": "fold-out wing panels, cable ponytail, a round lens over one eye; grey/lilac",
   "work": "builder: builds 10-30% faster, faster rails later; glides down from heights to its work",
   "mobility": {
    "primary": {
     "trait": "glider",
     "tier": 2
    },
-   "secondary": null
+   "secondary": null,
+   "carrier": "wings"
   },
   "id": "vesta_mk_ii",
   "rarity": "common",

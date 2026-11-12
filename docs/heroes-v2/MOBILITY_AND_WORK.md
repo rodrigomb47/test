@@ -80,9 +80,9 @@ Every trait is assembled from these pieces; most are vanilla 1.21.1 attributes, 
 | Slowing terrain | `generic.movement_efficiency` (soul sand, honey and other slow blocks) | 0 | 1.0 = not slowed |
 | Webs, berry bushes, powder snow | `Entity.makeStuckInBlock` override | - | vanilla's fox ignores sweet berry bushes the same way |
 | Knockback | `generic.knockback_resistance` modifier | role value | while moving, field mode only |
-| Climbing | `onClimbable()` true while pressing into a wall (vanilla `Spider` pattern) | - | vanilla climb rate 0.2 blocks/tick up (4 b/s), descent clamped to 0.15 (3 b/s) |
+| Climbing | `onClimbable()` true while pressing into a wall in the climb state (vanilla `Spider` pattern) | - | vanilla ladder physics: the vertical speed is set to 0.2 after each move and gravity then applies, so about 0.118 blocks/tick up (2.35 b/s, a player on a ladder); descent clamped to 0.15 (3 b/s). Vanilla also clamps horizontal speed to 0.15 on a climbable, so `onClimbable` is true only in the climb state, never just for touching a wall. Vanilla's sneak-cling is player-only (`this instanceof Player`), so a clinging hero sets `setNoGravity` and zero speed itself |
 | Gliding | a vertical-speed clamp plus a forward push per tick (vanilla `Chicken` slows its fall the same way); fall distance reset | - | not elytra fall-flying, which needs the item and player control |
-| Flight | flying travel (`Allay.travel`: `moveRelative`, move, x0.91), `FlyingMoveControl`-style steering, `generic.flying_speed` | - | `setNoGravity` while powered |
+| Flight | flying travel (`Allay.travel`: `moveRelative`, move, x0.91), `FlyingMoveControl`-style steering, `generic.flying_speed` | - | `setNoGravity` while powered. `flying_speed` is not in `LivingEntity.createLivingAttributes`, so `HeroEntity`'s attribute supplier adds it (`block_break_speed` and `submerged_mining_speed` are already in `FactionNpc`'s, which `BlockWork` reads) |
 | Swimming | NeoForge `swim_speed`, `generic.water_movement_efficiency` (Depth Strider), `generic.oxygen_bonus` (Respiration) | 1.0, 0, 0 | water breathing through NeoForge `canDrownInFluidType` |
 | Under-water work | `player.submerged_mining_speed` (Aqua Affinity) | 0.2 | 1.0 = full speed under water |
 | Fire and lava | `fireImmune()` override, `generic.burning_time` 0; `canStandOnFluid` for lava (vanilla `Strider`) | - | |
@@ -96,9 +96,9 @@ Numbers are tiers I / II / III (PROPOSED). "Travel" bonuses apply only while the
 |---|---|---|
 | `runner` | fleet of foot | travel speed +10 / +15 / +20%; step height 0.6 / 1.0 / 1.0; movement efficiency 0 / 0.5 / 1.0; travel hunger -20 / -35 / -50%; III: a sprint burst (+40% for 3 s every 15 s on a clear straight) |
 | `charger` | heavy ground mover | step height 1.0; knockback resistance +0.1 / +0.2 / +0.3 while moving; safe fall 5 / 7 / 9; movement efficiency 0.25 / 0.5 / 1.0; II-III: a traversal charge (+60% for 3 s, every 20 / 12 s) and cobwebs and berry bushes never slow it |
-| `leaper` | big bounds | jump 1.8 / 2.5 / 3.5 blocks (jump strength 0.52 / 0.62 / 0.75); gap leaps 3 / 4 / 6 blocks; safe fall 6 / 10 / 16; II-III: landing roll (no landing slowdown) |
+| `leaper` | big bounds | jump 1.8 / 2.5 / 3.5 blocks (jump strength 0.52 / 0.62 / 0.75); gap leaps 5 / 6 / 8 blocks (always longer than an acrobat of the same tier: the leaper is the long jumper); safe fall 6 / 10 / 16; II-III: landing roll (no landing slowdown) |
 | `acrobat` | air jumps and wall kicks | air jumps 1 / 1 / 2; reach 2.5 / 2.75 / 4.0 blocks up; gaps 4 / 5 / 6; safe fall 8 / 16 / no fall damage; II-III: step 1.0 and a wall kick; III: mantle |
-| `climber` | walls and trunks | climbs walls up to 6 / 16 / any blocks at the vanilla climb rate; clings still; II-III: works while clinging, safe fall 6; III: mantle and climbs round a one-block overhang |
+| `climber` | walls and trunks | climbs walls up to 6 / 16 / any blocks at the vanilla ladder rate (2.35 b/s); clings still; II-III: works while clinging, safe fall 6; III: mantle and climbs round a one-block overhang |
 | `glider` | glides from heights | sink 3.0 / 2.4 / 2.0 b/s, forward 7 / 8 / 10 b/s (2.3 / 3.3 / 5 blocks per block of drop); at most 10 / 15 / 20 s; launches from drops of 4+ blocks, II-III also from its own jump apex; gusts (+1.5 blocks) 0 / 1 / 2 per glide; no fall damage from a glide |
 | `flyer` | true flight | stamina 30 / 45 / 60 s; cruise 6 / 7 / 8 b/s; climb 2 / 3 / 4 b/s; glides as a glider of its tier; section 2 |
 | `hover` | floats low | 0.5 / 1.0 / 1.5 blocks above ground or water; drifts over gaps of 2 / 3 / 4 blocks; step 1.0 / 1.5 / 2.0; sinks at 4 b/s when nothing holds it; never tramples farmland |
@@ -134,14 +134,18 @@ Numbers are tiers I / II / III (PROPOSED). "Travel" bonuses apply only while the
 ### 1.6 `leaper`
 
 - **Vanilla**: `jump_strength` and `safe_fall_distance` modifiers; a gap leap is one impulse chosen by the leap solver
-  (3.3) from the gap and the height difference, for example (vertical, horizontal per tick) (0.50, 0.45) for 3 blocks,
-  (0.55, 0.60) for 4 and (0.65, 0.90) for 6, each landing with room to spare in the vanilla air simulation.
+  (3.3) from the gap and the height difference. The lowest-speed impulses (vertical, horizontal per tick) that land on
+  the far cell's centre within 0.15 blocks in the vanilla air simulation, from the near cell's centre on level ground:
+  (0.42, 0.52) for a 3-block gap, (0.50, 0.72) for 5, (0.54, 0.82) for 6 and (0.63, 1.00) for 8 (apex 1.25 to 2.6
+  blocks, 12-17 ticks in the air); a 1-block rise needs about 0.07 more vertical. (The first draft's (0.65, 0.90) for 6
+  overshot by a full block, onto the cell beyond: the solver, not hand-picked numbers, decides.)
 - **Navigation**: jump-up links of 1.5 (fences and walls at tier I), 2 and 3 blocks; gap links up to the tier's width;
   drop links down to the safe fall distance (3.2).
 - **Animations**: `move.crouch_jump` (the 0.3 s wind-up, the tell), `move.leap`, `move.fall`, `move.land_heavy`,
   `move.land_roll`.
 - **Fairness**: links never cross a hostile wall ring (rule 5.1.2); a leap is never aimed next to a drop deeper than the
-  safe fall distance, into lava, fire or the void.
+  safe fall distance, into lava, fire or the void; in a fight it never crosses a gap whose floor is one of those (3.3),
+  and in boss mode never opens a gap a player cannot follow (rule 5.1.15).
 - **Outside combat**: ravines, streams, fences and ledges without bridging or detours. **In combat**: reaches high
   ground in NEUTRAL (only ground a player can reach: 7.5) and may start a `dive` from its own jump apex (7.3).
 
@@ -162,15 +166,18 @@ Numbers are tiers I / II / III (PROPOSED). "Travel" bonuses apply only while the
 
 ### 1.8 `climber`
 
-- **Vanilla**: the spider pattern: `onClimbable()` returns true while the hero presses into a wall face and is allowed
-  to climb, so vanilla's own ladder physics move it (0.2 blocks per tick up, the descent clamped to 0.15); it clings
-  (zero vertical speed) when it stops, as a sneaking player on a ladder does. From II, `BlockWork` counts a clinging
-  climber as standing (vanilla divides break speed by 5 for anyone not on the ground: a player on a ladder is that slow).
+- **Vanilla**: the spider pattern: `onClimbable()` returns true while the hero is in the climb state and presses into
+  the wall face, so vanilla's own ladder physics move it (2.35 b/s up, the descent clamped to 3 b/s); it clings when it
+  stops: `HeroMovement` stops pressing into the face (no `horizontalCollision`, so no climb push), zeroes its speed and
+  sets `setNoGravity` until it moves on (vanilla's sneak-cling on ladders only works for players). From II, `BlockWork`
+  counts a clinging climber as standing (vanilla divides break speed by 5 for anyone not on the ground: a player on a
+  ladder is that slow).
 - **Navigation**: climb links (3.4); `WallClimberNavigation`'s direct-pursuit behaviour when chasing a target up a
   face.
 - **Animations**: `move.climb` (exists), `move.climb_idle` (clinging), `move.climb_down`, `move.mantle`.
 - **Fairness**: never climbs a hostile wall; any hit or a knockback of 0.5 or more makes it let go (it falls, safe fall
-  applies, 0.5 s before it can grip again); no move starts while clinging. Ceiling cling is left out (1.15).
+  applies, 0.5 s before it can grip again); no move starts while clinging; in boss mode it climbs only toward an
+  engaged player or out of a pit, never up a face to get out of reach (rule 5.1.15). Ceiling cling is left out (1.15).
 - **Outside combat**: woodcutters fell tall trees from the trunk instead of building the scaffold pillar (`Scaffold`),
   miners climb out of shafts and pits instead of pillaring (`DigOut`), builders work on walls, scouts climb cliffs and
   trees for a lookout (+16 sighting radius from 12+ blocks up, the flyers' altitude bonus). **In combat**: climbs out of
@@ -230,8 +237,10 @@ Section 2.
 - `snowstride` (frost heroes and snow spirits): `canFreeze()` false and `makeStuckInBlock` skips powder snow (the
   hero still sinks into it but is not slowed); II adds +20% speed on blocks tagged `#snow` or `#ice`.
 - `ember_stride` (fire heroes and phoenixes): `fireImmune()` true and `burning_time` 0; II: `canStandOnFluid` for lava
-  (the strider's rule) and lava as a walkable path type. In boss mode it never stands on lava or fire for more than 2 s
-  (a player cannot follow, so that counts as unreachable), and the hazard rules (§6.12) still keep players' knockback
+  (the strider's rule) and lava as a walkable path type. Vanilla's `LiquidBlock` collision holds an entity up only on a
+  source block (level 0) with nothing of the same fluid above, so only lava sources are walkable cells; flowing lava
+  stays a hazard (the hero is fire-proof there, but sinks). In boss mode it never stands on lava or fire for more than
+  2 s (a player cannot follow, so that counts as unreachable), and the hazard rules (§6.12) still keep players' knockback
   away from lava.
 
 ### 1.14 Combining traits
@@ -293,27 +302,31 @@ round the terrain.
 | Travel, scouting | 24 blocks above the ground under it, cruise layer 6-10 |
 | Field mode (NPC wars) | 10 blocks above the ground |
 | Boss mode | 6 blocks above the ground, plus the reach rule of 5.1.6 |
-| Hostile base (any mode) | none: never inside the airspace over its wall ring and interior, plus a 2-block margin, up to the build limit |
+| Hostile base (any mode) | none: never inside the airspace over its wall ring and interior, plus a 4-block margin, up to the build limit (3.7) |
 | Under a ceiling lower than 4 blocks, in caves, tunnels, forests too dense to take off | walks |
 
 ### 2.4 Shot down: air poise
 
-An airborne hero (flying, gliding, or a leaper or acrobat in the air) has **air poise**, a bar of 100 that decays 10
-per second after 2 s without a hit. When it fills, or at once on a stun, a freeze, Slowness II or worse, or a lightning
-strike, the hero is **downed**: the carrier folds, it falls (no control), takes fall damage above its safe fall
-distance (6 for flyers; in boss mode the fall counts as one player hit for the per-hit cap of §6.2), then lies 2 s on
-the ground (`move.downed`, +20% damage taken) and cannot take off for 12 s. In boss mode a downing also adds 30 poise
-(§6.9). Sources are in 5.3; NPC archers' arrows count too, so defenders can bring down a raiding flyer.
+An airborne hero (flying, gliding, or a leaper or acrobat in the air) has **air poise**, a bar of 100 that decays 10 per
+second after 2 s without a hit. When it fills, or at once on a stun, a freeze, Slowness II or worse, or a lightning
+strike, the hero is **downed**: the carrier folds, it falls (no control; its horizontal speed is cut to a fifth, so it
+drops almost straight down where players shot it instead of sailing 4 blocks on its momentum), takes fall damage above
+its safe fall distance (6 for flyers; in boss mode the fall counts as one player hit for the per-hit cap of §6.2), then
+lies 2 s on the ground (`move.downed`, +20% damage taken) and cannot take off for 12 s. In boss mode a downing also adds
+30 poise (§6.9). Sources are in 5.3; NPC archers' arrows count too, so defenders can bring down a raiding flyer.
 
 ### 2.5 Carriers
 
-A flyer is always carried by something visible, so players can tell at a glance who flies. The roster's flight
-carriers by archetype (`check_roster.py` `FLIGHT_CARRIER`): tengu crow wings, angels feathered wings, phoenixes ember
-wings, western dragons dragon wings, demon lords demon wings, vampires bat wings, paladins and magical heroes light or
-star wings (glow-painted feathered wings), witches a broom, eastern dragons a cloud, sword cultivators a flying sword,
-onmyoji a great paper crane, androids jets. Gliders use wings, capes and cloaks (bat cape, crow cloak), fans, a kite,
-a wind sack, or a canopy (leaf, dandelion seed, mushroom cap). Hover heroes need no carrier (frost mist, qi, rune
-circles, cloak hems; a glow or particle under the feet). Art side: 4.3.
+A flyer is always carried by something visible, so players can tell at a glance who flies. The roster's flight carriers
+by archetype (`check_roster.py` `FLIGHT_CARRIER`): tengu crow wings, angels feathered wings, phoenixes ember wings,
+western dragons dragon wings, demon lords demon wings, vampires bat wings, paladins and magical heroes light or star
+wings (glow-painted feathered wings), witches a broom, eastern dragons a cloud, sword cultivators a flying sword,
+onmyoji a great paper crane, androids jets. **Worn** wings (crow, feathered, bat, dragon, demon) are on the model all
+the time, folded while the hero walks, so the roster look names them; **summoned** carriers (light, star and ember
+wings, broom, cloud, sword, crane, jets) appear with the take-off, which is itself the 0.6 s tell. Gliders use wings,
+capes and cloaks (bat cape, crow cloak), fans, a kite, a wind sack, or a canopy (dandelion-seed parasol, mushroom cap),
+named in the roster look or prop and recorded in `roster.json` as `mobility.carrier`. Hover heroes need no carrier
+(frost mist, qi, rune circles, cloak hems; a glow or particle under the feet). Art side: 4.3.
 
 ---
 
@@ -344,7 +357,7 @@ neighbour fails (a hole, a wall, a fluid), at most 8 per node:
 | Link | From, to | Condition | Cost |
 |---|---|---|---|
 | jump-up | a node to a standable cell 2-3 blocks higher, 1 block across (1.5-block fences and walls at leaper I) | the tier's jump height minus 0.3 clears it; headroom over both | 2 + rise |
-| gap | across a gap 2 to the tier's width, cardinal directions, landing at most 1 block higher | the leap solver (3.3) finds an impulse that lands within 0.3 blocks with 2 blocks of headroom along the arc | 1 + width / 2 |
+| gap | across a gap 2 to the tier's width, cardinal directions, landing at most 1 block higher | the leap solver (3.3) finds an impulse that lands within 0.15 blocks of the centre with 2 blocks of headroom along the arc | 1 + width / 2 |
 | drop | down to the safe fall distance (vanilla's own drop search already uses `getMaxFallDistance`, which the hero overrides to its safe fall distance) | landing standable and not hazardous | 1 + drop / 4 |
 | climb | from a wall's foot up the face to the standable cell on top, or to a cell mid-wall for work | climber, height within the tier; every face cell solid | 1.5 per block |
 | chimney | up a 1-2 wide shaft by wall kicks | acrobat II-III | 2 per block |
@@ -360,23 +373,55 @@ Every link is checked against the hostile-airspace rule (3.7) and the hazard rul
 faces the landing, plays the wind-up (`move.crouch_jump`, 0.3 s; a running acrobat skips it), applies the impulse,
 waits for landing and hands back. `logic/hero/LeapSolver` (pure) picks the impulse: it simulates vanilla air physics
 (vertical (v - g) x 0.98, horizontal x 0.91 per tick) over a grid of impulses within the tier's limits and returns the
-lowest one that lands on the target cell's centre within 0.3 blocks and clears the arc's blocks; no solution means no
-link. A failed link (the hero did not land on the target cell) marks it dead for 10 minutes, the way `NpcNavigator`
-remembers dead ends today, and the path is rebuilt without it.
+lowest-speed one that lands on the target cell's centre within 0.15 blocks (the hero is 0.6 wide, so it stands well on
+the cell) and whose bounding box clears every block along the arc; no solution means no link. Failure modes and their
+rules (a missed leap is the main way a hero could die by its own movement):
+
+- **Take-off conditions**: the hero stands still (speed under 0.05) on the start cell before the impulse, except an
+  acrobat's running take-off, which the solver re-solves from the actual position and velocity on that tick. No link
+  starts from a block with a jump factor under 1 (honey) or a speed factor under 1 (soul sand), in water or powder
+  snow, in a cobweb, or while the hero has Slowness, Levitation or Slow Falling (they change the arc); the hero walks
+  instead.
+- **Hazard floors**: a gap whose floor (anything the hero would fall into from the arc) is lava, fire, the void or a
+  drop deeper than the safe fall distance is a **risky gap**. Out of combat a risky gap needs a wide landing (the target
+  cell and the cell beyond it standable, or a wall beyond it); in combat (a combat goal running, a hostile within 16
+  blocks, or damage taken in the last 5 s) risky gaps are refused, because a hit in the air would drop the hero into
+  them. Fire-proof heroes (`ember_stride`) count lava and fire floors as plain drops.
+- **In the air**: at the apex `HeroMovement` re-simulates the rest of the arc from the actual state; if it no longer
+  lands (a hit, knockback, an entity in the way), an acrobat spends its air jump to correct it, any other hero lets the
+  fall happen (safe fall applies) and the navigation rebuilds from where it lands.
+- **Dead links**: a failed link (the hero did not land on the target cell) marks it dead for 10 minutes, the way
+  `NpcNavigator` remembers dead ends today, and the path is rebuilt without it.
 
 ### 3.4 Climbing
 
-A climb link is followed by walking into the face: `onClimbable` turns true and vanilla moves the hero up at 4 b/s; at
-the top it mantles (III) or steps over the edge. For work cells mid-wall (a log, a wall block), the hero stops and
+A climb link is followed by walking into the face: `onClimbable` turns true and vanilla moves the hero up at 2.35 b/s;
+at the top it mantles (III) or steps over the edge. For work cells mid-wall (a log, a wall block), the hero stops and
 clings. A hit while climbing ends the climb (1.8); the navigation then rebuilds the path from where it landed.
 
 ### 3.5 Flight: the cruise planner and the ground fallback
 
-- `logic/hero/FlightPlanner` (pure, unit-tested) plans long flights from heightmap samples (`MOTION_BLOCKING`, every 4
-  blocks along the line): a polyline at the cruise layer, each leg within the stamina range at 70% (a reserve), with a
-  landing cell at each leg's end, avoiding hostile airspace (3.7). Between the ends the hero flies the polyline
-  straight; `FlyingPathNavigation` (a 3D search) is used only within 16 blocks of take-off and landing, under trees and
-  near buildings. This keeps flight cheaper than walking: no 3D search over long distances.
+- `logic/hero/FlightPlanner` (pure, unit-tested) plans flight from heightmap samples (`MOTION_BLOCKING`, which counts
+  leaves, every 4 blocks along the line and 2 blocks to each side, the highest of the three): a polyline at the cruise
+  layer, avoiding hostile airspace (3.7). Between the ends the hero flies the polyline straight; `FlyingPathNavigation`
+  (a 3D search) is used only within 16 blocks of take-off and landing, under trees and near buildings. This keeps
+  flight cheaper than walking: no 3D search over long distances.
+- **Only loaded terrain.** The planner samples only chunks that are already loaded (`getChunkNow`; it never loads or
+  generates a chunk, which would stall the server), so it cannot plan a 360-block leg in one go: NPCs travel by 24-block
+  `NpcNavigator` waypoints and carry a 3x3 chunk ticket (`ChunkLoading.updateTraveler`). A flying hero carries a 5x5
+  ticket instead (the next waypoint is always loaded) and the planner extends the polyline one waypoint at a time. The
+  stamina rule replaces "a landing at each leg's end": the hero keeps enough stamina to reach the best landing cell
+  already seen in loaded terrain plus 25%, and lands when it would not. It never flies into a chunk that is not loaded
+  (it waits at the edge, hovering at 2.0 drain, for at most 3 s, then lands).
+- **Obstacles between samples** (a spruce top, a tower, a cliff edge): `HeroFlightControl` probes 4 blocks ahead along
+  its heading every 4 ticks; a solid block in the way makes it climb at its climb rate until the probe is clear, or turn
+  along the planner's next waypoint if the climb would pass the altitude ceiling.
+- **Stuck in the air** (flyers wedged under leaves or a ceiling): a head bump while climbing (`verticalCollision` with
+  upward speed) for 10 ticks, or less than 1 block of progress in 2 s, ends the flight: the hero descends at its glide
+  rate (or falls with its safe fall distance) and the trip goes on with the ground navigation; that leg is a dead link
+  for 10 minutes. If it cannot descend either, the ordinary stall watchdog and stuck recovery of `NpcNavigator` apply.
+- **Take-off headroom** is checked over the full column the take-off rises through (4 blocks over the hero's 2x2
+  footprint), not only above its head, so it never launches into an overhang.
 - **Choosing a mode** (per `NpcNavigator` waypoint): fly when the ground route is at least 1.5 times the straight
   distance, or crosses water, a ravine or a cliff the hero cannot link over, or the trip is longer than 40 blocks, and
   the stamina covers the next leg. Walk otherwise, and always when the planner finds no legal landing, when the headroom
@@ -392,16 +437,30 @@ Swimmers I and every other hero swim with the ground navigation as workers do. S
 
 ### 3.7 Hostile airspace and walls
 
-`BaseZones` gets `hostileAirspace(data, faction, pos)`: true inside the wall ring and interior of any base whose
-faction is not the hero's and not allied with it, plus a 2-block margin, from the ground to the build limit. The
-evaluator refuses jump-up, gap, glide and climb links that start, end or pass inside it, and refuses climb links on its
-wall blocks; the flight planner and `HeroFlightControl` refuse to enter it (a flyer that is pushed into it by
-knockback lands outside at once). The ground navigation is unchanged inside: heroes walk in through a gate or a breach
-exactly as soldiers do. A logged violation counter feeds the campaign checks (17.3).
+`BaseZones` gets `hostileAirspace(data, faction, pos, margin)`, built on today's `BaseZones.insideWalls(base, pos,
+margin)` (the walls box at any height): true inside the walls box of any standing base whose faction is not the hero's
+and not allied with it, plus a margin: **2 blocks for links** (jump-up, gap, climb), **4 blocks for flight and
+gliding** (the drift of knockback on an airborne hero). The evaluator refuses jump-up, gap, glide and climb links that
+start, end or pass inside it, and refuses climb links on its wall blocks; the flight planner and `HeroFlightControl`
+refuse to enter it. The ground navigation is unchanged inside: heroes walk in through a gate or a breach exactly as
+soldiers do, and once inside they use no links at all (they move like soldiers there).
+
+- **Pushed in** (knockback, a downing, a pact that breaks while the hero is over a base that just turned hostile): this
+  is not a crossing. An airborne hero leaves by the shortest horizontal way, powered, with no move allowed until it is
+  out; a hero that lands inside (a downed flyer falls almost straight, 2.4) fights or walks out on the ground there,
+  among the defenders. The violation counter of the campaign checks (17.3) counts only voluntary entries and must stay
+  at 0; pushed-in events are counted separately.
+- **Player builds outside faction bases** (a player's own fort, a pillar, a pit) have no protected airspace: they are
+  terrain. Mobility there follows the unreachable-target rules of §6.12: a hero climbs or flies to a player only in the
+  Reach plan (3.8), at the step where soldiers today start pillaring or breaching (after 10 s without reach), within
+  the boss altitude ceiling of 2.3 (6 blocks above the ground, so it cannot simply fly over a tall wall).
 
 ### 3.8 With today's navigation code
 
 - `NpcNavigator`: unchanged API; a mode choice per waypoint (3.5); `canWalkToward` and the pit detour see links.
+  Every new branch here and below sits behind `npc.mobility()`, which is empty for workers and soldiers, so they
+  run exactly today's code (same evaluator, attributes, fall distance and chunk ticket; the static GameTest
+  `workersMoveUnchanged`).
 - `DigOut` (pillaring and bridging) and `Scaffold` (tall trees): a hero first tries its links (a climber climbs, a
   leaper leaps, a flyer flies); only when none applies does it pillar or bridge at player speed as today.
 - `Reach` and `ReachPlanner` (unreachable targets): the plan gains mobility options before tools: climb, jump-up, a
@@ -415,7 +474,8 @@ exactly as soldiers do. A logged violation counter feeds the campaign checks (17
 |---|---|
 | Extra neighbours per node | at most 8, only where the vanilla neighbour fails |
 | Leap solver | precomputed table per tier (gap, rise) -> impulse at server start; a lookup at path time |
-| Flight planning | heightmap samples every 4 blocks, at most 128 per plan; `FlyingPathNavigation` only within 16 blocks of the ends, at most 1 search per hero per 20 ticks |
+| Flight planning | heightmap samples every 4 blocks (3 across), loaded chunks only, one 24-block waypoint at a time (at most 48 samples per extension); `FlyingPathNavigation` only within 16 blocks of the ends, at most 1 search per hero per 20 ticks; the forward probe every 4 ticks |
+| Chunk tickets | a flying hero's traveller ticket is 5x5 instead of 3x3 while it flies (`ChunkLoading`), released on landing |
 | `HeroMovement` per tick | under 0.01 ms per hero (a few checks; stamina and air poise are counters) |
 
 ---
@@ -427,8 +487,10 @@ The art pipeline (§4 and §13, `tools/herogen`) owns these; this section lists 
 ### 4.1 The locomotion set (core library additions, PROPOSED)
 
 The core library already has `move.idle`, `move.walk`, `move.run`, `move.swim`, `move.fall`, `move.climb` and
-`move.crouch` (§13.6). Mobility adds about 24, generated like the rest (primitives `leap`, `land` and the gait cycles
-already exist):
+`move.crouch` (§13.6). Mobility adds 33 (counted from the table below; the first draft said about 24), generated like
+the rest (primitives `leap`, `land` and the gait cycles already exist). Milestone 1 (G10) makes 27; the 6 for hover
+and deep swimming (`move.hover`, `move.drift`, `move.swim_fast`, `move.tread`, `move.swim_down`, `move.surface_leap`)
+come with G10b (18.2):
 
 | Animation | Loop | Length | Used by |
 |---|---|---|---|
@@ -497,10 +559,14 @@ would shadow the core animation (§4.5). The validator refuses such an id (NOT L
 
 1. **No teleporting**; every hero movement is velocity, stopped by blocks.
 2. **Hostile ground**: no flight, glide or leap over, and no climbing of, the walls of a base that is not the hero's
-   faction's or an ally's (3.7). It walks in through a gate or a breach. Every mode, every hero.
+   faction's or an ally's (3.7: margins 2 blocks for links, 4 for flight and gliding; being pushed in is not a
+   crossing). It walks in through a gate or a breach. Every mode, every hero. Player builds outside faction bases are
+   terrain, reached by mobility only at the unreachable-target step of §6.12 (3.7).
 3. **Altitude ceilings** of 2.3.
-4. **Air budget in boss mode**: at most `bossAirSeconds` (8 s) airborne per take-off; at least 6 s on the ground
-   before the next take-off (4 s in phase 3, never less); airborne at most 40% of any 30 s.
+4. **Air budget**: in boss mode at most `bossAirSeconds` (8 s) airborne per take-off; at least 6 s on the ground
+   before the next take-off (4 s in phase 3, never less); airborne at most 40% of any 30 s (so at most 12 s of every
+   30, whatever the take-offs). In field mode (NPC wars, raids) at most 10 s per take-off and at least 6 s on the
+   ground between; travel flight outside fights has only the stamina limit.
 5. **Strikes**: melee only on the ground or as a `dive` (7.3: heavy, a landing decal that grows over the wind-up, at
    least 1.0 s of recovery on the ground). In the air a hero may only cast light ranged moves (`shot`, `volley`,
    `bolt`, `barrage`; at most 3 per take-off) and wind up a telegraphed `dive` or `rain`.
@@ -517,13 +583,19 @@ would shadow the core animation (§4.5). The validator refuses such an id (NOT L
 13. **Hazards**: no leap, glide, landing or dive into lava, fire, powder snow over a drop, the void or next to a drop
     deeper than the safe fall distance; players' knockback stays hazard-aware (§6.12).
 14. Creative and spectator players never count (as §6.1).
+15. **No escape links in boss mode**: a hero never uses a link (jump-up, gap, climb, glide, chimney) or a flight to put
+    an obstacle between itself and every engaged player that the player cannot cross by walking, sprint-jumping (gaps
+    up to 3 blocks, rises of 1) or towering up 2 blocks. Links toward a player, out of a pit, or back to ground the
+    player stands on are always allowed. This extends §6.12's arena rule from high ground to gaps, walls and water,
+    and is what keeps a 3.5-block leaper or a 16-block climber from kiting a sword player forever.
 
 ### 5.2 Raids and sieges
 
 - A flyer hero on a raid scouts ahead: it circles outside the target's wall ring at 8-24 blocks and its sightings count
   as a scout report (garrison count, heroes seen), because the faction only knows what someone saw.
-- It harasses from outside: light ranged moves at defenders on the walls within the field-mode air budget (10 s per
-  take-off, 6 s on the ground between), then joins the ground assault through the breach or gate.
+- It harasses from outside: light ranged moves at defenders on the walls within the field-mode air budget (5.1.4: 10 s
+  per take-off, 6 s on the ground between), from outside the 4-block margin, then joins the ground assault through the
+  breach or gate.
 - It never carries loot, a heart fragment or anyone over walls; the raid's goal (the heart) is reached on foot.
 - Defenders answer: NPC archers and crossbowmen shoot flyers (their arrows add air poise), defending flyers patrol over
   their own walls and intercept.
@@ -618,9 +690,10 @@ NEUTRAL (ground) --take-off (0.6 s tell)--> AIR (at most 8 s, at most 6 blocks u
   player gliding with an elytra or an airborne hero), `target_in_water`.
 - Default reaction for flyers (overridable): `target_drawing_bow` while airborne -> land or dive (60%, cooldown 8 s),
   so a drawn bow is a real threat.
-- Arena samples (§6.12) add: take-off headroom (under 4 blocks: no aerial window), ledges reachable by the hero's
-  jumps or climbing (it uses high ground only where an engaged player can follow by walking, jumping or towering up 2
-  blocks), and climbable faces. The `low_ceiling` condition also forbids take-off.
+- Arena samples (§6.12) add: take-off headroom (under 4 blocks: no aerial window), ledges reachable by the hero's jumps
+  or climbing (it uses high ground only where an engaged player can follow by walking, jumping or towering up 2 blocks;
+  rule 5.1.15 extends this to gaps, walls and water), and climbable faces. The `low_ceiling` condition also forbids
+  take-off.
 - Players' elytra: `target_flying` lets anti-air moves answer an elytra player; heroes never chase a gliding player
   higher than their own ceilings.
 
@@ -805,13 +878,19 @@ NeoForge fires `GetEnchantmentLevelEvent` whenever gameplay asks an item's encha
 item's enchantments (loot functions, fishing luck and lure, equipment levels) go through those two methods (checked in
 the sources). `HeroWork.lootScope(hero, kind)` opens a scope (a server-thread
 thread-local, closed in `finally`) around the job's loot call; inside it, the handler adds the specialty's levels to the
-hero's main-hand item:
+hero's main-hand item, recognised by identity (`event.getStack() == hero.getMainHandItem()`), so no other stack read
+in the same call (a worker's tool, a dropped item, the victim's gear) is touched:
 
-- block drops (`Block.getDrops` in `BlockWork.breakNow` and `dropExtra`): Fortune for surveyors, foresters and
-  harvest heroes;
-- fishing (`FishermanJob`'s `LootParams` luck and the wait): Luck of the Sea and Lure;
-- kills (`renown`): the scope opens in `LivingDeathEvent` when the killer is the hero and closes in `LivingDropsEvent`,
-  so the vanilla Looting functions of the victim's loot table see it.
+- block drops (`Block.getDrops` in `BlockWork.breakNow`): Fortune for surveyors, foresters and harvest heroes. Not in
+  `dropExtra`: an extra loot roll (affix, aura) rolls the table with the tool's real enchantments only, so virtual
+  levels and extra rolls never multiply each other (13);
+- fishing: `FishermanJob` already asks `EnchantmentHelper.getFishingLuckBonus` and `getFishingTimeReduction` for the
+  rod, so the scope sits around those two calls (Luck of the Sea and Lure);
+- kills (`renown`): the scope opens in a `LivingDeathEvent` handler at the lowest priority that skips cancelled events
+  (so it opens only for a death that goes ahead) when the killer is the hero, and closes in `LivingDropsEvent` (fired
+  at the end of `dropAllDeathLoot`), so the vanilla Looting functions of the victim's loot table see it. Because those
+  are two events and not one call, the scope is also cleared at the end of every server tick: a death another mod
+  cancels later cannot leave it open.
 
 The item itself never changes: no enchantment shows or persists. Levels never exceed the vanilla maximum together with
 the tool's own (Fortune III, Looting III, Luck of the Sea III, Lure III), and Fortune is never added to a Silk Touch
@@ -861,11 +940,22 @@ levels to `Block.getDrops` and the loot parameters.
 | Work speed from Diligence, proficiency, specialty and talents together | at most 2.0x a worker with the same gear (Efficiency, Haste and beacons are outside the cap, as for players) |
 | Extra loot roll per action (affix + aura + specialty) | at most 75%, never more than one extra roll |
 | Virtual enchantment levels | the vanilla maximum with the tool's own; none with Silk Touch |
+| Virtual levels and extra rolls on the same drop | never both: a drop takes whichever has the larger expected gain (Fortune I/II/III on ores 1.33x / 1.75x / 2.2x, an extra roll 1 + its chance), so one ore block yields at most 2.2x the plain table; an extra roll uses the tool's real enchantments only (12.2) |
 | Wear, hunger | at least 40% and 50% of a worker's |
 | Backpack | at most 36 slots |
 | Price cut | at most 40% |
 | Furnace speed | at most 2x vanilla |
-| Output | `sim.py` prints per hero and day the blocks broken, items produced, catches, trades and recruits beside the same-job worker average; a level-20 hero above `work.outputCap` (3x a level-1 worker of the same job and gear) is flagged in the campaign check |
+| Output | `sim.py` prints per hero and day the blocks broken, items produced, catches, trades and recruits beside the same-job worker average; a level-20 hero above `work.outputCap` (3x a level-1 worker of the same job and the same tool, counting the job's own products: ores for a miner, logs and saplings for a woodcutter, crops, catches, smelted items, dishes, trades, recruits) is flagged in the campaign check |
+
+**Why there is no runaway.** Every multiplier is per action and capped above, and none compounds over time: talents
+count base-wide only once (the strongest copy), specialties are personal and never stack across heroes, extra recruits
+and bred animals stay within the population and pen caps, prices within the villagers' own restock, furnace speed
+within 2x. The worst case the caps allow, worked: a level-20 surveyor with a plain iron pickaxe breaks blocks at most
+2x as fast, but a miner's day is mostly walking, hauling, eating and sleeping (about 40% breaking, PROPOSED, measured
+by `sim.py`), so it breaks about 1 / (0.6 + 0.4 / 2) = 1.25x the blocks; at most 2.2x per ore block gives about 2.75x
+the ores of a level-1 miner with the same pickaxe, under the 3x flag. (Allowing virtual Fortune and an extra roll on
+the same drop, as the first draft did, gave 2.2 x 1.75 = 3.85x per block and about 4.8x per day: the flag would have
+fired on the design's own numbers.) A flag therefore means a stacking bug, not a strong hero.
 
 ---
 
@@ -881,7 +971,12 @@ work-mastery line (duty: specialty; what its mobility does at that work). `check
   epic and legendary heroes;
 - the secondary is another family or a footing, tier 1-2 and at most the primary's; flyers never take glider or hover;
   glider and hover never pair; footings need their element;
-- every flyer's archetype has a flight carrier (2.5);
+- every flyer's archetype has a flight carrier (2.5); a flyer whose carrier is worn wings (crow, dragon, bat, demon or
+  feathered wings) names its wings in the look, so the model shows them folded while it walks; summoned carriers
+  (light, star and ember wings, broom, cloud, sword, crane, jets) appear on take-off and need no word in the look;
+- every glider (primary or secondary) names its glide carrier in the look or prop (wings, a cape or cloak, fans, a
+  kite, a wind sack, a parasol or a mushroom cap); `roster.json` records it as `mobility.carrier` (FLIGHT_CARRIER for
+  flyers);
 - the kit fits: a look with wings flies or glides; a signature that leaps, hops, pounces, vaults, wall-runs or dives
   has an airborne trait (one exemption: row 171, whose dolphin spirits leap, not she); one that charges has `charger`;
 - flyers are 20-30 heroes (10-15%) with a gender split within 3; every primary family has 8-50 heroes;
@@ -931,7 +1026,7 @@ the authoring tasks C1-C4.
 ### 15.2 Yugen Kagaribi (fox): runner III + leaper I; trader
 
 - **Mobility**: runner I-III: travel +10 / 15 / 20%, travel hunger -20 / 35 / 50%; II: step 1.0, movement efficiency
-  0.5; III: efficiency 1.0 and the sprint burst. Leaper I: jumps 1.8 (field fences), gaps 3, safe fall 6.
+  0.5; III: efficiency 1.0 and the sprint burst. Leaper I: jumps 1.8 (field fences), gaps 5, safe fall 6.
 - **At work**: `merchant_prince`: prices -10 / 20 / 30%, backpack 30 / 33 / 36, one more trip a day at III. A 300-block
   village trip is about a fifth shorter in time at III (speed, no fence detours).
 - **In a fight**: a zoner (`keep_distance` 10); travel bonuses off in boss mode; leaper I lets him hop onto fences and
@@ -958,7 +1053,7 @@ the authoring tasks C1-C4.
 
 ### 15.5 Kagenori Tsurumine (samurai): leaper II + runner I; guard
 
-- **Mobility**: leaper I-II: jumps 1.8 / 2.5, gaps 3 / 4, safe fall 6 / 10, landing roll at II; runner I: travel +10%.
+- **Mobility**: leaper I-II: jumps 1.8 / 2.5, gaps 5 / 6, safe fall 6 / 10, landing roll at II; runner I: travel +10%.
 - **At work**: Presence: `drill` and `mentor` a tier higher while home; personal: dawn sparring with 2 / 3 / 4 soldiers
   (10 / 15 / 20 combat XP, non-lethal).
 - **In a fight**: `crane_step`, `falling_crane` unchanged; he takes 2-block ledges in NEUTRAL (high ground a player can
@@ -994,11 +1089,11 @@ the authoring tasks C1-C4.
   shelves and back from errands outside the walls; as a leader (`court`) he mostly stays home.
 - **In a fight** (proposal for C3): phase 1 on the ground as written. Phase 2 (`aerial.phases: [2]`): `broom_hops`
   becomes `broom_dive` (form `dive`, `from: air`, range 8, radius 2, the same venom damage and puddle) inside an aerial
-  window: take-off (0.6 s: he mounts the staff, the crow caws), at most 8 s at most 5 blocks up, up to 3 touch-and-go
-  dives, then a landing with 1.0 s of recovery and at least 6 s on the ground. Phase 3 has no aerial windows: the
-  `great_brew` channel stays on the ground. Within a few seconds (air poise decays), five arrows, three bolts and a
-  snowball, two wind charges and two arrows, or a thrown trident and three arrows bring him down (downed 2 s, +20%
-  damage, no take-off for 12 s, +30 poise).
+  window: take-off (0.6 s: he mounts the staff, the crow caws), at most 8 s at most 6 blocks up (the boss ceiling), up
+  to 3 touch-and-go dives, then a landing with 1.0 s of recovery and at least 6 s on the ground. Phase 3 has no aerial
+  windows: the `great_brew` channel stays on the ground. Within a few seconds (air poise decays), five arrows, three
+  bolts and a snowball, two wind charges and two arrows, or a thrown trident and three arrows bring him down (downed
+  2 s, +20% damage, no take-off for 12 s, +30 poise).
 - **Animations**: `move.takeoff`, `move.ride`, `move.ride_cast`, `move.fly_land` in a broom variant; `broom_dive`'s own
   recipe.
 
@@ -1018,21 +1113,25 @@ the authoring tasks C1-C4.
 | Test | Covers |
 |---|---|
 | `MobilityRulesTest` | tier from level and ceiling; numbers per tier; combining primary and secondary; stamina drain and regain; the air budget windows; the validator's ADJUSTED cases |
-| `LeapSolverTest` | every gap and rise in each tier's range lands within 0.3 blocks in the vanilla air simulation; impossible links are refused; jump heights match 1.2 (1.25 / 1.84 / 2.52 / 3.54) |
-| `FlightPlannerTest` | cruise layer clearance, altitude ceilings, legs within the stamina range, hostile airspace never entered, a legal landing at each leg's end |
-| `HeroLinksTest` | link generation on a pure grid model: jump-up, gap, drop, climb, chimney, glide; the 8-link cap; hazards and hostile walls refused |
-| `WorkMasteryTest` | proficiency and specialty numbers, Presence tiers, every cap of 13, combining with affixes; workers' values unchanged |
+| `LeapSolverTest` | every gap and rise in each tier's range lands within 0.15 blocks of the cell centre in the vanilla air simulation (the impulses of 1.6 included); impossible links are refused; honey, soul sand, water and arc-changing effects refuse a take-off; jump heights match 1.2 (1.25 / 1.84 / 2.52 / 3.54) |
+| `FlightPlannerTest` | cruise layer clearance (a 1-block spire between samples is caught by the 3-wide sampling), altitude ceilings, the stamina reserve to the best landing seen, unloaded samples end the plan, hostile airspace (4-block margin) never entered |
+| `HeroLinksTest` | link generation on a pure grid model: jump-up, gap, drop, climb, chimney, glide; the 8-link cap; hazards and hostile walls refused; risky gaps refused in a fight and allowed with a wide landing out of one; boss-mode escape links refused (5.1.15) |
+| `WorkMasteryTest` | proficiency and specialty numbers, Presence tiers, every cap of 13, combining with affixes (virtual levels and an extra roll never on the same drop; the worked 2.75x day of 13 stays under the flag); workers' values unchanged |
 
 Python: `check_roster.py` (section 14).
 
 ### 17.2 GameTests (milestone 1; each job-running test its own `batch`, spawns at known relative positions on the flat test world, test bases through `GameTestBases.register`)
 
-Mobility (18): `leaperClimbsTwoBlockLedge`, `leaperCrossesGapWithoutBridge`, `acrobatAirJumpNoFallDamage`,
+Mobility (22): `leaperClimbsTwoBlockLedge`, `leaperCrossesGapWithoutBridge`, `leaperRefusesLavaGapInFight` (a
+lava channel: in a fight it walks round; out of one, with a wide landing, it leaps), `acrobatAirJumpNoFallDamage`,
 `climberScalesWallAndIsKnockedOff`, `chargerIgnoresCobweb`, `runnerBonusOffInFight`, `gliderDescendsCliffUnhurt`,
-`flyerCrossesRiverAndLands`, `flyerStaminaForcesLanding`, `flyerWalksInTunnel`, `flyerShotDownByArrows`,
-`flyerNeverCrossesHostileWalls` and `climberNeverClimbsHostileWalls` (two test bases), `bossFlyerKeepsAirBudget`,
-`diveLandsOnDecalAndRecovers`, `flyerYieldsOnTheGround`, `swimmerTierOneSwimsFaster` (with `snowstrideNeverFreezes`
-in the same batch).
+`flyerCrossesRiverAndLands`, `flyerStaminaForcesLanding`, `flyerWalksInTunnel`, `flyerUnderCanopyLandsAndWalks` (a leaf
+roof over the route: the head bump ends the flight, the trip finishes on foot, no stuck recovery),
+`flyerShotDownByArrows`, `flyerNeverCrossesHostileWalls` and `climberNeverClimbsHostileWalls` (two test bases),
+`bossFlyerKeepsAirBudget`, `bossLeaperNoEscapeAcrossGap` (a 5-block gap between hero and a fake engaged player: the
+hero never leaps away across it), `diveLandsOnDecalAndRecovers`, `flyerYieldsOnTheGround`, `swimmerTierOneSwimsFaster`
+(with `snowstrideNeverFreezes` in the same batch), and the static `workersMoveUnchanged` (`workers_static`: a worker's
+attributes, path evaluator, `getMaxFallDistance` and `NpcNavigator` mode are today's).
 
 Work mastery (9): `heroBreaksBlocksFasterThanWorker`, `heroBackpackHoldsMore`, `surveyorFortuneUsesLootTable` (a
 fixed seed: more drops than the same pickaxe in a worker's hand, the pickaxe unchanged), `anglerLuckAndLureApplied`,
@@ -1091,11 +1190,11 @@ climber's climb are on the batch GIF sheet.
 
 | Risk | Mitigation |
 |---|---|
-| New stuck cases from links and flight | links only where the solver proves a landing; dead links remembered; walking fallback; stuck recovery unchanged; the campaign checks count recoveries |
-| Flight path cost | the heightmap cruise planner; 3D search only near the ends; budgets of 3.9 |
+| New stuck cases from links and flight | links only where the solver proves a landing; take-off conditions and the apex re-check (3.3); dead links remembered; the head-bump and no-progress rules end a flight (3.5); walking fallback; stuck recovery unchanged; the campaign checks count recoveries |
+| Flight path cost | the heightmap cruise planner over loaded chunks only, one waypoint at a time; 3D search only near the ends; budgets of 3.9; the 5x5 flying ticket is measured in V3's tick-time run |
 | Flyers feel unfair or useless | the air budget, the reach rule and air poise are PROPOSED numbers tuned in the slice's boss sessions and the owner's play session |
-| Output inflation from specialties | caps of 13, `sim.py` output lines and the campaign flag |
-| Animation volume | about 24 shared locomotion animations, generated once for every hero; carriers as parts |
+| Output inflation from specialties | per-action caps of 13 (virtual levels and extra rolls never on one drop), no compounding, `sim.py` output lines and the campaign flag above the worked worst case |
+| Animation volume | 33 shared locomotion animations (27 in milestone 1), generated once for every hero; carriers as parts |
 
 Open questions for the owner:
 
@@ -1109,3 +1208,63 @@ Open questions for the owner:
    its full tier from the start?
 4. **Extra output.** Some specialties make a little more than vanilla would (a second dish, an extra loot roll, a
    second recruit), capped as in section 13. Are those magnitudes right?
+
+## 20. Critique (design review, 2026-11-12)
+
+A review of this file against the 21.1.209 sources, the existing navigation and job code, and the roster. What held,
+what was wrong and was fixed in place, and what is still open.
+
+**Held.** Every attribute used exists in 1.21.1 (`generic.jump_strength`, `safe_fall_distance`,
+`fall_damage_multiplier`, `step_height`, `gravity`, `movement_speed`, `movement_efficiency`,
+`water_movement_efficiency`, `oxygen_bonus`, `burning_time`, `knockback_resistance`, `flying_speed`,
+`player.block_break_speed`, `player.submerged_mining_speed`, NeoForge `swim_speed`); all but `flying_speed` are in
+`createLivingAttributes` or already in `FactionNpc`'s supplier. The jump apexes (1.25 / 1.84 / 2.52 / 3.54) re-simulate
+exactly. `Allay.travel`, `FlyingMoveControl` reading `flying_speed`, the oxygen-bonus rule, `makeStuckInBlock`,
+`canFreeze`, `fireImmune` and `GetEnchantmentLevelEvent` (fired by `getEnchantmentLevel` and `getAllEnchantments`, which
+`EnchantmentHelper` uses for Fortune, Looting, luck and lure) work as described. `check_roster.py` passes: 27 flyers
+(13.5%, 14 F / 13 M), every primary family 9-44, tier III only on epic and legendary heroes, the slice covering five
+families with Ambrose as its flyer. Ordinary NPCs keep every player-like rule.
+
+**Fixed here.**
+
+1. Climbing speed: vanilla ladder physics give 2.35 b/s up, not 4 (the 0.2 push is set before gravity); clinging needs
+   `setNoGravity` because vanilla's sneak-cling is player-only; `onClimbable` only in the climb state, since vanilla
+   clamps horizontal speed on climbables (1.2, 1.8, 3.4).
+2. Leaps: the example impulse for a 6-block gap overshot by a full block; the solver now aims within 0.15 of the cell
+   centre at the lowest launch speed (re-simulated values in 1.6). The leaper, the family for "jump longer", cleared
+   shorter gaps than the acrobat at tiers I-II: now 5 / 6 / 8.
+3. Leap failure modes: take-off conditions (standing still, no honey, soul sand, water or arc-changing effects), risky
+   gaps over lava, fire, the void or deep drops refused in fights, an apex re-check (3.3), and a GameTest.
+4. Flight planning assumed heightmaps along a 360-block leg, but the planner may only read loaded chunks (reading
+   others generates them on the server thread) and NPCs carry a 3x3 traveller ticket: it now plans one 24-block
+   waypoint at a time under a 5x5 flying ticket, samples 3 wide so a lone spire is not missed, probes ahead, and ends a
+   flight on a head bump or no progress, so flyers cannot wedge under canopies (3.5, GameTest).
+5. Walls: a 2-block hostile-airspace margin is less than the 3-4 blocks knockback carries an airborne hero, so flight
+   and gliding keep 4; a downed hero falls almost straight; being pushed in is not a crossing; player builds outside
+   faction bases are terrain reached only at §6.12's unreachable-target step (3.7).
+6. Boss fairness: nothing stopped an 8-block leaper or a 16-block climber from kiting a sword player across terrain it
+   cannot cross; rule 5.1.15 (no escape links) and a GameTest. The field-mode air budget was used but never defined
+   (5.1.4). Ambrose's ceiling now matches the 6-block boss ceiling.
+7. Economy: virtual Fortune and an extra roll multiplied on the same drop (3.85x per ore block, about 4.8x per day), so
+   the 3x campaign flag would have fired on the design's own numbers. A drop now takes one or the other; the worst case
+   is about 2.75x per day (13). The Looting scope, spanning two events, could leak if another mod cancels a death:
+   lowest priority, cancelled deaths skipped, cleared every tick, and the hero's stack recognised by identity (12.2).
+8. Workers: the shared `NpcNavigator`, `DigOut`, `Scaffold` and `Reach` changes are gated on `mobility()`, with a static
+   GameTest that a worker's movement is today's (3.8).
+9. Counts: the locomotion set is 33 animations (27 in milestone 1), not about 24; GameTests 31, not 27 (HEROES_V2 V1).
+10. Roster: three flyers on worn wings (rows 46, 131, 135) had no wings in their looks and seven gliders (45, 54, 61,
+    64, 78, 152, 189) named nothing to glide on; their looks now do, `check_roster.py` enforces both, and
+    `roster.json` carries each glider's carrier.
+
+**Still open.**
+
+- Every number is PROPOSED and needs the slice's boss sessions: whether an 8-block leap (a 20 b/s launch) reads well on
+  the GIF sheet or should stop at 7, the 8 s air budget, the poise values per projectile.
+- Rule 5.1.15 needs a cheap "can this player cross it" test; reusing `ReachPlanner`'s model of player movement is the
+  plan, and a too-strict test would make heroes passive, so the boss GameTests should include a case where a link
+  toward the player must still be taken.
+- The 5x5 flying ticket loads 16 more chunks per flyer in flight; V3's tick-time run should measure a raid with several
+  flyers.
+- `SLICE_PLAN.md` section 3 (outside this file's owner) still needs each slice hero's mobility line and Ambrose's
+  phase-2 `broom_dive`; the art sections (§4.4, §13.3, §13.6) need the locomotion set, `DATA_LOCO`, wing loops, the
+  `mounts` category and the summoned-versus-worn wings rule of 2.5.

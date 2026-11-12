@@ -1009,7 +1009,8 @@ and a passed chance replaces the next pick (never a move in progress).
 6. Boss mode never starts against creative or spectator players; the damage cap applies only to player sources, so NPC
    wars are unaffected.
 7. Mobility: an air budget per take-off, melee only on the ground or as a telegraphed `dive`, no hovering out of reach,
-   air poise (shot down by arrows, bolts, tridents, wind charges), no climbing or flying over hostile walls, travel
+   air poise (shot down by arrows, bolts, tridents, wind charges), no climbing or flying over hostile walls, no leap,
+   climb or flight that puts an obstacle a player cannot cross between the hero and every engaged player, travel
    bonuses off in fights (`MOBILITY_AND_WORK.md` section 5).
 
 ---
@@ -2137,7 +2138,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids (scout and harass, no wall crossing), the fairness rules | A6, A10, A11 | M | the boss mobility GameTests |
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
-| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 81 new ones and the 27 of `MOBILITY_AND_WORK.md` 17.2 pass |
+| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 81 new ones and the 31 of `MOBILITY_AND_WORK.md` 17.2 pass |
 | V2 | Screenshot session for the owner (SLICE_PLAN.md section 7) and render measurements | A2, C1-C4 | M | the gallery exists; numbers recorded |
 | V3 | Campaign runs A and B (8 days each), C (3 + 3 days), the 2-day baseline, the old-world load, tick time (SLICE_PLAN.md 6.4) | all | L | SLICE_PLAN.md section 6 criteria met |
 | V4 | Adversarial review and fixes | V1-V3 | M | review findings closed |

@@ -16,8 +16,8 @@ Rules (HEROES_V2.md section 14.3 and ROSTER_PLAN.md sections 2 and 8):
 - mobility (MOBILITY_AND_WORK.md sections 1 and 14): a primary trait the archetype allows (ARCH_MOBILITY) with tier 1-3,
   an optional secondary of another family with tier 1-2 and at most the primary's; tier 3 only for epic and legendary
   heroes; flight only for archetypes with a flight carrier and never with a glider or hover secondary; hover and glider
-  never together; snowstride needs frost (or a snow spirit), ember_stride fire (or a phoenix); a look with wings flies
-  or glides; a signature that leaps, hops, pounces, vaults, wall-runs or dives has an airborne trait, one that charges
+  never together; snowstride needs frost (or a snow spirit), ember_stride fire (or a phoenix); a flyer on worn wings
+  names them in its look, a glider names its glide carrier in its look or prop; a look with wings flies or glides; a signature that leaps, hops, pounces, vaults, wall-runs or dives has an airborne trait, one that charges
   has charger; flyers are 10-15% of the roster with a gender split within 3; every primary family 8-50 heroes; the
   slice's primaries cover at least 5 families and include a flyer;
 - work mastery: a line starting with the hero's duty, 20-170 characters.
@@ -112,6 +112,11 @@ FLIGHT_CARRIER = {"tengu": "crow wings", "east_dragon": "cloud", "west_dragon": 
                   "onmyoji": "paper crane", "sword_cultivator": "flying sword", "phoenix": "ember wings",
                   "paladin": "light wings", "witch": "broom", "vampire": "bat wings", "demon_lord": "demon wings",
                   "angel": "feathered wings", "magical": "star wings", "android": "jets"}
+# Flight carriers that are worn wings: the model shows them folded while the hero walks, so the look must name them.
+# The others (light, star and ember wings, broom, cloud, sword, crane, jets) are summoned on take-off.
+WORN_WINGS = {"crow wings", "dragon wings", "bat wings", "demon wings", "feathered wings"}
+# What a glider glides on, named in its look or prop (MOBILITY_AND_WORK.md 2.5 and 14); the first match is its carrier.
+GLIDE_CARRIER = re.compile(r"(?<!-)\b(wings?|cape|cloak|fans?|kite|wind sack|parasol|umbrella|mushroom-cap)\b", re.I)
 SIG_AIRBORNE = re.compile(r"\b(leap|leaps|hop|hops|hopping|jump|pounce|vault|vaulting|wall-run|backflips?|"
                           r"diving|dives from|wing dives|fallen dive)\b", re.I)
 SIG_CHARGE = re.compile(r"(?<!long )\bcharges?\b(?! (?:a |tell))", re.I)  # a run, not charging a spell or a beam
@@ -162,6 +167,15 @@ def mobility_traits(r):
     return {m["primary"]["trait"]} | ({m["secondary"]["trait"]} if m["secondary"] else set())
 
 
+def glide_carrier(r):
+    """The glide carrier a glider's look or prop names ('wings', 'cape', 'fans', 'kite'...), or None."""
+    m = GLIDE_CARRIER.search(r["look"] + "; " + r["prop"])
+    if not m:
+        return None
+    w = m.group(1).lower()
+    return {"wing": "wings", "fan": "fans", "umbrella": "parasol"}.get(w, w)
+
+
 def check_mobility(rows):
     errs = []
     for r in rows:
@@ -195,7 +209,11 @@ def check_mobility(rows):
                 errs.append(f"{n}: ember_stride needs the fire element")
         if pri["trait"] == "flyer" and r["arch"] not in FLIGHT_CARRIER:
             errs.append(f"{n}: a flyer needs an archetype with a flight carrier")
+        if pri["trait"] == "flyer" and FLIGHT_CARRIER.get(r["arch"]) in WORN_WINGS and "wings" not in r["look"].lower():
+            errs.append(f"{n}: a flyer on {FLIGHT_CARRIER[r['arch']]} names its wings in the look")
         traits = mobility_traits(r)
+        if "glider" in traits and not glide_carrier(r):
+            errs.append(f"{n}: a glider names its glide carrier (wings, cape, cloak, fans, kite...) in the look or prop")
         if "wings" in r["look"].lower() and not traits & {"flyer", "glider"}:
             errs.append(f"{n}: the look has wings, so it flies or glides")
         if SIG_AIRBORNE.search(r["sig"]) and not traits & AIRBORNE and n not in FIT_EXEMPT:
@@ -330,6 +348,8 @@ def main():
             r["mobility"].pop("extra", None)
             if r["mobility"]["primary"]["trait"] == "flyer":
                 r["mobility"]["carrier"] = FLIGHT_CARRIER[r["arch"]]
+            elif "glider" in mobility_traits(r):
+                r["mobility"]["carrier"] = glide_carrier(r)
             del r["mob"]
         with open(os.path.join(HERE, "roster.json"), "w") as f:
             json.dump(rows, f, indent=1)
