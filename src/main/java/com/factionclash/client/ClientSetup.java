@@ -6,6 +6,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 @EventBusSubscriber(modid = FactionClash.MODID, value = Dist.CLIENT)
 public final class ClientSetup {
@@ -16,5 +17,11 @@ public final class ClientSetup {
     public static void onRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.FACTION_NPC.get(), FactionNpcRenderer::new);
         event.registerEntityRenderer(ModEntities.HERO.get(), com.factionclash.client.hero.HeroRenderer::new);
+    }
+
+    /** Hero visual files a resource pack adds (preview fixtures for screenshots, HEROES_V2 15.2 A2). */
+    @SubscribeEvent
+    public static void onReloadListeners(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener(new com.factionclash.client.hero.ClientHeroVisuals());
     }
 }

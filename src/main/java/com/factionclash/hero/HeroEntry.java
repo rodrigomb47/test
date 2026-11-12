@@ -19,8 +19,17 @@ import java.util.List;
 public record HeroEntry(String id, String name, String title, HeroVisual visual, Source source, boolean ownModel,
                         List<String> overrides) {
 
-    /** Where the entry came from. */
-    public enum Source { BUILTIN, TRANSIENT }
+    /**
+     * Where the entry came from: the mod's files, a test's fixture, or a preview fixture (an operator's
+     * {@code config/factionclash/hero_fixtures/} on a server, a resource pack's visual file on a client): drawn and lined
+     * up for screenshots, never given to a faction.
+     */
+    public enum Source { BUILTIN, TRANSIENT, FIXTURE }
+
+    /** A preview fixture: it may be lined up and posed, never given to a faction (so never drafted). */
+    public boolean previewOnly() {
+        return source == Source.FIXTURE;
+    }
 
     /** The soldier role it counts as: the one that fits its weapon style (HEROES_V2 3.2). */
     public NpcRole role() {

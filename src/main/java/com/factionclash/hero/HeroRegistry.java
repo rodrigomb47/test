@@ -32,12 +32,22 @@ import java.util.stream.Stream;
  * {@link #registerTransient}. Ids starting with {@code _} are the shared libraries and the neutral {@code _fallback}
  * model, never heroes. Read lazily on both sides and again when a server starts. A1b adds the server definitions
  * ({@code data/factionclash/heroes/}) and {@code /fc hero reload}.
+ *
+ * <p><b>Preview fixtures</b> (A2): visual files an operator puts in {@code config/factionclash/hero_fixtures/} (for
+ * example the art pipeline's six style fixtures, built into a temporary folder) are registered as fixtures at every
+ * server start, so {@code /fc admin hero lineup} can stand them up for screenshots; the client draws them from a
+ * resource pack holding their art, whose visual files the client model registers with {@link #setClientEntries}. A
+ * fixture is never given to a faction, so the director never drafts it; a built-in hero's id always wins.
  */
 public final class HeroRegistry {
     private static final String SUFFIX = ".visual.json";
     private static volatile Map<String, HeroEntry> loaded;
     private static volatile List<String> problems = List.of();
     private static final Map<String, HeroEntry> TRANSIENT = new ConcurrentHashMap<>();
+    /** Preview fixtures from the server's config folder (refilled at every reload). */
+    private static volatile Map<String, HeroEntry> fixtures = Map.of();
+    /** The client's resource-pack visuals for ids the mod does not ship (set by the client model; empty on a server). */
+    private static volatile Map<String, HeroEntry> clientEntries = Map.of();
 
     private HeroRegistry() {
     }
@@ -48,7 +58,15 @@ public final class HeroRegistry {
             return null;
         }
         HeroEntry t = TRANSIENT.get(id);
-        return t != null ? t : loaded().get(id);
+        if (t != null) {
+            return t;
+        }
+        HeroEntry b = loaded().get(id);
+        if (b != null) {
+            return b;
+        }
+        HeroEntry f = fixtures.get(id);
+        return f != null ? f : clientEntries.get(id);
     }
 
     /** The hero with this id, or the neutral fallback entry (for an unknown or dormant hero's size and model). */
@@ -72,8 +90,27 @@ public final class HeroRegistry {
             }
         }
         out.addAll(TRANSIENT.values());
+        for (HeroEntry f : fixtures.values()) {
+            if (!TRANSIENT.containsKey(f.id())) {
+                out.add(f);
+            }
+        }
         out.sort(Comparator.comparing(HeroEntry::id));
         return out;
+    }
+
+    /**
+     * Registers the client's own visual files (a resource pack's) for ids the mod does not ship, as preview fixtures;
+     * called by the client model after each resource reload. Replaces the previous set.
+     */
+    public static void setClientEntries(Map<String, HeroEntry> entries) {
+        Map<String, HeroEntry> m = new LinkedHashMap<>();
+        for (Map.Entry<String, HeroEntry> e : entries.entrySet()) {
+            if (HeroIdentity.isHeroId(e.getKey()) && !loaded().containsKey(e.getKey())) {
+                m.put(e.getKey(), e.getValue());
+            }
+        }
+        clientEntries = Collections.unmodifiableMap(m);
     }
 
     /** What was wrong with the files at the last load (one line each, naming the file). */
@@ -85,18 +122,26 @@ public final class HeroRegistry {
     public static synchronized void reload() {
         List<String> found = new ArrayList<>();
         Map<String, HeroEntry> map = new LinkedHashMap<>();
+        Map<String, HeroEntry> fx = new LinkedHashMap<>();
         try {
             readBuiltIn(map, found);
             readOverrides(map, found);
+            readFixtures(map, fx, found);
         } catch (RuntimeException e) {
             found.add("hero files could not be read: " + e);
             FactionClash.LOGGER.error("Hero files could not be read", e);
         }
         loaded = Collections.unmodifiableMap(map);
+        fixtures = Collections.unmodifiableMap(fx);
         problems = List.copyOf(found);
+        HeroTimingFiles.reload();
         long heroes = map.keySet().stream().filter(HeroIdentity::isHeroId).count();
         FactionClash.LOGGER.info("Heroes: {} loaded ({}){}", heroes, String.join(", ", map.keySet().stream().filter(HeroIdentity::isHeroId).toList()),
                 found.isEmpty() ? "" : ", " + found.size() + " problem(s)");
+        if (!fx.isEmpty()) {
+            FactionClash.LOGGER.info("Heroes: {} preview fixture(s) from config/{}/hero_fixtures ({})", fx.size(), FactionClash.MODID,
+                    String.join(", ", fx.keySet()));
+        }
         for (String p : found) {
             FactionClash.LOGGER.warn("Heroes: {}", p);
         }
@@ -175,6 +220,45 @@ public final class HeroRegistry {
             }
             map.put(id, new HeroEntry(id, HeroIdentity.nameFromId(id), "", v, HeroEntry.Source.BUILTIN, ownModel, List.of()));
         }
+    }
+
+    /**
+     * Preview fixtures: {@code config/factionclash/hero_fixtures/<id>.visual.json}, registered with their own model
+     * (the client draws them from a resource pack); an id the mod ships is skipped.
+     */
+    private static void readFixtures(Map<String, HeroEntry> builtIn, Map<String, HeroEntry> out, List<String> found) {
+        Path dir = configDir() == null ? null : configDir().getParent().resolve("hero_fixtures");
+        if (dir == null || !Files.isDirectory(dir)) {
+            return;
+        }
+        List<Path> files;
+        try (Stream<Path> s = Files.list(dir)) {
+            files = s.filter(p -> p.getFileName().toString().endsWith(SUFFIX)).sorted().toList();
+        } catch (IOException e) {
+            found.add("config/factionclash/hero_fixtures could not be listed: " + e.getMessage());
+            return;
+        }
+        for (Path p : files) {
+            String file = "config/factionclash/hero_fixtures/" + p.getFileName();
+            String id = p.getFileName().toString().substring(0, p.getFileName().toString().length() - SUFFIX.length());
+            if (!HeroIdentity.isHeroId(id) || builtIn.containsKey(id)) {
+                found.add(file + ": not a hero id, or the id of a shipped hero; skipped");
+                continue;
+            }
+            JsonObject o = readObject(p, file, found);
+            if (o != null) {
+                out.put(id, fixtureEntry(id, o, found, file));
+            }
+        }
+    }
+
+    /** A preview fixture's entry from its visual file (its own model, name from the id). */
+    public static HeroEntry fixtureEntry(String id, JsonObject o, List<String> found, String file) {
+        HeroVisual v = HeroVisual.parse(id, o);
+        if (found != null) {
+            v.problems().forEach(x -> found.add(file + ": " + x));
+        }
+        return new HeroEntry(id, HeroIdentity.nameFromId(id), "preview fixture", v, HeroEntry.Source.FIXTURE, true, List.of());
     }
 
     /** Operator overrides: {@code config/factionclash/heroes/<id>.json}, name and title only in this build. */
@@ -294,6 +378,6 @@ public final class HeroRegistry {
     private static final HeroEntry BUILT_IN_FALLBACK = new HeroEntry(HeroIdentity.FALLBACK, "Hero", "",
             new HeroVisual(HeroIdentity.FALLBACK, "adult_m", "adult", "standard", HeroVisual.DEFAULT_HEIGHT_PX, HeroVisual.DEFAULT_HEAD_Y,
                     HeroVisual.DEFAULT_RENDER_SCALE, 1.0, "fists", List.of(HeroIdentity.FALLBACK, "_style_fists", "_core"),
-                    false, false, 256, 128, List.of()),
+                    false, false, 256, 128, HeroLook.DEFAULT, List.of()),
             HeroEntry.Source.BUILTIN, false, List.of());
 }

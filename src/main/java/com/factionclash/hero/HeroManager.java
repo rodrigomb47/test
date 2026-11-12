@@ -61,6 +61,9 @@ public final class HeroManager {
         if (entry == null) {
             return Result.failed(null, "No hero \"" + id + "\". /fc hero list shows them.");
         }
+        if (entry.previewOnly()) {
+            return Result.failed(null, entry.name() + " is a preview fixture: it can be lined up and posed, never given to a faction.");
+        }
         CampaignData data = CampaignData.get(server);
         if (base == null) {
             List<BaseState> bases = faction == null ? List.of() : data.livingBasesOf(faction);
@@ -272,8 +275,8 @@ public final class HeroManager {
      */
     public static boolean mayJoin(MinecraftServer server, HeroEntity h) {
         String id = h.heroId();
-        if (id.isEmpty()) {
-            return true;
+        if (id.isEmpty() || h.isPreview()) {
+            return true; // a display copy is never the campaign's hero
         }
         CampaignData data = CampaignData.get(server);
         HeroState s = data.heroes.get(id);
@@ -347,6 +350,64 @@ public final class HeroManager {
                 returnHome(server, data, s);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ previews (screenshots)
+
+    /**
+     * Stands a display copy of a hero at {@code at} facing {@code yaw}, sashed in {@code tint}'s colour (HEROES_V2 15.2
+     * A2, {@code /fc admin hero preview|lineup}): any hero the registry knows, preview fixtures included. It is not the
+     * campaign's hero: no roster entry, no job, no AI, cannot be hurt, never counted.
+     */
+    public static Result preview(ServerLevel level, String id, FactionType tint, BlockPos at, float yaw) {
+        return preview(level, id, tint, net.minecraft.world.phys.Vec3.atBottomCenterOf(at), yaw);
+    }
+
+    /** {@link #preview(ServerLevel, String, FactionType, BlockPos, float)} at an exact position (a lineup's even spacing). */
+    public static Result preview(ServerLevel level, String id, FactionType tint, net.minecraft.world.phys.Vec3 at, float yaw) {
+        HeroEntry entry = HeroRegistry.get(id);
+        if (entry == null) {
+            return Result.failed(null, "No hero \"" + id + "\". /fc hero list shows them.");
+        }
+        HeroEntity h = ModEntities.HERO.get().create(level);
+        if (h == null) {
+            return Result.failed(null, "the hero entity type could not create an entity");
+        }
+        h.setHeroId(id);
+        h.faction(tint);
+        h.role(entry.role());
+        h.setNpcName(entry.name());
+        h.makePreview();
+        ItemStack weapon = HeroKit.weapon(entry.role(), id);
+        if (!weapon.isEmpty()) {
+            h.equip(weapon);
+        }
+        h.moveTo(at.x, at.y, at.z, yaw, 0F);
+        h.setYHeadRot(yaw);
+        h.setYBodyRot(yaw);
+        level.addFreshEntity(h);
+        return Result.done(h, entry.name() + " (preview) at " + h.blockPosition().toShortString());
+    }
+
+    /** Every loaded entity of a hero id in the level: the campaign's hero and its previews ({@code id} null: every hero). */
+    public static List<HeroEntity> loaded(ServerLevel level, String id) {
+        List<HeroEntity> out = new ArrayList<>();
+        for (HeroEntity h : level.getEntities(ModEntities.HERO.get(), e -> id == null || id.equals(e.heroId()))) {
+            out.add(h);
+        }
+        return out;
+    }
+
+    /** Removes the preview copies of a hero ({@code id} null: of every hero); returns how many. */
+    public static int clearPreviews(ServerLevel level, String id) {
+        int n = 0;
+        for (HeroEntity h : loaded(level, id)) {
+            if (h.isPreview()) {
+                h.discard();
+                n++;
+            }
+        }
+        return n;
     }
 
     // ------------------------------------------------------------------ reading

@@ -11,13 +11,14 @@ import java.util.List;
 /**
  * What the game reads from a hero's generated {@code assets/factionclash/heroes/<id>.visual.json} (HEROES_V2 12.1):
  * its body (form, build, base), the model numbers the hitbox comes from ({@code height_px}, {@code head_y},
- * {@code render_scale}, {@code scale}), its weapon style and its animation chain (own file, style library, core). The
- * client's renderer reads the rest of the file itself (A2). Missing or broken fields fall back to the adult rig's
- * values and are listed in {@link #problems()}.
+ * {@code render_scale}, {@code scale}), its weapon style, its animation chain (own file, style library, core), its texture
+ * facts and its {@link HeroLook} (bone groups, face, phases, moves, chains: what the client model reads). Missing or
+ * broken fields fall back to the adult rig's values and are listed in {@link #problems()}.
  */
 public record HeroVisual(String id, String base, String form, String build, double heightPx, double headY,
                          double renderScale, double scale, String style, List<String> animationChain,
-                         boolean glowmask, boolean phaseTexture, int textureWidth, int textureHeight, List<String> problems) {
+                         boolean glowmask, boolean phaseTexture, int textureWidth, int textureHeight, HeroLook look,
+                         List<String> problems) {
 
     /** The adult rig v3's numbers: what a hero without a readable file stands as. */
     public static final double DEFAULT_HEIGHT_PX = 52, DEFAULT_HEAD_Y = 42, DEFAULT_RENDER_SCALE = 0.56;
@@ -63,7 +64,7 @@ public record HeroVisual(String id, String base, String form, String build, doub
         return new HeroVisual(id, string(o, "base", "adult_f"), string(o, "form", "adult"), string(o, "build", "standard"),
                 heightPx, headY, renderScale, scale, style, List.copyOf(chain),
                 bool(tex, "glowmask"), bool(tex, "p2"), (int) number(tex, "width", 256, problems), (int) number(tex, "height", 128, problems),
-                List.copyOf(problems));
+                HeroLook.parse(o, problems), List.copyOf(problems));
     }
 
     /** The hitbox at an entity scale of {@code entityScale} (its {@code generic.scale}, which starts at {@link #scale()}). */

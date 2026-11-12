@@ -708,7 +708,7 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
 * Damage: zombies, skeletons and variants deal ×0.5 to NPCs; with `survival.hunger` off, NPCs regenerate 1 HP per 4 s once 10 s have passed since they were last hurt; with it on (the default) they heal only through the food bar (see Hunger).
 * Victory rule (proposed): a base falls when its **Faction Heart** is destroyed; a faction with no standing bases is eliminated; the last faction standing (The Hollow included) wins. The reporting station is not the defeat core.
 
-## Heroes (config `heroes`; `HeroSize`, `HeroManager`, `HeroIdentity`) — in development
+## Heroes (config `heroes`; `HeroSize`, `HeroManager`, `HeroIdentity`, `HeroClips`, `FaceRules`, `HeroLod`) — in development
 Only the test model ships so far; an operator gives a hero to a faction with `/fc admin hero give`.
 * Hitbox (`HeroSize`): the model's height, `height_px x render_scale x scale / 16` blocks (rig v3 at render scale 0.56:
   adult 1.82, teen 1.58, chibi 1.23), eyes at `(head_y + 3) x render_scale x scale / 16`; width 0.6 x scale. At least
@@ -725,6 +725,23 @@ Only the test model ships so far; an operator gives a hero to a faction with `/f
   faction's first standing base), at full health with its kit, level, experience and traits, as a new entity; a faction
   with no standing base loses it (released). A hero the director finds missing (gone from a loaded area for 2400
   ticks) counts as fallen. One living entity per hero id: any other copy is discarded when it joins the level.
+* Animation (`HeroClips`, client): standing below a ground speed of **0.015** blocks/tick, running from **0.245**
+  (PROPOSED: between an NPC's walk, 0.216, and its sprint, 0.28). `move.walk` plays at ground speed / **0.11** and
+  `move.run` at ground speed / **0.20** (PROPOSED, by eye: about 2x for a walking NPC, 1.4x for a sprint), clamped to
+  **0.6-2.2** in steps of 0.1, changed only by **0.3** or more. Falling: off the ground and dropping faster than
+  **0.25** blocks/tick. Controller blends **4 / 2 / 6** ticks (base, action, secondary; the timing files' own).
+* Face (`FaceRules`, `BlinkSchedule`, `FaceClock`): blinks every **2.5-6 s** (nervous 1.5-3.5, calm 4-7, sleepy 3-5;
+  from the hero's visual file), half/closed/half **1/2/1** ticks (sleepy 2/4/2), **15%** double blinks two open ticks
+  apart, none during a wind-up or channel and an overdue blink **6** ticks after it; talking beats of **2-3** ticks
+  (one step in five skipped); a mood change holds **10** ticks; the face freezes beyond **16** blocks.
+* Mood and weapon (`MoodRules`, server): forced > hurt (vanilla's **10**-tick hurt time) > asleep > wind-up focus >
+  fighting (determined) > below **30%** health (tired) > calm. The weapon is drawn while the hero has a target and
+  **100** ticks after its last blow.
+* Level of detail (`HeroLod`): `fine_` bones within **20** blocks, the face within **16**, the secondary controller and
+  the chain sway within **32**, locator tracking within **24**, each with a **1**-block band.
+* Procedural touches (client): head look pitch **+-60**, yaw **+-80** degrees; hit flinch **7** degrees on the chest;
+  ears back **25** and out **15** while hurt or angry; chain sway at most **25** degrees (`Sway`: 0.8 + 3.5 x stiffness
+  Hz, damping ratio 0.8 x damping).
 
 ## Historical values (before the worker redesign)
 These numbers belonged to the old fixed workplaces. New bases no longer have them; they matter only for campaigns

@@ -58,7 +58,7 @@ abilities from level 1 at a power that grows to full at level 20, and an escapin
 | Milestone | Status |
 |---|---|
 | Research and design (archetypes, animation stack, hero-led factions, boss mechanics, roster of 200, slice plan) | done |
-| Vertical slice: engine (hero entity, GeckoLib models and faces, kits and boss mode, hero-led factions) + 8 heroes, screenshots for the owner | in progress: GeckoLib 4.9.3 vendored and embedded in the jar (A0, 2026-11-12); the hero entity with the test rig, given by an operator, fighting, saving, dying and returning (A1a, 2026-11-12); next its animated client model (A2) for checkpoint 1 |
+| Vertical slice: engine (hero entity, GeckoLib models and faces, kits and boss mode, hero-led factions) + 8 heroes, screenshots for the owner | in progress: GeckoLib 4.9.3 vendored and embedded in the jar (A0, 2026-11-12); the hero entity with the test rig, given by an operator, fighting, saving, dying and returning (A1a, 2026-11-12); its animated client model with faces, layers and LOD (A2, 2026-11-12): checkpoint 1 "pipeline alive" reached (the test rig renders, blinks and walks in game) |
 | Batches 1-8 of 24 heroes each, reviewed and arena-tested | planned |
 | Campaign checks and balance | planned |
 

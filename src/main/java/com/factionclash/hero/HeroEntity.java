@@ -1,7 +1,10 @@
 package com.factionclash.hero;
 
 import com.factionclash.logic.hero.HeroActions;
+import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.logic.hero.HeroSize;
+import com.factionclash.logic.hero.HeroTimings;
+import com.factionclash.logic.hero.MoodRules;
 import com.factionclash.npc.FactionNpc;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -31,7 +34,12 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  * role that fits its weapon style and fights with that role's basic attacks until the kit engine (A3) exists.
  *
  * <p>GeckoLib is on both sides, so implementing {@link GeoEntity} is safe on a dedicated server; nothing here
- * touches a client class. The controllers stay empty until the client model (A2) adds them.
+ * touches a client class. Its three animation controllers are {@link HeroAnimator}'s (A2); they run only in the client
+ * renderer. The server keeps the synced flags the model reads: the weapon is drawn while it fights, its mood follows
+ * {@link MoodRules}, a played action code is cleared once its clip has played (the timing files). An operator can force
+ * a mood, the weapon flag, a base pose and any flag for screenshots ({@code /fc admin hero pose}); a <b>preview</b> is a
+ * display copy for screenshots ({@code /fc admin hero preview|lineup}): it stands still, cannot be hurt, has no job,
+ * hunger or roster entry, is not the campaign's hero and is never counted by the director.
  */
 public class HeroEntity extends FactionNpc implements GeoEntity {
     /** The hero id ({@code ""} until set; set once at spawn). */
@@ -45,10 +53,30 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     /** Locomotion mode, one-shot and tired (MOBILITY_AND_WORK 4.2); reserved here, driven by the mobility engine (A10). */
     private static final EntityDataAccessor<Byte> DATA_LOCO = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.BYTE);
 
+    /**
+     * A base pose an operator forced for screenshots ({@link HeroClips#FORCED}; 0: the hero's own motion). Not in the
+     * design's 10.1 list: an operator tool, one byte, only ever non-zero on a hero posed by hand.
+     */
+    private static final EntityDataAccessor<Byte> DATA_POSE = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.BYTE);
+
+    /** After its last blow or shot it keeps the weapon drawn this long (ticks). */
+    public static final int WEAPON_DRAWN_AFTER_FIGHT = 100;
+
     /** Wings, tails and long weapons reach past the hitbox: the culling box is this much larger (3.1). */
     public static final double CULLING_MARGIN = 1.5;
 
     private final AnimatableInstanceCache animationCache = GeckoLibUtil.createInstanceCache(this);
+    private final HeroAnimator animator = new HeroAnimator(this);
+
+    /** A display copy (screenshots), not the campaign's hero. */
+    private boolean preview;
+    /** An operator's mood code (-1: the hero's own), weapon flag (-1 own, 0 sheathed, 1 drawn). */
+    private int forcedMood = -1;
+    private int forcedWeapon = -1;
+    /** The tick the played action's clip ends (the code is then cleared), or -1. */
+    private int actionEndsAt = -1;
+    /** The client renderer's per-hero state (face clocks, level of detail, sway); null on a server. */
+    private Object clientState;
 
     public HeroEntity(EntityType<? extends HeroEntity> type, Level level) {
         super(type, level);
@@ -66,6 +94,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         builder.define(DATA_STATE, (byte) 0);
         builder.define(DATA_MOOD, (byte) 0);
         builder.define(DATA_LOCO, (byte) 0);
+        builder.define(DATA_POSE, (byte) 0);
     }
 
     // ------------------------------------------------------------------ identity
@@ -143,9 +172,28 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         entityData.set(DATA_ACTION, packed);
     }
 
-    /** Starts an action: a new sequence number, so even the same action again restarts on the client. */
+    /**
+     * Starts an action: a new sequence number, so even the same action again restarts on the client. Its code is
+     * cleared again when the clip has played (its timing file's total ticks divided by the speed), so a player who
+     * starts tracking the hero later does not see an old action; channels and loops play until the next code.
+     */
     public void playAction(int code, double speed, int variant) {
-        setAction(HeroActions.nextAction(action(), code, speed, variant));
+        int packed = HeroActions.nextAction(action(), code, speed, variant);
+        setAction(packed);
+        actionEndsAt = -1;
+        String clip = HeroClips.actionClip(code, entry().visual().look().moves(), entry().visual().look().states());
+        HeroTimings.Clip t = clip == null ? null : HeroTimingFiles.clip(entry(), clip);
+        if (t != null && !t.loops() && HeroTimingFiles.clip(entry(), clip + ".loop") == null && t.totalTicks() > 0) {
+            actionEndsAt = tickCount + HeroTimings.ticksAt(t.totalTicks(), HeroActions.speed(packed));
+        }
+    }
+
+    /** Ends the action now (code 0: the client's action controller stops, the base pose takes over). */
+    public void stopAction() {
+        actionEndsAt = -1;
+        if (HeroActions.code(action()) != HeroActions.CODE_NONE) {
+            setAction(HeroActions.nextAction(action(), HeroActions.CODE_NONE, 1.0, 0));
+        }
     }
 
     public byte state() {
@@ -187,6 +235,127 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     public void setLoco(byte loco) {
         entityData.set(DATA_LOCO, loco);
+    }
+
+    /** The base pose an operator forced (an index of {@link HeroClips#FORCED}; 0: none). */
+    public int forcedPose() {
+        return entityData.get(DATA_POSE);
+    }
+
+    public void setForcedPose(int pose) {
+        entityData.set(DATA_POSE, (byte) (pose >= 0 && pose < HeroClips.FORCED.size() ? pose : 0));
+    }
+
+    /** An operator's mood (-1: the hero's own, by {@link MoodRules}). */
+    public void setForcedMood(int mood) {
+        forcedMood = mood >= 0 && mood < HeroActions.MOODS.size() ? mood : -1;
+    }
+
+    public int forcedMood() {
+        return forcedMood;
+    }
+
+    /** An operator's weapon flag: -1 the hero's own (drawn while fighting), 0 sheathed, 1 drawn. */
+    public void setForcedWeapon(int weapon) {
+        forcedWeapon = weapon == 0 || weapon == 1 ? weapon : -1;
+    }
+
+    public int forcedWeapon() {
+        return forcedWeapon;
+    }
+
+    /** Clears every forced value: mood, weapon, base pose, the state flags (the phase stays) and the action. */
+    public void clearPose() {
+        forcedMood = -1;
+        forcedWeapon = -1;
+        setForcedPose(0);
+        setState(HeroActions.withPhase(0, HeroActions.phase(state())));
+        setMood((byte) 0);
+        stopAction();
+    }
+
+    // ------------------------------------------------------------------ server: flags the model reads
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!level().isClientSide && isAlive()) {
+            updateFlags();
+        }
+    }
+
+    /**
+     * The weapon is drawn while it fights and for 5 s after its last blow; the mood follows {@link MoodRules} (an
+     * operator's forced values first; the hurt wince is vanilla's 10-tick hurt time); a played action's code is cleared
+     * when its clip has played.
+     */
+    private void updateFlags() {
+        boolean fighting = getTarget() != null && getTarget().isAlive();
+        boolean drawn = forcedWeapon >= 0 ? forcedWeapon == 1 : fighting || tickCount - lastAttackTick() < WEAPON_DRAWN_AFTER_FIGHT;
+        if (stateFlag(HeroActions.STATE_WEAPON_DRAWN) != drawn) {
+            setStateFlag(HeroActions.STATE_WEAPON_DRAWN, drawn);
+        }
+        int mood = MoodRules.pick(forcedMood, hurtTime > 0, isSleeping(), stateFlag(HeroActions.STATE_WINDUP), fighting,
+                getHealth() / Math.max(1F, getMaxHealth()));
+        byte moodByte = mood();
+        if (HeroActions.mood(moodByte) != mood) {
+            setMood((byte) ((moodByte & ~0xF) | mood));
+        }
+        if (actionEndsAt >= 0 && tickCount >= actionEndsAt) {
+            stopAction();
+        }
+    }
+
+    // ------------------------------------------------------------------ preview copies
+
+    /** A display copy for screenshots (see the class comment). */
+    public boolean isPreview() {
+        return preview;
+    }
+
+    /** Makes this a display copy: no AI, cannot be hurt or targeted, never despawns. Called before it joins the level. */
+    public void makePreview() {
+        preview = true;
+        setNoAi(true);
+        setInvulnerable(true);
+        setPersistenceRequired();
+        refreshName();
+    }
+
+    @Override
+    public boolean isDisplayOnly() {
+        return preview;
+    }
+
+    @Override
+    public boolean canBeSeenAsEnemy() {
+        return !preview && super.canBeSeenAsEnemy();
+    }
+
+    @Override
+    public void refreshName() {
+        if (preview) {
+            setCustomName(net.minecraft.network.chat.Component.literal(npcName()).withStyle(getFaction().color)
+                    .append(net.minecraft.network.chat.Component.literal(" (preview)").withStyle(net.minecraft.ChatFormatting.GRAY)));
+            return;
+        }
+        super.refreshName();
+    }
+
+    // ------------------------------------------------------------------ client
+
+    /** The controllers' owner (HEROES_V2 4.4). */
+    public HeroAnimator animator() {
+        return animator;
+    }
+
+    /** The client renderer's state for this hero (an opaque object; null until first drawn, always null on a server). */
+    public Object clientState() {
+        return clientState;
+    }
+
+    public void setClientState(Object state) {
+        this.clientState = state;
     }
 
     // ------------------------------------------------------------------ kit
@@ -236,9 +405,10 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     // ------------------------------------------------------------------ GeckoLib
 
-    /** Empty until the client model (A2): the base, action and secondary controllers come with it. */
+    /** The base, action and secondary controllers (HEROES_V2 4.4; {@link HeroAnimator}). */
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        animator.register(controllers);
     }
 
     @Override
@@ -253,6 +423,18 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         super.addAdditionalSaveData(tag);
         CompoundTag h = new CompoundTag();
         h.putString("id", heroId());
+        if (preview) {
+            h.putBoolean("preview", true);
+        }
+        if (forcedMood >= 0) {
+            h.putInt("mood", forcedMood);
+        }
+        if (forcedWeapon >= 0) {
+            h.putInt("weapon", forcedWeapon);
+        }
+        if (forcedPose() > 0) {
+            h.putInt("pose", forcedPose());
+        }
         tag.put("FcHero", h);
     }
 
@@ -261,5 +443,12 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         super.readAdditionalSaveData(tag);
         CompoundTag h = tag.getCompound("FcHero");
         setHeroId(h.getString("id"));
+        preview = h.getBoolean("preview");
+        forcedMood = h.contains("mood") ? h.getInt("mood") : -1;
+        forcedWeapon = h.contains("weapon") ? h.getInt("weapon") : -1;
+        setForcedPose(h.getInt("pose"));
+        if (preview) {
+            refreshName();
+        }
     }
 }

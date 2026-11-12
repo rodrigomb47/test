@@ -28,6 +28,9 @@ neoForge {
         clientViewer {
             client()
             programArguments.addAll '--quickPlayMultiplayer', 'localhost:25565', '--username', 'Viewer'
+            // the screenshot viewer logs hero animation markers with their ticks and hero render times (HEROES_V2 A2)
+            systemProperty 'factionclash.heroMarkers', 'true'
+            systemProperty 'factionclash.heroRenderStats', 'true'
         }
         gameTestServer {
             type = 'gameTestServer'

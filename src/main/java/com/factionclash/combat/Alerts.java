@@ -14,7 +14,7 @@ public final class Alerts {
         }
         int n = 0;
         for (FactionNpc g : caller.level().getEntitiesOfClass(FactionNpc.class, caller.getBoundingBox().inflate(radius),
-                o -> o != caller && o.isAlive() && o.getFaction() == caller.getFaction() && o.getRole().combatant)) {
+                o -> o != caller && o.isAlive() && !o.isDisplayOnly() && o.getFaction() == caller.getFaction() && o.getRole().combatant)) {
             if (g.getTarget() == null || !g.getTarget().isAlive()) {
                 g.setTarget(threat);
                 n++;
@@ -33,7 +33,7 @@ public final class Alerts {
         }
         int n = 0;
         for (FactionNpc g : caller.level().getEntitiesOfClass(FactionNpc.class, caller.getBoundingBox().inflate(radius),
-                o -> o != caller && o.isAlive() && o.getFaction() == caller.getFaction() && o.getRole().ranged)) {
+                o -> o != caller && o.isAlive() && !o.isDisplayOnly() && o.getFaction() == caller.getFaction() && o.getRole().ranged)) {
             if (g.getTarget() == null || !g.getTarget().isAlive()) {
                 g.setTarget(threat);
                 n++;

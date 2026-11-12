@@ -73,8 +73,8 @@ commits, language and testing are in `/CLAUDE.md`.
 | `config/` | `FCConfig` (NeoForge common config; sections campaign, movement, survival, achievements, workplaces, recruitment, war). |
 | `info/`, `net/`, `client/` | Station/info screen text (`BaseInfo`), map payload (`MapPayload` marker kinds: … VILLAGE 7, PILLAGER_OUTPOST 8, WOODLAND_MANSION 9, STALE flag 16), client screens (`MapScreen`, `InfoScreen`). |
 | `gametest/` | `FCGameTests` (all GameTests), `GameTestBases` (register an isolated test base, clean-up). |
-| `hero/` (Heroes v2, `docs/heroes-v2/HEROES_V2.md`) | `HeroEntity` (a `FactionNpc` subclass and GeckoLib `GeoEntity`: hero id and the synced fields `DATA_HERO/ACTION/STATE/MOOD/LOCO`, hitbox from the model, kit never dropped, `FcHero` NBT), `HeroRegistry` (every `assets/factionclash/heroes/*.visual.json` read from the mod file, config overrides in `config/factionclash/heroes/`, `registerTransient` fixtures for GameTests), `HeroVisual`/`HeroEntry` (what a hero looks like and where its files are), `HeroManager` (give, release, death and revival after `heroes.reviveSeconds`, one living entity per id), `HeroKit`, `HeroEvents`. Campaign record: `campaign/HeroState` in `CampaignData.heroes` (format 3); a hero's roster `NpcRecord` has `heroId`. Pure rules in `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`); commands in `command/HeroCommands` (`/fc hero list\|info`, `/fc admin hero give\|release\|revive`); GameTests in `gametest/HeroGameTests`. |
-| `client/hero/` | `HeroRenderer` + `HeroModel`: the GeckoLib renderer, so far only the bind pose at the rig's render scale (A2 adds controllers, face frames, layers, tint, LOD). |
+| `hero/` (Heroes v2, `docs/heroes-v2/HEROES_V2.md`) | `HeroEntity` (a `FactionNpc` subclass and GeckoLib `GeoEntity`: hero id and the synced fields `DATA_HERO/ACTION/STATE/MOOD/LOCO`, hitbox from the model, kit never dropped, `FcHero` NBT), `HeroRegistry` (every `assets/factionclash/heroes/*.visual.json` read from the mod file, config overrides in `config/factionclash/heroes/`, `registerTransient` fixtures for GameTests), `HeroVisual`/`HeroEntry` (what a hero looks like and where its files are), `HeroManager` (give, release, death and revival after `heroes.reviveSeconds`, one living entity per id, preview copies), `HeroKit`, `HeroEvents`, `HeroLook` (the visual file's bone groups, face table, blink, phases, move names, chains), `HeroAnimator` (the three GeckoLib controllers, common code), `HeroTimingFiles` (the server timing files through a hero's chain). Preview fixtures: `config/factionclash/hero_fixtures/*.visual.json` on a server. Campaign record: `campaign/HeroState` in `CampaignData.heroes` (format 3); a hero's roster `NpcRecord` has `heroId`. Pure rules in `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`, `FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); commands in `command/HeroCommands` (`/fc hero list\|info`, `/fc admin hero give\|release\|revive\|preview\|lineup\|pose`); GameTests in `gametest/HeroGameTests` and `HeroLookGameTests`. |
+| `client/hero/` | `HeroModel` (files and the animation chain with missing files dropped, `_fallback` for a missing model; after the animation pass: head look, face, flinch, ears, chain sway, bone visibility, LOD), `HeroRenderer` (face-frame UV shift, sash tint, layers, `-Dfactionclash.heroRenderStats`), `HeroFace`, `HeroClientState`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals` (a resource pack's hero visual files become preview fixtures on the client). HEROES_V2 15.2 "A2 as built". |
 | `tools/` (repo root) | `sim.py` (drive a server over RCON, print campaign summaries), `rcon.py`, `days.sh`, `setup_server.sh`, `gen_assets.py`. |
 | `libs/maven/` (repo root) | Vendored GeckoLib 4.9.3 (the hero models' animation library; jar, POM, `.module`, a hand-written `maven-metadata.xml`, `LICENSE-geckolib.txt`). The build reads the group `software.bernie.geckolib` only from here and embeds the jar (jar-in-jar). Hashes in section 5. |
 
@@ -177,6 +177,26 @@ python3 tools/rcon.py "stop"
   `soldiersDoNotKeepBreakingABlockThePlayerPutsBack` (known flakes, `docs/design/notes/combat-unreachable.md`), and
   once `aGuardWaitingOnAMonsterTurnsToAnIntruder` (the guard was still in CHASE, not HOLD, at its tick-100 check; not
   seen failing before; watch it).
+- **The hero client model** (Heroes v2 task A2, 2026-11-12; checkpoint 1 "pipeline alive" with A0 and A1a; `HEROES_V2.md`
+  15.2 "A2 as built"). Heroes animate: three GeckoLib controllers (`hero/HeroAnimator`: base from how the hero moves,
+  action from `DATA_ACTION` with the timing files' blends, secondary), a face that blinks, talks and shows 12 moods
+  (`client/hero/HeroFace` on pure `FaceRules`/`BlinkSchedule`/`FaceClock`), the faction-tinted sash, the glow mask,
+  vanilla tools in the hands, phase looks and LOD. **230 unit tests and 149 GameTests** (39 and 4 new). Checked in the
+  Xvfb viewer against a dedicated server from `tools/setup_server.sh` (the A1a world): the test rig idles, walks
+  (forced with `/fc admin hero pose test_rig base walk`), swings (`hit` logged at animation tick 10.36-10.72 for the
+  file's 10.00, at 1x and 2x), blinks (caught in a frame burst), shows all 12 moods, talks, takes each faction's
+  sash colour, holds a pickaxe and mines, shows the phase-2 halo and glowing eyes (day and night) and drops its
+  `fine_` bones beyond 20 blocks; the art pipeline's six style fixtures stand beside it in a lineup. Screenshots and
+  GIFs: `docs/screenshots/hero_a2_*`. Screenshot tools: `/fc admin hero preview|lineup|pose` (operators; previews are
+  display copies the campaign never counts). To show the style fixtures: build them into a scratch folder with the
+  art pipeline's own `build.build_files(id)` / `build.write_files(files, root=...)` (a short Python script with
+  `tools/herogen` on its path; nothing there is edited), copy their `visual.json` files to the server's
+  `config/factionclash/hero_fixtures/`, zip the `assets` folder with a `pack.mcmeta` (format 34) into
+  `run/resourcepacks/` and add it to `resourcePacks` in `run/options.txt`. The `clientViewer` run now logs hero markers
+  and render times (`factionclash.heroMarkers`, `factionclash.heroRenderStats`). Found in the viewer and fixed: a
+  restarted action was dropped on its first frame (GeckoLib still reports the previous clip as finished), and
+  offsets added after GeckoLib's pass built up frame after frame (GeckoLib leaves a bone its setters marked as
+  changed; heads slowly turned round). Measured 0.84-2.3 ms per hero render on the software-GL viewer.
 
 ## 6. Known open items and ideas (none blocking)
 

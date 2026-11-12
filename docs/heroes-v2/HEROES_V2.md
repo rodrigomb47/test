@@ -2186,7 +2186,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
 | A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`) |
 | A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file |
-| A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash |
+| A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash. Done 2026-11-12: `client/hero/` (`HeroModel`, `HeroRenderer`, `HeroFace`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals`), `hero/HeroAnimator` (the three controllers), `hero/HeroLook`, `hero/HeroTimingFiles`, pure `logic/hero/` (`FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); 230 unit tests (39 new) and 149 GameTests (4 new); in the Xvfb viewer the test rig idles, walks, swings (`hit` logged at animation tick 10.4-10.7 for the file's 10), blinks, shows all 12 moods, talks, tints its sash per faction, holds a pickaxe and mines, shows its phase-2 halo and glowing eyes, and drops its `fine_` bones beyond 20 blocks; the six style fixtures stand beside it (`docs/screenshots/hero_a2_*`) |
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5 |
 | A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5 |
@@ -2248,6 +2248,83 @@ A1a as built (2026-11-12), where it goes beyond or differs from the rows above:
   campaign frees every hero. `heroes.reviveSeconds` (600) is the first key of the `[heroes]` config section.
 - **Director.** A hero's roster entry carries `heroId`; it counts in every soldier count (needs, garrison, war council
   strength) but the raid party is picked from the non-heroes only, and `retrainIdleWorker` skips it.
+
+A2 as built (2026-11-12), where it goes beyond or differs from 4.4-4.9 and the row above:
+- **Controllers in common code.** `HeroEntity.registerControllers` hands over to `hero/HeroAnimator`, which builds
+  `base` (4 ticks), `action` (2) and `secondary` (6) with the blends of the timing files (`HeroClips.BASE_TRANSITION`
+  etc.; `HeroTimingsTest` checks every shipped timing file against them). It touches no client class: what a hero's
+  chain holds is asked of a `Library` the client model installs. Each controller picks the first clip of a candidate
+  list its chain has (`logic/hero/HeroClips`), so clips the libraries lack fall back (no swim clip: walk; no
+  `work.mine`: `attack.1`). `DATA_LOCO` modes come first in the base list (`move.fly`, `move.glide`, `move.climb` ...)
+  and fall back to the ground rules, so A10 only has to set the byte.
+- **Walk and run speed (PROPOSED, by eye).** An NPC walks at a player's 4.3 blocks/s, more than G3's stroll covers, so
+  `move.walk` plays at ground speed / 0.11 blocks per tick (about 2x for a walking NPC) and `move.run` (from 0.245
+  blocks/tick, a sprint) at ground speed / 0.20, both clamped to 0.6-2.2 in steps of 0.1 and changed only by 0.3 or
+  more (GeckoLib rescales the whole clip clock, which jumps the phase). The feet still slide a little at a walk.
+- **Actions.** A new `DATA_ACTION` sequence restarts the action controller (`forceAnimationReset`, the packed speed);
+  `name` then `name.loop` when the chain has one. The server clears the code to 0 when the clip has played
+  (`HeroTimingFiles`: the timing file's total ticks divided by the speed; loops and channels are never cleared), so a
+  player who starts tracking later does not replay an old action. While no action plays, a fresh vanilla swing plays
+  the held tool's work clip (`work.mine`, `work.chop`, `work.till`, else `attack.1`): basic attacks show the katana
+  cut, but the damage still lands at the swing's start until the move runner (A5) times basic attacks. Death plays
+  `death` and holds. Sound keyframes play at the hero on the client; `vfx:` markers are only logged until `HeroVfx`.
+- **Marker log and the timing check.** `-Dfactionclash.heroMarkers=true` (set for the `clientViewer` run) logs every
+  marker with its animation tick and the game ticks since the action started. In the Xvfb viewer (software GL, about 10
+  frames a second) `attack.1`'s `hit` fired at animation tick 10.36-10.72 (file: 10.00), 11.1-12.1 game ticks after the
+  data arrived at 1x and 6.9 at 2x: GeckoLib starts the clip on the first frame after the blend and fires an event on
+  the first frame past its tick, so each adds up to one frame; at 60 frames a second that is about 0.3 tick.
+- **The face** (`client/hero/HeroFace` on `FaceRules`, `BlinkSchedule`, `FaceClock`): the 4.6 priority with the
+  distance freeze applied right after "dead"; the mood byte's glowing eyes (and a phase look's `eyes_glow`) replace an
+  open-type eye with frame 10, its blush adds cheek frame 1 when the mood has none; a blink in progress opens at once
+  when the wind-up bit comes on and an overdue blink waits 6 ticks after it; the first mood seen is not a change for
+  the 10-tick hold. The mood table is the visual file's resolved `face.moods` with `face.overrides` on top.
+- **A first server mood stack** (`logic/hero/MoodRules`): an operator's forced mood, the hurt wince (vanilla's 10-tick
+  hurt time), asleep, focused in a wind-up, determined while fighting, tired below 30% health, otherwise calm. Phase,
+  reaction, situation and temperament moods slot in with A6 and L3/L4. The weapon-drawn flag is set while the hero
+  has a target and for 5 s (100 ticks) after its last blow.
+- **Renderer.** The UV shift is applied in `createVerticesOfQuad` while the `eyes`, `mouth` and `cheeks` cubes are
+  drawn, divided by the baked model's texture size; tint bones are the visual file's `tint` list plus any
+  `fine_sash*` bone, drawn with the faction's `rgb` as the vertex colour (a hero with no faction does not exist yet;
+  previews take one). The glow layer is GeckoLib's `AutoGlowingGeoLayer` through the same path, skipped when the
+  current texture has no `_glowmask` file and, for a mask that glows only in the glowing-eye frame, whenever that frame
+  is not shown. The item layer draws vanilla items at `item_r`/`item_l` at vanilla size (scaled back by 1 /
+  `render_scale`) with vanilla's third-person transforms; a hero whose model has its own weapon never shows a held
+  weapon or its kit item and shows no item while the weapon is drawn; a fists-style hero or the neutral model shows
+  what it holds (on a chibi a vanilla sword looks large; an open item for the art review).
+- **Procedural touches, and a GeckoLib trap.** Head look (pitch +-60, yaw +-80), a 7-degree hit flinch on `chest`
+  (none under super armour), ears back 25 and out 15 degrees while hurt or angry, and the sway of the visual file's
+  parent-to-child chains against the body's turn (`Sway`: the G3 spring numbers; hanging chains swing on z, others turn
+  on y; loose groups such as the two ears are left to the bake). GeckoLib's bone setters mark a bone as changed and its
+  next pass then leaves that bone where it is, so offsets added after the pass would add up frame after frame on a bone
+  no animation keys (found in the viewer: heads that slowly turned round); `setCustomAnimations` therefore clears the
+  markers after its offsets. Cape lift from velocity is left to the baked follow-through.
+- **Visibility and level of detail** (`logic/hero/HeroLod`): `fine_` bones within 20 blocks, the face within 16 (the
+  cheeks plane hides with it), the secondary controller and the sway within 32, locator tracking within 24, each with
+  a one-block band so a hero at a boundary does not flicker. Phase bones follow 4.3 (`p1_` only in phase 1), the
+  visual file's phase looks show and hide their lists in phase order, the weapon bones follow the weapon flag, and the
+  naming rules also cover bones a visual file forgot to list. Bone visibility is set on every frame.
+- **Fallback chain.** Geometry missing: the `_fallback` model, texture and chain. Animation files missing from the
+  chain are dropped (each logged once) so GeckoLib never looks a name up in a missing file; the `_p2` texture is used
+  only when the file exists.
+- **Operator screenshot tools** (`/fc admin hero ...`): `preview <id> [faction] [pos] [yaw]` stands a display copy
+  (no AI, cannot be hurt or targeted, no hunger, job or roster entry, never counted by the director or the alarms, kept
+  across restarts, named "(preview)"); `lineup [first] [count] [spacing] [faction]` stands a row of them 4 blocks in
+  front of the source, facing it (from RCON: `execute as <player> at <player> run fc admin hero lineup 0 7 1.5`);
+  `preview clear [id]` / `lineup clear`; `pose <id|all> mood <mood|auto> | action <name> [speed] | stop | base
+  <idle|combat|walk|run|swim|fall|crouch|sit|sleep|climb|fly|glide|auto> | weapon <drawn|sheathed|auto> | phase <1-4> |
+  talk|windup|blush|glow <on|off> | clear` on every loaded entity of that hero. A forced base pose needs one more
+  synced byte, `DATA_POSE`, beside the five of 10.1 (zero except on a hero posed by hand).
+- **The six style fixtures without shipping them.** A server reads `config/factionclash/hero_fixtures/<id>.visual.json`
+  at every start as preview fixtures (they can be lined up and posed, never given to a faction, so never drafted); a
+  client registers the visual files a resource pack adds for ids the mod does not ship (`ClientHeroVisuals`), so the
+  pack's geometry, textures and face tables draw them. For the screenshots the fixtures were built with the art
+  pipeline's own `build.build_files` / `build.write_files` into a temporary folder (nothing in `tools/herogen` changed),
+  their visual files copied to the server's `config/factionclash/hero_fixtures/` and the folder packed as a resource
+  pack in the viewer's `run/resourcepacks/`. Maren names `_style_sword_shield`, which does not exist yet: her chain
+  drops it.
+- **Measured (Xvfb, software GL, a loaded machine):** 0.84-2.3 ms per hero render (the glow layer redraws the whole
+  test rig because its mask glows outside the face); the 0.1-0.25 ms estimate of section 11 is for a real GPU and is
+  still to be measured there (V2).
 
 ### 15.3 Milestone 2: systems breadth
 

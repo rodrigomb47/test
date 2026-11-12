@@ -435,7 +435,7 @@ public final class FactionDirector {
             return 0;
         }
         List<FactionNpc> guards = level.getEntitiesOfClass(FactionNpc.class, walls.inflate(24, 8, 24),
-                g -> g.isAlive() && g.getFaction() == b.faction && g.getRole().combatant);
+                g -> g.isAlive() && g.getFaction() == b.faction && g.getRole().combatant && !g.isDisplayOnly());
         // raiders and enemy players first, then monsters: two guards on a monster must not leave an intruder unattended
         intruders.sort(Comparator.comparingInt(e -> e instanceof net.minecraft.world.entity.monster.Monster ? 1 : 0));
         int assigned = 0;
@@ -596,7 +596,7 @@ public final class FactionDirector {
         BlockPos min = home.point(BaseState.MIN), max = home.point(BaseState.MAX);
         AABB area = new AABB(min.getX(), min.getY() - 40, min.getZ(), max.getX() + 1, max.getY() + 40, max.getZ() + 1);
         List<FactionNpc> soldiers = level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == f.type
-                && n.getRole().combatant && n.baseId() == home.id);
+                && n.getRole().combatant && n.baseId() == home.id && !n.isDisplayOnly());
         // a real attack: every soldier beyond a third of the garrison (never fewer than raidPartySize, always leaving
         // homeDefenders at home) - small parties against a full garrison only feed an endless war of attrition
         int keep = Math.max(FCConfig.HOME_DEFENDERS.get(), (soldiers.size() + 2) / 3);

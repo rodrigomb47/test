@@ -604,10 +604,18 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         super.aiStep();
     }
 
+    /**
+     * A display copy (a hero's preview for screenshots, HEROES_V2 15.2 A2): it stands where an operator put it, has no
+     * hunger, job or roster entry, and the director and alarms never count it.
+     */
+    public boolean isDisplayOnly() {
+        return false;
+    }
+
     @Override
     public void tick() {
         super.tick();
-        if (level().isClientSide || !isAlive()) {
+        if (level().isClientSide || !isAlive() || isDisplayOnly()) {
             return;
         }
         goldenApple();
