@@ -3,7 +3,7 @@
   "set": "hinae_shirasuzu",
   "title": "Hinae Shirasuzu, the white bell shrine maiden (sweet-natured, wand and talismans, radiant)",
   "hero": {
-    "voice": {"talk": "voice", "rate": 3, "melody": [0, 0, 2, 4, -1], "fallback_blip": "bell", "jitter": 0.03,
+    "voice": {"talk": "voice", "line_loudness": -22.5, "rate": 3, "melody": [0, 0, 2, 4, -1], "fallback_blip": "bell", "jitter": 0.03,
               "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.4},
               "death": {"event": "minecraft:entity.player.death", "pitch": 1.4},
               "emotes": {"hum": "hum"}},
@@ -28,7 +28,7 @@
               "rite_release", "charm", "radiant_glow", "intro", "sweep_broom"],
   "sounds": {
     "voice": {
-      "kind": "voice", "subtitle": "Hinae speaks", "loudness": -25, "pitch": [0.98, 1.02], "variants": 6,
+      "kind": "voice", "subtitle": "Hinae speaks", "loudness": -27.5, "pitch": [0.98, 1.02], "variants": 6,
       "note": "Soft, high and round (the old bell voice): a bell-tinged source at about 587 Hz, gentle attacks, a light vibrato (rate 3).",
       "layers": [
         {"type": "vox", "source": "bell", "f0": 587, "dur": 0.13, "vowel": "u", "shift": 1.2, "fq": 4, "dry": 0.25,
@@ -55,7 +55,7 @@
       ]
     },
     "kagura": {
-      "kind": "cast", "subtitle": "A cluster of bells shakes", "loudness": -21, "variants": 2, "vary": {"pitch": [-0.6, 0.6]},
+      "kind": "cast", "subtitle": "A cluster of bells shakes", "loudness": -21, "variants": 2, "vary": {"pitch": [-0.6, 0.6]}, "plays": "server",
       "note": "Her purification wand's bell cluster (kagura suzu): many small bells struck in a quick shake. Wind-up of the dance, idles.",
       "layers": [
         {"type": "group", "layers": [

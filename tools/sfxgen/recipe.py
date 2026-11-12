@@ -32,7 +32,7 @@ SR = 44100
 KINDS = {
     # kind: default loudness (momentary max, LUFS-like), SoundSource category, who plays it, attenuation range
     # (blocks), longest allowed length (s)
-    "voice": dict(loudness=-24.0, category="voice", plays="client", range=12, max_dur=0.3),
+    "voice": dict(loudness=-26.0, category="voice", plays="client", range=12, max_dur=0.3),
     "emote": dict(loudness=-21.0, category="voice", plays="client", range=16, max_dur=2.0),
     "swing": dict(loudness=-21.0, category="hostile", plays="client", range=16, max_dur=1.2),
     "cast": dict(loudness=-20.0, category="hostile", plays="client", range=16, max_dur=2.5),
@@ -61,7 +61,8 @@ NAME_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z0-9_]+)*$")
 SET_RE = re.compile(r"^(cue|[a-z][a-z0-9_]{1,40})$")
 SOUND_FIELDS = {"kind", "subtitle", "plays", "category", "range", "pitch", "volume", "loudness", "rate", "loop",
                 "with", "note", "layers", "fx", "variants", "vary", "vanilla", "event", "preload", "seed", "post",
-                "loop_crossfade", "length", "each", "alias"}
+                "loop_crossfade", "length", "each", "alias", "hit_at"}
+VANILLA_RANGE = 16  # blocks a vanilla sound carries at play volume 1 (its sounds.json attenuation distance)
 LAYER_COMMON = {"type", "at", "gain", "pitch", "fx", "seed", "note", "hard"}
 MAX_VARIANTS = 12
 MAX_COMPANIONS = 2
@@ -108,9 +109,17 @@ class Sound:
         self.subtitle_text = merged.get("subtitle")
         self.plays = merged.get("plays", kd["plays"])
         self.category = merged.get("category", kd["category"])
-        self.range = int(merged.get("range", kd["range"]))
         self.pitch = list(merged.get("pitch", [1.0, 1.0]))
         self.volume = list(merged.get("volume", [1.0, 1.0]))
+        # the range the game really gives the sound (blocks): a generated sound carries its sounds.json attenuation
+        # distance; a vanilla reference carries vanilla's 16 blocks times its play volume when that is above 1 (the
+        # client attenuates over max(1, volume) x the referenced file's distance); an alias carries its target's
+        # (set by the Catalogue once every set is loaded)
+        if "vanilla" in spec:
+            self.range = int(round(VANILLA_RANGE * max(1.0, float(self.volume[1]))))
+        else:
+            self.range = int(merged.get("range", kd["range"]))
+        self.hit_at = float(spec["hit_at"]) if spec.get("hit_at") is not None else None
         self.loudness = float(merged.get("loudness", kd["loudness"]))
         self.rate = merged.get("rate", "auto")
         self.loop = bool(merged.get("loop", False))
@@ -181,6 +190,12 @@ def load_all(src=SRC):
 class Catalogue:
     def __init__(self, sets):
         self.sets = {s.id: s for s in sets}
+        for s in self.sounds():
+            if s.alias:
+                targets = [self.lookup(a["sound"], s.set) for a in s.alias]
+                ranges = [t.range for t in targets if t is not None and not t.alias]
+                if ranges:
+                    s.range = max(ranges)
 
     def sounds(self):
         for sid in sorted(self.sets):
@@ -235,6 +250,8 @@ def validate_file(data, path="<file>"):
                 for a in spec["alias"]:
                     if not isinstance(a, dict) or not a.get("sound") or set(a) - {"sound", "pitch", "volume", "weight"}:
                         p.append("%s: an alias entry is {sound, pitch, volume, weight}" % w)
+                    elif float(a.get("volume", 1.0)) > 1.0:
+                        p.append("%s: an alias entry's volume is at most 1 (the game clamps the level)" % w)
         if not spec.get("subtitle") and not data.get("defaults", {}).get("subtitle"):
             p.append("%s: no subtitle text" % w)
         kind = spec.get("kind", data.get("defaults", {}).get("kind", "hit"))
@@ -244,6 +261,16 @@ def validate_file(data, path="<file>"):
             v = spec.get(key)
             if v is not None and (not isinstance(v, list) or len(v) != 2 or v[0] > v[1] or v[0] <= 0):
                 p.append("%s: %s must be [low, high] with 0 < low <= high" % (w, key))
+        vol = spec.get("volume")
+        if (gen or ali) and isinstance(vol, list) and vol and vol[-1] > 1.0:
+            p.append("%s: play volume above 1 only widens the range (the game clamps the level): set range instead"
+                     % w)
+        if (van or ali) and "range" in spec:
+            p.append("%s: a %s carries %s, so it takes no range (a vanilla reference reaches 16 x its play volume)"
+                     % (w, "vanilla reference" if van else "alias", "vanilla's distance" if van else
+                        "its target's"))
+        if "hit_at" in spec and (not gen or not isinstance(spec["hit_at"], (int, float)) or spec["hit_at"] <= 0):
+            p.append("%s: hit_at is a positive time (s) in a generated sound" % w)
         if spec.get("plays", "server") not in PLAYERS:
             p.append("%s: plays must be server or client" % w)
         if spec.get("category", "hostile") not in CATEGORIES:

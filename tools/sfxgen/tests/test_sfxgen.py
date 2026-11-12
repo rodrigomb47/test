@@ -20,6 +20,7 @@ import codec
 import dsp
 import recipe
 import vanilla
+import voice
 
 SR = 44100
 
@@ -124,6 +125,15 @@ class MeasureTest(unittest.TestCase):
         x = np.concatenate([self.sine * 0.2, np.full(50, 0.99), self.sine * 0.2])
         y = dsp.limit(x * 3, SR, -1.0)
         self.assertLessEqual(float(np.max(np.abs(y))), 10 ** (-1 / 20.0) + 1e-9)
+
+    def test_normalize_keeps_the_true_peak_under_the_ceiling(self):
+        """A burst at a quarter of the rate, 45 degrees off its samples, peaks 3 dB between them: limiting the
+        samples once leaves the true peak over the ceiling, so normalize must limit again."""
+        n = int(0.05 * SR)
+        burst = np.sin(2 * math.pi * (SR / 4.0) * np.arange(n) / SR + math.pi / 4) * np.hanning(n)
+        x = np.concatenate([0.05 * self.sine[:SR // 4], burst, 0.05 * self.sine[:SR // 4]])
+        y = dsp.normalize(x, SR, -8.0)
+        self.assertLessEqual(analyze.db(analyze.true_peak(y)), -1.5 + 0.05)
 
     def test_dc_block_and_fades(self):
         y = dsp.fade(dsp.dc_block(self.sine + 0.2, SR), SR)
@@ -273,6 +283,100 @@ class OutputsTest(Fixture):
         for k in ("plays", "category", "range", "pitch", "volume", "subtitle", "variants", "length", "kind"):
             self.assertIn(k, e)
         self.assertEqual(idx["events"]["factionclash:hero.cue.hiss"]["refs"], ["minecraft:entity.cat.hiss"])
+
+    def test_ranges_are_what_the_game_gives(self):
+        """A vanilla reference reaches 16 blocks x its play volume (whatever its kind's default), an alias its
+        target's range; giving either a range is refused."""
+        cat = recipe.Catalogue([recipe.SoundSet("x.sfx.json", tiny_set({
+            "horn": {"kind": "sting", "subtitle": "h", "volume": [2.0, 2.0],
+                     "vanilla": [{"event": "minecraft:item.goat_horn.sound.5"}]}}))])
+        self.assertEqual(cat.lookup("hiss", "cue").range, 16, "a windup's default 24 does not apply to vanilla")
+        self.assertEqual(cat.lookup("horn", "cue").range, 32)
+        self.assertEqual(cat.lookup("ping.low", "cue").range, cat.lookup("ping", "cue").range)
+        self.assertTrue(recipe.validate_file(tiny_set({"far": {
+            "kind": "windup", "subtitle": "f", "range": 48, "vanilla": [{"event": "minecraft:entity.cat.hiss"}]}})))
+        self.assertTrue(recipe.validate_file(tiny_set({"loud": {
+            "kind": "hit", "subtitle": "l", "volume": [1.5, 1.5], "layers": [{"type": "tone"}]}})))
+
+    def test_same_subtitle_text_shares_one_key(self):
+        """The overlay merges equal components only: a sound and a companion that say the same thing share a key."""
+        cat = recipe.Catalogue([recipe.SoundSet("x.sfx.json", tiny_set({
+            "ping.echo": {"kind": "hit", "subtitle": "Ping", "layers": [{"type": "tone", "dur": 0.2}]},
+            "pong": {"kind": "hit", "subtitle": "Pong", "layers": [{"type": "tone", "dur": 0.2}]}}))])
+        sj = build.sounds_json(cat, [])
+        self.assertEqual(sj["hero.cue.ping.echo"]["subtitle"], sj["hero.cue.ping"]["subtitle"])
+        self.assertEqual(sj["hero.cue.ping.low"]["subtitle"], "subtitles.factionclash.hero.cue.ping")
+        self.assertEqual(sj["hero.cue.pong"]["subtitle"], "subtitles.factionclash.hero.cue.pong")
+        subs = build.subtitles(cat)
+        self.assertEqual(sorted(subs.values()).count("Ping"), 1)
+        self.assertEqual(set(subs), {e["subtitle"] for e in sj.values()})
+
+    def test_hit_at_reaches_the_index(self):
+        cat = recipe.Catalogue([recipe.SoundSet("x.sfx.json", tiny_set({
+            "swell": {"kind": "telegraph", "subtitle": "s", "hit_at": 0.3,
+                      "layers": [{"type": "tone", "dur": 0.3, "env": {"swell": [0.28, 0.02]}}]}}))])
+        idx = build.index_json(cat, [])
+        self.assertEqual(idx["events"]["factionclash:hero.cue.swell"]["hit_at"], 0.3)
+        self.assertNotIn("hit_at", idx["events"]["factionclash:hero.cue.ping"])
+        self.assertTrue(recipe.validate_file(tiny_set({"bad": {
+            "kind": "telegraph", "subtitle": "b", "hit_at": 0.3, "vanilla": [{"event": "minecraft:entity.cat.hiss"}]}})))
+
+
+def hero_set(voice_loudness=-26.0, line=None, windup_plays=None):
+    """A minimal hero set: a voice, a move whose wind-up is `bark` (plays as given)."""
+    v = {"talk": "voice", "rate": 2, "melody": [0, 2], "fallback_blip": "harp",
+         "hurt": {"event": "minecraft:entity.player.hurt"}, "death": {"event": "minecraft:entity.player.death"}}
+    if line is not None:
+        v["line_loudness"] = line
+    bark = {"kind": "windup", "subtitle": "Bark", "layers": [{"type": "tone", "dur": 0.3, "freq": 300}]}
+    if windup_plays:
+        bark["plays"] = windup_plays
+    return {"format": 1, "set": "test_hero", "title": "t",
+            "hero": {"voice": v, "moves": {"bite": {"class": "heavy", "windup": "bark"}},
+                     "phases": {"2": "bark", "3": "bark"}},
+            "sounds": {"voice": {"kind": "voice", "subtitle": "Talks", "loudness": voice_loudness, "variants": 4,
+                                 "layers": [{"type": "vox", "f0": 300, "dur": 0.08, "vowel": "a"}],
+                                 "each": [{"layers.0.vowel": v} for v in ("a", "e", "o", "u")]},
+                       "bark": bark}}
+
+
+class HeroRulesTest(unittest.TestCase):
+    def test_a_server_slot_needs_a_server_sound(self):
+        """The server plays a wind-up; a client sound there would reach nobody else."""
+        for plays, bad in (("client", True), ("server", False)):
+            cat = recipe.Catalogue([recipe.SoundSet("test_hero.sfx.json", hero_set(windup_plays=plays))])
+            rep = check.Report()
+            check.check_hero(cat, cat.sets["test_hero"], rep, None)
+            self.assertEqual(any("moves.bite.windup" in e and "plays: client" in e for e in rep.errors), bad,
+                             rep.errors)
+
+    def test_a_spoken_line_must_sit_at_its_loudness(self):
+        """Players hear lines: a line 3 dB off its voice.line_loudness fails, on target passes."""
+        cat = recipe.Catalogue([recipe.SoundSet("test_hero.sfx.json", hero_set())])
+        lm, _t = voice.line_loudness(recipe.Renderer(cat), cat.sets["test_hero"])
+        self.assertGreater(lm, -26.0 + 3, "a line measures well above one syllable")
+        for line, bad in ((lm + 3.0, True), (lm, False)):
+            cat = recipe.Catalogue([recipe.SoundSet("test_hero.sfx.json", hero_set(line=round(line, 2)))])
+            rep = check.Report()
+            check.check_voices(cat, rep)
+            self.assertEqual(any("spoken line" in e for e in rep.errors), bad, rep.errors)
+
+    def test_bare_marker_ids_are_vanilla(self):
+        """A bare id reads as Minecraft reads it (minecraft:), as hero files write look sounds."""
+        with tempfile.TemporaryDirectory() as tmp:
+            with open(os.path.join(tmp, "h.hero.json"), "w", encoding="utf-8") as f:
+                json.dump({"look": {"sound": "item.shield.block"}, "x": {"sound": "item.shield.blok"},
+                           "k": {"marker": "hit;sfx:factionclash:hero.cue.nothing"}}, f)
+            saved = check.ANIM_SOURCES
+            check.ANIM_SOURCES = [tmp]
+            try:
+                rep = check.Report()
+                check.check_markers(recipe.load_all(), rep)
+            finally:
+                check.ANIM_SOURCES = saved
+        self.assertFalse(any("item.shield.block " in e for e in rep.errors), rep.errors)
+        self.assertTrue(any("minecraft:item.shield.blok" in e for e in rep.errors), rep.errors)
+        self.assertTrue(any("hero.cue.nothing" in e for e in rep.errors), rep.errors)
 
 
 class CatalogueTest(unittest.TestCase):

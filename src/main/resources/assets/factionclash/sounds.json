@@ -99,7 +99,7 @@
         "name": "factionclash:hero/ambrose_nettlewick/bubble_rise"
       }
     ],
-    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.bubble_rise"
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.cauldron_windup"
   },
   "hero.ambrose_nettlewick.cauldron_bubble": {
     "sounds": [
@@ -259,7 +259,7 @@
         "name": "factionclash:hero/ambrose_nettlewick/splat_2"
       }
     ],
-    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.splat"
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.puddle_splat"
   },
   "hero.ambrose_nettlewick.vial_poison": {
     "sounds": [
@@ -352,9 +352,13 @@
   "hero.benika_akagane.club_hit": {
     "sounds": [
       {
-        "name": "minecraft:item.mace.smash_ground",
-        "pitch": 0.95,
-        "type": "event"
+        "name": "factionclash:hero/benika_akagane/club_hit_1"
+      },
+      {
+        "name": "factionclash:hero/benika_akagane/club_hit_2"
+      },
+      {
+        "name": "factionclash:hero/benika_akagane/club_hit_3"
       }
     ],
     "subtitle": "subtitles.factionclash.hero.benika_akagane.club_hit"
@@ -441,6 +445,17 @@
       }
     ],
     "subtitle": "subtitles.factionclash.hero.benika_akagane.fizzle"
+  },
+  "hero.benika_akagane.gourd_sip": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.generic.drink",
+        "pitch": 0.9,
+        "type": "event",
+        "volume": 0.3
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.gourd_sip"
   },
   "hero.benika_akagane.gourd_swig": {
     "sounds": [
@@ -583,7 +598,7 @@
         "name": "factionclash:hero/benika_akagane/thud_2"
       }
     ],
-    "subtitle": "subtitles.factionclash.hero.benika_akagane.thud"
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.charge_hit"
   },
   "hero.cue.barrier.break": {
     "sounds": [
@@ -613,7 +628,7 @@
         "name": "factionclash:hero/cue/barrier_sparkle"
       }
     ],
-    "subtitle": "subtitles.factionclash.hero.cue.barrier.sparkle"
+    "subtitle": "subtitles.factionclash.hero.cue.barrier.break"
   },
   "hero.cue.channel.break": {
     "sounds": [
@@ -772,7 +787,7 @@
         "name": "factionclash:hero/cue/shockwave_low"
       }
     ],
-    "subtitle": "subtitles.factionclash.hero.cue.shockwave.low"
+    "subtitle": "subtitles.factionclash.hero.cue.shockwave"
   },
   "hero.cue.spared": {
     "sounds": [
@@ -1087,7 +1102,7 @@
         "name": "factionclash:hero/ilsabet_frostmere/bash_thud_2"
       }
     ],
-    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.bash_thud"
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_bash"
   },
   "hero.ilsabet_frostmere.bulwark": {
     "sounds": [
@@ -1209,6 +1224,16 @@
       }
     ],
     "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.rime_wall"
+  },
+  "hero.ilsabet_frostmere.salute": {
+    "sounds": [
+      {
+        "name": "factionclash:hero.ilsabet_frostmere.intro",
+        "type": "event",
+        "volume": 0.5
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.intro"
   },
   "hero.ilsabet_frostmere.shield_bash": {
     "sounds": [
@@ -1383,6 +1408,16 @@
       {
         "attenuation_distance": 24,
         "name": "factionclash:hero/kagenori_tsurumine/guard_click"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.guard_click"
+  },
+  "hero.kagenori_tsurumine.guard_tap": {
+    "sounds": [
+      {
+        "name": "factionclash:hero.kagenori_tsurumine.guard_click",
+        "type": "event",
+        "volume": 0.55
       }
     ],
     "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.guard_click"
@@ -1628,6 +1663,15 @@
       }
     ],
     "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.flinch"
+  },
+  "hero.natsuho_komezaki.frenzy_rise": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/natsuho_komezaki/frenzy_rise"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.frenzy_yowl"
   },
   "hero.natsuho_komezaki.frenzy_sting": {
     "sounds": [
@@ -2482,6 +2526,6 @@
         "name": "factionclash:hero/yugen_kagaribi/vanish_sparkle"
       }
     ],
-    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish_sparkle"
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish"
   }
 }

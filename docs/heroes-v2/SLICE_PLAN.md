@@ -548,7 +548,7 @@ shake, crow peck.
 | Animations | 10-16 own | `_core` (about 45), 7 style libraries (about 14 each) |
 | Server definition | about 10-20 KB | - |
 | `visual.json` | move list, blink profile, mood overrides, voice | - |
-| Sounds (`SOUND.md`) | 20-34 events in `herosrc/sfx/<id>.sfx.json`: voice blips, a sound for each move's wind-up, release and impact where it has one, the ultimate, phases 2 and 3, intro, passives, weak points and idles; generated or vanilla by id; 176-245 KB of Ogg | the cue set: the six telegraph cues, parry, counter, poise, stagger, phase, shockwave, enrage, intro, yield, spared, mobility (32 events, 302 KB) |
+| Sounds (`SOUND.md`) | 20-34 events in `herosrc/sfx/<id>.sfx.json`: voice blips, a sound for each move's wind-up, release and impact where it has one, the ultimate, phases 2 and 3, intro, passives, weak points and idles; generated or vanilla by id; 179-248 KB of Ogg | the cue set: the six telegraph cues, parry, counter, poise, stagger, phase, shockwave, enrage, intro, yield, spared, mobility (32 events, 302 KB) |
 
 ---
 

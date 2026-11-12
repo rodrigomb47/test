@@ -2,8 +2,8 @@
 
 Determinism: the Ogg muxer normally draws a random stream serial number and writes the library version into the
 Vorbis comment header; `-fflags +bitexact -flags:a +bitexact` makes the serial number fixed and drops the version, so
-the same samples and the same ffmpeg/libvorbis give the same bytes. A different libvorbis may encode differently, so
-`build --check` compares decoded audio within a tolerance when the bytes differ (SOUND.md, "Determinism").
+the same samples and the same ffmpeg/libvorbis give the same bytes. A different libvorbis may encode differently: then
+`build --check` reports the files as different, and a rebuild is the fix (SOUND.md, "Determinism").
 """
 import os
 import shutil

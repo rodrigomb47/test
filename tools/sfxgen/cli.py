@@ -130,8 +130,7 @@ def cmd_vanilla_ids(args):
 def cmd_subtitles(args):
     """The en_us subtitle lines S2 merges into the language file (sorted JSON object)."""
     cat = _cat(args)
-    out = {s.subtitle_key: s.subtitle_text for s in cat.sounds()}
-    print(json.dumps(out, indent=2, sort_keys=True, ensure_ascii=False))
+    print(json.dumps(build.subtitles(cat), indent=2, sort_keys=True, ensure_ascii=False))
     return 0
 
 

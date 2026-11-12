@@ -3,7 +3,7 @@
   "set": "tobimaru_usugumo",
   "title": "Tobimaru Usugumo, the quiet ash ninja (lone wolf, twin blades and kunai, blight)",
   "hero": {
-    "voice": {"talk": "voice", "rate": 3, "melody": [0, 0, -1, 1], "fallback_blip": "hat", "jitter": 0.03,
+    "voice": {"talk": "voice", "line_loudness": -23.5, "rate": 3, "melody": [0, 0, -1, 1], "fallback_blip": "hat", "jitter": 0.03,
               "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 0.95},
               "death": {"event": "minecraft:entity.player.death", "pitch": 0.95},
               "emotes": {"hm": "hm"}},
@@ -29,7 +29,7 @@
               "kunai_twirl"],
   "sounds": {
     "voice": {
-      "kind": "voice", "subtitle": "Tobimaru whispers", "loudness": -26, "pitch": [0.98, 1.02], "variants": 6,
+      "kind": "voice", "subtitle": "Tobimaru whispers", "loudness": -28, "pitch": [0.98, 1.02], "variants": 6,
       "note": "A whisper with a trace of voice (the old hi-hat voice): breath through vowel formants over a faint 175 Hz tone; short and sparse (rate 3).",
       "layers": [
         {"type": "vox", "source": "glottal", "f0": 175, "dur": 0.08, "vowel": "a", "shift": 1.0, "tilt": 1.6, "breath": 3.0, "fq": 4, "attack": 0.008, "release": 0.03, "contour": [0, 0]}
@@ -77,7 +77,7 @@
       "vanilla": [{"event": "minecraft:entity.arrow.hit", "pitch": 1.2}]
     },
     "smoke_puff": {
-      "kind": "cast", "subtitle": "A puff of smoke", "loudness": -20, "variants": 2, "vary": {"pitch": [-1.5, 1.5]},
+      "kind": "cast", "subtitle": "A puff of smoke", "loudness": -20, "variants": 2, "vary": {"pitch": [-1.5, 1.5]}, "plays": "server",
       "note": "Shadow step (smoke puff, invisible), unseen, log swap: a soft 'pff' that hisses away.",
       "layers": [
         {"type": "noise", "colour": "pink", "dur": 0.5, "filter": {"mode": "lp", "f": {"from": 3000, "to": 500, "shape": "exp"}, "q": 0.8}, "env": {"perc": [0.006, 0.45]}},

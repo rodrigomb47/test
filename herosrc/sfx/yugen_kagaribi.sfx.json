@@ -28,7 +28,7 @@
               "tails_fan", "lantern_flare", "bewitch", "contract", "intro", "lantern_spin"],
   "sounds": {
     "voice": {
-      "kind": "voice", "subtitle": "Yugen murmurs", "pitch": [0.98, 1.02], "variants": 6,
+      "kind": "voice", "subtitle": "Yugen murmurs", "loudness": -26.5, "pitch": [0.98, 1.02], "variants": 6,
       "note": "Soft and breathy, gliding (the old flute voice): a mellow source with breath at about 233 Hz, slow vibrato, unhurried (rate 3).",
       "layers": [
         {"type": "vox", "source": "glottal", "f0": 233, "dur": 0.13, "vowel": "o", "shift": 1.05, "tilt": 2.2, "breath": 0.12, "dry": 0.02, "fq": 5,

@@ -225,7 +225,7 @@
       "range": 24,
       "set": "ambrose_nettlewick",
       "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.bubble_rise",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.cauldron_windup",
       "variants": 1,
       "volume": [
         1.0,
@@ -259,7 +259,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:block.brewing_stand.brew"
       ],
@@ -532,7 +532,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 12,
+      "range": 16,
       "refs": [
         "minecraft:entity.slime.squish_small"
       ],
@@ -558,7 +558,7 @@
         1.0,
         1.0
       ],
-      "plays": "client",
+      "plays": "server",
       "range": 12,
       "set": "ambrose_nettlewick",
       "source": "generated",
@@ -581,7 +581,7 @@
       "range": 16,
       "set": "ambrose_nettlewick",
       "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.splat",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.puddle_splat",
       "variants": 2,
       "volume": [
         1.0,
@@ -713,7 +713,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:entity.generic.explode"
       ],
@@ -733,7 +733,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 12,
+      "range": 16,
       "refs": [
         "minecraft:entity.player.burp"
       ],
@@ -793,18 +793,17 @@
     "factionclash:hero.benika_akagane.club_hit": {
       "category": "hostile",
       "kind": "hit",
+      "length": 0.443,
       "pitch": [
-        1.0,
-        1.0
+        0.96,
+        1.04
       ],
       "plays": "server",
       "range": 16,
-      "refs": [
-        "minecraft:item.mace.smash_ground"
-      ],
       "set": "benika_akagane",
-      "source": "vanilla",
+      "source": "generated",
       "subtitle": "subtitles.factionclash.hero.benika_akagane.club_hit",
+      "variants": 3,
       "volume": [
         1.0,
         1.0
@@ -925,7 +924,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:item.firecharge.use"
       ],
@@ -971,6 +970,26 @@
       "set": "benika_akagane",
       "source": "vanilla",
       "subtitle": "subtitles.factionclash.hero.benika_akagane.fizzle",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.gourd_sip": {
+      "category": "neutral",
+      "kind": "quirk",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.generic.drink"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.gourd_sip",
       "volume": [
         1.0,
         1.0
@@ -1067,7 +1086,7 @@
         1.0,
         1.0
       ],
-      "plays": "client",
+      "plays": "server",
       "range": 16,
       "set": "benika_akagane",
       "source": "generated",
@@ -1274,7 +1293,7 @@
       "range": 16,
       "set": "benika_akagane",
       "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.benika_akagane.thud",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.charge_hit",
       "variants": 2,
       "volume": [
         1.0,
@@ -1289,7 +1308,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:block.glass.break"
       ],
@@ -1338,7 +1357,7 @@
       "range": 16,
       "set": "cue",
       "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.cue.barrier.sparkle",
+      "subtitle": "subtitles.factionclash.hero.cue.barrier.break",
       "variants": 1,
       "volume": [
         1.0,
@@ -1423,6 +1442,7 @@
     },
     "factionclash:hero.cue.dive": {
       "category": "hostile",
+      "hit_at": 0.85,
       "kind": "telegraph",
       "length": 0.908,
       "pitch": [
@@ -1620,7 +1640,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:entity.breeze.wind_burst"
       ],
@@ -1650,7 +1670,7 @@
       "range": 24,
       "set": "cue",
       "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.cue.shockwave.low",
+      "subtitle": "subtitles.factionclash.hero.cue.shockwave",
       "variants": 1,
       "volume": [
         1.0,
@@ -1754,6 +1774,7 @@
     },
     "factionclash:hero.cue.telegraph.area": {
       "category": "hostile",
+      "hit_at": 1.0,
       "kind": "telegraph",
       "length": 1.058,
       "pitch": [
@@ -1773,6 +1794,7 @@
     },
     "factionclash:hero.cue.telegraph.heavy": {
       "category": "hostile",
+      "hit_at": 0.78,
       "kind": "telegraph",
       "length": 0.838,
       "pitch": [
@@ -1811,6 +1833,7 @@
     },
     "factionclash:hero.cue.telegraph.ultimate": {
       "category": "hostile",
+      "hit_at": 1.5,
       "kind": "telegraph",
       "length": 2.013,
       "pitch": [
@@ -2026,7 +2049,7 @@
         1.0,
         1.0
       ],
-      "plays": "client",
+      "plays": "server",
       "range": 16,
       "set": "hinae_shirasuzu",
       "source": "generated",
@@ -2278,7 +2301,7 @@
       "range": 16,
       "set": "ilsabet_frostmere",
       "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.bash_thud",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_bash",
       "variants": 2,
       "volume": [
         1.0,
@@ -2376,7 +2399,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:block.glass.break"
       ],
@@ -2396,7 +2419,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 12,
+      "range": 16,
       "refs": [
         "minecraft:block.glass.break"
       ],
@@ -2549,6 +2572,26 @@
         1.0
       ]
     },
+    "factionclash:hero.ilsabet_frostmere.salute": {
+      "category": "neutral",
+      "kind": "quirk",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "factionclash:hero.ilsabet_frostmere.intro"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "alias",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.intro",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
     "factionclash:hero.ilsabet_frostmere.shield_bash": {
       "category": "hostile",
       "kind": "hit",
@@ -2641,7 +2684,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:block.anvil.place"
       ],
@@ -2879,7 +2922,7 @@
         1.0,
         1.0
       ],
-      "plays": "client",
+      "plays": "server",
       "range": 16,
       "set": "kagenori_tsurumine",
       "source": "generated",
@@ -2923,6 +2966,26 @@
       "source": "generated",
       "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.guard_click",
       "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.guard_tap": {
+      "category": "neutral",
+      "kind": "quirk",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 24,
+      "refs": [
+        "factionclash:hero.kagenori_tsurumine.guard_click"
+      ],
+      "set": "kagenori_tsurumine",
+      "source": "alias",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.guard_click",
       "volume": [
         1.0,
         1.0
@@ -3153,7 +3216,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:entity.lightning_bolt.impact"
       ],
@@ -3383,11 +3446,30 @@
         0.98,
         1.04
       ],
-      "plays": "client",
+      "plays": "server",
       "range": 16,
       "set": "natsuho_komezaki",
       "source": "generated",
       "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.flinch",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.frenzy_rise": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.889,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.frenzy_yowl",
       "variants": 1,
       "volume": [
         1.0,
@@ -3402,7 +3484,7 @@
         1.0,
         1.0
       ],
-      "plays": "client",
+      "plays": "server",
       "range": 24,
       "set": "natsuho_komezaki",
       "source": "generated",
@@ -3421,7 +3503,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 32,
+      "range": 16,
       "refs": [
         "minecraft:entity.cat.stray_ambient"
       ],
@@ -3431,6 +3513,12 @@
       "volume": [
         1.0,
         1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.natsuho_komezaki.frenzy_rise"
+        }
       ]
     },
     "factionclash:hero.natsuho_komezaki.hiss": {
@@ -3441,7 +3529,7 @@
         1.0
       ],
       "plays": "server",
-      "range": 24,
+      "range": 16,
       "refs": [
         "minecraft:entity.cat.hiss"
       ],
@@ -4079,7 +4167,7 @@
         1.0,
         1.0
       ],
-      "plays": "client",
+      "plays": "server",
       "range": 16,
       "set": "tobimaru_usugumo",
       "source": "generated",
@@ -4687,7 +4775,7 @@
       "range": 16,
       "set": "yugen_kagaribi",
       "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish_sparkle",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish",
       "variants": 1,
       "volume": [
         1.0,
@@ -4851,7 +4939,7 @@
       },
       "quirks": {
         "personal.1": "factionclash:hero.benika_akagane.shoulder_roll",
-        "personal.2": "factionclash:hero.benika_akagane.gourd_swig",
+        "personal.2": "factionclash:hero.benika_akagane.gourd_sip",
         "personal.3": "factionclash:hero.benika_akagane.club_spin"
       },
       "states": {
@@ -4876,6 +4964,7 @@
           "pitch": 1.1
         },
         "jitter": 0.05,
+        "line_loudness": -20,
         "melody": [
           0,
           0,
@@ -4965,6 +5054,7 @@
           "pitch": 1.4
         },
         "jitter": 0.03,
+        "line_loudness": -22.5,
         "melody": [
           0,
           0,
@@ -5034,7 +5124,7 @@
       },
       "quirks": {
         "personal.1": "factionclash:hero.ilsabet_frostmere.shield_tap",
-        "personal.2": "factionclash:hero.ilsabet_frostmere.intro"
+        "personal.2": "factionclash:hero.ilsabet_frostmere.salute"
       },
       "states": {
         "bulwark": "factionclash:hero.ilsabet_frostmere.bulwark"
@@ -5130,7 +5220,7 @@
         "3": "factionclash:hero.kagenori_tsurumine.blade_hum"
       },
       "quirks": {
-        "personal.1": "factionclash:hero.kagenori_tsurumine.guard_click",
+        "personal.1": "factionclash:hero.kagenori_tsurumine.guard_tap",
         "personal.3": "factionclash:hero.kagenori_tsurumine.hair_tie"
       },
       "states": {
@@ -5342,6 +5432,7 @@
           "pitch": 0.95
         },
         "jitter": 0.03,
+        "line_loudness": -23.5,
         "melody": [
           0,
           0,

@@ -22,7 +22,7 @@
     "phases": {"2": "helmet", "3": "blade_hum"},
     "passives": {"still_mind": "guard_click"},
     "intro": "intro",
-    "quirks": {"personal.1": "guard_click", "personal.3": "hair_tie"},
+    "quirks": {"personal.1": "guard_tap", "personal.3": "hair_tie"},
     "steps": {"volume": 0.9}
   },
   "preview": ["voice", "hm", "kiai", "katana_swing", "guard_click", "iai_draw", "glint", "thunderclap", "sheathe",
@@ -80,6 +80,11 @@
         {"type": "click", "at": 0.012, "f": 2500, "q": 4, "dur": 0.04, "sharp": 700, "gain": -6},
         {"type": "tone", "at": 0.02, "dur": 1.2, "freq": 3520, "harmonics": [[1, 1], [2.4, 0.2]], "env": {"perc": [0.01, 1.1]}, "gain": -20}
       ]
+    },
+    "guard_tap": {
+      "kind": "quirk", "subtitle": "A sword guard clicks",
+      "note": "Personal idle 1 (thumbs the guard): the iai wind-up's click at idle level (an alias at 0.55 volume, no bytes), so an idle never sounds like the wind-up.",
+      "alias": [{"sound": "guard_click", "volume": 0.55}]
     },
     "iai_draw": {
       "kind": "swing", "subtitle": "A blade is drawn in a flash", "loudness": -16, "variants": 2, "vary": {"pitch": [-0.7, 0.7]},
@@ -219,7 +224,7 @@
       "vanilla": [{"event": "minecraft:entity.lightning_bolt.impact", "pitch": 1.0}]
     },
     "draw_second": {
-      "post": {"transients": true}, "kind": "cast", "subtitle": "Kagenori draws his second sword", "loudness": -19,
+      "post": {"transients": true}, "kind": "cast", "subtitle": "Kagenori draws his second sword", "loudness": -19, "plays": "server",
       "note": "State twin sky (phase 3, two swords): the short sword drawn, with an electric edge.",
       "layers": [
         {"type": "use", "sound": "iai_draw", "variant": 2, "pitch": 2},

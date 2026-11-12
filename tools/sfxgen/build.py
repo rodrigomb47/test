@@ -3,10 +3,12 @@
 Outputs (all generated, never edited by hand):
 - `src/main/resources/assets/factionclash/sounds/hero/<set>/<name>[_<n>].ogg`
 - `src/main/resources/assets/factionclash/sounds.json`: one entry per event (generated files with their attenuation
-  distance, vanilla references as `"type": "event"` entries with pitch and volume), with its subtitle key
-- `src/main/resources/assets/factionclash/sounds/hero_sfx.json`: the index (SOUND.md section 7): per event who plays
-  it, its category, range, play-time pitch and volume ranges, companions, loop flag, length; per hero the voice, the
-  move, phase, state, passive, weak-point and quirk maps; the shared cue map.
+  distance, vanilla references as `"type": "event"` entries with pitch and volume), with its subtitle key (sounds
+  with the same subtitle text share one key, so the overlay shows one line for a sound and its companion)
+- `src/main/resources/assets/factionclash/sounds/hero_sfx.json`: the index (SOUND.md section 15): per event who plays
+  it, its category, the range the game really gives it, play-time pitch and volume ranges, companions, loop flag,
+  length, `hit_at` for the telegraph cues; per hero the voice, the move, phase, state, passive, weak-point and quirk
+  maps; the shared cue map.
 """
 import concurrent.futures as cf
 import json
@@ -53,10 +55,25 @@ def render_all(cat, src=SRC, jobs=None, only=None):
     return res
 
 
+def subtitle_keys(cat):
+    """{event: subtitle key}. Sounds with the same subtitle text share one key, the first one's in catalogue order
+    (sets by id, sounds in file order): the game's subtitle overlay merges lines whose components are equal, and a
+    translatable component compares by key, so a sound and a companion that says the same thing show one line."""
+    first = {}
+    out = {}
+    for s in cat.sounds():
+        out[s.event] = first.setdefault(s.subtitle_text, s.subtitle_key)
+    return out
+
+
+def subtitles(cat):
+    """{key: English text} for the language file (one entry per distinct text)."""
+    keys = subtitle_keys(cat)
+    return {keys[s.event]: s.subtitle_text for s in cat.sounds()}
+
+
 def sounds_json(cat, rendered):
-    lengths = {}
-    for ev, k, stem, rate, data, sec in rendered:
-        lengths.setdefault(ev, []).append(stem)
+    keys = subtitle_keys(cat)
     out = {}
     for s in cat.sounds():
         entries = []
@@ -89,7 +106,7 @@ def sounds_json(cat, rendered):
                 if int(v.get("weight", 1)) != 1:
                     e["weight"] = int(v["weight"])
                 entries.append(e)
-        out[s.event] = {"sounds": entries, "subtitle": s.subtitle_key}
+        out[s.event] = {"sounds": entries, "subtitle": keys[s.event]}
     return out
 
 
@@ -100,6 +117,7 @@ def index_json(cat, rendered):
         secs[ev] = max(secs.get(ev, 0.0), sec)
         rates[ev] = rate
     events = {}
+    keys = subtitle_keys(cat)
     for s in cat.sounds():
         e = {
             "set": s.set,
@@ -110,10 +128,12 @@ def index_json(cat, rendered):
             "pitch": [round(v, 4) for v in s.pitch],
             "volume": [round(v, 4) for v in s.volume],
             "source": "generated" if s.generated else ("alias" if s.alias else "vanilla"),
-            "subtitle": s.subtitle_key,
+            "subtitle": keys[s.event],
         }
         if s.loop:
             e["loop"] = True
+        if s.hit_at is not None:
+            e["hit_at"] = round(s.hit_at, 3)
         if s.generated:
             e["variants"] = s.variants
             e["length"] = round(secs.get(s.event, 0.0), 3)

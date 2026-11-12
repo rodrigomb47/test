@@ -16,6 +16,7 @@ import build
 import codec
 import recipe
 import vanilla
+import voice
 from paths import INDEX_JSON, NAMESPACE, ROOT, SOUNDS_DIR, SOUNDS_JSON
 
 # loudness and level limits (momentary max, LUFS-like; dBFS for peaks)
@@ -45,6 +46,11 @@ REQUIRED_CUES = ["telegraph.light", "telegraph.heavy", "telegraph.area", "telegr
                  "decoy_pop", "weak_point", "channel_break"]
 MOVE_SLOTS = ("windup", "release", "impact", "loop", "end", "broken")
 MOVE_CLASSES = ("light", "heavy", "area", "ultimate")
+# slots the server plays at their moment (SOUND.md section 7): the sound must be `plays: server`, or nobody else
+# would hear it (a client sound is never sent over the network)
+SERVER_MOVE_SLOTS = ("windup", "impact", "broken")
+SERVER_GROUPS = ("states", "passives", "weak_points", "mobility")
+LINE_TOL = 1.5              # a hero's reference line lands within this of its voice.line_loudness
 EVENT_RE = re.compile(r"^hero\.(cue|voice|[a-z][a-z0-9_]*)\.[a-z0-9_][a-z0-9_.]*$")
 ANIM_SOURCES = [os.path.join(ROOT, "herosrc", "anim"), os.path.join(ROOT, "herosrc", "heroes")]
 
@@ -73,6 +79,7 @@ def run(cat, verbose=False, decode=True, jobs=None):
     rep = Report()
     check_catalogue(cat, rep)
     check_markers(cat, rep)
+    check_voices(cat, rep)
     if decode:
         check_files(cat, rep, jobs)
     for line in rep.errors + (rep.notes if verbose or not rep.errors else rep.notes):
@@ -120,9 +127,8 @@ def check_catalogue(cat, rep):
                 p = float(v.get("pitch", 1.0))
                 if p * lo < PITCH_RANGE[0] - 1e-9 or p * hi > PITCH_RANGE[1] + 1e-9:
                     rep.error(w, "pitch %.2f x play %s leaves %s" % (p, s.pitch, PITCH_RANGE))
-            if s.range != 16 and s.range > 16 * max(1.0, s.volume[1]) + 1e-6:
-                rep.note(w, "a vanilla reference carries 16 x volume blocks (%.0f), not range %d" % (
-                    16 * max(1.0, s.volume[1]), s.range))
+        if s.hit_at is not None and s.kind != "telegraph":
+            rep.error(w, "hit_at belongs to telegraph cues (where the release lands in the cue)")
         for c in s.companions:
             if cat.lookup(c["sound"], s.set) is None:
                 rep.error(w, "companion %r does not exist" % c["sound"])
@@ -161,6 +167,16 @@ def check_catalogue(cat, rep):
         for n in st.preview or []:
             if n not in st.sounds:
                 rep.error(sid, "preview lists a missing sound %r" % n)
+
+
+def carry(cat, s, seen=()):
+    """The farthest any part of a sound reaches (blocks): its own range or a companion's."""
+    best = s.range
+    for c in s.companions:
+        ref = cat.lookup(c["sound"], s.set)
+        if ref is not None and ref.event not in seen:
+            best = max(best, carry(cat, ref, seen + (s.event,)))
+    return best
 
 
 def _companion_depth(cat, s, seen):
@@ -234,6 +250,15 @@ def check_hero(cat, st, rep, ids):
         elif cat.lookup(ref, st.id) is None:
             rep.error(w, "%s names a missing sound %r" % (where, ref))
 
+    def server_ok(where, ref):
+        """A slot the server plays must name a sound the server sends (`plays: server`)."""
+        for r in (ref if isinstance(ref, list) else [ref]):
+            if isinstance(r, str) and not r.startswith("minecraft:"):
+                s = cat.lookup(r, st.id)
+                if s is not None and s.plays != "server":
+                    rep.error(w, "%s: the server plays this slot, but %s is plays: client (nobody else would hear "
+                                 "it): make it plays: server" % (where, s.event))
+
     for name, e in v.get("emotes", {}).items():
         ref_ok("voice.emotes.%s" % name, e)
     moves = h.get("moves", {})
@@ -250,17 +275,22 @@ def check_hero(cat, st, rep, ids):
                 rep.error(w, "%s: unknown slot %r" % (where, slot))
                 continue
             ref_ok("%s.%s" % (where, slot), m[slot])
+            if slot in SERVER_MOVE_SLOTS:
+                server_ok("%s.%s" % (where, slot), m[slot])
         if m.get("class") in ("heavy", "area", "ultimate") and "windup" not in m:
             rep.note(w, "%s: a %s move has no hero wind-up sound (the class cue plays alone)" % (where, m["class"]))
         if not any(k in m for k in ("release", "impact")):
             rep.note(w, "%s: neither release nor impact" % where)
         if m.get("class") == "ultimate":
             wu = cat.lookup(m.get("windup", ""), st.id) if isinstance(m.get("windup"), str) else None
-            if wu is not None and wu.range < 32 and not (not wu.generated and wu.volume[1] >= 2.0):
-                rep.note(w, "%s: an ultimate wind-up should carry at least 32 blocks" % where)
+            if wu is not None and carry(cat, wu) < 32:
+                rep.note(w, "%s: an ultimate wind-up should carry at least 32 blocks (%s reaches %d)" % (
+                    where, wu.event, carry(cat, wu)))
     for group in ("states", "phases", "passives", "weak_points", "quirks", "mobility"):
         for k, ref in h.get(group, {}).items():
             ref_ok("%s.%s" % (group, k), ref)
+            if group in SERVER_GROUPS:
+                server_ok("%s.%s" % (group, k), ref)
     if "intro" in h:
         ref_ok("intro", h["intro"])
     phases = h.get("phases", {})
@@ -274,7 +304,8 @@ def check_hero(cat, st, rep, ids):
     hero_file = os.path.join(ROOT, "herosrc", "heroes", st.id + ".hero.json")
     if os.path.exists(hero_file):
         try:
-            hd = json.load(open(hero_file, encoding="utf-8"))
+            with open(hero_file, encoding="utf-8") as f:
+                hd = json.load(f)
             ids_in_file = [m.get("id") for m in hd.get("moves", []) if isinstance(m, dict)]
             ult = hd.get("ultimate", {})
             if isinstance(ult, dict) and ult.get("id"):
@@ -290,6 +321,19 @@ def check_hero(cat, st, rep, ids):
             rep.note(w, "could not read %s: %s" % (hero_file, e))
     else:
         rep.note(w, "no herosrc/heroes/%s.hero.json yet: moves checked against the sound map only" % st.id)
+
+
+def check_voices(cat, rep):
+    """A hero's reference line (its syllables strung at its rate, SOUND.md section 6) lands within LINE_TOL of its
+    voice.line_loudness: players hear lines, not single syllables, and a line measures 4-7 dB above one syllable."""
+    r = recipe.Renderer(cat)
+    for sid, st in sorted(cat.sets.items()):
+        if st.is_cue or "voice" not in st.sounds or not st.sounds["voice"].generated:
+            continue
+        lm, target = voice.line_loudness(r, st)
+        if abs(lm - target) > LINE_TOL:
+            rep.error(sid, "a spoken line measures %.1f, voice.line_loudness is %.1f: move the voice's loudness by "
+                           "%+.1f" % (lm, target, target - lm))
 
 
 # ---------------------------------------------------------------- markers in animation recipes and hero files
@@ -308,7 +352,8 @@ def marker_refs():
                     continue
                 p = os.path.join(root, n)
                 try:
-                    data = json.load(open(p, encoding="utf-8"))
+                    with open(p, encoding="utf-8") as f:
+                        data = json.load(f)
                 except ValueError:
                     continue
                 for key, val in _walk(data):
@@ -337,7 +382,9 @@ def check_markers(cat, rep):
     for path, ref in marker_refs():
         where = os.path.relpath(path, ROOT)
         if ":" not in ref:
-            ref = "%s:%s" % (NAMESPACE, ref)
+            # as Minecraft reads it (ResourceLocation.parse): a bare id is a vanilla one; hero files write
+            # "look": {"sound": "item.shield.block"} (HEROES_V2 section 12)
+            ref = "minecraft:" + ref
         if ref.startswith("minecraft:"):
             if ids is not None and ref not in ids:
                 rep.error(where, "sound %s is not a 1.21.1 sound event" % ref)
@@ -418,6 +465,8 @@ def check_audio(s, k, x, sr, m, ch, rep, synth=None):
         content = dur - (recipe.LEAD_SAMPLES + recipe.TAIL_SAMPLES) / float(sr)
         if content > s.max_dur + 1e-6:
             rep.error(w, "%.2f s is longer than the %s limit of %.1f s" % (content, s.kind, s.max_dur))
+        if s.hit_at is not None and s.hit_at > content + 1e-6:
+            rep.error(w, "hit_at %.2f s is past the sound's end (%.2f s)" % (s.hit_at, content))
         e = m["edges"]
         if e["first"] > EDGE_MAX or e["last"] > EDGE_MAX:
             rep.error(w, "edge sample too loud (first %.1f, last %.1f dBFS): a click at the start or end" % (
@@ -480,6 +529,11 @@ def check_vanilla_levels(cat, rep):
                 # the game multiplies vanilla's own volume, our entry's and the play volume, then clamps to 1
                 gain = min(1.0, vol * float(v.get("volume", 1.0)) * s.volume[1])
                 levels.append(lm + analyze.db(max(gain, 1e-6)))
+            top = max((vol for _lm, vol in cache[ev]), default=1.0) * float(v.get("volume", 1.0))
+            if top > 1.0 + 1e-6:
+                rep.note(s.event, "%s plays at %.2f x its file: the level clamps at 1 and the client range grows to "
+                                  "%.0f blocks (keep entry volume x vanilla's own at or under 1)" % (
+                                      ev, top, 16 * top * s.volume[1]))
         if levels:
             eff = float(np.mean(levels))
             target = recipe.KINDS[s.kind]["loudness"]

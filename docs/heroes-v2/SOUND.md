@@ -4,10 +4,10 @@ How heroes sound: the design, the catalogue format, the generator (`tools/sfxgen
 the engine side (task S2) has to do. Companion of `HEROES_V2.md` (sections 4.1, 4.8, 6.4, 6.13, 10.3, 12.14),
 `SLICE_PLAN.md` section 3 and `MOBILITY_AND_WORK.md` sections 2.2 and 7.3.
 
-Status, 2026-11-12: S1 done (this document, the generator, the shared cues and the eight slice heroes' sounds, the
-previews). Nothing plays yet: S2 (Java) registers the events and plays them. The generated `.ogg` files, `sounds.json`
-and the index are in `src/main/resources/assets/factionclash/`; the client loads `sounds.json` already, and an event
-nobody registers or plays does nothing.
+Status, 2026-11-12: S1 done and reviewed (this document, the generator, the shared cues and the eight slice heroes'
+sounds, the previews). Nothing plays yet: S2 (Java) registers the events and plays them. The generated `.ogg` files,
+`sounds.json` and the index are in `src/main/resources/assets/factionclash/`; the client loads `sounds.json` already,
+and an event nobody registers or plays does nothing.
 
 ---
 
@@ -43,7 +43,10 @@ sounds when it makes more sense."* So:
 
    `sfxgen check` measures the six cues against each other (spectral shape, length, where the peak sits) and notes
    any pair that comes too close. The hero's own wind-up sound plays together with the class cue: the cue says
-   *what kind* of attack, the hero's sound says *which* attack.
+   *what kind* of attack, the hero's sound says *which* attack. The four swelling cues (heavy, area, ultimate, dive)
+   carry `hit_at`, the time in the cue where the attack lands; S2 starts them so that moment falls on the release
+   (section 7), so the swell also says *when*, whatever the move's wind-up length. Light and unblockable cues are
+   short stabs and play at the wind-up's start.
 2. **Heroes are recognisable by ear.** Each hero has a voice of its own (section 6) and a sound palette from its
    element, weapon and archetype: Natsuho is bells, claws and cat; Yugen cold foxfire, paper and fan; Benika iron,
    forge fire and a laugh; Hinae kagura bells, paper and claps; Kagenori steel rings, clicks and thunder; Tobimaru
@@ -51,7 +54,8 @@ sounds when it makes more sense."* So:
 3. **Vanilla where natural** (section 0), so heroes sit in Minecraft's world and players already know half of the
    sounds.
 4. **Levels fit vanilla.** Loudness targets come from measured vanilla sounds (section 8): a hero hit is as loud as
-   a player's critical hit, a slam as loud as a small explosion, a voice blip quieter than a villager.
+   a player's hit (between a strong hit and a critical one), a slam a little under an explosion, and a spoken line
+   (the blips strung together) between a villager's mumble and a wandering trader, under any hit.
 5. **Player-like and honest.** Sounds only tell; they never decide anything. Decoys have no footsteps (6.11), a
    hero's steps are vanilla block steps at a hero-specific volume, invisible Tobimaru leaves audible smoke puffs.
 6. **Small.** Every file costs about 3.4 KB of Vorbis headers before any audio, so variants are few, pitch
@@ -61,7 +65,8 @@ sounds when it makes more sense."* So:
 
 - Generated: anything that is the hero's identity or the mod's language: voices, signature magic, every telegraph
   and boss cue, ultimates, phase moments, stings, the hero's own swings and hits when their character matters.
-- Vanilla: a sound Minecraft already has for exactly that thing. The slice uses 29 vanilla events (and the player's
+- Vanilla: a sound Minecraft already has for exactly that thing, at the scale the moment needs (the mace's
+  ground smash is a 2.5 s slam, so it is not a club's every hit). The slice uses 28 vanilla events (and the player's
   hurt and death sounds):
 
 | Vanilla event | Used for |
@@ -69,9 +74,8 @@ sounds when it makes more sense."* So:
 | `entity.cat.hiss`, `entity.cat.purr`, `entity.cat.stray_ambient` | Natsuho's hiss wind-up, her purr, the midnight frenzy yowl |
 | `entity.fox.teleport`, `entity.fox.screech` | Yugen's vanish, the scream under his phase 3 flare |
 | `entity.player.attack.sweep`, `.strong`, `.knockback` | Ilsabet's sword, katana and blade hits, knockback hits |
-| `item.mace.smash_ground` | Benika's club hits (her kit weapon is a mace) |
 | `item.firecharge.use`, `entity.generic.explode`, `block.fire.extinguish` | fire under Benika's slams, the meteor blast, steam from her horn, her fire going out (snowball weak point) |
-| `entity.generic.drink`, `entity.player.burp` | the gourd swig |
+| `entity.generic.drink`, `entity.player.burp` | the gourd swig; the drink alone, at 0.3 volume, is her idle sip |
 | `block.glass.break`, `block.anvil.place`, `block.iron_trapdoor.close` | ice and barriers shattering, the frozen standard planted, a visor snapping shut |
 | `item.shield.block`, `item.armor.equip_iron`, `item.armor.equip_netherite` | shield bash and plant, Kagenori's helmet, Ilsabet's bulwark |
 | `item.goat_horn.sound.5` ("call") | Ilsabet's call the guard and phase 3 |
@@ -83,7 +87,8 @@ sounds when it makes more sense."* So:
 
 A vanilla sound and a generated one can play together: a sound's **companions** (`with`, section 4.6) are other
 events started with it, for example `vial_slow` = vanilla potion break + the generated slow-bubble tell, `frost_hit`
-= generated ice + vanilla glass.
+= generated ice + vanilla glass, `frenzy_yowl` = vanilla stray-cat yowl + the generated `frenzy_rise` (her bell
+jingling faster over a rising hiss), which also carries her ultimate's wind-up 48 blocks.
 
 ## 3. Event names
 
@@ -133,10 +138,11 @@ One file per set (`cue` or a hero id). The generator reads all of them; `sfxgen 
 |---|---|
 | `kind` | sets the defaults below: `voice`, `emote`, `swing`, `cast`, `hit`, `heavy`, `windup`, `telegraph`, `sting`, `chime`, `mobility`, `foley`, `quirk`, `loop` |
 | `subtitle` | English subtitle text (required; S2 writes it to the language file) |
-| `plays` | `server` (the server plays it at the hero: everyone in range hears it) or `client` (an animation keyframe or client code plays it; nothing on the network) |
+| `plays` | `server` (the server plays it at the hero: everyone in range hears it) or `client` (an animation keyframe or client code plays it; nothing on the network). A sound in a slot the server plays must be `server` (section 7, checked) |
 | `category` | the vanilla sound category (`hostile`, `neutral`, `voice`...), so players' volume sliders apply |
-| `range` | attenuation distance in blocks (generated sounds; S2 registers the event with this fixed range) |
-| `pitch`, `volume` | play-time random ranges `[low, high]` S2 picks from on every play |
+| `range` | attenuation distance in blocks, generated sounds only (sounds.json `attenuation_distance`; S2 registers the event with the index's range). A vanilla reference reaches 16 blocks x its play volume and an alias its target's range, so neither takes one (refused) |
+| `pitch`, `volume` | play-time random ranges `[low, high]` S2 picks from on every play; `volume` at most 1 for generated sounds and aliases (above 1 the game only clamps the level and widens the range: use `range`) |
+| `hit_at` | telegraph cues only: seconds into the cue where the attack lands (S2 aligns it with the release, section 7) |
 | `loudness` | target momentary-max loudness (generated; defaults per kind, section 8) |
 | `rate` | `auto` (22.05 kHz when less than -32 dB of the energy is above 9.5 kHz), `44100` or `22050` |
 | `loop`, `length`, `loop_crossfade` | a seamless loop of `length` seconds (the end cross-faded into the start) |
@@ -149,7 +155,7 @@ Kind defaults (loudness, category, who plays it, range, longest length):
 
 | Kind | Loudness | Category | Plays | Range | Max |
 |---|---|---|---|---|---|
-| `voice` | -24 | voice | client | 12 | 0.3 s |
+| `voice` | -26 (per syllable; a line about -21, section 6) | voice | client | 12 | 0.3 s |
 | `emote` | -21 | voice | client | 16 | 2.0 s |
 | `swing` | -21 | hostile | client | 16 | 1.2 s |
 | `cast` | -20 | hostile | client | 16 | 2.5 s |
@@ -217,14 +223,20 @@ frequent hits, 1 for everything else.
 `"vanilla": [{"event": "minecraft:...", "pitch": p, "volume": v, "weight": w}]` becomes a `"type": "event"` entry in
 sounds.json. The game multiplies the referenced sound's own pitch and volume by these, keeps the vanilla sound's
 attenuation (16 blocks x max(1, volume)), and clamps the final volume to 1. Several entries pick at random (Ambrose's
-`brew_drop` is one potion break at three pitches). The id must exist in 1.21.1 (checked) and the final pitch must
-stay within 0.5-2.0 (the client clamps).
+`brew_drop` is one potion break at three pitches; the game weighs an event entry by the referenced event's own
+weight, so `weight` has no effect there). The id must exist in 1.21.1 (checked) and the final pitch must stay within
+0.5-2.0 (the client clamps). A vanilla reference takes no `range`: it reaches 16 blocks, or 16 x its play `volume`
+above 1 (the goat horn's `rally` plays at 2: 32 blocks), and the index lists exactly that. An entry `volume` may lift
+a quiet vanilla sound, but the entry volume times vanilla's own should stay at or under 1 (the level clamps there and
+the client range would grow; `check` notes it).
 
 ### 4.5 Aliases
 
-`"alias": [{"sound": "set:name", "pitch": p}]` makes an event that plays another catalogue sound (a `type: event`
-entry pointing at `factionclash:...`): zero bytes. For later heroes: a batch hero's voice can be another voice at a
-new pitch, a style's swing can serve many heroes.
+`"alias": [{"sound": "set:name", "pitch": p, "volume": v}]` makes an event that plays another catalogue sound (a
+`type: event` entry pointing at `factionclash:...`): zero bytes. It carries its target's range, and its `volume` is at
+most 1. The slice uses two, for idles at idle level: Ilsabet's `salute` (her intro at half volume) and Kagenori's
+`guard_tap` (the iai wind-up's guard click at 0.55, so an idle never sounds like the wind-up). For later heroes: a
+batch hero's voice can be another voice at a new pitch, a style's swing can serve many heroes.
 
 ### 4.6 Companions
 
@@ -238,7 +250,7 @@ The `hero` block tells S2 (and the animation authors of C1-C4) which sound belon
 
 ```json
 "hero": {
-  "voice": {"talk": "voice", "rate": 2, "melody": [0, 0, 2, 3, 5, -2], "jitter": 0.04, "fallback_blip": "xylophone",
+  "voice": {"talk": "voice", "line_loudness": -21, "rate": 2, "melody": [0, 0, 2, 3, 5, -2], "jitter": 0.04, "fallback_blip": "xylophone",
             "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.35}, "death": {...},
             "emotes": {"hmph": "hmph", "yelp": "flinch"}},
   "moves": {
@@ -255,10 +267,12 @@ The `hero` block tells S2 (and the animation authors of C1-C4) which sound belon
 }
 ```
 
-Move slots: `windup` (server, at the wind-up's start, with the class cue), `release` (client keyframe where the
-action starts: the swing, the throw, the leap), `impact` (server, each time damage or the zone pulse lands; a list
-cycles per shot), `loop` (client, while a channel lasts), `end` (client keyframe in the recovery), `broken` (server,
-when the channel is broken). The cue set's map (`"cues"`) names the shared events the same way.
+Move slots: `windup` (server, at the wind-up's start, with the class cue), `release` (where the action starts: the
+swing, the throw, the leap; a client keyframe, or the server at the release tick when the sound is `plays: server`,
+as the ultimates' releases are), `impact` (server, each time damage or the zone pulse lands; a list cycles per shot),
+`loop` (client, while a channel lasts), `end` (client keyframe in the recovery), `broken` (server, when the channel
+is broken). Section 7 has the full rule for every slot. The cue set's map (`"cues"`) names the shared events the same
+way. `voice.line_loudness` is the loudness a spoken line should measure (default -21, section 6).
 
 ## 5. Markers (HEROES_V2 4.8)
 
@@ -267,14 +281,18 @@ a key's `"sound": "<id>"`, or a `sfx:<id>` part of a marker (`"hit;sfx:factioncl
 G3 writes them as GeckoLib `sound_effects` keyframes, at the pose's time plus the controller's blend (like every
 event), so the sound fires on the frame where its pose shows.
 
-- Ids are full: `minecraft:<event>` or `factionclash:hero.<set>.<name>` (a bare id is read as `factionclash:`).
+- Write ids in full: `minecraft:<event>` or `factionclash:hero.<set>.<name>`. A bare id is read as Minecraft reads
+  it (`ResourceLocation.parse`): a vanilla one, as hero files write `"look": {"sound": "item.shield.block"}`
+  (HEROES_V2 section 12).
 - `sfxgen check` reads every recipe in `herosrc/anim` and `herosrc/heroes` and fails on an id that is neither a
   1.21.1 sound event nor in the catalogue. Today's markers (`attack.1`'s sweep, the fishing cast and reel) are
   vanilla and pass.
-- Which marker goes where: the `release` and `end` slots of the hero map (section 4.7), the `phases` sounds in
-  `phase.2` / `phase.3`, `intro` in `intro`, `quirks` in `personal.N`. A move's `windup` and `impact` are not
-  markers: the server plays them (section 7), so they are heard by every player even when the client skips the
-  animation (late trackers, LOD).
+- Which marker goes where: the `release` sounds that play on the client and the `end` sounds of the hero map
+  (section 4.7), the `phases` sounds in `phase.2` / `phase.3`, `intro` in `intro`, `quirks` in `personal.N` (and
+  `idle`). A move's `windup`, `impact` and `broken`, the states, passives, weak points and mobility, and a `release`
+  whose sound is `plays: server` (the ultimates' releases, Kagenori's thunderclap, Benika's stomp) are not markers:
+  the server plays them (section 7), so every player hears them even when the client skips the animation (late
+  trackers, LOD).
 - One sound per keyframe time (the GeckoLib writer refuses two): layer at render time (`use`) or with companions.
 - The style libraries keep vanilla sounds until a style kit exists (`_style_katana`'s `attack.1` keeps
   `entity.player.attack.sweep`; C3 may point Kagenori's own `attack` overrides at `katana_swing`).
@@ -288,16 +306,25 @@ last syllable before a `?` 12% higher, a pause at `,` `.` `!` `?` and between wo
 `blip` and `pitch` are the fallback for a hero without a generated voice (an operator's custom hero, a batch hero
 before its sounds exist), and `rate` is shared.
 
-| Hero | Temperament | Old blip | Generated voice | f0 | Rate | Melody |
-|---|---|---|---|---|---|---|
-| Natsuho | tsundere | xylophone 1.35 | the owner's chirps: sine and two harmonics, a 30 Hz flutter, sin^1.6 arch; quick | 620 Hz | 2 | 0 0 +2 +3 +5 -2 |
-| Yugen | schemer | flute 1.0 | soft and breathy, gliding contours, slow vibrato | 233 Hz | 3 | 0 0 -2 +2 -3 |
-| Benika | battle maniac | guitar 1.1 | buzzy pulse with a little drive and rasp, punchy | 262 Hz | 2 | 0 0 +2 +4 -2 |
-| Hinae | sweet-natured | bell 1.4 | bell-tinged, round vowels, gentle attacks | 587 Hz | 3 | 0 0 +2 +4 -1 |
-| Kagenori | stoic | bass 0.85 | dark and level, no vibrato, short | 131 Hz | 3 | 0 0 0 -1 +1 |
-| Tobimaru | lone wolf | hat 0.95 | a whisper with a trace of tone (quieter: -26) | 175 Hz | 3 | 0 0 -1 +1 |
-| Ilsabet | righteous | chime 1.15 | clear and steady with a ring | 440 Hz | 3 | 0 0 +2 -2 +3 |
-| Ambrose | eccentric genius | pling 1.05 | bright, a 7 Hz wobble, big jumps | 311 Hz | 2 | 0 +3 -3 +5 +7 -2 |
+**Level.** Players hear lines, not syllables, and a line measures 4-7 dB above one syllable (more at rate 2, with
+short syllables). So the level is set on the line: `voice.line_loudness` (default -21: between a villager's mumble,
+-25, and a wandering trader, -19.5, and under a player's hit) and `check` renders each hero's reference line (the
+same sentence shape as the previews) and fails when it is more than 1.5 dB off. The syllables' own `loudness` is
+whatever puts the line there (-26 to -28 in the slice).
+
+| Hero | Temperament | Old blip | Generated voice | f0 | Rate | Melody | Line |
+|---|---|---|---|---|---|---|---|
+| Natsuho | tsundere | xylophone 1.35 | the owner's chirps: sine and two harmonics, a 30 Hz flutter, sin^1.6 arch; quick | 620 Hz | 2 | 0 0 +2 +3 +5 -2 | -21 |
+| Yugen | schemer | flute 1.0 | soft and breathy, gliding contours, slow vibrato | 233 Hz | 3 | 0 0 -2 +2 -3 | -21 |
+| Benika | battle maniac | guitar 1.1 | buzzy pulse with a little drive and rasp, punchy | 262 Hz | 2 | 0 0 +2 +4 -2 | -20 (loud) |
+| Hinae | sweet-natured | bell 1.4 | bell-tinged pure tone, round vowels, gentle attacks | 587 Hz | 3 | 0 0 +2 +4 -1 | -22.5 (soft) |
+| Kagenori | stoic | bass 0.85 | dark and level, no vibrato, short | 131 Hz | 3 | 0 0 0 -1 +1 | -21 |
+| Tobimaru | lone wolf | hat 0.95 | a whisper with a trace of tone | 175 Hz | 3 | 0 0 -1 +1 | -23.5 (whisper) |
+| Ilsabet | righteous | chime 1.15 | a clear sung vowel (glottal source, narrow formants, no vibrato) with a faint chime two octaves up | 440 Hz | 3 | 0 0 +2 -2 +3 | -21 |
+| Ambrose | eccentric genius | pling 1.05 | bright, a 7 Hz wobble, big jumps | 311 Hz | 2 | 0 +3 -3 +5 +7 -2 | -21 |
+
+The three high voices stay apart by timbre as well as pitch: Natsuho's chirps (pure, quick arches), Hinae's bell
+tone (pure, slow, soft) and Ilsabet's sung vowel (a full harmonic series shaped by formants, with the chime).
 
 Emotes (`voice.emotes`) are short generated vocal sounds in the same timbre: Natsuho's `hmph`, yelp and yawn,
 Yugen's sleeve laugh, Benika's laugh and roar, Hinae's humming, Kagenori's `hm` and kiai, Tobimaru's `hm`, Ilsabet's
@@ -312,11 +339,26 @@ The server plays what every nearby player must hear and what decides nothing on 
 state. A *notification* is `ServerPlayer.playNotifySound` to each engaged player (heard in the head, not positioned),
 for the beats that are about the fight, not a place.
 
+**The slot rule** (what S2 and C1-C4 apply, and `check` enforces):
+
+| Slot of the hero map | Played by | When |
+|---|---|---|
+| `moves.*.windup`, `moves.*.impact`, `moves.*.broken`, `states.*`, `passives.*`, `weak_points.*`, `mobility.*`, `steps.with`, every cue | the server (`HeroSounds`); the sound must be `plays: server` (a `check` error otherwise) | at that moment in the server code |
+| `moves.*.release` with a `plays: server` sound | the server | the move's release tick (the end of the wind-up) |
+| `moves.*.release` with a `plays: client` sound, `moves.*.end`, `phases.*`, `intro`, `quirks.*` | the client, from an `sfx:` marker in the matching animation (section 5) | the marker's frame |
+| `moves.*.loop` | the client, a looping sound following the hero | while the action code says the channel lasts |
+| `voice.talk` | the client (`HeroVoice`) | while the talking flag is set |
+
+**Telegraph timing.** At a wind-up's start the server plays the move's own `windup` sound at once, and the class cue
+(`cues.telegraph.<class>`; grabs `.unblockable`; the `dive` form `.dive`) so that its `hit_at` lands on the release:
+`delay = max(0, windup_ticks - round(hit_at x 20))` ticks after the start. Cues without `hit_at` (light, unblockable)
+play at the start. A heavy move with a 1.3 s wind-up thus hears its 0.78 s swell end on the hit, not 0.5 s before it.
+
 | Moment | Sound | Who |
 |---|---|---|
-| A move's wind-up starts | `cues.telegraph.<class>` (grabs: `.unblockable`; `dive`: `.dive`) + the move's `windup` | server, at the hero |
+| A move's wind-up starts | the move's `windup` at once; `cues.telegraph.<class>` (grabs: `.unblockable`; `dive`: `.dive`) timed by its `hit_at` (above) | server, at the hero |
 | A hit lands, a zone pulses, a projectile hits | the move's `impact` | server, at the target or the impact point |
-| The swing, throw, leap, cast | the move's `release` | client keyframe (`sfx:` marker) |
+| The swing, throw, leap, cast | the move's `release` | client keyframe (`sfx:` marker); the server at the release tick when the sound is `plays: server` |
 | A channel lasts (Hinae's rite, Ambrose's brew) | the move's `loop` | client, a looping sound following the hero |
 | A channel is broken | `cues.channel_break` + the move's `broken` | server |
 | Recovery details (paw lick, re-sheathe, kneel) | the move's `end` | client keyframe |
@@ -332,7 +374,7 @@ for the beats that are about the fight, not a place.
 | Yield, spared | `cues.yield`, `cues.spared` | server |
 | A charge hits a wall | `cues.charge_wall` | server |
 | A decoy pops; a barrier takes a hit, breaks | `cues.decoy_pop`; `cues.barrier.hit`, `.break` | server |
-| States, passives | `states.<name>`, `passives.<name>` | server (or the state animation's keyframe) |
+| States, passives | `states.<name>`, `passives.<name>` | server, when the state starts or the passive triggers |
 | Take-off (0.6 s tell) | `cues.takeoff` + the hero's `mobility.takeoff` | server |
 | Heavy landing (leap, dive, flight) | `cues.landing` | server |
 | Gliding | `cues.glide` (a 2 s seamless loop) while `DATA_LOCO` says glide | client |
@@ -349,37 +391,46 @@ same meter from the 1.21.1 assets (in memory, never copied), multiplied by their
 
 | Vanilla | Lm | | Ours (kind target) |
 |---|---|---|---|
-| `block.stone.step` | -34 | | foley -27, quirk -25 |
-| `entity.villager.ambient` | -25 | | voice -24 (Tobimaru -26) |
+| `block.stone.step` | -34 | | foley -27, quirk -25 (idles -24 to -30) |
+| `entity.villager.ambient`, `entity.wandering_trader.ambient` | -25, -19.5 | | a spoken line -21 (Benika -20, Hinae -22.5, Tobimaru -23.5); one syllable -26 to -28 |
 | `entity.player.attack.sweep` | -19 | | swing -21 |
 | `entity.cat.hiss` | -19.5 | | emote -21, cast -20 |
-| `entity.player.hurt`, `.attack.crit` | -20, -18 | | hit -17 |
+| `entity.player.attack.strong`, `.knockback`, `entity.player.hurt`, `.attack.crit` | -22, -21, -20, -18 | | hit -17 (short hits measure -18 to -20, about level with a player's hits by their 100 ms loudness) |
 | `entity.evoker.prepare_attack` | -15 | | windup -19, telegraph -18 (ultimate -14) |
 | `entity.player.levelup` | -14 | | sting -13, chime -18 |
 | `item.shield.block`, `entity.generic.explode` | -13, -10 | | heavy -13 (the biggest -11) |
 
 Every generated file lands within 1 dB of its target (or up to 3 dB under when the peak limiter holds a transient
-back), with a true peak under -0.3 dBFS after decoding.
+back), with a true peak under -0.3 dBFS after decoding (the limiter runs again when an inter-sample peak stays over
+its -1.5 dBFS ceiling).
 
 Attenuation: generated sounds carry their `range` as the sounds.json `attenuation_distance` (voice and foley 12,
 swings and hits 16, heavy, wind-ups and telegraphs 24, stings 32, ultimate wind-ups and releases 48), and S2
-registers each event with that fixed range so the server sends it that far. Vanilla references keep vanilla's 16
-blocks, more with a play volume above 1 (the goat horn plays at volume 2: 32 blocks).
+registers each event with the index's range so the server sends it that far. Vanilla references keep vanilla's 16
+blocks, more with a play volume above 1 (the goat horn plays at volume 2: 32 blocks); aliases keep their target's.
+The index's `range` is always the range the game really gives the event. A play volume above 1 has a cost: the game
+clamps the level after the player's category slider, so the horn ignores a hostile slider above 50% (vanilla's own
+goat horns, played at 16, do the same). Only `rally` uses it.
 
 ## 9. Checks (`sfxgen check`)
 
 Errors fail; notes advise. Audio rules run on the SHIPPED files (decoded by ffmpeg).
 
-- Format: fields, kinds, names, `each` lengths, exactly one of layers / vanilla / alias, subtitle text present.
+- Format: fields, kinds, names, `each` lengths, exactly one of layers / vanilla / alias, subtitle text present; no
+  `range` on a vanilla reference or an alias, no play volume above 1 on a generated sound or an alias, `hit_at` only
+  on telegraph cues and inside the sound.
 - References: every `use`, companion and alias resolves; no use cycles; companions nest at most 2 deep and never
   loop; vanilla ids exist in 1.21.1 (from the game's own `sounds.json` in the Gradle asset cache, or
   `tools/sfxgen/vanilla_sound_ids.txt`, a names-only list written by `sfxgen vanilla-ids`); final pitch within
   0.5-2.0.
-- Markers: every `sound` key and `sfx:` part in `herosrc/anim` and `herosrc/heroes` names a vanilla or catalogue event.
+- Markers: every `sound` key and `sfx:` part in `herosrc/anim` and `herosrc/heroes` names a vanilla or catalogue
+  event (a bare id is a vanilla one, as Minecraft parses it).
 - Hero maps: a voice (4+ syllables of at most 0.25 s, a rate of 2-4, a melody within an octave, a note-block
-  fallback), valid hurt and death ids, every slot names a sound, move classes valid; notes for heavy, area and
-  ultimate moves without a hero wind-up, moves with neither release nor impact, a missing phase sound, and (once
-  `herosrc/heroes/<id>.hero.json` exists) moves of the hero file without sounds.
+  fallback), valid hurt and death ids, every slot names a sound, move classes valid, every slot the server plays
+  (section 7) names a `plays: server` sound; notes for heavy, area and ultimate moves without a hero wind-up, an
+  ultimate wind-up that carries (with its companions) under 32 blocks, moves with neither release nor impact, a
+  missing phase sound, and (once `herosrc/heroes/<id>.hero.json` exists) moves of the hero file without sounds.
+- Voices: each hero's reference line (section 6) within 1.5 dB of its `voice.line_loudness`.
 - Cue map: all of telegraph light, heavy, area, ultimate, unblockable, dive, parry, counter, poise crack and break,
   stagger, phase, shockwave, enrage, intro, yield, spared, take-off, landing, glide, decoy pop, weak point, channel
   break.
@@ -389,8 +440,8 @@ Errors fail; notes advise. Audio rules run on the SHIPPED files (decoded by ffmp
   high-frequency energy 30 times the 30 ms around it that is neither an onset nor part of a texture; loops checked
   across the seam); true peak under -0.3 dBFS; DC under 0.003; loudness on target and within -34..-9; no more than
   18 dB lost without bass (inaudible on laptop speakers; a note from 12 dB).
-- Telegraph cues sound different from each other (note); vanilla references play near their kind's loudness (note,
-  measured from the game files); the jar budget (section 11).
+- Telegraph cues sound different from each other (note); vanilla references play near their kind's loudness and do
+  not push their file over volume 1 (notes, measured from the game files); the jar budget (section 11).
 
 ## 10. Tools
 
@@ -399,7 +450,7 @@ nothing else):
 
 | Command | What |
 |---|---|
-| `build [--check]` | render, encode and write the `.ogg` files, sounds.json and the index (about 50 s on 4 cores); `--check` compares instead |
+| `build [--check] [--jobs N]` | render, encode and write the `.ogg` files, sounds.json and the index (about 30-60 s on 4 cores); `--check` compares instead |
 | `check [-v] [--fast]` | section 9 (`--fast` skips decoding) |
 | `preview [sets]` | the owner's previews (section 12) |
 | `render <set or event>... [--wav] [--mp3]` | render to `build/sfxgen/` with a sheet and the measurements, for authoring |
@@ -408,9 +459,11 @@ nothing else):
 | `stats` | events, files and kilobytes per set |
 | `vanilla-ids` | rewrite `vanilla_sound_ids.txt` from the game artifacts |
 
-Tests: `python3 -m unittest discover tools/sfxgen/tests` (25: byte-identical builds twice and in another process,
-the click, edge, clipping, DC, loudness and small-speaker rules catching broken sounds, the format, variants, loops,
-sounds.json and the index, and the committed catalogue passing its rules).
+Tests: `python3 -m unittest discover tools/sfxgen/tests` (32: byte-identical builds twice and in another process,
+the click, edge, clipping, DC, loudness and small-speaker rules catching broken sounds, the true-peak limiter, the
+format, variants, loops, honest ranges, shared subtitle keys, `hit_at`, sounds.json and the index, the server-slot
+and spoken-line rules, bare marker ids, and the committed catalogue passing its rules). Each rule's test was checked
+by breaking the rule: the test fails.
 
 **Determinism.** The same recipes, NumPy and ffmpeg/libvorbis give byte-identical files (ffmpeg's `+bitexact` fixes
 the Ogg serial number and drops the version tag). Another libvorbis may encode differently; then `build --check`
@@ -418,12 +471,14 @@ reports the files as different and a rebuild is the fix.
 
 Code: `dsp.py` (parameters, envelopes, oscillators, noise, filters, effects, limiter, loudness normalisation),
 `synth.py` (instruments), `recipe.py` (format, variants, rendering), `analyze.py` (measurements), `codec.py`
-(ffmpeg), `vanilla.py` (ids and measurement), `build.py`, `check.py`, `preview.py` and `previews.py`, `cli.py`.
+(ffmpeg), `vanilla.py` (ids and measurement), `voice.py` (spoken lines), `build.py`, `check.py`, `preview.py` and
+`previews.py`, `cli.py`.
 
 ## 11. Jar size
 
 Each Vorbis file carries about 3.4 KB of codebook headers whatever its length (a 70 ms blip is 3.6 KB), so the file
-count matters more than the seconds. The slice as built: 296 files, 2.09 MB (cue set 302 KB, heroes 176-245 KB each).
+count matters more than the seconds. The slice as built: 298 Ogg files, 2.08 MB (cue set 302 KB, heroes 179-248 KB
+each).
 Budgets in `check` (errors): the cue set 320 KB, a slice hero 256 KB, the slice 2.4 MB.
 
 For the 200-hero roster that rate would be about 45 MB, so batch heroes follow a different rule:
@@ -447,8 +502,11 @@ the sheets name them, and they sound in the game as they always do).
 
 ## 13. Subtitles
 
-Every event has `subtitles.factionclash.<event>` and an English text in its recipe. S2 merges the output of `sfxgen
-subtitles` into `en_us.json`. Companions repeat their main sound's subtitle, so the overlay shows one line.
+Every event has an English subtitle text in its recipe. Events with the same text share one key, the first one's in
+catalogue order (`subtitles.factionclash.<that event>`): the game's subtitle overlay merges only equal components,
+and a translatable component compares by key, so a sound and a companion that say the same thing (`shockwave` and
+`shockwave.low`, `vanish` and `vanish_sparkle`) show one line. sounds.json and the index carry the shared key; the
+slice has 230 keys for 240 events. S2 merges the output of `sfxgen subtitles` (one line per key) into `en_us.json`.
 
 ## 14. Licence
 
@@ -459,39 +517,66 @@ played by the game from the player's own Minecraft assets; no vanilla audio is c
 
 ## 15. S2: the engine side (mechanical)
 
-1. **Registration** (`hero/HeroSounds`, common): read `assets/factionclash/sounds/hero_sfx.json` from the mod file
-   (as `HeroRegistry` reads `visual.json`) in the mod constructor and register every key of `events` in a
-   `DeferredRegister<SoundEvent>`: `SoundEvent.createFixedRangeEvent(id, range)` for generated events (range from
-   the index) and `createVariableRangeEvent(id)` for vanilla references and aliases. `sounds.json` needs nothing.
-2. **Subtitles**: merge `sfxgen subtitles` into `assets/factionclash/lang/en_us.json`.
-3. **Playing** (`HeroSounds.play(level, pos, eventId, source)`): look the event up in `events`, pick pitch and
-   volume uniformly from their ranges, multiply the volume by the `heroes.soundVolume` config, map `category` to
-   `SoundSource`, `level.playSound(null, x, y, z, event, source, volume, pitch)`; then each `with` companion after
-   its `delay` ticks (a small per-level queue ticked by the server tick event), recursively. A notification is
-   `ServerPlayer.playNotifySound` to each engaged player.
-4. **Hooks** (server): the move runner's wind-up start (class cue from `cues.telegraph` + `heroes.<id>.moves.<move>.windup`),
-   damage application and zone pulses (`impact`; a list cycles per shot), channel breaks (`broken` +
-   `cues.channel_break`); the boss controller's intro, phase, poise, stagger, parry, counter, enrage, yield, spare,
-   ultimate ready, weak point, wall stun, decoy, barrier beats (section 7); `HeroMovement`'s take-off, heavy landing
-   and downing; `HeroEntity.playStepSound` (vanilla step x `steps.volume`, plus `steps.with`); `getHurtSound`,
-   `getDeathSound` and `getVoicePitch` from `voice.hurt` / `voice.death`. A unit test asserts every slot of every hero
-   map resolves to a registered event.
-5. **Client**: a GeckoLib sound keyframe handler on the three controllers (`effect` is the event id; ranges from the
-   index, 1.0 for vanilla ids it does not list; companions through a client queue); `HeroVoice` (section 6: blips
-   per syllable from the speech bubble's text while the talking flag is set, the note-block fallback when the
-   index has no voice for the hero, the `heroes.voiceBlips` config); a looping `AbstractTickableSoundInstance`
-   that follows the hero for `loop` slots and `cues.glide` (start and stop with the action code or `DATA_LOCO`);
-   Tobimaru's `quirks.invisible_step` at his steps while he is invisible.
-6. **Config** (`[heroes]`): `soundVolume` (0.0-2.0, default 1.0), `voiceBlips` (true), `telegraphCues` (true; off
-   leaves the hero's own wind-up sounds).
-7. **Verification**: GameTests that a wind-up plays its class cue and the hero's wind-up (a test hook records
-   plays), that a decoy plays no steps, and a listening pass by the owner on the real client (V2).
+The index `assets/factionclash/sounds/hero_sfx.json` (written by `sfxgen build`, never by hand) holds everything:
+`events` (per event id: `set`, `kind`, `plays`, `category`, `range`, `pitch` and `volume` ranges, `source`, `subtitle`,
+`variants`, `length`, `loop`, `with` companions, `hit_at`, `refs`), `cues` (the shared cue map, full ids) and `heroes`
+(per hero id, its map of section 4.7 with full ids).
+
+1. **Registration** (`hero/HeroSounds`, common): read the index from the mod file (as `HeroRegistry` reads
+   `visual.json`) in the mod constructor and register every key of `events` in a `DeferredRegister<SoundEvent>` with
+   `SoundEvent.createFixedRangeEvent(id, range)`: the index's `range` is the range the game really gives the event
+   (generated: its attenuation distance; vanilla references: 16 x play volume; aliases: the target's), so one call
+   fits all. `sounds.json` needs nothing.
+2. **Subtitles**: merge the output of `sfxgen subtitles` (one line per key; events with the same text share a key)
+   into `assets/factionclash/lang/en_us.json`.
+3. **Playing** (`HeroSounds.play(level, x, y, z, eventId)`, server): look the event up in `events`, pick pitch and
+   volume uniformly from their ranges, multiply the volume by `heroes.soundVolume`, map `category` to `SoundSource`
+   (`SoundSource.valueOf(category.toUpperCase(Locale.ROOT))`), `level.playSound(null, x, y, z, event, source,
+   volume, pitch)`; then each `with` companion after its `delay` ticks at the same place (a small per-level queue
+   ticked by the server tick event), recursively (at most 2 deep). A notification is
+   `ServerPlayer.playNotifySound(event, source, volume, pitch)` to each engaged player, companions likewise.
+4. **Hooks** (server), by the slot rule of section 7:
+   - the move runner's wind-up start: `heroes.<id>.moves.<move>.windup` at once; the class cue
+     (`cues.telegraph.<class>`, grabs `.unblockable`, the `dive` form `.dive`, skipped when `heroes.telegraphCues`
+     is off) after `max(0, windupTicks - round(hit_at x 20))` ticks, `hit_at` from the cue's event (none: 0);
+   - the release tick (the wind-up's end): the move's `release` when its event's `plays` is `server`;
+   - damage application and zone pulses: `impact` (a list cycles per shot); a channel broken: `broken` +
+     `cues.channel_break`;
+   - entering a state: `states.<name>`; a passive triggering: `passives.<name>`; a weak point: `weak_points.<kind>` +
+     `cues.weak_point`;
+   - the boss controller's intro, phase, poise, stagger, parry, counter, enrage, yield, spare, ultimate ready, wall
+     stun, decoy and barrier beats (section 7's table, with the notifications it names);
+   - `HeroMovement`'s take-off (`cues.takeoff` + `mobility.takeoff`), heavy landing and downing;
+   - `HeroEntity.playStepSound` (vanilla step x `steps.volume`, plus `steps.with`); `getHurtSound`, `getDeathSound`
+     and `getVoicePitch` from `voice.hurt` / `voice.death` (vanilla ids: `BuiltInRegistries.SOUND_EVENT`).
+   A unit test asserts every string of every hero map and of `cues` resolves to a registered event or a vanilla one.
+5. **Client**: a GeckoLib sound keyframe handler on the three controllers: `effect` parsed with
+   `ResourceLocation.parse` (a bare id is a vanilla one), pitch and volume from the index (1.0 for vanilla ids it does
+   not list), `level.playLocalSound(x, y, z, event, source, volume, pitch, false)` at the hero, companions through a
+   client queue. `HeroVoice` (section 6): one syllable of `factionclash:hero.voice.<id>` per `rate` ticks from the
+   speech bubble's text while the talking flag is set, at volume 1 (the files carry the line level), the note-block
+   fallback when the index has no voice for the hero, off with `heroes.voiceBlips`. A looping
+   `AbstractTickableSoundInstance` that follows the hero for `loop` slots and `cues.glide` (start and stop with the
+   action code or `DATA_LOCO`). Tobimaru's `quirks.invisible_step` at his steps while he is invisible.
+6. **Config** (`[heroes]`): `soundVolume` (0.0-1.0, default 1.0; above 1 would only clamp and widen ranges),
+   `voiceBlips` (true), `telegraphCues` (true; off leaves the hero's own wind-up sounds).
+7. **Verification**: GameTests with a test hook that records plays (event, tick, position): a heavy move with a 1.3 s
+   wind-up plays its own wind-up at tick 0 and `telegraph.heavy` at tick 10 (26 - round(0.78 x 20)); an ultimate's
+   `plays: server` release sounds at the release tick; a decoy plays no steps. Then the owner's listening pass on the
+   real client (V2).
+
+Facts from the 1.21.1 sources this relies on (`SoundManager`, `SoundEngine`, `SubtitleOverlay`): a `"type": "event"`
+entry multiplies the target's volume and pitch, takes the target's attenuation distance and weighs by the target's
+own weight; the client attenuates over `max(volume, 1) x attenuation_distance` and clamps the final volume to 1 after
+the category slider; the subtitle overlay merges lines whose components are equal (same key).
 
 ## 16. Open items
 
 - **Jar budget for the roster** (section 11): a larger jar or fewer sounds per batch hero; the owner decides when
   batch 1 starts.
-- **In game**: loudness against real vanilla mixes and distances, the voice rates with real dialogue, and the
-  telegraph cues in a crowded fight are judged in the S2 verification and the owner's listening pass.
+- **In game**: loudness against real vanilla mixes and distances, the voice rates and the -21 line level with real
+  dialogue, and the telegraph cues in a crowded fight are judged in the S2 verification and the owner's listening
+  pass. Sounds changed by the review are worth a first listen in the previews: Benika's generated `club_hit`,
+  Natsuho's `frenzy_rise`, Ilsabet's voice.
 - The kit set and the style libraries' own swing sounds come with batch 1 and G8.
 - C1-C4 put the `release`, `end`, phase, intro and quirk sounds into the animation recipes as markers (section 5).

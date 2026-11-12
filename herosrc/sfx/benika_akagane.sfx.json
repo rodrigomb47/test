@@ -3,7 +3,7 @@
   "set": "benika_akagane",
   "title": "Benika Akagane, the iron club oni (battle maniac, club, fire)",
   "hero": {
-    "voice": {"talk": "voice", "rate": 2, "melody": [0, 0, 2, 4, -2], "fallback_blip": "guitar", "jitter": 0.05,
+    "voice": {"talk": "voice", "line_loudness": -20, "rate": 2, "melody": [0, 0, 2, 4, -2], "fallback_blip": "guitar", "jitter": 0.05,
               "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.1},
               "death": {"event": "minecraft:entity.player.death", "pitch": 1.1},
               "emotes": {"laugh": "laugh", "roar": "roar"}},
@@ -22,15 +22,15 @@
     "passives": {"battle_joy": "laugh"},
     "weak_points": {"snowball": "fizzle"},
     "intro": "intro",
-    "quirks": {"personal.1": "shoulder_roll", "personal.2": "gourd_swig", "personal.3": "club_spin"},
+    "quirks": {"personal.1": "shoulder_roll", "personal.2": "gourd_sip", "personal.3": "club_spin"},
     "steps": {"volume": 1.2, "with": "cue:step.heavy"}
   },
-  "preview": ["voice", "laugh", "roar", "club_swing", "slam_rise", "club_slam", "charge_snort", "thud", "stomp_windup",
+  "preview": ["voice", "laugh", "roar", "club_swing", "club_hit", "slam_rise", "club_slam", "charge_snort", "thud", "stomp_windup",
               "stomp", "fire_wave", "grab", "throw_whoosh", "meteor_leap", "crash_windup", "crash_impact",
               "horn_flare", "intro", "shoulder_roll", "club_spin"],
   "sounds": {
     "voice": {
-      "kind": "voice", "subtitle": "Benika talks", "loudness": -23, "pitch": [0.96, 1.04], "variants": 6,
+      "kind": "voice", "subtitle": "Benika talks", "loudness": -26, "pitch": [0.96, 1.04], "variants": 6,
       "note": "Punchy and gritty (the old guitar voice): a buzzing source at about 262 Hz with a little drive and rasp; quick (rate 2).",
       "layers": [
         {"type": "vox", "source": "buzz", "pw": 0.4, "f0": 262, "dur": 0.08, "vowel": "a", "shift": 1.12, "fq": 5, "rough": {"rate": 55, "depth": 0.2},
@@ -47,7 +47,8 @@
     },
     "laugh": {
       "kind": "emote", "subtitle": "Benika laughs", "loudness": -19, "variants": 2, "vary": {"pitch": [-1, 1]},
-      "note": "A hearty 'ha-ha-HA!' (battle joy, phase 3, kills).",
+      "plays": "server",
+      "note": "A hearty 'ha-ha-HA!' (battle joy, phase 3, kills): the server plays it for the passive.",
       "layers": [
         {"type": "vox", "source": "buzz", "pw": 0.4, "f0": 294, "dur": 0.12, "vowel": "a", "shift": 1.12, "contour": [2, -1], "rough": {"rate": 55, "depth": 0.25}, "drive": 1.8, "attack": 0.004, "release": 0.04},
         {"type": "vox", "source": "buzz", "pw": 0.4, "at": 0.17, "f0": 294, "dur": 0.12, "vowel": "a", "shift": 1.12, "contour": [3, 0], "rough": {"rate": 55, "depth": 0.25}, "drive": 1.8, "attack": 0.004, "release": 0.04},
@@ -73,9 +74,18 @@
       ]
     },
     "club_hit": {
-      "kind": "hit", "subtitle": "The club smashes",
-      "note": "Basic hits: her kit weapon is a mace, and vanilla's mace smash is the natural sound.",
-      "vanilla": [{"event": "minecraft:item.mace.smash_ground", "pitch": 0.95}]
+      "kind": "hit", "subtitle": "The club smashes", "loudness": -19, "variants": 3, "pitch": [0.96, 1.04],
+      "vary": {"pitch": [-1.2, 1.2], "layers.0.f.0": [165, 195], "layers.2.f0": [780, 880]},
+      "note": "Basic hits (every second or so): a short wooden thunk with an iron bite from the studs and a little grit. Vanilla has no club hit; the mace's ground smash is a 2.5 s slam, too big for a basic hit (review of S1).",
+      "layers": [
+        {"type": "impact", "dur": 0.4, "f": [180, 70], "drop": 0.022, "body": 0.45, "body_decay": 0.06, "crunch": 1.6,
+         "crunch_lp": 3200, "crunch_poles": 1, "crunch_decay": 0.035, "click": 0.5, "click_f": 1800, "drive": 1.3},
+        {"type": "tone", "dur": 0.16, "freq": [420, 300], "harmonics": [[1, 1], [2.3, 0.4], [3.9, 0.15]],
+         "env": {"perc": [0.001, 0.12]}, "gain": -6},
+        {"type": "bell", "partials": "iron", "f0": 820, "dur": 0.3, "decay": 0.07, "strike": 0.5, "gain": -12},
+        {"type": "noise", "colour": "pink", "dur": 0.14, "filter": {"mode": "bp", "f": [1500, 500], "q": 1.1},
+         "env": {"perc": [0.002, 0.12]}, "gain": -5}
+      ]
     },
     "slam_rise": {
       "post": {"transients": true}, "kind": "windup", "subtitle": "Benika raises her club", "loudness": -19,
@@ -161,6 +171,11 @@
       "kind": "quirk", "subtitle": "Benika burps", "category": "neutral", "plays": "server",
       "note": "Companion of gourd_swig.",
       "vanilla": [{"event": "minecraft:entity.player.burp", "pitch": 0.9}]
+    },
+    "gourd_sip": {
+      "kind": "quirk", "subtitle": "Benika sips from her gourd", "category": "neutral",
+      "note": "Personal idle 2: a quiet sip, vanilla's drinking at idle level (the fight's gourd_swig is 10 dB louder and burps).",
+      "vanilla": [{"event": "minecraft:entity.generic.drink", "pitch": 0.9, "volume": 0.3}]
     },
     "grab": {
       "kind": "windup", "subtitle": "Benika reaches to grab", "loudness": -18,

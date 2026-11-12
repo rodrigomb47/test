@@ -523,7 +523,9 @@ def limit(x, sr, ceiling_db=-1.0, lookahead=0.003, release=0.06):
 def normalize(x, sr, target_lufs, ceiling_db=-1.5):
     """Scale to a momentary-max loudness target (analyze.loudness), then keep the true peak under the ceiling with
     the limiter (-1.5 dBFS: Vorbis overshoots bright transients by up to about 1.2 dB, and the decoded file must
-    stay under -0.3); passes repeat so the limiter's loss is made up when it is small."""
+    stay under -0.3); passes repeat so the limiter's loss is made up when it is small. The limiter works on samples,
+    so a sharp transient can keep an inter-sample (true) peak over the ceiling: then it runs again with the ceiling
+    lowered by the overshoot, until the true peak is under (review of S1: a club hit decoded at -0.16 dBFS)."""
     x = np.asarray(x, float)
     for _ in range(3):
         lm, _ls = analyze.loudness(x, sr)
@@ -532,7 +534,13 @@ def normalize(x, sr, target_lufs, ceiling_db=-1.5):
         x = x * 10 ** ((target_lufs - lm) / 20.0)
         tp = analyze.db(analyze.true_peak(x))
         if tp > ceiling_db:
-            x = limit(x, sr, ceiling_db - 0.3)
+            c = ceiling_db - 0.3
+            for _pass in range(4):
+                x = limit(x, sr, c)
+                over = analyze.db(analyze.true_peak(x)) - ceiling_db
+                if over <= 0:
+                    break
+                c -= over + 0.1
         lm2, _ = analyze.loudness(x, sr)
         if abs(lm2 - target_lufs) < 0.3:
             break

@@ -22,7 +22,7 @@
     "phases": {"2": "visor", "3": "rally"},
     "passives": {"oath_keeper": "oath"},
     "intro": "intro",
-    "quirks": {"personal.1": "shield_tap", "personal.2": "intro"},
+    "quirks": {"personal.1": "shield_tap", "personal.2": "salute"},
     "steps": {"volume": 1.0, "with": "cue:step.heavy"}
   },
   "preview": ["voice", "resolve", "bash_thud", "frost_hit", "rime_wall", "sweep_windup", "frost_sweep", "lance_windup",
@@ -30,17 +30,18 @@
   "sounds": {
     "voice": {
       "kind": "voice", "subtitle": "Ilsabet speaks", "pitch": [0.99, 1.01], "variants": 6,
-      "note": "Clear and steady with a ring (the old chime voice): a bell-tinged source at about 440 Hz, level contours, firm attacks (rate 3).",
+      "note": "Clear and steady with a ring (the old chime voice): a clear sung vowel (glottal source, narrow formants, no vibrato) at about 440 Hz, level contours, firm attacks, and a faint chime two octaves up on each syllable (rate 3). Review of S1: it was the same bell source as Hinae's and read as her voice a fourth lower.",
       "layers": [
-        {"type": "vox", "source": "bell", "f0": 440, "dur": 0.11, "vowel": "a", "shift": 1.15, "fq": 5, "dry": 0.2, "attack": 0.008, "release": 0.04, "contour": [0, 0]}
+        {"type": "vox", "source": "glottal", "f0": 440, "dur": 0.11, "vowel": "a", "shift": 1.15, "tilt": 1.5, "fq": 7, "dry": 0.05, "attack": 0.008, "release": 0.04, "contour": [0, 0]},
+        {"type": "bell", "partials": "chime", "f0": 1760, "dur": 0.12, "decay": 0.05, "strike": 0.2, "gain": -20}
       ],
       "each": [
-        {"layers.0.vowel": "a", "layers.0.contour": [0, 0], "layers.0.dur": 0.11},
-        {"layers.0.vowel": "e", "layers.0.contour": [2, 2], "layers.0.dur": 0.1},
-        {"layers.0.vowel": "o", "layers.0.contour": [-2, -2], "layers.0.dur": 0.12},
-        {"layers.0.vowel": "i", "layers.0.contour": [4, 4], "layers.0.dur": 0.09},
-        {"layers.0.vowel": "a", "layers.0.contour": [5, 3], "layers.0.dur": 0.12},
-        {"layers.0.vowel": "u", "layers.0.contour": [0, -1], "layers.0.dur": 0.1}
+        {"layers.0.vowel": "a", "layers.0.contour": [0, 0], "layers.0.dur": 0.11, "layers.1.f0": 1760},
+        {"layers.0.vowel": "e", "layers.0.contour": [2, 2], "layers.0.dur": 0.1, "layers.1.f0": 1975.5},
+        {"layers.0.vowel": "o", "layers.0.contour": [-2, -2], "layers.0.dur": 0.12, "layers.1.f0": 1568},
+        {"layers.0.vowel": "i", "layers.0.contour": [4, 4], "layers.0.dur": 0.09, "layers.1.f0": 2217.5},
+        {"layers.0.vowel": "a", "layers.0.contour": [5, 3], "layers.0.dur": 0.12, "layers.1.f0": 2349.3},
+        {"layers.0.vowel": "u", "layers.0.contour": [0, -1], "layers.0.dur": 0.1, "layers.1.f0": 1760}
       ]
     },
     "resolve": {
@@ -158,7 +159,7 @@
       ]
     },
     "rally": {
-      "kind": "sting", "subtitle": "A war horn calls", "category": "hostile", "volume": [2.0, 2.0], "range": 32,
+      "kind": "sting", "subtitle": "A war horn calls", "category": "hostile", "volume": [2.0, 2.0],
       "note": "Call the guard and phase 3 ('To me, Rime Vow!'): vanilla's goat horn 'call' is the natural horn; played at volume 2 so it carries 32 blocks.",
       "vanilla": [{"event": "minecraft:item.goat_horn.sound.5", "pitch": 1.0}]
     },
@@ -220,6 +221,11 @@
         {"type": "tone", "at": 0.25, "dur": 0.9, "freq": 2637, "harmonics": [[1, 1], [2.31, 0.3], [3.8, 0.1]], "env": {"perc": [0.005, 0.85]}, "gain": -6},
         {"type": "bell", "partials": "iron", "at": 0.3, "f0": 1568, "dur": 0.4, "decay": 0.1, "strike": 0.3, "gain": -10}
       ]
+    },
+    "salute": {
+      "kind": "quirk", "subtitle": "Ilsabet salutes with her blade",
+      "note": "Personal idle 2 (the salute of her intro, at idle level): an alias of intro at half volume, no bytes.",
+      "alias": [{"sound": "intro", "volume": 0.5}]
     },
     "shield_tap": {
       "kind": "quirk", "subtitle": "Ilsabet taps her shield", "loudness": -27,
