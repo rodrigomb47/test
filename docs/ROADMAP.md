@@ -42,6 +42,10 @@ faction's name, colours, banner, base style and decisions follow its leader's pe
 `tools/roster/`. The earlier owner-supplied hero path (`docs/heroes/`, format 1 with 64x64 skins and a chatbot prompt)
 is retired; format-1 files still load as a fallback for operator overrides.
 
+Owner decisions (2026-11-12): the look is approved (Minecraft-style cube models with anime proportions, detailed outfits
+and animated pixel-art faces); the archetype mix is approved; after the 8-hero slice is approved from screenshots,
+EACH batch of 24 heroes waits for the owner's review of its screenshot gallery before the next batch starts.
+
 | Milestone | Status |
 |---|---|
 | Research and design (archetypes, animation stack, hero-led factions, boss mechanics, roster of 200, slice plan) | done |
