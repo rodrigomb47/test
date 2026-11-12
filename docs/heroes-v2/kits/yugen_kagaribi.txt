@@ -1,0 +1,393 @@
+Yugen Kagaribi - "The Lantern Fox"
+Male | fox | marksman | arcane | schemer | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO HE IS
+A soft-spoken fox merchant-lord who never raises his voice and always has a contract ready. His
+foxfire burns blue and cold, and you are never quite sure which of him is real. In a one-on-one
+fight he is a zoner: he keeps you out with projectiles, and you win by closing the gap. Out of
+battle he trades; as a faction leader he is the Master of the Veiled Lantern.
+
+LOOK
+- Body: male, slim build, normal size [scale 100%].
+- Hair: long silver hair, worn half up [#D8DCE6].
+- Fox parts: tall silver fox ears with black tips; three fluffy tails (six in phase 2, nine in phase
+  3).
+- Outfit: a layered plum court robe with a silver crest, a white fox mask with red marks worn on the
+  side of his head, prayer beads, court shoes.
+- Weapon: a closed folding fan in his right hand, and three small paper lanterns orbiting him.
+- Colours: skin [#F4DCCB], pale blue eyes [#8FB7FF], primary plum [#6B2148], secondary silver
+  [#D8DCE6], accent foxfire blue [#5AA9FF], trim red [#B23A48], glow light blue [#7FC8FF].
+- Face: narrow, half-lidded eyes, light lashes [lashes 1], thin arched brows, a soft mouth, red
+  eye-liner flicks. He blinks slowly and slyly, every 4 to 7 s [blink calm].
+- Idle quirks: a laugh behind his sleeve, a tail-fan flick, a lantern spin.
+- Glow: his lanterns always glow; in phase 3 his tail tips burn with foxfire and his eyes glow.
+- Phase looks: phase 2, six tails; phase 3, nine tails, foxfire tail tips and glowing eyes.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of his attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: his accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, his face goes "focused" and stops blinking, and the move's
+sound plays from where he stands. No wind-up gets shorter than its class minimum, even in phase 3 or
+enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero.
+His fighting: focus (foxfire lanterns and a folding fan, thrown); duel style zoner. He keeps about
+10 blocks away [keep_distance 10] and backs off like an archer when you come within 5; he goes for
+the weakest enemy first (the schemer focus). His element, arcane, goes through armour and shields
+[the arcane damage type bypasses armour and shields]. Cooldowns and how often he picks each move are
+set when he is built.
+
+  Basic attack
+    Thrown foxfire: a blue flame (drawn as blaze powder with soul-fire particles) that flies
+    straight, out to 14 blocks, for 4 arcane damage every 1.5 s.
+
+  Abilities
+    FOXFIRE VOLLEY (foxfire_volley) - boss phases 1, 2, 3
+      What it does: his tails flare and five foxfire flames fly out in a fan, out to 16 blocks.
+      The tell: the tails flare for 0.5 s (a light move: the animation only).
+      Counter: move sideways out of the fan, or put a block between you; a shield does not stop
+      arcane damage.
+      Numbers: [light, mid and far; volley of 5 (10 degrees apart), range 16; 4 arcane each; frames
+      0.5 / 0.3 / 0.4]. It often follows Vanish (70%), and it is his answer to a drawn bow (50%).
+
+    LANTERN RING (lantern_ring) - boss phases 1, 2, 3
+      What it does: a ring of lantern fire around him, 4 blocks across from his feet, that pulses
+      once a second for 3 s; each pulse hurts and slows everyone inside. He prefers it when you are
+      close.
+      The tell: a disc grows on the ground around him during the 1 s wind-up, with a sound.
+      Counter: step more than 4 blocks away from him before the first pulse, and stay out for 3 s.
+      Numbers: [area, close; zone at himself, radius 4, delay 1.0 s (whether the delay runs inside
+      the wind-up or after it is set when he is built), lasts 3 s, a pulse every 1 s; 3 arcane per
+      pulse + Slowness I 2 s; frames 1.0 / 3.0 / 0.8]
+
+    FAN CUT (fan_cut) - boss phases 1, 2, 3
+      What it does: two quick strikes with his folding fan at close range that knock you back. When
+      it hits, 80% of the time he follows with Vanish. It is his answer when you get behind him
+      (60%).
+      The tell: the animation only (a light move).
+      Counter: keep out of close range (a shield does not stop arcane damage); the knockback is what
+      opens the distance he wants.
+      Numbers: [light, close; combo of 2 strikes; 60% + knockback 2 (whether per strike or in total
+      is set when he is built); followup Vanish 80%; frames 0.4 / 0.3 / 0.3]
+
+    VANISH (vanish) - boss phases 1, 2, 3
+      What it does: he turns invisible for 2 s and hops 6 blocks back. 70% of the time he follows
+      with Foxfire Volley. It is his answer when you get close (70%). His signature string: Fan Cut,
+      then Vanish, then Foxfire Volley.
+      The tell: the animation only (a light move).
+      Counter: follow the hop (6 blocks straight back), and expect the volley; the punish window
+      comes after the last move of the string.
+      Numbers: [light, close; on himself; Invisibility 2 s + hop back 6; followup Foxfire Volley
+      70%; frames 0.4 / 0.1 / 0.3]
+
+    MIRAGE (mirage) - boss phases 2, 3 (phase 2's new mechanic)
+      What it does: two decoys of him appear for 10 s and copy his casts, but their foxfire does no
+      damage. Each decoy copies his actions a tenth of a second late [2 ticks], walks a short path,
+      has 1 health and pops in a puff of smoke at any hit or after 10 s.
+      The tell: a 0.8 s wind-up with a sound; the shape of its ground mark is set when he is built.
+      Counter: find the real one: only he casts a shadow and only he makes footstep sounds. One hit
+      pops a decoy.
+      Numbers: [heavy, any range; on himself, 2 decoys for 10 s (at most 3 decoys per hero); frames
+      0.8 / 0.2 / 0.8]
+
+    FOXFIRE RAIN (foxfire_rain) - boss phase 3 only (phase 3's new mechanic)
+      What it does: 8 foxfire impacts rain down within 5 blocks around you over 2 s; each one hits
+      everyone within 1 to 2 blocks of where it lands.
+      The tell: a 1 s wind-up with a sound; every impact gets its own growing ground mark and lands
+      0.9 s after it.
+      Counter: keep moving off the marks as they appear.
+      Numbers: [area, mid and far; rain of 8, radius 5, over 2 s, impact delay 0.9 s; 5 arcane per
+      impact; frames 1.0 / 2.0 / 0.8. Whether he skips it under a roof (the design needs open sky
+      for rain outdoors) is set when he is built]
+
+  Ultimate
+    NINEFOLD LANTERN (ninefold_lantern)
+      What it does: his lanterns gather into a ring behind him, then he fires 9 foxfire flames one
+      after another, 0.2 s apart, each aimed at you as it fires; each one hurts and puts a Bewitched
+      mark on you (see Passives).
+      The tell: a 1.6 s wind-up as the lanterns gather, a spoken line, a wide sound, a red ground
+      mark, and the screen darkens for 2 s for the players fighting him. He cannot be staggered
+      during this wind-up. The boss bar shows a lightning mark when his ultimate is ready.
+      Counter: get a block between you and him before the flames start, or keep moving sideways;
+      three marks on you mean a slow (see Passives).
+      Numbers: [ultimate; frames 1.6 / 1.8 / 1.5; barrage of 9, 0.2 s apart, 3 arcane each + mark
+      bewitched. Set when he is built: his ultimate line, its energy and charge rate, the minimum
+      gap between two ultimates (20-60 s)]
+
+  Passives
+    CONTRACT (contract): when you hit him in melee, 25% of the time he puts a Bewitched mark on you.
+    BEWITCHED (bewitched_full): when someone carries 3 of his Bewitched marks, they are stunned for
+    1 s; players are not stunned but slowed instead (v1 turns a stun on a player into Slowness IV
+    and Mining Fatigue II). At most once every 12 s. How long a mark lasts and how many can stack
+    are set when he is built.
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with him (the player hurt him in the last 15 s, or
+  is his target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and his health share never jumps. The first engagement with a
+  player each in-game day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and
+  cannot be staggered, a title on your screen (his name, title and faction) and his intro line. A
+  boss bar shows a star, his name and title, his phase pips and a lightning mark when his ultimate
+  is ready. (His bar title is set when he is built.)
+- Health: his field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader: every leader
+  gets +50], x1.3 for a marksman, and +50% for each extra engaged player (counted up to 5). At level
+  10 against one player that is 130 health (148 as a leader): about 24 s (27 s) of landed hits with
+  an iron sword at 1.6 swings a second, half of them landing, his iron weakness counted. A whole
+  fight lasts two to three times that once you dodge his wind-ups. No single player hit takes more
+  than 12% of his boss health; the excess becomes poise damage.
+- Poise: 70 (the marksman value, the lowest there is). Your hits fill his poise bar [damage x
+  weapon: sword 1.0, axe 1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt
+  0.8], and a parry (your shield raised in the last 6 ticks before a heavy move lands) adds 25. The
+  bar drains 15 per second after 3 s without poise damage. Full poise staggers him: 2.5 s kneeling
+  dizzy, taking 25% more damage; then the bar resets and its maximum grows 20% for the rest of the
+  fight. No stagger during his intro, a phase change or his ultimate's wind-up.
+- Pace: between moves he waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery he takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where he faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Foxfire Volley, Lantern Ring, Fan Cut, Vanish. Three tails.
+    Phase 2, from 60%: adds Mirage (the decoys); his tails go from 3 to 6.
+      "Which of me is lying? All of us, perhaps."
+    Phase 3, from 25%: adds Foxfire Rain; nine tails, glowing eyes and tail tips.
+      "Enough games. Let the lanterns speak."
+  Each phase change takes 0.8 to 2 s (his exact length is set when he is built): he takes 50% less
+  damage and cannot be staggered (a glint shows it; he is never invulnerable), a shockwave pushes
+  everyone within 4 blocks back (no damage; softened near lava or a drop), he says the line, his
+  face and look change, and the bar gains a pip.
+- Weak points:
+  - Iron: +15% damage from iron weapons (an iron sword, axe or other iron tool in your main hand).
+    Hint line: "Iron... how crude."
+  - Recovery: the punish bonus doubles during his recoveries [+30% instead of +15%].
+- How he reads you (each answer replaces his next pick; their cooldowns are set when he is built):
+  - You come close -> Vanish (70%).
+  - You draw a bow -> Foxfire Volley (50%).
+  - You get behind him -> Fan Cut (60%).
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his damage bonuses
+  together never exceed +25%.
+- Intro: a slow bow with the fan. "A customer? How delightful. The price today is your patience."
+- Yield: he REFUSES it. Heroes with honour 30 or less do not kneel (his honour is 20), and as a
+  leader his caution of 70 would make him refuse too. He is the only one of the first eight heroes
+  who runs instead of kneeling. When a killing blow from a player would start the yield, he stays at
+  1 health and escapes:
+  - Boss mode ends at once: the bar shows that he fled for 3 s and goes, the players who fought him
+    read "Yugen Kagaribi fled" in chat, nothing drops and there are no rewards. He says his escape
+    line (his own is not written yet; the schemer fallback lines cover it).
+  - From then on your hits are ordinary hits (no cap, no poise, no yield): at 1 health, the next
+    arrow, bolt or trident that reaches him kills him, and that is a real defeat with the usual
+    rewards (below).
+  - He runs for his refuge (his home base; as a leader the capital, or the nearest other standing
+    base; never the base he flees) with everything he has: an escape counts as travel, so his travel
+    speed and sprint burst are back on, and he may put a gap you cannot cross between you. He starts
+    no moves; cornered with no way out for 3 s, he fights back where he stands, then runs again as
+    soon as a way opens. The escape ends inside his refuge's walls, or once no pursuer has been
+    within 48 blocks for 10 s.
+  - Afterwards he stays away 5 minutes and until he is above 50% health, and does not go back for
+    the players he fled. He escapes at most once in 10 minutes: inside that window he kneels like
+    the others, so if you follow him home or meet him again soon, you get a real fight that ends in
+    the yield.
+  - When he does kneel (5 s, untouchable and passive, while you see "Sneak and use to spare, strike
+    to finish"): "Mm. A poor bargain for me."
+  - Spared (sneak and use): he walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "Mercy, freely given? I shall have to find out what it costs."
+  - Finished (strike): he dies. Rewards: XP orbs (7 x his level, at most 100), his non-kit gear (his
+    kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: he collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death.
+- Escape (other cases): outside boss fights he escapes when his health drops under his retreat point
+  away from home [retreat_below 44.5%, worked out from the formula of design section 5.4]: a trader
+  caught on the road gets away with a fox's turn of speed. He also escapes when his raid is lost
+  while he is in or near the target (the one order that pulls a hero out of a boss fight), or, as a
+  leader, when the base he is in falls or he is under 50% health at its heart with no guard beside
+  him. At his own base he withdraws like a soldier instead. The same refuge, stay-away,
+  once-in-10-minutes and no-reward rules apply.
+- Revival: like every hero he comes back 10 minutes after his death [heroes.reviveSeconds 600], at
+  his home base (a leader: at the capital, or the nearest standing base); his kit items vanish at
+  death and return with him. He has no death ability of his own. A hero of his faction with the
+  revival_rite talent (milestone 2) would bring him back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HIM
+1. Fight him with iron: an iron sword or axe deals 15% more. An axe or a mace also fills his small
+   poise bar (70) fast (x1.6 and x2.0), and a stagger gives you 2.5 s at +25% damage.
+2. Close the gap, but expect his answer: come close and he vanishes 70% of the time, hops 6 blocks
+   back and usually throws a Foxfire Volley. The punish window is at the end of that string, and his
+   recovery weak point doubles your punish bonus there. Getting behind him draws a Fan Cut (60%).
+3. Do not turtle: arcane goes through armour and shields. Step off the growing marks instead: the
+   Lantern Ring disc when you are close (radius 4; it slows you), and in phase 3 each Foxfire Rain
+   impact, which lands 0.9 s after its mark appears.
+4. Find the real one (phases 2 and 3): only he casts a shadow and makes footsteps, the decoys act a
+   split second late, one hit pops a decoy, and decoy foxfire does no damage.
+5. Watch your Bewitched marks: each melee hit you land has a 25% chance to mark you, and every flame
+   of his ultimate marks you; at 3 marks you are slowed. Mix in ranged hits, and get a block between
+   you and him when his ultimate starts.
+6. Keep a bow, crossbow or trident ready for the end: he will not kneel. At the killing blow he runs
+   at 1 health, and one shot that reaches him finishes him. With his runner speed back on, shoot
+   rather than chase.
+
+MOVEMENT
+Mobility traits: runner (ceiling III) and leaper (ceiling I). He has every feature from level 1; the
+numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20. Mobility never
+changes a move's damage, range or timing, and he never teleports (the stuck rescue every NPC has is
+the one exception).
+- From level 1: walking up full blocks without jumping [step 1.0]; a sprint burst for 3 s on a clear
+  straight (8 or more blocks with no turn and nothing within 2 blocks ahead); faster, more efficient
+  travel that costs less hunger; a 1.8-block jump (the leaper floor), so he hops field fences.
+- Numbers, level 1 / 10 / 20:
+    Travel speed                            +12% / +16% / +20%
+    Movement efficiency                     0.60 / 0.79 / 1.00
+      (1.00 = soul sand, honey and other slow blocks do not slow him at all)
+    Travel hunger                           -30% / -39% / -50%
+    Sprint burst                            +24% every 25 s / +32% every 19 s / +40% every 15 s
+    Jump height (blocks)                    1.80 / 1.80 / 1.80 (the leaper floor)
+    Longest gap he jumps (blocks)           3    / 3    / 5
+    Safe fall (blocks before damage)        4.8  / 5.4  / 6.0
+- Out of fights: a 300-block village trip takes about a fifth less time at full power (speed, and no
+  fence detours). He takes streams, gaps, fences and small ledges without detours or bridges, and
+  his travel routes give hostile bases a wide berth.
+- In fights: his travel bonuses (speed, sprint) are off in boss fights. Leaping lets him hop onto
+  fences and 1.5-block ledges while keeping his distance; from ground a player cannot reach he comes
+  back within 4 s. A jump starts with a 0.3 s crouch (the tell).
+- Walls in raids: as a non-leader he joins his base's raids like a soldier [raids: joins, the
+  marksman default]; as a leader he stays home (below). His jumps reach rises of 1.5 blocks, not
+  today's 5-block base walls, so he goes in by the gate with the soldiers (a jump across from higher
+  ground onto a lower or broken wall is the exception). Inside, two of the design's goals fit him:
+  the storehouse first (greed 70: a greedy hero takes one backpack of loot from a still-standing
+  base and carries it home) and clearing the defending archers (marksman and zoner heroes); which
+  one he takes is set when he is built. A goal ends after 60 s without progress. The defenders
+  answer him as any intruding hero (the alarm, the two nearest free guards and any hero at home).
+- Escaping: an escape counts as travel, so his speed and sprint come back on, and he may leave a gap
+  you cannot cross between you.
+- Signature animation: his sprint is a fox lope.
+
+WORK AND TALENTS
+- Duty: trader (when he is not leading). He trades with villagers, using their own offers, once his
+  base knows a village.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): a bigger backpack [21 / 24 / 27 slots; a worker has 18; his specialty gives 30 / 33 / 36
+  while he trades, and how the two combine is set when he is built], less wear [-10 / -20 / -30%],
+  less hunger from work [-10 / -15 / -20%] and more work XP [+10 / +20 / +30%]. The job-by-job table
+  gives trading no work-speed or reach part.
+- Specialty, from his merchant_prince talent (when he trades himself): prices 10 / 20 / 30% lower
+  (tier III equals the vanilla Hero of the Village I discount; with the Haggler bonus never more
+  than 40% off), a backpack of 30 / 33 / 36 slots, and one more trip every 3 / 2 / 1 days.
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where he is, inside
+  the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never the sum;
+  the realm talent, marked *, also works at every other base of his faction at tier I while he
+  leads):
+  - merchant_prince* (realm): the base's traders travel more often [trip interval x0.8 / x0.65 /
+    x0.5], get +1 / +2 / +2 stacks of the Haggler bonus (cheaper emerald prices), and also trade
+    with wandering traders.
+  - spymaster: the base's scout reports on rival bases carry their garrison counts and whether their
+    leader is home, and enemy raids are announced 0.5 / 1 / 2 minutes before they reach the walls.
+    (Spymaster's personal specialty, slipping close to rival bases unseen, belongs to scouts; his
+    duty is trader, so he does not use it.)
+  - Neither is a guard or court talent, so the Presence rule (a tier higher while home) does not
+    apply. What his base-wide talents do while he is away on a trading trip is set when he is built.
+
+AS A FACTION LEADER
+- Title: Master of the Veiled Lantern.
+- Faction names: "Veiled Lantern Exchange" (the first unused name is taken), then "The Blue Lantern
+  Company". Short name: "Veiled Lantern". Motto: "Every promise has a price."
+- Colours: primary plum [#6B2148], secondary silver [#D8DCE6], accent foxfire blue [#5AA9FF]. They
+  show in chat, name tags, map markers, the boss bar, his sash and his NPCs' tabards.
+- Banner: purple, with a light blue circle in the middle and a row of white triangles along the top
+  [base purple; circle light_blue; triangles_top white] (the beast-kin emblem). Real banners hang at
+  the station and the gates, and members get a banner item. Purple is set by hand because the
+  nearest dye to plum would be black. His faction's wool, carpets and beds are purple, with light
+  blue as the second dye.
+- Base style: cherry_court, a Court: cherry plank walls, stripped cherry log frames, birch plank
+  floors, deepslate tile roofs and smooth stone round the edge; signs read like "Veiled Lantern
+  Court". Culture: east (recruits get eastern names). Economy focus: trade (traders and haulers are
+  hired ahead of other civilians) and lore (the enchanter).
+- His day (court duty): trading is a travelling job, which a leader never takes, so he patrols
+  between the station, the gates and the heart and stands at the station with the others; his
+  talents still work at the base. A short stop at the station at dawn, the heart at dusk, a bed in
+  the largest house at night, woken by any alarm. He answers every alarm and guards the heart in a
+  defence, says his founding line when the faction starts, and announces raids, attacks on his base,
+  a lost base, a fallen hero and recruit milestones in his own voice (his own lines for these are
+  not written yet; his temperament's fallback lines fill in).
+- If he dies: everyone hears it; no new raids until he returns, and no vengeance raid (that needs
+  aggression 70 or more). He stays home from raids, so no raid waits on him. If his faction's last
+  base falls he becomes an exiled free hero, never a leader again in that campaign.
+- How his personality steers the faction. His traits (out of 100): aggression 45, honour 20,
+  ambition 85, caution 70, greed 70, sociability 60, loyalty 30, volatility 25. The numbers below
+  are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
+  personality strength; a neutral leader's value is in brackets. They equal the design's worked
+  example for a schemer (raid interval, attack odds, garrison, soldier cap, ranged share), except
+  the trader threshold: 13 there, 12 for him (sociability 60 against 45).
+  - Raids less often: about every 34 minutes, or 1.7 in-game days [40680 ticks, interval x1.13;
+    neutral 36000 ticks, 30 minutes]. First raid not before 0.94 intervals [1].
+  - Attacks only with a clear edge: attack odds needed 0.807 [0.667]; counter-attack window 0.31 of
+    the interval [0.25], at odds 1.69 [1.5].
+  - He stays home from raids (caution 70 or more).
+  - A raid party falls back after losing 38.5% [50%].
+  - Keeps 40% of the soldiers home [1/3], with at least 3 home defenders and 3 home swordsmen [3,
+    3].
+  - Soldier cap 13 [12]; ranged share 0.47 [0.40].
+  - Trader hired early, at population 12 [14]; trader trips x0.92 apart [1]; amounts kept back from
+    selling x1.04 [1].
+  - Enchanter at XP level 8 [10]; recruitment interval x0.79, so faster [1]; food reserve x1.02 [1].
+  - New house when free beds are 2 or fewer [1]; storage grows when fuller than 64% [70%]; repair
+    scan budget 430 [384].
+  - Miners want 19 gold and 10 diamonds before turning to other ores [16 and 8].
+  - Raid targets: a rival's defence counts only 73.5% [fd 0.735: an ambitious leader seeks strong
+    rivals]; rich targets weigh much more [-800 x loot estimate]; monster lairs (the Hollow's) a
+    little less [+50]. His low honour (30 or less) gives an ambush bonus: a faction whose army his
+    scouts saw marching is a much cheaper target [-1500].
+  - Very little random noise on his decisions [sigma 0.2 x volatility = 0.05].
+  - Schemer rule (milestone 2, when pacts arrive): he makes pacts with weaker neighbours and breaks
+    them once he is strong.
+
+PERSONALITY AND VOICE
+- Temperament: schemer. Traits: aggression 45, honour 20, ambition 85, caution 70, greed 70,
+  sociability 60, loyalty 30, volatility 25.
+- In a fight: steady (aggression between 35 and 65: he looks for enemies within 20 blocks and chases
+  up to 56), and his caution makes his zoning and defensive moves weigh a little more [x1.12;
+  attacking moves x0.97]. He goes for the weakest enemy (the schemer focus) and keeps about 10
+  blocks away. With honour under 60 he has no rule against striking a yielding enemy. Outside boss
+  fights he pulls back at 44.5% health [retreat_below].
+- Likes: gold ingots, emeralds, lanterns. Dislikes: iron ingots. (Gifts come in a later milestone.)
+- Quirk: "smiles most when he is lying, and he is always smiling."
+- Voice: soft flute blips per syllable, medium pitch [pitch 1.0], unhurried [rate 3 ticks per
+  syllable].
+- Lines:
+    Founding:  "Sign here, and here. Congratulations: you all work for the Veiled Lantern now."
+    Greeting:  "Ah, {player}. Buying or selling? With me it is always both."
+    Intro:     "A customer? How delightful. The price today is your patience."
+    Phase 2:   "Which of me is lying? All of us, perhaps."
+    Phase 3:   "Enough games. Let the lanterns speak."
+    Hint:      "Iron... how crude."
+    Kill:      "Paid in full."
+    Yield:     "Mm. A poor bargain for me."
+    Spared:    "Mercy, freely given? I shall have to find out what it costs."
+  Moments without a line of his own yet (his ultimate, enrage, stagger, escape, raid announcements
+  and others) use the schemer fallback lines until his are written. Since he refuses the yield, his
+  escape line is the one players will hear most at the end of a fight.
+
+ANIMATIONS
+His own, on top of the shared library:
+- One for each move: Foxfire Volley (the tails flare), Lantern Ring, Fan Cut, Vanish, Mirage,
+  Foxfire Rain.
+- Ultimate: the lanterns gather into a ring behind him.
+- Phase 2: his tails fan out, with a laugh behind his sleeve.
+- Phase 3: the lanterns flare and his eyes glow.
+- Intro: a slow bow with the fan.
+- Personal idles: a sleeve laugh, a lantern spin, a tail groom. (His look lists a tail-fan flick
+  instead of the tail groom; which three he gets is set when he is built.)
+- Movement: his sprint as a fox lope.
+- Always on: the three small lanterns orbiting him.
+Shared ones he uses a lot: the focus style set (one-hand cast, throw, channel; draw, guard, dodge,
+victory, taunt); the leaper moves (crouch jump, leap, landing).
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.

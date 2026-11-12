@@ -753,6 +753,9 @@ report to the owner:
    shots).
 8. **The contact sheet** from the preview renderer for all 8.
 
+Each hero also gets its kit sheet `docs/heroes-v2/kits/<id>.txt`, sent to the owner whenever the hero is ready or its
+kit changes; from C1 on herogen writes it from the hero source.
+
 ---
 
 ## 8. Order of work and checkpoints

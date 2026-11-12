@@ -1,0 +1,384 @@
+Natsuho Komezaki - "The Harbour Cat"
+Female | cat | striker | physical | tsundere | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO SHE IS
+A prickly dock brawler who insists she only fights for fish, and who would never admit she watches
+over the harbour workers. She pounces, claws, and rolls out of reach. In a one-on-one fight she is a
+rushdown fighter: she never stops coming with short strings and dashes, and you punish her after a
+finisher that misses. Out of battle she fishes; as a faction leader she is the Boss of the Harbour.
+
+LOOK
+- Body: female, slim build, drawn a little small [scale 92%].
+- Hair: a short bob with two tufts and an ahoge (one strand sticking up), cream-white [#EDE6DA] with
+  orange [#E0823A] and near-black [#2A2526] calico patches.
+- Cat parts: tufted cat ears (the left one orange, the right one black) and a long calico tail.
+- Outfit: a short orange hooded jacket over a white wrap top, belted charcoal shorts, white thigh
+  socks and split-toe boots, a red ribbon choker with a gold bell, faint whisker stripes on her
+  cheeks.
+- Weapon: claw gauntlets on both hands (in game terms, an iron sword drawn as claws).
+- Colours: skin [#F5D9C4], amber eyes [#E2A33B], primary orange [#E0823A], secondary cream
+  [#F4EFE6], accent charcoal [#2A2526], trim red [#C8323C], metal light steel [#C9CED6].
+- Face: cat eyes with slit pupils, light lashes [lashes 2], thin arched brows, a cat mouth with one
+  fang on the left, and a blush. She blinks at a normal pace (every 2.5 to 6 s) [blink normal].
+- Moods: when she is happy she shows a frown with a blush (she will not smile openly). Flustered is
+  the mood you will see most.
+- Idle quirks: an ear flick, an S-shaped tail sway, a paw lick.
+- Phase looks: in phase 2 her tail fur puffs up; in phase 3 her slit pupils glow amber.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of her attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: her accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, her face goes "focused" and stops blinking, and the move's
+sound plays from where she stands. No wind-up gets shorter than its class minimum, even in phase 3
+or enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero.
+Her fighting: fists (the claw gauntlets); duel style rushdown. She closes to melee and goes for the
+weakest enemy first (the striker default). Her element is physical: armour, shields and Protection
+work against it as usual. Cooldowns and how often she picks each move are set when she is built.
+
+  Basic attack
+    A fists string: jab, jab, claw. Each hit has a 30% chance to make you bleed [physical bleed: 1
+    damage per second for 3 s, up to 2 stacks]. A raised shield blocks it like any hit from the
+    front.
+
+  Abilities
+    CLAW STRING (claw_string) - boss phases 1, 2, 3
+      What it does: three claw swipes back to back that leave you bleeding.
+      The tell: the animation only (a light move).
+      Counter: block it (light moves are blockable like any hit) or step back out of close range;
+      each swipe can be dodged on its own.
+      Numbers: [light, close; swipes 45%, 45% and 70%, plus a bleed of 1 per second for 4 s, up to 2
+      stacks (which swipe carries it is set when she is built); frames 0.45 / 0.5 / 0.35]
+
+    POUNCE (pounce) - boss phases 1, 2, 3
+      What it does: she leaps at you from up to 8 blocks away and hits everyone within 1.5 blocks of
+      where she lands, with a small knockback. Her ultimate ends with a Pounce.
+      The tell: she crouches and wiggles her hips while a landing disc grows where she will come
+      down.
+      Counter: get off the landing disc, then punish the paw lick after she lands: a full second,
+      and her recovery weak point doubles your bonus there.
+      Numbers: [heavy, mid; leap range 8, landing radius 1.5; 110% + knockback 1; frames 0.8 (crouch
+      and hip wiggle) / 0.2 / 1.0 (paw lick)]
+
+    HISS (hiss) - boss phases 1, 2, 3
+      What it does: she hisses into a 90-degree cone up to 4 blocks in front of her. No damage, but
+      it weakens your melee hits for 4 s and pushes you back hard.
+      The tell: ears flat and tail puffed for a full second, a fan-shaped mark growing on the ground
+      in front of her, and a sound.
+      Counter: step out of the cone, to the side or behind her, before the second is up.
+      Numbers: [area, close; cone 4, 90 degrees; Weakness I 4 s + knockback 2; frames 1.0 / 0.1 /
+      0.8]
+
+    SCRATCH DASH (scratch_dash) - boss phases 1, 2, 3
+      What it does: a 6-block dash along the ground that claws everyone within 1.5 blocks of her
+      path and makes them bleed. When it hits, 60% of the time she goes straight into Claw String.
+      It is also her answer to a raised shield: she dashes round it.
+      The tell: a strip grows on the ground along the dash during the 0.8 s wind-up, with a sound.
+      Counter: step off the strip. A dash stops at walls and at drops over 4 blocks, and she skips
+      it when water or lava lies on the path.
+      Numbers: [heavy, mid; dash 6; 80% + bleed; followup Claw String 60%; frames 0.8 / 0.25 / 0.8]
+
+    CAT REFLEX (cat_reflex) - boss phases 2, 3 (phase 2's new mechanic)
+      What it does: a counter stance held for 1 s. Hit her in melee during it and she takes only 30%
+      of the blow, answers at once with two swipes and hops 3 blocks back.
+      The tell: she settles into the stance (the stance is the wind-up); the shape of its ground
+      mark is set when she is built.
+      Counter: stop attacking for that second, or shoot her: arrows are not countered.
+      Numbers: [heavy, close; stance 1.0 s, absorb 70%; answer 2 swipes x 60% + hop back 3; frames
+      1.0 (the stance) / 0.1 / 0.8]
+
+    ZOOMIES (zoomies) - boss phase 3 only (phase 3's new mechanic)
+      What it does: she charges 14 blocks across the arena at 180% speed, hitting and knocking back
+      everyone on the way. When it hits, 50% of the time she goes again at once. A run that ends
+      against a wall jolts her own balance [+40 poise on her].
+      The tell: a strip along the run grows on the ground during the 0.9 s wind-up, with a sound.
+      Counter: step off the strip; with a wall behind you, step aside late so she runs into it. A
+      charge stops at walls, drops and water, and she skips it when water or lava lies on the path.
+      Numbers: [heavy, mid and far; charge 14, speed 180%, wall stun; 90% + knockback 2; repeatable,
+      follows itself 50% (the design caps strings at 4 moves; how a move that follows itself is
+      capped is set when she is built); frames 0.9 / 0.8 / 1.2]
+
+  Ultimate
+    MIDNIGHT FRENZY (midnight_frenzy)
+      What it does: a long stretch and a yowl, then she enters Frenzy for 8 s (she attacks faster,
+      moves faster, and every hit makes you bleed), and a Pounce follows at once.
+      The tell: the biggest in her kit: the 1.5 s stretch, a spoken line, a wide sound, a red ground
+      mark, and the screen darkens for 2 s for the players fighting her. She cannot be staggered
+      during this wind-up. The boss bar shows a lightning mark when her ultimate is ready.
+      Counter: get off the Pounce's landing disc, punish its paw lick, then block or keep out of
+      reach until the 8 s of Frenzy run out.
+      Numbers: [ultimate; frames 1.5 / 0.2 / 1.5; state frenzy 8 s: attack speed +25%, speed +20%,
+      every hit bleeds; then Pounce. Set when she is built: her ultimate line, its energy and charge
+      rate, the minimum gap between two ultimates (20-60 s) and the shape of its ground mark]
+
+  Passives
+    NINE LIVES (nine_lives): once per fight, when her health drops below 30%, she gets a shield of 8
+    (4 golden hearts; how long it lasts is set when she is built), Speed II for 6 s, and hops 6
+    blocks back.
+    CAT CRIT (cat_crit): whenever she lands a jumping critical hit, she gets +15% speed for 3 s.
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with her (the player hurt her in the last 15 s, or
+  is her target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and her health share never jumps. The first engagement with a
+  player each in-game day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and
+  cannot be staggered, a title on your screen (her name, title and faction) and her intro line. A
+  boss bar shows a star, her name and title, her phase pips and a lightning mark when her ultimate
+  is ready. (Her bar title is set when she is built.)
+- Health: her field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.2 for a
+  striker, and +50% for each extra engaged player (counted up to 5). At level 10 against one player
+  that is 129 health (147 as a leader): about 27 s (31 s) of landed hits with an iron sword at 1.6
+  swings a second, half of them landing. A whole fight lasts two to three times that once you dodge
+  her wind-ups. No single player hit takes more than 12% of her boss health; the excess becomes
+  poise damage.
+- Poise: 80. Your hits fill her poise bar [damage x weapon: sword 1.0, axe 1.6, mace 2.0 plus its
+  fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your shield raised in the
+  last 6 ticks before a heavy move lands) adds 25. A Zoomies run that ends against a wall adds 40.
+  The bar drains 15 per second after 3 s without poise damage. Full poise staggers her: 2.5 s
+  kneeling dizzy, taking 25% more damage; then the bar resets and its maximum grows 20% for the rest
+  of the fight. No stagger during her intro, a phase change or her ultimate's wind-up.
+- Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where she faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Claw String, Pounce, Hiss, Scratch Dash.
+    Phase 2, from 60%: adds Cat Reflex (a counter stance: a new mechanic); her tail puffs up.
+      "F-fine! I'll take you seriously, but only this once!"
+    Phase 3, from 25%: adds Zoomies (charges across the arena; slam her into a wall); her eyes glow.
+      "Nobody... corners... a cat!"
+  Each phase change takes 0.8 to 2 s (her exact length is set when she is built): she takes 50% less
+  damage and cannot be staggered (a glint shows it; she is never invulnerable), a shockwave pushes
+  everyone within 4 blocks back (no damage; softened near lava or a drop), she says the line, her
+  face and look change, and the bar gains a pip.
+- Weak points:
+  - Water: a splash of water makes her flinch for 1 s and deal 10% less damage for 5 s, at most once
+    every 20 s. A thrown water bottle that hits her counts, and so does her getting wet (stepping
+    into water, rain starting, a bubble column). Hint line: "Don't you DARE get me wet!"
+  - Recovery: the punish bonus doubles during her recoveries [+30% instead of +15%]; the paw lick
+    after Pounce is the clearest one.
+- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built):
+  - You raise a shield -> Scratch Dash round the shield (50%). Between moves she hops hazards and
+    kicks off arena walls to reach your side, and the dash starts from there.
+  - You draw a bow -> Pounce (60%).
+  - You eat -> Pounce (70%).
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All her damage bonuses
+  together never exceed +25%.
+- Intro: arms crossed, she looks away, then glances back. "Huh? You're in my harbour. ...Fine. I'll
+  show you out myself."
+- Yield: she kneels (honour 65; only heroes with honour 30 or less, or leaders with caution 70 or
+  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
+  she kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
+  finish". Her yield line: "W-whatever. I let you win."
+  - Spared (sneak and use): she walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "...Thanks. Tell anyone and I'll scratch you."
+  - Finished (strike): she dies. Rewards: XP orbs (7 x her level, at most 100), her non-kit gear
+    (her kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: she collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death.
+- Escape: in a boss fight she never runs at low health: she fights to the yield and kneels. The one
+  order that pulls her out of a boss fight is a lost raid (her raid falls back, or its leader falls,
+  while she is in or near the target). Outside boss fights she escapes when her health drops under
+  her retreat point away from home [retreat_below 22.5%, worked out from the formula of design
+  section 5.4], when her raid is lost, or, as a leader, when the base she is in falls or she is
+  under 50% health at its heart with no guard beside her. At her own base she does not escape: she
+  withdraws like a soldier and comes back at 60% health. Escaping, she starts no moves and runs with
+  any movement she has, even where no one can follow (an escape counts as travel, so her travel
+  bonuses are on); cornered with no way out for 3 s, she fights back, then runs again as soon as a
+  way opens. It ends inside her refuge's walls (her home base; for a leader the capital, or the
+  nearest other standing base; never the base she flees) or once no pursuer has been within 48
+  blocks for 10 s. Then she stays away 5 minutes and until she is above 50% health, and does not go
+  back for those she fled. At most one escape in 10 minutes: inside that window she withdraws,
+  kneels or goes home with the party instead. An escape drops nothing and gives no rewards; a
+  killing blow while she flees is a normal defeat.
+- Revival: like every hero she comes back 10 minutes after her death [heroes.reviveSeconds 600], at
+  her home base (a leader: at the capital, or the nearest standing base); her kit items vanish at
+  death and return with her. She has no death ability of her own. A hero of her faction with the
+  revival_rite talent (milestone 2) would bring her back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HER
+1. Bring splash water bottles. A splash makes her flinch for 1 s and hit 10% softer for 5 s (once
+   every 20 s). Water on the ground helps too: she paths around it, and she skips Scratch Dash and
+   Zoomies when water lies in their path.
+2. Punish the paw lick. After every Pounce she licks her paw for a full second, and her recovery
+   weak point doubles your punish bonus there. Hit her from behind for more.
+3. Do not swing into Cat Reflex (phase 2 on). When she settles into the stance, wait out the second
+   or shoot her: arrows are not countered, melee hits are mostly absorbed and answered.
+4. Use the walls in phase 3. Zoomies is a straight 14-block charge: stand with a wall behind you and
+   step aside late so she slams into it (+40 poise on her, half of her starting 80).
+5. An axe or a mace fills her small poise bar fast (x1.6 and x2.0), and a stagger gives you 2.5 s at
+   +25% damage. A well-timed shield parry of Pounce or Scratch Dash adds 25 poise.
+6. Mind what you do in front of her: eating draws a Pounce 70% of the time, drawing a bow 60%,
+   raising a shield a Scratch Dash round it 50%. Just under 30% health she uses Nine Lives once (a
+   shield, Speed II, a hop back), and at 25% she enters phase 3: do not overcommit there.
+
+MOVEMENT
+Mobility traits: acrobat (ceiling III) and climber (ceiling I). She has every feature from level 1;
+the numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20. Mobility
+never changes a move's damage, range or timing, and she never teleports (the stuck rescue every NPC
+has is the one exception).
+- From level 1: two extra jumps in the air, wall kicks (a jump off a wall she touches), chimneys (up
+  a 1-2 block wide shaft by kicking from wall to wall), the mantle (she pulls herself onto a ledge
+  within a block of her hands at the top of a jump), walking up full blocks without jumping [step
+  1.0], a landing roll (no slowdown on landing) and no fall damage at all (the vanilla cat rule).
+  She climbs walls at ladder speed (2.35 blocks a second up, at most 3 down) and clings still to a
+  wall.
+- She dislikes water: paths through water cost her three times as much [avoid: water, from her water
+  weak point].
+- Numbers, level 1 / 10 / 20:
+    Jump height (blocks)                    1.40 / 1.45 / 1.50
+    Each air jump (blocks)                  0.75 / 0.99 / 1.25
+    Reach up with both air jumps (blocks)   2.9  / 3.4  / 4.0
+    Longest gap she jumps (blocks)          3    / 4    / 6
+    Climb height (blocks)                   3    / 4    / 6
+- Out of fights: she takes ravines, streams, fences and ledges without bridges or detours, hops rock
+  to rock and climbs pier pilings to reach open water a worker would bridge to or walk round.
+- In fights: no move changes. Between moves she hops ground hazards, kicks off arena walls to reach
+  the side of a player who is blocking, climbs out of a pit you dig, and may start Pounce from a
+  ledge she climbed. No move starts while she is in the air or clinging. She goes for a player on a
+  pillar or behind a wall at once when her jumps or climb reach; on a 1x1 pillar top she may land
+  basic attacks from a cling just under your feet or from the top of her jump. She may stand where
+  you cannot reach her, but at most 4 s at a time; then she comes back.
+- Counters: any hit, or a knockback of 0.5 or more, knocks her off a wall (she falls, and needs 0.5
+  s before she can grip again). Ledges are useless against her (no fall damage), but she is light
+  [knockback resistance 10], so knockback still moves her about.
+- Walls in raids: as a non-leader she always goes on her base's raids and is picked first [raids:
+  leads, the striker default]; as a leader, as her personality decides (below). She climbs today's
+  5-block base walls from level 13 (when her climb height reaches 5); her jumps get her onto walls
+  of at most 3 blocks (a lower or broken wall, a player's fort). Otherwise she goes through the gate
+  with the soldiers. She only goes over a wall when she also has a way out. Inside she takes one
+  goal: she opens the way when her soldiers are held outside, hunts a defending hero she sees
+  inside, and otherwise goes for the heart with her party; a goal ends after 60 s without progress.
+  The defenders answer: the alarm sounds once she is on the wall (any base NPC that sees her within
+  24 blocks raises it earlier), and the two nearest free guards and any hero at home go for her.
+  Defending her own base, she gets onto roofs and ledges at once, and onto the wall top from level
+  13.
+- Escaping (never while she is still fighting to win), she uses all of this, even where no one can
+  follow.
+- Signature animation: her own cat-twist air jump, with her tail as a counterweight.
+
+WORK AND TALENTS
+- Duty: fisherman (when she is not leading). She fishes real open water, with vanilla loot, like a
+  player, only better.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): a bigger backpack [21 / 24 / 27 slots; a worker has 18], less wear on her rod and gear [-10 /
+  -20 / -30%], less hunger from work [-10 / -15 / -20%] and more work XP [+10 / +20 / +30%]. The
+  job-by-job table gives fishing no work-speed or reach part.
+- Specialty, from her angler_lord talent (when she fishes herself): her rod counts as having Luck of
+  the Sea +1 / +2 / +3 and Lure +1 / +2 / +3 for her catches only. Lure makes the vanilla wait 5 s
+  shorter per level; Luck of the Sea is the vanilla luck bonus. The rod itself never changes, and
+  neither enchantment goes above III together with the rod's own.
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where she is,
+  inside the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never
+  the sum; the realm talent, marked *, also works at every other base of her faction at tier I while
+  she leads):
+  - angler_lord* (realm): the base's fishermen search for fishing water 16 / 32 / 48 blocks farther
+    and get +1 stack of the Angler bonus (a chance that a catch is rolled twice).
+  - lookout: the base's line-of-sight alarm reaches 32 / 40 / 48 blocks. Lookout is a guard talent,
+    and by the design's Presence rule a hero's guard and court talents count one tier higher while
+    it is at its base and not on a raid (tier IV: 56 blocks), and from 6 or more blocks up (a tower)
+    her own sight alarm reaches 16 blocks farther. Her own design entry does not mention Presence,
+    so whether it applies to a fisherman is set when she is built.
+
+AS A FACTION LEADER
+- Title: Boss of the Harbour.
+- Faction names: "Bellwhisker Harbour" (the first unused name is taken), then "The Calico Wharf
+  League". Short name: "Bellwhisker". Motto: "Nobody asked for your help."
+- Colours: primary orange [#E0823A], secondary cream [#F4EFE6], accent charcoal [#2A2526]. They show
+  in chat, name tags, map markers, the boss bar, her sash and her NPCs' tabards.
+- Banner: orange, with a row of black triangles along the top and a white circle in the middle [base
+  orange; triangles_top black; circle white] (the beast-kin emblem). Real banners hang at the
+  station and the gates, and members get a banner item. Her faction's wool, carpets and beds are
+  orange, with black as the second dye.
+- Base style: tide_port, a Port: prismarine brick walls, birch log frames, birch plank floors, dark
+  prismarine roofs and smooth sandstone round the edge; signs read like "Bellwhisker Port". Culture:
+  east (recruits get eastern names). Economy focus: food (chefs, fishermen and farmers are hired
+  ahead of other civilians) and scouting (scouts and cave explorers).
+- Her day (court duty): a short stop at the station at dawn; daylight at her fishery, where she
+  fishes and counts as a fisherman; the heart at dusk; a bed in the largest house at night, woken by
+  any alarm. She answers every alarm and guards the heart in a defence, says her founding line when
+  the faction starts, and announces raids, attacks on her base, a lost base, a fallen hero and
+  recruit milestones in her own voice (her own lines for these are not written yet; her
+  temperament's fallback lines fill in).
+- If she dies: everyone hears it; no new raids until she returns, and no vengeance raid (that needs
+  aggression 70 or more); a raid she was on carries on without her [(caution + 1 - loyalty) / 2 =
+  0.375, not over 0.5]. If her faction's last base falls she becomes an exiled free hero, never a
+  leader again in that campaign.
+- How her personality steers the faction. Her traits (out of 100): aggression 65, honour 65,
+  ambition 60, caution 45, greed 55, sociability 40, loyalty 70, volatility 45. The numbers below
+  are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
+  personality strength; a neutral leader's value is in brackets.
+  - Raids more often: about every 25 minutes, or 1.25 in-game days [29880 ticks, interval x0.83;
+    neutral 36000 ticks, 30 minutes]. First raid not before 1.06 intervals [1].
+  - Attacks with less of an edge: attack odds needed 0.577 [0.667]; counter-attack window 0.20 of
+    the interval [0.25], at odds 1.37 [1.5].
+  - She leads her raids herself (aggression 65 or more and caution under 60).
+  - A raid party falls back only after losing 60% [50%].
+  - Keeps 30% of the soldiers home [1/3], with at least 3 home defenders and 3 home swordsmen [3,
+    3].
+  - Soldier cap 14 [12]; ranged share 0.355 [0.40].
+  - Trader hired at population 15 [14]; trader trips x1.08 apart [1]; amounts kept back from selling
+    x0.93 [1].
+  - Enchanter at XP level 9 [10]; recruitment interval x0.94 [1]; food reserve x0.92 [1].
+  - New house when free beds are 1 or fewer [1]; storage grows when fuller than 68.5% [70%]; repair
+    scan budget 372 [384].
+  - Miners want 17 gold and 8 diamonds before turning to other ores [16 and 8].
+  - Raid targets: a rival's defence counts only 72% [fd 0.72: a bold, ambitious leader seeks strong
+    rivals]; rich targets weigh a little more [-200 x loot estimate]; monster lairs (the Hollow's) a
+    little less [+50]. No mercy or ambush rule (her honour is between 30 and 70).
+  - A little random noise on every decision [sigma 0.2 x volatility = 0.09].
+  - Tsundere rule (milestone 2, when pacts arrive): she refuses the first pact offer from each
+    faction.
+
+PERSONALITY AND VOICE
+- Temperament: tsundere. Traits: aggression 65, honour 65, ambition 60, caution 45, greed 55,
+  sociability 40, loyalty 70, volatility 45.
+- In a fight: bold (aggression 65 or more: she looks for enemies within 28 blocks and chases up to
+  80), so her attacking moves weigh a little more [x1.09; zoning and defensive ones x0.97]. She goes
+  for the weakest enemy (the striker default) and never strikes a yielding enemy (honour 60 or
+  more). Outside boss fights she pulls back at 22.5% health [retreat_below].
+- Likes: cod, salmon, string. Dislikes: pufferfish, water buckets. (Gifts come in a later
+  milestone.)
+- Quirk: "pretends not to listen, then remembers every word."
+- Voice: soft xylophone blips per syllable, high [pitch 1.35], fast [rate 2 ticks per syllable].
+- Lines:
+    Founding:  "This harbour's mine now. Don't get the wrong idea, I'm not doing it for you."
+    Greeting:  "{player}? I wasn't waiting for you. ...Did you bring fish?"
+    Intro:     "Huh? You're in my harbour. ...Fine. I'll show you out myself."
+    Phase 2:   "F-fine! I'll take you seriously, but only this once!"
+    Phase 3:   "Nobody... corners... a cat!"
+    Hint:      "Don't you DARE get me wet!"
+    Kill:      "Hmph. Too slow."
+    Yield:     "W-whatever. I let you win."
+    Spared:    "...Thanks. Tell anyone and I'll scratch you."
+  Moments without a line of her own yet (her ultimate, enrage, stagger, escape, raid announcements
+  and others) use the tsundere fallback lines until hers are written.
+
+ANIMATIONS
+Her own, on top of the shared library:
+- One for each move: Claw String, Pounce, Hiss, Scratch Dash, Cat Reflex, Zoomies.
+- Ultimate: a long stretch and a yowl.
+- Frenzy: entering the frenzy state.
+- Phase 2: her tail puffs up, with a flustered face.
+- Phase 3: her eyes narrow and glow.
+- Intro: arms crossed, she looks away, then glances back.
+- Personal idles: a paw lick, an ear flick, a stretch and a yawn. (Her look lists an S-shaped tail
+  sway instead of the stretch; which three she gets is set when she is built.)
+- Movement: her own cat-twist air jump (tail as a counterweight).
+Shared ones she uses a lot: the fists style set (guard up; the string; draw, guard, dodge, victory,
+taunt); the acrobat and climber moves (crouch jump, air jump, wall kick, mantle, landing roll,
+climb, cling, climb down); fishing (cast, wait, reel).
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.

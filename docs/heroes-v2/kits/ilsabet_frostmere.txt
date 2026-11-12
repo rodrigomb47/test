@@ -1,0 +1,407 @@
+Ilsabet Frostmere - "The Rime Vow Knight"
+Female | knight | vanguard | frost | righteous | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO SHE IS
+A knight-commander who swore to keep the weak behind her shield. She never strikes a kneeling foe
+and never breaks her word, and she will hold a gate until the last of her people is inside. In a
+one-on-one fight she is a counter fighter: patient, with a guard that answers your melee, so you
+bait it out and hit after her swing. Out of battle she guards the gate; as a faction leader she is
+the Knight-Commander of the Rime Vow.
+
+LOOK
+- Body: female, standard build, drawn a little large [scale 104%].
+- Hair: ash-blonde [#D9CDB4], braided into a crown.
+- Outfit: light steel plate with a long blue-and-white tabard bearing a frost-lily emblem, a short
+  blue cape and greaves.
+- Weapon: a longsword in her right hand and a kite shield with the frost-lily emblem in her left.
+- Colours: skin [#F3D9C9], pale blue eyes [#7FB7D9], primary steel [#B8C7D6], secondary white
+  [#EEF3F7], accent blue [#3D6FA8], trim gold [#CFAF5A], metal [#C9D1D9], glow ice blue [#A8E6FF].
+- Face: almond eyes, light lashes [lashes 2], straight brows, a soft mouth. She blinks at a normal
+  pace (every 2.5 to 6 s) [blink normal].
+- Idle quirks: a shield tap, a salute, a glance back at her allies.
+- Phase looks: in phase 2 a visored helm snaps down over her face; in phase 3 a planted standard
+  appears on her back and the edge of her blade glows with frost.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of her attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: her accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, her face goes "focused" and stops blinking, and the move's
+sound plays from where she stands. No wind-up gets shorter than its class minimum, even in phase 3
+or enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero.
+Her fighting: sword and shield; duel style counter. She closes to melee, protects her allies and
+goes for the strongest enemy first (the righteous focus: the one with the most maximum health). Her
+element is frost (players take it normally). What her effects do to you: a stun on a player is
+Slowness IV and Mining Fatigue II (you keep control, and cannot be stunned again for twice as long);
+a freeze works as powder snow does (slowed, frost on the screen, freeze damage), and leather armour
+stops it, as in vanilla; a taunt turns monsters and enemy NPCs on her, but never forces a player:
+she just glows for you. Cooldowns and how often she picks each move are set when she is built.
+
+  Basic attack
+    A sword-and-shield string: cut, cut, shield bash, and she really blocks with her shield between
+    swings. The design measures her boss health before her shield blocks, so her shield makes the
+    fight longer. The damage of each swing comes from her attack power and her sword; how often she
+    raises the shield and what it stops are set when she is built.
+
+  Abilities
+    SHIELD BASH (shield_bash) - boss phases 1, 2, 3
+      What it does: she lunges 3 blocks behind her shield and slams it into you, stunning you and
+      knocking you back.
+      The tell: the shield goes up high for 0.8 s while a strip grows on the ground ahead of her.
+      Counter: step aside (it is a short lunge), or raise your own shield just before it lands: a
+      parry (+25 poise). After the hit she needs 0.8 s to recover.
+      Numbers: [heavy, close; dash 3; 70% + stun 1 s + knockback 2; frames 0.8 (shield raised high)
+      / 0.2 / 0.8]
+
+    OATH STRIKE (oath_strike) - boss phases 1, 2, 3
+      What it does: two quick sword cuts; the second one freezes you.
+      The tell: a short 0.45 s wind-up (a light move: the animation only).
+      Counter: back off after the first cut, or block both (light moves are blockable like any hit).
+      Leather armour stops the freeze.
+      Numbers: [light, close; combo of 2 strikes: 60%, then 80% + freeze 2 s; frames 0.45 / 0.35 /
+      0.4]
+
+    RIME WALL (rime_wall) - boss phases 1, 2, 3
+      What it does: her allies near her get a shield of golden hearts, and the enemies around her
+      are taunted. She likes it best with two or more allies near her, and it is her answer to an
+      allied hero under half health (80%).
+      The tell: a 0.6 s wind-up (a light move: the animation only).
+      Counter: it does not hurt you, so use the moment to hit her or her helpers.
+      Numbers: [light, any range; nova, radius 5: taunt 3 s; allies within 6: shield 6 for 10 s;
+      prefers 2 or more allies near; frames 0.6 / 0.1 / 0.5]
+
+    TURNING SWEEP (turning_sweep) - boss phases 1, 2, 3
+      What it does: her frost blade turns through a half-circle around her over one second. It is
+      her answer to a player behind her (70%).
+      The tell: a ground mark grows around her for 1 s (the design gives no mark shape for sweeps:
+      set when she is built), then the blade turns through the half-circle for 1 s.
+      Counter: get more than 4 blocks away, or put a block between you (the cut is stopped by
+      blocks); then come back in for its 0.8 s recovery.
+      Numbers: [area, close; sweep 4, 180 degrees, over 1.0 s (the sweep minimum); 70% frost; frames
+      1.0 / 1.0 / 0.8]
+
+    FROST LANCE CHARGE (frost_lance_charge) - boss phases 2, 3 (new in phase 2)
+      What it does: she charges 14 blocks in a straight line, freezing and throwing back whoever she
+      hits, and stops by planting her shield. It is her answer to a drawn bow (50%).
+      The tell: she sets herself for 1 s while a long strip on the ground shows her path.
+      Counter: step off the strip, ideally with a wall behind you: a charge that ends against a wall
+      staggers her (see Weak points). A charge stops at walls, drops and water, and she skips it
+      when water or lava lies on the path. Her 1 s recovery is your opening.
+      Numbers: [heavy, mid and far; charge 14, speed 170%, wall stun; 100% + freeze 2 s + knockback
+      2; frames 1.0 / 0.8 / 1.0 (plants the shield to stop)]
+
+    FROZEN STANDARD (frozen_standard) - boss phase 3 only (new in phase 3)
+      What it does: she raises a frozen field around where she stands for 10 s: her allies inside it
+      hit harder, and enemies inside it are slowed.
+      The tell: a disc grows around her for 1.2 s.
+      Counter: fight her outside the 6-block field, or pull her helpers out of it; it lasts 10 s.
+      Numbers: [area, any range; zone at herself, radius 6, 10 s, a pulse every 1 s; allies inside
+      +15% damage; enemies inside Slowness I; frames 1.2 / 0.1 / 0.8]
+
+    CALL THE GUARD (call_the_guard) - boss phase 3 only (new in phase 3)
+      What it does: she calls her soldiers: up to three real soldiers of her faction within 32
+      blocks take her target. Nothing is spawned, so far from her people no one comes.
+      The tell: a 0.6 s wind-up (a light move: the animation only).
+      Counter: fight her away from her base and her soldiers; near them, deal with the soldiers or
+      keep moving.
+      Numbers: [light, any range; on herself, call_guards 3; frames 0.6 / 0.1 / 0.4]
+
+    BULWARK (state bulwark) - from boss phase 2
+      At the phase 2 change her visor snaps down and she settles into Bulwark: her armour holds
+      better and she is much harder to push, but her back becomes an even bigger weakness.
+      Numbers: [armour +25%, knockback resistance +30, her back weakness doubles (see Weak points)]
+
+  Ultimate
+    VOW OF WINTER (vow_of_winter)
+      What it does: she raises her sword while a ring of ice crystals grows on the ground around
+      her, then frost bursts out, hurting and freezing every enemy within 6 blocks and shielding her
+      allies within 8.
+      The tell: the full ultimate tell: the 1.6 s wind-up, a spoken line, a wide sound, a red ground
+      mark with the ring of ice crystals, and the screen darkens for 2 s for every player fighting
+      her. She cannot be staggered during this wind-up. The boss bar shows a lightning mark when her
+      ultimate is ready.
+      Counter: get more than 6 blocks away from her during the wind-up; leather armour stops the
+      freeze. Hit her in the 1.5 s recovery.
+      Numbers: [ultimate; nova, radius 6: 14 frost + freeze 3 s; allies within 8: shield 10; frames
+      1.6 / 0.2 / 1.5. Set when she is built: her ultimate line, her ultimate energy and charge
+      rate, and the minimum gap between two ultimates (20-60 s)]
+
+  Passives
+    OATH KEEPER (oath_keeper): when an ally within 12 blocks drops below 35% health, that ally takes
+    20% less damage for 6 s; at most once every 15 s (and once per ally every 20 s).
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with her (the player hurt her in the last 15 s, or
+  is her target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and her health share never jumps. The first engagement with a
+  player each in-game day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and
+  cannot be staggered, a title on your screen (her name, title and faction) and her intro line. A
+  boss bar shows a star, her name and title, her phase pips and a lightning mark when her ultimate
+  is ready. (Her bar title is set when she is built.)
+- Health: her field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.0 for a
+  vanguard, and +50% for each extra engaged player (counted up to 5). At level 10 against one player
+  that is 144 health (165 as a leader): about 31 s (36 s) of landed hits with an iron sword at 1.6
+  swings a second, half of them landing, counted before her shield blocks. A whole fight lasts two
+  to three times that once you dodge her wind-ups. No single player hit takes more than 12% of her
+  boss health; the excess becomes poise damage.
+- Poise: 140 (the vanguard value). Your hits fill her poise bar [damage x weapon: sword 1.0, axe
+  1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your
+  shield raised in the last 6 ticks before a heavy move lands) adds 25. A Frost Lance Charge that
+  ends against a wall adds 40, and her charge_wall weak point makes it a stagger at once. The bar
+  drains 15 per second after 3 s without poise damage. Full poise staggers her: 2.5 s kneeling
+  dizzy, taking 25% more damage; then the bar resets and its maximum grows 20% for the rest of the
+  fight. No stagger during her intro, a phase change or her ultimate's wind-up.
+- Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where she faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Shield Bash, Oath Strike, Rime Wall, Turning Sweep.
+    Phase 2, from 60%: her visor snaps down; she enters Bulwark; adds Frost Lance Charge.
+      "Then I will stand against you properly."
+    Phase 3, from 25%: adds Frozen Standard and Call the Guard; the standard appears on her back and
+      her blade glows.
+      "To me, Rime Vow! Hold the line!"
+  Each phase change takes 0.8 to 2 s (her exact length is set when she is built): she takes 50% less
+  damage and cannot be staggered (a glint shows it; she is never invulnerable), a shockwave pushes
+  everyone within 4 blocks back (no damage; softened near lava or a drop), she says the line, her
+  face and look change, and the bar gains a pip.
+- Weak points:
+  - Back: the bonus for hitting her from behind (more than 120 degrees from where she faces) doubles
+    [during a recovery, +30% more instead of +15%]. From phase 2, Bulwark doubles her back weakness
+    again; the exact number is set when she is built.
+  - Charge into a wall [charge_wall]: when her own Frost Lance Charge ends against a wall, she
+    staggers (2.5 s kneeling, +25% damage taken).
+  - The line or prop that hints at each weak point is set when she is built.
+- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built):
+  - You stand behind her -> Turning Sweep (70%).
+  - You draw a bow -> Frost Lance Charge (50%; phases 2 and 3).
+  - An allied hero falls under half health -> Rime Wall (80%).
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All her damage bonuses
+  together never exceed +25%. She also enrages at once when the heart of her base is attacked while
+  she defends it. (The design gives 240 s for her as a leader; the 180 s otherwise is the design's
+  default.)
+- Intro: a salute with her blade. "Lower your weapon and I will lower mine. I keep my word."
+- Yield: she kneels (honour 90; only heroes with honour 30 or less, or leaders with caution 70 or
+  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
+  she kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
+  finish". Her yield line: "I yield. I keep my word, so I expect you to keep yours."
+  - Spared (sneak and use): she walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "You have honour. I will not forget it."
+  - Finished (strike): she dies. Rewards: XP orbs (7 x her level, at most 100), her non-kit gear
+    (her kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: she collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death.
+- Escape: in a boss fight she never runs at low health: she fights to the yield and kneels. The one
+  order that pulls her out of a boss fight is a lost raid (her raid falls back, or its leader falls,
+  while she is in or near the target). Outside boss fights she escapes when her health drops under
+  her retreat point away from home [retreat_below 22%, worked out from the formula of design section
+  5.4], when her raid is lost, or, as a leader, when the base she is in falls or she is under 50%
+  health at its heart with no guard beside her. At her own base she does not escape: she withdraws
+  like a soldier and comes back at 60% health. Escaping, she starts no moves and runs with any
+  movement she has, even where no one can follow (an escape counts as travel, so her travel bonuses
+  are on); cornered with no way out for 3 s, she fights back, then runs again as soon as a way
+  opens. It ends inside her refuge's walls (her home base; for a leader the capital, or the nearest
+  other standing base; never the base she flees) or once no pursuer has been within 48 blocks for 10
+  s. Then she stays away 5 minutes and until she is above 50% health, and does not go back for those
+  she fled. At most one escape in 10 minutes: inside that window she withdraws, kneels or goes home
+  with the party instead. An escape drops nothing and gives no rewards; a killing blow while she
+  flees is a normal defeat.
+- Revival: like every hero she comes back 10 minutes after her death [heroes.reviveSeconds 600], at
+  her home base (a leader: at the capital, or the nearest standing base); her kit items vanish at
+  death and return with her. She has no death ability of her own. A hero of her faction with the
+  revival_rite talent (milestone 2) would bring her back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HER
+1. Wear at least one piece of leather armour. Oath Strike, Frost Lance Charge and her ultimate all
+   freeze, and the freeze ignores anyone in leather armour (the vanilla powder-snow rule).
+2. Work her back. Hits from behind during her recoveries pay double the extra, and from phase 2
+   Bulwark makes her back weaker still. She answers you standing behind her with Turning Sweep
+   (70%): get more than 4 blocks out when its mark appears, then come back in for its 0.8 s
+   recovery.
+3. From phase 2, make her charge into a wall. Stand at range with a wall at your back (drawing a bow
+   invites the charge, 50%) and step off the strip when it appears: if she runs into the wall she
+   staggers, which means 2.5 s of hits at +25% damage.
+4. Parry her heavy hits and bring a heavy weapon. Raise your shield just before Shield Bash (her
+   shield goes up high for 0.8 s first) or Frost Lance Charge lands (+25 poise each). Axes and maces
+   fill her big poise bar (140) faster (x1.6 and x2.0).
+5. Fight her away from her people. In phase 3 Call the Guard brings up to three real soldiers from
+   within 32 blocks and Frozen Standard makes her allies hit harder, while Rime Wall and Oath Keeper
+   protect them. Attacking her base's heart while she defends it enrages her at once.
+6. Get out of the circles: leave Frozen Standard's 6-block field (it slows you), and be more than 6
+   blocks from her when the red ring of Vow of Winter appears.
+
+MOVEMENT
+Mobility traits: charger (ceiling III) and snowstride (ceiling I). She has every feature from level
+1; the numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20.
+Mobility never changes a move's damage, range or timing, and she never teleports (the stuck rescue
+every NPC has is the one exception).
+- From level 1: walking up full blocks without jumping [step 1.0]; the traversal charge (on a
+  straight, clear stretch of path she breaks into a charging run; it stops at doors, fences, water
+  and drops; travel only); cobwebs and sweet berry bushes never slow her, in boss fights too; harder
+  to push back while moving in NPC wars; a longer safe fall; less slowing on soul sand, honey and
+  other slow blocks. Snowstride I: she never freezes, and powder snow does not slow her (she still
+  sinks into it). Her jump is a worker's: she has no leaping or climbing trait.
+- Numbers, level 1 / 10 / 20:
+    Traversal charge                        +36% every 20 s / +47% every 15 s / +60% every 12 s
+    Knockback resistance while moving       +0.18 / +0.24 / +0.30
+    Safe fall (blocks)                      6.6  / 7.7  / 9.0
+    Movement efficiency                     0.60 / 0.79 / 1.00
+      (1.00 = soul sand, honey and other slow blocks do not slow her at all)
+- Out of fights: on guard duty she holds the gate, and she is the first to meet an enemy hero coming
+  over her walls.
+- In fights: Frost Lance Charge is unchanged. In a boss fight her knockback bonus and traversal
+  charge switch off; her step height, safe fall, web immunity and snow footing stay, so she fights
+  in powder snow unslowed. If you stand where she cannot walk to you (a pillar, a pen, a ledge), she
+  uses her far-range moves, after 10 s digs and builds her way up at player speed, and after 30 s
+  gives up with a taunt and resets.
+- Walls in raids: as a non-leader she always goes on her base's raids and is picked first [raids:
+  leads, the vanguard default]; as a leader she joins only joint raids and counter-attacks (below).
+  Today's base walls are 5 blocks high and she can neither climb nor jump them, so as a charger she
+  leads her soldiers through the gate or the breach. Inside she takes one goal: she opens the way
+  when her soldiers are held outside, hunts a defending hero she sees inside, and otherwise goes for
+  the heart with her party; a goal ends after 60 s without progress. Defending, she joins the two
+  nearest free guards against an enemy hero on or inside her walls.
+- Escaping: her charging run comes back on, and she may go wherever her legs take her, even where no
+  pursuer can follow.
+- Signature animation: none of her own in the design; she uses the shared charging run and the skid
+  to a stop.
+
+WORK AND TALENTS
+- Duty: guard (when she is not leading). She patrols with the guards, answers alarms and holds the
+  gate; cobwebs never slow her, from level 1.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): as a guard she answers alarms from farther away instead of working faster [+8 / +12 / +16
+  blocks]. She also has a bigger backpack [21 / 24 / 27 slots; a worker has 18], less wear on her
+  gear [-10 / -20 / -30%], less hunger from work [-10 / -15 / -20%] and more work XP [+10 / +20 /
+  +30%]. Each level she gains rolls a guard affix, as for any NPC.
+- Presence (her specialty as a guard): rally and warden_of_walls count one tier higher while she is
+  at her base (inside the walls or within 16 blocks) and not on a raid; at tier III they use the
+  tier IV numbers. Her personal touch, from rally: when her faction pays for a recruit, two recruits
+  may come instead of one [chance 15 / 25 / 35%; within the population caps; once per payment].
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where she is,
+  inside the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never
+  the sum; the realm talent, marked *, also works at every other base of her faction at tier I while
+  she leads):
+  - rally* (realm): recruits cost 10 / 15 / 20% less food [with Presence at home: 15 / 20 / 25%].
+  - warden_of_walls: her base's defence alarm reaches farther and the repair check looks over more
+    of the base [alarm radius +8 / +16 / +24 blocks, repair scan budget x1.5 / x2 / x2.5; with
+    Presence at home +16 / +24 / +32 blocks and x2 / x2.5 / x3]. The talent table also gives it a
+    personal effect (the hero repairs breaches herself with real blocks from storage, at 1.5x a
+    builder's speed), but her own entry names only rally's; whether she does this, and how the
+    talent's repair budget combines with her leader's repair budget, are set when she is built.
+
+AS A FACTION LEADER
+- Title: Knight-Commander of the Rime Vow.
+- Faction names: "Order of the Rime Vow" (the first unused name is taken), then "The Frostmere
+  Guard". Short name: "Rime Vow". Motto: "No one falls while we stand."
+- Colours: primary frost blue [#5E9BD1], secondary white [#EEF3F7], accent gold [#CFAF5A]. The
+  faction blue is lighter than her tabard's [#3D6FA8], which was too close to the Still Crane's
+  indigo. They show in chat, name tags, map markers, the boss bar, her sash and her NPCs' tabards.
+- Banner: light blue, with a white diagonal cross (an X) and a yellow border [base light_blue; cross
+  white; border yellow] (the knights' emblem). Real banners hang at the station and the gates, and
+  members get a banner item. Her faction's wool, carpets and beds are light blue, with white as the
+  second dye.
+- Base style: frost_hall, a Hall: polished diorite walls, spruce log frames, spruce plank floors,
+  dark prismarine roofs and stone bricks round the edge; signs read like "Rime Vow Hall". Culture:
+  west (recruits get western names). Economy focus: defence (no civilian role moves up; one more
+  home defender instead) and people (chefs and haulers are hired ahead of other civilians, and the
+  recruitment interval is x0.9).
+- Her day (court duty): a short stop at the station at dawn; by day a walk between the station, the
+  gates and the heart, greeting member players (her first talent, rally, has no workplace); the
+  heart at dusk; a bed in the largest house at night, woken by any alarm. She answers every alarm
+  and guards the heart in a defence, says her founding line when the faction starts, and announces
+  raids, attacks on her base, a lost base, a fallen hero and recruit milestones in her own voice
+  (her own lines for these are not written yet; her temperament's fallback lines fill in).
+- If she dies: everyone hears it; no new raids until she returns, and no vengeance raid (that needs
+  aggression 70 or more); a raid she was on carries on without her [(caution + 1 - loyalty) / 2 =
+  0.375, not over 0.5]. If her faction's last base falls she becomes an exiled free hero, never a
+  leader again in that campaign.
+- How her personality steers the faction. Her traits (out of 100): aggression 50, honour 90,
+  ambition 50, caution 60, greed 15, sociability 60, loyalty 85, volatility 25. The numbers below
+  are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
+  personality strength; a neutral leader's value is in brackets.
+  - Raids at about the neutral pace: about every 31 minutes, or 1.56 in-game days [37440 ticks,
+    interval x1.04; neutral 36000 ticks, 30 minutes]. Her honour and caution hold back the first
+    one: not before 1.3 intervals [1].
+  - Attacks only with an edge: attack odds needed 0.727 [0.667]; counter-attack window 0.275 of the
+    interval [0.25], at odds 1.58 [1.5].
+  - She neither leads ordinary raids (that needs aggression 65 or more) nor stays home (caution 70
+    or more, or aggression under 35): she joins joint raids and counter-attacks.
+  - Her raid parties hold together a little longer: they fall back after losing 54% [50%].
+  - Keeps 36% of the soldiers home [1/3], with at least 4 home defenders (3, plus 1 from her defence
+    focus) and 3 home swordsmen [3, 3].
+  - Soldier cap 13 [12]; ranged share 0.43 [0.40].
+  - Trader hired at population 15 [14]; trader trips x0.92 apart [1]; amounts kept back from selling
+    x1.29 [1].
+  - Enchanter at XP level 10 [10]; recruitment interval x1.0 from her ambition, then x0.9 from her
+    people focus [1]; food reserve x1.08 [1].
+  - New house when free beds are 1 or fewer [1]; storage grows when fuller than 80.5% [70%]; repair
+    scan budget 407 [384], before her warden_of_walls talent.
+  - Miners want 10 gold and 5 diamonds before turning to other ores [16 and 8].
+  - Raid targets: a rival's defence counts in full [fd 1]; loot does not tempt her (greed 15);
+    monster lairs (the Hollow's) are much more attractive targets [-500]. Mercy rule (honour 70 or
+    more): she spares a faction that lost a base in the last in-game day.
+  - A little random noise on every decision [sigma 0.2 x volatility = 0.05].
+  - Righteous rule (a grudge against any conqueror; always joins coalitions): grudges need diplomacy
+    (milestone 2), and in this milestone every surviving faction joins the coalition against a
+    conqueror anyway (today's rule).
+  - Next to a default righteous leader [aggression 60, caution 45] she is calmer and more careful.
+    The slice's test run B has her as one of its four leaders (with a tsundere, an eccentric genius
+    and a lone wolf); in run A she serves the Still Crane as a second hero.
+
+PERSONALITY AND VOICE
+- Temperament: righteous. Traits: aggression 50, honour 90, ambition 50, caution 60, greed 15,
+  sociability 60, loyalty 85, volatility 25. Next to a typical righteous hero she is less aggressive
+  (50 against 60), more careful (60 against 45), a little more loyal (85 against 80) and a touch
+  less strict on honour (90 against 95).
+- In a fight: steady (aggression between 35 and 65: she looks for enemies within 20 blocks and
+  chases up to 56), so her attacking moves get no bonus [x1.0] and her zoning and defensive moves
+  weigh a little more [x1.06]. She goes for the strongest enemy, protects her allies, and never
+  strikes a yielding enemy (honour 60 or more). Outside boss fights she pulls back at 22% health
+  [retreat_below].
+- Likes: shields, iron ingots, white tulips. Dislikes: wither roses. (Gifts come in a later
+  milestone.)
+- Quirk: "polishes her shield every night, whether it needs it or not."
+- Voice: soft chime blips per syllable, a little lower than the usual female voice [pitch 1.15; the
+  default is 1.25], measured [rate 3 ticks per syllable].
+- Lines:
+    Founding:  "By my oath, this is the Order of the Rime Vow. No one here will be left behind."
+    Greeting:  "{player}. Are you well? Good. Stay that way."
+    Intro:     "Lower your weapon and I will lower mine. I keep my word."
+    Phase 2:   "Then I will stand against you properly."
+    Phase 3:   "To me, Rime Vow! Hold the line!"
+    Kill:      "It is done."
+    Yield:     "I yield. I keep my word, so I expect you to keep yours."
+    Spared:    "You have honour. I will not forget it."
+  Her phase 3 line names her own order even when she serves another faction (as in test run A);
+  whether it changes there is set when she is built. Moments without a line of her own yet (her
+  ultimate, enrage, stagger, escape, raid announcements and others) use the righteous fallback lines
+  until hers are written.
+
+ANIMATIONS
+Her own, on top of the shared library:
+- One for each move: Shield Bash, Oath Strike, Rime Wall, Turning Sweep, Frost Lance Charge, Frozen
+  Standard, Call the Guard.
+- Ultimate: the sword raised while the ring of ice crystals grows.
+- Bulwark: entering the bulwark state.
+- Phase 2: her visor snaps down.
+- Phase 3: she plants the standard.
+- Intro: a salute with the blade.
+- Personal idles: a shield tap, a salute, a glance back at her allies.
+Shared ones she uses a lot: the sword-and-shield style set (shield forward; cut, cut, bash; a raised
+guard; draw, dodge, victory, taunt); the charger moves (charging run, skid).
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.

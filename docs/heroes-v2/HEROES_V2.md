@@ -2231,6 +2231,9 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | V4 | Adversarial review and fixes | V1-V3 | M | review findings closed |
 | V5 | Docs (README "Heroes", "Factions and leaders"; BALANCE; ROADMAP; HANDOFF), config regeneration, jar and SHA-256, push | V4 | S | release checklist (HANDOFF section 7) |
 
+Kit sheets (C1-C4): each hero also gets its kit sheet `docs/heroes-v2/kits/<id>.txt`, sent to the owner whenever
+the hero is ready or its kit changes; from C1 on herogen writes it from the hero source.
+
 Order: A0, F1, F4, G1 and L1 can start at once (L1 does not need GeckoLib). The critical path is F1 -> F2 -> A1 -> A3
 -> A5 -> A6 -> V1 -> V3 (six L tasks in a row before the campaign runs; A0 is small and runs beside F1), with G1 -> G3
 -> G4 -> G5, G1 -> G6a-c and then C1-C4 alongside. Mobility and work mastery (F5, A10-A12, G10, L5m) are in this

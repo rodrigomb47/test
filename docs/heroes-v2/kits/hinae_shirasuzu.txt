@@ -1,0 +1,391 @@
+Hinae Shirasuzu - "The White Bell Shrine Maiden"
+Female | shrine | support | radiant | sweet-natured | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO SHE IS
+A gentle shrine keeper who would rather talk than fight, keeps lanterns lit for travellers, and
+whose talismans never miss when she finally throws them. In a one-on-one fight she is a zoner: she
+keeps you out with talismans and seals while she heals and shields her allies, and you win by
+closing the gap. Out of battle she guards the shrine and tends the wounded; as a faction leader she
+is the Keeper of the White Bell.
+
+LOOK
+- Body: female, standard build, drawn a little small [scale 96%].
+- Hair: long straight black hair [#1C1A22] tied low with white paper, with straight bangs.
+- Outfit: a white kimono top with plain sleeves, a pleated red hakama, split-toe socks and clogs,
+  talisman strips at her belt.
+- Weapon: a purification wand with paper streamers and a cluster of bells in her right hand; a fan
+  of talismans in her left.
+- Colours: skin [#F7DFD0], deep red eyes [#B4413A], primary white [#F6F3EE], secondary red
+  [#C8323C], accent gold [#D9B44A], trim cream [#EADFC8], glow pale gold [#FFE9A3].
+- Face: round eyes, light lashes [lashes 2], worried brows, a soft mouth and a blush. She blinks at
+  a normal pace (every 2.5 to 6 s) [blink normal].
+- Idle quirks: a bell shake, sweeping, hands together and a small bow.
+- Phase looks: in phase 2 seven glowing talismans orbit her; in phase 3 her eyes glow gold and her
+  paper streamers glow.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of her attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: her accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, her face goes "focused" and stops blinking, and the move's
+sound plays from where she stands. No wind-up gets shorter than its class minimum, even in phase 3
+or enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero.
+Her fighting: focus (the wand and talismans, thrown); duel style zoner. She keeps about 8 blocks
+away [keep_distance 8, the support default] and backs off like an archer when you come within 4; she
+protects her allies and goes for whoever threatens them first (the support focus). Her element is
+radiant (undead take 30% more from it; players take it normally). Cooldowns and how often she picks
+each move are set when she is built.
+
+  Basic attack
+    A thrown talisman: it flies straight like a feather, trailing white sparkles, out to 14 blocks,
+    for 4 radiant damage every 1.5 s.
+
+  Abilities
+    TALISMAN FAN (talisman_fan) - boss phases 1, 2, 3
+      What it does: she throws a spread of five talismans; a talisman that hits you strikes with
+      holy light and puts a seal mark on you. Seals stack.
+      The tell: a quick throw (a light move: the animation only).
+      Counter: move sideways out of the spread, put a block between you, or block it (light moves
+      are blockable like any hit). Count your seals: with 3 or more, her Sealing Circle stuns you.
+      Numbers: [light, mid and far; volley of 5 (10 degrees apart), range 16; 4 radiant + mark seal;
+      frames 0.5 / 0.3 / 0.4. How long a seal lasts and how many can stack are set when she is
+      built]
+
+    SEALING CIRCLE (sealing_circle) - boss phases 1, 2, 3
+      What it does: a circle of light marks the ground where you stand and bursts once a moment
+      later, hurting and slowing you. If you carry 3 or more seals, the burst also stuns you for 1 s
+      and wipes the seals. On a player a stun is heavy slowness [Slowness IV and Mining Fatigue II]:
+      you keep control, and you cannot be stunned again for twice as long. It is her answer to a
+      raised shield (50%).
+      The tell: she rings her bells for 1 s while a disc grows under you.
+      Counter: walk out of the circle before it bursts. A shield does not help: circles ignore
+      shields.
+      Numbers: [area, mid; zone at the target, radius 3, delay 1.0 s (whether the delay runs inside
+      the wind-up or after it is set when she is built), one burst; 6 radiant + Slowness II 3 s;
+      with 3 or more seals: stun 1 s and the seals clear; frames 1.0 (bell ring) / 0.1 / 0.8]
+
+    PURIFY (purify) - boss phases 1, 2, 3
+      What it does: she cleanses and heals every ally within 8 blocks. Cleansing removes harmful
+      potion effects, damage over time, marks, fire, freezing and stuns. She uses it when an ally is
+      under 60% health, and it is her answer to an allied hero under half health (80%).
+      The tell: a short cast (a light move: the animation only).
+      Counter: fight her away from her allies, or hit her during the 0.6 s cast.
+      Numbers: [light, any range; allies within 8: cleanse + heal 4; frames 0.6 / 0.1 / 0.4]
+
+    EXORCISE (exorcise) - boss phases 1, 2, 3
+      What it does: a burst of light all around her that hurts you, strips your helpful potion
+      effects (golden-apple absorption included) and pushes you away. She prefers it when you are
+      close, and it is her answer to a close target (70%).
+      The tell: a disc grows on the ground around her for 1 s.
+      Counter: step out of its 4-block reach during the wind-up, and do not drink potions or eat
+      golden apples right next to her.
+      Numbers: [area, close; nova, radius 4; 3 radiant + dispel + knockback 2; frames 1.0 / 0.1 /
+      0.8]
+
+    SEVEN TALISMANS (seven_talismans) - boss phases 2, 3 (phase 2's new mechanic)
+      What it does: seven talismans ring her and block all damage until 7 hits have landed (each hit
+      pops one talisman) or 12 s have passed.
+      The tell: she sets herself for 0.8 s, with a sound; the shape of its ground mark is set when
+      she is built.
+      Counter: every hit counts, however weak: land many quick hits, bring a friend, or wait it out.
+      Numbers: [heavy, any range; on herself; barrier of 7 hits for 12 s; frames 0.8 / 0.2 / 0.8]
+
+    PURIFYING DANCE (purifying_dance) - boss phase 3 only (phase 3's new mechanic)
+      What it does: she dances, sweeping a beam of light across the half-circle in front of her for
+      2 s; it hits you as it passes, and her allies get Regeneration I for 4 s. At the end she
+      kneels to pray for 1.5 s.
+      The tell: a ground mark grows in front of her for 1 s (the design gives no mark shape for
+      sweeps: set when she is built).
+      Counter: get behind her (the sweep covers only the half-circle in front), stay more than 8
+      blocks away, or put a block between you (the beam stops at blocks). Then hit her while she
+      kneels.
+      Numbers: [area, close and mid; sweep 8, 180 degrees, 2 s; 5 radiant per pass; allies
+      Regeneration I 4 s; frames 1.0 / 2.0 / 1.5 (kneels to pray)]
+
+  Ultimate
+    THOUSAND BELL RITE (thousand_bell_rite)
+      What it does: she rings a rite of bells. Every ally within 10 blocks heals and gains a shield
+      of golden hearts; every enemy within 6 blocks is struck by holy light and slowed. It is a
+      channel: enough damage breaks it.
+      The tell: the full ultimate tell: the 1.6 s wind-up, a spoken line, a wide sound, a red ground
+      mark, and the screen darkens for 2 s for every player fighting her. She cannot be staggered
+      during this wind-up. The boss bar shows a lightning mark when her ultimate is ready.
+      Counter: be more than 6 blocks away when it goes off, or break it: deal 15% of her maximum
+      health while she channels and she is left open for 2 s. One hit can never do it alone (a hit
+      is capped at 12%), so it takes two hits or more.
+      Numbers: [ultimate; frames 1.6 / 0.3 / 1.5; channelled, breaks after 15% of her max health in
+      damage; allies within 10: heal 10 + shield 8; enemies within 6: 10 radiant + Slowness II 4 s.
+      Set when she is built: her ultimate line, how long the channel lasts, her ultimate energy and
+      charge rate, and the minimum gap between two ultimates (20-60 s)]
+
+  Passives
+    GUARDIAN CHARM (guardian_charm): when an ally within 12 blocks drops below 35% health, she wraps
+    a shield of 4 (2 golden hearts) around that ally; at most once every 15 s (and once per ally
+    every 20 s).
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with her (the player hurt her in the last 15 s, or
+  is her target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and her health share never jumps. The first engagement with a
+  player each in-game day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and
+  cannot be staggered, a title on your screen (her name, title and faction) and her intro line. A
+  boss bar shows a star, her name and title, her phase pips and a lightning mark when her ultimate
+  is ready. (Her bar title is set when she is built.)
+- Health: her field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.25 for a
+  support, and +50% for each extra engaged player (counted up to 5). At level 10 against one player
+  that is 130 health (148 as a leader): about 27 s (31 s) of landed hits with an iron sword at 1.6
+  swings a second, half of them landing. A whole fight lasts two to three times that once you dodge
+  her wind-ups. No single player hit takes more than 12% of her boss health; the excess becomes
+  poise damage.
+- Poise: 80 (the support value). Your hits fill her poise bar [damage x weapon: sword 1.0, axe 1.6,
+  mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your shield
+  raised in the last 6 ticks before a heavy move lands) adds 25. The bar drains 15 per second after
+  3 s without poise damage. Full poise staggers her: 2.5 s kneeling dizzy, taking 25% more damage;
+  then the bar resets and its maximum grows 20% for the rest of the fight. No stagger during her
+  intro, a phase change or her ultimate's wind-up.
+- Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where she faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Talisman Fan, Sealing Circle, Purify, Exorcise.
+    Phase 2, from 60%: adds Seven Talismans (a barrier you must break with hits); the talisman ring.
+      "Please... stop. I don't want to hurt you."
+    Phase 3, from 25%: adds Purifying Dance; her eyes and streamers glow.
+      "Then I'll purify this fight myself!"
+  Each phase change takes 0.8 to 2 s (her exact length is set when she is built): she takes 50% less
+  damage and cannot be staggered (a glint shows it; she is never invulnerable), a shockwave pushes
+  everyone within 4 blocks back (no damage; softened near lava or a drop), she says the line, her
+  face and look change, and the bar gains a pip.
+- Weak points:
+  - Channel: her Thousand Bell Rite (and the prayer after Purifying Dance) breaks after damage of
+    15% of her maximum health and leaves her open for 2 s. (The dance has no channel of its own in
+    the design: what breaking its prayer does is set when she is built.)
+  - Back: the bonus for hitting her from behind (more than 120 degrees from where she faces) doubles
+    [during a recovery, +30% more instead of +15%].
+  - The line or prop that hints at each weak point is set when she is built.
+- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built):
+  - You come close -> Exorcise (70%).
+  - An allied hero falls under half health -> Purify (80%).
+  - You raise a shield -> Sealing Circle (50%; circles ignore shields).
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All her damage bonuses
+  together never exceed +25%. She also enrages at once when the heart of her base is attacked while
+  she defends it. (The design gives 240 s for her as a leader; the 180 s otherwise is the design's
+  default.)
+- Intro: she bows and raises her wand. "Welcome, traveller. Will you put your weapon down? ...No?
+  I'm sorry, then."
+- Yield: she kneels (honour 75; only heroes with honour 30 or less, or leaders with caution 70 or
+  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
+  she kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
+  finish". Her yield line: "I... see. You are very strong."
+  - Spared (sneak and use): she walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "Thank you. I'll ring a bell for you tonight."
+  - Finished (strike): she dies. Rewards: XP orbs (7 x her level, at most 100), her non-kit gear
+    (her kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: she collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death.
+- Escape: in a boss fight she never runs at low health: she fights to the yield and kneels. The one
+  order that pulls her out of a boss fight is a lost raid (her raid falls back, or its leader falls,
+  while she is in or near the target). Outside boss fights she escapes when her health drops under
+  her retreat point away from home [retreat_below 44%, worked out from the formula of design section
+  5.4], when her raid is lost, or, as a leader, when the base she is in falls or she is under 50%
+  health at its heart with no guard beside her. At her own base she does not escape: she withdraws
+  like a soldier and comes back at 60% health. Escaping, she starts no moves and runs with any
+  movement she has, even where no one can follow (an escape counts as travel, so her travel bonuses
+  are on); cornered with no way out for 3 s, she fights back, then runs again as soon as a way
+  opens. It ends inside her refuge's walls (her home base; for a leader the capital, or the nearest
+  other standing base; never the base she flees) or once no pursuer has been within 48 blocks for 10
+  s. Then she stays away 5 minutes and until she is above 50% health, and does not go back for those
+  she fled. At most one escape in 10 minutes: inside that window she withdraws, kneels or goes home
+  with the party instead. An escape drops nothing and gives no rewards; a killing blow while she
+  flees is a normal defeat.
+- Revival: like every hero she comes back 10 minutes after her death [heroes.reviveSeconds 600], at
+  her home base (a leader: at the capital, or the nearest standing base); her kit items vanish at
+  death and return with her. She has no death ability of her own. A hero of her faction with the
+  revival_rite talent (milestone 2) would bring her back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HER
+1. Count your seals. Each talisman of her Talisman Fan seals you; with 3 or more, her next Sealing
+   Circle stuns you for 1 s. Walk out of the circle while she rings her bells; a shield will not
+   stop it.
+2. Do not hug her, and do not buff up next to her. Close in she answers with Exorcise (70%), which
+   knocks you back and strips your potion effects and golden-apple hearts. Step in, hit, and step
+   out of its 4-block disc when it grows.
+3. Break her rite. While she channels Thousand Bell Rite, land 15% of her maximum health (two hits
+   or more) to break it and get 2 s of free hits, or simply stand more than 6 blocks away.
+4. Get behind her. Her back is a weak point, and her Purifying Dance only sweeps the half-circle in
+   front of her (blocks stop the beam too). Hit her while she kneels to pray after it.
+5. Pop the Seven Talismans with many quick hits: each hit breaks one, however weak; 7 hits or 12 s
+   end the barrier.
+6. Fight her away from her allies, or take them down first. She heals and cleanses them (Purify 80%
+   when an allied hero is under half health) and shields any ally under 35% health. Her poise is
+   small (80): an axe (x1.6) or a mace (x2.0) staggers her quickly.
+
+MOVEMENT
+Mobility traits: runner (ceiling II) and swimmer (ceiling I). She has every feature from level 1;
+the numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20. Mobility
+never changes a move's damage, range or timing, and she never teleports (the stuck rescue every NPC
+has is the one exception).
+- From level 1: walking up full blocks without jumping [step 1.0]; faster, more efficient travel
+  that costs less hunger (travel only, never in fights); less slowing on soul sand, honey and other
+  slow blocks. Swimmer I: she swims faster, moves better in water and holds her breath longer (the
+  waterfall purification rite) [each air loss is skipped with a chance of bonus / (bonus + 1), the
+  Respiration rule]. Otherwise she swims like a worker: diving on purpose belongs to stronger
+  swimmers. Her jump is a worker's.
+- Numbers, level 1 / 10 / 20:
+    Travel speed                            +9%   / +12%  / +15%
+    Movement efficiency                     0.30  / 0.39  / 0.50
+    Travel hunger                           -21%  / -28%  / -35%
+    Swim speed                              x1.30 / x1.39 / x1.50
+    Water movement efficiency               0.20  / 0.26  / 0.33
+    Oxygen bonus                            1.2   / 1.6   / 2.0
+- Out of fights: she swims across rivers and lakes instead of bridging or walking round, and as a
+  guard she runs the shrine steps to any alarm.
+- In fights: her travel bonuses are off; she keeps her zoning and fights in water unslowed (players
+  are slowed there). If you stand where she cannot walk to you (a pillar, a pen, a ledge), she uses
+  her far-range moves, after 10 s digs and builds her way up at player speed, and after 30 s gives
+  up with a taunt and resets.
+- Walls in raids: as a non-leader she joins her base's raids like a soldier [raids: joins, the
+  support default]; as a leader she stays home (below). She neither climbs nor jumps walls: as a
+  runner and swimmer she goes in through the gate or the breach at the head of the soldiers. Inside,
+  the design's goals that fit her are opening the way when her soldiers are held outside, hunting a
+  defending hero she sees inside, and clearing the defending archers (she is a zoner), otherwise the
+  heart with her party; which comes first is set when she is built. A goal ends after 60 s without
+  progress. Defending, as a guard hero she joins the two nearest free guards against an enemy hero
+  coming over her walls.
+- Escaping: her travel speed comes back on, and she may go wherever she can walk or swim, even where
+  no pursuer can follow.
+- Signature animation: none of her own in the design; she uses the shared run and swim.
+
+WORK AND TALENTS
+- Duty: guard (when she is not leading). She patrols with the guards and answers alarms.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): as a guard she answers alarms from farther away instead of working faster [+8 / +12 / +16
+  blocks]: she runs the shrine steps to any alarm. She also has a bigger backpack [21 / 24 / 27
+  slots; a worker has 18], less wear on her gear [-10 / -20 / -30%], less hunger from work [-10 /
+  -15 / -20%] and more work XP [+10 / +20 / +30%]. Each level she gains rolls a guard affix, as for
+  any NPC.
+- Presence (her specialty as a guard): mend and purifier count one tier higher while she is at her
+  base (inside the walls or within 16 blocks) and not on a raid; at tier III they use the tier IV
+  numbers. Her personal touch: she heals the most hurt NPC within 16 blocks by hand [4 / 6 / 8
+  health every 20 s; a 2 s channel that damage breaks], and her purifying also cleanses member
+  players near her [once every 60 / 45 / 30 s].
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where she is,
+  inside the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never
+  the sum; the realm talent, marked *, also works at every other base of her faction at tier I while
+  she leads):
+  - mend: out of combat, allies within 16 blocks heal 5 / 7 / 10% of their maximum health every 10 s
+    [with Presence at home: 7 / 10 / 12%].
+  - purifier* (realm): NPCs at her base lose poison, wither and hunger effects every 30 / 20 / 10 s
+    [with Presence at home: every 20 / 10 / 5 s].
+  At home she also uses the shared praying and sweeping idles of shrine keepers.
+
+AS A FACTION LEADER
+- Title: Keeper of the White Bell.
+- Faction names: "Hearth of the White Bell" (the first unused name is taken), then "White Bell
+  Sanctum". Short name: "White Bell". Motto: "Every lantern lit, every door open."
+- Colours: primary white [#F6F3EE], secondary red [#C8323C], accent gold [#D9B44A]. They show in
+  chat, name tags, map markers, the boss bar, her sash and her NPCs' tabards.
+- Banner: white, with a red plus-shaped cross and a yellow stripe down the middle [base white;
+  straight_cross red; stripe_center yellow] (the shrine emblem). Real banners hang at the station
+  and the gates, and members get a banner item. Her faction's wool, carpets and beds are white, with
+  red as the second dye.
+- Base style: shrine_pavilion, a Shrine: birch plank walls, stripped mangrove log frames, spruce
+  plank floors, deepslate tile roofs and stone bricks round the edge; signs read like "White Bell
+  Shrine". Culture: east (recruits get eastern names). Economy focus: food (chefs, fishermen and
+  farmers are hired ahead of other civilians) and people (chefs and haulers ahead, and the
+  recruitment interval x0.9).
+- Her day (court duty): a short stop at the station at dawn; by day a walk between the station, the
+  gates and the heart, greeting member players (her first talent, mend, has no workplace); the heart
+  at dusk; a bed in the largest house at night, woken by any alarm. She answers every alarm and
+  guards the heart in a defence, says her founding line when the faction starts, and announces
+  raids, attacks on her base, a lost base, a fallen hero and recruit milestones in her own voice
+  (her own lines for these are not written yet; her temperament's fallback lines fill in).
+- If she dies: everyone hears it; no new raids until she returns, and no vengeance raid (that needs
+  aggression 70 or more). She stays home from raids, so no raid waits on her. If her faction's last
+  base falls she becomes an exiled free hero, never a leader again in that campaign.
+- How her personality steers the faction. Her traits (out of 100): aggression 30, honour 75,
+  ambition 40, caution 60, greed 25, sociability 90, loyalty 80, volatility 35. The numbers below
+  are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
+  personality strength; a neutral leader's value is in brackets.
+  - Raids rarely: about every 37 minutes, or 1.86 in-game days [44640 ticks, interval x1.24; neutral
+    36000 ticks, 30 minutes]. First raid not before 1.21 intervals [1].
+  - Attacks only with a clear edge: attack odds needed 0.807 [0.667]; counter-attack window 0.325 of
+    the interval [0.25], at odds 1.70 [1.5].
+  - She stays home from raids (aggression under 35).
+  - A raid party falls back after losing 47% [50%].
+  - Keeps 38% of the soldiers home [1/3], with at least 3 home defenders and 3 home swordsmen [3,
+    3].
+  - Soldier cap 10 [12]; ranged share 0.47 [0.40]: a smaller army with more archers.
+  - Trader hired early, at population 12 [14] (the formula lands on 11.5; how a half is rounded is
+    set when she is built); trader trips x0.68 apart, so much more often [1]; amounts kept back from
+    selling x1.23 [1].
+  - Enchanter at XP level 11 [10]; recruitment interval x1.06 from her ambition, then x0.9 from her
+    people focus [1]; food reserve x1.12 [1].
+  - New house when free beds are 1 or fewer [1]; storage grows when fuller than 77.5% [70%]; repair
+    scan budget 407 [384].
+  - Miners want 12 gold and 6 diamonds before turning to other ores [16 and 8].
+  - Raid targets: a rival's defence counts in full [fd 1]; loot does not tempt her (greed under 50);
+    monster lairs (the Hollow's) are much more attractive targets [-550]. Mercy rule (honour 70 or
+    more): she spares a faction that lost a base in the last in-game day.
+  - A little random noise on every decision [sigma 0.2 x volatility = 0.07].
+  - Sweet-natured rule (milestone 2, when diplomacy arrives): she offers peace to every faction at
+    first contact.
+  - The design's worked example for a default sweet-natured leader raids every 45000 ticks, needs
+    odds of 0.767, keeps 36% home, has a soldier cap of 10, a ranged share of 0.45 and a trader at
+    12; her extra caution (60 against 50) and aggression (30 against 25) give the numbers above. The
+    slice's test campaign expects a battle maniac to launch at least twice as many raids as she does
+    by day 6.
+
+PERSONALITY AND VOICE
+- Temperament: sweet-natured. Traits: aggression 30, honour 75, ambition 40, caution 60, greed 25,
+  sociability 90, loyalty 80, volatility 35. Next to a typical sweet-natured hero she is a little
+  more aggressive (30 against 25) and more careful (60 against 50).
+- In a fight: cautious (aggression 35 or less: she looks for enemies within 12 blocks and chases up
+  to 32), so her zoning and defensive moves weigh a little more [x1.06; attacking moves x0.88]. She
+  protects her allies, goes for whoever threatens them, keeps about 8 blocks away, and never strikes
+  a yielding enemy (honour 60 or more). Outside boss fights she pulls back at 44% health
+  [retreat_below].
+- Likes: poppies, sweet berries, lanterns. Dislikes: rotten flesh. (Gifts come in a later
+  milestone.)
+- Quirk: "apologises to the monsters she defeats."
+- Voice: soft bell blips per syllable, higher than the usual female voice [pitch 1.4; the default is
+  1.25], unhurried [rate 3 ticks per syllable].
+- Lines:
+    Founding:  "Everyone, welcome home. From today we are the Hearth of the White Bell."
+    Greeting:  "{player}! Have you eaten? There's rice by the station."
+    Intro:     "Welcome, traveller. Will you put your weapon down? ...No? I'm sorry, then."
+    Phase 2:   "Please... stop. I don't want to hurt you."
+    Phase 3:   "Then I'll purify this fight myself!"
+    Kill:      "Rest gently."
+    Yield:     "I... see. You are very strong."
+    Spared:    "Thank you. I'll ring a bell for you tonight."
+  Moments without a line of her own yet (her ultimate, enrage, stagger, escape, raid announcements
+  and others) use the sweet-natured fallback lines until hers are written.
+
+ANIMATIONS
+Her own, on top of the shared library:
+- One for each move: Talisman Fan, Sealing Circle (with its bell ring), Purify, Exorcise, Seven
+  Talismans, Purifying Dance (ending kneeling in prayer).
+- Ultimate: the bell rite, with a loop she holds while she channels.
+- Phase 2: her talismans unfold into a ring around her.
+- Phase 3: she opens her eyes, glowing.
+- Intro: she bows and raises her wand.
+- Personal idles: a bell shake, sweeping, a prayer. (Her look lists hands together and a small bow
+  instead of the prayer; which three she gets is set when she is built.)
+Shared ones she uses a lot: the focus style set (one-hand cast, throw, channel; draw, guard, dodge,
+victory, taunt); running and swimming; praying and sweeping at home.
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.

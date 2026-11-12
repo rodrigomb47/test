@@ -1,0 +1,408 @@
+Benika Akagane - "The Iron Club Oni"
+Female | oni | vanguard | fire | battle maniac | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO SHE IS
+A laughing oni smith-warrior who wants one thing: an opponent worth breaking her club on. Her
+settlement rings with hammers and glows with forge fire. In a one-on-one fight she is a grappler:
+she grabs, throws and slams, so you stay out of her reach or punish a missed grab. Out of battle she
+mines with a nose for ore; as a faction leader she is the Warlord of the Crimson Anvil.
+
+LOOK
+- Body: female, large (broad) build, drawn big [scale 108%]. In Rage she grows another 5%; her
+  hitbox stops at 1.98 blocks so she still fits through 2-high doors, but the model is drawn at full
+  size.
+- Hair: a wild long black mane [#1B1717] with red tips [#C0392B].
+- Oni parts: a single curved red horn on her forehead (it glows from phase 2); red stripe markings
+  on her arms (glowing in phase 2).
+- Outfit: an open crimson coat over chest wraps, a short black hakama with a gold rope belt, iron
+  gauntlets, a gourd at her hip, wrapped feet in sandals.
+- Weapon: an iron-studded club held in both hands and carried over her shoulder (in game terms, a
+  mace).
+- Colours: skin [#E8B89A], gold eyes [#F2C14E], primary crimson [#A3202A], secondary near-black
+  [#1B1717], accent gold [#D4A23A], metal iron grey [#6D6E73], glow orange [#FF7A2A].
+- Face: sharp eyes, a single lash [lashes 1], bold brows, a wide mouth with fangs on both sides. She
+  blinks at a normal pace (every 2.5 to 6 s) [blink normal]. In Rage her face turns angry.
+- Idle quirks: a shoulder roll, a swig from her gourd, the club resting on her shoulder.
+- Phase looks: in phase 2 her horn and arm stripes glow; in phase 3 her eyes glow and steam rises
+  from her horn.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of her attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: her accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, her face goes "focused" and stops blinking, and the move's
+sound plays from where she stands. No wind-up gets shorter than its class minimum, even in phase 3
+or enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero.
+Her fighting: hammer (the club); duel style grappler. She closes to melee, protects her allies and
+goes for the strongest enemy first (the battle maniac focus). Her element is fire: Fire Protection
+reduces it, and Fire Resistance stops it completely (the vanilla fire rules); her basic club swings
+are physical. Cooldowns and how often she picks each move are set when she is built.
+
+  Basic attack
+    A hammer string: overhead, side swing, slam, with her kit mace "Ironmaw" (Density I, the vanilla
+    mace enchantment that adds damage for each block she falls before a hit). The damage of each
+    swing comes from her attack power and the mace; its exact numbers are set when she is built. A
+    raised shield blocks it like any hit from the front.
+
+  Abilities
+    OVERHEAD SLAM (overhead_slam) - boss phases 1, 2, 3
+      What it does: she brings the club down on a narrow cone in front of her in a burst of fire
+      that pops you up into the air.
+      The tell: the club rises for a full second while a fan-shaped mark grows in front of her.
+      After the hit the club is stuck in the ground for 1.2 s.
+      Counter: step to the side (the cone is narrow) or back out of reach, then hit her while the
+      club is stuck.
+      Numbers: [area (a damaging cone is never lighter than area), close; cone 4, 40 degrees; 150%
+      fire + knock-up 1 block; frames 1.0 (club rises) / 0.15 / 1.2 (club stuck)]
+
+    SHOULDER CHARGE (shoulder_charge) - boss phases 1, 2, 3
+      What it does: she drops her shoulder and runs straight through you, knocking you far back. It
+      is her answer when you stand far away (60%) or start eating (70%).
+      The tell: she sets herself for 0.9 s while a long strip on the ground shows her path.
+      Counter: step off the strip, ideally with a wall behind you: a charge that ends against a wall
+      staggers her (see Weak points). A charge stops at walls, drops and water, and she skips it
+      when water or lava lies on the path.
+      Numbers: [heavy, mid; charge 10, speed 160%, wall stun; 90% + knockback 3; frames 0.9 / 0.6 /
+      0.9]
+
+    GROUND STOMP (ground_stomp) - boss phases 1, 2, 3
+      What it does: she stomps and a ring of fire rolls outward along the ground, hurting you and
+      setting you alight.
+      The tell: a ring grows on the ground around her for 1 s.
+      Counter: jump as the ring reaches you: it only hits what stands on the ground. Water puts the
+      fire out.
+      Numbers: [area, close and mid; wave, radius 8, speed 8 blocks a second, 1 wave; 6 fire +
+      ignite 2 s; frames 1.0 / 1.0 / 0.8]
+
+    GOURD SWIG (gourd_swig) - boss phases 1, 2, 3
+      What it does: a long drink from her gourd that heals her and makes her hit harder for 8 s. She
+      prefers it when she is under half health.
+      The tell: the gourd comes up to her mouth (a light move: the animation only), and the drink
+      takes 1.2 s before it works.
+      Counter: it is a punish window: hit her while she drinks, then be careful for 8 s.
+      Numbers: [light, any range; heal 6 + attack +15% for 8 s; prefers her own health under 50%;
+      frames 1.2 / 0.1 / 0.6]
+
+    GRAB AND THROW (grab_throw) - boss phases 2, 3
+      What it does: she seizes you, holds you for a second and hurls you away in a burst of fire. It
+      cannot be blocked. It is her answer to a raised shield (70%).
+      The tell: she reaches out for 0.9 s over a purple mark (purple always means unblockable).
+      Counter: get out of her reach during the wind-up. While held you can still turn and use items.
+      A miss leaves her open for 1.2 s. A throw is softened when it would land you in lava, fire, a
+      deep drop or the void.
+      Numbers: [heavy, close; grab range 2.5, holds 1 s, throw 3, up 1; unblockable; 8 fire; frames
+      0.9 / 1.0 / 1.2]
+
+    METEOR CLUB (meteor_club) - boss phase 3 only (phase 3's new mechanic)
+      What it does: she leaps high from up to 10 blocks away and lands club-first in a burst of
+      fire, then always follows with a Ground Stomp.
+      The tell: a landing disc grows on the ground where she will come down.
+      Counter: get off the disc, then jump the stomp's ring. The stomp takes the place of the slam's
+      recovery, so your opening comes after the stomp.
+      Numbers: [heavy, mid and far; leap 10, radius 3; 120% fire; followup Ground Stomp 100%; frames
+      1.0 / 0.6 / 1.2]
+
+    RAGE (state rage) - from boss phase 2
+      At the phase 2 change she flies into a Rage: her horn glows, she grows, hits harder, is harder
+      to push, and her face turns angry. A snowball hit ends it (see Weak points).
+      Numbers: [attack +20%, knockback resistance +30, size 105%, mood angry. Whether and when she
+      can enter Rage again after a snowball is set when she is built]
+
+  Ultimate
+    IRON MOUNTAIN CRASH (iron_mountain_crash)
+      What it does: she raises the club high, shouts "Hold still, this'll be fun!", leaps and
+      crashes down, and three rings of fire roll out from where she lands.
+      The tell: the full ultimate tell: the 1.8 s wind-up with the club raised, her line, a wide
+      sound, a red ground mark, and the screen darkens for 2 s for every player fighting her. She
+      cannot be staggered during this wind-up. The boss bar shows a lightning mark when her ultimate
+      is ready.
+      Counter: leave the landing area, then jump each ring. Hit her in the 1.6 s recovery.
+      Numbers: [ultimate; frames 1.8 / 2.0 / 1.6; leap range 10 (the leap maximum), radius 4, then
+      three fire waves "of 8". Set when she is built: whether "of 8" is the waves' reach or their
+      damage, the crash's damage, the time between waves, her ultimate energy and charge rate, and
+      the minimum gap between two ultimates (20-60 s)]
+
+  Passives
+    BATTLE JOY (battle_joy): every time she is hurt she gets a little stronger for 10 s, and it
+    stacks [on_hurt: attack +5% for 10 s, up to 4 stacks]. In a boss fight all her damage bonuses
+    together never exceed +25%.
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with her (the player hurt her in the last 15 s, or
+  is her target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and her health share never jumps. The first engagement with a
+  player each in-game day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and
+  cannot be staggered, a title on your screen (her name, title and faction) and her intro line. A
+  boss bar shows a star, her name and title, her phase pips and a lightning mark when her ultimate
+  is ready. (Her bar title is set when she is built.)
+- Health: her field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.0 for a
+  vanguard, and +50% for each extra engaged player (counted up to 5). At level 10 against one player
+  that is 144 health (165 as a leader): about 31 s (36 s) of landed hits with an iron sword at 1.6
+  swings a second, half of them landing. A whole fight lasts two to three times that once you dodge
+  her wind-ups. No single player hit takes more than 12% of her boss health; the excess becomes
+  poise damage.
+- Poise: 140 (the vanguard value). Your hits fill her poise bar [damage x weapon: sword 1.0, axe
+  1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your
+  shield raised in the last 6 ticks before a heavy move lands) adds 25. A Shoulder Charge that ends
+  against a wall adds 40, and her charge_wall weak point makes it a stagger at once. The bar drains
+  15 per second after 3 s without poise damage. Full poise staggers her: 2.5 s kneeling dizzy,
+  taking 25% more damage; then the bar resets and its maximum grows 20% for the rest of the fight.
+  No stagger during her intro, a phase change or her ultimate's wind-up.
+- Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where she faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Overhead Slam, Shoulder Charge, Ground Stomp, Gourd Swig.
+    Phase 2, from 60%: Rage (the horn glows) and Grab and Throw (unblockable).
+      "Now THIS is a fight!"
+    Phase 3, from 25%: Meteor Club into a stomp; eyes glow, steam from the horn.
+      "Don't you dare fall down yet!"
+  Each phase change takes 0.8 to 2 s (her exact length is set when she is built): she takes 50% less
+  damage and cannot be staggered (a glint shows it; she is never invulnerable), a shockwave pushes
+  everyone within 4 blocks back (no damage; softened near lava or a drop), she says the line, her
+  face and look change, and the bar gains a pip.
+- Weak points:
+  - Snowball: a snowball hit ends her Rage and cuts her damage by 10% for 5 s. Hint line: "Ugh,
+    cold! Who throws snow at an oni?!" (How often it can work is set when she is built.)
+  - Charge into a wall [charge_wall]: when her own Shoulder Charge ends against a wall, she
+    staggers.
+- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built):
+  - You raise a shield -> Grab and Throw (70%). Grab and Throw is a phase 2-3 move; whether this
+    answer can come in phase 1 is set when she is built.
+  - You stand far away -> Shoulder Charge (60%).
+  - You eat -> Shoulder Charge (70%).
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All her damage bonuses
+  together never exceed +25%. She also enrages at once when the heart of her base is attacked while
+  she defends it. (The design gives 240 s for her as a leader; the 180 s otherwise is the design's
+  default.)
+- Intro: she plants the club and cracks her knuckles. "Oho! You look sturdy. Let's find out!"
+- Yield: she kneels (honour 70; only heroes with honour 30 or less, or leaders with caution 70 or
+  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
+  she kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
+  finish". Her yield line: "Hah... hah... that was GREAT."
+  - Spared (sneak and use): she walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "You're soft. I like you anyway."
+  - Finished (strike): she dies. Rewards: XP orbs (7 x her level, at most 100), her non-kit gear
+    (her kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: she collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death.
+- Escape: in a boss fight she never runs at low health: she fights to the yield and kneels. The one
+  order that pulls her out of a boss fight is a lost raid (her raid falls back, or its leader falls,
+  while she is in or near the target). Outside boss fights she escapes when her health drops under
+  her retreat point away from home [retreat_below 6.5%, worked out from the formula of design
+  section 5.4], when her raid is lost, or, as a leader, when the base she is in falls or she is
+  under 50% health at its heart with no guard beside her. At her own base she does not escape: she
+  withdraws like a soldier and comes back at 60% health. Escaping, she starts no moves and runs with
+  any movement she has, even where no one can follow (an escape counts as travel, so her travel
+  bonuses are on); cornered with no way out for 3 s, she fights back, then runs again as soon as a
+  way opens. It ends inside her refuge's walls (her home base; for a leader the capital, or the
+  nearest other standing base; never the base she flees) or once no pursuer has been within 48
+  blocks for 10 s. Then she stays away 5 minutes and until she is above 50% health, and does not go
+  back for those she fled. At most one escape in 10 minutes: inside that window she withdraws,
+  kneels or goes home with the party instead. An escape drops nothing and gives no rewards; a
+  killing blow while she flees is a normal defeat.
+- Revival: like every hero she comes back 10 minutes after her death [heroes.reviveSeconds 600], at
+  her home base (a leader: at the capital, or the nearest standing base); her kit items vanish at
+  death and return with her. She has no death ability of her own. A hero of her faction with the
+  revival_rite talent (milestone 2) would bring her back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HER
+1. Carry snowballs. From phase 2 she fights in Rage; one snowball ends it and cuts her damage by 10%
+   for 5 s. Cobweb traps will not hold her, but snowballs work.
+2. Drink a potion of Fire Resistance: her fire damage (Overhead Slam, Shoulder Charge, Ground Stomp,
+   Grab and Throw, Meteor Club, the fire rings) then does nothing to you; only her basic club swings
+   still hurt. Fire Protection armour softens it, and water puts out the burning.
+3. Fight with a wall at your back and step off the strip of Shoulder Charge: if she runs into the
+   wall she staggers, which means 2.5 s of hits at +25% damage.
+4. Keep your shield down until the last moment. A shield held up gets you grabbed (70%, unblockable,
+   phases 2 and 3); raising it just before a heavy hit lands is a parry (+25 poise). Do not eat in
+   front of her either: she charges you (70%).
+5. Jump the fire rings: Ground Stomp, the stomp after Meteor Club and the three rings of her
+   ultimate only hit you on the ground.
+6. Hit her when she is stuck: after Overhead Slam (club stuck 1.2 s), during Gourd Swig (1.2 s of
+   drinking), after a missed grab (1.2 s) and after the stomp that ends Meteor Club. Hit hard rather
+   than often (Battle Joy grows each time she is hurt): axes and maces fill her big poise bar (140)
+   faster. Under a roof of 3 blocks or less she cannot leap (Meteor Club, her ultimate) or knock you
+   up (Overhead Slam).
+
+MOVEMENT
+Mobility traits: charger (ceiling III) and leaper (ceiling I). She has every feature from level 1;
+the numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20. Mobility
+never changes a move's damage, range or timing, and she never teleports (the stuck rescue every NPC
+has is the one exception).
+- From level 1: walking up full blocks without jumping [step 1.0]; the traversal charge (on a
+  straight, clear stretch of path she breaks into a charging run; it stops at doors, fences, water
+  and drops; travel only); cobwebs and sweet berry bushes never slow her, in boss fights too; harder
+  to push back while moving in NPC wars; a longer safe fall; less slowing on soul sand, honey and
+  other slow blocks. Leaper I: a 1.8-block jump (the leaper floor: field fences and 1.5-block
+  ledges) and leaps across gaps instead of bridging them (no landing roll: that comes with stronger
+  leapers).
+- Numbers, level 1 / 10 / 20:
+    Traversal charge                        +36% every 20 s / +47% every 15 s / +60% every 12 s
+    Knockback resistance while moving       +0.18 / +0.24 / +0.30
+    Safe fall (blocks)                      6.6  / 7.7  / 9.0
+    Movement efficiency                     0.60 / 0.79 / 1.00
+      (1.00 = soul sand, honey and other slow blocks do not slow her at all)
+    Jump height (blocks)                    1.80 / 1.80 / 1.80
+    Longest gap she leaps (blocks)          3    / 3    / 5
+- Out of fights: she carries full loads up mine stairs without slowing, and leaps streams, narrow
+  ravines and fences instead of detouring or bridging.
+- In fights: Shoulder Charge and Meteor Club are unchanged. In a boss fight her knockback bonus and
+  traversal charge switch off; her jump, step height, safe fall and web immunity stay. She uses her
+  jump at once to reach a player on a fence or a 1.5-block ledge, and if she stands where no player
+  can reach her she comes back within 4 s. If no jump reaches you (a tall pillar), she uses
+  far-range moves, after 10 s digs and builds her way up at player speed, and after 30 s gives up
+  with a taunt and resets. A jump starts with a 0.3 s crouch (the tell).
+- Walls in raids: as a non-leader she always goes on her base's raids and is picked first [raids:
+  leads, the vanguard default]; as a leader she leads them herself (below). Today's base walls are 5
+  blocks high, beyond her jump (a jump-up needs her jump height minus 0.3: 1.5 blocks), so as a
+  charger she leads her soldiers through the gate or the breach. Inside she takes one goal: she
+  opens the way when her soldiers are held outside, hunts a defending hero she sees inside, and
+  otherwise goes for the heart with her party; a goal ends after 60 s without progress.
+- Escaping: her travel bonuses come back on (the charging run), and she may go wherever her legs and
+  jumps take her, even where no pursuer can follow.
+- Signature animation: none of her own in the design; she uses the shared charging run and skid, and
+  the leaper's crouch, leap and heavy landing.
+
+WORK AND TALENTS
+- Duty: miner (when she is not leading). As a faction leader her duty becomes court, but she still
+  spends daylight at the mine and counts as a miner there.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): she breaks blocks faster [+15 / +25 / +35%], has a bigger backpack [21 / 24 / 27 slots; a
+  worker has 18], reaches farther [+0.5 / +1.0 / +1.5 blocks], wears out her pickaxe and gear less
+  [-10 / -20 / -30%], gets less hungry at work [-10 / -15 / -20%] and earns more work XP [+10 / +20
+  / +30%]. Blocks still take real time to break and ore comes from the vanilla loot tables; all her
+  work-speed bonuses together never go above 2x a worker's with the same gear (Efficiency and Haste
+  aside). Each level she gains rolls a miner affix, as for any NPC.
+- Specialty, from her surveyor talent (when she mines herself): her pickaxe counts as having Fortune
+  +1 / +2 / +3 on the ores she mines, for the loot only (the item never changes; at most Fortune III
+  together with the pickaxe's own; never on a Silk Touch pickaxe), and she follows ore veins one
+  block wider, from level 1. A drop never gets both her extra Fortune and an extra loot roll: it
+  takes whichever gives more. Her charger footing lets her take loaded mine stairs without slowing.
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where she is,
+  inside the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never
+  the sum; the realm talent, marked *, also works at every other base of her faction at tier I while
+  she leads):
+  - surveyor* (realm): her base's miners search for mine sites farther away [search radius +8 / +16
+    / +24 blocks] and reach the diamond layer one level sooner with an iron pickaxe.
+  - drill: her base's soldiers gain 1 / 2 / 3 work XP every in-game hour by day. Drill is a guard
+    talent, and the design's Presence rule makes a hero's guard and court talents count one tier
+    higher while it is at its base and not on a raid (tier IV: 4 XP an hour), with dawn sparring as
+    drill's personal effect (2 / 3 / 4 soldiers gain 10 / 15 / 20 combat XP, non-lethal, stopping at
+    half health). Her own design entry does not mention either, so whether they apply to a miner is
+    set when she is built.
+
+AS A FACTION LEADER
+- Title: Warlord of the Crimson Anvil.
+- Faction names: "Crimson Anvil Warband" (the first unused name is taken), then "The Red Horn Host".
+  Short name: "Crimson Anvil". Motto: "Bring me someone worth breaking."
+- Colours: primary crimson [#A3202A], secondary near-black [#1B1717], accent gold [#D4A23A]. They
+  show in chat, name tags, map markers, the boss bar, her sash and her NPCs' tabards.
+- Banner: red, with a row of black triangles along the bottom and a yellow circle in the middle
+  [base red; triangles_bottom black; circle yellow]. Real banners hang at the station and the gates,
+  and members get a banner item. Her faction's wool, carpets and beds are red, with black as the
+  second dye.
+- Base style: ember_fortress, a Keep: brick walls, dark oak log frames, dark oak plank floors,
+  deepslate tile roofs and polished blackstone bricks round the edge; signs read like "Crimson Anvil
+  Keep". Culture: east (recruits get eastern names). Economy focus: military (no civilian role moves
+  up; the soldier cap gets +1 instead) and mining (miners and smelters are hired ahead of other
+  civilians).
+- Her day (court duty): a short stop at the station at dawn; daylight at the mine, where she mines
+  and counts as a miner; the heart at dusk; a bed in the largest house at night, woken by any alarm.
+  She answers every alarm and guards the heart in a defence, says her founding line when the faction
+  starts, and announces raids, attacks on her base, a lost base, a fallen hero and recruit
+  milestones in her own voice (her own lines for these are not written yet; her temperament's
+  fallback lines fill in).
+- If she dies: everyone hears it, and her faction launches one vengeance raid against the killer's
+  faction (aggression 70 or more); a raid she was on carries on without her [(caution + 1 - loyalty)
+  / 2 = 0.25, not over 0.5]. If her faction's last base falls she becomes an exiled free hero, never
+  a leader again in that campaign.
+- How her personality steers the faction. Her traits (out of 100): aggression 95, honour 70,
+  ambition 70, caution 5, greed 25, sociability 55, loyalty 55, volatility 60. The numbers below are
+  worked out from the design's LeaderBiases formulas (design section 5.5) at the default personality
+  strength; a neutral leader's value is in brackets.
+  - Raids as often as the rules allow: about every 15 minutes, or 0.75 in-game days [18000 ticks,
+    interval x0.5, the floor; neutral 36000 ticks, 30 minutes]. First raid after 0.85 of an interval
+    [1].
+  - Attacks even at poor odds: attack odds needed 0.40, the floor [0.667]; counter-attack window 0.1
+    of the interval, the floor [0.25], at odds 1.0, the floor [1.5].
+  - She leads her raids herself (aggression 65 or more and caution under 60).
+  - Her raid parties fight on until they have lost 78% [50%].
+  - Keeps 15% of the soldiers home [1/3], with at least 2 home defenders and 2 home swordsmen [3,
+    3].
+  - Soldier cap 19 [12]: 18 from her traits, +1 from her military focus. Ranged share 0.175 [0.40]:
+    a mostly melee army.
+  - Trader hired at population 15 [14]; trader trips x0.96 apart [1]; amounts kept back from selling
+    x0.79 [1].
+  - Enchanter at XP level 9 [10]; recruitment interval x0.88, so faster [1]; food reserve x0.6, the
+    floor [1].
+  - New house when free beds are 2 or fewer [1]; storage grows when fuller than 77.5% [70%]; repair
+    scan budget 280 [384].
+  - Miners want 12 gold and 6 diamonds before turning to other ores [16 and 8].
+  - Raid targets: a rival's defence counts only 17% [fd 0.17: a bold, ambitious leader seeks strong
+    rivals], and her temperament targets the strongest rival she can beat; loot does not tempt her
+    (greed under 50); monster lairs (the Hollow's) look less worth it [+700]. Mercy rule (honour 70
+    or more): she spares a faction that lost a base in the last in-game day.
+  - A fair amount of random noise on every decision [sigma 0.2 x volatility = 0.12].
+  - Battle maniac rule: she accepts every duel (duels come in a later milestone).
+  - The design's worked example for a default battle maniac has the same raid, odds, garrison,
+    soldier and ranged numbers; her higher sociability moves the trader threshold from 16 to 15. The
+    slice's test campaign expects a battle maniac to launch at least twice as many raids as a
+    sweet-natured leader by day 6.
+
+PERSONALITY AND VOICE
+- Temperament: battle maniac. Traits: aggression 95, honour 70, ambition 70, caution 5, greed 25,
+  sociability 55, loyalty 55, volatility 60. Next to a typical battle maniac she has more honour (70
+  against 55) and is a little more sociable (55 against 45): an honourable fighter who spares the
+  beaten.
+- In a fight: bold (aggression 65 or more: she looks for enemies within 28 blocks and chases up to
+  80), so her attacking moves weigh much more [x1.27; zoning and defensive ones x0.73]. She goes for
+  the strongest enemy, protects her allies, and never strikes a yielding enemy (honour 60 or more).
+  Outside boss fights she pulls back only at 6.5% health [retreat_below].
+- Likes: cake, honey bottles, iron ingots. Dislikes: snowballs. (Gifts come in a later milestone.)
+- Quirk: "has a sweet tooth she defends with her club."
+- Voice: soft guitar blips per syllable, a little lower than the usual female voice [pitch 1.1; the
+  default is 1.25], fast [rate 2 ticks per syllable].
+- Lines:
+    Founding:  "Listen up! From today we're the Crimson Anvil. We work hard and we fight harder!"
+    Greeting:  "{player}! Arm-wrestle later? No? Coward!"
+    Intro:     "Oho! You look sturdy. Let's find out!"
+    Phase 2:   "Now THIS is a fight!"
+    Phase 3:   "Don't you dare fall down yet!"
+    Ultimate:  "Hold still, this'll be fun!"
+    Hint:      "Ugh, cold! Who throws snow at an oni?!"
+    Kill:      "Next!"
+    Yield:     "Hah... hah... that was GREAT."
+    Spared:    "You're soft. I like you anyway."
+  Moments without a line of her own yet (enrage, stagger, escape, raid announcements and others) use
+  the battle maniac fallback lines until hers are written.
+
+ANIMATIONS
+Her own, on top of the shared library:
+- One for each move: Overhead Slam (the club rises high, smashes down and sticks), Shoulder Charge,
+  Ground Stomp, Gourd Swig, Grab and Throw, Meteor Club.
+- Ultimate: the club raised high, the leap and the crash.
+- Rage: entering the rage state.
+- Phase 2: her horn flares and she roars.
+- Phase 3: steam from the horn, and a grin.
+- Intro: she plants the club and cracks her knuckles.
+- Personal idles: a shoulder roll, a gourd swig, a club spin. (Her look lists the club resting on
+  her shoulder instead of the spin; which three she gets is set when she is built.)
+Shared ones she uses a lot: the hammer style set (low two-handed carry; overhead, side swing, slam;
+draw, guard, dodge, victory, taunt); the charger moves (charging run, skid); the leaper moves
+(crouch jump, leap, heavy landing); mining.
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.

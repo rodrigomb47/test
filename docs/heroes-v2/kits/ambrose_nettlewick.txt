@@ -1,0 +1,456 @@
+Ambrose Nettlewick - "The Cauldron Warlock"
+Male | witch | controller | venom | eccentric genius | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO HE IS
+A cheerful, absent-minded potion scholar who treats every fight as an experiment and takes notes
+while he wins, or loses. His crow is unimpressed with all of it. In a one-on-one fight he is a
+trapper: he fills the arena with pools, puddles and hexes, so you strike between his set-ups. Out of
+battle he is his base's enchanter and rides his staff like a broom; as a faction leader he is the
+Archivist of the Nettlewick Conclave.
+
+LOOK
+- Body: male, slim build, normal size [scale 100%].
+- Hair: messy, medium length, dark green-black [#23302A].
+- Hat and glasses: a wide-brimmed pointed hat, worn tilted, with a patched band; round glasses.
+- Outfit: a long purple coat with a bandolier of vials, dark trousers and boots; freckles.
+- Crow: a crow sits on his left shoulder and turns its head now and then (for looks only: it does
+  not fight). When he flies it flaps along beside him.
+- Weapon: a gnarled staff with a small cauldron hanging from it. It is also his broom: when he takes
+  off, the staff moves from his hand to under him and he rides it side-saddle, casting with his free
+  hand.
+- Colours: skin [#EBCFB8], green eyes [#7BCB5E], primary purple [#5B3A86], secondary near-black
+  [#1F1A26], accent green [#7BCB5E], trim gold [#C69C4E], leather [#6B4A33], glow bright green
+  [#9DFF6B].
+- Face: wide eyes, a single lash [lashes 1], bold brows, a wide mouth. He blinks often, every 1.5 to
+  3.5 s [blink nervous].
+- Idle quirks: a notebook scribble, a vial shake, the crow pecking his hat.
+- Phase looks: in phase 2 broom bristles sprout from the end of his staff; in phase 3 his eyes glow
+  green and his hat brim lifts.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of his attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: his accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, his face goes "focused" and stops blinking, and the move's
+sound plays from where he stands. No wind-up gets shorter than its class minimum, even in phase 3 or
+enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero. His rains get one mark per impact.
+His fighting: staff; duel style trapper. As a controller he keeps about 8 blocks away [keep_distance
+8] and backs off like an archer when you come within 4; he protects his allies and goes for ranged
+fighters first (the controller focus). His element is venom (undead ignore it; you do not). His hex
+is a mark that stacks on you; the third one sets off its effect. Cooldowns and how often he picks
+each move are set when he is built.
+
+  Basic attack
+    A thrown vial (it looks like a slimeball) that flies straight, out to 14 blocks, for 4 venom
+    damage every 1.5 s.
+
+  Abilities
+    POTION BARRAGE (potion_barrage) - boss phases 1, 2, 3
+      What it does: he throws three vials one after another, each with a different brew: the first
+      poisons you, the second slows you hard, the third weakens you.
+      The tell: a 0.6 s wind-up (a light move: the animation only). The colour of each vial tells
+      you what it does: green = Poison, grey = Slowness, black = Weakness, always in that order.
+      Counter: sidestep each throw (he aims each vial as he throws it), or block them with a shield
+      (light moves are blockable like any hit). After the third he needs 0.8 s to reach for new
+      vials.
+      Numbers: [light, mid; barrage of 3, 0.4 s apart; each 3 venom plus, in order, Poison I 4 s,
+      Slowness II 3 s, Weakness I 4 s; frames 0.6 / 0.8 / 0.8 (reaching for new vials)]
+
+    CAULDRON (cauldron) - boss phases 1, 2, 3
+      What it does: a pool of his brew forms where you stand and bubbles for 6 s, poisoning whoever
+      stays in it. It is his answer to a raised shield (60%).
+      The tell: a disc grows under you during the 1 s wind-up, and the pool waits for its warning
+      delay before the first bubble.
+      Counter: walk out of the circle before it starts, and stay out.
+      Numbers: [area, mid; zone at the target, radius 3, delay 1.0 s (whether the delay runs inside
+      the wind-up or after it is set when he is built), lasts 6 s with a pulse every 1 s; each
+      pulse: venom damage over time 2 per second for 3 s + Poison I (how long that Poison lasts is
+      set when he is built); frames 1.0 / 0.1 / 0.8]
+
+    HEX MARK (hex_mark) - boss phases 1, 2, 3
+      What it does: an instant bolt puts a hex on you. At the third hex you are weakened and glow
+      for 6 s. The bolt itself does no damage. It is his answer to you eating (50%).
+      The tell: a 0.5 s wind-up (a light move: the animation only). The bolt needs a clear line of
+      sight to you.
+      Counter: break line of sight (a block or a tree between you) and do not let three hexes pile
+      up.
+      Numbers: [light, mid and far; bolt, range 12; mark hex; at 3: Weakness II and Glowing 6 s;
+      frames 0.5 / 0.1 / 0.4. How long a hex stays on you is set when he is built]
+
+    FUME STEP (fume_step) - boss phases 1, 2, 3
+      What it does: when you get close he hops 5 blocks back, and fumes burst where he stood,
+      slowing everyone within 3 blocks. He prefers it when you are close, and it is his answer to
+      you closing in (70%).
+      The tell: a quick 0.4 s wind-up (a light move: the animation only).
+      Counter: expect it when you rush him: stop just short, let the hop happen, then close in again
+      round the side of the fumes.
+      Numbers: [light, close; on himself: hop back 5 and a nova of radius 3 where he stood; Slowness
+      II 3 s; frames 0.4 / 0.1 / 0.4]
+
+    BROOM HOPS (broom_hops) - boss phases 2, 3 (phase 2's new mechanic)
+      What it does: he leaps up to 8 blocks on his staff-broom and lands in a splash of venom that
+      leaves a small slowing puddle, then hops again: up to three hops in a row.
+      The tell: a landing disc grows where he will come down, for 0.8 s before each hop.
+      Counter: get off the landing disc and keep out of the puddles. A follow-up hop only starts
+      when the hop before it hits, so dodging a hop ends the string. Only the last hop has the full
+      0.8 s recovery: hit him then. Under a roof of 3 blocks or less he cannot leap at all.
+      Numbers: [heavy, any range; leap 8, radius 2; 4 venom on landing + a puddle zone (radius 2, 3
+      s, Slowness I); repeatable, follows itself 100% (3 hops); frames 0.8 / 0.5 / 0.8. A hero keeps
+      at most 2 zones at once, so a third puddle (or a live Cauldron) ends the oldest]
+      Proposed change (in the mobility design, not settled): in phase 2 this becomes Broom Dive,
+      dived from the air (see "Phase 2 in the air" under BOSS FIGHT).
+
+    GREAT BREW (great_brew) - boss phase 3 only (phase 3's new mechanic)
+      What it does: he stops and brews for 3 s; if he finishes, venom rains on the area around his
+      target for 2 s: ten splashes, each with one of his three potion effects at random.
+      The tell: a 1 s wind-up, then a 3 s channel in which he stands still; a mark grows for each
+      splash before it lands. His hint line for this weak point: "Big one coming, please don't
+      interrupt!"
+      Counter: interrupt him: once he has taken 15% of his maximum health during the channel, the
+      brew breaks and he is left open. One hit cannot do it alone (no hit takes more than 12% of his
+      health), so start swinging at once. If it goes off, keep moving off the splash marks.
+      Numbers: [area, any range; on himself, channel 3 s (breaks at 15% of his max health), then
+      rain of 10 within 6 blocks over 2 s; 5 venom per impact plus Poison I, Slowness II or Weakness
+      I at random; frames 1.0 / 3.0 + 2.0 / 2.0. When broken, his kit says "he staggers 2 s" and the
+      boss rules say a broken channel "gives a 2 s recovery"; which of the two is set when he is
+      built]
+
+  Ultimate
+    GRAND EXPERIMENT (grand_experiment)
+      What it does: he lifts the cauldron, the crow caws, and twelve splashes of venom rain down
+      around his target over 3 s, each with one of his potion effects at random. He also cleanses
+      himself: any poison, slowing, burning or freezing you put on him is gone.
+      The tell: the full ultimate tell: the 1.6 s wind-up, the line "Hypothesis: you lose!", a wide
+      sound, red ground marks for the impacts, and the screen darkens for 2 s for every player
+      fighting him. He cannot be staggered during this wind-up. The boss bar shows a lightning mark
+      when his ultimate is ready.
+      Counter: keep moving off the red marks (each splash only reaches 1-2 blocks round its mark),
+      and save your splash potions for after it. Hit him in the 1.5 s recovery.
+      Numbers: [ultimate; rain of 12, radius 7, over 3 s; 4 venom each plus Poison I, Slowness II or
+      Weakness I at random; cleanses himself; frames 1.6 / 3.0 / 1.5. Set when he is built: his
+      ultimate energy and charge rate, and the minimum gap between two ultimates (20-60 s)]
+
+  Passives
+    FIELD NOTES (field_notes): when you hurt him, 20% of the time he "learns" and hits 5% harder for
+    15 s, up to 4 times over. All his damage bonuses together never exceed +25%.
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with him (the player hurt him in the last 15 s, or
+  is his target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and his health share never jumps. The first engagement with a
+  player each in-game day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and
+  cannot be staggered, a title on your screen (his name, title and faction) and his intro line. A
+  boss bar shows a star, his name and title, his phase pips and a lightning mark when his ultimate
+  is ready. (His bar title is set when he is built.)
+- Health: his field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.25 for a
+  controller, and +50% for each extra engaged player (counted up to 5). At level 10 against one
+  player that is 130 health (148 as a leader): about 27 s (31 s) of landed hits with an iron sword
+  at 1.6 swings a second, half of them landing. A whole fight lasts two to three times that once you
+  dodge his wind-ups. No single player hit takes more than 12% of his boss health; the excess
+  becomes poise damage.
+- Poise: 80 (the controller value). Your hits fill his poise bar [damage x weapon: sword 1.0, axe
+  1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your
+  shield raised in the last 6 ticks before a heavy move lands) adds 25. Shooting him down out of the
+  air adds 30. The bar drains 15 per second after 3 s without poise damage. Full poise staggers him:
+  2.5 s kneeling dizzy, taking 25% more damage; then the bar resets and its maximum grows 20% for
+  the rest of the fight. No stagger during his intro, a phase change or his ultimate's wind-up.
+- Pace: between moves he waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery he takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where he faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Potion Barrage, Cauldron, Hex Mark, Fume Step.
+    Phase 2, from 60%: adds Broom Hops (he moves about and leaves puddles); broom bristles sprout on
+      his staff.
+      "Fascinating! Let's test mobility!"
+    Phase 3, from 25%: adds the Great Brew, a channel you can break; his eyes glow and his hat brim
+      lifts.
+      "Time for the big one. Please don't interrupt."
+  Each phase change takes 0.8 to 2 s (his exact length is set when he is built): he takes 50% less
+  damage and cannot be staggered (a glint shows it; he is never invulnerable), a shockwave pushes
+  everyone within 4 blocks back (no damage; softened near lava or a drop), he says the line, his
+  face and look change, and the bar gains a pip. A phase change always happens on the ground: if he
+  is flying, he lands first (0.4 s).
+- Phase 2 in the air (a proposal in the mobility design for when he is built; not settled yet): in
+  phase 2 he may take to the air on his staff-broom. The take-off is the tell: 0.6 s while he mounts
+  the staff and the crow caws. He stays up at most 8 s, at most 6 blocks above the ground (or above
+  the highest player fighting him who stands on a block), and at most 4 s at a time out of your
+  melee reach unless he is winding up a move. Up there he makes up to three touch-and-go dives
+  (Broom Dive: the same venom damage and puddle as Broom Hops, range 8, radius 2, a landing mark
+  that grows during the wind-up, a 0.5 s touch-down between dives) and may throw his light ranged
+  moves (Potion Barrage, Hex Mark; at most 3 per take-off). Then he lands with at least 1.0 s of
+  recovery (your punish window) and stays on the ground at least 6 s; he is never airborne more than
+  12 s in any 30 s. A drawn bow while he flies makes him land or dive (60%, at most every 8 s). A
+  shield blocks a dive (it is never unblockable). Phase 3 has no flying windows: the Great Brew is
+  cast standing. In phases 1 and 3 he takes off only to reach a player he cannot walk to (a pillar),
+  with no moves in the air, only his basic throw.
+- Shooting him down: in the air he has a separate air poise bar of 100 that drains 10 per second
+  after 2 s without a hit. Each arrow adds 20, a crossbow bolt 30 (15 per Multishot bolt), a thrown
+  trident 40, a wind charge 35, a snowball or an egg 10, a fishing rod hook 15 (and pulls him toward
+  you), a melee hit while he is within 3 blocks above you 25 (40 on a critical hit). A stun, a
+  freeze, Slowness II or worse (a splash potion), or a lightning strike (a Channeling trident in a
+  thunderstorm) downs him at once. Examples from the design: five arrows; three bolts and a
+  snowball; two wind charges and two arrows; a trident and three arrows. Downed, his broom folds and
+  he drops almost straight down (fall damage above 6 blocks, counted as one of your hits), lies 2 s
+  on the ground taking 20% more damage, cannot take off again for 12 s, and takes 30 poise. Slowness
+  I halves his climb rate.
+- Weak points:
+  - Channel: the Great Brew breaks after damage of 15% of his maximum health during its 3 s channel,
+    and leaves him open (see Great Brew). Hint line: "Big one coming, please don't interrupt!"
+  - Recovery: the punish bonus doubles during his recoveries [+30% instead of +15%]. The line or
+    prop that hints at it is set when he is built.
+- How he reads you (each answer replaces his next pick; their cooldowns are set when he is built):
+  - You come close -> Fume Step (70%).
+  - You raise a shield -> Cauldron (60%).
+  - You eat -> Hex Mark (50%).
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his damage bonuses
+  together never exceed +25%. He has no other enrage trigger.
+- Intro: he tips his hat and adjusts his glasses. "Ah, a test subject! I mean, a guest. Hold still,
+  please."
+- Yield: he kneels (honour 60; only heroes with honour 30 or less, or leaders with caution 70 or
+  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
+  he kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
+  finish". If the blow lands while he is in the air, he glides down first, then kneels. His yield
+  line: "Fascinating... I lost. Noted."
+  - Spared (sneak and use): he walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "Mercy! An unexpected variable. Thank you."
+  - Finished (strike): he dies. Rewards: XP orbs (7 x his level, at most 100), his non-kit gear (his
+    kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: he collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death. (In the air outside a boss fight, he falls.)
+- Escape: in a boss fight he never runs at low health: he fights to the yield and kneels. The one
+  order that pulls him out of a boss fight is a lost raid (his raid falls back, or its leader falls,
+  while he is in or near the target). Outside boss fights he escapes when his health drops under his
+  retreat point away from home [retreat_below 37.5%, worked out from the formula of design section
+  5.4], when his raid is lost, or, as a leader, when the base he is in falls or he is under 50%
+  health at its heart with no guard beside him. At his own base he does not escape: he withdraws
+  like a soldier and comes back at 60% health. Escaping, he starts no moves and runs with any
+  movement he has, even where no one can follow (an escape counts as travel, so his travel bonuses
+  are on); cornered with no way out for 3 s, he fights back, then runs again as soon as a way opens.
+  It ends inside his refuge's walls (his home base; for a leader the capital, or the nearest other
+  standing base; never the base he flees) or once no pursuer has been within 48 blocks for 10 s.
+  Then he stays away 5 minutes and until he is above 50% health, and does not go back for those he
+  fled. At most one escape in 10 minutes: inside that window he withdraws, kneels or goes home with
+  the party instead. An escape drops nothing and gives no rewards; a killing blow while he flees is
+  a normal defeat. Escaping, he flies with only his stamina as a limit (no 8 s air budget; up to 24
+  blocks above the ground, in any weather), but arrows still fill his air poise: shooting him down
+  is how you stop him.
+- Revival: like every hero he comes back 10 minutes after his death [heroes.reviveSeconds 600], at
+  his home base (a leader: at the capital, or the nearest standing base); his kit items vanish at
+  death and return with him. He has no death ability of his own. A hero of his faction with the
+  revival_rite talent (milestone 2) would bring him back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HIM
+1. Break the Great Brew. In phase 3, when he stops to brew, hit him hard during the 3 s channel: 15%
+   of his health in damage breaks it and leaves him open. It takes at least two hits (no hit takes
+   more than 12%), so start swinging at once.
+2. Punish every recovery: recoveries are his weak point (+30% instead of +15%). Openings: after
+   Potion Barrage (0.8 s), after the last Broom Hop (0.8 s), after the Great Brew (2 s), after his
+   ultimate (1.5 s), and after a dive landing (at least 1.0 s).
+3. Read the vials and do not turtle. Green is Poison, grey is Slowness, black is Weakness, always in
+   that order: sidestep them. A raised shield blocks them but gets a Cauldron dropped on you (60%):
+   step out of its circle before it starts.
+4. Close in smartly. He backs away when you come within 4 blocks and answers you up close with Fume
+   Step (70%): let him hop, go round the 3-block cloud, then close again. Do not eat in sight of him
+   (Hex Mark, 50%), and break line of sight so the hexes never reach three.
+5. Bring a bow, a crossbow or wind charges if he flies: five arrows, three bolts and a snowball, or
+   two wind charges and two arrows bring him down, and a splash potion of Slowness II downs him at
+   once: 2 s on the ground at +20% damage, no take-off for 12 s, +30 poise. Under a roof lower than
+   4 blocks he cannot take off, and at 3 blocks or less he cannot use Broom Hops.
+6. Keep a milk bucket: vanilla milk clears his Poison, Slowness, Weakness and Glowing. (He dislikes
+   milk buckets: "they ruin everything".) His poise is small (80): an axe (x1.6) or a mace (x2.0)
+   staggers him quickly.
+
+MOVEMENT
+Mobility trait: flyer (ceiling II), on his staff-broom. He has every feature from level 1; the
+numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20. Mobility never
+changes a move's damage, range or timing, and he never teleports (the stuck rescue every NPC has is
+the one exception).
+- From level 1: flight, gliding and the dive.
+- Take-off: 0.6 s (the tell: he mounts the staff, which moves from his hand to under him, and one
+  push lifts him 1.5 blocks). He needs enough stamina and 4 blocks of headroom, so roofs, tunnels
+  and dense trees make him walk. Landing takes 0.4 s, never on farmland, lava, fire or powder snow,
+  and costs him no fall damage.
+- Stamina: flying drains it [1 per second; 0.5 cruising on a trip; 2 hovering in place; x1.5 with a
+  backpack more than half full; x1.5 in a boss fight]; gliding costs nothing; it comes back on the
+  ground after 1 s. From 25% he heads for a landing and looks tired (a tell); at 0 he can only glide
+  down and is exhausted (winded on landing, no take-off until 50%).
+- Height limits: travelling, at most 24 blocks above the ground (cruising 6-10 above the terrain);
+  in NPC wars and raids at most 10 (a wall top counts as ground, so he crosses any wall); in a boss
+  fight at most 6 above the ground or the highest player fighting him who stands on a block. Out of
+  a fight he walks in a thunderstorm.
+- Numbers, level 1 / 10 / 20:
+    Stamina (seconds of powered flight)     27              / 35.5            / 45
+    Cruise speed (blocks per second)        5.9             / 6.4             / 7.0
+    Climb rate (blocks per second)          1.8             / 2.4             / 3.0
+    Glide: sink, forward (b/s), ratio       4.0, 6.5, 1.6:1 / 3.0, 7.2, 2.4:1 / 2.4, 8.0, 3.3:1
+    Glide time (s)                          9               / 12              / 15
+    Take-off needs (stamina)                42%             / 32%             / 25%
+    Stamina back on the ground (per s)      1.5             / 2.0             / 2.5
+  On long trips, landing to rest when needed, he averages about 4.4 blocks a second at level 1 and
+  5.8 at level 20 (walking round the terrain is about 4.3), so he compares the two for each trip.
+- Out of fights: he flies the long legs of his trips, up to the library's high shelves, and back
+  from errands outside the walls; as a leader he mostly stays home. Away from raids his routes give
+  enemy bases a wide berth.
+- In fights: Broom Hops (and the proposed Broom Dive) are unchanged by level. In a boss fight he
+  flies only inside the air rules: at most 8 s per take-off, at least 6 s on the ground between, and
+  at most 4 s at a time out of your melee reach. If you tower up a pillar he flies up to you even
+  outside phase 2 (at level 1 he climbs about 16 blocks in his 8 s) and throws from beside you.
+  These air rules do not grow with level: they are the counterplay. His air poise works in every
+  mode, and NPC archers' arrows count too.
+- Walls in raids: as a non-leader he joins his base's raids like a soldier [raids: joins, the
+  controller default]; as a leader he joins only joint raids and counter-attacks (below). On a raid
+  he scouts first: he circles the target 8-24 blocks out, over the walls when he chooses, and what
+  he sees goes into his faction's report on that base. He flies over the wall ring at the raid
+  height and lands inside near his goal, but only when he can get out again (his stamina back to its
+  take-off level within 20 s on the ground, or the gate). In raids he flies at most 10 s per
+  take-off with at least 6 s on the ground between. Defending archers shoot an airborne hero before
+  anything else, and five arrows bring him down. Inside he takes one goal: he opens the way when his
+  soldiers are held outside, hunts a defending hero he sees inside, and otherwise goes for the heart
+  with his party; a goal ends after 60 s without progress. Defending his own base, he patrols over
+  his walls and meets an airborne intruder with his light ranged moves.
+- Escaping: flight with only his stamina as a limit, and no height limit but the travel one.
+- Signature animations: broom versions of the take-off, riding side-saddle, casting while riding and
+  landing; the crow flaps beside him.
+
+WORK AND TALENTS
+- Duty: enchanter (when he is not leading). He works his base's enchanting table once the base
+  qualifies. As a faction leader his duty becomes court, but he still spends daylight at the
+  enchanting table and counts as the enchanter there.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): a bigger backpack [21 / 24 / 27 slots; a worker has 18], less wear [-10 / -20 / -30%], less
+  hunger from work [-10 / -15 / -20%] and more work XP [+10 / +20 / +30%]. The job-by-job table
+  names no proficiency part for the enchanter's job, so whether work speed and reach show at the
+  enchanting table is set when he is built. Each level he gains rolls an enchanter affix, as for any
+  NPC.
+- Specialty, from his sage_of_letters talent (when he enchants himself): he sees the table's three
+  offers as a player does (the cost and the first enchantment) and takes the best one. When none is
+  worth it, he rerolls by enchanting a book with the cheapest offer (real lapis and levels; the book
+  goes to storage), which changes the offers as it does for a player [rerolls 0.5 / 1 / 2: at tier I
+  once every second enchanting].
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where he is, inside
+  the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never the sum;
+  the realm talent, marked *, also works at every other base of his faction at tier I while he
+  leads):
+  - sage_of_letters* (realm): his base hires its enchanter sooner [at XP level 7 / 6 / 5] and gets a
+    library project (builders build bookshelves from crafted books).
+  - ember_keeper: his base smelts faster and its furnaces are refuelled before they go cold
+    [smelting +10 / +20 / +30%]. This talent's stronger personal furnace bonus belongs to heroes
+    whose duty is smelting; Ambrose is an enchanter, so only the base-wide part works.
+
+AS A FACTION LEADER
+- Title: Archivist of the Nettlewick Conclave.
+- Faction names: "Nettlewick Conclave" (the first unused name is taken), then "The Bubbling
+  Academy". Short name: "Nettlewick". Motto: "Hypothesis: we win. Let us test it."
+- Colours: primary nettle green [#4E7A2E], secondary purple [#5B3A86], accent green [#7BCB5E]. The
+  faction's main colour is green rather than his coat purple, which was too close to the Still
+  Crane's indigo and would share the Veiled Lantern's purple banner dye. They show in chat, name
+  tags, map markers, the boss bar, his sash and his NPCs' tabards.
+- Banner: green, with a purple circle in the middle and a black fade rising from the bottom [base
+  green; circle purple; gradient_up black]. Real banners hang at the station and the gates, and
+  members get a banner item. His faction's wool, carpets and beds are green, with purple as the
+  second dye.
+- Base style: dark_manor, a Manor: polished blackstone brick walls, dark oak log frames, dark oak
+  plank floors, deepslate tile roofs and blackstone round the edge; signs read like "Nettlewick
+  Manor". Culture: west (recruits get western names). Economy focus: lore (the enchanter is hired
+  ahead of other civilians) and craft (blacksmiths and smelters too).
+- His day (court duty): a short stop at the station at dawn; daylight at the enchanting table once
+  the base has one (before that, a walk between the station, the gates and the heart, greeting
+  member players); the heart at dusk; a bed in the largest house at night, woken by any alarm. He
+  answers every alarm and guards the heart in a defence, says his founding line when the faction
+  starts, and announces raids, attacks on his base, a lost base, a fallen hero and recruit
+  milestones in his own voice (his own lines for these are not written yet; his temperament's
+  fallback lines fill in).
+- If he dies: everyone hears it; no new raids until he returns, and no vengeance raid (that needs
+  aggression 70 or more); a raid he was on falls back [(caution + 1 - loyalty) / 2 = 0.525, over
+  0.5]. If his faction's last base falls he becomes an exiled free hero, never a leader again in
+  that campaign.
+- How his personality steers the faction. His traits (out of 100): aggression 35, honour 60,
+  ambition 75, caution 55, greed 50, sociability 55, loyalty 50, volatility 70. The numbers below
+  are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
+  personality strength; a neutral leader's value is in brackets.
+  - Raids less often: about every 35 minutes, or 1.76 in-game days [42120 ticks, interval x1.17;
+    neutral 36000 ticks, 30 minutes]. First raid not before 1.09 intervals [1].
+  - Attacks only with a clear edge: attack odds needed 0.757 [0.667]; counter-attack window 0.30 of
+    the interval [0.25], at odds 1.63 [1.5].
+  - He neither leads ordinary raids nor stays home: he joins joint raids and counter-attacks. His
+    aggression of 35 sits exactly on the line: one point lower and he would stay home from every
+    raid [stays home below 35].
+  - A raid party falls back after losing 44% [50%].
+  - Keeps 36% of the soldiers home [1/3], with at least 3 home defenders and 3 home swordsmen [3,
+    3].
+  - Soldier cap 12 [12]; ranged share 0.445 [0.40].
+  - Trader hired at population 14 [14] (the formula lands on 13.5; how a half is rounded is set when
+    he is built); trader trips x0.96 apart [1]; amounts kept back from selling x1.04 [1].
+  - Enchanter at XP level 8 [10]; his sage_of_letters talent says XP level 7 at tier I, and how the
+    two combine is set when he is built. Recruitment interval x0.85, so faster [1]; food reserve
+    x0.94 [1].
+  - New house when free beds are 2 or fewer [1]; storage grows when fuller than 70% [70%]; repair
+    scan budget 396 [384].
+  - Miners want the usual 16 gold and 8 diamonds [16 and 8].
+  - Raid targets: a rival's defence counts 97.5% [fd 0.975]; no loot term (greed 50, exactly
+    neutral); monster lairs (the Hollow's) are a little more attractive [-300]. No mercy or ambush
+    rule (his honour is between 30 and 70).
+  - A lot of random noise in his decisions [sigma 0.2 x volatility = 0.14].
+  - Eccentric genius rule, "crafting and lore projects first": how it works in this milestone is not
+    described in the design; set when he is built.
+  - Next to a default eccentric genius [honour 50, sociability 40] he is more honourable and more
+    sociable. The slice's test run B has him as one of its four leaders (with a tsundere, a
+    righteous knight and a lone wolf); in run A he serves the Veiled Lantern as a second hero.
+
+PERSONALITY AND VOICE
+- Temperament: eccentric genius. Traits: aggression 35, honour 60, ambition 75, caution 55, greed
+  50, sociability 55, loyalty 50, volatility 70. Next to a typical eccentric genius he is more
+  honourable (60 against 50) and more sociable (55 against 40).
+- In a fight: cautious (aggression 35 or less: he looks for enemies within 12 blocks and chases up
+  to 32), so his zoning and defensive moves weigh a little more [x1.03; attacking moves x0.91]. He
+  goes for ranged fighters first, protects his allies, keeps about 8 blocks away, and never strikes
+  a yielding enemy (honour 60 or more). Outside boss fights he pulls back at 37.5% health
+  [retreat_below].
+- Likes: glass bottles, books, glow berries. Dislikes: milk buckets ("they ruin everything"). (Gifts
+  come in a later milestone.)
+- Quirk: "names every potion after the person it was tested on."
+- Voice: soft pling blips per syllable, higher than the usual male voice [pitch 1.05; the default is
+  0.9], fast [rate 2 ticks per syllable].
+- Lines:
+    Founding:  "Welcome to the Nettlewick Conclave! Please do not drink anything labelled 'maybe'."
+    Greeting:  "{player}! Perfect timing, I need someone to hold this. Don't sniff it."
+    Intro:     "Ah, a test subject! I mean, a guest. Hold still, please."
+    Phase 2:   "Fascinating! Let's test mobility!"
+    Phase 3:   "Time for the big one. Please don't interrupt."
+    Ultimate:  "Hypothesis: you lose!" (with the crow's caw)
+    Hint:      "Big one coming, please don't interrupt!"
+    Kill:      "Data acquired."
+    Yield:     "Fascinating... I lost. Noted."
+    Spared:    "Mercy! An unexpected variable. Thank you."
+  Moments without a line of his own yet (enrage, stagger, escape, raid announcements and others) use
+  the eccentric genius fallback lines until his are written.
+
+ANIMATIONS
+His own, on top of the shared library:
+- One for each move: Potion Barrage (reaching for new vials at the end), Cauldron, Hex Mark, Fume
+  Step, Broom Hops, Great Brew.
+- Ultimate: he lifts the cauldron, with a loop held while the rain falls.
+- Phase 2: broom bristles sprout and he hops onto his staff.
+- Phase 3: his hat brim lifts and his eyes glow.
+- Intro: he tips his hat and adjusts his glasses.
+- Personal idles: a notebook scribble, a vial shake, the crow pecking his hat (the crow has its own
+  small bones for a head turn).
+- Flight (from the mobility design): broom versions of the take-off, riding side-saddle, casting
+  while riding and landing; Broom Dive gets its own if the phase 2 proposal is taken.
+Shared ones he uses a lot: the staff style set (caster ready; cast forward, cast up; spin bonk;
+draw, guard, dodge, victory, taunt); reading at the enchanting table.
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.

@@ -1,0 +1,403 @@
+Tobimaru Usugumo - "The Quiet Ash Ninja"
+Male | ninja | skirmisher | blight | lone wolf | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO HE IS
+A silent scout who maps every valley alone and trusts no footprints but his own. His long red scarf
+is the only colour he allows himself. In a one-on-one fight he is a rushdown fighter: he never stops
+coming with vanishing steps, stabs from behind and dashes, and you punish him after a finisher that
+misses. Out of battle he scouts; as a faction leader he is the Head of the Quiet Ash.
+
+LOOK
+- Body: male, slim build, drawn a little small [scale 98%].
+- Hair: short dark navy hair [#1C2233] in a high ponytail.
+- Outfit: a navy cloth half mask over the lower half of his face (lowered in phase 3, which shows
+  his mouth for the first time); a long red scarf that trails behind him and swings as he moves; a
+  navy wrap top, fitted wrapped trousers, arm guards and split-toe socks; a kunai holster on his
+  thigh.
+- Weapon: a short blade held in reverse grip in his right hand and a kunai in his left (in game
+  terms, an iron sword; the kunai he throws look like flint).
+- Colours: skin [#EFD2BE], grey-blue eyes [#9AA4B8], primary navy [#1E2740], secondary scarf red
+  [#B3262E], accent ash grey [#4A4E57], metal steel [#AEB4BE].
+- Face: narrow eyes with no lashes [lashes 0], straight brows; his mouth is hidden by the mask until
+  phase 3. He blinks slowly and calmly, every 4 to 7 s [blink calm].
+- Idle quirks: adjusting his scarf, a crouching scan of the surroundings, twirling a kunai.
+- Phase looks: in phase 3 he pulls the mask down.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of his attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: his accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, his face goes "focused" and stops blinking, and the move's
+sound plays from where he stands. No wind-up gets shorter than its class minimum, even in phase 3 or
+enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero.
+His fighting: twin blades; duel style rushdown. As a skirmisher he hits and runs: after each melee
+hit he steps back 3 blocks until his next swing is ready [keep_distance 4], and he goes for the
+weakest enemy first (the skirmisher default). His element is blight (the wither and wither skeletons
+ignore it; you do not). His element resistances, gear, move cooldowns and how often he picks each
+move are set when he is built.
+
+  Basic attack
+    A twin-blade string of quick slashes. Every fourth hit makes you bleed blight [1 damage per
+    second for 3 s]. A raised shield blocks the slashes like any hit from the front.
+
+  Abilities
+    KUNAI FAN (kunai_fan) - boss phases 1, 2, 3
+      What it does: he throws three kunai in a fan at targets up to 14 blocks away. A kunai that
+      hits poisons you with blight. It is his answer when you stand far away (60%).
+      The tell: the animation only (a light move).
+      Counter: move sideways out of the fan, put a block between you, or block it (light moves are
+      blockable like any hit).
+      Numbers: [light, mid and far; volley of 3 (10 degrees apart), range 14; blight damage over
+      time 1.5 per second for 4 s; frames 0.4 / 0.2 / 0.4. Whether a kunai also deals impact damage,
+      and whether two kunai stack their poison, is set when he is built]
+
+    SHADOW STEP (shadow_step) - boss phases 1, 2, 3
+      What it does: he vanishes in a puff of smoke, turns invisible and fast for 3 s, then always
+      strikes with Backstab. It is his answer to a raised shield (60%) and to you eating (70%).
+      The tell: a smoke puff during the 0.8 s wind-up. While he is invisible, small puffs at his
+      feet give him away as he moves.
+      Counter: watch the puffs, turn to face them, and punish the Backstab's recovery.
+      Numbers: [heavy, any range; on himself; Invisibility 3 s + Speed I 3 s; followup Backstab
+      100%; frames 0.8 (smoke puff) / 0.1 / 0.8 (skipped when Backstab follows, so the punish window
+      comes after the Backstab); the shape of its ground mark is set when he is built]
+
+    BACKSTAB (backstab) - boss phases 1, 2, 3, only after Shadow Step
+      What it does: a quick stab, 60% stronger when he is behind you. He never picks it on its own:
+      it only follows Shadow Step.
+      The tell: the animation only (a light move), and the footstep puffs of the Shadow Step before
+      it.
+      Counter: keep him in front of you (face the puffs) and block it; then hit him in its 0.5 s
+      recovery.
+      Numbers: [light, close; 120%, +60% more from behind (whether added to or multiplied with the
+      120% is set when he is built); weight 0 (a followup only); frames 0.4 / 0.1 / 0.5]
+
+    SMOKE BOMB (smoke_bomb) - boss phases 1, 2, 3
+      What it does: a burst of smoke around him: players within 4 blocks get Darkness and everyone
+      in it is slowed, while he hops 5 blocks back. It deals no damage. He prefers it when you are
+      close.
+      The tell: a disc grows on the ground around him during the 1.0 s wind-up, with a sound.
+      Counter: step out of the 4-block disc during the wind-up.
+      Numbers: [area, close; nova, radius 4; Darkness 3 s (players), Slowness I 3 s; hop back 5;
+      frames 1.0 / 0.1 / 0.8]
+
+    SHADOW CLONES (shadow_clones) - boss phases 2, 3 (new in phase 2)
+      What it does: two decoys of him appear and last 10 s. A decoy looks exactly like him, copies
+      what he does a tenth of a second late [2 ticks], walks a short path, has 1 health and pops in
+      a puff of smoke at any hit. The design gives decoys no attack of their own.
+      The tell: a 0.8 s wind-up with a sound; the shape of its ground mark is set when he is built.
+      Counter: find the real one: only he casts a shadow and only he makes footstep sounds. One hit
+      pops a decoy.
+      Numbers: [heavy, any range; on himself, 2 decoys for 10 s (at most 3 decoys per hero); frames
+      0.8 / 0.2 / 0.8]
+
+    LOG SWAP (log_swap) - boss phases 2, 3 (new in phase 2)
+      What it does: he leaves a decoy where he stood and hops 4 blocks back. He prefers it when you
+      are close.
+      The tell: the animation only (a light move).
+      Counter: do not chase the figure that stays put: it is the decoy; the real one is 4 blocks
+      back.
+      Numbers: [light, close; on himself, 1 decoy + hop back 4; frames 0.4 / 0.1 / 0.3]
+
+    SHADOW DASH (shadow_dash) - boss phase 3 only (new in phase 3)
+      What it does: a 7-block dash along the ground that cuts everyone within 1.5 blocks of his path
+      with blight. Each time a dash hits, he dashes again at once, up to four dashes in a row. After
+      the last one (or the first one that misses) he kneels for 1.5 s to reset.
+      The tell: a strip grows on the ground along the dash during the 0.8 s wind-up, with a sound.
+      Counter: dodge one dash to end the string, then hit him while he kneels (his recovery weak
+      point doubles your bonus). A dash stops at walls and at drops over 4 blocks, and he skips it
+      when water or lava lies on the path.
+      Numbers: [heavy, mid; dash 7; 70% blight; repeatable, follows itself 100% (a string of 4;
+      whether each chained dash replays its wind-up and strip is set when he is built); frames 0.8 /
+      0.3 / 1.5 (kneels to reset)]
+
+  Ultimate
+    NIGHTFALL (nightfall)
+      What it does: a column of smoke rises around him; players within 10 blocks get Darkness for 4
+      s; he vanishes for 2 s, then strikes his target with a combo of 4 blight strikes.
+      The tell: the biggest in his kit: a 1.5 s wind-up with the smoke column, a spoken line, a wide
+      sound, a red ground mark, and the screen darkens for 2 s for the players fighting him. He
+      cannot be staggered during this wind-up. The boss bar shows a lightning mark when his ultimate
+      is ready.
+      Counter: keep moving and keep a shield ready when he reappears; each strike of the combo can
+      be dodged on its own. Hit him in the 1.5 s recovery.
+      Numbers: [ultimate; radius 10; Darkness 4 s (players); vanish 2 s; 4 strikes x 60% blight;
+      frames 1.5 / 1.6 / 1.5. Set when he is built: his ultimate line, the shape of its ground mark,
+      how fast the energy bar fills and the minimum gap between two ultimates (20-60 s)]
+
+  Passives
+    UNSEEN (unseen): whenever he kills an enemy he turns invisible for 2 s and gets Speed I
+    [on_kill; how long the Speed lasts is set when he is built].
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with him (the player hurt him in the last 15 s, or
+  is his target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and his health share never jumps. The first engagement with a
+  player each in-game day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and
+  cannot be staggered, a title on your screen (his name, title and faction) and his intro line. A
+  boss bar shows a star, his name and title, his phase pips and a lightning mark when his ultimate
+  is ready. (His bar title is set when he is built.)
+- Health: his field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.25 for a
+  skirmisher, and +50% for each extra engaged player (counted up to 5). At level 10 against one
+  player that is 130 health (148 as a leader): about 27 s (31 s) of landed hits with an iron sword
+  at 1.6 swings a second, half of them landing. A whole fight lasts two to three times that once you
+  dodge his wind-ups. No single player hit takes more than 12% of his boss health; the excess
+  becomes poise damage.
+- Poise: 80 (the skirmisher value). Your hits fill his poise bar [damage x weapon: sword 1.0, axe
+  1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your
+  shield raised in the last 6 ticks before a heavy move lands) adds 25. The bar drains 15 per second
+  after 3 s without poise damage. Full poise staggers him: 2.5 s kneeling dizzy, taking 25% more
+  damage; then the bar resets and its maximum grows 20% for the rest of the fight. No stagger during
+  his intro, a phase change or his ultimate's wind-up.
+- Pace: between moves he waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery he takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where he faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Kunai Fan, Shadow Step (with Backstab), Smoke Bomb.
+    Phase 2, from 60%: adds Shadow Clones and Log Swap (decoys); a hand seal and smoke.
+      "...You see me? Then see three."
+    Phase 3, from 25%: he pulls his mask down; adds the Shadow Dash string.
+      "No more hiding."
+  Each phase change takes 0.8 to 2 s (his exact length is set when he is built): he takes 50% less
+  damage and cannot be staggered (a glint shows it; he is never invulnerable), a shockwave pushes
+  everyone within 4 blocks back (no damage; softened near lava or a drop), he says the line, his
+  face and look change, and the bar gains a pip.
+- Weak points:
+  - Light: a torch, a lantern, glowstone or any block that gives light of 12 or more, placed by a
+    player within 4 blocks of him, weakens him by 10% for 10 s. Hint line: "...Too bright." (Whether
+    the 10% is less damage dealt or more damage taken, and how often it can trigger, is set when he
+    is built.)
+  - Recovery: the punish bonus doubles during his recoveries [+30% instead of +15%]; the kneel after
+    the Shadow Dash string is the clearest one.
+- How he reads you (each answer replaces his next pick; their cooldowns are set when he is built):
+  - You stand far away -> Kunai Fan (60%).
+  - You raise a shield -> Shadow Step (60%), then Backstab, which goes for your back.
+  - You eat -> Shadow Step (70%).
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his damage bonuses
+  together never exceed +25%.
+- Intro: he drops from above into a crouch. "Leave. This is the only warning."
+- Yield: he kneels (honour 50; only heroes with honour 30 or less, or leaders with caution 70 or
+  more, refuse, and his caution is 60). A killing blow from a player or a player's projectile is
+  stopped at 1 health, and he kneels for 5 s, untouchable and passive, while you see "Sneak and use
+  to spare, strike to finish". His yield line: "...Hm."
+  - Spared (sneak and use): he walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "I owe you one footprint."
+  - Finished (strike): he dies. Rewards: XP orbs (7 x his level, at most 100), his non-kit gear (his
+    kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: he collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death.
+- Escape: in a boss fight he never runs at low health: he fights to the yield and kneels. The one
+  order that pulls him out of a boss fight is a lost raid (his raid falls back, or its leader falls,
+  while he is in or near the target). Outside boss fights he escapes when his health drops under his
+  retreat point away from home [retreat_below 31.5%, worked out from the formula of design section
+  5.4], when his raid is lost, or, as a leader, when the base he is in falls or he is under 50%
+  health at its heart with no guard beside him. At his own base he does not escape: he withdraws
+  like a soldier and comes back at 60% health. Escaping, he starts no moves and runs with any
+  movement he has, even where no one can follow (an escape counts as travel, so his travel bonuses
+  are on); cornered with no way out for 3 s, he fights back, then runs again as soon as a way opens.
+  It ends inside his refuge's walls (his home base; for a leader the capital, or the nearest other
+  standing base; never the base he flees) or once no pursuer has been within 48 blocks for 10 s.
+  Then he stays away 5 minutes and until he is above 50% health, and does not go back for those he
+  fled. At most one escape in 10 minutes: inside that window he withdraws, kneels or goes home with
+  the party instead. An escape drops nothing and gives no rewards; a killing blow while he flees is
+  a normal defeat. On a scouting round he also steps aside the same way when he sees enemy soldiers,
+  is badly hurt among monsters (under 40%) or meets a monster in the way; that is not a real escape
+  (no stay-away, no window spent, no line): he goes out of sight and on with his round, or home when
+  he retreats. Engage him and he fights instead.
+- Revival: like every hero he comes back 10 minutes after his death [heroes.reviveSeconds 600], at
+  his home base (a leader: at the capital, or the nearest standing base); his kit items vanish at
+  death and return with him. He has no death ability of his own. A hero of his faction with the
+  revival_rite talent (milestone 2) would bring him back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HIM
+1. Carry torches. Placing a torch, a lantern or glowstone within 4 blocks of him weakens him by 10%
+   for 10 s ("...Too bright."). It is the placing that counts, so place a new one near him when the
+   10 s run out.
+2. Track the smoke. When he vanishes with Shadow Step, a Backstab always follows, and it hits 60%
+   harder from behind. Watch the puffs at his feet, turn to face them, and punish the 0.5 s after
+   the stab. Eating in front of him draws Shadow Step 70% of the time, a raised shield 60%.
+3. Find the real one. From phase 2, only the real Tobimaru casts a shadow and makes footstep sounds;
+   the decoys copy him a tenth of a second late and pop at any hit (1 health). Keep entity shadows
+   switched on in your video settings.
+4. Dodge one dash to end the string. In phase 3 every Shadow Dash that hits chains into another (up
+   to 4); a miss ends it and he kneels for 1.5 s, where his recovery weak point doubles your punish
+   bonus. Water or lava on the dash path makes him skip the dash.
+5. His poise is small (80): an axe (x1.6) or a mace (x2.0) staggers him quickly, and a stagger gives
+   you 2.5 s at +25% damage.
+6. A pillar will not save you. He climbs 9 blocks or more from level 1, may hit you from a cling
+   just under your feet, and can break the block under you at player speed. Any hit, or a knockback
+   of 0.5 or more, knocks him off the wall.
+
+MOVEMENT
+Mobility traits: acrobat (ceiling III) and climber (ceiling II). He has every feature from level 1;
+the numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20. Mobility
+never changes a move's damage, range or timing, and he never teleports (the stuck rescue every NPC
+has is the one exception).
+- From level 1: two extra jumps in the air, wall kicks (a jump off a wall he touches), chimneys (up
+  a 1-2 block wide shaft by kicking from wall to wall), the mantle (he pulls himself onto a ledge
+  within a block of his hands at the top of a jump), walking up full blocks without jumping [step
+  1.0], a landing roll (no slowdown on landing) and no fall damage at all. He climbs walls at ladder
+  speed (2.35 blocks a second up, at most 3 down), clings still to a wall, and can work while
+  clinging (a player on a ladder breaks blocks five times slower; he does not).
+- Numbers, level 1 / 10 / 20:
+    Jump height (blocks)                    1.40 / 1.45 / 1.50
+    Each air jump (blocks)                  0.75 / 0.99 / 1.25
+    Reach up with both air jumps (blocks)   2.9  / 3.4  / 4.0
+    Longest gap he jumps (blocks)           3    / 4    / 6
+    Climb height (blocks)                   9    / 12   / 16
+  A base wall is 5 blocks high, so he climbs any of today's walls from level 1.
+- Out of fights: he double-jumps ravines instead of bridging them, and climbs cliffs and tall trees
+  for a lookout: from 12 or more blocks up he sees 16 blocks farther.
+- In fights: no move changes. Between moves he uses wall kicks to get behind you for Shadow Step and
+  Backstab, and climbs out of a pit you dig. No move starts while he is in the air or clinging. He
+  goes for a player on a pillar or behind a wall at once; on a 1x1 pillar top he may land basic
+  attacks from a cling just under your feet, or break the block under your feet at player speed. He
+  may stand where you cannot reach him, but at most 4 s at a time; then he comes back.
+- Counters: any hit, or a knockback of 0.5 or more, knocks him off a wall (he falls, and needs 0.5 s
+  before he can grip again). Ledges are useless against him (no fall damage), and he has no
+  knockback resistance [0, the skirmisher's], so knockback moves him about.
+- Walls in raids and scouting: scouting, he climbs a rival's wall or a tree beside it and looks into
+  the yard, so his report carries the garrison, the heroes and where the heart and the storehouse
+  are. As a non-leader he joins his base's raids like a soldier [raids: joins, the skirmisher
+  default]; as a leader, as his personality decides (below). On a raid he is his party's way in: up
+  the wall away from the archers' posts and down the inside (only when he also has a way out, such
+  as a climb back up the inside face), then he opens the gate from inside when his party needs it; a
+  goal ends after 60 s without progress. The defenders answer: the alarm sounds once he is on the
+  wall (any base NPC that sees him within 24 blocks raises it earlier), archers shoot, the two
+  nearest free guards and any hero at home go for him, and a hit knocks him off the wall. Defending
+  his own base, he reaches the wall top at once.
+- Escaping, or stepping aside on a scouting round, he climbs where no one follows.
+- Signature animation: none of his own in the design; he uses the shared acrobat and climber moves,
+  with his scarf trailing behind him.
+
+WORK AND TALENTS
+- Duty: scout (when he is not leading). He scouts and delivers reports like a faction scout, only
+  better.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): a bigger backpack [21 / 24 / 27 slots; a worker has 18], less wear on his gear [-10 / -20 /
+  -30%], less hunger from work [-10 / -15 / -20%] and more work XP [+10 / +20 / +30%]. The
+  job-by-job table gives scouting no work-speed or reach part. Each level he gains rolls a scout
+  affix, as for any NPC.
+- Specialty, from his cartographer talent (when he scouts himself): his own scouting range is 32 /
+  48 / 64 blocks longer, on top of the talent's base-wide 16 / 32 / 48, and his reports mark the 5x5
+  sectors around them as explored (the talent gives the base's other scouts 3x3).
+- The work table also gives spymaster a scout specialty (walking up to 24 / 20 / 16 blocks from a
+  rival base without raising its alarm, and reports that name the heroes seen), but his own entry
+  names only the cartographer one; whether he gets it is set when he is built.
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where he is, inside
+  the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never the sum;
+  the realm talent, marked *, also works at every other base of his faction at tier I while he
+  leads):
+  - cartographer* (realm): the base's scouts reach 16 / 32 / 48 blocks farther, and each report
+    marks the 3x3 sectors around it as explored.
+  - spymaster: the base's reports on rival bases carry garrison counts and whether the leader is
+    home, and enemy raids are announced 0.5 / 1 / 2 minutes before they reach the walls.
+  - Both are scout talents, not guard or court talents, so the Presence rule (a tier higher while
+    home) does not apply to them.
+
+AS A FACTION LEADER
+- Title: Head of the Quiet Ash.
+- Faction names: "Quiet Ash Clan" (the first unused name is taken), then "The Ashen Veil". Short
+  name: "Quiet Ash". Motto: "Leave no footprint."
+- Colours: primary ash grey [#4A4E57], secondary scarf red [#B3262E], accent navy [#1E2740]. They
+  show in chat, name tags, map markers, the boss bar, his sash and his NPCs' tabards.
+- Banner: grey, with a red diagonal band and a black border [base gray; stripe_downleft red; border
+  black]. Real banners hang at the station and the gates, and members get a banner item. His
+  faction's wool, carpets and beds are grey, with red as the second dye.
+- Base style: bamboo_village, a Village: bamboo plank walls, jungle log frames, bamboo plank floors,
+  spruce plank roofs and cobblestone round the edge; signs read like "Quiet Ash Village". Culture:
+  east (recruits get eastern names). Economy focus: scouting (scouts and cave explorers are hired
+  ahead of other civilians) and military (no civilian role moves up; the soldier cap gets +1
+  instead).
+- His day (court duty): scouting is a travelling job, which a leader never takes, so while he leads
+  he does not scout (his talents still work at the base). A short stop at the station at dawn;
+  daylight patrolling between the station, the gates and the heart and standing at the station,
+  greeting member players; the heart at dusk; a bed in the largest house at night, woken by any
+  alarm. He answers every alarm and guards the heart in a defence, says his founding line when the
+  faction starts, and announces raids, attacks on his base, a lost base, a fallen hero and recruit
+  milestones in his own voice (his own lines for these are not written yet; his temperament's
+  fallback lines fill in).
+- If he dies: everyone hears it; no new raids until he returns, and no vengeance raid (that needs
+  aggression 70 or more); a raid he was on falls back [(caution + 1 - loyalty) / 2 = 0.525, over
+  0.5]. If his faction's last base falls he becomes an exiled free hero, never a leader again in
+  that campaign.
+- How his personality steers the faction. His traits (out of 100): aggression 55, honour 50,
+  ambition 40, caution 60, greed 40, sociability 10, loyalty 55, volatility 30. The numbers below
+  are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
+  personality strength; a neutral leader's value is in brackets.
+  - Raids about as often as a neutral leader: about every 30 minutes, or 1.49 in-game days [35640
+    ticks, interval x0.99; neutral 36000 ticks, 30 minutes]. First raid not before 1.06 intervals
+    [1].
+  - Attack odds needed 0.707 [0.667]; counter-attack window 0.26 of the interval [0.25], at odds
+    1.55 [1.5].
+  - He neither leads ordinary raids (that needs aggression 65 or more) nor stays home (caution 70 or
+    more, or aggression under 35): he joins joint raids and counter-attacks.
+  - A raid party falls back after losing 49.5% [50%].
+  - Keeps 36% of the soldiers home [1/3], with at least 3 home defenders and 3 home swordsmen [3,
+    3].
+  - Soldier cap 13 [12]: 12 from his traits, +1 from his military focus. Ranged share 0.42 [0.40].
+  - Trader hired late, at population 19 [14] (his sociability is only 10); trader trips x1.32 apart
+    [1]; amounts kept back from selling x1.14 [1].
+  - Enchanter at XP level 11 [10]; recruitment interval x1.06 [1]; food reserve x1.12 [1].
+  - New house when free beds are 1 or fewer [1]; storage grows when fuller than 73% [70%]; repair
+    scan budget 407 [384].
+  - Miners want 14 gold and 7 diamonds before turning to other ores [16 and 8].
+  - Raid targets: a rival's defence counts in full [fd 1]; he is territorial (a lone wolf), so
+    distance weighs five times as much [fdist 5] and he raids his nearest rivals; loot does not
+    tempt him (greed under 50); monster lairs (the Hollow's) are a little more attractive [-50]. No
+    mercy or ambush rule (his honour is between 30 and 70).
+  - A little random noise on every decision [sigma 0.2 x volatility = 0.06].
+  - Lone wolf rule (milestone 2, when pacts arrive): he never proposes a pact, and accepts one only
+    when the strongest other faction he knows is at least twice as strong as his own [T >= 2].
+
+PERSONALITY AND VOICE
+- Temperament: lone wolf. Traits: aggression 55, honour 50, ambition 40, caution 60, greed 40,
+  sociability 10, loyalty 55, volatility 30.
+- In a fight: steady (aggression between 35 and 65: he looks for enemies within 20 blocks and chases
+  up to 56), so his attacking moves get only a small bonus [x1.03] and his caution makes defensive
+  and zoning moves a little likelier [x1.06]. He goes for the weakest enemy (the skirmisher
+  default). His honour (50) is under 60, so the rule that keeps a hero from striking a yielding
+  enemy does not hold him back. Outside boss fights he pulls back at 31.5% health [retreat_below].
+- Likes: maps, compasses. Dislikes: bells. (Gifts come in a later milestone.)
+- Quirk: "counts his steps out loud when he thinks nobody is near."
+- Voice: soft clicking hi-hat blips per syllable, a little low [pitch 0.95], measured [rate 3 ticks
+  per syllable]. He says little.
+- Lines:
+    Founding:  "Quiet Ash. That is all you need to know."
+    Greeting:  "..." or "{player}. You're loud."
+    Intro:     "Leave. This is the only warning."
+    Phase 2:   "...You see me? Then see three."
+    Phase 3:   "No more hiding."
+    Hint:      "...Too bright."
+    Kill:      "Gone."
+    Yield:     "...Hm."
+    Spared:    "I owe you one footprint."
+  Moments without a line of his own yet (his ultimate, enrage, stagger, escape, raid announcements
+  and others) use the lone wolf fallback lines until his are written.
+
+ANIMATIONS
+His own, on top of the shared library:
+- One for each move: Kunai Fan, Shadow Step, Backstab, Smoke Bomb, Shadow Clones, Log Swap, Shadow
+  Dash (ending in the kneel).
+- Ultimate: Nightfall, with its column of smoke.
+- Phase 2: a hand seal, and smoke.
+- Phase 3: he pulls the mask down.
+- Intro: he drops from above into a crouch.
+- Personal idles: adjusting his scarf, a crouching scan, twirling a kunai.
+Shared ones he uses a lot: the twin blades style set (crouched reverse grip; four quick slashes; a
+spin; draw, guard, dodge, victory, taunt); the acrobat and climber moves (crouch jump, air jump,
+wall kick, mantle, landing roll, climb, cling, climb down).
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.

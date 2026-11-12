@@ -1,0 +1,420 @@
+Kagenori Tsurumine - "The Still Crane Samurai"
+Male | samurai | striker | shock | stoic | epic
+Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+tuned after play.
+====================================================================================================
+
+WHO HE IS
+A quiet swordsman of few words who announces his name before every duel, never strikes a kneeling
+foe, and fights like still water until the moment his blade moves. In a one-on-one fight he is a
+counter fighter: patient, with a guard stance that answers melee, so you bait the stance and hit
+after his swing. Out of battle he stands guard and drills the soldiers; as a faction leader he is
+the Lord of the Still Crane.
+
+LOOK
+- Body: male, standard build, drawn a little large [scale 102%].
+- Hair: long black hair [#1E1F2A] in a high ponytail.
+- Outfit: an indigo coat with a white crane crest, white hakama (wide pleated trousers), a steel
+  shoulder plate on the right, wrist guards, a sash and sandals.
+- Weapon: a long sword and a short sword at his hip; he fights with the long one drawn. His kit:
+  "Crane's Edge" (an iron sword with Sweeping Edge II), a chainmail chestplate and iron boots; kit
+  items never drop and come back when he revives.
+- Colours: skin [#F1D3BC], blue eyes [#6C7BD0], primary indigo [#2E3A6B], secondary off-white
+  [#E8E4D8], accent steel grey [#9AA6B2], trim gold [#B8963E], metal light steel [#C9CED6].
+- Face: sharp eyes with no lashes [lashes 0], thick straight brows, a small mouth. He blinks slowly
+  and calmly, every 4 to 7 s [blink calm].
+- Moods: when he is happy he keeps his focused eyes and shows only a faint smile.
+- Idle quirks: his hand resting on the hilt; eyes closed, breathing slowly.
+- Phase looks: in phase 2 he puts on a plain helmet; in phase 3 he draws the short sword as well,
+  and his eyes and the edges of his blades glow.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is a share of his attack power (150% = one and a half normal hits) or plain health points (2
+points = 1 heart). Ranges are in blocks: close is up to 4, mid 4 to 10, far 10 to 24. Every heavy,
+area and ultimate move draws a ground mark that grows over its whole wind-up (a timer you can read)
+and goes at the hit: his accent colour for normal moves, red for the ultimate. Light moves show only
+the animation. When a wind-up starts, his face goes "focused" and stops blinking, and the move's
+sound plays from where he stands. No wind-up gets shorter than its class minimum, even in phase 3 or
+enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
+level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
+a player from full health to zero.
+His fighting: katana; duel style counter. He closes to melee and goes for the strongest enemy first
+(set in his file). His element is shock: you take 30% more from it while you stand in water or rain.
+He resists shock and is weak to blight [resistances: shock +20, blight -15]. The cooldowns and
+weights below come from the design's example file of him (design section 12.18); a move's weight is
+how often the picker likes it (default 5).
+
+  Basic attack
+    A katana string of three cuts. Every third hit puts a "storm" mark on you (small particles above
+    your head) [mark storm, 1 stack]. Nothing in his kit reads the storm mark yet; what it does is
+    set when he is built. A raised shield blocks the cuts like any hit from the front.
+
+  Abilities
+    THREE CUTS (three_cut) - boss phases 1, 2, 3
+      What it does: three quick cuts back to back; the last one also knocks you back a little.
+      The tell: the animation only (a light move).
+      Counter: block it (light moves are blockable like any hit) or step back; each cut can be
+      dodged on its own.
+      Numbers: [light, close; 55%, 55% and 80% + knockback 1; frames 0.45 / 0.45 / 0.35; cooldown 6
+      s, weight 6]
+
+    STILL WATER (iai_stance) - boss phases 1, 2, 3 (see the phase 3 note below)
+      What it does: a quick-draw counter stance held for 1.5 s. Hit him in melee during it and he
+      takes only a fifth of the blow, then answers at once with a draw cut that stuns you for 1 s
+      (on a player a stun is Slowness IV and Mining Fatigue II: you keep control). He prefers this
+      stance against players (its score doubles).
+      The tell: his hand goes to the hilt with a guard click (a shield-block sound) and electric
+      sparks; the 1.5 s stance itself is the wind-up.
+      Counter: stop attacking for the 1.5 s, or shoot him: arrows are not countered. If nobody hits
+      him, the 0.8 s recovery after the stance is one of his weak points.
+      Numbers: [heavy, close; stance 1.5 s, absorb 80%; riposte 140% + stun 1 s; frames 1.5 (the
+      stance) / 0.1 / 0.8; cooldown 10 s]
+
+    THUNDERCLAP DRAW (thunderclap_draw) - boss phases 1, 2, 3
+      What it does: a lightning-fast draw that cuts along a straight line 8 blocks long and 1 wide
+      toward you, for shock damage. The line stops at the first solid block. When it hits, 30% of
+      the time he follows with Crane Step. Sometimes (his lines are rate-limited) he says "Thunder
+      answers the blade."
+      The tell: 1.3 s of total stillness, a glint on the hilt, and a strip on the ground along the
+      line growing to full length.
+      Counter: step sideways off the strip, or keep a block between you; then punish the slow
+      re-sheathe, one of his weak points.
+      Numbers: [heavy, mid; line 8 x 1; 150% shock; followup Crane Step 30%; frames 1.3 (stillness,
+      a glint) / 0.05 / 0.85 (re-sheathe); cooldown 11 s]
+
+    CRANE STEP (crane_step) - boss phases 1, 2, 3 (see the phase 3 note below)
+      What it does: a 6-block dash along the ground that cuts everyone within 1.5 blocks of his
+      path. When it hits, 70% of the time he goes straight into Three Cuts. It is his answer to a
+      drawn bow (70%).
+      The tell: a strip grows on the ground along the dash during the 0.8 s wind-up, with a sound.
+      Counter: step off the strip. A dash stops at walls and at drops over 4 blocks, and he skips it
+      when water or lava lies on the path.
+      Numbers: [heavy, mid; dash 6; 80%; followup Three Cuts 70%; frames 0.8 / 0.25 / 0.8; cooldown
+      8 s]
+
+    GUARD SPLITTER (guard_splitter) - boss phases 2, 3 (new in phase 2)
+      What it does: a heavy cut that breaks guard: if you are blocking, your shield is disabled (the
+      vanilla axe rule). It is his answer to a raised shield (60%).
+      The tell: a 0.9 s wind-up with a sound; the shape of its ground mark is set when he is built.
+      Counter: lower your shield and step back out of reach during the wind-up.
+      Numbers: [heavy, close; melee, breaks guard; 110% + guard_break 4 s; frames 0.9 / 0.1 / 0.9;
+      cooldown 12 s. The general boss rules say a guard-breaking move disables a shield for 5 s;
+      which length counts is set when he is built]
+
+    CHAINED LIGHTNING DRAW (chain_draw) - boss phases 2, 3 (new in phase 2)
+      What it does: lightning from his draw strikes a target up to 10 blocks away, then jumps to up
+      to two more enemies, each within 4 blocks of the last (never the same one twice). Each one hit
+      takes shock damage and is slowed.
+      The tell: a 1.0 s wind-up with a sound; the shape of its ground mark is set when he is built.
+      Counter: spread out from your friends (it jumps up to 4 blocks), and keep out of water and
+      rain (shock hurts 30% more there).
+      Numbers: [heavy, mid; chain of 3, range 10, jump radius 4; 7 shock + Slowness I 3 s; frames
+      1.0 / 0.45 / 0.8; cooldown 14 s]
+
+    FALLING CRANE (falling_crane) - boss phase 3 only (new in phase 3)
+      What it does: he leaps at you from up to 8 blocks away and lands with a cut that hits everyone
+      within 2 blocks of the landing point and knocks them back hard. He always follows it with
+      Three Cuts. From level 13 he may start it from a 2-block ledge he jumped onto.
+      The tell: a landing disc grows on the ground during the 0.9 s wind-up, with a sound.
+      Counter: leave the disc during the wind-up and keep moving after he lands; the punish window
+      comes after the Three Cuts. Under a ceiling of 3 blocks or less he does not leap.
+      Numbers: [heavy, mid and far; leap 8, landing radius 2; 100% + knockback 2; followup Three
+      Cuts 100%; frames 0.9 / 0.5 / 1.0; cooldown 12 s]
+
+    TWIN SKY (state twin_sky) - boss phase 3
+      At the phase 3 change he draws his short sword and fights with two blades for the rest of the
+      fight, faster and harder. His face turns determined and he says "Two blades. No more
+      restraint."
+      Numbers: [attack speed +20%, damage +10%]
+
+  Ultimate
+    HEAVEN-SPLITTING DRAW (heaven_split)
+      What it does: one enormous draw cut along a straight line 12 blocks long and 2 wide, with a
+      harmless lightning flash along the line and a thunder sound. Like his other draws, the line
+      stops at the first solid block.
+      The tell: the biggest in his kit: a 2.0 s wind-up in which he closes his eyes and stops
+      blinking, then opens them sharp; the line "Close your eyes. It is already over."; a wide
+      sound; a red strip on the ground along the line; and the screen darkens for 2 s for the
+      players fighting him. He cannot be staggered during this wind-up. The boss bar shows a
+      lightning mark when his ultimate is ready.
+      Counter: dodge sideways off the 2-wide strip, or get a block between you; then hit him in the
+      1.6 s recovery.
+      Numbers: [ultimate; line 12 x 2; 22 shock; frames 2.0 / 0.1 / 1.6. It needs a full energy bar
+      (100); how fast the bar fills and the minimum gap between two ultimates (20-60 s) are set when
+      he is built]
+
+  Passives
+    STILL MIND (still_mind): every time his counter stance catches a blow, he gains 15 energy toward
+    his ultimate [on_counter: energy 15; at most once every 6 s].
+
+BOSS FIGHT
+- When: boss mode is on while a player is engaged with him (the player hurt him in the last 15 s, or
+  is his target, within 32 blocks; creative and spectator players never count). It ends 10 s after
+  the last engaged player leaves, and his health share never jumps. The first engagement with a
+  player each in-game day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and
+  cannot be staggered, a title on your screen (his name, title and faction) and his intro line. A
+  boss bar shows a star, his name and title, his phase pips and a lightning mark when his ultimate
+  is ready. His title is "the Still Crane".
+- Health: his field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.2 for a
+  striker, and +50% for each extra engaged player (counted up to 5). At level 10 against one player
+  that is 129 health (147 as a leader): about 34 s (39 s) of landed hits with an iron sword at 1.6
+  swings a second, half of them landing; his chainmail and iron boots soak part of every blow. A
+  whole fight lasts two to three times that once you dodge his wind-ups. No single player hit takes
+  more than 12% of his boss health; the excess becomes poise damage.
+- Poise: 100. Your hits fill his poise bar [damage x weapon: sword 1.0, axe 1.6, mace 2.0 plus its
+  fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your shield raised in the
+  last 6 ticks before a heavy move lands) adds 25. The bar drains 15 per second after 3 s without
+  poise damage. Full poise staggers him: 2.5 s kneeling dizzy, taking 25% more damage; then the bar
+  resets and its maximum grows 20% for the rest of the fight. No stagger during his intro, a phase
+  change or his ultimate's wind-up.
+- Pace: between moves he waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  During any recovery he takes 15% more damage, and 15% more again from behind (more than 120
+  degrees from where he faces). In a string of moves only the last one plays its full recovery, so
+  the punish window comes at the end of the string.
+- Phases:
+    Phase 1, from 100% health: Three Cuts, Still Water, Thunderclap Draw, Crane Step.
+    Phase 2, from 60%: the helmet goes on (armour +20%); adds Guard Splitter and Chained Lightning
+      Draw. The change takes 1.2 s, with a determined face.
+      "Then I will fight you properly."
+    Phase 3, from 25%: Twin Sky (two swords); adds Falling Crane. The change takes 1.4 s.
+      "Forgive me, teacher."
+  During a phase change he takes 50% less damage and cannot be staggered (a glint shows it; he is
+  never invulnerable), a shockwave pushes everyone within 4 blocks back (no damage; softened near
+  lava or a drop), he says the line, his look changes and the bar gains a pip. Phase 3 note: the
+  design's kit table keeps Still Water and Crane Step in all three phases, but its example file
+  leaves both out of the phase 3 list; which is right is set when he is built.
+- Weak points:
+  - Recovery: after a counter stance that nobody hit, after the re-sheathe of Thunderclap Draw, and
+    in every other recovery, the punish bonus doubles [+30% instead of +15%].
+  - Back: the bonus for hitting him from behind (more than 120 degrees from where he faces) doubles
+    [during a recovery, +30% more instead of +15%].
+  - The line or prop that hints at each weak point is set when he is built.
+- How he reads you (each answer replaces his next pick):
+  - You raise a shield -> Guard Splitter (60%, at most once every 10 s). Guard Splitter is a phase
+    2-3 move; whether this answer can come in phase 1 is set when he is built.
+  - You draw a bow -> Crane Step (70%, at most once every 8 s), and from there Three Cuts 70% of the
+    time.
+  - Against players, Still Water scores double, so expect the stance often in a duel.
+- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
+  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his damage bonuses
+  together never exceed +25%. In phase 3, Twin Sky's +10% and enrage's +15% take him exactly to that
+  cap.
+- Intro: a bow, then his hand to the hilt. "Tsurumine Kagenori. Draw when you are ready."
+- Yield: he kneels (honour 90; only heroes with honour 30 or less, or leaders with caution 70 or
+  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
+  he kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
+  finish". His yield line: "...Well struck."
+  - Spared (sneak and use): he walks home and will not fight for 10 minutes (a defeat, not a death;
+    no gear dropped). "I will remember this mercy."
+  - Finished (strike): he dies. Rewards: XP orbs (7 x his level, at most 100), his non-kit gear (his
+    kit never drops) and a hero crest trophy (one per hero per player per in-game day).
+  - No choice in 5 s: he collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
+    beat, then death.
+- Escape: in a boss fight he never runs at low health: he fights to the yield and kneels. The one
+  order that pulls him out of a boss fight is a lost raid (his raid falls back, or its leader falls,
+  while he is in or near the target). Outside boss fights he escapes when his health drops under his
+  retreat point away from home [retreat_below 28%, worked out from the formula of design section
+  5.4], when his raid is lost, or, as a leader, when the base he is in falls or he is under 50%
+  health at its heart with no guard beside him. At his own base he does not escape: he withdraws
+  like a soldier and comes back at 60% health. Escaping, he starts no moves and runs with any
+  movement he has, even where no one can follow (an escape counts as travel, so his travel bonuses
+  are on); cornered with no way out for 3 s, he fights back, then runs again as soon as a way opens.
+  It ends inside his refuge's walls (his home base; for a leader the capital, or the nearest other
+  standing base; never the base he flees) or once no pursuer has been within 48 blocks for 10 s.
+  Then he stays away 5 minutes and until he is above 50% health, and does not go back for those he
+  fled. At most one escape in 10 minutes: inside that window he withdraws, kneels or goes home with
+  the party instead. An escape drops nothing and gives no rewards; a killing blow while he flees is
+  a normal defeat.
+- Revival: like every hero he comes back 10 minutes after his death [heroes.reviveSeconds 600], at
+  his home base (a leader: at the capital, or the nearest standing base); his kit items vanish at
+  death and return with him. He has no death ability of his own. A hero of his faction with the
+  revival_rite talent (milestone 2) would bring him back 20 / 30 / 40% sooner, never under 30 s.
+
+HOW TO BEAT HIM
+1. Do not swing into Still Water. When his hand goes to the hilt with a click and sparks, stop
+   attacking for the 1.5 s stance, or shoot him: arrows are not countered, while a melee hit is 80%
+   absorbed and answered with a 140% cut and a stun. If nobody hits him, the stance ends in a 0.8 s
+   recovery where your punish bonus is doubled.
+2. Step sideways from his draws. Thunderclap Draw (8 x 1) and Heaven-Splitting Draw (12 x 2) are
+   straight lines, with a strip on the ground that grows over 1.3 s and 2.0 s. The line stops at the
+   first solid block, so a block between you and him saves you too. Then punish the re-sheathe.
+3. Get behind him. His back is a weak point, and so are his recoveries: the best moment is his back
+   while he re-sheathes, or after the Three Cuts that follow Falling Crane.
+4. Bring an axe or a mace for his poise of 100 (x1.6 and x2.0): a stagger gives you 2.5 s at +25%
+   damage. A shield parry of a heavy move adds 25 poise, but from phase 2 a shield held up draws
+   Guard Splitter (60%), which disables it.
+5. Stay dry and do not draw a bow in the open at mid range: shock hurts 30% more in water or rain,
+   and a drawn bow brings Crane Step (70%), then Three Cuts. Water or lava between you makes him
+   skip the dash, and a ceiling of 3 blocks or less stops Falling Crane in phase 3.
+6. Respect phase 3. At 25% he draws his second sword (+20% attack speed, +10% damage), and every
+   Falling Crane is followed by Three Cuts: leave the 2-block landing disc during its 0.9 s wind-up
+   and keep moving after he lands.
+
+MOVEMENT
+Mobility traits: leaper (ceiling II) and runner (ceiling I). He has every feature from level 1; the
+numbers grow from 60% of full power at level 1 (79% at level 10) to 100% at level 20. Mobility never
+changes a move's damage, range or timing, and he never teleports (the stuck rescue every NPC has is
+the one exception).
+- From level 1: big bounds (higher jumps and long jumps over gaps) and the landing roll (no slowdown
+  when he lands). Before a leap he crouches for 0.3 s (the tell). As a runner he travels faster and
+  gets less hungry on trips, but only while travelling: both are off in fights.
+- Numbers, level 1 / 10 / 20:
+    Jump height (blocks)                    2.00 / 2.24 / 2.50
+    Longest gap he leaps (blocks)           3    / 4    / 6
+    Safe fall (blocks he drops unhurt)      7.2  / 8.5  / 10.0
+    Travel speed                            +6%  / +8%  / +10%
+    Travel hunger                           -12% / -16% / -20%
+- What his jumps reach: a rise up to his jump height minus 0.3, so 1.5-block fences and walls from
+  level 1 and 2-block ledges from level 13 (that needs 2.3).
+- Out of fights: he takes ravines, streams, fences and ledges without bridging or detours.
+- In fights: no move changes (Crane Step and Falling Crane are as written). Between moves he may
+  bound onto high ground; from level 13 he takes 2-block ledges (high ground a player can tower to),
+  and Falling Crane may start from one. He goes for a player on a pillar or behind a wall at once
+  when a jump reaches; on a 1x1 pillar top he may land basic attacks from the top of his jump. He
+  may stand where you cannot reach him, but at most 4 s at a time; then he comes back. A leap is
+  never aimed next to a drop deeper than his safe fall or into lava, fire or the void, and in a
+  fight he never leaps a gap whose floor is one of those.
+- Walls in raids: as a non-leader he always goes on his base's raids and is picked first [raids:
+  leads, the striker default]; as a leader, as his personality decides (below). His jumps cannot
+  clear today's 5-block base walls (a jump onto a wall is at most 3 blocks for any leaper, and his
+  own reach is 1.5, then 2 from level 13). He gets in over a lower or broken wall or a player's fort
+  within his jump, or leaps onto the top from higher ground outside (gaps up to 3 / 4 / 6), and only
+  when he also has a way out; otherwise he goes through the gate with the soldiers. Inside he takes
+  one goal: he opens the way when his soldiers are held outside, hunts a defending hero he sees
+  inside, and otherwise goes for the heart with his party; a goal ends after 60 s without progress.
+  Defending his own base, he bounds onto roofs and ledges at once.
+- Escaping (never while he is still fighting to win), he uses all of this, even where no one can
+  follow.
+- Signature animation: his own leap, arms spread and sleeves like wings (the crane).
+
+WORK AND TALENTS
+- Duty: guard (when he is not leading). He patrols and answers alarms like a guard, only better.
+- Proficiency (every hero beats a worker at its duty; tier I at levels 1-9, II at 10-19, III from
+  20): as a guard he answers alarms from farther away instead of working faster [+8 / +12 / +16
+  blocks]. He also has a bigger backpack [21 / 24 / 27 slots; a worker has 18], less wear on his
+  gear [-10 / -20 / -30%], less hunger from work [-10 / -15 / -20%] and more work XP [+10 / +20 /
+  +30%]. Each level he gains rolls a guard affix, as for any NPC.
+- Presence (his specialty as a guard): drill and mentor count one tier higher while he is at his
+  base (inside the walls or within 16 blocks) and not on a raid; at tier III they use the tier IV
+  numbers. So at level 1, at home, drill already gives 2 XP an hour and mentor +25% work XP. His
+  personal touch, from drill: dawn sparring with 2 / 3 / 4 soldiers, who gain 10 / 15 / 20 combat XP
+  (non-lethal; it stops at half health).
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where he is, inside
+  the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never the sum;
+  the realm talent, marked *, also works at every other base of his faction at tier I while he
+  leads):
+  - drill: the base's soldiers gain 1 / 2 / 3 work XP per in-game hour by day [tier IV with
+    Presence: 4].
+  - mentor* (realm): NPCs within 16 blocks gain +15 / +25 / +35% work XP, and recruits start higher:
+    at tier I every second recruit at level 2, at tier II every recruit at level 2, at tier III at
+    level 3 [tier IV with Presence: +45% work XP, recruits at level 4]. The talent table also gives
+    mentor a personal effect (NPCs of the job he works, within 16 blocks, work 5 / 8 / 10% faster),
+    but his own entry names only the dawn sparring; whether it applies to a guard is set when he is
+    built.
+
+AS A FACTION LEADER
+- Title: Lord of the Still Crane.
+- Faction names: "House of the Still Crane" (the first unused name is taken), then "Still Crane
+  Watch". Short name: "Still Crane". Motto: "The blade waits. So do we."
+- Colours: primary indigo [#2E3A6B], secondary off-white [#E8E4D8], accent steel grey [#9AA6B2].
+  They show in chat, name tags, map markers, the boss bar, his sash and his NPCs' tabards.
+- Banner: blue, with a white circle in the middle and a light grey border [base blue; circle white;
+  border light_gray]. Real banners hang at the station and the gates, and members get a banner item.
+  Blue is set by hand because the nearest dye to indigo would be grey. His faction's wool, carpets
+  and beds are blue, with white as the second dye.
+- Base style: deepslate_keep, a Keep: deepslate brick walls, dark oak log frames, spruce plank
+  floors, deepslate tile roofs and cobbled deepslate round the edge; signs read like "Still Crane
+  Keep". Culture: east (recruits get eastern names). Economy focus: military (no civilian role moves
+  up; the soldier cap gets +1 instead) and mining (miners and smelters are hired ahead of other
+  civilians).
+- His day (court duty): a short stop at the station at dawn; daylight walking between the station,
+  the gates and the heart, greeting member players (his first talent, drill, has no workplace); the
+  heart at dusk; a bed in the largest house at night, woken by any alarm. He answers every alarm and
+  guards the heart in a defence, says his founding line when the faction starts, and announces
+  raids, attacks on his base, a lost base, a fallen hero and recruit milestones in his own voice
+  (his own lines for these are not written yet; his temperament's fallback lines fill in).
+- If he dies: everyone hears it; no new raids until he returns, and no vengeance raid (that needs
+  aggression 70 or more); a raid he was on carries on without him [(caution + 1 - loyalty) / 2 =
+  0.40, not over 0.5]. If his faction's last base falls he becomes an exiled free hero, never a
+  leader again in that campaign.
+- How his personality steers the faction. His traits (out of 100): aggression 50, honour 90,
+  ambition 45, caution 65, greed 25, sociability 30, loyalty 85, volatility 10. The numbers below
+  are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
+  personality strength; a neutral leader's value is in brackets.
+  - Raids a little less often: about every 32 minutes, or 1.59 in-game days [38160 ticks, interval
+    x1.06; neutral 36000 ticks, 30 minutes]. First raid not before 1.33 intervals [1].
+  - Attacks only with a clear edge: attack odds needed 0.757 [0.667]; counter-attack window 0.29 of
+    the interval [0.25], at odds 1.62 [1.5].
+  - He neither leads ordinary raids (that needs aggression 65 or more) nor stays home (caution 70 or
+    more, or aggression under 35): he joins joint raids and counter-attacks.
+  - A raid party falls back after losing 52.5% [50%].
+  - Keeps 38% of the soldiers home [1/3], with at least 3 home defenders and 3 home swordsmen [3,
+    3].
+  - Soldier cap 13 [12]: 12 from his traits, +1 from his military focus. Ranged share 0.445 [0.40].
+  - Trader hired late, at population 18 [14] (the formula lands on 17.5; how a half is rounded is
+    set when he is built); trader trips x1.16 apart [1]; amounts kept back from selling x1.27 [1].
+  - Enchanter at XP level 10 [10]; recruitment interval x1.03 [1]; food reserve x1.14 [1].
+  - New house when free beds are 1 or fewer [1]; storage grows when fuller than 77.5% [70%]; repair
+    scan budget 419 [384].
+  - Miners want 12 gold and 6 diamonds before turning to other ores [16 and 8]: he is not greedy.
+  - Raid targets: a rival's defence counts in full [fd 1]; loot does not tempt him (greed under 50);
+    monster lairs (the Hollow's) are much more attractive targets for an honourable, careful leader
+    [-550]. Mercy rule (honour 70 or more): he spares a faction that lost a base in the last in-game
+    day.
+  - Almost no random noise on his decisions [sigma 0.2 x volatility = 0.02]: he is predictable.
+  - Stoic rule (milestone 2, when pacts arrive): he never breaks an agreement by surprise; as an
+    honourable leader (honour 75 or more) he declares a break openly instead of betraying.
+  - The design's worked example for a default stoic gives the same raid interval, attack odds,
+    garrison and ranged share, and a soldier cap of 12 before the military focus; its trader
+    threshold is 17, and his lower greed (25 against 30) moves it to 17.5.
+
+PERSONALITY AND VOICE
+- Temperament: stoic. Traits: aggression 50, honour 90, ambition 45, caution 65, greed 25,
+  sociability 30, loyalty 85, volatility 10.
+- In a fight: steady (aggression between 35 and 65: he looks for enemies within 20 blocks and chases
+  up to 56), so his attacking moves get no bonus [x1.0], and his caution makes his zoning and
+  defensive moves a little likelier [x1.09]. He goes for the strongest enemy (set in his file) and
+  never strikes a yielding enemy (honour 60 or more). Outside boss fights he pulls back at 28%
+  health [retreat_below].
+- Likes: bamboo, cherry saplings. Dislikes: rotten flesh. (Gifts come in a later milestone.)
+- Quirk: "re-ties his hair before every duel."
+- Voice: deep bass blips per syllable, low [pitch 0.85; the male default is 0.9], measured [rate 3
+  ticks per syllable].
+- Lines:
+    Founding:          "From today this land is the Still Crane's. Keep your blades clean."
+    Greeting:          "{player}. Walk with purpose."
+    Intro:             "Tsurumine Kagenori. Draw when you are ready."
+    Phase 2:           "Then I will fight you properly."
+    Phase 3:           "Forgive me, teacher."
+    Twin Sky:          "Two blades. No more restraint."
+    Thunderclap Draw:  "Thunder answers the blade."
+    Ultimate:          "Close your eyes. It is already over."
+    Kill:              "Rest."
+    Yield:             "...Well struck."
+    Spared:            "I will remember this mercy."
+  About 45 more lines are planned. Moments without a line of his own yet (enrage, stagger, escape,
+  raid announcements and others) use the stoic fallback lines until his are written.
+
+ANIMATIONS
+His own, on top of the shared library:
+- One for each move: Three Cuts, Still Water, Thunderclap Draw, Crane Step, Guard Splitter, Chained
+  Lightning Draw, Falling Crane. Thunderclap Draw, for example, is 2.2 s long: from his stance he
+  sets the quick-draw grip with a glint at 0.25 s, holds still, cuts at 1.3 s and has re-sheathed by
+  2.2 s.
+- Ultimate: his eyes close (no blinking), then open sharp for the cut.
+- Twin Sky: he draws the second sword.
+- Phase 2: he puts on the helmet.
+- Phase 3: his own phase 3 change (the design does not describe it yet).
+- Intro: a bow, then his hand to the hilt.
+- Personal idles: hand resting on the hilt, eyes-closed breathing, re-tying his hair.
+- Movement: his own leap, arms spread, sleeves like wings.
+Shared ones he uses a lot: the katana style set (low ready; horizontal, diagonal and thrust cuts;
+quick-draw ready and sheathe; draw, guard, dodge, victory, taunt); the leaper moves (crouch jump,
+leap, heavy landing, landing roll).
+
+SOUNDS
+Being made now: voice blips, move sounds and an ultimate sting; this section is filled when the
+sound set is approved.
