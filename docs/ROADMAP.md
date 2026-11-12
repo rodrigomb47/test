@@ -31,22 +31,23 @@ server, documented (README/BALANCE) and shipped in the download jar. Keep the St
 | Nether expeditions (§15) | A portal, Nether wart, quartz, blaze rods; unlocks potions and better enchanting | planned |
 | Overworld/Nether dungeons and bosses, reward chests, hero tokens (§15, §17) | Ties into Phase 4 heroes | planned |
 
-## Phase 4: heroes (§2, §16), to start right after phase 1
+## Phase 4: original heroes (§2, §16), the next milestone
 
-The owner's main feature. The format is final: `docs/heroes/HERO_FORMAT.md` (version 1), with the chatbot prompt
-`docs/heroes/hero-prompt.txt`, the schema, original examples and the checker `tools/herotool/`. Each hero is
-`<id>.json` + `<id>.png` dropped into the server's `config/factionclash/heroes/`, loaded and validated on start and on
-`/fc hero reload`; the server sends skins to clients. The owner writes their heroes (Honkai: Star Rail / Zenless
-Zone Zero characters) with a chatbot and keeps them in their private repository `rodrigomb47/faction-heros`; those
-files are never committed to this repository or shipped in the jar. Claude can install copies on its test server,
-check and test them, and report problems; it does not edit or author them.
+The owner's main feature, redesigned on 2026-11-11: 200 ORIGINAL anime-style heroes (100 female, 100 male), each with
+its own animated model (GeckoLib, bundled in the jar), facial animation (blinking, expressions), a unique boss-like
+combat kit, a personality and non-combat talents. Each campaign's factions are led by randomly drawn heroes; a
+faction's name, colours, banner, base style and decisions follow its leader's personality. The design is in
+`docs/heroes-v2/` (`HEROES_V2.md` the design, `ROSTER_PLAN.md` the 200 heroes, `SLICE_PLAN.md` the first milestone,
+`CRITIQUE.md` open points, `research/` the archetype, animation and systems research); the roster tools are in
+`tools/roster/`. The earlier owner-supplied hero path (`docs/heroes/`, format 1 with 64x64 skins and a chatbot prompt)
+is retired; format-1 files still load as a fallback for operator overrides.
 
-| Item | Status |
+| Milestone | Status |
 |---|---|
-| Format, prompt, schema, examples, offline checker (`docs/heroes/`, `tools/herotool/`) | done |
-| Loader and validator (`/fc hero reload`, `check`, `_report.txt`), skin sync to clients | planned |
-| Hero entity, stats, gear, behaviour, basic attack, skills, ultimate/energy, passives, base abilities | planned |
-| Progression, dialogue, starter hero, hero tokens, 10-minute revival, war council and raids | planned |
+| Research and design (archetypes, animation stack, hero-led factions, boss mechanics, roster of 200, slice plan) | done |
+| Vertical slice: engine (hero entity, GeckoLib models and faces, kits and boss mode, hero-led factions) + 8 heroes, screenshots for the owner | planned |
+| Batches 1-8 of 24 heroes each, reviewed and arena-tested | planned |
+| Campaign checks and balance | planned |
 
 ## Phase 5: play and polish
 

@@ -4,8 +4,9 @@ Heroes are unique, named champions of a faction, each with its own skin, stats, 
 ultimate charged by energy, passives, out-of-combat abilities at its base, and dialogue lines. Each hero is two files:
 `<id>.json` (the hero) and `<id>.png` (its skin).
 
-> Status: the format is final (version 1). The hero system that loads these files is being built next (see
-> `docs/ROADMAP.md`); until it ships, `tools/herotool/herotool.py check` is the way to check a file.
+> Status: RETIRED. The owner chose original heroes made in the mod (see `docs/heroes-v2/`). This format 1 (owner-written
+> heroes with 64x64 skins and a chatbot prompt) is kept for reference; its ability catalogue is the base of format 2,
+> and format-1 files will still load as a fallback for operator overrides.
 
 ## Making a hero with a chatbot
 
