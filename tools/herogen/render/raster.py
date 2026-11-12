@@ -270,10 +270,12 @@ class Frame:
 
 
 def render(geo, tex, view=None, pose=None, hidden=(), uv_shift=None, tint=None, glow=None, bounds=None, pad=2,
-           brightness=1.0, frame=False, **legacy):
+           brightness=1.0, frame=False, reverse=False, **legacy):
     """Draw the hero. `tex` (and `glow`) are RGBA arrays; `tint` maps bone names to an RGB multiplier (0-255);
     `bounds` (xmin, xmax, ymin, ymax) in projected model pixels fixes the framing (default: the model's own).
-    Returns the RGBA array, or a Frame with frame=True. The G1 keywords yaw, scale and pitch still work."""
+    Returns the RGBA array, or a Frame with frame=True. The G1 keywords yaw, scale and pitch still work.
+    `reverse` draws the faces in the opposite order, which changes only pixels where two surfaces tie in depth
+    (coplanar_ties)."""
     if view is None:
         view = View(legacy.pop("yaw", 0.0), legacy.pop("pitch", 0.0), legacy.pop("scale", 8))
     if legacy:
@@ -281,6 +283,8 @@ def render(geo, tex, view=None, pose=None, hidden=(), uv_shift=None, tint=None, 
     tex = np.asarray(tex)
     th, tw = tex.shape[:2]
     qs = quads(geo, hidden, uv_shift, pose)
+    if reverse:
+        qs = qs[::-1]
     if bounds is None:
         bounds = projected_bounds(qs, view)
     xmin, xmax, ymin, ymax = bounds
@@ -333,6 +337,32 @@ def render(geo, tex, view=None, pose=None, hidden=(), uv_shift=None, tint=None, 
     if frame:
         return Frame(out, depth, ids, qs, bounds, scale, pad, tuv)
     return out
+
+
+def coplanar_ties(geo, tex, view, seams=False, **kw):
+    """Where two visible surfaces of different colour lie in one plane (z-fighting in game). The renderer resolves
+    a depth tie by draw order (the earlier face wins), the game does not: two coplanar faces of different cubes get
+    depth values that differ in their last bits from pixel to pixel and from frame to frame, so the pixel flickers
+    between them (most at a distance). Drawing the faces in the opposite order changes exactly the tied pixels.
+    Without `seams`, ties narrower than 2 screen pixels are dropped (the line where two faces cross, or a face edge
+    flush with another face: a seam, not a flickering area). Returns (mask (H, W) bool, {(bone, bone): pixels},
+    the Frame drawn in file order); other keywords as render()."""
+    kw = dict(kw, frame=True)
+    a = render(geo, tex, view, **kw)
+    b = render(geo, tex, view, reverse=True, **kw)
+    mask = np.any(a.rgba != b.rgba, axis=2)
+    if not seams:                                   # opening with a 2 x 2 square: keeps areas, drops lines
+        core = mask[:-1, :-1] & mask[1:, :-1] & mask[:-1, 1:] & mask[1:, 1:]
+        opened = np.zeros_like(mask)
+        for dy in (0, 1):
+            for dx in (0, 1):
+                opened[dy:dy + core.shape[0], dx:dx + core.shape[1]] |= core
+        mask = opened
+    pairs = {}
+    for y, x in zip(*np.nonzero(mask)):
+        key = tuple(sorted((a.quads[a.ids[y, x]].bone, b.quads[b.ids[y, x]].bone)))
+        pairs[key] = pairs.get(key, 0) + 1
+    return mask, pairs, a
 
 
 def _project(qs, view, bounds, scale, pad, H, W):

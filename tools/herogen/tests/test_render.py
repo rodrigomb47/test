@@ -48,10 +48,16 @@ def _cube(origin, size, uv_at, faces=("north", "south", "east", "west", "up", "d
     return d
 
 
-def fixture():
-    """(GeoModel, texture, glow mask): a body, an arm on a rotated bone, a cube with its own rotation, an inflated
-    cube, a zero-thickness plane, a tinted bone and a cut-out hole."""
-    bones = [
+def _fixture_doc(bones=None):
+    """The fixture's geometry document (its own bones, or `bones`)."""
+    if bones is None:
+        bones = _fixture_bones()
+    return json.loads(json.dumps({"format_version": "1.12.0", "minecraft:geometry": [{"description": {
+        "identifier": "geometry.test", "texture_width": 128, "texture_height": 128}, "bones": bones}]}))
+
+
+def _fixture_bones():
+    return [
         {"name": "root", "pivot": [0, 0, 0]},
         {"name": "body", "parent": "root", "pivot": [0, 6, 0], "cubes": [_cube((-4, 0, -2), (8, 12, 4), (0, 0))]},
         {"name": "arm", "parent": "body", "pivot": [5, 11, 0], "rotation": [10, 0, 25],
@@ -63,9 +69,13 @@ def fixture():
          "cubes": [_cube((-3, 7, -2.05), (6, 3, 0), (0, 64), faces=("north",))]},
         {"name": "sash", "parent": "body", "pivot": [0, 5, 0], "cubes": [_cube((-4.5, 5, -2.5), (9, 1, 5), (0, 80))]},
     ]
-    doc = {"format_version": "1.12.0", "minecraft:geometry": [{"description": {
-        "identifier": "geometry.test", "texture_width": 128, "texture_height": 128}, "bones": bones}]}
-    geo = GeoModel(json.loads(json.dumps(doc)))
+
+
+def fixture():
+    """(GeoModel, texture, glow mask): a body, an arm on a rotated bone, a cube with its own rotation, an inflated
+    cube, a zero-thickness plane, a tinted bone and a cut-out hole."""
+    bones = _fixture_bones()
+    geo = GeoModel(_fixture_doc(bones))
     yy, xx = np.mgrid[0:128, 0:128]
     tex = np.zeros((128, 128, 4), dtype=np.uint8)
     tex[..., 0] = (xx * 2) % 256
@@ -221,6 +231,31 @@ class LightingTest(unittest.TestCase):
         self.assertTrue(horn.any())
         self.assertGreater(lit[horn][:, 0].mean(), fr.rgba[horn][:, 0].mean() + 60)
         self.assertTrue(np.array_equal(lit[~horn], fr.rgba[~horn]))
+
+
+class CoplanarTest(unittest.TestCase):
+    """Coplanar faces of different colour z-fight in game; the renderer must not hide them (raster.coplanar_ties)."""
+
+    def test_the_fixture_has_none(self):
+        geo, tex, _ = fixture()
+        for yaw in (0.0, -40.0, 180.0):
+            mask, pairs, _ = raster.coplanar_ties(geo, tex, raster.View(yaw, 10.0, 3))
+            self.assertFalse(mask.any(), (yaw, pairs))
+
+    def test_a_flush_cube_is_found(self):
+        """A belt cube whose front lies in the body's front plane, painted differently: every pixel where the two
+        overlap is a tie (the body front is 12 px wide, the belt 6 x 1 px and flush with it)."""
+        _, tex, _ = fixture()
+        bones = _fixture_bones()
+        bones.append({"name": "belt", "parent": "body", "pivot": [0, 3, 0],
+                      "cubes": [_cube((-3, 3, -2), (6, 1, 0.5), (60, 80))]})
+        tex = tex.copy()
+        tex[80:84, 60:76, :3] = (30, 200, 40)
+        g2 = GeoModel(_fixture_doc(bones))
+        mask, pairs, fr = raster.coplanar_ties(g2, tex, raster.View(0.0, 0.0, 4))
+        self.assertEqual(set(pairs), {("belt", "body")})
+        self.assertEqual(int(mask.sum()), 6 * 1 * 4 * 4)            # the belt front, 6 x 1 model px at 4x
+        self.assertEqual({fr.quads[i].bone for i in np.unique(fr.ids[mask])}, {"body"})   # file order: body first
 
 
 class GeometryTest(unittest.TestCase):
@@ -476,11 +511,14 @@ class GifTest(unittest.TestCase):
             with open(p1, "rb") as f1, open(p2, "rb") as f2:
                 self.assertEqual(f1.read(), f2.read())
             g = Image.open(p1)
-            for i, f in enumerate(frames):
+            self.assertEqual(g.n_frames, len(frames))
+            for i, (f, q) in enumerate(zip(frames, gif.quantize(frames))):
                 g.seek(i)
-                got = np.asarray(g.convert("RGB")).astype(int)
+                got = np.asarray(g.convert("RGB"))
+                # exactly the quantized frame (frame differencing loses nothing, no frame is dropped or shifted)
+                self.assertTrue(np.array_equal(got, np.asarray(q.convert("RGB"))), "frame %d" % i)
                 want = np.asarray(f.convert("RGB")).astype(int)
-                self.assertLess(np.abs(got - want).mean(), 3.0, "frame %d" % i)
+                self.assertLess(np.abs(got.astype(int) - want).mean(), 3.0, "frame %d" % i)
 
     def test_cli_preview(self):
         import cli

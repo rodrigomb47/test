@@ -130,7 +130,7 @@ def turnaround(a, path, scale=7, pitch=PITCH, tint=SASH_TINT, title=None):
         cells.append((label, to_image(a.render(v, pose, tint=tint, bounds=(xb[0], xb[1], yb[0], yb[1])))))
     extra = []
     top = raster.View(0.0, 89.0, scale)
-    extra.append(("from above (front down)", to_image(a.render(top, pose, tint=tint))))
+    extra.append(("from above (front at the bottom)", to_image(a.render(top, pose, tint=tint))))
     if a.bones("weapon_drawn"):
         d = raster.View(-34.0, pitch, scale)
         dpose = a.stance(drawn=True)
@@ -139,7 +139,7 @@ def turnaround(a, path, scale=7, pitch=PITCH, tint=SASH_TINT, title=None):
                                                         bounds=(xb[0], xb[1], min(yb[0], xb[2]), max(yb[1], xb[3]))))))
     far = raster.View(-34.0, pitch, scale)
     xb = a.bounds([far], (pose,), far=True)
-    extra.append(("far: fine_ hidden", to_image(a.render(far, pose, far=True, tint=tint,
+    extra.append(("far (beyond 16 blocks): fine_ bones hidden", to_image(a.render(far, pose, far=True, tint=tint,
                                                          bounds=(xb[0], xb[1], yb[0], yb[1])))))
     phases = a.visual.get("phases") or []
     if phases:
@@ -152,7 +152,9 @@ def turnaround(a, path, scale=7, pitch=PITCH, tint=SASH_TINT, title=None):
     f18, f13 = font(18), font(13)
     gap = 14
     row1_w = sum(im.width for _, im in cells) + gap * (len(cells) - 1)
-    row2_w = sum(im.width for _, im in extra) + gap * (len(extra) - 1)
+    measure = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    row2_w = sum(max(im.width, int(measure.textlength(label, font=f13))) for label, im in extra) + \
+        gap * (len(extra) - 1)
     row1_h = max(im.height for _, im in cells)
     row2_h = max(im.height for _, im in extra)
     W = max(row1_w, row2_w, 900) + 32
@@ -168,10 +170,14 @@ def turnaround(a, path, scale=7, pitch=PITCH, tint=SASH_TINT, title=None):
         sheet.alpha_composite(im, (x, y + 18 + row1_h - im.height))
         x += im.width + gap
     x, y = 16, 62 + 18 + row1_h + 16
-    for label, im in extra:
+    for i, (label, im) in enumerate(extra):
+        lw = int(d.textlength(label, font=f13))
+        x += max(0, (lw - im.width) // 2)                  # room for a label wider than its image
         d.text((x + im.width // 2, y), label, fill=DIM, font=f13, anchor="ma")
-        sheet.alpha_composite(im, (x, y + 18 + row2_h - im.height))
-        x += im.width + gap
+        # the view from above is centred in the row; the standing views share the row's feet line
+        top_y = y + 18 + ((row2_h - im.height) // 2 if i == 0 else row2_h - im.height)
+        sheet.alpha_composite(im, (x, top_y))
+        x += im.width + gap + max(0, (lw - im.width) // 2)
     save(sheet, path)
     return sheet
 
@@ -304,7 +310,8 @@ def _cell(a, tint):
     main = main.crop((0, max(0, main.height - main_h), main.width, main.height))
     cell.alpha_composite(main, (6, 30 + main_h - main.height))
     x = 12 + main.width
-    back_v = raster.View(160.0, PITCH, scale / 2)
+    # the back and the phase look at the main view's scale (the cell has the room; half size hid the detail)
+    back_v = raster.View(160.0, PITCH, scale)
     back = to_image(a.render(back_v, pose, tint=tint))
     cell.alpha_composite(back, (x, 30 + main_h - back.height))
     d.text((x + back.width // 2, 30 + main_h + 2), "back", fill=DIM, font=f12, anchor="ma")
@@ -313,7 +320,7 @@ def _cell(a, tint):
     if phases:
         ph = max(p["phase"] for p in phases)
         glow_eyes = any(p.get("eyes_glow") for p in phases)
-        pv = raster.View(-34.0, PITCH, scale / 2)
+        pv = raster.View(-34.0, PITCH, scale)
         face = (10, 0, 0) if glow_eyes else (0, 0, 0)
         pim = to_image(a.render(pv, pose, face=face, phase=ph, tint=tint))
         cell.alpha_composite(pim, (x, 30 + main_h - pim.height))
@@ -332,8 +339,12 @@ def _cell(a, tint):
     hero = a.hero or {}
     d.text((6, 4), a.name, fill=INK, font=f15)
     weapon = ((hero.get("art") or {}).get("weapon") or {}).get("prop", "-")
-    facts = "%s / %s / %s / %s" % (hero.get("archetype", "-"), hero.get("role", "-"), hero.get("element", "-"),
-                                   weapon.split("/")[-1])
+    if hero.get("role") or hero.get("element"):
+        facts = "%s / %s / %s / %s" % (hero.get("archetype", "-"), hero.get("role", "-"), hero.get("element", "-"),
+                                       weapon.split("/")[-1])
+    else:                                       # a style fixture or the fallback: no kit, show the build instead
+        facts = "%s %s, %d cubes%s" % (a.visual["base"], a.visual["build"], len(a.geo.cubes),
+                                       "" if weapon == "-" else ", " + weapon.split("/")[-1])
     d.text((CELL_W - 6, 6), facts, fill=DIM, font=f12, anchor="ra")
     sw = _palette_swatch(a, CELL_W - 12)
     cell.alpha_composite(sw, (6, CELL_H - sw.height - 4))
@@ -341,7 +352,7 @@ def _cell(a, tint):
 
 
 def contact_sheet(heroes, path, tints=None, cols=6, rows=4, title=None):
-    """24 heroes per sheet (6 x 4 cells): each cell has the 3/4 front view, a small back view, the phase look, the
+    """24 heroes per sheet (6 x 4 cells): each cell has the 3/4 front view, the back view, the phase look, the
     face strip (open, blink, happy, angry, focused, pain, talk), the palette, and the name, archetype, role, element
     and weapon. More heroes than fit write path_2.png, path_3.png, ... Returns the paths."""
     per = cols * rows

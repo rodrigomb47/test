@@ -221,8 +221,16 @@ def cmd_preview(args):
     for t in times:
         pose = pb.pose(t) if pb else a.stance(drawn)
         face = face_sim.frames(t, pose, blink_ok=False)
-        frames.append(to_image(a.render(view, pose, face=face, phase=args.phase, drawn=drawn,
-                                        brightness=0.25 if args.night else 1.0)))
+        img = to_image(a.render(view, pose, face=face, phase=args.phase, drawn=drawn,
+                                brightness=0.25 if args.night else 1.0))
+        if args.ties:                   # coplanar faces of different colour (z-fighting in game) in magenta
+            mask, pairs, _ = a.ties(view, pose, face=face, phase=args.phase, drawn=drawn)
+            arr = np.array(img)
+            arr[mask] = (255, 0, 255, 255)
+            img = Image.fromarray(arr, "RGBA")
+            print("t=%.2f: %d coplanar pixels%s" % (t, int(mask.sum()), "".join(
+                "\n  %s/%s %d" % (k[0], k[1], n) for k, n in sorted(pairs.items(), key=lambda kv: -kv[1]))))
+        frames.append(img)
     if len(frames) == 1:
         out = frames[0]
     else:
@@ -289,6 +297,13 @@ def cmd_sheet(args):
 def cmd_render_previews(args):
     from render import showcase
     out = args.out or showcase.OUT_DIR
+    if args.check:
+        problems = showcase.check(out, gifs=not args.no_gif, only=args.only or None)
+        for p in problems:
+            print("DIFF " + p)
+        if not problems:
+            print("OK   %s: the committed previews match a fresh render" % out)
+        return 1 if problems else 0
     for k, p in sorted(showcase.write_all(out, gifs=not args.no_gif, only=args.only or None).items()):
         print("%s: %s" % (k, p))
     return 0
@@ -338,6 +353,8 @@ def main(argv=None):
             q.add_argument("--phase", type=int, default=1)
             q.add_argument("--night", action="store_true", help="light map at night (shows the glow layer)")
             q.add_argument("--transparent", action="store_true")
+            q.add_argument("--ties", action="store_true", help="paint coplanar faces of different colour (they "
+                                                              "z-fight in game) magenta and list their bones")
         else:
             q.add_argument("ids", nargs="+")
             q.add_argument("--t0", type=float, default=0.0)
@@ -370,6 +387,8 @@ def main(argv=None):
     rp.add_argument("--out", default=None)
     rp.add_argument("--no-gif", action="store_true")
     rp.add_argument("--only", nargs="*", choices=("lineups", "turnarounds", "faces", "contact", "gifs"))
+    rp.add_argument("--check", action="store_true", help="render in a temporary folder and fail if a committed "
+                                                         "preview differs (stale)")
     rp.set_defaults(fn=cmd_render_previews)
     s = sub.add_parser("stats", help="budgets per hero")
     s.add_argument("ids", nargs="*")

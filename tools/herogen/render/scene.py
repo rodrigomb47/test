@@ -154,6 +154,13 @@ class HeroAssets:
                              uv_shift=self.face_shift(*face), tint=self.tint(tint), glow=gl if glow else None,
                              bounds=bounds, pad=pad, brightness=brightness, frame=frame)
 
+    def ties(self, view, pose=None, face=(0, 0, 0), phase=1, drawn=False, far=False, bounds=None, pad=2):
+        """raster.coplanar_ties for this hero in a frame: (mask, {(bone, bone): pixels}, Frame)."""
+        pose = {b: v for b, v in (pose or {}).items() if b in self.geo.bones}
+        tex, _ = self.textures(phase)
+        return raster.coplanar_ties(self.geo, tex, view, pose=pose, hidden=self.hidden(phase, drawn, far),
+                                    uv_shift=self.face_shift(*face), tint=self.tint(), bounds=bounds, pad=pad)
+
     def bounds(self, views, poses=(None,), phase=1, drawn=False, far=False):
         """Common bounds of several views and poses."""
         bs = []

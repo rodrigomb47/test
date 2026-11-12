@@ -1201,3 +1201,69 @@ and is byte-identical twice; `preview` from the command line. `test_anim.py` and
 - **Not emulated**: GeckoLib's bone reset after an action ends (the base shows at once here), blends between two base
   animations, the procedural look and the secondary chains of `setCustomAnimations`, held vanilla items, name tags,
   fog, the hurt overlay and the entity shadow (lineups draw a soft ellipse).
+
+## G2 review: stale GIFs, coplanar faces, readable films (2026-11-12)
+
+Reviewed c2e967a: every image and GIF of `previews/render/` (GIF frames extracted and read), the renderer against the
+vanilla and GeckoLib rules it cites, the tests, and a fresh render of the whole set compared byte for byte with the
+committed files (the style and animation previews too).
+
+### Confirmed correct
+
+- The light values recomputed by hand from `DIFFUSE_LIGHT_0/1` (front and back 0.74, sides 0.50, top 1.0, bottom 0.4)
+  and the face-plane numbers of `face_plane_light.png` (head down 20 degrees: front 0.55, eyes plane 0.88; turned 30
+  degrees to its right: 0.74 against 0.65).
+- Bone and cube transform order, the normal matrix, hidden children, cut-out, no culling (the sleeve's open end shows
+  its inside, as in game), the action blend and the event clock (the hit on the frame of the cut, 0.80 s).
+- Determinism: 16 of the 18 committed files of the set and all 28 style and animation previews came out byte for byte.
+- Blinks: every hero blinks inside the faces GIF's window, Rowan's double blink is 2 ticks apart, and the half and
+  closed frames are both visible at 20 fps.
+- No missing faces and no wrong overlaps in any view, apart from the depth ties below.
+
+### Found and fixed
+
+1. **Two committed GIFs were stale** (not what the code makes). `swing.gif` showed every event one frame late (the
+   sweep sound at 0.75 s, the hit at 0.85 s, while the cut shows at 0.80 s: an earlier event window), so the G2 summary's
+   "hit at 0.80 s" was not true of the committed file; `idle_blink_faces.gif` was an 8 s render (2.0-10.0 s) where the
+   code and these notes say 6 s (2.5-8.5 s). Both regenerated. New `render-previews --check` renders the set in a
+   temporary folder and fails on any committed preview that differs (about 4 minutes; run it before committing
+   previews).
+2. **The renderer hid z-fighting.** It settles a depth tie by draw order (the earlier face wins), so two coplanar faces
+   of different cubes look like one clean surface; in game they z-fight (their depths differ in the last bits from
+   pixel to pixel and frame to frame, worst at a distance). Drawing the faces a second time in reverse order changes
+   exactly the tied pixels. In the seven characters' stance (front, 3/4, back at 6x): **Maren's sash has exactly the
+   extents of her waist coat layer** (x +-3.4, z +-2.4), so the sash is hidden in every preview and would flicker
+   against the coat in game (611 px); **Garrick's and Tobin's sash shares its side planes with the skirt's top band**
+   (y 27.5-28.75 on Garrick: 495 and 250 px); Maren's two greaves overlap by 0.45 px at the centre in one front plane
+   (477 px); smaller: the test rig's chest/fine_chest and tail_4/tail_5, the ear slabs of Tansy, Tobin and the test rig
+   (cubes of one bone flush with each other), Rowan's chest, Wren's bangs on the head (8 px). Added
+   `raster.coplanar_ties` (ties narrower than 2 screen pixels are dropped: where two faces cross, or an edge lies flush
+   on a face, is a seam, not a flickering area), `HeroAssets.ties`, `preview --ties` (magenta overlay and the bone
+   pairs) and the evidence image `previews/render/coplanar_faces.png`. The fixes belong to the parts (G6b): a layer
+   over another sits at least 0.05 px proud (the face planes' rule, HEROES_V2 4.3), or the faces that overlap carry
+   the same colour; then a `check` rule (G7).
+3. **The GIFs were too small to judge**: 360-411 px wide at 3x, so a blink was 1-2 screen pixels and the blade a 1 px
+   line. Walk, run and the swing are now at 5x and the idle at 4x (all GIFs together about 2.4 MB, was 1.9).
+4. **Event labels ran together** over the swing ("hit vfx:slash_arc" of four heroes in one line): now one event per
+   line above each hero (a vfx without its prefix), in a band reserved above the tallest hero.
+5. **Sheet details**: the turnaround's view from above is centred in its row (it sat at the bottom of a tall row);
+   labels "from above (front at the bottom)" and "far (beyond 16 blocks): fine_ bones hidden"; the contact sheet's back
+   view and phase look are drawn at the main view's scale (they were half size in a half-empty cell), and a style
+   fixture or the fallback (no kit) shows its base, build, cube count and weapon instead of "fixture / - / - / -".
+6. **The GIF test could not see a shifted frame** (it compared mean differences, which a slow walk passes one frame
+   off): decoded frames must now equal the quantized frames exactly (`gif.quantize`).
+
+### Tests (215 -> 217)
+
+`CoplanarTest`: the fixture has no ties in three views; a belt cube flush with the body front is found with exactly its
+area (6 x 1 model pixels at 4x) and the pair (belt, body), and the preview shows the body there (file order).
+`GifTest` now exact.
+
+### Open items
+
+- **G6b**: fix the coplanar faces above, the sash layers first (the sash carries the faction colour); then make
+  `coplanar_ties` a `check` error over the stance's front, 3/4 and back (G7).
+- From G2, still open: the face-plane light (A2), the fidelity test (A2), the sleeve's open end at 0.45 s in the swing
+  (G5 or G6b).
+- Not part of this step: the owner's request for more anime reference models by other authors (for the art-direction
+  study; measure only, as with the WineFox set).

@@ -50,18 +50,27 @@ class Actor:
                                       bounds=self.bounds, pad=2)), face
 
 
+def _event_lines(evs):
+    """The fired events of one actor as short lines: instructions by name (a vfx without its prefix), then sounds."""
+    lines = [v.split(":", 1)[1] if v.startswith("vfx:") else v for _, kind, v in evs if kind == "instruction"]
+    if any(kind == "sound" for _, kind, _ in evs):
+        lines.append("sound")
+    return lines
+
+
 def film(actors, times, title, events=True, gap=14):
     """RGBA frames: the actors side by side, a caption with the clip time, each actor's name under it, and the
-    events firing on a frame written over it."""
+    events firing on a frame written over it (one line each, above the actor)."""
     for ac in actors:
         ac.bounds = ac.frame_bounds(times)
     small, tiny = font(13), font(11)
     frames = []
     dt = (times[1] - times[0]) if len(times) > 1 else 0.05
+    head = 24 + (30 if events else 0)                                   # caption, then two event lines
     for t in times:
         cells = [(ac, ac.render(t)[0]) for ac in actors]
         w = max(360, sum(c.width for _, c in cells) + gap * (len(cells) + 1))
-        h = max(c.height for _, c in cells) + 48
+        h = max(c.height for _, c in cells) + head + 20
         im = Image.new("RGBA", (w, h), BG)
         d = ImageDraw.Draw(im)
         d.text((10, 6), "%.2f s  %s" % (t, title), fill=INK, font=small)
@@ -70,19 +79,16 @@ def film(actors, times, title, events=True, gap=14):
             im.alpha_composite(c, (x, h - 20 - c.height))
             d.text((x + c.width // 2, h - 16), ac.label, fill=DIM, font=tiny, anchor="ma")
             if events:
-                evs = ac.pb.events(t - dt + 1e-6, t + 1e-6)              # fired since the last frame
-                fired = [v for at, kind, v in evs if kind == "instruction"] + ["sound" for at, kind, v in evs
-                                                                               if kind == "sound"]
-                if fired:
-                    d.text((x + c.width // 2, 24), " ".join(fired), fill=(200, 30, 30, 255), font=small, anchor="ma")
+                for k, line in enumerate(_event_lines(ac.pb.events(t - dt + 1e-6, t + 1e-6))[:2]):  # since last frame
+                    d.text((x + c.width // 2, 24 + 15 * k), line, fill=(200, 30, 30, 255), font=small, anchor="ma")
             x += c.width + gap
         frames.append(im)
     return frames
 
 
-def write_gif(frames, path, fps=20):
-    """A looping GIF with one palette for every frame (255 colours from a sample of the frames, leaving an index free
-    for the transparency of unchanged pixels), no dithering."""
+def quantize(frames):
+    """The frames in one palette (255 colours from a sample of the frames, leaving an index free for the
+    transparency of unchanged pixels), no dithering: what the GIF holds, frame by frame."""
     rgb = [f.convert("RGB") if f.mode != "RGB" else f for f in frames]
     sample = rgb[::max(1, len(rgb) // 24)]
     w = max(f.width for f in sample)
@@ -92,10 +98,15 @@ def write_gif(frames, path, fps=20):
         mosaic.paste(f, (0, y))
         y += f.height
     pal = mosaic.quantize(colors=255, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
-    out = [f.quantize(palette=pal, dither=Image.Dither.NONE) for f in rgb]
+    return [f.quantize(palette=pal, dither=Image.Dither.NONE) for f in rgb]
+
+
+def write_gif(frames, path, fps=20):
+    """A looping GIF of the quantized frames."""
+    out = quantize(frames)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     # optimize: Pillow writes each frame as the difference from the last (unchanged pixels transparent), which
-    # decodes to the same frames (tests/test_render.py) at a fraction of the size
+    # decodes to exactly the quantized frames (tests/test_render.py) at a fraction of the size
     out[0].save(path, save_all=True, append_images=out[1:], duration=int(round(1000 / fps)), loop=0,
                 optimize=True, disposal=1)
     return path
@@ -108,7 +119,7 @@ def ticks(t0, t1, fps):
 
 # ------------------------------------------------------------------ the standard films
 
-def idle_film(heroes, t0=0.0, t1=24.0, fps=10, yaw=-30.0, scale=3, head_only=False, mood="calm"):
+def idle_film(heroes, t0=0.0, t1=24.0, fps=10, yaw=-30.0, scale=4, head_only=False, mood="calm"):
     """move.idle with blinking (each hero its own blink seed), from t0 to t1."""
     actors = []
     for i, a in enumerate(heroes):
@@ -119,7 +130,7 @@ def idle_film(heroes, t0=0.0, t1=24.0, fps=10, yaw=-30.0, scale=3, head_only=Fal
     return film(actors, ticks(t0, t1, fps), title, events=False)
 
 
-def move_film(heroes, name, fps=20, yaw=-55.0, scale=3):
+def move_film(heroes, name, fps=20, yaw=-55.0, scale=5):
     """A base loop (move.walk, move.run) over one cycle."""
     actors = [Actor(a, a.playback(name), a.face_sim("calm", i), raster.View(yaw, PITCH, scale))
               for i, a in enumerate(heroes)]
@@ -127,7 +138,7 @@ def move_film(heroes, name, fps=20, yaw=-55.0, scale=3):
     return film(actors, ticks(0.0, length, fps), "%s (%.2f s loop)" % (name, length), events=False)
 
 
-def action_film(heroes, action="attack.1", lead=0.3, tail=0.4, fps=20, yaw=-34.0, scale=3):
+def action_film(heroes, action="attack.1", lead=0.3, tail=0.4, fps=20, yaw=-34.0, scale=5):
     """An action over combat.idle: `lead` seconds of stance, the action (its blend, then the clip), `tail` seconds
     back on the stance; events are written on the frame they fire."""
     actors = []

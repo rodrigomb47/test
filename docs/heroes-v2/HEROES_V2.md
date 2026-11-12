@@ -1909,11 +1909,11 @@ install):
 | `build [ids \| --batch N \| --slice \| --all \| --changed]` | write the model, texture, glow and phase textures, animation file, `visual.json` and the server definition |
 | `build --check` | rebuild into a temporary folder and fail if anything differs from the committed files |
 | `check [ids \| --all]` | asset validation (14.2), then `./gradlew checkHeroes` for the kit rules (14.1) |
-| `preview <id> [--anim NAME] [--action NAME] [--t 0.4 \| --frames 8] [--view 34\|front\|side\|right\|back\|34back\|top] [--yaw DEG] [--phase 2] [--mood angry] [--night] [--scale 4] [--committed]` | render PNGs with the software renderer (13.8) |
+| `preview <id> [--anim NAME] [--action NAME] [--t 0.4 \| --frames 8] [--view 34\|front\|side\|right\|back\|34back\|top] [--yaw DEG] [--phase 2] [--mood angry] [--night] [--ties] [--scale 4] [--committed]` | render PNGs with the software renderer (13.8); `--ties` paints coplanar faces of different colour (they z-fight in game) magenta and lists their bones |
 | `gif <ids...> [--anim NAME] [--action NAME] [--fps 20] [--view ...]` | an animated preview (heroes side by side) |
 | `faces <id>` | every eye, mouth and cheek frame enlarged, plus each mood, and the rendered face strip |
 | `sheet [ids] [--style] --out FILE` | contact sheets, 24 heroes each (`--batch`/`--slice` come with the roster) |
-| `render-previews [--only ...]` | the owner's G2 set in `docs/heroes-v2/previews/render/` |
+| `render-previews [--only ...] [--check]` | the owner's G2 set in `docs/heroes-v2/previews/render/`; `--check` renders it in a temporary folder and fails if a committed preview differs (stale) |
 | `lint` | the parts library on every base |
 | `stats` | budgets per hero and library usage |
 | `import-anim <id> <file>` | adopt a Blockbench-polished animation file (sets `animations.source: manual`) |
@@ -1946,7 +1946,11 @@ still build. The Java `HeroAssetsTest` (14.2) runs in the normal unit tests with
   events on the frame they fire), and the face comes from `visual.json` through a stand-in for `HeroFace` (moods,
   `face_ctrl`, seeded blinks). The camera is orthographic for previews and perspective for the fidelity check. Found
   by it: the zero-thickness face planes are lit apart from the head when the face points down or to one side
-  (GeckoLib's flat-cube fix); recommended: A2 skips the fix for those bones.
+  (GeckoLib's flat-cube fix); recommended: A2 skips the fix for those bones. The G2 review added the coplanar-face
+  check (`raster.coplanar_ties`, `preview --ties`, `previews/render/coplanar_faces.png`): the renderer settles a depth
+  tie by draw order, the game z-fights, so two coplanar faces of different colour are drawn a second time in reverse
+  order and every pixel that changes is reported (the sash layers of three style fixtures fight their coat or skirt;
+  fixes in G6b, a `check` rule in G7); and `render-previews --check` (two committed GIFs had gone stale).
 - **Fidelity check** (task G2, with A2): the test rig in three poses is rendered by the preview and screenshotted in
   game; the silhouettes must match within one pixel at 4x. This guards the sign and order conventions.
 - **Contact sheet**: 24 heroes per sheet (6 x 4 cells); each cell has the 3/4 front view, a small back view, the phase
@@ -2108,12 +2112,12 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G1s | Style pass after the owner's reference: rig v2 (three forms x two families x three builds, 10 px head, 20x20 face), larger eye frames, the layered hair kit, volumetric ears and tails, outfit volume parts, six original style fixtures, the style preview set | G1 | L | done 2026-11-12: all parts on all six bases pass the checks; previews in `docs/heroes-v2/previews/style/` |
 | G1s2 | Style pass 2 after the owner's feedback ("head too big, faces similar") and the reference measurements: rig v3 (longer bodies, render scale 0.56, low wide-set eyes), part generators (strands, chains, groups) and the strand hair kit, layered ears and five-bone tails, detailed outfits, the face system, six redesigned fixtures, budgets 300 cubes / 130 outside `fine_` / 100 bones | G1s | L | done 2026-11-12: 123 Python tests; every part on every base passes the checks; the six faces differ pairwise in 5+ features; previews regenerated |
 | G1s3 | Art direction pass 2: review of the style pass 2 previews against the references; hair ramp and strand gradient, parted crown, covered nape, lower crown, spikes, stubble, plaster and cat mouth, ear slabs as one mass, jag edges without the barcode, twin-tail nape strands, lighter fixture skins | G1s2 | M | done 2026-11-12: 136 Python tests; previews regenerated; before and after in `notes/previews/artdir2_before_after.png` |
-| G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px. Renderer done 2026-11-12 (215 Python tests, golden images, the owner's set in `docs/heroes-v2/previews/render/`); the fidelity test waits for A2 |
+| G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px. Renderer done 2026-11-12 (215 Python tests, golden images, the owner's set in `docs/heroes-v2/previews/render/`); the fidelity test waits for A2. Review 2026-11-12: two stale GIFs regenerated (the swing's events were a frame late), `render-previews --check`, the coplanar-face check, larger GIFs; 217 Python tests |
 | G3 | Animation generator: poses, primitives, recipes, secondary bake, markers, writer, frames into the server file, quality rules | G1 | L | done 2026-11-12: 181 Python tests; `_core` (idle 24 s, walk, run) and `_style_katana` (`combat.idle`, `attack.1` with its `hit` at tick 8) pass the rules on all six bases; timing files beside them; previews in `docs/heroes-v2/previews/anim/` (A2 plays them in game) |
 | G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs |
 | G5 | Style libraries for the slice: fists, focus, hammer, katana, twin_blades, sword_shield, staff | G3, G4 | M | each passes `check`; reviewed as GIFs on two bases |
 | G6a | Parts library, head: hair, ears, horns, tails, wings, headwear (30 parts of 13.3) and `lint` | G1 | M | `lint` clean; the head parts on all six bases reviewed on a sheet |
-| G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet |
+| G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first) |
 | G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style |
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
 | A1 | `HeroEntity`, registration, synced fields, `FcHero` saving, `HeroState`, `HeroRegistry` (resources + config overlay, `registerTransient` for fixtures), `/fc hero list/info/check/reload`, `/fc admin hero give/release/revive`, basic attacks, the director's hero rule (3.2), name tags, dialogue lines and speech bubbles; `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F2, A0 | L | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads |
