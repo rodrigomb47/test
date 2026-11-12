@@ -1,0 +1,30 @@
+{
+  "_comment": "Body cubes shared by the six bases (HEROES_V2.md 4.3). Sizes come from each base's dims; heights are the rig's shared heights, so every animation fits every base. Slots: skin, base_top, base_bottom and shoes are the base layer that outfit parts paint over (a hero's art.base_layer maps them to palette slots). The hero's right side is -x.",
+  "id": "_template",
+  "cubes": [
+    {"name": "head", "bone": "head", "origin": [-4, 24, -4], "size": [8, 8, 8], "slot": "skin", "material": "skin",
+     "fixed": {"north": "head_front"}},
+    {"name": "neck", "bone": "neck", "origin": ["-neck_w / 2", 23, "-neck_d / 2"], "size": ["neck_w", 1, "neck_d"],
+     "slot": "skin", "material": "skin"},
+    {"name": "chest", "bone": "chest", "origin": ["-chest_w / 2", 18, "-chest_d / 2"], "size": ["chest_w", 5, "chest_d"],
+     "slot": "base_top", "material": "cloth"},
+    {"name": "bust", "bone": "chest", "origin": ["-bust_w / 2", 19, "-chest_d / 2 - bust_d"],
+     "size": ["bust_w", "bust_h", "bust_d"], "slot": "base_top", "material": "cloth", "skip_if_empty": true},
+    {"name": "waist", "bone": "waist", "origin": ["-waist_w / 2", 15, "-waist_d / 2"], "size": ["waist_w", 3, "waist_d"],
+     "slot": "base_top", "material": "cloth"},
+    {"name": "hips", "bone": "body", "origin": ["-hips_w / 2", 13, "-hips_d / 2"], "size": ["hips_w", 2, "hips_d"],
+     "slot": "base_bottom", "material": "cloth"},
+    {"name": "upper_arm_r", "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2", 17, "-arm_d / 2"],
+     "size": ["arm_w", 5, "arm_d"], "slot": "base_top", "material": "cloth", "mirror": true},
+    {"name": "forearm_r", "bone": "forearm_r", "origin": ["-shoulder_x - arm_w / 2", 13.5, "-arm_d / 2"],
+     "size": ["arm_w", 3.5, "arm_d"], "slot": "base_top", "material": "cloth", "mirror": true},
+    {"name": "hand_r", "bone": "hand_r", "origin": ["-shoulder_x - arm_w / 2", 11.5, "-arm_d / 2"],
+     "size": ["arm_w", 2, "arm_d"], "slot": "skin", "material": "skin", "mirror": true},
+    {"name": "thigh_r", "bone": "leg_r", "origin": ["-hip_x - leg_w / 2", 6.5, "-leg_d / 2"],
+     "size": ["leg_w", 6.5, "leg_d"], "slot": "base_bottom", "material": "cloth", "mirror": true},
+    {"name": "shin_r", "bone": "shin_r", "origin": ["-hip_x - leg_w / 2", 2, "-leg_d / 2"],
+     "size": ["leg_w", 4.5, "leg_d"], "slot": "base_bottom", "material": "cloth", "mirror": true},
+    {"name": "foot_r", "bone": "foot_r", "origin": ["-hip_x - leg_w / 2", 0, "-leg_d / 2 - 1"],
+     "size": ["leg_w", 2, "leg_d + 1"], "slot": "shoes", "material": "leather", "mirror": true}
+  ]
+}

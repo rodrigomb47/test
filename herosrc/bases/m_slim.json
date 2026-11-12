@@ -1,0 +1,26 @@
+{
+  "_comment": "Base body m_slim (HEROES_V2.md 4.3 table; hip_x, neck and bust are herogen additions, PROPOSED). Cubes come from _template.json.",
+  "id": "m_slim",
+  "family": "male",
+  "build": "slim",
+  "template": "_template",
+  "dims": {
+    "chest_w": 7,
+    "chest_d": 3.5,
+    "waist_w": 6,
+    "waist_d": 3,
+    "hips_w": 6.5,
+    "hips_d": 3,
+    "arm_w": 2.5,
+    "arm_d": 2.5,
+    "leg_w": 3,
+    "leg_d": 3,
+    "shoulder_x": 4.75,
+    "hip_x": 1.5,
+    "neck_w": 2.5,
+    "neck_d": 2.5,
+    "bust_w": 0,
+    "bust_h": 0,
+    "bust_d": 0
+  }
+}

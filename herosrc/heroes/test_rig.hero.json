@@ -1,0 +1,46 @@
+{
+  "_comment": "Pipeline fixture (HEROES_V2.md 15.2, G1-G3, A2): exercises every rig feature: face planes and frames, hair and a ponytail chain, ears, a tail chain, skirt panels, a two-segment cape, the tinted sash with a fine_ knot, a weapon in hand and sheathed at the hip, a phase-2 halo (p2_ bone, glow mask) and a phase-2 palette change (_p2 texture). Not a roster hero.",
+  "format": 2,
+  "id": "test_rig",
+  "name": "Test Rig",
+  "title": "the pipeline fixture",
+  "gender": "female",
+  "archetype": "fixture",
+  "art": {
+    "base": "female",
+    "build": "standard",
+    "scale": 100,
+    "palette": {
+      "skin": "#F3D5C0",
+      "hair": "#34466F",
+      "eyes": "#E0A033",
+      "primary": "#B5423A",
+      "secondary": "#EEE7DA",
+      "accent": "#2C2F3B",
+      "trim": "#D9B04C",
+      "metal": "#C9CED6",
+      "leather": "#6E4A33",
+      "glow": "#FFE38A"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/high_ponytail_long", "color": "hair", "trim": "primary", "params": {"length": 10}},
+      {"part": "ears/cat", "color": "hair"},
+      {"part": "tails/cat_long", "color": "hair", "alt": "hair_accent"},
+      {"part": "outfit_top/short_jacket", "color": "primary", "trim": "trim", "alt": "secondary"},
+      {"part": "outfit_bottom/pleated_skirt", "color": "accent", "trim": "trim"},
+      {"part": "legwear/tights_boots", "color": "secondary", "alt": "leather"},
+      {"part": "back/cape_short", "color": "primary", "trim": "trim"},
+      {"part": "accessories/sash_obi"},
+      {"part": "headwear/halo_ring", "phase": 2}
+    ],
+    "weapon": {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip"},
+    "face": {"eyes": "round", "iris": "#E0A033", "pupil": "round", "lashes": 2, "brows": "thin_arched",
+             "mouth": "small", "fang": "none", "blush": true},
+    "phases": [
+      {"phase": 2, "show": ["p2_halo"], "palette": {"eyes": "#E8584F"}, "eyes_glow": true}
+    ]
+  },
+  "animations": {"style": "katana", "blink": "normal"},
+  "voice": {"blip": "alto", "pitch": 1.0, "rate": 3}
+}

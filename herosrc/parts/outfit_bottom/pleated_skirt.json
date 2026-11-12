@@ -1,0 +1,23 @@
+{
+  "_comment": "Starter part: a pleated skirt of four panels on the skirt bones (secondary motion), trimmed hem.",
+  "id": "outfit_bottom/pleated_skirt",
+  "category": "outfit_bottom",
+  "slots": {"main": "accent", "trim": "trim"},
+  "params": {"length": {"min": 4, "max": 9, "default": 6}},
+  "occupies": ["skirt"],
+  "paint": [
+    {"cubes": ["hips"], "slot": "main", "material": "cloth"}
+  ],
+  "cubes": [
+    {"bone": "skirt_f", "origin": ["-hips_w / 2 - 0.6", "15 - length", "-hips_d / 2 - 0.6"],
+     "size": ["hips_w + 1.2", "length", 0.5], "slot": "main", "material": "cloth",
+     "pattern": {"type": "pleats", "width": 1}, "trim": {"slot": "trim", "edge": "bottom", "width": 1}},
+    {"bone": "skirt_b", "origin": ["-hips_w / 2 - 0.6", "15 - length", "hips_d / 2 + 0.1"],
+     "size": ["hips_w + 1.2", "length", 0.5], "slot": "main", "material": "cloth",
+     "pattern": {"type": "pleats", "width": 1}, "trim": {"slot": "trim", "edge": "bottom", "width": 1}},
+    {"bone": "skirt_r", "origin": ["-hips_w / 2 - 0.6", "15 - length", "-hips_d / 2 - 0.1"],
+     "size": [0.5, "length", "hips_d + 0.2"], "slot": "main", "material": "cloth", "mirror": true,
+     "pattern": {"type": "pleats", "width": 1}, "trim": {"slot": "trim", "edge": "bottom", "width": 1}}
+  ],
+  "secondary": {"chain": ["skirt_f", "skirt_b", "skirt_l", "skirt_r"], "stiffness": 0.5, "damping": 0.7}
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": "Starter part: tights painted on the legs and boots to a chosen height with a turned-down cuff.",
+  "id": "legwear/tights_boots",
+  "category": "legwear",
+  "slots": {"main": "accent", "alt": "leather"},
+  "params": {"boot": {"min": 2.5, "max": 9, "default": 5}},
+  "occupies": ["legs", "feet"],
+  "paint": [
+    {"cubes": ["thigh_*", "shin_*"], "slot": "main", "material": "cloth"},
+    {"cubes": ["thigh_*", "shin_*", "foot_*"], "y": [0, "boot"], "slot": "alt", "material": "leather"}
+  ],
+  "cubes": [
+    {"bone": "shin_r", "origin": ["-hip_x - leg_w / 2 - 0.25", "boot - 0.75", "-leg_d / 2 - 0.25"],
+     "size": ["leg_w + 0.5", 0.75, "leg_d + 0.5"], "slot": "alt", "material": "leather", "mirror": true}
+  ]
+}

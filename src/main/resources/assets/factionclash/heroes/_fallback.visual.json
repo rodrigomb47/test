@@ -1,0 +1,84 @@
+{
+  "base": "m_slim",
+  "bones": {
+    "fine": ["fine_sash_knot"],
+    "items": ["item_r", "item_l"],
+    "locators": ["item_l", "item_r", "vfx_chest", "vfx_feet", "vfx_head", "vfx_tip_l", "vfx_tip_r"],
+    "phase": {},
+    "tint": ["fine_sash_knot", "sash"],
+    "weapon_drawn": [],
+    "weapon_sheathed": []
+  },
+  "face": {
+    "blink": {
+      "double_chance": 0.15,
+      "interval": [2.5, 6],
+      "over_eyes": [0, 4, 5, 8, 9],
+      "profile": "normal",
+      "ticks": [1, 2, 1]
+    },
+    "cheek_frames": ["none", "blush", "sweat", "tears"],
+    "eye_frames": [
+      "open",
+      "half",
+      "closed",
+      "happy",
+      "angry",
+      "sad",
+      "surprised",
+      "pain",
+      "focused",
+      "smug",
+      "glowing",
+      "sleeping"
+    ],
+    "mood_order": [
+      "calm",
+      "happy",
+      "angry",
+      "focused",
+      "hurt",
+      "tired",
+      "sad",
+      "smug",
+      "surprised",
+      "asleep",
+      "flustered",
+      "determined"
+    ],
+    "moods": {
+      "angry": {"cheeks": 0, "eyes": 4, "mouth": 4},
+      "asleep": {"cheeks": 0, "eyes": 11, "mouth": 0},
+      "calm": {"cheeks": 0, "eyes": 0, "mouth": 0},
+      "determined": {"cheeks": 0, "eyes": 4, "mouth": 0},
+      "flustered": {"cheeks": 1, "eyes": 6, "mouth": 5},
+      "focused": {"cheeks": 0, "eyes": 8, "mouth": 0},
+      "happy": {"cheeks": 0, "eyes": 3, "mouth": 1},
+      "hurt": {"cheeks": 0, "eyes": 7, "mouth": 4},
+      "sad": {"cheeks": 0, "eyes": 5, "mouth": 5},
+      "smug": {"cheeks": 0, "eyes": 9, "mouth": 1},
+      "surprised": {"cheeks": 0, "eyes": 6, "mouth": 2},
+      "tired": {"cheeks": 2, "eyes": 1, "mouth": 0}
+    },
+    "mouth_frames": ["neutral", "smile", "talk_a", "talk_b", "grit", "frown", "cat", "fang_grin"],
+    "overrides": {},
+    "regions": {
+      "cheeks": {"columns": 4, "frames": 4, "h": 2, "u": 64, "v": 28, "w": 12},
+      "eyes": {"columns": 4, "frames": 12, "h": 8, "u": 64, "v": 0, "w": 16},
+      "mouth": {"columns": 8, "frames": 8, "h": 4, "u": 64, "v": 24, "w": 8}
+    }
+  },
+  "format": 1,
+  "generator": "herogen 1",
+  "id": "_fallback",
+  "moves": [],
+  "phases": [],
+  "rig": "hero_rig_v1",
+  "scale": 1,
+  "source_sha256": "acbfaa3dd19abdda89203fb1d5c71bd45ccac8259ba878130e43f80101087cc8",
+  "states": [],
+  "style": "fists",
+  "texture": {"glow_outside_face": false, "glowmask": true, "height": 128, "p2": false, "width": 128},
+  "voice": null,
+  "weapon": null
+}

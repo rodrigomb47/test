@@ -1,0 +1,13 @@
+{
+  "_comment": "Starter part: a glowing ring above the head (written to the glow mask).",
+  "id": "headwear/halo_ring",
+  "category": "headwear",
+  "slots": {"main": "glow"},
+  "occupies": ["halo"],
+  "cubes": [
+    {"bone": "halo", "origin": [-2, 34.75, -2.75], "size": [4, 0.5, 0.5], "slot": "main", "material": "glow"},
+    {"bone": "halo", "origin": [-2, 34.75, 2.25], "size": [4, 0.5, 0.5], "slot": "main", "material": "glow"},
+    {"bone": "halo", "origin": [-2.75, 34.75, -2.25], "size": [0.5, 0.5, 4.5], "slot": "main", "material": "glow",
+     "mirror": true}
+  ]
+}

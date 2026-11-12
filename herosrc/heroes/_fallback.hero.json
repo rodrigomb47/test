@@ -1,0 +1,29 @@
+{
+  "_comment": "The neutral model drawn for an unknown hero id or a format-1 hero (HEROES_V2.md 4.9, 12.1): light grey clothes so the renderer's faction tint reads, a plain face, short hair and the sash.",
+  "format": 2,
+  "id": "_fallback",
+  "name": "Unknown hero",
+  "gender": "male",
+  "archetype": "fixture",
+  "art": {
+    "base": "male",
+    "build": "slim",
+    "palette": {
+      "skin": "#E8C4A8",
+      "hair": "#4E4640",
+      "eyes": "#6F7C8C",
+      "primary": "#C9C9C9",
+      "secondary": "#E4E4E4",
+      "accent": "#8E8E8E",
+      "trim": "#B0B0B0",
+      "leather": "#5C5650"
+    },
+    "base_layer": {"base_top": "primary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/short_crop", "color": "hair"},
+      {"part": "accessories/sash_obi"}
+    ],
+    "face": {"eyes": "almond", "brows": "straight", "mouth": "small", "lashes": 0}
+  },
+  "animations": {"style": "fists", "blink": "normal"}
+}

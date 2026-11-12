@@ -1,0 +1,22 @@
+{
+  "_comment": "Starter part: a long cat tail that leaves the hips backward and rises behind the back; tip in the alt slot.",
+  "id": "tails/cat_long",
+  "category": "tails",
+  "slots": {"main": "hair", "alt": "hair_accent"},
+  "params": {"length": {"min": 6, "max": 12, "default": 9}},
+  "occupies": ["tail"],
+  "bones": [
+    {"name": "tail_1", "parent": "body", "pivot": [0, 14, "hips_d / 2"]},
+    {"name": "tail_2", "parent": "tail_1", "pivot": [0, 14, "hips_d / 2 + 3"]},
+    {"name": "tail_3", "parent": "tail_2", "pivot": [0, "11 + length", "hips_d / 2 + 3"]}
+  ],
+  "cubes": [
+    {"bone": "tail_1", "origin": [-0.5, 13.5, "hips_d / 2 + 0.05"], "size": [1, 1, 3.45], "slot": "main",
+     "material": "hair"},
+    {"bone": "tail_2", "origin": [-0.5, 14.5, "hips_d / 2 + 2.5"], "size": [1, "length - 3.5", 1], "slot": "main",
+     "material": "hair"},
+    {"bone": "tail_3", "origin": [-0.5, "11 + length", "hips_d / 2 + 2.5"], "size": [1, 3, 1], "slot": "alt",
+     "material": "hair", "cutout": "tri_up"}
+  ],
+  "secondary": {"chain": ["tail_1", "tail_2", "tail_3"], "stiffness": 0.25, "damping": 0.5}
+}

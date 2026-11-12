@@ -1,0 +1,15 @@
+{
+  "_comment": "Starter part: pointed cat ears with a pink inner ear.",
+  "id": "ears/cat",
+  "category": "ears",
+  "slots": {"main": "hair", "alt": "blush"},
+  "occupies": ["ears"],
+  "cubes": [
+    {"name": "ears/cat#ear_r", "bone": "ear_r", "origin": [-4, 32.25, -1.25], "size": [2.5, 2.75, 1],
+     "slot": "main", "material": "hair", "cutout": "tri_up", "mirror": true}
+  ],
+  "paint": [
+    {"cubes": ["ears/cat#ear_r*"], "faces": ["north"], "abs_x": [2.3, 3.2], "y": [32.25, 34.0], "slot": "alt",
+     "material": "skin"}
+  ]
+}

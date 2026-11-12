@@ -1,0 +1,17 @@
+{
+  "_comment": "Starter part: short hair painted on the head, a thin crown cap and short bangs (fallback model and base previews).",
+  "id": "hair/short_crop",
+  "category": "hair",
+  "slots": {"main": "hair"},
+  "occupies": ["hair_top"],
+  "paint": [
+    {"cubes": ["head"], "faces": ["up", "south", "east", "west"], "slot": "main", "material": "hair"},
+    {"cubes": ["head"], "faces": ["east", "west"], "y": [24, 28], "z": [-4, 0], "slot": "skin", "material": "skin"},
+    {"cubes": ["head"], "faces": ["south"], "y": [24, 25.5], "slot": "skin", "material": "skin"}
+  ],
+  "cubes": [
+    {"bone": "hair_top", "origin": [-4.25, 31.25, -4.25], "size": [8.5, 1, 8.5], "slot": "main", "material": "hair"},
+    {"bone": "bangs", "origin": [-4.25, 30.75, -4.5], "size": [8.5, 1.5, 0.5], "slot": "main", "material": "hair",
+     "cutout": "bangs_jagged_4"}
+  ]
+}
