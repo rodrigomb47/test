@@ -1,0 +1,272 @@
+{
+  "format": 1,
+  "set": "benika_akagane",
+  "title": "Benika Akagane, the iron club oni (battle maniac, club, fire)",
+  "hero": {
+    "voice": {"talk": "voice", "rate": 2, "melody": [0, 0, 2, 4, -2], "fallback_blip": "guitar", "jitter": 0.05,
+              "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.1},
+              "death": {"event": "minecraft:entity.player.death", "pitch": 1.1},
+              "emotes": {"laugh": "laugh", "roar": "roar"}},
+    "moves": {
+      "basic": {"class": "light", "release": "club_swing", "impact": "club_hit"},
+      "overhead_slam": {"class": "area", "windup": "slam_rise", "release": "club_swing", "impact": "club_slam"},
+      "shoulder_charge": {"class": "heavy", "windup": "charge_snort", "impact": "charge_hit"},
+      "ground_stomp": {"class": "area", "windup": "stomp_windup", "release": "stomp", "impact": "fire_wave"},
+      "gourd_swig": {"class": "light", "release": "gourd_swig"},
+      "grab_throw": {"class": "heavy", "windup": "grab", "release": "throw_whoosh"},
+      "meteor_club": {"class": "heavy", "windup": "slam_rise", "release": "meteor_leap", "impact": "meteor_impact"},
+      "iron_mountain_crash": {"class": "ultimate", "windup": "crash_windup", "release": "meteor_leap", "impact": "crash_impact"}
+    },
+    "states": {"rage": "roar"},
+    "phases": {"2": "horn_flare", "3": "steam"},
+    "passives": {"battle_joy": "laugh"},
+    "weak_points": {"snowball": "fizzle"},
+    "intro": "intro",
+    "quirks": {"personal.1": "shoulder_roll", "personal.2": "gourd_swig", "personal.3": "club_spin"},
+    "steps": {"volume": 1.2, "with": "cue:step.heavy"}
+  },
+  "preview": ["voice", "laugh", "roar", "club_swing", "slam_rise", "club_slam", "charge_snort", "thud", "stomp_windup",
+              "stomp", "fire_wave", "grab", "throw_whoosh", "meteor_leap", "crash_windup", "crash_impact",
+              "horn_flare", "intro", "shoulder_roll", "club_spin"],
+  "sounds": {
+    "voice": {
+      "kind": "voice", "subtitle": "Benika talks", "loudness": -23, "pitch": [0.96, 1.04], "variants": 6,
+      "note": "Punchy and gritty (the old guitar voice): a buzzing source at about 262 Hz with a little drive and rasp; quick (rate 2).",
+      "layers": [
+        {"type": "vox", "source": "buzz", "pw": 0.4, "f0": 262, "dur": 0.08, "vowel": "a", "shift": 1.12, "fq": 5, "rough": {"rate": 55, "depth": 0.2},
+         "attack": 0.004, "release": 0.03, "drive": 1.25, "contour": [0, 0], "fx": [{"lp": 4200, "q": 0.6}]}
+      ],
+      "each": [
+        {"layers.0.vowel": "a", "layers.0.contour": [0, -1], "layers.0.dur": 0.08},
+        {"layers.0.vowel": "ae", "layers.0.contour": [3, 2], "layers.0.dur": 0.07},
+        {"layers.0.vowel": "o", "layers.0.contour": [-2, -2], "layers.0.dur": 0.09},
+        {"layers.0.vowel": "e", "layers.0.contour": [5, 3], "layers.0.dur": 0.06},
+        {"layers.0.vowel": "a", "layers.0.contour": [7, 4], "layers.0.dur": 0.1},
+        {"layers.0.vowel": "uh", "layers.0.contour": [0, 0], "layers.0.dur": 0.06}
+      ]
+    },
+    "laugh": {
+      "kind": "emote", "subtitle": "Benika laughs", "loudness": -19, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "A hearty 'ha-ha-HA!' (battle joy, phase 3, kills).",
+      "layers": [
+        {"type": "vox", "source": "buzz", "pw": 0.4, "f0": 294, "dur": 0.12, "vowel": "a", "shift": 1.12, "contour": [2, -1], "rough": {"rate": 55, "depth": 0.25}, "drive": 1.8, "attack": 0.004, "release": 0.04},
+        {"type": "vox", "source": "buzz", "pw": 0.4, "at": 0.17, "f0": 294, "dur": 0.12, "vowel": "a", "shift": 1.12, "contour": [3, 0], "rough": {"rate": 55, "depth": 0.25}, "drive": 1.8, "attack": 0.004, "release": 0.04},
+        {"type": "vox", "source": "buzz", "pw": 0.4, "at": 0.34, "f0": 330, "dur": 0.2, "vowel": "a", "shift": 1.12, "contour": [5, 0, -3], "rough": {"rate": 55, "depth": 0.25}, "drive": 1.8, "attack": 0.004, "release": 0.07}
+      ]
+    },
+    "roar": {
+      "kind": "emote", "subtitle": "Benika roars", "loudness": -15, "range": 32, "plays": "server", "category": "hostile",
+      "note": "State rage (phase 2 on) and big moments: a raw battle cry with a burst of forge fire.",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 210, "dur": 0.95, "vowel": "a", "vowel_to": "o", "shift": 1.08, "tilt": 0.8, "contour": [0, 4, 3, -3],
+         "jitter": 1.0, "rough": {"rate": 46, "depth": 0.45}, "drive": 3.0, "attack": 0.05, "release": 0.2},
+        {"type": "noise", "colour": "pink", "dur": 0.9, "filter": {"mode": "lp", "f": {"from": 300, "to": 3000, "shape": "exp"}, "q": 0.7}, "env": {"swell": [0.3, 0.6]}, "gain": -6},
+        {"type": "crackle", "dur": 0.9, "rate": [40, 160], "f": [1200, 5000], "grain": 0.008, "env": {"swell": [0.4, 0.5]}, "gain": -9}
+      ]
+    },
+    "club_swing": {
+      "kind": "swing", "subtitle": "A heavy club swings", "loudness": -20, "variants": 3, "pitch": [0.94, 1.04], "vary": {"pitch": [-1.5, 1.5]},
+      "note": "The iron-studded club through the air: a deep, slow whoosh with body.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.45, "f": [180, 850, 230], "q": 1.0, "peak": 0.5, "body": 0.6, "colour": "pink"},
+        {"type": "whoosh", "dur": 0.45, "f": [600, 2200, 700], "q": 2.0, "peak": 0.5, "colour": "white", "gain": -12}
+      ]
+    },
+    "club_hit": {
+      "kind": "hit", "subtitle": "The club smashes",
+      "note": "Basic hits: her kit weapon is a mace, and vanilla's mace smash is the natural sound.",
+      "vanilla": [{"event": "minecraft:item.mace.smash_ground", "pitch": 0.95}]
+    },
+    "slam_rise": {
+      "post": {"transients": true}, "kind": "windup", "subtitle": "Benika raises her club", "loudness": -19,
+      "note": "Overhead slam and meteor club wind-up (the club rises): a creaking strain over a rising rumble and forge crackle.",
+      "layers": [
+        {"type": "fm", "dur": 1.0, "freq": {"from": 90, "to": 140, "shape": "in"}, "ratio": 2.01, "index": [1.5, 4], "vibrato": {"rate": 7, "depth": 0.5},
+         "env": {"points": [[0, 0], [0.85, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "noise", "colour": "brown", "dur": 1.0, "filter": {"mode": "lp", "f": [150, 600], "q": 0.8}, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -3},
+        {"type": "crackle", "dur": 1.0, "rate": [15, 90], "f": [1500, 5000], "grain": 0.007, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -8}
+      ],
+      "fx": [{"drive": 1.5}]
+    },
+    "club_slam": {
+      "kind": "heavy", "subtitle": "The club slams the ground", "variants": 2, "vary": {"layers.0.f.0": [150, 162], "pitch": [-0.5, 0.5]},
+      "note": "Overhead slam lands (and meteor club): the owner's prototype slam (a sub thump with a pitch drop, a crunchy burst, debris); vanilla fire rides with it.",
+      "layers": [
+        {"type": "impact", "dur": 1.0, "f": [155, 45], "drop": 0.0556, "body_decay": 0.2, "crunch": 1.4, "crunch_lp": 1800, "crunch_poles": 1,
+         "crunch_decay": 0.0714, "click": 0, "drive": 1.6, "debris": 0},
+        {"type": "impact", "dur": 1.0, "f": [100, 100], "body": 0, "crunch": 0, "click": 0, "debris": 14, "debris_f": [1500, 4000], "debris_span": 0.5, "debris_gain": 0.8}
+      ],
+      "with": [{"sound": "fire_burst", "delay": 1}]
+    },
+    "fire_burst": {
+      "kind": "heavy", "subtitle": "Fire bursts", "volume": [0.55, 0.65],
+      "note": "Companion of the slams: vanilla's fire charge is the natural burst of flame.",
+      "vanilla": [{"event": "minecraft:item.firecharge.use", "pitch": 0.8}]
+    },
+    "charge_snort": {
+      "kind": "windup", "subtitle": "Benika lowers her shoulder", "loudness": -19,
+      "note": "Shoulder charge wind-up: a growled 'hmm' turning into a shout, a heavy foot scraping back.",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 180, "dur": 0.6, "vowel": "m", "vowel_to": "a", "tilt": 1.0, "contour": [0, 0, 4], "rough": {"rate": 40, "depth": 0.4}, "drive": 2.0, "attack": 0.05, "release": 0.1},
+        {"type": "noise", "colour": "brown", "at": 0.1, "dur": 0.4, "filter": {"mode": "bp", "f": 500, "q": 0.8}, "env": {"swell": [0.15, 0.25]}, "gain": -6},
+        {"type": "impact", "at": 0.62, "dur": 0.3, "f": [110, 55], "drop": 0.03, "body_decay": 0.08, "crunch": 0.6, "crunch_lp": 1200, "click": 0.1, "gain": -3}
+      ]
+    },
+    "charge_hit": {
+      "kind": "hit", "subtitle": "Benika rams into someone",
+      "note": "Shoulder charge connects (knockback 3): vanilla's knockback hit, lower, over a body thud.",
+      "vanilla": [{"event": "minecraft:entity.player.attack.knockback", "pitch": 0.75}],
+      "with": [{"sound": "thud", "delay": 0}]
+    },
+    "thud": {
+      "kind": "hit", "subtitle": "Benika rams into someone", "loudness": -16, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Companion of charge_hit: a heavy body thud.",
+      "layers": [
+        {"type": "impact", "dur": 0.4, "f": [130, 55], "drop": 0.03, "body_decay": 0.1, "crunch": 0.7, "crunch_lp": 1100, "click": 0.15}
+      ]
+    },
+    "stomp_windup": {
+      "kind": "windup", "subtitle": "Benika lifts her foot", "loudness": -19,
+      "note": "Ground stomp wind-up: a grunt and a rising ground rumble (jump the ring that follows).",
+      "layers": [
+        {"type": "noise", "colour": "brown", "dur": 1.0, "filter": {"mode": "lp", "f": [120, 500], "q": 1.0}, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "vox", "source": "buzz", "pw": 0.4, "at": 0.65, "f0": 230, "dur": 0.25, "vowel": "uh", "shift": 1.1, "contour": [0, 3], "rough": {"rate": 50, "depth": 0.3}, "drive": 1.6, "gain": -4},
+        {"type": "crackle", "dur": 1.0, "rate": [10, 50], "f": [300, 1500], "grain": 0.02, "q": 1.5, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -6}
+      ]
+    },
+    "stomp": {
+      "kind": "heavy", "subtitle": "Benika stomps", "loudness": -14, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Ground stomp: a huge foot on the ground, a thud with dirt and a crack.",
+      "layers": [
+        {"type": "impact", "dur": 0.9, "f": [115, 38], "drop": 0.05, "body_decay": 0.22, "crunch": 1.3, "crunch_lp": 1500, "crunch_poles": 1, "click": 0.4,
+         "debris": 10, "debris_f": [800, 2600], "drive": 1.5}
+      ]
+    },
+    "fire_wave": {
+      "kind": "heavy", "subtitle": "A ring of fire rolls out", "loudness": -16,
+      "note": "Each fire wave (ground stomp, the ultimate's three): a rolling roar of flame that travels for about a second.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 1.1, "filter": {"mode": "lp", "f": [400, 1600, 700], "q": 0.8}, "env": {"swell": [0.25, 0.85]}},
+        {"type": "crackle", "dur": 1.1, "rate": [60, 220, 60], "f": [1200, 6000], "grain": 0.006, "env": {"swell": [0.3, 0.8]}, "gain": -5},
+        {"type": "whoosh", "dur": 1.1, "f": [300, 1200, 400], "q": 0.8, "peak": 0.25, "gain": -6}
+      ]
+    },
+    "gourd_swig": {
+      "kind": "cast", "subtitle": "Benika swigs from her gourd", "category": "neutral", "plays": "server",
+      "note": "Gourd swig (heal; a punish window) and her idle: vanilla's drinking, then a satisfied burp (vanilla).",
+      "vanilla": [{"event": "minecraft:entity.generic.drink", "pitch": 0.85}],
+      "with": [{"sound": "burp", "delay": 10}]
+    },
+    "burp": {
+      "kind": "quirk", "subtitle": "Benika burps", "category": "neutral", "plays": "server",
+      "note": "Companion of gourd_swig.",
+      "vanilla": [{"event": "minecraft:entity.player.burp", "pitch": 0.9}]
+    },
+    "grab": {
+      "kind": "windup", "subtitle": "Benika reaches to grab", "loudness": -18,
+      "note": "Grab and throw wind-up (unblockable; the shared purple-decal cue plays too): a sharp 'hup!' and a lunge of cloth.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.4, "f": [300, 1400, 500], "q": 1.0, "peak": 0.5},
+        {"type": "vox", "source": "buzz", "pw": 0.4, "at": 0.3, "f0": 300, "dur": 0.15, "vowel": "uh", "shift": 1.12, "contour": [0, 4], "rough": {"rate": 55, "depth": 0.3}, "drive": 2.0}
+      ]
+    },
+    "throw_whoosh": {
+      "kind": "swing", "subtitle": "Someone is hurled", "loudness": -19,
+      "note": "The throw: a big tumbling whoosh.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.6, "f": [250, 1800, 300], "q": 1.0, "peak": 0.35, "body": 0.4},
+        {"type": "vox", "source": "buzz", "pw": 0.4, "f0": 280, "dur": 0.22, "vowel": "a", "shift": 1.12, "contour": [3, -2], "rough": {"rate": 55, "depth": 0.3}, "drive": 2.0, "gain": -3}
+      ]
+    },
+    "meteor_leap": {
+      "kind": "swing", "subtitle": "Benika leaps high", "loudness": -18, "range": 24,
+      "note": "Meteor club and the ultimate take off: a rising rush with a growing roar of fire.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.7, "f": {"from": 250, "to": 2500, "shape": "exp"}, "q": 1.0, "peak": 0.7, "air": 0.3},
+        {"type": "noise", "colour": "pink", "dur": 0.7, "filter": {"mode": "lp", "f": [300, 2500], "q": 0.7}, "env": {"swell": [0.55, 0.15]}, "gain": -6},
+        {"type": "crackle", "dur": 0.7, "rate": [30, 160], "f": [1500, 6000], "grain": 0.006, "env": {"swell": [0.55, 0.15]}, "gain": -10}
+      ]
+    },
+    "meteor_impact": {
+      "kind": "heavy", "subtitle": "Benika crashes down", "loudness": -12, "range": 32,
+      "note": "Meteor club lands: the slam, deeper, with vanilla's explosion as the natural blast (no block is harmed).",
+      "layers": [
+        {"type": "use", "sound": "club_slam", "variant": 1, "pitch": -2}
+      ],
+      "with": [{"sound": "blast", "delay": 0}]
+    },
+    "blast": {
+      "kind": "heavy", "subtitle": "An explosion of fire", "volume": [0.5, 0.6],
+      "note": "Companion of meteor_impact and crash_impact: vanilla's explosion, higher and quieter.",
+      "vanilla": [{"event": "minecraft:entity.generic.explode", "pitch": 1.25}]
+    },
+    "crash_windup": {
+      "kind": "windup", "subtitle": "Benika winds up a mountain-breaking blow", "loudness": -14, "range": 48,
+      "note": "Iron mountain crash wind-up (1.8 s; 'Hold still, this'll be fun!'): the club creaks up while a distorted roar and forge fire swell over three heartbeat drums.",
+      "layers": [
+        {"type": "use", "sound": "slam_rise", "fx": [{"speed": 0.56}]},
+        {"type": "brass", "dur": 1.8, "freq": {"from": 55, "to": 82, "shape": "in"}, "cutoff": 150, "open": 2000, "detune": 18,
+         "env": {"points": [[0, 0], [1.6, 1, "in"], [1.8, 0, "cos"]]}, "fx": [{"drive": 2.5}], "gain": -4},
+        {"type": "membrane", "at": 0.2, "f0": 58, "dur": 0.5, "decay": 0.2, "stick": 0.2, "gain": -4},
+        {"type": "membrane", "at": 0.75, "f0": 60, "dur": 0.5, "decay": 0.2, "stick": 0.2, "gain": -3},
+        {"type": "membrane", "at": 1.25, "f0": 62, "dur": 0.5, "decay": 0.2, "stick": 0.2, "gain": -2}
+      ]
+    },
+    "crash_impact": {
+      "post": {"transients": true}, "kind": "heavy", "subtitle": "The mountain falls", "loudness": -11, "range": 48,
+      "note": "Iron mountain crash lands: the slam at its deepest with the explosion; three fire waves follow (fire_wave each).",
+      "layers": [
+        {"type": "use", "sound": "club_slam", "variant": 2, "pitch": -4},
+        {"type": "impact", "dur": 1.2, "f": [80, 30], "drop": 0.08, "body_decay": 0.35, "crunch": 0.4, "crunch_lp": 600, "click": 0, "gain": -4}
+      ],
+      "with": [{"sound": "blast", "delay": 0}]
+    },
+    "horn_flare": {
+      "kind": "cast", "subtitle": "Benika's horn blazes", "loudness": -16, "range": 24,
+      "note": "Phase 2 (the horn flares, a roar): a whoomp of forge fire and a ringing horn.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.8, "filter": {"mode": "lp", "f": {"from": 300, "to": 3500, "shape": "exp"}, "q": 0.7}, "env": {"swell": [0.15, 0.65]}},
+        {"type": "bell", "partials": "iron", "at": 0.1, "f0": 392, "dur": 1.0, "decay": 0.5, "strike": 0.2, "gain": -6},
+        {"type": "use", "sound": "roar", "at": 0.25, "gain": -2, "fx": [{"len": 0.8}, {"fade": [0.002, 0.2]}]}
+      ]
+    },
+    "steam": {
+      "kind": "cast", "subtitle": "Steam hisses from Benika's horn", "plays": "client",
+      "note": "Phase 3 (steam from the horn, a grin): vanilla's fire-extinguish hiss is the natural steam, then her laugh.",
+      "vanilla": [{"event": "minecraft:block.fire.extinguish", "pitch": 0.7}],
+      "with": [{"sound": "laugh", "delay": 8}]
+    },
+    "fizzle": {
+      "kind": "hit", "subtitle": "Benika's fire fizzles out",
+      "note": "Snowball weak point ('Ugh, cold!'): her fire hissing out, vanilla's extinguish sound, higher.",
+      "vanilla": [{"event": "minecraft:block.fire.extinguish", "pitch": 1.3}]
+    },
+    "intro": {
+      "post": {"transients": true}, "kind": "emote", "subtitle": "Benika cracks her knuckles", "loudness": -18,
+      "note": "Intro (plants the club, cracks her knuckles): a heavy plant, three knuckle cracks, the laugh.",
+      "layers": [
+        {"type": "impact", "dur": 0.5, "f": [120, 50], "drop": 0.04, "body_decay": 0.12, "crunch": 0.8, "crunch_lp": 1400, "click": 0.3, "gain": -2},
+        {"type": "click", "at": 0.55, "f": 2800, "q": 1.2, "dur": 0.03, "sharp": 700},
+        {"type": "click", "at": 0.66, "f": 3200, "q": 1.2, "dur": 0.03, "sharp": 700},
+        {"type": "click", "at": 0.74, "f": 2600, "q": 1.2, "dur": 0.03, "sharp": 700},
+        {"type": "use", "sound": "laugh", "variant": 1, "at": 0.95}
+      ]
+    },
+    "shoulder_roll": {
+      "post": {"transients": true}, "kind": "quirk", "subtitle": "Benika rolls her shoulders", "loudness": -27,
+      "note": "Personal idle: a cloth roll and a joint pop.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.4, "f": [300, 900, 400], "q": 0.9, "peak": 0.5},
+        {"type": "click", "at": 0.35, "f": 2200, "q": 1.5, "dur": 0.03, "sharp": 700, "gain": -2}
+      ]
+    },
+    "club_spin": {
+      "kind": "quirk", "subtitle": "Benika twirls her club", "loudness": -24,
+      "note": "Personal idle: two deep twirls of the club.",
+      "layers": [
+        {"type": "use", "sound": "club_swing", "variant": 1},
+        {"type": "use", "sound": "club_swing", "variant": 2, "at": 0.32, "pitch": 1}
+      ]
+    }
+  }
+}

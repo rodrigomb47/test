@@ -1,0 +1,2487 @@
+{
+  "hero.ambrose_nettlewick.brew_burst": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/ambrose_nettlewick/brew_burst"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_burst"
+  },
+  "hero.ambrose_nettlewick.brew_drop": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.splash_potion.break",
+        "pitch": 0.9,
+        "type": "event"
+      },
+      {
+        "name": "minecraft:entity.splash_potion.break",
+        "type": "event"
+      },
+      {
+        "name": "minecraft:entity.splash_potion.break",
+        "pitch": 1.15,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_drop"
+  },
+  "hero.ambrose_nettlewick.brew_fizzle": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ambrose_nettlewick/brew_fizzle"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_fizzle"
+  },
+  "hero.ambrose_nettlewick.brew_loop": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/brew_loop"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_loop"
+  },
+  "hero.ambrose_nettlewick.brew_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ambrose_nettlewick/brew_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_windup"
+  },
+  "hero.ambrose_nettlewick.bristles": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/bristles"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.bristles"
+  },
+  "hero.ambrose_nettlewick.broom_hop": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/broom_hop_1"
+      },
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/broom_hop_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.broom_hop"
+  },
+  "hero.ambrose_nettlewick.broom_takeoff": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ambrose_nettlewick/broom_takeoff"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.broom_takeoff"
+  },
+  "hero.ambrose_nettlewick.broom_whoosh": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/broom_whoosh_1"
+      },
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/broom_whoosh_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.broom_whoosh"
+  },
+  "hero.ambrose_nettlewick.bubble_rise": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ambrose_nettlewick/bubble_rise"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.bubble_rise"
+  },
+  "hero.ambrose_nettlewick.cauldron_bubble": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/cauldron_bubble_1"
+      },
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/cauldron_bubble_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.cauldron_bubble"
+  },
+  "hero.ambrose_nettlewick.cauldron_windup": {
+    "sounds": [
+      {
+        "name": "minecraft:block.brewing_stand.brew",
+        "pitch": 0.9,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.cauldron_windup"
+  },
+  "hero.ambrose_nettlewick.crow_caw": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/crow_caw_1"
+      },
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/crow_caw_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.crow_caw"
+  },
+  "hero.ambrose_nettlewick.crow_peck": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/crow_peck"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.crow_peck"
+  },
+  "hero.ambrose_nettlewick.eureka": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/eureka"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.eureka"
+  },
+  "hero.ambrose_nettlewick.experiment_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/ambrose_nettlewick/experiment_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.experiment_windup"
+  },
+  "hero.ambrose_nettlewick.fizz_poison": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/fizz_poison"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fizz_poison"
+  },
+  "hero.ambrose_nettlewick.fizz_slow": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/fizz_slow"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fizz_slow"
+  },
+  "hero.ambrose_nettlewick.fizz_weak": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/fizz_weak"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fizz_weak"
+  },
+  "hero.ambrose_nettlewick.fume_puff": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/fume_puff"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fume_puff"
+  },
+  "hero.ambrose_nettlewick.hex_cast": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/hex_cast"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.hex_cast"
+  },
+  "hero.ambrose_nettlewick.hex_full": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/hex_full"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.hex_full"
+  },
+  "hero.ambrose_nettlewick.hex_hit": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/hex_hit"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.hex_hit"
+  },
+  "hero.ambrose_nettlewick.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.intro"
+  },
+  "hero.ambrose_nettlewick.phase3_glow": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/phase3_glow"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.phase3_glow"
+  },
+  "hero.ambrose_nettlewick.puddle_splat": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.slime.squish_small",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.puddle_splat"
+  },
+  "hero.ambrose_nettlewick.scribble": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/scribble"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.scribble"
+  },
+  "hero.ambrose_nettlewick.splat": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/splat_1"
+      },
+      {
+        "name": "factionclash:hero/ambrose_nettlewick/splat_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.splat"
+  },
+  "hero.ambrose_nettlewick.vial_poison": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.splash_potion.break",
+        "pitch": 1.05,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_poison"
+  },
+  "hero.ambrose_nettlewick.vial_shake": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/vial_shake"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_shake"
+  },
+  "hero.ambrose_nettlewick.vial_slow": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.splash_potion.break",
+        "pitch": 0.9,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_slow"
+  },
+  "hero.ambrose_nettlewick.vial_throw": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.splash_potion.throw",
+        "pitch": 1.1,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_throw"
+  },
+  "hero.ambrose_nettlewick.vial_weak": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.splash_potion.break",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_weak"
+  },
+  "hero.benika_akagane.blast": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.generic.explode",
+        "pitch": 1.25,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.blast"
+  },
+  "hero.benika_akagane.burp": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.burp",
+        "pitch": 0.9,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.burp"
+  },
+  "hero.benika_akagane.charge_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.knockback",
+        "pitch": 0.75,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.charge_hit"
+  },
+  "hero.benika_akagane.charge_snort": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/charge_snort"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.charge_snort"
+  },
+  "hero.benika_akagane.club_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:item.mace.smash_ground",
+        "pitch": 0.95,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.club_hit"
+  },
+  "hero.benika_akagane.club_slam": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/club_slam_1"
+      },
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/club_slam_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.club_slam"
+  },
+  "hero.benika_akagane.club_spin": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/club_spin"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.club_spin"
+  },
+  "hero.benika_akagane.club_swing": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/benika_akagane/club_swing_1"
+      },
+      {
+        "name": "factionclash:hero/benika_akagane/club_swing_2"
+      },
+      {
+        "name": "factionclash:hero/benika_akagane/club_swing_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.club_swing"
+  },
+  "hero.benika_akagane.crash_impact": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/benika_akagane/crash_impact"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.crash_impact"
+  },
+  "hero.benika_akagane.crash_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/benika_akagane/crash_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.crash_windup"
+  },
+  "hero.benika_akagane.fire_burst": {
+    "sounds": [
+      {
+        "name": "minecraft:item.firecharge.use",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.fire_burst"
+  },
+  "hero.benika_akagane.fire_wave": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/fire_wave"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.fire_wave"
+  },
+  "hero.benika_akagane.fizzle": {
+    "sounds": [
+      {
+        "name": "minecraft:block.fire.extinguish",
+        "pitch": 1.3,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.fizzle"
+  },
+  "hero.benika_akagane.gourd_swig": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.generic.drink",
+        "pitch": 0.85,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.gourd_swig"
+  },
+  "hero.benika_akagane.grab": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/grab"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.grab"
+  },
+  "hero.benika_akagane.horn_flare": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/horn_flare"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.horn_flare"
+  },
+  "hero.benika_akagane.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/benika_akagane/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.intro"
+  },
+  "hero.benika_akagane.laugh": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/benika_akagane/laugh_1"
+      },
+      {
+        "name": "factionclash:hero/benika_akagane/laugh_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.laugh"
+  },
+  "hero.benika_akagane.meteor_impact": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/benika_akagane/meteor_impact"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.meteor_impact"
+  },
+  "hero.benika_akagane.meteor_leap": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/meteor_leap"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.meteor_leap"
+  },
+  "hero.benika_akagane.roar": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/benika_akagane/roar"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.roar"
+  },
+  "hero.benika_akagane.shoulder_roll": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/shoulder_roll"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.shoulder_roll"
+  },
+  "hero.benika_akagane.slam_rise": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/slam_rise"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.slam_rise"
+  },
+  "hero.benika_akagane.steam": {
+    "sounds": [
+      {
+        "name": "minecraft:block.fire.extinguish",
+        "pitch": 0.7,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.steam"
+  },
+  "hero.benika_akagane.stomp": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/stomp_1"
+      },
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/stomp_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.stomp"
+  },
+  "hero.benika_akagane.stomp_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/benika_akagane/stomp_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.stomp_windup"
+  },
+  "hero.benika_akagane.throw_whoosh": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/benika_akagane/throw_whoosh"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.throw_whoosh"
+  },
+  "hero.benika_akagane.thud": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/benika_akagane/thud_1"
+      },
+      {
+        "name": "factionclash:hero/benika_akagane/thud_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.benika_akagane.thud"
+  },
+  "hero.cue.barrier.break": {
+    "sounds": [
+      {
+        "name": "minecraft:block.glass.break",
+        "pitch": 1.3,
+        "type": "event",
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.barrier.break"
+  },
+  "hero.cue.barrier.hit": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/barrier_hit_1"
+      },
+      {
+        "name": "factionclash:hero/cue/barrier_hit_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.barrier.hit"
+  },
+  "hero.cue.barrier.sparkle": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/barrier_sparkle"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.barrier.sparkle"
+  },
+  "hero.cue.channel.break": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/channel_break"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.channel.break"
+  },
+  "hero.cue.charge_wall": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/charge_wall_1"
+      },
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/charge_wall_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.charge_wall"
+  },
+  "hero.cue.counter": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/counter"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.counter"
+  },
+  "hero.cue.decoy.pop": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/decoy_pop_1"
+      },
+      {
+        "name": "factionclash:hero/cue/decoy_pop_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.decoy.pop"
+  },
+  "hero.cue.dive": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/dive",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.dive"
+  },
+  "hero.cue.downed": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/cue/downed"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.downed"
+  },
+  "hero.cue.enrage": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/cue/enrage"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.enrage"
+  },
+  "hero.cue.glide": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/glide"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.glide"
+  },
+  "hero.cue.intro": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/cue/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.intro"
+  },
+  "hero.cue.landing.heavy": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/landing_heavy_1"
+      },
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/landing_heavy_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.landing.heavy"
+  },
+  "hero.cue.parry": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/parry_1"
+      },
+      {
+        "name": "factionclash:hero/cue/parry_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.parry"
+  },
+  "hero.cue.phase": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/cue/phase"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.phase"
+  },
+  "hero.cue.poise.break": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/cue/poise_break"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.poise.break"
+  },
+  "hero.cue.poise.crack": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/poise_crack_1"
+      },
+      {
+        "name": "factionclash:hero/cue/poise_crack_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.poise.crack"
+  },
+  "hero.cue.shockwave": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.breeze.wind_burst",
+        "pitch": 0.75,
+        "type": "event",
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.shockwave"
+  },
+  "hero.cue.shockwave.low": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/shockwave_low"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.shockwave.low"
+  },
+  "hero.cue.spared": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/spared"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.spared"
+  },
+  "hero.cue.stagger.dizzy": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/stagger_dizzy"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.stagger.dizzy"
+  },
+  "hero.cue.step.heavy": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/cue/step_heavy_1"
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/cue/step_heavy_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.step.heavy"
+  },
+  "hero.cue.super_armor": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/super_armor"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.super_armor"
+  },
+  "hero.cue.takeoff": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/takeoff"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.takeoff"
+  },
+  "hero.cue.telegraph.area": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/telegraph_area",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.telegraph.area"
+  },
+  "hero.cue.telegraph.heavy": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/telegraph_heavy",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.telegraph.heavy"
+  },
+  "hero.cue.telegraph.light": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/telegraph_light_1",
+        "preload": true
+      },
+      {
+        "name": "factionclash:hero/cue/telegraph_light_2",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.telegraph.light"
+  },
+  "hero.cue.telegraph.ultimate": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/cue/telegraph_ultimate",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.telegraph.ultimate"
+  },
+  "hero.cue.telegraph.unblockable": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/telegraph_unblockable",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.telegraph.unblockable"
+  },
+  "hero.cue.ultimate.ready": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/cue/ultimate_ready"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.ultimate.ready"
+  },
+  "hero.cue.weak_point": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/weak_point"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.weak_point"
+  },
+  "hero.cue.yield": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/yield"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.yield"
+  },
+  "hero.hinae_shirasuzu.charm": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/hinae_shirasuzu/charm"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.charm"
+  },
+  "hero.hinae_shirasuzu.dance_sweep": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/dance_sweep"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.dance_sweep"
+  },
+  "hero.hinae_shirasuzu.exorcise": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/hinae_shirasuzu/exorcise"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.exorcise"
+  },
+  "hero.hinae_shirasuzu.exorcise_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/hinae_shirasuzu/exorcise_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.exorcise_windup"
+  },
+  "hero.hinae_shirasuzu.hum": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/hum"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.hum"
+  },
+  "hero.hinae_shirasuzu.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.intro"
+  },
+  "hero.hinae_shirasuzu.kagura": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/kagura_1"
+      },
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/kagura_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.kagura"
+  },
+  "hero.hinae_shirasuzu.pray_clap": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/pray_clap"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.pray_clap"
+  },
+  "hero.hinae_shirasuzu.purify": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/purify"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.purify"
+  },
+  "hero.hinae_shirasuzu.radiant_glow": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/radiant_glow"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.radiant_glow"
+  },
+  "hero.hinae_shirasuzu.rite_loop": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/rite_loop"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.rite_loop"
+  },
+  "hero.hinae_shirasuzu.rite_release": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/hinae_shirasuzu/rite_release"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.rite_release"
+  },
+  "hero.hinae_shirasuzu.rite_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/hinae_shirasuzu/rite_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.rite_windup"
+  },
+  "hero.hinae_shirasuzu.seal_burst": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/hinae_shirasuzu/seal_burst"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.seal_burst"
+  },
+  "hero.hinae_shirasuzu.seal_ring": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/hinae_shirasuzu/seal_ring"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.seal_ring"
+  },
+  "hero.hinae_shirasuzu.sweep_broom": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/sweep_broom"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.sweep_broom"
+  },
+  "hero.hinae_shirasuzu.talisman_hit": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/talisman_hit_1"
+      },
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/talisman_hit_2"
+      },
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/talisman_hit_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.talisman_hit"
+  },
+  "hero.hinae_shirasuzu.talisman_throw": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/talisman_throw_1"
+      },
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/talisman_throw_2"
+      },
+      {
+        "name": "factionclash:hero/hinae_shirasuzu/talisman_throw_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.talisman_throw"
+  },
+  "hero.hinae_shirasuzu.talismans_unfold": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/hinae_shirasuzu/talismans_unfold"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.talismans_unfold"
+  },
+  "hero.ilsabet_frostmere.bash_thud": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/bash_thud_1"
+      },
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/bash_thud_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.bash_thud"
+  },
+  "hero.ilsabet_frostmere.bulwark": {
+    "sounds": [
+      {
+        "name": "minecraft:item.armor.equip_netherite",
+        "pitch": 0.9,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.bulwark"
+  },
+  "hero.ilsabet_frostmere.frost_hit": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/frost_hit_1"
+      },
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/frost_hit_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.frost_hit"
+  },
+  "hero.ilsabet_frostmere.frost_pulse": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/frost_pulse_1"
+      },
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/frost_pulse_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.frost_pulse"
+  },
+  "hero.ilsabet_frostmere.frost_sweep": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/frost_sweep"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.frost_sweep"
+  },
+  "hero.ilsabet_frostmere.ice_shatter": {
+    "sounds": [
+      {
+        "name": "minecraft:block.glass.break",
+        "pitch": 0.9,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.ice_shatter"
+  },
+  "hero.ilsabet_frostmere.ice_tink": {
+    "sounds": [
+      {
+        "name": "minecraft:block.glass.break",
+        "pitch": 1.6,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.ice_tink"
+  },
+  "hero.ilsabet_frostmere.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.intro"
+  },
+  "hero.ilsabet_frostmere.lance_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.knockback",
+        "pitch": 0.8,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.lance_hit"
+  },
+  "hero.ilsabet_frostmere.lance_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ilsabet_frostmere/lance_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.lance_windup"
+  },
+  "hero.ilsabet_frostmere.oath": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ilsabet_frostmere/oath"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.oath"
+  },
+  "hero.ilsabet_frostmere.rally": {
+    "sounds": [
+      {
+        "name": "minecraft:item.goat_horn.sound.5",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.rally"
+  },
+  "hero.ilsabet_frostmere.resolve": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/resolve"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.resolve"
+  },
+  "hero.ilsabet_frostmere.rime_wall": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/ilsabet_frostmere/rime_wall"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.rime_wall"
+  },
+  "hero.ilsabet_frostmere.shield_bash": {
+    "sounds": [
+      {
+        "name": "minecraft:item.shield.block",
+        "pitch": 0.75,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_bash"
+  },
+  "hero.ilsabet_frostmere.shield_plant": {
+    "sounds": [
+      {
+        "name": "minecraft:item.shield.block",
+        "pitch": 0.6,
+        "type": "event",
+        "volume": 0.9
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_plant"
+  },
+  "hero.ilsabet_frostmere.shield_raise": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ilsabet_frostmere/shield_raise"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_raise"
+  },
+  "hero.ilsabet_frostmere.shield_tap": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ilsabet_frostmere/shield_tap"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_tap"
+  },
+  "hero.ilsabet_frostmere.standard_plant": {
+    "sounds": [
+      {
+        "name": "minecraft:block.anvil.place",
+        "pitch": 0.8,
+        "type": "event",
+        "volume": 0.5
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.standard_plant"
+  },
+  "hero.ilsabet_frostmere.sweep_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/ilsabet_frostmere/sweep_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.sweep_windup"
+  },
+  "hero.ilsabet_frostmere.sword_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.strong",
+        "pitch": 0.95,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.sword_hit"
+  },
+  "hero.ilsabet_frostmere.sword_swing": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.sweep",
+        "pitch": 0.95,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.sword_swing"
+  },
+  "hero.ilsabet_frostmere.visor": {
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_trapdoor.close",
+        "pitch": 1.4,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.visor"
+  },
+  "hero.ilsabet_frostmere.vow_release": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/ilsabet_frostmere/vow_release"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.vow_release"
+  },
+  "hero.ilsabet_frostmere.vow_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/ilsabet_frostmere/vow_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.vow_windup"
+  },
+  "hero.kagenori_tsurumine.blade_hum": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/blade_hum"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.blade_hum"
+  },
+  "hero.kagenori_tsurumine.chain_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/kagenori_tsurumine/chain_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.chain_windup"
+  },
+  "hero.kagenori_tsurumine.chain_zap": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/chain_zap_1"
+      },
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/chain_zap_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.chain_zap"
+  },
+  "hero.kagenori_tsurumine.crane_land": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/crane_land"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.crane_land"
+  },
+  "hero.kagenori_tsurumine.crane_leap": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/crane_leap"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.crane_leap"
+  },
+  "hero.kagenori_tsurumine.draw_second": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/draw_second"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.draw_second"
+  },
+  "hero.kagenori_tsurumine.glint": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/kagenori_tsurumine/glint"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.glint"
+  },
+  "hero.kagenori_tsurumine.guard_click": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/kagenori_tsurumine/guard_click"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.guard_click"
+  },
+  "hero.kagenori_tsurumine.hair_tie": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/hair_tie"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.hair_tie"
+  },
+  "hero.kagenori_tsurumine.heaven_split": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/kagenori_tsurumine/heaven_split"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.heaven_split"
+  },
+  "hero.kagenori_tsurumine.heaven_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/kagenori_tsurumine/heaven_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.heaven_windup"
+  },
+  "hero.kagenori_tsurumine.heavy_cut": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/heavy_cut"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.heavy_cut"
+  },
+  "hero.kagenori_tsurumine.helmet": {
+    "sounds": [
+      {
+        "name": "minecraft:item.armor.equip_iron",
+        "pitch": 0.9,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.helmet"
+  },
+  "hero.kagenori_tsurumine.hm": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/hm"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.hm"
+  },
+  "hero.kagenori_tsurumine.iai_draw": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/iai_draw_1"
+      },
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/iai_draw_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.iai_draw"
+  },
+  "hero.kagenori_tsurumine.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.intro"
+  },
+  "hero.kagenori_tsurumine.katana_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.strong",
+        "pitch": 1.1,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.katana_hit"
+  },
+  "hero.kagenori_tsurumine.katana_swing": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/katana_swing_1"
+      },
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/katana_swing_2"
+      },
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/katana_swing_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.katana_swing"
+  },
+  "hero.kagenori_tsurumine.kiai": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/kiai_1"
+      },
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/kiai_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.kiai"
+  },
+  "hero.kagenori_tsurumine.lightning": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.lightning_bolt.impact",
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.lightning"
+  },
+  "hero.kagenori_tsurumine.overhead_raise": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/kagenori_tsurumine/overhead_raise"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.overhead_raise"
+  },
+  "hero.kagenori_tsurumine.sheathe": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/sheathe"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.sheathe"
+  },
+  "hero.kagenori_tsurumine.split_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.knockback",
+        "pitch": 0.85,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.split_hit"
+  },
+  "hero.kagenori_tsurumine.step_dash": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/step_dash_1"
+      },
+      {
+        "name": "factionclash:hero/kagenori_tsurumine/step_dash_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.step_dash"
+  },
+  "hero.kagenori_tsurumine.step_poise": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/kagenori_tsurumine/step_poise"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.step_poise"
+  },
+  "hero.kagenori_tsurumine.thunderclap": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/kagenori_tsurumine/thunderclap"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.thunderclap"
+  },
+  "hero.natsuho_komezaki.bell": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/bell_1"
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/bell_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.bell"
+  },
+  "hero.natsuho_komezaki.claw": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/claw_1"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/claw_2"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/claw_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.claw"
+  },
+  "hero.natsuho_komezaki.claw_hit": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/claw_hit_1"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/claw_hit_2"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/claw_hit_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.claw_hit"
+  },
+  "hero.natsuho_komezaki.claw_scrape": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/natsuho_komezaki/claw_scrape"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.claw_scrape"
+  },
+  "hero.natsuho_komezaki.dash": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/dash_1"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/dash_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.dash"
+  },
+  "hero.natsuho_komezaki.flinch": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/flinch"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.flinch"
+  },
+  "hero.natsuho_komezaki.frenzy_sting": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/natsuho_komezaki/frenzy_sting"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.frenzy_sting"
+  },
+  "hero.natsuho_komezaki.frenzy_yowl": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.cat.stray_ambient",
+        "pitch": 1.05,
+        "type": "event",
+        "volume": 2.8
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.frenzy_yowl"
+  },
+  "hero.natsuho_komezaki.hiss": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.cat.hiss",
+        "pitch": 1.15,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.hiss"
+  },
+  "hero.natsuho_komezaki.hiss_burst": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/hiss_burst"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.hiss_burst"
+  },
+  "hero.natsuho_komezaki.hmph": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/hmph_1"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/hmph_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.hmph"
+  },
+  "hero.natsuho_komezaki.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.intro"
+  },
+  "hero.natsuho_komezaki.nine_lives": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/natsuho_komezaki/nine_lives"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.nine_lives"
+  },
+  "hero.natsuho_komezaki.paw_lick": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/paw_lick"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.paw_lick"
+  },
+  "hero.natsuho_komezaki.phase2": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/phase2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.phase2"
+  },
+  "hero.natsuho_komezaki.phase3": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/phase3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.phase3"
+  },
+  "hero.natsuho_komezaki.pounce_land": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/pounce_land_1"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/pounce_land_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.pounce_land"
+  },
+  "hero.natsuho_komezaki.pounce_leap": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/natsuho_komezaki/pounce_leap_1"
+      },
+      {
+        "name": "factionclash:hero/natsuho_komezaki/pounce_leap_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.pounce_leap"
+  },
+  "hero.natsuho_komezaki.pounce_wiggle": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/natsuho_komezaki/pounce_wiggle"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.pounce_wiggle"
+  },
+  "hero.natsuho_komezaki.purr": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.cat.purr",
+        "pitch": 1.1,
+        "type": "event",
+        "volume": 1.4
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.purr"
+  },
+  "hero.natsuho_komezaki.reflex_growl": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/natsuho_komezaki/reflex_growl"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.reflex_growl"
+  },
+  "hero.natsuho_komezaki.yawn": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/yawn"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.yawn"
+  },
+  "hero.natsuho_komezaki.zoomies": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/natsuho_komezaki/zoomies"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.zoomies"
+  },
+  "hero.tobimaru_usugumo.backstab": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/backstab"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.backstab"
+  },
+  "hero.tobimaru_usugumo.blade_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.strong",
+        "pitch": 1.3,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.blade_hit"
+  },
+  "hero.tobimaru_usugumo.blade_swish": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/blade_swish_1"
+      },
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/blade_swish_2"
+      },
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/blade_swish_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.blade_swish"
+  },
+  "hero.tobimaru_usugumo.clones": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/clones"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.clones"
+  },
+  "hero.tobimaru_usugumo.dash_slice": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/dash_slice_1"
+      },
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/dash_slice_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.dash_slice"
+  },
+  "hero.tobimaru_usugumo.fuse": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/tobimaru_usugumo/fuse"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.fuse"
+  },
+  "hero.tobimaru_usugumo.hand_seal": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/tobimaru_usugumo/hand_seal"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.hand_seal"
+  },
+  "hero.tobimaru_usugumo.hm": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/hm"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.hm"
+  },
+  "hero.tobimaru_usugumo.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.intro"
+  },
+  "hero.tobimaru_usugumo.kneel": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/kneel"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kneel"
+  },
+  "hero.tobimaru_usugumo.kunai_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.arrow.hit",
+        "pitch": 1.2,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kunai_hit"
+  },
+  "hero.tobimaru_usugumo.kunai_throw": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/kunai_throw_1"
+      },
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/kunai_throw_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kunai_throw"
+  },
+  "hero.tobimaru_usugumo.kunai_twirl": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/kunai_twirl"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kunai_twirl"
+  },
+  "hero.tobimaru_usugumo.log_swap": {
+    "sounds": [
+      {
+        "name": "minecraft:block.wood.break",
+        "pitch": 1.2,
+        "type": "event",
+        "volume": 0.6
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.log_swap"
+  },
+  "hero.tobimaru_usugumo.mask_pull": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/mask_pull"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.mask_pull"
+  },
+  "hero.tobimaru_usugumo.nightfall_strike": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/nightfall_strike_1"
+      },
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/nightfall_strike_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.nightfall_strike"
+  },
+  "hero.tobimaru_usugumo.nightfall_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 48,
+        "name": "factionclash:hero/tobimaru_usugumo/nightfall_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.nightfall_windup"
+  },
+  "hero.tobimaru_usugumo.smoke_bomb": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/tobimaru_usugumo/smoke_bomb"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.smoke_bomb"
+  },
+  "hero.tobimaru_usugumo.smoke_puff": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/smoke_puff_1"
+      },
+      {
+        "name": "factionclash:hero/tobimaru_usugumo/smoke_puff_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.smoke_puff"
+  },
+  "hero.tobimaru_usugumo.smoke_step": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/smoke_step_1"
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/smoke_step_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.smoke_step"
+  },
+  "hero.voice.ambrose_nettlewick": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ambrose_nettlewick/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.ambrose_nettlewick"
+  },
+  "hero.voice.benika_akagane": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/benika_akagane/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.benika_akagane"
+  },
+  "hero.voice.hinae_shirasuzu": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/hinae_shirasuzu/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.hinae_shirasuzu"
+  },
+  "hero.voice.ilsabet_frostmere": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ilsabet_frostmere/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ilsabet_frostmere/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ilsabet_frostmere/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ilsabet_frostmere/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ilsabet_frostmere/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/ilsabet_frostmere/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.ilsabet_frostmere"
+  },
+  "hero.voice.kagenori_tsurumine": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/kagenori_tsurumine/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.kagenori_tsurumine"
+  },
+  "hero.voice.natsuho_komezaki": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/natsuho_komezaki/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.natsuho_komezaki"
+  },
+  "hero.voice.tobimaru_usugumo": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/tobimaru_usugumo/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.tobimaru_usugumo"
+  },
+  "hero.voice.yugen_kagaribi": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/voice_1",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/voice_2",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/voice_3",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/voice_4",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/voice_5",
+        "preload": true
+      },
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/voice_6",
+        "preload": true
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.voice.yugen_kagaribi"
+  },
+  "hero.yugen_kagaribi.bewitch": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/bewitch"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.bewitch"
+  },
+  "hero.yugen_kagaribi.contract": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/contract"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.contract"
+  },
+  "hero.yugen_kagaribi.fan_cut": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/fan_cut_1"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/fan_cut_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.fan_cut"
+  },
+  "hero.yugen_kagaribi.fan_hit": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.knockback",
+        "pitch": 1.2,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.fan_hit"
+  },
+  "hero.yugen_kagaribi.fox_screech": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.fox.screech",
+        "pitch": 0.85,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.fox_screech"
+  },
+  "hero.yugen_kagaribi.foxfire": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_1"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_2"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire"
+  },
+  "hero.yugen_kagaribi.foxfire_drop": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_drop_1"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_drop_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire_drop"
+  },
+  "hero.yugen_kagaribi.foxfire_hit": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_hit_1"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_hit_2"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_hit_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire_hit"
+  },
+  "hero.yugen_kagaribi.foxfire_volley": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/foxfire_volley"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire_volley"
+  },
+  "hero.yugen_kagaribi.intro": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/intro"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.intro"
+  },
+  "hero.yugen_kagaribi.lantern_flare": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/yugen_kagaribi/lantern_flare"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_flare"
+  },
+  "hero.yugen_kagaribi.lantern_hum": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/yugen_kagaribi/lantern_hum"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_hum"
+  },
+  "hero.yugen_kagaribi.lantern_pulse": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/lantern_pulse_1"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/lantern_pulse_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_pulse"
+  },
+  "hero.yugen_kagaribi.lantern_spin": {
+    "sounds": [
+      {
+        "attenuation_distance": 12,
+        "name": "factionclash:hero/yugen_kagaribi/lantern_spin"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_spin"
+  },
+  "hero.yugen_kagaribi.laugh": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/laugh_1"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/laugh_2"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.laugh"
+  },
+  "hero.yugen_kagaribi.mirage": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/yugen_kagaribi/mirage"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.mirage"
+  },
+  "hero.yugen_kagaribi.ninefold_gather": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/yugen_kagaribi/ninefold_gather"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.ninefold_gather"
+  },
+  "hero.yugen_kagaribi.ninefold_shot": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/ninefold_shot_1"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/ninefold_shot_2"
+      },
+      {
+        "name": "factionclash:hero/yugen_kagaribi/ninefold_shot_3"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.ninefold_shot"
+  },
+  "hero.yugen_kagaribi.rain_windup": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/yugen_kagaribi/rain_windup"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.rain_windup"
+  },
+  "hero.yugen_kagaribi.tails_fan": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/tails_fan"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.tails_fan"
+  },
+  "hero.yugen_kagaribi.vanish": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.fox.teleport",
+        "pitch": 0.95,
+        "type": "event"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish"
+  },
+  "hero.yugen_kagaribi.vanish_sparkle": {
+    "sounds": [
+      {
+        "name": "factionclash:hero/yugen_kagaribi/vanish_sparkle"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish_sparkle"
+  }
+}

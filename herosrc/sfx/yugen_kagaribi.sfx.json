@@ -1,0 +1,254 @@
+{
+  "format": 1,
+  "set": "yugen_kagaribi",
+  "title": "Yugen Kagaribi, the lantern fox (schemer, foxfire lanterns and fan, arcane)",
+  "hero": {
+    "voice": {"talk": "voice", "rate": 3, "melody": [0, 0, -2, 2, -3], "fallback_blip": "flute", "jitter": 0.03,
+              "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.0},
+              "death": {"event": "minecraft:entity.player.death", "pitch": 1.0},
+              "emotes": {"laugh": "laugh"}},
+    "moves": {
+      "basic": {"class": "light", "release": "foxfire", "impact": "foxfire_hit"},
+      "foxfire_volley": {"class": "light", "release": "foxfire_volley", "impact": "foxfire_hit"},
+      "lantern_ring": {"class": "area", "windup": "lantern_hum", "impact": "lantern_pulse"},
+      "fan_cut": {"class": "light", "release": "fan_cut", "impact": "fan_hit"},
+      "vanish": {"class": "light", "release": "vanish"},
+      "mirage": {"class": "heavy", "windup": "mirage"},
+      "foxfire_rain": {"class": "area", "windup": "rain_windup", "impact": "foxfire_drop"},
+      "ninefold_lantern": {"class": "ultimate", "windup": "ninefold_gather", "release": "ninefold_shot", "impact": "foxfire_hit"}
+    },
+    "phases": {"2": "tails_fan", "3": "lantern_flare"},
+    "passives": {"contract": "contract", "bewitched_full": "bewitch"},
+    "intro": "intro",
+    "quirks": {"personal.1": "laugh", "personal.2": "lantern_spin"},
+    "steps": {"volume": 0.8}
+  },
+  "preview": ["voice", "laugh", "foxfire", "foxfire_volley", "foxfire_hit", "lantern_hum", "lantern_pulse", "fan_cut",
+              "vanish_sparkle", "mirage", "rain_windup", "foxfire_drop", "ninefold_gather", "ninefold_shot",
+              "tails_fan", "lantern_flare", "bewitch", "contract", "intro", "lantern_spin"],
+  "sounds": {
+    "voice": {
+      "kind": "voice", "subtitle": "Yugen murmurs", "pitch": [0.98, 1.02], "variants": 6,
+      "note": "Soft and breathy, gliding (the old flute voice): a mellow source with breath at about 233 Hz, slow vibrato, unhurried (rate 3).",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 233, "dur": 0.13, "vowel": "o", "shift": 1.05, "tilt": 2.2, "breath": 0.12, "dry": 0.02, "fq": 5,
+         "vibrato": {"rate": 4.5, "depth": 0.15}, "attack": 0.025, "release": 0.05, "contour": [0, 0]}
+      ],
+      "each": [
+        {"layers.0.vowel": "o", "layers.0.contour": [0, -1], "layers.0.dur": 0.13},
+        {"layers.0.vowel": "a", "layers.0.contour": [2, 0], "layers.0.dur": 0.12},
+        {"layers.0.vowel": "u", "layers.0.contour": [-2, -3], "layers.0.dur": 0.14},
+        {"layers.0.vowel": "e", "layers.0.contour": [3, 4], "layers.0.dur": 0.11},
+        {"layers.0.vowel": "a", "layers.0.contour": [5, 2], "layers.0.dur": 0.15},
+        {"layers.0.vowel": "o", "layers.0.contour": [0, 3], "layers.0.dur": 0.12}
+      ]
+    },
+    "laugh": {
+      "kind": "emote", "subtitle": "Yugen laughs softly", "loudness": -22, "variants": 2, "vary": {"pitch": [-0.7, 0.7]},
+      "note": "The laugh behind the sleeve: three breathy 'fu' syllables falling in pitch.",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 262, "dur": 0.09, "vowel": "u", "shift": 1.05, "tilt": 2.0, "breath": 0.6, "dry": 0.03, "contour": [2, 0], "attack": 0.008, "release": 0.04},
+        {"type": "vox", "source": "glottal", "at": 0.13, "f0": 247, "dur": 0.09, "vowel": "u", "shift": 1.05, "tilt": 2.0, "breath": 0.6, "dry": 0.03, "contour": [1, -1], "attack": 0.008, "release": 0.04, "gain": -1},
+        {"type": "vox", "source": "glottal", "at": 0.26, "f0": 233, "dur": 0.12, "vowel": "u", "shift": 1.05, "tilt": 2.0, "breath": 0.6, "dry": 0.03, "contour": [0, -3], "attack": 0.008, "release": 0.06, "gain": -2}
+      ]
+    },
+    "foxfire": {
+      "kind": "cast", "subtitle": "Foxfire flies", "loudness": -21, "variants": 3, "pitch": [0.96, 1.04],
+      "vary": {"pitch": [-1.5, 1.5]},
+      "note": "Basic attack throw: a short version of the foxfire whoosh-sparkle.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.45, "f": {"from": 400, "to": 2000, "shape": "exp"}, "q": 0.9, "peak": 0.35},
+        {"type": "fm", "dur": 0.45, "freq": {"from": 700, "to": 1150, "shape": "exp"}, "ratio": 1.5, "index": 2.5, "env": {"perc": [0.03, 0.4]},
+         "fx": [{"trem": {"rate": 13, "depth": 0.4}}], "gain": -3},
+        {"type": "tone", "at": 0.1, "dur": 0.25, "freq": 3136, "env": {"perc": [0.002, 0.2]}, "gain": -12},
+        {"type": "tone", "at": 0.22, "dur": 0.25, "freq": 3520, "env": {"perc": [0.002, 0.2]}, "gain": -13}
+      ]
+    },
+    "foxfire_volley": {
+      "kind": "cast", "subtitle": "Foxfire volley flies", "loudness": -19, "pitch": [0.98, 1.02],
+      "note": "Foxfire volley release: the owner's prototype (an airy whoosh and a shimmering FM sparkle that rises, four glints).",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 1.1, "filter": {"mode": "bp", "f": [300, 1800], "q": 0.9}, "env": {"perc": [0.25, 0.6]}, "gain": -4.4},
+        {"type": "fm", "dur": 1.1, "freq": {"from": 660, "to": 1320, "shape": "exp"}, "ratio": 1.5, "index": 2.5, "env": {"perc": [0.05, 0.8]},
+         "fx": [{"trem": {"rate": 13, "depth": 0.4}}], "gain": -6},
+        {"type": "tone", "at": 0.15, "dur": 0.4, "freq": 2637, "env": {"perc": [0.002, 0.2]}, "gain": -12},
+        {"type": "tone", "at": 0.35, "dur": 0.4, "freq": 3136, "env": {"perc": [0.002, 0.2]}, "gain": -12},
+        {"type": "tone", "at": 0.55, "dur": 0.4, "freq": 3520, "env": {"perc": [0.002, 0.2]}, "gain": -12},
+        {"type": "tone", "at": 0.70, "dur": 0.4, "freq": 4186, "env": {"perc": [0.002, 0.2]}, "gain": -12}
+      ]
+    },
+    "foxfire_hit": {
+      "kind": "hit", "subtitle": "Foxfire bursts", "variants": 3, "pitch": [0.95, 1.05], "vary": {"pitch": [-1.5, 1.5]},
+      "note": "Cold blue fire bursts on a target: a bright fizz, a soft pop and two glints.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.3, "filter": {"mode": "hp", "f": {"from": 6000, "to": 2500, "shape": "exp"}, "q": 0.8}, "env": {"perc": [0.003, 0.25]}},
+        {"type": "impact", "dur": 0.2, "f": [240, 110], "drop": 0.02, "body_decay": 0.04, "crunch": 0, "click": 0, "gain": -4},
+        {"type": "fm", "dur": 0.25, "freq": {"from": 1600, "to": 700, "shape": "exp"}, "ratio": 1.5, "index": 1.8, "env": {"perc": [0.003, 0.2]}, "gain": -6},
+        {"type": "tone", "at": 0.04, "dur": 0.2, "freq": 3520, "env": {"perc": [0.002, 0.15]}, "gain": -12}
+      ]
+    },
+    "lantern_hum": {
+      "post": {"transients": true}, "kind": "windup", "subtitle": "Paper lanterns hum", "loudness": -19,
+      "note": "Lantern ring wind-up: the lanterns gather round him, a cold hum swelling with paper rustle and a rising shimmer.",
+      "layers": [
+        {"type": "tone", "dur": 1.0, "freq": 220, "harmonics": [[1, 1], [1.5, 0.5], [2, 0.6], [3, 0.3]], "vibrato": {"rate": 5, "depth": 0.1},
+         "env": {"points": [[0, 0], [0.85, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "crackle", "dur": 1.0, "rate": [20, 70], "f": [2500, 6000], "grain": 0.01, "q": 1.5, "env": {"swell": [0.8, 0.2]}, "gain": -6},
+        {"type": "shimmer", "dur": 1.0, "count": 8, "f": [1500, 3500], "rise": [0, 5], "trem": 9, "gain": -8,
+         "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}}
+      ]
+    },
+    "lantern_pulse": {
+      "kind": "hit", "subtitle": "Lantern ring pulses", "loudness": -20, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Each pulse of the lantern ring zone: a soft cold 'whoom' and a chime.",
+      "layers": [
+        {"type": "tone", "dur": 0.6, "freq": {"from": 140, "to": 95, "shape": "exp"}, "harmonics": [[1, 1], [2, 0.3]], "env": {"swell": [0.08, 0.5]}},
+        {"type": "bell", "partials": "chime", "at": 0.03, "f0": 1174.7, "dur": 0.7, "decay": 0.35, "strike": 0.05, "gain": -5},
+        {"type": "whoosh", "dur": 0.5, "f": [500, 1500, 400], "q": 0.8, "peak": 0.25, "gain": -8}
+      ]
+    },
+    "fan_cut": {
+      "kind": "swing", "subtitle": "A fan snaps open and cuts", "loudness": -19, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Fan cut: the folding fan snaps open (a dry wooden clack) and sweeps.",
+      "layers": [
+        {"type": "click", "f": 1800, "q": 1.5, "dur": 0.05, "sharp": 250, "ring": {"f": 1150, "gain": 0.6, "decay": 0.02}},
+        {"type": "click", "at": 0.018, "f": 2600, "q": 2, "dur": 0.03, "sharp": 400, "gain": -5},
+        {"type": "whoosh", "at": 0.04, "dur": 0.24, "f": [900, 3200, 1400], "q": 1.3, "peak": 0.4, "gain": -2}
+      ]
+    },
+    "fan_hit": {
+      "kind": "hit", "subtitle": "The fan strikes",
+      "note": "Fan cut lands with knockback 2: vanilla's knockback hit, a little brighter.",
+      "vanilla": [{"event": "minecraft:entity.player.attack.knockback", "pitch": 1.2}]
+    },
+    "vanish": {
+      "kind": "cast", "subtitle": "Yugen vanishes",
+      "note": "Vanish (invisible, hops back): vanilla's fox teleport is the natural fox 'blink', with a sparkle sucked away.",
+      "vanilla": [{"event": "minecraft:entity.fox.teleport", "pitch": 0.95}],
+      "with": [{"sound": "vanish_sparkle", "delay": 0}]
+    },
+    "vanish_sparkle": {
+      "kind": "cast", "subtitle": "Yugen vanishes", "loudness": -21,
+      "note": "Companion of vanish: a reversed sparkle that drains into nothing.",
+      "layers": [
+        {"type": "sparkle", "dur": 0.5, "count": 7, "scale": [0, 2, 4, 7, 9], "base": 1600, "octaves": 2, "grain": 0.12, "span": [0, 0.35], "order": "down"},
+        {"type": "whoosh", "dur": 0.5, "f": [800, 3000], "q": 1.2, "peak": 0.2, "gain": -6}
+      ],
+      "fx": [{"reverse": true}, {"fade": [0.02, 0.01]}]
+    },
+    "mirage": {
+      "kind": "windup", "subtitle": "Yugen splits into mirages", "loudness": -19,
+      "note": "Mirage wind-up (phase 2 decoys): his laugh from three places at once over a wavering shimmer.",
+      "layers": [
+        {"type": "shimmer", "dur": 1.0, "count": 9, "f": [900, 2600], "rise": [0, -3], "trem": 6, "env": {"swell": [0.5, 0.5]}},
+        {"type": "use", "sound": "laugh", "variant": 1, "at": 0.08},
+        {"type": "use", "sound": "laugh", "variant": 2, "at": 0.18, "pitch": 4, "gain": -4},
+        {"type": "use", "sound": "laugh", "variant": 1, "at": 0.28, "pitch": -5, "gain": -5}
+      ],
+      "fx": [{"echo": {"delay": 0.09, "feedback": 0.4, "count": 3, "damp": 3000, "mix": 0.3}}]
+    },
+    "rain_windup": {
+      "kind": "windup", "subtitle": "Foxfire gathers overhead", "loudness": -19,
+      "note": "Foxfire rain wind-up: a shimmer climbing into the sky with a rising rush.",
+      "layers": [
+        {"type": "shimmer", "dur": 1.0, "count": 10, "f": [1000, 3000], "rise": {"from": 0, "to": 9, "shape": "in"}, "trem": 11,
+         "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "whoosh", "dur": 1.0, "f": {"from": 300, "to": 3000, "shape": "exp"}, "q": 1.0, "peak": 0.85, "gain": -5}
+      ]
+    },
+    "foxfire_drop": {
+      "kind": "hit", "subtitle": "Foxfire falls", "loudness": -19, "variants": 2, "vary": {"pitch": [-2, 2]},
+      "note": "Each foxfire rain impact: a short falling glint that pops.",
+      "layers": [
+        {"type": "tone", "dur": 0.22, "freq": {"from": 3400, "to": 1300, "shape": "exp"}, "harmonics": [[1, 1], [2, 0.2]], "env": {"points": [[0, 0], [0.03, 0.6], [0.2, 1], [0.22, 0, "cos"]]}},
+        {"type": "use", "sound": "foxfire_hit", "at": 0.2, "gain": -2}
+      ]
+    },
+    "ninefold_gather": {
+      "kind": "windup", "subtitle": "Nine lanterns gather", "loudness": -16, "range": 32,
+      "note": "Ninefold lantern wind-up (1.6 s): nine small bells climb a pentatonic scale while the hum swells.",
+      "layers": [
+        {"type": "group", "layers": [
+          {"type": "bell", "partials": "chime", "at": 0.00, "f0": 587.3, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 0.16, "f0": 659.3, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 0.32, "f0": 784.0, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 0.48, "f0": 880.0, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 0.64, "f0": 987.8, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 0.80, "f0": 1174.7, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 0.96, "f0": 1318.5, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 1.12, "f0": 1568.0, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+          {"type": "bell", "partials": "chime", "at": 1.28, "f0": 1760.0, "dur": 0.7, "decay": 0.4, "strike": 0.1}
+        ], "gain": -2},
+        {"type": "use", "sound": "lantern_hum", "gain": -3, "fx": [{"speed": 0.62}]},
+        {"type": "whoosh", "dur": 1.6, "f": {"from": 250, "to": 2500, "shape": "exp"}, "q": 0.9, "peak": 0.92, "gain": -8}
+      ]
+    },
+    "ninefold_shot": {
+      "kind": "cast", "subtitle": "A lantern fires", "loudness": -18, "variants": 3,
+      "each": [{"layers.0.f0": 880}, {"layers.0.f0": 987.8}, {"layers.0.f0": 1174.7}],
+      "note": "Each of the nine foxfire shots: a bright pluck with a short sparkling whoosh.",
+      "layers": [
+        {"type": "pluck", "f0": 880, "dur": 0.5, "decay": 0.35, "damp": 0.6},
+        {"type": "use", "sound": "foxfire", "gain": -3, "fx": [{"len": 0.35}, {"fade": [0.002, 0.12]}]}
+      ]
+    },
+    "tails_fan": {
+      "kind": "cast", "subtitle": "Yugen's tails fan out", "loudness": -19,
+      "note": "Phase 2 (tails 3 to 6, a laugh behind the sleeve): soft fur flutters spreading, then the laugh.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.25, "f": [500, 1500, 600], "q": 1.0, "peak": 0.5},
+        {"type": "whoosh", "at": 0.08, "dur": 0.25, "f": [600, 1700, 700], "q": 1.0, "peak": 0.5, "gain": -1},
+        {"type": "whoosh", "at": 0.16, "dur": 0.25, "f": [700, 1900, 800], "q": 1.0, "peak": 0.5, "gain": -2},
+        {"type": "use", "sound": "laugh", "variant": 2, "at": 0.45}
+      ]
+    },
+    "lantern_flare": {
+      "kind": "cast", "subtitle": "The lanterns flare blue", "loudness": -16, "range": 24,
+      "note": "Phase 3 (lanterns flare, eyes glow): a cold fire bloom and a shimmer; a fox screech rides on it (vanilla).",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 1.0, "filter": {"mode": "lp", "f": {"from": 400, "to": 4500, "shape": "exp"}, "q": 0.8}, "env": {"swell": [0.3, 0.7]}},
+        {"type": "fm", "dur": 1.0, "freq": {"from": 330, "to": 660, "shape": "exp"}, "ratio": 1.5, "index": [1, 3], "env": {"swell": [0.35, 0.65]}, "gain": -5},
+        {"type": "shimmer", "at": 0.2, "dur": 0.9, "count": 9, "f": [2000, 5000], "trem": 13, "gain": -6}
+      ],
+      "with": [{"sound": "fox_screech", "delay": 4}]
+    },
+    "fox_screech": {
+      "kind": "cast", "subtitle": "A fox screams", "volume": [0.9, 1.0],
+      "note": "Companion of lantern_flare: vanilla's fox screech, lower, for the eerie kitsune moment.",
+      "vanilla": [{"event": "minecraft:entity.fox.screech", "pitch": 0.85}]
+    },
+    "bewitch": {
+      "kind": "hit", "subtitle": "A target is bewitched", "loudness": -18,
+      "note": "Bewitched at three marks (stun 1 s): a chime that bends down and wavers.",
+      "layers": [
+        {"type": "bell", "partials": "chime", "f0": 1396.9, "dur": 0.9, "decay": 0.5, "strike": 0.2, "glide": [0, -5], "beat": 4},
+        {"type": "bell", "partials": "chime", "at": 0.04, "f0": 1046.5, "dur": 0.9, "decay": 0.5, "strike": 0.1, "glide": [0, -4], "beat": 3, "gain": -4},
+        {"type": "shimmer", "dur": 0.8, "count": 6, "f": [2500, 4500], "rise": [0, -4], "trem": 7, "gain": -10}
+      ]
+    },
+    "contract": {
+      "kind": "foley", "subtitle": "A contract is stamped", "loudness": -24, "plays": "server", "category": "hostile",
+      "note": "Contract (25% on a melee hit: marks the attacker): a paper flick and a stamp.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.08, "filter": {"mode": "bp", "f": [2500, 5000], "q": 1.5}, "env": {"perc": [0.004, 0.07]}},
+        {"type": "impact", "at": 0.09, "dur": 0.15, "f": [420, 200], "drop": 0.01, "body_decay": 0.03, "crunch": 0.3, "crunch_lp": 1800, "click": 0.3}
+      ]
+    },
+    "intro": {
+      "kind": "emote", "subtitle": "Yugen bows with his fan", "loudness": -20,
+      "note": "Intro (a slow bow with the fan): the fan opens, then the soft laugh.",
+      "layers": [
+        {"type": "use", "sound": "fan_cut", "variant": 1, "gain": -3},
+        {"type": "use", "sound": "laugh", "variant": 1, "at": 0.5}
+      ]
+    },
+    "lantern_spin": {
+      "kind": "quirk", "subtitle": "Lanterns rustle", "loudness": -28,
+      "note": "Personal idle (lantern spin): paper rustle and a tiny chime.",
+      "layers": [
+        {"type": "crackle", "dur": 0.5, "rate": 60, "f": [2500, 6000], "grain": 0.012, "q": 1.2, "env": {"swell": [0.2, 0.3]}},
+        {"type": "bell", "partials": "chime", "at": 0.2, "f0": 1568, "dur": 0.5, "decay": 0.25, "strike": 0, "gain": -6}
+      ]
+    }
+  }
+}

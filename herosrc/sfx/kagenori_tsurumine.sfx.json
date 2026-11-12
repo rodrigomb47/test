@@ -1,0 +1,260 @@
+{
+  "format": 1,
+  "set": "kagenori_tsurumine",
+  "title": "Kagenori Tsurumine, the still crane samurai (stoic, katana, shock)",
+  "hero": {
+    "voice": {"talk": "voice", "rate": 3, "melody": [0, 0, 0, -1, 1], "fallback_blip": "bass", "jitter": 0.02,
+              "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 0.85},
+              "death": {"event": "minecraft:entity.player.death", "pitch": 0.85},
+              "emotes": {"hm": "hm", "kiai": "kiai"}},
+    "moves": {
+      "basic": {"class": "light", "release": "katana_swing", "impact": "katana_hit"},
+      "three_cut": {"class": "light", "release": "katana_swing", "impact": "katana_hit"},
+      "iai_stance": {"class": "heavy", "windup": "guard_click", "release": "iai_draw", "impact": "katana_hit"},
+      "thunderclap_draw": {"class": "heavy", "windup": "glint", "release": "thunderclap", "end": "sheathe"},
+      "crane_step": {"class": "heavy", "windup": "step_poise", "release": "step_dash", "impact": "katana_hit"},
+      "guard_splitter": {"class": "heavy", "windup": "overhead_raise", "release": "heavy_cut", "impact": "split_hit"},
+      "chain_draw": {"class": "heavy", "windup": "chain_windup", "impact": "chain_zap"},
+      "falling_crane": {"class": "heavy", "windup": "step_poise", "release": "crane_leap", "impact": "crane_land"},
+      "heaven_split": {"class": "ultimate", "windup": "heaven_windup", "release": "heaven_split"}
+    },
+    "states": {"twin_sky": "draw_second"},
+    "phases": {"2": "helmet", "3": "blade_hum"},
+    "passives": {"still_mind": "guard_click"},
+    "intro": "intro",
+    "quirks": {"personal.1": "guard_click", "personal.3": "hair_tie"},
+    "steps": {"volume": 0.9}
+  },
+  "preview": ["voice", "hm", "kiai", "katana_swing", "guard_click", "iai_draw", "glint", "thunderclap", "sheathe",
+              "step_poise", "step_dash", "overhead_raise", "heavy_cut", "chain_windup", "chain_zap", "crane_leap",
+              "crane_land", "heaven_windup", "heaven_split", "draw_second", "blade_hum", "intro", "hair_tie"],
+  "sounds": {
+    "voice": {
+      "kind": "voice", "subtitle": "Kagenori speaks", "pitch": [0.99, 1.01], "variants": 6,
+      "note": "Low, short and level (the old bass voice): a dark source at about 131 Hz, flat contours, no vibrato (rate 3, few words).",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 131, "dur": 0.1, "vowel": "o", "shift": 0.95, "tilt": 1.5, "fq": 6, "attack": 0.01, "release": 0.04, "contour": [0, 0]}
+      ],
+      "each": [
+        {"layers.0.vowel": "o", "layers.0.contour": [0, 0], "layers.0.dur": 0.1},
+        {"layers.0.vowel": "u", "layers.0.contour": [-1, -1], "layers.0.dur": 0.09},
+        {"layers.0.vowel": "a", "layers.0.contour": [1, 0], "layers.0.dur": 0.11},
+        {"layers.0.vowel": "uh", "layers.0.contour": [0, -1], "layers.0.dur": 0.08},
+        {"layers.0.vowel": "e", "layers.0.contour": [2, 1], "layers.0.dur": 0.1},
+        {"layers.0.vowel": "o", "layers.0.contour": [-2, -2], "layers.0.dur": 0.12}
+      ]
+    },
+    "hm": {
+      "kind": "emote", "subtitle": "Kagenori grunts", "loudness": -23,
+      "note": "A low closed-mouth 'hm.' (acknowledgement, the intro, still mind).",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 118, "dur": 0.22, "vowel": "m", "shift": 0.95, "tilt": 1.4, "dry": 0.3, "contour": [1, -1], "attack": 0.02, "release": 0.08}
+      ]
+    },
+    "kiai": {
+      "kind": "emote", "subtitle": "Kagenori shouts", "loudness": -17, "plays": "server", "category": "hostile", "variants": 2, "vary": {"pitch": [-0.8, 0.8]},
+      "note": "A sharp kiai ('Ha!') on his heaviest cuts.",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 175, "dur": 0.2, "vowel": "a", "shift": 0.97, "tilt": 1.0, "contour": [3, -2], "attack": 0.004, "release": 0.07, "drive": 2.0, "breath": 0.2}
+      ]
+    },
+    "katana_swing": {
+      "kind": "swing", "subtitle": "A katana cuts the air", "loudness": -20, "variants": 3, "pitch": [0.96, 1.04],
+      "vary": {"layers.0.dur": [0.4, 0.44], "pitch": [-1, 1]},
+      "note": "The owner's prototype swing: band-passed noise whose centre sweeps up and back down (500 Hz to 4 kHz), a sin^1.5 swell and a faint ring at the middle.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.42, "f": {"points": [[0, 500], [0.21, 4000, "cos"], [0.42, 500, "cos"]]}, "q": 1.6, "colour": "white", "env": {"arch": 1.5}},
+        {"type": "tone", "dur": 0.42, "freq": 2900, "env": {"points": [[0, 0], [0.06, 0], [0.22, 1, "cos"], [0.38, 0, "cos"]]}, "gain": -14}
+      ]
+    },
+    "katana_hit": {
+      "kind": "hit", "subtitle": "The katana strikes",
+      "note": "Cuts land: vanilla's strong attack, a touch brighter.",
+      "vanilla": [{"event": "minecraft:entity.player.attack.strong", "pitch": 1.1}]
+    },
+    "guard_click": {
+      "kind": "windup", "subtitle": "A sword guard clicks", "loudness": -21,
+      "note": "Iai stance wind-up (hand on the hilt, a guard click): a sharp steel click, then a faint ringing stillness. Strike now and he answers.",
+      "layers": [
+        {"type": "click", "f": 3800, "q": 3, "dur": 0.05, "sharp": 900, "ring": {"f": 4180, "gain": 0.35, "decay": 0.03}},
+        {"type": "click", "at": 0.012, "f": 2500, "q": 4, "dur": 0.04, "sharp": 700, "gain": -6},
+        {"type": "tone", "at": 0.02, "dur": 1.2, "freq": 3520, "harmonics": [[1, 1], [2.4, 0.2]], "env": {"perc": [0.01, 1.1]}, "gain": -20}
+      ]
+    },
+    "iai_draw": {
+      "kind": "swing", "subtitle": "A blade is drawn in a flash", "loudness": -16, "variants": 2, "vary": {"pitch": [-0.7, 0.7]},
+      "note": "The iai riposte and quick draws: a blade leaving the scabbard at once, a fast rising scrape and a long ring.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.18, "filter": {"mode": "bp", "f": {"from": 1800, "to": 8000, "shape": "exp"}, "q": 5}, "env": {"points": [[0, 0], [0.02, 1], [0.18, 0, "out"]]}},
+        {"type": "tone", "at": 0.06, "dur": 0.7, "freq": 4180, "harmonics": [[1, 1], [2.31, 0.3], [3.8, 0.12]], "env": {"perc": [0.005, 0.65]}, "gain": -8},
+        {"type": "use", "sound": "katana_swing", "variant": 2, "at": 0.06, "pitch": 2, "gain": -2}
+      ]
+    },
+    "glint": {
+      "post": {"transients": true}, "kind": "windup", "subtitle": "Stillness, then a glint", "loudness": -21,
+      "note": "Thunderclap draw wind-up (1.3 s of stillness, a glint): faint static gathering, then a bright glint just before the draw.",
+      "layers": [
+        {"type": "crackle", "dur": 1.2, "rate": [2, 80], "f": [3000, 8000], "grain": 0.004, "q": 2, "env": {"points": [[0, 0], [1.1, 1, "in"], [1.2, 0, "cos"]]}, "gain": -6},
+        {"type": "tone", "dur": 1.2, "freq": 60, "harmonics": [[1, 1], [2, 0.6], [3, 0.4], [4, 0.2]], "env": {"points": [[0, 0], [1.1, 1, "in"], [1.2, 0, "cos"]]}, "gain": -9},
+        {"type": "bell", "partials": "crystal", "at": 0.9, "f0": 3951, "dur": 0.4, "decay": 0.2, "strike": 0.1}
+      ]
+    },
+    "thunderclap": {
+      "kind": "heavy", "subtitle": "A thunderclap draw splits the air", "loudness": -13, "range": 32,
+      "note": "Thunderclap draw (a line of shock damage): a sharp crack, an electric zap and a low boom.",
+      "layers": [
+        {"type": "use", "sound": "iai_draw", "variant": 1, "gain": -3},
+        {"type": "crackle", "at": 0.03, "dur": 0.35, "rate": [900, 50], "f": [1500, 9000], "grain": 0.004, "q": 1.5},
+        {"type": "noise", "colour": "white", "at": 0.03, "dur": 0.08, "filter": {"mode": "hp", "f": 2000, "q": 0.7}, "env": {"perc": [0.001, 0.07]}, "gain": -2},
+        {"type": "fm", "at": 0.03, "dur": 0.35, "freq": {"from": 2400, "to": 300, "shape": "exp"}, "ratio": 0.51, "index": [6, 1], "env": {"perc": [0.002, 0.3]}, "gain": -8},
+        {"type": "impact", "at": 0.04, "dur": 1.0, "f": [90, 32], "drop": 0.08, "body_decay": 0.3, "crunch": 0.3, "crunch_lp": 500, "click": 0, "gain": -4}
+      ]
+    },
+    "sheathe": {
+      "kind": "foley", "subtitle": "A blade slides home", "loudness": -21, "plays": "client",
+      "note": "The re-sheathe after a draw (his recovery weak point): a falling slide and a final click.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.4, "filter": {"mode": "bp", "f": {"from": 6000, "to": 2500, "shape": "exp"}, "q": 6}, "env": {"points": [[0, 0], [0.05, 0.8], [0.35, 0.6], [0.4, 0, "cos"]]}},
+        {"type": "click", "at": 0.4, "f": 3500, "q": 3, "dur": 0.05, "sharp": 900, "ring": {"f": 4180, "gain": 0.3, "decay": 0.03}}
+      ]
+    },
+    "step_poise": {
+      "kind": "windup", "subtitle": "Kagenori shifts his stance", "loudness": -21,
+      "note": "Crane step and falling crane wind-up: a quick inhale and the hakama shifting.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.6, "filter": {"mode": "bp", "f": [800, 2200], "q": 1.5}, "env": {"swell": [0.45, 0.15]}},
+        {"type": "whoosh", "at": 0.45, "dur": 0.3, "f": [300, 1000, 400], "q": 1.0, "peak": 0.5, "gain": -3}
+      ]
+    },
+    "step_dash": {
+      "kind": "swing", "subtitle": "Kagenori darts forward", "loudness": -20, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Crane step: a clean cut of wind and a snap of cloth.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.28, "f": [500, 3200, 800], "q": 1.4, "peak": 0.35},
+        {"type": "noise", "colour": "pink", "at": 0.1, "dur": 0.12, "filter": {"mode": "bp", "f": 1500, "q": 1.4}, "env": {"perc": [0.002, 0.1]}, "fx": [{"trem": {"rate": 40, "depth": 0.8, "shape": "square"}}], "gain": -8}
+      ]
+    },
+    "overhead_raise": {
+      "kind": "windup", "subtitle": "Kagenori raises his sword high", "loudness": -19,
+      "note": "Guard splitter wind-up: the blade rises overhead with a steel shimmer and a held breath.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.6, "f": [300, 1500], "q": 1.0, "peak": 0.8},
+        {"type": "tone", "dur": 0.85, "freq": [2600, 3800], "harmonics": [[1, 1], [2.31, 0.3]], "env": {"points": [[0, 0], [0.75, 1, "in"], [0.85, 0, "cos"]]}, "gain": -12}
+      ]
+    },
+    "heavy_cut": {
+      "kind": "swing", "subtitle": "A crushing two-handed cut", "loudness": -17,
+      "note": "Guard splitter release: the swing, lower and heavier, with a kiai.",
+      "layers": [
+        {"type": "use", "sound": "katana_swing", "variant": 3, "pitch": -3},
+        {"type": "use", "sound": "kiai", "variant": 1, "at": 0.05, "gain": -3}
+      ]
+    },
+    "split_hit": {
+      "kind": "hit", "subtitle": "A guard is split",
+      "note": "Guard splitter lands (vanilla also plays its shield-break when a raised shield is disabled): vanilla's knockback hit, lower.",
+      "vanilla": [{"event": "minecraft:entity.player.attack.knockback", "pitch": 0.85}]
+    },
+    "chain_windup": {
+      "kind": "windup", "subtitle": "Lightning gathers on the blade", "loudness": -19,
+      "note": "Chain draw wind-up: an electric hum rising with crackles.",
+      "layers": [
+        {"type": "tone", "dur": 1.0, "freq": [100, 125], "harmonics": [[1, 1], [2, 0.7], [3, 0.6], [4, 0.4], [5, 0.3], [7, 0.2]], "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "crackle", "dur": 1.0, "rate": [20, 260], "f": [2000, 8000], "grain": 0.004, "q": 1.5, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -3}
+      ],
+      "fx": [{"drive": 1.6}]
+    },
+    "chain_zap": {
+      "kind": "hit", "subtitle": "Lightning jumps between targets", "loudness": -17, "variants": 2, "vary": {"pitch": [-2, 2]},
+      "note": "Each chain draw jump (shock, Slowness): a snapping electric arc.",
+      "layers": [
+        {"type": "crackle", "dur": 0.3, "rate": [1200, 100], "f": [1500, 9000], "grain": 0.003, "q": 1.5},
+        {"type": "fm", "dur": 0.3, "freq": 110, "ratio": 3.01, "index": [8, 1], "env": {"perc": [0.002, 0.28]}, "gain": -6},
+        {"type": "tone", "dur": 0.2, "freq": {"from": 3000, "to": 900, "shape": "exp"}, "env": {"perc": [0.002, 0.18]}, "gain": -12}
+      ],
+      "fx": [{"drive": 1.5}]
+    },
+    "crane_leap": {
+      "kind": "swing", "subtitle": "Kagenori leaps like a crane", "loudness": -19,
+      "note": "Falling crane take-off: two sleeve flaps like wings and a rising rush.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.25, "f": [300, 900, 350], "q": 1.0, "peak": 0.4, "flutter": {"rate": 30, "depth": 0.5}},
+        {"type": "whoosh", "at": 0.18, "dur": 0.25, "f": [320, 950, 380], "q": 1.0, "peak": 0.4, "flutter": {"rate": 30, "depth": 0.5}},
+        {"type": "whoosh", "at": 0.1, "dur": 0.55, "f": {"from": 400, "to": 2600, "shape": "exp"}, "q": 1.2, "peak": 0.7, "gain": -3}
+      ]
+    },
+    "crane_land": {
+      "kind": "hit", "subtitle": "Kagenori lands blade-first", "loudness": -15,
+      "note": "Falling crane lands (knockback 2): a firm landing and a cut.",
+      "layers": [
+        {"type": "impact", "dur": 0.5, "f": [140, 55], "drop": 0.04, "body_decay": 0.12, "crunch": 0.8, "crunch_lp": 1500, "click": 0.2},
+        {"type": "use", "sound": "katana_swing", "variant": 1, "at": 0.02, "pitch": 1, "gain": -4}
+      ]
+    },
+    "heaven_windup": {
+      "kind": "windup", "subtitle": "Kagenori closes his eyes", "loudness": -16, "range": 48,
+      "note": "Heaven split wind-up (2.0 s: eyes closed, no blinking): a deep drone and wind, two heartbeats, a rising thread of tension, the glint as his eyes open.",
+      "layers": [
+        {"type": "tone", "dur": 2.0, "freq": 55, "harmonics": [[1, 1], [2, 0.5], [3, 0.35], [4, 0.2]], "env": {"points": [[0, 0], [0.4, 0.6, "cos"], [1.8, 1], [2.0, 0, "cos"]]}},
+        {"type": "noise", "colour": "pink", "dur": 2.0, "filter": {"mode": "bp", "f": {"sine": {"mid": 700, "depth": 250, "rate": 0.6}}, "q": 0.9}, "env": {"swell": [1.2, 0.8]}, "gain": -6},
+        {"type": "membrane", "at": 0.5, "f0": 52, "dur": 0.4, "decay": 0.15, "stick": 0.05, "skin": 0.1, "gain": -2},
+        {"type": "membrane", "at": 1.15, "f0": 52, "dur": 0.4, "decay": 0.15, "stick": 0.05, "skin": 0.1, "gain": -1},
+        {"type": "tone", "dur": 2.0, "freq": {"from": 1760, "to": 2637, "shape": "in"}, "harmonics": [[1, 1], [2.01, 0.15]], "env": {"points": [[0, 0], [1.9, 1, "in"], [2.0, 0, "cos"]]}, "gain": -16},
+        {"type": "bell", "partials": "crystal", "at": 1.7, "f0": 3951, "dur": 0.3, "decay": 0.15, "strike": 0.1, "gain": -2}
+      ]
+    },
+    "heaven_split": {
+      "kind": "heavy", "subtitle": "The heavens split", "loudness": -11, "range": 48,
+      "note": "Heaven split releases (a 12-block line, a harmless lightning flash along it): the sharpest draw, a thunder crack and a long ring; vanilla's lightning impact rides with it.",
+      "layers": [
+        {"type": "use", "sound": "thunderclap"},
+        {"type": "tone", "at": 0.05, "dur": 1.6, "freq": 4180, "harmonics": [[1, 1], [2.31, 0.3], [3.8, 0.12]], "env": {"perc": [0.005, 1.5]}, "gain": -10},
+        {"type": "impact", "at": 0.05, "dur": 1.6, "f": [70, 28], "drop": 0.12, "body_decay": 0.45, "crunch": 0.4, "crunch_lp": 400, "click": 0, "gain": -3}
+      ],
+      "with": [{"sound": "lightning", "delay": 1}]
+    },
+    "lightning": {
+      "kind": "heavy", "subtitle": "Lightning cracks", "volume": [0.65, 0.75],
+      "note": "Companion of heaven_split: vanilla's lightning impact crack (the natural sound for the flash).",
+      "vanilla": [{"event": "minecraft:entity.lightning_bolt.impact", "pitch": 1.0}]
+    },
+    "draw_second": {
+      "post": {"transients": true}, "kind": "cast", "subtitle": "Kagenori draws his second sword", "loudness": -19,
+      "note": "State twin sky (phase 3, two swords): the short sword drawn, with an electric edge.",
+      "layers": [
+        {"type": "use", "sound": "iai_draw", "variant": 2, "pitch": 2},
+        {"type": "crackle", "at": 0.1, "dur": 0.4, "rate": [300, 30], "f": [2500, 8000], "grain": 0.003, "gain": -6}
+      ]
+    },
+    "helmet": {
+      "kind": "cast", "subtitle": "Kagenori puts on his helmet", "plays": "client",
+      "note": "Phase 2 (the helmet goes on): vanilla's iron armour equip is the natural sound.",
+      "vanilla": [{"event": "minecraft:item.armor.equip_iron", "pitch": 0.9}]
+    },
+    "blade_hum": {
+      "post": {"transients": true}, "kind": "cast", "subtitle": "Kagenori's blades crackle with lightning", "loudness": -17,
+      "note": "Phase 3 (eyes and blade edges glow): an electric hum swells, a glint, a kiai.",
+      "layers": [
+        {"type": "use", "sound": "chain_windup", "fx": [{"len": 0.8}, {"fade": [0.005, 0.15]}]},
+        {"type": "bell", "partials": "crystal", "at": 0.7, "f0": 3951, "dur": 0.4, "decay": 0.2, "strike": 0.1, "gain": -3},
+        {"type": "use", "sound": "kiai", "variant": 2, "at": 0.8, "gain": -3}
+      ]
+    },
+    "intro": {
+      "kind": "emote", "subtitle": "Kagenori bows, hand on the hilt", "loudness": -21,
+      "note": "Intro ('Tsurumine Kagenori. Draw when you are ready.'; a bow, then hand to hilt): cloth, the guard click.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.45, "f": [300, 1000, 400], "q": 0.9, "peak": 0.5, "gain": -4},
+        {"type": "use", "sound": "guard_click", "at": 0.7}
+      ]
+    },
+    "hair_tie": {
+      "kind": "quirk", "subtitle": "Kagenori re-ties his hair", "loudness": -29,
+      "note": "Personal idle (re-tying the hair before a duel): a cloth rustle and a cord pulled tight.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.5, "filter": {"mode": "bp", "f": [1200, 2600], "q": 1.0}, "env": {"swell": [0.2, 0.3]}},
+        {"type": "noise", "colour": "white", "at": 0.5, "dur": 0.12, "filter": {"mode": "bp", "f": {"from": 1500, "to": 3500, "shape": "exp"}, "q": 4}, "env": {"perc": [0.01, 0.1]}, "gain": -2}
+      ]
+    }
+  }
+}

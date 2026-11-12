@@ -1,0 +1,257 @@
+{
+  "format": 1,
+  "set": "natsuho_komezaki",
+  "title": "Natsuho Komezaki, the harbour cat (tsundere, fists, physical)",
+  "hero": {
+    "voice": {"talk": "voice", "rate": 2, "melody": [0, 0, 2, 3, 5, -2], "fallback_blip": "xylophone", "jitter": 0.04,
+              "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.35},
+              "death": {"event": "minecraft:entity.player.death", "pitch": 1.35},
+              "emotes": {"hmph": "hmph", "yelp": "flinch", "yawn": "yawn", "purr": "purr"}},
+    "moves": {
+      "basic": {"class": "light", "release": "claw", "impact": "claw_hit"},
+      "claw_string": {"class": "light", "release": "claw", "impact": "claw_hit"},
+      "pounce": {"class": "heavy", "windup": "pounce_wiggle", "release": "pounce_leap", "impact": "pounce_land", "end": "paw_lick"},
+      "hiss": {"class": "area", "windup": "hiss", "release": "hiss_burst"},
+      "scratch_dash": {"class": "heavy", "windup": "claw_scrape", "release": "dash", "impact": "claw_hit"},
+      "cat_reflex": {"class": "heavy", "windup": "reflex_growl", "release": "claw", "impact": "claw_hit"},
+      "zoomies": {"class": "heavy", "windup": "zoomies", "release": "dash", "impact": "pounce_land"},
+      "midnight_frenzy": {"class": "ultimate", "windup": "frenzy_yowl", "release": "frenzy_sting"}
+    },
+    "states": {"frenzy": "frenzy_sting"},
+    "phases": {"2": "phase2", "3": "phase3"},
+    "passives": {"nine_lives": "nine_lives"},
+    "weak_points": {"water": "flinch"},
+    "intro": "intro",
+    "quirks": {"personal.1": "paw_lick", "personal.3": "yawn", "idle": "bell"},
+    "steps": {"volume": 0.6}
+  },
+  "preview": ["voice", "bell", "hmph", "flinch", "claw", "claw_hit", "pounce_wiggle", "pounce_leap", "pounce_land",
+              "hiss_burst", "claw_scrape", "dash", "reflex_growl", "zoomies", "frenzy_sting", "phase2", "phase3",
+              "nine_lives", "intro", "paw_lick", "yawn"],
+  "sounds": {
+    "voice": {
+      "kind": "voice", "subtitle": "Natsuho talks", "pitch": [0.97, 1.03], "variants": 6,
+      "note": "Chirpy blips (the owner's prototype): a sine with two harmonics at about 620 Hz, a fast 30 Hz flutter and a sin^1.6 arch; quick (rate 2 ticks).",
+      "layers": [
+        {"type": "vox", "source": "chirp", "vowel": "none", "f0": 620, "dur": 0.07, "contour": [0, 0],
+         "vibrato": {"rate": 30, "depth": 0.7, "ramp": 0.001}, "env": {"arch": 1.6}}
+      ],
+      "each": [
+        {"layers.0.contour": [0, 0], "layers.0.dur": 0.07},
+        {"layers.0.contour": [3, 3], "layers.0.dur": 0.06},
+        {"layers.0.contour": [5, 5], "layers.0.dur": 0.08},
+        {"layers.0.contour": [2, 2], "layers.0.dur": 0.06},
+        {"layers.0.contour": [7, 7], "layers.0.dur": 0.10},
+        {"layers.0.contour": [0, 0], "layers.0.dur": 0.05}
+      ]
+    },
+    "bell": {
+      "kind": "quirk", "subtitle": "A small bell jingles", "loudness": -24, "variants": 2, "pitch": [0.98, 1.02],
+      "vary": {"layers.0.f0": [1450, 1510], "layers.1.f0": [1540, 1590], "layers.1.at": [0.09, 0.14]},
+      "note": "Her choker bell (the owner's prototype): two quick strikes of a small brass bell. Plays in her idles, the pounce wiggle and the intro.",
+      "layers": [
+        {"type": "bell", "partials": "brass_small", "f0": 1480, "dur": 1.6, "decay": 0.8, "strike": 0.3},
+        {"type": "bell", "partials": "brass_small", "f0": 1560, "dur": 1.6, "at": 0.11, "decay": 0.8, "strike": 0.3, "gain": -2}
+      ]
+    },
+    "hmph": {
+      "kind": "emote", "subtitle": "Natsuho huffs", "pitch": [0.97, 1.03], "variants": 2, "vary": {"layers.0.f0": [500, 540]},
+      "note": "The tsundere huff: a closed-mouth 'hm' that rises and drops, then a puff of breath.",
+      "layers": [
+        {"type": "vox", "source": "chirp", "vowel": "m", "f0": 520, "dur": 0.2, "contour": [0, 4, -3], "dry": 0.35,
+         "vibrato": {"rate": 30, "depth": 0.4, "ramp": 0.001}, "attack": 0.01, "release": 0.04},
+        {"type": "noise", "colour": "pink", "at": 0.17, "dur": 0.12, "filter": {"mode": "bp", "f": 1700, "q": 1.2},
+         "env": {"perc": [0.004, 0.11]}, "gain": -5}
+      ]
+    },
+    "flinch": {
+      "kind": "emote", "subtitle": "Natsuho yelps", "pitch": [0.98, 1.04],
+      "note": "Her water weak point ('Don't you DARE get me wet!'): a startled 'nyah!' and a shiver of the bell.",
+      "layers": [
+        {"type": "vox", "source": "chirp", "vowel": "none", "f0": 700, "dur": 0.26, "contour": [0, 8, 5, -1],
+         "vibrato": {"rate": 30, "depth": 0.9, "ramp": 0.001}, "env": {"arch": 1.1}},
+        {"type": "use", "sound": "bell", "variant": 2, "at": 0.12, "gain": -10, "fx": [{"len": 0.6}, {"fade": [0.002, 0.3]}]}
+      ]
+    },
+    "yawn": {
+      "kind": "quirk", "subtitle": "Natsuho yawns", "loudness": -26,
+      "note": "Personal idle 3, the stretch and yawn: a breathy falling 'aaah' that ends in a tiny squeak.",
+      "layers": [
+        {"type": "vox", "source": "glottal", "vowel": "a", "vowel_to": "o", "f0": 480, "dur": 0.9, "contour": [5, 3, 0, -6],
+         "shift": 1.25, "tilt": 1.6, "breath": 0.35, "attack": 0.12, "release": 0.25},
+        {"type": "vox", "source": "chirp", "vowel": "none", "at": 0.85, "f0": 760, "dur": 0.12, "contour": [0, 5],
+         "vibrato": {"rate": 30, "depth": 0.6, "ramp": 0.001}, "env": {"arch": 1.5}, "gain": -6}
+      ]
+    },
+    "purr": {
+      "kind": "emote", "subtitle": "Natsuho purrs (and denies it)", "category": "voice", "plays": "client",
+      "note": "A happy moment she will not admit to: vanilla's cat purr is the natural sound.",
+      "vanilla": [{"event": "minecraft:entity.cat.purr", "pitch": 1.1, "volume": 1.4}]
+    },
+    "claw": {
+      "kind": "swing", "subtitle": "Claws swipe", "variants": 3, "pitch": [0.96, 1.05],
+      "vary": {"layers.0.dur": [0.16, 0.2], "pitch": [-1, 1]},
+      "note": "The claw gauntlets cut the air: a short bright swish with a three-tine metal shimmer.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.18, "f": [1400, 5200, 2600], "q": 2.0, "peak": 0.45, "colour": "white"},
+        {"type": "tone", "at": 0.05, "dur": 0.12, "freq": 3800, "env": {"perc": [0.01, 0.1]}, "gain": -14},
+        {"type": "tone", "at": 0.06, "dur": 0.12, "freq": 4450, "env": {"perc": [0.01, 0.1]}, "gain": -15},
+        {"type": "tone", "at": 0.07, "dur": 0.12, "freq": 5230, "env": {"perc": [0.01, 0.1]}, "gain": -16}
+      ]
+    },
+    "claw_hit": {
+      "kind": "hit", "subtitle": "Claws rake", "variants": 3, "pitch": [0.95, 1.05], "vary": {"pitch": [-1.5, 1.5]},
+      "note": "Claws land: three quick tearing scratches over a small body thump.",
+      "layers": [
+        {"type": "impact", "dur": 0.2, "f": [220, 90], "drop": 0.02, "body_decay": 0.05, "crunch": 0.4, "crunch_lp": 2500, "crunch_decay": 0.03, "click": 0.2, "gain": -9},
+        {"type": "noise", "colour": "white", "dur": 0.05, "filter": {"mode": "bp", "f": [2500, 4800], "q": 2.5}, "env": {"perc": [0.002, 0.045]}},
+        {"type": "noise", "colour": "white", "at": 0.022, "dur": 0.05, "filter": {"mode": "bp", "f": [2700, 5200], "q": 2.5}, "env": {"perc": [0.002, 0.045]}, "gain": -1},
+        {"type": "noise", "colour": "white", "at": 0.045, "dur": 0.07, "filter": {"mode": "bp", "f": [2300, 4400], "q": 2.5}, "env": {"perc": [0.002, 0.06]}, "gain": -2}
+      ]
+    },
+    "pounce_wiggle": {
+      "kind": "windup", "subtitle": "Natsuho wiggles, ready to pounce", "loudness": -20,
+      "note": "Pounce wind-up (crouch and hip wiggle): two cloth swishes and her bell, a tell players learn.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.2, "f": [500, 1400, 700], "q": 1.2, "peak": 0.5},
+        {"type": "whoosh", "at": 0.22, "dur": 0.2, "f": [600, 1500, 800], "q": 1.2, "peak": 0.5, "gain": -1},
+        {"type": "use", "sound": "bell", "variant": 1, "at": 0.42, "gain": -3, "fx": [{"len": 0.7}, {"fade": [0.002, 0.3]}]}
+      ]
+    },
+    "pounce_leap": {
+      "kind": "swing", "subtitle": "Natsuho leaps", "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "The pounce leaves the ground: a rising rush of air.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.4, "f": {"from": 500, "to": 3800, "shape": "exp"}, "q": 1.3, "peak": 0.55, "air": 0.3},
+        {"type": "impact", "dur": 0.15, "f": [160, 90], "drop": 0.02, "body_decay": 0.04, "crunch": 0.3, "crunch_lp": 1200, "click": 0, "gain": -8}
+      ]
+    },
+    "pounce_land": {
+      "kind": "hit", "subtitle": "Natsuho lands on her prey", "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Pounce and zoomies land: a light thud and a rake.",
+      "layers": [
+        {"type": "impact", "dur": 0.45, "f": [150, 65], "drop": 0.03, "body_decay": 0.1, "crunch": 0.6, "crunch_lp": 1800, "click": 0.2},
+        {"type": "use", "sound": "claw_hit", "at": 0.03, "gain": -3}
+      ]
+    },
+    "hiss": {
+      "kind": "windup", "subtitle": "Natsuho hisses",
+      "note": "Hiss wind-up (ears flat, tail puffed): vanilla's cat hiss is the natural sound, a little higher.",
+      "vanilla": [{"event": "minecraft:entity.cat.hiss", "pitch": 1.15}]
+    },
+    "hiss_burst": {
+      "kind": "cast", "subtitle": "A hissing blast of air", "loudness": -18,
+      "note": "The hiss cone releases: a bright burst of air with a low push.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.45, "f": [2400, 6500, 2800], "q": 0.9, "peak": 0.18, "colour": "white"},
+        {"type": "impact", "dur": 0.25, "f": [140, 70], "drop": 0.03, "body_decay": 0.06, "crunch": 0, "click": 0, "gain": -6}
+      ]
+    },
+    "claw_scrape": {
+      "kind": "windup", "subtitle": "Claws scrape together", "loudness": -20,
+      "note": "Scratch dash wind-up: the gauntlets sharpen against each other, a ridged metal scrape that rises.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.6, "filter": {"mode": "bp", "f": [2600, 5200], "q": 6},
+         "env": {"points": [[0, 0], [0.05, 0.7], [0.5, 1], [0.6, 0, "cos"]]}, "fx": [{"trem": {"rate": 34, "depth": 0.8, "shape": "square"}}]},
+        {"type": "tone", "dur": 0.6, "freq": [2900, 3500], "harmonics": [[1, 1], [2.7, 0.4]], "env": {"points": [[0, 0], [0.1, 0.5], [0.55, 1], [0.6, 0, "cos"]]}, "gain": -12}
+      ]
+    },
+    "dash": {
+      "kind": "swing", "subtitle": "Natsuho dashes", "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Scratch dash and zoomies: a low-to-high rush with two quick paw taps.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.32, "f": [400, 2800, 900], "q": 1.1, "peak": 0.35},
+        {"type": "impact", "dur": 0.08, "f": [300, 160], "drop": 0.01, "body_decay": 0.02, "crunch": 0.4, "crunch_lp": 2000, "click": 0, "gain": -10},
+        {"type": "impact", "at": 0.07, "dur": 0.08, "f": [320, 170], "drop": 0.01, "body_decay": 0.02, "crunch": 0.4, "crunch_lp": 2000, "click": 0, "gain": -11}
+      ]
+    },
+    "reflex_growl": {
+      "kind": "windup", "subtitle": "Natsuho growls, guard up", "loudness": -20,
+      "note": "Cat reflex (a counter stance) wind-up: a low rattling growl; strike now and she answers.",
+      "layers": [
+        {"type": "vox", "source": "glottal", "vowel": "u", "f0": 105, "dur": 0.95, "contour": [0, 1, 0, 2],
+         "shift": 1.3, "tilt": 0.9, "jitter": 0.8, "rough": {"rate": 24, "depth": 0.85}, "breath": 0.4, "attack": 0.08, "release": 0.12},
+        {"type": "noise", "colour": "pink", "dur": 0.95, "filter": {"mode": "bp", "f": 2600, "q": 2}, "env": {"swell": [0.6, 0.35]}, "gain": -16}
+      ]
+    },
+    "zoomies": {
+      "kind": "windup", "subtitle": "Natsuho's paws drum the ground", "loudness": -19,
+      "note": "Zoomies wind-up: paws patter faster and faster under a rising rush.",
+      "layers": [
+        {"type": "group", "layers": [
+          {"type": "impact", "at": 0.00, "dur": 0.07, "f": [280, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.16, "dur": 0.07, "f": [300, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.29, "dur": 0.07, "f": [280, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.40, "dur": 0.07, "f": [300, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.49, "dur": 0.07, "f": [280, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.57, "dur": 0.07, "f": [300, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.64, "dur": 0.07, "f": [280, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.70, "dur": 0.07, "f": [300, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.75, "dur": 0.07, "f": [280, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0},
+          {"type": "impact", "at": 0.80, "dur": 0.07, "f": [300, 150], "drop": 0.01, "body_decay": 0.02, "crunch": 0.5, "crunch_lp": 2200, "click": 0}
+        ]},
+        {"type": "whoosh", "dur": 0.9, "f": {"from": 300, "to": 2400, "shape": "exp"}, "q": 1.0, "peak": 0.9, "gain": -4}
+      ]
+    },
+    "frenzy_yowl": {
+      "kind": "windup", "subtitle": "Natsuho yowls", "range": 32,
+      "note": "Midnight frenzy wind-up (a long stretch and a yowl): vanilla's stray cat yowl is the natural sound; the ultimate's shared cue plays with it.",
+      "vanilla": [{"event": "minecraft:entity.cat.stray_ambient", "pitch": 1.05, "volume": 2.8}]
+    },
+    "frenzy_sting": {
+      "kind": "cast", "subtitle": "Natsuho goes into a frenzy", "loudness": -15, "range": 24,
+      "note": "Midnight frenzy releases (state frenzy): chirps racing upward, a distorted claw scrape and the bell.",
+      "layers": [
+        {"type": "sparkle", "dur": 0.5, "count": 7, "scale": [0, 2, 5, 7, 9], "base": 900, "octaves": 2, "order": "up", "grain": 0.07, "glide": 4, "span": [0.0, 0.4]},
+        {"type": "use", "sound": "claw_scrape", "at": 0.05, "gain": -3, "fx": [{"drive": 2.2}, {"len": 0.45}, {"fade": [0.005, 0.1]}]},
+        {"type": "use", "sound": "claw", "variant": 1, "at": 0.42},
+        {"type": "use", "sound": "bell", "variant": 2, "at": 0.45, "gain": -4, "fx": [{"len": 0.8}, {"fade": [0.002, 0.35]}]}
+      ]
+    },
+    "phase2": {
+      "kind": "cast", "subtitle": "Natsuho's tail puffs up", "loudness": -19,
+      "note": "Phase 2 (tail fur puffs, flustered face): a soft fur 'fwump', then her huff.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.3, "filter": {"mode": "lp", "f": {"from": 2500, "to": 500, "shape": "exp"}, "q": 0.8}, "env": {"perc": [0.02, 0.28]}},
+        {"type": "impact", "dur": 0.25, "f": [120, 70], "drop": 0.03, "body_decay": 0.07, "crunch": 0, "click": 0, "gain": -6},
+        {"type": "use", "sound": "hmph", "variant": 1, "at": 0.35}
+      ]
+    },
+    "phase3": {
+      "kind": "cast", "subtitle": "Natsuho's eyes narrow and glow", "loudness": -18,
+      "note": "Phase 3 (slit pupils glow amber): a rising glint over a short growl.",
+      "layers": [
+        {"type": "use", "sound": "reflex_growl", "gain": -2, "fx": [{"len": 0.6}, {"fade": [0.005, 0.15]}]},
+        {"type": "shimmer", "at": 0.2, "dur": 0.7, "count": 7, "f": [1800, 4200], "rise": [0, 7], "trem": 12, "gain": -4},
+        {"type": "bell", "partials": "crystal", "at": 0.55, "f0": 2490, "dur": 0.5, "decay": 0.25, "strike": 0.1, "gain": -6}
+      ]
+    },
+    "nine_lives": {
+      "kind": "chime", "subtitle": "Natsuho cheats death", "loudness": -17,
+      "note": "Nine lives (once per fight at 30% health): a hop back, the bell, a rising sparkle.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.3, "f": [1200, 400], "q": 1.2, "peak": 0.3},
+        {"type": "use", "sound": "bell", "variant": 1, "at": 0.12, "gain": -2, "fx": [{"len": 0.9}, {"fade": [0.002, 0.4]}]},
+        {"type": "sparkle", "at": 0.15, "dur": 0.7, "count": 9, "scale": [0, 2, 4, 7, 9], "base": 1400, "octaves": 2, "order": "up", "grain": 0.12, "span": [0.0, 0.5], "gain": -4}
+      ]
+    },
+    "intro": {
+      "kind": "emote", "subtitle": "Natsuho sizes you up", "loudness": -20,
+      "note": "Intro (arms crossed, looks away, glances back): the bell as she turns, then the huff.",
+      "layers": [
+        {"type": "use", "sound": "bell", "variant": 2},
+        {"type": "use", "sound": "hmph", "variant": 2, "at": 0.55}
+      ]
+    },
+    "paw_lick": {
+      "kind": "quirk", "subtitle": "Natsuho licks her paw", "loudness": -30,
+      "note": "Personal idle 1 and the pounce's recovery (her recovery weak point): two small wet licks.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.09, "filter": {"mode": "bp", "f": [1800, 3200], "q": 2.2}, "env": {"swell": [0.02, 0.07]}},
+        {"type": "click", "at": 0.07, "f": 1300, "q": 3, "dur": 0.02, "sharp": 600, "gain": -8},
+        {"type": "noise", "colour": "pink", "at": 0.24, "dur": 0.1, "filter": {"mode": "bp", "f": [1700, 3400], "q": 2.2}, "env": {"swell": [0.025, 0.075]}},
+        {"type": "click", "at": 0.32, "f": 1400, "q": 3, "dur": 0.02, "sharp": 600, "gain": -9}
+      ]
+    }
+  }
+}

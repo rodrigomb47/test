@@ -556,6 +556,10 @@ sheet lists it. The phase look uses `p2_`/`p3_` bones and, when the art spec ask
   `emote.greet`, `emote.wave`, `emote.talk`) key only the upper body, so a hero can swing or wave while it walks.
 - **Client-only effects**: sound keyframes; particle keyframes and `vfx:*` markers spawn particles at locator bones
   (world positions with bone tracking on for locators only). Everything that affects play stays on the server.
+- **Sound markers** (S1, `SOUND.md` section 5): a key's `sound` and a marker's `sfx:<id>` part name a full id,
+  `minecraft:<event>` or `factionclash:hero.<set>.<name>` from the catalogue in `herosrc/sfx`; `sfxgen check` fails on
+  any other. Swings, throws and recovery details are markers; wind-ups, impacts and the boss beats are played by the
+  server (`SOUND.md` section 7), so every nearby player hears them whatever the client animates.
 
 ### 4.9 Level of detail and culling
 
@@ -1443,6 +1447,10 @@ condition `self_state` reads it. The animation `state.<name>` plays on entering.
 0.5-2.0 (default 1.25 female, 0.9 male, shifted by temperament); `rate` 2-4 ticks per syllable; `hurt_pitch` for the
 vanilla player hurt and death sounds the hero uses.
 
+Generated voices (S1, `SOUND.md` section 6): a hero with a sound set has its own blips, `factionclash:hero.voice.<id>`
+(syllable variants made by `tools/sfxgen` from `herosrc/sfx/<id>.sfx.json`, played one per `rate` ticks with the
+set's melody and jitter); `blip` and `pitch` remain the fallback for a hero without one, and `rate` drives both.
+
 ### 12.15 `lines`
 
 v1 §23 events and rules, plus:
@@ -2207,6 +2215,8 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape and the refused yield, the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
+| S1 | Sound design and generator: `SOUND.md`, `tools/sfxgen` (synthesiser, recipes, build, check, previews, tests), the shared cue set and the eight slice heroes' sounds (generated or vanilla by id), sounds.json and the index | - | M | done 2026-11-12: 236 events (195 generated in 296 Ogg files, 2.09 MB; 41 vanilla references), `sfxgen check` clean, 25 Python tests; previews in `docs/heroes-v2/previews/sound/` |
+| S2 | Sound engine: register the events from the index (fixed ranges), subtitles, `HeroSounds` (server cues, companions, notifications), the GeckoLib sound keyframe handler, `HeroVoice` blips with the note-block fallback, looping sounds, steps, hurt and death, `[heroes]` sound config (`SOUND.md` section 15) | S1, A2, A5, A6 | M | wind-up cue GameTests; every hero map slot resolves to a registered event; the owner's listening pass on the real client |
 | V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 81 new ones and the 39 of `MOBILITY_AND_WORK.md` 17.2 pass |
 | V2 | Screenshot session for the owner (SLICE_PLAN.md section 7) and render measurements | A2, C1-C4 | M | the gallery exists; numbers recorded |
 | V3 | Campaign runs A and B (8 days each), C (3 + 3 days), the 2-day baseline, the old-world load, tick time (SLICE_PLAN.md 6.4) | all | L | SLICE_PLAN.md section 6 criteria met |

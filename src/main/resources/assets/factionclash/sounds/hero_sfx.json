@@ -1,0 +1,5440 @@
+{
+  "cues": {
+    "barrier": {
+      "break": "factionclash:hero.cue.barrier.break",
+      "hit": "factionclash:hero.cue.barrier.hit"
+    },
+    "channel_break": "factionclash:hero.cue.channel.break",
+    "charge_wall": "factionclash:hero.cue.charge_wall",
+    "counter": "factionclash:hero.cue.counter",
+    "decoy_pop": "factionclash:hero.cue.decoy.pop",
+    "downed": "factionclash:hero.cue.downed",
+    "enrage": "factionclash:hero.cue.enrage",
+    "glide": "factionclash:hero.cue.glide",
+    "intro": "factionclash:hero.cue.intro",
+    "landing": "factionclash:hero.cue.landing.heavy",
+    "parry": "factionclash:hero.cue.parry",
+    "phase": "factionclash:hero.cue.phase",
+    "poise": {
+      "break": "factionclash:hero.cue.poise.break",
+      "crack": "factionclash:hero.cue.poise.crack"
+    },
+    "shockwave": "factionclash:hero.cue.shockwave",
+    "spared": "factionclash:hero.cue.spared",
+    "stagger": "factionclash:hero.cue.stagger.dizzy",
+    "step_heavy": "factionclash:hero.cue.step.heavy",
+    "super_armor": "factionclash:hero.cue.super_armor",
+    "takeoff": "factionclash:hero.cue.takeoff",
+    "telegraph": {
+      "area": "factionclash:hero.cue.telegraph.area",
+      "dive": "factionclash:hero.cue.dive",
+      "heavy": "factionclash:hero.cue.telegraph.heavy",
+      "light": "factionclash:hero.cue.telegraph.light",
+      "ultimate": "factionclash:hero.cue.telegraph.ultimate",
+      "unblockable": "factionclash:hero.cue.telegraph.unblockable"
+    },
+    "ultimate_ready": "factionclash:hero.cue.ultimate.ready",
+    "weak_point": "factionclash:hero.cue.weak_point",
+    "yield": "factionclash:hero.cue.yield"
+  },
+  "events": {
+    "factionclash:hero.ambrose_nettlewick.brew_burst": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 0.829,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_burst",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.brew_drop": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.splash_potion.break",
+        "minecraft:entity.splash_potion.break",
+        "minecraft:entity.splash_potion.break"
+      ],
+      "set": "ambrose_nettlewick",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_drop",
+      "volume": [
+        0.5,
+        0.6
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.brew_fizzle": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.849,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_fizzle",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.brew_loop": {
+      "category": "hostile",
+      "kind": "loop",
+      "length": 2.0,
+      "loop": true,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_loop",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.brew_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.brew_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.bristles": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.089,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.bristles",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.broom_hop": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.522,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.broom_hop",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.broom_takeoff": {
+      "category": "neutral",
+      "kind": "mobility",
+      "length": 0.529,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.broom_takeoff",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.broom_whoosh": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.544,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.broom_whoosh",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.bubble_rise": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.bubble_rise",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.cauldron_bubble": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.893,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.cauldron_bubble",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.cauldron_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:block.brewing_stand.brew"
+      ],
+      "set": "ambrose_nettlewick",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.cauldron_windup",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ambrose_nettlewick.bubble_rise"
+        }
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.crow_caw": {
+      "category": "hostile",
+      "kind": "emote",
+      "length": 0.379,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.crow_caw",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.crow_peck": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.279,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.crow_peck",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.eureka": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.389,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.eureka",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.experiment_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.671,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.experiment_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.fizz_poison": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.729,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fizz_poison",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.fizz_slow": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.858,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fizz_slow",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.fizz_weak": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.758,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fizz_weak",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.fume_puff": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.629,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.fume_puff",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.hex_cast": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.529,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.hex_cast",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.hex_full": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.758,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.hex_full",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.hex_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.758,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.hex_hit",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.889,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.phase3_glow": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.158,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.phase3_glow",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.puddle_splat": {
+      "category": "hostile",
+      "kind": "foley",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 12,
+      "refs": [
+        "minecraft:entity.slime.squish_small"
+      ],
+      "set": "ambrose_nettlewick",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.puddle_splat",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ambrose_nettlewick.splat"
+        }
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.scribble": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.529,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.scribble",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.splat": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.685,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.splat",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.vial_poison": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.splash_potion.break"
+      ],
+      "set": "ambrose_nettlewick",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_poison",
+      "volume": [
+        0.55,
+        0.6
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ambrose_nettlewick.fizz_poison"
+        }
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.vial_shake": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.699,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_shake",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.vial_slow": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.splash_potion.break"
+      ],
+      "set": "ambrose_nettlewick",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_slow",
+      "volume": [
+        0.55,
+        0.6
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ambrose_nettlewick.fizz_slow"
+        }
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.vial_throw": {
+      "category": "hostile",
+      "kind": "swing",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.splash_potion.throw"
+      ],
+      "set": "ambrose_nettlewick",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_throw",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ambrose_nettlewick.vial_weak": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.splash_potion.break"
+      ],
+      "set": "ambrose_nettlewick",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ambrose_nettlewick.vial_weak",
+      "volume": [
+        0.55,
+        0.6
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ambrose_nettlewick.fizz_weak"
+        }
+      ]
+    },
+    "factionclash:hero.benika_akagane.blast": {
+      "category": "hostile",
+      "kind": "heavy",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:entity.generic.explode"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.blast",
+      "volume": [
+        0.5,
+        0.6
+      ]
+    },
+    "factionclash:hero.benika_akagane.burp": {
+      "category": "neutral",
+      "kind": "quirk",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 12,
+      "refs": [
+        "minecraft:entity.player.burp"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.burp",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.charge_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.knockback"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.charge_hit",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.benika_akagane.thud"
+        }
+      ]
+    },
+    "factionclash:hero.benika_akagane.charge_snort": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.978,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.charge_snort",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.club_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:item.mace.smash_ground"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.club_hit",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.club_slam": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.044,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.club_slam",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 1,
+          "event": "factionclash:hero.benika_akagane.fire_burst"
+        }
+      ]
+    },
+    "factionclash:hero.benika_akagane.club_spin": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.799,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.club_spin",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.club_swing": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.535,
+      "pitch": [
+        0.94,
+        1.04
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.club_swing",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.crash_impact": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.284,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.crash_impact",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.benika_akagane.blast"
+        }
+      ]
+    },
+    "factionclash:hero.benika_akagane.crash_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.858,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.crash_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.fire_burst": {
+      "category": "hostile",
+      "kind": "heavy",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:item.firecharge.use"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.fire_burst",
+      "volume": [
+        0.55,
+        0.65
+      ]
+    },
+    "factionclash:hero.benika_akagane.fire_wave": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.14,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.fire_wave",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.fizzle": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:block.fire.extinguish"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.fizzle",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.gourd_swig": {
+      "category": "neutral",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.generic.drink"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.gourd_swig",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 10,
+          "event": "factionclash:hero.benika_akagane.burp"
+        }
+      ]
+    },
+    "factionclash:hero.benika_akagane.grab": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.479,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.grab",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.horn_flare": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.158,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.horn_flare",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 1.535,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.laugh": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.614,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.laugh",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.meteor_impact": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.089,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.meteor_impact",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.benika_akagane.blast"
+        }
+      ]
+    },
+    "factionclash:hero.benika_akagane.meteor_leap": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.729,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.meteor_leap",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.roar": {
+      "category": "hostile",
+      "kind": "emote",
+      "length": 1.008,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.roar",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.shoulder_roll": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.429,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.shoulder_roll",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.slam_rise": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.slam_rise",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.steam": {
+      "category": "hostile",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:block.fire.extinguish"
+      ],
+      "set": "benika_akagane",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.steam",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 8,
+          "event": "factionclash:hero.benika_akagane.laugh"
+        }
+      ]
+    },
+    "factionclash:hero.benika_akagane.stomp": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 0.955,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.stomp",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.stomp_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.stomp_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.throw_whoosh": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.629,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.throw_whoosh",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.benika_akagane.thud": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.47,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.benika_akagane.thud",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.barrier.break": {
+      "category": "hostile",
+      "kind": "heavy",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:block.glass.break"
+      ],
+      "set": "cue",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.cue.barrier.break",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 1,
+          "event": "factionclash:hero.cue.barrier.sparkle"
+        }
+      ]
+    },
+    "factionclash:hero.cue.barrier.hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.356,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.barrier.hit",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.barrier.sparkle": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.829,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.barrier.sparkle",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.channel.break": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.603,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.channel.break",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.charge_wall": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 0.904,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.charge_wall",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.counter": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.449,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.counter",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.decoy.pop": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.499,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.decoy.pop",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.dive": {
+      "category": "hostile",
+      "kind": "telegraph",
+      "length": 0.908,
+      "pitch": [
+        0.96,
+        1.04
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.dive",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.downed": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.538,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.downed",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.enrage": {
+      "category": "hostile",
+      "kind": "sting",
+      "length": 1.947,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.enrage",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.glide": {
+      "category": "hostile",
+      "kind": "loop",
+      "length": 2.0,
+      "loop": true,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.glide",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.intro": {
+      "category": "hostile",
+      "kind": "sting",
+      "length": 3.191,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.landing.heavy": {
+      "category": "neutral",
+      "kind": "mobility",
+      "length": 0.779,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.landing.heavy",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.parry": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.579,
+      "pitch": [
+        0.97,
+        1.04
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.parry",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.phase": {
+      "category": "hostile",
+      "kind": "sting",
+      "length": 2.192,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.phase",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.poise.break": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.279,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.poise.break",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.poise.crack": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.348,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.poise.crack",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.shockwave": {
+      "category": "hostile",
+      "kind": "heavy",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:entity.breeze.wind_burst"
+      ],
+      "set": "cue",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.cue.shockwave",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.cue.shockwave.low"
+        }
+      ]
+    },
+    "factionclash:hero.cue.shockwave.low": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 0.958,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.shockwave.low",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.spared": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 2.198,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.spared",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.stagger.dizzy": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 2.447,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.stagger.dizzy",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.step.heavy": {
+      "category": "neutral",
+      "kind": "foley",
+      "length": 0.259,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 12,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.step.heavy",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.super_armor": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 0.479,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.super_armor",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.takeoff": {
+      "category": "neutral",
+      "kind": "mobility",
+      "length": 0.709,
+      "pitch": [
+        0.96,
+        1.04
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.takeoff",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.telegraph.area": {
+      "category": "hostile",
+      "kind": "telegraph",
+      "length": 1.058,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.telegraph.area",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.telegraph.heavy": {
+      "category": "hostile",
+      "kind": "telegraph",
+      "length": 0.838,
+      "pitch": [
+        0.97,
+        1.03
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.telegraph.heavy",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.telegraph.light": {
+      "category": "hostile",
+      "kind": "telegraph",
+      "length": 0.215,
+      "pitch": [
+        0.97,
+        1.03
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.telegraph.light",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.telegraph.ultimate": {
+      "category": "hostile",
+      "kind": "telegraph",
+      "length": 2.013,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.telegraph.ultimate",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.telegraph.unblockable": {
+      "category": "hostile",
+      "kind": "telegraph",
+      "length": 0.769,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.telegraph.unblockable",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.ultimate.ready": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 0.839,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.ultimate.ready",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.weak_point": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.532,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.weak_point",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.yield": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 2.767,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.yield",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.charm": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 0.629,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.charm",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.dance_sweep": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 2.397,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.dance_sweep",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.exorcise": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 0.929,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.exorcise",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.exorcise_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.exorcise_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.hum": {
+      "category": "voice",
+      "kind": "quirk",
+      "length": 1.588,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.hum",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 1.561,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.kagura": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.097,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.kagura",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.pray_clap": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 1.579,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.pray_clap",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.purify": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.229,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.purify",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.radiant_glow": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.629,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.radiant_glow",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.rite_loop": {
+      "category": "hostile",
+      "kind": "loop",
+      "length": 2.0,
+      "loop": true,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.rite_loop",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.rite_release": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.378,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.rite_release",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.rite_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 2.031,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.rite_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.seal_burst": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.seal_burst",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.seal_ring": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.481,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.seal_ring",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.sweep_broom": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 1.219,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.sweep_broom",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.talisman_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.479,
+      "pitch": [
+        0.96,
+        1.04
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.talisman_hit",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.talisman_throw": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.241,
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.talisman_throw",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.hinae_shirasuzu.talismans_unfold": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.929,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.hinae_shirasuzu.talismans_unfold",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.bash_thud": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.573,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.bash_thud",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.bulwark": {
+      "category": "hostile",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:item.armor.equip_netherite"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.bulwark",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.frost_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.656,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.frost_hit",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ilsabet_frostmere.ice_tink"
+        }
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.frost_pulse": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.75,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.frost_pulse",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.frost_sweep": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 1.029,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.frost_sweep",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.ice_shatter": {
+      "category": "hostile",
+      "kind": "heavy",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:block.glass.break"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.ice_shatter",
+      "volume": [
+        0.7,
+        0.8
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.ice_tink": {
+      "category": "hostile",
+      "kind": "foley",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 12,
+      "refs": [
+        "minecraft:block.glass.break"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.ice_tink",
+      "volume": [
+        0.3,
+        0.4
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 1.179,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.lance_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.knockback"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.lance_hit",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ilsabet_frostmere.frost_hit"
+        }
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.lance_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.029,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.lance_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.oath": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 0.629,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.oath",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.rally": {
+      "category": "hostile",
+      "kind": "sting",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "refs": [
+        "minecraft:item.goat_horn.sound.5"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.rally",
+      "volume": [
+        2.0,
+        2.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.resolve": {
+      "category": "hostile",
+      "kind": "emote",
+      "length": 0.258,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.resolve",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.rime_wall": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.229,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.rime_wall",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.shield_bash": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:item.shield.block"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_bash",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ilsabet_frostmere.bash_thud"
+        }
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.shield_plant": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:item.shield.block"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_plant",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.shield_raise": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.849,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_raise",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.shield_tap": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.479,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.shield_tap",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.standard_plant": {
+      "category": "hostile",
+      "kind": "windup",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:block.anvil.place"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.standard_plant",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.sweep_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.029,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.sweep_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.sword_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.strong"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.sword_hit",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.sword_swing": {
+      "category": "hostile",
+      "kind": "swing",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.sweep"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.sword_swing",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.visor": {
+      "category": "hostile",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:block.iron_trapdoor.close"
+      ],
+      "set": "ilsabet_frostmere",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.visor",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.vow_release": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.229,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.vow_release",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.ilsabet_frostmere.ice_shatter"
+        }
+      ]
+    },
+    "factionclash:hero.ilsabet_frostmere.vow_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.629,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.ilsabet_frostmere.vow_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.blade_hum": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.129,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.blade_hum",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.chain_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.chain_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.chain_zap": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.347,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.chain_zap",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.crane_land": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.529,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.crane_land",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.crane_leap": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.679,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.crane_leap",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.draw_second": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.693,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.draw_second",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.glint": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.329,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.glint",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.guard_click": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.278,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.guard_click",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.hair_tie": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.649,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.hair_tie",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.heaven_split": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.679,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.heaven_split",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 1,
+          "event": "factionclash:hero.kagenori_tsurumine.lightning"
+        }
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.heaven_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 2.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.heaven_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.heavy_cut": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.528,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.heavy_cut",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.helmet": {
+      "category": "hostile",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:item.armor.equip_iron"
+      ],
+      "set": "kagenori_tsurumine",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.helmet",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.hm": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.278,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.hm",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.iai_draw": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.805,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.iai_draw",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 1.949,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.katana_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.strong"
+      ],
+      "set": "kagenori_tsurumine",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.katana_hit",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.katana_swing": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.479,
+      "pitch": [
+        0.96,
+        1.04
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.katana_swing",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.kiai": {
+      "category": "hostile",
+      "kind": "emote",
+      "length": 0.263,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.kiai",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.lightning": {
+      "category": "hostile",
+      "kind": "heavy",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:entity.lightning_bolt.impact"
+      ],
+      "set": "kagenori_tsurumine",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.lightning",
+      "volume": [
+        0.65,
+        0.75
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.overhead_raise": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.879,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.overhead_raise",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.sheathe": {
+      "category": "neutral",
+      "kind": "foley",
+      "length": 0.479,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.sheathe",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.split_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.knockback"
+      ],
+      "set": "kagenori_tsurumine",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.split_hit",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.step_dash": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.317,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.step_dash",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.step_poise": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.779,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.step_poise",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.kagenori_tsurumine.thunderclap": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.069,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.kagenori_tsurumine.thunderclap",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.bell": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 1.757,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.bell",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.claw": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.226,
+      "pitch": [
+        0.96,
+        1.05
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.claw",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.claw_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.241,
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.claw_hit",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.claw_scrape": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.629,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.claw_scrape",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.dash": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.358,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.dash",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.flinch": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.762,
+      "pitch": [
+        0.98,
+        1.04
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.flinch",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.frenzy_sting": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.274,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 24,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.frenzy_sting",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.frenzy_yowl": {
+      "category": "hostile",
+      "kind": "windup",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "refs": [
+        "minecraft:entity.cat.stray_ambient"
+      ],
+      "set": "natsuho_komezaki",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.frenzy_yowl",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.hiss": {
+      "category": "hostile",
+      "kind": "windup",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "refs": [
+        "minecraft:entity.cat.hiss"
+      ],
+      "set": "natsuho_komezaki",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.hiss",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.hiss_burst": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.479,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.hiss_burst",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.hmph": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.348,
+      "pitch": [
+        0.97,
+        1.03
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.hmph",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 1.757,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.nine_lives": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 0.983,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.nine_lives",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.paw_lick": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.369,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.paw_lick",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.phase2": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.698,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.phase2",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.phase3": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.079,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.phase3",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.pounce_land": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.492,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.pounce_land",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.pounce_leap": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.441,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.pounce_leap",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.pounce_wiggle": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.143,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.pounce_wiggle",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.purr": {
+      "category": "voice",
+      "kind": "emote",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.cat.purr"
+      ],
+      "set": "natsuho_komezaki",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.purr",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.reflex_growl": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.979,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.reflex_growl",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.yawn": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.999,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.yawn",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.natsuho_komezaki.zoomies": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.929,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.natsuho_komezaki.zoomies",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.backstab": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.469,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.backstab",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.blade_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.strong"
+      ],
+      "set": "tobimaru_usugumo",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.blade_hit",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.blade_swish": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.262,
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.blade_swish",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.clones": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.972,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.clones",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.dash_slice": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.384,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.dash_slice",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.fuse": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.029,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.fuse",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.hand_seal": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 0.829,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.hand_seal",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.hm": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.229,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.hm",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.759,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.kneel": {
+      "category": "neutral",
+      "kind": "foley",
+      "length": 0.729,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kneel",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.kunai_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.arrow.hit"
+      ],
+      "set": "tobimaru_usugumo",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kunai_hit",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.kunai_throw": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.22,
+      "pitch": [
+        0.95,
+        1.06
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kunai_throw",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.kunai_twirl": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.657,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.kunai_twirl",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.log_swap": {
+      "category": "hostile",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:block.wood.break"
+      ],
+      "set": "tobimaru_usugumo",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.log_swap",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.tobimaru_usugumo.smoke_puff"
+        }
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.mask_pull": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.729,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.mask_pull",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.nightfall_strike": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.429,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.nightfall_strike",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.nightfall_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.529,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 48,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.nightfall_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.smoke_bomb": {
+      "category": "hostile",
+      "kind": "heavy",
+      "length": 1.082,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.smoke_bomb",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.smoke_puff": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.656,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.smoke_puff",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.tobimaru_usugumo.smoke_step": {
+      "category": "neutral",
+      "kind": "foley",
+      "length": 0.323,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.tobimaru_usugumo.smoke_step",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.ambrose_nettlewick": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.158,
+      "pitch": [
+        0.96,
+        1.05
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "ambrose_nettlewick",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.ambrose_nettlewick",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.benika_akagane": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.158,
+      "pitch": [
+        0.96,
+        1.04
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "benika_akagane",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.benika_akagane",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.hinae_shirasuzu": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.208,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "hinae_shirasuzu",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.hinae_shirasuzu",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.ilsabet_frostmere": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.178,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "ilsabet_frostmere",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.ilsabet_frostmere",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.kagenori_tsurumine": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.178,
+      "pitch": [
+        0.99,
+        1.01
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "kagenori_tsurumine",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.kagenori_tsurumine",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.natsuho_komezaki": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.158,
+      "pitch": [
+        0.97,
+        1.03
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "natsuho_komezaki",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.natsuho_komezaki",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.tobimaru_usugumo": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.119,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "tobimaru_usugumo",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.tobimaru_usugumo",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.voice.yugen_kagaribi": {
+      "category": "voice",
+      "kind": "voice",
+      "length": 0.208,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.voice.yugen_kagaribi",
+      "variants": 6,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.bewitch": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.969,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.bewitch",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.contract": {
+      "category": "hostile",
+      "kind": "foley",
+      "length": 0.269,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 12,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.contract",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.fan_cut": {
+      "category": "hostile",
+      "kind": "swing",
+      "length": 0.317,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.fan_cut",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.fan_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.player.attack.knockback"
+      ],
+      "set": "yugen_kagaribi",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.fan_hit",
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.fox_screech": {
+      "category": "hostile",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.fox.screech"
+      ],
+      "set": "yugen_kagaribi",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.fox_screech",
+      "volume": [
+        0.9,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.foxfire": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.554,
+      "pitch": [
+        0.96,
+        1.04
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.foxfire_drop": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.559,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire_drop",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.foxfire_hit": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.347,
+      "pitch": [
+        0.95,
+        1.05
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire_hit",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.foxfire_volley": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.129,
+      "pitch": [
+        0.98,
+        1.02
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.foxfire_volley",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.intro": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.901,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.intro",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.lantern_flare": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 1.157,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 24,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_flare",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 4,
+          "event": "factionclash:hero.yugen_kagaribi.fox_screech"
+        }
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.lantern_hum": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.058,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_hum",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.lantern_pulse": {
+      "category": "hostile",
+      "kind": "hit",
+      "length": 0.809,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_pulse",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.lantern_spin": {
+      "category": "neutral",
+      "kind": "quirk",
+      "length": 0.729,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 12,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.lantern_spin",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.laugh": {
+      "category": "voice",
+      "kind": "emote",
+      "length": 0.446,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.laugh",
+      "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.mirage": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.307,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.mirage",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.ninefold_gather": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 2.009,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.ninefold_gather",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.ninefold_shot": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.529,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.ninefold_shot",
+      "variants": 3,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.rain_windup": {
+      "category": "hostile",
+      "kind": "windup",
+      "length": 1.029,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.rain_windup",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.tails_fan": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.867,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.tails_fan",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.vanish": {
+      "category": "hostile",
+      "kind": "cast",
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "refs": [
+        "minecraft:entity.fox.teleport"
+      ],
+      "set": "yugen_kagaribi",
+      "source": "vanilla",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish",
+      "volume": [
+        1.0,
+        1.0
+      ],
+      "with": [
+        {
+          "delay": 0,
+          "event": "factionclash:hero.yugen_kagaribi.vanish_sparkle"
+        }
+      ]
+    },
+    "factionclash:hero.yugen_kagaribi.vanish_sparkle": {
+      "category": "hostile",
+      "kind": "cast",
+      "length": 0.529,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "client",
+      "range": 16,
+      "set": "yugen_kagaribi",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.yugen_kagaribi.vanish_sparkle",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "format": 1,
+  "heroes": {
+    "ambrose_nettlewick": {
+      "intro": "factionclash:hero.ambrose_nettlewick.intro",
+      "mobility": {
+        "takeoff": "factionclash:hero.ambrose_nettlewick.broom_takeoff"
+      },
+      "moves": {
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.ambrose_nettlewick.vial_poison",
+          "release": "factionclash:hero.ambrose_nettlewick.vial_throw"
+        },
+        "broom_hops": {
+          "class": "heavy",
+          "impact": "factionclash:hero.ambrose_nettlewick.puddle_splat",
+          "release": "factionclash:hero.ambrose_nettlewick.broom_hop",
+          "windup": "factionclash:hero.ambrose_nettlewick.crow_caw"
+        },
+        "cauldron": {
+          "class": "area",
+          "impact": "factionclash:hero.ambrose_nettlewick.cauldron_bubble",
+          "windup": "factionclash:hero.ambrose_nettlewick.cauldron_windup"
+        },
+        "fume_step": {
+          "class": "light",
+          "release": "factionclash:hero.ambrose_nettlewick.fume_puff"
+        },
+        "grand_experiment": {
+          "class": "ultimate",
+          "impact": "factionclash:hero.ambrose_nettlewick.brew_drop",
+          "release": "factionclash:hero.ambrose_nettlewick.brew_burst",
+          "windup": "factionclash:hero.ambrose_nettlewick.experiment_windup"
+        },
+        "great_brew": {
+          "broken": "factionclash:hero.ambrose_nettlewick.brew_fizzle",
+          "class": "area",
+          "impact": "factionclash:hero.ambrose_nettlewick.brew_drop",
+          "loop": "factionclash:hero.ambrose_nettlewick.brew_loop",
+          "release": "factionclash:hero.ambrose_nettlewick.brew_burst",
+          "windup": "factionclash:hero.ambrose_nettlewick.brew_windup"
+        },
+        "hex_mark": {
+          "class": "light",
+          "impact": "factionclash:hero.ambrose_nettlewick.hex_hit",
+          "release": "factionclash:hero.ambrose_nettlewick.hex_cast"
+        },
+        "potion_barrage": {
+          "class": "light",
+          "impact": [
+            "factionclash:hero.ambrose_nettlewick.vial_poison",
+            "factionclash:hero.ambrose_nettlewick.vial_slow",
+            "factionclash:hero.ambrose_nettlewick.vial_weak"
+          ],
+          "release": "factionclash:hero.ambrose_nettlewick.vial_throw"
+        }
+      },
+      "passives": {
+        "field_notes": "factionclash:hero.ambrose_nettlewick.scribble",
+        "hex_full": "factionclash:hero.ambrose_nettlewick.hex_full"
+      },
+      "phases": {
+        "2": "factionclash:hero.ambrose_nettlewick.bristles",
+        "3": "factionclash:hero.ambrose_nettlewick.phase3_glow"
+      },
+      "quirks": {
+        "personal.1": "factionclash:hero.ambrose_nettlewick.scribble",
+        "personal.2": "factionclash:hero.ambrose_nettlewick.vial_shake",
+        "personal.3": "factionclash:hero.ambrose_nettlewick.crow_peck"
+      },
+      "steps": {
+        "volume": 0.9
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 1.05
+        },
+        "emotes": {
+          "caw": "factionclash:hero.ambrose_nettlewick.crow_caw",
+          "eureka": "factionclash:hero.ambrose_nettlewick.eureka"
+        },
+        "fallback_blip": "pling",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 1.05
+        },
+        "jitter": 0.06,
+        "melody": [
+          0,
+          3,
+          -3,
+          5,
+          7,
+          -2
+        ],
+        "rate": 2,
+        "talk": "factionclash:hero.voice.ambrose_nettlewick"
+      }
+    },
+    "benika_akagane": {
+      "intro": "factionclash:hero.benika_akagane.intro",
+      "moves": {
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.benika_akagane.club_hit",
+          "release": "factionclash:hero.benika_akagane.club_swing"
+        },
+        "gourd_swig": {
+          "class": "light",
+          "release": "factionclash:hero.benika_akagane.gourd_swig"
+        },
+        "grab_throw": {
+          "class": "heavy",
+          "release": "factionclash:hero.benika_akagane.throw_whoosh",
+          "windup": "factionclash:hero.benika_akagane.grab"
+        },
+        "ground_stomp": {
+          "class": "area",
+          "impact": "factionclash:hero.benika_akagane.fire_wave",
+          "release": "factionclash:hero.benika_akagane.stomp",
+          "windup": "factionclash:hero.benika_akagane.stomp_windup"
+        },
+        "iron_mountain_crash": {
+          "class": "ultimate",
+          "impact": "factionclash:hero.benika_akagane.crash_impact",
+          "release": "factionclash:hero.benika_akagane.meteor_leap",
+          "windup": "factionclash:hero.benika_akagane.crash_windup"
+        },
+        "meteor_club": {
+          "class": "heavy",
+          "impact": "factionclash:hero.benika_akagane.meteor_impact",
+          "release": "factionclash:hero.benika_akagane.meteor_leap",
+          "windup": "factionclash:hero.benika_akagane.slam_rise"
+        },
+        "overhead_slam": {
+          "class": "area",
+          "impact": "factionclash:hero.benika_akagane.club_slam",
+          "release": "factionclash:hero.benika_akagane.club_swing",
+          "windup": "factionclash:hero.benika_akagane.slam_rise"
+        },
+        "shoulder_charge": {
+          "class": "heavy",
+          "impact": "factionclash:hero.benika_akagane.charge_hit",
+          "windup": "factionclash:hero.benika_akagane.charge_snort"
+        }
+      },
+      "passives": {
+        "battle_joy": "factionclash:hero.benika_akagane.laugh"
+      },
+      "phases": {
+        "2": "factionclash:hero.benika_akagane.horn_flare",
+        "3": "factionclash:hero.benika_akagane.steam"
+      },
+      "quirks": {
+        "personal.1": "factionclash:hero.benika_akagane.shoulder_roll",
+        "personal.2": "factionclash:hero.benika_akagane.gourd_swig",
+        "personal.3": "factionclash:hero.benika_akagane.club_spin"
+      },
+      "states": {
+        "rage": "factionclash:hero.benika_akagane.roar"
+      },
+      "steps": {
+        "volume": 1.2,
+        "with": "factionclash:hero.cue.step.heavy"
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 1.1
+        },
+        "emotes": {
+          "laugh": "factionclash:hero.benika_akagane.laugh",
+          "roar": "factionclash:hero.benika_akagane.roar"
+        },
+        "fallback_blip": "guitar",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 1.1
+        },
+        "jitter": 0.05,
+        "melody": [
+          0,
+          0,
+          2,
+          4,
+          -2
+        ],
+        "rate": 2,
+        "talk": "factionclash:hero.voice.benika_akagane"
+      },
+      "weak_points": {
+        "snowball": "factionclash:hero.benika_akagane.fizzle"
+      }
+    },
+    "hinae_shirasuzu": {
+      "intro": "factionclash:hero.hinae_shirasuzu.intro",
+      "moves": {
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.hinae_shirasuzu.talisman_hit",
+          "release": "factionclash:hero.hinae_shirasuzu.talisman_throw"
+        },
+        "exorcise": {
+          "class": "area",
+          "impact": "factionclash:hero.hinae_shirasuzu.exorcise",
+          "windup": "factionclash:hero.hinae_shirasuzu.exorcise_windup"
+        },
+        "purify": {
+          "class": "light",
+          "release": "factionclash:hero.hinae_shirasuzu.purify"
+        },
+        "purifying_dance": {
+          "class": "area",
+          "end": "factionclash:hero.hinae_shirasuzu.pray_clap",
+          "impact": "factionclash:hero.hinae_shirasuzu.talisman_hit",
+          "release": "factionclash:hero.hinae_shirasuzu.dance_sweep",
+          "windup": "factionclash:hero.hinae_shirasuzu.kagura"
+        },
+        "sealing_circle": {
+          "class": "area",
+          "impact": "factionclash:hero.hinae_shirasuzu.seal_burst",
+          "windup": "factionclash:hero.hinae_shirasuzu.seal_ring"
+        },
+        "seven_talismans": {
+          "class": "heavy",
+          "windup": "factionclash:hero.hinae_shirasuzu.talismans_unfold"
+        },
+        "talisman_fan": {
+          "class": "light",
+          "impact": "factionclash:hero.hinae_shirasuzu.talisman_hit",
+          "release": "factionclash:hero.hinae_shirasuzu.talisman_throw"
+        },
+        "thousand_bell_rite": {
+          "class": "ultimate",
+          "loop": "factionclash:hero.hinae_shirasuzu.rite_loop",
+          "release": "factionclash:hero.hinae_shirasuzu.rite_release",
+          "windup": "factionclash:hero.hinae_shirasuzu.rite_windup"
+        }
+      },
+      "passives": {
+        "guardian_charm": "factionclash:hero.hinae_shirasuzu.charm"
+      },
+      "phases": {
+        "2": "factionclash:hero.hinae_shirasuzu.talismans_unfold",
+        "3": "factionclash:hero.hinae_shirasuzu.radiant_glow"
+      },
+      "quirks": {
+        "idle": "factionclash:hero.hinae_shirasuzu.hum",
+        "personal.1": "factionclash:hero.hinae_shirasuzu.kagura",
+        "personal.2": "factionclash:hero.hinae_shirasuzu.sweep_broom",
+        "personal.3": "factionclash:hero.hinae_shirasuzu.pray_clap"
+      },
+      "steps": {
+        "volume": 0.8
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 1.4
+        },
+        "emotes": {
+          "hum": "factionclash:hero.hinae_shirasuzu.hum"
+        },
+        "fallback_blip": "bell",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 1.4
+        },
+        "jitter": 0.03,
+        "melody": [
+          0,
+          0,
+          2,
+          4,
+          -1
+        ],
+        "rate": 3,
+        "talk": "factionclash:hero.voice.hinae_shirasuzu"
+      }
+    },
+    "ilsabet_frostmere": {
+      "intro": "factionclash:hero.ilsabet_frostmere.intro",
+      "moves": {
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.ilsabet_frostmere.sword_hit",
+          "release": "factionclash:hero.ilsabet_frostmere.sword_swing"
+        },
+        "call_the_guard": {
+          "class": "light",
+          "release": "factionclash:hero.ilsabet_frostmere.rally"
+        },
+        "frost_lance_charge": {
+          "class": "heavy",
+          "end": "factionclash:hero.ilsabet_frostmere.shield_plant",
+          "impact": "factionclash:hero.ilsabet_frostmere.lance_hit",
+          "windup": "factionclash:hero.ilsabet_frostmere.lance_windup"
+        },
+        "frozen_standard": {
+          "class": "area",
+          "impact": "factionclash:hero.ilsabet_frostmere.frost_pulse",
+          "windup": "factionclash:hero.ilsabet_frostmere.standard_plant"
+        },
+        "oath_strike": {
+          "class": "light",
+          "impact": "factionclash:hero.ilsabet_frostmere.frost_hit",
+          "release": "factionclash:hero.ilsabet_frostmere.sword_swing"
+        },
+        "rime_wall": {
+          "class": "light",
+          "release": "factionclash:hero.ilsabet_frostmere.rime_wall"
+        },
+        "shield_bash": {
+          "class": "heavy",
+          "impact": "factionclash:hero.ilsabet_frostmere.shield_bash",
+          "windup": "factionclash:hero.ilsabet_frostmere.shield_raise"
+        },
+        "turning_sweep": {
+          "class": "area",
+          "impact": "factionclash:hero.ilsabet_frostmere.sword_hit",
+          "release": "factionclash:hero.ilsabet_frostmere.frost_sweep",
+          "windup": "factionclash:hero.ilsabet_frostmere.sweep_windup"
+        },
+        "vow_of_winter": {
+          "class": "ultimate",
+          "release": "factionclash:hero.ilsabet_frostmere.vow_release",
+          "windup": "factionclash:hero.ilsabet_frostmere.vow_windup"
+        }
+      },
+      "passives": {
+        "oath_keeper": "factionclash:hero.ilsabet_frostmere.oath"
+      },
+      "phases": {
+        "2": "factionclash:hero.ilsabet_frostmere.visor",
+        "3": "factionclash:hero.ilsabet_frostmere.rally"
+      },
+      "quirks": {
+        "personal.1": "factionclash:hero.ilsabet_frostmere.shield_tap",
+        "personal.2": "factionclash:hero.ilsabet_frostmere.intro"
+      },
+      "states": {
+        "bulwark": "factionclash:hero.ilsabet_frostmere.bulwark"
+      },
+      "steps": {
+        "volume": 1.0,
+        "with": "factionclash:hero.cue.step.heavy"
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 1.15
+        },
+        "emotes": {
+          "resolve": "factionclash:hero.ilsabet_frostmere.resolve"
+        },
+        "fallback_blip": "chime",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 1.15
+        },
+        "jitter": 0.02,
+        "melody": [
+          0,
+          0,
+          2,
+          -2,
+          3
+        ],
+        "rate": 3,
+        "talk": "factionclash:hero.voice.ilsabet_frostmere"
+      }
+    },
+    "kagenori_tsurumine": {
+      "intro": "factionclash:hero.kagenori_tsurumine.intro",
+      "moves": {
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.kagenori_tsurumine.katana_hit",
+          "release": "factionclash:hero.kagenori_tsurumine.katana_swing"
+        },
+        "chain_draw": {
+          "class": "heavy",
+          "impact": "factionclash:hero.kagenori_tsurumine.chain_zap",
+          "windup": "factionclash:hero.kagenori_tsurumine.chain_windup"
+        },
+        "crane_step": {
+          "class": "heavy",
+          "impact": "factionclash:hero.kagenori_tsurumine.katana_hit",
+          "release": "factionclash:hero.kagenori_tsurumine.step_dash",
+          "windup": "factionclash:hero.kagenori_tsurumine.step_poise"
+        },
+        "falling_crane": {
+          "class": "heavy",
+          "impact": "factionclash:hero.kagenori_tsurumine.crane_land",
+          "release": "factionclash:hero.kagenori_tsurumine.crane_leap",
+          "windup": "factionclash:hero.kagenori_tsurumine.step_poise"
+        },
+        "guard_splitter": {
+          "class": "heavy",
+          "impact": "factionclash:hero.kagenori_tsurumine.split_hit",
+          "release": "factionclash:hero.kagenori_tsurumine.heavy_cut",
+          "windup": "factionclash:hero.kagenori_tsurumine.overhead_raise"
+        },
+        "heaven_split": {
+          "class": "ultimate",
+          "release": "factionclash:hero.kagenori_tsurumine.heaven_split",
+          "windup": "factionclash:hero.kagenori_tsurumine.heaven_windup"
+        },
+        "iai_stance": {
+          "class": "heavy",
+          "impact": "factionclash:hero.kagenori_tsurumine.katana_hit",
+          "release": "factionclash:hero.kagenori_tsurumine.iai_draw",
+          "windup": "factionclash:hero.kagenori_tsurumine.guard_click"
+        },
+        "three_cut": {
+          "class": "light",
+          "impact": "factionclash:hero.kagenori_tsurumine.katana_hit",
+          "release": "factionclash:hero.kagenori_tsurumine.katana_swing"
+        },
+        "thunderclap_draw": {
+          "class": "heavy",
+          "end": "factionclash:hero.kagenori_tsurumine.sheathe",
+          "release": "factionclash:hero.kagenori_tsurumine.thunderclap",
+          "windup": "factionclash:hero.kagenori_tsurumine.glint"
+        }
+      },
+      "passives": {
+        "still_mind": "factionclash:hero.kagenori_tsurumine.guard_click"
+      },
+      "phases": {
+        "2": "factionclash:hero.kagenori_tsurumine.helmet",
+        "3": "factionclash:hero.kagenori_tsurumine.blade_hum"
+      },
+      "quirks": {
+        "personal.1": "factionclash:hero.kagenori_tsurumine.guard_click",
+        "personal.3": "factionclash:hero.kagenori_tsurumine.hair_tie"
+      },
+      "states": {
+        "twin_sky": "factionclash:hero.kagenori_tsurumine.draw_second"
+      },
+      "steps": {
+        "volume": 0.9
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 0.85
+        },
+        "emotes": {
+          "hm": "factionclash:hero.kagenori_tsurumine.hm",
+          "kiai": "factionclash:hero.kagenori_tsurumine.kiai"
+        },
+        "fallback_blip": "bass",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 0.85
+        },
+        "jitter": 0.02,
+        "melody": [
+          0,
+          0,
+          0,
+          -1,
+          1
+        ],
+        "rate": 3,
+        "talk": "factionclash:hero.voice.kagenori_tsurumine"
+      }
+    },
+    "natsuho_komezaki": {
+      "intro": "factionclash:hero.natsuho_komezaki.intro",
+      "moves": {
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.natsuho_komezaki.claw_hit",
+          "release": "factionclash:hero.natsuho_komezaki.claw"
+        },
+        "cat_reflex": {
+          "class": "heavy",
+          "impact": "factionclash:hero.natsuho_komezaki.claw_hit",
+          "release": "factionclash:hero.natsuho_komezaki.claw",
+          "windup": "factionclash:hero.natsuho_komezaki.reflex_growl"
+        },
+        "claw_string": {
+          "class": "light",
+          "impact": "factionclash:hero.natsuho_komezaki.claw_hit",
+          "release": "factionclash:hero.natsuho_komezaki.claw"
+        },
+        "hiss": {
+          "class": "area",
+          "release": "factionclash:hero.natsuho_komezaki.hiss_burst",
+          "windup": "factionclash:hero.natsuho_komezaki.hiss"
+        },
+        "midnight_frenzy": {
+          "class": "ultimate",
+          "release": "factionclash:hero.natsuho_komezaki.frenzy_sting",
+          "windup": "factionclash:hero.natsuho_komezaki.frenzy_yowl"
+        },
+        "pounce": {
+          "class": "heavy",
+          "end": "factionclash:hero.natsuho_komezaki.paw_lick",
+          "impact": "factionclash:hero.natsuho_komezaki.pounce_land",
+          "release": "factionclash:hero.natsuho_komezaki.pounce_leap",
+          "windup": "factionclash:hero.natsuho_komezaki.pounce_wiggle"
+        },
+        "scratch_dash": {
+          "class": "heavy",
+          "impact": "factionclash:hero.natsuho_komezaki.claw_hit",
+          "release": "factionclash:hero.natsuho_komezaki.dash",
+          "windup": "factionclash:hero.natsuho_komezaki.claw_scrape"
+        },
+        "zoomies": {
+          "class": "heavy",
+          "impact": "factionclash:hero.natsuho_komezaki.pounce_land",
+          "release": "factionclash:hero.natsuho_komezaki.dash",
+          "windup": "factionclash:hero.natsuho_komezaki.zoomies"
+        }
+      },
+      "passives": {
+        "nine_lives": "factionclash:hero.natsuho_komezaki.nine_lives"
+      },
+      "phases": {
+        "2": "factionclash:hero.natsuho_komezaki.phase2",
+        "3": "factionclash:hero.natsuho_komezaki.phase3"
+      },
+      "quirks": {
+        "idle": "factionclash:hero.natsuho_komezaki.bell",
+        "personal.1": "factionclash:hero.natsuho_komezaki.paw_lick",
+        "personal.3": "factionclash:hero.natsuho_komezaki.yawn"
+      },
+      "states": {
+        "frenzy": "factionclash:hero.natsuho_komezaki.frenzy_sting"
+      },
+      "steps": {
+        "volume": 0.6
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 1.35
+        },
+        "emotes": {
+          "hmph": "factionclash:hero.natsuho_komezaki.hmph",
+          "purr": "factionclash:hero.natsuho_komezaki.purr",
+          "yawn": "factionclash:hero.natsuho_komezaki.yawn",
+          "yelp": "factionclash:hero.natsuho_komezaki.flinch"
+        },
+        "fallback_blip": "xylophone",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 1.35
+        },
+        "jitter": 0.04,
+        "melody": [
+          0,
+          0,
+          2,
+          3,
+          5,
+          -2
+        ],
+        "rate": 2,
+        "talk": "factionclash:hero.voice.natsuho_komezaki"
+      },
+      "weak_points": {
+        "water": "factionclash:hero.natsuho_komezaki.flinch"
+      }
+    },
+    "tobimaru_usugumo": {
+      "intro": "factionclash:hero.tobimaru_usugumo.intro",
+      "moves": {
+        "backstab": {
+          "class": "light",
+          "impact": "factionclash:hero.tobimaru_usugumo.blade_hit",
+          "release": "factionclash:hero.tobimaru_usugumo.backstab"
+        },
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.tobimaru_usugumo.blade_hit",
+          "release": "factionclash:hero.tobimaru_usugumo.blade_swish"
+        },
+        "kunai_fan": {
+          "class": "light",
+          "impact": "factionclash:hero.tobimaru_usugumo.kunai_hit",
+          "release": "factionclash:hero.tobimaru_usugumo.kunai_throw"
+        },
+        "log_swap": {
+          "class": "light",
+          "release": "factionclash:hero.tobimaru_usugumo.log_swap"
+        },
+        "nightfall": {
+          "class": "ultimate",
+          "impact": "factionclash:hero.tobimaru_usugumo.blade_hit",
+          "release": "factionclash:hero.tobimaru_usugumo.nightfall_strike",
+          "windup": "factionclash:hero.tobimaru_usugumo.nightfall_windup"
+        },
+        "shadow_clones": {
+          "class": "heavy",
+          "release": "factionclash:hero.tobimaru_usugumo.clones",
+          "windup": "factionclash:hero.tobimaru_usugumo.hand_seal"
+        },
+        "shadow_dash": {
+          "class": "heavy",
+          "end": "factionclash:hero.tobimaru_usugumo.kneel",
+          "impact": "factionclash:hero.tobimaru_usugumo.blade_hit",
+          "release": "factionclash:hero.tobimaru_usugumo.dash_slice",
+          "windup": "factionclash:hero.tobimaru_usugumo.hand_seal"
+        },
+        "shadow_step": {
+          "class": "heavy",
+          "windup": "factionclash:hero.tobimaru_usugumo.smoke_puff"
+        },
+        "smoke_bomb": {
+          "class": "area",
+          "release": "factionclash:hero.tobimaru_usugumo.smoke_bomb",
+          "windup": "factionclash:hero.tobimaru_usugumo.fuse"
+        }
+      },
+      "passives": {
+        "unseen": "factionclash:hero.tobimaru_usugumo.smoke_puff"
+      },
+      "phases": {
+        "2": "factionclash:hero.tobimaru_usugumo.hand_seal",
+        "3": "factionclash:hero.tobimaru_usugumo.mask_pull"
+      },
+      "quirks": {
+        "invisible_step": "factionclash:hero.tobimaru_usugumo.smoke_step",
+        "personal.3": "factionclash:hero.tobimaru_usugumo.kunai_twirl"
+      },
+      "steps": {
+        "volume": 0.4
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 0.95
+        },
+        "emotes": {
+          "hm": "factionclash:hero.tobimaru_usugumo.hm"
+        },
+        "fallback_blip": "hat",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 0.95
+        },
+        "jitter": 0.03,
+        "melody": [
+          0,
+          0,
+          -1,
+          1
+        ],
+        "rate": 3,
+        "talk": "factionclash:hero.voice.tobimaru_usugumo"
+      }
+    },
+    "yugen_kagaribi": {
+      "intro": "factionclash:hero.yugen_kagaribi.intro",
+      "moves": {
+        "basic": {
+          "class": "light",
+          "impact": "factionclash:hero.yugen_kagaribi.foxfire_hit",
+          "release": "factionclash:hero.yugen_kagaribi.foxfire"
+        },
+        "fan_cut": {
+          "class": "light",
+          "impact": "factionclash:hero.yugen_kagaribi.fan_hit",
+          "release": "factionclash:hero.yugen_kagaribi.fan_cut"
+        },
+        "foxfire_rain": {
+          "class": "area",
+          "impact": "factionclash:hero.yugen_kagaribi.foxfire_drop",
+          "windup": "factionclash:hero.yugen_kagaribi.rain_windup"
+        },
+        "foxfire_volley": {
+          "class": "light",
+          "impact": "factionclash:hero.yugen_kagaribi.foxfire_hit",
+          "release": "factionclash:hero.yugen_kagaribi.foxfire_volley"
+        },
+        "lantern_ring": {
+          "class": "area",
+          "impact": "factionclash:hero.yugen_kagaribi.lantern_pulse",
+          "windup": "factionclash:hero.yugen_kagaribi.lantern_hum"
+        },
+        "mirage": {
+          "class": "heavy",
+          "windup": "factionclash:hero.yugen_kagaribi.mirage"
+        },
+        "ninefold_lantern": {
+          "class": "ultimate",
+          "impact": "factionclash:hero.yugen_kagaribi.foxfire_hit",
+          "release": "factionclash:hero.yugen_kagaribi.ninefold_shot",
+          "windup": "factionclash:hero.yugen_kagaribi.ninefold_gather"
+        },
+        "vanish": {
+          "class": "light",
+          "release": "factionclash:hero.yugen_kagaribi.vanish"
+        }
+      },
+      "passives": {
+        "bewitched_full": "factionclash:hero.yugen_kagaribi.bewitch",
+        "contract": "factionclash:hero.yugen_kagaribi.contract"
+      },
+      "phases": {
+        "2": "factionclash:hero.yugen_kagaribi.tails_fan",
+        "3": "factionclash:hero.yugen_kagaribi.lantern_flare"
+      },
+      "quirks": {
+        "personal.1": "factionclash:hero.yugen_kagaribi.laugh",
+        "personal.2": "factionclash:hero.yugen_kagaribi.lantern_spin"
+      },
+      "steps": {
+        "volume": 0.8
+      },
+      "voice": {
+        "death": {
+          "event": "minecraft:entity.player.death",
+          "pitch": 1.0
+        },
+        "emotes": {
+          "laugh": "factionclash:hero.yugen_kagaribi.laugh"
+        },
+        "fallback_blip": "flute",
+        "hurt": {
+          "event": "minecraft:entity.player.hurt",
+          "pitch": 1.0
+        },
+        "jitter": 0.03,
+        "melody": [
+          0,
+          0,
+          -2,
+          2,
+          -3
+        ],
+        "rate": 3,
+        "talk": "factionclash:hero.voice.yugen_kagaribi"
+      }
+    }
+  },
+  "note": "generated by tools/sfxgen (SOUND.md section 7); do not edit"
+}

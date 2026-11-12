@@ -1,0 +1,243 @@
+{
+  "format": 1,
+  "set": "hinae_shirasuzu",
+  "title": "Hinae Shirasuzu, the white bell shrine maiden (sweet-natured, wand and talismans, radiant)",
+  "hero": {
+    "voice": {"talk": "voice", "rate": 3, "melody": [0, 0, 2, 4, -1], "fallback_blip": "bell", "jitter": 0.03,
+              "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.4},
+              "death": {"event": "minecraft:entity.player.death", "pitch": 1.4},
+              "emotes": {"hum": "hum"}},
+    "moves": {
+      "basic": {"class": "light", "release": "talisman_throw", "impact": "talisman_hit"},
+      "talisman_fan": {"class": "light", "release": "talisman_throw", "impact": "talisman_hit"},
+      "sealing_circle": {"class": "area", "windup": "seal_ring", "impact": "seal_burst"},
+      "purify": {"class": "light", "release": "purify"},
+      "exorcise": {"class": "area", "windup": "exorcise_windup", "impact": "exorcise"},
+      "seven_talismans": {"class": "heavy", "windup": "talismans_unfold"},
+      "purifying_dance": {"class": "area", "windup": "kagura", "release": "dance_sweep", "impact": "talisman_hit", "end": "pray_clap"},
+      "thousand_bell_rite": {"class": "ultimate", "windup": "rite_windup", "loop": "rite_loop", "release": "rite_release"}
+    },
+    "phases": {"2": "talismans_unfold", "3": "radiant_glow"},
+    "passives": {"guardian_charm": "charm"},
+    "intro": "intro",
+    "quirks": {"personal.1": "kagura", "personal.2": "sweep_broom", "personal.3": "pray_clap", "idle": "hum"},
+    "steps": {"volume": 0.8}
+  },
+  "preview": ["voice", "hum", "kagura", "talisman_throw", "talisman_hit", "seal_ring", "seal_burst", "purify",
+              "exorcise_windup", "exorcise", "talismans_unfold", "dance_sweep", "pray_clap", "rite_windup", "rite_loop",
+              "rite_release", "charm", "radiant_glow", "intro", "sweep_broom"],
+  "sounds": {
+    "voice": {
+      "kind": "voice", "subtitle": "Hinae speaks", "loudness": -25, "pitch": [0.98, 1.02], "variants": 6,
+      "note": "Soft, high and round (the old bell voice): a bell-tinged source at about 587 Hz, gentle attacks, a light vibrato (rate 3).",
+      "layers": [
+        {"type": "vox", "source": "bell", "f0": 587, "dur": 0.13, "vowel": "u", "shift": 1.2, "fq": 4, "dry": 0.25,
+         "vibrato": {"rate": 5.2, "depth": 0.12}, "attack": 0.015, "release": 0.05, "contour": [0, 0]}
+      ],
+      "each": [
+        {"layers.0.vowel": "u", "layers.0.contour": [0, 1], "layers.0.dur": 0.13},
+        {"layers.0.vowel": "o", "layers.0.contour": [2, 2], "layers.0.dur": 0.12},
+        {"layers.0.vowel": "i", "layers.0.contour": [4, 5], "layers.0.dur": 0.11},
+        {"layers.0.vowel": "a", "layers.0.contour": [-2, -1], "layers.0.dur": 0.14},
+        {"layers.0.vowel": "e", "layers.0.contour": [5, 3], "layers.0.dur": 0.12},
+        {"layers.0.vowel": "o", "layers.0.contour": [0, -2], "layers.0.dur": 0.15}
+      ]
+    },
+    "hum": {
+      "kind": "quirk", "subtitle": "Hinae hums", "loudness": -27, "category": "voice",
+      "note": "Idle humming while she sweeps: a small closed-mouth tune on a pentatonic scale.",
+      "layers": [
+        {"type": "vox", "source": "bell", "f0": 587, "dur": 0.28, "vowel": "m", "shift": 1.2, "dry": 0.4, "contour": [0, 0], "attack": 0.03, "release": 0.06},
+        {"type": "vox", "source": "bell", "at": 0.3, "f0": 659, "dur": 0.22, "vowel": "m", "shift": 1.2, "dry": 0.4, "contour": [0, 0], "attack": 0.03, "release": 0.06},
+        {"type": "vox", "source": "bell", "at": 0.54, "f0": 784, "dur": 0.3, "vowel": "m", "shift": 1.2, "dry": 0.4, "contour": [0, 0], "attack": 0.03, "release": 0.06},
+        {"type": "vox", "source": "bell", "at": 0.86, "f0": 659, "dur": 0.2, "vowel": "m", "shift": 1.2, "dry": 0.4, "contour": [0, 0], "attack": 0.03, "release": 0.06},
+        {"type": "vox", "source": "bell", "at": 1.08, "f0": 587, "dur": 0.45, "vowel": "m", "shift": 1.2, "dry": 0.4, "contour": [0, -1], "vibrato": {"rate": 5, "depth": 0.2, "delay": 0.15}, "attack": 0.03, "release": 0.15}
+      ]
+    },
+    "kagura": {
+      "kind": "cast", "subtitle": "A cluster of bells shakes", "loudness": -21, "variants": 2, "vary": {"pitch": [-0.6, 0.6]},
+      "note": "Her purification wand's bell cluster (kagura suzu): many small bells struck in a quick shake. Wind-up of the dance, idles.",
+      "layers": [
+        {"type": "group", "layers": [
+          {"type": "bell", "partials": "kagura", "at": 0.00, "f0": 2350, "dur": 0.7, "decay": 0.3, "strike": 0.3},
+          {"type": "bell", "partials": "kagura", "at": 0.03, "f0": 2780, "dur": 0.7, "decay": 0.3, "strike": 0.3, "gain": -2},
+          {"type": "bell", "partials": "kagura", "at": 0.07, "f0": 2090, "dur": 0.7, "decay": 0.3, "strike": 0.3, "gain": -1},
+          {"type": "bell", "partials": "kagura", "at": 0.12, "f0": 3130, "dur": 0.7, "decay": 0.3, "strike": 0.3, "gain": -3},
+          {"type": "bell", "partials": "kagura", "at": 0.17, "f0": 2480, "dur": 0.7, "decay": 0.3, "strike": 0.3, "gain": -2},
+          {"type": "bell", "partials": "kagura", "at": 0.22, "f0": 2630, "dur": 0.7, "decay": 0.3, "strike": 0.3, "gain": -3},
+          {"type": "bell", "partials": "kagura", "at": 0.29, "f0": 2200, "dur": 0.7, "decay": 0.3, "strike": 0.3, "gain": -4},
+          {"type": "bell", "partials": "kagura", "at": 0.35, "f0": 2950, "dur": 0.7, "decay": 0.3, "strike": 0.3, "gain": -5}
+        ]}
+      ]
+    },
+    "talisman_throw": {
+      "kind": "swing", "subtitle": "Talismans fly", "variants": 3, "pitch": [0.95, 1.05], "vary": {"pitch": [-1.5, 1.5]},
+      "note": "A thrown paper talisman: a crisp paper flick with a flutter.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.2, "f": [2000, 6000, 3000], "q": 1.5, "peak": 0.35, "colour": "white"},
+        {"type": "noise", "colour": "white", "dur": 0.2, "filter": {"mode": "bp", "f": 3600, "q": 2}, "env": {"perc": [0.01, 0.18]}, "fx": [{"trem": {"rate": 45, "depth": 0.7, "shape": "square"}}], "gain": -8}
+      ]
+    },
+    "talisman_hit": {
+      "kind": "hit", "subtitle": "A talisman strikes", "loudness": -18, "variants": 3, "pitch": [0.96, 1.04],
+      "each": [{"layers.1.f0": 2093}, {"layers.1.f0": 2349}, {"layers.1.f0": 2637}],
+      "note": "A talisman lands (radiant): a paper slap and a short holy chime (three notes for variety).",
+      "layers": [
+        {"type": "click", "f": 2000, "q": 0.8, "dur": 0.04, "sharp": 250},
+        {"type": "bell", "partials": "crystal", "f0": 2093, "dur": 0.45, "decay": 0.18, "strike": 0.1, "gain": -2}
+      ]
+    },
+    "seal_ring": {
+      "kind": "windup", "subtitle": "Hinae rings her bells", "loudness": -19,
+      "note": "Sealing circle wind-up (a bell ring): the cluster shakes over a swelling chord.",
+      "layers": [
+        {"type": "use", "sound": "kagura", "variant": 1},
+        {"type": "use", "sound": "kagura", "variant": 2, "at": 0.42, "gain": -2},
+        {"type": "shimmer", "dur": 1.0, "count": 8, "scale": [0, 4, 7], "base": 1046.5, "octaves": 2, "trem": 6, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -6}
+      ]
+    },
+    "seal_burst": {
+      "kind": "heavy", "subtitle": "A sealing circle bursts", "loudness": -15,
+      "note": "The sealing circle triggers: a bright chord chime, a soft 'fwoom' and a ringing tail.",
+      "layers": [
+        {"type": "bell", "partials": "crystal", "f0": 1046.5, "dur": 1.0, "decay": 0.5, "strike": 0.3},
+        {"type": "bell", "partials": "crystal", "f0": 1318.5, "dur": 1.0, "decay": 0.5, "strike": 0.2, "gain": -2},
+        {"type": "bell", "partials": "crystal", "f0": 1568, "dur": 1.0, "decay": 0.5, "strike": 0.2, "gain": -3},
+        {"type": "noise", "colour": "pink", "dur": 0.5, "filter": {"mode": "lp", "f": {"from": 4000, "to": 300, "shape": "exp"}, "q": 0.8}, "env": {"perc": [0.01, 0.45]}, "gain": -4},
+        {"type": "impact", "dur": 0.4, "f": [160, 70], "drop": 0.03, "body_decay": 0.09, "crunch": 0, "click": 0, "gain": -6}
+      ]
+    },
+    "purify": {
+      "kind": "cast", "subtitle": "Hinae purifies her allies", "loudness": -20,
+      "note": "Purify (cleanse and heal): a gentle rising shimmer, a soft lift of air and a chime.",
+      "layers": [
+        {"type": "shimmer", "dur": 0.9, "count": 9, "scale": [0, 2, 4, 7, 9], "base": 1318.5, "octaves": 2, "rise": [0, 5], "trem": 8},
+        {"type": "whoosh", "dur": 0.8, "f": [400, 1800], "q": 0.8, "peak": 0.6, "gain": -10},
+        {"type": "bell", "partials": "chime", "at": 0.5, "f0": 1568, "dur": 0.7, "decay": 0.35, "strike": 0.05, "gain": -4}
+      ]
+    },
+    "exorcise_windup": {
+      "kind": "windup", "subtitle": "Hinae gathers light", "loudness": -19,
+      "note": "Exorcise wind-up: a hummed rising 'aah' and a gathering of air around her.",
+      "layers": [
+        {"type": "vox", "source": "bell", "f0": 587, "dur": 1.0, "vowel": "a", "shift": 1.2, "dry": 0.2, "contour": [0, 0, 5], "vibrato": {"rate": 5.5, "depth": 0.2, "delay": 0.3},
+         "env": {"points": [[0, 0], [0.85, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "whoosh", "dur": 1.0, "f": {"from": 3000, "to": 500, "shape": "exp"}, "q": 0.9, "peak": 0.85, "gain": -6},
+        {"type": "shimmer", "dur": 1.0, "count": 6, "f": [2000, 4500], "rise": [0, 4], "trem": 10, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -9}
+      ]
+    },
+    "exorcise": {
+      "kind": "heavy", "subtitle": "A burst of holy light", "loudness": -15,
+      "note": "Exorcise (a nova that dispels and pushes): a bright burst, a chord and a push of air.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.5, "filter": {"mode": "hp", "f": {"from": 1500, "to": 5000, "shape": "exp"}, "q": 0.7}, "env": {"perc": [0.005, 0.45]}},
+        {"type": "impact", "dur": 0.5, "f": [180, 60], "drop": 0.04, "body_decay": 0.1, "crunch": 0.2, "crunch_lp": 1000, "click": 0, "gain": -4},
+        {"type": "bell", "partials": "crystal", "f0": 1174.7, "dur": 0.9, "decay": 0.45, "strike": 0.2, "gain": -4},
+        {"type": "bell", "partials": "crystal", "f0": 1760, "dur": 0.9, "decay": 0.45, "strike": 0.2, "gain": -6},
+        {"type": "shimmer", "dur": 0.8, "count": 8, "f": [2500, 6000], "trem": 12, "env": {"perc": [0.01, 0.7]}, "gain": -10}
+      ]
+    },
+    "talismans_unfold": {
+      "kind": "windup", "subtitle": "Seven talismans unfold", "loudness": -19,
+      "note": "Seven talismans (a barrier of 7 hits) and phase 2: seven paper flicks in a quick ring and a rising shimmer.",
+      "layers": [
+        {"type": "group", "layers": [
+          {"type": "use", "sound": "talisman_throw", "variant": 1, "at": 0.00},
+          {"type": "use", "sound": "talisman_throw", "variant": 2, "at": 0.08, "pitch": 1},
+          {"type": "use", "sound": "talisman_throw", "variant": 3, "at": 0.16, "pitch": 2},
+          {"type": "use", "sound": "talisman_throw", "variant": 1, "at": 0.24, "pitch": 3},
+          {"type": "use", "sound": "talisman_throw", "variant": 2, "at": 0.32, "pitch": 4},
+          {"type": "use", "sound": "talisman_throw", "variant": 3, "at": 0.40, "pitch": 5},
+          {"type": "use", "sound": "talisman_throw", "variant": 1, "at": 0.48, "pitch": 6}
+        ]},
+        {"type": "shimmer", "dur": 0.9, "count": 7, "scale": [0, 2, 4, 7, 9], "base": 1568, "octaves": 2, "rise": [0, 5], "trem": 9, "gain": -6}
+      ]
+    },
+    "dance_sweep": {
+      "kind": "cast", "subtitle": "Hinae dances, bells ringing", "loudness": -19,
+      "note": "Purifying dance (a 2 s sweep): a flowing whoosh that circles twice with the bells jingling.",
+      "layers": [
+        {"type": "whoosh", "dur": 2.0, "f": [500, 2200, 600, 2200, 500], "q": 1.1, "env": {"points": [[0, 0], [0.5, 1, "cos"], [1.0, 0.5, "cos"], [1.5, 1, "cos"], [2.0, 0, "cos"]]}},
+        {"type": "use", "sound": "kagura", "variant": 2, "at": 0.3, "gain": -4, "pitch": 1},
+        {"type": "use", "sound": "kagura", "variant": 1, "at": 1.3, "gain": -4}
+      ]
+    },
+    "pray_clap": {
+      "kind": "quirk", "subtitle": "Hinae claps twice in prayer", "loudness": -21,
+      "note": "The dance's recovery (she kneels to pray) and an idle: two shrine claps and a small bell.",
+      "layers": [
+        {"type": "clap", "dur": 0.25, "f": 1300, "q": 1.0},
+        {"type": "clap", "at": 0.36, "dur": 0.25, "f": 1250, "q": 1.0},
+        {"type": "bell", "partials": "kagura", "at": 0.75, "f0": 2350, "dur": 0.8, "decay": 0.4, "strike": 0.2, "gain": -8}
+      ]
+    },
+    "rite_windup": {
+      "kind": "windup", "subtitle": "A thousand bells begin to ring", "loudness": -15, "range": 48,
+      "note": "Thousand bell rite wind-up (1.6 s): bells upon bells swelling over a soft choir chord.",
+      "layers": [
+        {"type": "use", "sound": "kagura", "variant": 1, "gain": -6},
+        {"type": "use", "sound": "kagura", "variant": 2, "at": 0.35, "gain": -4},
+        {"type": "use", "sound": "kagura", "variant": 2, "at": 0.7, "gain": -2, "pitch": -1},
+        {"type": "use", "sound": "kagura", "variant": 1, "at": 1.05, "pitch": 2},
+        {"type": "group", "gain": -3, "layers": [
+          {"type": "vox", "source": "bell", "f0": 523.3, "dur": 1.6, "vowel": "a", "shift": 1.2, "dry": 0.2, "vibrato": {"rate": 5, "depth": 0.15, "delay": 0.4}, "env": {"points": [[0, 0], [1.4, 1, "in"], [1.6, 0, "cos"]]}},
+          {"type": "vox", "source": "bell", "f0": 659.3, "dur": 1.6, "vowel": "a", "shift": 1.2, "dry": 0.2, "vibrato": {"rate": 5.4, "depth": 0.15, "delay": 0.4}, "env": {"points": [[0, 0], [1.4, 1, "in"], [1.6, 0, "cos"]]}},
+          {"type": "vox", "source": "bell", "f0": 784, "dur": 1.6, "vowel": "a", "shift": 1.2, "dry": 0.2, "vibrato": {"rate": 4.7, "depth": 0.15, "delay": 0.4}, "env": {"points": [[0, 0], [1.4, 1, "in"], [1.6, 0, "cos"]]}}
+        ]},
+        {"type": "shimmer", "dur": 1.6, "count": 10, "f": [2500, 6000], "rise": [0, 5], "trem": 11, "env": {"points": [[0, 0], [1.5, 1, "in"], [1.6, 0, "cos"]]}, "gain": -8}
+      ]
+    },
+    "rite_loop": {
+      "kind": "loop", "subtitle": "Bells ring on and on", "loudness": -22, "loop": true, "length": 2.0, "loop_crossfade": 0.4,
+      "note": "The rite's channel (ultimate.loop): a seamless shimmer of bells and choir while she keeps it up; break it with 15% of her health.",
+      "layers": [
+        {"type": "shimmer", "dur": 2.5, "count": 12, "scale": [0, 4, 7], "base": 1046.5, "octaves": 2, "trem": 7, "env": {"points": [[0, 1], [2.5, 1]]}},
+        {"type": "vox", "source": "bell", "f0": 523.3, "dur": 2.5, "vowel": "a", "shift": 1.2, "dry": 0.2, "vibrato": {"rate": 5, "depth": 0.15}, "env": {"points": [[0, 1], [2.5, 1]]}, "gain": -6},
+        {"type": "crackle", "dur": 2.5, "rate": 14, "f": [2200, 3200], "grain": 0.25, "q": 30, "gain": -4}
+      ]
+    },
+    "rite_release": {
+      "kind": "heavy", "subtitle": "The rite blooms with light", "loudness": -14, "range": 48,
+      "note": "Thousand bell rite releases (allies healed and shielded, enemies slowed): a radiant bloom, a big chord and a cascade of bells.",
+      "layers": [
+        {"type": "use", "sound": "exorcise"},
+        {"type": "sparkle", "at": 0.05, "dur": 1.2, "count": 16, "scale": [0, 2, 4, 7, 9], "base": 1046.5, "octaves": 3, "order": "down", "grain": 0.2, "span": [0, 0.9], "gain": -3},
+        {"type": "tone", "dur": 1.4, "freq": 523.3, "harmonics": [[1, 1], [1.25, 0.6], [1.5, 0.6], [2, 0.4]], "unison": {"voices": 3, "cents": 8}, "env": {"swell": [0.15, 1.25]}, "gain": -8}
+      ]
+    },
+    "charm": {
+      "kind": "chime", "subtitle": "A guardian charm glows", "loudness": -21,
+      "note": "Guardian charm (a shield on an ally in trouble): a small chime and a sparkle.",
+      "layers": [
+        {"type": "bell", "partials": "crystal", "f0": 1760, "dur": 0.6, "decay": 0.3, "strike": 0.1},
+        {"type": "sparkle", "at": 0.05, "dur": 0.5, "count": 5, "scale": [0, 4, 7], "base": 2093, "octaves": 1, "order": "up", "grain": 0.1, "span": [0, 0.35], "gain": -6}
+      ]
+    },
+    "radiant_glow": {
+      "kind": "cast", "subtitle": "Hinae's eyes glow gold", "loudness": -18,
+      "note": "Phase 3 (eyes open glowing, streamers glow): a rising shimmer, a hummed 'aah' and a bell.",
+      "layers": [
+        {"type": "shimmer", "dur": 1.1, "count": 10, "scale": [0, 4, 7], "base": 1318.5, "octaves": 2, "rise": [0, 7], "trem": 10},
+        {"type": "use", "sound": "exorcise_windup", "gain": -4, "fx": [{"len": 0.9}, {"fade": [0.005, 0.2]}]},
+        {"type": "bell", "partials": "kagura", "at": 0.8, "f0": 2350, "dur": 0.8, "decay": 0.4, "strike": 0.3, "gain": -4}
+      ]
+    },
+    "intro": {
+      "kind": "emote", "subtitle": "Hinae bows and raises her wand", "loudness": -21,
+      "note": "Intro (bows, raises the wand): a cloth rustle of the bow, then the bells.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.4, "f": [400, 1200, 500], "q": 0.9, "peak": 0.5, "gain": -4},
+        {"type": "use", "sound": "kagura", "variant": 2, "at": 0.5}
+      ]
+    },
+    "sweep_broom": {
+      "kind": "quirk", "subtitle": "Hinae sweeps", "loudness": -29,
+      "note": "Personal idle (sweeping the shrine steps): three soft brush strokes.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.3, "filter": {"mode": "bp", "f": [2000, 3500], "q": 1.0}, "env": {"swell": [0.12, 0.18]}},
+        {"type": "noise", "colour": "pink", "at": 0.42, "dur": 0.3, "filter": {"mode": "bp", "f": [2100, 3600], "q": 1.0}, "env": {"swell": [0.12, 0.18]}, "gain": -1},
+        {"type": "noise", "colour": "pink", "at": 0.84, "dur": 0.35, "filter": {"mode": "bp", "f": [1900, 3300], "q": 1.0}, "env": {"swell": [0.14, 0.2]}, "gain": -2}
+      ]
+    }
+  }
+}

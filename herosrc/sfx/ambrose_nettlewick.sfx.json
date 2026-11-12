@@ -1,0 +1,314 @@
+{
+  "format": 1,
+  "set": "ambrose_nettlewick",
+  "title": "Ambrose Nettlewick, the cauldron warlock (eccentric genius, staff and vials, venom)",
+  "hero": {
+    "voice": {"talk": "voice", "rate": 2, "melody": [0, 3, -3, 5, 7, -2], "fallback_blip": "pling", "jitter": 0.06,
+              "hurt": {"event": "minecraft:entity.player.hurt", "pitch": 1.05},
+              "death": {"event": "minecraft:entity.player.death", "pitch": 1.05},
+              "emotes": {"eureka": "eureka", "caw": "crow_caw"}},
+    "moves": {
+      "basic": {"class": "light", "release": "vial_throw", "impact": "vial_poison"},
+      "potion_barrage": {"class": "light", "release": "vial_throw", "impact": ["vial_poison", "vial_slow", "vial_weak"]},
+      "cauldron": {"class": "area", "windup": "cauldron_windup", "impact": "cauldron_bubble"},
+      "hex_mark": {"class": "light", "release": "hex_cast", "impact": "hex_hit"},
+      "fume_step": {"class": "light", "release": "fume_puff"},
+      "broom_hops": {"class": "heavy", "windup": "crow_caw", "release": "broom_hop", "impact": "puddle_splat"},
+      "great_brew": {"class": "area", "windup": "brew_windup", "loop": "brew_loop", "release": "brew_burst", "impact": "brew_drop", "broken": "brew_fizzle"},
+      "grand_experiment": {"class": "ultimate", "windup": "experiment_windup", "release": "brew_burst", "impact": "brew_drop"}
+    },
+    "phases": {"2": "bristles", "3": "phase3_glow"},
+    "passives": {"field_notes": "scribble", "hex_full": "hex_full"},
+    "mobility": {"takeoff": "broom_takeoff"},
+    "intro": "intro",
+    "quirks": {"personal.1": "scribble", "personal.2": "vial_shake", "personal.3": "crow_peck"},
+    "steps": {"volume": 0.9}
+  },
+  "preview": ["voice", "eureka", "crow_caw", "fizz_poison", "fizz_slow", "fizz_weak", "bubble_rise", "cauldron_bubble",
+              "hex_cast", "hex_hit", "hex_full", "fume_puff", "broom_whoosh", "broom_hop", "splat", "brew_windup",
+              "brew_loop", "brew_burst", "brew_fizzle", "experiment_windup", "bristles", "phase3_glow", "intro",
+              "scribble", "vial_shake", "crow_peck"],
+  "sounds": {
+    "voice": {
+      "kind": "voice", "subtitle": "Ambrose chatters", "pitch": [0.96, 1.05], "variants": 6,
+      "note": "Bright, quick and wobbly (the old pling voice): a bright source at about 311 Hz with a 7 Hz wobble and big jumps between syllables (rate 2).",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 311, "dur": 0.08, "vowel": "e", "shift": 1.05, "tilt": 0.9, "fq": 5, "vibrato": {"rate": 7, "depth": 0.5},
+         "attack": 0.006, "release": 0.03, "contour": [0, 0]}
+      ],
+      "each": [
+        {"layers.0.vowel": "e", "layers.0.contour": [0, 4], "layers.0.dur": 0.08},
+        {"layers.0.vowel": "i", "layers.0.contour": [7, 3], "layers.0.dur": 0.07},
+        {"layers.0.vowel": "a", "layers.0.contour": [-3, 2], "layers.0.dur": 0.09},
+        {"layers.0.vowel": "o", "layers.0.contour": [5, 5], "layers.0.dur": 0.06},
+        {"layers.0.vowel": "e", "layers.0.contour": [10, 6], "layers.0.dur": 0.1},
+        {"layers.0.vowel": "ae", "layers.0.contour": [2, -2], "layers.0.dur": 0.07}
+      ]
+    },
+    "eureka": {
+      "kind": "emote", "subtitle": "Ambrose exclaims 'aha!'", "loudness": -20,
+      "note": "An excited 'a-HA!' (his intro, kills, a successful brew).",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 311, "dur": 0.1, "vowel": "a", "shift": 1.05, "tilt": 0.9, "contour": [0, -2], "vibrato": {"rate": 7, "depth": 0.4}, "attack": 0.006, "release": 0.03},
+        {"type": "vox", "source": "glottal", "at": 0.14, "f0": 415, "dur": 0.22, "vowel": "a", "shift": 1.05, "tilt": 0.9, "contour": [0, 6, 4], "vibrato": {"rate": 7, "depth": 0.6}, "attack": 0.006, "release": 0.07}
+      ]
+    },
+    "crow_caw": {
+      "kind": "emote", "subtitle": "A crow caws", "loudness": -19, "plays": "server", "category": "hostile", "variants": 2,
+      "vary": {"layers.0.f0": [560, 660], "pitch": [-1, 1]},
+      "note": "His crow (broom hops wind-up, take-off, the ultimate): a harsh 'kaaw'. Vanilla has no crow, so it is generated.",
+      "layers": [
+        {"type": "vox", "source": "glottal", "f0": 600, "dur": 0.34, "vowel": "crow", "tilt": 0.6, "fq": 3.5, "contour": [3, 1, -3], "jitter": 1.5,
+         "rough": {"rate": 72, "depth": 0.6}, "breath": 0.4, "attack": 0.015, "release": 0.09, "drive": 2.5}
+      ]
+    },
+    "vial_throw": {
+      "kind": "swing", "subtitle": "A vial is thrown",
+      "note": "Thrown vials: vanilla's splash potion throw is the natural sound.",
+      "vanilla": [{"event": "minecraft:entity.splash_potion.throw", "pitch": 1.1}]
+    },
+    "vial_poison": {
+      "kind": "hit", "subtitle": "A green vial shatters", "volume": [0.55, 0.6],
+      "note": "Barrage shot 1 and the basic attack (Poison, green): vanilla's potion break with a bright bubbly fizz.",
+      "vanilla": [{"event": "minecraft:entity.splash_potion.break", "pitch": 1.05}],
+      "with": [{"sound": "fizz_poison", "delay": 0}]
+    },
+    "vial_slow": {
+      "kind": "hit", "subtitle": "A grey vial shatters", "volume": [0.55, 0.6],
+      "note": "Barrage shot 2 (Slowness, grey): the break with a slow, gloopy bubbling.",
+      "vanilla": [{"event": "minecraft:entity.splash_potion.break", "pitch": 0.9}],
+      "with": [{"sound": "fizz_slow", "delay": 0}]
+    },
+    "vial_weak": {
+      "kind": "hit", "subtitle": "A black vial shatters", "volume": [0.55, 0.6],
+      "note": "Barrage shot 3 (Weakness, black): the break with a dark, sinking hiss.",
+      "vanilla": [{"event": "minecraft:entity.splash_potion.break", "pitch": 0.8}],
+      "with": [{"sound": "fizz_weak", "delay": 0}]
+    },
+    "fizz_poison": {
+      "kind": "hit", "subtitle": "Poison fizzes", "loudness": -21,
+      "note": "The poison tell: quick bright bubbles.",
+      "layers": [
+        {"type": "bubbles", "dur": 0.7, "rate": [60, 10], "f": [700, 2200], "tau": 0.012, "chirp": 9},
+        {"type": "noise", "colour": "white", "dur": 0.5, "filter": {"mode": "hp", "f": 5000, "q": 0.7}, "env": {"perc": [0.01, 0.45]}, "gain": -14}
+      ]
+    },
+    "fizz_slow": {
+      "kind": "hit", "subtitle": "Sludge bubbles slowly", "loudness": -21,
+      "note": "The slowness tell: a few slow, low, gloopy bubbles.",
+      "layers": [
+        {"type": "bubbles", "dur": 0.8, "rate": [14, 4], "f": [140, 380], "tau": 0.05, "chirp": 3},
+        {"type": "noise", "colour": "brown", "dur": 0.5, "filter": {"mode": "lp", "f": 500, "q": 1.5}, "env": {"perc": [0.02, 0.45]}, "gain": -8}
+      ]
+    },
+    "fizz_weak": {
+      "kind": "hit", "subtitle": "A dark hiss sinks away", "loudness": -21,
+      "note": "The weakness tell: a dark hiss with a sinking tone.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.7, "filter": {"mode": "lp", "f": {"from": 2500, "to": 500, "shape": "exp"}, "q": 1.2}, "env": {"perc": [0.01, 0.65]}},
+        {"type": "tone", "dur": 0.7, "freq": {"from": 440, "to": 180, "shape": "exp"}, "harmonics": [[1, 1], [1.06, 0.8]], "env": {"perc": [0.02, 0.65]}, "gain": -6}
+      ]
+    },
+    "cauldron_windup": {
+      "kind": "windup", "subtitle": "Something is brewing",
+      "note": "Cauldron wind-up: vanilla's brewing stand is the natural brew sound; a rising bubble rides with it.",
+      "vanilla": [{"event": "minecraft:block.brewing_stand.brew", "pitch": 0.9}],
+      "with": [{"sound": "bubble_rise", "delay": 0}]
+    },
+    "bubble_rise": {
+      "kind": "windup", "subtitle": "Something is brewing", "loudness": -20,
+      "note": "Companion of cauldron_windup: bubbling that quickens and rises.",
+      "layers": [
+        {"type": "bubbles", "dur": 1.0, "rate": [8, 70], "f": [250, 1100], "tau": 0.025, "chirp": 6, "env": {"points": [[0, 0.3], [0.9, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "noise", "colour": "brown", "dur": 1.0, "filter": {"mode": "lp", "f": [200, 600], "q": 1.0}, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -10}
+      ]
+    },
+    "cauldron_bubble": {
+      "kind": "hit", "subtitle": "A cauldron bubbles over", "loudness": -21, "variants": 2, "vary": {"pitch": [-1.5, 1.5]},
+      "note": "Each pulse of the cauldron zone: a burst of bubbles.",
+      "layers": [
+        {"type": "bubbles", "dur": 0.8, "rate": [70, 10], "f": [200, 900], "tau": 0.03, "chirp": 5}
+      ]
+    },
+    "hex_cast": {
+      "kind": "cast", "subtitle": "A hex is cast", "loudness": -20,
+      "note": "Hex mark (a bolt): an eerie wobbling warble thrown forward.",
+      "layers": [
+        {"type": "fm", "dur": 0.5, "freq": {"from": 520, "to": 780, "shape": "exp"}, "ratio": 1.41, "index": [3, 1], "vibrato": {"rate": 11, "depth": 1.0}, "env": {"perc": [0.02, 0.45]}},
+        {"type": "whoosh", "dur": 0.45, "f": [600, 2400, 1200], "q": 1.2, "peak": 0.3, "gain": -6}
+      ]
+    },
+    "hex_hit": {
+      "kind": "hit", "subtitle": "A hex takes hold", "loudness": -19,
+      "note": "A hex mark lands: a dark beating chime and a soft thump.",
+      "layers": [
+        {"type": "bell", "partials": "chime", "f0": 622.3, "dur": 0.7, "decay": 0.35, "strike": 0.2, "beat": 7},
+        {"type": "impact", "dur": 0.25, "f": [160, 80], "drop": 0.02, "body_decay": 0.05, "crunch": 0.2, "crunch_lp": 1500, "click": 0, "gain": -6}
+      ]
+    },
+    "hex_full": {
+      "kind": "hit", "subtitle": "The hex is complete", "loudness": -16,
+      "note": "Three hex marks (Weakness II and Glowing): a small sinister diminished stab.",
+      "layers": [
+        {"type": "brass", "dur": 0.6, "freq": 146.8, "cutoff": 400, "open": 2400, "env": {"a": 0.01, "d": 0.3, "s": 0.4, "r": 0.2}},
+        {"type": "brass", "dur": 0.6, "freq": 174.6, "cutoff": 400, "open": 2400, "env": {"a": 0.01, "d": 0.3, "s": 0.4, "r": 0.2}},
+        {"type": "brass", "dur": 0.6, "freq": 207.7, "cutoff": 400, "open": 2400, "env": {"a": 0.01, "d": 0.3, "s": 0.4, "r": 0.2}},
+        {"type": "use", "sound": "hex_hit", "gain": -2}
+      ]
+    },
+    "fume_puff": {
+      "kind": "cast", "subtitle": "Fumes puff out", "loudness": -19,
+      "note": "Fume step (hops back, a nova of fumes): a gassy hiss and a little bubbling.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.6, "filter": {"mode": "bp", "f": {"from": 3000, "to": 800, "shape": "exp"}, "q": 0.9}, "env": {"perc": [0.01, 0.55]}},
+        {"type": "bubbles", "dur": 0.5, "rate": [40, 8], "f": [300, 1000], "tau": 0.02, "chirp": 6, "gain": -6}
+      ]
+    },
+    "broom_takeoff": {
+      "kind": "mobility", "subtitle": "Ambrose mounts his staff and takes off", "loudness": -18, "range": 24,
+      "note": "His take-off (he mounts the staff, the crow caws); the shared take-off cue plays with it.",
+      "layers": [
+        {"type": "use", "sound": "broom_whoosh"},
+        {"type": "use", "sound": "crow_caw", "variant": 2, "at": 0.15, "gain": -2}
+      ]
+    },
+    "broom_whoosh": {
+      "kind": "swing", "subtitle": "A broom swishes", "loudness": -20, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "The staff-broom in flight: bristles swishing with a rush.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.5, "f": [400, 2200, 800], "q": 1.0, "peak": 0.4},
+        {"type": "crackle", "dur": 0.5, "rate": [80, 200, 50], "f": [2500, 6000], "grain": 0.01, "q": 1.2, "env": {"swell": [0.2, 0.3]}, "gain": -6}
+      ]
+    },
+    "broom_hop": {
+      "kind": "swing", "subtitle": "Ambrose hops on his broom", "loudness": -19, "variants": 2, "vary": {"pitch": [-1, 2]},
+      "note": "Broom hops (and broom_dive, MOBILITY_AND_WORK 15.8): a springy upward swish.",
+      "layers": [
+        {"type": "use", "sound": "broom_whoosh", "gain": -2},
+        {"type": "fm", "dur": 0.35, "freq": {"from": 220, "to": 660, "shape": "exp"}, "ratio": 2, "index": 1.2, "vibrato": {"rate": 18, "depth": 1.2}, "env": {"perc": [0.01, 0.32]}, "gain": -8}
+      ]
+    },
+    "puddle_splat": {
+      "kind": "foley", "subtitle": "A venom puddle splats", "plays": "server", "category": "hostile",
+      "note": "Broom hop landing (a puddle zone): vanilla's small slime squish is the natural gloop, with a splat.",
+      "vanilla": [{"event": "minecraft:entity.slime.squish_small", "pitch": 0.8}],
+      "with": [{"sound": "splat", "delay": 0}]
+    },
+    "splat": {
+      "kind": "hit", "subtitle": "A venom puddle splats", "loudness": -19, "variants": 2, "vary": {"pitch": [-1.5, 1.5]},
+      "note": "Companion of puddle_splat: a wet splat and a few slow bubbles.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.3, "filter": {"mode": "lp", "f": {"from": 3000, "to": 400, "shape": "exp"}, "q": 1.2}, "env": {"perc": [0.003, 0.28]}},
+        {"type": "impact", "dur": 0.25, "f": [180, 80], "drop": 0.02, "body_decay": 0.05, "crunch": 0, "click": 0, "gain": -6},
+        {"type": "bubbles", "at": 0.1, "dur": 0.5, "rate": [20, 5], "f": [200, 500], "tau": 0.04, "chirp": 3, "gain": -4}
+      ]
+    },
+    "brew_windup": {
+      "kind": "windup", "subtitle": "A great brew starts to boil", "loudness": -17,
+      "note": "Great brew wind-up: a big boil building and a theremin-like glide climbing ('Big one coming, please don't interrupt!').",
+      "layers": [
+        {"type": "bubbles", "dur": 1.0, "rate": [20, 120], "f": [200, 1200], "tau": 0.025, "chirp": 6},
+        {"type": "tone", "dur": 1.0, "freq": {"from": 330, "to": 990, "shape": "in"}, "vibrato": {"rate": 6, "depth": 0.5}, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -8},
+        {"type": "noise", "colour": "brown", "dur": 1.0, "filter": {"mode": "lp", "f": [150, 700], "q": 1.0}, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.0, 0, "cos"]]}, "gain": -8}
+      ]
+    },
+    "brew_loop": {
+      "kind": "loop", "subtitle": "The great brew boils", "loudness": -22, "loop": true, "length": 2.0, "loop_crossfade": 0.4, "rate": 22050,
+      "note": "The great brew's 3 s channel (the client loops it): a steady rolling boil; 15% of his health breaks it.",
+      "layers": [
+        {"type": "bubbles", "dur": 2.5, "rate": 70, "f": [200, 1100], "tau": 0.025, "chirp": 6},
+        {"type": "noise", "colour": "brown", "dur": 2.5, "filter": {"mode": "lp", "f": {"sine": {"mid": 450, "depth": 150, "rate": 1.0}}, "q": 1.0}, "env": {"points": [[0, 1], [2.5, 1]]}, "gain": -9}
+      ]
+    },
+    "brew_burst": {
+      "kind": "heavy", "subtitle": "The brew erupts", "loudness": -15, "range": 32,
+      "note": "Great brew and grand experiment release (a rain of vials): a big pop and a rush upward.",
+      "layers": [
+        {"type": "impact", "dur": 0.5, "f": [220, 80], "drop": 0.02, "body_decay": 0.08, "crunch": 0.7, "crunch_lp": 2500, "click": 0.3},
+        {"type": "whoosh", "dur": 0.8, "f": {"from": 300, "to": 3000, "shape": "exp"}, "q": 0.9, "peak": 0.3, "air": 0.3},
+        {"type": "bubbles", "dur": 0.8, "rate": [150, 20], "f": [300, 1500], "tau": 0.015, "chirp": 8, "gain": -4}
+      ]
+    },
+    "brew_drop": {
+      "kind": "hit", "subtitle": "Vials rain down and shatter", "volume": [0.5, 0.6],
+      "note": "Each rain impact of the brew and the ultimate: vanilla's potion break at three pitches.",
+      "vanilla": [{"event": "minecraft:entity.splash_potion.break", "pitch": 0.9}, {"event": "minecraft:entity.splash_potion.break", "pitch": 1.0},
+                  {"event": "minecraft:entity.splash_potion.break", "pitch": 1.15}]
+    },
+    "brew_fizzle": {
+      "kind": "hit", "subtitle": "The brew fizzles out", "loudness": -17, "range": 24,
+      "note": "The great brew is broken (he staggers 2 s): a sad falling fizz, a clink of glass and an 'uh-oh'.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.8, "filter": {"mode": "bp", "f": {"from": 2500, "to": 400, "shape": "exp"}, "q": 1.5}, "env": {"perc": [0.01, 0.75]}},
+        {"type": "tone", "dur": 0.8, "freq": {"from": 700, "to": 140, "shape": "exp"}, "harmonics": [[1, 1], [2, 0.3]], "env": {"perc": [0.01, 0.75]}, "gain": -6},
+        {"type": "bell", "partials": "crystal", "at": 0.35, "f0": 3136, "dur": 0.3, "decay": 0.1, "strike": 0.2, "gain": -8},
+        {"type": "vox", "source": "glottal", "at": 0.5, "f0": 330, "dur": 0.12, "vowel": "uh", "tilt": 0.9, "contour": [3, 3], "attack": 0.006, "release": 0.03, "gain": -2},
+        {"type": "vox", "source": "glottal", "at": 0.66, "f0": 262, "dur": 0.16, "vowel": "o", "tilt": 0.9, "contour": [0, -2], "attack": 0.006, "release": 0.05, "gain": -2}
+      ]
+    },
+    "experiment_windup": {
+      "kind": "windup", "subtitle": "Ambrose lifts his cauldron high", "loudness": -15, "range": 48,
+      "note": "Grand experiment wind-up (1.6 s; the crow caws, 'Hypothesis: you lose!'): the boil swells, a glide climbs, the crow caws.",
+      "layers": [
+        {"type": "use", "sound": "brew_windup", "fx": [{"speed": 0.62}]},
+        {"type": "use", "sound": "crow_caw", "variant": 1, "at": 0.25},
+        {"type": "shimmer", "dur": 1.6, "count": 8, "f": [1500, 4000], "rise": [0, 7], "trem": 9, "env": {"points": [[0, 0], [1.5, 1, "in"], [1.6, 0, "cos"]]}, "gain": -8}
+      ]
+    },
+    "bristles": {
+      "kind": "cast", "subtitle": "Broom bristles sprout", "loudness": -19,
+      "note": "Phase 2 (bristles sprout, he hops onto the staff; 'Fascinating! Let's test mobility!'): a rustle and a springy boing.",
+      "layers": [
+        {"type": "crackle", "dur": 0.4, "rate": [300, 50], "f": [2000, 6000], "grain": 0.008, "q": 1.2},
+        {"type": "fm", "at": 0.2, "dur": 0.6, "freq": {"from": 180, "to": 360, "shape": "exp"}, "ratio": 2, "index": 1.5, "vibrato": {"rate": 14, "depth": 1.5}, "env": {"perc": [0.005, 0.55]}},
+        {"type": "use", "sound": "eureka", "at": 0.7, "gain": -3}
+      ]
+    },
+    "phase3_glow": {
+      "kind": "cast", "subtitle": "Ambrose's eyes glow green", "loudness": -18,
+      "note": "Phase 3 (hat brim lifts, eyes glow): an eerie rising warble over bubbling.",
+      "layers": [
+        {"type": "fm", "dur": 1.0, "freq": {"from": 300, "to": 900, "shape": "in"}, "ratio": 1.41, "index": [1, 3], "vibrato": {"rate": 9, "depth": 0.8}, "env": {"swell": [0.7, 0.3]}},
+        {"type": "bubbles", "dur": 1.0, "rate": [20, 80], "f": [300, 1200], "tau": 0.02, "chirp": 7, "gain": -6},
+        {"type": "shimmer", "at": 0.5, "dur": 0.6, "count": 6, "f": [2500, 5000], "trem": 12, "gain": -9}
+      ]
+    },
+    "intro": {
+      "post": {"transients": true}, "kind": "emote", "subtitle": "Ambrose tips his hat", "loudness": -20,
+      "note": "Intro (tips the hat, adjusts the glasses; 'Ah, a test subject!'): a cloth swish, a tiny click, 'a-ha!'.",
+      "layers": [
+        {"type": "whoosh", "dur": 0.3, "f": [400, 1300, 500], "q": 0.9, "peak": 0.5, "gain": -4},
+        {"type": "click", "at": 0.35, "f": 4000, "q": 3, "dur": 0.02, "sharp": 900, "gain": -6},
+        {"type": "use", "sound": "eureka", "at": 0.5}
+      ]
+    },
+    "scribble": {
+      "post": {"transients": true}, "kind": "quirk", "subtitle": "A pencil scribbles", "loudness": -27,
+      "note": "Field notes (+damage as he learns) and his idle: quick pencil strokes.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.12, "filter": {"mode": "bp", "f": [3500, 5000], "q": 2.5}, "env": {"swell": [0.03, 0.09]}},
+        {"type": "noise", "colour": "white", "at": 0.15, "dur": 0.1, "filter": {"mode": "bp", "f": [5000, 3600], "q": 2.5}, "env": {"swell": [0.03, 0.07]}},
+        {"type": "noise", "colour": "white", "at": 0.28, "dur": 0.16, "filter": {"mode": "bp", "f": [3400, 5200], "q": 2.5}, "env": {"swell": [0.04, 0.12]}},
+        {"type": "click", "at": 0.48, "f": 3000, "q": 2, "dur": 0.02, "sharp": 900, "gain": -6}
+      ]
+    },
+    "vial_shake": {
+      "kind": "quirk", "subtitle": "Ambrose shakes a vial", "loudness": -27,
+      "note": "Personal idle: liquid sloshing in a vial and two glass clinks.",
+      "layers": [
+        {"type": "bubbles", "dur": 0.6, "rate": 40, "f": [400, 1400], "tau": 0.015, "chirp": 5, "env": {"swell": [0.3, 0.3]}, "fx": [{"trem": {"rate": 6, "depth": 0.8}}]},
+        {"type": "bell", "partials": "crystal", "at": 0.15, "f0": 3520, "dur": 0.2, "decay": 0.06, "strike": 0.2, "gain": -6},
+        {"type": "bell", "partials": "crystal", "at": 0.47, "f0": 3730, "dur": 0.2, "decay": 0.06, "strike": 0.2, "gain": -7}
+      ]
+    },
+    "crow_peck": {
+      "post": {"transients": true}, "kind": "quirk", "subtitle": "A crow pecks at a hat", "loudness": -28,
+      "note": "Personal idle: the crow pecks his hat three times.",
+      "layers": [
+        {"type": "click", "f": 1500, "q": 2, "dur": 0.03, "sharp": 500},
+        {"type": "click", "at": 0.11, "f": 1600, "q": 2, "dur": 0.03, "sharp": 500, "gain": -1},
+        {"type": "click", "at": 0.22, "f": 1450, "q": 2, "dur": 0.03, "sharp": 500, "gain": -2}
+      ]
+    }
+  }
+}

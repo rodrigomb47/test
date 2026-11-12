@@ -1,0 +1,384 @@
+{
+  "format": 1,
+  "set": "cue",
+  "title": "Shared cues: telegraphs, boss beats, mobility",
+  "cues": {
+    "telegraph": {"light": "telegraph.light", "heavy": "telegraph.heavy", "area": "telegraph.area",
+                  "ultimate": "telegraph.ultimate", "unblockable": "telegraph.unblockable", "dive": "dive"},
+    "parry": "parry", "counter": "counter",
+    "poise": {"crack": "poise.crack", "break": "poise.break"}, "stagger": "stagger.dizzy",
+    "phase": "phase", "shockwave": "shockwave", "super_armor": "super_armor", "enrage": "enrage",
+    "intro": "intro", "yield": "yield", "spared": "spared", "ultimate_ready": "ultimate.ready",
+    "weak_point": "weak_point", "channel_break": "channel.break", "charge_wall": "charge_wall",
+    "decoy_pop": "decoy.pop", "barrier": {"hit": "barrier.hit", "break": "barrier.break"},
+    "takeoff": "takeoff", "landing": "landing.heavy", "glide": "glide", "downed": "downed",
+    "step_heavy": "step.heavy"
+  },
+  "preview": ["telegraph.light", "telegraph.heavy", "telegraph.area", "telegraph.unblockable", "telegraph.ultimate",
+              "dive", "parry", "counter", "poise.crack", "poise.break", "stagger.dizzy", "super_armor", "phase",
+              "shockwave.low", "enrage", "intro", "yield", "spared", "ultimate.ready", "weak_point", "channel.break",
+              "charge_wall", "decoy.pop", "barrier.hit", "barrier.sparkle", "takeoff", "landing.heavy", "glide",
+              "downed", "step.heavy"],
+  "sounds": {
+    "telegraph.light": {
+      "kind": "telegraph", "subtitle": "Quick attack readies", "loudness": -25, "range": 16,
+      "pitch": [0.97, 1.03], "variants": 2, "vary": {"pitch": [-0.5, 0.5]},
+      "note": "A light move: a bright double tick, short and high, so it never masks the heavier cues.",
+      "layers": [
+        {"type": "click", "f": 3600, "q": 2.5, "dur": 0.03, "sharp": 700},
+        {"type": "tone", "at": 0.045, "dur": 0.11, "freq": [1750, 2450], "harmonics": [[1, 1], [2, 0.2]],
+         "env": {"perc": [0.004, 0.09]}, "gain": -4},
+        {"type": "click", "at": 0.05, "f": 5200, "q": 3, "dur": 0.02, "sharp": 900, "gain": -6}
+      ]
+    },
+    "telegraph.heavy": {
+      "kind": "telegraph", "subtitle": "Heavy attack winds up", "loudness": -18, "pitch": [0.97, 1.03],
+      "note": "A heavy move: a low rising 'whum' with grit, peaking just before a 0.8 s wind-up ends.",
+      "layers": [
+        {"type": "brass", "dur": 0.78, "freq": {"from": 82, "to": 165, "shape": "in"}, "detune": 14,
+         "cutoff": 260, "open": 1900, "res": 1.6, "env": {"points": [[0, 0], [0.55, 1, "in"], [0.70, 0.9], [0.78, 0, "cos"]]}},
+        {"type": "noise", "colour": "pink", "dur": 0.78, "gain": -5,
+         "filter": {"mode": "bp", "f": [300, 1500], "q": 1.3},
+         "env": {"points": [[0, 0], [0.62, 1, "in"], [0.78, 0, "cos"]]}},
+        {"type": "tone", "dur": 0.78, "freq": [41, 62], "gain": -11,
+         "env": {"points": [[0, 0], [0.5, 1, "in"], [0.78, 0, "cos"]]}}
+      ],
+      "fx": [{"drive": 1.8}]
+    },
+    "telegraph.area": {
+      "kind": "telegraph", "subtitle": "Area attack gathers", "loudness": -17.5, "pitch": [0.98, 1.02],
+      "note": "An area move: a wide hum that pulses faster and faster, with a ground rumble and a ringing top.",
+      "layers": [
+        {"type": "brass", "dur": 1.0, "freq": 110, "cutoff": 350, "open": 1500, "detune": 10,
+         "env": {"points": [[0, 0], [0.85, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "brass", "dur": 1.0, "freq": 164.8, "cutoff": 350, "open": 1500, "detune": 10, "gain": -2,
+         "env": {"points": [[0, 0], [0.85, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "noise", "colour": "brown", "dur": 1.0, "gain": -9, "filter": {"mode": "lp", "f": 220, "q": 0.8},
+         "env": {"points": [[0, 0], [0.8, 1, "in"], [1.0, 0, "cos"]]}},
+        {"type": "bell", "partials": "chime", "f0": 1318, "dur": 1.0, "decay": 0.9, "bloom": 0.35, "strike": 0,
+         "beat": 3.0, "gain": -9}
+      ],
+      "fx": [{"env": {"points": [[0, 1], [0.0625, 0.35], [0.125, 1], [0.1875, 0.35], [0.25, 1], [0.3, 0.4],
+                                 [0.35, 1], [0.39, 0.45], [0.43, 1], [0.465, 0.5], [0.5, 1], [0.53, 0.55],
+                                 [0.56, 1], [0.585, 0.6], [0.61, 1], [0.635, 0.6], [0.66, 1], [0.68, 0.65],
+                                 [0.70, 1], [0.72, 0.7], [0.74, 1], [1.0, 1]], "shape": "cos"}},
+             {"drive": 1.3}]
+    },
+    "telegraph.unblockable": {
+      "kind": "telegraph", "subtitle": "Unblockable grab readies", "loudness": -17.5, "pitch": [0.99, 1.01],
+      "note": "Grabs (always unblockable, purple decal): a dissonant tritone double stab with a metal ring.",
+      "layers": [
+        {"type": "brass", "dur": 0.22, "freq": 185, "cutoff": 500, "open": 3000, "env": {"a": 0.006, "d": 0.12, "s": 0.4, "r": 0.06}},
+        {"type": "brass", "dur": 0.22, "freq": 261.6, "cutoff": 500, "open": 3000, "env": {"a": 0.006, "d": 0.12, "s": 0.4, "r": 0.06}},
+        {"type": "brass", "at": 0.24, "dur": 0.42, "freq": 185, "cutoff": 500, "open": 3200, "env": {"a": 0.006, "d": 0.2, "s": 0.5, "r": 0.15}},
+        {"type": "brass", "at": 0.24, "dur": 0.42, "freq": 261.6, "cutoff": 500, "open": 3200, "env": {"a": 0.006, "d": 0.2, "s": 0.5, "r": 0.15}},
+        {"type": "bell", "partials": "iron", "f0": 740, "dur": 0.7, "decay": 0.35, "strike": 0.2, "gain": -10},
+        {"type": "bell", "partials": "iron", "at": 0.24, "f0": 523, "dur": 0.5, "decay": 0.3, "strike": 0.2, "gain": -10}
+      ],
+      "fx": [{"drive": 1.5}]
+    },
+    "telegraph.ultimate": {
+      "kind": "telegraph", "subtitle": "Ultimate gathers power", "loudness": -14, "range": 48,
+      "note": "An ultimate: taiko and gong, a rising choir chord and a reversed cymbal swell into the release.",
+      "layers": [
+        {"type": "membrane", "f0": 62, "dur": 1.2, "decay": 0.5, "stick": 0.5, "drop": 0.3},
+        {"type": "bell", "partials": "gong", "f0": 98, "dur": 1.55, "decay": 1.4, "bloom": 0.04, "glide": [0, -0.6], "strike": 0.1, "gain": -5},
+        {"type": "group", "gain": -3, "layers": [
+          {"type": "vox", "f0": 220, "dur": 1.5, "vowel": "a", "vowel_to": "o", "shift": 1.05, "tilt": 1.4, "fq": 5,
+           "vibrato": {"rate": 5.2, "depth": 0.2, "delay": 0.3}, "contour": [0, 0, 1], "env": {"points": [[0, 0], [1.3, 1, "in"], [1.5, 0, "cos"]]}},
+          {"type": "vox", "f0": 277.2, "dur": 1.5, "vowel": "a", "vowel_to": "o", "shift": 1.08, "tilt": 1.4, "fq": 5,
+           "vibrato": {"rate": 4.8, "depth": 0.2, "delay": 0.35}, "contour": [0, 0, 1], "env": {"points": [[0, 0], [1.3, 1, "in"], [1.5, 0, "cos"]]}},
+          {"type": "vox", "f0": 329.6, "dur": 1.5, "vowel": "a", "vowel_to": "o", "shift": 1.12, "tilt": 1.4, "fq": 5,
+           "vibrato": {"rate": 5.5, "depth": 0.2, "delay": 0.25}, "contour": [0, 0, 1], "env": {"points": [[0, 0], [1.3, 1, "in"], [1.5, 0, "cos"]]}}
+        ]},
+        {"type": "noise", "colour": "white", "dur": 1.5, "gain": -12, "filter": {"mode": "hp", "f": [3000, 6000], "q": 0.7},
+         "env": {"points": [[0, 0], [1.45, 1, "in"], [1.5, 0, "cos"]]}}
+      ],
+      "fx": [{"reverb": {"size": 1.0, "damp": 0.55, "mix": 0.25}}]
+    },
+    "dive": {
+      "kind": "telegraph", "subtitle": "Something dives from above", "loudness": -19, "pitch": [0.96, 1.04],
+      "note": "The dive form's wind-up: a falling whistle with breath, aimed at the landing decal.",
+      "layers": [
+        {"type": "tone", "dur": 0.85, "freq": {"from": 2700, "to": 780, "shape": "exp"}, "harmonics": [[1, 1], [2, 0.12]],
+         "vibrato": {"rate": 7, "depth": 0.25}, "env": {"points": [[0, 0], [0.12, 0.8, "cos"], [0.7, 1], [0.85, 0, "cos"]]}},
+        {"type": "whoosh", "dur": 0.85, "f": {"from": 3000, "to": 900, "shape": "exp"}, "q": 2.5, "colour": "white", "gain": -6,
+         "env": {"points": [[0, 0], [0.7, 1, "in"], [0.85, 0, "cos"]]}}
+      ]
+    },
+    "parry": {
+      "kind": "hit", "subtitle": "Parry rings", "loudness": -15, "pitch": [0.97, 1.04], "variants": 2,
+      "vary": {"layers.0.f0": [1850, 1980]},
+      "note": "A player parries a heavy move: a bright steel ting on top of vanilla's own shield block sound.",
+      "layers": [
+        {"type": "bell", "partials": "iron", "f0": 1900, "dur": 0.55, "decay": 0.22, "strike": 0.6},
+        {"type": "bell", "partials": "crystal", "f0": 3150, "dur": 0.45, "decay": 0.2, "strike": 0, "gain": -6},
+        {"type": "click", "f": 4500, "q": 1.2, "dur": 0.02, "gain": -2}
+      ]
+    },
+    "counter": {
+      "kind": "hit", "subtitle": "Counter strikes back", "loudness": -16,
+      "note": "A hero's counter stance answers a hit: a fast rising blade 'shing'.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.32, "filter": {"mode": "bp", "f": [1800, 7500], "q": 4},
+         "env": {"points": [[0, 0], [0.03, 1, "cos"], [0.32, 0, "out"]]}},
+        {"type": "tone", "dur": 0.42, "freq": [3900, 4400], "harmonics": [[1, 1], [2.4, 0.3]], "env": {"perc": [0.01, 0.4]}, "gain": -9}
+      ]
+    },
+    "poise.crack": {
+      "kind": "hit", "subtitle": "Guard cracks", "loudness": -19, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "Poise passes three quarters: a short brittle crack, a warning that a stagger is near.",
+      "layers": [
+        {"type": "crackle", "dur": 0.09, "rate": 420, "f": [1800, 7000], "grain": 0.006, "q": 2},
+        {"type": "impact", "dur": 0.25, "f": [260, 120], "drop": 0.02, "body_decay": 0.05, "crunch": 0.5, "crunch_lp": 3500, "crunch_decay": 0.03, "click": 0.6, "gain": -3},
+        {"type": "bell", "partials": "crystal", "at": 0.01, "f0": 2900, "dur": 0.3, "decay": 0.12, "strike": 0, "gain": -12}
+      ]
+    },
+    "poise.break": {
+      "kind": "heavy", "subtitle": "Guard shatters", "loudness": -12.5, "range": 32,
+      "note": "Poise breaks into a stagger: a heavy crunch, glassy debris and a falling sparkle.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.25, "filter": {"mode": "bp", "f": [400, 2500], "q": 1.5},
+         "env": {"points": [[0, 0], [0.24, 1, "in"], [0.25, 0]]}, "gain": -8},
+        {"type": "impact", "at": 0.25, "dur": 1.0, "f": [190, 48], "drop": 0.05, "body_decay": 0.22, "crunch": 1.1,
+         "crunch_lp": 4000, "crunch_decay": 0.09, "click": 0.8, "debris": 18, "debris_f": [2200, 7500], "debris_span": 0.5, "drive": 1.5},
+        {"type": "sparkle", "at": 0.3, "dur": 0.9, "count": 9, "scale": [0, 3, 5, 7, 10], "base": 1400, "octaves": 2,
+         "order": "down", "grain": 0.16, "span": [0.0, 0.7], "gain": -9}
+      ]
+    },
+    "stagger.dizzy": {
+      "kind": "chime", "subtitle": "Hero reels, dazed", "loudness": -25, "range": 16,
+      "note": "The 2.5 s stagger: little stars twittering round the head (an up-down figure, slowly fading).",
+      "layers": [
+        {"type": "group", "layers": [
+          {"type": "tone", "at": 0.00, "dur": 0.12, "freq": [2100, 2700], "env": {"perc": [0.005, 0.1]}},
+          {"type": "tone", "at": 0.13, "dur": 0.12, "freq": [2600, 3200], "env": {"perc": [0.005, 0.1]}},
+          {"type": "tone", "at": 0.26, "dur": 0.12, "freq": [3100, 2500], "env": {"perc": [0.005, 0.1]}},
+          {"type": "tone", "at": 0.39, "dur": 0.12, "freq": [2500, 2000], "env": {"perc": [0.005, 0.1]}},
+          {"type": "tone", "at": 0.60, "dur": 0.12, "freq": [2100, 2700], "env": {"perc": [0.005, 0.1]}, "gain": -2},
+          {"type": "tone", "at": 0.73, "dur": 0.12, "freq": [2600, 3200], "env": {"perc": [0.005, 0.1]}, "gain": -2},
+          {"type": "tone", "at": 0.86, "dur": 0.12, "freq": [3100, 2500], "env": {"perc": [0.005, 0.1]}, "gain": -2},
+          {"type": "tone", "at": 0.99, "dur": 0.12, "freq": [2500, 2000], "env": {"perc": [0.005, 0.1]}, "gain": -2},
+          {"type": "tone", "at": 1.20, "dur": 0.12, "freq": [2100, 2700], "env": {"perc": [0.005, 0.1]}, "gain": -5},
+          {"type": "tone", "at": 1.33, "dur": 0.12, "freq": [2600, 3200], "env": {"perc": [0.005, 0.1]}, "gain": -5},
+          {"type": "tone", "at": 1.46, "dur": 0.12, "freq": [3100, 2500], "env": {"perc": [0.005, 0.1]}, "gain": -5},
+          {"type": "tone", "at": 1.59, "dur": 0.12, "freq": [2500, 2000], "env": {"perc": [0.005, 0.1]}, "gain": -5},
+          {"type": "tone", "at": 1.80, "dur": 0.12, "freq": [2100, 2700], "env": {"perc": [0.005, 0.1]}, "gain": -9},
+          {"type": "tone", "at": 1.93, "dur": 0.12, "freq": [2600, 3200], "env": {"perc": [0.005, 0.1]}, "gain": -9},
+          {"type": "tone", "at": 2.06, "dur": 0.12, "freq": [3100, 2500], "env": {"perc": [0.005, 0.1]}, "gain": -9},
+          {"type": "tone", "at": 2.19, "dur": 0.12, "freq": [2500, 2000], "env": {"perc": [0.005, 0.1]}, "gain": -9}
+        ], "fx": [{"echo": {"delay": 0.065, "feedback": 0.4, "count": 2, "damp": 5000, "mix": 0.35}}]},
+        {"type": "shimmer", "dur": 2.4, "count": 6, "f": [3000, 5200], "trem": 9, "gain": -14,
+         "env": {"points": [[0, 0], [0.2, 1, "cos"], [2.4, 0, "cos"]]}}
+      ]
+    },
+    "super_armor": {
+      "kind": "chime", "subtitle": "Hero hardens", "loudness": -21, "range": 16,
+      "note": "A phase transition's super armour glint: a short metallic shine.",
+      "layers": [
+        {"type": "noise", "colour": "white", "dur": 0.2, "filter": {"mode": "bp", "f": [2500, 9000], "q": 5}, "env": {"swell": [0.12, 0.08]}, "gain": -6},
+        {"type": "bell", "partials": "crystal", "at": 0.1, "f0": 3500, "dur": 0.35, "decay": 0.18, "strike": 0.2},
+        {"type": "bell", "partials": "iron", "at": 0.1, "f0": 1750, "dur": 0.35, "decay": 0.15, "strike": 0, "gain": -8}
+      ]
+    },
+    "phase": {
+      "kind": "sting", "subtitle": "The fight turns", "loudness": -13, "range": 32,
+      "note": "Phase change: taiko, a minor brass stab that swells, a gong; heard by engaged players as a notification.",
+      "layers": [
+        {"type": "membrane", "f0": 66, "dur": 1.0, "decay": 0.45, "stick": 0.5},
+        {"type": "membrane", "at": 0.16, "f0": 74, "dur": 0.9, "decay": 0.4, "stick": 0.45, "gain": -3},
+        {"type": "group", "at": 0.16, "gain": -2, "layers": [
+          {"type": "brass", "dur": 1.5, "freq": 110, "cutoff": 300, "open": 2600, "env": {"a": 0.03, "d": 0.6, "s": 0.55, "r": 0.5}},
+          {"type": "brass", "dur": 1.5, "freq": 130.8, "cutoff": 300, "open": 2600, "env": {"a": 0.03, "d": 0.6, "s": 0.55, "r": 0.5}},
+          {"type": "brass", "dur": 1.5, "freq": 164.8, "cutoff": 300, "open": 2600, "env": {"a": 0.03, "d": 0.6, "s": 0.55, "r": 0.5}},
+          {"type": "brass", "dur": 1.5, "freq": 220, "cutoff": 300, "open": 2200, "env": {"a": 0.03, "d": 0.6, "s": 0.5, "r": 0.5}, "gain": -4}
+        ]},
+        {"type": "bell", "partials": "gong", "at": 0.16, "f0": 82, "dur": 1.7, "decay": 1.3, "bloom": 0.05, "strike": 0.15, "glide": [0, -0.5], "gain": -6}
+      ],
+      "fx": [{"drive": 1.4}, {"reverb": {"size": 1.0, "damp": 0.55, "mix": 0.22}}]
+    },
+    "shockwave": {
+      "kind": "heavy", "subtitle": "Shockwave pushes back", "range": 24,
+      "note": "The phase transition's push (4 blocks): vanilla's wind burst, pitched down, over a generated sub thump.",
+      "vanilla": [{"event": "minecraft:entity.breeze.wind_burst", "pitch": 0.75, "volume": 0.9}],
+      "with": [{"sound": "shockwave.low", "delay": 0}]
+    },
+    "shockwave.low": {
+      "kind": "heavy", "subtitle": "Shockwave pushes back", "loudness": -16, "range": 24,
+      "note": "Companion of shockwave: the sub thump and the air ring of the push.",
+      "layers": [
+        {"type": "impact", "dur": 0.9, "f": [120, 38], "drop": 0.07, "body_decay": 0.3, "crunch": 0.3, "crunch_lp": 600, "click": 0},
+        {"type": "whoosh", "dur": 0.6, "f": {"from": 600, "to": 180, "shape": "exp"}, "q": 0.8, "peak": 0.1, "gain": -4}
+      ]
+    },
+    "enrage": {
+      "kind": "sting", "subtitle": "Hero is enraged", "loudness": -12, "range": 32,
+      "note": "Soft or hard enrage: a growl under a distorted tritone brass swell and two heartbeat taiko hits.",
+      "layers": [
+        {"type": "vox", "f0": 85, "dur": 1.3, "vowel": "o", "vowel_to": "a", "tilt": 0.9, "jitter": 1.2, "rough": {"rate": 38, "depth": 0.6},
+         "contour": [0, 3, 1, -2], "env": {"points": [[0, 0], [0.25, 1, "in"], [1.0, 0.8], [1.3, 0, "cos"]]}, "drive": 3},
+        {"type": "group", "gain": -2, "layers": [
+          {"type": "brass", "dur": 1.5, "freq": {"from": 55, "to": 58, "shape": "lin"}, "cutoff": 200, "open": 1800, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.5, 0, "cos"]]}},
+          {"type": "brass", "dur": 1.5, "freq": {"from": 77.8, "to": 82, "shape": "lin"}, "cutoff": 200, "open": 1800, "env": {"points": [[0, 0], [0.9, 1, "in"], [1.5, 0, "cos"]]}}
+        ], "fx": [{"drive": 2.5}]},
+        {"type": "membrane", "at": 0.05, "f0": 55, "dur": 0.5, "decay": 0.25, "stick": 0.2},
+        {"type": "membrane", "at": 0.30, "f0": 52, "dur": 0.6, "decay": 0.3, "stick": 0.2, "gain": -2}
+      ],
+      "fx": [{"reverb": {"size": 1.1, "damp": 0.6, "mix": 0.2}}]
+    },
+    "intro": {
+      "kind": "sting", "subtitle": "A boss steps forward", "loudness": -13, "range": 32,
+      "note": "Boss intro (first engagement in a day): two taiko hits, a rising brass call and a gong; a notification to engaged players.",
+      "layers": [
+        {"type": "membrane", "f0": 60, "dur": 0.9, "decay": 0.4, "stick": 0.55},
+        {"type": "membrane", "at": 0.32, "f0": 68, "dur": 0.9, "decay": 0.4, "stick": 0.5, "gain": -2},
+        {"type": "group", "at": 0.55, "gain": -2, "layers": [
+          {"type": "brass", "dur": 0.35, "freq": 146.8, "cutoff": 300, "open": 2400, "env": {"a": 0.02, "d": 0.2, "s": 0.6, "r": 0.08}},
+          {"type": "brass", "at": 0.3, "dur": 0.35, "freq": 174.6, "cutoff": 300, "open": 2600, "env": {"a": 0.02, "d": 0.2, "s": 0.6, "r": 0.08}},
+          {"type": "brass", "at": 0.6, "dur": 1.2, "freq": 220, "cutoff": 300, "open": 3000, "vibrato": {"rate": 5, "depth": 0.15, "delay": 0.3}, "env": {"a": 0.03, "d": 0.5, "s": 0.7, "r": 0.4}},
+          {"type": "brass", "at": 0.6, "dur": 1.2, "freq": 110, "cutoff": 300, "open": 1800, "env": {"a": 0.03, "d": 0.5, "s": 0.7, "r": 0.4}, "gain": -4}
+        ]},
+        {"type": "bell", "partials": "gong", "at": 1.15, "f0": 98, "dur": 1.6, "decay": 1.2, "bloom": 0.06, "strike": 0.15, "glide": [0, -0.4], "gain": -5}
+      ],
+      "fx": [{"reverb": {"size": 1.0, "damp": 0.55, "mix": 0.22}}]
+    },
+    "yield": {
+      "kind": "chime", "subtitle": "Hero yields", "loudness": -19, "range": 24,
+      "note": "The hero kneels at 1 health: a soft falling three-note chime that settles.",
+      "layers": [
+        {"type": "bell", "partials": "chime", "f0": 1318.5, "dur": 1.6, "decay": 0.9, "strike": 0.15},
+        {"type": "bell", "partials": "chime", "at": 0.3, "f0": 1046.5, "dur": 1.6, "decay": 0.9, "strike": 0.15, "gain": -1},
+        {"type": "bell", "partials": "chime", "at": 0.6, "f0": 880, "dur": 1.8, "decay": 1.1, "strike": 0.15, "gain": -1},
+        {"type": "shimmer", "at": 0.5, "dur": 1.6, "count": 6, "scale": [0, 4, 7], "base": 1760, "octaves": 1, "trem": 4, "gain": -16}
+      ],
+      "fx": [{"reverb": {"size": 1.6, "damp": 0.55, "mix": 0.3}}]
+    },
+    "spared": {
+      "kind": "chime", "subtitle": "Hero is spared", "loudness": -20, "range": 24,
+      "note": "The player spares the hero: a warm rising two-note chime with a soft pad.",
+      "layers": [
+        {"type": "bell", "partials": "chime", "f0": 784, "dur": 1.4, "decay": 0.8, "strike": 0.1},
+        {"type": "bell", "partials": "chime", "at": 0.24, "f0": 1174.7, "dur": 1.6, "decay": 1.0, "strike": 0.1},
+        {"type": "tone", "at": 0.1, "dur": 1.6, "freq": 392, "harmonics": [[1, 1], [1.5, 0.4], [2, 0.3]], "unison": {"voices": 3, "cents": 9},
+         "env": {"swell": [0.5, 1.1]}, "gain": -12}
+      ],
+      "fx": [{"reverb": {"size": 1.4, "damp": 0.55, "mix": 0.25}}]
+    },
+    "ultimate.ready": {
+      "kind": "chime", "subtitle": "Hero's ultimate is ready", "loudness": -24, "range": 16,
+      "note": "The boss bar's lightning mark appears: a soft rising shimmer and two quick notes.",
+      "layers": [
+        {"type": "shimmer", "dur": 0.7, "count": 8, "f": [2200, 4800], "rise": [0, 5], "trem": 10},
+        {"type": "bell", "partials": "crystal", "at": 0.25, "f0": 1760, "dur": 0.45, "decay": 0.2, "strike": 0, "gain": -4},
+        {"type": "bell", "partials": "crystal", "at": 0.36, "f0": 2637, "dur": 0.45, "decay": 0.25, "strike": 0, "gain": -4}
+      ]
+    },
+    "weak_point": {
+      "kind": "hit", "subtitle": "A weak point is struck", "loudness": -16, "range": 24,
+      "note": "A weak point triggers (water, iron, snowball, bell, light, back...): a clear 'tink' and a falling sparkle.",
+      "layers": [
+        {"type": "bell", "partials": "iron", "f0": 2600, "dur": 0.4, "decay": 0.12, "strike": 0.5},
+        {"type": "sparkle", "at": 0.05, "dur": 0.55, "count": 5, "scale": [0, 2, 4, 7, 9], "base": 1800, "octaves": 1,
+         "order": "down", "grain": 0.12, "span": [0.0, 0.4], "gain": -6}
+      ]
+    },
+    "channel.break": {
+      "kind": "hit", "subtitle": "Channel breaks", "loudness": -16, "range": 24,
+      "note": "A channelled move is interrupted (weak point channel): a snap and a falling, fizzling pitch bend.",
+      "layers": [
+        {"type": "click", "f": 2200, "q": 1.0, "dur": 0.04, "sharp": 300},
+        {"type": "fm", "at": 0.02, "dur": 0.6, "freq": {"from": 900, "to": 160, "shape": "exp"}, "ratio": 1.41, "index": [3, 0.5],
+         "env": {"perc": [0.005, 0.55]}, "gain": -3},
+        {"type": "crackle", "at": 0.02, "dur": 0.5, "rate": [200, 20], "f": [1500, 6000], "grain": 0.006, "env": {"perc": [0.01, 0.45]}, "gain": -6}
+      ],
+      "fx": [{"crush": 7, "hold": 2}]
+    },
+    "charge_wall": {
+      "post": {"transients": true}, "kind": "heavy", "subtitle": "Charger slams into a wall", "loudness": -13, "range": 24, "variants": 2,
+      "vary": {"pitch": [-1, 1]},
+      "note": "A charge ends against a wall (wall stun): a heavy stone crunch with grit.",
+      "layers": [
+        {"type": "impact", "dur": 0.85, "f": [150, 44], "drop": 0.05, "body_decay": 0.22, "crunch": 1.3, "crunch_lp": 2200,
+         "crunch_decay": 0.08, "click": 0.7, "debris": 14, "debris_f": [900, 3500], "drive": 1.6}
+      ]
+    },
+    "decoy.pop": {
+      "kind": "hit", "subtitle": "Decoy pops", "loudness": -18, "variants": 2, "vary": {"pitch": [-1.5, 1.5]},
+      "note": "A decoy add pops (any hit or 10 s): a soft smoke 'poof' with a tiny sparkle.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 0.45, "filter": {"mode": "lp", "f": {"from": 3500, "to": 350, "shape": "exp"}, "q": 0.9},
+         "env": {"perc": [0.006, 0.4]}},
+        {"type": "impact", "dur": 0.3, "f": [170, 70], "drop": 0.03, "body_decay": 0.06, "crunch": 0, "click": 0, "gain": -6},
+        {"type": "sparkle", "at": 0.04, "dur": 0.35, "count": 4, "f": [3500, 6000], "grain": 0.08, "gain": -14}
+      ]
+    },
+    "barrier.hit": {
+      "kind": "hit", "subtitle": "Barrier absorbs a hit", "loudness": -19, "variants": 2, "vary": {"pitch": [-1, 1.5]},
+      "note": "A barrier (Hinae's talismans) takes one of its hits: a crystal tick and a paper snap.",
+      "layers": [
+        {"type": "bell", "partials": "crystal", "f0": 2400, "dur": 0.32, "decay": 0.12, "strike": 0.3},
+        {"type": "click", "f": 3000, "q": 0.9, "dur": 0.03, "sharp": 400, "gain": -4}
+      ]
+    },
+    "barrier.break": {
+      "kind": "heavy", "subtitle": "Barrier shatters", "range": 24,
+      "note": "The last barrier hit: vanilla glass shatter, pitched up, with a falling sparkle.",
+      "vanilla": [{"event": "minecraft:block.glass.break", "pitch": 1.3, "volume": 0.9}],
+      "with": [{"sound": "barrier.sparkle", "delay": 1}]
+    },
+    "barrier.sparkle": {
+      "kind": "hit", "subtitle": "Barrier shatters", "loudness": -19,
+      "note": "Companion of barrier.break.",
+      "layers": [
+        {"type": "sparkle", "dur": 0.8, "count": 10, "scale": [0, 2, 4, 7, 9], "base": 1600, "octaves": 2, "order": "down",
+         "grain": 0.14, "span": [0.0, 0.6]},
+        {"type": "shimmer", "dur": 0.8, "count": 5, "f": [3000, 6000], "trem": 11, "gain": -10, "env": {"perc": [0.01, 0.7]}}
+      ]
+    },
+    "takeoff": {
+      "kind": "mobility", "subtitle": "Hero takes off", "loudness": -17, "range": 24, "pitch": [0.96, 1.04],
+      "note": "The 0.6 s take-off tell: a crouch push, a rising rush of air and a cloth snap (carriers add their own).",
+      "layers": [
+        {"type": "impact", "dur": 0.3, "f": [110, 55], "drop": 0.03, "body_decay": 0.07, "crunch": 0.35, "crunch_lp": 900, "click": 0.1, "gain": -4},
+        {"type": "whoosh", "at": 0.08, "dur": 0.6, "f": {"from": 280, "to": 2600, "shape": "exp"}, "q": 1.1, "peak": 0.75, "air": 0.4},
+        {"type": "noise", "colour": "pink", "at": 0.3, "dur": 0.3, "filter": {"mode": "bp", "f": 1300, "q": 1.2},
+         "env": {"points": [[0, 0], [0.02, 1], [0.3, 0, "out"]]}, "fx": [{"trem": {"rate": 22, "depth": 0.8, "shape": "square"}}], "gain": -7}
+      ]
+    },
+    "landing.heavy": {
+      "kind": "mobility", "subtitle": "Hero lands heavily", "loudness": -15, "range": 24, "variants": 2, "vary": {"pitch": [-1, 1]},
+      "note": "A heavy landing (after a leap, a flight, a dive): a thud with dirt and grit.",
+      "layers": [
+        {"type": "impact", "dur": 0.7, "f": [125, 40], "drop": 0.045, "body_decay": 0.17, "crunch": 1.0, "crunch_lp": 1300,
+         "crunch_decay": 0.07, "click": 0.25, "debris": 10, "debris_f": [700, 2400], "debris_span": 0.35, "drive": 1.3}
+      ]
+    },
+    "glide": {
+      "kind": "loop", "subtitle": "Wind rushes past", "loudness": -26, "range": 16, "loop": true, "length": 2.0, "loop_crossfade": 0.4, "rate": 22050,
+      "note": "Gliding (a loop the client plays while DATA_LOCO says glide): steady wind with cloth flutter.",
+      "layers": [
+        {"type": "noise", "colour": "pink", "dur": 2.5, "filter": {"mode": "bp", "f": {"sine": {"mid": 520, "depth": 120, "rate": 0.5}}, "q": 0.8}},
+        {"type": "noise", "colour": "pink", "dur": 2.5, "filter": {"mode": "bp", "f": 1250, "q": 1.4},
+         "fx": [{"trem": {"rate": 11, "depth": 0.75}}], "gain": -6}
+      ]
+    },
+    "downed": {
+      "kind": "heavy", "subtitle": "Flyer is shot down", "loudness": -15, "range": 32,
+      "note": "Air poise breaks: a wobbling falling whistle, then a crash.",
+      "layers": [
+        {"type": "tone", "dur": 0.85, "freq": {"from": 1700, "to": 380, "shape": "exp"}, "harmonics": [[1, 1], [2, 0.25], [3, 0.1]],
+         "vibrato": {"rate": 9, "depth": 1.4}, "env": {"points": [[0, 0], [0.05, 1, "cos"], [0.75, 0.8], [0.85, 0, "cos"]]}, "gain": -3},
+        {"type": "impact", "at": 0.78, "dur": 0.7, "f": [130, 42], "drop": 0.045, "body_decay": 0.18, "crunch": 1.0, "crunch_lp": 1500, "click": 0.3,
+         "debris": 8, "debris_f": [800, 2600], "drive": 1.3}
+      ]
+    },
+    "step.heavy": {
+      "kind": "foley", "subtitle": "Heavy footsteps", "loudness": -29, "range": 12, "plays": "server", "category": "neutral", "variants": 2,
+      "vary": {"pitch": [-1.5, 1.5]},
+      "note": "A soft low thud the server adds under the vanilla block step of heavy heroes (heavy builds, plate armour).",
+      "layers": [
+        {"type": "impact", "dur": 0.22, "f": [110, 55], "drop": 0.025, "body_decay": 0.05, "crunch": 0.9, "crunch_lp": 1400, "crunch_poles": 1, "crunch_decay": 0.03, "click": 0}
+      ]
+    }
+  }
+}
