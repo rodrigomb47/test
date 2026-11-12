@@ -186,8 +186,9 @@ it has the `court` duty it is never sent alone. GameTest `heroNotDraftedIntoRaid
 - **Spawn**: a leader at its capital's reporting station when the base is built (section 5.6); a hero joining by
   `/fc admin hero give` (milestone 1), tokens and recruitment (milestone 3). One living entity per hero id; a duplicate
   joining the level is discarded (v1 §25.1 rule).
-- **Death in field mode**: v1 revival (`heroes.reviveSeconds`, 600 s) at the home base's spawn point; leaders take
-  `leaders.reviveMultiplier` x that (150%, so 15 minutes). Kit items vanish and return (v1 §7, §25.4).
+- **Death in field mode**: v1 revival (`heroes.reviveSeconds`, 600 s) at the home base's spawn point. Owner decision
+  (2026-11-12): every hero, leaders included, comes back 10 minutes after its death; there is no longer a separate
+  leader timer (`leaders.reviveMultiplier` is gone) and no talent shortens it. Kit items vanish and return (v1 §7, §25.4).
 - **Defeat in boss mode**: the yield beat (section 6.13) first; finished or not spared in 5 s, it dies as above.
 - **Removed or broken definition**: a hero whose definition disappears keeps its entity and saved state and fights as
   a plain soldier of its duty with the fallback model, name tag `(dormant)` (v1 §25.5).
@@ -718,8 +719,8 @@ Worked numbers (appendix A defaults, `k = 1`):
 - **Announcements in the leader's voice**: raid launched, base attacked, base lost, hero fallen, new recruit
   milestones; the leader's line first, then today's plain message. Temperament fallback lines cover missing events.
 - **Death**: announced to everyone; no new raids until it returns unless a >= 0.7, in which case one vengeance raid
-  goes against the killer's faction; a raid it was on falls back when `(c + 1 - l) / 2 > 0.5`. Revival after 15
-  minutes at the capital or the nearest standing base. (Morale effects arrive with milestone 2.)
+  goes against the killer's faction; a raid it was on falls back when `(c + 1 - l) / 2 > 0.5`. Revival after 10
+  minutes, like every hero (3.4), at the capital or the nearest standing base. (Morale effects arrive with milestone 2.)
 - **Elimination** (last base falls; `CampaignManager.eliminate` kills every NPC today): heroes are no longer killed;
   the leader becomes an exiled free hero, never a leader again in this campaign, recruitable later (milestone 3).
 - **Succession** happens only with `leaders.permadeath` (off): the faction's highest-level hero with compatibility
@@ -1075,7 +1076,7 @@ already use; they never create items, place or break blocks outside the existing
 | `steward` | a second base run by this hero uses its personality for that base's knobs | `LeaderBiases` source per base | 2 |
 | `mend` | out of combat, allies within 16 blocks heal 5/7/10% of max health every 10 s | v1 hook | 1 |
 | `triage` | in a fight, an ally NPC under 30% within 12 blocks is healed 4/6/8 once per 30 s, paid with one food item | combat tick, `FactionStorage.extract` | 2 |
-| `revival_rite` | fallen heroes of the faction return 20/30/40% sooner | `HeroManager` revival | 2 |
+| `revival_rite` | fallen heroes of the faction come back with 2/3/4 absorption hearts for 2 minutes and a third/half/full energy bar (the 10-minute revival itself never changes, 3.4) | `HeroManager` revival | 2 |
 | `purifier` | NPCs at the base lose poison, wither and hunger effects every 30/20/10 s | `FactionNpc.tick` | 1 |
 | `lookout` | line-of-sight alarm within 32/40/48 blocks | v1 hook | 1 |
 | `cartographer` | scouts reach +16/32/48 blocks; each report marks the 3x3 sectors around it explored | `ScoutJob`, `FactionState.explored` | 1 |

@@ -1126,7 +1126,7 @@ counts, never the sum. Each also has a personal effect (I / II / III):
 | `steward` | - | at the base it stewards, its talents run at their full tier instead of tier I |
 | `mend` | 12% every 10 s | heals the most hurt NPC within 16 blocks by hand: 4 / 6 / 8 health every 20 s (a 2 s channel broken by damage) |
 | `triage` | 10 health | carries 2 / 3 / 4 meals of its own for triage |
-| `revival_rite` | 50% sooner | revived allies rise with 4 / 6 / 8 absorption hearts for 2 minutes |
+| `revival_rite` | full energy on return (the 10-minute revival never changes, HEROES_V2 3.4) | revived allies rise with 4 / 6 / 8 absorption hearts for 2 minutes |
 | `purifier` | every 5 s | also cleanses member players near it once every 60 / 45 / 30 s |
 | `lookout` | 56 blocks | from 6+ blocks up (a tower, or flying) its sight alarm reaches 16 blocks farther |
 | `envoy` | +0.4 | pacts it carries in person: +0.1 / 0.15 / 0.2 acceptance (milestone 2) |
