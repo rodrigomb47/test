@@ -1,12 +1,14 @@
 """Faces (design 4.6 and 13.5): eye, mouth and cheek frames at double resolution, and the head front.
 
 Layout on the 16x8 eye plane (the same for every hero, so frames line up): brows in rows 0-1, the upper lash in row 2,
-the eye body in rows 3-7. The two eyes mirror about the plane's centre line, stay inside columns 1-14 (column 0 and 15
-are where side locks may hang) and have 2 or 4 texels between their inner corners (mirroring makes the gap even).
+the eye body in rows 3-7; rest brows use row 0 only, so a skin row separates them from the lash. The two eyes mirror
+about the plane's centre line, stay inside columns 1-14 (column 0 and 15 are where side locks may hang) and have 2 or 4
+texels between their inner corners (mirroring makes the gap even).
 In the frames the viewer's left eye is the hero's right eye (column 0 is the hero's right, -x).
 
-The head front (16x16) is skin with transparent holes exactly under the opaque eyes plane (rows 2-9) and mouth plane
-(rows 12-15, columns 4-11); the cheeks plane in front of rows 10-11 is cut-out (transparent except blush, sweat, tears).
+The head front (16x16) is skin with transparent holes exactly under the opaque eyes plane (rows 2-9) and under the mouth
+plane's inner columns (rows 12-15, columns 5-10; see head_front_holes); the cheeks plane in front of rows 10-11 is
+cut-out (transparent except blush, sweat, tears).
 """
 import numpy as np
 
@@ -130,6 +132,7 @@ class FaceColours:
         self.lash = lash_colour(palette_hex["hair"])
         self.lash_soft = mix(self.lash, self.skin, 0.35)
         self.brow = brow_colour(palette_hex["hair"])
+        self.brow_soft = mix(self.brow, self.skin, 0.45)
         self.sclera = ramps["sclera"][2]
         self.white = (255, 255, 255)
         self.iris = ramp(spec["iris"])
@@ -282,52 +285,55 @@ def _closed_points(spec, row, curve):
 
 
 def _brow_points(spec, mood):
-    """(row, x) of the hero's right brow (mirrored for the left); x 0 = outer end."""
+    """(row, x, soft) of the hero's right brow (mirrored for the left); x 0 = outer end, soft = a lighter tail texel.
+
+    Rest brows sit on row 0 and leave row 1 as skin, so they never touch the lash on row 2 (a brow on row 1 above the
+    lash reads as one heavy dark blob at game distance). Row 1 is used only where the frame moves the lash away from
+    it (angry and sad shift lash texels down, focused, smug and sleeping lower the lid) or for the deliberately heavy
+    shapes (straight_thick, bold, worried). Every frame of a blink (open, half, closed) uses the same rest brows, so
+    the brows never jump while the hero blinks.
+    """
     W = spec["width"]
     shape = spec["brows"]
     if shape == "none":
         return []
     xs = list(range(0, W - 1))
     n = len(xs)
-    pts = []
-    if mood == "angry":
-        for k, x in enumerate(xs):
-            pts.append((0 if k < n // 2 else 1, x))
-        pts.append((2, xs[-1]))
-    elif mood in ("sad", "pain"):
-        for k, x in enumerate(xs):
-            pts.append((1 if k < n // 2 else 0, x))
-    elif mood == "surprised":
-        pts = [(0, x) for x in xs]
-    elif mood == "focused":
-        pts = [(1, x) for x in xs]
-        pts.append((2, xs[-1]))
-    elif mood == "sleeping":
-        pts = [(1, x) for x in xs[1:]]
+    half = n // 2
+    if mood == "angry":                       # inner end down toward the nose (the lash's inner half drops a row)
+        pts = [(0 if k < half else 1, x, False) for k, x in enumerate(xs)] + [(2, xs[-1], False)]
+    elif mood in ("sad", "pain"):             # inner end up, outer end down (the lash's outer end drops a row)
+        pts = [(1 if k < half else 0, x, False) for k, x in enumerate(xs)]
+    elif mood == "surprised":                 # high and full
+        pts = [(0, x, False) for x in xs]
+    elif mood in ("focused", "lowered"):      # the lid is lowered, so row 1 is free above it
+        pts = [(1, x, False) for x in xs]
+        if mood == "focused":
+            pts.append((2, xs[-1], False))
+    elif mood == "sleeping":                  # relaxed and low, the lash line sits at the bottom of the eye
+        pts = [(1, x, x == xs[0]) for x in xs]
     elif shape == "thin_arched" or mood == "happy":
-        for k, x in enumerate(xs):
-            pts.append((1 if k in (0, n - 1) else 0, x))
+        pts = [(0, x, k == 0) for k, x in enumerate(xs)]          # tapered outer tail
     elif shape == "worried":
-        for k, x in enumerate(xs):
-            pts.append((0 if k >= n - 2 else 1, x))
+        pts = [(1, x, True) for x in xs[:max(1, half - 1)]] + [(0, x, False) for x in xs[max(1, half - 1):]]
     else:
-        pts = [(1, x) for x in xs]
-    if shape in ("straight_thick", "bold") and mood not in ("sleeping",):
-        extra = []
-        for (r, x) in pts:
-            if shape == "bold" and x < W // 2:
-                continue
-            if r == 1:
-                extra.append((0, x))
-            elif r == 0 and mood != "surprised":
-                extra.append((1, x))
-        pts += extra
+        pts = [(0, x, False) for x in xs]
+    if shape in ("straight_thick", "bold") and mood not in ("sleeping", "surprised", "angry", "sad", "pain"):
+        rows = {(r, x) for r, x, _ in pts}
+        for (r, x, _) in list(pts):
+            if r == 0 and (r + 1, x) not in rows and (shape == "straight_thick" or _inner(x, W)):
+                pts.append((1, x, shape == "straight_thick" and x == xs[0]))
     return pts
 
 
+def _inner(x, W):
+    """True for the inner half of a brow (x 0 is the outer end)."""
+    return x >= (W - 1) // 2
+
+
 def _draw_brows(cv, spec, col, mood, only=None):
-    for (row, x) in _brow_points(spec, mood):
-        cv.put(row, x, col.brow, only=only)
+    for (row, x, soft) in _brow_points(spec, mood):
+        cv.put(row, x, col.brow_soft if soft else col.brow, only=only)
 
 
 def eye_frame(spec, col, frame):
@@ -375,7 +381,7 @@ def eye_frame(spec, col, frame):
         _draw_brows(cv, spec, col, "focused")
         _draw_open(cv, spec, col, lid=H - int(np.floor(0.6 * H + 0.5)))
     elif name == "smug":
-        _draw_brows(cv, spec, col, "neutral", only="r")
+        _draw_brows(cv, spec, col, "lowered", only="r")
         _draw_brows(cv, spec, col, "surprised", only="l")
         _draw_open(cv, spec, col, lid=H // 2)
     elif name == "glowing":
@@ -486,16 +492,24 @@ def cheek_frame(spec, col, frame):
     return img
 
 
+def head_front_holes():
+    """16x16 mask of the transparent texels of the head front. Exactly under the eyes plane (rows 2-9, full width); under
+    the mouth plane (rows 12-15) without the plane's two edge columns, which are plain skin in every mouth frame: the
+    head front keeps that skin behind them, so the 0.05 px gap between plane and head shows skin, never the inside of
+    the head, when the face is seen at an angle (the two coincident texels are the same colour, so no flicker)."""
+    holes = np.zeros((16, 16), dtype=bool)
+    holes[2:10, :] = True
+    holes[12:16, 5:11] = True
+    return holes
+
+
 def head_front(spec, col):
     """16x16 head front: skin, darker jaw corners, transparent under the eyes and mouth planes."""
     img = np.zeros((16, 16, 4), dtype=np.uint8)
     img[:, :] = col.skin + (255,)
     for r, c in ((15, 0), (15, 1), (15, 14), (15, 15), (14, 0), (14, 15)):
         img[r, c] = col.skin_dark + (255,)
-    img[2:10, :, 3] = 0
-    img[12:16, 4:12, 3] = 0
-    img[2:10, :, :3] = 0
-    img[12:16, 4:12, :3] = 0
+    img[head_front_holes()] = 0
     return img
 
 

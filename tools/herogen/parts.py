@@ -19,7 +19,7 @@ import os
 
 from expr import evaluate
 from palette import FIXED, SLOTS
-from rig import BASE_SLOTS, FACES, Cube, mirror_name
+from rig import BASE_SLOTS, FACES, Bone, Cube, mirror_name
 from util import HEROSRC, HerogenError, load_json
 
 LOGICAL_SLOTS = ("main", "trim", "alt", "detail")
@@ -312,11 +312,12 @@ def _transform_box(o, s, mode):
 
 
 SHEATH = {
-    # mount point (absolute), axis mode, cube rotation (file degrees about the mount point). GeckoLib bakes file
-    # rotations as (-x, -y, z) in its x-mirrored space, so +55 about x swings a hanging blade backward, and -35 about
-    # z puts a back-carried hilt over the hero's right shoulder.
-    "hip": (lambda env, side: (side * (env["hips_w"] / 2 + 0.75), 15.5, -0.5), "down", (55.0, 0.0, 0.0)),
-    "back": (lambda env, side: (0.0, 20.5, env["chest_d"] / 2 + 1.0), "down", (0.0, 0.0, -35.0)),
+    # mount point (absolute), axis mode, cube rotation (file degrees about the mount point), parent of weapon_back.
+    # GeckoLib bakes file rotations as (-x, -y, z) in its x-mirrored space, so +55 about x swings a hanging blade
+    # backward, and -35 about z puts a back-carried hilt over the hero's right shoulder. A hip scabbard hangs from the
+    # hips (`body`), so a waist twist or chest lean does not swing it through the leg; a back carry follows the chest.
+    "hip": (lambda env, side: (side * (env["hips_w"] / 2 + 0.75), 15.5, -0.5), "down", (55.0, 0.0, 0.0), "body"),
+    "back": (lambda env, side: (0.0, 20.5, env["chest_d"] / 2 + 1.0), "down", (0.0, 0.0, -35.0), "back"),
 }
 
 
@@ -357,7 +358,14 @@ def apply_weapon(model, weapon, index=0):
         return
     if sheathed not in SHEATH:
         raise HerogenError("art.weapon.sheathed %r is unknown (hip, back, none)" % sheathed)
-    mount_fn, mode, rot = SHEATH[sheathed]
+    mount_fn, mode, rot, parent = SHEATH[sheathed]
+    rig_bone = model.catalogue["weapon_back"]
+    if parent != rig_bone.parent:
+        if "weapon_back" in model.bones:
+            raise HerogenError("art.weapon: weapon_back is already used by a part, so a %s sheath cannot move it"
+                               % sheathed)
+        model.catalogue["weapon_back"] = Bone("weapon_back", parent, (0.0, 15.5, -0.5), required=rig_bone.required,
+                                              kind=rig_bone.kind, source="weapon")
     for side in sides:
         mside = 1 if side == "r" else -1      # a right-hand weapon hangs on the left hip
         mount = mount_fn(model.env, mside)

@@ -4,22 +4,31 @@ Per texel: the slot and material come from the cube (or the base layer) and the 
 that point; the tone (-2..+2 on the slot's ramp) is the sum of
 - light by face direction: top +1, front and back 0, the hero's left side 0, right side -1, bottom -2 (light from the
   hero's front-left);
-- a one-tone darker band on the lowest third of tall faces (5+ texels) for cloth, hair, leather, fur, scale, wood;
-- ambient occlusion: -1 on the top row of a cube that sits under a cube at least as wide (cuffs, collars, belts);
-- an outline: -2 on the last row of a clothing or hair region (hems, sleeve ends, bangs), never on skin;
+- a one-tone darker band on the lowest third of tall faces (5+ texels) for cloth, hair, leather, fur, scale, wood,
+  only where the region ends at the face's bottom edge (a garment that continues onto the cube below is shaded once, at
+  its hem, not once per body cube, which would read as stripes);
+- ambient occlusion: -1 on the top row of a cube that sits under a cube at least as wide (cuffs, collars, belts),
+  only where the region above is a different one (a sleeve over a hand, a collar over a shirt);
+- an outline: -2 on the last row of a clothing or hair region (hems, sleeve ends, bangs) and on the lowest texel a
+  cutout leaves in a column (jagged tips), never on skin;
 - material detail (cloth folds, hair strands and a crown ring, metal specular band, leather stitches, fur noise...);
 - pattern tone and the op's or cube's own tone.
 Patterns use whole-texel 3D coordinates, so stripes and checks line up across neighbouring faces. Cutouts set alpha 0.
+A cutout is authored on the side faces, and the other faces follow it so the solid stays consistent: the top and
+bottom faces keep only what the side faces keep on their edge rows (a tapered or jagged tip has no flat full-size cap),
+and a thin cube (one texel deep) cuts its narrow faces like the broad face's edge column (a triangular ear has no
+full-height side strip).
 """
 import numpy as np
 
 from rig import SIDE_FACES
-from uvpack import texel_point
+from uvpack import texel_point, texels
 from util import hash_ints, hash_unit, seed_of
 
 LIGHT = {"up": 1, "north": 0, "south": 0, "west": 0, "east": -1, "down": -2}
 BANDED = {"cloth", "hair", "leather", "fur", "scale", "wood"}
 OUTLINED = {"cloth", "hair", "leather", "fur"}
+RESTING = {"cloth", "leather"}           # materials whose edges against the body get a soft shadow instead
 EPS = 1e-6
 
 
@@ -66,6 +75,18 @@ class Painter:
                     and (a1 - a0) * (c1 - c0) >= area - 0.01:
                 return True
         return False
+
+    def _cube_above(self, c, p):
+        """The solid cube whose bottom sits on this cube's top at p (the one _ao_top found)."""
+        x, _, z = p
+        y = c.box[4]
+        for d in self.solid:
+            if d is c:
+                continue
+            a0, b0, c0, a1, b1, c1 = d.box
+            if abs(b0 - y) < 0.01 and a0 - EPS <= x <= a1 + EPS and c0 - EPS <= z <= c1 + EPS:
+                return d
+        return None
 
     def _cube_below(self, c, p):
         x, _, z = p
@@ -198,8 +219,8 @@ class Painter:
         return None, 0
 
     @staticmethod
-    def keep(cube, face, i, j, W, H):
-        """Alpha of a texel after the cube's cutout and taper (only side faces are cut)."""
+    def own_keep(cube, face, i, j, W, H):
+        """Alpha of a side-face texel after the cube's own cutout and taper (the authored shape)."""
         if face not in SIDE_FACES:
             return True
         cut = cube.cutout
@@ -223,6 +244,26 @@ class Painter:
                 return j < H - jag_depth(int(cut[len(prefix):]), i, W, min(dmax, H - 1))
         return True
 
+    @classmethod
+    def keep(cls, cube, face, i, j, W, H):
+        """Alpha of a texel: the side faces' own cutout, followed by the other faces so the solid stays consistent
+        (caps keep what the side faces keep on their edge row; a thin cube's narrow faces follow the broad face's edge
+        column)."""
+        if cube.taper is None and not cube.cutout:
+            return True
+        if cube.flat_axis is not None:
+            return cls.own_keep(cube, face, i, j, W, H)
+        d = cube.density
+        wx, hy, dz = texels(cube.size[0], d), texels(cube.size[1], d), texels(cube.size[2], d)
+        if face in ("up", "down"):
+            r = hy - 1 if face == "down" else 0
+            return cls.own_keep(cube, "north", i, r, wx, hy) and cls.own_keep(cube, "west", dz - 1 - j, r, dz, hy)
+        if face in ("east", "west") and dz == 1:
+            return cls.own_keep(cube, "north", 0 if face == "east" else wx - 1, j, wx, hy)
+        if face in ("north", "south") and wx == 1 and dz > 1:
+            return cls.own_keep(cube, "west", 0 if face == "north" else dz - 1, j, dz, hy)
+        return cls.own_keep(cube, face, i, j, W, H)
+
     # -------------------------------------------------------------- paint
 
     def paint(self, img, glow):
@@ -242,6 +283,8 @@ class Painter:
                 p = texel_point(cube, face, i, j, rect)
                 row.append((p,) + self.resolve(cube, face, p, j, H))
             grid.append(row)
+        kept = [[self.keep(cube, face, i, j, W, H) for i in range(W)] for j in range(H)]
+        ends = [self._outline(cube, face, grid, i, H - 1, W, H, grid[H - 1][i][6]) for i in range(W)] if side else []
         for j in range(H):
             for i in range(W):
                 p, slot, mat, pattern, tone, is_trim, group = grid[j][i]
@@ -250,19 +293,47 @@ class Painter:
                     slot = pslot
                 t = LIGHT[face] + tone + ptone
                 if side:
-                    if mat in BANDED and H >= 5 and j >= H - H // 3:
+                    if mat in BANDED and H >= 5 and j >= H - H // 3 and ends[i] \
+                            and all(grid[k][i][6] == group for k in range(j, H)):
                         t -= 1
-                    if j == 0 and self._ao[cube.name]:
+                    if j == 0 and self._ao[cube.name] and self._ao_differs(cube, face, p, group):
                         t -= 1
-                    if mat in OUTLINED and not is_trim and self._outline(cube, face, grid, i, j, W, H, group):
-                        t -= 2
+                    if mat in OUTLINED and not is_trim and kept[j][i] and (
+                            self._outline(cube, face, grid, i, j, W, H, group)
+                            or (H >= 3 and j + 1 < H and not kept[j + 1][i])):
+                        # a cloth edge lying against the body (the bust, a collar) is a soft shadow, not a hem line
+                        t -= 1 if mat in RESTING and self._rests_on_body(cube, face, p) else 2
                 t += self.material_tone(cube, mat, face, i, j, W, H, p)
                 t = max(-2, min(2, t))
                 r, g, b = self.ramps[slot][t + 2]
-                a = 255 if self.keep(cube, face, i, j, W, H) else 0
+                a = 255 if kept[j][i] else 0
                 img[v + j, u + i] = (r, g, b, a)
                 if (cube.glow or mat == "glow") and a:
                     glow[v + j, u + i] = (r, g, b, 255)
+
+    def _rests_on_body(self, cube, face, p):
+        """True when another solid cube sits right behind this face at p (the face's cube is attached to it)."""
+        n = {"north": (0, 0, 1), "south": (0, 0, -1), "east": (1, 0, 0), "west": (-1, 0, 0)}.get(face)
+        if n is None:
+            return False
+        x0, y0, z0, x1, y1, z1 = cube.box
+        depth = {"north": z1 - z0, "south": z1 - z0, "east": x1 - x0, "west": x1 - x0}[face]
+        q = (p[0] + n[0] * (depth + 0.25), p[1] + 0.25, p[2] + n[2] * (depth + 0.25))
+        for d in self.solid:
+            if d is cube:
+                continue
+            a0, b0, c0, a1, b1, c1 = d.box
+            if a0 <= q[0] <= a1 and b0 <= q[1] <= b1 and c0 <= q[2] <= c1:
+                return True
+        return False
+
+    def _ao_differs(self, cube, face, p, group):
+        """Ambient occlusion only where another region sits on top (a sleeve over a hand), not inside one garment."""
+        above = self._cube_above(cube, p)
+        if above is None:
+            return True
+        q = (p[0], above.box[1] + 0.25, p[2])
+        return self.resolve(above, face, q)[5] != group
 
     def _outline(self, cube, face, grid, i, j, W, H, group):
         if j + 1 < H:

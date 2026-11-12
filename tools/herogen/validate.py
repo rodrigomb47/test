@@ -3,16 +3,16 @@ distinctness and the Java HeroAssetsTest). Every function returns a list of prob
 
 Checked here: geometry format_version; texture size matches the geometry and is an allowed size; bone and cube
 budgets; bone names; parents before children; required bones; whole-texel UVs; UV islands inside the texture and not
-overlapping (face planes on their fixed regions); the alpha holes under the eyes and mouth planes; every eye, mouth
-and cheek frame present and distinct; the eyes mirror (frame 9 may raise one brow); nothing in front of the face
-below y 30 within |x| < 3.5.
+overlapping (face planes on their fixed regions); the alpha holes under the eyes and mouth planes (face.head_front_holes)
+and, where a plane edge covers painted head front, identical texels; every eye, mouth and cheek frame present and
+distinct; the eyes mirror (frame 9 may raise one brow); nothing in front of the face below y 30 within |x| < 3.5.
 """
 import math
 import re
 
 import numpy as np
 
-from face import frame_rect
+from face import frame_rect, head_front_holes
 from render.ortho import rotation_matrix
 from rig import load_rig, required_bones
 
@@ -132,13 +132,23 @@ def check_face_texture(tex, rig=None):
     tpl = rig["uv_template"]
     hu, hv, hw, hh = tpl["head_front"]
     head = tex[hv:hv + hh, hu:hu + hw, 3]
-    holes = np.zeros((16, 16), dtype=bool)
-    holes[2:10, :] = True
-    holes[12:16, 4:12] = True
+    holes = head_front_holes()
     if (head[holes] != 0).any():
         out.append("head front is not transparent under the eyes and mouth planes")
     if (head[~holes] != 255).any():
         out.append("head front has transparent texels outside the plane holes")
+    # where a plane covers painted head-front texels (the mouth's edge columns), every frame must match them exactly,
+    # or the two coincident surfaces would flicker between different colours
+    for plane, (r0, c0) in (("eyes", (2, 0)), ("mouth", (12, 4))):
+        n = rig["face"]["planes"][plane]["frames"]
+        for k in range(n):
+            u, v, w, h = frame_rect(rig, plane, k)
+            f = tex[v:v + h, u:u + w]
+            under = tex[hv + r0:hv + r0 + h, hu + c0:hu + c0 + w]
+            covered = under[:, :, 3] == 255
+            if covered.any() and not np.array_equal(f[covered], under[covered]):
+                out.append("%s frame %d differs from the head front where they overlap (edge texels must be the "
+                           "same skin)" % (plane, k))
     for plane, n, opaque in (("eyes", 12, True), ("mouth", 8, True), ("cheeks", 4, False)):
         frames = []
         for k in range(n):

@@ -194,8 +194,8 @@
           "pivot": [0, 31, -4],
           "cubes": [
             {
-              "origin": [-4.25, 30.5, -4.6],
-              "size": [8.5, 2.25, 0.6],
+              "origin": [-4.25, 31, -4.6],
+              "size": [8.5, 1.75, 0.6],
               "uv": {
                 "down": {"uv": [41, 78], "uv_size": [9, -1]},
                 "east": {"uv": [31, 78], "uv_size": [1, 2]},
@@ -703,10 +703,11 @@
             }
           ]
         },
+        {"name": "vfx_chest", "parent": "chest", "pivot": [0, 20.5, -1.75]},
         {
           "name": "weapon_back",
-          "parent": "back",
-          "pivot": [0, 20, 1.75],
+          "parent": "body",
+          "pivot": [0, 15.5, -0.5],
           "cubes": [
             {
               "pivot": [4.25, 15.5, -0.5],
@@ -766,7 +767,6 @@
             }
           ]
         },
-        {"name": "vfx_chest", "parent": "chest", "pivot": [0, 20.5, -1.75]},
         {"name": "skirt", "parent": "body", "pivot": [0, 15, 0]},
         {
           "name": "skirt_f",

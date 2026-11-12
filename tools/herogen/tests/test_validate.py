@@ -121,6 +121,12 @@ class ValidateTest(unittest.TestCase):
         tex[hv + 4, hu + 4] = (200, 150, 120, 255)
         self.assertProblem("not transparent under the eyes and mouth planes", self.problems(tex=tex))
 
+    def test_mouth_edge_must_match_the_head_front(self):
+        tex = self.tex.copy()
+        u, v, _, _ = F.frame_rect(load_rig(), "mouth", 3)
+        tex[v + 1, u + 7] = (90, 30, 40, 255)          # paint into the mouth plane's edge column
+        self.assertProblem("mouth frame 3 differs from the head front", self.problems(tex=tex))
+
     def test_cube_in_front_of_the_face(self):
         d = copy.deepcopy(self.geo_data)
         bangs = next(b for b in self.bones(d) if b["name"] == "bangs")

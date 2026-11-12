@@ -91,12 +91,18 @@ class PartsTest(unittest.TestCase):
         for c in sheath:
             self.assertEqual(c.rotation, (55.0, 0.0, 0.0))
             self.assertGreater(c.pivot[0], 0, "a right-hand sword hangs on the left hip (+x)")
+        self.assertEqual(m.bones["weapon_back"].parent, "body", "a hip scabbard follows the hips, not the chest")
         m2 = Model("t", "f_standard")
         apply_weapon(m2, {"prop": "weapons/sword_plain", "hand": "pair", "sheathed": "back"})
+        self.assertEqual(m2.bones["weapon_back"].parent, "back", "a back carry follows the chest")
         self.assertEqual(len([c for c in m2.cubes if c.bone == "weapon_l"]), 4)
         self.assertEqual(len([c for c in m2.cubes if c.bone == "weapon_back"]), 8)
         with self.assertRaises(HerogenError):
             apply_weapon(Model("t", "f_slim"), {"prop": "hair/short_crop"})
+        m3 = Model("t", "f_slim")
+        apply_part(m3, inline(cubes=[dict(BOX, bone="weapon_back")]), 0)
+        with self.assertRaises(HerogenError):
+            apply_weapon(m3, {"prop": "weapons/sword_plain", "sheathed": "hip"})
 
     def test_test_rig_assembles(self):
         m = build.assemble(build.load_hero("test_rig"))

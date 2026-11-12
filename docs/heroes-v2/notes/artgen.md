@@ -27,7 +27,7 @@ docs task (V5).
 | `build.py` | hero source to output files, `--check` |
 | `validate.py` | the geometry and face half of the 14.2 asset checks |
 | `render/ortho.py`, `previews.py` | minimal rest-pose orthographic renderer and the preview sheets (stopgap until G2) |
-| `tests/` | 72 unit tests: `python3 -m unittest discover tools/herogen/tests` (or `python3 -m unittest` in `tools/herogen`) |
+| `tests/` | unit tests (87 after the review): `python3 -m unittest discover tools/herogen/tests` (or `python3 -m unittest` in `tools/herogen`) |
 | `herosrc/rig/rig_v1.json` | bones (61 with every option, 33 required), pivots, heights, joint limits, UV template, face layout, budgets (72 bones, 140 cubes) |
 | `herosrc/bases/*.json` | the six bases (dims) and `_template.json` (body cubes shared by all six) |
 | `herosrc/parts/**` | 11 starter parts for the test rig and the fallback (G6a-c grow this into the library) |
@@ -49,11 +49,11 @@ passes for both models and all six bare bases.
   the front; top and bottom with the left edge on the hero's right and the bottom row at the front. The bottom face is
   stored as `uv = (u, v + h)`, `uv_size = (w, -h)`, exactly what GeckoLib's own box-UV code computes for `DOWN`, so
   per-face and box UV look the same. One function pair owns this (`uvpack.to_file_uv` / `from_file_uv`), and
-  `uvpack.texel_point` maps a texel to its 3D point for the painter. **To confirm in G2's fidelity test** (the
+  `uvpack.texel_point` maps a texel to its 3D point for the painter. **Confirmed against GeckoLib 4.9.3's code by the review** (`tests/test_geckolib.py`); G2's fidelity test still checks the whole render (the
   preview renderer uses the same convention, so a mistake would show in both and only the game screenshot catches it).
 - **Rotations**: cube rotations are file degrees about the cube pivot. The renderer emulates GeckoLib: render-space
   angles `(-rx, -ry, rz)`, applied X first, then Y, then Z. With that, `+55` about x swings a hanging scabbard
-  backward. Also to confirm in G2.
+  backward. Also confirmed against GeckoLib's code by the review.
 - **Determinism**: JSON with a fixed key order (geometry keys first: `format_version`, `minecraft:geometry`,
   `description`, `identifier`, `name`, `parent`, `pivot`, `rotation`, `origin`, `size`, `inflate`, `uv`, `uv_size`;
   everything else sorted), numbers rounded to 3 decimals and written without `.0`; PNGs RGBA with only IHDR, IDAT,
@@ -108,7 +108,7 @@ passes for both models and all six bare bases.
     GeckoLib needs every file of the chain; G3's writer replaces it. The server definition is not written by G1.
 14. **`_fallback`** (a shared asset in SLICE_PLAN 3.9) is built too: m_slim, light-grey clothes so a faction tint
     reads, short hair, a plain face, the sash.
-15. **Face-front details**: the head front is skin with darker jaw corners; bangs in the starter hair stop at y 30.5
+15. **Face-front details** (bangs changed by the review, see below): the head front is skin with darker jaw corners; bangs in the starter hair stop at y 30.5
     (they cover brow row 0, never the lash row). Hair gets its bright crown ring at y 31-31.75.
 16. **Minimal renderer** (until G2): rest pose, the GeckoLib conventions above, cut-out at alpha 0.1, nearest
     sampling, block-style face shading (top 1.0, front and back 0.8, sides 0.6, bottom 0.5), not vanilla's entity light
@@ -135,7 +135,8 @@ passes for both models and all six bare bases.
 
 ### Open items for later tasks
 
-- **G2**: confirm the face orientation and rotation conventions above against an in-game screenshot; replace
+- **G2**: confirm the whole render (entity transforms, lighting, the face planes) against an in-game screenshot (the UV
+  and rotation conventions themselves are now pinned to GeckoLib's code by `tests/test_geckolib.py`); replace
   `render/ortho.py` and `previews.py` with the full renderer, `preview`, `faces`, `sheet`, `gif`.
 - **G3**: write the hero's own animation file (build.py writes the empty one today) and the server definition;
   read `model.secondary` (chains declared by parts, recorded on the model) for the follow-through bake; the rig's
@@ -150,3 +151,83 @@ passes for both models and all six bare bases.
   `outfit_top/short_jacket`, `outfit_bottom/pleated_skirt`, `legwear/tights_boots`, `back/cape_short`,
   `accessories/sash_obi`, `headwear/halo_ring`, `weapons/sword_plain`) use the final format; `lint` (every part on
   every base) is not built yet.
+
+---
+
+## G1 review (2026-11-12)
+
+Adversarial review of the G1 commit (1b94e959) against HEROES_V2.md 4.3, 4.6, 13 and 14.2, the CRITIQUE, and GeckoLib
+4.9.3 itself, then fixes. Commit "Review fixes: ...".
+
+### What was checked and holds
+
+- **GeckoLib conventions, against GeckoLib's own code.** The published `geckolib-neoforge-1.21.1-4.9.3.jar` (SHA-256
+  `20a1995e...1c47`, the hash HEROES_V2.md 4.2 records) was downloaded to a scratch folder and read with `javap -c`
+  (never executed): `BakedModelFactory.Builtin.constructCube/constructBone/buildQuad`, `BakedModelFactory.VertexSet`,
+  `GeoQuad.build`, `FaceUV.Rotation.rotateUvs`, `RenderUtil.rotateMatrixAroundBone/Cube`, `GeoRenderer.renderCube`,
+  the `loading.json.raw` records and `FormatVersion`. Every G1 convention matches: x mirrored at bake, per-face UV
+  orientation of all six faces (front and back as seen from outside, east = the hero's right at file -x with its left
+  edge at the back, west with its left edge at the front, top and bottom with the hero's right on the left and the
+  front on the bottom row), the bottom face addressed as `uv (u, v+h)`, `uv_size (w, -h)`, rotations baked as
+  `(-rx, -ry, rz)` and applied about Z, then Y, then X, null quads (faces missing from a per-face `uv`) skipped by the
+  renderer, `format_version` 1.12.0 accepted, the empty animation file valid. `tests/test_geckolib.py` ports that code
+  (vertex sets, quad vertex order, the UV swap without mirror) and checks every texel of every face lands on the point
+  the painter paints, the preview renderer's corners and rotations, and that written geometry uses only keys GeckoLib
+  reads (Gson drops unknown keys silently). Removing the bottom-face flip or changing the rotation order fails it.
+- Bone names, 61-bone tree, 33 required, budgets 72 bones and 140 cubes, the six bases against the 4.3 table, whole
+  texels, the fixed UV regions and the 4 x 3 / 8 / 4 frame grids, byte-identical builds (one process and two processes
+  with different hash seeds), `build --check`.
+
+### Fixed
+
+1. **Brows merged with the lash.** Rest brows used rows 0-1 and the lash row 2, and the starter bangs (down to y 30.5)
+   hid row 0, so what showed was brow fragments touching the lash: a heavy dark blob over each eye in most moods. Now
+   rest brows sit on row 0 only, with row 1 kept as skin; the arched brow tapers with a lighter outer texel; mood
+   brows use row 1 only where that frame moves the lash away (angry: inner end down; sad and pain: outer end down;
+   focused, smug, sleeping: the lid is lowered); open, half and closed share their brows, so a blink never moves them.
+   The starter bangs (`hair/high_ponytail_long`, `hair/short_crop`) now end at y 31: they cover the forehead rows and
+   leave the brows visible (bangs may still cover the brow rows in other hair parts, 4.6).
+2. **Garments were striped.** The lower-third band was applied per body cube and occlusion to every cube under a wider
+   one, so one top or pair of trousers showed a dark band at every cube seam (chest/waist, thigh/shin: "knee pads").
+   Now the band is applied only where the region ends at the face's bottom edge (a hem), and occlusion only where a
+   different region sits on top (a sleeve over a hand, a collar over a shirt).
+3. **Hard line under the bust.** A cloth or leather edge that rests against another cube (bust, collar) now gets a
+   one-tone soft shadow instead of the two-tone hem outline; free hems and all hair keep the full outline.
+4. **Cutouts only on the side faces.** A triangular ear kept a full-height side strip and a full-width top, a jagged
+   fringe and a tapered lock kept a full-size flat bottom (seen from slightly below, which is the player's usual view
+   of a hero's bangs). Now the top and bottom faces keep only what the side faces keep on their edge rows, and a
+   one-texel-thin cube cuts its narrow faces like the broad face's edge column. The lowest texel a cutout leaves in a
+   column (a jagged tip) gets the hem outline too.
+5. **The mouth plane's angled-view sliver.** The planes sit 0.05 px in front of their holes; at an angle that gap
+   showed a thin dark line into the head beside the mouth (visible in the 3/4 preview, about a pixel at three blocks
+   in game). The mouth frames' edge columns are plain skin in every frame, so the head front now keeps its skin under
+   them (hole columns 5-10 instead of 4-11): the gap shows identical skin, and the two coincident texels cannot flicker
+   because they are the same colour. `herogen check` verifies that every eyes and mouth frame equals the head front
+   wherever both are opaque. **Deviation** from 4.6 ("transparent exactly under the planes"): the hole is one column
+   narrower on each side of the mouth; the eyes hole is unchanged (its edge columns are at the head's corners, and
+   its top and bottom rows carry brows and lids).
+6. **A hip scabbard swung with the chest.** `weapon_back` is a child of `back` (chest), so a waist twist or chest lean
+   swung a hip-sheathed sword (9-12 px of scabbard) through the leg. For `sheathed: hip`, `weapon_back` now hangs from
+   `body` (the hips, pivot 0, 15.5, -0.5); for `back` it stays under `back`. The name is unchanged, so the renderer's
+   rule (4.3 naming table) and `visual.json` `bones.weapon_sheathed` still work. **Deviation** from the 4.3 tree
+   (recorded in `rig_v1.json` and `parts.SHEATH`).
+
+### Tests added (72 -> 87)
+
+`test_geckolib.py` (6, above); faces: rest brows clear of the lash for every template and lash weight, blink frames
+keep the brows, angry and sad brow directions, mouth edge columns equal the head front skin; painter: one garment not
+striped, band at a free hem, soft edge on the bust, cutouts carried to caps and narrow faces, outlined cut tips;
+validator: a mouth edge texel that differs from the head front fails; parts: hip and back sheath parents, and a hip
+sheath refusing a `weapon_back` already used by a part.
+
+### Open (for the tasks named)
+
+- **A2 (HeroFace)**: the blink frames (half, closed) carry rest brows, so a blink over angry, sad, focused or smug eyes
+  (4.6 lists them) shows rest brows for its 4 ticks. Either accept it (it reads as a flinch) or blink only over open
+  and glowing eyes; decide with the screenshots.
+- **G3**: `sash` is a child of `chest` while the starter obi sits at the waist (y 16.25-18): keep chest rotations
+  relative to the waist small (a few degrees) or the obi drifts off the waist; twists belong on `waist`.
+- **G2**: the eyes plane keeps the 0.05 px offset over its full-width hole; looking from well above or below, its top
+  and bottom edges can show a sub-pixel sliver of the head's inside. Check it in the fidelity screenshots up close.
+- **G6a-c**: author new cut-out parts knowing that caps and narrow faces now follow the side faces' cut (a thick cube
+  with different cuts on its front and side faces gets their intersection on its caps).

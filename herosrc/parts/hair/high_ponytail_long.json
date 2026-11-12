@@ -1,5 +1,5 @@
 {
-  "_comment": "Starter part (G1 test rig). Crown cap, jagged bangs that stop at y 30.5 (brow row 0), side locks outside |x| 3.5, back hair and a two-segment ponytail with a fine tip.",
+  "_comment": "Starter part (G1 test rig). Crown cap, jagged bangs over the forehead whose tips stop at y 31 (the brows on row 0 of the eyes plane stay visible), side locks outside |x| 3.5, back hair and a two-segment ponytail with a fine tip.",
   "id": "hair/high_ponytail_long",
   "category": "hair",
   "slots": {"main": "hair", "trim": "accent"},
@@ -20,7 +20,7 @@
      "slot": "main", "material": "hair"},
     {"bone": "hair_back", "origin": [-4.25, 25, 4.05], "size": [8.5, 7, 0.75], "slot": "main", "material": "hair",
      "cutout": "jagged_4"},
-    {"bone": "bangs", "origin": [-4.25, 30.5, -4.6], "size": [8.5, 2.25, 0.6], "slot": "main", "material": "hair",
+    {"bone": "bangs", "origin": [-4.25, 31, -4.6], "size": [8.5, 1.75, 0.6], "slot": "main", "material": "hair",
      "cutout": "bangs_jagged_5"},
     {"bone": "hair_r", "origin": [-4.6, 25.5, -4.6], "size": [1, 6, 1.2], "slot": "main", "material": "hair",
      "mirror": true, "cutout": "tip_jagged_1"},

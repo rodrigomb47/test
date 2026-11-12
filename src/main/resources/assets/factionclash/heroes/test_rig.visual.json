@@ -75,7 +75,7 @@
   "phases": [{"eyes_glow": true, "hide": [], "phase": 2, "show": ["p2_halo"], "texture": "p2"}],
   "rig": "hero_rig_v1",
   "scale": 1,
-  "source_sha256": "0b221283015fde5403319f11a08fbb34246eea8ec744954ae386a1747f3cd4f1",
+  "source_sha256": "247b02f6f8cf8f2ee96d5b65514bc856d6e06c71f27b5a36435edf304a49968d",
   "states": [],
   "style": "katana",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": true, "width": 128},

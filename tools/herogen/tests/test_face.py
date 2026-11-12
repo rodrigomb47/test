@@ -62,6 +62,35 @@ class FaceTest(unittest.TestCase):
             spec, col, _ = frames({"width": width, "spacing": spacing})
             self.check_eye_set(spec, col)
 
+    def test_rest_brows_clear_of_the_lash(self):
+        """Rest brows sit on row 0 with a skin row under them, so brow and lash never merge into one dark blob."""
+        for eyes in F.EYE_TEMPLATES:
+            for lashes in range(4):
+                for brows in ("thin_arched", "straight", "none"):
+                    spec, col, _ = frames({"eyes": eyes, "lashes": lashes, "brows": brows})
+                    skin = np.array(col.skin + (255,), dtype=np.uint8)
+                    for k in (0, 1, 2, 3, 6, 10):
+                        img = F.eye_frame(spec, col, k)[0]
+                        self.assertTrue((img[1] == skin).all(), "%s/%d/%s frame %d row 1" % (eyes, lashes, brows, k))
+
+    def test_blink_frames_keep_the_brows(self):
+        """open, half and closed (the blink) share their brow rows, so brows never jump during a blink."""
+        for brows in F.BROWS:
+            spec, col, _ = frames({"brows": brows})
+            rows = [F.eye_frame(spec, col, k)[0][0:2] for k in (0, 1, 2)]
+            self.assertTrue(np.array_equal(rows[0], rows[1]) and np.array_equal(rows[0], rows[2]), brows)
+
+    def test_expression_brows(self):
+        spec, col, _ = frames({})
+        brow = np.array(col.brow + (255,), dtype=np.uint8)
+
+        def brow_rows(k):
+            img = F.eye_frame(spec, col, k)[0]
+            return [sorted({c for c in range(8) if (img[r, c] == brow).all()}) for r in (0, 1, 2)]
+        angry, sad = brow_rows(4), brow_rows(5)
+        self.assertTrue(angry[1] and max(angry[1]) > max(angry[0]), "angry: the inner end drops toward the nose")
+        self.assertTrue(sad[1] and min(sad[1]) < min(sad[0]), "sad: the outer end drops, the inner end stays up")
+
     def test_glow_only_in_frame_10(self):
         spec, col, _ = frames({})
         for k in range(12):
@@ -89,10 +118,21 @@ class FaceTest(unittest.TestCase):
         hf = F.head_front(spec, col)
         alpha = hf[:, :, 3]
         self.assertFalse(alpha[2:10, :].any(), "hole under the eyes plane (rows 2-9)")
-        self.assertFalse(alpha[12:16, 4:12].any(), "hole under the mouth plane")
+        self.assertFalse(alpha[12:16, 5:11].any(), "hole under the mouth plane's inner columns")
+        self.assertTrue((alpha[12:16, 4] == 255).all() and (alpha[12:16, 11] == 255).all(),
+                        "skin behind the mouth plane's edge columns, so an angled view never sees into the head")
         self.assertTrue((alpha[0:2, :] == 255).all())
         self.assertTrue((alpha[10:12, :] == 255).all(), "skin behind the cut-out cheeks plane")
         self.assertTrue((alpha[12:16, 0:4] == 255).all() and (alpha[12:16, 12:16] == 255).all())
+        # every mouth frame's edge columns are exactly that skin (coincident texels must not differ)
+        for mouth in F.MOUTHS:
+            for fang in F.FANGS:
+                spec, col, _ = frames({"mouth": mouth, "fang": fang})
+                for k in range(8):
+                    m = F.mouth_frame(spec, col, k)
+                    for c in (0, 7):
+                        self.assertTrue((m[:, c] == np.array(col.skin + (255,), dtype=np.uint8)).all(),
+                                        "%s/%s mouth frame %d column %d" % (mouth, fang, k, c))
 
     def test_mood_table(self):
         spec, _, _ = frames({"blush": True, "fang": "left",

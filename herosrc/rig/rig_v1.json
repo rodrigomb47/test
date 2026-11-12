@@ -64,7 +64,7 @@
     {"name": "cape_2", "parent": "cape_1", "pivot": [0, 18, "chest_d / 2 + 0.5"]},
     {"name": "wing_l", "parent": "back", "pivot": [1, 21, "chest_d / 2"]},
     {"name": "wing_r", "parent": "back", "pivot": [-1, 21, "chest_d / 2"]},
-    {"name": "weapon_back", "parent": "back", "pivot": [0, 20, "chest_d / 2"]},
+    {"name": "weapon_back", "parent": "back", "pivot": [0, 20, "chest_d / 2"], "_comment": "the sheathed copy; a hip sheath re-parents it to body (parts.SHEATH)"},
     {"name": "skirt", "parent": "body", "pivot": [0, 15, 0]},
     {"name": "skirt_f", "parent": "skirt", "pivot": [0, 15, "-hips_d / 2"]},
     {"name": "skirt_b", "parent": "skirt", "pivot": [0, 15, "hips_d / 2"]},
