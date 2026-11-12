@@ -1,38 +1,70 @@
 {
-  "_comment": "A long two-segment cape from the shoulders to below the knee with a fur mantle over the shoulders (alt, fur) and a trimmed hem. Length is drop x (shoulders to knee).",
+  "_comment": "A long cape with a fur mantle (style pass 2): a ring of fur tufts round the shoulders (fine), the cape in two hinged panels (cape_1 to the waist, cape_2 to the knees) hanging a little back, trimmed at the hem, lined in the alt colour.",
   "id": "back/cape_long",
   "category": "back",
-  "slots": {"alt": "secondary", "main": "primary", "trim": "trim"},
+  "slots": {"main": "primary", "alt": "secondary", "trim": "trim"},
   "params": {"drop": {"default": 0.9, "max": 1.1, "min": 0.5}},
   "occupies": ["back"],
   "bones": [
-    {"name": "cape_1", "parent": "back", "pivot": [0, "chest_top", "chest_d / 2 + 0.35"]},
-    {
-      "name": "cape_2",
-      "parent": "cape_1",
-      "pivot": [0, "chest_top - (chest_top - knee_y) * drop * 0.5", "chest_d / 2 + 0.5"]
-    }
+    {"name": "cape_1", "parent": "back", "pivot": [0, "chest_top", "chest_d / 2 + 0.75"]},
+    {"name": "cape_2", "parent": "cape_1", "pivot": [0, "waist_y", "chest_d / 2 + 1.75"]}
   ],
   "cubes": [
     {
-      "origin": ["-chest_w / 2 - 1", "chest_top - 1.25", "-chest_d / 2 - 0.75"],
-      "size": ["chest_w + 2", 1.75, "chest_d + 1.5"],
-      "bone": "chest",
-      "material": "fur",
-      "slot": "alt"
-    },
-    {
-      "origin": ["-chest_w / 2 - 1.25", "chest_top - (chest_top - knee_y) * drop * 0.5", "chest_d / 2 + 0.25"],
-      "size": ["chest_w + 2.5", "(chest_top - knee_y) * drop * 0.5 + 0.25", 0.5],
-      "bone": "cape_1"
-    },
-    {
-      "origin": ["-chest_w / 2 - 1.5", "chest_top - (chest_top - knee_y) * drop", "chest_d / 2 + 0.35"],
-      "size": ["chest_w + 3", "(chest_top - knee_y) * drop * 0.5 + 0.1", 0.5],
-      "bone": "cape_2",
-      "cutout": "round_bottom",
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+      "name": "mantle",
+      "bone": "back",
+      "origin": ["-chest_w / 2 - 1", "chest_top - 1.5", "-chest_d / 2 - 0.75"],
+      "size": ["chest_w + 2", 2.25, "chest_d + 1.75"],
+      "slot": "alt",
+      "material": "fur"
     }
   ],
-  "secondary": {"chain": ["cape_1", "cape_2"], "damping": 0.6, "stiffness": 0.4}
+  "groups": [
+    {
+      "rotation": [8, 0, 0],
+      "pivot": [0, "chest_top", "chest_d / 2 + 0.75"],
+      "cubes": [
+        {
+          "name": "cape_top",
+          "bone": "cape_1",
+          "origin": ["-chest_w / 2 - 1.25", "waist_y - 0.25", "chest_d / 2 + 0.6"],
+          "size": ["chest_w + 2.5", "chest_top - waist_y + 0.25", 0.6],
+          "material": "cloth"
+        }
+      ]
+    },
+    {
+      "rotation": [4, 0, 0],
+      "pivot": [0, "waist_y", "chest_d / 2 + 1.75"],
+      "cubes": [
+        {
+          "name": "cape_low",
+          "bone": "cape_2",
+          "origin": ["-chest_w / 2 - 1.75", "waist_y - (waist_y - knee_y) * drop - 0.5", "chest_d / 2 + 1.6"],
+          "size": ["chest_w + 3.5", "(waist_y - knee_y) * drop + 0.75", 0.6],
+          "material": "cloth",
+          "cutout": "jagged_5",
+          "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "fur",
+      "bone": "back",
+      "path": "arc",
+      "y": "chest_top + 0.75",
+      "radius": ["chest_w / 2 + 0.75", "chest_d / 2 + 0.75"],
+      "angles": [-135, 135],
+      "count": 12,
+      "width": 2.5,
+      "depth": 1,
+      "length": 2.75,
+      "flare": 48,
+      "material": "fur",
+      "slot": "alt",
+      "tone": [0, 1, -1]
+    }
+  ]
 }

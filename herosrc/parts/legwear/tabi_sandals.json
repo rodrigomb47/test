@@ -1,0 +1,40 @@
+{
+  "_comment": "Tabi socks with sandals (style pass 2): white split-toe socks painted on the feet and shins, a dark sole and two thong straps in the trim colour.",
+  "id": "legwear/tabi_sandals",
+  "category": "legwear",
+  "slots": {"main": "secondary", "alt": "leather", "trim": "trim"},
+  "occupies": ["legs_lower", "feet"],
+  "paint": [
+    {"cubes": ["foot_*"], "material": "cloth", "slot": "main"},
+    {"cubes": ["shin_*"], "y": [0, "ankle_y + 1.5"], "material": "cloth", "slot": "main"}
+  ],
+  "cubes": [
+    {
+      "name": "sole",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.35", 0, "-leg_d / 2 - toe - 0.45"],
+      "size": ["leg_w + 0.7", 0.75, "leg_d + toe + 0.8"],
+      "slot": "alt",
+      "material": "wood",
+      "mirror": true
+    },
+    {
+      "name": "strap",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.1", 0.75, "-leg_d / 2 - toe + 0.75"],
+      "size": ["leg_w + 0.2", 0.5, 0.75],
+      "slot": "trim",
+      "mirror": true,
+      "fine": true
+    },
+    {
+      "name": "thong",
+      "bone": "foot_r",
+      "origin": ["-hip_x - 0.25", 0.75, "-leg_d / 2 - toe - 0.15"],
+      "size": [0.5, 0.5, 1.25],
+      "slot": "trim",
+      "mirror": true,
+      "fine": true
+    }
+  ]
+}

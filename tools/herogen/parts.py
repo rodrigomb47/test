@@ -13,17 +13,21 @@ Cube fields: bone, origin, size (numbers or expressions over params and base dim
   taper, trim {slot, edge, width}, mirror (build the left copy from the right), fine (own fine_ bone for level of
   detail), inflate, rotation + pivot (cube rotation, degrees), faces (subset), glow, tone, name, density, shade
   ("vertical": lit top, darker tip, the default for hair; "flat": none), skip_if_empty (leave the cube out when a
-  param makes one of its sizes 0, for optional pieces such as an ahoge).
+  param makes one of its sizes 0, for optional pieces such as an ahoge), outline (false: no dark hem row, for a
+  segment that continues into the next one).
 Paint op fields (paint over existing cubes, usually the base body): cubes [glob...], faces [...], y [lo, hi],
   x [lo, hi], z [lo, hi], abs_x [lo, hi] (|x|, for symmetric regions), side r|l, vee [y_tip, slope] (only where
   |x| <= (y - y_tip) * slope: a V neckline), slot, material, pattern, trim {slot, edge, width}, tone. Ranges are
   model pixels at rest, lower bound inclusive.
+Generators (style pass 2, gen.py): `strands` (rows of rotated strands, panels, frills), `chains` (bones along a
+  polyline with a box per segment: big tails) and `groups` (cubes sharing one rotation and pivot).
 Weapon parts (category weapons) are authored in grip space (grip centre at 0,0,0, blade along -z, as a held item at
   rest) with cube roles hilt or blade, a scabbard cube list and a tip point; see apply_weapon.
 """
 import fnmatch
 import os
 
+import gen
 from expr import evaluate
 from palette import FIXED, SLOTS
 from rig import BASE_SLOTS, FACES, Bone, Cube, mirror_name
@@ -156,23 +160,27 @@ def _material(ctx, m):
     return m
 
 
-def _declare_bones(ctx):
+def _declare_one(ctx, name, parent, pivot):
+    """Declare a part bone, or move a rig bone's pivot (it must keep its rig parent)."""
     model = ctx.model
+    parent = ctx.renames.get(parent, parent)
+    if ctx.prefix:
+        new = ctx.prefix + name
+        ctx.renames[name] = new
+        model.declare_bone(new, parent, pivot, ctx.where)
+    elif name in model.catalogue and model.catalogue[name].source == "rig":
+        rigb = model.catalogue[name]
+        if rigb.parent != parent:
+            raise HerogenError("%s: rig bone %s must keep its parent %s" % (ctx.where, name, rigb.parent))
+        rigb.pivot = tuple(pivot)
+        model.use_bone(name)
+    else:
+        model.declare_bone(name, parent, pivot, ctx.where)
+
+
+def _declare_bones(ctx):
     for b in ctx.part.get("bones", []):
-        name, parent = b["name"], ctx.renames.get(b["parent"], b["parent"])
-        pivot = ctx.at(b["pivot"])
-        if ctx.prefix:
-            new = ctx.prefix + name
-            ctx.renames[name] = new
-            model.declare_bone(new, parent, pivot, ctx.where)
-        elif name in model.catalogue and model.catalogue[name].source == "rig":
-            rigb = model.catalogue[name]
-            if rigb.parent != parent:
-                raise HerogenError("%s: rig bone %s must keep its parent %s" % (ctx.where, name, rigb.parent))
-            rigb.pivot = pivot
-            model.use_bone(name)
-        else:
-            model.declare_bone(name, parent, pivot, ctx.where)
+        _declare_one(ctx, b["name"], b["parent"], ctx.at(b["pivot"]))
 
 
 def _target_bone(ctx, bone, fine):
@@ -225,33 +233,53 @@ def _cube_from_spec(ctx, spec, n, bone, origin, size, name_suffix=""):
                 pattern=ctx.pattern(spec.get("pattern")), cutout=spec.get("cutout"),
                 taper=float(spec["taper"]) if "taper" in spec else None, trim=ctx.trim(spec.get("trim")),
                 glow=bool(spec.get("glow")) or spec.get("material") == "glow", tone=int(spec.get("tone", 0)),
-                density=density, shade=shade)
+                density=density, shade=shade, outline=bool(spec.get("outline", True)))
+
+
+def _place(ctx, spec, name, bone, origin, size, rotation=None, pivot=None, mirror=False):
+    """Add one cube (and its mirrored copy) to the model."""
+    model = ctx.model
+    bone = _target_bone(ctx, bone, spec.get("fine"))
+    spec = dict(spec, name=name)
+    cube = _cube_from_spec(ctx, spec, 0, bone, origin, size)
+    if rotation is not None:
+        cube.rotation, cube.pivot = tuple(rotation), tuple(pivot)
+    if ctx.prefix:
+        cube.name = ctx.prefix + cube.name
+    model.add_cube(cube)
+    if mirror:
+        mbone = _mirror_bone(ctx, bone)
+        morigin = (-(origin[0] + size[0]), origin[1], origin[2])
+        mc = _cube_from_spec(ctx, spec, 0, mbone, morigin, size, ":l")
+        if cube.rotation is not None:
+            mc.rotation = (cube.rotation[0], -cube.rotation[1], -cube.rotation[2])
+            mc.pivot = (-cube.pivot[0], cube.pivot[1], cube.pivot[2])
+        if ctx.prefix:
+            mc.name = ctx.prefix + mc.name
+        model.add_cube(mc)
 
 
 def _add_cubes(ctx):
-    model = ctx.model
-    for n, spec in enumerate(ctx.part.get("cubes", [])):
+    specs = list(ctx.part.get("cubes", [])) + gen.groups(ctx)
+    for n, spec in enumerate(specs):
         origin = ctx.at(spec["origin"])
         size = ctx.ev(spec["size"])
         if any(s < 0 for s in size):
             raise HerogenError("%s: cube %d has a negative size" % (ctx.where, n))
         if spec.get("skip_if_empty") and any(abs(s) < 1e-9 for s in size):
             continue                       # an optional piece switched off by a param (an ahoge of height 0)
-        bone = _target_bone(ctx, spec["bone"], spec.get("fine"))
-        cube = _cube_from_spec(ctx, spec, n, bone, origin, size)
-        if ctx.prefix:
-            cube.name = ctx.prefix + cube.name
-        model.add_cube(cube)
-        if spec.get("mirror"):
-            mbone = _mirror_bone(ctx, bone)
-            morigin = (-(origin[0] + size[0]), origin[1], origin[2])
-            mc = _cube_from_spec(ctx, spec, n, mbone, morigin, size, ":l")
-            if ctx.prefix:
-                mc.name = ctx.prefix + mc.name
-            if mc.rotation is not None:
-                mc.rotation = (mc.rotation[0], -mc.rotation[1], -mc.rotation[2])
-                mc.pivot = (-mc.pivot[0], mc.pivot[1], mc.pivot[2])
-            model.add_cube(mc)
+        rotation = tuple(ctx.ev(spec["rotation"])) if "rotation" in spec else None
+        pivot = ctx.at(spec["pivot"]) if "pivot" in spec else None
+        if rotation is not None and pivot is None:
+            raise HerogenError("%s: a rotated cube needs a pivot" % ctx.where)
+        name = "%s#%s" % (ctx.pid, spec["name"]) if "name" in spec else "%s#%d" % (ctx.pid, n)
+        _place(ctx, spec, name, spec["bone"], origin, size, rotation, pivot, bool(spec.get("mirror")))
+
+    def add(spec, origin, size, rotation, pivot, bone, name, mirror):
+        _place(ctx, spec, name, bone, origin, size, rotation, pivot, mirror)
+
+    gen.chains(ctx, lambda name, parent, pivot: _declare_one(ctx, name, parent, pivot), add)
+    gen.strands(ctx, add)
 
 
 def _paint_ops(ctx):

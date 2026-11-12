@@ -4,10 +4,11 @@ Every cube face gets its own rectangle of WHOLE texels: round(face size x densit
 (a 2.5 px arm face uses 3 texels). A cube's faces are laid out as a vanilla skin net (top and bottom above; right
 side, front, left side, back below), so seams stay adjacent and the texture reads like a Minecraft skin in an editor.
 Islands are packed largest first (height, then width) at the first free spot in row-major order with a 1-texel gutter
-around everything already placed. Base body cubes pack into the base region (rig v2: 0, 0, 64, 80); part cubes into the rest
+around everything already placed. Base body cubes pack into the base region (rig v3: 0, 0, 64, 128); part cubes into the rest
 of the texture outside the fixed template regions; the texture is the first size of the rig's budget list the parts
-fit (rig v2: 256x128, then 256x256). A cube's density (texels per pixel) is 1 for the body and 2 for the face planes,
-the head front and head-anchored parts such as hair and ears (the head is drawn at double density).
+fit (rig v3: 256x128, then 256x256). A cube's density (texels per pixel) is 1 for the body and every part (rig v3: the hair strands are cubes, so
+hair is 1 texel per px too) and 2 for the face planes and the head front (the face is drawn at double density); a part
+may still ask for 2.
 
 Net orientation of each face rectangle (u to the right, v down), which is vanilla box UV:
   north (front): left edge = hero's right (-x), top = up      south (back): left edge = hero's left (+x)

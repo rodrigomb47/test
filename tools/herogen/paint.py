@@ -11,12 +11,12 @@ that point; the tone (-2..+2 on the slot's ramp) is the sum of
   only where the region above is a different one (a sleeve over a hand, a collar over a shirt);
 - an outline: -2 on the last row of a clothing or hair region (hems, sleeve ends, bangs) and on the lowest texel a
   cutout leaves in a column (jagged tips), never on skin;
-- material detail (cloth folds, hair strands and a crown ring, metal specular band, leather stitches, fur noise...);
+- material detail (one soft fold on big cloth faces, metal specular band, leather stitches, fur noise...);
 - vertical shading (`shade: vertical`, the default for hair): the top fifth of a side face one tone lighter, so every
   strand or lock reads lit at the root and dark at the tip, as pixel-art hair is drawn;
 - pattern tone and the op's or cube's own tone.
-Hair detail scales with the cube's density (strand lines every 3 texels at 1x, every 4 at 2x, running down the sides
-and front to back over the top). Rig v2 hair has no crown ring: light comes from the vertical shading of each strand.
+Style pass 2 paints flat, the way the references do (2-3 tones per face): hair has no painted strand lines (the strands
+are cubes, lit at the root and dark at the tip by the vertical shading), cloth has at most one fold per big face.
 Patterns use whole-texel 3D coordinates, so stripes and checks line up across neighbouring faces. Cutouts set alpha 0.
 A cutout is authored on the side faces, and the other faces follow it so the solid stays consistent: the top and
 bottom faces keep only what the side faces keep on their edge rows (a tapered or jagged tip has no flat full-size cap),
@@ -26,6 +26,7 @@ full-height side strip).
 import numpy as np
 
 from rig import SIDE_FACES
+from rot import file_matrix
 from uvpack import texel_point, texels
 from util import hash_ints, hash_unit, seed_of
 
@@ -35,6 +36,18 @@ OUTLINED = {"cloth", "hair", "leather", "fur"}
 RESTING = {"cloth", "leather"}
 SILHOUETTE_CUTS = {"tri_up", "tri_down", "peak", "round_top", "round_bottom"}   # cut through the front and back           # materials whose edges against the body get a soft shadow instead
 EPS = 1e-6
+NORMALS = {"north": (0, 0, -1), "south": (0, 0, 1), "east": (-1, 0, 0), "west": (1, 0, 0), "up": (0, 1, 0),
+           "down": (0, -1, 0)}
+
+
+def face_light(cube, face):
+    """Baked light of a face: by the direction it faces once the cube's own rotation is applied (a tail segment
+    turned upside down gets its light from below, not from its local top)."""
+    if cube.rotation is None:
+        return LIGHT[face]
+    n = file_matrix(cube.rotation) @ np.array(NORMALS[face], dtype=float)
+    best = max(NORMALS, key=lambda f: float(np.dot(n, NORMALS[f])))
+    return LIGHT[best]
 
 
 def _in(rng, v):
@@ -154,24 +167,14 @@ class Painter:
         side = face in SIDE_FACES
         k = cube.order * 8 + ["north", "south", "east", "west", "up", "down"].index(face)
         if mat == "cloth":
-            if side and H >= 6 and W >= 4 and j >= 2:
-                period = 3 + hash_ints(s, k, 1) % 2
-                off = hash_ints(s, k, 2) % period
-                if (i + off) % period == 0:
+            # one soft fold line on big flat faces only (style pass 2: flat painting, the geometry carries the
+            # volume; folds every few texels read as stripes on long limbs and flared panels)
+            if side and cube.rotation is None and H >= 8 and W >= 6 and j >= 2:
+                if i == 1 + hash_ints(s, k, 1) % max(1, W - 2):
                     return -1
             return 0
         if mat == "hair":
-            d = cube.density
-            period = 3 if d == 1 else 4
-            if side:
-                if j >= d and (i + hash_ints(s, k, 3)) % period == 0:
-                    return -1
-                if d == 2 and j < H // 2 and (i + hash_ints(s, k, 4)) % 5 == 2:
-                    return 1
-                return 0
-            if face == "up":            # strands run front to back over the top of the head
-                return -1 if (i + hash_ints(s, k, 3)) % period == 0 else 0
-            return -1 if hash_unit(s, k, i // d, j // d) < 0.25 else 0
+            return 0             # style pass 2: no painted strand lines, the strands are cubes
         if mat == "metal":
             if side:
                 if W >= 3 and i == W // 3:
@@ -184,8 +187,9 @@ class Painter:
         if mat == "leather":
             return -1 if side and H >= 4 and j == 1 and i % 2 == 0 else 0
         if mat == "fur":
-            r = hash_unit(s, k, i, j)
-            return -1 if r < 0.33 else (1 if r > 0.84 else 0)
+            # soft tufts: a few darker and lighter texels (style pass 2: flatter than the v2 noise)
+            r = hash_unit(s, k, i // 2, j)
+            return -1 if r < 0.16 else (1 if r > 0.9 else 0)
         if mat == "scale":
             if j % 2 == 1:
                 return -1
@@ -331,8 +335,8 @@ class Painter:
                 pslot, ptone = self.pattern_at(pattern, face, p, cube.density)
                 if pslot:
                     slot = pslot
-                t = LIGHT[face] + tone + ptone
-                if side:
+                t = face_light(cube, face) + tone + ptone
+                if side and cube.outline:
                     if mat in BANDED and H >= 5 and j >= H - H // 3 and ends[i] \
                             and all(grid[k][i][6] == group for k in range(j, H)):
                         t -= 1

@@ -43,13 +43,17 @@ def _to_render(p):
     return np.array([-p[0], p[1], p[2]], dtype=float)
 
 
-def _bone_matrices(geo):
-    """Rest transforms of every bone (render space): a function p -> p for each bone, parents applied."""
+def _bone_matrices(geo, pose=None):
+    """Rest transforms of every bone (render space): a function p -> p for each bone, parents applied. `pose` adds
+    file-degree rotations to named bones (a preview pose, as an animation would)."""
     mats = {}
     for name in geo.order:
         b = geo.bones[name]
         parent = b.get("parent")
         rot = b.get("rotation")
+        if pose and name in pose:
+            base = rot or (0.0, 0.0, 0.0)
+            rot = [base[i] + pose[name][i] for i in range(3)]
         local = None
         if rot and any(abs(a) > 1e-9 for a in rot):
             local = (_to_render(b["pivot"]), rotation_matrix(-rot[0], -rot[1], rot[2]))
@@ -63,9 +67,9 @@ def _apply_chain(chain, p):
     return p
 
 
-def quads(geo, hidden=(), uv_shift=None):
+def quads(geo, hidden=(), uv_shift=None, pose=None):
     """Every visible face: (corners (4x3, render space), rect (u, v, w, h), normal, face name, bone)."""
-    chains = _bone_matrices(geo)
+    chains = _bone_matrices(geo, pose)
     hidden_set = set()
     for name in geo.order:
         parent = geo.parent(name)
@@ -93,6 +97,8 @@ def quads(geo, hidden=(), uv_shift=None):
             n = _to_render(NORMALS[face])
             if crot:
                 n = crot[1] @ n
+            for _, m in reversed(chains[c.bone]):
+                n = m @ n
             if uv_shift and c.bone in uv_shift:
                 du, dv = uv_shift[c.bone]
                 rect = (rect[0] + du, rect[1] + dv, rect[2], rect[3])
@@ -105,7 +111,7 @@ def view_matrix(yaw, pitch=0.0):
     return rotation_matrix(-pitch, 0, 0) @ rotation_matrix(0, yaw, 0)
 
 
-def render(geo, tex, yaw=0.0, scale=8, hidden=(), uv_shift=None, tint=None, pad=2, bounds=None, pitch=0.0):
+def render(geo, tex, yaw=0.0, scale=8, hidden=(), uv_shift=None, tint=None, pad=2, bounds=None, pitch=0.0, pose=None):
     """RGBA image of the model seen from the front (camera on -z looking +z) after turning it by `yaw` degrees
     (negative yaw shows the hero's left side) and tilting it by `pitch` (camera above). `tint` maps bone names to an
     RGB multiplier."""
@@ -113,7 +119,7 @@ def render(geo, tex, yaw=0.0, scale=8, hidden=(), uv_shift=None, tint=None, pad=
     th, tw = tex.shape[:2]
     view = view_matrix(yaw, pitch)
     items = []
-    for pts, rect, n, face, bone in quads(geo, hidden, uv_shift):
+    for pts, rect, n, face, bone in quads(geo, hidden, uv_shift, pose):
         items.append(((view @ pts.T).T, rect, n, face, bone))
     if bounds is None:
         allp = np.concatenate([it[0] for it in items])
@@ -178,12 +184,12 @@ def _raster(img, depth, pts, uvs, tex, rect, mult, tw, th):
     img[yy, xx, 3] = 255
 
 
-def model_bounds(geo, yaws, hidden=(), pitch=0.0):
+def model_bounds(geo, yaws, hidden=(), pitch=0.0, pose=None):
     """Common screen bounds for several views, so they line up at the same scale."""
     xs, ys = [], []
     for yaw in yaws:
         view = view_matrix(yaw, pitch)
-        for pts, *_ in quads(geo, hidden):
+        for pts, *_ in quads(geo, hidden, None, pose):
             vp = (view @ pts.T).T
             xs += [vp[:, 0].min(), vp[:, 0].max()]
             ys += [vp[:, 1].min(), vp[:, 1].max()]

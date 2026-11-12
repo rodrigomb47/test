@@ -1,5 +1,5 @@
 """Command line (design 13.7). G1 provides build, build --check, check (geometry and face part of 14.2), previews
-(rig v2: the style set) and stats; G2 and G3 add preview/faces/sheet/gif, the animation commands and the kit
+(rig v3: the style set) and stats; G2 and G3 add preview/faces/sheet/gif, the animation commands and the kit
 checks. `check --style` also checks the style fixtures in herosrc/style (built in memory, never written)."""
 import argparse
 import io
@@ -54,11 +54,11 @@ def _palette_notes(b):
 def cmd_check(args):
     bad = 0
     for hid in _ids(args):
-        files, _ = build.build_files(hid)
+        files, b = build.build_files(hid)
         paths = build.out_paths(hid)
         geo = GeoModel(json.loads(files[paths["geo"]]))
         tex = np.array(Image.open(io.BytesIO(files[paths["texture"]])).convert("RGBA"))
-        problems = validate.check_built(geo, tex)
+        problems = validate.check_built(geo, tex, asymmetric=b.spec["asymmetric"])
         if hid in build.hero_ids():
             problems += build.check_files(hid, files)
         for p in problems:

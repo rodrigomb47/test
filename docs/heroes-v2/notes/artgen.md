@@ -400,3 +400,228 @@ pieces (hair against the face, the top against the bottom), so each piece reads 
   hime cut), more ears (fox, wolf, rabbit), robes, more armour.
 - **Owner review**: the proportions in the table above are PROPOSED; the lineup and the close-ups are the material to
   decide on (head share of the adult, chibi height, eye size).
+
+---
+
+## Style pass 2: rig v3, the strand hair kit and the face system (2026-11-12)
+
+The owner's feedback on the rig v2 previews: "the head feels too big and their faces [are] quite similar to each
+other". Inputs: the owner's three screenshots (three body forms on grass, a face close-up, a fox girl playing a violin
+whose body is long against its head, with a hair mass of many strand cubes, a big layered tail and a layered outfit),
+the measurements of the models behind them (`reference-study.md`) and of five other creators' models
+(`reference-survey.md`). Those models are used **only as measurements and techniques**: nothing of their geometry,
+textures, animations or character designs is in the repository or the generator, and the style below does not imitate
+any one creator. It takes the screenshots' feel (small face in a big hair mass, long body, dense layered detail) and the
+surveys' ranges (head shares, eye placement, cube budgets, construction methods). Where this section and the earlier
+ones differ, this one holds. HEROES_V2.md 3.6, 4.3, 4.6, 4.9, 11, 12.5, 13.2-13.5, 14.2 and 15.2 (G1s2) were updated
+to match.
+
+Previews (committed, regenerate with `python3 tools/herogen/herogen.py previews`), `docs/heroes-v2/previews/style/`:
+- `lineup.png` (the six fixtures on grass, one scale, heights in blocks), `lineup_three_forms.png` (one character per
+  form, shot like the owner's reference);
+- `face_lineup.png` (the six calm faces side by side, front and 3/4, with the features that differ),
+  `face_closeups.png` (every head in six moods, a blink and a 3/4 view);
+- `style_<id>.png` (turnaround: front, 3/4, side, back, 3/4 back, a blink, the far level of detail with the `fine_`
+  bones hidden, the weapon drawn), `style_<id>_frames.png` (the 12 moods and every frame);
+- `bases_v3.png` (the six bases), `test_rig.png`, `fallback.png`, `test_rig_texture.png`.
+The previews show the idle stance the animations will use (arms 9 degrees out, `previews.IDLE_POSE`); the geometry's
+rest pose keeps the arms straight down.
+
+### What changed, in one paragraph
+
+Rig v3 keeps the 10 px head, its 20x20-texel face and every bone name, makes the bodies 1.5-1.6 times longer and
+draws the whole model at a render scale of 0.56, so the head with its hair is about a quarter of an adult's height
+(the references' 0.22-0.25) and about the size of a vanilla player's head in the world. The eyes moved down and apart
+(eye centre 0.30 of the head height above the chin, was 0.45; default gap 6 texels, was 2-4). Hair is a mass of 68-89
+mostly rotated strand cubes from generators instead of 20-30 untilted slabs; ears are stacked slabs; big tails are five-bone
+chains of overlapping rolled boxes; outfits gained bell sleeves, panel skirts, frills, collars, bows, belts, an apron
+and armour plates. A face system gives every hero its own face (shape family, iris, pupil, highlights, lash, brows,
+mouth, blush, marks, glasses or an eye patch), and the six fixtures were redesigned so no two share an eye shape or a
+mouth. Cubes per hero: 136-224 (was 54-76), budget 300.
+
+### Proportions (rig v3)
+
+| Form | Head top (px) | Chin | Hip (legs) | Waist / chest / chest top | Shoulder / elbow / wrist / hand bottom | Head share with 3 px of hair | World height at 0.56 |
+|---|---|---|---|---|---|---|---|
+| adult | 52 | 42 | 24.5 (0.47) | 27.5 / 31 / 39.5 | 38.5 / 31 / 23 / 19.5 (mid-thigh) | 0.24 (references 0.22-0.24) | 1.82 blocks (a player is 1.8) |
+| teen | 45 | 35 | 20 (0.44) | 22.5 / 25.5 / 32.5 | 31.5 / 25.5 / 19.5 / 16.5 (upper thigh) | 0.27 (references 0.25) | 1.58 blocks |
+| chibi | 35 | 25 | 12 (0.34) | 14 / 16.5 / 23.5 | 22.5 / 18 / 14 / 11.5 (hip line) | 0.34 (references 0.32-0.33) | 1.23 blocks |
+
+- Measured on the fixtures (hair top from the hair cubes): adult 0.235, teen 0.27-0.30 (the spiky style is tall),
+  chibi 0.34-0.37. The reference screenshot gives 0.22 / 0.25 / 0.32 for its tall, mid and chibi forms.
+- **Why keep the 10 px head** (the survey's route a) rather than the study's 8 px head: the 20x20-texel face has room
+  for the face system's shapes (the study's 16x16 would cut the eye body to 5 rows), and every head-local number in the
+  parts stays. **Why one render scale for every form** (the survey proposed 0.71 / 0.7 / 0.63): the same texel size and
+  the same head size on every form, as in the owner's three-forms screenshot, and a lineup at one model-pixel scale is
+  already to world scale. 0.56 has two decimals because generated JSON keeps three.
+- Widths grew with the bodies (the references' limbs are thick: legs about 0.35-0.5 of the head width). Standard
+  builds, female / male: adult chest 7.5 / 9, waist 6 / 7.5, hips 8 / 8.5, arm 3 / 3.5, leg 3.75 / 4; teen chest
+  6.5 / 7.5, arm 2.75 / 3, leg 3.25 / 3.5; chibi chest 6 / 6.5, arm 2.5 / 2.75, leg 3. Slim and large builds as before
+  (widths only). Arms still hang flush with the chest, legs inside the hips.
+- Necks are 1.5-2.5 px visible; hands 2.5-3.5 px tall "mittens" at the arm's width; toes 1-1.5 px.
+- `visual.json` gains `render_scale`; the hitbox is `height_px x render_scale x scale / 16` blocks (A1).
+
+### Face (rig v3 layout and the face system)
+
+Face rows (0.5 px each, top = 0): 0-6 forehead (under the bangs), 7-16 the eyes plane (brows 7-8, skin 9, lash 10,
+eye body 11-16), 17-19 the mouth plane (8x3, the mouth line on row 18), 17-18 the cut-out cheeks plane. The bangs may
+reach down to head-local y 5.5 (they may cover the brows, never the lash or the eyes). Everything is drawn over one
+**skin layer** (skin, jaw shading, marks): the head front is that layer with holes, the eye frames start from its rows
+7-16, the mouth frames from rows 17-19, so marks cross planes without seams and the mouth plane's edge columns always
+equal the head front.
+
+| Lever | Values | Notes |
+|---|---|---|
+| `eyes` (shape family) | `round`, `wide` (big, sparkle highlights), `almond`, `sharp` (tsurime), `droopy` (tareme), `narrow`, `sleepy` (jitome, a heavy lid hides the iris top), `heavy_lid`, `cat` (slit pupil), `small`; aliases `tsurime`, `tareme`, `jitome`, `sparkly` | each shape is a per-column opening (top and bottom row), so a raised or lowered outer corner, a sloped lash and a lidded look come from the shape; `width` 5-7 stretches or squeezes it |
+| `iris_style` | `gradient`, `two_tone` (the reference look), `ring`, `solid`, `glossy` | `iris` colour; `iris2` for a different left eye (heterochromia) |
+| `pupil` | `round` (2x2), `dot`, `slit`, `none`, `star`, `ring` | |
+| `highlights` | `one`, `two`, `sparkle`, `inner`, `none` (1 and 2 still read) | |
+| `lashes`, `flick`, `lower_lash` | weight 0-3; outer flick `up`, `down`, `none` | female default 2 / up / lower lash, male 1 / none |
+| `spacing` | 2, 4, 6 (default), 8 texels between the inner corners | eyes may reach the face edges |
+| `brows` | `thin_arched`, `straight`, `straight_thick`, `worried`, `bold`, `angled` (stern), `short` (round dots), `none` | moods move them as before; blinks keep them |
+| `mouth`, `fang` | `small`, `soft`, `wide`, `cat` (ω), `stern`, `fang`, `pout`, `smirk`; fangs `left`, `right`, `both` | each style has its own rest mouth and its own 8 frames |
+| `blush` | `true` / `false`, or a style: `soft`, `hatch`, `dots` | |
+| `marks` | `freckles`, `beauty_mark` (at the eye or the mouth), `scar` (eye, cheek, nose), `face_paint` (stripes, tear, dots, chevron; any palette slot), `stubble`, `bandage`; `side` r, l or both | one-sided marks make the face asymmetric |
+| wear | `glasses` (`round`, `square`, `half`; `glasses_color` a palette slot), `eyepatch` (r or l) | drawn into every eye frame, so blinks and moods keep working behind them; the patched eye shows nothing in any frame |
+
+- All 12 eye frames, 8 mouth and 4 cheek frames and the 12-mood table are unchanged in meaning. The closed eye is now
+  the reference's "dropped lash bar": a dark line low across the eye, doubled by a soft row for lash weight 2 or more.
+- The validator's mirror check is skipped for asymmetric faces (`spec.asymmetric`: an eye patch, `iris2`, a one-sided
+  mark).
+- `face.signature` and `face.distinct` compare two faces feature by feature (the iris hue counts when 40 degrees or more
+  apart). The six fixtures differ pairwise in at least five features and share no eye shape and no mouth
+  (`test_style.test_faces_are_distinct`).
+
+### The six fixtures (original designs, each with its own face and silhouette)
+
+| Fixture | Base | Silhouette | Face |
+|---|---|---|---|
+| Tansy | chibi_f | twin tails tied high with gold ties, stacked cat ears, a curling five-bone cat tail, bell-sleeved kimono top with frilled cuffs, panel skirt with a frill hem under a frilled apron, sash bow | `wide` eyes with sparkle highlights, lash 3 with an up flick, no brows (bangs), `cat` mouth with a fang, hatched blush |
+| Tobin | chibi_m large | round fluffy bob that curls under, round ears, a big five-bone fluffy tail, kimono top over a hakama, tabi and sandals | `droopy` eyes, two-tone iris, `short` brows, `soft` mouth, freckles, dot blush |
+| Rowan | teen_m | spiky messy hair, open jacket with lapels, hood and flared hem, striped scarf with a tail blowing back, belt and pouch, cuffed boots | `sharp` eyes with a ring iris, `angled` brows, `smirk` with a fang, a plaster on the left cheek |
+| Wren | teen_f slim | long layered hair to the back with a curled ahoge, sailor-collared short jacket with a ribbon bow, pleated skirt, capelet, thigh socks | `sleepy` (jitome) eyes behind round gold glasses, a down flick, `pout`, a beauty mark under the left eye |
+| Maren | adult_f | high ponytail, breastplate with ridge and tassets, layered pauldrons, gauntlets with flared cuffs, coat tails, long cape with a fur mantle, greaves with knee cops, sword | `narrow` eyes 8 texels apart, two-tone iris, thick straight brows, `stern` mouth, crimson war paint stripes |
+| Garrick | adult_m | low ponytail with a side-swept fringe, wide-sleeved kimono coat over a long hakama, sword | an eye patch over the right eye, a `heavy_lid` left eye with a slit pupil and a scar through it, `bold` brows, `wide` mouth, stubble |
+
+### Hair kit 2 (strands, `gen.py`)
+
+Every style is built from the same layers, head-local, 1 texel per px (the strands are the detail now, so double
+density is kept for the face only):
+1. **cap** open at the front, 0.3 px outside the head (y 1.5 up to 10.5), and a **stepped dome** (three slabs to
+   y 12.5): the far silhouette, not `fine_`;
+2. **crown**: 16 strands on a ring of radius 3.5 at y 12.1, 3 px wide, 4.5-5 px long, flared about 40 degrees, so the
+   top reads round and the mass is 14-15 px wide (1.4-1.5 head widths; the reference's 1.9 is for a 7 px head); a
+   **crown top** ring of 7 and a **whorl** of 8 strands lying almost flat (74 degrees) from the centre hide the dome's
+   steps;
+3. an **inner** ring (darker, short flare) and a **mid** ring (5.75 px radius, 2.75 px strands, two depths) for the
+   sides and back, length per style;
+4. a **fringe base** slab (jagged) and 7-8 **fringe** strands (1.75-2 px wide), shaped by `fan` (positive parts them,
+   negative draws them together), `zigzag` (alternating tilt) or `lean` (side-swept); their tips are clipped above the
+   eyes by the generator (`clear_face`), so a fringe can never cover the lash;
+5. **side locks** (1-2 per side, tapered, past the chin) and side strands;
+6. the style's own pieces: long **back** layers at two depths (9 strands, tapered), a **ponytail** or **twin tails** as
+   a ring of strands round the tie on their own bone (plus one core box for the far view), an **ahoge** as a two-bone
+   chain (`when: ahoge`).
+Strands are painted flat: lit top fifth, a darker lower third and a dark tip; no painted strand lines (the cube edges
+are the strands); a per-strand `tone` cycle gives the layered look. Hair cubes: 68-89 per style, 90% of them
+rotated and on `fine_` bones.
+
+Styles: `long_layered`, `twin_tails`, `messy_short`, `short_crop`, `bob`, `high_ponytail_long`, `low_ponytail` (new).
+
+### Ears, tails, outfits
+
+- **Ears**: `cat` is seven 1 px slabs, each narrower and shallower than the one below, a dark tip, a pink inner plate
+  and a light tuft, tilted out and back as one rotated `group`; `round` is a rounded disc with a cap and an inner plate.
+  They stand on the hair's top corners.
+- **Tails**: five-bone `chains` (rig v3 adds the optional `tail_4`, `tail_5`). `fluffy`: per segment a main box and
+  two boxes rolled 28 degrees either way about the segment (`fine_`), cross-section up to 7 x 6.5 px, flat bands
+  lightening toward a tapered light tip; `cat_long`: a slender curl with a light tip. Chain boxes are painted flat with
+  no hem line except at the tip, and every rotated face takes its baked light from the direction it faces after the
+  rotation (`paint.face_light`), so an upturned segment is not lit from below.
+- **Outfits** (all expressions over the base dims, so they fit every base):
+  - `kimono_wide`: bell sleeves of 8 panels round each forearm on the `sleeve` bones (flare 15-25 degrees by
+    `sleeve`), frill rings at the cuffs, puffed upper sleeves, crossed lapel slabs, the painted V collar;
+  - `jacket_open`: lapels, layered collar, a hood bunched behind the neck (three rotated slabs), cuffs, pockets, a
+    flared hem of panels open at the front;
+  - `short_jacket`: a sailor collar (back flap and two front flaps meeting in a V), a ribbon bow with tails, cuffs, a
+    short flared hem;
+  - skirts as rings of hinged panels on `skirt_f/b/l/r`: `flared_skirt` (12 panels and a frill hem ring),
+    `pleated_skirt` (14 knife pleats: alternate tones and depths), `hakama` (16 panels to the shins, a back board),
+    `coat_tails` (8 panels open at the front);
+  - accessories: `sash_bow` (obi, knot, loops up and out, tails splayed back), `sash_obi`, `scarf` (two tails, one
+    blowing back), `belt` (buckle, pouch), `apron` (new: a frilled panel on `skirt_f` and a back bow);
+  - armour: `breastplate` (ridge, gorget, waist plate, 8 tassets), `pauldrons` (a cap and two lames, each tilted
+    further out), `gauntlets` (shell, hand plate, a flared cuff of plates);
+  - back: `cape_long` (fur mantle ring, two hinged panels hanging back), `cape_short` (a ring of panels round the
+    shoulders, open at the front, with a clasp);
+  - legwear: `socks_shoes` (cuffed socks, round shoes with a sole and a strap), `boots` (cuff, sole), `tights_boots`,
+    `thigh_socks` (new), `tabi_sandals` (new: wooden soles, straps), `greaves` (knee cops, sabatons);
+  - headwear: `halo_ring` (moved above the new hair top), `ribbon_bow` (new).
+- The library has 37 parts (was 30). Every part on every base passes the geometry checks (`test_every_part_on_every_base`).
+
+### Parts format additions
+
+- **Generators** (`gen.py`): `strands` (line or arc paths; `count`, `width`, `depth`, `length` lists, `jitter`,
+  `flare`, `fan`, `zigzag`, `lean`, `layers`, `drop`, `tone`, `dir` up or down, `bones_by_angle`, `mirror`,
+  `clear_face`, default `fine`), `chains` (bones along a polyline, a box per segment, rolled extras, `taper_last`,
+  `cutout_last`, `slot_last`), `groups` (cubes sharing one rotation and pivot), and `when` on any of them.
+- Cube `outline` (false: no hem row, for a segment that continues). Named part cubes are now prefixed with the part id
+  (`<part>#<name>`), so two parts may use the same short names.
+- **Rotations in one place** (`rot.py`): GeckoLib applies a file rotation (rx, ry, rz) as Rz(-rz) Ry(ry) Rx(-rx) in
+  file coordinates; `file_angles` turns any wanted matrix into file angles. Positive x tilts a hanging piece's free end
+  back (+z), negative x forward; for a hanging piece on the hero's right (-x), positive z swings its end inward and
+  negative z outward (mirrored copies flip y and z). `test_parts.GeneratorTest` and the validator test pin this.
+
+### Validator and previews
+
+- The clear-face check now rotates corners with GeckoLib's sense of rotation (`rot.file_matrix`; the old check used the
+  opposite sign for x and z rotations, harmless while only a few cubes were rotated).
+- New budget `lod_cubes` (130): cubes outside `fine_` bones, what is still drawn beyond the fine distance.
+- Asymmetric faces skip the mirror check (`check_built(..., asymmetric=...)`).
+- Previews: `ortho.render(..., pose=...)` (file degrees added to bone rotations; normals follow), the far view (`fine_`
+  hidden), `face_lineup`, heights in blocks.
+
+### Cube budget (PROPOSED) and why
+
+| Budget | Value | Validator |
+|---|---|---|
+| cubes per hero | at most **300**, typical **130-230** (the fixtures: 136-224) | error |
+| cubes outside `fine_` bones | at most **130** (the fixtures: 54-92) | error |
+| bones | at most **100** (the fixtures: 51-74) | error |
+| texture | 256x128 (every fixture fits, 9-18k texels painted) or 256x256 | error |
+
+Why not the reference's 300-500: up to about 50 heroes can be on screen and GeckoLib transforms every vertex on the CPU
+each frame. With HEROES_V2 11's unmeasured estimate (0.4-1.1 microseconds per visible cube), 50 heroes at 450 cubes
+would cost 9-25 ms per frame, while 12 near heroes at 230 plus 38 far ones at 90 (their `fine_` strands, frills and
+rolled tail boxes hidden beyond 20 blocks) cost about 6,200 cube-renders, 2.5-6.8 ms, the same band as the study's
+proposal and about 1.8 times rig v2's worst case for about three times the detail where the player looks. The survey
+shows multi-character packs at 70-250 cubes and single-avatar showpieces above 300; the cap leaves room for leaders
+and bosses up to 300. The per-cube cost is still to be measured (HEROES_V2 14.7); if it is high, tighten the LOD rule
+(fewer heroes at full detail), not the art.
+
+### Decisions (each deliberate)
+
+1. 10 px head with one render scale (above), not an 8 px head or per-form scales.
+2. Expressions stay texture frames on three planes (12 + 8 + 4 frames from 3 cubes); the references' cube faces would
+   cost 46-118 cubes per hero. Their look is borrowed instead (low wide eyes, two-tone iris, dropped lash bar).
+3. Hair at 1 texel per px (was 2): the strands carry the detail, the 2x texels went into a 4x larger hair surface.
+4. No UV island sharing (the study's suggestion): every fixture fits 256x128 without it; revisit when a hero needs
+   256x256.
+5. Previews show an idle stance (arms 9 degrees out); the rest pose stays straight so animations key from neutral.
+6. The six fixtures keep their names and roles but were redesigned (new hair, faces and outfits); none copies a
+   reference character.
+
+### Open items
+
+- **Owner review**: the head shares (0.24 / 0.27 / 0.34 with hair), the render scale (adult 1.82 blocks, a teen 1.58,
+  a chibi 1.23), and the face system on the six fixtures.
+- **A1**: hitbox from `height_px x render_scale x scale`; eye height (head_y + 3) x render_scale.
+- **A2**: the renderer scales the whole model by `render_scale`; items at `item_r`/`item_l` need a 1/0.56 counter-scale
+  to keep vanilla tool size; frame regions changed (mouth 8x3 at 64,30; cheeks at 64,33), read them from `visual.json`.
+- **G2**: confirm in game that cube rotations on all three axes render as `ortho` shows (the rotation convention is
+  pinned to GeckoLib's code, the in-game screenshot is still to come), and the far view's look at 20+ blocks.
+- **G3**: the idle animation sets the arms' A-pose; chains to key or sway: twin tails (`twin_r`, `twin_l`), ponytail
+  (`tail_hair_1/2`), ahoge (`ahoge`, `ahoge_tip`), tails (`tail_1..5`), ears, sleeves, skirt panels, scarf tails, cape.
+  Sway wrapper bones (study 11.7) are not added yet.
+- **G7**: a distinctness NOTE from `face.distinct` across a batch of heroes; a second LOD tier (study 11.5 LOD2) if the
+  measurement asks for it.

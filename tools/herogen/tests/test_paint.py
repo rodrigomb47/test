@@ -13,8 +13,16 @@ def luma(px):
     return 0.299 * px[0] + 0.587 * px[1] + 0.114 * px[2]
 
 
+def cube_named(model, name):
+    """A cube by its name, or by the name a part gave it (parts prefix their cube names with the part id)."""
+    for c in model.cubes:
+        if c.name == name or c.name.endswith("#" + name):
+            return c
+    raise KeyError(name)
+
+
 def face_pixels(b, cube_name, face):
-    c = b.model.cube(cube_name)
+    c = cube_named(b.model, cube_name)
     u, v, w, h = c.uv[face]
     return b.image[v:v + h, u:u + w]
 
@@ -102,7 +110,7 @@ class ShadingRulesTest(unittest.TestCase):
 
     def test_one_garment_is_not_striped(self):
         chest = self.px("chest", "south")                  # continues into the waist below: no band on its last row
-        self.assertTrue((chest[-1] == chest[0]).all(), "no lower-third band where the garment continues")
+        self.assertTrue((chest[-1] == chest[2]).all(), "no lower-third band where the garment continues")
         waist = self.px("waist", "south")                  # under the wider chest, but the same garment: no occlusion
         self.assertTrue((waist[0] == waist[1]).all(), "no occlusion row inside one garment")
         shin = self.px("shin_r", "south")
@@ -125,7 +133,7 @@ class ShadingRulesTest(unittest.TestCase):
 
     def test_cutout_carries_to_every_face(self):
         def keep(name, face, i, j):
-            c = self.b.model.cube(name)
+            c = cube_named(self.b.model, name)
             _, _, W, H = c.uv[face]
             return Painter.keep(c, face, i, j, W, H)
         ear_up = self.px("ear", "up")

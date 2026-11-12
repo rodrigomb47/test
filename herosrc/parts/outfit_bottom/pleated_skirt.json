@@ -1,34 +1,41 @@
 {
-  "_comment": "Rig v2 starter: a pleated skirt of four panels on the skirt bones (secondary motion), trimmed hem.",
+  "_comment": "A pleated skirt (style pass 2): fourteen narrow panels round the hips, alternately light and dark and at two depths (knife pleats), flared 13 degrees, a trimmed hem and a waistband.",
   "id": "outfit_bottom/pleated_skirt",
   "category": "outfit_bottom",
-  "slots": {"main": "accent", "trim": "trim"},
-  "params": {"drop": {"default": 0.75, "max": 1.2, "min": 0.4}},
+  "slots": {"main": "primary", "trim": "trim"},
+  "params": {"drop": {"default": 0.6, "max": 1.2, "min": 0.2}},
   "occupies": ["skirt"],
   "paint": [{"cubes": ["hips"], "material": "cloth", "slot": "main"}],
   "cubes": [
     {
-      "origin": ["-hips_w / 2 - 0.6", "waist_y - (waist_y - knee_y) * drop", "-hips_d / 2 - 0.6"],
-      "size": ["hips_w + 1.2", "(waist_y - knee_y) * drop", 0.5],
-      "bone": "skirt_f",
-      "pattern": {"type": "pleats", "width": 1},
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
-    },
-    {
-      "origin": ["-hips_w / 2 - 0.6", "waist_y - (waist_y - knee_y) * drop", "hips_d / 2 + 0.1"],
-      "size": ["hips_w + 1.2", "(waist_y - knee_y) * drop", 0.5],
-      "bone": "skirt_b",
-      "pattern": {"type": "pleats", "width": 1},
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
-    },
-    {
-      "origin": ["-hips_w / 2 - 0.6", "waist_y - (waist_y - knee_y) * drop", "-hips_d / 2 - 0.1"],
-      "size": [0.5, "(waist_y - knee_y) * drop", "hips_d + 0.2"],
-      "bone": "skirt_r",
-      "mirror": true,
-      "pattern": {"type": "pleats", "width": 1},
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+      "name": "band",
+      "bone": "skirt",
+      "origin": ["-waist_w / 2 - 0.3", "waist_y - 0.25", "-waist_d / 2 - 0.3"],
+      "size": ["waist_w + 0.6", 1, "waist_d + 0.6"],
+      "slot": "main",
+      "tone": -1
     }
   ],
-  "secondary": {"chain": ["skirt_f", "skirt_b", "skirt_l", "skirt_r"], "damping": 0.7, "stiffness": 0.5}
+  "strands": [
+    {
+      "name": "panel",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.25",
+      "radius": ["hips_w / 2 + 0.15", "hips_d / 2 + 0.15"],
+      "angles": [-180, 179.999],
+      "count": 14,
+      "width": "(hips_w + hips_d) * 0.26 + 0.5",
+      "depth": 0.75,
+      "length": "(waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75",
+      "flare": 13,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1],
+      "layers": [0, 0.35],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ]
 }

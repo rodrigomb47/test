@@ -1,6 +1,7 @@
 """`<id>.visual.json`: the client facts `HeroModel` and `HeroFace` read (design 12.1).
 
-Fields: style library, blink profile, face frame layout and the resolved mood table (defaults with the hero's
+Fields: form, build, height_px and head_y (model pixels), render_scale (rig v3: model pixels to world pixels for the
+whole model; the hitbox is height_px x render_scale x scale / 16 blocks), style library, blink profile, face frame layout and the resolved mood table (defaults with the hero's
 overrides applied, so the Java side needs no copy of the defaults), move list (index -> animation name; filled by the
 animation generator), states, phase looks, bone groups the renderer treats specially (tint, fine, phase, weapon,
 items), texture facts and voice.
@@ -42,6 +43,7 @@ def visual_json(hero, model, spec, textures, source_hash, moves=None, states=Non
         "build": model.build,
         "height_px": model.env["head_top"],
         "head_y": model.env["head_y"],
+        "render_scale": model.env["render_scale"],
         "scale": art.get("scale", 100) / 100.0,
         "style": anim.get("style", "fists"),
         "texture": textures,

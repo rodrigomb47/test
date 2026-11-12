@@ -81,14 +81,14 @@ class UvTest(unittest.TestCase):
                     self.assertTrue(all(isinstance(a, int) for a in (u, v, w, h)))
                     if f in c.fixed:
                         continue
-                    self.assertTrue(u + w <= 64 and v + h <= 80, "%s %s %s outside the base region" % (bid, c.name, f))
+                    self.assertTrue(u + w <= 64 and v + h <= 128, "%s %s %s outside the base region" % (bid, c.name, f))
                     self.assertFalse(occ[v:v + h, u:u + w].any(), "%s %s %s overlaps" % (bid, c.name, f))
                     occ[v:v + h, u:u + w] = 1
             head = m.cube("head")
             self.assertEqual(head.uv["north"], (144, 0, 20, 20), "the 20x20 double-density face")
             self.assertEqual(m.cube("eyes").uv["north"], (64, 0, 20, 10))
-            self.assertEqual(m.cube("mouth").uv["north"], (64, 30, 8, 4))
-            self.assertEqual(m.cube("cheeks").uv["north"], (64, 34, 16, 2))
+            self.assertEqual(m.cube("mouth").uv["north"], (64, 30, 8, 3))
+            self.assertEqual(m.cube("cheeks").uv["north"], (64, 33, 16, 2))
             self.assertEqual((m.tex_w, m.tex_h), (256, 128))
 
     def test_every_build_packs(self):

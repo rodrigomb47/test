@@ -107,7 +107,7 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
 
 ```
  herosrc/  (repository only)        tools/herogen  (Python 3, Pillow, NumPy)     src/main/resources  (shipped)
-   rig/rig_v2.json                    build  ──►  assets/factionclash/geo/hero/<id>.geo.json
+   rig/rig_v3.json                    build  ──►  assets/factionclash/geo/hero/<id>.geo.json
    bases/<form>_<f|m>.json                   ──►  assets/factionclash/animations/hero/<id>.animation.json
    parts/<category>/<part>.json              ──►  assets/factionclash/animations/hero/_core|_style_<s>.animation.json
    palettes/, faces/                         ──►  assets/factionclash/textures/entity/hero/<id>[_glowmask|_p2].png
@@ -193,10 +193,12 @@ it has the `court` duty it is never sent alone. GameTest `heroNotDraftedIntoRaid
 
 ### 3.6 Size
 
-Rig v2 has three body forms (4.3): **chibi** 23 px to the crown (about 1.35 blocks drawn at 15/16), **teen** 28 px
-(1.64 blocks) and **adult** 33 px (1.93 blocks), each with the same 10 px head. `HeroEntity` takes its hitbox height
-from the form (`visual.json` `height_px` x 15/16 / 16 x scale; PROPOSED: at least 1.2 blocks so a chibi is not much
-harder to hit than a player crouching), width 0.6 like players.
+Rig v3 has three body forms (4.3): **chibi** 35 px to the top of the head, **teen** 45 px and **adult** 52 px, each
+with the same 10 px head, and the whole model is drawn at the rig's **render scale 0.56** (style pass 2: longer
+bodies, so the head with its hair is about a quarter of an adult's height, and a head about the size of a vanilla
+player's). In the world that is about **1.23, 1.58 and 1.82 blocks**. `HeroEntity` takes its hitbox height from the
+form (`visual.json` `height_px` x `render_scale` x scale / 16; PROPOSED: at least 1.2 blocks so a chibi is not much
+harder to hit than a player crouching; eye height (`head_y` + 3) x `render_scale` x scale), width 0.6 like players.
 The vanilla `generic.scale` attribute sets size: `art.scale` 85-110% (PROPOSED). The hitbox is capped at 1.98 blocks
 so every hero still walks through 2-high tunnels and doors; "large" heroes are broader through their base body, and
 horns or ears may stick out of the hitbox visually. GeckoLib's renderer applies `getScale()` (checked: 
@@ -254,20 +256,22 @@ NeoForge 21.1.150 and later (we use 21.1.209), is MIT-licensed and adds about 0.
    GameTests pass with GeckoLib on the headless server; a dedicated server from `tools/setup_server.sh` and the Xvfb
    `clientViewer` start with only our jar.
 
-### 4.3 The shared rig ("hero rig v2")
+### 4.3 The shared rig ("hero rig v3")
 
-Units are Bedrock pixels (1/16 block); feet at y = 0; drawn at 15/16 like players. Rig v2 (`herosrc/rig/rig_v2.json`,
-replacing rig v1 on 2026-11-12 after the owner's style reference: blocky, but with big anime heads and different body
-forms) has **three forms** with the **same 10x10x10 head** on each, so the face, the face texture layout and every
-head-anchored part (hair, ears, hats) fit every form:
+Units are Bedrock model pixels; feet at y = 0; the whole model is drawn at the rig's `render.scale` (**0.56**), so 16
+model px are about 9 world px. Rig v3 (`herosrc/rig/rig_v3.json`, 2026-11-12, replacing rig v2 after the owner's feedback
+"the head feels too big and their faces are quite similar": style pass 2, `notes/artgen.md`) keeps v2's bone names and
+its **three forms** with the **same 10x10x10 head** on each, so the face, the face texture layout and every
+head-anchored part (hair, ears, hats) fit every form; the bodies are 1.5-1.6 times longer, to the proportions measured
+on the owner's references and other creators' models (`notes/reference-study.md`, `notes/reference-survey.md`):
 
-| Form | Crown | Head share | Legs (hip) | Torso (hips, waist, chest) | Arms (shoulder pivot to hand bottom) | Reads as |
-|---|---|---|---|---|---|---|
-| `chibi` | 23 px (1.35 blocks) | 10 px = 0.43 | 7 | 1 + 1.5 + 3 | 12 to 7 | a small child, head as wide as the shoulders and sleeves |
-| `teen` | 28 px (1.64 blocks) | 0.36 | 11 | 1.5 + 2 + 3 | 16.5 to 10 | petite, head about a third of the height |
-| `adult` | 33 px (1.93 blocks) | 0.30 | 14 | 1.5 + 2.5 + 4 | 21 to 12 | tall, long legs, head a bit less than a third |
+| Form | Head top | Head share with hair (refs) | Legs (hip) | Torso (hips, waist, chest) | Arms (shoulder pivot to hand bottom) | World height | Reads as |
+|---|---|---|---|---|---|---|---|
+| `chibi` | 35 px | 0.34 (0.32) | 12 | 2 + 2.5 + 7 | 22.5 to 11.5 (hip line) | 1.23 blocks | a small child |
+| `teen` | 45 px | 0.27 (0.25) | 20 | 2.5 + 3 + 7 | 31.5 to 16.5 (upper thigh) | 1.58 blocks | petite |
+| `adult` | 52 px | 0.24 (0.22-0.24) | 24.5 | 3 + 3.5 + 8.5 | 38.5 to 19.5 (mid-thigh) | 1.82 blocks | about player height, long legs |
 
-Two-segment arms and legs, a 0.5-1 px neck, a 1 px toe (0.5 on chibi). Every height is a base dim (`hip_y`, `knee_y`,
+Two-segment arms and legs, a 1.5-2.5 px neck, 2.5-3.5 px "mitten" hands, a 1-1.5 px toe. Every height is a base dim (`hip_y`, `knee_y`,
 `waist_y`, `chest_y`, `chest_top`, `head_y`, `shoulder_y`, `elbow_y`, `wrist_y`, ...), so pivots are expressions over
 the dims and differ by form, while **bone names are the same on every base**: an animation keyed for one base plays on
 all of them (rotations transfer exactly; root position offsets are in pixels, so a bob authored for the adult is a little
@@ -288,7 +292,7 @@ root                                     whole-body offset (bob, dodge slide); n
 │  │   └─ back ─ cape_1 ─ cape_2 ; wing_l, wing_r ; weapon_back (sheathed copy)
 │  ├─ waist ─ sash                       faction tint band (section 4.7); v2: under waist (v1: chest)
 │  ├─ skirt ─ skirt_f, skirt_b, skirt_l, skirt_r       panels, hakama legs or coat tails
-│  └─ tail_1 ─ tail_2 ─ tail_3           (+ tail_b_*, tail_c_* ... for several tails)
+│  └─ tail_1 ─ tail_2 ─ tail_3 ─ tail_4 ─ tail_5   (five-bone chains; + tail_b_* ... for several tails)
 ├─ leg_r ─ shin_r ─ foot_r
 ├─ leg_l ─ shin_l ─ foot_l
 └─ vfx_tip_r, vfx_tip_l, vfx_chest, vfx_head, vfx_feet  (locators for effects; no cubes)
@@ -300,12 +304,12 @@ Standard widths (PROPOSED; the full set with the builds is in `herosrc/bases/`):
 
 | Base | Chest w x d | Waist w x d | Hips w x d | Upper arm w x d | Leg w x d | Shoulder pivot x |
 |---|---|---|---|---|---|---|
-| `chibi_f` | 5.5 x 3.5 | 5 x 3 | 6 x 3.5 | 2 x 2 | 2.5 x 2.5 | ±3.75 |
-| `chibi_m` | 6 x 3.5 | 5.5 x 3 | 6 x 3.5 | 2.5 x 2.5 | 2.5 x 2.5 | ±4.25 |
-| `teen_f` | 6 x 3.5 | 5 x 3 | 6.5 x 3.5 | 2 x 2 | 2.5 x 2.5 | ±4 |
-| `teen_m` | 7 x 3.5 | 6 x 3 | 6.5 x 3.5 | 2.5 x 2.5 | 3 x 3 | ±4.75 |
-| `adult_f` | 7 x 4 | 5.5 x 3.5 | 7 x 4 | 2.5 x 2.5 | 3 x 3 | ±4.75 |
-| `adult_m` | 8.5 x 4.5 | 7 x 4 | 7.5 x 4 | 3 x 3 | 3.5 x 3.5 | ±5.75 |
+| `chibi_f` | 6 x 3.5 | 5.5 x 3.5 | 6.5 x 4 | 2.5 x 2.5 | 3 x 3 | ±4.25 |
+| `chibi_m` | 6.5 x 4 | 6 x 3.5 | 6.5 x 4 | 2.75 x 2.75 | 3 x 3 | ±4.625 |
+| `teen_f` | 6.5 x 4 | 5.5 x 3.5 | 7 x 4 | 2.75 x 2.75 | 3.25 x 3.25 | ±4.625 |
+| `teen_m` | 7.5 x 4 | 6.5 x 3.5 | 7.5 x 4 | 3 x 3 | 3.5 x 3.5 | ±5.25 |
+| `adult_f` | 7.5 x 4.5 | 6 x 4 | 8 x 4.5 | 3 x 3 | 3.75 x 3.75 | ±5.25 |
+| `adult_m` | 9 x 5 | 7.5 x 4.5 | 8.5 x 4.5 | 3.5 x 3.5 | 4 x 4 | ±6.25 |
 
 The teen and adult female bases have a small bust cube; arms hang right next to the chest (shoulder pivot = half the
 chest plus half the arm); legs stay inside the hips. `art.form` picks the form (default `adult`), `art.base` the family
@@ -323,17 +327,20 @@ and `art.build` the build (12.5). The style guide that sets these numbers (head-
 | `sash`, `fine_sash_*` | tinted with the faction colour |
 | `eyes`, `mouth`, `cheeks` | face planes whose UVs the renderer shifts to the current frame |
 
-**Required and optional bones.** The tree above has 64 bones when every option is present (v1's 61 plus `ahoge`,
-`sleeve_r`, `sleeve_l`). 33 are **required** in every
+**Required and optional bones.** The tree above has 66 bones when every option is present (v1's 61 plus `ahoge`,
+`sleeve_r`, `sleeve_l`, `tail_4`, `tail_5`). 33 are **required** in every
 model (root, body, waist, chest, neck, head, face, eyes, mouth, cheeks, face_ctrl, the 10 arm bones with their
 locators and weapon bones, sash, the 6 leg bones and the 5 `vfx_*` locators); every other bone exists only when a part
 uses it (a hero without wings has no `wing_*` bones). Extra tails beyond the first chain use 2 bones each
 (`tail_b_1`, `tail_b_2`, ...), and every `p2_`/`p3_`/`fine_` group is its own bone, because visibility is per bone.
 
-**Budgets** (validator, PROPOSED): at most 72 bones (typical 40-60; a nine-tailed hero with orbiting lanterns, the worst
-case in the slice, is about 67) and 140 cubes (typical 60-110; the six style fixtures use 54-76 with layered hair),
-texture 256x128 (256x256 for winged heroes, many tails or very large weapons; the double-density head needs the width),
-at most 24 animations in a hero's own file. Texture memory: 256x128 RGBA is 128 KiB (256x256: 256 KiB), plus the same
+**Budgets** (validator, PROPOSED, style pass 2): at most **100 bones** (typical 50-80; generators add chain and
+`fine_` bones), at most **300 cubes** (typical 130-230; the six style fixtures use 136-224, of which 68-89 are hair
+strands) and at most **130 cubes outside `fine_` bones** (what is still drawn beyond the fine distance; the fixtures
+54-92); texture 256x128 (every fixture fits) or 256x256 for winged heroes, many tails or very large weapons; at most 24
+animations in a hero's own file. Why 300 and not the references' 300-500: up to about 50 heroes on screen, each vertex
+transformed on the CPU every frame; with the LOD rule (4.9) 12 near heroes at about 230 cubes and 38 far ones at about
+90 cost about 6,200 cube-renders, against about 22,500 at 450 cubes each (`notes/artgen.md`, "Cube budget"). Texture memory: 256x128 RGBA is 128 KiB (256x256: 256 KiB), plus the same
 for a glow mask and a phase texture when present; textures load when a hero is first drawn, so a campaign with 8-40
 heroes on screen holds 2-15 MiB, and all 200 at once would be about 25-75 MiB. Bones are cheap next to cubes (one matrix push per
 bone; only keyed bones are sampled), so the cube budget is the one that protects frame time.
@@ -380,33 +387,40 @@ Texture frames on flat planes, not eyelid cubes: anime faces are 2D drawings, an
 eyes, crossed pain eyes and wide surprise, which cubes cannot. Bones still move where depth helps (ears, tails,
 ponytails, a visor, a mask).
 
-- **Resolution**: the head's front face maps 10x10 px to 20x20 texels (double density); head-anchored parts (hair,
-  ears) are drawn at double density too; the rest of the body is one texel per pixel like vanilla skins.
-- **Planes**: `eyes` 10x5 px (20x10 texels, eyes and brows), `mouth` 4x2 px (8x4 texels), `cheeks` 8x1 px (16x2
-  texels). Bangs sit in front of them. Where they sit on the 10x10 head front (head-local px: y 0 is the chin, the head
-  spans x -5..5, y 0..10, with its front at z -5; face rows of 0.5 px counted from the top of the face):
+- **Resolution**: the head's front face maps 10x10 px to 20x20 texels (double density); the rest of the model,
+  hair included (rig v3: the strands are cubes now), is one texel per pixel like vanilla skins.
+- **Planes**: `eyes` 10x5 px (20x10 texels, eyes and brows), `mouth` 4x1.5 px (8x3 texels), `cheeks` 8x1 px (16x2
+  texels). Bangs sit in front of them. Rig v3 puts the eyes low and wide like the references (eye centre 0.30 of the
+  head height above the chin, was 0.45). Where the planes sit on the 10x10 head front (head-local px: y 0 is the chin,
+  the head spans x -5..5, y 0..10, with its front at z -5; face rows of 0.5 px counted from the top of the face):
 
 | Plane | x | y (head-local) | Face rows | Contents |
 |---|---|---|---|---|
-| (head front) | -5..5 | 8..10 | 0-3 | forehead (under the bangs) |
-| `eyes` | -5..5 | 3..8 | 4-13 | texel rows 0-1 brows, row 2 skin, row 3 the upper lash, rows 4-9 the eye body (anime eyes: lash and eye 3.5 px tall, a third of the face) |
-| `cheeks` | -4..4 | 2..3 | 14-15 | blush with hatch lines, sweat drop, tears (transparent elsewhere) |
-| `mouth` | -2..2 | 0..2 | 16-19 | mouth and chin |
+| (head front) | -5..5 | 6.5..10 | 0-6 | forehead (under the bangs) |
+| `eyes` | -5..5 | 1.5..6.5 | 7-16 | texel rows 0-1 brows, row 2 skin, row 3 the upper lash (lower for a shape whose corner sits lower), rows 4-9 the eye body |
+| `mouth` | -2..2 | 0..1.5 | 17-19 | mouth (its line on the middle row) and chin |
+| `cheeks` | -4..4 | 0.5..1.5 | 17-18 | blush, sweat drop, tears (transparent elsewhere; in front of the mouth plane's edges) |
+
+- **One skin layer** (style pass 2): skin, jaw shading and the face marks are drawn once; the head front is that layer
+  with holes, every eye frame starts from its rows 7-16 and every mouth frame from rows 17-19, so marks, glasses and an
+  eye patch cross the planes without seams and blink with the eyes. The face system (eye shape families, iris, pupil and
+  highlight styles, lashes, brows, mouths, blush, marks, glasses, eye patch) is in 13.5.
 
 - **No z-fighting by construction.** The 20x20 head-front texture is **transparent (alpha 0) exactly under the `eyes`
   and `mouth` planes**, which are fully opaque, so the planes sit 0.05 px in front of the head with nothing behind them
   to fight (a 0.02 px offset with a painted face behind it would flicker beyond about 30 blocks with a 24-bit depth
   buffer). The `cheeks` plane is cut-out (only blush pixels are opaque), sits 0.1 px in front, and is hidden beyond 16
-  blocks with the face freeze. `herogen check` verifies the alpha holes and that no cube face in front of the face
-  reaches below the lash line (head-local y 6.5) within |x| < 4.5 (bangs may cover the brows, never the lash or the
-  eyes; a hair cap open at the front may enclose the head); side locks outside that width may hang lower.
+  blocks with the face freeze. `herogen check` verifies the alpha holes and that no cube face in front of the face,
+  rotation included, reaches below head-local y 5.5 within |x| < 4.5 (bangs may cover the brows, never the lash or the
+  eyes; a hair cap open at the front may enclose the head); side locks outside that width may hang lower. The strand
+  generator shortens fringe strands to keep that rule by construction.
 - **Frames** (fixed texture regions, the same for every hero):
 
 | Strip | Region (u, v) | Frames |
 |---|---|---|
 | eyes | 64-143, 0-29 (4 x 3 grid of 20x10) | 0 open, 1 half, 2 closed, 3 happy, 4 angry, 5 sad, 6 surprised, 7 pain, 8 focused, 9 smug, 10 glowing, 11 sleeping |
-| mouth | 64-127, 30-33 (8 of 8x4) | 0 neutral, 1 smile, 2 talk A, 3 talk B or shout, 4 grit teeth, 5 frown, 6 cat mouth, 7 fang grin |
-| cheeks | 64-127, 34-35 (4 of 16x2) | 0 none, 1 blush, 2 sweat drop, 3 tears |
+| mouth | 64-127, 30-32 (8 of 8x3) | 0 neutral, 1 smile, 2 talk A, 3 talk B or shout, 4 grit teeth, 5 frown, 6 cat mouth, 7 fang grin |
+| cheeks | 64-127, 33-34 (4 of 16x2) | 0 none, 1 blush, 2 sweat drop, 3 tears |
 
 - **Renderer** (`HeroRenderer`, about 40 lines): `renderCubesOfBone` sets a UV shift for the bones named `eyes`,
   `mouth` and `cheeks` from the entity's `HeroFace`; `createVerticesOfQuad` adds the shift to each vertex's UV. GeckoLib
@@ -488,7 +502,9 @@ sheet lists it. The phase look uses `p2_`/`p3_` bones and, when the art spec ask
 
 ### 4.9 Level of detail and culling
 
-`fine_` bones hidden beyond 20 blocks (target 30-40% fewer cubes), face frozen beyond 16, `secondary` controller
+`fine_` bones hidden beyond 20 blocks (style pass 2: hair strands, rolled tail boxes, frills, bows and small plates
+are `fine_`; at most 130 cubes stay, the fixtures keep 54-92 of 136-224, about 45-60% fewer), face frozen beyond 16,
+`secondary` controller
 paused beyond 32, locator tracking off beyond 24, vanilla frustum culling with the inflated box (section 3.1). An
 unknown hero id on the client renders `_fallback.geo.json` (the neutral rig) tinted with the faction colour.
 
@@ -1143,7 +1159,7 @@ a second, under 100 bytes/s per hero per watching player. A telegraph decal is o
 |---|---|---|---|
 | Server tick, per hero | under 0.05 ms average in a fight, under 0.01 ms idle | move picks every 5 ticks, area queries capped (radius 12, 16 receivers), arena samples every 2 s, auras cached per base every 40 ticks | tick time with 4 leaders + 12 heroes vs without, in the campaign check: under +1 ms per tick (today 4.6-10.4 ms) |
 | Decals | 12 per hero, 48 per level | `Telegraphs` caps and clean-up | GameTest `telegraphDecalsCleanedUp` |
-| Client render, per hero at full detail | about 0.1-0.15 ms CPU (8-12 player models of vertex work) | cube budget 140 (typical 80-110), LOD (`fine_` bones beyond 20 blocks, face frozen beyond 16, secondary controller paused beyond 32), frustum culling | `-Dfactionclash.heroRenderStats` logs average microseconds per hero every 600 frames; lineups of 1, 16 and 64 heroes on the Xvfb client (CPU only) and on the owner's PC in the phase 5 play session |
+| Client render, per hero at full detail | about 0.1-0.25 ms CPU (estimate, unmeasured: 0.4-1.1 µs per visible cube) | cube budget 300 (typical 130-230), at most 130 outside `fine_` bones, LOD (`fine_` bones beyond 20 blocks, face frozen beyond 16, secondary controller paused beyond 32), frustum culling | `-Dfactionclash.heroRenderStats` logs average microseconds per hero every 600 frames; lineups of 1, 16 and 64 heroes on the Xvfb client (CPU only) and on the owner's PC in the phase 5 play session |
 | 20 heroes on screen | under 3 ms per frame | as above | same |
 | Client memory (all 200 baked at resource load) | under 60 MB | JSON sizes from the generator, shared libraries | heap histogram after a resource reload; if over 100 MB, move hero geometry out of the scanned folder and bake on first sight |
 | Resource reload | under +3 s | | timed in the client log |
@@ -1231,7 +1247,7 @@ Synonyms (ADJUSTED) add `crowd_control`, `cc`, `debuffer`, `trapper` → control
 | `scale` | whole % 85-110 | 100 | `generic.scale`; hitbox capped at 1.98 blocks |
 | `palette` | map slot to colour | archetype default | slots: `skin`, `skin_shade`, `hair`, `hair_accent`, `eyes`, `primary`, `secondary`, `accent`, `trim`, `metal`, `leather`, `glow`; every part colours from slots |
 | `parts` | list of 4-24 `{ part, color, params, pattern, pattern_colors, mirror, phase }` | archetype default | parts library entries (section 13.3); `phase` 2 or 3 makes it a `p2_`/`p3_` part |
-| `face` | object | archetype and gender | `eyes` template, `pupil` (`round`, `slit`, `star`, `ring`, `none`), `iris` colour, `lashes` 0-3, `brows` template, `mouth` template, `fang` (`none`, `left`, `right`, `both`), `marks` (cheek stripes, freckles, scar, beauty mark, tattoo lines), `blush` (bool), `overrides` (mood to frame substitutions) |
+| `face` | object | archetype and gender | the face system (13.5): `eyes` shape family, `width`, `spacing`, `iris` (and `iris2`), `iris_style`, `iris_width`, `pupil`, `highlights`, `lashes` 0-3, `flick`, `lower_lash`, `brows`, `mouth`, `fang`, `blush` (bool or a style), `marks` (freckles, beauty mark, scar, face paint, stubble, bandage; per side), `glasses`, `glasses_color`, `eyepatch`, `closed`, `overrides` (mood to frame substitutions) |
 | `weapon` | object | style default | `prop` (a part id in `weapons/`), `hand` (`right`, `left`, `both`, `pair`), `sheathed` (`hip`, `back`, `none`), `glow` |
 | `phases` | list | none | per phase: `show`, `hide` (bone or part ids), `palette` changes (a `_p2.png` is painted when any), `eyes_glow` |
 | `glow` | list | none | regions painted into the glow mask (eyes in a phase, runes, a weapon edge, foxfire) |
@@ -1531,8 +1547,8 @@ The generator turns the `thunderclap_draw` recipe into a 2.2 s animation whose `
 
 ```
 herosrc/
-  rig/rig_v2.json                bones, pivots (expressions over the base dims), required bones, joint limits, UV
-                                 template regions, face layout
+  rig/rig_v3.json                bones, pivots (expressions over the base dims), required bones, joint limits, UV
+                                 template regions, face layout, render scale, budgets
   bases/<form>_<f|m>.json        base dims per form and family, with slim and large width overrides (section 4.3);
                                  bases/_template.json holds the body cubes shared by all six
   style/<id>.hero.json           style fixtures: original characters on every base, built for the previews and tests
@@ -1553,20 +1569,20 @@ herosrc/
 
 | Region (u, v, w, h) | Contents |
 |---|---|
-| 0, 0, 64, 80 | base body (packed: head sides and top at 1x, torso, arms, legs) |
+| 0, 0, 64, 128 | base body (packed: head sides and top at 1x, torso, arms, legs; rig v3's longer bodies) |
 | 64, 0, 80, 30 | eye frames (4 x 3 of 20x10) |
 | 144, 0, 20, 20 | head front at 2x (20x20 texels for the 10x10 face) |
-| 64, 30, 64, 4 | mouth frames (8 of 8x4) |
-| 64, 34, 64, 2 | cheek frames (4 of 16x2) |
-| rest of 256x128 (or 256x256) | packed parts and weapon (first fit on an occupancy grid, largest first, 1-texel gutters); hair and ears at 2x |
+| 64, 30, 64, 3 | mouth frames (8 of 8x3) |
+| 64, 33, 64, 2 | cheek frames (4 of 16x2) |
+| rest of 256x128 (or 256x256) | packed parts and weapon (first fit on an occupancy grid, largest first, 1-texel gutters) |
 
 **Integer texels.** Many cube sizes are fractional (a 2.5 px arm, a 6.5 px hip). Box UV would put such faces on
 half-texel boundaries, which nearest-neighbour sampling turns into uneven pixel widths and bleeding at seams. So every
 face gets a **per-face UV rectangle of whole texels**: `round(face size x density)`, at least 1 (density 1, or 2 for the
 head front and face planes). A 2.5 px face drawn with 3 texels stretches them by 17%, which is invisible in game and
 keeps every pixel crisp. The packer works in whole texels only, and `herogen check` rejects any fractional UV. A part
-or cube may set `density` 2 (two texels per pixel): rig v2's hair and ear parts do, so the hair around the face has the
-face's texel size.
+or cube may set `density` 2 (two texels per pixel); rig v2's hair and ears did, rig v3's do not (the strands are cubes,
+so 1 texel per px keeps them flat-painted like the references and cuts the hair's texels by four).
 
 ### 13.3 The parts library
 
@@ -1617,7 +1633,23 @@ from `hair/high_ponytail_long`):
   dome, a fringe block over the forehead, 3-5 strand cubes over it whose tips stop at the lash line, side cover, back
   cover and the style's own pieces (long side locks, layered back strands, ponytails and twin tails on chains, an
   ahoge). Touching hair cubes of one colour are painted as one mass (no outline between them).
-- **Built for the rig v2 style set** (2026-11-12): hair `short_crop`, `messy_short`, `bob`, `long_layered`,
+- **Style pass 2 additions** (rig v3, `gen.py`, `notes/artgen.md`): **generators** next to plain cubes: `strands` (rows
+  of rotated boxes along a line or an arc, each hanging from an anchor or standing on it, with `flare` outward, `fan`,
+  `zigzag` and `lean` sideways, `layers` of depth, cycled `length`, `width`, `tone`, a deterministic `jitter`,
+  `bones_by_angle` for skirt panels, `mirror`, `clear_face` clipping, `fine_` by default: hair, bell sleeves, skirts,
+  frills, tassets, capes), `chains` (bones along a polyline with a box per segment and rolled extra boxes: big tails,
+  an ahoge) and `groups` (cubes sharing one rotation: an ear's stacked slabs, a bow's loops); `when` switches any of
+  them off; cube `outline`. `rot.py` holds GeckoLib's rotation convention in file space (a file rotation (rx, ry, rz)
+  applies Rz(-rz) Ry(ry) Rx(-rx)) and turns any wanted orientation into file angles. Named part cubes are prefixed
+  with the part id. The library (37 parts): hair `long_layered`, `twin_tails`, `messy_short`, `short_crop`, `bob`,
+  `high_ponytail_long`, `low_ponytail` (68-89 strand cubes each); ears `cat` (seven stacked 1 px slabs), `round`; tails
+  `cat_long`, `fluffy` (five-bone chains); tops `kimono_wide` (bell sleeves, cuff frills, crossed lapels),
+  `jacket_open` (lapels, hood, flared hem), `short_jacket` (sailor collar, ribbon bow); bottoms `flared_skirt` (panels
+  and a frill hem), `pleated_skirt`, `hakama`, `coat_tails`; accessories `sash_bow`, `sash_obi`, `scarf`, `belt`,
+  `apron`; armour `breastplate` (tassets), `pauldrons` (cap and two lames), `gauntlets` (flared cuff); back
+  `cape_long` (fur mantle), `cape_short`; legwear `socks_shoes`, `boots`, `tights_boots`, `thigh_socks`,
+  `tabi_sandals`, `greaves`; headwear `halo_ring`, `ribbon_bow`; `weapons/sword_plain`.
+- **Built for the rig v2 style set** (2026-11-12; rebuilt for rig v3 in style pass 2): hair `short_crop`, `messy_short`, `bob`, `long_layered`,
   `twin_tails`, `high_ponytail_long`; ears `cat`, `round`; tails `cat_long`, `fluffy`; outfit tops `kimono_wide` (wide
   hanging sleeves, crossed collar), `jacket_open` (hood, lapels, flared hem), `short_jacket`; bottoms `flared_skirt`
   (three stacked widening tiers), `hakama`, `coat_tails`, `pleated_skirt`; `accessories/sash_bow` (the faction sash as an
@@ -1651,7 +1683,8 @@ stay symmetric.
   shift hue toward blue-violet by up to 12 degrees and lose chroma, highlights shift toward yellow by up to 8 degrees
   (the hue-shifting of pixel-art shading). Skin ramps shift shadows toward red instead.
 - **Materials** decide how a face of a cube is painted: `cloth` (soft vertical gradient, folds every 3-4 texels on long
-  faces), `skin` (soft, blush region on the face plane only), `hair` (rig v2: every strand cube lit at the top fifth,
+  faces), `skin` (soft, blush region on the face plane only), `hair` (style pass 2: painted flat, 2-3 tones per face
+  and no strand lines, the strands being cubes; earlier: every strand cube lit at the top fifth,
   darker in its lower third, outlined at its tip; strand lines every 4 texels at 2x and short highlight streaks; no
   crown ring), `metal` (high contrast, a specular band, rim light), `leather` (mid contrast, stitch lines), `fur` (noise
   tufts, cut-out tips), `scale` (overlapping arcs), `wood`, `paper` (flat, ink marks), `lacquer` (glossy, sharp
@@ -1671,7 +1704,19 @@ stay symmetric.
 
 ### 13.5 Faces (`face.py`)
 
-- **Eye templates** (parametric, on the 20x10 eye plane of rig v2): `round`, `almond`, `sharp`, `droopy`, `cat`,
+- **Face system** (style pass 2, rig v3; full table in `notes/artgen.md`): eye **shape families** `round`, `wide`,
+  `almond`, `sharp` (tsurime), `droopy` (tareme), `narrow`, `sleepy` (jitome), `heavy_lid`, `cat`, `small`, each a
+  per-column opening so the shape carries the lash slope and the corners; **iris styles** `gradient`, `two_tone`,
+  `ring`, `solid`, `glossy` (and `iris2` for heterochromia); **pupils** `round`, `dot`, `slit`, `none`, `star`,
+  `ring`; **highlights** `one`, `two`, `sparkle`, `inner`, `none`; lash weight 0-3 with an outer **flick** up, down or
+  none; **spacing** 2-8; **brows** `thin_arched`, `straight`, `straight_thick`, `worried`, `bold`, `angled`, `short`,
+  `none`; **mouths** `small`, `soft`, `wide`, `cat`, `stern`, `fang`, `pout`, `smirk`; **blush** `soft`, `hatch`,
+  `dots`; **marks** freckles, beauty mark, scar, face paint, stubble, bandage; **wear** glasses (round, square, half)
+  and an eye patch. All of it is drawn into every frame it crosses, over one skin layer, so blinking and the 12 moods
+  keep working; `face.distinct` counts the features two faces differ in (review gate 2 and the style fixtures' test).
+  The closed eye is a dark line low across the eye (the references' dropped lash bar).
+- **Eye templates** (rig v2 text, kept for history; rig v3 replaces the rows below with the layout of 4.6 and the
+  shapes above) (parametric, on the 20x10 eye plane of rig v2): `round`, `almond`, `sharp`, `droopy`, `cat`,
   `sleepy`, `wide`, `narrow`, `heavy_lid`; parameters: width 5-7 texels, height 4-6 (plus the lash row), spacing 2, 4
   or 6, iris size 3-5 (at most width - 2), pupil type, one or two highlights, lash weight 0-3 (1 a dark line, 2 adds the
   outer corner, 3 an upward flick), lower lash on or off (on for female faces). Texel layout (the same for every hero,
@@ -1843,7 +1888,9 @@ planes on the fixed UV regions; texture size matches the geometry's `texture_wid
 texture and not overlapping; every action code the server can send resolves through the hero's chain; `hit` markers
 equal the server `frames` within one tick; `face_ctrl` channels use `step` easing; joint limits, planted feet and
 closed loops (13.6); action animations end on the idle settle key; whole-texel UVs; the alpha holes under the eye and
-mouth planes and nothing in front of the face below y 30 (4.6); `visual.json` move list equals the server move list;
+mouth planes and nothing in front of the face below head-local y 5.5, rotated corners included (4.6); at most 130 cubes
+outside `fine_` bones (4.3); the eyes mirror unless the face is asymmetric by design (an eye patch, `iris2`, a
+one-sided mark); `visual.json` move list equals the server move list;
 every file in the chain exists; the build is reproducible (`build --check`).
 
 Distinctness NOTEs (they feed review gate 2 with numbers instead of impressions): the preview renderer's front and side
@@ -1956,6 +2003,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | F4 | `Personality`, `Temperaments`, `LeaderBiases`, `LeaderDraft`, `FactionNameGen`, `Palette`, `BannerDesign`, `BaseStyles`, `Talents` | - | M | their unit tests (neutral equals today) |
 | G1 | herogen core: rig v1, 6 bases, UV template, packer, palette ramps, painter, face painter, geo writer, `visual.json`, determinism | - | L | Python tests; a test rig with face frames builds byte-identically twice |
 | G1s | Style pass after the owner's reference: rig v2 (three forms x two families x three builds, 10 px head, 20x20 face), larger eye frames, the layered hair kit, volumetric ears and tails, outfit volume parts, six original style fixtures, the style preview set | G1 | L | done 2026-11-12: all parts on all six bases pass the checks; previews in `docs/heroes-v2/previews/style/` |
+| G1s2 | Style pass 2 after the owner's feedback ("head too big, faces similar") and the reference measurements: rig v3 (longer bodies, render scale 0.56, low wide-set eyes), part generators (strands, chains, groups) and the strand hair kit, layered ears and five-bone tails, detailed outfits, the face system, six redesigned fixtures, budgets 300 cubes / 130 outside `fine_` / 100 bones | G1s | L | done 2026-11-12: 123 Python tests; every part on every base passes the checks; the six faces differ pairwise in 5+ features; previews regenerated |
 | G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px |
 | G3 | Animation generator: poses, primitives, recipes, secondary bake, markers, writer, frames into the server file, quality rules | G1 | L | Python tests; the test rig's idle, walk and a swing with a `hit` marker are generated (A2 plays them in game) |
 | G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs |

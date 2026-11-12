@@ -1,0 +1,70 @@
+{
+  "_comment": "A frilled apron over the skirt front (style pass 2): a panel from the waist on the front skirt bone, tilted like the skirt, a frill row under its hem, two shoulder straps painted over the top and a bow at the back (fine).",
+  "id": "accessories/apron",
+  "category": "accessories",
+  "slots": {"main": "secondary", "trim": "trim"},
+  "params": {"drop": {"default": 0.65, "max": 1.2, "min": 0.3}},
+  "occupies": ["apron"],
+  "paint": [
+    {
+      "cubes": ["chest", "bust"],
+      "faces": ["north", "south", "up"],
+      "abs_x": ["chest_w / 2 - 1.75", "chest_w / 2 - 0.5"],
+      "material": "cloth",
+      "slot": "main"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [-25, 0, 0],
+      "pivot": [0, "waist_y + 0.5", "-hips_d / 2 - 0.6"],
+      "cubes": [
+        {
+          "name": "apron",
+          "bone": "skirt_f",
+          "origin": [
+            "-hips_w / 2 + 1.25",
+            "waist_y + 0.5 - ((waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75) * 0.85",
+            "-hips_d / 2 - 1.0"
+          ],
+          "size": ["hips_w - 2.5", "((waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75) * 0.85", 0.4],
+          "material": "cloth",
+          "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "frill",
+      "bone": "skirt_f",
+      "path": "line",
+      "from": [
+        "-hips_w / 2 + 1.75",
+        "waist_y + 0.75 - ((waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75) * 0.77",
+        "-hips_d / 2 - 1.2 - ((waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75) * 0.36"
+      ],
+      "to": [
+        "hips_w / 2 - 1.75",
+        "waist_y + 0.75 - ((waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75) * 0.77",
+        "-hips_d / 2 - 1.2 - ((waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75) * 0.36"
+      ],
+      "count": 4,
+      "width": 1.5,
+      "depth": 0.35,
+      "length": 1.25,
+      "flare": 35,
+      "material": "cloth",
+      "tone": [0, -1]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "bow",
+      "bone": "skirt_b",
+      "origin": [-1.5, "waist_y + 0.5", "waist_d / 2 + 0.6"],
+      "size": [3, 1.25, 0.5],
+      "fine": true
+    }
+  ]
+}

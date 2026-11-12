@@ -1,11 +1,11 @@
 {
   "base": "adult_m",
   "bones": {
-    "fine": ["fine_sash_knot"],
+    "fine": ["fine_bangs", "fine_hair_l", "fine_hair_r", "fine_hair_top", "fine_sash"],
     "items": ["item_r", "item_l"],
     "locators": ["item_l", "item_r", "vfx_chest", "vfx_feet", "vfx_head", "vfx_tip_l", "vfx_tip_r"],
     "phase": {},
-    "tint": ["fine_sash_knot", "sash"],
+    "tint": ["fine_sash", "sash"],
     "weapon_drawn": [],
     "weapon_sheathed": []
   },
@@ -64,22 +64,23 @@
     "mouth_frames": ["neutral", "smile", "talk_a", "talk_b", "grit", "frown", "cat", "fang_grin"],
     "overrides": {},
     "regions": {
-      "cheeks": {"columns": 4, "frames": 4, "h": 2, "u": 64, "v": 34, "w": 16},
+      "cheeks": {"columns": 4, "frames": 4, "h": 2, "u": 64, "v": 33, "w": 16},
       "eyes": {"columns": 4, "frames": 12, "h": 10, "u": 64, "v": 0, "w": 20},
-      "mouth": {"columns": 8, "frames": 8, "h": 4, "u": 64, "v": 30, "w": 8}
+      "mouth": {"columns": 8, "frames": 8, "h": 3, "u": 64, "v": 30, "w": 8}
     }
   },
   "form": "adult",
   "format": 1,
   "generator": "herogen 1",
-  "head_y": 23,
-  "height_px": 33,
+  "head_y": 42,
+  "height_px": 52,
   "id": "_fallback",
   "moves": [],
   "phases": [],
-  "rig": "hero_rig_v2",
+  "render_scale": 0.56,
+  "rig": "hero_rig_v3",
   "scale": 1,
-  "source_sha256": "39eb29019afba36a5ea8f402c480024bfed37b02ec3ed632c1d0e38e795e6bc9",
+  "source_sha256": "29654f28ef04d587c3a90308589181a93a4403aff12c77a81d4976e9d5cb6cbe",
   "states": [],
   "style": "fists",
   "texture": {"glow_outside_face": false, "glowmask": true, "height": 128, "p2": false, "width": 256},

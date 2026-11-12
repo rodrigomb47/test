@@ -1,4 +1,4 @@
-"""Rig v2, the base bodies (three forms x two families, each in three builds) and the in-memory model (bones and
+"""Rig v3, the base bodies (three forms x two families, each in three builds) and the in-memory model (bones and
 cubes) the other modules fill.
 
 Coordinates are Bedrock model pixels as written to the .geo.json: feet at y 0, the hero faces north (-z), and the
@@ -7,7 +7,9 @@ Cube origins and bone pivots are absolute model coordinates, as in Bedrock geome
 
 A base is a form (chibi, teen, adult: the heights) and a family (female, male: the widths), in a build (slim,
 standard, large: width overrides). The head is the same 10 px cube on every form, so the face planes, the face
-texture layout and head-anchored parts (hair, ears, hats: `offset` [0, "head_y", 0]) fit every base.
+texture layout and head-anchored parts (hair, ears, hats: `offset` [0, "head_y", 0]) fit every base. Rig v3 (the
+second style pass) keeps v2's bone names and the 10 px head, makes the bodies longer and draws the whole model at the
+rig's `render.scale` (0.56), so heads read about vanilla-sized on bodies of anime proportions.
 """
 import fnmatch
 import os
@@ -23,7 +25,7 @@ FORMS = ("chibi", "teen", "adult")
 FAMILIES = ("female", "male")
 BUILDS = ("slim", "standard", "large")
 BASE_IDS = ("chibi_f", "chibi_m", "teen_f", "teen_m", "adult_f", "adult_m")
-RIG_FILE = "rig_v2.json"
+RIG_FILE = "rig_v3.json"
 HEIGHT_KEYS = ("ankle_y", "knee_y", "hip_y", "waist_y", "chest_y", "chest_top", "head_y", "arm_top", "shoulder_y",
                "elbow_y", "wrist_y", "hand_bottom", "hand_y", "toe")
 BASE_SLOTS = ("skin", "base_top", "base_bottom", "shoes")
@@ -85,7 +87,14 @@ def base_env(base, rig=None):
     env["head_s"] = size
     env["head_top"] = env["head_y"] + size
     env["height"] = env["head_top"]
+    env["render_scale"] = float(rig.get("render", {}).get("scale", 1.0))
     return env
+
+
+def render_scale(rig=None):
+    """Model pixels to world pixels (the renderer scales the whole model by it, on top of art.scale)."""
+    rig = rig or load_rig()
+    return float(rig.get("render", {}).get("scale", 1.0))
 
 
 def mirror_name(name):
@@ -140,6 +149,7 @@ class Cube:
     trim: Optional[dict] = None
     glow: bool = False
     tone: int = 0
+    outline: bool = True                          # dark hem row and lower band at the bottom of side faces
     uv: dict = field(default_factory=dict)        # face -> (u, v, w, h) in whole texels, net orientation
     order: int = 0
 

@@ -1,0 +1,53 @@
+{
+  "_comment": "Thigh-high socks and loafers (style pass 2): socks painted up the legs to above the knee with a banded top (a ring cube), loafers as a shell with a sole and a front strap.",
+  "id": "legwear/thigh_socks",
+  "category": "legwear",
+  "slots": {"main": "accent", "alt": "leather", "trim": "trim"},
+  "params": {"sock": {"default": 0.45, "max": 0.9, "min": 0.1}},
+  "occupies": ["legs_lower", "feet"],
+  "paint": [
+    {"cubes": ["shin_*"], "material": "cloth", "slot": "main"},
+    {"cubes": ["thigh_*"], "y": [0, "knee_y + (hip_y - knee_y) * sock"], "material": "cloth", "slot": "main"}
+  ],
+  "cubes": [
+    {
+      "name": "band",
+      "bone": "leg_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.3", "knee_y + (hip_y - knee_y) * sock - 0.75", "-leg_d / 2 - 0.3"],
+      "size": ["leg_w + 0.6", 1, "leg_d + 0.6"],
+      "slot": "main",
+      "tone": -1,
+      "mirror": true,
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "shoe",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.35", 0, "-leg_d / 2 - toe - 0.55"],
+      "size": ["leg_w + 0.7", "ankle_y + 0.3", "leg_d + toe + 0.9"],
+      "slot": "alt",
+      "material": "lacquer",
+      "mirror": true
+    },
+    {
+      "name": "sole",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.45", 0, "-leg_d / 2 - toe - 0.65"],
+      "size": ["leg_w + 0.9", 0.5, "leg_d + toe + 1.1"],
+      "slot": "alt",
+      "material": "leather",
+      "tone": -2,
+      "mirror": true,
+      "fine": true
+    },
+    {
+      "name": "strap",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.4", "ankle_y - 0.25", "-leg_d / 2 - toe + 0.5"],
+      "size": ["leg_w + 0.8", 0.6, 0.75],
+      "slot": "trim",
+      "mirror": true,
+      "fine": true
+    }
+  ]
+}

@@ -1,30 +1,62 @@
 {
-  "_comment": "Plate armour for the torso: a breastplate over chest and bust with a trimmed top edge, a gorget, and a fauld of waist plates with a trimmed hem; sleeves under it in alt.",
+  "_comment": "A breastplate (style pass 2): a plate shell over chest and bust with a raised centre ridge, a gorget at the neck, a plate band at the waist and a ring of trimmed tassets (faulds) flared from the waist; the cloth under it (arms, waist) in the alt colour.",
   "id": "armour/breastplate",
   "category": "armour",
-  "slots": {"alt": "secondary", "main": "metal", "trim": "trim"},
+  "slots": {"main": "metal", "alt": "secondary", "trim": "trim"},
   "occupies": ["torso"],
   "paint": [{"cubes": ["upper_arm_*", "forearm_*", "chest", "waist"], "material": "cloth", "slot": "alt"}],
   "cubes": [
     {
-      "origin": ["-chest_w / 2 - 0.35", "chest_y - 0.25", "-chest_d / 2 - bust_d - 0.35"],
-      "size": ["chest_w + 0.7", "chest_top - chest_y + 0.35", "chest_d + bust_d + 0.7"],
+      "name": "plate",
       "bone": "chest",
+      "origin": ["-chest_w / 2 - 0.35", "chest_y - 0.25", "-chest_d / 2 - 0.35 - bust_d"],
+      "size": ["chest_w + 0.7", "chest_top - chest_y - 0.5", "chest_d + 0.7 + bust_d"],
       "material": "metal",
-      "trim": {"edge": "top", "slot": "trim", "width": 1}
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
     },
     {
-      "origin": ["-neck_w / 2 - 0.75", "chest_top - 0.25", "-neck_d / 2 - 0.75"],
-      "size": ["neck_w + 1.5", 1, "neck_d + 1.5"],
+      "name": "ridge",
       "bone": "chest",
-      "material": "metal"
+      "origin": [-0.5, "chest_y + 0.5", "-chest_d / 2 - 0.75 - bust_d"],
+      "size": [1, "chest_top - chest_y - 2", 0.45],
+      "material": "metal",
+      "tone": 1,
+      "fine": true
     },
     {
-      "origin": ["-waist_w / 2 - 0.5", "waist_y - 0.75", "-waist_d / 2 - 0.5"],
-      "size": ["waist_w + 1", "chest_y - waist_y + 0.5", "waist_d + 1"],
+      "name": "gorget",
+      "bone": "chest",
+      "origin": ["-neck_w / 2 - 0.75", "chest_top - 0.75", "-neck_d / 2 - 0.75"],
+      "size": ["neck_w + 1.5", 1.5, "neck_d + 1.5"],
+      "material": "metal",
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "waist_plate",
       "bone": "waist",
+      "origin": ["-waist_w / 2 - 0.4", "waist_y + 0.25", "-waist_d / 2 - 0.4"],
+      "size": ["waist_w + 0.8", "chest_y - waist_y", "waist_d + 0.8"],
       "material": "metal",
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+      "tone": -1
+    }
+  ],
+  "strands": [
+    {
+      "name": "tasset",
+      "bone": "body",
+      "path": "arc",
+      "y": "waist_y + 0.5",
+      "radius": ["waist_w / 2 + 0.6", "waist_d / 2 + 0.6"],
+      "angles": [-150, 150],
+      "count": 8,
+      "width": "(waist_w + waist_d) * 0.4",
+      "depth": 0.6,
+      "length": "(waist_y - hip_y) + 2.5",
+      "flare": 20,
+      "material": "metal",
+      "fine": false,
+      "tone": [0, -1],
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
     }
   ]
 }

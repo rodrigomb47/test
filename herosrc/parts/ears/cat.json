@@ -1,32 +1,95 @@
 {
-  "_comment": "Big cat ears built as volume: a thick outer ear (tri_up) tilted outward and a thin inner-ear plate in the alt colour in front of it. Head-local (offset head_y), density 2.",
+  "_comment": "Layered cat ears (style pass 2, the reference technique): each ear is a wedge of six 1 px slabs, each narrower and shallower than the one below it, with a dark tip, a pink inner plate and a tuft of light fur at its base, standing on the top corners of the hair and tilted outward and a little back as one piece (a rotated group). Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
   "id": "ears/cat",
   "category": "ears",
-  "slots": {"alt": "blush", "main": "hair"},
+  "slots": {"main": "hair", "alt": "blush", "detail": "hair_accent"},
   "occupies": ["ears"],
   "offset": [0, "head_y", 0],
-  "density": 2,
-  "cubes": [
+  "groups": [
     {
-      "pivot": [-4.25, 10.5, -1],
-      "rotation": [0, 0, -10],
-      "origin": [-6.25, 10.5, -1.75],
-      "size": [4, 5, 1.5],
-      "bone": "ear_r",
-      "cutout": "peak",
-      "material": "hair",
-      "mirror": true
-    },
-    {
-      "pivot": [-4.25, 10.5, -1],
-      "rotation": [0, 0, -10],
-      "origin": [-5.75, 10.75, -2],
-      "size": [3, 3.75, 0.25],
-      "bone": "ear_r",
-      "cutout": "peak",
-      "material": "fur",
-      "mirror": true,
-      "slot": "alt"
+      "rotation": [-10, 0, -18],
+      "pivot": [-4.0, 11.25, 0.75],
+      "cubes": [
+        {
+          "name": "ear_0",
+          "bone": "ear_r",
+          "origin": [-6.875, 11.0, -0.75],
+          "size": [5.75, 1.0, 3.0],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_1",
+          "bone": "ear_r",
+          "origin": [-6.5, 12.0, -0.625],
+          "size": [5.0, 1.0, 2.75],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_2",
+          "bone": "ear_r",
+          "origin": [-6.125, 13.0, -0.5],
+          "size": [4.25, 1.0, 2.5],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_3",
+          "bone": "ear_r",
+          "origin": [-5.75, 14.0, -0.375],
+          "size": [3.5, 1.0, 2.25],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_4",
+          "bone": "ear_r",
+          "origin": [-5.375, 15.0, -0.25],
+          "size": [2.75, 1.0, 2.0],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_5",
+          "bone": "ear_r",
+          "origin": [-5.0, 16.0, -0.125],
+          "size": [2.0, 1.0, 1.75],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_6",
+          "bone": "ear_r",
+          "origin": [-4.625, 17.0, 0.125],
+          "size": [1.25, 1.0, 1.25],
+          "material": "hair",
+          "mirror": true,
+          "tone": -2
+        },
+        {
+          "name": "ear_inner",
+          "bone": "ear_r",
+          "origin": [-6.0, 11.25, -0.75],
+          "size": [4, 5.25, 0.25],
+          "slot": "alt",
+          "material": "fur",
+          "cutout": "tri_up",
+          "mirror": true
+        },
+        {
+          "name": "ear_tuft",
+          "bone": "ear_r",
+          "origin": [-5.6, 11.0, -1.0],
+          "size": [3.25, 1.5, 0.5],
+          "slot": "detail",
+          "material": "fur",
+          "cutout": "fur_tips",
+          "fine": true,
+          "mirror": true
+        }
+      ]
     }
-  ]
+  ],
+  "secondary": {"chain": ["ear_r", "ear_l"], "damping": 0.6, "stiffness": 0.6}
 }

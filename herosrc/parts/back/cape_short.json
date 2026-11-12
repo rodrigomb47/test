@@ -1,27 +1,38 @@
 {
-  "_comment": "Rig v2 starter: a short two-segment cape (capelet) on the cape bones, trimmed hem.",
+  "_comment": "A short capelet (style pass 2): a ring of panels round the shoulders, open at the front, flared out over the upper arms and trimmed, on the back bone; a clasp at the throat.",
   "id": "back/cape_short",
   "category": "back",
   "slots": {"main": "primary", "trim": "trim"},
-  "params": {"length": {"default": 6, "max": 10, "min": 3}},
+  "params": {"length": {"default": 5, "max": 9, "min": 3}},
   "occupies": ["back"],
-  "bones": [
-    {"name": "cape_1", "parent": "back", "pivot": [0, "chest_top", "chest_d / 2 + 0.35"]},
-    {"name": "cape_2", "parent": "cape_1", "pivot": [0, "chest_top - length * 0.55", "chest_d / 2 + 0.35"]}
-  ],
   "cubes": [
     {
-      "origin": ["-chest_w / 2 - 0.75", "chest_top - length * 0.55", "chest_d / 2 + 0.1"],
-      "size": ["chest_w + 1.5", "length * 0.55 + 0.5", 0.5],
-      "bone": "cape_1"
-    },
-    {
-      "origin": ["-chest_w / 2 - 1", "chest_top - length", "chest_d / 2 + 0.15"],
-      "size": ["chest_w + 2", "length * 0.45", 0.5],
-      "bone": "cape_2",
-      "cutout": "round_bottom",
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+      "name": "clasp",
+      "bone": "chest",
+      "origin": [-0.75, "chest_top - 1.5", "-chest_d / 2 - 0.5"],
+      "size": [1.5, 1.25, 0.5],
+      "slot": "trim",
+      "material": "metal",
+      "fine": true
     }
   ],
-  "secondary": {"chain": ["cape_1", "cape_2"], "damping": 0.6, "stiffness": 0.4}
+  "strands": [
+    {
+      "name": "cape",
+      "bone": "back",
+      "path": "arc",
+      "y": "chest_top + 0.5",
+      "radius": ["chest_w / 2 + 0.4", "chest_d / 2 + 0.4"],
+      "angles": [32, 328],
+      "count": 11,
+      "width": "(chest_w + chest_d) * 0.3 + 0.5",
+      "depth": 0.6,
+      "length": "length",
+      "flare": 34,
+      "material": "cloth",
+      "fine": false,
+      "tone": [0, -1, 0],
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ]
 }

@@ -1,5 +1,5 @@
 {
-  "_comment": "Body cubes shared by every base of rig v2 (HEROES_V2.md 4.3). Sizes and heights come from each base's dims (the form sets the heights, the family and build the widths), so every animation fits every base. The head is the same 10 px cube on every form. Slots: skin, base_top, base_bottom and shoes are the base layer that outfit parts paint over (a hero's art.base_layer maps them to palette slots). The hero's right side is -x.",
+  "_comment": "Body cubes shared by every base of rig v3 (HEROES_V2.md 4.3). Sizes and heights come from each base's dims (the form sets the heights, the family and build the widths), so every animation fits every base. The head is the same 10 px cube on every form. Slots: skin, base_top, base_bottom and shoes are the base layer that outfit parts paint over (a hero's art.base_layer maps them to palette slots). The hero's right side is -x.",
   "id": "_template",
   "cubes": [
     {"name": "head", "bone": "head", "origin": [-5, "head_y", -5], "size": [10, 10, 10], "slot": "skin", "material": "skin",

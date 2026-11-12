@@ -1,28 +1,44 @@
 {
-  "_comment": "Round animal ears (bear, tanuki, mouse): a thick outer ear with a rounded top and an inner plate in the alt colour. Head-local (offset head_y), density 2.",
+  "_comment": "Round ears (bear, tanuki, mouse): a thick rounded disc with a rounded cap and an inner plate, on the top corners of the hair, tilted outward as one piece. Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
   "id": "ears/round",
   "category": "ears",
-  "slots": {"alt": "secondary", "main": "hair"},
+  "slots": {"main": "hair", "alt": "secondary"},
   "occupies": ["ears"],
   "offset": [0, "head_y", 0],
-  "density": 2,
-  "cubes": [
+  "groups": [
     {
-      "origin": [-6, 10.25, -1],
-      "size": [3, 3, 1.5],
-      "bone": "ear_r",
-      "cutout": "round_top",
-      "material": "fur",
-      "mirror": true
-    },
-    {
-      "origin": [-5.5, 10.5, -1.25],
-      "size": [2, 2, 0.25],
-      "bone": "ear_r",
-      "cutout": "round_top",
-      "material": "fur",
-      "mirror": true,
-      "slot": "alt"
+      "rotation": [-6, 0, -26],
+      "pivot": [-4.0, 11.25, 0.75],
+      "cubes": [
+        {
+          "name": "ear_a",
+          "bone": "ear_r",
+          "origin": [-7.0, 11.0, -0.25],
+          "size": [5.0, 3.75, 2.25],
+          "material": "hair",
+          "cutout": "round_top",
+          "mirror": true
+        },
+        {
+          "name": "ear_b",
+          "bone": "ear_r",
+          "origin": [-6.5, 14.75, 0.0],
+          "size": [4.0, 0.75, 1.75],
+          "material": "hair",
+          "mirror": true
+        },
+        {
+          "name": "ear_inner",
+          "bone": "ear_r",
+          "origin": [-6.25, 11.5, -0.5],
+          "size": [3.5, 3.0, 0.25],
+          "slot": "alt",
+          "material": "fur",
+          "cutout": "round_top",
+          "mirror": true
+        }
+      ]
     }
-  ]
+  ],
+  "secondary": {"chain": ["ear_r", "ear_l"], "damping": 0.6, "stiffness": 0.6}
 }

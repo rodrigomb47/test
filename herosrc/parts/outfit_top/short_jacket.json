@@ -1,35 +1,143 @@
 {
-  "_comment": "Rig v2 starter: a short open jacket painted over the torso and arms, trimmed hem and cuffs, and a stand-up collar.",
+  "_comment": "A short jacket with a sailor collar (style pass 2): the jacket painted over the torso and arms, a square collar flap over the back of the shoulders and two front flaps in a V (trimmed), a ribbon bow at the chest (knot, two loops, two tails), turned-back cuffs and a short flared hem.",
   "id": "outfit_top/short_jacket",
   "category": "outfit_top",
-  "slots": {"alt": "secondary", "main": "primary", "trim": "trim"},
-  "params": {"hem": {"default": 0.4, "max": 1, "min": 0}},
-  "occupies": ["torso"],
+  "slots": {"main": "primary", "alt": "secondary", "trim": "trim"},
+  "occupies": ["torso", "sleeves"],
   "paint": [
+    {"cubes": ["chest", "bust", "waist", "upper_arm_*", "forearm_*"], "material": "cloth", "slot": "main"},
     {
-      "cubes": ["chest", "bust", "waist"],
-      "material": "cloth",
-      "slot": "main",
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1},
-      "y": ["waist_y + (chest_y - waist_y) * hem", "head_y"]
-    },
-    {
-      "abs_x": [0, 1.01],
-      "cubes": ["chest", "bust", "waist"],
+      "cubes": ["chest", "bust"],
       "faces": ["north"],
       "material": "cloth",
       "slot": "alt",
-      "y": ["waist_y + (chest_y - waist_y) * hem", "chest_top - 0.5"]
-    },
-    {"cubes": ["upper_arm_*", "forearm_*"], "material": "cloth", "slot": "main"},
-    {"cubes": ["forearm_*"], "material": "cloth", "slot": "trim", "y": ["wrist_y", "wrist_y + 1"]}
+      "vee": ["chest_top - 3.5", 0.8]
+    }
   ],
   "cubes": [
     {
-      "origin": ["-chest_w / 2 + 0.5", "chest_top - 0.75", "-chest_d / 2 - 0.25"],
-      "size": ["chest_w - 1", 1.25, "chest_d + 0.5"],
+      "name": "cuff",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.45", "wrist_y", "-arm_d / 2 - 0.45"],
+      "size": ["arm_w + 0.9", 1.5, "arm_d + 0.9"],
+      "slot": "alt",
+      "trim": {"slot": "trim", "edge": "top", "width": 1},
+      "mirror": true
+    },
+    {
+      "name": "knot",
       "bone": "chest",
-      "trim": {"edge": "top", "slot": "trim", "width": 1}
+      "origin": [-0.75, "chest_top - 4.5", "-chest_d / 2 - 1.1"],
+      "size": [1.5, 1.25, 1],
+      "slot": "trim"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [8, 0, 0],
+      "pivot": [0, "chest_top + 0.25", "chest_d / 2"],
+      "cubes": [
+        {
+          "name": "collar_back",
+          "bone": "chest",
+          "origin": ["-chest_w / 2 + 0.25", "chest_top - 3.75", "chest_d / 2 + 0.05"],
+          "size": ["chest_w - 0.5", 4, 0.5],
+          "slot": "alt",
+          "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, -32],
+      "pivot": [-2.75, "chest_top + 0.25", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "collar_r",
+          "bone": "chest",
+          "origin": [-3.625, "chest_top - 3.5", "-chest_d / 2 - 0.4"],
+          "size": [1.75, 3.75, 0.4],
+          "slot": "alt",
+          "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, 32],
+      "pivot": [2.75, "chest_top + 0.25", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "collar_l",
+          "bone": "chest",
+          "origin": [1.875, "chest_top - 3.5", "-chest_d / 2 - 0.4"],
+          "size": [1.75, 3.75, 0.4],
+          "slot": "alt",
+          "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, 28],
+      "pivot": [-0.5, "chest_top - 3.9", "-chest_d / 2 - 1"],
+      "cubes": [
+        {
+          "name": "bow_r",
+          "bone": "chest",
+          "origin": [-2.75, "chest_top - 4.75", "-chest_d / 2 - 1.0"],
+          "size": [2.25, 1.75, 0.6],
+          "slot": "trim",
+          "fine": true
+        },
+        {
+          "name": "bow_tail_r",
+          "bone": "chest",
+          "origin": [-1.0, "chest_top - 7.25", "-chest_d / 2 - 0.85"],
+          "size": [0.9, 2.75, 0.4],
+          "slot": "trim",
+          "fine": true,
+          "cutout": "tip_jagged_1"
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, -28],
+      "pivot": [0.5, "chest_top - 3.9", "-chest_d / 2 - 1"],
+      "cubes": [
+        {
+          "name": "bow_l",
+          "bone": "chest",
+          "origin": [0.5, "chest_top - 4.75", "-chest_d / 2 - 1.0"],
+          "size": [2.25, 1.75, 0.6],
+          "slot": "trim",
+          "fine": true
+        },
+        {
+          "name": "bow_tail_l",
+          "bone": "chest",
+          "origin": [0.1, "chest_top - 7.25", "-chest_d / 2 - 0.85"],
+          "size": [0.9, 2.75, 0.4],
+          "slot": "trim",
+          "fine": true,
+          "cutout": "tip_jagged_1"
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "hem",
+      "bone": "waist",
+      "path": "arc",
+      "y": "waist_y + 0.75",
+      "radius": ["waist_w / 2 + 0.3", "waist_d / 2 + 0.3"],
+      "angles": [-180, 140],
+      "count": 9,
+      "width": "(waist_w + waist_d) * 0.36 + 0.5",
+      "depth": 0.5,
+      "length": 2,
+      "flare": 16,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false
     }
   ]
 }

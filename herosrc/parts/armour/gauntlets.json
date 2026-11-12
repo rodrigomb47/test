@@ -1,18 +1,47 @@
 {
-  "_comment": "Gauntlets: a metal shell over each forearm with a flared, trimmed cuff, and metal-painted hands.",
+  "_comment": "Gauntlets (style pass 2): a plate shell over the forearm, a cuff of plates flaring out at the elbow end, and a plate over the back of the hand.",
   "id": "armour/gauntlets",
   "category": "armour",
   "slots": {"main": "metal", "trim": "trim"},
-  "occupies": ["hands"],
-  "paint": [{"cubes": ["hand_*"], "material": "metal", "slot": "main"}],
+  "occupies": ["forearms"],
   "cubes": [
     {
-      "origin": ["-shoulder_x - arm_w / 2 - 0.35", "wrist_y - 0.25", "-arm_d / 2 - 0.35"],
-      "size": ["arm_w + 0.7", "elbow_y - wrist_y - 0.25", "arm_d + 0.7"],
+      "name": "shell",
       "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.35", "wrist_y - 0.25", "-arm_d / 2 - 0.35"],
+      "size": ["arm_w + 0.7", "elbow_y - wrist_y - 0.5", "arm_d + 0.7"],
+      "material": "metal",
+      "mirror": true
+    },
+    {
+      "name": "hand_plate",
+      "bone": "hand_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "hand_bottom + 0.75", "-arm_d / 2 - 0.3"],
+      "size": ["arm_w + 0.6", "wrist_y - hand_bottom - 0.5", "arm_d + 0.6"],
+      "material": "metal",
+      "tone": -1,
+      "mirror": true
+    }
+  ],
+  "strands": [
+    {
+      "name": "cuff",
+      "bone": "forearm_r",
+      "path": "arc",
+      "center": ["-shoulder_x", 0],
+      "radius": ["arm_w / 2 + 0.5", "arm_d / 2 + 0.5"],
+      "y": "elbow_y - 1.75",
+      "angles": [-180, 120],
+      "count": 6,
+      "dir": "up",
+      "width": "arm_w * 0.7 + 0.5",
+      "depth": 0.5,
+      "length": 2,
+      "flare": 26,
       "material": "metal",
       "mirror": true,
-      "trim": {"edge": "top", "slot": "trim", "width": 1}
+      "trim": {"slot": "trim", "edge": "top", "width": 1},
+      "fine": false
     }
   ]
 }

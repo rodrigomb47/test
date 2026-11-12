@@ -1,11 +1,15 @@
 {
-  "_comment": "Hero rig v2 (HEROES_V2.md 4.3, style guide in docs/heroes-v2/notes/artgen.md). Units are Bedrock pixels, feet at y 0, the hero faces north (-z), the hero's right side is -x in the file (Bedrock and GeckoLib mirror x when they bake). Every height comes from the base's form (chibi, teen, adult), so pivots are expressions over the base dims; bone names are the same on every base, so every animation transfers. The head is a 10 px cube on every form (head_y is its bottom); its front is drawn at double density. Bones marked required exist in every model; the others exist only when a part puts cubes on them or on a child.",
-  "id": "hero_rig_v2",
+  "_comment": "Hero rig v3 (HEROES_V2.md 4.3, style guide in docs/heroes-v2/notes/artgen.md, 'Style pass 2'). Units are Bedrock pixels, feet at y 0, the hero faces north (-z), the hero's right side is -x in the file (Bedrock and GeckoLib mirror x when they bake). Every height comes from the base's form (chibi, teen, adult), so pivots are expressions over the base dims; bone names are the same on every base (and the same as rig v2), so every animation transfers. The head is a 10 px cube on every form (head_y is its bottom); its front is drawn at double density. v3 lengthens the bodies (head share with hair about 0.24 adult, 0.27 teen, 0.34 chibi) and draws the whole model at render.scale (0.56), so an adult stays about player height and the head about a vanilla head. Bones marked required exist in every model; the others exist only when a part puts cubes on them or on a child.",
+  "id": "hero_rig_v3",
+  "render": {"scale": 0.56,
+             "_comment": "Model pixels to world pixels (16 world px = 1 block), applied by the renderer to the whole model, on top of art.scale. The hitbox height is height_px x scale x art.scale / 16 blocks: an adult (52 px to the head top) is 1.82 blocks, a teen 1.58, a chibi 1.23. Kept to two decimals because generated JSON keeps three."},
   "budgets": {
-    "bones": 72,
-    "cubes": 140,
+    "bones": 100,
+    "cubes": 300,
+    "lod_cubes": 130,
     "own_animations": 24,
-    "textures": [[256, 128], [256, 256]]
+    "textures": [[256, 128], [256, 256]],
+    "_comment": "cubes: every cube (validator error above it). lod_cubes: cubes outside fine_ bones, the ones still drawn beyond the fine distance (4.9). Typical heroes use 200-280 cubes with 100-130 outside fine_ bones."
   },
   "head": {"size": 10, "front_z": -5},
   "bones": [
@@ -15,17 +19,17 @@
     {"name": "chest", "parent": "waist", "pivot": [0, "chest_y", 0], "required": true},
     {"name": "neck", "parent": "chest", "pivot": [0, "chest_top", 0], "required": true},
     {"name": "head", "parent": "neck", "pivot": [0, "head_y", 0], "required": true},
-    {"name": "face", "parent": "head", "pivot": [0, "head_y + 5", -5], "required": true, "kind": "group"},
-    {"name": "eyes", "parent": "face", "pivot": [0, "head_y + 5.5", -5], "required": true, "kind": "plane"},
-    {"name": "mouth", "parent": "face", "pivot": [0, "head_y + 1", -5], "required": true, "kind": "plane"},
-    {"name": "cheeks", "parent": "face", "pivot": [0, "head_y + 2.5", -5], "required": true, "kind": "plane"},
+    {"name": "face", "parent": "head", "pivot": [0, "head_y + 3", -5], "required": true, "kind": "group"},
+    {"name": "eyes", "parent": "face", "pivot": [0, "head_y + 4", -5], "required": true, "kind": "plane"},
+    {"name": "mouth", "parent": "face", "pivot": [0, "head_y + 0.75", -5], "required": true, "kind": "plane"},
+    {"name": "cheeks", "parent": "face", "pivot": [0, "head_y + 1", -5], "required": true, "kind": "plane"},
     {"name": "face_ctrl", "parent": "head", "pivot": [0, "head_y", 0], "required": true, "kind": "control"},
     {"name": "hair_top", "parent": "head", "pivot": [0, "head_y + 10", 0]},
-    {"name": "bangs", "parent": "head", "pivot": [0, "head_y + 9", -5]},
+    {"name": "bangs", "parent": "head", "pivot": [0, "head_y + 10", -5]},
     {"name": "hair_back", "parent": "head", "pivot": [0, "head_y + 9", 5]},
     {"name": "hair_l", "parent": "head", "pivot": [5, "head_y + 9", 0]},
     {"name": "hair_r", "parent": "head", "pivot": [-5, "head_y + 9", 0]},
-    {"name": "ahoge", "parent": "head", "pivot": [0, "head_y + 10.5", -1]},
+    {"name": "ahoge", "parent": "head", "pivot": [0, "head_y + 11.5", -1]},
     {"name": "tail_hair_1", "parent": "head", "pivot": [0, "head_y + 8", 5.5]},
     {"name": "tail_hair_2", "parent": "tail_hair_1", "pivot": [0, "head_y + 3", 6.5]},
     {"name": "tail_hair_3", "parent": "tail_hair_2", "pivot": [0, "head_y - 2", 6.5]},
@@ -34,7 +38,7 @@
     {"name": "horn_l", "parent": "head", "pivot": [3, "head_y + 10", -1.5]},
     {"name": "horn_r", "parent": "head", "pivot": [-3, "head_y + 10", -1.5]},
     {"name": "hat", "parent": "head", "pivot": [0, "head_y + 10", 0]},
-    {"name": "halo", "parent": "head", "pivot": [0, "head_y + 13", 0]},
+    {"name": "halo", "parent": "head", "pivot": [0, "head_y + 14", 0]},
     {"name": "arm_r", "parent": "chest", "pivot": ["-shoulder_x", "shoulder_y", 0], "required": true},
     {"name": "forearm_r", "parent": "arm_r", "pivot": ["-shoulder_x", "elbow_y", 0], "required": true},
     {"name": "hand_r", "parent": "forearm_r", "pivot": ["-shoulder_x", "wrist_y", 0], "required": true},
@@ -48,7 +52,7 @@
     {"name": "weapon_l", "parent": "hand_l", "pivot": ["shoulder_x", "hand_y", 0], "required": true},
     {"name": "sleeve_l", "parent": "forearm_l", "pivot": ["shoulder_x", "elbow_y", 0]},
     {"name": "sash", "parent": "waist", "pivot": [0, "waist_y + 1", 0], "required": true,
-     "_comment": "v2: a child of waist (v1: chest), so the obi follows a waist twist"},
+     "_comment": "a child of waist (v1: chest), so the obi follows a waist twist"},
     {"name": "back", "parent": "chest", "pivot": [0, "chest_top", "chest_d / 2"]},
     {"name": "cape_1", "parent": "back", "pivot": [0, "chest_top", "chest_d / 2 + 0.25"]},
     {"name": "cape_2", "parent": "cape_1", "pivot": [0, "chest_y", "chest_d / 2 + 0.5"]},
@@ -64,6 +68,8 @@
     {"name": "tail_1", "parent": "body", "pivot": [0, "hip_y + 0.5", "hips_d / 2"]},
     {"name": "tail_2", "parent": "tail_1", "pivot": [0, "hip_y + 0.5", "hips_d / 2 + 3"]},
     {"name": "tail_3", "parent": "tail_2", "pivot": [0, "hip_y + 4.5", "hips_d / 2 + 3"]},
+    {"name": "tail_4", "parent": "tail_3", "pivot": [0, "hip_y + 8.5", "hips_d / 2 + 3"]},
+    {"name": "tail_5", "parent": "tail_4", "pivot": [0, "hip_y + 12.5", "hips_d / 2 + 3"]},
     {"name": "leg_r", "parent": "root", "pivot": ["-hip_x", "hip_y", 0], "required": true},
     {"name": "shin_r", "parent": "leg_r", "pivot": ["-hip_x", "knee_y", 0], "required": true},
     {"name": "foot_r", "parent": "shin_r", "pivot": ["-hip_x", "ankle_y", 0], "required": true},
@@ -88,26 +94,26 @@
   },
   "uv_template": {
     "_comment": "u, v, w, h in texels; fixed for every hero. Everything else is packed (body cubes into base, parts into the rest of a 256x128 or 256x256 texture).",
-    "base": [0, 0, 64, 80],
+    "base": [0, 0, 64, 128],
     "eyes": [64, 0, 80, 30],
     "head_front": [144, 0, 20, 20],
-    "mouth": [64, 30, 64, 4],
-    "cheeks": [64, 34, 64, 2]
+    "mouth": [64, 30, 64, 3],
+    "cheeks": [64, 33, 64, 2]
   },
   "face": {
-    "_comment": "Face planes (4.6): flat cubes in front of the 10x10 head front (z -5), drawn at double density, so the face is 20x20 texels. The head front texture is transparent under the opaque eyes and mouth planes; cheeks are cut-out. Plane origins are head-local (y 0 = the chin, the head's bottom). Eye frame rows: 0-1 brows, 2 skin, 3 upper lash, 4-9 eye body.",
+    "_comment": "Face planes (4.6): flat cubes in front of the 10x10 head front (z -5), drawn at double density, so the face is 20x20 texels (face rows of 0.5 px counted from the top). v3 puts the eyes low and wide like the references: forehead rows 0-6 (under the bangs), the eyes plane on rows 7-16 (frame rows 0-1 brows, 2 skin, 3 the upper lash, 4-9 the eye body: the eye centre 0.30 of the head height above the chin), the mouth plane on rows 17-19, the cut-out cheeks plane on rows 17-18. Plane origins are head-local (y 0 = the chin). The head front texture is transparent under the opaque eyes and mouth planes.",
     "density": 2,
     "planes": {
-      "eyes": {"origin": [-5, 3, -5.05], "size": [10, 5, 0], "frame": [20, 10], "grid": [4, 3], "frames": 12},
-      "mouth": {"origin": [-2, 0, -5.05], "size": [4, 2, 0], "frame": [8, 4], "grid": [8, 1], "frames": 8},
-      "cheeks": {"origin": [-4, 2, -5.1], "size": [8, 1, 0], "frame": [16, 2], "grid": [4, 1], "frames": 4}
+      "eyes": {"origin": [-5, 1.5, -5.05], "size": [10, 5, 0], "frame": [20, 10], "grid": [4, 3], "frames": 12},
+      "mouth": {"origin": [-2, 0, -5.05], "size": [4, 1.5, 0], "frame": [8, 3], "grid": [8, 1], "frames": 8},
+      "cheeks": {"origin": [-4, 0.5, -5.1], "size": [8, 1, 0], "frame": [16, 2], "grid": [4, 1], "frames": 4}
     },
     "eye_rows": {"brows": [0, 1], "lash": 3, "body": [4, 9]},
     "eye_frames": ["open", "half", "closed", "happy", "angry", "sad", "surprised", "pain", "focused", "smug",
                    "glowing", "sleeping"],
     "mouth_frames": ["neutral", "smile", "talk_a", "talk_b", "grit", "frown", "cat", "fang_grin"],
     "cheek_frames": ["none", "blush", "sweat", "tears"],
-    "clear_below_y": 6.5,
+    "clear_below_y": 5.5,
     "clear_half_width": 4.5
   }
 }

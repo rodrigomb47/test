@@ -1,12 +1,15 @@
 {
-  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original chibi cat-eared girl. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "_comment": "Style fixture (style pass 2, docs/heroes-v2/notes/artgen.md): an original chibi cat girl: twin tails tied with gold ties and an ahoge, layered cat ears, a slender curling tail, a wide-sleeved kimono top with frilled cuffs, a flared panel skirt with a frill hem under a frilled apron, the faction sash as a big bow, socks and round shoes. Face: big sparkly eyes with star pupils, a heavy upturned lash, a cat mouth with a fang, hatched blush. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
   "format": 2,
   "id": "style_tansy",
   "name": "Tansy",
   "title": "style test: chibi cat girl",
   "gender": "female",
   "archetype": "fixture",
-  "style_preview": {"faction_tint": "#D2524A", "order": 1},
+  "style_preview": {
+    "faction_tint": "#D2524A",
+    "order": 1
+  },
   "art": {
     "base": "female",
     "form": "chibi",
@@ -16,23 +19,90 @@
       "hair": "#A98AD6",
       "eyes": "#EFA22E",
       "primary": "#2E9E92",
-      "secondary": "#F3EADA",
+      "secondary": "#F6EEE0",
       "accent": "#7A4C98",
       "trim": "#E4B24A",
       "leather": "#6E2F34"
     },
-    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "base_layer": {
+      "base_top": "secondary",
+      "base_bottom": "accent",
+      "shoes": "leather"
+    },
     "parts": [
-      {"part": "hair/twin_tails", "color": "hair", "trim": "trim", "params": {"length": 15, "locks": 4}},
-      {"part": "ears/cat", "color": "hair", "alt": "blush"},
-      {"part": "tails/cat_long", "color": "hair", "alt": "secondary", "params": {"length": 9}},
-      {"part": "outfit_top/kimono_wide", "color": "primary", "alt": "secondary", "trim": "trim"},
-      {"part": "outfit_bottom/flared_skirt", "color": "accent", "trim": "trim", "params": {"drop": 1.25}},
-      {"part": "accessories/sash_bow"},
-      {"part": "legwear/socks_shoes", "color": "secondary", "alt": "leather", "trim": "trim"}
+      {
+        "part": "hair/twin_tails",
+        "color": "hair",
+        "trim": "trim",
+        "params": {
+          "length": 15,
+          "locks": 5,
+          "ahoge": 1
+        }
+      },
+      {
+        "part": "ears/cat",
+        "color": "hair",
+        "alt": "blush",
+        "detail": "secondary"
+      },
+      {
+        "part": "tails/cat_long",
+        "color": "hair",
+        "alt": "secondary"
+      },
+      {
+        "part": "outfit_top/kimono_wide",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim",
+        "params": {
+          "sleeve": 1.3
+        }
+      },
+      {
+        "part": "outfit_bottom/flared_skirt",
+        "color": "accent",
+        "alt": "secondary",
+        "trim": "trim",
+        "params": {
+          "drop": 0.85
+        }
+      },
+      {
+        "part": "accessories/apron",
+        "color": "secondary",
+        "trim": "trim",
+        "params": {
+          "drop": 0.7
+        }
+      },
+      {
+        "part": "accessories/sash_bow"
+      },
+      {
+        "part": "legwear/socks_shoes",
+        "color": "secondary",
+        "alt": "leather",
+        "trim": "trim"
+      }
     ],
-    "face": {"eyes": "cat", "pupil": "slit", "lashes": 3, "brows": "thin_arched", "mouth": "cat", "fang": "left",
-             "blush": true}
+    "face": {
+      "eyes": "wide",
+      "iris_style": "gradient",
+      "pupil": "round",
+      "highlights": "sparkle",
+      "lashes": 3,
+      "flick": "up",
+      "spacing": 4,
+      "brows": "none",
+      "mouth": "cat",
+      "fang": "left",
+      "blush": "hatch"
+    }
   },
-  "animations": {"style": "fists", "blink": "nervous"}
+  "animations": {
+    "style": "fists",
+    "blink": "nervous"
+  }
 }

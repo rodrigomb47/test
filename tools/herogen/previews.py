@@ -1,6 +1,8 @@
-"""Preview sheets for the owner (rig v2 style set): the base bodies, each style character in four views, a lineup of
-the characters side by side on grass under a sky (the way the owner's reference lineup is shot), face close-ups and
-the texture layout. They are rendered from the built files (geometry + PNG), not from the in-memory model, so they show
+"""Preview sheets for the owner (rig v3 style set): the base bodies, each style character turned round (front, 3/4,
+side, back, 3/4 back, a blink, the far level of detail, the weapon drawn), a lineup of the characters side by side on
+grass under a sky (the way the owner's reference lineup is shot), face close-ups, the six calm faces side by side
+and the texture layout. Every model is drawn at the same model-pixel scale, which is the same world scale because rig
+v3 draws every form at one render scale. They are rendered from the built files (geometry + PNG), not from the in-memory model, so they show
 what the game gets. G2 replaces the renderer with the full one (animations, vanilla lighting, contact sheets, GIFs).
 """
 import json
@@ -21,8 +23,11 @@ BG = (156, 168, 186, 255)          # a light blue-grey, so dark clothes and ligh
 INK = (22, 26, 34, 255)
 DIM = (48, 54, 66, 255)
 SASH_TINT = (74, 118, 196)
-VIEWS = (("front", 0.0), ("3/4", -34.0), ("side", -90.0), ("back", 180.0))
+VIEWS = (("front", 0.0), ("3/4", -34.0), ("side", -90.0), ("back", 180.0), ("3/4 back", 145.0))
 PITCH = 10.0                 # camera a little above the hero, like a player looking at it
+# The previews show the idle stance the animations will use (the arms a little out, an A-pose like the references), not
+# the straight-armed rest pose of the geometry: file degrees added to the bones' rest rotation.
+IDLE_POSE = {"arm_r": (0.0, 0.0, 9.0), "arm_l": (0.0, 0.0, -9.0)}
 
 # A mannequin for the bare bases: neutral base layer, short hair, default face of the family.
 MANNEQUIN_PALETTE = {"skin": "#F1D0B8", "hair": "#4A3F3A", "eyes": "#4F78C8", "secondary": "#A3AABB",
@@ -49,8 +54,12 @@ def built_geo(files, hero_id):
     return GeoModel(json.loads(files[build.out_paths(hero_id)["geo"]]))
 
 
-def view_hidden(geo, phase=1, drawn=False):
+def view_hidden(geo, phase=1, drawn=False, far=False):
+    """Bones hidden in a view: other phases, the sheathed or the drawn weapon, and with far=True every fine_ bone
+    (what the renderer still draws beyond the fine distance, HEROES_V2 4.9)."""
     hidden = [n for n in geo.order if n.startswith("p2_") and phase < 2 or n.startswith("p3_") and phase < 3]
+    if far:
+        hidden += [n for n in geo.order if n.startswith("fine_")]
     if drawn:
         hidden.append("weapon_back")
     else:
@@ -73,16 +82,17 @@ def face_shift(eyes=0, mouth=0, cheeks=0):
 
 
 def render_views(geo, tex, views, scale, phase=1, drawn=False, eyes=0, mouth=0, cheeks=0, pitch=PITCH,
-                 tint=SASH_TINT, ybounds=None):
+                 tint=SASH_TINT, ybounds=None, pose=None, far=False):
     """Images of several views with a shared vertical scale (feet on one line)."""
-    hidden = view_hidden(geo, phase, drawn)
+    hidden = view_hidden(geo, phase, drawn, far)
     shift = face_shift(eyes, mouth, cheeks)
     out = []
-    yb = ybounds or ortho.model_bounds(geo, [v for _, v in views], hidden, pitch)[2:]
+    pose = IDLE_POSE if pose is None else pose
+    yb = ybounds or ortho.model_bounds(geo, [v for _, v in views], hidden, pitch, pose)[2:]
     for label, yaw in views:
-        xb = ortho.model_bounds(geo, [yaw], hidden, pitch)
+        xb = ortho.model_bounds(geo, [yaw], hidden, pitch, pose)
         img = ortho.render(geo, tex, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=tint_of(geo, tint),
-                           bounds=(xb[0], xb[1], yb[0], yb[1]), pitch=pitch)
+                           bounds=(xb[0], xb[1], yb[0], yb[1]), pitch=pitch, pose=pose)
         out.append((label, Image.fromarray(img, "RGBA")))
     return out
 
@@ -168,7 +178,7 @@ def bases_sheet(path, scale=7):
     order = [0, 2, 4, 1, 3, 5]                  # rows: female, male; columns: chibi, teen, adult
     sheet = Image.new("RGBA", (cell_w * 3 + 24, cell_h * 2 + 60), BG)
     d = ImageDraw.Draw(sheet)
-    d.text((16, 12), "Hero rig v2: three forms x two families (standard builds, mannequin palette, short hair)",
+    d.text((16, 12), "Hero rig v3: three forms x two families (standard builds, mannequin palette, short hair)",
            fill=INK, font=font)
     for slot, n in enumerate(order):
         base_id, b, images = cells[n]
@@ -176,8 +186,9 @@ def bases_sheet(path, scale=7):
         y0 = 46 + (slot // 3) * cell_h
         env = b.model.env
         d.text((x0 + 8, y0), "%s  (%s)" % (base_id, b.model.form), fill=INK, font=font)
-        d.text((x0 + 8, y0 + 22), "%g px, %.2f blocks; head %.2f of the height" % (
-            env["head_top"], env["head_top"] * 15 / 16 / 16, 10 / env["head_top"]), fill=DIM, font=small)
+        d.text((x0 + 8, y0 + 22), "%g px, %.2f blocks at render scale %g; head cube %.2f of the height" % (
+            env["head_top"], env["head_top"] * env["render_scale"] / 16, env["render_scale"], 10 / env["head_top"]),
+            fill=DIM, font=small)
         _paste_views(sheet, d, x0 + 8, y0 + 40, images, small)
     _save(sheet, path)
     del hidden
@@ -190,6 +201,7 @@ def hero_sheet(hero_id, path, scale=9, tint=SASH_TINT, title=None):
     art = b.hero["art"]
     extra = [("blink", 0.0)]
     groups.append(render_views(geo, b.image, extra, scale, eyes=2, tint=tint))
+    groups.append(render_views(geo, b.image, (("far: fine_ hidden", -34.0),), scale, tint=tint, far=True))
     if art.get("weapon"):
         groups.append(render_views(geo, b.image, (("weapon drawn", -34.0),), scale, drawn=True, tint=tint))
     if art.get("phases"):
@@ -203,13 +215,23 @@ def hero_sheet(hero_id, path, scale=9, tint=SASH_TINT, title=None):
     d = ImageDraw.Draw(sheet)
     m = b.model
     d.text((16, 12), title or b.hero.get("name", hero_id), fill=INK, font=font)
-    d.text((16, 36), "%s (%s, %s build): %d bones, %d cubes, %dx%d texture, %g px tall; sash tinted as its faction" % (
-        hero_id, m.base_id, m.build, len(m.bones), len(m.cubes), m.tex_w, m.tex_h, m.env["head_top"]), fill=DIM,
-        font=small)
+    far = sum(1 for c in m.cubes if not _under_fine(m, c.bone))
+    d.text((16, 36), "%s (%s, %s build): %d bones, %d cubes (%d beyond the fine distance), %dx%d texture, %g px tall "
+                     "(%.2f blocks); sash tinted as its faction; idle stance (arms 9 degrees out)" % (
+        hero_id, m.base_id, m.build, len(m.bones), len(m.cubes), far, m.tex_w, m.tex_h, m.env["head_top"],
+        m.env["head_top"] * m.env["render_scale"] / 16), fill=DIM, font=small)
     x = 16
     for g in groups:
         x = _paste_views(sheet, d, x, 62, g, small) + 24
     _save(sheet, path)
+
+
+def _under_fine(model, bone):
+    while bone is not None:
+        if bone.startswith("fine_"):
+            return True
+        bone = model.bones[bone].parent if bone in model.bones else None
+    return False
 
 
 def lineup(ids, path, scale=10, yaw=-24.0, pitch=12.0, tints=None, gap=26, labels=True):
@@ -219,7 +241,7 @@ def lineup(ids, path, scale=10, yaw=-24.0, pitch=12.0, tints=None, gap=26, label
     for n, hid in enumerate(ids):
         geo, b = _built(hid)
         hidden = view_hidden(geo)
-        bx = ortho.model_bounds(geo, [yaw], hidden, pitch)
+        bx = ortho.model_bounds(geo, [yaw], hidden, pitch, IDLE_POSE)
         renders.append((hid, geo, b, hidden, bx))
     ytop = max(r[4][3] for r in renders)
     ybot = min(r[4][2] for r in renders)
@@ -228,12 +250,14 @@ def lineup(ids, path, scale=10, yaw=-24.0, pitch=12.0, tints=None, gap=26, label
     for n, (hid, geo, b, hidden, bx) in enumerate(renders):
         tint = (tints or {}).get(hid, SASH_TINT)
         img = ortho.render(geo, b.image, yaw=yaw, scale=scale, hidden=hidden, uv_shift=face_shift(),
-                           tint=tint_of(geo, tint), bounds=(bx[0], bx[1], ybot, ytop), pitch=pitch, pad=pad)
+                           tint=tint_of(geo, tint), bounds=(bx[0], bx[1], ybot, ytop), pitch=pitch, pad=pad,
+                           pose=IDLE_POSE)
         imgs.append((hid, b, Image.fromarray(img, "RGBA"), _feet_row(geo, hidden, yaw, pitch, scale, pad,
                                                                      (ybot, ytop)), bx))
     body_h = max(i[2].height for i in imgs)
     W = sum(i[2].width for i in imgs) + gap * (len(imgs) + 1) + 40
-    H = body_h + 150
+    lowest = max(i[3] + max(10, int(i[1].model.env["hips_w"] * scale * 2.6) // 3) for i in imgs)
+    H = max(body_h + 150, 40 + lowest + 44)
     horizon = int(H * 0.42)
     sheet = backdrop(W, H, horizon)
     d = ImageDraw.Draw(sheet)
@@ -249,8 +273,10 @@ def lineup(ids, path, scale=10, yaw=-24.0, pitch=12.0, tints=None, gap=26, label
         sheet.alpha_composite(im, (x, top))
         if labels:
             name = b.hero.get("name", hid)
-            d.text((foot_x, top + feet + sh + 10), "%s (%s)" % (name, b.model.form), fill=(250, 250, 250, 255),
-                   font=font, anchor="ma", stroke_width=2, stroke_fill=(30, 50, 26, 255))
+            env = b.model.env
+            d.text((foot_x, top + feet + sh + 10), "%s (%s, %.2f blocks)" % (
+                name, b.model.form, env["head_top"] * env["render_scale"] / 16), fill=(250, 250, 250, 255),
+                font=font, anchor="ma", stroke_width=2, stroke_fill=(30, 50, 26, 255))
         x += im.width + gap
     _save(sheet, path)
 
@@ -281,7 +307,8 @@ def face_strip(ids, path, scale=13, moods=HEAD_MOODS):
     ncol = max(len(c) for _, _, c in rows)
     sheet = Image.new("RGBA", (ncol * (cw + 10) + 30, len(rows) * (ch + 56) + 50), BG)
     d = ImageDraw.Draw(sheet)
-    d.text((16, 12), "Face close-ups: the 20x20 double-density face, eye frames over each mood", fill=INK, font=font)
+    d.text((16, 12), "Face close-ups: the 20x20 double-density face (eyes low and wide), the frames of six moods, a blink "
+                     "and a 3/4 view", fill=INK, font=font)
     y = 46
     for hid, b, cells in rows:
         d.text((16, y), "%s (%s)" % (b.hero.get("name", hid), b.model.base_id), fill=INK, font=small)
@@ -296,11 +323,54 @@ def face_strip(ids, path, scale=13, moods=HEAD_MOODS):
 
 def _head_render(geo, b, hidden, head_y, yaw, pitch, scale, shift):
     """The head and what hangs from it, cropped from shoulders up."""
-    full = ortho.model_bounds(geo, [yaw], hidden, pitch)
+    full = ortho.model_bounds(geo, [yaw], hidden, pitch, IDLE_POSE)
     lo = head_y - 4.0
     img = ortho.render(geo, b.image, yaw=yaw, scale=scale, hidden=hidden, uv_shift=shift, tint=tint_of(geo),
-                       bounds=(max(full[0], -11.0), min(full[1], 11.0), lo, full[3]), pitch=pitch, pad=4)
+                       bounds=(max(full[0], -12.0), min(full[1], 12.0), lo, min(full[3], head_y + 20.0)),
+                       pitch=pitch, pad=4, pose=IDLE_POSE)
     return Image.fromarray(img, "RGBA")
+
+
+def face_lineup(ids, path, scale=26):
+    """The calm faces of every character side by side, large, front and 3/4: the sheet to judge whether the faces are
+    clearly different. Under each: the face features that differ (eye shape, iris, pupil, lashes, brows, mouth,
+    marks, wear)."""
+    font, small = _font(18), _font(13)
+    cells = []
+    for hid in ids:
+        geo, b = _built(hid)
+        hidden = view_hidden(geo)
+        hy = b.model.env["head_y"]
+        front = _head_render(geo, b, hidden, hy, 0.0, 2.0, scale, face_shift())
+        side = _head_render(geo, b, hidden, hy, -30.0, 6.0, scale * 3 // 4, face_shift())
+        sp = b.spec
+        marks = ", ".join(m["type"].replace("_", " ") for m in sp["marks"]) or "no marks"
+        wear = sp["glasses"] and "%s glasses" % sp["glasses"] or (sp["eyepatch"] and "eye patch") or ""
+        lines = ["%s eyes, %s iris, %s pupil" % (sp["eyes"], sp["iris_style"].replace("_", "-"), sp["pupil"]),
+                 "lash %d (%s), %s brows" % (sp["lashes"], sp["flick"], sp["brows"].replace("_", " ")),
+                 "%s mouth%s; %s%s" % (sp["mouth"], ", fang" if sp["fang"] != "none" else "", marks,
+                                       ("; " + wear) if wear else "")]
+        cells.append((b, front, side, lines))
+    cw = max(f.width for _, f, _, _ in cells)
+    sw = max(s.width for _, _, s, _ in cells)
+    ch = max(max(f.height, s.height) for _, f, s, _ in cells)
+    per_row = 3
+    rows = (len(cells) + per_row - 1) // per_row
+    W = per_row * (cw + sw + 40) + 30
+    H = rows * (ch + 110) + 50
+    sheet = Image.new("RGBA", (W, H), BG)
+    d = ImageDraw.Draw(sheet)
+    d.text((16, 12), "Faces side by side (calm): shape, iris, lash, brows, mouth, marks and wear differ for every hero",
+           fill=INK, font=font)
+    for n, (b, f, sd, lines) in enumerate(cells):
+        x = 16 + (n % per_row) * (cw + sw + 40)
+        y = 46 + (n // per_row) * (ch + 110)
+        d.text((x, y), "%s (%s)" % (b.hero.get("name", b.hero["id"]), b.model.base_id), fill=INK, font=font)
+        sheet.alpha_composite(f, (x, y + 26 + ch - f.height))
+        sheet.alpha_composite(sd, (x + cw + 10, y + 26 + ch - sd.height))
+        for k, line in enumerate(lines):
+            d.text((x, y + 30 + ch + k * 16), line, fill=DIM, font=small)
+    _save(sheet, path)
 
 
 def faces_sheet(hero_id, path, zoom=8):
@@ -390,9 +460,10 @@ def style_order():
 def write_all(out_dir=PREVIEW_DIR):
     """Every sheet of the style set. Returns {name: path}."""
     ids, tints = style_order()
-    paths = {"bases": os.path.join(out_dir, "bases_v2.png"), "lineup": os.path.join(out_dir, "lineup.png"),
+    paths = {"bases": os.path.join(out_dir, "bases_v3.png"), "lineup": os.path.join(out_dir, "lineup.png"),
              "lineup_forms": os.path.join(out_dir, "lineup_three_forms.png"),
-             "faces": os.path.join(out_dir, "face_closeups.png")}
+             "faces": os.path.join(out_dir, "face_closeups.png"),
+             "face_lineup": os.path.join(out_dir, "face_lineup.png")}
     bases_sheet(paths["bases"])
     lineup(ids, paths["lineup"], tints=tints)
     # one character per form, larger, like the owner's reference shot (chibi, adult, teen)
@@ -402,6 +473,7 @@ def write_all(out_dir=PREVIEW_DIR):
     three = [by_form[f] for f in ("chibi", "adult", "teen") if f in by_form]
     lineup(three, paths["lineup_forms"], scale=15, yaw=-20.0, tints=tints)
     face_strip(ids, paths["faces"])
+    face_lineup(ids, paths["face_lineup"])
     for hid in ids:
         paths[hid] = os.path.join(out_dir, "%s.png" % hid)
         hero_sheet(hid, paths[hid], tint=tints.get(hid, SASH_TINT))

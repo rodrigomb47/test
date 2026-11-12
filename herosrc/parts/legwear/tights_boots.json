@@ -1,27 +1,41 @@
 {
-  "_comment": "Rig v2 starter: tights painted on the legs and boots to a chosen height with a turned-down cuff.",
+  "_comment": "Tights and ankle boots (style pass 2): tights painted on the legs, short boots with a cuff and a sole.",
   "id": "legwear/tights_boots",
   "category": "legwear",
-  "slots": {"alt": "leather", "main": "accent"},
-  "params": {"boot": {"default": 0.6, "max": 1, "min": 0.3}},
-  "occupies": ["legs", "feet"],
-  "paint": [
-    {"cubes": ["thigh_*", "shin_*"], "material": "cloth", "slot": "main"},
-    {
-      "cubes": ["shin_*", "foot_*"],
-      "material": "leather",
-      "slot": "alt",
-      "y": [0, "ankle_y + (knee_y - ankle_y) * boot"]
-    }
-  ],
+  "slots": {"main": "accent", "alt": "leather", "trim": "trim"},
+  "params": {"boot": {"default": 0.35, "max": 0.8, "min": 0.15}},
+  "occupies": ["legs_lower", "feet"],
+  "paint": [{"cubes": ["thigh_*", "shin_*"], "material": "cloth", "slot": "main"}],
   "cubes": [
     {
-      "origin": ["-hip_x - leg_w / 2 - 0.25", "ankle_y + (knee_y - ankle_y) * boot - 0.75", "-leg_d / 2 - 0.25"],
-      "size": ["leg_w + 0.5", 0.75, "leg_d + 0.5"],
+      "name": "shaft",
       "bone": "shin_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.3", "ankle_y - 0.1", "-leg_d / 2 - 0.3"],
+      "size": ["leg_w + 0.6", "(knee_y - ankle_y) * boot + 0.1", "leg_d + 0.6"],
+      "slot": "alt",
       "material": "leather",
       "mirror": true,
-      "slot": "alt"
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "foot",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.3", 0, "-leg_d / 2 - toe - 0.5"],
+      "size": ["leg_w + 0.6", "ankle_y + 0.1", "leg_d + toe + 0.8"],
+      "slot": "alt",
+      "material": "leather",
+      "mirror": true
+    },
+    {
+      "name": "sole",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.4", 0, "-leg_d / 2 - toe - 0.6"],
+      "size": ["leg_w + 0.8", 0.5, "leg_d + toe + 1"],
+      "slot": "alt",
+      "material": "leather",
+      "tone": -2,
+      "mirror": true,
+      "fine": true
     }
   ]
 }

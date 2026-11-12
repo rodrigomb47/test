@@ -1,39 +1,46 @@
 {
-  "_comment": "Trousers painted on the legs and boots with volume: a shaft over the shin, a turned-down cuff and a sturdy foot. boot is the shaft height as a fraction of the shin.",
+  "_comment": "Boots (style pass 2): a boot shell over the shin and foot with a turned-down cuff at the top, a sole and a toe cap; the trousers above in the base layer.",
   "id": "legwear/boots",
   "category": "legwear",
-  "slots": {"alt": "leather", "main": "accent", "trim": "leather"},
-  "params": {"boot": {"default": 0.7, "max": 1, "min": 0.3}},
-  "occupies": ["legs", "feet"],
-  "paint": [
-    {"cubes": ["hips", "thigh_*", "shin_*"], "material": "cloth", "slot": "main"},
-    {"cubes": ["foot_*"], "material": "leather", "slot": "alt"}
-  ],
+  "slots": {"main": "leather", "trim": "trim"},
+  "params": {"boot": {"default": 0.75, "max": 1.0, "min": 0.3}},
+  "occupies": ["legs_lower", "feet"],
   "cubes": [
     {
+      "name": "shaft",
+      "bone": "shin_r",
       "origin": ["-hip_x - leg_w / 2 - 0.3", "ankle_y - 0.1", "-leg_d / 2 - 0.3"],
       "size": ["leg_w + 0.6", "(knee_y - ankle_y) * boot", "leg_d + 0.6"],
-      "bone": "shin_r",
       "material": "leather",
-      "mirror": true,
-      "slot": "alt"
+      "mirror": true
     },
     {
-      "origin": ["-hip_x - leg_w / 2 - 0.45", "ankle_y + (knee_y - ankle_y) * boot - 0.75", "-leg_d / 2 - 0.45"],
-      "size": ["leg_w + 0.9", 0.85, "leg_d + 0.9"],
+      "name": "cuff",
       "bone": "shin_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.55", "ankle_y + (knee_y - ankle_y) * boot - 1.25", "-leg_d / 2 - 0.55"],
+      "size": ["leg_w + 1.1", 1.75, "leg_d + 1.1"],
       "material": "leather",
+      "tone": 1,
       "mirror": true,
-      "slot": "trim",
-      "tone": 1
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
     },
     {
-      "origin": ["-hip_x - leg_w / 2 - 0.3", 0, "-leg_d / 2 - toe - 0.4"],
-      "size": ["leg_w + 0.6", "ankle_y", "leg_d + toe + 0.7"],
+      "name": "foot",
       "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.3", 0, "-leg_d / 2 - toe - 0.5"],
+      "size": ["leg_w + 0.6", "ankle_y + 0.1", "leg_d + toe + 0.8"],
       "material": "leather",
+      "mirror": true
+    },
+    {
+      "name": "sole",
+      "bone": "foot_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.4", 0, "-leg_d / 2 - toe - 0.6"],
+      "size": ["leg_w + 0.8", 0.5, "leg_d + toe + 1"],
+      "material": "leather",
+      "tone": -2,
       "mirror": true,
-      "slot": "alt"
+      "fine": true
     }
   ]
 }

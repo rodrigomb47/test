@@ -1,32 +1,30 @@
 {
-  "_comment": "A knight's tabard and coat tails on the skirt bones: a front panel, two long split tails at the back and short side panels, all trimmed. Length is drop x (waist to knee).",
+  "_comment": "Coat tails (style pass 2): panels from the waist round the sides and back (open in front), split at the back, flared 12 degrees and trimmed, on the skirt bones.",
   "id": "outfit_bottom/coat_tails",
   "category": "outfit_bottom",
   "slots": {"main": "primary", "trim": "trim"},
-  "params": {"drop": {"default": 1.1, "max": 1.5, "min": 0.6}},
+  "params": {"drop": {"default": 0.9, "max": 1.5, "min": 0.3}},
   "occupies": ["skirt"],
-  "paint": [{"cubes": ["hips"], "material": "cloth", "slot": "main"}],
-  "cubes": [
+  "strands": [
     {
-      "origin": ["-hips_w / 2 + 0.75", "waist_y - (waist_y - knee_y) * drop", "-hips_d / 2 - 0.6"],
-      "size": ["hips_w - 1.5", "(waist_y - knee_y) * drop + 0.75", 0.5],
-      "bone": "skirt_f",
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
-    },
-    {
-      "origin": ["-hips_w / 2 - 0.3", "waist_y - (waist_y - knee_y) * drop - 1.5", "hips_d / 2 + 0.1"],
-      "size": ["hips_w / 2 + 0.2", "(waist_y - knee_y) * drop + 2.25", 0.5],
-      "bone": "skirt_b",
-      "mirror": true,
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
-    },
-    {
-      "origin": ["-hips_w / 2 - 0.6", "waist_y - (waist_y - knee_y) * drop * 0.6", "-hips_d / 2 - 0.1"],
-      "size": [0.5, "(waist_y - knee_y) * drop * 0.6 + 0.75", "hips_d + 0.2"],
-      "bone": "skirt_r",
-      "mirror": true,
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+      "name": "panel",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.5",
+      "radius": ["hips_w / 2 + 0.3", "hips_d / 2 + 0.3"],
+      "angles": [40, 320],
+      "count": 8,
+      "width": "(hips_w + hips_d) * 0.3 + 0.5",
+      "depth": 0.6,
+      "length": "(waist_y - hip_y) + (hip_y - knee_y) * drop + 0.75",
+      "flare": 12,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1, 0, 0],
+      "layers": [0, 0.25],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
     }
-  ],
-  "secondary": {"chain": ["skirt_f", "skirt_b", "skirt_l", "skirt_r"], "damping": 0.65, "stiffness": 0.45}
+  ]
 }

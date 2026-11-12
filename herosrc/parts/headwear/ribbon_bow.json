@@ -1,0 +1,35 @@
+{
+  "_comment": "A ribbon bow on the side of the head (style pass 2): a knot and two loops tilted up and out, two short tails, on the hat bone. Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
+  "id": "headwear/ribbon_bow",
+  "category": "headwear",
+  "slots": {"main": "primary"},
+  "occupies": ["hair_ornament"],
+  "offset": [0, "head_y", 0],
+  "cubes": [{"name": "knot", "bone": "hat", "origin": [3.5, 10.5, -2.5], "size": [1.5, 1.5, 1.5]}],
+  "groups": [
+    {
+      "rotation": [0, 0, -25],
+      "pivot": [4.25, 11.25, -1.75],
+      "cubes": [{"name": "loop_a", "bone": "hat", "origin": [4.75, 10.75, -2.25], "size": [3, 2, 1], "fine": false}]
+    },
+    {
+      "rotation": [0, 0, 30],
+      "pivot": [4.25, 11.25, -1.75],
+      "cubes": [{"name": "loop_b", "bone": "hat", "origin": [0.75, 10.75, -2.25], "size": [3, 2, 1], "fine": true}]
+    },
+    {
+      "rotation": [0, 0, 15],
+      "pivot": [4.25, 10.75, -1.75],
+      "cubes": [
+        {
+          "name": "tail",
+          "bone": "hat",
+          "origin": [4, 8, -2.0],
+          "size": [0.9, 2.75, 0.5],
+          "fine": true,
+          "cutout": "tip_jagged_1"
+        }
+      ]
+    }
+  ]
+}

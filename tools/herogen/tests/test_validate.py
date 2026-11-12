@@ -63,14 +63,14 @@ class ValidateTest(unittest.TestCase):
     def test_over_cube_budget(self):
         d = copy.deepcopy(self.geo_data)
         chest = next(b for b in self.bones(d) if b["name"] == "chest")
-        chest["cubes"] = chest["cubes"] * 141
-        self.assertProblem("cubes (budget 140)", self.problems(d))
+        chest["cubes"] = chest["cubes"] * 301
+        self.assertProblem("cubes (budget 300)", self.problems(d))
 
     def test_over_bone_budget(self):
         d = copy.deepcopy(self.geo_data)
-        for i in range(20):
+        for i in range(60):
             self.bones(d).append({"name": "extra_%d" % i, "parent": "root", "pivot": [0, 0, 0]})
-        self.assertProblem("bones (budget 72)", self.problems(d))
+        self.assertProblem("bones (budget 100)", self.problems(d))
 
     def test_parent_order_and_names(self):
         d = copy.deepcopy(self.geo_data)
@@ -118,7 +118,7 @@ class ValidateTest(unittest.TestCase):
     def test_head_front_without_holes(self):
         tex = self.tex.copy()
         hu, hv, _, _ = load_rig()["uv_template"]["head_front"]
-        tex[hv + 6, hu + 4] = (200, 150, 120, 255)
+        tex[hv + 10, hu + 4] = (200, 150, 120, 255)          # face row 10 is under the eyes plane
         self.assertProblem("not transparent under the eyes and mouth planes", self.problems(tex=tex))
 
     def test_mouth_edge_must_match_the_head_front(self):
@@ -128,19 +128,47 @@ class ValidateTest(unittest.TestCase):
         self.assertProblem("mouth frame 3 differs from the head front", self.problems(tex=tex))
 
     def test_cube_in_front_of_the_face(self):
-        head_y = 23           # the test rig is an adult: the lash line is at head_y + 6.5
+        head_y = 42           # the test rig is a rig v3 adult: bangs must stop at head_y + 5.5
         d = copy.deepcopy(self.geo_data)
         bangs = next(b for b in self.bones(d) if b["name"] == "bangs")
         long_bangs = copy.deepcopy(bangs["cubes"][0])
-        long_bangs["origin"] = [-1, head_y + 5, -5.6]
+        long_bangs.pop("rotation", None)
+        long_bangs.pop("pivot", None)
+        long_bangs["origin"] = [-1, head_y + 4, -5.6]
         long_bangs["size"] = [2, 3, 0.5]
         bangs["cubes"].append(long_bangs)
-        self.assertProblem("in front of the face below y 29.5", self.problems(d))
+        self.assertProblem("in front of the face below y 47.5", self.problems(d))
+
+    def test_rotated_cube_in_front_of_the_face(self):
+        """The clear face is tested on rotated corners, with GeckoLib's sense of rotation: a long strand inside the
+        head (behind the face) whose tip swings forward (file rotation x negative) comes out in front of the eyes and
+        is caught; swung backward (x positive) it stays behind the face."""
+        head_y = 42
+        d = copy.deepcopy(self.geo_data)
+        bangs = next(b for b in self.bones(d) if b["name"] == "bangs")
+        strand = copy.deepcopy(bangs["cubes"][0])
+        strand["origin"] = [-0.5, head_y + 2, -4.5]
+        strand["size"] = [1, 8, 0.25]
+        strand["pivot"] = [0, head_y + 10, -4.5]
+        bangs["cubes"] = [strand]
+        strand["rotation"] = [20, 0, 0]
+        self.assertFalse(any("front of the face" in p for p in validate._check_clear_face(GeoModel(d), load_rig())),
+                         "swung back, it stays behind the face")
+        strand["rotation"] = [-20, 0, 0]
+        self.assertProblem("in front of the face", validate._check_clear_face(GeoModel(d), load_rig()))
+
+    def test_lod_budget(self):
+        """At most budgets.lod_cubes cubes outside fine_ bones."""
+        d = copy.deepcopy(self.geo_data)
+        chest = next(b for b in self.bones(d) if b["name"] == "chest")
+        chest["cubes"] = chest["cubes"] * 131
+        self.assertProblem("cubes outside fine_ bones (budget 130)", self.problems(d))
+        self.assertLessEqual(validate.lod_cubes(GeoModel(self.geo_data)), load_rig()["budgets"]["lod_cubes"])
 
     def test_open_cap_and_side_locks_are_fine(self):
         """Faces, not boxes: a cap without its north face may enclose the head, and a lock beside the face (|x| > 4.5)
         may hang below the lash line."""
-        head_y = 23
+        head_y = 42
         d = copy.deepcopy(self.geo_data)
         top = next(b for b in self.bones(d) if b["name"] == "hair_top")
         cap = {"origin": [-5.5, head_y + 2, -5.5], "size": [11, 9, 11],

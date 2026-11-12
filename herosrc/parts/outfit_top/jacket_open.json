@@ -1,60 +1,119 @@
 {
-  "_comment": "An open short jacket with volume: slightly oversized sleeves with rolled cuffs, lapels flanking the shirt, a hem that flares over the hips (open at the front, on the skirt bone) and a hood bunched behind the neck.",
+  "_comment": "An open jacket with a hood (style pass 2): the jacket painted over the torso and arms with the shirt showing in an open front, lapel slabs folded back, a layered collar, a hood bunched behind the neck (three rotated slabs), turned-back cuffs and a flared hem of panels below the waist, open at the front.",
   "id": "outfit_top/jacket_open",
   "category": "outfit_top",
-  "slots": {"alt": "secondary", "main": "primary", "trim": "trim"},
+  "slots": {"main": "primary", "alt": "secondary", "trim": "trim"},
+  "params": {"hem": {"default": 1, "max": 1.5, "min": 0.5}},
   "occupies": ["torso", "sleeves"],
   "paint": [
     {"cubes": ["chest", "bust", "waist", "upper_arm_*", "forearm_*"], "material": "cloth", "slot": "main"},
-    {
-      "abs_x": [0, 1.26],
-      "cubes": ["chest", "bust", "waist"],
-      "faces": ["north"],
-      "material": "cloth",
-      "slot": "alt"
-    }
+    {"cubes": ["chest", "bust", "waist"], "faces": ["north"], "abs_x": [0, 1.5], "material": "cloth", "slot": "alt"}
   ],
   "cubes": [
     {
-      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "elbow_y - 0.25", "-arm_d / 2 - 0.3"],
-      "size": ["arm_w + 0.6", "arm_top - elbow_y + 0.55", "arm_d + 0.6"],
-      "bone": "arm_r",
-      "mirror": true
-    },
-    {
-      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "wrist_y + 0.75", "-arm_d / 2 - 0.3"],
-      "size": ["arm_w + 0.6", "elbow_y - wrist_y - 0.75", "arm_d + 0.6"],
-      "bone": "forearm_r",
-      "mirror": true
-    },
-    {
-      "origin": ["-shoulder_x - arm_w / 2 - 0.45", "wrist_y - 0.1", "-arm_d / 2 - 0.45"],
-      "size": ["arm_w + 0.9", 1, "arm_d + 0.9"],
-      "bone": "forearm_r",
-      "mirror": true,
-      "slot": "trim"
-    },
-    {
-      "origin": ["-chest_w / 2 + 0.25", "chest_y + 0.25", "-chest_d / 2 - bust_d - 0.4"],
-      "size": [1.25, "chest_top - chest_y", 0.5],
+      "name": "collar",
       "bone": "chest",
-      "mirror": true,
-      "trim": {"edge": "top", "slot": "trim", "width": 1}
+      "origin": ["-neck_w / 2 - 1.25", "chest_top - 0.5", "-chest_d / 2 + 0.25"],
+      "size": ["neck_w + 2.5", 1.5, "chest_d - 0.25"],
+      "slot": "main",
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
     },
     {
-      "origin": ["-hips_w / 2 - 0.45", "hip_y - 1.75", "-hips_d / 2 - 0.45"],
-      "size": ["hips_w + 0.9", "waist_y - hip_y + 2.25", "hips_d + 0.9"],
-      "bone": "skirt",
-      "faces": ["south", "east", "west"],
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+      "name": "cuff",
+      "bone": "forearm_r",
+      "origin": ["-shoulder_x - arm_w / 2 - 0.5", "wrist_y", "-arm_d / 2 - 0.5"],
+      "size": ["arm_w + 1", 1.75, "arm_d + 1"],
+      "slot": "trim",
+      "mirror": true
     },
     {
-      "origin": ["-hips_w / 2 - 0.45", "hip_y - 1.75", "-hips_d / 2 - 0.55"],
-      "size": ["hips_w / 2 - 0.65", "waist_y - hip_y + 2.25", 0.5],
-      "bone": "skirt",
-      "mirror": true,
-      "trim": {"edge": "bottom", "slot": "trim", "width": 1}
+      "name": "pocket",
+      "bone": "waist",
+      "origin": ["-waist_w / 2 + 0.25", "waist_y + 0.5", "-waist_d / 2 - 0.35"],
+      "size": [1.75, 1.5, 0.35],
+      "slot": "main",
+      "tone": -1,
+      "fine": true,
+      "mirror": true
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, -12],
+      "pivot": [-2.0, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_r",
+          "bone": "chest",
+          "origin": [-2.75, "chest_top - 5.5", "-chest_d / 2 - 0.5"],
+          "size": [1.5, 5.5, 0.5],
+          "slot": "main",
+          "tone": 1
+        }
+      ]
     },
-    {"origin": [-2.75, "chest_top - 1.75", "chest_d / 2 - 0.5"], "size": [5.5, 2.5, 2.25], "bone": "chest"}
-  ]
+    {
+      "rotation": [0, 0, 12],
+      "pivot": [2.0, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "lapel_l",
+          "bone": "chest",
+          "origin": [1.25, "chest_top - 5.5", "-chest_d / 2 - 0.5"],
+          "size": [1.5, 5.5, 0.5],
+          "slot": "main",
+          "tone": 1
+        }
+      ]
+    },
+    {
+      "rotation": [25, 0, 0],
+      "pivot": [0, "chest_top + 0.5", "chest_d / 2"],
+      "cubes": [
+        {
+          "name": "hood_a",
+          "bone": "chest",
+          "origin": ["-neck_w / 2 - 2.25", "chest_top - 2", "chest_d / 2 - 0.25"],
+          "size": ["neck_w + 4.5", 3.25, 1.75],
+          "slot": "main"
+        },
+        {
+          "name": "hood_b",
+          "bone": "chest",
+          "origin": ["-neck_w / 2 - 1.5", "chest_top - 3.75", "chest_d / 2 + 0.75"],
+          "size": ["neck_w + 3", 2, 1.25],
+          "slot": "main",
+          "tone": -1
+        },
+        {
+          "name": "hood_lining",
+          "bone": "chest",
+          "origin": ["-neck_w / 2 - 1.5", "chest_top - 1.25", "chest_d / 2 - 0.5"],
+          "size": ["neck_w + 3", 1.75, 0.5],
+          "slot": "alt",
+          "fine": true
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "hem",
+      "bone": "waist",
+      "path": "arc",
+      "y": "waist_y + 0.5",
+      "radius": ["waist_w / 2 + 0.35", "waist_d / 2 + 0.35"],
+      "angles": [28, 332],
+      "count": 9,
+      "width": "(waist_w + waist_d) * 0.36 + 0.5",
+      "depth": 0.6,
+      "length": "(waist_y - hip_y) * hem + 1.5",
+      "flare": 12,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ],
+  "conflicts": ["outfit_top/*"]
 }

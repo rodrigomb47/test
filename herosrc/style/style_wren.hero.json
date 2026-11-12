@@ -1,12 +1,15 @@
 {
-  "_comment": "Style fixture (rig v2 style set, docs/heroes-v2/notes/artgen.md): an original teen girl with long layered hair and an ahoge, a short jacket, a pleated skirt, a capelet, tights and boots. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
+  "_comment": "Style fixture (style pass 2, docs/heroes-v2/notes/artgen.md): an original teen girl: long layered hair with a curled ahoge, a short jacket with a sailor collar and a ribbon bow, a pleated skirt, a capelet, thigh socks and loafers. Face: half-lidded sleepy eyes behind round gold glasses, a lash with a downward flick, a pout, a beauty mark under the left eye. Built for the previews and tests only; never written to the mod's resources and not a roster hero.",
   "format": 2,
   "id": "style_wren",
   "name": "Wren",
   "title": "style test: teen with long layered hair",
   "gender": "female",
   "archetype": "fixture",
-  "style_preview": {"faction_tint": "#8A5CC8", "order": 5},
+  "style_preview": {
+    "faction_tint": "#8A5CC8",
+    "order": 5
+  },
   "art": {
     "base": "female",
     "form": "teen",
@@ -19,18 +22,83 @@
       "secondary": "#C8404A",
       "accent": "#2B2E3A",
       "trim": "#D9B04C",
-      "leather": "#5B3C2C"
+      "leather": "#5B3C2C",
+      "metal": "#B7953F"
     },
-    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "base_layer": {
+      "base_top": "secondary",
+      "base_bottom": "accent",
+      "shoes": "leather"
+    },
     "parts": [
-      {"part": "hair/long_layered", "color": "hair", "params": {"length": 9, "locks": 6, "ahoge": 1}},
-      {"part": "outfit_top/short_jacket", "color": "primary", "trim": "trim", "alt": "secondary"},
-      {"part": "outfit_bottom/pleated_skirt", "color": "secondary", "trim": "trim", "params": {"drop": 0.8}},
-      {"part": "back/cape_short", "color": "accent", "trim": "trim", "params": {"length": 5}},
-      {"part": "accessories/sash_obi"},
-      {"part": "legwear/tights_boots", "color": "accent", "alt": "leather", "params": {"boot": 0.7}}
+      {
+        "part": "hair/long_layered",
+        "color": "hair",
+        "params": {
+          "length": 17,
+          "locks": 12,
+          "ahoge": 1
+        }
+      },
+      {
+        "part": "outfit_top/short_jacket",
+        "color": "primary",
+        "trim": "trim",
+        "alt": "secondary"
+      },
+      {
+        "part": "outfit_bottom/pleated_skirt",
+        "color": "secondary",
+        "trim": "trim",
+        "params": {
+          "drop": 0.6
+        }
+      },
+      {
+        "part": "back/cape_short",
+        "color": "accent",
+        "trim": "trim",
+        "params": {
+          "length": 5
+        }
+      },
+      {
+        "part": "accessories/sash_obi"
+      },
+      {
+        "part": "legwear/thigh_socks",
+        "color": "accent",
+        "alt": "leather",
+        "trim": "trim",
+        "params": {
+          "sock": 0.45
+        }
+      }
     ],
-    "face": {"eyes": "wide", "lashes": 2, "brows": "thin_arched", "mouth": "small", "blush": true}
+    "face": {
+      "eyes": "sleepy",
+      "iris_style": "gradient",
+      "pupil": "round",
+      "highlights": "two",
+      "lashes": 2,
+      "flick": "down",
+      "spacing": 6,
+      "brows": "thin_arched",
+      "mouth": "pout",
+      "glasses": "round",
+      "glasses_color": "metal",
+      "blush": "soft",
+      "marks": [
+        {
+          "type": "beauty_mark",
+          "at": "eye",
+          "side": "l"
+        }
+      ]
+    }
   },
-  "animations": {"style": "focus", "blink": "normal"}
+  "animations": {
+    "style": "fists",
+    "blink": "normal"
+  }
 }

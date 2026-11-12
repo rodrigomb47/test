@@ -20,16 +20,17 @@ class RenderTest(unittest.TestCase):
         hidden = ["p2_halo", "weapon_r", "weapon_l"]
         img = ortho.render(self.geo, self.b.image, scale=4, hidden=hidden, pad=0)
         ys = np.argwhere(img[:, :, 3] > 0)[:, 0]
-        self.assertAlmostEqual((ys.max() - ys.min() + 1) / 4.0, 38.5, delta=1.0, msg="feet to ear tips (adult 33 + ears)")
+        self.assertAlmostEqual((ys.max() - ys.min() + 1) / 4.0, 59.75, delta=1.0,
+                               msg="feet to ear tips (rig v3 adult 52 + the cat ears)")
         self.assertTrue(img[:, :, 3].any())
         colours = {tuple(p[:3]) for p in img.reshape(-1, 4) if p[3]}
         self.assertGreater(len(colours), 20)
 
     def test_hidden_bones(self):
         full = ortho.render(self.geo, self.b.image, scale=2, hidden=["weapon_r", "weapon_l"], pad=0,
-                            bounds=(-12, 12, 0, 40))
+                            bounds=(-12, 12, 0, 64))
         bare = ortho.render(self.geo, self.b.image, scale=2, hidden=["weapon_r", "weapon_l", "p2_halo"], pad=0,
-                            bounds=(-12, 12, 0, 40))
+                            bounds=(-12, 12, 0, 64))
         self.assertGreater(int((full[:, :, 3] > 0).sum()), int((bare[:, :, 3] > 0).sum()))
 
     def test_sheathed_blade_points_back_and_down(self):

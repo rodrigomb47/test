@@ -1,36 +1,52 @@
 {
-  "_comment": "A thick scarf: a ring around the neck up to the chin, a striped front tail with a fringe and a back tail fluttering out behind (each on its own bone for secondary motion).",
+  "_comment": "A scarf (style pass 2): a thick wrap round the neck and two tails, the short one hanging in front of the right shoulder and the long one fluttering back, on their own bones (striped with the pattern colours).",
   "id": "accessories/scarf",
   "category": "accessories",
-  "slots": {"alt": "secondary", "main": "primary"},
-  "params": {"length": {"default": 4.5, "max": 8, "min": 2}},
+  "slots": {"main": "accent", "alt": "secondary"},
+  "params": {"tail": {"default": 7, "max": 12, "min": 3}},
   "occupies": ["neck"],
   "bones": [
-    {"name": "scarf_1", "parent": "chest", "pivot": [1.25, "chest_top - 1", "-neck_d / 2 - 1.75"]},
-    {"name": "scarf_2", "parent": "chest", "pivot": [-1.5, "chest_top - 0.5", "neck_d / 2 + 1.5"]}
+    {"name": "scarf_tail_r", "parent": "chest", "pivot": [-1.5, "chest_top", "-chest_d / 2"]},
+    {"name": "scarf_tail_b", "parent": "chest", "pivot": [1, "chest_top + 0.5", "chest_d / 2"]}
   ],
   "cubes": [
     {
-      "origin": ["-neck_w / 2 - 1.6", "chest_top - 1", "-neck_d / 2 - 1.6"],
-      "size": ["neck_w + 3.2", "head_y - chest_top + 1.75", "neck_d + 3.2"],
-      "bone": "chest"
-    },
-    {
-      "origin": [0.25, "chest_top - 1 - length", "-neck_d / 2 - 2.1"],
-      "size": [2, "length + 0.25", 0.75],
-      "bone": "scarf_1",
-      "cutout": "fur_tips",
-      "pattern": {"size": 1, "dir": "h", "type": "stripes"}
-    },
-    {
-      "pivot": [-1.5, "chest_top - 0.75", "neck_d / 2 + 1.5"],
-      "rotation": [35, 0, -12],
-      "origin": [-2.5, "chest_top - 0.75 - length * 0.85", "neck_d / 2 + 1.1"],
-      "size": [2, "length * 0.85", 0.75],
-      "bone": "scarf_2",
-      "cutout": "fur_tips",
-      "pattern": {"size": 1, "dir": "h", "type": "stripes"}
+      "name": "wrap",
+      "bone": "chest",
+      "origin": ["-neck_w / 2 - 1.25", "chest_top - 0.25", "-neck_d / 2 - 1.25"],
+      "size": ["neck_w + 2.5", 2, "neck_d + 2.5"],
+      "pattern": {"type": "stripes", "dir": "h"}
     }
   ],
-  "secondary": {"chain": ["scarf_1", "scarf_2"], "damping": 0.5, "stiffness": 0.3}
+  "groups": [
+    {
+      "rotation": [-8, 0, 6],
+      "pivot": [-1.5, "chest_top", "-chest_d / 2"],
+      "cubes": [
+        {
+          "name": "tail_front",
+          "bone": "scarf_tail_r",
+          "origin": [-2.5, "chest_top - tail * 0.6", "-chest_d / 2 - 1"],
+          "size": [2, "tail * 0.6 + 0.25", 0.75],
+          "pattern": {"type": "stripes", "dir": "h"},
+          "cutout": "tip_jagged_1"
+        }
+      ]
+    },
+    {
+      "rotation": [38, 0, 10],
+      "pivot": [1, "chest_top + 0.5", "chest_d / 2"],
+      "cubes": [
+        {
+          "name": "tail_back",
+          "bone": "scarf_tail_b",
+          "origin": [0, "chest_top + 0.5 - tail", "chest_d / 2"],
+          "size": [2, "tail", 0.75],
+          "pattern": {"type": "stripes", "dir": "h"},
+          "cutout": "tip_jagged_1"
+        }
+      ]
+    }
+  ],
+  "secondary": {"chain": ["scarf_tail_r", "scarf_tail_b"], "damping": 0.6, "stiffness": 0.35}
 }

@@ -5,9 +5,11 @@ Checked here: geometry format_version; texture size matches the geometry and is 
 budgets; bone names; parents before children; required bones; whole-texel UVs; UV islands inside the texture and not
 overlapping (face planes on their fixed regions); the alpha holes under the eyes and mouth planes (face.head_front_holes)
 and, where a plane edge covers painted head front, identical texels; every eye, mouth and cheek frame present and
-distinct; the eyes mirror (frame 9 may raise one brow); no face of any cube in front of the face below the lash line
-(rig face.clear_below_y, head-local) within |x| < face.clear_half_width (bangs may cover the forehead and the brows,
-never the eyes; side locks hang outside that width).
+distinct; the eyes mirror (frame 9 may raise one brow; a face with an eye patch, heterochromia or a one-sided mark
+is asymmetric by design); no face of any cube, rotation included, in front of the face below the lash line (rig
+face.clear_below_y, head-local) within |x| < face.clear_half_width (bangs may cover the forehead and the brows, never
+the eyes; side locks hang outside that width); at most budgets.lod_cubes cubes outside fine_ bones (what is still
+drawn beyond the fine distance).
 """
 import math
 import re
@@ -16,8 +18,8 @@ import numpy as np
 
 import face as F
 from face import frame_rect, head_front_holes
-from render.ortho import rotation_matrix
 from rig import load_rig, required_bones
+from rot import file_matrix
 
 NAME = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -40,6 +42,10 @@ def check_geometry(geo, tex, rig=None):
         out.append("%d bones (budget %d)" % (len(geo.order), budgets["bones"]))
     if len(geo.cubes) > budgets["cubes"]:
         out.append("%d cubes (budget %d)" % (len(geo.cubes), budgets["cubes"]))
+    lod = lod_cubes(geo)
+    if "lod_cubes" in budgets and lod > budgets["lod_cubes"]:
+        out.append("%d cubes outside fine_ bones (budget %d): move detail (strands, frills, trims) onto fine_ bones"
+                   % (lod, budgets["lod_cubes"]))
     seen = set()
     for name in geo.order:
         if not NAME.match(name):
@@ -56,6 +62,16 @@ def check_geometry(geo, tex, rig=None):
     out += _check_uvs(geo, rig)
     out += _check_clear_face(geo, rig)
     return out
+
+
+def lod_cubes(geo):
+    """Cubes still drawn when every fine_ bone (and everything under it) is hidden."""
+    fine = set()
+    for name in geo.order:
+        parent = geo.parent(name)
+        if name.startswith("fine_") or parent in fine:
+            fine.add(name)
+    return sum(1 for c in geo.cubes if c.bone not in fine)
 
 
 def _check_uvs(geo, rig):
@@ -117,7 +133,7 @@ def _face_points(c, face):
     }[face]
     if c.rotation is None:
         return corners
-    m = rotation_matrix(c.rotation[0], c.rotation[1], c.rotation[2])
+    m = file_matrix(c.rotation)
     pv = np.array(c.pivot)
     return [tuple(pv + m @ (np.array(p) - pv)) for p in corners]
 
@@ -144,7 +160,7 @@ def _check_clear_face(geo, rig):
     return out
 
 
-def check_face_texture(tex, rig=None):
+def check_face_texture(tex, rig=None, asymmetric=False):
     rig = rig or load_rig()
     out = []
     tpl = rig["uv_template"]
@@ -183,11 +199,12 @@ def check_face_texture(tex, rig=None):
             for j in range(i + 1, n):
                 if np.array_equal(frames[i], frames[j]):
                     out.append("%s frames %d and %d are identical" % (plane, i, j))
-        if plane == "eyes":
+        if plane == "eyes" and not asymmetric:
             for k, f in enumerate(frames):
                 rows = slice(F.LASH, F.EH) if k == 9 else slice(0, F.EH)
                 if not np.array_equal(f[rows], f[rows, ::-1]):
                     out.append("eyes frame %d: the eyes do not mirror" % k)
+        if plane == "eyes":
             skin = frames[0][F.EH - 1, 0].copy()
             for k, f in enumerate(frames):
                 if (f[:, :, :3] == skin[:3]).all():
@@ -195,5 +212,5 @@ def check_face_texture(tex, rig=None):
     return out
 
 
-def check_built(geo, tex):
-    return F.check_layout(load_rig()) + check_geometry(geo, tex) + check_face_texture(tex)
+def check_built(geo, tex, asymmetric=False):
+    return F.check_layout(load_rig()) + check_geometry(geo, tex) + check_face_texture(tex, asymmetric=asymmetric)

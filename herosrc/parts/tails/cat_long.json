@@ -1,29 +1,29 @@
 {
-  "_comment": "A slender cat tail on a three-bone chain: back from the hips, up behind the back, and a curl at the tip in the alt colour. Density 2.",
+  "_comment": "A slender cat tail: a five-bone chain from the lower back that dips, sweeps back and curls up, with a lighter tip (style pass 2: chains, gen.py).",
   "id": "tails/cat_long",
   "category": "tails",
-  "slots": {"alt": "hair_accent", "main": "hair"},
-  "params": {"length": {"default": 9, "max": 14, "min": 6}},
+  "slots": {"main": "hair", "alt": "hair_accent"},
+  "params": {"size": {"default": 1, "max": 1.4, "min": 0.7}},
   "occupies": ["tail"],
-  "density": 2,
-  "bones": [
-    {"name": "tail_1", "parent": "body", "pivot": [0, "hip_y + 0.5", "hips_d / 2"]},
-    {"name": "tail_2", "parent": "tail_1", "pivot": [0, "hip_y + 0.75", "hips_d / 2 + 2.5"]},
-    {"name": "tail_3", "parent": "tail_2", "pivot": [0, "hip_y + length - 1", "hips_d / 2 + 2.5"]}
-  ],
-  "cubes": [
-    {"origin": [-0.75, "hip_y", "hips_d / 2 - 0.25"], "size": [1.5, 1.5, 3.25], "bone": "tail_1"},
+  "chains": [
     {
-      "origin": [-0.75, "hip_y + 1.25", "hips_d / 2 + 1.5"],
-      "size": [1.5, "length - 2.25", 1.5],
-      "bone": "tail_2"
-    },
-    {
-      "origin": [-0.75, "hip_y + length - 1", "hips_d / 2 + 0.25"],
-      "size": [1.5, 1.75, 3],
-      "bone": "tail_3",
-      "slot": "alt"
+      "name": "tail",
+      "bones": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"],
+      "parent": "body",
+      "points": [
+        [0, "hip_y + 1", "hips_d / 2 - 0.5"],
+        [0, "hip_y - 1.5", "hips_d / 2 + 2.5"],
+        [0, "hip_y - 2.25", "hips_d / 2 + 6.5 * size"],
+        [0, "hip_y + 1.5", "hips_d / 2 + 9.5 * size"],
+        [0, "hip_y + 6 * size", "hips_d / 2 + 10.5 * size"],
+        [0, "hip_y + 9 * size", "hips_d / 2 + 8.75 * size"]
+      ],
+      "sections": [[1.75, 1.75], [2.25, 2.25], [2.25, 2.25], [2, 2], [2, 2]],
+      "overlap": 0.4,
+      "material": "hair",
+      "slot_last": "alt",
+      "taper_last": 0.45
     }
   ],
-  "secondary": {"chain": ["tail_1", "tail_2", "tail_3"], "damping": 0.5, "stiffness": 0.25}
+  "secondary": {"chain": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"], "damping": 0.55, "stiffness": 0.3}
 }

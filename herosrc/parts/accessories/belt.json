@@ -1,0 +1,33 @@
+{
+  "_comment": "A belt with a buckle and a pouch on the left hip (style pass 2).",
+  "id": "accessories/belt",
+  "category": "accessories",
+  "slots": {"main": "leather", "trim": "metal"},
+  "occupies": ["belt"],
+  "cubes": [
+    {
+      "name": "belt",
+      "bone": "body",
+      "origin": ["-hips_w / 2 - 0.3", "waist_y - 1", "-hips_d / 2 - 0.3"],
+      "size": ["hips_w + 0.6", 1.1, "hips_d + 0.6"],
+      "material": "leather"
+    },
+    {
+      "name": "buckle",
+      "bone": "body",
+      "origin": [-0.75, "waist_y - 1.25", "-hips_d / 2 - 0.6"],
+      "size": [1.5, 1.5, 0.35],
+      "slot": "trim",
+      "material": "metal"
+    },
+    {
+      "name": "pouch",
+      "bone": "body",
+      "origin": ["hips_w / 2 - 0.25", "waist_y - 3.25", -1.25],
+      "size": [1.25, 2.5, 2.5],
+      "material": "leather",
+      "fine": true,
+      "trim": {"slot": "main", "edge": "top", "width": 1}
+    }
+  ]
+}

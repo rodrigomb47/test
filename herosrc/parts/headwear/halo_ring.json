@@ -1,13 +1,13 @@
 {
-  "_comment": "Rig v2 starter: a glowing ring above the head (written to the glow mask). Head-local (offset head_y).",
+  "_comment": "A glowing ring above the head (written to the glow mask). Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
   "id": "headwear/halo_ring",
   "category": "headwear",
   "slots": {"main": "glow"},
   "occupies": ["halo"],
   "offset": [0, "head_y", 0],
   "cubes": [
-    {"origin": [-2.5, 13, -3.25], "size": [5, 0.5, 0.5], "bone": "halo", "material": "glow"},
-    {"origin": [-2.5, 13, 2.75], "size": [5, 0.5, 0.5], "bone": "halo", "material": "glow"},
-    {"origin": [-3.25, 13, -2.75], "size": [0.5, 0.5, 5.5], "bone": "halo", "material": "glow", "mirror": true}
+    {"origin": [-2.5, 15, -3.25], "size": [5, 0.5, 0.5], "bone": "halo", "material": "glow"},
+    {"origin": [-2.5, 15, 2.75], "size": [5, 0.5, 0.5], "bone": "halo", "material": "glow"},
+    {"origin": [-3.25, 15, -2.75], "size": [0.5, 0.5, 5.5], "bone": "halo", "material": "glow", "mirror": true}
   ]
 }

@@ -1,5 +1,6 @@
-"""Rig v2 style system: the parts library on every base, the style fixtures, and the part features the style relies
-on (head-local offset, density 2 on the head, V regions, optional pieces, silhouette cutouts, hair as one mass)."""
+"""Rig v3 style system (style pass 2): the parts library on every base, the style fixtures, and the part features the
+style relies on (head-local offset, density, V regions, optional pieces, silhouette cutouts, hair as one mass, dense
+rotated strands, distinct faces)."""
 import glob
 import io
 import json
@@ -12,6 +13,7 @@ from PIL import Image
 from helpers import HEROGEN, mannequin
 
 import build
+import face as F
 import validate
 from geo import GeoModel, geo_json
 from paint import Painter
@@ -68,17 +70,23 @@ class LibraryTest(unittest.TestCase):
             self.assertEqual(local["chibi_f"], local["adult_m"], pid)
 
     def test_hair_styles(self):
-        """Every hair style is volume: a cap, a fringe in front of the forehead (z < -5 over y head_y + 8..10),
-        at double density, with no strand below the lash line in front of the eyes (checked by the clear face)."""
+        """Every hair style is a dense mass of strands (style pass 2): at least 45 cubes, most of them rotated (fanned
+        and flared, the references' main technique) and on fine_ bones (level of detail), at 1 texel per px, over a
+        cap and a fringe in front of the forehead (z < -5 over y head_y + 8..10); no strand in front of the eyes
+        (the clear face)."""
         styles = [p for p in library() if p.startswith("hair/")]
-        self.assertGreaterEqual(len(styles), 6)
+        self.assertGreaterEqual(len(styles), 7)
         for pid in styles:
             m = Model("t", "teen_f")
             apply_part(m, {"part": pid, "color": "hair", "trim": "trim"}, 0)
             hy = m.env["head_y"]
             cubes = [c for c in m.cubes if c.part == pid]
-            self.assertTrue(all(c.density == 2 for c in cubes), pid)
-            self.assertGreaterEqual(len(cubes), 6, "%s is built from layered cubes" % pid)
+            self.assertTrue(all(c.density == 1 for c in cubes), pid)
+            self.assertGreaterEqual(len(cubes), 45, "%s is a dense mass of strands" % pid)
+            rotated = [c for c in cubes if c.rotation is not None]
+            self.assertGreater(len(rotated), len(cubes) * 0.6, "%s: most strands are fanned or flared" % pid)
+            fine = [c for c in cubes if c.bone.startswith("fine_")]
+            self.assertGreater(len(fine), len(cubes) * 0.6, "%s: strands are level-of-detail" % pid)
             fringe = [c for c in cubes if c.box[2] < -5 and c.box[1] <= hy + 8.5 and c.box[4] >= hy + 10
                       and c.box[0] < -3 and c.box[3] > 3]
             self.assertTrue(fringe, "%s covers the forehead" % pid)
@@ -108,9 +116,26 @@ class StyleFixtureTest(unittest.TestCase):
                 p = build.out_paths(hid)
                 geo = GeoModel(json.loads(files[p["geo"]]))
                 tex = np.array(Image.open(io.BytesIO(files[p["texture"]])).convert("RGBA"))
-                self.assertEqual(validate.check_built(geo, tex), [])
-                self.assertLessEqual(len(b.model.bones), 72)
-                self.assertLessEqual(len(b.model.cubes), 140)
+                self.assertEqual(validate.check_built(geo, tex, asymmetric=b.spec["asymmetric"]), [])
+                self.assertLessEqual(len(b.model.bones), 100)
+                self.assertLessEqual(len(b.model.cubes), 300)
+                self.assertGreaterEqual(len(b.model.cubes), 110, "detail: well past rig v2's 54-76 cubes")
+                self.assertLessEqual(validate.lod_cubes(geo), 130)
+                self.assertGreaterEqual(sum(1 for c in b.model.cubes if c.rotation is not None), 50,
+                                        "rotated strands, panels and plates")
+
+    def test_faces_are_distinct(self):
+        """The owner's 'their faces are quite similar': every pair of fixtures differs in at least five face features
+        (eye shape, iris style, pupil, highlights, lash, flick, spacing, brows, mouth, blush, marks, wear, iris hue)
+        and no two share an eye shape or a mouth."""
+        specs = {hid: b.spec for hid, (_, b) in self.built.items()}
+        ids = sorted(specs)
+        for i, a in enumerate(ids):
+            for c in ids[i + 1:]:
+                with self.subTest(a=a, b=c):
+                    self.assertGreaterEqual(F.distinct(specs[a], specs[c]), 5)
+        self.assertEqual(len({s["eyes"] for s in specs.values()}), len(ids))
+        self.assertEqual(len({s["mouth"] for s in specs.values()}), len(ids))
 
     def test_fixtures_are_deterministic_and_never_shipped(self):
         for hid in self.ids:
@@ -158,8 +183,8 @@ class FeatureTest(unittest.TestCase):
 
     def test_peak_ears_have_no_side_strips(self):
         """A cut-out ear is cut through its front: its side faces only keep where the front keeps its edge column."""
-        b = build.build(mannequin("teen_f", parts=[{"part": "ears/cat", "color": "hair", "alt": "blush"}]))
-        ear = next(c for c in b.model.cubes if c.bone == "ear_r" and c.size[2] > 1)
+        b = build.build(mannequin("teen_f", parts=[{"part": "ears/round", "color": "hair", "alt": "blush"}]))
+        ear = next(c for c in b.model.cubes if c.bone == "ear_r" and c.cutout == "round_top" and c.size[2] > 1)
         for face in ("east", "west"):
             _, _, W, H = ear.uv[face]
             self.assertFalse(Painter.keep(ear, face, 0, 0, W, H), "no full-height strip on the %s side" % face)
@@ -181,7 +206,7 @@ class FeatureTest(unittest.TestCase):
         ramp = [tuple(c) for c in b.ramps["hair"]]
 
         def tones(name):
-            c = b.model.cube(name)
+            c = b.model.cube("inline/0#" + name)
             u, v, w, h = c.uv["north"]
             return [ramp.index(tuple(p[:3])) - 2 for p in b.image[v + h - 1, u:u + w] if tuple(p[:3]) in ramp]
         self.assertNotIn(-2, tones("tuft"), "no outline where the tuft sits on the cap")
