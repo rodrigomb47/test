@@ -45,6 +45,9 @@ is retired; format-1 files still load as a fallback for operator overrides.
 Owner decisions (2026-11-12): the look is approved (Minecraft-style cube models with anime proportions, detailed outfits
 and animated pixel-art faces); the archetype mix is approved; after the 8-hero slice is approved from screenshots,
 EACH batch of 24 heroes waits for the owner's review of its screenshot gallery before the next batch starts.
+Later the same day the owner approved art style pass 2 (rig v3: smaller heads, distinct faces, strand hair) from the
+preview GIFs ("these designs are better, I like it"), and asked that heroes get superhuman mobility (higher and longer
+jumps, flight for some) and work better than ordinary NPCs outside battle (`docs/heroes-v2/MOBILITY_AND_WORK.md`).
 
 | Milestone | Status |
 |---|---|
