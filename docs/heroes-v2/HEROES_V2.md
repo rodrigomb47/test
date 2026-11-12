@@ -931,6 +931,14 @@ passive.
 `boss.reactions`: up to 8 `{ when, move, chance, cooldown }`, checked every 5 ticks; a true `when` with a ready move
 and a passed chance replaces the next pick (never a move in progress).
 
+Reactions read **whatever the hero is fighting**, player or NPC, in both modes (owner, 2026-11-12: "if a boss
+punishes the player for raising a shield, it does the same when an NPC raises one"). Every `target_*` condition is
+computed from the target's own state with the same test: `isBlocking()` (faction soldiers raise shields against
+archers today), using a bow or crossbow (NPC archers draw like players), eating (an NPC eating from its food bar),
+airborne or above (an NPC on a pillar or a scaffold), behind, far, unreachable. The chances and cooldowns are the same.
+What stays player-only is the boss layer of 6.1-6.2, which exists to keep fights fair for people: boss health
+scaling and the bar, the per-hit damage cap, `damage_vs_players`, the no-one-shot rule and attack tokens.
+
 | `when` | Typical answer |
 |---|---|
 | `target_blocking` | a `breaks_guard` strike, a grab, or walking round the shield |
