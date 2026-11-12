@@ -184,6 +184,11 @@ public class BuilderJob extends Job {
                 takeFromStorage(s -> s.is(ItemTags.LOGS), (e.getValue() - got + 3) / 4);
                 Crafting.ensurePlanks(npc.inventory(), e.getValue());
                 got = Inv.count(npc.inventory(), MaterialRules.accepts(n));
+            } else if (got < e.getValue() && MaterialRules.craftFor(n.group()) != null) {
+                // live check: a door a raider broke was never put back - a door (or fence, torch, chest) is crafted
+                // from the storehouse's materials for a repair as for a project, not only taken ready-made
+                got += craftForRepair(MaterialRules.craftFor(n.group()), e.getValue() - got);
+                got = Math.min(got, Inv.count(npc.inventory(), MaterialRules.accepts(n)));
             }
             gotAny |= got > 0;
         }
@@ -199,6 +204,26 @@ public class BuilderJob extends Job {
             return;
         }
         state = State.REPAIR;
+    }
+
+    /**
+     * Crafts {@code want} more of a repair part with {@code r} from the storehouse's materials (logs for planks and
+     * sticks), as it does for a project; leftovers go back at the next storehouse visit. Returns how many it made.
+     */
+    private int craftForRepair(Crafting.Recipe r, int want) {
+        int batches = (want + r.outputCount() - 1) / r.outputCount();
+        for (Crafting.Input in : r.inputs()) {
+            int amount = in.count() * batches;
+            int t = takeKeeping(in.filter(), amount);
+            if (t < amount && (in.label().equals("Planks") || in.label().equals(Items.STICK.getDescription().getString()))) {
+                takeFromStorage(s -> s.is(ItemTags.LOGS), (amount - t + 3) / 4 + 1);
+            }
+        }
+        int made = Crafting.craftWithIntermediates(npc.inventory(), r, batches) * r.outputCount();
+        if (made > 0) {
+            npc.swing(InteractionHand.MAIN_HAND);
+        }
+        return made;
     }
 
     private BlockState plannedAt(BaseState b, BlockPos pos) {

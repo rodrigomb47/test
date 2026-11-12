@@ -496,6 +496,18 @@ public final class NpcNavigator {
         } else {
             return false;
         }
+        return recoverToward(goal);
+    }
+
+    /**
+     * The stuck recovery toward {@code goal}: a hop to the validated safe spot within the configured range (default 4
+     * across, 2 up or down) closest to it, if one is closer than where the NPC stands. Also used by a fighter boxed in
+     * within its target's reach (a pit it was knocked into), see {@link com.factionclash.combat.Pursuit}.
+     */
+    public boolean recoverToward(Vec3 goal) {
+        if (!(npc.level() instanceof ServerLevel level)) {
+            return false;
+        }
         BlockPos here = npc.blockPosition();
         StuckRecovery.Spot spot = StuckRecovery.choose(here.getX(), here.getY(), here.getZ(), goal.x, goal.y, goal.z,
                 com.factionclash.config.FCConfig.UNSTUCK_HORIZONTAL.get(), com.factionclash.config.FCConfig.UNSTUCK_VERTICAL.get(),

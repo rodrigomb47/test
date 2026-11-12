@@ -584,6 +584,14 @@ public final class FCCommands {
                         n.getBlockX(), n.getBlockZ()));
                 o.addProperty("problem", n.navigator().lastProblem());
                 o.addProperty("target", n.getTarget() == null ? "" : n.getTarget().getType().toShortString() + "@" + n.getTarget().blockPosition().toShortString());
+                o.addProperty("xyz", String.format(java.util.Locale.ROOT, "%.2f,%.2f,%.2f", n.getX(), n.getY(), n.getZ()));
+                com.factionclash.combat.Pursuit pu = n.pursuit();
+                o.addProperty("pursuit", pu.mode() + (pu.holdSpot() == null ? "" : " hold@" + pu.holdSpot().toShortString())
+                        + " plans=" + pu.plans + " holds=" + pu.holds + " breaks=" + pu.breaks + " pillars=" + pu.pillars
+                        + " gates=" + n.gateGoal().cycles);
+                net.minecraft.world.level.pathfinder.Path np = n.getNavigation().getPath();
+                o.addProperty("path", np == null ? "none" : np.isDone() ? "done" : np.getNextNodeIndex() + "/" + np.getNodeCount()
+                        + (np.canReach() ? " reach " : " partial ") + np.getEndNode().asBlockPos().toShortString());
                 o.addProperty("goals", String.join(",", n.goalSelector.getAvailableGoals().stream().filter(g -> g.isRunning())
                         .map(g -> g.getGoal().getClass().getSimpleName()).toList()));
                 JsonObject af = new JsonObject();

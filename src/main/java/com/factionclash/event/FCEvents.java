@@ -142,6 +142,17 @@ public final class FCEvents {
         }
     }
 
+    /**
+     * Whether a player of faction {@code player} (null: none) is an outsider to a base of {@code base}: not of its
+     * faction and not allied to it. A player of no faction counts: it is neutral until it fights, but a block it
+     * puts in a base (a pillar to hit soldiers from) is no more the base's than an enemy's is (live check: the
+     * soldiers could not touch a factionless player's pillar in their yard).
+     */
+    public static boolean outsider(net.minecraft.server.MinecraftServer server, com.factionclash.faction.FactionType player,
+                                   com.factionclash.faction.FactionType base) {
+        return player != base && (player == null || com.factionclash.campaign.Diplomacy.hostile(server, player, base));
+    }
+
     @SubscribeEvent
     public void onPlace(BlockEvent.EntityPlaceEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer p)) {
@@ -156,9 +167,10 @@ public final class FCEvents {
                 b.playerEdits.add(event.getPos().asLong());
             }
             data.setDirty();
-        } else if (b != null && !p.isCreative() && com.factionclash.campaign.Diplomacy.hostile(p.server, data.players.get(p.getUUID()), b.faction)
+        } else if (b != null && !p.isCreative() && outsider(p.server, data.players.get(p.getUUID()), b.faction)
                 && b.intruderBlocks.size() < BaseState.MAX_INTRUDER_BLOCKS) {
-            // an enemy building in the base (a block in a doorway, a pillar to stand on): its soldiers may break it
+            // an enemy or a player of no faction building in the base (a block in a doorway, a pillar to stand on):
+            // its soldiers may break it when it is in their way to someone they fight
             b.intruderBlocks.add(event.getPos().asLong());
             data.setDirty();
         }

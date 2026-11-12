@@ -32,6 +32,8 @@ public class NpcMeleeAttackGoal extends Goal {
     private int ticksUntilNextAttack;
     private long lastCanUseCheck;
     private Pursuit.Mode lastMode = Pursuit.Mode.CHASE;
+    /** Whether its path had been walked to its end at the last chase tick. */
+    private boolean pathEnded;
 
     public NpcMeleeAttackGoal(FactionNpc npc) {
         this.npc = npc;
@@ -97,7 +99,10 @@ public class NpcMeleeAttackGoal extends Goal {
             return true; // already working or waiting on this one: no new search
         }
         path = npc.getNavigation().createPath(t, 0);
-        return path != null || npc.isWithinMeleeAttackRange(t);
+        // no path is searched while it is in the air (knocked up by a blow): a target close by is still fought (live
+        // check: in a pit, bounced by the player's blows from the edge, it never took up the fight at all)
+        return path != null || npc.isWithinMeleeAttackRange(t)
+                || !npc.onGround() && npc.distanceToSqr(t) < Pursuit.PLAN_RANGE * Pursuit.PLAN_RANGE;
     }
 
     @Override
@@ -125,6 +130,7 @@ public class NpcMeleeAttackGoal extends Goal {
             }
         }
         npc.setAggressive(true);
+        pathEnded = false;
         repath = 0;
         ticksUntilNextAttack = 0;
         lastMode = npc.pursuit().mode();
@@ -154,8 +160,10 @@ public class NpcMeleeAttackGoal extends Goal {
         }
         Pursuit pursuit = npc.pursuit();
         pursuit.bind(t, false);
+        pursuit.afterJump(t);
         npc.getLookControl().setLookAt(t, 30.0F, 30.0F);
-        if (pursuit.mode() == Pursuit.Mode.CHASE) {
+        Pursuit.Mode was = pursuit.mode();
+        if (was == Pursuit.Mode.CHASE) {
             if (lastMode != Pursuit.Mode.CHASE) {
                 repath = 0; // back from working or waiting: look for the way at once
                 pathedX = pathedY = pathedZ = 0;
@@ -164,15 +172,28 @@ public class NpcMeleeAttackGoal extends Goal {
         } else {
             pursuit.tick(t);
         }
-        lastMode = pursuit.mode();
+        // the mode it started this tick in: a switch to CHASE made during the tick (the block in the doorway just
+        // broken, a way in found while waiting) is seen next tick, so it looks for the way at once (live check: it
+        // stood about 2 s in the open doorway, in the player's reach, until its old search timer ran out)
+        lastMode = was;
         ticksUntilNextAttack = Math.max(ticksUntilNextAttack - 1, 0);
         boolean canStrike = pursuit.canStrikeNow(t);
         checkAndPerformAttack(t);
-        pursuit.watchStuck(t, canStrike || npc.tickCount - npc.lastAttackTick() < 40);
+        boolean fighting = canStrike || npc.tickCount - npc.lastAttackTick() < 40;
+        pursuit.watchStuck(t, fighting);
+        pursuit.watchBoxedIn(t, canStrike); // (a lucky blow from the bottom of a pit, at the top of a bounce, does not get it out)
     }
 
     /** Vanilla's chase: a fresh path to the target every 4-10 ticks (less often far away) while it moves or now and then. */
     private void chase(LivingEntity t) {
+        boolean ended = npc.getNavigation().isDone();
+        if (ended && !pathEnded) {
+            // at the end of its path (a partial one, walked from afar up to the block in the doorway): it looks again
+            // from here at once, instead of standing in the player's reach until the search timer runs out
+            repath = 0;
+            pathedX = pathedY = pathedZ = 0;
+        }
+        pathEnded = ended;
         repath = Math.max(repath - 1, 0);
         if (repath > 0 || !(pathedX == 0 && pathedY == 0 && pathedZ == 0 || t.distanceToSqr(pathedX, pathedY, pathedZ) >= 1.0
                 || npc.getRandom().nextFloat() < 0.05F)) {

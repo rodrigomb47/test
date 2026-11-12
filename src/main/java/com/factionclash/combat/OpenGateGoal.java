@@ -40,8 +40,11 @@ public class OpenGateGoal extends Goal {
         this.npc = npc;
     }
 
-    /** PROPOSED: after going through a gate in a fight, its paths may still use gates this long (to walk back out). */
-    static final int GATE_MEMORY = 600;
+    /**
+     * PROPOSED: after going through a gate in a fight, its paths may still use gates this long after the fight (to
+     * walk back out); the time counts from the end of the fight (FactionNpc keeps it topped up while it fights).
+     */
+    public static final int GATE_MEMORY = 600;
 
     private boolean fighting() {
         return npc.opensGates();

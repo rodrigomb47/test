@@ -504,8 +504,11 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 ## Reaching a target (`Pursuit`, `ReachPlanner`, `Reach`, `OpenGateGoal`)
 A fighter whose path to its target comes back partial (it cannot walk up to it and hit it) plans a way or waits out
 of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
-* Gates: while fighting, and for 600 ticks after it went through a gate in a fight (so it walks back out of the pen
-  when the fight is over), a closed fence gate counts as a door on the path. Opened when the path's next nodes reach
+* Gates: while fighting, and for 600 ticks (GATE_MEMORY) after a fight in which it went through a gate (so it walks
+  back out of the pen when the fight is over), a closed fence gate counts as a door on the path. Live check: the 600
+  ticks now count from the end of the fight, however long it lasted (they counted from opening the gate, and after a
+  40 s fight in a pen soldiers were hopped over the fence by the stuck recovery), and a fighter that walks through a
+  gateway another one opened counts as having gone through a gate. Opened when the path's next nodes reach
   it within 2.25 blocks; closed once the NPC is through (far side), 3 blocks away or 80 ticks after opening, never
   while anyone stands in the gateway; then 20 ticks before that NPC opens a gate again.
 * Planner: only for a target within 12 blocks (horizontal) and 5 up or down; box 4 blocks round both, 3 down.
@@ -518,10 +521,17 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
 * Breaking (`Reach.mayBreak`): never a planned block, a block entity, a block in or beside a fluid, a mine's stairs,
   a base's ground (its walls box + 1, below its floor), or anything over 100 ticks to break with the held item; a
   foreign block in a planned cell yes (not the base's own player's edit for that faction or its allies); in a base of
-  its own side an unplanned block only if a hostile player placed it (`intruderBlocks`, at most 4096 per base). A
+  its own side an unplanned block only if a player not of its side placed it (`intruderBlocks`, at most 4096 per
+  base; live check: also a player of no faction, whose pillar in a yard the soldiers could not touch before). A
   block it broke for a target and that is put back is not broken again for that target.
-* Building up (`Reach.mayPlace`): an empty cell outside every plan, not in a base of its own side (walls box + 1), not
-  in a mine's stairwell.
+* Building up (`Reach.mayPlace`): an empty cell outside every plan, not in a base of its own side (walls box + 1)
+  except below its floor (filling a hole in its ground: a pit it is shut in), not in a mine's stairwell.
+* Boxed in (live check, a 1x1 pit two deep in a base's yard, the player hitting from the edge): waiting within 4.7
+  blocks (horizontal) of the target, unable to strike from where it stands, and not getting 1 block away (horizontal)
+  for 30 ticks (BOXED_IN), a melee fighter uses the stuck recovery (a hop of at most 4 across and 2 up or down, the
+  configured `movement` range) toward the waiting ring; at most 3 times per target (MAX_UNBOX). With blocks it
+  builds itself out first (the planner). Its strike check counts only while it stands (in the air, knocked up by a
+  blow, its hit box reaches higher than from where it stands).
 * Waiting: on a ring 6.5 blocks round the target (archers 9, in sight of it), at least 5 blocks away horizontally,
   nearest the end of the path toward it, 2+ blocks from another fighter's spot; staying put when already 5 to 9 away.
   One path search toward the target every 40 ticks (then the planner again), a new spot at most once a second when
@@ -544,6 +554,9 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
   attacker unseen for 3 s.
 * Guards carry up to 8 dirt, cobblestone or cobbled deepslate (each kind) for building up, taken only while the
   storehouse keeps 64 of that block.
+* Repairs (live check: a door a raider broke was never put back when the storehouse held no door): a builder fetching
+  parts for repairs crafts a door, fence, torch or chest from the storehouse's materials (logs for planks and sticks)
+  when none is stored, as it does for a project.
 
 ## Hauler (`HaulerJob`)
 * Recruited once a base has 12 NPCs. Picks up items that have lain inside the walls for 10 seconds (not in the

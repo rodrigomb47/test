@@ -3,6 +3,7 @@ package com.factionclash.gametest;
 import com.factionclash.FactionClash;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.StructureRecord;
+import com.factionclash.combat.OpenGateGoal;
 import com.factionclash.faction.FactionType;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
@@ -161,7 +162,8 @@ public final class CombatReachGameTests {
             sb.append(n.getRole().id).append(" at ").append(r.toShortString()).append(" d=")
                     .append(String.format("%.1f", Math.sqrt(n.getBoundingBox().distanceToSqr(p.getEyePosition()))))
                     .append(" target=").append(n.getTarget() == p ? "player" : String.valueOf(n.getTarget()))
-                    .append(" status='").append(n.status()).append("' hp=").append(n.getHealth()).append("; ");
+                    .append(" status='").append(n.status()).append("' hp=").append(n.getHealth()).append(" mode=").append(n.pursuit().mode())
+                    .append(" unboxed=").append(n.pursuit().unboxed).append("; ");
         }
         sb.append("player hp ").append(p.getHealth());
         return sb.toString();
@@ -256,9 +258,18 @@ public final class CombatReachGameTests {
                 }
             }
         });
+        long[] brokenAt = {-1};
         t.onEachTick(() -> {
-            if (hurtByNpc(p) && h.getBlockState(dirt).isAir()) {
+            if (brokenAt[0] < 0 && h.getBlockState(dirt).isAir()) {
+                brokenAt[0] = h.getTick();
+            }
+            if (hurtByNpc(p) && brokenAt[0] >= 0) {
                 t.succeed();
+            }
+            // live check: once the doorway is open they go straight in; they had stood in it, in the player's reach,
+            // for about 2 s until an old search timer ran out
+            if (brokenAt[0] >= 0 && h.getTick() - brokenAt[0] > 30) {
+                t.fail("the dirt was broken " + (h.getTick() - brokenAt[0]) + " ticks ago and nobody went in: " + describe(h, p, npcs));
             }
         });
     }
@@ -482,6 +493,9 @@ public final class CombatReachGameTests {
             h.assertTrue(may.test(own, i) && may.test(foe, i), "a plain block outside every base may be broken");
             java.util.function.BiPredicate<FactionNpc, BlockPos> place = (n, r) -> com.factionclash.combat.Reach.mayPlace(level, h.absolutePos(r), n);
             h.assertFalse(place.test(own, air), "no pillar in its own base");
+            BlockPos hole = new BlockPos(13, 1, 13);
+            h.setBlock(hole, Blocks.AIR); // a hole in the base's ground (a pit dug by a player)
+            h.assertTrue(place.test(own, hole), "filling a hole in its own base's ground is allowed (out of a pit)");
             h.assertTrue(place.test(foe, air), "an enemy may build itself up in the base");
             h.assertTrue(place.test(own, out), "anyone may build up outside the bases");
             h.assertFalse(place.test(foe, gap), "never a block into a planned cell (a gap in a wall stays for the builders)");
@@ -759,6 +773,201 @@ public final class CombatReachGameTests {
                 t.succeed();
             }
         });
+    }
+
+    /**
+     * Live check: after a fight of more than 30 s in the pen, the soldiers' memory of the gate had run out (it counted
+     * from opening the gate), so their paths out ended at the fence and the stuck recovery hopped them over it. It now
+     * counts from the end of the fight: they walk out through the gate however long the fight was.
+     */
+    @GameTest(template = "platform", timeoutTicks = 1300, batch = "reach_pen_long")
+    public static void soldiersLeaveThePenThroughTheGateAfterALongFight(GameTestHelper h) {
+        pen(h, 7, 9, 17, 19, 12);
+        BlockPos gate = h.absolutePos(new BlockPos(12, 2, 9));
+        Cow cow = h.spawn(EntityType.COW, new BlockPos(9, 2, 17));
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 2, 15), FactionType.GROVE_COVENANT);
+        List<FactionNpc> npcs = List.of(soldier(h, 9, 3, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN),
+                soldier(h, 15, 3, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN));
+        npcs.forEach(n -> n.setTarget(p));
+        AABB inside = new AABB(h.absolutePos(new BlockPos(8, 1, 10))).minmax(new AABB(h.absolutePos(new BlockPos(16, 4, 18))));
+        BlockPos out = h.absolutePos(new BlockPos(12, 2, 4));
+        long[] in = {-1}, over = {-1};
+        h.onEachTick(() -> {
+            if (in[0] < 0 && hurtByNpc(p) && npcs.stream().allMatch(n -> inside.contains(n.position()))) {
+                in[0] = h.getTick();
+            }
+            if (in[0] >= 0 && over[0] < 0 && h.getTick() - in[0] >= OpenGateGoal.GATE_MEMORY + 100) {
+                h.assertTrue(npcs.stream().allMatch(n -> n.getTarget() == p), "the fight in the pen should still be on: "
+                        + describe(h, p, npcs));
+                over[0] = h.getTick();
+                remove(h, p); // the player is dead after a long fight: both soldiers in the pen
+            }
+            if (over[0] >= 0) {
+                for (FactionNpc n : npcs) {
+                    if (inside.contains(n.position()) && n.getNavigation().isDone()) {
+                        n.getNavigation().moveTo(out.getX() + 0.5, out.getY(), out.getZ() + 0.5, 1.0); // back to its post
+                    }
+                }
+            }
+        });
+        h.runAtTickTime(1297, () -> {
+            remove(h, p);
+            h.fail(in[0] < 0 ? "the soldiers never both got into the pen to the player: " + describe(h, p, npcs)
+                    : over[0] < 0 ? "the fight did not last: " + describe(h, p, npcs)
+                    : "the soldiers did not get out of the pen after a long fight: " + describe(h, p, npcs) + "; gate open "
+                    + h.getLevel().getBlockState(gate).getValue(FenceGateBlock.OPEN) + "; fight over at " + over[0] + ", gates "
+                    + npcs.stream().map(n -> (n.gatesUntil - n.tickCount) + "/" + n.gateGoal().cycles + "/" + n.getNavigation().isDone()).toList());
+        });
+        h.succeedWhen(() -> {
+            h.assertTrue(over[0] >= 0, "the fight is not over yet");
+            h.assertTrue(npcs.stream().noneMatch(n -> inside.contains(n.position())), "a soldier is still in the pen");
+            boolean inGate = npcs.stream().anyMatch(n -> n.getBoundingBox().intersects(new AABB(gate)));
+            h.assertTrue(!inGate && !h.getLevel().getBlockState(gate).getValue(FenceGateBlock.OPEN), "the gate is still open");
+            if (!inside.contains(cow.position())) {
+                h.fail("the cow got out of the pen");
+            }
+        });
+    }
+
+    /**
+     * Live check: a player of no faction who fights a base's soldiers built a two-high pillar in their yard; its
+     * blocks were not recorded as an intruder's (only enemy factions' were), so the soldiers could not touch them and
+     * only waited. Blocks put in a base by any player not of its side are now its soldiers' to break; the base's own
+     * players' are not.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "workers_static")
+    public static void blocksAnOutsiderPutsInABaseAreItsSoldiersToBreak(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 6, 11, 40);
+        var level = h.getLevel();
+        var data = CampaignData.get(level.getServer());
+        h.setBlock(new BlockPos(16, 2, 16), Blocks.STONE); // a planned block: the base has a plan, as every real one
+        t.base.structures.add(StructureRecord.of("Test plan", Map.of(h.absolutePos(new BlockPos(16, 2, 16)), Blocks.STONE.defaultBlockState())));
+        t.base.invalidatePlanIndex();
+        ServerPlayer none = enemyPlayer(h, new BlockPos(8, 2, 8), FactionType.GROVE_COVENANT);
+        data.players.remove(none.getUUID()); // of no faction
+        ServerPlayer foe = enemyPlayer(h, new BlockPos(9, 2, 8), FactionType.GROVE_COVENANT);
+        ServerPlayer own = enemyPlayer(h, new BlockPos(10, 2, 8), FactionType.EMBER_LEGION);
+        try {
+            BlockPos a = new BlockPos(12, 2, 9), b = new BlockPos(13, 2, 9), c = new BlockPos(14, 2, 9);
+            placeAs(h, none, a);
+            placeAs(h, foe, b);
+            placeAs(h, own, c);
+            h.assertTrue(t.base.intruderBlocks.contains(h.absolutePos(a).asLong()), "a factionless player's block in the base must be an intruder's");
+            h.assertTrue(t.base.intruderBlocks.contains(h.absolutePos(b).asLong()), "an enemy player's block in the base must be an intruder's");
+            h.assertFalse(t.base.intruderBlocks.contains(h.absolutePos(c).asLong()), "the base's own player's block is not an intruder's");
+            FactionNpc guard = t.register(soldier(h, 4, 20, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN));
+            h.assertTrue(com.factionclash.combat.Reach.mayBreak(level, h.absolutePos(a), guard), "its soldier may break the factionless player's block");
+            h.assertFalse(com.factionclash.combat.Reach.mayBreak(level, h.absolutePos(c), guard), "its soldier must leave its own player's block");
+            h.succeed();
+        } finally {
+            remove(h, none);
+            remove(h, foe);
+            remove(h, own);
+        }
+    }
+
+    /**
+     * A 1x1 pit two deep in a base's yard (its floor is the plateau top), its own soldier in it and an enemy player at
+     * the edge hitting down. Live check: soldiers that jumped into such a pit after a player, or were knocked in,
+     * could neither hit back (two blocks up) nor dig (the base's ground) or build (their own yard) their way out, and
+     * stood there within the player's reach until killed. {@code blocks}: dirt it carries.
+     */
+    private static void pitTest(GameTestHelper h, int blocks, int timeout) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 6, 11, timeout);
+        t.base.center = h.absolutePos(new BlockPos(12, 4, 12)); // the plateau top is the yard floor
+        for (int x = 4; x <= 20; x++) {
+            for (int z = 4; z <= 20; z++) {
+                for (int y = 2; y <= 3; y++) {
+                    if (x != 12 || z != 12) {
+                        h.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+                    }
+                }
+            }
+        }
+        h.setBlock(new BlockPos(16, 4, 16), Blocks.STONE);
+        t.base.structures.add(StructureRecord.of("Test plan", Map.of(h.absolutePos(new BlockPos(16, 4, 16)), Blocks.STONE.defaultBlockState())));
+        t.base.invalidatePlanIndex();
+        ServerPlayer p = enemyPlayer(h, new BlockPos(12, 4, 11), FactionType.GROVE_COVENANT);
+        t.onCleanup(() -> remove(h, p));
+        FactionNpc n = t.register(soldier(h, 12, 12, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN));
+        if (blocks > 0) {
+            n.inventory().addItem(new ItemStack(Items.DIRT, blocks));
+        }
+        n.setTarget(p);
+        int[] worst = {0};
+        playerStrikesBack(h, p, List.of(n), worst);
+        int floor = h.absolutePos(new BlockPos(12, 4, 12)).getY();
+        BlockPos below = h.absolutePos(new BlockPos(12, 1, 12));
+        t.onEachTick(() -> {
+            t.assertTrue(!h.getLevel().getBlockState(below).isAir(), "the ground under the pit was dug");
+            boolean inPit = n.getY() < floor - 1.5;
+            if (inPit && worst[0] > 5) {
+                t.fail("the soldier took " + worst[0] + " blows in a row in the pit: " + describe(h, p, List.of(n)) + " mode "
+                        + n.pursuit().mode() + " plans " + n.pursuit().plans + " holds " + n.pursuit().holds + " unboxed "
+                        + n.pursuit().unboxed + " pillars " + n.pursuit().pillars);
+            }
+            if (!inPit && n.onGround()) {
+                // out: on a block it put in the pit (from where it strikes the player at the edge), or hopped out
+                if (blocks > 0) {
+                    t.assertTrue(n.pursuit().pillars >= 1 && n.pursuit().unboxed == 0, "with blocks it should build itself out, not hop out");
+                } else {
+                    t.assertTrue(n.pursuit().unboxed >= 1, "without blocks it gets out by the stuck recovery");
+                }
+                t.succeed();
+            }
+            if (h.getTick() >= timeout - 5) {
+                t.fail("the soldier did not get out of the pit (unboxed " + n.pursuit().unboxed + ", pillars " + n.pursuit().pillars
+                        + ", worst run " + worst[0] + "): " + describe(h, p, List.of(n)) + " y=" + n.getY());
+            }
+        });
+    }
+
+    @GameTest(template = "platform", timeoutTicks = 300, batch = "reach_pit")
+    public static void aSoldierInAPitGetsOutInsteadOfTakingBlows(GameTestHelper h) {
+        pitTest(h, 0, 300);
+    }
+
+    @GameTest(template = "platform", timeoutTicks = 300, batch = "reach_pit_blocks")
+    public static void aSoldierInAPitBuildsItselfOutWithItsBlocks(GameTestHelper h) {
+        pitTest(h, 4, 300);
+    }
+
+    /**
+     * Live check: a door a raider broke (the owner's second report) was never put back when the storehouse held no
+     * door: the builder only took parts ready-made for repairs. It now crafts one from the storehouse's logs, as it does
+     * for a project.
+     */
+    @GameTest(template = "platform", timeoutTicks = 600, batch = "reach_door_repair")
+    public static void aBrokenDoorIsPutBackWithNoDoorInTheStorehouse(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 6, 11, 600);
+        Direction south = h.getTestRotation().rotate(Direction.SOUTH);
+        BlockPos lower = h.absolutePos(new BlockPos(12, 2, 14)), upper = lower.above();
+        BlockState door = Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.FACING, south);
+        Map<BlockPos, BlockState> plan = new HashMap<>();
+        plan.put(lower, door.setValue(DoorBlock.HALF, DoubleBlockHalf.LOWER));
+        plan.put(upper, door.setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+        t.base.structures.add(StructureRecord.of("Test door", plan));
+        t.base.invalidatePlanIndex();
+        t.base.pendingRepairs.add(lower.asLong()); // broken by a raider: the repair scan finds the cell empty
+        com.factionclash.storage.FactionStorage.insert(h.getLevel(), t.base, new ItemStack(Items.OAK_LOG, 4));
+        FactionNpc builder = t.npc(6, 6, NpcRole.BUILDER);
+        t.onEachTick(() -> {
+            if (h.getLevel().getBlockState(lower).getBlock() instanceof DoorBlock && h.getLevel().getBlockState(upper).getBlock() instanceof DoorBlock) {
+                t.succeed();
+            }
+            if (h.getTick() >= 590) {
+                t.fail("the broken door was not put back: builder '" + builder.status() + "'");
+            }
+        });
+    }
+
+    /** {@code p} puts a block of dirt at relative {@code rel}, as the server sees a player placing one. */
+    private static void placeAs(GameTestHelper h, ServerPlayer p, BlockPos rel) {
+        BlockPos abs = h.absolutePos(rel);
+        h.setBlock(rel, Blocks.DIRT);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent(
+                net.neoforged.neoforge.common.util.BlockSnapshot.create(h.getLevel().dimension(), h.getLevel(), abs),
+                Blocks.GRASS_BLOCK.defaultBlockState(), p));
     }
 
 }

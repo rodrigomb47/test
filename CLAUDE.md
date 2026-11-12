@@ -27,7 +27,8 @@ README.md describes the mod for players; BALANCE.md lists every tunable and PROP
 - Compile: `./gradlew build --console=plain -q -x test 2>&1 | grep -E "error|warning: \[" | head`
 - Unit tests (pure logic in `src/test/java/com/factionclash/logic`): `./gradlew test --console=plain`
 - GameTests (real headless server): `timeout 900 ./gradlew runGameTestServer --console=plain > gt.log 2>&1; grep -E
-  "required tests passed|failed" gt.log` → "All N required tests passed :)". Counts at handoff: 145 unit, 108 GameTests.
+  "required tests passed|failed" gt.log` → "All N required tests passed :)". Counts at handoff: 174 unit,
+  133 GameTests.
 - GameTest facts: the test world is FLAT near y=-60 (no mine layer is legal there; heightmaps need
   `skyAccess = true`); platforms are ~29 blocks apart and never cleared; `GameTestHelper.relativePos` is not the
   inverse of `absolutePos` (spawn at known relative positions); every test that runs a job gets its own

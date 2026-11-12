@@ -90,6 +90,12 @@ public final class Pursuit {
     static final double COVER_RING = 10.0;
     /** PROPOSED: a worker steps out of reach of a target it cannot get at for at most this long, then lets it be. */
     static final int CIVILIAN_STEP_AWAY = 100;
+    /**
+     * PROPOSED: waiting (HOLD) this long within its target's reach, not landing a blow and unable to move a block away
+     * (boxed in: a 1x1 pit it jumped or was knocked into, with the player hitting it from the edge), it uses the stuck
+     * recovery to get out toward the waiting ring. At most {@link #MAX_UNBOX} times per target.
+     */
+    static final int BOXED_IN = 30, MAX_UNBOX = 3;
 
     private final FactionNpc npc;
     private Mode mode = Mode.CHASE;
@@ -129,6 +135,11 @@ public final class Pursuit {
     private int unanswered, unansweredTotal;
     /** Shot at by its target while waiting: it waits out of the target's sight (or farther) instead. */
     private boolean cover;
+    /** Where it stood when it came to be boxed in within the target's reach, the ticks since, and its hops out (per target). */
+    private Vec3 boxedAt;
+    private int boxedTicks, unboxes;
+    /** For tests: stuck recoveries out of a box (a pit) within a target's reach. */
+    public int unboxed;
 
     public Pursuit(FactionNpc npc) {
         this.npc = npc;
@@ -165,6 +176,10 @@ public final class Pursuit {
         unanswered = 0;
         cover = false;
         pathReach = true;
+        boxedAt = null;
+        boxedTicks = 0;
+        decideOnLanding = false;
+        futileOnLanding = false;
     }
 
     /**
@@ -180,6 +195,7 @@ public final class Pursuit {
                 futile.clear();
                 brokenCells.clear();
                 unansweredTotal = 0;
+                unboxes = 0;
                 memoryOf = t.getUUID();
                 memoryAt = npc.tickCount;
             }
@@ -267,9 +283,13 @@ public final class Pursuit {
         return Math.sqrt(dx * dx + dz * dz);
     }
 
-    /** Whether it can hit the target from where it stands right now. */
+    /**
+     * Whether it can hit the target from where it stands right now. Standing: in the air its hit box is higher than
+     * where it stands (live check: in a 1x1 pit, knocked up by the player's blows at the edge, it counted as able to
+     * strike at the top of each bounce, so nothing ever saw it as stuck).
+     */
     public boolean canStrikeNow(LivingEntity t) {
-        return npc.isWithinMeleeAttackRange(t) && npc.getSensing().hasLineOfSight(t);
+        return (npc.onGround() || npc.isInWater()) && npc.isWithinMeleeAttackRange(t) && npc.getSensing().hasLineOfSight(t);
     }
 
     // ------------------------------------------------------------------ deciding
@@ -316,7 +336,57 @@ public final class Pursuit {
             decide(t);
             if (mode == Mode.HOLD) {
                 markFutile(t);
+            } else if (decideOnLanding) {
+                futileOnLanding = true; // knocked into the air: the same, once it lands
             }
+        }
+    }
+
+    /**
+     * Live check (a 1x1 pit two deep in its own yard): soldiers that jumped in after a player, or were knocked in,
+     * could neither hit the player at the edge (two blocks up) nor walk, dig (the base's ground) or build (its own
+     * yard) their way out, and stood there within its reach until killed. Waiting (HOLD) boxed in like that for
+     * {@link #BOXED_IN} ticks - within the target's reach, unable to strike from where it stands (a lucky blow at the
+     * top of a bounce does not count), not getting a block away - it uses the stuck recovery (the one teleport
+     * player-like NPCs allow themselves) toward the waiting ring. A fighter with blocks builds itself out first:
+     * filling a hole in its own base's ground is allowed ({@link Reach#mayPlace}), so the planner does that.
+     */
+    public void watchBoxedIn(LivingEntity t, boolean canStrike) {
+        if (mode != Mode.HOLD || canStrike || horizontal(npc, t) >= HOLD_MIN - 0.3 || unboxes >= MAX_UNBOX) {
+            boxedAt = null;
+            boxedTicks = 0;
+            return;
+        }
+        double mx = boxedAt == null ? 0 : npc.getX() - boxedAt.x, mz = boxedAt == null ? 0 : npc.getZ() - boxedAt.z;
+        if (boxedAt == null || mx * mx + mz * mz > 1.0) { // (jumping against the side of a pit is no way out)
+            boxedAt = npc.position();
+            boxedTicks = 0;
+            return;
+        }
+        if (++boxedTicks < BOXED_IN) {
+            return;
+        }
+        boxedAt = null;
+        boxedTicks = 0;
+        double dx = npc.getX() - t.getX(), dz = npc.getZ() - t.getZ(), len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.3) {
+            BlockPos from = exit != null ? exit : npc.blockPosition().relative(npc.getDirection().getOpposite(), 4);
+            dx = from.getX() + 0.5 - t.getX();
+            dz = from.getZ() + 0.5 - t.getZ();
+            len = Math.max(1.0e-3, Math.sqrt(dx * dx + dz * dz));
+        }
+        Vec3 goal = new Vec3(t.getX() + dx / len * HOLD_RING, t.getY(), t.getZ() + dz / len * HOLD_RING);
+        if (npc.navigator().recoverToward(goal)) {
+            unboxes++;
+            unboxed++;
+            closeNoHit = 0;
+            npc.getNavigation().stop();
+            // that spot of the target's cannot be got at from where it was: it waits out of reach (and goes in when a
+            // path leads to the target, as one does once it is out of the pit beside a player at the edge)
+            markFutile(t);
+            hold(t);
+            holdSpot = null;
+            holdAge = 1000; // a spot from where it landed
         }
     }
 
@@ -326,8 +396,12 @@ public final class Pursuit {
             return;
         }
         if (!npc.onGround() && !npc.isInWater()) {
-            return; // mid-jump: its cell is not where it stands; the next look decides
+            // mid-jump: its cell is not where it stands. It decides as soon as it lands (in a pit it would otherwise
+            // keep jumping at the side, and be in the air at every look)
+            decideOnLanding = true;
+            return;
         }
+        decideOnLanding = false;
         if (!supported(t)) {
             mode = Mode.CHASE; // a target in the air (a flying monster, a fall): chased as always, nothing built toward it
             return;
@@ -452,6 +526,21 @@ public final class Pursuit {
     }
 
     // ------------------------------------------------------------------ ticking
+
+    /** A look found it in the air (a jump, a blow's knock-back): it decides when it lands, and (stuck) marks that spot. */
+    private boolean decideOnLanding, futileOnLanding;
+
+    /** Every tick, whatever the mode: a decision put off by a jump is taken on landing. */
+    public void afterJump(LivingEntity t) {
+        if (decideOnLanding && (npc.onGround() || npc.isInWater())) {
+            boolean mark = futileOnLanding;
+            futileOnLanding = false;
+            decide(t);
+            if (mark && mode == Mode.HOLD) {
+                markFutile(t);
+            }
+        }
+    }
 
     /** Runs WORK or HOLD for this tick (the attack goal chases in CHASE). */
     public void tick(LivingEntity t) {

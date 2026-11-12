@@ -162,8 +162,9 @@ public final class Reach {
 
     /**
      * Whether the fighter may build itself up with a block at {@code pos}: an empty cell (air, grass) outside every
-     * base's plan, not in a base of its own side (it would leave a pillar in its own yard), and not in a mine's
-     * stairwell (the miners' way up and down).
+     * base's plan, not in a base of its own side (it would leave a pillar in its own yard) except below its floor
+     * (that only fills a hole in its ground, such as a pit it was knocked into), and not in a mine's stairwell (the
+     * miners' way up and down).
      */
     public static boolean mayPlace(ServerLevel level, BlockPos pos, FactionNpc npc) {
         if (!level.isLoaded(pos)) {
@@ -181,8 +182,9 @@ public final class Reach {
             if (b.planIndex().containsKey(pos.asLong())) {
                 return false;
             }
-            if (BaseZones.insideWalls(b, pos, 1) && !Diplomacy.hostile(level.getServer(), npc.getFaction(), b.faction)) {
-                return false;
+            if (BaseZones.insideWalls(b, pos, 1) && !Diplomacy.hostile(level.getServer(), npc.getFaction(), b.faction)
+                    && pos.getY() >= b.center.getY()) {
+                return false; // (below its floor it only fills a hole in its own ground: a pit it is shut in)
             }
         }
         return !mineStairs(data, pos);

@@ -10,7 +10,7 @@ repair and raid on a bounded campaign map without the player having to manage th
 **[⬇ Download factionclash-0.1.0.jar](https://github.com/rodrigomb47/test/raw/claude/minecraft-mod-build-9amjyg/download/factionclash-0.1.0.jar)**
 (NeoForge 21.1.209, Minecraft 1.21.1 — put it in the `mods` folder of the server and every client)
 
-SHA-256: `bd814543601a735f6ea420acece8daae0722abb90f9247ccbb3339f968a7e89d`
+SHA-256: `66dc5eaebb39dc9ea1c42363da61a2093339e990a768224eeee33438bcd553fc`
 
 This is the **foundation build** (spec §21 priority order): safe starts, a working central station, useful
 starting workers, movement, storage and uninterrupted workspace production first, then recruitment, upgrades,
@@ -144,7 +144,11 @@ Players respawn at their nearest surviving allied base when they have no bed.
   player's reach**, watching from near the way out, call the **archers**, and go in as soon as a way opens. A
   soldier that takes a few blows it cannot answer (a player in a 1x1 hole, just behind a fence, or putting back the
   block it breaks) backs off and does not walk up to that spot again; shot at while it waits, it **takes cover**.
-  After a fight in a pen they walk out through the gate. Workers step out of reach instead of fighting.
+  A soldier shut in a **pit** with the player hitting it from the edge builds itself out with its blocks (filling the
+  hole) or, with none, gets out by the stuck recovery instead of standing there. Blocks a player of **no faction** puts
+  in a base count as an intruder's too. After a fight in a pen they walk out through the gate, however long the fight,
+  and a door a raider broke is put back even when the storehouse has none (the builder crafts one). Workers step out
+  of reach instead of fighting.
   Raids **muster** at a rally point outside the target and go in together; a party that loses more than half
   **retreats**. A **war council** picks the target: of the bases its scouts reported, the weakest garrison first,
   then the nearest. The raid party is every soldier beyond a third of the garrison (at least `raidPartySize`), and
@@ -387,7 +391,7 @@ server simulation, **—** implemented but not separately verified, **✗** not 
 | §12 Radio / communication tower | ✗ | — |
 | §13 Player-equivalent speed, allies pass through each other, stuck recovery (default ≤4 across / ≤2 up-down, configurable), day/night continuity | Implemented | G (4.25 blocks/s; recovery), U, S |
 | §14 Mob targeting, half undead damage, civilian flee, creeper jump-back, raids, defence alarm | Implemented | G, S |
-| §14 Soldiers against targets they cannot walk up to (gates, breaking players' blocks, building up, waiting out of reach, calling archers, no blows taken twice from one spot, cover) | Implemented | U (reach planner), G (pen, doorway, pillars, waiting, a hole, a re-blocked doorway, leaving the pen, cover, workers, break rules); not yet campaign-checked |
+| §14 Soldiers against targets they cannot walk up to (gates, breaking players' blocks, building up, waiting out of reach, calling archers, no blows taken twice from one spot, cover, out of a pit) | Implemented | U (reach planner), G (pen, doorway, pillars, waiting, a hole, a pit, a re-blocked doorway, leaving the pen after a long fight, cover, workers, break rules, outsiders' blocks, door repair); **checked live** on a dedicated server with a real client as the player (pen, doorway, 2-high pillar, 1x1 hole and pit); not yet in a multi-day campaign with a real player |
 | §14 Field medics, potions | ✗ | — |
 | §15 Overworld/Nether dungeons, Nether expeditions, TNT, rails | ✗ (Hollow lairs are the only monster bases) | — |
 | §17 Boss reward chests and hero tokens | ✗ | — |
@@ -422,13 +426,17 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   step out from every cell, never beside water, a drop or an earlier patch), branch ends in protected wood, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
-* `./gradlew runGameTestServer` — 128 GameTests on a real headless server, including **soldiers against a player
+* `./gradlew runGameTestServer` — 133 GameTests on a real headless server, including **soldiers against a player
   they cannot reach** (open a pen's gate and close it behind them with the cow still in, and walk out through it after
-  the fight; break a player's block in a broken doorway and never the wall, but not again and again when the player
-  puts it back; break the block under a player on a pillar, build themselves up beside a perch they may not break,
+  the fight, also after a fight longer than the gate memory; break a player's block in a broken doorway and never the
+  wall, and go straight in once it is broken, but not again and again when the player puts it back; break the block
+  under a player on a pillar, build themselves up beside a perch they may not break,
   hit a player one block up without breaking anything, wait out of the player's reach and call the archer when there
-  is no way in, then go in once there is; take only a few blows from a player in a 1x1 hole, then keep away; take
-  cover when shot at while waiting; a worker steps out of reach; what a fighter or an ally may break and build), **miners** (digs its own
+  is no way in, then go in once there is; take only a few blows from a player in a 1x1 hole, then keep away; get out
+  of a pit in their own yard with the player at the edge, by building up or by the stuck recovery; take
+  cover when shot at while waiting; a worker steps out of reach; what a fighter or an ally may break and build, and
+  that a factionless player's blocks in a base are its soldiers' to break; a broken door put back with no door in
+  the storehouse), **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for
   a resting mine; a mine set aside keeps only the ground it dug; a second miner helps in a mine at the cap on

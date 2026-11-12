@@ -52,7 +52,9 @@ commits, language and testing are in `/CLAUDE.md`.
    block put in the doorway, killed soldiers that stood within reach unable to do anything). Soldiers now open fence
    gates (closing them behind), break blocks in the way that are not anyone's planned building, build themselves up or
    break the block under a player on a pillar, and otherwise wait out of reach, watching, calling the archers
-   (`docs/design/notes/combat-unreachable.md`).
+   (`docs/design/notes/combat-unreachable.md`). Checked live with a real client as the player (that note's "Live
+   check"): pen, broken doorway, pillar, hole; five faults found there were fixed (pen exit after a long fight, a
+   factionless player's blocks, the pit trap, standing in the opened doorway, broken doors never repaired).
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
@@ -132,12 +134,18 @@ python3 tools/rcon.py "stop"
   away and its mine rested forever).
 
 - Soldiers against a target they cannot walk up to (request 7, `docs/design/notes/combat-unreachable.md`): tested
-  (174 unit tests, 128 GameTests, two sabotage checks), reviewed (a server crash in `OpenGateGoal` fixed; a 1x1 hole,
+  (174 unit tests, 133 GameTests, sabotage checks), reviewed (a server crash in `OpenGateGoal` fixed; a 1x1 hole,
   a block put back in a doorway, a player just behind a fence, soldiers shut in a pen after the fight, arrows while
-  waiting, workers, allies' edits: see the notes' "Review" section), not yet checked in a campaign or against a real
-  player. Found on the way: the melee swing cooldown is 20 ticks for every weapon (vanilla's goal ignored the weapon
-  interval the docs describe); kept, the owner's choice. A gate left open by an NPC that dies in it stays open until
-  the animal carer next goes through it.
+  waiting, workers, allies' edits: see the notes' "Review" section), and **checked live with a real client as the
+  player** (the notes' "Live check": pen, doorway, pillar, hole, pit; the pit trap, the pen exit after a long fight,
+  a factionless player's pillar, a 2 s wait in the opened doorway and never-repaired doors were fixed there). Not yet
+  checked in a multi-day campaign with a player, nor a player on a wall or roof, or arrows. Found on the way: the melee
+  swing cooldown is 20 ticks for every weapon (vanilla's goal ignored the weapon interval the docs describe); kept, the
+  owner's choice. A gate left open by an NPC that dies in it stays open until the animal carer next goes through it.
+  Soldiers (and archers) jump into a player's 1x1 hole and fight there; a pit left in a yard is not repaired (not
+  part of any plan). Live testing tip: `/fc admin dump` now gives each NPC's exact position (`xyz`), its `pursuit`
+  mode and counters and its `path`; a client can be driven with `xdotool` (installable with apt) to place blocks and
+  hit (`tp` with explicit yaw/pitch to aim; `tp ... facing` takes the feet, not the eyes).
 - A base keeps at most `maxOpenMines` (3) active mines. Roadmap phase 1: a miner left without a site now helps in
   an open mine of its base, on another level (`docs/design/notes/phase1.md`, "Two miners share a mine"); it is still
   retrained after half a day without a mine of its own when the base needs another role. Tested (160 unit tests,

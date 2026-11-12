@@ -100,7 +100,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     private net.minecraft.world.phys.Vec3 lastSwimPos;
     private int recordTimer;
     private long lastHurtTime;
-    private long lastAttackTime;
+    /** (Not 0: a freshly spawned NPC has not "just landed a blow" in its first 40 ticks.) */
+    private long lastAttackTime = -1000;
 
     public FactionNpc(EntityType<? extends FactionNpc> type, Level level) {
         super(type, level);
@@ -612,6 +613,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             boolean farForCivilian = getRole().isCivilian() && distanceToSqr(t) > 100;
             if (!t.isAlive() || stale || farForCivilian) {
                 setTarget(null);
+            } else if (tickCount < gatesUntil || level().getBlockState(blockPosition()).getBlock()
+                    instanceof net.minecraft.world.level.block.FenceGateBlock) {
+                // went through a gate after this target (or through one another fighter opened): its paths may use
+                // gates until a while after the fight, however long the fight in the pen lasts, so it walks back out
+                gatesUntil = tickCount + com.factionclash.combat.OpenGateGoal.GATE_MEMORY;
             }
         }
         if (++recordTimer >= 40) {

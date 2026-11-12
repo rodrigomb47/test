@@ -229,9 +229,86 @@ partial path search (every 19+ ticks) or per 40-tick check while waiting; water 
 
 ### Still open
 
-- Not checked in a campaign or against a real player (pens, doorways, holes, perches, walls, arrows).
+- Checked against a real player client on a dedicated server (pens, doorways, a 2-high pillar, a 1x1 hole and pit:
+  see "Live check" below), not yet in a multi-day campaign with a player, nor walls, arrows or a player on a roof.
 - Vanilla's hurt-by target memory still lets go of an attacker that has been out of sight for 3 s, so a guard
   watching a player in a hole goes back to its post; the next time it is hit it goes straight back to waiting.
 - A player hopping along a 2-deep trench gets at most one short walk-up (about 1-2 blows) per cell per soldier.
 - A guard that took 3 blows from a player on a ledge it could reach by a long way round (stairs outside the
   planner's box) does not walk up to that spot again while the player stays there; the archers deal with it.
+
+## Live check (dedicated server, a real client as the player)
+
+A fresh campaign (`fc start 256`, seed 20261107), one day sprinted, then the client viewer (`runClientViewer`, the
+"Viewer" player) in survival with diamond armour, Resistance IV and Regeneration so it could watch, a member of Ember
+Legion in Grove Covenant's base. A script played the player: every 0.3-0.6 s it read the NPCs (`fc admin dump`, which
+now also gives each NPC's exact position, its `Pursuit` mode and counters and its current path) and, when a soldier's
+box was within 3 blocks of the eyes, turned the view onto it and left-clicked in the client (the client's own pick
+decides whether the blow lands; a stick, so the soldiers lived long enough to watch). Blocks were placed and pillars
+built with the client's right click (so the server saw a real player place them). Logs and screenshots are in the
+session scratchpad (`live/`).
+
+What the soldiers did:
+
+| Case | Seen |
+|---|---|
+| Player in the pen, gate closed (the owner's first report) | The first guard opened the gate, went in and closed it; all three were in the pen and hitting the player within 10 s; the gate was shut, 2 cows and the pigs stayed in. |
+| Player in a house, the door broken and his dirt in the doorway (the owner's second report) | The first soldier to arrive broke the dirt (WORK, about 1 s with a sword) and they came in and fought. Also with the dirt in front of the doorway (outside, an unplanned cell of the yard): broken as an enemy's block. |
+| Player on a 2-high pillar of his dirt in the yard | A soldier broke the top block (the player dropped to 1 up) and they hit him from the ground. |
+| Player in a 1x1 hole two deep | The soldiers jumped in with him and fought at close quarters (they hit him). |
+| Player hitting from the edge of that pit, soldiers in it | **Exploit, fixed** (below). |
+
+Faults found and fixed (commit "Live fixes: ..."):
+
+1. **Shut in a pen after a long fight.** After a 40 s fight in the pen the soldiers could not path out (the 600-tick
+   gate memory counted from opening the gate) and the stuck recovery hopped all three over the fence. The memory now
+   counts from the end of the fight (`FactionNpc` tops it up while it fights) and a fighter that walks through a
+   gateway another one opened learns it too. Live: after a 60 s fight they walked out through the gate in 2 s, no
+   recovery hop, gate shut, animals in. GameTest `soldiersLeaveThePenThroughTheGateAfterALongFight`.
+2. **A factionless player's pillar.** Blocks were recorded as an intruder's only for players of a hostile faction, so a
+   player of no faction who attacked the guards (they fight back) could pillar up in their yard and they could only
+   wait. Now any player not of the base's side (`FCEvents.outsider`). Live: the guard broke the top block within
+   2 s. GameTest `blocksAnOutsiderPutsInABaseAreItsSoldiersToBreak`.
+3. **The pit trap.** Soldiers that jumped into a 1x1 pit two deep after the player (or are knocked in), with the player
+   then hitting from the edge, could not hit back (two up), dig (the base's ground), build (their own yard) or walk
+   out: they stood there in HOLD until killed (live: three soldiers taken from 15-20 to 0-1 hp with a stick). Three
+   causes: building in its own base was forbidden even below the floor; nothing noticed it could not move; and the
+   blows knocked it up so that, at the top of each bounce, it "could strike" and every stuck check was reset. Now:
+   filling a hole below its own base's floor is allowed (`Reach.mayPlace`), so a soldier with blocks builds itself
+   out (and strikes from its block); one waiting boxed in within the target's reach for 30 ticks uses the stuck
+   recovery toward the waiting ring (`Pursuit.watchBoxedIn`, at most 3 per target); `canStrikeNow` counts only while
+   it stands; a decision put off by a jump is taken on landing (and marks the spot when the stuck rule asked for it);
+   the attack goal also starts while it is in the air (no path is searched then); a fresh NPC no longer counts as
+   having just landed a blow (`lastAttackTime` started at 0). Live with the pit fixes in their final form: of the two soldiers in the
+   pit one built a block within 1 s and climbed out, the other stepped onto that block and was out within 5 s; both
+   then fought the player on the surface. (With the version before the last change, which still let a lucky blow
+   from the pit reset the boxed-in check, two soldiers hopped out after 4 and 6 s and one took 12 s.) GameTests `aSoldierInAPitGetsOutInsteadOfTakingBlows` and
+   `aSoldierInAPitBuildsItselfOutWithItsBlocks`; the static test checks the hole rule.
+4. **Standing in the open doorway.** Once the dirt was broken the soldiers stood in the doorway, in the player's reach,
+   for about 2 s: the switch from WORK to CHASE was seen in the same tick, so the old path-search timer ran on. Also
+   on arriving at the end of a partial path they waited for that timer before planning. Now the attack goal compares
+   the mode it started the tick in, and it searches again at once when its path has been walked to the end. Live:
+   in through the doorway 0-5 ticks after the block broke. The doorway GameTest now requires a hit within 30 ticks
+   of the break (fails without the fix).
+5. **A broken door was never put back** when the storehouse had no door (the builder took repair parts ready-made
+   only; doors are crafted only for projects): Grove's door stayed broken for 67,000 ticks. A builder now crafts a
+   door, fence, torch or chest for a repair from the storehouse's materials (logs for planks and sticks). Live: put
+   back within a minute of the restart. GameTest `aBrokenDoorIsPutBackWithNoDoorInTheStorehouse`.
+
+Sabotage checks: with fixes 1 and 2 switched off, exactly their two GameTests fail; with the pit fixes (boxed-in
+recovery, building below the floor) off, the two pit tests and the static rules test fail; with the old mode
+bookkeeping, the doorway test fails. Final: unit tests 174, GameTests "All 133 required tests passed" in the last
+three runs. Two flakes were seen on the way, once each: `soldiersDoNotKeepBreakingABlockThePlayerPutsBack` (the soldier
+had let go of the player at tick 495: vanilla's 3 s unseen rule, see "Still open") in 1 of 6 runs with the final
+code, and `soldiersLeaveThePenThroughTheGateAfterALongFight` in 1 of 9 runs (its failure message now prints each
+soldier's gate memory, gate cycles and path state for the next time).
+
+Seen and left as it is:
+
+- A guard that is pushed onto a 1x1 pit's edge by a crowd sometimes jumps in after the others; with the fixes they get
+  out again. A pit dug in a yard stays (it is not part of any plan); a soldier's block left in it fills it.
+- Several soldiers in one 1x1 pit block each other's pillar block (someone stands in the cell); the others hop out
+  and the last builds up.
+- The player's melee damage against a soldier that is breaking its way in is real: a soldier in the doorway breaking
+  the dirt takes the blows of a player standing behind it for about 1 s, as a raiding player would.
+- Archers walk into a 1x1 hole after the player like the swordsmen (they then shoot at point blank).
