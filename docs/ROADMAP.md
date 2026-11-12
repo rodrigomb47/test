@@ -50,7 +50,9 @@ preview GIFs ("these designs are better, I like it"), and asked that heroes get 
 jumps, flight for some) and work better than ordinary NPCs outside battle (`docs/heroes-v2/MOBILITY_AND_WORK.md`).
 The owner also set that every hero, leaders included, respawns 10 minutes after its death, unless a death-related
 ability (a talent or the hero's own rebirth) changes it. Heroes get their own sounds (generated, or vanilla sounds where
-they fit better); the owner accepts a download of about 19 MB for them, or larger if needed.
+they fit better); the owner accepts a download of about 19 MB for them, or larger if needed. Also decided: no path for
+owner-written heroes (built-ins only, operator overrides stay), the work-bonus sizes stay, a hero's third phase and
+awakened ultimate are there from level 1, and ordinary soldiers get no extra knockback resistance (player-like).
 The owner then answered that design's questions: heroes may use their abilities to make things "unfair" (they cross
 hostile walls and reach players anywhere; soldiers still need the gate), the 27 flyers stay, every hero has all of its
 abilities from level 1 at a power that grows to full at level 20, and an escaping hero may make pursuit impossible

@@ -2532,7 +2532,10 @@ reload time, a 64-hero lineup); the 30-day soak; adversarial review; docs; relea
 2. **Your own heroes.** Earlier you planned to write your own heroes with a chatbot and keep them in a private
    repository. With original heroes made by Claude, the design drops the "your own hero JSON plus a 64x64 skin" path
    (operators can still override a built-in hero's kit in the config folder). Do you still want your own heroes
-   installable in some form, for example on the old player-model look without animations?
+   installable in some form, for example on the old player-model look without animations? *Answered on 2026-11-12*:
+   not needed. Only the built-in heroes; operators can still override a built-in hero's name or kit in the config
+   folder. (Questions 1 and 3 were answered the same day: the look is approved; each batch of 24 waits for the
+   owner's review.)
 3. **Review cadence.** After you approve the 8-hero slice from screenshots, should each batch of 24 wait for your
    review of its contact sheet and screenshots, or should Claude continue through the batches and send you the
    galleries as they are done?
@@ -2544,7 +2547,8 @@ reload time, a 64-hero lineup); the 30-day soak; adversarial review; docs; relea
    abilities to make things "unfair" (they cross hostile walls and reach players anywhere), the 27 flyers stay, every
    hero has all of its abilities from level 1 but not at full power (applied to moves, phases, ultimates and talents
    too: section 8), and an escaping hero may make pursuit impossible. The size of the extra output was not answered:
-   those numbers stay and are tuned after you play.
+   those numbers stay and are tuned after you play. Later the same day the owner confirmed: keep the extra output
+   sizes (tuned after play), and keep a common or rare hero's third phase and the awakened second ultimate from level 1.
 
 ---
 

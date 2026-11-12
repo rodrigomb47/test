@@ -12,8 +12,8 @@ mastery, this file wins; `HEROES_V2.md` points here from §0, §1, §3.5, §6.5,
 **Owner answers (2026-11-12).** The owner answered the questions of section 19: heroes may use their abilities to make
 things "unfair" (they cross hostile walls and reach players anywhere: 3.7, 5.1, 5.2), the 27 flyers stay, every hero
 has all of its abilities from level 1 but not at full power (1.1, 15.9), and an escaping hero may make pursuit
-impossible (7.7). The extra output sizes (question 4) were not answered: those numbers stay and are tuned after the
-owner plays. Section 19 has the answers verbatim and what each one changed.
+impossible (7.7). The extra output sizes (question 4) were confirmed later the same day: those numbers stay and are
+tuned after the owner plays. Section 19 has the answers verbatim and what each one changed.
 
 ---
 
@@ -1638,7 +1638,8 @@ What each changed (the reading told to the owner, applied here):
    two talent parts that were missing at tier I start there with a smaller number (`mentor`'s recruit level,
    `spymaster`'s raid warning: §7.2); here, three specialty parts likewise (11.1). Power keeps growing with level as
    before (v1 growth and ability power, talent tiers at 10 and 20). No new gate was added.
-4. **Extra output** (not answered): the numbers of sections 11-13 stay and are tuned after the owner plays.
+4. **Extra output** (answered later on 2026-11-12: "keep it"): the numbers of sections 11-13 stay, capped at about
+   2.75x a level-1 worker per day, and are tuned after the owner plays.
 
 The owner added a fourth point, on escaping: an escaping hero may use any mobility, even making pursuit impossible,
 while a fighting hero still wants to win and comes back. Section 7.7 defines the minimal rule (triggers, how long it

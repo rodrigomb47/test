@@ -260,7 +260,8 @@ python3 tools/rcon.py "stop"
   part of any plan). Second live check ("Live check 2"): fixed the pen's far fence, monsters held at home and wounded
   workers in a pit; left for the owner: a lone soldier walking straight at a player who hits it every 12 ticks is
   kept off by the knock-back (vanilla mobs too; a player's 3-block melee reach for soldiers would end it but changes
-  every fight's balance), and animals can slip out of a pen while many soldiers go in and out over a long fight (the
+  every fight's balance; on 2026-11-12 the owner chose to keep soldiers player-like: no knockback resistance, no longer
+  reach), and animals can slip out of a pen while many soldiers go in and out over a long fight (the
   carer brings them back). Live testing tip: `/fc admin dump` now gives each NPC's exact position (`xyz`), its `pursuit`
   mode and counters and its `path`; a client can be driven with `xdotool` (installable with apt) to place blocks and
   hit (`tp` with explicit yaw/pitch to aim; `tp ... facing` takes the feet, not the eyes).

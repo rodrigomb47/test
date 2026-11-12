@@ -365,7 +365,8 @@ Seen and left as it is:
   and closes in very slowly (a GameTest showed 18 blows in a row inside the pen against a player pressed into the
   fence); a mob's melee reach is shorter than a player's 3 blocks. Vanilla mobs have the same weakness and several
   soldiers together break it (live, the soldiers in the pen hit the player regularly). Giving soldiers a player's
-  3-block melee reach would end it but changes the balance of every fight: the owner's call.
+  3-block melee reach would end it but changes the balance of every fight: the owner's call. Decided on 2026-11-12:
+  keep soldiers player-like (no knockback resistance, no longer reach).
 - Animals can slip out of the pen while many soldiers go in and out over a long fight (the gate is shut behind each
   of them and never on anyone in the gateway); the animal carer brings strays back.
 - A 1-deep hole right in front of a doorway (dug by the player) made soldiers stand in it, unable to path up into the
