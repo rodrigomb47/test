@@ -431,6 +431,15 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return true;
     }
 
+    /**
+     * Whether its food bar heals it (vanilla's natural regeneration, or the slow healing without hunger). A hero's
+     * healing is its boss reset instead (HEROES_V2 6.2: no regeneration while fighting; 6.10: 1% of its base health a
+     * second once 30 s out of a fight and unhurt), so a hero with a definition says no.
+     */
+    protected boolean regeneratesNaturally() {
+        return true;
+    }
+
     /** Fights with its bare hands and never fetches a weapon (a fists-style hero, HEROES_V2 3.2); never an NPC. */
     public boolean fightsBareHanded() {
         return false;
@@ -1054,7 +1063,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
      */
     private void hungerTick() {
         if (!com.factionclash.config.FCConfig.HUNGER.get()) {
-            if (getHealth() < getMaxHealth() && tickCount - lastHurtTime > 200 && ++regenTimer >= 80) {
+            if (regeneratesNaturally() && getHealth() < getMaxHealth() && tickCount - lastHurtTime > 200 && ++regenTimer >= 80) {
                 regenTimer = 0;
                 heal(1.0F); // without hunger: the original slow regeneration
             }
@@ -1070,7 +1079,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             lastSwimPos = null;
         }
         float change = hunger.tick(getHealth(), getMaxHealth(), level().getDifficulty().getId(),
-                level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_NATURAL_REGENERATION));
+                level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_NATURAL_REGENERATION)
+                        && regeneratesNaturally());
         if (change > 0) {
             heal(change);
         } else if (change < 0) {

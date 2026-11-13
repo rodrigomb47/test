@@ -251,6 +251,22 @@ class BossRulesTest {
         assertEquals(30 - 10 * 15 / 20.0, p.value(), 1e-9, "decay restarts 3 s after the last poise damage");
     }
 
+    @Test
+    void poiseRemembersItsLastDamage() {
+        // the game keeps a fight's opening blow: a bar filled this recently is not emptied as the fight begins
+        Poise p = new Poise(100);
+        assertTrue(p.lastDamageTick() < -1_000_000, "no damage yet");
+        p.add(10, 500, false);
+        assertEquals(500, p.lastDamageTick());
+        p.add(0, 600, false);
+        assertEquals(500, p.lastDamageTick(), "nothing landed: the time stays");
+        p.add(10, 700, true);
+        assertEquals(700, p.lastDamageTick(), "damage under protection still counts as damage");
+        Poise none = new Poise(0);
+        none.add(10, 800, false);
+        assertTrue(none.lastDamageTick() < -1_000_000, "a hero with no bar takes no poise damage");
+    }
+
     // ------------------------------------------------------------------ damage-taken windows and weak points
 
     @Test

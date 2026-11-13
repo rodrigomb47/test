@@ -83,8 +83,11 @@ public final class HeroEffects {
             List<LivingEntity> rs = switch (to) {
                 case FORM -> formReceivers;
                 case SELF -> List.of(hero);
+                // v1 10.2: the allies inside the same area; an effect that names its own radius reaches that far from
+                // the area's centre instead (review of A3-A6: Hinae's rite heals allies within 10 while it strikes
+                // enemies within 6, Ilsabet's vow shields allies within 8, as their kit sheets say)
                 case ALLIES_IN_AREA -> use.areaCenter == null ? List.of(hero)
-                        : HeroForms.alliesNear(hero, use.areaCenter, use.areaRadius);
+                        : HeroForms.alliesNear(hero, use.areaCenter, e.c().radius() > 0 ? e.c().radius() : use.areaRadius);
                 case ALLIES_AROUND -> HeroForms.alliesNear(hero, hero.position(), radius(e));
                 case MOST_HURT_ALLY -> List.of(HeroForms.mostHurtAlly(hero, radius(e)));
             };
@@ -145,7 +148,10 @@ public final class HeroEffects {
                 // 6.9: a breaks_guard move knocks a raised shield aside (the axe rule) unless it has its own guard_break;
                 // an unblockable move, every grab among them, goes through a shield (the same for every receiver)
                 boolean guardUp = use.move != null && use.move.breaksGuard() && HeroStatus.shieldUp(r);
-                boolean unblockable = use.move != null && (use.move.unblockable() || use.move.form() == HeroDef.Form.GRAB);
+                // a zone bursts from the ground under its receivers, so no shield stops it (SLICE_PLAN 3.4: "zones
+                // ignore shields"; review of A3-A6), the same for every receiver
+                boolean unblockable = use.move != null && (use.move.unblockable() || use.move.form() == HeroDef.Form.GRAB)
+                        || use.form == HeroDef.Form.ZONE;
                 float lost = unblockable ? HeroDamage.dealUnblockable(hero, direct, r, el, raw)
                         : HeroDamage.deal(hero, direct, r, el, raw, false);
                 if (guardUp && !hasGuardBreak(use.move) && HeroStatus.guardBreak(r, BREAKS_GUARD_SECONDS)) {

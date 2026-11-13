@@ -100,6 +100,8 @@ import java.util.UUID;
  * a charge into a wall; hits fill it from A6a), its barrier and its decoys.
  */
 public final class HeroCombat {
+    /** Poise that landed this recently when a fight begins came from the blows that opened it: it is kept. */
+    static final int FIGHT_OPENING_TICKS = 2;
     /** A leap that has not landed after this long lands where it is (v1 29.4: "a 40-tick timeout"). */
     public static final int LEAP_TIMEOUT = 40;
     /** At most this many zones of one hero; a new one ends the oldest (v1 10.1). */
@@ -276,8 +278,10 @@ public final class HeroCombat {
             }
             passives.fightStarted();
             BossRules.Poise p = poise();
-            if (p != null) {
-                p.reset(); // a new fight starts from an empty bar (6.9)
+            if (p != null && now() - p.lastDamageTick() > FIGHT_OPENING_TICKS) {
+                // a new fight starts from an empty bar (6.9), but the blow that opened it counts: that blow's poise
+                // lands inside the hurt, before this tick sees the fight begin (review of A3-A6)
+                p.reset();
             }
         }
         fighting = f;
@@ -650,7 +654,9 @@ public final class HeroCombat {
      */
     public boolean poiseDamage(double amount) {
         BossRules.Poise p = poise();
-        if (p == null || !hero.isAlive()) {
+        if (p == null || !hero.isAlive() || staggered()) {
+            // 6.9, no stun-lock: during any stagger (a full bar's, a weak point's, a broken barrier's) poise damage is
+            // ignored, so a kneel is never extended by a second stagger (review of A3-A6)
             return false;
         }
         double before = p.value();
@@ -873,7 +879,17 @@ public final class HeroCombat {
         for (int i = 0; i < Math.max(1, count); i++) {
             decoys.removeIf(d -> d.isRemoved() || d.popped());
             while (decoys.size() >= HeroCatalogue.MAX_DECOYS) {
-                decoys.removeFirst().pop();
+                // the oldest pops first, but never its barrier's focus while another can go (popping its own focus
+                // would break its barrier and stagger it: review of A3-A6)
+                HeroDecoy old = decoys.peekFirst();
+                for (HeroDecoy c : decoys) {
+                    if (barrierFocus == null || !barrierFocus.equals(c.getUUID())) {
+                        old = c;
+                        break;
+                    }
+                }
+                decoys.remove(old);
+                old.pop();
             }
             HeroDecoy d = ModEntities.HERO_DECOY.get().create(sl);
             if (d == null) {
@@ -909,8 +925,11 @@ public final class HeroCombat {
         if (barrierFocus != null && barrierFocus.equals(d.getUUID())) {
             barrierFocus = null;
             HeroStatus s = HeroStatus.peek(hero);
-            if (s != null && s.book().breakBarrier()) {
-                stagger(); // 6.6: killing the focus breaks the barrier and staggers the hero
+            if (s != null && s.book().barrierHits(now()) > 0 && s.book().breakBarrier()) {
+                // 6.6: killing the focus breaks the barrier and staggers the hero, on its next tick and through the
+                // protections of 6.9 like any weak point's stagger (not in a transition, the intro, an ultimate's
+                // wind-up or a super-armour move, nor again while it kneels)
+                boss.staggerSoon();
             }
         }
         trigger(PassiveBook.Event.of(Trigger.ON_ADD_DIED), null, null);
@@ -1427,7 +1446,7 @@ public final class HeroCombat {
             if (t == plan.activeEnd() && !done) {
                 hero.setStateFlag(HeroActions.STATE_WINDUP, false);
                 motion = M_NONE;
-                if (use.landed && !noFollowup) {
+                if ((use.landed || reachesNoEnemy(move)) && !noFollowup) {
                     MoveSelector s = selector();
                     if (s != null && target != null && target.isAlive()) {
                         HeroSenses.fill(hero, target, sense, hero.energy(), 0);
@@ -1444,6 +1463,17 @@ public final class HeroCombat {
             if (t >= recoveryEnd()) {
                 end(true);
             }
+        }
+
+        /**
+         * A move whose form reaches no enemy ({@code self}, {@code ally}, {@code allies}: a state, a vanish, a heal) has
+         * nobody to "hit": it counts as landed once its active part has played, so its followups may start (review of
+         * A3-A6: Natsuho's Midnight Frenzy then Pounce, Tobimaru's Shadow Step then Backstab, Yugen's Vanish then
+         * Foxfire Volley, as their kit sheets say). Every other form follows up only when it reached an enemy (6.3).
+         */
+        static boolean reachesNoEnemy(Move m) {
+            Form f = m.form();
+            return f == Form.SELF || f == Form.ALLY || f == Form.ALLIES;
         }
 
         /**
@@ -1809,6 +1839,10 @@ public final class HeroCombat {
             dashHit.clear();
             hero.swing(InteractionHand.MAIN_HAND);
             startMotion(M_SWEEP, sweepTicks);
+            // what it gives its side lands as the sweep starts, whether or not the line ever passes an enemy (review of
+            // A3-A6: Hinae's dance regenerates her allies even when nobody is in its arc); the line's own effects
+            // reach only the enemies it passes, tick by tick
+            HeroEffects.apply(use, a.effects(), 0, List.of(), hero);
         }
 
         /**

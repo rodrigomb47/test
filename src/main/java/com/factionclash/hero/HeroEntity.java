@@ -883,6 +883,17 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return false;
     }
 
+    /**
+     * Its food bar never heals it (review of A3-A6): a hero's health comes back by its boss reset (HEROES_V2 6.10: 1% of
+     * its base health a second, 30 s out of a fight and unhurt), never in a fight (6.2), and by authored heals, drains
+     * and potion effects. It still eats. A dormant hero is a plain soldier and heals as one.
+     */
+    @Override
+    protected boolean regeneratesNaturally() {
+        HeroDef d = dormant() ? null : definition();
+        return d == null || d.v2() == null;
+    }
+
     /** Every hero looks for enemies, whatever its duty (v1 25.6). */
     @Override
     public boolean isGuardDuty() {
@@ -1047,13 +1058,39 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     // ------------------------------------------------------------------ server: flags the model reads
 
+    /**
+     * Server time spent in heroes' ticks (the whole entity tick, and the fight runtime's part of it), with the number of
+     * hero ticks counted: HEROES_V2 11's per-hero budget, read by the review's sixteen-hero GameTest. Two clock reads a
+     * hero tick, no allocation; server thread only.
+     */
+    private static long tickNanos, combatNanos, ticksTimed;
+
+    /** {@code {nanoseconds in heroes' ticks, of them in their fight runtime, hero ticks}} since the last reset. */
+    public static long[] tickStats() {
+        return new long[] {tickNanos, combatNanos, ticksTimed};
+    }
+
+    public static void resetTickStats() {
+        tickNanos = 0;
+        combatNanos = 0;
+        ticksTimed = 0;
+    }
+
     @Override
     public void tick() {
-        super.tick();
         if (level().isClientSide) {
+            super.tick();
             HeroLocalSounds.clientTick(this); // S2: animation companions, voice blips, loops
             return;
         }
+        long start = System.nanoTime();
+        serverTick();
+        tickNanos += System.nanoTime() - start;
+        ticksTimed++;
+    }
+
+    private void serverTick() {
+        super.tick();
         if (bubble != null) {
             if (!isAlive() || tickCount >= bubbleUntil || !bubble.isAlive()) {
                 removeBubble();
@@ -1069,7 +1106,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             updateFlags();
             if (!preview) {
                 fightTick();
+                long c = System.nanoTime();
                 combat().tick();
+                combatNanos += System.nanoTime() - c;
                 if (getTarget() != null && getTarget().isAlive() && tickCount % 5 == 0) {
                     armForFight();
                 }

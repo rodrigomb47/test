@@ -1032,6 +1032,19 @@ Presentation only: no number here changes a fight, and every cue plays whoever c
   bubble). The note-block fallback: the hero's v1 voice (instrument, pitch, rate; **harp**, **1.0**, **3** when none) at
   volume **0.5** with the melody **0 0 +2 +4 -3**.
 
+## Hero review of A3-A6 and S2 (`HeroCombat`, `HeroBoss`, `HeroEffects`, `FactionNpc.regeneratesNaturally`)
+* A hero's food bar never heals it: **no natural regeneration** for a hero with a definition (it still eats). Its health
+  comes back only by the boss reset (**1%** of its base health a second, **30 s** out of a fight and unhurt), authored
+  heals and drains, and potion effects. A dormant hero heals as a plain soldier.
+* Poise: ignored during **any** stagger (no second stagger in a kneel); a new fight starts from an empty bar, except
+  poise that landed in its last **2** ticks (`HeroCombat.FIGHT_OPENING_TICKS`: the blow or parry that opened the fight).
+* A zone's damage goes through shields, for every receiver (SLICE_PLAN 3.4).
+* `to: allies` in a nova, zone or leap: the area's own radius, or the effect's **own `radius`** when it gives one.
+* A `self`, `ally` or `allies` move counts as landed for its followups once its active part has played.
+* Measured (`sixteenHeroesFightWithinBudget`, 8 against 8 on the GameTest server): **0.06-0.10 ms** a hero tick for the
+  whole entity, **0.008-0.013 ms** of it in the fight runtime (HEROES_V2 11's budget for a hero's own cost: 0.05 ms).
+  The test fails above **1.0 ms** and **0.25 ms**.
+
 ## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no
 modifiers, 18 slots, 1 + Diligence).

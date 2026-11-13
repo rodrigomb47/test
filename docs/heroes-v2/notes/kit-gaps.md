@@ -453,3 +453,36 @@ rewards, the operator's hooks: `HeroBoss`, `HeroEscape`, `HeroBossBars`, `HeroRe
   title and "Won by <winner> on day N"), once per hero per side per in-game day, kept in `HeroState.crests`.
 - **Lines**: the intro, enrage, escape and last-stand lines ignore the dialogue cooldown (each comes at most once a fight,
   a day or ten minutes), so a skill's line a moment before never hides them.
+
+## Review of A3-A6 decisions (2026-11-13)
+
+Taken in the review of A3-A6 and S2 (HEROES_V2 15.2 "Review of A3-A6 and S2"), each to make the game do what the kit
+sheets say:
+
+- **Followups of a move that reaches no enemy.** 6.3 says a followup may start "when a move hits"; a `self`, `ally` or
+  `allies` move has nobody to hit, so it counts as landed once its active part has played. Natsuho's Midnight Frenzy goes
+  on into Pounce, Tobimaru's Shadow Step into Backstab and Yugen's Vanish into Foxfire Volley (70%), each when the
+  followup has its charge and its reach then. A followup still starts at once or not at all: Shadow Step taken from mid
+  range ends its string when Backstab (close) is out of reach as the step ends, which is for C3's content or A12's
+  movement to settle.
+- **The allies of an area move.** v1 10.2 sends `to: allies` in a nova, zone or leap to the allies inside that area; an
+  effect that gives its own `radius` now reaches that far from the area's centre (Hinae's rite heals and shields within
+  10 while it strikes within 6; Ilsabet's vow shields within 8 while it freezes within 6). Without a radius the area's
+  holds. Ilsabet's Rime Wall (shields within 6, taunts within 5) can now be written as the kit says: radius 5 for the
+  move, `radius: 6` on its shield (C4).
+- **A sweep's gifts to its side** land as it starts, so Hinae's dance regenerates her allies whether or not the line
+  passes an enemy; the line's own effects reach only the enemies it passes, tick by tick (each tick that strikes renews
+  the allies' effect).
+- **Zones ignore shields** (SLICE_PLAN 3.4): a zone bursts from the ground under its receivers, so its damage goes through
+  a raised shield, the same for a player and an NPC. Waves and rain keep vanilla's shield test (nothing in the kits says
+  otherwise).
+- **A hero's food bar does not heal it.** Its health comes back by the reset of 6.10 (1% of its base a second, 30 s out
+  of a fight and unhurt), never in a fight (6.2), and by authored heals, drains and potion effects (a golden apple's
+  regeneration included). It still eats, so it never starves. A dormant hero heals from food as the plain soldier it is.
+- **No stun-lock**: poise damage is ignored during any stagger, whatever caused it (a full bar, a weak point, a broken
+  barrier), so a second stagger never extends a kneel.
+- **A fight's opening blow keeps its poise**: a new fight still starts from an empty bar, but poise that landed in the
+  last 2 ticks (the blow, or the parry, that started the fight) is kept.
+- **A barrier's focus** is the last of a hero's decoys to go when its own `spawn_add` keeps the cap of 3; killing it
+  staggers the hero on its next tick through 6.9's protections (not in a transition, the intro, an ultimate's wind-up, a
+  super-armour move, or while it already kneels).

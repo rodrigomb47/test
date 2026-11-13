@@ -305,6 +305,11 @@ public final class BossRules {
             return now < staggerUntil;
         }
 
+        /** The game time of the last poise damage that landed (a very old time: none yet). */
+        public long lastDamageTick() {
+            return lastDamageTick;
+        }
+
         public long staggerUntil() {
             return staggerUntil;
         }

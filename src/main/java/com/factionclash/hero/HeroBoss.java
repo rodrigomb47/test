@@ -1105,6 +1105,14 @@ public final class HeroBoss {
         return false;
     }
 
+    /**
+     * A stagger asked for from outside the incoming path (its barrier's focus killed, 6.6): on its next tick, through the
+     * same protections as a weak point's ({@link #staggerNow}).
+     */
+    void staggerSoon() {
+        staggerPending = true;
+    }
+
     /** Its own charge ended against a wall ({@code charge_wall}): it staggers at once, after the move runner's tick. */
     void chargeWall() {
         if (weakTo(WeakPoint.CHARGE_WALL)) {
