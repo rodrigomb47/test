@@ -205,3 +205,6 @@
 	# Default: 100
 	# Range: 25 ~ 300
 	healthScale = 100
+	#Draw a growing ground mark under a hero's heavy, area and ultimate moves for the players within 32
+	#blocks (presentation only: a move's timing, reach and damage never depend on it).
+	telegraphDecals = true

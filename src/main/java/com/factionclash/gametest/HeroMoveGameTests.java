@@ -805,10 +805,9 @@ public final class HeroMoveGameTests {
                 near(t, b1 - vsNpc.getHealth(), b2 - vsPlayer.getHealth(), "the arrows, soldier's and player's");
                 t.assertTrue(b1 - vsNpc.getHealth() > 2, "an arrow was absorbed");
             }));
-            h.runAtTickTime(10, t.guard(() -> {
-                for (HeroEntity x : List.of(vsNpc, vsPlayer, control)) {
-                    x.invulnerableTime = 0;
-                }
+            // the blows come after the arrows' hurt cooldown: an archer's arrows and blows share one (6.2, kept per attacker
+            // since A6a, so clearing the entity's invulnerableTime no longer resets it)
+            h.runAtTickTime(19, t.guard(() -> {
                 float b1 = vsNpc.getHealth(), b2 = vsPlayer.getHealth(), b3 = control.getHealth();
                 vsNpc.hurt(vsNpc.damageSources().mobAttack(npc), 10);
                 vsPlayer.hurt(vsPlayer.damageSources().playerAttack(pl), 10);
@@ -819,7 +818,7 @@ public final class HeroMoveGameTests {
                 near(t, lost[0], lost[1], "the countered blows, soldier's and player's");
                 near(t, lost[2] * 0.2, lost[0], "a fifth of the blow lands");
             }));
-            h.runAtTickTime(14, t.guard(() -> {
+            h.runAtTickTime(23, t.guard(() -> {
                 t.assertTrue(npc.getHealth() < 100 && pl.getHealth() < 100, "the riposte did not land");
                 near(t, 100 - npc.getHealth(), 100 - pl.getHealth(), "the riposte, on the soldier and on the player");
                 t.assertTrue(HeroStatus.stunned(npc) && HeroStatus.stunned(pl), "the riposte's stun");
@@ -1152,7 +1151,8 @@ public final class HeroMoveGameTests {
 
     /**
      * {@code channelBreaksAfterItsShare}: damage of a channelled move's share (15% of max health) in its active part
-     * breaks it: no more waves roll, the {@code interrupt} clip plays and a 2 s recovery follows.
+     * breaks it: no more waves roll, the {@code interrupt} clip plays and a 2 s recovery follows. Since A6a one blow
+     * takes at most 12% (the per-hit cap), so the share comes from two soldiers' blows: the first does not break it.
      */
     @GameTest(template = "platform", timeoutTicks = 160, batch = "hero_mv_channel")
     public static void channelBreaksAfterItsShare(GameTestHelper h) {
@@ -1164,7 +1164,7 @@ public final class HeroMoveGameTests {
                     + " \"active\": 2.2, \"recovery\": 0.8}, " + DMG4)), 12, 12);
             hero.setNoAi(true);
             FactionNpc npc = foe(t, 14, 12, 500);
-            FactionNpc hitter = foe(t, 10, 12, 100);
+            FactionNpc hitter = foe(t, 10, 12, 100), second = foe(t, 10, 14, 100);
             h.runAtTickTime(2, t.guard(() -> force(t, hero, npc, "tremor")));
             long[] broke = {-1};
             float[] afterFirst = {0};
@@ -1174,8 +1174,9 @@ public final class HeroMoveGameTests {
                 if (r > 0 && broke[0] < 0 && now == r + 8) {
                     afterFirst[0] = npc.getHealth();
                     t.assertTrue(afterFirst[0] < 500, "the first wave did not land");
-                    hero.invulnerableTime = 0;
-                    hero.hurt(hero.damageSources().mobAttack(hitter), (float) (hero.getMaxHealth() * 0.2));
+                    hero.hurt(hero.damageSources().mobAttack(hitter), (float) (hero.getMaxHealth() * 0.1));
+                    t.assertTrue(hero.combat().stage() == MoveStage.ACTIVE, "one blow under the cap broke the channel");
+                    hero.hurt(hero.damageSources().mobAttack(second), (float) (hero.getMaxHealth() * 0.1));
                     broke[0] = now;
                     t.assertTrue(hero.combat().stage() == MoveStage.RECOVERY, "the channel held: " + hero.combat().stage());
                     t.assertTrue(HeroActions.code(hero.action()) == HeroActions.actionCode("interrupt"), "no interrupt clip");

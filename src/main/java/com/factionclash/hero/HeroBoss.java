@@ -1,0 +1,622 @@
+package com.factionclash.hero;
+
+import com.factionclash.campaign.CampaignData;
+import com.factionclash.campaign.HeroState;
+import com.factionclash.hero.entity.HeroDecoy;
+import com.factionclash.logic.hero.BossRules;
+import com.factionclash.logic.hero.HeroActions;
+import com.factionclash.logic.hero.HeroDef;
+import com.factionclash.logic.hero.HeroDef.LineEvent;
+import com.factionclash.logic.hero.HeroDef.Slot;
+import com.factionclash.logic.hero.HeroDef.StatBonus;
+import com.factionclash.logic.hero.HeroDef.Trigger;
+import com.factionclash.logic.hero.HeroDef.WeakPoint;
+import com.factionclash.logic.hero.HeroRules;
+import com.factionclash.logic.hero.MovePlan.MoveStage;
+import com.factionclash.logic.hero.PassiveBook;
+import com.factionclash.logic.hero.UseLedger;
+import com.factionclash.npc.FactionNpc;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.ThrownTrident;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MaceItem;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.Tiers;
+import net.minecraft.world.item.TridentItem;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.IntPredicate;
+
+/**
+ * A hero as a boss, part one (HEROES_V2 6.1-6.4, 6.7, 6.9, 6.10; task A6a): one mode in every fight, whoever the enemy
+ * is. Nothing here reads whether anyone is a player.
+ * <ul>
+ * <li><b>The fight</b> (6.1): the engaged enemies are the living enemies that struck at the hero in the last 15 s or
+ * are its target, within 32 blocks ({@link BossRules.Engagement}, kept by entity id); the fight runs from the first
+ * until 10 s after the last ({@link BossRules.Fight}). It drives the move gap, the poise bar's reset and the
+ * {@code enemies_engaged} condition.</li>
+ * <li><b>The hurt cooldown per attacker</b> (6.2, 6.16): vanilla's half-second cooldown is kept per attacking entity
+ * ({@link BossRules.HurtLedger}; every hit with no attacker shares one record), so six soldiers' blows all land.
+ * {@link HeroEntity#hurt} sets the source's own record on the entity before vanilla's check and stores what vanilla made
+ * of it after. A hero's own damage keeps v1's save-and-restore and is not counted here.</li>
+ * <li><b>The incoming path</b> ({@link #incoming}, from the damage event after armour, resistances and a counter's
+ * absorb): the damage-taken windows (a stagger +25%, a recovery +15% and +15% more from behind, a transition's super
+ * armour -50%; the {@code recovery}, {@code back}, {@code iron} and {@code gold} weak points as {@link BossRules#land}
+ * holds them), then the per-hit cap for a hit with any attacking entity ({@code boss.max_hit_share}, 12%), the excess
+ * and the hit's weapon factor to poise. Damage with no attacker is not capped; {@code /kill} and the void are never
+ * touched.</li>
+ * <li><b>Poise and stagger</b> (6.9): every hit fills the bar whoever lands it (a hero's damage over time does not), a
+ * parry adds 25 (a shield raised 5-11 ticks before a heavy move's hit, a player's or an NPC's); at full poise the hero
+ * staggers: the running move is interrupted, it kneels 2.5 s ({@code combat/HeroHoldGoal}) taking +25%, stars over
+ * its head, {@code on_stagger}. {@code boss.poise: 0} is no bar.</li>
+ * <li><b>Phases</b> (6.7): {@link BossRules.Phases}; the transition plays between moves (never inside one or a
+ * stagger) for its 0.8-2.0 s: super armour (half damage, no stagger, a glint), the hero holds still, the shockwave
+ * pushes everyone within its radius back (hazard-aware, no damage), the phase line, face and look ({@code DATA_STATE}'s
+ * phase, which the renderer reads: {@code p2_}/{@code p3_} bones, the phase texture, glowing eyes), the
+ * {@code phase.N} clip, {@code on_phase} and the transition's effects; at its end the phase's stats (held, every
+ * phase reached adds its own), its state (for the rest of the fight) and adds apply and the new phase's gap begins.</li>
+ * <li><b>Reset</b> (6.10): 30 s out of a fight and unhurt, it heals 1% of its base (v1) health a second; the phases
+ * re-arm 10% above their starts, their look, stats and states going with them.</li>
+ * </ul>
+ * The boss bar, the intro, reactions, the event weak points, enrage, the end of a fight and rewards are A6b's.
+ */
+public final class HeroBoss {
+    /** Engaged enemies are within this many blocks (6.1). */
+    public static final double ENGAGE_RADIUS = BossRules.ENGAGE_RADIUS;
+    /** The source a phase's stat bonuses carry in the hero's status book. */
+    static final String PHASE_SOURCE = "phase";
+
+    private final HeroEntity hero;
+    private final HeroCombat combat;
+    private final BossRules.Fight fight = new BossRules.Fight();
+    private final BossRules.Engagement engagement = new BossRules.Engagement();
+    private final BossRules.HurtLedger<Integer> hurts = new BossRules.HurtLedger<>();
+    private final IntPredicate engagedNow = this::engagedNow;
+    private BossRules.Phases phases;
+    private HeroDef phasesFor;
+    private int loadedPhase;
+    private Set<WeakPoint> weak = EnumSet.noneOf(WeakPoint.class);
+    private HeroDef weakFor;
+    /** Poise this hit's damage event worked out; it lands after the hurt (so a stagger never strikes into it). */
+    private double pendingPoise;
+    /** A parry caught inside the blocker's hurt: its 25 poise lands on the hero's next tick. */
+    private boolean parried;
+    /** The last tick damage landed on it (-1: never), for the out-of-fight healing. */
+    private long lastHurt = -1;
+    /** The transition playing (null: none) and the mood it holds. */
+    private HeroDef.Transition transition;
+    private int transitionPhase;
+    /** The last hit through the incoming path (tests, the operator's sheet). */
+    private BossRules.Landed lastLanded;
+    private int staggerCount, transitionCount;
+
+    HeroBoss(HeroEntity hero, HeroCombat combat) {
+        this.hero = hero;
+        this.combat = combat;
+    }
+
+    private long now() {
+        return hero.level().getGameTime();
+    }
+
+    // ------------------------------------------------------------------ the fight (6.1)
+
+    /** Whether a fight is on (from the first engaged enemy until 10 s after the last). */
+    public boolean fighting() {
+        return fight.active();
+    }
+
+    /** The game time the fight began (its first engaged enemy). */
+    public long fightStart() {
+        return fight.start();
+    }
+
+    /** Seconds of the fight so far (0 out of one): the enrage clock (A6b). */
+    public double fightSeconds() {
+        return fight.seconds(now());
+    }
+
+    /** The engaged enemies at the last count, of every kind (the {@code enemies_engaged} condition). */
+    public int engaged() {
+        return engagement.engaged();
+    }
+
+    /**
+     * Something struck at the hero (from {@link HeroEntity#hurt}, before anything else, a barrier's block included): an
+     * attacking entity is remembered for 15 s.
+     */
+    void struckBy(DamageSource src) {
+        if (src.getEntity() instanceof LivingEntity a && a != hero) {
+            engagement.hurtBy(a.getId(), now());
+        }
+    }
+
+    private boolean engagedNow(int id) {
+        Entity e = hero.level().getEntity(id);
+        return e instanceof LivingEntity l && l.isAlive() && !l.isRemoved() && HeroForms.enemy(hero, l)
+                && l.distanceToSqr(hero) <= ENGAGE_RADIUS * ENGAGE_RADIUS;
+    }
+
+    /** Every tick: counts the engaged enemies and moves the fight clock. */
+    BossRules.FightEvent tickFight() {
+        LivingEntity t = hero.getTarget();
+        int n = engagement.count(now(), t == null ? -1 : t.getId(), engagedNow);
+        return fight.update(now(), n > 0);
+    }
+
+    // ------------------------------------------------------------------ the hurt cooldown per attacker (6.2)
+
+    /** The ledger's key for a hit: the attacking entity's id (an arrow's shooter), null for every hit with no attacker. */
+    static Integer hurtKey(DamageSource src) {
+        Entity a = src.getEntity();
+        return a == null ? null : a.getId();
+    }
+
+    /** The source's record inside its 10-tick window, or null. */
+    BossRules.HurtRecord hurtRecord(Integer key, long now) {
+        return hurts.record(key, now);
+    }
+
+    /** What vanilla's check made of the hit: a new window, or the excess's new amount. */
+    void hurtLanded(Integer key, BossRules.HurtRecord r) {
+        hurts.remember(key, r);
+    }
+
+    // ------------------------------------------------------------------ the incoming path (6.2, 6.9)
+
+    private HeroDef def() {
+        return combat.def();
+    }
+
+    private Set<WeakPoint> weak(HeroDef d) {
+        if (weakFor != d) {
+            Set<WeakPoint> w = EnumSet.noneOf(WeakPoint.class);
+            for (HeroDef.WeakSpot s : d.v2().boss().weakPoints()) {
+                w.add(s.point());
+            }
+            weak = w;
+            weakFor = d;
+        }
+        return weak;
+    }
+
+    /**
+     * One hit's damage on the hero after armour, resistances and a counter (the damage event): the damage-taken window,
+     * the per-hit cap for a hit with an attacking entity and its poise (stored for {@link #afterHurt}). Returns what
+     * lands. Never touches {@code /kill} or the void; a dormant hero is a plain soldier.
+     */
+    float incoming(DamageSource src, float amount) {
+        HeroDef d = def();
+        if (d == null || d.v2() == null || !(amount > 0) || src.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return amount;
+        }
+        Entity attacker = src.getEntity();
+        boolean hasAttacker = attacker != null && attacker != hero;
+        BossRules.Window w = new BossRules.Window(combat.staggered(), combat.stage() == MoveStage.RECOVERY, behind(src),
+                transitioning(), false, tier(src));
+        BossRules.Landed l = BossRules.land(amount, hasAttacker, hero.getMaxHealth(), d.v2().boss().maxHitShare(), w,
+                weak(d), weaponKind(src));
+        lastLanded = l;
+        if (hasAttacker && !HeroDamage.isDot(src)) {
+            pendingPoise += l.poise();
+        }
+        return (float) l.health();
+    }
+
+    /** Whoever struck stands more than 120 degrees from the hero's facing (its body). */
+    private boolean behind(DamageSource src) {
+        Vec3 at = src.getSourcePosition();
+        return at != null && BossRules.behind(hero.yBodyRot, at.x - hero.getX(), at.z - hero.getZ());
+    }
+
+    /** The attacker's main-hand weapon tier, for a melee blow (the {@code iron} and {@code gold} weak points). */
+    private static BossRules.WeaponTier tier(DamageSource src) {
+        if (!(src.getEntity() instanceof LivingEntity a) || src.getDirectEntity() != a || src.is(HeroDamage.HERO)) {
+            return BossRules.WeaponTier.NONE;
+        }
+        ItemStack s = a.getMainHandItem();
+        if (!(s.getItem() instanceof TieredItem t)) {
+            return BossRules.WeaponTier.NONE;
+        }
+        if (t.getTier() == Tiers.IRON) {
+            return BossRules.WeaponTier.IRON;
+        }
+        if (t.getTier() == Tiers.GOLD) {
+            return BossRules.WeaponTier.GOLD;
+        }
+        if (t.getTier() == Tiers.WOOD) {
+            return BossRules.WeaponTier.WOOD;
+        }
+        if (t.getTier() == Tiers.STONE) {
+            return BossRules.WeaponTier.STONE;
+        }
+        if (t.getTier() == Tiers.DIAMOND) {
+            return BossRules.WeaponTier.DIAMOND;
+        }
+        return t.getTier() == Tiers.NETHERITE ? BossRules.WeaponTier.NETHERITE : BossRules.WeaponTier.OTHER;
+    }
+
+    /**
+     * The poise factor of what struck (6.9), the same whoever holds it: a sword 1.0, an axe 1.6, a mace 2.0, a trident
+     * 1.2 (thrown or in the hand), an arrow 0.6, a crossbow bolt 0.8; a hero's move and anything else 1.0.
+     */
+    static BossRules.WeaponKind weaponKind(DamageSource src) {
+        if (src.is(HeroDamage.HERO)) {
+            return BossRules.WeaponKind.OTHER;
+        }
+        Entity direct = src.getDirectEntity();
+        if (direct instanceof ThrownTrident) {
+            return BossRules.WeaponKind.TRIDENT;
+        }
+        if (direct instanceof AbstractArrow arrow) {
+            return arrow.shotFromCrossbow() ? BossRules.WeaponKind.BOLT : BossRules.WeaponKind.ARROW;
+        }
+        if (direct instanceof LivingEntity l && direct == src.getEntity()) {
+            var item = l.getMainHandItem().getItem();
+            if (item instanceof MaceItem) {
+                return BossRules.WeaponKind.MACE;
+            }
+            if (item instanceof AxeItem) {
+                return BossRules.WeaponKind.AXE;
+            }
+            if (item instanceof TridentItem) {
+                return BossRules.WeaponKind.TRIDENT;
+            }
+            if (item instanceof SwordItem) {
+                return BossRules.WeaponKind.SWORD;
+            }
+        }
+        return BossRules.WeaponKind.OTHER;
+    }
+
+    /** The last hit through the incoming path (null before any). */
+    public BossRules.Landed lastLanded() {
+        return lastLanded;
+    }
+
+    /** After a hurt (from {@link HeroEntity#hurt}): the poise it worked out lands now, and the health it lost counts. */
+    void afterHurt(float lost) {
+        if (lost > 0) {
+            lastHurt = now();
+        }
+        double p = pendingPoise;
+        pendingPoise = 0;
+        if (p > 0 && hero.isAlive()) {
+            combat.poiseDamage(p);
+        }
+    }
+
+    /**
+     * A shield blocked one of this hero's moves (inside the blocker's hurt): a heavy move (or heavier) blocked by a
+     * shield raised 5-11 ticks before is a parry, 25 poise on the hero's next tick (6.9), whoever held it.
+     */
+    void blocked(LivingEntity blocker) {
+        HeroDef.Move m = combat.runningMove();
+        if (m != null && BossRules.parry(true, blocker.getTicksUsingItem(), m.cls())) {
+            parried = true;
+        }
+    }
+
+    // ------------------------------------------------------------------ stagger (6.9)
+
+    /** It staggered (from {@link HeroCombat#stagger}): counted for the campaign. */
+    void staggered() {
+        staggerCount++;
+        HeroState rec = hero.campaignRecord();
+        if (rec != null) {
+            rec.staggers++;
+            CampaignData.get(hero.getServer()).setDirty();
+        }
+    }
+
+    /** How many times it staggered since it was made (tests). */
+    public int staggerCount() {
+        return staggerCount;
+    }
+
+    /** Whether it is held still now: a stagger's kneel or a phase transition. */
+    public boolean held() {
+        return combat.staggered() || transitioning();
+    }
+
+    // ------------------------------------------------------------------ phases (6.7)
+
+    /** Its phases (null while it has no definition). */
+    BossRules.Phases phases() {
+        HeroDef d = def();
+        if (d == null || d.v2() == null) {
+            return null;
+        }
+        if (phases == null || phasesFor != d) {
+            int keep = phases != null ? phases.reached() : loadedPhase;
+            List<HeroDef.Phase> list = d.v2().boss().phases();
+            Integer[] starts = new Integer[Math.max(1, list.size())];
+            for (int i = 0; i < list.size(); i++) {
+                starts[i] = list.get(i).at();
+            }
+            if (list.isEmpty()) {
+                starts[0] = 100;
+            }
+            phases = new BossRules.Phases(List.of(starts));
+            phasesFor = d;
+            if (keep > 1) {
+                phases.set(keep);
+                showPhase(phases.shown());
+            }
+            loadedPhase = 0;
+            if (transition != null) {
+                endTransition(d); // a reload in a transition: it ends now, its phase applied
+            }
+        }
+        return phases;
+    }
+
+    /** The phase its look and moves show (1 without a definition). */
+    public int phase() {
+        BossRules.Phases p = phases();
+        return p == null ? 1 : p.shown();
+    }
+
+    /** Whether a phase transition plays now (super armour, no stagger, held still). */
+    public boolean transitioning() {
+        return transition != null && phases != null && phases.transitioning(now());
+    }
+
+    /** How many transitions it has played since it was made (tests). */
+    public int transitionCount() {
+        return transitionCount;
+    }
+
+    /** The mood a transition holds on its face (-1: none). */
+    int mood() {
+        return transition != null && transition.face() != null ? HeroActions.moodCode(transition.face()) : -1;
+    }
+
+    private void showPhase(int p) {
+        if (HeroActions.phase(hero.state()) != p) {
+            hero.setState(HeroActions.withPhase(hero.state(), p));
+        }
+    }
+
+    private void beginTransition(BossRules.Phases ph, HeroDef d) {
+        int target = ph.reached();
+        HeroDef.Phase phase = d.v2().boss().phases().get(Math.min(target, d.v2().boss().phases().size()) - 1);
+        HeroDef.Transition tr = phase.transition() == null ? HeroDef.Transition.DEFAULT : phase.transition();
+        int ticks = (int) Math.max(1, HeroRules.ticks(BossRules.transitionSeconds(tr.seconds())));
+        int p = ph.begin(now(), ticks);
+        transition = tr;
+        transitionPhase = p;
+        transitionCount++;
+        showPhase(p);
+        hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, true);
+        hero.getNavigation().stop();
+        hero.playAction(HeroActions.actionCode(p >= 3 ? "phase.3" : "phase.2"), 1.0, 0);
+        LineEvent event = p >= 3 ? LineEvent.PHASE_3 : LineEvent.PHASE_2;
+        if (tr.line() != null && !tr.line().isBlank()) {
+            hero.speak(event, tr.line());
+        } else {
+            hero.say(event);
+        }
+        shockwave(tr.shockRadius() > 0 ? tr.shockRadius() : BossRules.SHOCK_RADIUS,
+                tr.shockStrength() > 0 ? tr.shockStrength() : BossRules.SHOCK_STRENGTH);
+        if (!tr.effects().isEmpty()) {
+            UseLedger ledger = UseLedger.of(Slot.PASSIVE, combat.abilityPower(), HeroEffects.powerScale(), 1);
+            HeroUse use = combat.newUse(d, null, Slot.PASSIVE, HeroDef.Form.SELF, "phase." + p, ledger);
+            HeroEffects.apply(use, tr.effects(), 0, List.of(hero), hero);
+        }
+        HeroState rec = hero.campaignRecord();
+        if (rec != null && p > rec.phaseReached) {
+            rec.phaseReached = p;
+            CampaignData.get(hero.getServer()).setDirty();
+        }
+        double share = hero.getHealth() / Math.max(1F, hero.getMaxHealth());
+        combat.trigger(new PassiveBook.Event(Trigger.ON_PHASE, null, share, null, p, false), hero.getTarget(), null);
+        if (hero.level() instanceof ServerLevel sl) {
+            sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE,
+                    0.6F, 1.4F);
+        }
+    }
+
+    /**
+     * The transition's shockwave (6.7): everyone within {@code radius} but the hero, its own adds, display copies and
+     * players outside the fight's modes (creative, spectator) is pushed back with the given strength, softened toward
+     * lava or a drop for every receiver (6.12); no damage.
+     */
+    private void shockwave(double radius, double strength) {
+        List<LivingEntity> near = hero.level().getEntitiesOfClass(LivingEntity.class, hero.getBoundingBox().inflate(radius),
+                e -> e != hero && e.isAlive() && !(e instanceof ArmorStand)
+                        && !(e instanceof FactionNpc n && n.isDisplayOnly())
+                        && !(e instanceof HeroDecoy dc && dc.owner() == hero)
+                        && !(e instanceof Player pl && (pl.isSpectator() || pl.isCreative()))
+                        && e.distanceToSqr(hero) <= radius * radius);
+        for (LivingEntity e : near) {
+            HeroEffects.knockback(hero, e, strength, 0);
+        }
+        HeroEffects.particleRing(hero.level(), hero.position().add(0, 0.2, 0), radius, ParticleTypes.CLOUD);
+    }
+
+    /** The transition is over: the phase's stats, state and adds; the new phase's gap begins. */
+    private void endTransition(HeroDef d) {
+        transition = null;
+        if (d.v2().boss().phases().isEmpty()) {
+            hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, false);
+            return;
+        }
+        if (!(combat.running() && combat.runningMove().superArmor())) {
+            hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, false);
+        }
+        int p = transitionPhase;
+        applyPhaseStats(d, p);
+        HeroDef.Phase phase = d.v2().boss().phases().get(Math.min(p, d.v2().boss().phases().size()) - 1);
+        String state = null;
+        for (int i = Math.min(p, d.v2().boss().phases().size()); i >= 1 && state == null; i--) {
+            List<String> s = d.v2().boss().phases().get(i - 1).states();
+            state = s.isEmpty() ? null : s.get(0);
+        }
+        if (state != null && !state.equals(combat.stateName())) {
+            combat.enterState(state, BossRules.PHASE_HOLD_SECONDS);
+        }
+        for (HeroDef.AddSpec a : phase.adds()) {
+            combat.spawnAdds(a.id(), a.count());
+        }
+        var s = combat.selector();
+        if (s != null) {
+            s.moveEnded(now(), p, hero.stateFlag(HeroActions.STATE_ENRAGED));
+        }
+    }
+
+    /** Every phase up to {@code p} adds its own stat bonuses, held; those of deeper phases go. */
+    private void applyPhaseStats(HeroDef d, int p) {
+        List<HeroDef.Phase> list = d.v2().boss().phases();
+        HeroStatus status = HeroStatus.of(hero);
+        long now = now();
+        boolean any = false;
+        for (int i = 1; i <= list.size(); i++) {
+            for (StatBonus b : list.get(i - 1).stats()) {
+                String key = "phase." + i + "." + b.stat().id();
+                if (i <= p) {
+                    status.book().stat(PHASE_SOURCE, key, b.stat(), b.percent(), 0, 1, now);
+                    any = true;
+                } else {
+                    any |= status.book().removeStat(PHASE_SOURCE, key);
+                }
+            }
+        }
+        if (any) {
+            status.book().consumeStatsDirty();
+            HeroStatus.applyStats(hero, now);
+        }
+    }
+
+    /** Re-armed to phase {@code p}: its look goes back, deeper phases' stats go, a deeper phase's state ends. */
+    private void rearmed(HeroDef d, int p) {
+        transition = null;
+        hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, false);
+        showPhase(p);
+        applyPhaseStats(d, p);
+        String st = combat.stateName();
+        if (st == null) {
+            return;
+        }
+        List<HeroDef.Phase> list = d.v2().boss().phases();
+        boolean ownedByLower = false, ownedByDeeper = false;
+        for (int i = 1; i <= list.size(); i++) {
+            if (list.get(i - 1).states().contains(st)) {
+                if (i <= p) {
+                    ownedByLower = true;
+                } else {
+                    ownedByDeeper = true;
+                }
+            }
+        }
+        if (ownedByDeeper && !ownedByLower) {
+            combat.states.exit();
+        }
+    }
+
+    // ------------------------------------------------------------------ the tick
+
+    /** Every tick after the move runner: phases, the reset's healing and re-arm, a parry, the stagger's stars. */
+    void tick() {
+        long now = now();
+        if (parried) {
+            parried = false;
+            combat.poiseDamage(BossRules.PARRY_POISE);
+        }
+        HeroDef d = def();
+        BossRules.Phases ph = d == null ? null : phases();
+        if (ph != null && hero.isAlive()) {
+            double share = hero.getHealth() / Math.max(1F, hero.getMaxHealth());
+            ph.health(share);
+            if (transition != null && ph.ends(now)) {
+                endTransition(d);
+            }
+            if (transition == null && ph.due() && !combat.running() && !combat.staggered() && !HeroStatus.stunned(hero)) {
+                beginTransition(ph, d);
+            }
+            if (!fight.active() && hero.tickCount % 20 == 0) {
+                if (ph.rearm(share)) {
+                    rearmed(d, ph.shown());
+                }
+                if (fight.mayHeal(now, lastHurt) && hero.getHealth() < hero.getMaxHealth()) {
+                    hero.heal((float) (baseMaxHealth() * BossRules.HEAL_PERCENT_PER_SECOND / 100));
+                }
+            }
+        }
+        if (hero.level() instanceof ServerLevel sl) {
+            if (combat.staggered() && hero.tickCount % 5 == 0) {
+                // the stars of a stagger, circling over its head
+                double a = hero.tickCount * 0.35, top = hero.getY() + hero.getBbHeight() + 0.25;
+                for (int i = 0; i < 3; i++) {
+                    double b = a + i * Math.PI * 2 / 3;
+                    sl.sendParticles(ParticleTypes.CRIT, hero.getX() + Math.cos(b) * 0.45, top, hero.getZ() + Math.sin(b) * 0.45,
+                            1, 0, 0, 0, 0);
+                }
+            }
+            if (transition != null && hero.tickCount % 4 == 0) {
+                // super armour's glint
+                sl.sendParticles(ParticleTypes.ENCHANTED_HIT, hero.getX(), hero.getY(0.6), hero.getZ(), 3, 0.35, 0.5, 0.35, 0.02);
+            }
+        }
+        if (hero.tickCount % 20 == 0) {
+            hurts.prune(now);
+        }
+    }
+
+    /** Its v1 health: the boss maximum without the {@code boss_health} modifier (6.2). */
+    double baseMaxHealth() {
+        AttributeInstance a = hero.getAttribute(Attributes.MAX_HEALTH);
+        AttributeModifier m = a == null ? null : a.getModifier(HeroEntity.BOSS_HEALTH);
+        double k = m == null ? 0 : m.amount();
+        return hero.getMaxHealth() / Math.max(0.01, 1 + k);
+    }
+
+    /** Death or a reload: the transition ends with the run (its super armour goes). */
+    void reset() {
+        if (transition != null) {
+            transition = null;
+            hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, false);
+        }
+        pendingPoise = 0;
+        parried = false;
+    }
+
+    // ------------------------------------------------------------------ saving
+
+    /**
+     * Saves the last phase whose transition has played (a transition in progress or still waiting plays again after a
+     * load, from the health the hero has then, so its state and stats are never skipped).
+     */
+    void save(CompoundTag h) {
+        int p = phases == null ? loadedPhase : transition != null ? transitionPhase - 1 : phases.shown();
+        if (p > 1) {
+            h.putInt("phase", p);
+        }
+    }
+
+    void load(CompoundTag h) {
+        loadedPhase = h.getInt("phase");
+        phases = null;
+        phasesFor = null;
+        transition = null;
+    }
+}

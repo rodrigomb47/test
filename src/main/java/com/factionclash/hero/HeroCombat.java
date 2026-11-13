@@ -143,11 +143,27 @@ public final class HeroCombat {
     private UUID barrierFocus;
     /** A blow its counter stance caught this tick: the riposte answers it on the hero's next tick. */
     private LivingEntity riposteOn;
+    /** A6a: the boss controller (the fight clock, the hurt cooldown per attacker, the cap, poise, phases). */
+    final HeroBoss boss;
+    /** A6a: the ground decals of its wind-ups, drawn by the players near. */
+    final HeroTelegraphs telegraphs;
 
     HeroCombat(HeroEntity hero) {
         this.hero = hero;
         this.states = new HeroStates(hero);
         this.passives = new HeroPassives(hero);
+        this.boss = new HeroBoss(hero, this);
+        this.telegraphs = new HeroTelegraphs(hero);
+    }
+
+    /** Its boss controller (task A6a). */
+    public HeroBoss boss() {
+        return boss;
+    }
+
+    /** Its ground decals (task A6a). */
+    public HeroTelegraphs telegraphs() {
+        return telegraphs;
     }
 
     // ------------------------------------------------------------------ the definition and the selector
@@ -251,7 +267,9 @@ public final class HeroCombat {
         if (run != null) {
             run.step();
         }
-        boolean f = hero.inFight();
+        // the fight (6.1, A6a): from the first engaged enemy, player or NPC alike, until 10 s after the last
+        boss.tickFight();
+        boolean f = boss.fighting();
         if (f && !fighting) {
             MoveSelector s = selector();
             if (s != null) {
@@ -266,6 +284,8 @@ public final class HeroCombat {
         fighting = f;
         states.tick();
         passives.tick(fighting);
+        boss.tick();
+        telegraphs.tick();
         if (!zones.isEmpty()) {
             zones.removeIf(Entity::isRemoved);
         }
@@ -340,7 +360,7 @@ public final class HeroCombat {
         }
         nextCheckAt = now + MoveSelector.CHECK_TICKS;
         LivingEntity t = hero.getTarget();
-        if (t == null || !t.isAlive() || !fighting || HeroStatus.stunned(hero) || staggered()) {
+        if (t == null || !t.isAlive() || !fighting || HeroStatus.stunned(hero) || boss.held()) {
             return false;
         }
         MoveSelector s = selector();
@@ -589,6 +609,8 @@ public final class HeroCombat {
         popDecoys();
         states.exit();
         passives.reset();
+        boss.reset();
+        telegraphs.clearAll();
     }
 
     /**
@@ -629,7 +651,7 @@ public final class HeroCombat {
         if (p == null || !hero.isAlive()) {
             return false;
         }
-        boolean protectedNow = run != null && (run.move.superArmor()
+        boolean protectedNow = boss.transitioning() || run != null && (run.move.superArmor()
                 || MoveSelector.isUltimate(run.move) && run.stage() == MoveStage.WINDUP);
         if (p.add(amount, now(), protectedNow)) {
             stagger();
@@ -639,9 +661,10 @@ public final class HeroCombat {
     }
 
     /**
-     * The stagger hook (6.9; task A5, completed by A6a): the running move is interrupted (half the cooldown back in its
-     * wind-up), it starts no move for 2.5 s, plays {@code stagger} and its {@code on_stagger} passives fire. A6a adds the
-     * kneeling hold, the +25% damage taken and the stars.
+     * The stagger (6.9; the hook of task A5, completed by A6a): the running move is interrupted (half the cooldown back
+     * in its wind-up, its decal gone), it plays {@code stagger} and kneels 2.5 s ({@code combat/HeroHoldGoal}: no
+     * walking, no blow, no move) taking +25% damage ({@link HeroBoss#incoming}), stars circle over its head, it says its
+     * {@code stagger} line and its {@code on_stagger} passives fire.
      */
     public void stagger() {
         pending = null;
@@ -651,7 +674,13 @@ public final class HeroCombat {
         }
         hero.playAction(HeroActions.actionCode("stagger"), 1.0, 0);
         hero.getNavigation().stop();
+        hero.setDeltaMovement(hero.getDeltaMovement().multiply(0, 1, 0));
         HeroEffects.particles(hero.level(), hero, ParticleTypes.CRIT, 10);
+        if (hero.level() instanceof ServerLevel sl) {
+            sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.SHIELD_BREAK, SoundSource.HOSTILE, 0.9F, 0.8F);
+        }
+        boss.staggered();
+        hero.say(LineEvent.STAGGER);
         trigger(PassiveBook.Event.of(Trigger.ON_STAGGER), hero.getTarget(), null);
     }
 
@@ -854,9 +883,10 @@ public final class HeroCombat {
         return states.name() == null ? 0 : states.until();
     }
 
-    /** The mood its state holds (-1: none). */
+    /** The mood its phase transition or its state holds (-1: none). */
     public int stateMood() {
-        return states.mood();
+        int m = boss.mood();
+        return m >= 0 ? m : states.mood();
     }
 
     /**
@@ -1009,11 +1039,13 @@ public final class HeroCombat {
         }
         h.putInt("basicHits", basicHits);
         states.save(h);
+        boss.save(h);
     }
 
     void load(CompoundTag h) {
         basicHits = h.getInt("basicHits");
         states.load(h);
+        boss.load(h);
         restoreStates = true;
         if (!h.contains("cooldowns")) {
             return;
@@ -1095,6 +1127,8 @@ public final class HeroCombat {
         final List<HeroDef.Effect> effects;
         final ParticleOptions look;
         int age;
+        /** Its ground disc (A6a; -1: none). */
+        int decal = -1;
 
         RainFlight(HeroUse use, Vec3 at, int landsIn, List<HeroDef.Effect> effects, ParticleOptions look) {
             this.use = use;
@@ -1108,6 +1142,7 @@ public final class HeroCombat {
         public boolean step() {
             age++;
             if (!hero.isAlive()) {
+                telegraphs.clear(decal);
                 return true;
             }
             if (age < landsIn) {
@@ -1117,6 +1152,7 @@ public final class HeroCombat {
                 }
                 return false;
             }
+            telegraphs.clear(decal);
             HeroEffects.particleRing(hero.level(), at, FormGeometry.RAIN_IMPACT_RADIUS, look);
             HeroEffects.apply(use, effects, 0, HeroForms.enemiesNear(hero, at.add(0, 0.5, 0), FormGeometry.RAIN_IMPACT_RADIUS), hero);
             return true;
@@ -1172,6 +1208,8 @@ public final class HeroCombat {
         int sweepTicks;
         /** The receiver a grab holds. */
         LivingEntity grabbed;
+        /** Its wind-up's ground decal (A6a; -1: none drawn). */
+        int decal = -1;
 
         Run(Move move, MoveSelector.Source source, Timing timing, HeroUse use, LivingEntity target) {
             this.move = move;
@@ -1216,7 +1254,19 @@ public final class HeroCombat {
             if (hero.level() instanceof ServerLevel sl) {
                 HeroEffects.particles(sl, hero, HeroEffects.particle(move.ability().look(), element(), color()), 8);
             }
+            if (plan.windup() > 0) {
+                // 6.4: the ground decal grows over the whole wind-up, for the players near (presentation only)
+                decal = telegraphs.show(move, plan.windup(), target, aim);
+            }
             // the hero's tick steps it from this tick on
+        }
+
+        /** Its decal goes (the hit, an interrupt, the end). */
+        void clearDecal() {
+            if (decal > 0) {
+                telegraphs.clear(decal);
+                decal = -1;
+            }
         }
 
         /** The telegraph pose ends with the wind-up. */
@@ -1277,6 +1327,7 @@ public final class HeroCombat {
                     hero.setStateFlag(HeroActions.STATE_WINDUP, false);
                     lastRelease = now();
                     unpose();
+                    clearDecal();
                 }
                 if (target != null && target.isAlive()) {
                     aim = target.position();
@@ -1334,8 +1385,11 @@ public final class HeroCombat {
             motion = M_NONE;
             grabbed = null;
             hero.setStateFlag(HeroActions.STATE_WINDUP, false);
-            hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, false);
+            if (!boss.transitioning()) {
+                hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, false);
+            }
             unpose();
+            clearDecal();
             if (actionSequence >= 0 && HeroActions.sequence(hero.action()) == actionSequence
                     && HeroActions.code(hero.action()) == timing.code()) {
                 hero.stopAction();
@@ -1356,6 +1410,7 @@ public final class HeroCombat {
             noFollowup = true;
             hero.setStateFlag(HeroActions.STATE_WINDUP, false);
             unpose();
+            clearDecal();
             int from = Math.max(t, plan.windup());
             t = Math.max(t, Math.min(plan.activeEnd(), from));
             if (t < plan.activeEnd()) {
@@ -1377,6 +1432,7 @@ public final class HeroCombat {
             nextHit = plan.hitCount(); // the stance's end releases nothing more
             hero.setStateFlag(HeroActions.STATE_WINDUP, false);
             unpose();
+            clearDecal();
             lastRelease = now();
             if (a.isAlive() && !HeroForms.ally(hero, a)) {
                 hero.getLookControl().setLookAt(a, 90F, 90F);
@@ -1602,7 +1658,9 @@ public final class HeroCombat {
             double[] off = FormGeometry.discPoint(hero.getRandom().nextDouble(), hero.getRandom().nextDouble(), radius);
             Vec3 spot = ground(c.x + off[0], c.y, c.z + off[1]);
             int delay = (int) Math.max(1, HeroRules.ticks(a.delay() > 0 ? a.delay() : 0.9));
-            flights.add(new RainFlight(use, spot, delay, a.effects(), HeroEffects.particle(a.look(), element(), color())));
+            RainFlight f = new RainFlight(use, spot, delay, a.effects(), HeroEffects.particle(a.look(), element(), color()));
+            f.decal = telegraphs.impact(move, spot, delay); // 6.4: one disc per impact, gone as it lands
+            flights.add(f);
         }
 
         /** The top of the ground at (x, z) near height y: the first solid block from 2 above down to 4 below. */

@@ -56,6 +56,7 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_SUMMONS;
     public static final ModConfigSpec.IntValue HERO_XP_RATE;
     public static final ModConfigSpec.IntValue BOSS_HEALTH_SCALE;
+    public static final ModConfigSpec.BooleanValue BOSS_TELEGRAPH_DECALS;
     public static final ModConfigSpec.IntValue HERO_POWER_PERCENT;
 
     static {
@@ -199,6 +200,9 @@ public final class FCConfig {
         BOSS_HEALTH_SCALE = b.comment("Multiplies every hero's boss health, in percent (PROPOSED: 100). A hero's health is its v1 health x its",
                         "health_scale (rarity: common 250, rare 300, epic 350, legendary 400) x its role factor, whoever and however many it fights.")
                 .defineInRange("healthScale", 100, 25, 300);
+        BOSS_TELEGRAPH_DECALS = b.comment("Draw a growing ground mark under a hero's heavy, area and ultimate moves for the players within 32",
+                        "blocks (presentation only: a move's timing, reach and damage never depend on it).")
+                .define("telegraphDecals", true);
         b.pop();
         SPEC = b.build();
     }

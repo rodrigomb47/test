@@ -589,6 +589,145 @@ class BossRulesTest {
         assertEquals(19.8, la.health(), 1e-9, "capped for both");
     }
 
+    // ------------------------------------------------------------------ task A6a: engaged enemies, phases, healing
+
+    @Test
+    void engagedEnemiesAreCountedFromBlowsAndTheTarget() {
+        BossRules.Engagement e = new BossRules.Engagement();
+        java.util.function.IntPredicate all = id -> true;
+        assertEquals(0, e.count(0, -1, all), "nobody: no fight");
+        assertEquals(1, e.count(0, 7, all), "its target alone is engaged");
+        e.hurtBy(3, 100);
+        e.hurtBy(4, 110);
+        assertEquals(3, e.count(120, 7, all), "two attackers and the target");
+        assertEquals(2, e.count(120, 3, all), "the target that also struck counts once");
+        assertEquals(2, e.count(120, 7, id -> id != 4), "an attacker that left (dead, a pact, 32 blocks) is not engaged");
+        // 15 s after its last blow an attacker is forgotten
+        assertEquals(2, e.count(100 + BossRules.ENGAGE_MEMORY_TICKS - 1, -1, all), "both still inside 15 s");
+        assertEquals(1, e.count(100 + BossRules.ENGAGE_MEMORY_TICKS, -1, all), "the first is forgotten at 15 s");
+        assertEquals(1, e.remembered());
+        e.hurtBy(4, 400);
+        assertEquals(1, e.remembered(), "a new blow refreshes, it does not add");
+        assertEquals(1, e.count(400 + BossRules.ENGAGE_MEMORY_TICKS - 1, -1, all));
+        // the memory is bounded: the oldest blow goes first
+        BossRules.Engagement f = new BossRules.Engagement();
+        for (int i = 0; i < BossRules.Engagement.MAX_REMEMBERED + 5; i++) {
+            f.hurtBy(1000 + i, i);
+        }
+        assertEquals(BossRules.Engagement.MAX_REMEMBERED, f.remembered());
+        assertEquals(BossRules.Engagement.MAX_REMEMBERED, f.count(50, -1, all));
+        assertEquals(0, f.count(50, -1, id -> id < 1005), "the five oldest were forgotten");
+    }
+
+    @Test
+    void theLedgerKeepsWhatVanillaMadeOfEachAttackersHit() {
+        // the game sets each attacker's own record on the entity before vanilla's check and stores the outcome after
+        HurtLedger<Integer> l = new HurtLedger<>();
+        assertEquals(0, BossRules.invulnerableTime(l.record(1, 100), 100), "a first blow: no cooldown");
+        l.remember(1, new HurtRecord(100, 6));
+        assertEquals(20, BossRules.invulnerableTime(l.record(1, 100), 100), "the same tick: vanilla's full 20");
+        assertEquals(6, BossRules.lastHurt(l.record(1, 105), 105), 1e-9);
+        assertEquals(15, BossRules.invulnerableTime(l.record(1, 105), 105));
+        assertEquals(0, BossRules.invulnerableTime(l.record(2, 105), 105), "another attacker has its own, empty");
+        l.remember(1, new HurtRecord(100, 9)); // an excess raised the amount, the window keeps its start
+        assertEquals(9, BossRules.lastHurt(l.record(1, 109), 109), 1e-9);
+        assertEquals(null, l.record(1, 110), "after 10 ticks a full blow again");
+        l.remember(null, new HurtRecord(200, 4));
+        assertEquals(4, BossRules.lastHurt(l.record(null, 201), 201), 1e-9, "every hit with no attacker shares one record");
+        assertEquals(0, l.prune(300), "old records are dropped");
+    }
+
+    @Test
+    void theFightRunsOnEngagedEnemiesOfAnyKind() {
+        BossRules.Engagement e = new BossRules.Engagement();
+        Fight f = new Fight();
+        e.hurtBy(42, 0);
+        assertEquals(FightEvent.STARTED, f.update(0, e.count(0, -1, id -> true) > 0), "a blow alone starts a fight");
+        long last = BossRules.ENGAGE_MEMORY_TICKS - 1;
+        for (long t = 1; t <= last; t++) {
+            assertEquals(FightEvent.NONE, f.update(t, e.count(t, -1, id -> true) > 0));
+        }
+        long gone = BossRules.ENGAGE_MEMORY_TICKS;
+        assertEquals(0, e.count(gone, -1, id -> true));
+        for (long t = gone; t < last + BossRules.FIGHT_END_TICKS; t++) {
+            assertEquals(FightEvent.NONE, f.update(t, false), "the fight lasts 10 s after the last engaged enemy");
+        }
+        assertEquals(FightEvent.ENDED, f.update(last + BossRules.FIGHT_END_TICKS, false));
+        long ended = last + BossRules.FIGHT_END_TICKS;
+        assertEquals(ended, f.endedAt());
+        assertFalse(f.mayHeal(ended + BossRules.HEAL_DELAY_TICKS - 1, -1));
+        assertTrue(f.mayHeal(ended + BossRules.HEAL_DELAY_TICKS, -1), "30 s after the fight");
+        assertFalse(f.mayHeal(ended + BossRules.HEAL_DELAY_TICKS, ended + 100), "hurt (by lava) 25 s ago: not yet");
+        assertTrue(f.mayHeal(ended + 100 + BossRules.HEAL_DELAY_TICKS, ended + 100));
+        Fight fresh = new Fight();
+        assertTrue(fresh.mayHeal(5, -1), "never in a fight and never hurt");
+    }
+
+    @Test
+    void phasesWaitForTheHeroAndPlayOneTransition() {
+        BossRules.Phases p = new BossRules.Phases(List.of(100, 60, 25));
+        assertEquals(3, p.count());
+        assertFalse(p.health(0.61));
+        assertFalse(p.due());
+        assertTrue(p.health(0.60), "a phase begins when the share falls to its start");
+        assertTrue(p.due());
+        assertEquals(1, p.shown(), "the look waits for the transition");
+        assertEquals(2, p.begin(1000, 24));
+        assertEquals(2, p.shown());
+        assertFalse(p.due());
+        assertTrue(p.transitioning(1023));
+        assertFalse(p.ends(1023));
+        assertTrue(p.ends(1024));
+        assertFalse(p.ends(1025), "once");
+        assertFalse(p.transitioning(1024));
+        assertFalse(p.health(0.9), "never back while it lives");
+        assertEquals(2, p.reached());
+        // one blow through 25% plays one transition, to phase 3
+        BossRules.Phases q = new BossRules.Phases(List.of(100, 60, 25));
+        assertTrue(q.health(0.2));
+        assertEquals(3, q.reached());
+        assertEquals(3, q.begin(0, 20));
+        assertFalse(q.due());
+        // a phase reached during a transition waits for its end
+        BossRules.Phases r = new BossRules.Phases(List.of(100, 60, 25));
+        r.health(0.5);
+        r.begin(0, 30);
+        r.health(0.2);
+        assertFalse(r.due(), "not while one plays");
+        r.ends(30);
+        assertTrue(r.due());
+        assertEquals(3, r.begin(31, 30));
+    }
+
+    @Test
+    void phasesRearmTenPercentAboveTheirStart() {
+        BossRules.Phases p = new BossRules.Phases(List.of(100, 60, 25));
+        p.health(0.2);
+        p.begin(0, 20);
+        p.ends(20);
+        assertFalse(p.rearm(0.34), "under 25 + 10");
+        assertTrue(p.rearm(0.35), "35%: back to phase 2");
+        assertEquals(2, p.reached());
+        assertEquals(2, p.shown());
+        assertFalse(p.rearm(0.69));
+        assertTrue(p.rearm(0.70));
+        assertEquals(1, p.shown());
+        assertTrue(p.health(0.6), "the next fight plays the transition again");
+        // healing straight to full re-arms both at once
+        BossRules.Phases q = new BossRules.Phases(List.of(100, 60, 25));
+        q.health(0.1);
+        q.begin(0, 20);
+        assertTrue(q.rearm(1.0));
+        assertEquals(1, q.reached());
+        assertFalse(q.transitioning(5), "a re-arm ends a transition");
+        BossRules.Phases one = new BossRules.Phases(List.of());
+        assertEquals(1, one.count(), "no phases: one");
+        assertFalse(one.health(0.01));
+        BossRules.Phases loaded = new BossRules.Phases(List.of(100, 60, 25));
+        loaded.set(9);
+        assertEquals(3, loaded.shown(), "a saved phase is held to the hero's phases");
+    }
+
     private static void checkName(Class<?> c, String name) {
         String n = name.toLowerCase(Locale.ROOT);
         for (String bad : List.of("player", "npc", "token", "yield", "spare", "kneel")) {

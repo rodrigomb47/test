@@ -215,4 +215,62 @@ class DecalsTest {
         assertTrue(Decals.fit(List.of(Decals.strip(0, 0, 0, 1, 5, 1)), 12).isEmpty());
         assertEquals(1, Decals.pieces(Decals.fit(List.of(Decals.strip(0, 0, 0, 1, 5, 1)), 11)));
     }
+
+    // ------------------------------------------------------------------ task A6a: what the client draws
+
+    @Test
+    void piecesGrowFromTheirGrowPoint() {
+        Shape strip = Decals.strip(0, 0, 1, 0, 6, 1);
+        Piece p = strip.pieces().get(0);
+        double[] gp = p.growPoint();
+        assertEquals(0, gp[0], 1e-9, "a strip grows from the hero");
+        assertEquals(0, gp[1], 1e-9);
+        for (double[] c : p.cornersAt(0)) {
+            assertEquals(0, c[0], 1e-9, "at 0 every corner is the grow point");
+            assertEquals(0, c[1], 1e-9);
+        }
+        double[][] full = p.corners(), at1 = p.cornersAt(1), half = p.cornersAt(0.5);
+        for (int i = 0; i < 4; i++) {
+            assertEquals(full[i][0], at1[i][0], 1e-9);
+            assertEquals(full[i][1], at1[i][1], 1e-9);
+            assertEquals(full[i][0] / 2, half[i][0], 1e-9, "halfway: half the way from the grow point");
+        }
+        Piece disc = Decals.disc(3, 4, 2).pieces().get(1);
+        double[] dg = disc.growPoint();
+        assertEquals(3, dg[0], 1e-9, "a disc grows from its centre");
+        assertEquals(4, dg[1], 1e-9);
+    }
+
+    @Test
+    void packedPiecesDrawTheSameCorners() {
+        List<Shape> shapes = List.of(Decals.fan(0, 0, 0.3, 1, 8, 120), Decals.disc(2, 5, 1.5), Decals.ring(0, 0, 6));
+        float[] packed = Decals.pack(shapes, new double[]{0, 1.5, -0.5});
+        assertEquals(Decals.pieces(shapes) * Decals.PIECE_FLOATS, packed.length);
+        double[] out = new double[8];
+        int k = 0;
+        for (int s = 0; s < shapes.size(); s++) {
+            for (Piece p : shapes.get(s).pieces()) {
+                assertEquals(new double[]{0, 1.5, -0.5}[s], packed[k * Decals.PIECE_FLOATS + 1], 1e-6, "its shape's ground");
+                for (double g : new double[]{0, 0.3, 1}) {
+                    Decals.corners(packed, k, g, out);
+                    double[][] want = p.cornersAt(g);
+                    for (int c = 0; c < 4; c++) {
+                        assertEquals(want[c][0], out[c * 2], 1e-4, "corner " + c + " x at " + g);
+                        assertEquals(want[c][1], out[c * 2 + 1], 1e-4, "corner " + c + " z at " + g);
+                    }
+                }
+                k++;
+            }
+        }
+        assertEquals(0, Decals.pack(List.of(), null).length);
+    }
+
+    @Test
+    void growthFollowsTheWindup() {
+        assertEquals(0, Decals.growth(0, 20), 1e-9);
+        assertEquals(0.5, Decals.growth(10, 20), 1e-9);
+        assertEquals(1, Decals.growth(20, 20), 1e-9, "full size as the wind-up ends");
+        assertEquals(1, Decals.growth(35, 20), 1e-9);
+        assertEquals(1, Decals.growth(0, 0), 1e-9, "no wind-up: drawn at once");
+    }
 }

@@ -185,6 +185,15 @@ public final class BossRules {
             return h;
         }
 
+        /**
+         * Stores what vanilla's own check made of a hit from {@code source} (the game lets vanilla compare the amount it
+         * sees after shields and the incoming hooks, with this source's record set on the entity first): a full hit
+         * starts a new window at {@code now}, an excess keeps the window's start with the new amount.
+         */
+        public void remember(K source, HurtRecord r) {
+            records.put(source == null ? NO_ATTACKER : source, r);
+        }
+
         /** The record of a source inside its window, or null. */
         public HurtRecord record(K source, long now) {
             HurtRecord r = records.get(source == null ? NO_ATTACKER : source);
@@ -541,6 +550,103 @@ public final class BossRules {
         public boolean mayHeal(long now) {
             return !active && now - endedAt >= HEAL_DELAY_TICKS;
         }
+
+        /**
+         * {@link #mayHeal(long)}, and not hurt in the last 30 s either (task A6a: a hero burnt by lava with no enemy
+         * near is not "30 s out of a fight" the moment it steps out; {@code lastHurt} &lt; 0: never hurt).
+         */
+        public boolean mayHeal(long now, long lastHurt) {
+            return mayHeal(now) && (lastHurt < 0 || now - lastHurt >= HEAL_DELAY_TICKS);
+        }
+
+        /** The game time the last fight ended (a very small number before any). */
+        public long endedAt() {
+            return endedAt;
+        }
+    }
+
+    /**
+     * The engaged enemies (6.1, task A6a): the attackers that hurt the hero (or struck at it) in the last 15 s, kept by
+     * entity id with the tick of their last blow, plus its target. Who they are is the game's question
+     * ({@code stillEngaged}: alive, an enemy, within 32 blocks); nothing here reads whether one is a player. At most
+     * {@link #MAX_REMEMBERED} attackers are remembered (the oldest blow goes first); primitive arrays, so a tick's count
+     * allocates nothing.
+     */
+    public static final class Engagement {
+        /** More attackers than this in 15 s: the oldest blow is forgotten (the fight goes on either way). */
+        public static final int MAX_REMEMBERED = 32;
+        private final int[] ids = new int[MAX_REMEMBERED];
+        private final long[] ticks = new long[MAX_REMEMBERED];
+        private int size;
+        private int counted;
+
+        /** An attacker of any kind struck at the hero now. */
+        public void hurtBy(int id, long now) {
+            for (int i = 0; i < size; i++) {
+                if (ids[i] == id) {
+                    ticks[i] = now;
+                    return;
+                }
+            }
+            if (size == MAX_REMEMBERED) {
+                int oldest = 0;
+                for (int i = 1; i < size; i++) {
+                    if (ticks[i] < ticks[oldest]) {
+                        oldest = i;
+                    }
+                }
+                ids[oldest] = id;
+                ticks[oldest] = now;
+                return;
+            }
+            ids[size] = id;
+            ticks[size] = now;
+            size++;
+        }
+
+        /**
+         * Counts the engaged enemies now: each remembered attacker whose blow is under 15 s old and that still passes
+         * {@code stillEngaged}, and the target ({@code targetId}; -1: none) when it passes and is not one of them.
+         * Blows older than 15 s are forgotten.
+         */
+        public int count(long now, int targetId, java.util.function.IntPredicate stillEngaged) {
+            int n = 0;
+            boolean targetSeen = false;
+            for (int i = 0; i < size; ) {
+                long age = now - ticks[i];
+                if (age < 0 || age >= ENGAGE_MEMORY_TICKS) {
+                    size--;
+                    ids[i] = ids[size];
+                    ticks[i] = ticks[size];
+                    continue;
+                }
+                if (stillEngaged.test(ids[i])) {
+                    n++;
+                    targetSeen |= ids[i] == targetId;
+                }
+                i++;
+            }
+            if (targetId >= 0 && !targetSeen && stillEngaged.test(targetId)) {
+                n++;
+            }
+            counted = n;
+            return n;
+        }
+
+        /** The last count. */
+        public int engaged() {
+            return counted;
+        }
+
+        /** How many attackers it remembers (some may no longer be engaged). */
+        public int remembered() {
+            return size;
+        }
+
+        public void clear() {
+            size = 0;
+            counted = 0;
+        }
     }
 
     /** Health regained per tick out of a fight: 1% of the base (v1) maximum a second. */
@@ -636,6 +742,106 @@ public final class BossRules {
     /** The pips the bar shows: the phases, plus one for an unspent or spent rebirth (never a surprise). */
     public static int pips(int phases, boolean hasRebirth) {
         return Math.max(1, phases) + (hasRebirth ? 1 : 0);
+    }
+
+    /** A phase's states and stats hold "for the rest of the fight": this long, or until the phase re-arms. */
+    public static final double PHASE_HOLD_SECONDS = 3600;
+
+    /**
+     * A hero's phases across its fights (6.3, 6.7, 6.10; task A6a). Its health reaches a phase (the deepest whose start
+     * the share has fallen to; never back while it lives); the transition to it waits until the hero is free (it plays
+     * in NEUTRAL, between moves: never inside a move or a stagger) and then lasts 0.8-2.0 s. The phase its look and
+     * moves show changes when the transition begins; its new states and stats apply when it ends. Two thresholds
+     * crossed by one blow play one transition, to the deeper phase. Out of a fight the phases re-arm as the hero heals
+     * (10% above a phase's start puts it back one), so the next fight plays that transition again.
+     */
+    public static final class Phases {
+        private final List<Integer> starts;
+        private int reached = 1;
+        private int shown = 1;
+        private boolean inTransition;
+        private long transitionEnds;
+
+        public Phases(List<Integer> starts) {
+            this.starts = starts.isEmpty() ? List.of(100) : List.copyOf(starts);
+        }
+
+        /** How many phases (1-3, and 4 with a rebirth's final phase some day). */
+        public int count() {
+            return starts.size();
+        }
+
+        /** The deepest phase its health has reached. */
+        public int reached() {
+            return reached;
+        }
+
+        /** The phase its look and moves show (it moves on when a transition begins). */
+        public int shown() {
+            return shown;
+        }
+
+        /** The health share now; true when it reached a new phase (its transition is then due). */
+        public boolean health(double share) {
+            int p = phaseFor(reached, share, starts);
+            if (p > reached) {
+                reached = p;
+                return true;
+            }
+            return false;
+        }
+
+        /** A transition waits: a new phase is reached and none is playing. */
+        public boolean due() {
+            return reached > shown && !inTransition;
+        }
+
+        /** The transition begins now for {@code ticks}: the shown phase becomes the reached one, which it returns. */
+        public int begin(long now, int ticks) {
+            shown = reached;
+            inTransition = true;
+            transitionEnds = now + Math.max(1, ticks);
+            return shown;
+        }
+
+        public boolean transitioning(long now) {
+            return inTransition && now < transitionEnds;
+        }
+
+        /** The tick the transition's window ends; true once, when it does (its states and stats then apply). */
+        public boolean ends(long now) {
+            if (inTransition && now >= transitionEnds) {
+                inTransition = false;
+                return true;
+            }
+            return false;
+        }
+
+        public long transitionEnds() {
+            return inTransition ? transitionEnds : 0;
+        }
+
+        /**
+         * Out of a fight: back one phase for each start the share is 10% above ({@link BossRules#rearm}); true when it
+         * went back (a transition in progress ends with it).
+         */
+        public boolean rearm(double share) {
+            int r = BossRules.rearm(reached, share, starts);
+            if (r < reached) {
+                reached = r;
+                shown = Math.min(shown, r);
+                inTransition = false;
+                return true;
+            }
+            return false;
+        }
+
+        /** Loaded: the phase it had reached and showed. */
+        public void set(int phase) {
+            reached = Math.max(1, Math.min(starts.size(), phase));
+            shown = reached;
+            inTransition = false;
+        }
     }
 
     // ================================================================== intro (6.13)

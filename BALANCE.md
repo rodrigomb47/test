@@ -941,6 +941,34 @@ marked; the others are PROPOSED. No new config.
   soldiers within **32** blocks. `spawn_add` decoys: **1** health, **10 s**, a walk of **3-5** blocks, at most **3** a
   hero.
 
+## Hero boss controller, part one (config `boss`; `HeroBoss`, `HeroBossEvents`, `HeroTelegraphs`, `BossRules`, `Decals`) — A6a
+The same numbers against every attacker and receiver, player or NPC (HEROES_V2 6.15). Numbers of HEROES_V2 6.1-6.10 are
+marked; the others are PROPOSED.
+* The fight (6.1): an attacker is engaged **15 s** after its last blow, its target while it is one, within **32**
+  blocks; at most **32** attackers remembered; the fight ends **10 s** after the last engaged enemy.
+* Hurt cooldown (6.2): vanilla's **10**-tick window kept per attacking entity (an arrow's shooter included); every hit
+  with no attacker shares one; a hero's own damage keeps v1's save-and-restore.
+* Damage taken (6.9), added then halved by super armour: stagger **+25%**, recovery **+15%**, from behind (more than
+  **120** degrees) in a recovery **+15%** (`recovery` and `back` weak points double theirs), an `iron`/`gold` weak point
+  **+15%** from an iron/golden melee weapon, a transition's super armour **x0.5**.
+* Per-hit cap (6.2): **12%** of max health a hit from any attacking entity (`boss.max_hit_share` 5-25); damage with no
+  attacker uncapped, `/kill` and the void untouched.
+* Poise (6.9): landed x the weapon's factor (sword **1.0**, axe **1.6**, mace **2.0**, trident **1.2**, arrow **0.6**,
+  crossbow bolt **0.8**, anything else and a hero's move **1.0**) + the excess **1:1**; a hero's damage over time **0**;
+  a parry **25** (a heavy or heavier move blocked by a shield up **5-11** ticks); the bar drains **15** a second after
+  **3 s** without poise damage; `boss.poise` 50-200 (role default), **0** no bar.
+* Stagger (6.9): **2.5 s** held (no walking, blow or move), **+25%** taken; the bar empties and its maximum grows **20%**
+  for the rest of the fight; never in a transition, an ultimate's wind-up or a `super_armor` move (the bar fills to just
+  short of full instead).
+* Phases (6.7): a phase begins when the health share falls to its `at`; its transition (**0.8-2.0 s**, 1.0 by default)
+  waits until no move runs and the hero is not staggered or stunned; shockwave radius **4**, strength **2** (hazard-aware,
+  no damage); its stats held while the phase lasts, its state for the rest of the fight (**3600 s** or the re-arm).
+* Reset (6.10): **30 s** out of a fight and unhurt, it heals **1%** of its base health a second; a phase re-arms **10%**
+  above its start (checked every second out of a fight).
+* Decals (6.4): sent only to players within **32** blocks; light moves draw none; grow over the wind-up (a rain impact's
+  over its delay); at most **12** pieces a hero (a disc counts **2**); a decal whose clear never came is dropped **40**
+  ticks after its wind-up. Config `[boss] telegraphDecals` (**true**): false sends none.
+
 ## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no
 modifiers, 18 slots, 1 + Diligence).

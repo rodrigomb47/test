@@ -129,7 +129,7 @@ public final class HeroSenses {
             }
             s.enemies.add(new Sense.Near(hero.distanceTo(e), target == null ? 99 : e.distanceTo(target)));
         }
-        s.enemiesEngaged = s.enemiesNearSelf(12);
+        s.enemiesEngaged = hero.combat().boss().engaged(); // 6.1's engaged enemies, of every kind (A6a)
         for (LivingEntity a : HeroForms.alliesNear(hero, at, 16)) {
             if (a != hero) {
                 s.allies.add(new Sense.Ally(hero.distanceTo(a), a.getHealth() / Math.max(1F, a.getMaxHealth()),

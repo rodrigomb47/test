@@ -370,3 +370,44 @@ kits and the format leave open:
 - **`call_guards`**: up to `count` real soldiers of its faction within 32 blocks (never heroes), the free ones first,
   then the nearest, take its target; a blinded soldier answers only within its sight; nothing is spawned.
 - **Moves that run now**: every move of the eight slice fixtures (no slice hero has a `dive`, which waits for A12).
+
+## A6a decisions on the boss controller's first part (2026-11-13)
+
+A6a (the fight clock, the hurt cooldown per attacker, the cap, poise and the stagger, phases and decals: `HeroBoss`,
+`HeroBossEvents`, `HeroTelegraphs`, `combat/HeroHoldGoal`, `client/hero/HeroDecalRenderer`, `logic/hero/BossRules`,
+`Decals`; HEROES_V2.md 15.2 "A6a as built") decided what the design and the kits leave open:
+
+- **Two fights, one for the rules and one for the lines.** The boss rules (the move gap, poise, once-per-fight passives,
+  `enemies_engaged`) run on 6.1's fight of engaged enemies; the lines (`fight_start`, `victory`) and the name tag keep
+  v1's fight on the hero's target, so what a hero says did not change.
+- **An attempted blow engages.** An attacker is engaged from the moment it strikes at the hero, even when the barrier
+  stops the blow; an ally's stray blow is remembered but never counts, being no enemy.
+- **Vanilla compares, the ledger remembers.** The hurt cooldown per attacker sets the attacker's own record on the entity
+  and lets vanilla's own check decide (it compares the amount after shields and the incoming hooks, which the game alone
+  sees), then stores what vanilla made of it.
+- **Where the cap sits**: after armour, resistances and a counter's absorb (the damage event), before absorption hearts;
+  the windows multiply first (6.9's order: "the damage-taken factor, then the per-hit cap"). A hero's moves on another
+  hero are capped too; only damage with no attacker and `/kill`/the void are not.
+- **Poise from what struck**: a melee blow's weapon is the attacker's main hand, a projectile's is the projectile (a
+  thrown trident, an arrow, a crossbow bolt); a hero's move counts 1.0; a hero's damage over time fills no poise (as it
+  costs a barrier no hit). The weak points `iron` and `gold` come with this path (they need nothing but the attacker's
+  main hand); A6b keeps the event weak points.
+- **The parry belongs to the move, not to the hit**: any shield block of a heavy or heavier move that is running, a
+  player's or an NPC's shield up 5-11 ticks, lands 25 on the hero's next tick (a hit inside the blocker's hurt changes
+  no hero state).
+- **A transition waits for a free hero** (6.3 puts TRANSITION beside NEUTRAL): never inside a move, a stagger or a stun,
+  so a move's recovery (the punish window) is never cut short by super armour; a phase reached meanwhile plays its
+  transition as soon as the hero is free, and two thresholds crossed together play one. The look changes when it
+  begins; the stats, the state and the adds come when it ends.
+- **Phase stats add up, phase states replace.** Every phase reached adds its own stat bonuses (Kagenori's phase-2 armour
+  stays in phase 3); a hero is in one state at a time, so the deepest phase that names one enters it, and a phase that
+  names none keeps the one it has (Benika's rage from phase 2 on). A phase's state lasts the rest of the fight: an hour,
+  or until the re-arm takes it away.
+- **The shockwave pushes everyone near** but the hero, its own decoys, display copies, armour stands and players outside
+  the fight's modes (creative, spectator): allies too, with no damage, as 6.7 says "everyone".
+- **Healing waits for quiet**: 30 s out of a fight and 30 s since the last damage of any kind, so lava or a fall with no
+  enemy near does not start the healing at once.
+- **Decals are drawn by the client** instead of 6.4's block displays: the server sends the shapes, colour and wind-up,
+  so nothing is spawned in the world, nothing outlives a crash or is saved with a chunk, and no access transformer is
+  needed; each shape lies on the ground under its centre near the hero's or the target's height. A rain draws nothing in
+  its wind-up (its impacts are not known yet) and one disc per impact as each is called (F3's "one disc per impact").

@@ -93,7 +93,90 @@ public final class Decals {
             double off = (growFrom - 0.5) * length;
             return new double[]{l[0] * off, LIFT, l[1] * off};
         }
+
+        /** The point it grows from (x, z): fixed on the ground while the piece grows. */
+        public double[] growPoint() {
+            double[] l = axis();
+            double off = (growFrom - 0.5) * length;
+            return new double[]{x + l[0] * off, z + l[1] * off};
+        }
+
+        /** Its four corners at growth {@code g} (0: the grow point, 1: {@link #corners()}). */
+        public double[][] cornersAt(double g) {
+            double[][] c = corners();
+            double[] gp = growPoint();
+            double k = Math.max(0, Math.min(1, g));
+            for (double[] p : c) {
+                p[0] = gp[0] + (p[0] - gp[0]) * k;
+                p[1] = gp[1] + (p[1] - gp[1]) * k;
+            }
+            return c;
+        }
     }
+
+    // ------------------------------------------------------------------ what the client draws (task A6a)
+
+    /**
+     * The floats one piece takes in a packed decal: its centre (x, y, z) relative to the decal's origin (y: the ground
+     * the shape lies on, relative to the origin's), its yaw, width, length and grow point.
+     */
+    public static final int PIECE_FLOATS = 7;
+
+    /**
+     * Packs shapes for the client ({@code HeroDecalPayload}): {@link #PIECE_FLOATS} floats a piece, each shape's pieces
+     * at its own ground height {@code ys[i]} (relative to the origin; null: all at 0).
+     */
+    public static float[] pack(List<Shape> shapes, double[] ys) {
+        float[] out = new float[pieces(shapes) * PIECE_FLOATS];
+        int k = 0;
+        for (int i = 0; i < shapes.size(); i++) {
+            double y = ys == null || i >= ys.length ? 0 : ys[i];
+            for (Piece p : shapes.get(i).pieces()) {
+                out[k++] = (float) p.x();
+                out[k++] = (float) y;
+                out[k++] = (float) p.z();
+                out[k++] = (float) p.yaw();
+                out[k++] = (float) p.width();
+                out[k++] = (float) p.length();
+                out[k++] = (float) p.growFrom();
+            }
+        }
+        return out;
+    }
+
+    /**
+     * The four corners of packed piece {@code i} at growth {@code g}, written to {@code out} as x0, z0, ... x3, z3
+     * (relative to the origin), as {@link Piece#cornersAt}: the client draws a decal each frame with no allocation.
+     */
+    public static void corners(float[] packed, int i, double g, double[] out) {
+        int o = i * PIECE_FLOATS;
+        double x = packed[o], z = packed[o + 2], yaw = packed[o + 3];
+        double w = packed[o + 4], len = packed[o + 5], from = packed[o + 6];
+        double lx = Math.sin(yaw), lz = Math.cos(yaw);
+        double wx = lz, wz = -lx;
+        double off = (from - 0.5) * len;
+        double gx = x + lx * off, gz = z + lz * off;
+        double k = Math.max(0, Math.min(1, g));
+        double hw = w / 2, hl = len / 2;
+        for (int c = 0; c < 4; c++) {
+            // counter-clockwise from the near left, as Piece.corners
+            double sw = c == 0 || c == 3 ? -hw : hw, sl = c < 2 ? -hl : hl;
+            double cx = x + wx * sw + lx * sl, cz = z + wz * sw + lz * sl;
+            out[c * 2] = gx + (cx - gx) * k;
+            out[c * 2 + 1] = gz + (cz - gz) * k;
+        }
+    }
+
+    /**
+     * A decal's growth at {@code age} ticks (fractional: the client's partial tick) of a wind-up of {@code growTicks}:
+     * 0 when it appears, 1 as the wind-up ends (and after).
+     */
+    public static double growth(double age, int growTicks) {
+        return growTicks <= 0 ? 1 : Math.max(0, Math.min(1, age / growTicks));
+    }
+
+    /** A decal the clear never reached is dropped this long after its wind-up should have ended (client and server). */
+    public static final int LINGER_TICKS = 40;
 
     /** One drawn shape: its pieces, and whether it is a disc (2 pieces that can fall back to 1). */
     public record Shape(Decal kind, List<Piece> pieces) {

@@ -21,6 +21,8 @@ public final class FCNetwork {
                 (p, ctx) -> ctx.enqueueWork(() -> com.factionclash.client.ClientScreens.openInfo(p)));
         r.playToClient(MapPayload.TYPE, MapPayload.CODEC,
                 (p, ctx) -> ctx.enqueueWork(() -> com.factionclash.client.ClientScreens.openMap(p)));
+        r.playToClient(HeroDecalPayload.TYPE, HeroDecalPayload.CODEC,
+                (p, ctx) -> ctx.enqueueWork(() -> com.factionclash.client.hero.HeroDecalRenderer.receive(p)));
     }
 
     public static void sendInfo(ServerPlayer player, String title, int titleColor, List<String> lines, List<Integer> colors) {

@@ -193,6 +193,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     @Override
     protected void registerGoals() {
         super.registerGoals();
+        this.goalSelector.addGoal(0, new com.factionclash.combat.HeroHoldGoal(this));
         this.goalSelector.addGoal(2, new com.factionclash.combat.HeroAbilityGoal(this));
         this.goalSelector.addGoal(3, new com.factionclash.combat.HeroThrowGoal(this));
         // its own target choice (focus, protects, aggression radius; no attack tokens) replaces the soldiers' nearest
@@ -1165,14 +1166,56 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return lastTargetTick;
     }
 
+    /**
+     * A hit on the hero. Its barrier (6.6, task A5) first; then (task A6a, HEROES_V2 6.2 and 15.6) vanilla's half-second
+     * hurt cooldown is kept per attacker: before vanilla's own check the entity's {@code invulnerableTime} and
+     * {@code lastHurt} are set from this attacker's record ({@link com.factionclash.logic.hero.BossRules#invulnerableTime}),
+     * and after it the record keeps what vanilla made of the hit (a full hit starts a window, an excess raises its amount).
+     * So one attacker's spam still lands only its excess, while six soldiers' blows all land. Every hit with no attacker
+     * shares one record (lava and fire tick as in vanilla); a hero's own damage keeps v1's save-and-restore
+     * ({@link HeroDamage#hit}) and is not counted. The cap and poise of the hit are worked out in the damage event
+     * ({@link HeroBoss#incoming}) and its poise lands after the hurt ({@link HeroBoss#afterHurt}).
+     */
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (!level().isClientSide && !preview && isAlive() && combat().barrierBlocks(source)) {
-            return false; // its barrier (6.6, task A5) blocks all damage until it has taken its hits
+        boolean server = !level().isClientSide && !preview;
+        if (server && isAlive()) {
+            combat().boss().struckBy(source); // an attacker is engaged for 15 s (6.1), even when its blow is blocked
+            if (combat().barrierBlocks(source)) {
+                return false; // its barrier (6.6, task A5) blocks all damage until it has taken its hits
+            }
+        }
+        boolean perAttacker = server && isAlive() && !source.is(HeroDamage.HERO)
+                && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_COOLDOWN);
+        Integer key = null;
+        com.factionclash.logic.hero.BossRules.HurtRecord rec = null;
+        long now = 0;
+        boolean inWindow = false;
+        float lastBefore = 0;
+        if (perAttacker) {
+            now = level().getGameTime();
+            key = HeroBoss.hurtKey(source);
+            rec = combat().boss().hurtRecord(key, now);
+            invulnerableTime = com.factionclash.logic.hero.BossRules.invulnerableTime(rec, now);
+            lastHurt = (float) com.factionclash.logic.hero.BossRules.lastHurt(rec, now);
+            inWindow = invulnerableTime > 10;
+            lastBefore = lastHurt;
         }
         float before = getHealth();
         boolean r = super.hurt(source, amount);
+        if (perAttacker) {
+            if (inWindow) {
+                if (lastHurt > lastBefore && rec != null) {
+                    combat().boss().hurtLanded(key, new com.factionclash.logic.hero.BossRules.HurtRecord(rec.tick(), lastHurt));
+                }
+            } else if (invulnerableTime > 0) {
+                combat().boss().hurtLanded(key, new com.factionclash.logic.hero.BossRules.HurtRecord(now, lastHurt));
+            }
+        }
         float lost = before - getHealth();
+        if (server) {
+            combat().boss().afterHurt(lost);
+        }
         if (r && lost > 0 && !level().isClientSide && !preview) {
             gainEnergy(HeroRules.energyFromDamage(lost));
             if (isAlive()) {
