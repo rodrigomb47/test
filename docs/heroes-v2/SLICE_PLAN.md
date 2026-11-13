@@ -136,7 +136,7 @@ Reactions: blocking -> `scratch_dash` round the shield (50%); drawing a bow -> `
 (70%). Enrage after 180 s (240 as leader). Intro: "Huh? You're in my harbour. ...Fine. I'll show you out myself."
 
 **When a fight is lost.** She escapes (`when_losing: escape`, authored: her traits alone, 65 + 65 - 45 = 85, would
-give a tsundere's last stand, but a cat bolts). She leaves it late, under 8% of her health (`retreat_below` 22.5),
+give a tsundere's last stand, but a cat bolts; confirmed by the owner on 2026-11-13). She leaves it late, under 8% of her health (`retreat_below` 22.5),
 and goes over walls and roofs: two air jumps, wall kicks, no fall damage. Not from her own harbour: at her home base
 she fights to the death (`stands_for: home`, the default at loyalty 70; she would never admit it is for the
 workers). Cornered, she fights back and runs again as soon as a way opens; caught again within 10 minutes of an
