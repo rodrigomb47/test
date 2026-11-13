@@ -34,6 +34,21 @@ public final class Sense {
         public boolean burning, freezing, slowed, stunned, hasDot;
         public final Map<String, Integer> marks = new HashMap<>();
 
+        /** Back to a present, visible target with nothing known about it (a sense is reused from check to check). */
+        public TargetState clear() {
+            present = true;
+            distance = 0;
+            visible = true;
+            healthShare = 1;
+            maxHealth = 20;
+            kinds.clear();
+            blocking = drawingBow = eating = airborne = flying = inWater = behind = unreachable = false;
+            heightAbove = 0;
+            burning = freezing = slowed = stunned = hasDot = false;
+            marks.clear();
+            return this;
+        }
+
         public TargetState distance(double d) {
             distance = d;
             return this;
@@ -133,6 +148,29 @@ public final class Sense {
     public boolean dashPathHazard;
     /** Cannot start moves: stunned, silenced (6.6), eating, or escaping (a cornered hero asks again). */
     public boolean stunned, silenced, escaping;
+
+    /** Back to the defaults (no target, nothing near): a hero reuses one sense for every check, allocating nothing. */
+    public Sense clear() {
+        target.clear();
+        target.present = false;
+        healthShare = 1;
+        phase = 1;
+        enraged = false;
+        enemiesEngaged = 0;
+        enemies.clear();
+        allies.clear();
+        addsAlive = 0;
+        inHomeBase = night = raining = lowCeiling = inWater = false;
+        state = null;
+        empowered = shielded = airborne = flying = climbing = false;
+        staminaShare = 1;
+        marks.clear();
+        ticksWithoutEnemy = 0;
+        energy = 0;
+        dashPathHazard = false;
+        stunned = silenced = escaping = false;
+        return this;
+    }
 
     public Sense target(TargetState t) {
         target = t;

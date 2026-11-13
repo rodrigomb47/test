@@ -50,6 +50,9 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_DEFAULT_LINES;
     public static final ModConfigSpec.BooleanValue HERO_SPEECH_BUBBLES;
     public static final ModConfigSpec.BooleanValue HERO_SHOW_ENERGY;
+    public static final ModConfigSpec.IntValue HERO_POWER_SCALE;
+    public static final ModConfigSpec.IntValue HERO_MAX_HIT;
+    public static final ModConfigSpec.IntValue HERO_MAX_DOT_PER_SECOND;
     public static final ModConfigSpec.IntValue BOSS_HEALTH_SCALE;
     public static final ModConfigSpec.IntValue HERO_POWER_PERCENT;
 
@@ -177,6 +180,13 @@ public final class FCConfig {
                 .define("speechBubbles", true);
         HERO_SHOW_ENERGY = b.comment("Show a fighting hero's energy on its name tag: [Fighting 80%].")
                 .define("showEnergy", true);
+        HERO_POWER_SCALE = b.comment("Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent",
+                        "(PROPOSED: 100). The same against every target, player or NPC.")
+                .defineInRange("powerScale", 100, 25, 200);
+        HERO_MAX_HIT = b.comment("One hit of a hero's move deals at most this much damage, whoever it lands on (PROPOSED: 40).")
+                .defineInRange("maxHit", 40, 10, 100);
+        HERO_MAX_DOT_PER_SECOND = b.comment("One hero's damage over time on one target deals at most this much per second (PROPOSED: 6).")
+                .defineInRange("maxDotPerSecond", 6, 1, 20);
         b.pop();
 
         b.comment("Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)").push("boss");

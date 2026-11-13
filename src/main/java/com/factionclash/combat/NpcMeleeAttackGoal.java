@@ -72,7 +72,7 @@ public class NpcMeleeAttackGoal extends Goal {
     }
 
     private boolean blocked() {
-        return ranged() || npc.job() != null && npc.job().ignoresCombat()
+        return ranged() || !npc.fightsInMelee() || npc.job() != null && npc.job().ignoresCombat()
                 || npc.getRole().isCivilian() && npc.getHealth() < npc.getMaxHealth() * 0.5F;
     }
 

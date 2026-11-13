@@ -192,6 +192,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return lastAttackTime;
     }
 
+    /** It just attacked (a hero's throw or move; blows and arrows mark it themselves): it is trading blows. */
+    public void markAttacked() {
+        lastAttackTime = tickCount;
+    }
+
     /** Opens a fence gate on a fighting NPC's path and closes it behind it. */
     private com.factionclash.combat.OpenGateGoal gateGoal;
     /**
@@ -344,6 +349,18 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return false;
     }
 
+    /**
+     * Whether its basic attack is a melee blow ({@link com.factionclash.combat.NpcMeleeAttackGoal}); a hero that throws
+     * (HERO_FORMAT.md 9, {@code thrown}) fights with its own ranged goal instead. Every NPC does.
+     */
+    public boolean fightsInMelee() {
+        return true;
+    }
+
+    /** An arrow it shot, just before it flies (a hero tags its own, so the hit counts as its basic hit). */
+    protected void onArrowShot(AbstractArrow arrow) {
+    }
+
     /** Whether it goes to the storehouse for its role's tool when it has none in hand (a hero with its kit weapon does not). */
     public boolean needsRoleTool() {
         return true;
@@ -391,6 +408,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             arrow.shoot(dx, dy + d * 0.2F, dz, 1.6F, 4.0F);
             playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
         }
+        onArrowShot(arrow);
         level().addFreshEntity(arrow);
         lastAttackTime = tickCount;
         wearWeapon(1);

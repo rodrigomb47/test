@@ -13,9 +13,11 @@ import com.factionclash.logic.hero.HeroDef.Slot;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SplittableRandom;
+import java.util.function.Predicate;
 
 /**
  * The boss fight loop's choice of move (HEROES_V2 6.3, 6.8; 15.6 "MoveSelector"): one loop in every fight, whoever
@@ -74,6 +76,23 @@ public final class MoveSelector {
     private static final class Charges {
         int left;
         long nextAt;
+        /** The game time of its last use (the {@code cooldown_cut} limit counts from it), or Long.MIN_VALUE / 4. */
+        long lastUseAt = Long.MIN_VALUE / 4;
+    }
+
+    /** One move's charges as saved with the hero: charges left, when the next comes back, its last use (game times). */
+    public record ChargeState(int left, long nextAt, long lastUseAt) {
+    }
+
+    /**
+     * What a hero saves of its selector (HEROES_V2 3.3: "cooldown ready-at game times, charges"), so a restart never
+     * resets or skips a cooldown (v1 15): every move's charges and the last ultimate. The fight's own clock (the gap,
+     * the string, the reactions) is not saved: a reload ends the fight.
+     */
+    public record Snapshot(Map<String, ChargeState> charges, long lastUltimateAt) {
+        public Snapshot {
+            charges = Map.copyOf(charges);
+        }
     }
 
     private static final class ReactionState {
@@ -94,6 +113,8 @@ public final class MoveSelector {
     private final Map<String, Charges> charges = new HashMap<>();
     private final ArrayDeque<String> recent = new ArrayDeque<>();
     private final List<ReactionState> reactions = new ArrayList<>();
+    /** The moves the game can run now; any other is never picked (task A3: the engine runs some forms and effects). */
+    private Predicate<Move> runnable = m -> true;
     private ReactionState pending;
     private long gapEndsAt = Long.MAX_VALUE;
     private long lastStartAt = Long.MIN_VALUE / 4;
@@ -117,6 +138,15 @@ public final class MoveSelector {
         for (Reaction r : kit.boss().reactions()) {
             reactions.add(new ReactionState(r));
         }
+    }
+
+    /**
+     * Only moves this accepts are ever picked, answered or followed (the game's engine runs them in full; HEROES_V2
+     * 15.2 A3). Returns this selector.
+     */
+    public MoveSelector runnable(Predicate<Move> p) {
+        runnable = p == null ? m -> true : p;
+        return this;
     }
 
     // ------------------------------------------------------------------ the fight's clock
@@ -303,6 +333,7 @@ public final class MoveSelector {
                 c.nextAt = now + cooldownTicks(m);
             }
             c.left--;
+            c.lastUseAt = now;
         }
         lastStartAt = now;
         firstPick = false;
@@ -355,6 +386,65 @@ public final class MoveSelector {
         return refill(m, now).left;
     }
 
+    /**
+     * {@code cooldown_cut} (v1 13.5): every running recharge of the hero's moves comes {@code seconds} sooner, but never
+     * sooner than half of that move's full cooldown after its last use ({@link HeroRules#cutCooldown}), so the floors
+     * still hold. The ultimates have no cooldown to cut.
+     */
+    public void cutCooldowns(long now, double seconds) {
+        long cut = HeroRules.ticks(seconds);
+        for (Move m : kit.allMoves()) {
+            if (isUltimate(m)) {
+                continue;
+            }
+            Charges c = refill(m, now);
+            if (c.left < maxCharges(m)) {
+                c.nextAt = HeroRules.cutCooldown(c.nextAt, c.lastUseAt, cooldownTicks(m), cut);
+                refill(m, now);
+            }
+        }
+    }
+
+    /** The game time {@code m}'s next charge comes back (now or earlier when it has one ready). */
+    public long readyAt(Move m, long now) {
+        if (isUltimate(m)) {
+            double gap = m.ability().numbers().minGap() > 0 ? m.ability().numbers().minGap() : DEFAULT_ULTIMATE_GAP;
+            return lastUltimateAt <= 0 ? now : Math.max(now, lastUltimateAt + HeroRules.ticks(gap));
+        }
+        Charges c = refill(m, now);
+        return c.left > 0 ? now : c.nextAt;
+    }
+
+    /** The state to save with the hero (every move whose charges were ever spent, and the last ultimate). */
+    public Snapshot snapshot() {
+        Map<String, ChargeState> m = new LinkedHashMap<>();
+        charges.forEach((id, c) -> m.put(id, new ChargeState(c.left, c.nextAt, c.lastUseAt)));
+        return new Snapshot(m, lastUltimateAt);
+    }
+
+    /**
+     * Puts saved charges back (loading): moves the kit no longer has are dropped, charges are held to the move's
+     * current count, and a recharge saved longer than the move's current cooldown comes no later than that.
+     */
+    public void restore(Snapshot s, long now) {
+        if (s == null) {
+            return;
+        }
+        for (Map.Entry<String, ChargeState> e : s.charges().entrySet()) {
+            Move m = kit.move(e.getKey());
+            if (m == null || isUltimate(m)) {
+                continue;
+            }
+            Charges c = new Charges();
+            int max = maxCharges(m);
+            c.left = Math.max(0, Math.min(max, e.getValue().left()));
+            c.nextAt = Math.min(e.getValue().nextAt(), now + Math.max(1, cooldownTicks(m)));
+            c.lastUseAt = e.getValue().lastUseAt();
+            charges.put(m.id(), c);
+        }
+        lastUltimateAt = Math.max(0, s.lastUltimateAt());
+    }
+
     private Charges refill(Move m, long now) {
         Charges c = charges.computeIfAbsent(m.id(), k -> {
             Charges n = new Charges();
@@ -402,7 +492,7 @@ public final class MoveSelector {
     }
 
     private boolean eligible(Move m, long now, Sense s, boolean needCharge) {
-        if (!m.phases().contains(s.phase)) {
+        if (!runnable.test(m) || !m.phases().contains(s.phase)) {
             return false;
         }
         if (needCharge && (isUltimate(m) ? !ultimateReady(m, now, s.energy) : refill(m, now).left <= 0)) {

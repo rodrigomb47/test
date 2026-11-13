@@ -17,6 +17,8 @@ public final class ClientSetup {
     public static void onRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.FACTION_NPC.get(), FactionNpcRenderer::new);
         event.registerEntityRenderer(ModEntities.HERO.get(), com.factionclash.client.hero.HeroRenderer::new);
+        event.registerEntityRenderer(ModEntities.HERO_PROJECTILE.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        event.registerEntityRenderer(ModEntities.HERO_ZONE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
     }
 
     /** Hero visual files a resource pack adds (preview fixtures for screenshots, HEROES_V2 15.2 A2). */

@@ -736,17 +736,17 @@ a faction with `/fc admin hero give`.
 * Role: a hero counts as one soldier of the role its basic attack and weapon fit (bow archer, crossbow crossbowman;
   melee with an axe or a mace, or an axe, hammer or scythe style, axe fighter; every other melee, trident and thrown
   hero swordsman) for recruitment needs and the garrison by heads, but the raid party's soldier sort never picks it.
-  It is never retrained. Until the kit engine (A3) it fights with that role's basic attacks.
+  It is never retrained. Between its moves (A3, below) it fights with that role's basic attacks; a thrown hero
+  throws instead (`HeroThrowGoal`).
 * Kit: the `gear` of its file (names and enchantments included), bound to the hero: never dropped, never deposited,
   gone when better storehouse gear of the same kind replaces it, given again on its return. A **fists**-style hero
   holds no weapon: the stone sword the checker adds to a melee kit with none is left out, and it never fetches or
-  takes a weapon (thrown heroes fight bare-handed too until A3). A hero takes a storehouse shield only when its kit
+  takes a weapon (a thrown hero holds nothing either and throws its projectile, A3). A hero takes a storehouse shield only when its kit
   has one; a hero holding a kit weapon of another kind than its role's tool (a mace) keeps it. Bow and crossbow heroes
   carry the one never-used-up arrow. A dormant hero gets its role's basic weapon as a plain soldier.
 * Name tag: `★ Name · title` in the hero's colour (its file's `color`, else its faction's), `[Fighting 80%]` while it
-  has a target (its energy; `heroes.showEnergy`), `(dormant)`. Energy (v1 14, minimal until A3): a landed melee
-  basic hit **5**, a kill **10**, **1** per 2 health lost (at most 8 a hit), each x its ultimate's `charge_rate`;
-  0-100, saved, 0 after a revival.
+  has a target (its energy; `heroes.showEnergy`), `(dormant)`. Energy: see "Hero ability core" below; 0-100, saved,
+  0 after a revival.
 * Lines (`HeroSpeech`, v1 23): one line per hero per `heroes.dialogueCooldownSeconds` **20** (5-300); `summoned`,
   `fallen`, `revived` and `ultimate` always; greetings **5 s** apart, `idle` at most every **15 min**. Chances:
   `fight_start` **50%**, `kill` **30%**, `skill` 25%, others always. Heard by: nearby players within
@@ -787,6 +787,59 @@ a faction with `/fc admin hero give`.
 * Procedural touches (client): head look pitch **+-60**, yaw **+-80** degrees; hit flinch **7** degrees on the chest;
   ears back **25** and out **15** while hurt or angry; chain sway at most **25** degrees (`Sway`: 0.8 + 3.5 x stiffness
   Hz, damping ratio 0.8 x damping).
+
+## Hero ability core (config `heroes`; `HeroCombat`, `HeroEffects`, `HeroDamage`, `HeroStatus`, `MovePlan`, `UseLedger`, `StatusBook`, `FormGeometry`, `EffectRouting`) — A3
+The same numbers against every target, player or NPC (HEROES_V2 6.15). Numbers marked v1 are HERO_FORMAT.md's; the
+others are PROPOSED.
+* Config: `heroes.powerScale` **100%** (25-200) multiplies every amount of every move (damage, damage over time,
+  heals, shields) and the slot caps with them; `heroes.maxHit` **40** (10-100): one hit of a hero's move or throw deals
+  at most this, whoever it lands on (v1 6.3; the 12% cap on a hero as the target is A6's); `heroes.maxDotPerSecond`
+  **6** (1-20): one hero's damage over time on one target per second.
+* Damage (v1 6.3): `raw` = the Amount at hit time (the hero's attack power, its health and armour, the target's health,
+  missing health and marks; `target_max_health_percent` at most **2%** on a boss or hero) x ability power at its level
+  (v1 5.3) x `powerScale`; then x the four factors clamped to **0-2** (the attacker's `damage_dealt`, the element, a
+  hero target's resistance, the target's `damage_taken`), at most `maxHit`, with the element's damage type
+  `factionclash:hero_<element>` (no difficulty scaling; fire is fire for Fire Protection and fire-immune mobs, arcane
+  ignores armour, a DoT neither knocks back nor is blocked by a shield). Elements (v1 6.1): venom does nothing to
+  undead, frost nothing to freeze-immune mobs, radiant **x1.3** on undead. Vanilla damage on a hero target is turned by
+  its resistance to the element it maps to (fire, freezing, lightning, wither, magic; any blow from an entity is
+  physical). A hero hit clears and then restores the target's hurt cooldown, so it never swallows a sword blow.
+* Slot caps per use and receiver (v1 16.1, HEROES_V2 6.14 rule 3): what one use (all its hits, pulses and projectiles)
+  lands on one receiver is held to the slot's cap x ability power x `powerScale` / 100 x **1.5** (gear and buffs, v1
+  6.2) x **1.5** for a zone that pulses more than once or **1.25** for a combo (6.5); damage as `raw`, damage over time
+  as one application's total, heals and shields as points restored.
+* Energy (v1 14), each gain x the ultimate's `charge_rate` x (1 + the `energy_gain` stat): a landed basic hit **5**
+  (melee blow, thrown projectile or the hero's own arrow alike), a skill's use its `energy_gain` (**10** by default),
+  **1** per 2 health lost (at most **8** a hit), a kill **10**, healing and shielding **1** per 2 points restored (at most
+  **8** a use), an `energy` effect its amount. The ultimate needs **100** and spends all of it.
+* Moves: the selector asks every **5** ticks while the hero fights and runs no move (the gap, charges, followups and
+  reactions are F3's numbers, `MoveSelector`); a move runs its authored wind-up, active part and recovery (A5 brings the
+  timing files and speed); a move whose target dies or moves more than **2** blocks past its range during the wind-up
+  is called off with its charge kept; a stopped wind-up gives half the cooldown back (v1 10.3); no move lasts more than
+  **30 s**. Cooldowns and charges are saved as game times; a saved recharge never waits longer than the move's
+  cooldown now. `cooldown_cut` brings every running recharge sooner, never sooner than **half** the full cooldown
+  after the last use. A smoke ring marks where a nova, zone or leap will land every **5** ticks of its wind-up.
+* Forms (v1 10.1): melee and each combo strike reach **3.5** blocks to the target's box, plus the strike's splash
+  radius; at most **16** receivers an area, nearest first; a volley's projectiles **10** degrees apart; a chain jumps
+  every **3** ticks (0.15 s) to the nearest new enemy within its radius; a line stops at the first solid block; a dash
+  pushes for **10** ticks (0.5 s), hits enemies within **1.5** blocks of its path once each, and stops at a wall or a
+  drop; a leap is a physical arc to **1** block short of its target with **1** block of clearance over the rise, at most
+  its range + 1, and hits on landing (or after **40** ticks in the air); no fall damage from the hero's own leap or hop. A zone warns with a ring for its delay (format 2 folds the
+  delay into the wind-up) and pulses `1 + duration / interval` times; at most **2** zones a hero (a third ends the
+  oldest). Projectiles fly **1.2** blocks a tick (arrow looks **1.6**, with gravity **0.03** and an archer's lead), are
+  gone after **100** ticks or their range + 4 blocks, change no block and drop nothing.
+* Effects (v1 13): knock-back of vanilla strength **0.4** (a plain blow's) per point of strength (knock-back resistance applies),
+  a lift of at most **1** block, cut to a third when it would push the receiver into lava or over a drop of more than
+  3 blocks; pull **2** blocks per point of strength, stopping **1.5** blocks from the hero, with a **0.3** hop; a shield
+  holds at most **60%** of the receiver's maximum health, a stronger one replaces a weaker one, and it runs out on time;
+  a `stat` or `effect` with no seconds lasts **8 s**; a stat's sum is held to its v1 13.3 range (attack, armour, speed
+  and attack speed as a share of the total, knock-back resistance flat); damage over time once a second (**20** ticks)
+  for its seconds, summed per hero and target; a freeze holds the receiver fully frozen; at most **32** statuses on one
+  entity (the oldest goes); `cleanse` removes harmful potion effects, heroes' damage over time, marks an enemy put on
+  it, harmful stat changes, fire and freezing.
+* Thrown basic attack (v1 9): one throw every `interval` seconds within **14** blocks and in sight; backs away like an
+  archer when an enemy comes closer than half its `keep_distance`; the throw deals its `amount` plus the hero's attack
+  bonuses of its element.
 
 ## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no

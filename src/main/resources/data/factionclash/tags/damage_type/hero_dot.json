@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "factionclash:hero_physical_dot",
+    "factionclash:hero_fire_dot",
+    "factionclash:hero_frost_dot",
+    "factionclash:hero_shock_dot",
+    "factionclash:hero_venom_dot",
+    "factionclash:hero_blight_dot",
+    "factionclash:hero_arcane_dot",
+    "factionclash:hero_radiant_dot"
+  ]
+}

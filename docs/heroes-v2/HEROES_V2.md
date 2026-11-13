@@ -2719,7 +2719,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`). Reviewed 2026-11-12: a dead copy no longer revives the record, `/fc hero info` shows where a hero is only to its faction and operators, `give` from another dimension fixed; uniqueness now also tested on the chunk-load path ("Review of A0-A2" below) |
 | A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file. Done 2026-11-13: `HeroRegistry` reads the format-2 definitions (`hero/HeroDefinitions`, a reload listener on `data/factionclash/heroes`; built-in heroes only; operators' overrides merged by `logic/hero/HeroOverride` with each problem naming its own file and line; `logic/hero/HeroAssembly`), a broken or removed definition leaves its hero dormant (neutral model, plain soldier, `(dormant)`); the entity takes its definition (`logic/hero/HeroLoadout`: stats with growth, boss health at all times and the same against anyone, role, kit with no weapon for a fists hero), the name tag with `[Fighting N%]`, lines with v1's rate limit, audiences and speech bubbles (`logic/hero/HeroSpeech`), the revival block and the `revival_rite` talent on the 10-minute rule with the 30 s floor, `/fc hero check` and `/fc hero reload`, the test rig's minimal format-2 definition, the war council counting heroes by war power, `sim.py`'s hero and council lines; 829 unit tests (36 new) and 159 GameTests (10 new); the moves themselves run from A3/A5 ("A1b as built" below); reviewed 2026-11-13 ("Review of F1-F5 and A1b" below) |
 | A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash. Done 2026-11-12: `client/hero/` (`HeroModel`, `HeroRenderer`, `HeroFace`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals`), `hero/HeroAnimator` (the three controllers), `hero/HeroLook`, `hero/HeroTimingFiles`, pure `logic/hero/` (`FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); 230 unit tests (39 new) and 149 GameTests (4 new); in the Xvfb viewer the test rig idles, walks, swings (`hit` logged at animation tick 10.4-10.7 for the file's 10), blinks, shows all 12 moods, talks, tints its sash per faction, holds a pickaxe and mines, shows its phase-2 halo and glowing eyes, and drops its `fine_` bones beyond 20 blocks; the six style fixtures stand beside it (`docs/screenshots/hero_a2_*`). Reviewed 2026-11-12: the per-frame allocations of the render path removed, the walk/run flicker at an NPC's travel pace fixed ("Review of A0-A2" below); checkpoint 1 stands |
-| A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core |
+| A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core. Done 2026-11-13: a hero picks its moves with F3's selector after the fight's opening gap and runs each select -> wind-up -> hit ticks -> recovery (`hero/HeroCombat`, `combat/HeroAbilityGoal`, `logic/hero/MovePlan`, where A5 plugs in the timing files, `DATA_ACTION` and interrupts); v1's fourteen forms and the combo, with projectile and zone entities and chains; the effects of phase 4 (damage, dot, heal, shield, effect, stat, knockback, pull, ignite, freeze, cleanse, energy, cooldown_cut, move_self, mark, clear_marks) with Amounts at hit time and `Conditions` per receiver; element damage types and resistances; the slot caps per use and receiver against any target (`logic/hero/UseLedger`); marks, stacks and statuses on any entity, saved with it (`hero/HeroStatus`, `logic/hero/StatusBook`); energy built (ranged hits too) and spent by the ultimate; cooldowns and energy kept across a save; the thrown basic attack's own goal (`combat/HeroThrowGoal`); a move with a later task's form or effect is not picked yet; `heroes.powerScale`, `maxHit`, `maxDotPerSecond`; 877 unit tests (41 new) and 183 GameTests (23 new), every effect that can land on a player giving an NPC soldier and a mock player the same numbers ("A3 as built" below) |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5 |
 | A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5 |
 | A6 | Boss controller, one mode (section 6): the permanent boss health, the engaged-enemy set and the fight clock, the per-hit cap for every attacker, poise and stagger, phases and transitions, reactions to players and NPCs alike, weak points, enrage and reset, arena checks, telegraph decals (access transformer), the intro title and boss bar for nearby players with the `fled` and `fallen` end states, death without a yield and the rewards to the winning side; no attack tokens, no player-only rule (15.6); operator test hooks `/fc admin hero health/poise/escape/target-state` | A5 | L | the boss and equal-treatment GameTests of 14.5; split into A6a (health, fight clock, cap, poise, phases, decals) and A6b (reactions, weak points, enrage, arena, intro, bar, the end of a fight and rewards, hooks) if it grows |
@@ -3412,6 +3412,109 @@ against HERO_FORMAT, sections 3.5, 6 (as rewritten for equal treatment, no attac
   within 6 but taunts within 5 (one move has one radius; the fixture uses 5 for both, C4); the great brew's "one of
   three effects at random" is three 33% chances in the fixture (the format has no pick-one list, C3). 836 unit tests,
   160 GameTests.
+
+A3 as built (2026-11-13), where it goes beyond or differs from 3.3, 3.5, 6.3, 6.14-6.15, HERO_FORMAT 9-16 and 32
+phase 4, and the row above:
+- **The loop.** `hero/HeroCombat` is a hero's fight runtime (made on first use): its `MoveSelector` (built from the
+  definition, seeded from the UUID, rebuilt after a reload with its charges carried over), energy, ability power at
+  its level (`HeroRules.abilityPower`) and the running move. `combat/HeroAbilityGoal` (priority 2, MOVE and LOOK) asks
+  the selector every 5 ticks while the hero fights and runs no move, against its current target whoever that is,
+  with a `Sense` that `HeroSenses` fills (one reused sense; `Sense.clear` is new); the move then advances in the
+  hero's own tick, so its timing never depends on when the goal selector runs. Between moves the goal holds nothing
+  and the soldiers' basic attack goals space and strike. The fight's opening gap starts when `inFight` first turns
+  on.
+- **The timing seam for A5.** `logic/hero/MovePlan.Plan` is a move's schedule in ticks from its start: the wind-up
+  (the first hit), every hit tick, the end of the active part and of the recovery. Hits by form: melee, bolt, nova,
+  cone and line with `hits` every `hit_interval`; a combo's strikes spread over the active part, or each after the
+  previous strike's `active` plus its own `windup`; a chain one jump every 3 ticks; every other form one release at
+  the end of the wind-up (the projectile, the zone or the motion resolves later). `HeroCombat.planFor` hands in the
+  move's authored frames today; A5 hands in the timing file's frames at the hero's speed there, sets `DATA_ACTION` in
+  `Run.begin`, and sends its interrupts through `stopRun` (a wind-up stopped gives half the cooldown back, v1 10.3).
+  `STATE_WINDUP` is on during the wind-up; a smoke ring every 5 ticks marks where a nova, zone or leap will land (the
+  decals are A6's). A target that dies, goes or moves more than 2 blocks past the move's range during the wind-up
+  calls it off with the charge kept. After a use that landed, a followup replaces the recovery (6.3).
+- **Forms** (`hero/HeroForms`, `logic/hero/FormGeometry`): enemies are exactly whom the hero's side fights (hostile
+  factions' NPCs and heroes with pacts respected, enemy players, hostile monsters, its own target), allies its side
+  with the hero itself; animals, villagers, golems, armour stands and display copies are never touched; an area
+  takes at most 16 receivers, nearest first. Melee and combo strikes reach 3.5 blocks to the target's box plus the
+  strike's splash; a bolt and a chain's first link need sight; a cone reads its angle, a line stops at the first solid
+  block, a volley fans 10 degrees apart; a leap is a physical arc (`FormGeometry.leap` on F5's `LeapSolver`) that
+  lands a block short of its target and strikes on landing or after 40 ticks; a dash pushes 0.5 s along the ground,
+  hits each enemy within 1.5 blocks of its path once and stops at a wall or a drop; the hero takes no fall damage
+  from its own leap or hop. `hero/entity/HeroProjectile` (a `ThrowableItemProjectile` showing the look's vanilla item;
+  custom models are A9's) passes through allies, changes no block, drops nothing and is not saved; a volley's
+  projectiles share one use. `hero/entity/HeroZone` (invisible, server particles, not saved) pulses
+  `1 + duration / interval` times; at most two zones a hero.
+- **Effects and amounts** (`hero/HeroEffects`, `logic/hero/EffectRouting`): each effect goes where its `to` says (the
+  form's receivers, the hero once per use, the allies inside a nova, zone or leap, the allies around the hero, the most
+  hurt ally), only to receivers its recipient class allows, rolled by its `chance` and checked by its `if` for each
+  receiver (`Conditions`, the receiver as the sense's target; `target_behind` reads both ways, kit-gaps "A3
+  decisions"). An Amount reads the hero's attack power, health and armour and the receiver's health, missing health
+  and marks at hit time, x ability power x `heroes.powerScale`. `logic/hero/UseLedger` holds what one use lands on
+  one receiver (all its hits, pulses and projectiles) to the slot cap x ability power x power scale x 1.5 for gear x
+  1.5 for a pulsing zone or 1.25 for a combo (v1 16.1, 6.5, 6.14 rule 3), whoever the receiver is.
+- **Damage** (`hero/HeroDamage`): v1 6.3's factors (the attacker's `damage_dealt`, the element against what the target
+  is, a hero target's resistance, the target's `damage_taken`, clamped 0-2), at most `heroes.maxHit`, with
+  `factionclash:hero_<element>` and `_dot` damage types (`data/factionclash/damage_type`, scaling `never`; tagged
+  `is_fire`, `bypasses_armor` for arcane, `no_knockback` and `bypasses_shield` for DoTs, `witch_resistant_to`,
+  `wither_immune_to`; death messages in `en_us.json`). A hero hit clears the target's hurt cooldown and puts it back
+  after, so hero hits are never swallowed and never swallow a soldier's sword. `hero/HeroCombatEvents` gives vanilla
+  damage the same stats (`damage_dealt`, `damage_taken`, a hero target's resistance to the element vanilla's damage
+  maps to) and `healing_received` on every heal. The per-hit boss cap on a hero target is A6a's.
+- **Statuses** (`hero/HeroStatus` over `logic/hero/StatusBook`): marks with stacks (shared ids, one "full" report),
+  damage over time once a second summed per hero and target and held to `heroes.maxDotPerSecond`, stat modifiers
+  (attribute modifiers, one per stat, the sum held to v1 13.3's range; the others read by the rules), the shield
+  (absorption with its room on `MAX_ABSORPTION`, at most 60% of max health, replaced by a stronger one, gone on
+  time), the freeze hold and cleanse. A data attachment (`factionclash:hero_status`) on any living entity, saved with
+  expiries as game times, stats put back on load; at most 32 statuses an entity; every carrier is ticked once a
+  server tick with nothing allocated while nothing is due.
+- **Energy** (v1 14): 5 for a landed basic hit (a melee blow, a thrown projectile, or the hero's own arrow, tagged
+  when shot), a skill's `energy_gain`, damage taken and kills (A1b), healing and shielding (the hero counts as an
+  ally), the `energy` effect; each x the ultimate's `charge_rate` x the `energy_gain` stat. The ultimate needs 100
+  and spends all of it. A basic hit also applies the basic attack's `on_hit` and its `every_nth_hit` finisher.
+- **Thrown heroes** (`combat/HeroThrowGoal`, priority 3): a `thrown` hero no longer fights in melee
+  (`FactionNpc.fightsInMelee`); it throws its projectile look every `interval` within 14 blocks and in sight, backs
+  away like an archer inside half its `keep_distance` and closes in through `Pursuit.approachRanged`.
+- **Saving.** The hero's `FcHero` tag keeps every move's charges and recharge as game times, the last ultimate and the
+  basic-hit count beside the energy; a recharge saved longer than the move's cooldown now comes no later than that.
+  The fight's own clock, the running move, projectiles and zones are not saved (a reload ends the fight).
+- **Equal treatment.** Nothing in the ability core reads whether a target is a player beyond vanilla's own creative
+  and spectator rule (`CombatRules.isEnemyPlayer`, 6.14 rule 6); the GameTests' mock player is a NeoForge
+  `FakePlayer` in survival, a member of an enemy or allied faction (`makeMockServerPlayerInLevel` gives a creative
+  player, which is never an enemy). The GameTest server is a dedicated server, so the common side loads no client
+  class.
+- **Elsewhere**: `MoveSelector.runnable` (only moves the engine runs in full are picked, answered or followed;
+  `EffectRouting.runs`), `snapshot`/`restore`, `cutCooldowns` and `readyAt`; `FactionNpc.markAttacked` and
+  `onArrowShot`; `NpcMeleeAttackGoal` stands aside for a thrown hero; `ModEntities` `hero_projectile` and `hero_zone`
+  with vanilla renderers; `HeroEntity.speak` for a move's own line; `build.gradle` passes the slice fixtures' folder
+  to the GameTest run (`-Dfactionclash.sliceFixtures`). New config `[heroes]` `powerScale`, `maxHit`,
+  `maxDotPerSecond` (`docs/factionclash-common.toml` regenerated from a fresh server).
+- **Which slice moves run now**: every move of the eight fixtures whose form and effects are all A3's (Natsuho: claw
+  string, pounce, hiss, scratch dash); the counter, charge, wave, rain, sweep, grab and barrage forms, the stun,
+  taunt, dispel, empower and summon effects and the format-2 effects wait for A4 and A5, and their moves are not
+  picked until then (the list: kit-gaps "A3 decisions").
+- **Tests**: `AbilityRuntimeTest` (12), `FormGeometryTest` (9), `MovePlanTest` (8) and `StatusBookTest` (12): 877 unit
+  tests. `HeroAbilityGameTests` (23): `heroSkillDamagesEnemy`, `heroUltimateAtFullEnergy`,
+  `cooldownsAndEnergySurviveASave`, `cooldownCutAndEnergyEffects`, `heroNovaSparesAlliesAndAnimals`,
+  `chainJumpsBetweenEnemies`, `coneAndLineReachOnlyTheirShape`, `heroZonePulses`, `heroProjectileLeavesNoFire`,
+  `heroLeapMovesPhysically`, `heroDashMovesAndHitsAlongItsPath`, `heroHealsHurtAlly`,
+  `heroShieldExpiresOnNpcAndPlayerAlike`, `heroDotTicksThroughIframes`, `heroElementImmunity`, `heroMarksStackAndSpend`,
+  `cleanseRemovesTheHarmfulPart`, `natsuhoComboHitsSoldierAndPlayerEqually` (the slice fixture's claw string, strike by
+  strike, and its bleed), `knockbackAndPullTheSameForNpcAndPlayer`, `statAndEffectTheSameForNpcAndPlayer`,
+  `slotCapHoldsForAnyTarget`, `thrownHeroThrowsAndGainsEnergy` and `bowHeroArrowsAreBasicHits`: 183 GameTests, all
+  passing. Sabotage checks, each caught: six in the pure rules (no slot cap, a restored recharge not clamped, DoTs
+  twice a second, a knock-up over a block, chain jumps 4 ticks apart, every form runnable) and 22 in the game that
+  between them fail all 23 GameTests (half damage on a player, caught by the Natsuho and the slot-cap tests; no
+  cooldowns saved; every faction NPC an enemy, which in a shared run also hid three of the others, so those were run
+  again alone; a shield never taken away, the hurt cooldown not put back, a thrown hit or an arrow that is no basic hit,
+  one zone pulse too many, half the knock-back on a player, an ultimate that spends nothing, no undead nature, a
+  cleanse that leaves the fire, the least hurt ally healed, `clear_marks` and `cooldown_cut` doing nothing, a chain
+  that jumps back, stats skipping players, a cone of any angle, no opening gap, a leap that lands at take-off, a dash
+  three times as fast, a projectile that sets fire).
+- **Left open**: stun, taunt, dispel, empower, summon and the passives, `on_mark_full` among them (A4); the format-2
+  forms and effects, the timing files' frames, `DATA_ACTION`, speed and interrupts (A5); the per-hit boss cap,
+  poise, phases and decals (A6); custom projectile and zone looks (A9); the station sheet's moves. Not yet checked on a
+  dedicated server in a campaign: only the test rig ships, and its one move (a dash) runs now.
 
 ### 15.3 Milestone 2: systems breadth
 

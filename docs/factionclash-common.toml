@@ -178,6 +178,19 @@
 	speechBubbles = true
 	#Show a fighting hero's energy on its name tag: [Fighting 80%].
 	showEnergy = true
+	#Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent
+	#(PROPOSED: 100). The same against every target, player or NPC.
+	# Default: 100
+	# Range: 25 ~ 200
+	powerScale = 100
+	#One hit of a hero's move deals at most this much damage, whoever it lands on (PROPOSED: 40).
+	# Default: 40
+	# Range: 10 ~ 100
+	maxHit = 40
+	#One hero's damage over time on one target deals at most this much per second (PROPOSED: 6).
+	# Default: 6
+	# Range: 1 ~ 20
+	maxDotPerSecond = 6
 
 #Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)
 [boss]

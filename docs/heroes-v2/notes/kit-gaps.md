@@ -207,3 +207,42 @@ What the review decided or fixed in the format and the fixtures:
 - **Unknown words of long lists** (archetypes, talents, format-2 conditions and line events, banner patterns) name the
   document that lists them instead of HERO_FORMAT's Appendix B.
 - Open for L4: 6.7 gives every leader three phases; a rare or common hero that leads still has its file's two.
+
+## A3 decisions on the ability core (2026-11-13)
+
+A3 (the moves in the game: `HeroCombat`, `HeroAbilityGoal`, `HeroEffects`, `HeroDamage`, `HeroStatus`, the forms,
+projectiles and zones; HEROES_V2.md 15.2 "A3 as built") decided what the kits and the format leave open:
+
+- **`target_behind` has two readings**, as the kits use it: for the move choice and reactions it is a target standing
+  behind the hero (Yugen's and Ilsabet's "behind him/her"); in an effect's `if` it is the hero standing behind the
+  receiver (Tobimaru's backstab, "60% stronger when he is behind you"). An effect's `if` is checked for each receiver,
+  the receiver as the sense's target.
+- **Only whole moves run.** A move whose form or any effect is a later task's is never picked, answered or followed
+  until then (`EffectRouting.runs`), so nothing plays half a move. Waiting for A4 (stun, taunt, dispel, empower,
+  summon) and A5 (charge, wave, rain, sweep, grab, counter, barrage and the format-2 effects such as barrier,
+  guard_break, spawn_add, call_guards): Ambrose's potion barrage and both rains; Benika's charge, stomp, grab and
+  crash waves; Hinae's sealing circle, exorcise, seven talismans and dance; Ilsabet's bash, rime wall, sweep, lance
+  charge and the call; Kagenori's iai stance and guard splitter; Natsuho's cat reflex, zoomies and midnight frenzy;
+  Tobimaru's clones and log swap; Yugen's mirage, foxfire rain and ninefold lantern. The rest of every slice kit
+  runs now (Natsuho: claw string, pounce, hiss, scratch dash).
+- **Allies include the hero.** `to: allies` and the `ally` and `allies` forms count the hero as one of its side (v1
+  10.2), so healing or shielding itself fills its energy as healing an ally does (v1 14, 1 per 2 points, at most 8 a
+  use). `to: allies` in a nova, zone or leap reaches the allies inside that area; elsewhere those within the
+  effect's `radius` of the hero (8 when it gives none).
+- **Ranged basic hits.** A bow or crossbow hero's own arrows are tagged; one that lands is its basic hit (5 energy,
+  `on_hit`, the n-th hit's finisher), as a melee blow is. A `thrown` hero throws its projectile look (a vanilla item
+  until A9) for its `amount` plus its attack bonuses (attack damage above the base 1), of the basic attack's element
+  or its own.
+- **Cancel and interrupt.** A target that dies, goes or moves more than 2 blocks past the move's range during the
+  wind-up calls the move off with its charge kept (v1 10.3); a wind-up stopped by anything else (the goal losing its
+  turn; A4's stun and A6's escape will take the same path) gives back half the cooldown.
+- **What a save keeps**: every move's charges and recharge as game times, the last ultimate, energy, the basic-hit
+  count, and every status on any entity (attachment `factionclash:hero_status`, expiries as game times, stat
+  modifiers put back on load). The fight's own clock (gap, string, reactions), running moves, projectiles and zones
+  are not saved: a reload ends the fight. A recharge saved longer than the move's cooldown now (a reload that
+  shortened it) comes no later than that cooldown.
+- **Hazard-aware pushes for everyone** (6.12): a knock-back that would put any receiver, player or NPC, in lava or
+  over a drop of more than 3 blocks is cut to a third; a knock-up lifts only a receiver on the ground, at most 1 block.
+- **Looks for now**: projectiles look like vanilla items, zones and novas are particle rings, a wind-up shows a smoke
+  ring where a nova, zone or leap will land, an ultimate with a `lightning` look calls a visual-only bolt. The decals,
+  the timing files' frames and custom models are A5, A6 and A9's.

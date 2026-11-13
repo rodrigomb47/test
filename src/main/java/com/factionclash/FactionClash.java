@@ -27,6 +27,7 @@ public final class FactionClash {
         ModItems.ITEMS.register(modBus);
         ModItems.TABS.register(modBus);
         ModEntities.ENTITIES.register(modBus);
+        com.factionclash.hero.HeroAttachments.ATTACHMENTS.register(modBus);
         container.registerConfig(ModConfig.Type.COMMON, FCConfig.SPEC);
         modBus.addListener(FactionClash::onAttributes);
         modBus.addListener(FactionClash::onTickets);
@@ -34,6 +35,7 @@ public final class FactionClash {
         NeoForge.EVENT_BUS.register(new FCEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.achieve.AchievementEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroEvents());
+        NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroCombatEvents());
     }
 
     private static void onAttributes(EntityAttributeCreationEvent event) {

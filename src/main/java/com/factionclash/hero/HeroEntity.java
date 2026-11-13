@@ -148,6 +148,8 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     /** Energy 0-100 (v1 14): basic hits, kills and damage taken fill it; a revival starts at 0. Saved. */
     private int energy;
+    /** Its fight runtime: moves, cooldowns, basic hits' effects (task A3); made on first use. */
+    private HeroCombat combat;
     /** The kit it was last equipped with ({@link HeroLoadout#signature}); a reload re-equips it only when this changes. */
     private String kitSignature = "";
     /** From its definition at the last {@link #applyDefinition}: a bare-handed kit, a kit with a shield. */
@@ -169,6 +171,26 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     public static AttributeSupplier.Builder createAttributes() {
         return FactionNpc.createAttributes();
+    }
+
+    /**
+     * A faction NPC's goals plus the hero's own (HEROES_V2 3.5): its moves at priority 2 and, for a {@code thrown}
+     * basic attack, its throwing goal at priority 3 beside the soldiers' attack goals. (Runs in the constructor:
+     * the goals read the hero's fields only later.)
+     */
+    @Override
+    protected void registerGoals() {
+        super.registerGoals();
+        this.goalSelector.addGoal(2, new com.factionclash.combat.HeroAbilityGoal(this));
+        this.goalSelector.addGoal(3, new com.factionclash.combat.HeroThrowGoal(this));
+    }
+
+    /** Its fight runtime (task A3): moves, cooldowns and charges, energy gains, basic hits' effects. */
+    public HeroCombat combat() {
+        if (combat == null) {
+            combat = new HeroCombat(this);
+        }
+        return combat;
     }
 
     @Override
@@ -417,12 +439,34 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         }
     }
 
-    /** Adds energy for an event worth {@code base} (x the ultimate's {@code charge_rate}). */
+    /** Adds energy for an event worth {@code base} (x the ultimate's {@code charge_rate} and the energy_gain stat). */
     private void gainEnergy(double base) {
-        HeroDef d = dormant() ? null : definition();
-        int rate = d != null && d.v2().ultimate() != null ? d.v2().ultimate().ability().chargeRate() : 100;
-        setEnergy(HeroRules.addEnergy(energy, HeroRules.energyGain(base, rate, 0)));
+        combat().gain(base);
     }
+
+    /** Whether its basic attack is {@code thrown} (it fights with {@code HeroThrowGoal}, not in melee). */
+    public boolean throwsBasic() {
+        if (level().isClientSide || dormant()) {
+            return false;
+        }
+        HeroDef d = definition();
+        return d != null && d.basicAttack().style() == HeroDef.Style.THROWN;
+    }
+
+    /** A thrown hero does not fight in melee: its throws are its basic attack. */
+    @Override
+    public boolean fightsInMelee() {
+        return !throwsBasic();
+    }
+
+    /** Its arrows are tagged: one that lands is its basic hit (energy and {@code on_hit}, v1 9 and 14). */
+    @Override
+    protected void onArrowShot(net.minecraft.world.entity.projectile.AbstractArrow arrow) {
+        arrow.getPersistentData().putBoolean(BASIC_ARROW_TAG, true);
+    }
+
+    /** The tag on a hero's own arrows. */
+    public static final String BASIC_ARROW_TAG = "fc_hero_basic";
 
     // ------------------------------------------------------------------ name tag (v1 25.8)
 
@@ -492,6 +536,31 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         v.putIfAbsent("name", npcName());
         v.putIfAbsent("faction", getFaction().displayName);
         String text = HeroSpeech.fill(line, v);
+        deliver(sl, event, text, listener, mode, now);
+        return true;
+    }
+
+    /**
+     * Says a move's own {@code line} (v1 10: "said when it is used, rate-limited") under {@code event}'s rate limit
+     * and audience. Returns whether it spoke.
+     */
+    public boolean speak(LineEvent event, String text) {
+        if (!(level() instanceof ServerLevel sl) || preview || !isAlive() || text == null || text.isBlank()) {
+            return false;
+        }
+        String mode = FCConfig.HERO_DIALOGUE.get();
+        long now = sl.getGameTime();
+        if ("off".equals(mode) || !clock.allows(event, now, FCConfig.HERO_DIALOGUE_COOLDOWN_SECONDS.get())) {
+            return false;
+        }
+        Map<String, String> v = new HashMap<>();
+        v.put("name", npcName());
+        v.put("faction", getFaction().displayName);
+        deliver(sl, event, HeroSpeech.fill(text, v), null, mode, now);
+        return true;
+    }
+
+    private void deliver(ServerLevel sl, LineEvent event, String text, ServerPlayer listener, String mode, long now) {
         clock.said(event, now);
         lastLine = text;
         Component chat = Component.literal(HeroSpeech.chatLine(npcName(), text)).withStyle(colour(dormant() ? null : definition()));
@@ -515,7 +584,6 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         }
         talkUntil = tickCount + HeroSpeech.BUBBLE_TICKS;
         setTalking(true);
-        return true;
     }
 
     public boolean say(LineEvent event) {
@@ -773,6 +841,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             updateFlags();
             if (!preview) {
                 fightTick();
+                combat().tick();
             }
         }
     }
@@ -866,6 +935,11 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return inFight;
     }
 
+    /** The last tick it had a live target (v1 {@code out_of_combat}: 5 s without one). */
+    public int lastTargetTick() {
+        return lastTargetTick;
+    }
+
     @Override
     public boolean hurt(DamageSource source, float amount) {
         float before = getHealth();
@@ -890,12 +964,19 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         }
     }
 
-    /** A landed basic attack fills energy (v1 14: 5, x its ultimate's charge rate). */
+    /**
+     * A landed basic attack: energy (v1 14: 5, x its ultimate's charge rate) and its {@code on_hit} effects and
+     * finisher (v1 9), the same on any target.
+     */
     @Override
     public boolean doHurtTarget(Entity target) {
         boolean hit = super.doHurtTarget(target);
         if (hit && !level().isClientSide && !preview) {
-            gainEnergy(HeroRules.ENERGY_BASIC_HIT);
+            if (target instanceof LivingEntity l) {
+                combat().onBasicHit(l, this);
+            } else {
+                gainEnergy(HeroRules.ENERGY_BASIC_HIT);
+            }
         }
         return hit;
     }
@@ -1037,6 +1118,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     @Override
     public void die(DamageSource source) {
+        if (combat != null) {
+            combat.reset();
+        }
         super.die(source);
         if (level() instanceof ServerLevel sl && isDeadOrDying()) {
             HeroManager.onDeath(sl.getServer(), this, source);
@@ -1077,6 +1161,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         }
         h.putInt("energy", energy);
         h.putString("kit", kitSignature);
+        if (combat != null) {
+            combat.save(h);
+        }
         tag.put("FcHero", h);
     }
 
@@ -1093,6 +1180,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         preview = h.getBoolean("preview");
         energy = Math.max(0, Math.min(HeroRules.ENERGY_MAX, h.getInt("energy")));
         kitSignature = h.getString("kit");
+        combat().load(h);
         setHeroId(h.getString("id"));
         forcedMood = h.contains("mood") ? h.getInt("mood") : -1;
         forcedWeapon = h.contains("weapon") ? h.getInt("weapon") : -1;

@@ -35,6 +35,8 @@ neoForge {
         gameTestServer {
             type = 'gameTestServer'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            // the slice heroes' format-2 test fixtures (test data, never shipped) for the ability GameTests (HEROES_V2 A3)
+            systemProperty 'factionclash.sliceFixtures', file('src/test/resources/heroes/slice').absolutePath
         }
         configureEach {
             systemProperty 'forge.logging.markers', 'REGISTRIES'
