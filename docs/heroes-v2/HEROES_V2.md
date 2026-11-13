@@ -337,6 +337,7 @@ root                                     whole-body offset (bob, dodge slide); n
 │  └─ tail_1 ─ tail_2 ─ tail_3 ─ tail_4 ─ tail_5   (five-bone chains; + tail_b_* ... for several tails)
 ├─ leg_r ─ shin_r ─ foot_r
 ├─ leg_l ─ shin_l ─ foot_l
+├─ mount                                 G10: a carrier's seat (a broom part, or the weapon that is the carrier); shown only while riding
 └─ vfx_tip_r, vfx_tip_l, vfx_chest, vfx_head, vfx_feet  (locators for effects; no cubes)
 ```
 
@@ -369,8 +370,8 @@ and `art.build` the build (12.5). The style guide that sets these numbers (head-
 | `sash`, `fine_sash_*` | tinted with the faction colour |
 | `eyes`, `mouth`, `cheeks` | face planes whose UVs the renderer shifts to the current frame |
 
-**Required and optional bones.** The tree above has 66 bones when every option is present (v1's 61 plus `ahoge`,
-`sleeve_r`, `sleeve_l`, `tail_4`, `tail_5`). 33 are **required** in every
+**Required and optional bones.** The tree above has 67 bones when every option is present (v1's 61 plus `ahoge`,
+`sleeve_r`, `sleeve_l`, `tail_4`, `tail_5` and G10's `mount`). 33 are **required** in every
 model (root, body, waist, chest, neck, head, face, eyes, mouth, cheeks, face_ctrl, the 10 arm bones with their
 locators and weapon bones, sash, the 6 leg bones and the 5 `vfx_*` locators); every other bone exists only when a part
 uses it (a hero without wings has no `wing_*` bones). Extra tails beyond the first chain use 2 bones each
@@ -396,7 +397,7 @@ animation keys.
 |---|---|---|---|
 | `base` | 4 ticks | `move.idle`, `combat.idle`, `personal.1-3` (rare idles), `move.walk`, `move.run`, `move.swim`, `move.fall`, `move.climb`, `move.crouch`, `rest.sit`, `rest.sleep`, `carry.loop` | speed, `onGround`, `isInWater`, pose, weapon-drawn flag, mood |
 | `action` | 2 ticks | every action of the code table (appendix D), `death` | `DATA_ACTION` (a new sequence number = a new action), `isDeadOrDying()`, vanilla `swinging` for work hits |
-| `secondary` | 6 ticks | `sec.*` loops for bones no base or action animation keys (G3: a controller overrides per bone and channel, so a `sec.tail` that keys `tail_1` would erase the follow-through baked into walk, run and every swing; the library bakes the rig's chain bones, and part-declared chains sway procedurally, below) | always on; Molang `query.ground_speed` scales the sway |
+| `secondary` | 6 ticks | `sec.*` loops for bones no base or action animation keys (G3: a controller overrides per bone and channel, so a `sec.tail` that keys `tail_1` would erase the follow-through baked into walk, run and every swing; the library bakes the rig's chain bones, and part-declared chains sway procedurally, below). G10: the core's wing loops `sec.wings_fold` (on the ground), `sec.wings_flap` (powered flight; its speed from the flight speed) and `sec.wings_glide` key only `wing_r`/`wing_l`, which no other clip keys | always on; Molang `query.ground_speed` scales the sway; G10: the wing loop by `DATA_LOCO`'s mode (MOBILITY_AND_WORK 4.2) |
 | face (Java, not a controller) | | eye, mouth and cheek frames | section 4.6 |
 
 Procedural touches in `HeroModel.setCustomAnimations` (cheap, every frame): head look (the generated animations key
@@ -2470,6 +2471,26 @@ of every clip on all six bases, `tests/test_styles.py`). Previews: `docs/heroes-
 and the rest of the set as GIFs on a chibi and an adult holding the slice prop, a contact sheet per style;
 `herogen anim-previews --styles [--check]`).
 
+**Mobility set** (G10, 2026-11-13; `notes/artgen.md`, "G10"; MOBILITY_AND_WORK 4.1-4.3): the 27 locomotion
+animations of milestone 1 are in `_core` (recipes in `herosrc/anim/core/mobility.json`, poses in
+`herosrc/anim/poses/mobility.json`). Base loops: `move.leap`, `move.climb_idle`, `move.climb_down`, `move.glide`,
+`move.fly`, `move.fly_fast`, `move.fly_hover`, `move.sprint`, `move.charge_run`, `move.winded`, `move.ride`. Base
+one-shots end on the first frame of the loop the base controller queues after them (`settle_to` on a base clip), so the
+controller's blend into it shows nothing: `move.jump`, `move.crouch_jump` (the 0.3 s tell), `move.air_jump` (a front
+flip) and `move.wall_kick` lead into `move.leap`; `move.glide_start` and `move.gust` into `move.glide`; `move.takeoff`
+into `move.fly`; `move.mantle`, `move.land`, `move.land_heavy`, `move.land_roll` (a forward roll), `move.fly_land`,
+`move.skid` and `move.downed` (a rock back and a kip-up) into `move.idle`. Two are actions: `move.ride_cast` (the upper
+body over `move.ride`) and `move.air_dive` (the `dive` form's default: class heavy, the hit on landing). The secondary
+controller's wing loops (`sec.wings_fold`, `sec.wings_flap`, `sec.wings_glide`) key only the wing bones. Generator
+additions: `primitives.spin` (a full turn that unwinds with a pre/post key, so a flip or a roll ends where it started),
+`primitives.hold`, layers that keep jump keys, the recipe's `floor` spans (the root follows a rolling body on every
+form), `contact: mount` and `quality.check_mount` (the rider's seat on the rig's `mount` bone on every base), and hero
+**variants** (`herosrc/anim/variants/<name>.json`, picked by a hero's `animations.variants`; the slice's `cat_twist`,
+`fox_lope`, `crane_leap` and `broom`). Carriers: the rig's `mount` bone, the `mounts` part category (`mounts/broom`)
+and a weapon that is its own carrier (Ambrose's staff), described by `visual.json` `carrier`. Every clip passes
+`herogen check` on all six bases; previews in `docs/heroes-v2/previews/anim/locomotion/`
+(`herogen anim-previews --locomotion [--check]`).
+
 **Per hero**: `move.<id>` for every move, `ultimate` (and `.loop`, `.end` for channelled ones), `phase.2`, `phase.3`,
 `intro`, `state.<name>`, 1-3 `personal.*`; typically 10-16 animations.
 
@@ -2770,7 +2791,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2 |
 | A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, walls as terrain for heroes, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration (mobility first, no 10 s wait) | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day |
 | A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape (`HeroEscapeGoal`, `EscapeRules`: 6.13; there is no yield to refuse), the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
-| G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases |
+| G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases. Done 2026-11-13: the 27 animations of MOBILITY_AND_WORK 4.1 for milestone 1 in `_core` (11 base loops, 14 base one-shots that end on the loop that follows them, `move.ride_cast` and `move.air_dive` as actions) and the three wing loops of the secondary controller, every clip passing `herogen check` on all six bases; full turns that unwind (`primitives.spin`: the flip, the roll, the cat twist), the riding rule on the rig's new `mount` bone (`quality.check_mount`), the `mounts/broom` carrier part and `visual.json` `carrier`, hero variants (`animations.variants`) with the slice's four: Natsuho's cat twist, Yugen's fox lope, Kagenori's crane leap, Ambrose's broom ridden side-saddle on his staff; GIFs and sheets on a chibi and an adult in `docs/heroes-v2/previews/anim/locomotion/` (`notes/artgen.md`, "G10"); 331 Python tests |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
 | S1 | Sound design and generator: `SOUND.md`, `tools/sfxgen` (synthesiser, recipes, build, check, previews, tests), the shared cue set and the eight slice heroes' sounds (generated or vanilla by id), sounds.json and the index | - | M | done and reviewed 2026-11-12: 240 events (197 generated in 298 Ogg files, 2.08 MB; 41 vanilla references, 2 aliases), `sfxgen check` clean, 32 Python tests (each rule's test fails when the rule is broken); previews in `docs/heroes-v2/previews/sound/` |
 | S2 | Sound engine: register the events from the index (fixed ranges), subtitles, `HeroSounds` (server cues by the slot rule, telegraph cues timed by `hit_at`, companions, notifications), the GeckoLib sound keyframe handler, `HeroVoice` blips with the note-block fallback, looping sounds, steps, hurt and death, `[heroes]` sound config (`SOUND.md` sections 7 and 15) | S1, A2, A5, A6 | M | wind-up cue GameTests (a 1.3 s heavy wind-up: its own sound at tick 0, the class cue at tick 10); every hero map slot resolves to a registered event; the owner's listening pass on the real client |

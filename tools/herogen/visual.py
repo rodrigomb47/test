@@ -87,13 +87,43 @@ def visual_json(hero, model, spec, textures, source_hash, moves=None, states=Non
             "weapon_sheathed": [b for b in ("weapon_back", "weapon_back_2")
                                 if b in model.bones and model.subtree_has_cubes(b)],
             "items": ["item_r", "item_l"],
-            # G6c: the mounted copy of a carrier weapon, shown only while riding (G10; HeroModel must hide it otherwise)
-            **({"mount": [model.mount["bone"]]} if model.mount else {}),
+            # G6c/G10: the carrier on the `mount` bone (a mounts/* part or the mounted copy of a carrier weapon),
+            # shown only while riding (HeroModel must hide it otherwise)
+            **({"mount": ["mount"]} if _has_mount(model) else {}),
             "locators": sorted(n for n, b in model.bones.items() if b.kind == "locator"),
         },
         "weapon": _weapon_info(weapon, model) if weapon.get("prop") else None,
+        **({"carrier": carrier_info(model)} if _has_mount(model) else {}),
         "voice": hero.get("voice"),
     }
+
+
+def _has_mount(model):
+    return "mount" in model.bones and model.subtree_has_cubes("mount")
+
+
+def carrier_info(model):
+    """G10 (MOBILITY_AND_WORK 4.3, 8.4): the carrier drawn on the `mount` bone, shown only while the hero rides
+    (modes fly, glide, ride): `part` "weapon" when the weapon doubles as the mount (its hand and back copies hide
+    while riding: Ambrose's staff-broom), else the mounts/* part's id; `kind` (broom, cloud, ...); the bone and its
+    seat (its pivot, the underside of level thighs)."""
+    seat = [0.0, round(float(model.bones["mount"].pivot[1]), 4), 0.0]
+    if model.mount:
+        return {"part": "weapon", "prop": model.mount["prop"], "kind": model.mount.get("kind", "broom"),
+                "bone": "mount", "seat": seat}
+    parts = sorted({c.part for c in model.cubes if _under(model, c.bone, "mount")})
+    kinds = sorted(set(model.carrier_kinds.get("mount", [])))
+    return {"part": parts[0] if len(parts) == 1 else parts, "kind": kinds[0] if kinds else "mount", "bone": "mount",
+            "seat": seat}
+
+
+def _under(model, bone, top):
+    while bone is not None:
+        if bone == top:
+            return True
+        b = model.bones.get(bone)
+        bone = b.parent if b is not None else None
+    return False
 
 
 def _weapon_info(weapon, model):

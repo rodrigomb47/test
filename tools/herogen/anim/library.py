@@ -18,6 +18,11 @@ its heroes (style_poses). Its `restyle_arms` {"pose": name, "clips": [...]} give
 recipe field `arms_over` (recipes.py): their arm offsets go over that pose (a lowered weapon arm) instead of the
 guard, so a death, a kneel or a dizzy stagger does not fold the weapon into the head.
 
+Variants (G10): herosrc/anim/variants/<name>.json holds a named set of locomotion overrides ({"variant", "description",
+"poses", "animations"}: a cat's twist on move.air_jump, a fox's lope for move.sprint, a crane's move.leap, a broom
+ridden side-saddle); a hero's `animations.variants` [names] copies them into its own file, where its own signatures
+and overrides still win. A variant may be shared by every hero of an archetype (MOBILITY_AND_WORK 18.3).
+
 Restyled reactions (G4): a core recipe with `restyle: true` (hurt.heavy, stagger, stun, interrupt, dodge, intro,
 victory, ...) starts and ends on "@stance", the first frame of the clip it settles on. The core expands it over
 move.idle; every style library with a combat.idle also gets its own copy expanded over that stance (unless the style
@@ -38,6 +43,7 @@ from util import HEROSRC, HerogenError, dumps_json, load_json, rel, sha256_bytes
 ANIM_DIR = os.path.join(HEROSRC, "anim")
 CORE_DIR = os.path.join(ANIM_DIR, "core")
 STYLE_DIR = os.path.join(ANIM_DIR, "styles")
+VARIANT_DIR = os.path.join(ANIM_DIR, "variants")
 ANIM_OUT = "src/main/resources/assets/factionclash/animations/hero/%s.animation.json"
 TIMING_OUT = "src/main/resources/data/factionclash/hero_timings/%s.json"
 CORE = "_core"
@@ -239,21 +245,65 @@ def style(style_name):
     return _build(style_file(style_name), recipes, style_poses(style_name), [c], settle, sources)
 
 
+def variant_path(name):
+    return os.path.join(VARIANT_DIR, name + ".json")
+
+
+def variant_names():
+    return sorted(os.path.basename(p)[:-5] for p in glob.glob(os.path.join(VARIANT_DIR, "*.json")))
+
+
+@functools.lru_cache(maxsize=None)
+def variant(name):
+    """A variant set (G10): ({name: recipe}, {pose name: spec}) of herosrc/anim/variants/<name>.json."""
+    path = variant_path(name)
+    if not os.path.exists(path):
+        raise HerogenError("animations.variants: %r is unknown (%s)" % (name, ", ".join(variant_names())))
+    data = load_json(path)
+    if data.get("variant") != name:
+        raise HerogenError("%s: variant field is %r" % (rel(path), data.get("variant")))
+    for n in data.get("animations", {}):
+        if not n.startswith("move."):
+            raise HerogenError("%s: %s is not a locomotion animation (move.*)" % (rel(path), n))
+    return _resolve_copies(dict(data.get("animations", {}))), dict(data.get("poses") or {})
+
+
 def hero(hero_obj, hero_source=None):
-    """The hero's own animation file from animations.signatures and animations.overrides."""
+    """The hero's own animation file from animations.variants (G10), animations.signatures and
+    animations.overrides."""
     anim = hero_obj.get("animations") or {}
     recipes = {}
+    variant_poses, variant_files = {}, []
+    for vname in anim.get("variants") or []:
+        vr, vp = variant(vname)
+        for name, r in vr.items():
+            if name in recipes:
+                raise HerogenError("%s: animation %s is in two variants" % (hero_obj["id"], name))
+            recipes[name] = r
+        for name, spec in vp.items():
+            if name in variant_poses:
+                raise HerogenError("%s: pose %s is in two variants" % (hero_obj["id"], name))
+            variant_poses[name] = spec
+        variant_files.append(variant_path(vname))
+    own = {}
     for key in ("signatures", "overrides"):
         for name, r in (anim.get(key) or {}).items():
-            if name in recipes:
+            if name in own:
                 raise HerogenError("%s: animation %s is both a signature and an override" % (hero_obj["id"], name))
-            recipes[name] = r
+            own[name] = r
+    recipes.update(own)
     lib = style_poses(style_of(hero_obj))
+    if variant_poses:
+        clash = sorted(n for n in variant_poses if n in lib.specs)
+        if clash:
+            raise HerogenError("%s: variant poses %s are already in the pose library" % (hero_obj["id"],
+                                                                                      ", ".join(clash)))
+        lib = lib.with_specs(variant_poses, "%s variants" % hero_obj["id"])
     if anim.get("poses"):
         lib = lib.with_specs(anim["poses"], "%s animations.poses" % hero_obj["id"])
     st = style(style_of(hero_obj))
     settle = "combat.idle" if "combat.idle" in st.by_name else "move.idle"
-    sources = _shared_sources() + ([hero_source] if hero_source else [])
+    sources = _shared_sources() + ([hero_source] if hero_source else []) + variant_files
     if recipes:
         sources.append(style_recipe_path(style_of(hero_obj)))      # its clips may use the style's own poses
     return _build(hero_obj["id"], recipes, lib, [st, core()], settle, sources)
@@ -277,6 +327,7 @@ def resolve(hero_obj, name):
 
 def clear_caches():
     core.cache_clear()
+    variant.cache_clear()
     style.cache_clear()
     style_poses.cache_clear()
     pose_library.cache_clear()

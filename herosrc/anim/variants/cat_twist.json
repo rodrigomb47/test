@@ -1,0 +1,105 @@
+{
+  "_comment": "A cat's air jump (G10; MOBILITY_AND_WORK 15.1: Natsuho's override of move.air_jump; any cat-eared acrobat may use it): instead of the generic front flip she twists once round her vertical axis in the air, the chest leading and the hips following while the tail sweeps the other way as a counterweight, landing back in move.leap's pose.",
+  "variant": "cat_twist",
+  "poses": {
+    "cat.coil": {
+      "_comment": "Air jump, cat: gathered for the twist, the back arched and the knees tucked, the paws (hands) drawn in under the chin, ears flat, the tail up.",
+      "bones": {
+        "body": [-8, 0, 0],
+        "chest": [-12, 0, 0],
+        "neck": [-10, 0, 0],
+        "leg_r": [-70, 0, 6],
+        "shin_r": [104, 0, 0],
+        "foot_r": [24, 0, 0],
+        "leg_l": [-58, 0, -6],
+        "shin_l": [110, 0, 0],
+        "foot_l": [26, 0, 0],
+        "arm_r": [-70, 0, -6],
+        "forearm_r": [-96, 0, 0],
+        "hand_r": [30, 0, 0],
+        "arm_l": [-70, 0, 6],
+        "forearm_l": [-96, 0, 0],
+        "hand_l": [30, 0, 0],
+        "ear_r": [-32, 0, 12],
+        "ear_l": [-32, 0, -12],
+        "tail_1": [-30, 0, 0]
+      }
+    },
+    "cat.twist_lead": {
+      "_comment": "Mid-twist: the chest turned ahead of the hips, the tail swept the other way.",
+      "bones": {
+        "body": [-4, -24, 0],
+        "chest": [-8, 30, 0],
+        "neck": [-8, 14, 0],
+        "leg_r": [-64, -10, 8],
+        "shin_r": [98, 0, 0],
+        "foot_r": [24, 0, 0],
+        "leg_l": [-52, -10, -4],
+        "shin_l": [104, 0, 0],
+        "foot_l": [26, 0, 0],
+        "arm_r": [-60, 0, 30],
+        "forearm_r": [-70, 0, 0],
+        "hand_r": [30, 0, 0],
+        "arm_l": [-80, 0, -10],
+        "forearm_l": [-90, 0, 0],
+        "hand_l": [30, 0, 0],
+        "ear_r": [-32, 0, 12],
+        "ear_l": [-32, 0, -12],
+        "tail_1": [-10, -50, 0]
+      }
+    },
+    "cat.twist_follow": {
+      "_comment": "The hips catching up with the chest, the tail swinging back through.",
+      "bones": {
+        "body": [0, 20, 0],
+        "chest": [-4, -14, 0],
+        "neck": [-8, -8, 0],
+        "leg_r": [-50, 8, 6],
+        "shin_r": [80, 0, 0],
+        "foot_r": [20, 0, 0],
+        "leg_l": [-30, 8, -6],
+        "shin_l": [74, 0, 0],
+        "foot_l": [24, 0, 0],
+        "arm_r": [-50, 0, 46],
+        "forearm_r": [-40, 0, 0],
+        "hand_r": [10, 0, 0],
+        "arm_l": [-60, 0, -40],
+        "forearm_l": [-50, 0, 0],
+        "hand_l": [10, 0, 0],
+        "ear_r": [-22, 0, 10],
+        "ear_l": [-22, 0, -10],
+        "tail_1": [10, 40, 0]
+      }
+    }
+  },
+  "animations": {
+    "move.air_jump": {
+      "description": "Natsuho's air jump, 0.35 s: a kick of the legs (a puff of air), the cat twist: she arches and tucks, turns once round in the air with the chest leading, the hips following and the tail swinging the other way (0.06-0.28 s), and opens out into move.leap's pose; a smug little grin.",
+      "length": 0.35,
+      "settle_to": "move.leap",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {
+          "t": 0,
+          "pose": "air.kick",
+          "face": "smug",
+          "marker": "vfx:air_ring",
+          "sound": "minecraft:entity.breeze.jump"
+        },
+        {"t": 0.06, "pose": "cat.coil", "ease": "easeOutQuad"},
+        {"t": 0.14, "pose": "cat.twist_lead", "ease": "easeInOutSine"},
+        {"t": 0.23, "pose": "cat.twist_follow", "ease": "easeInOutSine"},
+        {"t": 0.3, "pose": "air.open", "ease": "easeOutQuad", "face": "none"},
+        {"t": 0.35, "pose": "leap.a"}
+      ],
+      "layers": [
+        {
+          "primitive": "spin",
+          "params": {"bones": {"root": [0, 360, 0]}, "t0": 0.06, "t1": 0.28, "ease": "easeInOutSine"}
+        }
+      ]
+    }
+  }
+}

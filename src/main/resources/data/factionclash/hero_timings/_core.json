@@ -189,6 +189,44 @@
       "total_ticks": 30,
       "transition_ticks": 2
     },
+    "move.air_dive": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.9, "tick": 18, "type": "sfx", "value": "minecraft:item.trident.riptide_1"},
+        {"t": 1.1, "tick": 22, "type": "hit"},
+        {"t": 1.1, "tick": 22, "type": "vfx", "value": "ground_slam"}
+      ],
+      "frame_ticks": {"active": 1, "recovery": 19, "windup": 22},
+      "frames": {"active": 0.05, "recovery": 0.95, "windup": 1.1},
+      "hits": [1.1],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "move.air_jump": {
+      "events": [
+        {"t": 0.2, "tick": 4, "type": "vfx", "value": "air_ring"},
+        {"t": 0.2, "tick": 4, "type": "sfx", "value": "minecraft:entity.breeze.jump"}
+      ],
+      "kind": "base",
+      "length": 0.35,
+      "loop": "once",
+      "ticks": 7,
+      "total_ticks": 11,
+      "transition_ticks": 4
+    },
+    "move.charge_run": {
+      "events": [],
+      "kind": "base",
+      "length": 0.6,
+      "loop": "loop",
+      "ticks": 12,
+      "total_ticks": 16,
+      "transition_ticks": 4
+    },
     "move.climb": {
       "events": [],
       "kind": "base",
@@ -196,6 +234,24 @@
       "loop": "loop",
       "ticks": 20,
       "total_ticks": 24,
+      "transition_ticks": 4
+    },
+    "move.climb_down": {
+      "events": [],
+      "kind": "base",
+      "length": 1,
+      "loop": "loop",
+      "ticks": 20,
+      "total_ticks": 24,
+      "transition_ticks": 4
+    },
+    "move.climb_idle": {
+      "events": [],
+      "kind": "base",
+      "length": 4,
+      "loop": "loop",
+      "ticks": 80,
+      "total_ticks": 84,
       "transition_ticks": 4
     },
     "move.crouch": {
@@ -207,6 +263,24 @@
       "total_ticks": 28,
       "transition_ticks": 4
     },
+    "move.crouch_jump": {
+      "events": [{"t": 0.45, "tick": 9, "type": "vfx", "value": "jump_dust"}],
+      "kind": "base",
+      "length": 0.3,
+      "loop": "once",
+      "ticks": 6,
+      "total_ticks": 10,
+      "transition_ticks": 4
+    },
+    "move.downed": {
+      "events": [{"t": 0.3, "tick": 6, "type": "vfx", "value": "stars"}],
+      "kind": "base",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 44,
+      "transition_ticks": 4
+    },
     "move.fall": {
       "events": [],
       "kind": "base",
@@ -214,6 +288,72 @@
       "loop": "loop",
       "ticks": 16,
       "total_ticks": 20,
+      "transition_ticks": 4
+    },
+    "move.fly": {
+      "events": [],
+      "kind": "base",
+      "length": 1.6,
+      "loop": "loop",
+      "ticks": 32,
+      "total_ticks": 36,
+      "transition_ticks": 4
+    },
+    "move.fly_fast": {
+      "events": [],
+      "kind": "base",
+      "length": 0.8,
+      "loop": "loop",
+      "ticks": 16,
+      "total_ticks": 20,
+      "transition_ticks": 4
+    },
+    "move.fly_hover": {
+      "events": [],
+      "kind": "base",
+      "length": 1.6,
+      "loop": "loop",
+      "ticks": 32,
+      "total_ticks": 36,
+      "transition_ticks": 4
+    },
+    "move.fly_land": {
+      "events": [],
+      "kind": "base",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 12,
+      "transition_ticks": 4
+    },
+    "move.glide": {
+      "events": [],
+      "kind": "base",
+      "length": 2.4,
+      "loop": "loop",
+      "ticks": 48,
+      "total_ticks": 52,
+      "transition_ticks": 4
+    },
+    "move.glide_start": {
+      "events": [{"t": 0.25, "tick": 5, "type": "sfx", "value": "minecraft:item.armor.equip_elytra"}],
+      "kind": "base",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 12,
+      "transition_ticks": 4
+    },
+    "move.gust": {
+      "events": [
+        {"t": 0.3, "tick": 6, "type": "vfx", "value": "gust"},
+        {"t": 0.3, "tick": 6, "type": "sfx", "value": "minecraft:entity.wind_charge.wind_burst"}
+      ],
+      "kind": "base",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 12,
       "transition_ticks": 4
     },
     "move.idle": {
@@ -225,6 +365,78 @@
       "total_ticks": 484,
       "transition_ticks": 4
     },
+    "move.jump": {
+      "events": [{"t": 0.2, "tick": 4, "type": "vfx", "value": "jump_dust"}],
+      "kind": "base",
+      "length": 0.3,
+      "loop": "once",
+      "ticks": 6,
+      "total_ticks": 10,
+      "transition_ticks": 4
+    },
+    "move.land": {
+      "events": [],
+      "kind": "base",
+      "length": 0.3,
+      "loop": "once",
+      "ticks": 6,
+      "total_ticks": 10,
+      "transition_ticks": 4
+    },
+    "move.land_heavy": {
+      "events": [{"t": 0.3, "tick": 6, "type": "vfx", "value": "ground_dust"}],
+      "kind": "base",
+      "length": 0.5,
+      "loop": "once",
+      "ticks": 10,
+      "total_ticks": 14,
+      "transition_ticks": 4
+    },
+    "move.land_roll": {
+      "events": [],
+      "kind": "base",
+      "length": 0.5,
+      "loop": "once",
+      "ticks": 10,
+      "total_ticks": 14,
+      "transition_ticks": 4
+    },
+    "move.leap": {
+      "events": [],
+      "kind": "base",
+      "length": 1,
+      "loop": "loop",
+      "ticks": 20,
+      "total_ticks": 24,
+      "transition_ticks": 4
+    },
+    "move.mantle": {
+      "events": [],
+      "kind": "base",
+      "length": 0.5,
+      "loop": "once",
+      "ticks": 10,
+      "total_ticks": 14,
+      "transition_ticks": 4
+    },
+    "move.ride": {
+      "events": [],
+      "kind": "base",
+      "length": 2,
+      "loop": "loop",
+      "ticks": 40,
+      "total_ticks": 44,
+      "transition_ticks": 4
+    },
+    "move.ride_cast": {
+      "events": [{"t": 0.4, "tick": 8, "type": "vfx", "value": "cast"}],
+      "kind": "action",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 14,
+      "transition_ticks": 2
+    },
     "move.run": {
       "events": [],
       "kind": "base",
@@ -232,6 +444,27 @@
       "loop": "loop",
       "ticks": 12,
       "total_ticks": 16,
+      "transition_ticks": 4
+    },
+    "move.skid": {
+      "events": [
+        {"t": 0.2, "tick": 4, "type": "vfx", "value": "skid_dust"},
+        {"t": 0.2, "tick": 4, "type": "sfx", "value": "minecraft:entity.breeze.slide"}
+      ],
+      "kind": "base",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 12,
+      "transition_ticks": 4
+    },
+    "move.sprint": {
+      "events": [],
+      "kind": "base",
+      "length": 0.5,
+      "loop": "loop",
+      "ticks": 10,
+      "total_ticks": 14,
       "transition_ticks": 4
     },
     "move.swim": {
@@ -243,6 +476,15 @@
       "total_ticks": 28,
       "transition_ticks": 4
     },
+    "move.takeoff": {
+      "events": [{"t": 0.5, "tick": 10, "type": "vfx", "value": "takeoff_dust"}],
+      "kind": "base",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 16,
+      "transition_ticks": 4
+    },
     "move.walk": {
       "events": [],
       "kind": "base",
@@ -250,6 +492,27 @@
       "loop": "loop",
       "ticks": 20,
       "total_ticks": 24,
+      "transition_ticks": 4
+    },
+    "move.wall_kick": {
+      "events": [
+        {"t": 0.25, "tick": 5, "type": "vfx", "value": "wall_dust"},
+        {"t": 0.25, "tick": 5, "type": "sfx", "value": "minecraft:entity.breeze.jump"}
+      ],
+      "kind": "base",
+      "length": 0.3,
+      "loop": "once",
+      "ticks": 6,
+      "total_ticks": 10,
+      "transition_ticks": 4
+    },
+    "move.winded": {
+      "events": [],
+      "kind": "base",
+      "length": 1.2,
+      "loop": "loop",
+      "ticks": 24,
+      "total_ticks": 28,
       "transition_ticks": 4
     },
     "personal.1": {
@@ -295,6 +558,33 @@
       "loop": "loop",
       "ticks": 160,
       "total_ticks": 164,
+      "transition_ticks": 4
+    },
+    "sec.wings_flap": {
+      "events": [],
+      "kind": "base",
+      "length": 0.5,
+      "loop": "loop",
+      "ticks": 10,
+      "total_ticks": 14,
+      "transition_ticks": 4
+    },
+    "sec.wings_fold": {
+      "events": [],
+      "kind": "base",
+      "length": 4,
+      "loop": "loop",
+      "ticks": 80,
+      "total_ticks": 84,
+      "transition_ticks": 4
+    },
+    "sec.wings_glide": {
+      "events": [],
+      "kind": "base",
+      "length": 2,
+      "loop": "loop",
+      "ticks": 40,
+      "total_ticks": 44,
       "transition_ticks": 4
     },
     "spared": {
@@ -502,6 +792,6 @@
   "file": "_core",
   "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "3a79d4c6e65812792d7691501747fd960f99505ec60f0ec38130e95a759307e5",
+  "source_sha256": "ed5b0fba1fcfb0b62d37ee6d8839c4da26c83f869c3835a080be27cde0b28526",
   "tick": 0.05
 }

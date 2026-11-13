@@ -70,7 +70,7 @@
           "trim": "trim"
         }
       },
-      "animations": {"blink": "normal", "style": "fists"}
+      "animations": {"blink": "normal", "style": "fists", "variants": ["cat_twist"]}
     },
     {
       "id": "yugen",
@@ -127,7 +127,7 @@
           "detail": "trim"
         }
       },
-      "animations": {"blink": "calm", "style": "focus"}
+      "animations": {"blink": "calm", "style": "focus", "variants": ["fox_lope"]}
     },
     {
       "id": "benika",
@@ -270,7 +270,7 @@
           }
         }
       },
-      "animations": {"blink": "calm", "style": "katana"}
+      "animations": {"blink": "calm", "style": "katana", "variants": ["crane_leap"]}
     },
     {
       "id": "tobimaru",
@@ -443,7 +443,7 @@
           "detail": "glow"
         }
       },
-      "animations": {"blink": "nervous", "style": "staff"}
+      "animations": {"blink": "nervous", "style": "staff", "variants": ["broom"]}
     }
   ]
 }

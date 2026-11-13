@@ -100,12 +100,12 @@ class HeroAssets:
 
     def hidden(self, phase=1, drawn=False, far=False, riding=False):
         """Bones hidden in a frame: phase bones of a later phase, the sheathed copy while the weapon is drawn (or the
-        drawn one while it is sheathed), the fine bones beyond the fine distance (4.9), and the mounted copy of a
-        carrier weapon unless riding (G6c; while riding, the weapon's hand and sheathed copies instead)."""
+        drawn one while it is sheathed), the fine bones beyond the fine distance (4.9), and the carrier on the mount
+        bone unless riding (G6c, G10; while riding a carrier that is the weapon, its hand and sheathed copies instead)."""
         out = [b for b, p in self.visual["bones"].get("phase", {}).items() if phase < p]
-        if riding:
+        if riding and self.carrier_is_weapon():
             out += self.bones("weapon_drawn") + self.bones("weapon_sheathed")
-        else:
+        elif not riding:
             out += self.bones("mount")
         for ph in self.visual.get("phases", []):
             if ph["phase"] <= phase:
@@ -119,6 +119,13 @@ class HeroAssets:
         if far:
             out += self.bones("fine")
         return out
+
+    def carrier_is_weapon(self):
+        """G10: the carrier on the mount bone is the weapon itself (its hand and back copies hide while riding)."""
+        carrier = self.visual.get("carrier")
+        if carrier is not None:
+            return carrier.get("part") == "weapon"
+        return bool((self.visual.get("weapon") or {}).get("mount"))
 
     def face_shift(self, eyes=0, mouth=0, cheeks=0):
         """The UV shift (texels) HeroRenderer gives the face plane bones for these frames (4.6)."""

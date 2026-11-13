@@ -108,7 +108,7 @@
       "stiffness": 0.3
     }
   ],
-  "source_sha256": "6785472ce691240881345bd616281f060af0fc9a83154930ca325ff2d89d6121",
+  "source_sha256": "d589b1be4079c8a5548a9d3287eda024d791e84ad92212a6c55fec9908bcd1f6",
   "states": [],
   "style": "katana",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": true, "width": 256},

@@ -1,0 +1,126 @@
+{
+  "_comment": "Riding a broom side-saddle (G10; MOBILITY_AND_WORK 15.8: Ambrose's staff-broom; any witch whose carrier is a broom may use it): the take-off hops onto the broom (the carrier appears on the mount bone), the ride sits side-saddle with the legs on the left of the shaft, the cast throws with the free left hand, the landing slides off.",
+  "variant": "broom",
+  "poses": {
+    "broom.saddle": {
+      "_comment": "Side-saddle on the broom (the mount bone's seat): both thighs level on it and turned to the left side together, the shins hanging with the ankles crossed, the body turned left with the chest and head turned back to look ahead, the right hand on the shaft in front, the left on the knee.",
+      "bones": {
+        "leg_r": [-90, -52, 0],
+        "shin_r": [82, 0, 0],
+        "foot_r": [24, 0, 0],
+        "leg_l": [-90, -52, 0],
+        "shin_l": [88, 0, 0],
+        "foot_l": [20, 0, 0],
+        "body": [6, -40, 0],
+        "waist": [0, 6, 0],
+        "chest": [2, 16, 0],
+        "neck": [-8, 18, 0],
+        "arm_r": [-58, 0, -24],
+        "forearm_r": [-34, 0, 0],
+        "hand_r": [10, 0, 0],
+        "arm_l": [-30, 0, 8],
+        "forearm_l": [-56, 0, 0],
+        "hand_l": [6, 0, 0]
+      }
+    },
+    "broom.hop": {
+      "_comment": "The hop onto the broom: both knees bent and lifted, the body turning left, the right hand reaching for the shaft.",
+      "bones": {
+        "leg_r": [-60, -30, 0],
+        "shin_r": [100, 0, 0],
+        "foot_r": [10, 0, 0],
+        "leg_l": [-56, -30, 0],
+        "shin_l": [104, 0, 0],
+        "foot_l": [10, 0, 0],
+        "body": [8, -24, 0],
+        "chest": [0, 10, 0],
+        "neck": [-12, 12, 0],
+        "arm_r": [-62, 0, -18],
+        "forearm_r": [-30, 0, 0],
+        "arm_l": [-50, 0, 30],
+        "forearm_l": [-30, 0, 0]
+      }
+    },
+    "broom.cast_wind": {
+      "_comment": "Offsets over the side-saddle: the free left hand draws a vial back over the shoulder.",
+      "bones": {
+        "chest": [0, -12, 0],
+        "neck": [0, 8, 0],
+        "arm_l": [36, 0, -40],
+        "forearm_l": [-70, 0, 0],
+        "hand_l": [-20, 0, 0]
+      }
+    },
+    "broom.cast_throw": {
+      "_comment": "Offsets over the side-saddle: the left arm flung forward, the vial away.",
+      "bones": {"chest": [0, 14, 0], "neck": [0, -8, 0], "arm_l": [-74, 0, -6], "forearm_l": [50, 0, 0], "hand_l": [-20, 0, 0]}
+    }
+  },
+  "animations": {
+    "move.ride": {
+      "description": "Riding the broom side-saddle, a 2.0 s loop: a gentle bob with the broom (the mount bone rides under the root), the crossed ankles swinging idly, the free hand on the knee.",
+      "length": 2,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "contact": "mount",
+      "keys": [{"t": 0, "pose": "broom.saddle"}, {"t": 2, "pose": "broom.saddle"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.6, 0]}, "period": 2, "channel": "position"}},
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"shin_r": [10, 0, 0], "shin_l": [-8, 0, 0], "body": [0, 0, 2], "neck": [0, 0, -2]},
+            "period": 2,
+            "phase": 0.25
+          }
+        }
+      ]
+    },
+    "move.takeoff": {
+      "description": "Take-off on the broom, 0.6 s, the tell: a crouch (0.15 s), a hop with the knees lifted and the body turning (0.3 s; the staff appears on the mount bone under him), settling side-saddle onto the shaft by 0.6 s. The server plays the take-off cue and Ambrose's broom take-off (SOUND.md 7).",
+      "length": 0.6,
+      "settle_to": "move.ride",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "land.give", "face": "happy"},
+        {"t": 0.15, "pose": "takeoff.crouch", "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "broom.hop", "ease": "easeOutQuad", "root": [0, 2, 0], "marker": "vfx:takeoff_dust"},
+        {"t": 0.48, "pose": "broom.saddle", "ease": "easeInOutSine", "face": "none"},
+        {"t": 0.6, "pose": "broom.saddle"}
+      ]
+    },
+    "move.ride_cast": {
+      "description": "A throw from the broom (an action over move.ride: the upper body only), 0.6 s: the free left hand draws a vial back over the shoulder (0.15 s) and flings it forward (0.3 s), then rests on the knee again; the right hand stays on the shaft.",
+      "length": 0.6,
+      "plays_over": "move.ride",
+      "settle_to": "move.ride",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "@stance", "face": "focused"},
+        {"t": 0.15, "pose": "broom.cast_wind", "over": true, "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "broom.cast_throw", "over": true, "ease": "easeInQuad", "marker": "vfx:cast"},
+        {"t": 0.42, "pose": "broom.cast_throw", "over": true, "face": "none"},
+        {"t": 0.6, "pose": "@stance"}
+      ]
+    },
+    "move.fly_land": {
+      "description": "Landing from the broom, 0.4 s: he slides off the shaft, the legs swinging down (0.15 s), the feet touch (0.25 s) and he stands (0.4 s); the engine then puts the staff back in his hand.",
+      "length": 0.4,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "broom.saddle"},
+        {"t": 0.15, "pose": "broom.hop", "ease": "easeInSine"},
+        {"t": 0.25, "pose": "land.contact", "ease": "easeInQuad"},
+        {"t": 0.32, "pose": "land.give", "ease": "easeOutQuad"},
+        {"t": 0.4, "pose": "stance.relaxed"}
+      ]
+    }
+  }
+}

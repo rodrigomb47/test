@@ -1,0 +1,604 @@
+{
+  "_comment": "Core library, the mobility set (G10; MOBILITY_AND_WORK 4.1-4.3, HEROES_V2 4.4): the 27 locomotion animations of milestone 1 and the wing loops of the secondary controller. Loops are base clips; one-shots play on the base controller too and end on the first frame of the loop it queues after them (settle_to: move.leap, move.idle, move.fly, move.glide, move.ride), so its blend shows nothing; move.ride_cast and move.air_dive are actions. No root motion: movement is physical.",
+  "animations": {
+    "move.leap": {
+      "description": "In the air on a leap or any jump (the base controller's airborne loop, MOBILITY_AND_WORK 4.1), 1.0 s: the right knee up, the left leg trailing, arms out for balance, drifting slowly so a long leap stays alive; ears and tail stream behind (the bake). Every jump one-shot ends on its first frame. Not grounded.",
+      "length": 1,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "leap.a"}, {"t": 0.5, "pose": "leap.b"}, {"t": 1, "pose": "leap.a"}]
+    },
+    "move.jump": {
+      "description": "Leaving the ground (everyone with a jump bonus), 0.3 s on the base controller as the hero leaves the ground: the push-off (legs straight, toes pointed, arms swung up) at 0.05 s, the knee drawn up and the arms opening into move.leap's pose by 0.3 s; a determined face.",
+      "length": 0.3,
+      "settle_to": "move.leap",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "jump.push", "face": "determined"},
+        {"t": 0.12, "pose": "leap.b", "ease": "easeOutQuad"},
+        {"t": 0.25, "face": "none"},
+        {"t": 0.3, "pose": "leap.a"}
+      ],
+      "markers": [{"t": 0, "marker": "vfx:jump_dust"}]
+    },
+    "move.crouch_jump": {
+      "description": "The wind-up of a leap (leaper and acrobat links), 0.3 s, the tell: a dip (0.06 s), the deep crouch with the arms swung back and the eyes on the target (0.2 s), the push-off on the last tick before the hero leaves the ground, then move.leap. Feet planted until the push.",
+      "length": 0.3,
+      "settle_to": "move.leap",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "jump.load", "face": "focused"},
+        {"t": 0.2, "pose": "jump.crouch", "ease": "easeOutQuad"},
+        {"t": 0.25, "pose": "jump.push", "ease": "easeInQuad", "face": "determined"},
+        {"t": 0.3, "pose": "leap.a", "ease": "easeOutSine"}
+      ],
+      "markers": [{"t": 0.25, "marker": "vfx:jump_dust"}]
+    },
+    "move.land": {
+      "description": "A landing after any fall, 0.3 s: the feet touch with the arms coming down, the knees take the weight (0.08 s), the hero rises back into the idle stance by 0.3 s. Feet planted.",
+      "length": 0.3,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "land.contact"},
+        {"t": 0.08, "pose": "land.impact", "ease": "easeOutQuad"},
+        {"t": 0.2, "pose": "land.give", "ease": "easeInOutSine"},
+        {"t": 0.3, "pose": "stance.relaxed"}
+      ]
+    },
+    "move.land_heavy": {
+      "description": "A heavy landing (after a leap, a dive or a long fall), 0.5 s: the feet touch, the hero drops into a deep crouch with a fist on the ground and the other arm flung out (0.1 s, dust), holds it, rises (0.4 s) and is back in the idle stance by 0.5 s. The server plays the landing cue (SOUND.md 7).",
+      "length": 0.5,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "land.contact", "face": "determined"},
+        {"t": 0.1, "pose": "land.heavy", "ease": "easeOutQuad", "marker": "vfx:ground_dust"},
+        {"t": 0.26, "pose": "land.heavy_hold"},
+        {"t": 0.4, "pose": "land.heavy_rise", "face": "none"},
+        {"t": 0.5, "pose": "stance.relaxed"}
+      ]
+    },
+    "move.land_roll": {
+      "description": "The landing roll (leaper II+ and acrobats), 0.5 s: the hands reach for the ground, the hero tucks and rolls forward once over the back (0.06-0.3 s; the body and legs turn together about the hips, and the root follows the ball's lowest point on every form), comes up into a crouch (0.36 s) and stands by 0.5 s. In place: the hero's momentum carries it.",
+      "length": 0.5,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "contact": "body",
+      "keys": [
+        {"t": 0, "pose": "roll.contact", "face": "focused"},
+        {"t": 0.06, "pose": "roll.tuck", "ease": "easeInQuad", "face": {"eyes": 2, "mouth": 4}},
+        {"t": 0.3, "pose": "roll.tuck"},
+        {"t": 0.36, "pose": "roll.up", "ease": "easeOutQuad", "face": "determined"},
+        {"t": 0.44, "pose": "land.give", "face": "none"},
+        {"t": 0.5, "pose": "stance.relaxed"}
+      ],
+      "layers": [
+        {
+          "primitive": "spin",
+          "params": {
+            "bones": {"body": [360, 0, 0], "leg_r": [360, 0, 0], "leg_l": [360, 0, 0]},
+            "t0": 0.06,
+            "t1": 0.3,
+            "ease": "easeInOutSine"
+          }
+        }
+      ],
+      "floor": [
+        {
+          "from": 0,
+          "to": 0.4,
+          "bones": ["body", "waist", "chest", "neck", "head", "arm_*", "forearm_*", "hand_*", "leg_*", "shin_*", "foot_*"]
+        }
+      ]
+    },
+    "move.air_jump": {
+      "description": "An air jump (acrobats; the generic tuck), 0.35 s: the legs kick down and the arms fly up (a puff of air under the feet), the hero tucks and turns a front flip about the hips (0.08-0.28 s), opens out with the arms wide and settles into move.leap's pose. A hero may override it (Natsuho's cat twist, herosrc/anim/variants/cat_twist.json).",
+      "length": 0.35,
+      "settle_to": "move.leap",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {
+          "t": 0,
+          "pose": "air.kick",
+          "face": "determined",
+          "marker": "vfx:air_ring",
+          "sound": "minecraft:entity.breeze.jump"
+        },
+        {"t": 0.08, "pose": "air.tuck", "ease": "easeOutQuad"},
+        {"t": 0.26, "pose": "air.tuck"},
+        {"t": 0.3, "pose": "air.open", "ease": "easeOutQuad", "face": "none"},
+        {"t": 0.35, "pose": "leap.a"}
+      ],
+      "layers": [
+        {
+          "primitive": "spin",
+          "params": {
+            "bones": {"body": [360, 0, 0], "leg_r": [360, 0, 0], "leg_l": [360, 0, 0]},
+            "t0": 0.08,
+            "t1": 0.28,
+            "ease": "easeInOutSine"
+          }
+        }
+      ]
+    },
+    "move.wall_kick": {
+      "description": "A wall kick (acrobat II-III), 0.3 s: the hero, crouched against the wall behind it with a foot planted on it, kicks off (0.12 s: the leg drives back straight, the other knee and both arms drive forward; a puff of dust off the wall) and flies into move.leap's pose.",
+      "length": 0.3,
+      "settle_to": "move.leap",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "wall.plant", "face": "determined"},
+        {"t": 0.05, "marker": "vfx:wall_dust", "sound": "minecraft:entity.breeze.jump"},
+        {"t": 0.12, "pose": "wall.push", "ease": "easeOutQuad"},
+        {"t": 0.24, "face": "none"},
+        {"t": 0.3, "pose": "leap.a"}
+      ]
+    },
+    "move.mantle": {
+      "description": "A mantle onto a ledge (acrobat III, climber III), 0.5 s: hands on the edge (the server lifts the hero: a short upward push and a forward step), the pull with a knee coming up (0.14 s), the press over the edge with a knee on it (0.28 s), stepping up (0.4 s) into the idle stance; gritted teeth.",
+      "length": 0.5,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "mantle.hang", "face": {"eyes": 8, "mouth": 4}},
+        {"t": 0.14, "pose": "mantle.pull", "ease": "easeInOutSine"},
+        {"t": 0.28, "pose": "mantle.press", "ease": "easeInOutSine"},
+        {"t": 0.4, "pose": "mantle.step", "ease": "easeOutSine", "face": "none"},
+        {"t": 0.5, "pose": "stance.relaxed"}
+      ]
+    },
+    "move.climb_idle": {
+      "description": "Clinging to a wall (climber; DATA_LOCO mode cling), a 4.0 s loop: hands and feet on holds, breathing, a glance over the right shoulder (0.6-1.6 s) and down to the left (2.6-3.4 s), a grip shifting now and then. Not grounded.",
+      "length": 4,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "climb.cling"}, {"t": 4, "pose": "climb.cling"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 2, "depth": 1.4}},
+        {"primitive": "look", "params": {"glances": [[0.6, 0.9, 1.3, 1.6, 30, 6], [2.6, 2.85, 3.15, 3.4, -18, 22]]}},
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"forearm_r": [-6, 0, 0], "leg_l": [-5, 0, 0], "shin_l": [8, 0, 0]},
+            "period": 4,
+            "shape": "pulse",
+            "phase": 0.5
+          }
+        }
+      ]
+    },
+    "move.climb_down": {
+      "description": "Climbing down (climber), a 1.0 s loop: foot under foot and hand under hand, looking down past the feet, a small drop on each step. Not grounded.",
+      "length": 1,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "climb_down.a"}, {"t": 0.5, "pose": "climb_down.b"}, {"t": 1, "pose": "climb_down.a"}],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"root": [0, -0.6, 0]}, "period": 0.5, "channel": "position", "shape": "pulse"}
+        }
+      ]
+    },
+    "move.glide": {
+      "description": "Gliding (glider, flyer gliding), a 2.4 s loop: the spread glide with a slow bank one way and the other (the arms tip like wings, the chest rolls), a gentle bob and the legs swaying a little. Not grounded.",
+      "length": 2.4,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "glide.spread"}, {"t": 2.4, "pose": "glide.spread"}],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "arm_r": [0, 0, 8],
+              "arm_l": [0, 0, 8],
+              "chest": [0, 4, -5],
+              "neck": [0, -4, 3],
+              "leg_r": [4, 0, 2],
+              "leg_l": [-4, 0, 2]
+            },
+            "period": 2.4
+          }
+        },
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.5, 0]}, "period": 1.2, "channel": "position"}}
+      ]
+    },
+    "move.glide_start": {
+      "description": "Opening a glide, 0.4 s: from the fall the arms sweep out wide (the carrier opens: a cape spreads, wings unfold), the body tips forward with a small overshoot and settles into move.glide; the rustle of cloth or feathers.",
+      "length": 0.4,
+      "settle_to": "move.glide",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "fall.a"},
+        {"t": 0.05, "sound": "minecraft:item.armor.equip_elytra"},
+        {"t": 0.14, "pose": "glide.open", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "glide.spread", "ease": "easeOutSine", "overshoot": 0.12, "overshoot_time": 0.06},
+        {"t": 0.4, "pose": "glide.spread"}
+      ]
+    },
+    "move.gust": {
+      "description": "A gust lifts the glider (fans, a wind sack, a kite: one upward push), 0.4 s: the body rises nearer upright with the arms swept up and the knees tucked (0.1 s, a burst of wind), then spreads out again into move.glide.",
+      "length": 0.4,
+      "settle_to": "move.glide",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "glide.spread"},
+        {
+          "t": 0.1,
+          "pose": "gust.lift",
+          "ease": "easeOutQuad",
+          "marker": "vfx:gust",
+          "sound": "minecraft:entity.wind_charge.wind_burst",
+          "face": "surprised"
+        },
+        {"t": 0.3, "pose": "glide.spread", "ease": "easeInOutSine", "face": "none"},
+        {"t": 0.4, "pose": "glide.spread"}
+      ]
+    },
+    "move.fly": {
+      "description": "Powered flight (flyer; DATA_LOCO mode fly), a 1.6 s loop: leaning into the flight with the legs trailing, a slow bob and a small flutter of the legs and arms; wings beat by the secondary controller (sec.wings_flap). Not grounded.",
+      "length": 1.6,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "fly.cruise"}, {"t": 1.6, "pose": "fly.cruise"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.8, 0]}, "period": 1.6, "channel": "position"}},
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "leg_r": [5, 0, 0],
+              "leg_l": [-5, 0, 0],
+              "shin_r": [-6, 0, 0],
+              "shin_l": [6, 0, 0],
+              "arm_r": [4, 0, 3],
+              "arm_l": [4, 0, -3],
+              "body": [-2, 0, 0]
+            },
+            "period": 1.6,
+            "phase": 0.25
+          }
+        }
+      ]
+    },
+    "move.fly_fast": {
+      "description": "Fast flight, a 0.8 s loop: nearly level and streamlined, a quick shallow bob, the legs fluttering. Not grounded.",
+      "length": 0.8,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "fly.fast", "face": "focused"}, {"t": 0.8, "pose": "fly.fast"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.4, 0]}, "period": 0.8, "channel": "position"}},
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"leg_r": [3, 0, 0], "leg_l": [-3, 0, 0], "shin_r": [-4, 0, 0], "shin_l": [4, 0, 0]},
+            "period": 0.4
+          }
+        }
+      ]
+    },
+    "move.fly_hover": {
+      "description": "Hovering in flight (flyer; DATA_LOCO mode fly hover), a 1.6 s loop: upright, treading the air with the legs, the arms balancing, a bob on each stroke. Not grounded.",
+      "length": 1.6,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "fly.hover"}, {"t": 1.6, "pose": "fly.hover"}],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {
+              "leg_r": [12, 0, 0],
+              "leg_l": [-12, 0, 0],
+              "shin_r": [-10, 0, 0],
+              "shin_l": [10, 0, 0],
+              "arm_r": [0, 0, 5],
+              "arm_l": [0, 0, -5]
+            },
+            "period": 1.6
+          }
+        },
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 1, 0]}, "period": 0.8, "channel": "position"}}
+      ]
+    },
+    "move.takeoff": {
+      "description": "Take-off (flyer), 0.6 s, the tell (MOBILITY_AND_WORK 2.2): a crouch with the arms opening like wings (0.2 s; the carrier opens), the upward push with the arms driven down (0.3 s, dust), the rise with the legs trailing and into move.fly's pose by 0.6 s; a determined face. The server plays the take-off cue and the hero's own take-off sound (SOUND.md 7).",
+      "length": 0.6,
+      "settle_to": "move.fly",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "land.give", "face": "determined"},
+        {"t": 0.2, "pose": "takeoff.crouch", "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "takeoff.push", "ease": "easeInQuad", "marker": "vfx:takeoff_dust"},
+        {"t": 0.45, "pose": "takeoff.rise", "ease": "easeOutQuad", "face": "none"},
+        {"t": 0.6, "pose": "fly.cruise"}
+      ]
+    },
+    "move.fly_land": {
+      "description": "Landing from flight, 0.4 s: the flare (the body tips back, the legs swing down, the arms brake), touch-down (0.18 s), the knees take the weight (0.26 s), up into the idle stance by 0.4 s.",
+      "length": 0.4,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "fly.flare"},
+        {"t": 0.18, "pose": "land.contact", "ease": "easeInQuad"},
+        {"t": 0.26, "pose": "land.give", "ease": "easeOutQuad"},
+        {"t": 0.4, "pose": "stance.relaxed"}
+      ]
+    },
+    "move.sprint": {
+      "description": "The sprint burst (runner III), a 0.5 s loop: a faster, longer run than move.run, leaning 13 degrees with the arms pumping hard and a longer flight phase; a focused face.",
+      "length": 0.5,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "face": "focused"}],
+      "layers": [
+        {
+          "primitive": "run_cycle",
+          "add": false,
+          "params": {
+            "stride": 42,
+            "knee": 108,
+            "lean": 13,
+            "waist_lean": 2,
+            "chest_lean": 3,
+            "arms": 42,
+            "elbow": 82,
+            "elbow_swing": 18,
+            "twist": 8,
+            "flight": 1,
+            "tail_lift": -18
+          }
+        }
+      ]
+    },
+    "move.charge_run": {
+      "description": "The traversal charge (charger), a 0.6 s loop: a heavy, driving run leaning 20 degrees with the head down, the right shoulder leading (the chest turned 14 degrees) and both forearms up before the chest; an angry face.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "charge.arms", "face": {"eyes": 4, "mouth": 4}}, {"t": 0.6, "pose": "charge.arms"}],
+      "layers": [
+        {
+          "primitive": "run_cycle",
+          "add": false,
+          "params": {
+            "stride": 32,
+            "knee": 88,
+            "lean": 20,
+            "waist_lean": 2,
+            "chest_lean": 6,
+            "head_level": 0.8,
+            "twist": 3,
+            "upper": 0,
+            "flight": 0.5,
+            "tail_lift": -16
+          }
+        },
+        {"primitive": "hold", "params": {"bones": {"waist": [0, -8, 0], "chest": [0, -6, 0], "neck": [0, 12, 0]}}},
+        {"primitive": "oscillate", "params": {"bones": {"arm_r": [6, 0, 0], "arm_l": [-6, 0, 0]}, "period": 0.6}}
+      ]
+    },
+    "move.skid": {
+      "description": "A skid to a stop (after the sprint burst or the traversal charge), 0.4 s: braced on the front heel and leaning back with the arms flung forward (dust, a sliding scrape; the server's own deceleration carries the hero), the weight caught on the back leg (0.28 s), back into the idle stance by 0.4 s.",
+      "length": 0.4,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "steps": true,
+      "keys": [
+        {
+          "t": 0,
+          "pose": "skid.brace",
+          "face": {"eyes": 6, "mouth": 2},
+          "marker": "vfx:skid_dust",
+          "sound": "minecraft:entity.breeze.slide"
+        },
+        {"t": 0.16, "pose": "skid.brace"},
+        {"t": 0.22, "pose": "skid.lift", "ease": "easeOutQuad"},
+        {"t": 0.29, "pose": "skid.catch", "ease": "easeInOutSine", "face": "none"},
+        {"t": 0.35, "pose": "skid.settle", "ease": "easeInOutSine"},
+        {"t": 0.4, "pose": "stance.relaxed", "ease": "easeInQuad"}
+      ]
+    },
+    "move.downed": {
+      "description": "Shot down (an airborne hero's air poise filled: MOBILITY_AND_WORK 2.4), 2.0 s on the ground where it fell: sprawled on the back with pain eyes and stars (0.1 s), the head rolling, dazed, until 1.0 s; it rocks back with the legs swung up (1.15 s) and springs up off its shoulders (a kip: in the air for a moment, 1.23 s), lands in a deep squat with the feet on their spots (1.33 s; they come down from the air, so nothing slides), rises and is back in the idle stance by 2.0 s, when it may move again (no take-off for 12 s: the server).",
+      "length": 2,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "steps": true,
+      "contact": "body",
+      "ground": false,
+      "secondary": ["tail", "ears", "skirt"],
+      "keys": [
+        {"t": 0, "pose": "downed.sprawl", "face": {"eyes": 7, "mouth": 3}},
+        {"t": 0.1, "marker": "vfx:stars"},
+        {"t": 0.35, "face": {"eyes": 7, "mouth": 5}},
+        {"t": 0.95, "pose": "downed.sprawl"},
+        {"t": 1.15, "pose": "downed.rock", "ease": "easeInOutSine", "face": {"eyes": 4, "mouth": 4}},
+        {"t": 1.23, "pose": "downed.kip", "ease": "easeOutQuad", "root": [0, 3, 0]},
+        {"t": 1.29, "pose": "downed.tuck", "ease": "easeInOutSine", "root": [0, 1.8, 0]},
+        {"t": 1.33, "pose": "downed.tuck", "ease": "easeInQuad"},
+        {"t": 1.4, "pose": "downed.crouch", "ease": "easeOutSine"},
+        {"t": 1.55, "pose": "downed.squat", "ease": "easeOutSine"},
+        {"t": 1.75, "pose": "land.heavy_rise", "ease": "easeInOutSine", "face": "none"},
+        {"t": 2, "pose": "stance.relaxed"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"neck": [10, 0, 12]}, "period": 0.8, "shape": "circle", "window": [0.2, 0.4, 0.8, 1]}
+        }
+      ]
+    },
+    "move.winded": {
+      "description": "Winded (stamina spent after flight: MOBILITY_AND_WORK 2.2), a 1.2 s loop: hunched with the hands on the knees, panting twice a second (the chest heaves, the shoulders rise, the mouth opens on each breath), a tired face with a sweat drop. Feet planted.",
+      "length": 1.2,
+      "loop": true,
+      "keys": [
+        {"t": 0, "pose": "winded.hunch", "face": {"eyes": 1, "mouth": 3, "cheeks": 2}},
+        {"t": 0.3, "face": {"eyes": 1, "mouth": 0, "cheeks": 2}},
+        {"t": 0.6, "face": {"eyes": 1, "mouth": 3, "cheeks": 2}},
+        {"t": 0.9, "face": {"eyes": 1, "mouth": 0, "cheeks": 2}},
+        {"t": 1.2, "pose": "winded.hunch", "face": {"eyes": 1, "mouth": 3, "cheeks": 2}}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"chest": [-4, 0, 0], "waist": [-1.5, 0, 0], "neck": [3, 0, 0], "arm_r": [0, 0, 2], "arm_l": [0, 0, -2]},
+            "period": 0.6,
+            "shape": "pulse"
+          }
+        },
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"chest": [0, 0.25, 0]}, "period": 0.6, "channel": "position", "shape": "pulse"}
+        }
+      ]
+    },
+    "move.ride": {
+      "description": "Riding a carrier (a broom, a mount part: DATA_LOCO mode ride), a 2.0 s loop: seated astride on the mount bone with both hands on the handle, a gentle bob (the mount, a child of the root, bobs with the rider) and a slow sway. The rider's seat stays on the mount on every form (quality.check_mount). Not grounded.",
+      "length": 2,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "contact": "mount",
+      "keys": [{"t": 0, "pose": "ride.astride"}, {"t": 2, "pose": "ride.astride"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.6, 0]}, "period": 2, "channel": "position"}},
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"body": [0, 0, 2], "neck": [0, 0, -2], "foot_r": [6, 0, 0], "foot_l": [-6, 0, 0]},
+            "period": 2,
+            "phase": 0.25
+          }
+        }
+      ]
+    },
+    "move.ride_cast": {
+      "description": "A cast while riding (an action over move.ride: the upper body only, the legs keep the seat), 0.6 s: the right hand draws back (0.15 s), thrusts forward at the target (0.3 s, the cast), returns to the handle by 0.6 s; a focused face.",
+      "length": 0.6,
+      "plays_over": "move.ride",
+      "settle_to": "move.ride",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "@stance", "face": "focused"},
+        {"t": 0.15, "pose": "ride.cast_wind", "over": true, "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "ride.cast_throw", "over": true, "ease": "easeInQuad", "marker": "vfx:cast"},
+        {"t": 0.42, "pose": "ride.cast_throw", "over": true, "face": "none"},
+        {"t": 0.6, "pose": "@stance"}
+      ]
+    },
+    "move.air_dive": {
+      "description": "The generated default for a `dive` move without its own recipe (MOBILITY_AND_WORK 7.3; class heavy, an action), 2.0 s: the wind-up in the air (the 0.8 s tell: knees tucked, the fist raised, the eyes on the target; the decal grows), the plunge (0.8 s, a rush of air), the hit as the hero lands fist first in a heavy landing (1.0 s: ground slam), the recovery on the ground (at least 0.8 s: the punish window) and back in the idle stance by 2.0 s.",
+      "length": 2,
+      "class": "heavy",
+      "plays_over": "move.leap",
+      "settle_to": "move.idle",
+      "planted": false,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "dive.coil", "face": "focused"},
+        {"t": 0.7, "pose": "dive.coil", "root": [0, 1, 0]},
+        {
+          "t": 0.8,
+          "pose": "dive.plunge",
+          "ease": "easeInQuad",
+          "face": {"eyes": 4, "mouth": 3},
+          "sound": "minecraft:item.trident.riptide_1",
+          "root": [0, 4, 0]
+        },
+        {"t": 0.95, "pose": "land.contact", "ease": "easeInQuad"},
+        {"t": 1, "pose": "land.heavy", "ease": "easeOutQuad", "marker": "hit;vfx:ground_slam"},
+        {"t": 1.3, "pose": "land.heavy_hold", "face": "determined"},
+        {"t": 1.7, "pose": "land.heavy_rise", "face": "none"},
+        {"t": 2, "pose": "stance.relaxed"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"root": [0, 0.6, 0]}, "period": 0.7, "channel": "position", "window": [0, 0.1, 0.5, 0.7]}
+        }
+      ]
+    },
+    "sec.wings_fold": {
+      "description": "Worn wings folded while the hero walks, stands or fights on the ground (the secondary controller, MOBILITY_AND_WORK 4.3), a 4.0 s loop: tucked against the back, rising and settling with the breath, a ruffle (a half-open shake) at 2.6 s. Keys only the wing bones, so it plays over any base or action clip.",
+      "length": 4,
+      "loop": true,
+      "secondary": false,
+      "planted": false,
+      "ground": false,
+      "keys": [
+        {"t": 0, "pose": "wings.folded"},
+        {"t": 2.5, "pose": "wings.folded"},
+        {"t": 2.65, "pose": "wings.recover", "ease": "easeOutQuad"},
+        {"t": 2.8, "pose": "wings.folded", "ease": "easeInOutSine", "settle": 0.3},
+        {"t": 4, "pose": "wings.folded"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"wing_r": [0, 0, 3], "wing_l": [0, 0, -3]}, "period": 2, "shape": "pulse"}
+        }
+      ]
+    },
+    "sec.wings_flap": {
+      "description": "Powered flight's wing beat (the secondary controller; the engine scales its speed with the flight speed), a 0.5 s loop: a fast power stroke from high to low (0.2 s), the wings half folding on the way back up (0.35 s) and opening at the top.",
+      "length": 0.5,
+      "loop": true,
+      "secondary": false,
+      "planted": false,
+      "ground": false,
+      "keys": [
+        {"t": 0, "pose": "wings.up"},
+        {"t": 0.2, "pose": "wings.down", "ease": "easeInOutQuad"},
+        {"t": 0.35, "pose": "wings.recover", "ease": "easeOutSine"},
+        {"t": 0.5, "pose": "wings.up", "ease": "easeOutQuad"}
+      ]
+    },
+    "sec.wings_glide": {
+      "description": "Wings spread for a glide (the secondary controller), a 2.0 s loop: wide and level, the tips fluttering a little in the wind.",
+      "length": 2,
+      "loop": true,
+      "secondary": false,
+      "planted": false,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "wings.spread"}, {"t": 2, "pose": "wings.spread"}],
+      "layers": [{"primitive": "oscillate", "params": {"bones": {"wing_r": [0, 2, 3], "wing_l": [0, -2, -3]}, "period": 1}}]
+    }
+  }
+}

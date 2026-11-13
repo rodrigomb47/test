@@ -1,0 +1,58 @@
+{
+  "_comment": "A crane's leap (G10; MOBILITY_AND_WORK 15.5: Kagenori's override of move.leap; a crane-crested samurai or a dancer may use it): in the air the arms spread wide like wings, the sleeves hanging from them as feathers, one knee drawn high and the other leg straight below, the head up.",
+  "variant": "crane_leap",
+  "poses": {
+    "crane.wings": {
+      "_comment": "The crane in the air: arms spread wide and a little back, the hands flat, the right knee drawn high, the left leg straight below with the toes pointed, upright, the chin up.",
+      "bones": {
+        "body": [8, 0, 0],
+        "chest": [-6, 0, 0],
+        "neck": [-12, 0, 0],
+        "arm_r": [10, 0, 80],
+        "forearm_r": [-8, 0, 0],
+        "hand_r": [0, 0, -12],
+        "arm_l": [10, 0, -80],
+        "forearm_l": [-8, 0, 0],
+        "hand_l": [0, 0, 12],
+        "leg_r": [-96, 0, 4],
+        "shin_r": [112, 0, 0],
+        "foot_r": [22, 0, 0],
+        "leg_l": [16, 0, -2],
+        "shin_l": [8, 0, 0],
+        "foot_l": [38, 0, 0],
+        "tail_1": [20, 0, 0]
+      }
+    },
+    "crane.wings_up": {
+      "_comment": "The slow wing beat's top: the arms raised a little, the trailing leg further back.",
+      "bones": {
+        "body": [6, 0, 0],
+        "chest": [-8, 0, 0],
+        "neck": [-14, 0, 0],
+        "arm_r": [4, 0, 100],
+        "forearm_r": [-4, 0, 0],
+        "hand_r": [0, 0, 8],
+        "arm_l": [4, 0, -100],
+        "forearm_l": [-4, 0, 0],
+        "hand_l": [0, 0, -8],
+        "leg_r": [-100, 0, 4],
+        "shin_r": [116, 0, 0],
+        "foot_r": [24, 0, 0],
+        "leg_l": [22, 0, -2],
+        "shin_l": [10, 0, 0],
+        "foot_l": [40, 0, 0],
+        "tail_1": [24, 0, 0]
+      }
+    }
+  },
+  "animations": {
+    "move.leap": {
+      "description": "Kagenori's leap, the crane, a 1.2 s loop: arms spread like wings with the haori sleeves hanging from them, the right knee drawn high and the left leg straight below, rising and settling in one slow wing beat. Every jump one-shot of the core ends on the core move.leap's pose and blends into this one (the base controller's 4 ticks).",
+      "length": 1.2,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [{"t": 0, "pose": "crane.wings"}, {"t": 0.6, "pose": "crane.wings_up"}, {"t": 1.2, "pose": "crane.wings"}]
+    }
+  }
+}

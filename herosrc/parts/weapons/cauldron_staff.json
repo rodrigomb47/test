@@ -7,7 +7,7 @@
   "style": "staff",
   "sheath": "back_up",
   "tip": [0, -3.8, "zh - 1"],
-  "mount": {"seat": [0, 0.6, "7 * k"], "height": "hip_y - leg_d / 2"},
+  "mount": {"seat": [0, 0.6, "7 * k"], "height": "hip_y - leg_d / 2", "kind": "broom"},
   "cubes": [
     {"name": "shaft", "origin": [-0.6, -0.6, "-5 * k"], "size": [1.2, 1.2, "10.2 * k"], "material": "wood"},
     {

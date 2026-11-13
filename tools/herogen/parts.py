@@ -456,6 +456,11 @@ def apply_part(model, entry, index):
         if b.kind != "locator":
             raise HerogenError("%s: %s is not a locator" % (ctx.where, name))
         b.pivot = ctx.at(pos)
+    if part.get("category") == "mounts":
+        # G10 (MOBILITY_AND_WORK 4.3): a carrier drawn on the rig's `mount` bone; `carrier` names its kind
+        if not any(c.part == ctx.pid and c.bone.endswith("mount") for c in model.cubes):
+            raise HerogenError("%s: a mounts part puts its cubes on the `mount` bone" % ctx.where)
+        model.carrier_kinds.setdefault("mount", []).append(part.get("carrier", "mount"))
     if part.get("secondary"):
         sec = dict(part["secondary"])
         # a chain built several times ("copies": a fox's tails) declares one spring chain per copy
@@ -784,7 +789,10 @@ def _place_mount(model, w, index):
     ctx = _weapon_ctx(model, part, entry, 150 + index, where)
     seat = np.array(ctx.ev(spec_m["seat"]), dtype=float)
     height = float(ctx.ev(spec_m.get("height", "hip_y - leg_d / 2 - 0.6")))
-    # under `root`, so a whole-body offset (a hover bob) carries the mount with its rider; its pivot is the seat
+    # the rig's `mount` bone (G10): under `root`, so a whole-body offset (a hover bob) carries the mount with its
+    # rider; its pivot is the seat (the underside of level thighs, the prop's `mount.height` by default)
+    if model.subtree_has_cubes("mount") if "mount" in model.bones else False:
+        raise HerogenError("%s: the hero already has a carrier on the mount bone (a mounts/* part): one carrier" % where)
     loc = model.declare_bone("mount", "root", (0.0, height, 0.0), where) if "mount" not in model.catalogue \
         else model.use_bone("mount")
     t = (-seat[0], height - seat[1], -seat[2])
@@ -792,7 +800,7 @@ def _place_mount(model, w, index):
         o, s = _grip_box(spec, ctx)
         rot, q = _spec_rot(ctx, spec)
         _add(model, ctx, spec, n, loc.name, _placed(o, s, rot, q, IDENT, t), "mount:%s#%d" % (prop, n), "r")
-    model.mount = {"prop": prop, "seat": [0.0, height, 0.0], "bone": "mount"}
+    model.mount = {"prop": prop, "seat": [0.0, height, 0.0], "bone": "mount", "kind": spec_m.get("kind", "broom")}
 
 
 HANDS = ("right", "left", "both", "pair")

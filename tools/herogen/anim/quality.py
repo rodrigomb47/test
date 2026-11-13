@@ -170,8 +170,9 @@ def check_joints(clip, rig=None):
 
 
 def check_settle(clip, target):
-    if clip.meta.get("kind") != "action" or clip.loop != "once":
-        return []      # an action loop plays until the server stops it (4.8) and closes; a held clip (death) stays
+    if clip.loop != "once" or (clip.meta.get("kind") != "action" and not clip.meta.get("settle_to")):
+        return []      # an action loop plays until the server stops it (4.8) and closes; a held clip (death) stays;
+        # a base one-shot with settle_to (G10: a jump, a landing) ends on the loop the base controller queues next
     out = []
     for bc, tr in sorted(clip.tracks.items()):
         goal = target.tracks[bc].sample(0.0) if target is not None and bc in target.tracks else (0.0, 0.0, 0.0)
@@ -304,6 +305,34 @@ def check_slide(name, base_id, times, soles_by_tick):
     return []
 
 
+MOUNT_TOL = 0.6
+
+
+def check_mount(clip, base=None, bases=BASE_IDS):
+    """G10, a riding clip (`contact: mount`): on every base the lowest point of the seat bones (the thighs, by
+    default) rests on the `mount` bone's pivot, the carrier's seat, within MOUNT_TOL px every tick (the mount is a child
+    of the root, so a bob carries both). MOBILITY_AND_WORK 4.1: the riding poses keep the rider on the mount locator."""
+    out = []
+    seat = clip.meta.get("seat") or ["leg_*"]
+    for base_id in bases:
+        sk = S.for_base(base_id)
+        if not sk.has("mount"):
+            continue
+        pose_at = _pose_fn(clip, base, sk.d)
+        worst, at = 0.0, 0.0
+        for t in _ticks(clip):
+            pose = pose_at(t)
+            w = sk.world(pose, only=["mount"])
+            mount_y = float(sk.apply(w, "mount", sk.pivot["mount"])[1])
+            low, _ = sk.lowest_body(pose, seat)
+            if abs(low - mount_y) > abs(worst):
+                worst, at = low - mount_y, t
+        if abs(worst) > MOUNT_TOL:
+            out.append("%s on %s: the seat %s %.2f px %s the mount (at %.2f s; at most %.1f)" % (
+                clip.name, base_id, "+".join(seat), abs(worst), "above" if worst > 0 else "into", at, MOUNT_TOL))
+    return out
+
+
 def check_root(clip):
     tr = clip.tracks.get(("root", "position"))
     if tr is None or clip.meta.get("moves"):
@@ -328,6 +357,10 @@ def check_clip(clip, settle_target=None, known_bones=None, feet=True, over=None)
     out = check_keys(clip) + check_markers(clip) + check_face(clip) + check_joints(clip) + check_root(clip)
     if clip.meta.get("kind") == "action":
         out += check_settle(clip, settle_target) + check_start(clip, over)
+    elif clip.meta.get("settle_to"):
+        out += check_settle(clip, settle_target)
+    if clip.meta.get("contact") == "mount":
+        out += check_mount(clip, over if clip.meta.get("kind") == "action" else None)
     if known_bones is not None:
         out += check_bones(clip, known_bones)
     if feet:
@@ -349,6 +382,10 @@ def check_built(built, lookup, extra_bones=(), own_file=False, feet=True):
         if clip.meta.get("kind") == "action":
             target = lookup(clip.meta["settle_to"])
             over = lookup(clip.meta.get("over", clip.meta["settle_to"]))
+        elif clip.meta.get("settle_to"):
+            target = lookup(clip.meta["settle_to"])
+            if target is None:
+                out.append("%s: settle_to %s is not in the chain" % (clip.name, clip.meta["settle_to"]))
         out += check_clip(clip, target, known, feet, over=over)
     if own_file:
         cap = load_rig()["budgets"].get("own_animations", 24)

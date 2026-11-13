@@ -2133,3 +2133,193 @@ fourth run's fix; with the first stances it found the seven parts `lint` found).
 - **Hair kit** (G6c's item, still open): the coplanar rule sees only the first frame of each stance. Any frame where
   the head is level and still, so `hair_back` comes to rest, z-fights through the hem in game until each `back_base`
   moves 0.1 px back. The stance bow above keeps the combat idles clear; the fix belongs to the hair kit.
+
+---
+
+## G10: the mobility set (2026-11-13)
+
+HEROES_V2.md 15.2 row G10 and MOBILITY_AND_WORK.md 4.1-4.3 and 15, on G3's generator and G4's core library. The
+approved look (rig v3, style pass 2) is unchanged: this task adds motion, the rig's `mount` bone and a broom carrier
+part. As before, no reference model's animation, pose or timing is in the repository: every pose here was authored for
+this task (the squats and the skid's brace solved for planted feet on the teen, as G4 did).
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/anim/core/mobility.json` | the 27 animations of milestone 1 and the three wing loops (`_core` now holds 85 clips, 1.6 MB) |
+| `herosrc/anim/poses/mobility.json` | their poses (jumps, landings, the roll and the flip, wall kick, mantle, climbing, gliding, flight, the charge and the skid, the downed get-up, riding, the dive, the wings) |
+| `herosrc/anim/variants/{cat_twist,fox_lope,crane_leap,broom}.json` | the slice heroes' locomotion overrides (below) |
+| `herosrc/parts/mounts/broom.json` | the `mounts` category's first part: a flying broom on the `mount` bone |
+| `herosrc/rig/rig_v3.json` | the optional bone `mount` (parent `root`, pivot `[0, hip_y - leg_d / 2, 0]`: the underside of level thighs) |
+| `herosrc/style/outfits.json` | Natsuho, Yugen, Kagenori and Ambrose carry `animations.variants` |
+| `anim/library.py` | `variant(name)`, `animations.variants` in a hero's own file |
+| `anim/recipes.py` | `settle_to` on base one-shots, `contact: mount` with `seat`, the `floor` spans, layers that keep jump keys |
+| `anim/primitives.py` | `spin` (a full turn that unwinds) and `hold` (a constant offset over a gait layer) |
+| `anim/quality.py` | the settle rule for base one-shots, `check_mount` |
+| `anim/loco_preview.py`, `herogen anim-previews --locomotion [--groups ...] [--check]` | the previews below |
+| `parts.py`, `visual.py`, `rig.py`, `render/scene.py` | the `mounts` category, `visual.json` `carrier`, the riding rule of the renderer |
+| `tests/test_mobility.py` | 22 tests (below) |
+
+### The clips
+
+| Clip | Kind | Length | Leads into | What |
+|---|---|---|---|---|
+| `move.leap` | base loop | 1.0 s | | in the air on any jump: the right knee up, the left leg trailing, the arms out for balance, a slow drift so a long leap stays alive |
+| `move.jump` | base one-shot | 0.3 | `move.leap` | leaving the ground: the push-off (legs straight, toes pointed, the arms swung up and out), then the knee draws up; dust |
+| `move.crouch_jump` | base one-shot | 0.3 | `move.leap` | the leap's tell: a dip, the deep crouch (knee 80 degrees, feet planted on every base, the eyes on the target), the push on the last tick |
+| `move.air_jump` | base one-shot | 0.35 | `move.leap` | the legs kick down (a ring of air, `entity.breeze.jump`), the tuck turns one front flip about the hips (0.08-0.28 s), opens out |
+| `move.wall_kick` | base one-shot | 0.3 | `move.leap` | crouched against the wall behind with a foot planted on it, the kick: the leg drives back, the knee and arms forward |
+| `move.mantle` | base one-shot | 0.5 | `move.idle` | hands on the edge, the pull with a knee up, the press over the edge, the step up; gritted teeth |
+| `move.land` | base one-shot | 0.3 | `move.idle` | touch-down, the knees take the weight (70 degrees, feet planted), up |
+| `move.land_heavy` | base one-shot | 0.5 | `move.idle` | a deep crouch (110 degrees) with a fist on the ground and the other arm flung out, held, up |
+| `move.land_roll` | base one-shot | 0.5 | `move.idle` | the hands reach for the ground, a forward roll over the back (0.06-0.3 s), up into a crouch and the stance |
+| `move.climb_idle` | base loop | 4.0 | | clinging: hands wide on holds, breathing, a glance over the shoulder and one down, a grip shifting |
+| `move.climb_down` | base loop | 1.0 | | foot under foot, hand under hand, looking down, a small drop on each step |
+| `move.glide_start` | base one-shot | 0.4 | `move.glide` | from the fall the arms sweep out (`item.armor.equip_elytra`), the body tips forward with an overshoot |
+| `move.glide` | base loop | 2.4 | | pitched 62 degrees, legs trailing, arms spread like wings, a slow bank one way and the other, a bob |
+| `move.gust` | base one-shot | 0.4 | `move.glide` | lifted: nearly upright, the arms swept up and out, the knees tucked (`entity.wind_charge.wind_burst`), spread again |
+| `move.takeoff` | base one-shot | 0.6 | `move.fly` | the 0.6 s tell: a crouch with the arms opening like wings, the push with the arms driven down, the rise |
+| `move.fly` | base loop | 1.6 | | leaning 38 degrees, legs trailing, arms relaxed back, a slow bob and a flutter |
+| `move.fly_fast` | base loop | 0.8 | | nearly level and streamlined, the arms back along the sides, a quick shallow bob |
+| `move.fly_hover` | base loop | 1.6 | | upright, treading the air, the arms balancing |
+| `move.fly_land` | base one-shot | 0.4 | `move.idle` | the flare (the body back, the legs forward, the arms braking), touch-down, up |
+| `move.sprint` | base loop | 0.5 | | the runner's burst: a longer stride (42 degrees), the knee at 108, a 13 degree lean, a longer flight phase |
+| `move.charge_run` | base loop | 0.6 | | a heavy driving run leaning 20 degrees, the head down, the right shoulder leading, both forearms up |
+| `move.skid` | base one-shot | 0.4 | `move.idle` | braked on the front heel with the weight sunk on the back leg (both soles down, solved), the heel lifts and comes back (`entity.breeze.slide`) |
+| `move.downed` | base one-shot | 2.0 | `move.idle` | shot down: sprawled on the back with stars, dazed until 1.0 s, a rock back with the legs up, a kip-up (in the air for a moment), a deep squat landing on the feet's own spots, up |
+| `move.winded` | base loop | 1.2 | | hunched with the hands on the knees, panting twice a second, the mouth opening on each breath, a sweat drop |
+| `move.ride` | base loop | 2.0 | | astride the carrier on the `mount` bone, both hands on the handle, a bob (the mount bobs with the root) and a sway |
+| `move.ride_cast` | action over `move.ride` | 0.6 | `move.ride` | the upper body only: the right hand draws back and casts forward (`vfx:cast`) |
+| `move.air_dive` | action (class heavy) | 2.0 | `move.idle` | the `dive` form's default: a wind-up in the air (knees tucked, the fist raised, the eyes on the target), the plunge (`item.trident.riptide_1`), the hit on landing in the heavy-landing crouch at 1.0 s (`hit;vfx:ground_slam`), the recovery |
+| `sec.wings_fold` | secondary loop | 4.0 | | the wings tucked against the back, rising with the breath, a ruffle |
+| `sec.wings_flap` | secondary loop | 0.5 | | a power stroke from high to low in 0.2 s, half folded on the way up |
+| `sec.wings_glide` | secondary loop | 2.0 | | spread wide and level, the tips fluttering |
+
+Faces come from `face_ctrl` keys where the move has an expression (a determined jump and take-off, focused eyes on the
+tell and the roll, closed eyes in the tuck, gritted teeth on the mantle, surprise on the skid and the gust, pain on
+the downing, a tired face with a sweat drop while winded); the loops leave the mood alone except `move.fly_fast` and
+`move.sprint` (focused) and `move.winded`.
+
+### Generator additions
+
+1. **Base one-shots settle.** A recipe with `loop: false`, `kind: "base"` and `settle_to` ends on the first frame of
+   that loop on every channel it keys (the same `_settle` as actions), and `quality.check_settle` checks it. GeckoLib
+   blends a queued animation in over the controller's transition from the pose shown, so a one-shot that ends on the
+   next loop's first frame hands over with nothing to see. (Without `kind: "base"` a one-shot defaults to an action:
+   the first draft did that and its events were written 2 ticks early for the base controller; a test pins the kinds.)
+2. **Full turns** (`primitives.spin`): a flip, a roll or a twist turns bones by whole turns from t0 to t1 (keyed
+   every tick) and unwinds at t1 with a Bedrock pre/post key (the same orientation), so the clip ends where it started
+   and GeckoLib never turns it back the long way. A whole figure turns about the hips when `body`, `leg_r` and `leg_l`
+   (all pivoted at the hips) turn together (the flip, the roll), or about its vertical axis on `root` (the cat twist).
+   Layers now keep jump keys when they are summed (`recipes._layer`).
+3. **Floor spans** (recipe `floor: [{from, to, bones}]`): after the layers, the root height follows the lowest point
+   of the bones tick by tick, fitted over the forms (form-scaled): the roll's tucked body stays on the ground while it
+   turns over (head included: within 0.75 px on every base, a test).
+4. **`hold`**: a constant offset added over a gait layer that replaces those channels (the charge's leading shoulder
+   over `run_cycle`).
+5. **Riding** (`contact: "mount"`, `seat` default `leg_*`): `quality.check_mount` keeps the lowest point of the seat
+   bones within 0.6 px of the `mount` bone's pivot (carried by the root) every tick on all six bases. The pivot is the
+   underside of level thighs on every form, so thighs at -90 degrees sit exactly on it.
+6. **Variants** (`herosrc/anim/variants/<name>.json`, `{variant, poses, animations}`): a hero's
+   `animations.variants` copies them into its own file; its own signatures and overrides still win; a variant's
+   animations must be `move.*` and its poses may not reuse a pose library name.
+
+### Carriers and the mount
+
+- The rig's optional `mount` bone (67 bones with every option) is under `root`, so a bob carries the carrier with its
+  rider; its pivot is the seat. G6c's staff mount now uses it (same pivot as before).
+- A `mounts` part (category `mounts`, `carrier: <kind>`) puts its cubes on `mount`; `mounts/broom` is a straight
+  handle with its top at the seat, a knob, a cord binding and two splayed straw bundles authored hanging and laid back
+  by their rotation (their ragged ends are the far end). A hero has one carrier: a mounts part and a weapon with a
+  mount refuse each other.
+- `visual.json` gains `carrier` {part (`weapon` or the part id), kind, bone, seat} whenever the mount has cubes, and
+  `bones.mount`. The preview renderer shows the mount only while riding and hides the weapon's hand and back copies
+  only when the carrier is the weapon (Ambrose); a broom part leaves the weapon where it is.
+
+### Hero variants (MOBILITY_AND_WORK 15)
+
+| Variant | Hero (sample outfit) | Overrides | What |
+|---|---|---|---|
+| `cat_twist` | Natsuho | `move.air_jump` | the cat twist: she arches and tucks, turns once round her vertical axis (the root, 0.06-0.28 s) with the chest leading, the hips following and the tail sweeping the other way, a smug grin |
+| `fox_lope` | Yugen | `move.sprint` | long low bounds with a long float (flight 1.8), the body stretched 20 degrees, the arms swept back like trailing sleeves, a sly smile; 0.6 s |
+| `crane_leap` | Kagenori | `move.leap` | the crane: arms spread wide and a little back with the sleeves hanging from them, the right knee high, the left leg straight below, one slow wing beat per 1.2 s |
+| `broom` | Ambrose | `move.takeoff`, `move.ride`, `move.ride_cast`, `move.fly_land` | side-saddle: a crouch and a hop onto the staff, both thighs level on it and turned to the left with the ankles crossed, the chest and head turned back to the way ahead, the right hand on the shaft; the free left hand throws a vial; he slides off to land |
+
+The four pass every animation rule in their hero's own file on the hero's base and on a chibi (a test). The core's
+jump one-shots end on the core `move.leap`'s pose; for Kagenori the base controller then blends into his crane (4
+ticks).
+
+### Sounds and markers
+
+SOUND.md 7 gives the server the take-off, the heavy landing, the glide loop, the downing and the steps, so the clips
+mark only client details, all vanilla 1.21.1 events (a test reads sfxgen's list): `entity.breeze.jump` (the air jump,
+the wall kick), `item.armor.equip_elytra` (the glide opens), `entity.wind_charge.wind_burst` (the gust),
+`entity.breeze.slide` (the skid), `item.trident.riptide_1` (the dive's plunge). `vfx:` markers: `jump_dust`,
+`ground_dust`, `air_ring`, `wall_dust`, `gust`, `takeoff_dust`, `skid_dust`, `stars`, `cast`, `ground_slam` (no
+particle handler yet, A2). Base clips write their events after the base controller's 4-tick blend (G3 review).
+
+### Previews (`docs/heroes-v2/previews/anim/locomotion/`)
+
+`jumps`, `climb_glide`, `flight` (with feathered wings and their loops), `ground` (sprint, charge, skid, the dive) and
+`ride` (a mounts/broom) on Tansy (chibi_f) and Maren (adult_f), and `hero_natsuho`, `hero_yugen`, `hero_kagenori`,
+`hero_ambrose` (each variant on the hero's own base and a chibi): a GIF at 20 fps and a contact sheet each, and a
+README. `anim/loco_preview.LocoPlayback` plays the base controller's queue (each clip blends in from the pose shown
+over 4 ticks, as GeckoLib starts a queued animation), an action over it (2 ticks) and the wing loop on the secondary
+controller (6 ticks); the carrier shows from the take-off's start until the landing has played.
+
+### Tests (309 -> 331: `tests/test_mobility.py`, 22)
+
+The set of 4.1 (27, kinds, loop modes, lengths); every one-shot ends on its loop and one moved off it fails (the
+settle rule and `check_built`); every clip passes the quality rules on all six bases; the wing loops key only the
+wings, a full beat, and no locomotion clip keys a wing; no root motion; the crouch jump crouches with planted feet on
+every base; markers and their file times; every sound is a 1.21.1 event; the flip turns once and unwinds (written as a
+pre/post key and read back), a layer keeps the jump, a spin outside the clip fails; the roll stays on the ground on
+every base; the mount bone is the seat on every base; the broom part is a carrier (visual.json, hidden unless riding,
+the weapon kept, the handle's top at the seat); the staff is a weapon carrier (its copies hidden while riding); one
+carrier, and a mounts part off the mount bone fails; the rider sits on the mount and lifted thighs fail; variants go
+into the hero's own file and its override wins, an unknown variant fails; the four slice variants pass on their bases;
+the cat twists round its vertical axis; the broom rides side-saddle on the mount; the preview queue hands a one-shot
+to its loop without a pop. `test_rig`: 67 bones with every option, and the `mount` pivot (the seat) is the one height
+that follows the build (the leg's depth) instead of the form.
+
+### Decisions (each deliberate)
+
+1. **Locomotion one-shots are base clips** (MOBILITY_AND_WORK 4.2: one-shots play on the base controller over the
+   loop), so an attack on the action controller is never cut by a landing; they end on the loop that follows instead
+   of `move.idle`.
+2. **Flips and rolls are real full turns**, unwound by a pre/post key. GeckoLib places `pre` 0.001 s before its key and
+   interpolates between them, so a render frame that falls in that millisecond (about one flip in 16 at 60 fps) shows
+   the body at an in-between angle for that frame. A tuck without the turn read as a crouch in the air and a roll
+   without it as a stumble; the open item below has the engine-side fix.
+3. **Variants instead of per-hero copies**: an archetype's flavour (a cat's twist, a witch's broom) is one file any
+   hero can pick (MOBILITY_AND_WORK 18.3); the sample outfits carry them until C1-C4 write the heroes.
+4. **The broom variant keys no part bone** (Ambrose's crow): a hero's own file is checked against its own bones, and a
+   witch without a crow must be able to use it.
+5. **Wings are animated only by the secondary controller's loops**, so no base clip and no action has to know whether
+   a hero has wings, and the loops play over anything.
+6. **`move.air_dive` is 2.0 s**: the heavy class needs 0.8 s before the hit and 0.8 s after it; the dive's touch-and-go
+   (0.5 s) is the hero's own recipe or A12's.
+
+### Open items
+
+- **A10 (`DATA_LOCO`, `HeroClips`)**: the clip names are MOBILITY_AND_WORK 4.1's; `HeroClips.LOCO_CLIPS` (A2) still
+  plays `move.cling`, `move.charge`, `move.run` and `rest.sit` for modes 7, 10, 11 and 14: they should be
+  `move.climb_idle`, `move.charge_run`, `move.sprint` and `move.ride`. Play the one-shots as `thenPlay(one-shot)
+  .thenLoop(loop)` on the base controller (the loop each one leads into is its `settle_to` in the timing file's clip
+  and in this table). A hero whose carrier is a mount flies in mode 14 (ride): the broom variant has no `move.fly`.
+- **A10 / A2**: show `visual.json` `bones.mount` only in the fly, glide and ride modes and, when `carrier.part` is
+  `weapon`, hide `bones.weapon_drawn` and `bones.weapon_sheathed` meanwhile; play `sec.wings_fold`, `sec.wings_flap`
+  (speed from the flight speed) or `sec.wings_glide` by mode on the secondary controller; the `tired` bit could slow
+  the beat.
+- **A2 (the unwind)**: to remove decision 2's one-frame risk, `HeroModel` can skip a frame's sample inside a pre/post
+  millisecond (or snap a rotation channel that moved by more than 300 degrees since the last frame to its post value).
+- **Timing files**: the `sec.*` loops are written with the base controller's 4 ticks (the Java test accepts base and
+  action only); they carry no events, so nothing fires early. A `secondary` kind (6 ticks) needs the Java side first.
+- **C3**: Ambrose's crow flapping beside him while he flies needs wing bones on the crow part; his `broom_dive`
+  recipe is his own.
+- **G8 / G10b**: style overrides of the set (a samurai's `move.leap` keeping the sword hand still), the other
+  carriers (cloud, sword, crane, jets, kite, canopies) and G10b's six (hover, drift, swim_fast, tread, swim_down,
+  surface_leap).
+- **Polish**: raised arms hide behind the big head from behind (the climb's hands were widened for it); Garrick's and
+  Kagenori's hip scabbards point up while riding astride (they hang from `body`).

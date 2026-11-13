@@ -1,0 +1,55 @@
+{
+  "_comment": "A fox's lope for the sprint burst (G10; MOBILITY_AND_WORK 15.2: Yugen's override of move.sprint; a fox or wolf runner may use it): long, low, floating bounds with the body stretched forward, the arms swept back loose like trailing sleeves, the tails streaming.",
+  "variant": "fox_lope",
+  "poses": {
+    "fox.arms_back": {
+      "_comment": "The lope's arms: swept back and a little out, loose, the hands open.",
+      "bones": {
+        "arm_r": [46, 0, 18],
+        "forearm_r": [-18, 0, 0],
+        "hand_r": [10, 0, 6],
+        "arm_l": [46, 0, -18],
+        "forearm_l": [-18, 0, 0],
+        "hand_l": [10, 0, -6],
+        "ear_r": [-30, 0, 6],
+        "ear_l": [-30, 0, -6]
+      }
+    }
+  },
+  "animations": {
+    "move.sprint": {
+      "description": "Yugen's sprint burst, a fox lope, a 0.6 s loop: long low bounds with a long float between the pushes (the body stretched 20 degrees forward, the knees snapping high), the arms swept back like trailing sleeves, a sly smile; the tails stream behind (the bake and the procedural lag).",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "fox.arms_back", "face": "smug"}, {"t": 0.6, "pose": "fox.arms_back"}],
+      "layers": [
+        {
+          "primitive": "run_cycle",
+          "add": false,
+          "params": {
+            "stride": 42,
+            "knee": 106,
+            "lean": 20,
+            "waist_lean": 2,
+            "chest_lean": 2,
+            "head_level": 0.9,
+            "twist": 4,
+            "tilt": 1.5,
+            "flight": 1.8,
+            "upper": 0,
+            "tail_lift": -28,
+            "tail_sway": 3
+          }
+        },
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"arm_r": [8, 0, 3], "arm_l": [8, 0, -3], "forearm_r": [-6, 0, 0], "forearm_l": [-6, 0, 0]},
+            "period": 0.3
+          }
+        }
+      ]
+    }
+  }
+}

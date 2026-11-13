@@ -32,6 +32,14 @@ A recipe:
               gets its own copy expanded over that stance (library.py), so the reaction settles on the style's stance
   copy        (G4) the name of another recipe of the same library to expand under this name (an alias: `eat` is
               `work.eat`)
+  settle_to   (G10) also for a base one-shot (a jump, a landing, a take-off: MOBILITY_AND_WORK 4.1): the loop the base
+              controller plays next (`move.leap`, `move.idle`, `move.fly`); the clip ends on that loop's first key
+              on every channel it keys, so GeckoLib's blend into the queued loop shows nothing
+  floor       (G10) [{from, to, bones}]: after the layers, the root height follows the lowest point of `bones` (default
+              the base body, BODY: the head rests deeper, as in G4's lying poses) tick by tick from `from` to `to`, fitted
+              over the forms (form-scaled): a roll whose spin turns the tucked body over on the ground
+  contact     (G10) also "mount": a riding clip; the bones in `seat` (default the thighs, `leg_*`) rest on the rig's
+              `mount` bone (its pivot, the seat, carried by the root) on every form (quality.check_mount)
 Pose keys: every bone any key's pose mentions is keyed at every pose key (0 where a pose leaves it out), so a key is
 a whole pose; the pose "@stance" is the first frame of the clip the action settles on (its authored channels: the
 style's stance for a restyled reaction), and `over: true` adds the key's pose to that stance (bones it leaves out
@@ -57,7 +65,8 @@ KEY_FIELDS = ("t", "pose", "ease", "root", "face", "marker", "sound", "particle"
               "settle", "settle_time", "over")
 RECIPE_FIELDS = ("length", "loop", "kind", "class", "settle_to", "secondary", "planted", "ground", "poses", "keys",
                  "layers", "markers", "bones", "description", "steps", "contact", "restyle", "copy", "plays_over",
-                 "arms_over")
+                 "arms_over", "seat", "floor")
+CONTACTS = ("soles", "body", "mount")
 STANCE = "@stance"
 ARM_GLOBS = ("arm_*", "forearm_*", "hand_*")
 DEFAULT_EASE = "easeInOutSine"
@@ -133,6 +142,7 @@ def stance_of(clip):
     return out
 
 
+FLOOR_BODY = ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "leg_*", "shin_*", "foot_*"]
 SKIRT_FOLLOW = 30.0         # degrees between a thigh and the hips beyond which skirt panels follow the thighs
 SKIRTS = ("skirt_f", "skirt_b", "skirt_r", "skirt_l")
 
@@ -252,6 +262,12 @@ class Expander:
             clip.meta["settle_to"] = recipe.get("settle_to", self.default_settle)
             base = self.lookup(clip.meta["over"])
             settle = self.lookup(clip.meta["settle_to"])
+        elif loop == "once" and recipe.get("settle_to"):
+            # G10: a base one-shot ends on the first frame of the loop the base controller queues after it
+            clip.meta["settle_to"] = recipe["settle_to"]
+            settle = self.lookup(recipe["settle_to"])
+            if settle is None:
+                raise HerogenError("%s: settle_to %r is not an animation built before it" % (where, recipe["settle_to"]))
         self.stance = stance_of(base)
         lib = self.poses.with_specs(recipe.get("poses"), where) if recipe.get("poses") else self.poses
         self.over_base = None
@@ -272,6 +288,9 @@ class Expander:
             self._layer(clip, layer, "%s layers[%d]" % (where, i))
         for i, m in enumerate(recipe.get("markers", [])):
             self._markers(clip, m, "%s markers[%d]" % (where, i))
+        for i, f in enumerate(recipe.get("floor", []) or []):
+            self._floor_span(clip, float(f["from"]), float(f["to"]), f.get("bones") or FLOOR_BODY,
+                             "%s floor[%d]" % (where, i))
         if recipe.get("bones"):
             globs = list(recipe["bones"]) + [FACE_BONE]
             for bc in list(clip.tracks):
@@ -283,9 +302,11 @@ class Expander:
         clip.meta["steps"] = gait
         clip.meta["stepping"] = stepping and not gait
         contact = recipe.get("contact", "soles")
-        if contact not in ("soles", "body"):
-            raise HerogenError("%s: contact must be soles or body" % where)
+        if contact not in CONTACTS:
+            raise HerogenError("%s: contact must be %s" % (where, ", ".join(CONTACTS)))
         clip.meta["contact"] = contact
+        if contact == "mount":
+            clip.meta["seat"] = list(recipe.get("seat", ["leg_*"]))
         if recipe.get("restyle"):
             clip.meta["restyle"] = True
         chain = set(secondary.chain_bones())
@@ -299,7 +320,7 @@ class Expander:
             if kind == "action":
                 movers = {b for b, _ in clip.tracks if b != FACE_BONE}
             secondary.bake(clip, self.skeleton, groups, base=base, movers=movers)
-        if kind == "action" and loop == "once":
+        if (kind == "action" or clip.meta.get("settle_to")) and loop == "once":
             self._settle(clip, settle, where)    # a loop closes, a held clip (death) stays on its last frame
         self._finish(clip, where)
         return clip
@@ -449,6 +470,36 @@ class Expander:
                 a, b = primitives.form_fit(lifts)
                 root.set(t, (rx, a, rz), k=(0.0, b, 0.0))
 
+    def _floor_span(self, clip, t0, t1, globs, where):
+        """The root height every tick from t0 to t1 (inclusive) puts the lowest point of `globs` on the ground on
+        every form (a + b x FORM_VAR, fitted over the forms): G10's roll, whose spin turns the tucked body over."""
+        if not (0.0 <= t0 < t1 <= clip.length + 1e-9) or not on_tick(t0) or not on_tick(t1):
+            raise HerogenError("%s: from and to must be ticks inside the clip" % where)
+        root = clip.track("root", "position")
+        n = int(round((t1 - t0) / TICK))
+        fits = []
+        for i in range(n + 1):
+            t = round(t0 + i * TICK, 6)
+            pose = {}
+            for (bone, ch), tr in clip.tracks.items():
+                if ch == "rotation" and bone != FACE_BONE:
+                    pose.setdefault(bone, {})["rotation"] = tr.sample(t)
+            rx, _, rz = root.sample(t)
+            lifts = []
+            for sk in self.forms:
+                pose["root"] = {"rotation": pose.get("root", {}).get("rotation", (0.0, 0.0, 0.0)),
+                                "position": (rx, 0.0, rz)}
+                low, _ = sk.lowest_body(pose, globs)
+                lifts.append((sk.d, -low))
+            a, b = primitives.form_fit(lifts)
+            fits.append((t, (rx, a, rz), (0.0, b, 0.0)))
+        for t, v, k in fits:
+            old = [kk for kk in root.keys if abs(kk.t - t) < 1e-6 and kk.pre is not None]
+            if old:
+                root.put(Key(t, v, "linear", pre=old[0].pre, k=k))
+            else:
+                root.set(t, v, k=k)
+
     def _stance(self, where):
         if self.stance is None:
             raise HerogenError("%s: \"@stance\" and \"over\" need an action with a clip to settle on" % where)
@@ -494,11 +545,22 @@ class Expander:
             base = clip.tracks[bc]
             times = sorted({round(i * TICK, 6) for i in range(int(round(clip.length / TICK)) + 1)}
                            | {round(k.t, 6) for k in base.keys} | {round(k.t, 6) for k in tr.keys})
+            jumps_a = {round(k.t, 6): k for k in base.keys if k.pre is not None and k.t > 0}
+            jumps_b = {round(k.t, 6): k for k in tr.keys if k.pre is not None and k.t > 0}
             out = Track()
             for t in times:
                 a, b = base.sample(t), tr.sample(t)
                 ka, kb = base.sample_k(t), tr.sample_k(t)
-                out.set(t, tuple(a[c] + b[c] for c in range(3)), k=tuple(ka[c] + kb[c] for c in range(3)))
+                v = tuple(a[c] + b[c] for c in range(3))
+                if t in jumps_a or t in jumps_b:
+                    # G10: a jump in either track (a full turn unwound to the same orientation, primitives.spin)
+                    # stays a jump in the sum: the values just before it, then the sum after it
+                    pa = jumps_a[t].pre if t in jumps_a else a
+                    pb = jumps_b[t].pre if t in jumps_b else b
+                    out.put(Key(t, v, "linear", pre=tuple(pa[c] + pb[c] for c in range(3)),
+                                k=tuple(ka[c] + kb[c] for c in range(3))))
+                else:
+                    out.set(t, v, k=tuple(ka[c] + kb[c] for c in range(3)))
             clip.tracks[bc] = simplify(out, 0.05 if bc[1] == "rotation" else 0.005)
         for k, v in part.meta.items():
             clip.meta.setdefault(k, v)

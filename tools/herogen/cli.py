@@ -5,7 +5,8 @@ G2 adds `preview`, `gif`, `faces`, `sheet` (written to build/herogen/ unless --o
 `render-previews` (the owner's set, render/showcase.py); G5 adds `anim-previews --styles` (the style libraries'
 films and sheets). `check --style` also checks the style fixtures in
 herosrc/style (built in memory, never written). G6a/b add the coplanar-face rule to `check` and `lint` (the parts
-library on every base and the sample outfits, lint.py)."""
+library on every base and the sample outfits, lint.py). G10 adds `anim-previews --locomotion` (the mobility set's
+films and sheets)."""
 import argparse
 import io
 import json
@@ -197,6 +198,19 @@ def cmd_anim_previews(args):
                 print("OK   %s: the committed previews match a fresh render" % out)
             return 1 if problems else 0
         for k, p in sorted(core_preview.write_all(out, args.groups or None, gifs=not args.no_gif).items()):
+            print("%s: %s" % (k, p))
+        return 0
+    if args.locomotion:                 # G10: the mobility set's previews (anim/loco_preview.py)
+        from anim import loco_preview
+        out = args.out or loco_preview.OUT_DIR
+        if args.check:
+            problems = loco_preview.check(out, args.groups or None, gifs=not args.no_gif)
+            for p in problems:
+                print("DIFF " + p)
+            if not problems:
+                print("OK   %s: the committed previews match a fresh render" % out)
+            return 1 if problems else 0
+        for k, p in sorted(loco_preview.write_all(out, args.groups or None, gifs=not args.no_gif).items()):
             print("%s: %s" % (k, p))
         return 0
     if args.styles is not None:         # G5: the style libraries' previews (anim/style_preview.py)
@@ -432,11 +446,16 @@ def main(argv=None):
     ap.add_argument("--core", action="store_true", help="the core library's previews (G4) in "
                                                         "docs/heroes-v2/previews/anim/core")
     ap.add_argument("--groups", nargs="*", help="with --core: movement, work, work_home, emotes, combat, "
-                                                "combat_katana")
+                                                "combat_katana; with --locomotion: jumps, climb_glide, flight, "
+                                                "ground, ride, hero_natsuho, hero_yugen, hero_kagenori, "
+                                                "hero_ambrose")
+    ap.add_argument("--locomotion", action="store_true", help="the mobility set's previews (G10) in "
+                                                              "docs/heroes-v2/previews/anim/locomotion")
     ap.add_argument("--styles", nargs="*", default=None, help="the style libraries' previews (G5) in "
                                                               "docs/heroes-v2/previews/anim/styles (all, or the "
                                                               "styles named)")
-    ap.add_argument("--check", action="store_true", help="with --core or --styles: render in a temporary folder and "
+    ap.add_argument("--check", action="store_true", help="with --core, --styles or --locomotion: render in a "
+                                                         "temporary folder and "
                                                          "fail if a committed preview differs")
     ap.set_defaults(fn=cmd_anim_previews)
     for name, fn, hlp in (("preview", cmd_preview, "render a hero to PNG (a pose, an animation frame or frames)"),

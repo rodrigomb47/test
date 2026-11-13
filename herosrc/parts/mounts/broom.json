@@ -1,0 +1,31 @@
+{
+  "_comment": "A flying broom (G10, MOBILITY_AND_WORK 4.3: the `mounts` category, a carrier drawn on the rig's `mount` bone and shown only while the hero rides, flies or glides). A straight handle laid along the hero's facing, its top at the seat (the mount bone's pivot: the underside of level thighs) so a rider sits on it astride or side-saddle on every form; a rounded knob at the front, a cord binding behind the rider and a straw head of two bundles splaying back with ragged ends (authored hanging and laid back along the handle by their rotation, so their cut tips are the far end). For a hero whose weapon is its broom (Ambrose's staff), the weapon's own `mount` is used instead; this is the broom of a witch who carries none. Lengths follow the form (`k`).",
+  "id": "mounts/broom",
+  "category": "mounts",
+  "carrier": "broom",
+  "slots": {"main": "leather", "alt": "trim", "detail": "accent"},
+  "occupies": ["mount"],
+  "vars": {"k": "0.6 + 0.4 * head_y / 42", "s": "hip_y - leg_d / 2", "a": "hip_y - leg_d / 2 - 0.55",
+           "zb": "6.5 * k"},
+  "cubes": [
+    {"name": "handle", "bone": "mount", "origin": [-0.55, "s - 1.1", "-15 * k"], "size": [1.1, 1.1, "15 * k + zb + 0.4"],
+     "material": "wood"},
+    {"name": "knob", "bone": "mount", "origin": [-0.75, "s - 1.3", "-15 * k - 0.8"], "size": [1.5, 1.5, 1.1],
+     "material": "wood", "tone": -1},
+    {"name": "grain", "bone": "mount", "origin": [-0.7, "s - 1.25", "-6 * k"], "size": [1.4, 1.4, 0.7],
+     "material": "wood", "tone": -1, "fine": true},
+    {"name": "binding", "bone": "mount", "origin": [-1.2, "a - 1.2", "zb - 0.5"], "size": [2.4, 2.4, 1.3],
+     "slot": "detail", "material": "cloth"},
+    {"name": "cord", "bone": "mount", "origin": [-1.3, "a - 0.25", "zb - 0.2"], "size": [2.6, 0.5, 0.7],
+     "slot": "detail", "material": "cloth", "tone": -1, "fine": true},
+    {"name": "core", "bone": "mount", "origin": [-1.5, "a - 5.4 * k", "zb + 0.5 - 1.5"], "size": [3.0, "5.4 * k", 3.0],
+     "rotation": [90, 0, 0], "pivot": [0, "a", "zb + 0.5"], "slot": "alt", "material": "cloth", "tone": -1,
+     "cutout": "jagged_2", "shade": "flat"},
+    {"name": "head", "bone": "mount", "origin": [-2.2, "a - 4.6 * k", "zb + 1.4 - 2.2"], "size": [4.4, "4.0 * k", 4.4],
+     "rotation": [90, 0, 0], "pivot": [0, "a", "zb + 1.4"], "slot": "alt", "material": "cloth",
+     "cutout": "jagged_2", "shade": "flat"},
+    {"name": "straw_r", "bone": "mount", "origin": [-2.75, "a - 3.6 * k", "zb + 2.4 - 0.4"], "size": [0.8, "3.4 * k", 0.8],
+     "rotation": [90, 0, 0], "pivot": [-2.35, "a", "zb + 2.4"], "slot": "alt", "material": "cloth", "tone": 1,
+     "shade": "flat", "fine": true, "mirror": true}
+  ]
+}

@@ -76,6 +76,7 @@
     {"name": "leg_l", "parent": "root", "pivot": ["hip_x", "hip_y", 0], "required": true},
     {"name": "shin_l", "parent": "leg_l", "pivot": ["hip_x", "knee_y", 0], "required": true},
     {"name": "foot_l", "parent": "shin_l", "pivot": ["hip_x", "ankle_y", 0], "required": true},
+    {"name": "mount", "parent": "root", "pivot": [0, "hip_y - leg_d / 2", 0], "_comment": "G10: the mount locator of a carrier (MOBILITY_AND_WORK 4.3): a broom part (`mounts/*`) or a weapon that is the carrier (art.weapon.mount: Ambrose's staff-broom) is drawn on it; its pivot is the seat, the underside of level thighs, so a rider astride or side-saddle sits on it on every form; under root, so a hover bob carries it; HeroModel shows it only while the hero rides (visual.json bones.mount, carrier)"},
     {"name": "vfx_tip_r", "parent": "weapon_r", "pivot": ["-shoulder_x", "hand_y", 0], "required": true, "kind": "locator"},
     {"name": "vfx_tip_l", "parent": "weapon_l", "pivot": ["shoulder_x", "hand_y", 0], "required": true, "kind": "locator"},
     {"name": "vfx_chest", "parent": "chest", "pivot": [0, "(chest_y + chest_top) / 2", "-chest_d / 2"], "required": true,

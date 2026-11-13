@@ -27,7 +27,7 @@ class RigTest(unittest.TestCase):
     def test_bone_counts(self):
         rig = load_rig()
         self.assertEqual(rig["id"], "hero_rig_v3")
-        self.assertEqual(len(rig["bones"]), 66, "v2's 64 plus tail_4 and tail_5 (five-bone tails)")
+        self.assertEqual(len(rig["bones"]), 67, "v2's 64 plus tail_4 and tail_5 (five-bone tails) and G10's mount")
         self.assertEqual(sorted(required_bones(rig)), sorted(REQUIRED))
         self.assertEqual(len(REQUIRED), 33)
         self.assertEqual(rig["budgets"]["bones"], 100)
@@ -92,7 +92,8 @@ class RigTest(unittest.TestCase):
 
     def test_forms_share_names_and_heights(self):
         """Every base has the same bone catalogue; within a form (both families, every build) every pivot height is
-        the same, so an animation keyed for the form fits each of its bodies exactly."""
+        the same, so an animation keyed for the form fits each of its bodies exactly. G10's `mount` is the exception:
+        it is the seat (the underside of level thighs), which follows the build's leg depth, and no clip turns it."""
         models = {(bid, b): Model("t", bid, b) for bid in BASE_IDS for b in BUILDS}
         ref = models[("adult_f", "standard")]
         for (bid, b), m in models.items():
@@ -100,6 +101,9 @@ class RigTest(unittest.TestCase):
             self.assertEqual(sorted(m.bones), sorted(REQUIRED), bid)
             same_form = models[(m.form + "_f", "standard")]
             for name, bone in m.catalogue.items():
+                if name == "mount":
+                    self.assertAlmostEqual(bone.pivot[1], m.env["hip_y"] - m.env["leg_d"] / 2.0)
+                    continue
                 self.assertEqual(bone.pivot[1], same_form.catalogue[name].pivot[1], "%s %s %s height" % (bid, b, name))
 
     def test_body_geometry(self):

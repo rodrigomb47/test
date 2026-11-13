@@ -197,6 +197,7 @@ class Model:
         self.notes = []
         self.phase_hide = {}           # phase -> bones the phase look hides (an off-hand's holstered copy, G6c)
         self.mount = None              # the mounted copy of a carrier weapon (G6c, for G10)
+        self.carrier_kinds = {}        # G10: bone -> the kinds of the mounts/* parts drawn on it
         self.tex_w, self.tex_h = self.rig["budgets"]["textures"][0]
         for name in self.rig_order:
             if self.catalogue[name].required:

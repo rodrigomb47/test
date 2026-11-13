@@ -431,7 +431,57 @@ def flinch(ctx, t=0.0, bones=None, rise=0.08, decay=0.22, rebound=0.25, channel=
     return clip
 
 
+# ------------------------------------------------------------------ G10: offsets and full turns
+
+def hold(ctx, bones=None, channel="rotation"):
+    """Constant offsets added to bones over the whole clip (additive; G10): a turn or a lean kept on top of a gait
+    layer that replaces those channels (a charge's leading shoulder over the run cycle). bones {bone: [x, y, z]}."""
+    if channel not in ("rotation", "position"):
+        raise HerogenError("hold: channel must be rotation or position")
+    clip = Clip("hold", ctx.length, "loop" if ctx.loop else "once")
+    for bone, v in sorted((bones or {}).items()):
+        v = tuple(float(a) for a in v)
+        clip.tracks[(bone, channel)] = Track([Key(0.0, v), Key(ctx.length, v)])
+    return clip
+
+
+def spin(ctx, bones=None, t0=0.0, t1=None, ease="easeInOutSine", unwind=True):
+    """A full turn added to bones (additive; G10: a flip, a roll, a twist in the air): each bone of `bones` {bone:
+    [ax, ay, az]} turns by its angles (whole turns on one axis: [360, 0, 0] is a forward flip of a bone whose rx leans
+    it forward) from t0 to t1 along `ease`, keyed every tick. With `unwind` the angle jumps back to 0 at t1 (a
+    Bedrock pre/post key: the orientation is the same, so nothing shows), so the clip ends where it started and
+    GeckoLib never turns it back the long way when it blends into the next clip. A whole figure turns about the hips
+    when `body`, `leg_r` and `leg_l` (all pivoted at the hips) turn together, or about its vertical axis on `root`."""
+    from anim.clip import ease as ease_fn
+    t0 = float(t0)
+    t1 = float(ctx.length if t1 is None else t1)
+    if not (0.0 <= t0 < t1 <= ctx.length + 1e-9):
+        raise HerogenError("spin: needs 0 <= t0 < t1 <= the clip's length")
+    clip = Clip("spin", ctx.length, "loop" if ctx.loop else "once")
+    n = int(round((t1 - t0) / TICK))
+    for bone, amp in sorted((bones or {}).items()):
+        amp = tuple(float(a) for a in amp)
+        tr = Track([Key(0.0, (0.0, 0.0, 0.0))])
+        if t0 > 0:
+            tr.put(Key(t0, (0.0, 0.0, 0.0)))
+        for i in range(1, n + 1):
+            t = round(t0 + (t1 - t0) * i / n, 6)
+            f = ease_fn(ease, i / float(n))
+            v = tuple(a * f for a in amp)
+            if i == n and unwind:
+                tr.put(Key(t, (0.0, 0.0, 0.0), "linear", pre=v))
+            else:
+                tr.put(Key(t, v))
+        if t1 < ctx.length - 1e-9:
+            tr.put(Key(ctx.length, (0.0, 0.0, 0.0) if unwind else amp))
+        clip.tracks[(bone, "rotation")] = tr
+    clip.meta["spin"] = {"bones": sorted(bones or {}), "t0": t0, "t1": t1}
+    return clip
+
+
 PRIMITIVES = {
+    "spin": spin,
+    "hold": hold,
     "breathe": breathe,
     "weight_shift": weight_shift,
     "look": look,
