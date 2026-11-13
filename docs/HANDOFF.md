@@ -71,7 +71,11 @@ commits, language and testing are in `/CLAUDE.md`.
    - procedural buildings ("factions dont need one exactly blueprint for a building, but a template for it and it can
      be built based on the terrain and resource available").
 
-   Recorded in `docs/ROADMAP.md` (Phase 3 rows and a new Phase 6), with where each fits.
+   - later the same day: more vehicle kinds ("transport items for raids like a van and carrier plane", "more scouting
+     vehicles like a baloon or scout helicoprters"), "more items that factions can craft and use" and "new gear with
+     more advanced weapons and guns" ("this can be added on the appropiate time").
+
+   Recorded in `docs/ROADMAP.md` (Phase 3 rows and Phase 6), with where each fits.
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
