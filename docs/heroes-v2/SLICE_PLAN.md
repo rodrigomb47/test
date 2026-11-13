@@ -71,7 +71,8 @@ agent sessions to A2 and loses marker keyframes (replaced by a sidecar timing fi
 
 ## 3. The eight heroes
 
-All eight are epic (three phases), leader-eligible, and cover all eight elements, six roles, five duel styles and seven
+All eight are adults of ordinary size, so each has the `adult` body form for good (the owner's one-body rule of
+2026-11-13, design 3.6; none is a kid or a small species). All eight are epic (three phases), leader-eligible, and cover all eight elements, six roles, five duel styles and seven
 weapon styles. Their faction primaries are at least 27 apart (CIE76 delta-E, every pair; checked) and their banner base
 dyes, which colour wool, carpets and beds, are all different (orange, purple, red, white, blue, gray, light blue,
 green), so any four of them can lead one campaign without the draft relaxing its colour rule. What the eight do not

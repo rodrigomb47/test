@@ -229,6 +229,14 @@ home hero's war power is added on top, so one hero does not inflate eight soldie
 
 ### 3.6 Size
 
+**One body per hero (owner, 2026-11-13: "i rather they have only one type of body, instead of growing from chibi to
+adult").** Each hero has exactly one body form, its `art.form` (12.5), and keeps it for good: it never changes with
+level, phase or time. Phase looks and a state's size change are separate and stay as designed. The form fits the
+character: `adult` by default, `teen` for a youthful-looking character, and `chibi` only for a hero who is a kid or a
+small species ("its fine if their intended body is in the chibi form if the character is a kid or a small species").
+A hero's previews and screenshots show it only in its own form. Library sheets that prove one animation file fits every
+body use the unnamed style fixtures, never a named hero on a body it does not have.
+
 Rig v3 has three body forms (4.3): **chibi** 35 px to the top of the head, **teen** 45 px and **adult** 52 px, each
 with the same 10 px head, and the whole model is drawn at the rig's **render scale 0.56** (style pass 2: longer
 bodies, so the head with its hair is about a quarter of an adult's height, and a head about the size of a vanilla
@@ -1746,7 +1754,7 @@ Synonyms (ADJUSTED) add `crowd_control`, `cc`, `debuffer`, `trapper` → control
 | Field | Type | Default | Meaning |
 |---|---|---|---|
 | `base` | `female`, `male` | from `gender` | base body family |
-| `form` | `chibi`, `teen`, `adult` | `adult` | body form: heights and head share (section 4.3) |
+| `form` | `chibi`, `teen`, `adult` | `adult` | the hero's one body form, kept for good (3.6): `adult` by default, `teen` for a youthful look, `chibi` only for a kid or a small species; heights and head share (section 4.3) |
 | `build` | `slim`, `standard`, `large` | `standard` | base body build, widths only (section 4.3) |
 | `scale` | whole % 85-110 | 100 | `generic.scale`; hitbox capped at 1.98 blocks |
 | `palette` | map slot to colour | archetype default | slots: `skin`, `skin_shade`, `hair`, `hair_accent`, `eyes`, `primary`, `secondary`, `accent`, `trim`, `metal`, `leather`, `glow`; every part colours from slots |

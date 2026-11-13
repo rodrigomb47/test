@@ -81,6 +81,8 @@ fights as a boss against anyone (one combat mode, the same health, caps and reac
 boss bar, title, decals, sounds and speech stay player-side), attack tokens are gone (any number of heroes may press
 one target), and no hero yields: each escapes or fights to the death as its own personality decides
 (`docs/heroes-v2/HEROES_V2.md` section 6).
+Each hero has one body for good (2026-11-13): no hero changes form, and the form fits the character (adult by default,
+chibi only for a kid or a small species).
 The owner plays single-player only: nothing is tuned for multiplayer or co-op (it should not break, but it is not a
 goal), and the dedicated server stays only as the test harness (single-player runs the same server code).
 The owner then answered that design's questions: heroes may use their abilities to make things "unfair" (they cross
