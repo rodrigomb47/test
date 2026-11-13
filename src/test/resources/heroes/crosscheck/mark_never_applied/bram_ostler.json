@@ -1,0 +1,318 @@
+{
+  "format": 1,
+  "id": "bram_ostler",
+  "name": "Bram Ostler",
+  "title": "the Gatewarden",
+  "description": "A former toll-keeper who decided the gate was his to hold. Slow to anger, impossible to move, and fond of anyone who stands behind him.",
+  "rarity": "rare",
+  "starter_for": "stoneguard",
+  "skin_model": "classic",
+  "color": "#8A7F70",
+  "element": "physical",
+  "stats": {
+    "health": 36,
+    "attack": 1,
+    "armor": 4,
+    "speed": 95,
+    "knockback_resistance": 40,
+    "size": 105,
+    "growth": "tough"
+  },
+  "resistances": {
+    "physical": 10,
+    "frost": -10
+  },
+  "gear": [
+    {
+      "item": "iron_sword",
+      "name": "Toll Breaker",
+      "enchantments": {
+        "knockback": 1
+      }
+    },
+    "shield",
+    "iron_helmet",
+    "chainmail_chestplate"
+  ],
+  "behaviour": {
+    "combat_role": "vanguard",
+    "focus": "threat_to_allies",
+    "aggression": "steady",
+    "protects": "workers",
+    "retreat_below": 20,
+    "raids": "leads",
+    "duty": "guard"
+  },
+  "basic_attack": {
+    "style": "melee",
+    "on_hit": [
+      {
+        "type": "mark",
+        "mark": "toll",
+        "stacks": 1,
+        "max_stacks": 4,
+        "seconds": 12
+      }
+    ],
+    "every_nth_hit": {
+      "n": 4,
+      "effects": [
+        {
+          "type": "knockback",
+          "strength": 2
+        },
+        {
+          "type": "stat",
+          "stat": "damage_dealt",
+          "percent": -20,
+          "seconds": 5
+        }
+      ]
+    }
+  },
+  "skills": [
+    {
+      "name": "Shield Slam",
+      "description": "Drives his shield into the target. A target that has paid enough toll is knocked senseless.",
+      "form": "melee",
+      "windup": 0.3,
+      "cooldown": 9,
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "base": 2,
+            "armor_percent": 20
+          }
+        },
+        {
+          "type": "stun",
+          "seconds": 1,
+          "if": {
+            "condition": "target_has_mark",
+            "mark": "tolls",
+            "value": 3
+          }
+        },
+        {
+          "type": "clear_marks",
+          "mark": "toll",
+          "if": {
+            "condition": "target_has_mark",
+            "mark": "toll",
+            "value": 3
+          }
+        }
+      ],
+      "look": {
+        "particle": "crit",
+        "sound": "item.shield.block",
+        "pose": "block"
+      }
+    },
+    {
+      "name": "Gate Call",
+      "description": "A bellow that turns every nearby enemy toward him while he braces behind golden hearts.",
+      "form": "nova",
+      "radius": 6,
+      "cooldown": 14,
+      "use_when": "enemies_near",
+      "use_value": 2,
+      "effects": [
+        {
+          "type": "taunt",
+          "seconds": 4
+        },
+        {
+          "type": "shield",
+          "to": "self",
+          "amount": {
+            "max_health_percent": 20
+          },
+          "seconds": 8
+        }
+      ],
+      "look": {
+        "particle": "angry_villager",
+        "sound": "entity.ravager.roar",
+        "pose": "horn"
+      },
+      "line": "Eyes on me!"
+    },
+    {
+      "name": "Brace",
+      "description": "Plants his feet and shrugs off whatever is clinging to him.",
+      "form": "self",
+      "cooldown": 16,
+      "use_when": "self_health_below",
+      "use_value": 50,
+      "effects": [
+        {
+          "type": "stat",
+          "stat": "damage_taken",
+          "percent": -30,
+          "seconds": 6
+        },
+        {
+          "type": "cleanse"
+        }
+      ],
+      "look": {
+        "particle": "white_ash",
+        "sound": "block.anvil.land"
+      }
+    }
+  ],
+  "ultimate": {
+    "name": "Hold the Gate",
+    "description": "Everyone near him stands firm behind a wall of golden hearts, and Bram becomes the gate itself.",
+    "form": "allies",
+    "radius": 10,
+    "windup": 0.5,
+    "use_when": "big_fight",
+    "charge_rate": 110,
+    "effects": [
+      {
+        "type": "shield",
+        "amount": {
+          "base": 4,
+          "max_health_percent": 15
+        },
+        "seconds": 10
+      },
+      {
+        "type": "effect",
+        "id": "resistance",
+        "level": 1,
+        "seconds": 8
+      },
+      {
+        "type": "empower",
+        "seconds": 10
+      }
+    ],
+    "look": {
+      "particle": "totem_of_undying",
+      "sound": "block.beacon.activate"
+    },
+    "line": "Nobody passes. Nobody falls."
+  },
+  "empowered": {
+    "name": "Iron Vigil",
+    "description": "Heavier, steadier, and every blow he lands demands the enemy's attention.",
+    "stats": [
+      {
+        "stat": "armor",
+        "percent": 30
+      },
+      {
+        "stat": "knockback_resistance",
+        "percent": 30
+      }
+    ],
+    "on_hit": [
+      {
+        "type": "taunt",
+        "seconds": 2
+      }
+    ],
+    "particle": "white_ash",
+    "size": 104,
+    "line": "I am the gate."
+  },
+  "passives": [
+    {
+      "name": "Shoulder to Shoulder",
+      "description": "When an ally beside him is struck, he throws a guard over them.",
+      "trigger": "on_ally_hurt",
+      "cooldown": 8,
+      "form": "trigger_ally",
+      "effects": [
+        {
+          "type": "shield",
+          "amount": {
+            "max_health_percent": 8
+          },
+          "seconds": 5
+        }
+      ]
+    },
+    {
+      "name": "Stubborn",
+      "description": "Below half health he only gets harder to move.",
+      "trigger": "always",
+      "if": {
+        "condition": "self_health_below",
+        "value": 50
+      },
+      "effects": [
+        {
+          "type": "stat",
+          "stat": "damage_taken",
+          "percent": -15
+        }
+      ]
+    }
+  ],
+  "base_abilities": [
+    {
+      "type": "aura",
+      "name": "Foreman's Eye",
+      "affix": "mason",
+      "stacks": 2,
+      "radius": 24
+    },
+    {
+      "type": "drill",
+      "name": "Gate Drill",
+      "xp": 2,
+      "radius": 16
+    }
+  ],
+  "lines": {
+    "summoned": [
+      "Bram Ostler. Show me the gate and I'll show you a wall."
+    ],
+    "greeting": [
+      "Morning, {player}. Walls are holding.",
+      "Toll's paid, {player}. Go on through."
+    ],
+    "idle": [
+      "Good gates don't need to be pretty. Just stubborn."
+    ],
+    "fight_start": [
+      "Here they come. Behind me.",
+      "Line up, {enemy}. Everyone pays."
+    ],
+    "ultimate": [
+      "Nobody passes!"
+    ],
+    "low_health": [
+      "Not... yet."
+    ],
+    "kill": [
+      "Stay down."
+    ],
+    "ally_fallen": [
+      "{ally}! I should have been closer."
+    ],
+    "victory": [
+      "Gate's clear."
+    ],
+    "raid_start": [
+      "{faction} marches. Stay in my shadow."
+    ],
+    "base_attacked": [
+      "To the gate! {faction}, to the gate!"
+    ],
+    "level_up": [
+      "Level {level}. Still the same stubborn fool."
+    ],
+    "fallen": [
+      "Hold... the gate..."
+    ],
+    "revived": [
+      "Back on my feet. Who did I miss?"
+    ]
+  }
+}

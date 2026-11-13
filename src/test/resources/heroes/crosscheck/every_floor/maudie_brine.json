@@ -1,0 +1,243 @@
+{
+  "format": 1,
+  "id": "maudie_brine",
+  "name": "Maudie Brine",
+  "title": "Saltwater Mender",
+  "description": "A healer who learned her craft on storm-wrecked shores. When the fighting stops she cooks for the whole base and scolds anyone who skipped a meal.",
+  "rarity": "rare",
+  "starter_for": "tide_alliance",
+  "skin_model": "slim",
+  "color": "#2E86C1",
+  "element": "frost",
+  "stats": {
+    "health": 26,
+    "attack": 0,
+    "armor": 2,
+    "speed": 100,
+    "growth": "mystic"
+  },
+  "resistances": {
+    "frost": 20,
+    "shock": -10
+  },
+  "gear": [
+    "iron_helmet",
+    "leather_chestplate",
+    "leather_leggings"
+  ],
+  "behaviour": {
+    "combat_role": "support",
+    "keep_distance": 8,
+    "aggression": "cautious",
+    "protects": "allies",
+    "retreat_below": 40,
+    "raids": "joins",
+    "duty": "chef"
+  },
+  "basic_attack": {
+    "style": "thrown",
+    "projectile": "prismarine_shard",
+    "held_item": "heart_of_the_sea",
+    "amount": 3,
+    "interval": 1.4,
+    "element": "frost",
+    "on_hit": [
+      {
+        "type": "freeze",
+        "seconds": 1,
+        "chance": 30
+      }
+    ]
+  },
+  "skills": [
+    {
+      "name": "Mending Draught",
+      "description": "Closes the worst wounds of the most hurt ally nearby.",
+      "form": "ally",
+      "range": 12,
+      "cooldown": 8,
+      "use_when": "ally_health_below",
+      "use_value": 60,
+      "effects": [
+        {
+          "type": "heal",
+          "amount": {
+            "base": 3,
+            "target_max_health_percent": 15
+          }
+        }
+      ],
+      "look": {
+        "particle": "heart",
+        "sound": "block.amethyst_block.chime"
+      }
+    },
+    {
+      "name": "Clear Water",
+      "description": "Washes poison, fire and frost off everyone near her.",
+      "form": "allies",
+      "radius": 8,
+      "cooldown": 18,
+      "use_when": "ally_health_below",
+      "use_value": 80,
+      "effects": [
+        {
+          "type": "cleanse"
+        },
+        {
+          "type": "effect",
+          "id": "regeneration",
+          "level": 1,
+          "seconds": 5
+        }
+      ],
+      "look": {
+        "particle": "splash",
+        "sound": "entity.player.splash"
+      }
+    },
+    {
+      "name": "Undertow",
+      "description": "Drags an enemy toward her friends through a spray of freezing water.",
+      "form": "bolt",
+      "range": 12,
+      "cooldown": 11,
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 3
+        },
+        {
+          "type": "pull",
+          "strength": 2
+        },
+        {
+          "type": "effect",
+          "id": "slowness",
+          "level": 1,
+          "seconds": 3
+        }
+      ],
+      "look": {
+        "particle": "nautilus",
+        "sound": "item.trident.riptide_1",
+        "pose": "spear_throw"
+      }
+    }
+  ],
+  "ultimate": {
+    "name": "Spring Tide",
+    "description": "A ring of clean seawater follows her for six seconds: friends inside mend, enemies inside wade.",
+    "form": "zone",
+    "zone_at": "follow_self",
+    "radius": 6,
+    "duration": 6,
+    "interval": 1,
+    "windup": 0.5,
+    "use_when": "ally_health_below",
+    "use_value": 50,
+    "effects": [
+      {
+        "type": "heal",
+        "to": "allies",
+        "amount": 2
+      },
+      {
+        "type": "effect",
+        "id": "slowness",
+        "level": 1,
+        "seconds": 2
+      }
+    ],
+    "look": {
+      "particle": "splash",
+      "sound": "block.conduit.activate"
+    },
+    "line": "Breathe. I've got you."
+  },
+  "passives": [
+    {
+      "name": "Calm Presence",
+      "description": "In a fight, people near her slowly recover.",
+      "trigger": "every",
+      "trigger_value": 3,
+      "form": "allies",
+      "radius": 6,
+      "effects": [
+        {
+          "type": "heal",
+          "amount": 6
+        }
+      ]
+    },
+    {
+      "name": "Rising Tide",
+      "description": "When another hero unleashes their full power, the swell lifts her too.",
+      "trigger": "on_ally_ultimate",
+      "cooldown": 20,
+      "form": "self",
+      "effects": [
+        {
+          "type": "energy",
+          "amount": 10
+        }
+      ]
+    }
+  ],
+  "base_abilities": [
+    {
+      "type": "mend",
+      "name": "Sick Bay",
+      "percent": 5,
+      "every": 10,
+      "radius": 16
+    },
+    {
+      "type": "aura",
+      "name": "Hearty Meals",
+      "affix": "hardy",
+      "stacks": 2,
+      "radius": 24
+    }
+  ],
+  "lines": {
+    "summoned": [
+      "Maudie Brine. Point me at the kitchen and the wounded, in that order."
+    ],
+    "greeting": [
+      "Eaten today, {player}?",
+      "Sit. You look tired, {player}."
+    ],
+    "idle": [
+      "Salt, a little kelp, a lot of patience. That's the whole secret."
+    ],
+    "fight_start": [
+      "Stay together!"
+    ],
+    "skill": [
+      "Hold still, this stings.",
+      "Here, drink."
+    ],
+    "ultimate": [
+      "Breathe. I've got you."
+    ],
+    "low_health": [
+      "I need cover!"
+    ],
+    "ally_fallen": [
+      "No... {ally}..."
+    ],
+    "victory": [
+      "Everyone in one piece? Good. Soup's on."
+    ],
+    "base_attacked": [
+      "{faction}, to the walls! I'll keep you standing."
+    ],
+    "fallen": [
+      "Keep... them... safe..."
+    ],
+    "revived": [
+      "The tide always comes back."
+    ]
+  }
+}

@@ -2214,7 +2214,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
-| F1 | v1 format core in Java: `HeroJson`, `HeroCatalogue`, `HeroDef`, `HeroReader`, `Problems`, `HeroBalance`, `HeroRules` (v1 §32 phase 1, minus skins) | - | L | v1 unit tests of §31.1 green |
+| F1 | v1 format core in Java: `HeroJson`, `HeroCatalogue`, `HeroDef`, `HeroReader`, `Problems`, `HeroBalance`, `HeroRules` (v1 §32 phase 1, minus skins) | - | L | v1 unit tests of §31.1 green. Done 2026-11-13: the seven classes in `logic/hero/` with 473 unit tests in all (237 new: one case per message code, 117 of them; 6,000 seeded damaged files that must load within every range, cap and floor or be refused; 38 cases cross-checked against `tools/herotool/herotool.py`); the three v1 examples load with nothing to report; no game code reads the classes yet ("F1 as built" below) |
 | F2 | Format 2: catalogue additions (12), sense rules (14.1), `checkHeroes` task, schema generation | F1 | L | `HeroReaderV2Test`, `HeroBalanceV2Test` |
 | F3 | `BossRules`, `MoveSelector`, `HeroActions`, decal geometry helpers | F1 | M | their unit tests |
 | F4 | `Personality`, `Temperaments`, `LeaderBiases`, `LeaderDraft`, `FactionNameGen`, `Palette`, `BannerDesign`, `BaseStyles`, `Talents` | - | M | their unit tests (neutral equals today) |
@@ -2476,6 +2476,51 @@ read in the decompiled 4.9.3 jar):
 - **Checkpoint 1 stands:** A0, A1a and A2 are done and reviewed; the test rig renders, blinks and walks in game. Left
   as noted: the hero drawn with `_fallback` geometry when a client lacks its own keeps its own look's bone lists
   (harmless while every hero shares the rig's names and face regions); the live check's open items above.
+
+F1 as built (2026-11-13), where it goes beyond or differs from v1 §26 and §29.1 and the row above:
+- **Seven pure classes** in `logic/hero/`: `HeroJson` (line and column of every key and value, six forgiven things
+  as notes, 21 refusals in plain words), `HeroCatalogue` (every field table, word list with its synonyms, allowlist,
+  role preset, growth step, form, trigger, placeholder list, cap and weight constant; no other class holds a number
+  of the format), `HeroDef` (records; every list and map is copied when a record is built, so a loaded hero cannot be
+  changed), `HeroReader` (files to definitions, the sense rules, the checks across files), `Problems` (outcome, code,
+  file, line, friendly and machine path, report and summary), `HeroBalance` (reference Amounts, per-effect and slot
+  caps, weights, floors, the ultimate's gap) and `HeroRules` (the runtime arithmetic). Not in F1: skins, the schema
+  and guide writers and `checkHeroes` (F2), and anything that runs in the game.
+- **Equal treatment in the reader** (6.15): `protects: players` is read as `allies` and the `target_is` kinds
+  `player` and `npc` as the kind `person`, each ADJUSTED with the owner's rule in the message
+  (`HeroCatalogue.EQUAL_READINGS`, code `equal_treatment`). They are no longer words of the format, so no loaded
+  definition can single out players, and a test fails if a `HeroDef` word names them again. The Python reference
+  checker still takes them as written (the cross-check cases stay clear of them).
+- **Equal treatment in the arithmetic**: `HeroRules` has no input that says whether an attacker or a target is a
+  player (a test checks it): one formula, the same clamps and `heroes.maxHit` against anyone, no multiplier against
+  players. The slot caps are applied to the definition when it loads, so they hold against any target. The 2% limit
+  on `target_max_health_percent` is the caller's `targetIsBoss`, true for a vanilla boss and for a hero (6.2).
+- **No yield, no attack tokens**: nothing in F1 knows either. `behaviour.retreat_below` is carried as the file wrote
+  it (0: never), for `EscapeRules` to read (6.13).
+- **Revival** (3.4): `HeroRules.reviveDelaySeconds(config, own, riteTier)`, `reviveAt` and `revivalDue`: 600 s for
+  every hero, a hero's own `revival` seconds first (an hour at most), the faction's `revival_rite` tier shortening
+  either by 20/30/40%, never under 30 s; `at: night` waits for nightfall.
+- **War power is a hook**: `HeroRules.heroPower` and `HERO_DEFENDERS` still hold v1 §25.7's numbers behind
+  `WAR_POWER_IS_PROVISIONAL`, with a test that says so. Section 8's formula, cap and hurt-hero rule are not in the
+  code yet.
+- **Beyond v1's text** (each tested): a JSON `null` is a field left out (a NOTE; a required one is then "missing");
+  the balance pass reports at the exact field and its line (`skills[0].cooldown`, `skills[0].effects[1].seconds`,
+  `empowered.stats[1].percent`) and says when the value it raised was a default; placeholders are read in any case;
+  at most 200 problems are listed per hero, then one line with the count and the worst outcome among the rest (what
+  stops a hero from loading is always listed); a hero without `gear` gets its style's weapon with nothing reported;
+  melee, bow, crossbow and trident basic attacks are physical whatever the hero's element (v1 §9); text is never cut
+  through a surrogate pair.
+- **Tests**: `HeroMessagesTest` makes every one of the 90 reader and 27 JSON codes; `HeroReaderRobustnessTest`
+  damages the three examples and a hero that uses every effect type (6,000 seeded files in the suite; a one-off run
+  of 160,000 found nothing) and checks every loaded hero against every range, cap, floor and recipient rule;
+  `HeroCatalogueTest` compares the catalogue with `herotool.py`'s tables and v1 appendix C; `HeroCrossCheckTest`
+  reads the 38 cases `tools/herotool/crosscheck.py` writes with the reference checker's verdicts. Seven sabotage
+  checks, each caught by its test: a player-only word back in the format, nulls not skipped, a floor reported at
+  the ability instead of the field, a `damageVsPlayers` method, the 30 s revival floor dropped, the problem limit
+  removed, a list that can be changed.
+- **Left open**: v1's on-hit lists cap damage, healing, shields and stuns but no other control (a file may freeze or
+  taunt on every basic hit; a v1 gap, not changed here); a `thrown` hero with both a kit weapon and a `held_item`
+  loads with both and the game side must choose which it holds.
 
 ### 15.3 Milestone 2: systems breadth
 

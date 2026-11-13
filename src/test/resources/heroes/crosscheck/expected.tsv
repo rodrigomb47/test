@@ -1,0 +1,44 @@
+# written by tools/herotool/crosscheck.py from herotool.py's report: case, outcome, path
+unchanged_bram	-	-
+unchanged_sela	-	-
+unchanged_maudie	-	-
+cooldown_floor	ADJUSTED	skills[0].cooldown
+empower_no_state	PART LEFT OUT	ultimate.effects[2]
+potion_caps	ADJUSTED	skills[0].effects[1]
+potion_caps	ADJUSTED	skills[2].effects[1]
+invisibility_to_allies	PART LEFT OUT	skills[1].effects[1]
+stat_cap	ADJUSTED	skills[2].effects[0]
+stat_zero	PART LEFT OUT	skills[2].effects[0]
+stat_zero	PART LEFT OUT	skills[2].effects[0]
+summon_count	ADJUSTED	skills[2].effects[2]
+radius_unused	NOTE	skills[0].effects[0]
+summon_in_passive	PART LEFT OUT	passives[1].effects[0]
+out_of_combat	ADJUSTED	skills[0].use_when
+fields_unused	NOTE	skills[0].hits
+projectile_unused	NOTE	skills[0].projectile
+three_damage	PART LEFT OUT	skills[0].effects
+two_moves	PART LEFT OUT	skills[2].effects
+enemy_in_friendly_form	PART LEFT OUT	skills[0].effects[1]
+enemy_to_self	PART LEFT OUT	skills[0].effects[3]
+ally_in_enemy_form	NOTE	skills[0].effects[3]
+mark_in_allies_form	PART LEFT OUT	skills[1].effects[2]
+slot_cap	ADJUSTED	skills[0]
+slot_cap	ADJUSTED	skills[0].cooldown
+every_floor	ADJUSTED	passives[0]
+every_floor	ADJUSTED	passives[0].trigger_value
+passive_floor	ADJUSTED	passives[0].cooldown
+trigger_form	PART LEFT OUT	passives[0].form
+always_seconds	PART LEFT OUT	passives[1].effects[0]
+always_cap	ADJUSTED	passives[1].effects[0]
+energy_on_ultimate	PART LEFT OUT	passives[1]
+thrown_rate	ADJUSTED	basic_attack.interval
+thrown_only_fields	NOTE	basic_attack.amount
+thrown_only_fields	NOTE	basic_attack.interval
+shared_on_hit	ADJUSTED	empowered
+size_note	NOTE	empowered.size
+placeholder	PART LEFT OUT	lines.kill[1]
+enchant_level	ADJUSTED	gear[0].enchantments.knockback
+kit_enchant_total	ADJUSTED	gear
+mark_never_applied	NOTE	skills[0].effects[1]
+schema_range	ADJUSTED	stats.health
+schema_required	NOT LOADED

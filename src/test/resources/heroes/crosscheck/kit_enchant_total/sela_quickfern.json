@@ -1,0 +1,296 @@
+{
+  "format": 1,
+  "id": "sela_quickfern",
+  "name": "Sela Quickfern",
+  "title": "Briar Sentinel",
+  "description": "A quiet hunter from the deep woods who pins her quarry with thorned arrows and lets her friends finish the work.",
+  "rarity": "rare",
+  "starter_for": "grove_covenant",
+  "skin_model": "slim",
+  "color": "#4F8A3C",
+  "element": "venom",
+  "stats": {
+    "health": 24,
+    "attack": 1,
+    "armor": 1,
+    "speed": 106,
+    "growth": "swift"
+  },
+  "gear": [
+    {
+      "item": "bow",
+      "name": "Bramblestring",
+      "enchantments": {
+        "power": 2
+      }
+    },
+    {
+      "item": "leather_helmet",
+      "enchantments": {
+        "protection": 2,
+        "respiration": 1
+      }
+    },
+    {
+      "item": "leather_chestplate",
+      "enchantments": {
+        "protection": 2
+      }
+    },
+    "leather_boots"
+  ],
+  "behaviour": {
+    "combat_role": "marksman",
+    "focus": "weakest",
+    "keep_distance": 12,
+    "aggression": "cautious",
+    "protects": "none",
+    "retreat_below": 40,
+    "raids": "joins",
+    "duty": "guard"
+  },
+  "basic_attack": {
+    "style": "bow",
+    "on_hit": [
+      {
+        "type": "mark",
+        "mark": "pinned",
+        "stacks": 1,
+        "max_stacks": 3,
+        "seconds": 10
+      }
+    ]
+  },
+  "skills": [
+    {
+      "name": "Pinning Shot",
+      "description": "A heavy thorned arrow that slows the target to a crawl and drives two thorns deep.",
+      "form": "shot",
+      "projectile": "arrow",
+      "range": 20,
+      "cooldown": 10,
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 120
+          },
+          "element": "physical"
+        },
+        {
+          "type": "effect",
+          "id": "slowness",
+          "level": 2,
+          "seconds": 3
+        },
+        {
+          "type": "mark",
+          "mark": "pinned",
+          "stacks": 2,
+          "max_stacks": 3,
+          "seconds": 10
+        }
+      ],
+      "look": {
+        "particle": "crit",
+        "sound": "item.crossbow.shoot",
+        "pose": "bow_draw"
+      }
+    },
+    {
+      "name": "Thornfan",
+      "description": "Four quick thorn darts in a fan; each leaves a sting that keeps working.",
+      "form": "volley",
+      "projectile": "arrow",
+      "count": 4,
+      "range": 16,
+      "cooldown": 14,
+      "use_when": "enemies_near",
+      "use_value": 2,
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 50
+          }
+        },
+        {
+          "type": "dot",
+          "amount": 1,
+          "seconds": 4
+        }
+      ],
+      "look": {
+        "particle": "spore_blossom_air",
+        "sound": "entity.arrow.shoot"
+      }
+    },
+    {
+      "name": "Slip Away",
+      "description": "Hops back out of reach and sprints for the treeline.",
+      "form": "self",
+      "cooldown": 10,
+      "use_when": "target_close",
+      "use_value": 4,
+      "effects": [
+        {
+          "type": "move_self",
+          "direction": "back",
+          "distance": 6
+        },
+        {
+          "type": "effect",
+          "id": "speed",
+          "level": 2,
+          "seconds": 3
+        }
+      ],
+      "look": {
+        "particle": "cloud",
+        "sound": "entity.breeze.shoot"
+      }
+    }
+  ],
+  "ultimate": {
+    "name": "Thornfall",
+    "description": "Arrows rain down where the target stood, again and again, for four seconds.",
+    "form": "zone",
+    "zone_at": "target",
+    "range": 20,
+    "radius": 4,
+    "delay": 1,
+    "duration": 4,
+    "interval": 1,
+    "windup": 0.6,
+    "unlock_level": 5,
+    "effects": [
+      {
+        "type": "damage",
+        "amount": 5
+      },
+      {
+        "type": "effect",
+        "id": "slowness",
+        "level": 1,
+        "seconds": 2
+      },
+      {
+        "type": "mark",
+        "mark": "pinned",
+        "stacks": 1,
+        "max_stacks": 3,
+        "seconds": 10
+      }
+    ],
+    "look": {
+      "particle": "crit",
+      "sound": "entity.arrow.shoot"
+    },
+    "line": "Look up."
+  },
+  "passives": [
+    {
+      "name": "Called Shot",
+      "description": "When a friend strikes an enemy she has pinned, she puts an arrow in it too.",
+      "trigger": "on_ally_attack",
+      "cooldown": 3,
+      "form": "shot",
+      "projectile": "arrow",
+      "if": {
+        "condition": "target_has_mark",
+        "mark": "pinned",
+        "value": 2
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": {
+            "attack_percent": 50
+          },
+          "element": "physical"
+        }
+      ]
+    },
+    {
+      "name": "Hunter's Patience",
+      "description": "A fully pinned enemy glows for everyone, and the sight sharpens her focus.",
+      "trigger": "on_mark_full",
+      "mark": "pinned",
+      "cooldown": 6,
+      "form": "trigger_enemy",
+      "effects": [
+        {
+          "type": "effect",
+          "id": "glowing",
+          "seconds": 8
+        },
+        {
+          "type": "energy",
+          "to": "self",
+          "amount": 10
+        }
+      ]
+    }
+  ],
+  "base_abilities": [
+    {
+      "type": "lookout",
+      "name": "Treeline Watch",
+      "radius": 40
+    },
+    {
+      "type": "aura",
+      "name": "Seed Keeper",
+      "affix": "regrowth",
+      "stacks": 1,
+      "radius": 24,
+      "roles": [
+        "woodcutter"
+      ]
+    }
+  ],
+  "lines": {
+    "summoned": [
+      "Sela. I'll be on the wall, where the wind is honest."
+    ],
+    "greeting": [
+      "Quiet day, {player}. I like those."
+    ],
+    "idle": [
+      "Something's moving in the far trees. Probably a fox. Probably."
+    ],
+    "fight_start": [
+      "Movement in the brush.",
+      "I see you, {enemy}."
+    ],
+    "skill": [
+      "Hold still.",
+      "There."
+    ],
+    "ultimate": [
+      "Look up."
+    ],
+    "low_health": [
+      "Too close, too close!"
+    ],
+    "kill": [
+      "One less.",
+      "Clean shot."
+    ],
+    "ally_fallen": [
+      "{ally}... I had the angle. I had it."
+    ],
+    "victory": [
+      "Woods are quiet again."
+    ],
+    "unlock": [
+      "Level {level}. I think I've learned {ability}."
+    ],
+    "fallen": [
+      "Lost... the light..."
+    ],
+    "revived": [
+      "Where's my bow? Ah. Good."
+    ]
+  }
+}

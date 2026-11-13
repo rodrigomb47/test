@@ -426,7 +426,10 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 236 JUnit tests for the pure rules (a hero's hitbox from its model, its synced fields and revival time,
+* `./gradlew test` — 473 JUnit tests for the pure rules (the hero file format: reading a file with the line of every
+  problem, every message the checker can write, thousands of damaged files that must load within every limit or be
+  refused, the balance caps and cooldown floors, the damage formula, energy, growth and revival time, and the same
+  verdicts as the Python reference checker on the example heroes; a hero's hitbox from its model, its synced fields and revival time,
   its face (which frame each plane shows, blink timing, the talking mouth, the mood hold), which animation clip plays
   (a teleport is not running; one clip per motion class; walk and run do not flip about the threshold), the form-scaled animation keys' variable,
   the level of detail by distance, the chain sway, its mood, and the animation timing files, each clip written for the
