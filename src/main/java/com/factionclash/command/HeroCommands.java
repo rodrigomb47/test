@@ -226,6 +226,20 @@ public final class HeroCommands {
                         .executes(c -> report(c, HeroManager.release(c.getSource().getServer(), id(c))))))
                 .then(Commands.literal("revive").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
                         .executes(c -> report(c, HeroManager.revive(c.getSource().getServer(), id(c))))))
+                // A6b's test hooks (SLICE_PLAN 6.5): health share, poise, an escape on demand, the target's read state
+                .then(Commands.literal("health").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
+                        .then(Commands.argument("percent", DoubleArgumentType.doubleArg(0.1, 100))
+                                .executes(c -> health(c, DoubleArgumentType.getDouble(c, "percent"))))))
+                .then(Commands.literal("poise").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
+                        .then(Commands.literal("full").executes(c -> poise(c, -1)))
+                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0, 1000))
+                                .executes(c -> poise(c, DoubleArgumentType.getDouble(c, "amount"))))))
+                .then(Commands.literal("escape").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
+                        .executes(HeroCommands::escape)))
+                .then(Commands.literal("target-state").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
+                        .then(Commands.argument("state", StringArgumentType.word())
+                                .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("blocking", "bow", "eating", "clear"), b))
+                                .executes(HeroCommands::targetState))))
                 .then(Commands.literal("preview")
                         .then(Commands.literal("clear")
                                 .executes(c -> clearPreviews(c, null))
@@ -536,6 +550,87 @@ public final class HeroCommands {
         }
         BlockPos at = pos != null ? pos : overworld && c.getSource().getEntity() instanceof Player p ? p.blockPosition() : null;
         return report(c, HeroManager.give(c.getSource().getServer(), id(c), f, null, at));
+    }
+
+    // ------------------------------------------------------------------ A6b's operator hooks
+
+    /** The hero's living entity, or a failure message (null). */
+    private static HeroEntity live(CommandContext<CommandSourceStack> c) {
+        HeroEntity h = HeroManager.entity(c.getSource().getServer(), id(c));
+        if (h == null || !h.isAlive()) {
+            c.getSource().sendFailure(Component.literal("No loaded living entity of \"" + id(c) + "\"."));
+            return null;
+        }
+        return h;
+    }
+
+    /** {@code health <id> <percent>}: its health jumps to that share of its maximum (phases follow on its next tick). */
+    private static int health(CommandContext<CommandSourceStack> c, double percent) {
+        HeroEntity h = live(c);
+        if (h == null) {
+            return 0;
+        }
+        h.setHealth((float) (h.getMaxHealth() * percent / 100.0));
+        c.getSource().sendSuccess(() -> Component.literal(h.npcName() + " at " + Math.round(h.getHealth()) + " / "
+                + Math.round(h.getMaxHealth()) + " health (" + percent + "%)."), true);
+        return 1;
+    }
+
+    /** {@code poise <id> full|<amount>}: poise damage as from a hit; {@code full} fills the bar (a stagger, unless protected). */
+    private static int poise(CommandContext<CommandSourceStack> c, double amount) {
+        HeroEntity h = live(c);
+        if (h == null) {
+            return 0;
+        }
+        var p = h.combat().poise();
+        if (p == null || p.none()) {
+            c.getSource().sendFailure(Component.literal(h.npcName() + " has no poise bar."));
+            return 0;
+        }
+        p.decay(h.level().getGameTime());
+        double a = amount < 0 ? Math.max(1, p.max() - p.value()) : amount;
+        boolean staggered = h.combat().poiseDamage(a);
+        c.getSource().sendSuccess(() -> Component.literal(h.npcName() + ": poise " + Math.round(p.value()) + " / "
+                + Math.round(p.max()) + (staggered ? ", staggered" : "")), true);
+        return 1;
+    }
+
+    /** {@code escape <id>}: it escapes now, whatever its kind and health (the yield hook of the first draft is gone). */
+    private static int escape(CommandContext<CommandSourceStack> c) {
+        HeroEntity h = live(c);
+        if (h == null) {
+            return 0;
+        }
+        if (!h.combat().boss().escape().start(com.factionclash.logic.hero.EscapeRules.Trigger.LOW_HEALTH, true)) {
+            c.getSource().sendFailure(Component.literal(h.npcName() + " is escaping already."));
+            return 0;
+        }
+        c.getSource().sendSuccess(() -> Component.literal(h.npcName() + " escapes."), true);
+        return 1;
+    }
+
+    /** {@code target-state <id> blocking|bow|eating|clear}: its target reads so for its reactions until cleared. */
+    private static int targetState(CommandContext<CommandSourceStack> c) {
+        HeroEntity h = live(c);
+        if (h == null) {
+            return 0;
+        }
+        String st = StringArgumentType.getString(c, "state").toLowerCase(Locale.ROOT);
+        int bits = switch (st) {
+            case "blocking" -> com.factionclash.hero.HeroCombat.FORCE_BLOCKING;
+            case "bow" -> com.factionclash.hero.HeroCombat.FORCE_BOW;
+            case "eating" -> com.factionclash.hero.HeroCombat.FORCE_EATING;
+            case "clear" -> 0;
+            default -> -1;
+        };
+        if (bits < 0) {
+            c.getSource().sendFailure(Component.literal("blocking, bow, eating or clear"));
+            return 0;
+        }
+        int now = bits == 0 ? 0 : h.combat().forcedTargetState() | bits;
+        h.combat().forceTargetState(now);
+        c.getSource().sendSuccess(() -> Component.literal(h.npcName() + "'s target reads as " + (now == 0 ? "it is" : st)), true);
+        return 1;
     }
 
     private static int report(CommandContext<CommandSourceStack> c, HeroManager.Result r) {

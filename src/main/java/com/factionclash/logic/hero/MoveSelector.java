@@ -109,7 +109,7 @@ public final class MoveSelector {
     private final HeroDef.V2 kit;
     private final double aggression, caution;
     private final boolean opensWithUltimate;
-    private final SplittableRandom rng;
+    private SplittableRandom rng;
     private final Map<String, Charges> charges = new HashMap<>();
     private final ArrayDeque<String> recent = new ArrayDeque<>();
     private final List<ReactionState> reactions = new ArrayList<>();
@@ -138,6 +138,15 @@ public final class MoveSelector {
         for (Reaction r : kit.boss().reactions()) {
             reactions.add(new ReactionState(r));
         }
+    }
+
+    /**
+     * Starts its random draws again from {@code seed} (task A6b: two heroes given the same seed draw the same gaps,
+     * reaction rolls and picks, so a test can set an NPC's raised shield beside a player's). Returns this selector.
+     */
+    public MoveSelector reseed(long seed) {
+        rng = new SplittableRandom(seed);
+        return this;
     }
 
     /**

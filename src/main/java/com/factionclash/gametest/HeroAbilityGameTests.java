@@ -119,6 +119,8 @@ public final class HeroAbilityGameTests {
         if (!r.ok()) {
             throw new GameTestAssertException("give failed: " + r.message());
         }
+        // the day's intro (A6b) is taken as played, so a test's first blow lands as it always did; the intro tests clear it
+        r.hero().combat().boss().introPlayedToday(true);
         return r.hero();
     }
 

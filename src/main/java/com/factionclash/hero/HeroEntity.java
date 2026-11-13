@@ -194,11 +194,22 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     protected void registerGoals() {
         super.registerGoals();
         this.goalSelector.addGoal(0, new com.factionclash.combat.HeroHoldGoal(this));
+        // an escaping hero runs from a fight it lost (6.13, task A6b); a stagger's hold still stops it where it is
+        escapeGoal = new com.factionclash.combat.HeroEscapeGoal(this);
+        this.goalSelector.addGoal(1, escapeGoal);
         this.goalSelector.addGoal(2, new com.factionclash.combat.HeroAbilityGoal(this));
         this.goalSelector.addGoal(3, new com.factionclash.combat.HeroThrowGoal(this));
         // its own target choice (focus, protects, aggression radius; no attack tokens) replaces the soldiers' nearest
         this.targetSelector.removeAllGoals(g -> g instanceof net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal);
         this.targetSelector.addGoal(2, new com.factionclash.combat.HeroTargetGoal(this));
+    }
+
+    /** Its escape goal (task A6b; set while the goals are registered, so no initialiser may overwrite it). */
+    private com.factionclash.combat.HeroEscapeGoal escapeGoal;
+
+    /** The goal that runs it from a lost fight (A12 gives it the hero's own mobility). */
+    public com.factionclash.combat.HeroEscapeGoal escapeGoal() {
+        return escapeGoal;
     }
 
     // ------------------------------------------------------------------ the heroes in the world
@@ -494,7 +505,8 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     /** Its job keeps it from a fight only while it stands on a woodcutter's pillar (a hero always fights, v1 25.6). */
     @Override
     public boolean jobIgnoresCombat() {
-        return job() != null && job().onScaffold();
+        // a hero running from a lost fight answers no blow and no alarm (6.13); cornered, it fights back
+        return job() != null && job().onScaffold() || combat != null && combat.boss().escape().fleeing();
     }
 
     /** It shoots when its basic attack is a bow or crossbow, whatever its duty. */
@@ -1095,7 +1107,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         } else if (inFight && tickCount - lastTargetTick >= VICTORY_AFTER) {
             inFight = false;
             refreshName();
-            if (level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(VICTORY_RADIUS),
+            if (!combat().boss().escape().running() && level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(VICTORY_RADIUS),
                     e -> e != this && e.isAlive() && isHostileTo(e)).isEmpty()) {
                 say(LineEvent.VICTORY);
             }
@@ -1214,7 +1226,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         }
         float lost = before - getHealth();
         if (server) {
-            combat().boss().afterHurt(lost);
+            combat().boss().afterHurt(lost, source);
         }
         if (r && lost > 0 && !level().isClientSide && !preview) {
             gainEnergy(HeroRules.energyFromDamage(lost));
@@ -1427,7 +1439,10 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             HeroSummons.dismissAll(this);
         }
         super.die(source);
-        if (level() instanceof ServerLevel sl && isDeadOrDying()) {
+        if (level() instanceof ServerLevel sl && isDeadOrDying() && !preview) {
+            HeroBossBars.end(this, false); // the bar's "fallen" for 3 s (6.13)
+            combat().boss().hurtBy(source); // the killing blow is the last that hurt it
+            HeroRewards.onDeath(sl, this); // XP orbs and the crest to the winning side, where it died
             HeroManager.onDeath(sl.getServer(), this, source);
         }
     }

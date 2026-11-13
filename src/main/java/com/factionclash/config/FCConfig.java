@@ -57,6 +57,10 @@ public final class FCConfig {
     public static final ModConfigSpec.IntValue HERO_XP_RATE;
     public static final ModConfigSpec.IntValue BOSS_HEALTH_SCALE;
     public static final ModConfigSpec.BooleanValue BOSS_TELEGRAPH_DECALS;
+    public static final ModConfigSpec.BooleanValue BOSS_BARS;
+    public static final ModConfigSpec.BooleanValue HERO_ESCAPE;
+    public static final ModConfigSpec.IntValue HERO_ESCAPE_AWAY_SECONDS;
+    public static final ModConfigSpec.IntValue HERO_ESCAPE_COOLDOWN_SECONDS;
     public static final ModConfigSpec.IntValue HERO_POWER_PERCENT;
 
     static {
@@ -194,6 +198,14 @@ public final class FCConfig {
                 .define("summons", true);
         HERO_XP_RATE = b.comment("Multiplies the experience heroes earn from fights, raids, defences and days alive, in percent (PROPOSED: 100).")
                 .defineInRange("xpRate", 100, 0, 500);
+        HERO_ESCAPE = b.comment("A hero of the escaping kind breaks off a fight it is losing and runs (HEROES_V2 6.13). false: every hero",
+                        "fights to the death.")
+                .define("escape", true);
+        HERO_ESCAPE_AWAY_SECONDS = b.comment("How long an escaped hero stays away from those it fled, in seconds (PROPOSED: 300).")
+                .defineInRange("escapeAwaySeconds", 300, 60, 1200);
+        HERO_ESCAPE_COOLDOWN_SECONDS = b.comment("At most one escape per hero in this many seconds (PROPOSED: 600); caught again inside",
+                        "that time, it fights to the death.")
+                .defineInRange("escapeCooldownSeconds", 600, 120, 1800);
         b.pop();
 
         b.comment("Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)").push("boss");
@@ -203,6 +215,9 @@ public final class FCConfig {
         BOSS_TELEGRAPH_DECALS = b.comment("Draw a growing ground mark under a hero's heavy, area and ultimate moves for the players within 32",
                         "blocks (presentation only: a move's timing, reach and damage never depend on it).")
                 .define("telegraphDecals", true);
+        BOSS_BARS = b.comment("Show a fighting hero's boss bar, and its intro title once a day, to the players within 32 blocks",
+                        "(presentation only: nothing in a fight depends on it).")
+                .define("bossBars", true);
         b.pop();
         SPEC = b.build();
     }

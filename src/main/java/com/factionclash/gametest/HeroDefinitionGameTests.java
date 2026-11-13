@@ -91,6 +91,7 @@ public final class HeroDefinitionGameTests {
             t.fail("give failed: " + r.message());
             throw new GameTestAssertException(r.message());
         }
+        r.hero().combat().boss().introPlayedToday(true); // the day's intro (A6b) is taken as played
         return r.hero();
     }
 

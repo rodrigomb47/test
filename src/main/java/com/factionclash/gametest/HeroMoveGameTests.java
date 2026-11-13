@@ -126,6 +126,7 @@ public final class HeroMoveGameTests {
         if (faction != t.base.faction) {
             r.hero().faction(faction); // an enemy hero: of the other side, living at the test base
         }
+        r.hero().combat().boss().introPlayedToday(true); // the day's intro (A6b) is taken as played
         return r.hero();
     }
 

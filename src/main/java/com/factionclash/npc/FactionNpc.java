@@ -866,6 +866,10 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 dmg.removeModifier(CRIT_ID);
             }
         }
+        if (r && crit) {
+            // a hero's crit_above weak point counts an NPC's jump critical as a player's (HEROES_V2 6.9, task A6b)
+            com.factionclash.hero.HeroBossEvents.npcCritical(this, target);
+        }
         if (r && crit && level() instanceof ServerLevel sl) {
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.PLAYER_ATTACK_CRIT, getSoundSource(), 1.0F, 1.0F);
             sl.getChunkSource().broadcastAndSend(this, new net.minecraft.network.protocol.game.ClientboundAnimatePacket(target,

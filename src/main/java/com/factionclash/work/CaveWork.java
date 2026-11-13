@@ -130,6 +130,7 @@ public final class CaveWork {
             return false;
         }
         level.setBlock(p, torch, Block.UPDATE_ALL);
+        com.factionclash.hero.HeroBossEvents.npcPlaced(npc, p, torch); // a light placed near a hero (6.9, as a player's)
         level.playSound(null, p, SoundEvents.WOOD_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
         npc.swing(InteractionHand.MAIN_HAND);
         return true;

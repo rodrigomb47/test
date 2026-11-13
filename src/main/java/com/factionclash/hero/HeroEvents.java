@@ -54,6 +54,13 @@ public final class HeroEvents {
         if (event.getServer().getTickCount() % HeroManager.TICK_INTERVAL == 0) {
             HeroManager.tick(event.getServer());
         }
+        HeroBossBars.tick(event.getServer()); // the boss bars and intro titles of fighting heroes (A6b)
+    }
+
+    /** No boss bar outlives its server (a singleplayer world closed and another opened). */
+    @SubscribeEvent
+    public void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        HeroBossBars.serverStopped();
     }
 
     /** {@code ally_fallen}: heroes within 24 blocks of a member of their side who died (an NPC, a hero or a player). */
@@ -71,6 +78,16 @@ public final class HeroEvents {
                 x -> x != dead && x.isAlive() && !x.isPreview() && x.distanceToSqr(dead) <= r * r)) {
             if (CombatRules.sameSide(hero, dead)) {
                 hero.say(LineEvent.ALLY_FALLEN, Map.of("ally", HeroEntity.nameOf(dead)), null);
+            }
+        }
+        if (dead instanceof HeroEntity) {
+            // 6.10's hard trigger ally_hero_died: a fighting hero of its side within 32 blocks, killed by anyone
+            double far = 32;
+            for (HeroEntity hero : level.getEntitiesOfClass(HeroEntity.class, dead.getBoundingBox().inflate(far),
+                    x -> x != dead && x.isAlive() && !x.isPreview() && x.distanceToSqr(dead) <= far * far)) {
+                if (CombatRules.sameSide(hero, dead)) {
+                    hero.combat().boss().hardTrigger(com.factionclash.logic.hero.HeroDef.EnrageTrigger.ALLY_HERO_DIED);
+                }
             }
         }
     }

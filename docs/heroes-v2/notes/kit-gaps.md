@@ -411,3 +411,45 @@ A6a (the fight clock, the hurt cooldown per attacker, the cap, poise and the sta
   so nothing is spawned in the world, nothing outlives a crash or is saved with a chunk, and no access transformer is
   needed; each shape lies on the ground under its centre near the hero's or the target's height. A rain draws nothing in
   its wind-up (its impacts are not known yet) and one disc per impact as each is called (F3's "one disc per impact").
+
+## A6b decisions on the boss controller's second part (2026-11-13)
+
+A6b (reactions, the event weak points, enrage, the arena, the intro, the bar and title, the end of a fight and the
+rewards, the operator's hooks: `HeroBoss`, `HeroEscape`, `HeroBossBars`, `HeroRewards`, `HeroBossEvents`,
+`combat/HeroEscapeGoal`; HEROES_V2.md 15.2 "A6b as built") decided what the design and the kits leave open:
+
+- **8, the douse's rate and what comes back.** A snowball and water douse at most once in 20 s (Natsuho's sheet gives
+  20 s for water; the snowball uses the same). A fire hero's state ends (Benika's Rage); a state a phase holds comes back
+  when the douse's 5 s end (she rages again), a state from a move or a passive does not. A hero that is not of fire
+  flinches 1 s instead (Natsuho's "flinch"): a wind-up is cut as a stun cuts it. Both deal 10% less for 5 s.
+- **8, light.** Tobimaru's 10% is less damage dealt (as the douse), for 10 s, renewed by each new light, no other
+  limit; only an enemy's placement counts (a player's or an NPC's torch alike).
+- **The bell** is any ring of a bell (a hand, a projectile, redstone, an NPC through the bell's own ring), as 6.9 says
+  "by anyone"; 1 s stun through the receiver's stun immunity, once in 30 s.
+- **`crit_above` and `charge_wall` stagger at once** without filling the bar; neither staggers in a transition, the
+  intro, an ultimate's wind-up or a `super_armor` move, except that a charge into a wall staggers through its own
+  charge's armour (it is that charge that ended).
+- **Channel defaults are not needed**: every channelled move of the slice authors its `channel` field, so a hero's
+  `channel` weak point gives no default share (left for a future hero that needs one).
+- **The intro** is looked for during a fight's first 3 s once the hero is free (no move, stagger, stun or transition),
+  and only when a person (a player, a faction NPC, a hero) is engaged; the day is the world's day (`dayTime`), so
+  sleeping through a night brings a new day. It holds the hero still with super armour; its length is its `intro`
+  clip's, held to 1.0-1.5 s (1.25 s without one).
+- **Enrage's +25% cap**: the enrage adds what is left of +25% after the hero's other damage bonuses at that moment, at
+  most 15; a bonus that comes after it is not trimmed. Hard triggers enrage only a hero in a fight; `favoured_hurt` reads
+  a friendly bond (friend, sibling, mentor, student, admirer) in its relationships until leaders (L4) add "its leader".
+- **The end of a fight** is read after every hit that lands and once a tick while fighting; an operator's `escape`
+  starts one whatever the hero's kind. The stand at home is inside its home's walls plus 16 blocks while the heart stands;
+  "its leader fighting near" waits for leaders (L4), and the rebirth for its legendary heroes (none in the slice), so
+  neither holds anyone yet. A lost base sends an escaping hero there off at once (`baseLost`).
+- **Running on foot**: the escape heads for its refuge's spawn point or, in the wild, 72 blocks from its enemies'
+  middle (so "away" is away from them), with the hero's own navigation a waypoint at a time (never the stuck recovery's
+  hop); it is cornered after 3 s with no way (no path, or under half a block moved in a second) and then fights the
+  nearest pursuer within 16 blocks; a way is looked for every second. Those it fled are not taken as targets for its away
+  time and until it is above half health. Its fight ends at once, so no bar, intro or move while it runs. A12 swaps the
+  movement for its mobility.
+- **The winning side** is the last person whose blow hurt it in its last 15 s, the killing blow included; a factionless
+  player is a side of one. The crest is a registered item (`factionclash:hero_crest`, named "Crest of <name>", its
+  title and "Won by <winner> on day N"), once per hero per side per in-game day, kept in `HeroState.crests`.
+- **Lines**: the intro, enrage, escape and last-stand lines ignore the dialogue cooldown (each comes at most once a fight,
+  a day or ten minutes), so a skill's line a moment before never hides them.

@@ -115,7 +115,8 @@ public final class BlockWork {
         public boolean tick(FactionNpc npc, BlockPos target, Predicate<ItemStack> keep) {
             ServerLevel level = (ServerLevel) npc.level();
             gained = 0;
-            if (!target.equals(pos)) {
+            boolean fresh = !target.equals(pos);
+            if (fresh) {
                 reset(npc);
                 pos = target.immutable();
             }
@@ -123,6 +124,10 @@ public final class BlockWork {
             if (state.isAir()) {
                 reset(npc);
                 return true;
+            }
+            if (fresh && state.is(com.factionclash.registry.ModBlocks.FACTION_HEART.get())) {
+                // a raider starts on a heart: its defending heroes' heart_attacked enrage (HEROES_V2 6.10), as for a player
+                com.factionclash.hero.HeroBossEvents.heartAttacked(level, pos, npc);
             }
             npc.getLookControl().setLookAt(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
             progress += progressPerTick(npc, state, pos, npc.getMainHandItem());

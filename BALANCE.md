@@ -969,6 +969,47 @@ marked; the others are PROPOSED.
   over its delay); at most **12** pieces a hero (a disc counts **2**); a decal whose clear never came is dropped **40**
   ticks after its wind-up. Config `[boss] telegraphDecals` (**true**): false sends none.
 
+## Hero boss controller, part two (config `heroes`, `boss`; `HeroBoss`, `HeroEscape`, `HeroBossBars`, `HeroRewards`, `HeroEscapeGoal`, `BossRules`, `EscapeRules`) — A6b
+The same numbers against every attacker and receiver, player or NPC (HEROES_V2 6.15). Numbers of HEROES_V2 6.8-6.13
+and MOBILITY_AND_WORK 7.7 are marked; the others are PROPOSED.
+* Reactions (6.8): the file's chance and cooldown, one roll per occurrence; an operator's `target-state` hook reads the
+  target as blocking, drawing a bow or eating until cleared. Log line `[Heroes] reaction <id> <when> -> <move>`.
+* Intro (6.13): the first fight against people (a player, a faction NPC, a hero) in an in-game day (the day of
+  `dayTime`); its `intro` clip's length held to **1.0-1.5 s** (**1.25 s** without a clip); super armour (**x0.5** taken,
+  no stagger) and held still; looked for during the fight's first **3 s** once the hero is free; the opening gap counts
+  from its end.
+* Enrage (6.10): after `boss.enrage.after` s of fighting (**180**, **240** leading; the file's **120-300**), or at once by
+  a hard trigger (`ally_hero_died` within **32** blocks, `heart_attacked` inside its home's walls + **16**,
+  `favoured_hurt` for a friendly-bond hero within **32**); **+15%** damage dealt, less when other bonuses would pass
+  **+25%**; gap **x0.7**; poise maximum **x1.25**; the bar red; an angry face **3 s**; ends with the fight.
+* Douse (6.9, `snowball`/`water`): at most once in **20 s**; a fire hero's state ends (a phase's state comes back when
+  the douse ends), any other flinches **1 s** (its wind-up cut); **-10%** damage dealt for **5 s**. A thrown water
+  bottle douses within **4** blocks; stepping into water, rain or a bubble column counts on its rising edge.
+* Bell (6.9): rung within **8** blocks by anyone, a **1 s** stun, once in **30 s**. Light (6.9): a block of light
+  **12**+ placed by an enemy within **4** blocks, **-10%** damage dealt for **10 s** (a new light renews it).
+  `crit_above` (6.9): a falling critical from above its eyes staggers at once; `charge_wall`: its own charge into a wall
+  staggers at once (through its own charge's armour). Neither staggers in a transition, the intro, an ultimate's wind-up
+  or a `super_armor` move.
+* Arena (6.12): ceiling and open sky sampled every **2 s** while fighting; a target no link reaches for **30 s** in a row
+  is given up (a taunt, ignored as `Pursuit`'s give-up).
+* The end of a fight (6.13): escape under `flee_at` (8-15%, see the hero file format) for an escaping kind, else the
+  last-stand beat once a fight (its line, a determined face **3 s**, `on_last_stand`); read after every hit that lands
+  and once a tick. The stand at home: inside its home's walls + **16** while the heart stands.
+* Escape (MOBILITY_AND_WORK 7.7): config `[heroes] escape` (**true**), `escapeAwaySeconds` (**300**, 60-1200),
+  `escapeCooldownSeconds` (**600**, 120-1800; the window outlives death and restarts in `HeroState.lastEscapeAt`).
+  It runs at **1.3** times its walk, a waypoint at a time within **16** blocks, to its refuge's spawn point or, in the
+  wild, to **72** blocks (**64** + **8**) from its enemies' middle; checks every **1 s**; cornered after **3 s** with no
+  way (no path, or under **0.5** blocks moved in a second); over inside the refuge's walls or **10 s** with no pursuer
+  within **48**; then it keeps away from those it fled for its away time and until above **50%** health, and in the wild
+  keeps **64** blocks from the fight.
+* Bar and title (6.13): to players within **32** blocks, at most **3** bars a player (nearest first), matched every
+  **10** ticks; colour the nearest of vanilla's 7 to the hero's own; `fled`/`fallen` shown **3 s**; an ultimate darkens
+  the screen **2 s**; the title once per hero per in-game day (fade **10/40/10** ticks). Config `[boss] bossBars`
+  (**true**): false shows none.
+* Rewards (6.13): only at a death, to the side of the last person that hurt it in its last **15 s** (the killing blow
+  counts): XP orbs **7 x level**, at most **100**; the crest once per hero per winning side per in-game day; its non-kit
+  gear as any NPC's. An escape drops nothing.
+
 ## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no
 modifiers, 18 slots, 1 + Diligence).

@@ -31,5 +31,6 @@
   "death.attack.factionclash.hero_radiant.item": "%1$s was smitten by %2$s using %3$s",
   "death.attack.factionclash.hero_radiant.player": "%1$s was smitten whilst fighting %2$s",
   "entity.factionclash.hero_projectile": "Hero Projectile",
-  "entity.factionclash.hero_zone": "Hero Zone"
+  "entity.factionclash.hero_zone": "Hero Zone",
+  "item.factionclash.hero_crest": "Hero Crest"
 }

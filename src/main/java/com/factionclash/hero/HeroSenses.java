@@ -116,6 +116,12 @@ public final class HeroSenses {
         long now = level.getGameTime();
         if (target != null && target.isAlive()) {
             target(hero, target, s.target, false);
+            int forced = hero.combat().forcedTargetState(); // the operator's target-state hook (SLICE_PLAN 6.5)
+            if (forced != 0) {
+                s.target.blocking |= (forced & HeroCombat.FORCE_BLOCKING) != 0;
+                s.target.drawingBow |= (forced & HeroCombat.FORCE_BOW) != 0;
+                s.target.eating |= (forced & HeroCombat.FORCE_EATING) != 0;
+            }
         }
         s.healthShare = hero.getHealth() / Math.max(1F, hero.getMaxHealth());
         s.phase = HeroActions.phase(hero.state());
@@ -141,7 +147,8 @@ public final class HeroSenses {
         s.inHomeBase = base != null && base.contains(feet, 0);
         s.night = HeroRules.isNight(level.getDayTime());
         s.raining = level.isRainingAt(feet.above());
-        s.lowCeiling = solid(level, feet.above(2)) || solid(level, feet.above(3));
+        Boolean sampled = hero.combat().boss().sampledLowCeiling(); // 6.12: every 2 s while fighting (A6b)
+        s.lowCeiling = sampled != null ? sampled : solid(level, feet.above(2)) || solid(level, feet.above(3));
         s.inWater = hero.isInWater();
         s.shielded = hero.getAbsorptionAmount() > 0;
         s.airborne = !hero.onGround() && !hero.isInWater() && !hero.onClimbable() && !hero.isPassenger();
@@ -156,6 +163,7 @@ public final class HeroSenses {
         s.state = hero.combat().stateName();
         s.empowered = s.state != null;
         s.dashPathHazard = target != null && hazardBetween(hero, target);
+        s.escaping = hero.combat().boss().escape().fleeing(); // 6.13: no move while it runs; a cornered hero asks again
     }
 
     private static boolean solid(Level level, BlockPos p) {

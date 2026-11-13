@@ -200,7 +200,9 @@ class HeroRulesTest {
         assertFalse(HeroRules.maySpeak(LineEvent.KILL, now, last, 0, 0, 20));
         assertTrue(HeroRules.maySpeak(LineEvent.KILL, now, now - 400, 0, 0, 20), "20 s later");
         assertTrue(HeroRules.maySpeak(LineEvent.KILL, now, 0, 0, 0, 20), "never spoke");
-        for (LineEvent e : List.of(LineEvent.SUMMONED, LineEvent.FALLEN, LineEvent.REVIVED, LineEvent.ULTIMATE)) {
+        // A6b: the intro (once a day), the enrage, the escape (once in 10 minutes) and the last stand (once a fight) too
+        for (LineEvent e : List.of(LineEvent.SUMMONED, LineEvent.FALLEN, LineEvent.REVIVED, LineEvent.ULTIMATE,
+                LineEvent.INTRO, LineEvent.ENRAGE, LineEvent.ESCAPE, LineEvent.LAST_STAND)) {
             assertTrue(HeroRules.maySpeak(e, now, now - 1, now - 1, now - 1, 20), e.id());
         }
         assertTrue(HeroRules.maySpeak(LineEvent.GREETING, now, now - 1, now - 100, 0, 20), "greetings wait 5 s");

@@ -54,6 +54,16 @@ public final class HeroState {
     /** Its health and maximum when last seen alive (the war councils of other factions read them, 8.1). */
     public float health;
     public float maxHealth;
+    /**
+     * Task A6b (HEROES_V2 6.13, MOBILITY_AND_WORK 7.7): the game time its last escape began (0: never), for the
+     * 10-minute window and the stay away; it outlives a death and a restart.
+     */
+    public long lastEscapeAt;
+    /**
+     * The in-game day each winning side last took this hero's crest ({@code HeroRules.Side} key to day): one crest per
+     * hero per winning side per day (6.13).
+     */
+    public final Map<String, Long> crests = new TreeMap<>();
 
     public CompoundTag save() {
         CompoundTag t = new CompoundTag();
@@ -89,6 +99,14 @@ public final class HeroState {
         }
         t.putFloat("health", health);
         t.putFloat("maxHealth", maxHealth);
+        if (lastEscapeAt > 0) {
+            t.putLong("lastEscapeAt", lastEscapeAt);
+        }
+        if (!crests.isEmpty()) {
+            CompoundTag c = new CompoundTag();
+            crests.forEach(c::putLong);
+            t.put("crests", c);
+        }
         return t;
     }
 
@@ -127,6 +145,11 @@ public final class HeroState {
         s.fellAt = t.contains("fellAt") ? BlockPos.of(t.getLong("fellAt")) : null;
         s.health = t.getFloat("health");
         s.maxHealth = t.getFloat("maxHealth");
+        s.lastEscapeAt = t.getLong("lastEscapeAt");
+        CompoundTag c = t.getCompound("crests");
+        for (String k : c.getAllKeys()) {
+            s.crests.put(k, c.getLong(k));
+        }
         return s;
     }
 

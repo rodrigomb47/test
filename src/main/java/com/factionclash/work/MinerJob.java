@@ -1572,6 +1572,7 @@ public class MinerJob extends Job {
         if (c.torch()) {
             if (s.isAir() && Inv.consume(npc.inventory(), TORCH, 1)) {
                 level().setBlock(pos, Blocks.TORCH.defaultBlockState(), Block.UPDATE_ALL);
+                com.factionclash.hero.HeroBossEvents.npcPlaced(npc, pos, Blocks.TORCH.defaultBlockState());
                 level().playSound(null, pos, SoundEvents.WOOD_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
                 npc.swing(InteractionHand.MAIN_HAND);
             }
@@ -1880,6 +1881,7 @@ public class MinerJob extends Job {
         if (level().getBlockState(t).isAir() && below.isFaceSturdy(level(), t.below(), Direction.UP)
                 && BlockWork.inReach(npc, t, 4.5) && Inv.consume(npc.inventory(), TORCH, 1)) {
             level().setBlock(t, Blocks.TORCH.defaultBlockState(), Block.UPDATE_ALL);
+            com.factionclash.hero.HeroBossEvents.npcPlaced(npc, t, Blocks.TORCH.defaultBlockState());
             level().playSound(null, t, SoundEvents.WOOD_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
             npc.swing(InteractionHand.MAIN_HAND);
         }

@@ -18,6 +18,12 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> WORLD_MAP_BOARD = ITEMS.registerSimpleBlockItem("world_map_board", ModBlocks.WORLD_MAP_BOARD);
     public static final DeferredItem<BlockItem> FACTION_HEART = ITEMS.registerSimpleBlockItem("faction_heart", ModBlocks.FACTION_HEART);
     public static final DeferredItem<BlockItem> BEDROLL = ITEMS.registerSimpleBlockItem("bedroll", ModBlocks.BEDROLL);
+    /**
+     * A hero's crest (HEROES_V2 6.13, task A6b): the trophy a hero drops where it died, once per hero per winning side per
+     * in-game day, named after the hero; a winning faction's soldiers carry it home to their storehouse.
+     */
+    public static final DeferredItem<net.minecraft.world.item.Item> HERO_CREST = ITEMS.registerSimpleItem("hero_crest",
+            new net.minecraft.world.item.Item.Properties().stacksTo(16).rarity(net.minecraft.world.item.Rarity.EPIC).fireResistant());
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("main", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.factionclash"))
@@ -27,6 +33,7 @@ public final class ModItems {
                 out.accept(WORLD_MAP_BOARD.get());
                 out.accept(FACTION_HEART.get());
                 out.accept(BEDROLL.get());
+                out.accept(HERO_CREST.get());
             })
             .build());
 

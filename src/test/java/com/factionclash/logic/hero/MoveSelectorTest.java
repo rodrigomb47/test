@@ -388,6 +388,30 @@ class MoveSelectorTest {
         }
     }
 
+    /** A6b: a selector reseeded draws as a new one with that seed (two heroes in a GameTest draw alike). */
+    @Test
+    void aReseededSelectorDrawsAsANewOne() {
+        String boss = V2Files.BOSS.replace("]}", "], \"reactions\": [{\"when\": \"target_blocking\", \"move\":"
+                + " \"bash\", \"chance\": 50, \"cooldown\": 2}]}");
+        HeroDef.V2 k = kit(boss, move("slash", "melee", "\"weight\": 5"), move("bash", "melee", "\"class\": \"heavy\", \"weight\": 0"));
+        for (long seed = 0; seed < 20; seed++) {
+            MoveSelector fresh = new MoveSelector(k, 50, 50, false, seed);
+            MoveSelector reseeded = new MoveSelector(k, 50, 50, false, seed + 1000).reseed(seed);
+            fresh.fightStarted(0);
+            reseeded.fightStarted(0);
+            for (long t = 0; t < 1200; t += 5) {
+                Sense s = new Sense().target(new TargetState().distance(2).blocking((t / 40) % 2 == 0));
+                Pick a = fresh.check(t, s), b = reseeded.check(t, s);
+                assertEquals(a == null ? null : a.move().id() + "/" + a.source(), b == null ? null : b.move().id() + "/" + b.source(),
+                        "seed " + seed + " at " + t);
+                if (a != null) {
+                    fresh.moveEnded(t + 20, 1, false);
+                    reseeded.moveEnded(t + 20, 1, false);
+                }
+            }
+        }
+    }
+
     /** A fight against a target that raises its shield every other second; the Sense has no field for who it is. */
     private static List<String> run(HeroDef.V2 k, long seed, String who) {
         assertFalse(who.isEmpty());

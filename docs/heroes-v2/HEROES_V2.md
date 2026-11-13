@@ -2776,7 +2776,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core. Done 2026-11-13: a hero picks its moves with F3's selector after the fight's opening gap and runs each select -> wind-up -> hit ticks -> recovery (`hero/HeroCombat`, `combat/HeroAbilityGoal`, `logic/hero/MovePlan`, where A5 plugs in the timing files, `DATA_ACTION` and interrupts); v1's fourteen forms and the combo, with projectile and zone entities and chains; the effects of phase 4 (damage, dot, heal, shield, effect, stat, knockback, pull, ignite, freeze, cleanse, energy, cooldown_cut, move_self, mark, clear_marks) with Amounts at hit time and `Conditions` per receiver; element damage types and resistances; the slot caps per use and receiver against any target (`logic/hero/UseLedger`); marks, stacks and statuses on any entity, saved with it (`hero/HeroStatus`, `logic/hero/StatusBook`); energy built (ranged hits too) and spent by the ultimate; cooldowns and energy kept across a save; the thrown basic attack's own goal (`combat/HeroThrowGoal`); a move with a later task's form or effect is not picked yet; `heroes.powerScale`, `maxHit`, `maxDotPerSecond`; 877 unit tests (41 new) and 183 GameTests (23 new), every effect that can land on a player giving an NPC soldier and a mock player the same numbers ("A3 as built" below) |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5. Done 2026-11-13: stun, taunt, dispel, empower and summon run (`hero/HeroStatus`, `HeroEffects`, `HeroSummons`, `combat/StunnedGoal`, `hero/HeroControlEvents`), the same on every receiver (6.15: a stun stops a player as it stops an NPC, with its immunity from any source; a taunt halves anyone's damage to others; blindness cuts an NPC's ranges); the format-2 states and v1's empowered state (`hero/HeroStates`; the selector reads `skills_locked` and a state's move list); passives with every trigger the game has now and the loop guard (`logic/hero/PassiveBook`, `hero/HeroPassives`); `combat/HeroTargetGoal` (focus, protects, aggression radius, no attack tokens; `logic/hero/TargetRules`); the leash by aggression, the skirmisher's step back and a held keep distance; duties (a worker-duty hero takes that worker's role, tool and job and still fights like a soldier) and alarms; the v1 base abilities as their five talents (`hero/HeroTalents`); combat XP and growth; telegraph poses; the ground leap and dash checked at drops and walls; `heroes.summons`, `heroes.xpRate`; 911 unit tests (34 new) and 203 GameTests (20 new), every control checked on an NPC soldier and a mock player ("A4 as built" below) |
 | A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5. Done 2026-11-13: the move runner in `hero/HeroCombat` (`logic/hero/MoveTiming`): a move's frames and hit ticks from the hero's timing files through its animation chain (the clip its code names; its `hit` markers are the hits), else its own frames; `DATA_ACTION` gets the move's code (`move.<slot>` by its `visual.json` list, `ultimate`, `ultimate.awakened`) at the move's speed on the tick its wind-up starts and the hit lands exactly the wind-up later; speed from Haste, Mining Fatigue, Slowness and the `attack_speed` stat, held to the class minimums and rounded down to a `DATA_ACTION` step so clip and plan agree; interrupts (stun, the stagger hook A6a completes, a knock-back over 0.5 in a wind-up, a broken channel, an escape, death, a target lost or out of reach) with their clips and half the cooldown back where v1 says; followups, strings and the opening gap as F3's selector holds them; the forms charge, wave, rain, sweep, grab, counter and barrage beside A3's combo (the `dive` waits for A12); the effects guard_break, barrier, spawn_add (decoys, `entity/HeroDecoy`; their look is A7's), call_guards, tether, silence and poise, `breaks_guard` and `unblockable`; `on_counter`, `on_stagger`, `on_add_died`, `adds_alive` and `silenced` filled; 937 unit tests (26 new) and 224 GameTests (21 new), the counter, the grab, the wave, the guard break, the barrier, the tether and the unblockable hit each on an NPC soldier and a mock player with the same numbers ("A5 as built" below) |
-| A6 | Boss controller, one mode (section 6): the permanent boss health, the engaged-enemy set and the fight clock, the per-hit cap for every attacker, poise and stagger, phases and transitions, reactions to players and NPCs alike, weak points, enrage and reset, arena checks, telegraph decals (access transformer), the intro title and boss bar for nearby players with the `fled` and `fallen` end states, death without a yield and the rewards to the winning side; no attack tokens, no player-only rule (15.6); operator test hooks `/fc admin hero health/poise/escape/target-state` | A5 | L | the boss and equal-treatment GameTests of 14.5; split into A6a (health, fight clock, cap, poise, phases, decals) and A6b (reactions, weak points, enrage, arena, intro, bar, the end of a fight and rewards, hooks) if it grows. A6a done 2026-11-13: the boss controller's first part (`hero/HeroBoss`, `HeroBossEvents`, `HeroTelegraphs`, `combat/HeroHoldGoal`, `net/HeroDecalPayload`, `client/hero/HeroDecalRenderer`; `logic/hero/BossRules` `Engagement` and `Phases`, `Decals` packing): the engaged enemies (a blow in the last 15 s or the target, within 32 blocks, of any kind) and the fight clock that ends 10 s after the last, which now drives the move gap, the poise bar's reset and `enemies_engaged`; vanilla's hurt cooldown kept per attacker; the damage-taken windows (a stagger +25%, a recovery +15% and +15% from behind, a transition's -50%, with the `recovery`, `back`, `iron` and `gold` weak points) and the per-hit cap for a hit from any attacking entity, its excess and the weapon's factor to poise; the parry; the stagger (it interrupts the move runner, plays `stagger`, kneels 2.5 s with stars; `poise: 0` is no bar); phases with their transitions (between moves: super armour, shockwave, line, face, `phase.N`, `on_phase`, the phase the renderer reads; then the phase's stats, state and adds) and their re-arm with the out-of-fight healing; telegraph decals drawn by the client for the players within 32 blocks (new config `boss.telegraphDecals`); 945 unit tests (8 new) and 231 GameTests (7 new, in `HeroBossGameTests`), the cap, the hurt cooldown, the stagger, the parry, the shockwave and the fight clock each with an NPC soldier's blow and a mock player's ("A6a as built" below) |
+| A6 | Boss controller, one mode (section 6): the permanent boss health, the engaged-enemy set and the fight clock, the per-hit cap for every attacker, poise and stagger, phases and transitions, reactions to players and NPCs alike, weak points, enrage and reset, arena checks, telegraph decals (access transformer), the intro title and boss bar for nearby players with the `fled` and `fallen` end states, death without a yield and the rewards to the winning side; no attack tokens, no player-only rule (15.6); operator test hooks `/fc admin hero health/poise/escape/target-state` | A5 | L | the boss and equal-treatment GameTests of 14.5; split into A6a (health, fight clock, cap, poise, phases, decals) and A6b (reactions, weak points, enrage, arena, intro, bar, the end of a fight and rewards, hooks) if it grows. A6a done 2026-11-13: the boss controller's first part (`hero/HeroBoss`, `HeroBossEvents`, `HeroTelegraphs`, `combat/HeroHoldGoal`, `net/HeroDecalPayload`, `client/hero/HeroDecalRenderer`; `logic/hero/BossRules` `Engagement` and `Phases`, `Decals` packing): the engaged enemies (a blow in the last 15 s or the target, within 32 blocks, of any kind) and the fight clock that ends 10 s after the last, which now drives the move gap, the poise bar's reset and `enemies_engaged`; vanilla's hurt cooldown kept per attacker; the damage-taken windows (a stagger +25%, a recovery +15% and +15% from behind, a transition's -50%, with the `recovery`, `back`, `iron` and `gold` weak points) and the per-hit cap for a hit from any attacking entity, its excess and the weapon's factor to poise; the parry; the stagger (it interrupts the move runner, plays `stagger`, kneels 2.5 s with stars; `poise: 0` is no bar); phases with their transitions (between moves: super armour, shockwave, line, face, `phase.N`, `on_phase`, the phase the renderer reads; then the phase's stats, state and adds) and their re-arm with the out-of-fight healing; telegraph decals drawn by the client for the players within 32 blocks (new config `boss.telegraphDecals`); 945 unit tests (8 new) and 231 GameTests (7 new, in `HeroBossGameTests`), the cap, the hurt cooldown, the stagger, the parry, the shockwave and the fight clock each with an NPC soldier's blow and a mock player's ("A6a as built" below). A6b done 2026-11-13: the boss controller's second part (`hero/HeroEscape`, `HeroBossBars`, `HeroRewards`, the A6b parts of `HeroBoss` and `HeroBossEvents`, `combat/HeroEscapeGoal`; `logic/hero/BossRules`' douse, intro, bar and unreachable rules and `EscapeRules.Escape`): reactions read any target (an NPC soldier's raised shield draws the answer a player's does, the same seed the same picks; `[Heroes] reaction` log line); the event weak points `snowball`, `water`, `bell`, `light`, `crit_above` and `charge_wall`, each caused alike by an NPC and a player; the soft and hard enrage and the reset; the arena sampled every 2 s and a target out of reach for 30 s given up; the intro (once a day against people) and the bar and title for the players within 32 blocks (at most 3 bars, nearest first) with `fled` and `fallen`; the end of a fight with no yield (`EscapeRules` at runtime: an escaping kind runs on foot under its `flee_at`, with its home stand and the 10-minute window, cornered after 3 s it fights back and runs again; a last-stand kind says its line once and dies fighting); rewards only at a death (XP orbs, the new `hero_crest`, its non-kit gear) to the side of the last person that hurt it; `/fc admin hero health\|poise\|escape\|target-state`; new config `heroes.escape`, `escapeAwaySeconds`, `escapeCooldownSeconds`, `boss.bossBars`; 957 unit tests (12 new) and 241 GameTests (10 new, in `HeroEndGameTests`), each rule a player can cause checked against an NPC soldier and a mock player with the same numbers ("A6b as built" below) |
 | A7 | `HeroDecoy` | A2, A5 | M | `decoyPopsAndHasNoShadow`; a screenshot of a decoy beside its hero |
 | L1 | Identity layer M1 + slugs M3: `FactionIdentity`, `Factions`, the ~60 reads routed, `FactionIdentityPayload`, `ClientFactions`, `MapPayload` RGB | F4 | L | every existing test unchanged; identity GameTests |
 | L2 | Neutral NPC skins and tint layer (M4) | L1 | S | screenshots: four factions in new colours |
@@ -3862,6 +3862,93 @@ A6a as built (2026-11-13), where it goes beyond or differs from 6.1-6.4, 6.7, 6.
   a campaign on a dedicated server: only the test rig ships (one phase, no heavy move), so a campaign shows no change
   but the per-attacker cooldown and the cap.
 
+A6b as built (2026-11-13), where it goes beyond or differs from 6.3, 6.8-6.13, 14.5, 15.6, MOBILITY_AND_WORK 7.7 and the
+row above:
+- **Reactions** (6.8): F3's selector already read every target through one `Sense`; the game fills it the same way for
+  an NPC and a player (`isBlocking()`, a drawn bow, eating). An answer started by a reaction is counted and logged
+  (`[Heroes] reaction <id> <when> -> <move>`). The operator's `/fc admin hero target-state <id> blocking|bow|eating|clear`
+  ORs those flags into the target's state until cleared. `MoveSelector.reseed` lets two heroes draw alike (tests).
+- **The intro** (6.13; `HeroBoss`): looked for during a fight's first 3 s once the hero is free, when a person (a player, a
+  faction NPC, a hero) is among the engaged enemies, once per in-game day (the world's `dayTime`, saved with the hero):
+  the `intro` clip (its length held to 1.0-1.5 s, 1.25 s without one), held still under super armour (half damage, no
+  stagger, the same window as a transition), its `boss.intro` line or its `intro` line with `{enemy}`, `on_intro`; the
+  fight's opening gap counts from its end. Monsters alone get none.
+- **Enrage and reset** (6.10): the soft enrage at `boss.enrage.after` (180 s, 240 leading; leaders come with L4) or a hard
+  trigger at once (`ally_hero_died` within 32 blocks, `heart_attacked` inside its home's walls plus 16 by an enemy's
+  start on the heart, a player's or a raider's breaker, `favoured_hurt` for a hero it names with a friendly bond); +15%
+  damage dealt as a held stat (less if its other bonuses would pass +25%), the gap x0.7, poise x1.25, `STATE_ENRAGED`, the
+  bar red, an angry face 3 s, its `enrage` line, `on_enrage`. It ends with the fight. The leash is A4's.
+- **Event weak points** (6.9; `HeroBossEvents`): a snowball's hit and a thrown water bottle's splash (4 blocks), and the
+  rising edge of `isInWaterRainOrBubble`, douse (once in 20 s): a fire hero's state ends (a phase's state comes back when
+  the douse ends), any other flinches 1 s (a wind-up cut as by a stun); -10% damage dealt for 5 s. A bell rung within 8
+  blocks by anyone (its own ring: a hand, a projectile, redstone, an NPC) stuns 1 s, once in 30 s. A block of light 12+
+  placed within 4 blocks by an enemy (a player's placement event; an NPC's torch through `CaveWork.placeTorch` and the
+  miner's torches, `HeroBossEvents.npcPlaced`) weakens 10% for 10 s. A critical hit from an attacker falling from above
+  its eyes (a player's by vanilla's critical-hit event, an NPC's or hero's jump critical from `FactionNpc.doHurtTarget`)
+  and its own charge into a wall (`charge_wall`) stagger at once, on its next tick. No move of the slice needs a default
+  `channel` share (each channel authors its own).
+- **Arena** (6.12): the ceiling and the open sky are sampled every 2 s while fighting (the selector reads the sample); a
+  target its pursuit has not reached for 30 s in a row is given up with a taunt (`Pursuit.giveUp`), and the fight ends
+  10 s later.
+- **The bar and the title** (6.13; `HeroBossBars`): a vanilla `ServerBossEvent` per fighting hero (not while it escapes),
+  `★ Name · title  ◆◇◇` with `⚡` when the ultimate is ready, its colour the nearest of the 7 to the hero's own and red
+  while enraged, its fill the health share; matched every 10 ticks to the players within 32 blocks, at most 3 a player,
+  nearest first; the title (name in its colour, "title · faction", fade 10/40/10) once per hero per in-game day to each
+  player near it in a fight; an ultimate's wind-up darkens the screens 2 s. `fled` (its share kept) or `fallen` (empty)
+  shows 3 s to whom had the bar, then it goes; a won or reset fight's bar just goes. `boss.bossBars = false` shows none.
+  Presentation only: nothing reads it.
+- **The end of a fight** (6.13; `HeroEscape`): read after every hit that lands (`HeroBoss.afterHurt`) and once a tick
+  while fighting, from `EscapeRules.lowHealth` with the hero's own `EndOfFight` and the situation (inside its home's
+  walls plus 16 while the heart stands; the window from `HeroState.lastEscapeAt`, which outlives a death; `heroes.escape`).
+  A last stand: its line once a fight, a determined face 3 s, `on_last_stand`, `HeroState.lastStands`. An escape: the
+  move in its wind-up is cancelled as a stun cancels it (an active part plays out its tick), its target dropped, the
+  fight ended at once (no bar, intro, enrage or new fight while it runs; `fled` on the bar), its `escape` line,
+  `on_escape`, `HeroState.escapes`. Its refuge by `EscapeRules.refuge` (its home unless the fight is there, else the
+  nearest other base of its faction, else the wild 72 blocks from its enemies' middle). `combat/HeroEscapeGoal`
+  (priority 1, MOVE and LOOK) runs it there on foot, a waypoint within 16 blocks at a time at 1.3 times its walk, never
+  with the stuck recovery's hop; a `Movement` hook is where A12 puts its mobility. It takes no target, answers no blow
+  or alarm (`jobIgnoresCombat`) and starts no move (`Sense.escaping`). Cornered (no path, or under half a block moved in
+  a second, for 3 s) it fights the nearest pursuer within 16 blocks and runs again once a way opens (looked for every
+  second). Over inside its refuge's walls or 10 s with no pursuer within 48 blocks; then it does not take those it fled
+  as targets for `heroes.escapeAwaySeconds` and until above half health, and in the wild keeps 64 blocks off. A lost base
+  (`CampaignManager.destroyBase`) sends an escaping hero there off at once (`EscapeRules.lostBase`). A reload ends an
+  escape in progress (the window stays). Leaders (L4) and the rebirth (legendary, none in the slice) hold no one yet.
+- **Rewards** (6.13; `HeroRewards`): at a death only, to the side of the last person (a player, a faction NPC or a hero)
+  whose blow hurt it in its last 15 s, the killing blow included (a factionless player is a side of one): XP orbs
+  (`7 x level`, at most 100) and the new `factionclash:hero_crest` item ("Crest of <name>", its title, "Won by <winner> on
+  day N"), once per hero per side per in-game day (`HeroState.crests`), where it died; its non-kit gear drops as any NPC's
+  and its kit never. NPCs of the winning side pick the orbs up (any NPC within 4 blocks, for its faction) and guards the
+  crest with their loot. With no person in its last 15 s, only its gear. An escape drops nothing.
+- **Operator hooks** (`/fc admin hero`): `health <id> <percent>`, `poise <id> full|<amount>` (`full` fills the bar: a
+  stagger unless protected), `escape <id>` (an escape on demand, whatever its kind), `target-state <id> ...`. The first
+  draft's `STATE_YIELDING` had been renamed `STATE_ESCAPING` in F3; nothing named a yield was left.
+- **Lines**: `intro`, `enrage`, `escape` and `last_stand` ignore the dialogue cooldown (each at most once a fight, a day or
+  ten minutes); the v1 `victory` line is not said by a hero that ran.
+- **Equal treatment**: nothing of A6b reads whether anyone is a player but the presentation (the bar and the title go to
+  players). The shield reaction, the escape at the same health, the last stand and death, the enrage, the rewards and
+  every event weak point are each checked with an NPC soldier and a mock player and give the same numbers.
+- **Tests**: `BossEndRulesTest` (11: the enrage's share of +25%, the fight ended and backdated, the douse and its rate,
+  the intro's length, the bar's text and the 3 nearest, the unreachable clock, the engagement's ids, an escape from
+  start to end, the wild point) and `MoveSelectorTest.aReseededSelectorDrawsAsANewOne`: 957 unit tests.
+  `HeroEndGameTests` (10): `reactionFiresOnNpcShield`, `escapingHeroFleesAtThresholdFromNpcsAndPlayer`,
+  `lastStandHeroNeverFleesAndDiesFighting`, `homeStandHeroFleesAfieldNotAtHome` (Natsuho's fixture),
+  `bossBarShownInAnyFightNearAPlayer` (the bar, the title, the 3-bar limit, the intro once a day, the same move with and
+  without a player near), `enrageAndResetForNpcAndPlayer`, `rewardsDropOnlyOnDeath`,
+  `eventWeakPointsAnswerNpcAndPlayerAlike`, `waterStartlesAWaterHatingHero`, `operatorHooksDriveABossFight`; 14.5's
+  `threeHeroesPressOneTarget` stands from A4. 241 GameTests, all passing. GameTest helpers take the day's intro as played
+  (`HeroBoss.introPlayedToday`), so older tests' first blows land as before. Sabotage checks, each caught: seven in the
+  pure rules (the enrage over the cap, a fight that does not end, no douse rate, no 3-bar limit, a clock kept across
+  targets, cornered at once, a reseed that does nothing) and eighteen in the game over three runs (an NPC's shield not
+  read, the last stand said twice, no crest, no enrage poise, a bell only a player rings, the intro without super armour,
+  never at home, a flinch that leaves the wind-up, a target-state hook that does nothing, a player's blows never
+  sending it off, `fallen` for an escape, an NPC's torch ignored, the killing blow's side not counted, the enrage stat
+  kept after the fight, an intro twice a day, an escaper that does not move, a drop at an escape, a fourth bar).
+- **Left open**: A12's superhuman escape movement (the `Movement` hook), the lost raid (raids with heroes, L4/A12),
+  leaders (their stand beside a leader, the 240 s enrage, `favoured_hurt` for its leader: L4), the rebirth, S2's cues
+  (the bar's `fled`/`fallen` stings, the last-stand accent), sound and the crest's own texture (it borrows the nether
+  star's). Not yet seen on a real client (the bar, the title) or in a campaign on a dedicated server (only the test rig
+  ships).
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3996,6 +4083,12 @@ both (14.5).
 - Done in A6a (15.2 "A6a as built"): the hit cap in the hero's damage event for any entity source, the hurt cooldown per
   attacker in `HeroEntity.hurt` as the next two lines say, decals to players within 32 blocks deciding nothing
   (`HeroBoss`, `HeroTelegraphs`); the bar, the end states and the rewards are A6b's.
+- Done in A6b (15.2 "A6b as built"): the bar, its `fled` and `fallen` and the intro title to players within 32 blocks
+  deciding nothing (`HeroBossBars`); rewards at death to the winning side, soldiers picking the orbs up (`HeroRewards`);
+  `EscapeRules.decide`'s low-health and lost-base parts from the hero's post-damage hook and its tick, the escape through
+  the move runner's interrupt (`HeroEscape`), `HeroEscapeGoal` at priority 1 (its goal ready for A12's mobility);
+  `HeroTargetGoal` keeps away from those it fled; `/fc admin hero escape`; `HeroState.escapes`, `lastStands`,
+  `lastEscapeAt`; `heroes.escape`, `escapeAwaySeconds`, `escapeCooldownSeconds`. No code path cancels lethal damage.
 - `BossController` (A6): the health modifier is permanent (spawn, revival, load); the hit cap sits in the hero's
   incoming-damage hook for any entity source; **no code path cancels lethal damage**; bar, intro title and decals go
   to players within 32 blocks and decide nothing; the bar's `fled` and `fallen` states; rewards at death to the

@@ -707,6 +707,18 @@ public final class Pursuit {
         }
     }
 
+    /**
+     * Gives the target up for {@link #IGNORE_TICKS} (task A6b: a hero that could not reach it for 30 s disengages,
+     * HEROES_V2 6.12), whoever it is, and resets the pursuit.
+     */
+    public void giveUp(LivingEntity t) {
+        if (t != null) {
+            ignored = t.getUUID();
+            ignoredUntil = npc.tickCount + IGNORE_TICKS;
+        }
+        reset();
+    }
+
     /** A target it gave up on a little while ago (it does not pick it again until then). */
     public boolean ignores(net.minecraft.world.entity.Entity e) {
         return ignored != null && e.getUUID().equals(ignored) && npc.tickCount < ignoredUntil;

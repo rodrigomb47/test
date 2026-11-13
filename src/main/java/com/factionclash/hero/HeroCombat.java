@@ -360,7 +360,7 @@ public final class HeroCombat {
         }
         nextCheckAt = now + MoveSelector.CHECK_TICKS;
         LivingEntity t = hero.getTarget();
-        if (t == null || !t.isAlive() || !fighting || HeroStatus.stunned(hero) || boss.held()) {
+        if (t == null || !t.isAlive() || !fighting || HeroStatus.stunned(hero) || boss.held() || boss.escape().fleeing()) {
             return false;
         }
         MoveSelector s = selector();
@@ -496,6 +496,12 @@ public final class HeroCombat {
                 BuiltInRegistries.SOUND_EVENT.getOptional(rl).ifPresent(s ->
                         hero.level().playSound(null, hero.getX(), hero.getY(), hero.getZ(), s, SoundSource.HOSTILE, 1F, 1F));
             }
+        }
+        if (p.source() == MoveSelector.Source.REACTION && p.reaction() != null) {
+            boss.reacted(p.reaction(), m); // 6.8: the log line SLICE_PLAN 6.5 counts
+        }
+        if (ultimate) {
+            HeroBossBars.darken(hero); // 6.4: the screens of those who see its bar darken (presentation)
         }
         if (FactionClash.LOGGER.isDebugEnabled()) {
             FactionClash.LOGGER.debug("[Heroes] {} starts {} ({}) at {}: code {} speed {} plan {}", hero.heroId(), m.id(),
@@ -651,9 +657,7 @@ public final class HeroCombat {
         if (p == null || !hero.isAlive()) {
             return false;
         }
-        boolean protectedNow = boss.transitioning() || run != null && (run.move.superArmor()
-                || MoveSelector.isUltimate(run.move) && run.stage() == MoveStage.WINDUP);
-        if (p.add(amount, now(), protectedNow)) {
+        if (p.add(amount, now(), protectedFromStagger())) {
             stagger();
             return true;
         }
@@ -687,6 +691,52 @@ public final class HeroCombat {
     /** Whether it is staggered now (no move starts). */
     public boolean staggered() {
         return now() < staggerUntil;
+    }
+
+    /**
+     * Whether nothing may stagger it now (6.9): a transition or the intro (the boss layer's super armour), a
+     * {@code super_armor} move, or an ultimate's wind-up.
+     */
+    public boolean protectedFromStagger() {
+        return boss.armoured() || run != null && (run.move.superArmor()
+                || MoveSelector.isUltimate(run.move) && run.stage() == MoveStage.WINDUP);
+    }
+
+    /**
+     * A water-hating hero flinches (6.9, task A6b): a pick waiting to start is dropped and a move in its wind-up is cut
+     * as a stun cuts it (half the cooldown back, its decal gone); a move past it goes on. It plays its heavy hurt.
+     */
+    void flinch() {
+        pending = null;
+        if (run != null && run.stage() == MoveStage.WINDUP) {
+            interrupt(Interrupt.STUN);
+        }
+        hero.playAction(HeroActions.actionCode("hurt.heavy"), 1.0, 0);
+    }
+
+    /**
+     * Its escape began (6.13, task A6b): a pick waiting to start is dropped, a move in its wind-up is cancelled as a stun
+     * cancels it (its decals go, no hit) and a move in its active part plays out that tick; a string ends.
+     */
+    void escapeStarted() {
+        pending = null;
+        if (run != null) {
+            interrupt(Interrupt.ESCAPE);
+        }
+    }
+
+    // ------------------------------------------------------------------ the operator's target-state hook (SLICE_PLAN 6.5)
+
+    /** {@code /fc admin hero target-state}: the target reads as blocking, drawing a bow or eating (bits; 0: as it is). */
+    public static final int FORCE_BLOCKING = 1, FORCE_BOW = 2, FORCE_EATING = 4;
+    private int forcedTarget;
+
+    public void forceTargetState(int bits) {
+        forcedTarget = bits;
+    }
+
+    public int forcedTargetState() {
+        return forcedTarget;
     }
 
     // ------------------------------------------------------------------ counter, barrier, channel (A5)
@@ -1803,6 +1853,8 @@ public final class HeroCombat {
                     if (move.extra().wallStun()) {
                         poiseDamage(BossRules.WALL_POISE); // 6.9: a charge ending against a wall
                     }
+                    boss.chargeWall(); // its charge_wall weak point: a stagger at once (A6b), after this tick's run
+
                 }
                 return;
             }

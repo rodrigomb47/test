@@ -480,6 +480,40 @@ public final class BossRules {
         return weak.contains(WeakPoint.CRIT_ABOVE) && critical && falling && attackerFeetY > heroEyeY;
     }
 
+    /**
+     * A douse works at most once in this long (task A6b, PROPOSED: Natsuho's sheet's "at most once every 20 s", used for
+     * the snowball too, which the kits left open: kit-gaps 8).
+     */
+    public static final int DOUSE_EVERY_TICKS = 20 * TPS;
+    /** A water-hating hero flinches this long when doused (its wind-up is cut, it holds still). */
+    public static final int FLINCH_TICKS = TPS;
+    /** A thrown water bottle splashes everyone within this many blocks of where it breaks, as vanilla's splash does. */
+    public static final double SPLASH_RADIUS = 4;
+
+    /** What douses a hero: a snowball hit, or water (a thrown water bottle, stepping into water, rain, a bubble column). */
+    public enum Douse { SNOWBALL, WATER }
+
+    /**
+     * Whether a douse of this kind works on the hero now: its own weak point ({@code snowball} or {@code water}),
+     * once in {@link #DOUSE_EVERY_TICKS} ({@code lastDouseAt} &lt;= 0: never). Who threw the snowball or the bottle is
+     * not an input: a player's and an NPC's count the same.
+     */
+    public static boolean douses(Set<WeakPoint> weak, Douse kind, long now, long lastDouseAt) {
+        WeakPoint p = kind == Douse.SNOWBALL ? WeakPoint.SNOWBALL : WeakPoint.WATER;
+        return weak.contains(p) && (lastDouseAt <= 0 || now - lastDouseAt >= DOUSE_EVERY_TICKS);
+    }
+
+    /**
+     * What a douse does (6.9: "douses a fire hero (its burning state ends, -10% damage for 5 s) or startles a
+     * water-hating one"): a fire hero's state ends; any other flinches for a second; both deal 10% less for 5 s.
+     */
+    public record DouseEffect(boolean endsState, boolean flinches, double dealtPercent, int ticks) {
+    }
+
+    public static DouseEffect douse(boolean fireHero) {
+        return new DouseEffect(fireHero, !fireHero, DOUSE_DEALT_PERCENT, DOUSE_TICKS);
+    }
+
     // ================================================================== the fight (6.1), enrage and reset (6.10)
 
     /** An enemy is engaged when it hurt the hero in the last 15 s or is its target, within 32 blocks. */
@@ -563,6 +597,29 @@ public final class BossRules {
         public long endedAt() {
             return endedAt;
         }
+
+        /**
+         * The fight ends now, whatever is engaged (task A6b: an escape ends the fight for the hero that runs, 6.13);
+         * true when one was on. The next engaged enemy starts a new one.
+         */
+        public boolean end(long now) {
+            if (!active) {
+                return false;
+            }
+            active = false;
+            endedAt = now;
+            return true;
+        }
+
+        /**
+         * Moves the fight's start {@code ticks} earlier (operators and tests: the soft enrage after its minutes without
+         * waiting for them); nothing out of a fight.
+         */
+        public void backdate(long ticks) {
+            if (active && ticks > 0) {
+                start -= ticks;
+            }
+        }
     }
 
     /**
@@ -643,6 +700,25 @@ public final class BossRules {
             return size;
         }
 
+        /** The entity id of the {@code i}-th remembered attacker (0 to {@link #remembered()} - 1; task A6b). */
+        public int id(int i) {
+            return ids[i];
+        }
+
+        /**
+         * Whether any attacker that struck in the last 15 s passes {@code p} (task A6b: a person among them opens the
+         * day's intro). Forgets nothing.
+         */
+        public boolean any(long now, java.util.function.IntPredicate p) {
+            for (int i = 0; i < size; i++) {
+                long age = now - ticks[i];
+                if (age >= 0 && age < ENGAGE_MEMORY_TICKS && p.test(ids[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public void clear() {
             size = 0;
             counted = 0;
@@ -675,6 +751,14 @@ public final class BossRules {
      */
     public static boolean enraged(double fightSeconds, double after, boolean hardTriggered) {
         return hardTriggered || fightSeconds >= after;
+    }
+
+    /**
+     * The enrage's own damage bonus when the hero's other damage bonuses already come to {@code otherPercent} (task
+     * A6b): +15, or less so that all of them together stay within +25; never below 0.
+     */
+    public static double enrageBonus(double otherPercent) {
+        return Math.max(0, Math.min(ENRAGE_DAMAGE_PERCENT, BOSS_DAMAGE_BONUS_MAX - Math.max(0, otherPercent)));
     }
 
     /**
@@ -861,6 +945,113 @@ public final class BossRules {
      */
     public static boolean introDue(long lastIntroDay, long gameTime, boolean personEngaged) {
         return personEngaged && day(gameTime) != lastIntroDay;
+    }
+
+    /** The intro's length without a clip of its own (1.25 s, PROPOSED). */
+    public static final int INTRO_DEFAULT_TICKS = 25;
+
+    /** The intro's length in ticks: its clip's (0: none), held to 1.0-1.5 s. */
+    public static int introTicks(int clipTicks) {
+        int t = clipTicks > 0 ? clipTicks : INTRO_DEFAULT_TICKS;
+        return Math.max((int) Math.round(INTRO_MIN * TPS), Math.min((int) Math.round(INTRO_MAX * TPS), t));
+    }
+
+    // ================================================================== the bar and the title (6.13; presentation)
+
+    /** The bar and the title go to players within this many blocks of a fighting hero. */
+    public static final double BAR_RADIUS = 32;
+    /** A player sees at most this many bars, the nearest fighting heroes first (PROPOSED). */
+    public static final int MAX_BARS = 3;
+    /** The {@code fled} and {@code fallen} end states show this long before the bar goes. */
+    public static final int END_SHOW_TICKS = 3 * TPS;
+    /** An ultimate darkens the screens of those who see the hero's bar this long (6.4). */
+    public static final int DARKEN_TICKS = 2 * TPS;
+
+    /** The pips of the bar: one filled ◆ per phase reached, one ◇ per phase still to come (a rebirth adds one). */
+    public static String pips(int shown, int total) {
+        int n = Math.max(1, total), f = Math.max(0, Math.min(n, shown));
+        return "◆".repeat(f) + "◇".repeat(n - f);
+    }
+
+    /** The bar's text while it fights: {@code ★ Name · title  ◆◆◇}, and {@code ⚡} when its ultimate is ready. */
+    public static String barName(String name, String title, int shown, int total, boolean ultimateReady) {
+        StringBuilder b = new StringBuilder("★ ").append(name);
+        if (title != null && !title.isBlank()) {
+            b.append(" · ").append(title);
+        }
+        b.append("  ").append(pips(shown, total));
+        if (ultimateReady) {
+            b.append(" ⚡");
+        }
+        return b.toString();
+    }
+
+    /** The bar's end state: {@code ★ Name · fled} (it escaped) or {@code ★ Name · fallen} (it died). No third state. */
+    public static String endName(String name, boolean fled) {
+        return "★ " + name + " · " + (fled ? "fled" : "fallen");
+    }
+
+    /**
+     * Which bars one player sees: the indices of the fighting heroes within {@link #BAR_RADIUS} (their distances
+     * given, a negative distance for one in another level), nearest first, at most {@link #MAX_BARS}. Who the player
+     * is does not count.
+     */
+    public static int[] nearestBars(double[] distances) {
+        int n = 0;
+        int[] idx = new int[distances.length];
+        for (int i = 0; i < distances.length; i++) {
+            if (distances[i] >= 0 && distances[i] <= BAR_RADIUS) {
+                idx[n++] = i;
+            }
+        }
+        // insertion sort by distance (a handful of heroes), ties by index
+        for (int i = 1; i < n; i++) {
+            int v = idx[i], j = i - 1;
+            while (j >= 0 && distances[idx[j]] > distances[v]) {
+                idx[j + 1] = idx[j];
+                j--;
+            }
+            idx[j + 1] = v;
+        }
+        return java.util.Arrays.copyOf(idx, Math.min(n, MAX_BARS));
+    }
+
+    // ================================================================== arena awareness (6.12)
+
+    /** The hero samples its surroundings this often while fighting (the ceiling and the open sky). */
+    public static final int ARENA_SAMPLE_TICKS = 2 * TPS;
+    /** A target no link has reached for this long: the hero disengages with a taunt and resets. */
+    public static final int UNREACHABLE_GIVE_UP_TICKS = 30 * TPS;
+
+    /**
+     * The unreachable clock (6.12): ticks in a row the hero's target has been out of its reach (no path, or no melee
+     * reach); true once it reaches 30 s, and it starts again from 0 whenever the target can be reached or changes.
+     */
+    public static final class UnreachableClock {
+        private int ticks;
+        private int targetId = Integer.MIN_VALUE;
+
+        public boolean tick(int target, boolean unreachable, int dt) {
+            if (target != targetId) {
+                targetId = target;
+                ticks = 0;
+            }
+            if (!unreachable) {
+                ticks = 0;
+                return false;
+            }
+            ticks += Math.max(0, dt);
+            return ticks >= UNREACHABLE_GIVE_UP_TICKS;
+        }
+
+        public int ticks() {
+            return ticks;
+        }
+
+        public void reset() {
+            ticks = 0;
+            targetId = Integer.MIN_VALUE;
+        }
     }
 
     // ================================================================== knockback and control (6.12, 6.14)

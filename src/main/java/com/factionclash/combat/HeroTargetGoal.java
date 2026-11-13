@@ -45,6 +45,10 @@ public class HeroTargetGoal extends Goal {
         if (hero.level().isClientSide || hero.isPreview() || --next > 0) {
             return false;
         }
+        if (hero.combat().boss().escape().fleeing()) {
+            next = 10;
+            return false; // it runs (6.13): no target until the escape is over or it is cornered
+        }
         LivingEntity cur = hero.getTarget();
         boolean has = cur != null && cur.isAlive();
         next = has ? TargetRules.RECHECK_TICKS : 10;
@@ -71,6 +75,7 @@ public class HeroTargetGoal extends Goal {
         for (LivingEntity e : hero.level().getEntitiesOfClass(LivingEntity.class, box, e -> e != hero && e.isAlive())) {
             if (!HeroForms.enemy(hero, e) || e instanceof Player p && (p.isCreative() || p.isSpectator())
                     || hero.distanceTo(e) > radius || hero.pursuit().ignores(e)
+                    || e != cur && hero.combat().boss().escape().keepsAwayFrom(e)
                     || e != cur && !hero.getSensing().hasLineOfSight(e)) {
                 continue;
             }

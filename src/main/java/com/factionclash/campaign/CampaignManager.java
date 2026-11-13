@@ -85,6 +85,8 @@ public final class CampaignManager {
         CampaignData data = CampaignData.get(level.getServer());
         base.destroyed = true;
         base.destroyedAt = level.getGameTime();
+        // its heroes: an escaping hero goes at once, a last-stand one finishes its fight (HEROES_V2 6.13, task A6b)
+        com.factionclash.hero.HeroBossEvents.baseLost(level, base);
         BlockPos heart = base.point(BaseState.HEART);
         destroying = true;
         try {

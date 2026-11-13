@@ -267,6 +267,105 @@ public final class EscapeRules {
         return now - escapedAt >= awaySeconds(awaySeconds) * 20L && healthShare > RETURN_HEALTH_SHARE;
     }
 
+    /** Where an escape stands (task A6b). */
+    public enum EscapeStage { RUNNING, CORNERED, OVER }
+
+    /**
+     * One escape from its start to its end (MOBILITY_AND_WORK 7.7; task A6b): the hero runs while it has a way away
+     * from its pursuers; with none for 3 s it is cornered and fights back where it stands, and it runs again as soon as a
+     * way opens; the escape is over inside its refuge's walls or once no pursuer has been within 48 blocks for 10 s.
+     * The game reports what it sees every {@code dt} ticks; nothing here says who the pursuers are.
+     */
+    public static final class Escape {
+        private final long startedAt;
+        private final double originX, originZ;
+        private final String refuge;
+        private EscapeStage stage = EscapeStage.RUNNING;
+        private int noWay, clear;
+
+        public Escape(long startedAt, double originX, double originZ, String refuge) {
+            this.startedAt = startedAt;
+            this.originX = originX;
+            this.originZ = originZ;
+            this.refuge = refuge;
+        }
+
+        /**
+         * {@code dt} ticks went by: {@code wayAway} it could move away from its pursuers, {@code pursuerNear} one was
+         * within 48 blocks, {@code insideRefuge} it stands inside its refuge's walls. Returns the stage now.
+         */
+        public EscapeStage tick(int dt, boolean wayAway, boolean pursuerNear, boolean insideRefuge) {
+            if (stage == EscapeStage.OVER) {
+                return stage;
+            }
+            int d = Math.max(0, dt);
+            clear = pursuerNear ? 0 : clear + d;
+            if (escapeOver(insideRefuge, clear)) {
+                stage = EscapeStage.OVER;
+                return stage;
+            }
+            if (wayAway) {
+                noWay = 0;
+                stage = EscapeStage.RUNNING;
+            } else {
+                noWay += d;
+                if (cornered(noWay)) {
+                    stage = EscapeStage.CORNERED;
+                }
+            }
+            return stage;
+        }
+
+        public EscapeStage stage() {
+            return stage;
+        }
+
+        public long startedAt() {
+            return startedAt;
+        }
+
+        /** Where the fight it left was. */
+        public double originX() {
+            return originX;
+        }
+
+        public double originZ() {
+            return originZ;
+        }
+
+        /** The base it runs to (null: the wild). */
+        public String refuge() {
+            return refuge;
+        }
+
+        /** Ticks in a row with no pursuer within 48 blocks. */
+        public int clearTicks() {
+            return clear;
+        }
+
+        /** Ticks in a row with no way away. */
+        public int noWayTicks() {
+            return noWay;
+        }
+    }
+
+    /**
+     * Where a hero running into the wild heads: {@code distance} blocks from the fight it left ({@code fromX, fromZ}),
+     * straight away from it through where the hero stands; from the fight's very spot, along {@code yawDegrees}
+     * (Minecraft's: 0 faces +Z, 90 faces -X). Returns {x, z}.
+     */
+    public static double[] awayPoint(double heroX, double heroZ, double fromX, double fromZ, double yawDegrees,
+                                     double distance) {
+        double dx = heroX - fromX, dz = heroZ - fromZ, len = Math.hypot(dx, dz);
+        if (len < 0.5) {
+            double r = Math.toRadians(yawDegrees);
+            dx = -Math.sin(r);
+            dz = Math.cos(r);
+            len = 1;
+        }
+        return new double[]{fromX + dx / len * distance, fromZ + dz / len * distance};
+    }
+
     /** Whether an enemy hero chases an escaping hero: not with honour 60 or more (it lets it go). */
     public static boolean heroPursues(int honour) {
         return honour < HONOUR_LETS_GO;
