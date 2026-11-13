@@ -74,6 +74,8 @@ commits, language and testing are in `/CLAUDE.md`.
    - later the same day: more vehicle kinds ("transport items for raids like a van and carrier plane", "more scouting
      vehicles like a baloon or scout helicoprters"), "more items that factions can craft and use" and "new gear with
      more advanced weapons and guns" ("this can be added on the appropiate time").
+   - faction tech levels ("they need a lab or something like that, a researcher, engineer and more types of npc, so
+     only having materials is not enough to build, but having knowledge too").
 
    Recorded in `docs/ROADMAP.md` (Phase 3 rows and Phase 6), with where each fits.
 
