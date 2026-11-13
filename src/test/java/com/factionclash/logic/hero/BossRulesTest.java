@@ -491,7 +491,8 @@ class BossRulesTest {
     void referenceDuel() throws IOException {
         // SLICE_PLAN criterion 15: each slice hero at level 10 against a reference player (iron sword 6, 1.6
         // swings a second, half landing, vanilla armour, an iron sword on an iron weakness): 20-60 s of landed
-        // hitting, as a leader and not; the table's values within a second.
+        // hitting, as a leader and not; the table's values within a second; it also prints the time one iron-sword
+        // soldier needs and the war power of 8.1.
         Object[][] want = {
                 {"natsuho_komezaki", 129, 147, 27, 31}, {"yugen_kagaribi", 130, 148, 24, 27},
                 {"benika_akagane", 144, 165, 31, 36}, {"hinae_shirasuzu", 130, 148, 27, 31},
@@ -522,8 +523,14 @@ class BossRulesTest {
                 assertTrue(seconds >= 20 && seconds <= 60, w[0] + ": " + seconds);
                 double slower = (h / soldier) / seconds;
                 assertTrue(slower > 1.1 && slower < 1.4, "a soldier needs about a fifth longer: " + slower);
+                double power = HeroRules.heroPower(h, 10, 100);
+                if (w[0].equals("benika_akagane") && lead == 1) {
+                    assertEquals(5.3, HeroRules.heroSoldiers(h, 10), 0.05, "8.1: about 5.3 iron soldiers");
+                    assertEquals(11.8, power, 0.05, "8.1: power 11.8");
+                }
                 report.add(String.format(Locale.ROOT, "%s%s: %.0f health, %.1f s for the reference player, %.1f s"
-                        + " for an iron-sword soldier", w[0], lead == 1 ? " (leader)" : "", h, seconds, h / soldier));
+                        + " for an iron-sword soldier, war power %.1f (%.1f iron soldiers)", w[0],
+                        lead == 1 ? " (leader)" : "", h, seconds, h / soldier, power, HeroRules.heroSoldiers(h, 10)));
             }
         }
         report.forEach(System.out::println);

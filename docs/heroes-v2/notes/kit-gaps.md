@@ -110,3 +110,19 @@ this list that are rules of a fight, in the spirit of HEROES_V2 6; C1-C4 still c
 - **Poise under super armour**: during a transition, an ultimate's wind-up or a `super_armor` move the bar fills to
   just short of its maximum, so the first hit after the protection staggers; during a stagger poise damage is
   ignored (no stun-lock), and each stagger raises the maximum by 20% for the rest of the fight.
+
+## F4 decisions on the leader rules (2026-11-13)
+
+F4 (personality, the leader's director knobs, the draft, names, colours, banners, base styles and talents,
+HEROES_V2.md 15.2 "F4 as built") checked the eight kit sheets' leader numbers against `LeaderBiases`: every number
+of every sheet agrees (`LeaderBiasesTest.theSliceKitSheetsAgreeNumberForNumber`). It decided the points left open:
+
+- **11, rounding in the knobs**: a half rounds up, below zero too (-0.5 is 0). The sheets' open halves land where
+  they printed them: Hinae's trader at 11.5 is 12, Kagenori's 17.5 is 18, Ambrose's 13.5 is 14, Ambrose's repair
+  budget 395.5 is 396.
+- **9, talents beside the knobs**: `sage_of_letters` and the leader's enchanter level take the lower (Ambrose: 8 from
+  his ambition, 7 from the talent at tier I: 7); `warden_of_walls` multiplies the leader's repair budget (Ilsabet: 407
+  x1.5 = 611 at tier I). The other points of 9 (Presence for non-guards, the spymaster specialty, the backpack sizes,
+  talents while their hero trades away) stay with L5m.
+- **The eccentric genius rule** ("crafting and lore projects first") stays undefined until projects have a priority
+  list (L4); it changes no knob.

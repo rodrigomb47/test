@@ -2703,7 +2703,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | F1 | v1 format core in Java: `HeroJson`, `HeroCatalogue`, `HeroDef`, `HeroReader`, `Problems`, `HeroBalance`, `HeroRules` (v1 §32 phase 1, minus skins) | - | L | v1 unit tests of §31.1 green. Done 2026-11-13: the seven classes in `logic/hero/` with 473 unit tests in all (237 new: one case per message code, 117 of them; 6,000 seeded damaged files that must load within every range, cap and floor or be refused; 38 cases cross-checked against `tools/herotool/herotool.py`); the three v1 examples load with nothing to report; no game code reads the classes yet ("F1 as built" below) |
 | F2 | Format 2: catalogue additions (12), sense rules (14.1), `checkHeroes` task, schema generation | F1 | L | `HeroReaderV2Test`, `HeroBalanceV2Test`. Done 2026-11-13: format 2 read and balanced in `logic/hero/` (`HeroReader2`, `EscapeRules`, `HeroSchemaGen`, `HeroCheckMain` new; the F1 classes extended), 613 unit tests in all (140 new: 50 new message codes with one case each, 2,000 seeded damaged slice kits), the eight slice kits of SLICE_PLAN section 3 as format-2 test fixtures that load with nothing to report, `./gradlew checkHeroes` in `check`, the generated `docs/heroes-v2/hero2.schema.json` ("F2 as built" below) |
 | F3 | `BossRules`, `MoveSelector`, `HeroActions`, decal geometry helpers | F1 | M | their unit tests. Done 2026-11-13: `BossRules`, `MoveSelector`, `Sense`, `Conditions`, `Decals` new in `logic/hero/`, the runtime half of `EscapeRules` (escape or last stand in a fight, a lost raid, a lost base, the window, cornered, the refuge), the rewards in `HeroRules`, `STATE_ESCAPING`; 674 unit tests in all (61 new, `referenceDuel` matching SLICE_PLAN criterion 15 to the second); no game code reads them yet ("F3 as built" below) |
-| F4 | `Personality`, `Temperaments`, `LeaderBiases`, `LeaderDraft`, `FactionNameGen`, `Palette`, `BannerDesign`, `BaseStyles`, `Talents` | - | M | their unit tests (neutral equals today) |
+| F4 | `Personality`, `Temperaments`, `LeaderBiases`, `LeaderDraft`, `FactionNameGen`, `Palette`, `BannerDesign`, `BaseStyles`, `Talents` | - | M | their unit tests (neutral equals today). Done 2026-11-13: the nine classes in a new `logic/leader/` and the war power of 8.1 in `HeroRules`; 717 unit tests in all (43 new; a neutral leader gives the constants the game's own source holds today, `k = 0` is neutral whatever the leader, 5.5's worked table and the eight kit sheets' leader numbers agree to the last digit); no game code reads them yet ("F4 as built" below) |
 | G1 | herogen core: rig v1, 6 bases, UV template, packer, palette ramps, painter, face painter, geo writer, `visual.json`, determinism | - | L | Python tests; a test rig with face frames builds byte-identically twice |
 | G1s | Style pass after the owner's reference: rig v2 (three forms x two families x three builds, 10 px head, 20x20 face), larger eye frames, the layered hair kit, volumetric ears and tails, outfit volume parts, six original style fixtures, the style preview set | G1 | L | done 2026-11-12: all parts on all six bases pass the checks; previews in `docs/heroes-v2/previews/style/` |
 | G1s2 | Style pass 2 after the owner's feedback ("head too big, faces similar") and the reference measurements: rig v3 (longer bodies, render scale 0.56, low wide-set eyes), part generators (strands, chains, groups) and the strand hair kit, layered ears and five-bone tails, detailed outfits, the face system, six redesigned fixtures, budgets 300 cubes / 130 outside `fine_` / 100 bones | G1s | L | done 2026-11-12: 123 Python tests; every part on every base passes the checks; the six faces differ pairwise in 5+ features; previews regenerated |
@@ -3160,6 +3160,64 @@ and the row above (all pure, none read by the game yet; A3-A6 and A12 wire them 
 - **Left open**: the `dive` form and the air budget (F5); decals' block states and the access transformer (A3);
   everything that reads these classes in the game.
 
+F4 as built (2026-11-13), where it goes beyond or differs from sections 5, 7.2, 8.1 and the row above (pure, in
+`logic/leader/` but for the war power; L1-L5 wire them in):
+- **`Personality`**: `t_eff = clamp(0.5 + k (t - 0.5), 0, 1)`, `k` from `leaders.personalityStrength` (0-200%), the
+  20-point rule (`adjust`, the reader's rule as a function), the fight AI's raw readings (the aggression word,
+  `retreat_below`), the noise (sigma 0.2 x v, doubled for an airhead), and 8's compatibility, bond term and loyalty.
+- **`Temperaments`**: Appendix A's rows (traits from `HeroCatalogue`, the special rule, economy focus, recruit
+  condition, admires and clashes; tested row by row against the appendix), the affinity (+0.2 when either admires the
+  other, -0.2 when either clashes, 0 for both or neither) and the flags of the rules milestone 1 acts on (territorial,
+  builds ahead, opener, doubled noise, doubled ambush, always spares, no raids before day 3, vengeance at any
+  aggression, bold under half health, strongest beatable); the others wait for their systems.
+- **`LeaderBiases`**: every knob of 5.5 (raids, odds, garrison, defenders, fall-back, the leader's raids, soldier cap,
+  swordsmen, ranged share, trader, enchanter, recruitment, food reserve, house, storage, repair budget, trader trips,
+  keep-back, gold and diamonds wanted, need order, the raid target cost with `fd`, `fdist`, loot, lairs and the
+  ambush, the mercy rule, the vengeance raid, the fall-back on a leader's loss, the noise). The economy focus and
+  the temperament rules are off at `k = 0`. A half rounds up (also below zero: -0.5 is 0), which gives the values
+  the kit sheets printed where the formula lands on a half (Hinae's trader at 11.5 is 12, Kagenori's 17.5 is 18,
+  Ambrose's 13.5 is 14, his repair budget 395.5 is 396). `LeaderBiasesTest` reads `FCConfig`, `FactionDirector` and
+  `TraderJob` and fails when one of today's constants changes without the neutral value.
+- **`LeaderDraft`**: the seeded greedy draw (weights 4, 4, 2, 1; 200 tries a round) with the rules relaxed from the
+  last to the first (5, 4, 3, then rule 2's delta-E, then rule 1), distinct dyes never relaxed (a slot no hero can
+  fill under it stays empty, for the legacy identity), fixed leaders first, the seed (`leaders.seed`, else world seed
+  XOR the start time).
+- **`FactionNameGen`**: the leader's first unused name and its short name (else the name's key word, its last two
+  words or its last word), else a seeded name from colour words by the primary dye, three motif words for each of
+  the 54 archetypes and group nouns by temperament ("Crimson Anvil Warband", "Oath of the Indigo Crane", "The Ashen
+  Watch"); names, short names and slugs unique in the campaign (slot ids included), slugs `[a-z0-9_]` 3-24;
+  base names ("Still Crane Keep").
+- **`Palette`**: Lab (D65), CIE76 delta-E, the nearest dye, chat and boss bar colour, the identity dyes of 5.1 (the
+  banner's dyes when there is a banner) and hex text. The test keeps 5.1's examples: indigo and charcoal land on
+  gray, plum on black. Indigo's nearest chat colour is dark gray, not dark blue (only the scoreboard glow uses it).
+- **`BannerDesign`**: the leader's banner when it is valid (2-4 vanilla layers, never the logo), else the archetype's
+  emblem (Appendix C's ten groups, each of the 54 archetypes assigned to one; the sea group adds a border as its
+  second layer) in the faction's dyes, a layer in the base's own dye turned white or black, whichever reads; the
+  `/give` component text.
+- **`BaseStyles`**: Appendix B's 16 families (blocks, stairs, seat, milestone; tested against the table), the
+  `STONE_BLOCKS` additions, the archetype's family (ROSTER_PLAN 2.3, tested against its table), and for a family not
+  built yet the nearest built one by the colours of its walls, roofs and perimeter, walls counting double (coral port
+  waits as tide port, ivory palace as frost hall, jungle haven as grove lodge, tuff workshop as deepslate keep, mud
+  town as grove lodge, desert court as tide port); a default culture by ROSTER_PLAN's archetype groups (east for
+  A-C, west for D, mixed for E).
+- **`Talents`**: the 35 talents' tier numbers (tested against 7.2's table), each working at tier I, tiers by level,
+  the milestones (15 live in milestone 1), the strongest copy at a base and the realm rule, `mentor`'s recruit levels;
+  kit-gaps 9's combinations: `sage_of_letters` and the leader's enchanter level take the lower, `warden_of_walls`
+  multiplies the leader's repair budget.
+- **War power** (`HeroRules`, 8.1): `heroSoldiers`, `heroPower(maxHealth, level, war.heroPowerPercent)`,
+  `countedPower` (the soldier backbone) and `defencePower` (half under half health) replace the hook;
+  `WAR_POWER_IS_PROVISIONAL` and `HERO_DEFENDERS` are gone. The test holds 8.1's five rows, the worked raid (25.3
+  against 22.4, 0.60 with Benika dead) and the cap; `BossRulesTest.referenceDuel` prints each slice hero's power
+  (Benika leading: 5.3 iron soldiers, 11.8).
+- **The kit sheets** (`docs/heroes-v2/kits/*.txt`, "How ... personality steers the faction"): all eight agree with
+  `LeaderBiases` number for number (`LeaderBiasesTest.theSliceKitSheetsAgreeNumberForNumber`).
+- **Tests** (43 new, 717 unit tests in all): `PersonalityTest` (5), `TemperamentsTest` (3), `LeaderBiasesTest` (9),
+  `LeaderDraftTest` (5), `FactionNameGenTest` (4), `PaletteTest` (5), `BannerDesignTest` (3), `BaseStylesTest` (4),
+  `TalentsTest` (4) and `HeroRulesTest`'s two war power tests in place of the hook's. Seven sabotage checks, each
+  caught.
+- **Left open**: the game hooks (L1-L5); the special rules that need milestone 2 systems; the boss bar colours are
+  approximations of the bar textures.
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3235,6 +3293,7 @@ both (14.5).
 
 - Damage: one path for every target (it is so already); `targetIsBoss` is true for a hero, so
   `target_max_health_percent` counts at most 2% against one (6.2).
+- Done in F4 (15.2 "F4 as built"): the war power below; the rewards came with F3.
 - War power: `heroPower(maxHealth, level, percent)` is the formula of 8.1 and replaces the provisional body;
   `HERO_DEFENDERS` and `WAR_POWER_IS_PROVISIONAL` go; add `countedPower(soldiersPower, heroesPower)` (the
   soldier-backbone cap: heroes at most 1.5 times the soldiers) and the half weight under half health;

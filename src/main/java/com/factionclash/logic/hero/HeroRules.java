@@ -19,9 +19,9 @@ import java.util.Set;
  * 3.4, 6.2 and 8): the damage formula and its clamps (v1 6.3), Amounts at hit time with the gear cap (6.2, 12), element
  * multipliers, energy (14), {@code cooldown_cut} (13.5), growth and ability power per level (5.3, 22.2), combat XP
  * (22.1), the dialogue rate limit (23), rarity draws (25.3; the leader draft's weights, HEROES_V2 5.2), the revival
- * time with the owner's ten-minute rule and the death-related abilities (HEROES_V2 3.4) and the war power hook. Pure
- * Java, unit-tested ({@code HeroRulesTest}). Numbers marked PROPOSED in the designs go to BALANCE.md when the game
- * uses them.
+ * time with the owner's ten-minute rule and the death-related abilities (HEROES_V2 3.4), the rewards at a death
+ * (6.13) and the war power (8.1). Pure Java, unit-tested ({@code HeroRulesTest}). Numbers marked PROPOSED in the
+ * designs go to BALANCE.md when the game uses them.
  *
  * <p><b>Equal treatment</b> (the owner's rule of 2026-11-12, HEROES_V2 6): nothing here reads whether an attacker or
  * a target is a player. A hero's hit goes through the same formula, the same clamps and {@code heroes.maxHit} against
@@ -489,29 +489,46 @@ public final class HeroRules {
         return new CrestKey(heroId, side, Math.floorDiv(gameTime, 24000L));
     }
 
-    // ------------------------------------------------------------------ war power: HOOK, NOT FINAL
-    //
-    // WAR POWER HOOK. What a hero weighs in the war council (a raid party's strength, its home base's defence) is
-    // being recomputed by the design: under equal treatment a hero has its boss health against NPC soldiers too, so
-    // v1 25.7's "about 2.3 soldiers" underprices it (HEROES_V2 3.2 "Strength is not heads" and section 8, where the
-    // new price is being written as a PROPOSED formula from the hero's real max health and level, with a config
-    // percent, a cap against a side's ordinary soldiers and half power for a hurt hero). Until that formula is
-    // decided, the two members below hold v1 25.7's numbers so callers compile, and WAR_POWER_IS_PROVISIONAL says so.
-    // Nothing in the game reads them yet. Whoever lands the formula: replace heroPower with it (its inputs change),
-    // add the cap and the hurt-hero rule beside it, revisit HERO_DEFENDERS, set WAR_POWER_IS_PROVISIONAL to false and
-    // rewrite HeroRulesTest.warPowerIsAHookUntilTheDesignLands with the design's table.
+    // ------------------------------------------------------------------ war power (HEROES_V2 8.1)
 
-    /** True while {@link #heroPower} and {@link #HERO_DEFENDERS} are v1's placeholders (see the note above). */
-    public static final boolean WAR_POWER_IS_PROVISIONAL = true;
-
-    /** PROVISIONAL (v1 25.7): a hero at home counts as this many defenders, whatever its duty. */
-    public static final int HERO_DEFENDERS = 2;
+    /** {@code FactionDirector.power} of a soldier in full iron (armour 15, an iron sword): 1 + 0.75 + 0.5. */
+    public static final double IRON_SOLDIER_POWER = 2.25;
+    /** {@code war.heroPowerPercent}: 100 by default, 0-200 (0 counts a hero by heads only, as before). */
+    public static final int HERO_POWER_PERCENT_DEFAULT = 100, HERO_POWER_PERCENT_MAX = 200;
+    /** The soldier backbone: in an odds check a side's heroes count at most this many times its soldiers' power. */
+    public static final double BACKBONE = 1.5;
 
     /**
-     * PROVISIONAL (v1 25.7): a hero's war-council power as the soldier formula + 1 + level / 10 (a level-20 hero in
-     * full iron is 5.25). The war power hook: see the note above.
+     * A hero in iron soldiers (8.1): {@code sqrt(maxHealth / 20) x (1.5 + level / 30)}, fitted to the estimate
+     * {@code sqrt(2 H D / (h d))} of one hero against soldiers who all reach it. It reads the hero's real maximum, so
+     * the rarity, {@code boss.healthScale} and a leader's +50 move it with no rule of their own.
      */
-    public static double heroPower(double soldierPower, int level) {
-        return soldierPower + 1 + clampLevel(level) / 10.0;
+    public static double heroSoldiers(double maxHealth, int level) {
+        return Math.sqrt(Math.max(0, maxHealth) / 20) * (1.5 + clampLevel(level) / 30.0);
+    }
+
+    /**
+     * A hero's war power in the director's units ({@code FactionDirector.power}): {@code 2.25 x heroSoldiers x
+     * war.heroPowerPercent / 100}. A level-10 Benika leading (165 health) is 11.8; a common marksman at level 1 (78)
+     * is 6.8. Who the hero fights does not enter.
+     */
+    public static double heroPower(double maxHealth, int level, int percent) {
+        int p = Math.max(0, Math.min(HERO_POWER_PERCENT_MAX, percent));
+        return IRON_SOLDIER_POWER * heroSoldiers(maxHealth, level) * p / 100.0;
+    }
+
+    /** A hero under half health counts half in its base's defence (8.1), the same line as an escaped hero's return. */
+    public static double defencePower(double heroPower, double healthShare) {
+        return healthShare < 0.5 ? heroPower / 2 : heroPower;
+    }
+
+    /**
+     * A side's counted power in an odds check (8.1, the soldier backbone): its ordinary soldiers' power plus its
+     * heroes' power, the heroes counting at most 1.5 times the soldiers (so at most 60% of the total). Two level-10
+     * heroes (23.0) beside three iron soldiers (6.75) count 6.75 + 10.1 = 16.9.
+     */
+    public static double countedPower(double soldiersPower, double heroesPower) {
+        double s = Math.max(0, soldiersPower);
+        return s + Math.min(Math.max(0, heroesPower), BACKBONE * s);
     }
 }

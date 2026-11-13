@@ -333,20 +333,56 @@ class HeroRulesTest {
                 100)));
     }
 
-    // ------------------------------------------------------------------ war power: a hook (HEROES_V2 3.2, 8)
+    // ------------------------------------------------------------------ war power (HEROES_V2 3.2, 8.1)
 
-    /**
-     * The design is recomputing what a hero weighs in the war council now that it has its boss health in NPC wars.
-     * Until that formula lands, {@link HeroRules#heroPower} is v1 25.7's placeholder and says so. Whoever replaces it
-     * rewrites this test with the new numbers and sets the flag to false.
-     */
+    /** 8.1's table: max health, level, the hero in iron soldiers and its power. */
     @Test
-    void warPowerIsAHookUntilTheDesignLands() {
-        assertTrue(HeroRules.WAR_POWER_IS_PROVISIONAL, "the new war power is in: rewrite this test for it");
-        assertEquals(5.25, HeroRules.heroPower(2.25, 20), EPS, "v1: a level-20 hero in full iron");
-        assertEquals(3.35, HeroRules.heroPower(2.25, 1), 1e-9);
-        assertEquals(6.25, HeroRules.heroPower(2.25, 99), 1e-9, "level 30 at most");
-        assertEquals(2, HeroRules.HERO_DEFENDERS);
+    void warPowerFollowsTheTableOfEightOne() {
+        Object[][] rows = {
+                {"a common marksman, level 1", 78.0, 1, 3.0, 6.8},
+                {"Kagenori (epic striker), level 10, not leading", 129.0, 10, 4.7, 10.5},
+                {"Benika (epic vanguard) as a leader, level 10", 165.0, 10, 5.3, 11.8},
+                {"the same at level 20", 197.0, 20, 6.8, 15.3},
+                {"a legendary vanguard leader, level 30", 257.0, 30, 9.0, 20.2}};
+        for (Object[] r : rows) {
+            double h = (double) r[1];
+            int lvl = (int) r[2];
+            assertEquals((double) r[3], HeroRules.heroSoldiers(h, lvl), 0.05, (String) r[0]);
+            assertEquals((double) r[4], HeroRules.heroPower(h, lvl, 100), 0.05, (String) r[0]);
+        }
+        // the worked raid: Kagenori leading at level 10 (147 health) is 5.0 soldiers, power 11.2
+        assertEquals(5.0, HeroRules.heroSoldiers(147, 10), 0.05);
+        assertEquals(11.2, HeroRules.heroPower(147, 10, 100), 0.05);
+        // war.heroPowerPercent scales it (0 counts heroes by heads only), 0-200
+        assertEquals(0, HeroRules.heroPower(165, 10, 0), EPS);
+        assertEquals(2 * HeroRules.heroPower(165, 10, 100), HeroRules.heroPower(165, 10, 200), 1e-9);
+        assertEquals(HeroRules.heroPower(165, 10, 200), HeroRules.heroPower(165, 10, 900), 1e-9);
+        assertEquals(0, HeroRules.heroPower(165, 10, -5), EPS);
+        // levels clamp to 1-30
+        assertEquals(HeroRules.heroPower(165, 1, 100), HeroRules.heroPower(165, -4, 100), 1e-9);
+        assertEquals(HeroRules.heroPower(165, 30, 100), HeroRules.heroPower(165, 99, 100), 1e-9);
+        assertEquals(2.25, HeroRules.IRON_SOLDIER_POWER, EPS, "FactionDirector.power in full iron");
+    }
+
+    @Test
+    void theSoldierBackboneAndTheHurtHero() {
+        // two level-10 heroes (23.0) beside three iron soldiers (6.75): 6.75 + 10.1, not 29.8
+        double heroes = 2 * 11.5, soldiers = 3 * 2.25;
+        assertEquals(6.75 + 10.125, HeroRules.countedPower(soldiers, heroes), 1e-9);
+        assertEquals(16.9, HeroRules.countedPower(soldiers, heroes), 0.05);
+        assertEquals(27 + 11.8, HeroRules.countedPower(27, 11.8), 1e-9, "under the cap: the full sum");
+        assertEquals(0, HeroRules.countedPower(0, 11.8), EPS, "heroes alone count for nothing in the odds");
+        assertEquals(0.6, (HeroRules.countedPower(10, 1000) - 10) / HeroRules.countedPower(10, 1000), 1e-9,
+                "heroes at most 60% of the total");
+        assertEquals(5.9, HeroRules.defencePower(11.8, 0.49), 1e-9, "half under half health");
+        assertEquals(11.8, HeroRules.defencePower(11.8, 0.5), 1e-9);
+        // the worked raid of 8.1: Benika and six soldiers against five soldiers and Kagenori
+        double party = HeroRules.countedPower(6 * 2.25, HeroRules.heroPower(165, 10, 100));
+        double defence = HeroRules.countedPower(5 * 2.25, HeroRules.heroPower(147, 10, 100));
+        assertEquals(25.3, party, 0.05);
+        assertEquals(22.4, defence, 0.05);
+        assertEquals(1.13, party / defence, 0.005);
+        assertEquals(0.60, 6 * 2.25 / defence, 0.005, "Benika dead: 13.5 against 22.4");
     }
 
     // ------------------------------------------------------------------ equal treatment (HEROES_V2 6)
