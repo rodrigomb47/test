@@ -1,0 +1,136 @@
+{
+  "_comment": "Prayer beads (G6c; Yugen's): a loop of wooden beads round the neck, hanging in a curve over the chest front (alternate beads are fine detail), with a larger bead and a short tassel at the bottom (alt). Sits 1.35 px off the chest so it clears collars and robe layers.",
+  "id": "accessories/prayer_beads",
+  "category": "accessories",
+  "slots": {"main": "leather", "alt": "trim"},
+  "occupies": ["necklace"],
+  "cubes": [
+    {
+      "name": "f0",
+      "bone": "chest",
+      "origin": [-3.0, "chest_top - 0.6 - 0 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": false
+    },
+    {
+      "name": "f1",
+      "bone": "chest",
+      "origin": [-2.35, "chest_top - 0.6 - 0.438 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "f2",
+      "bone": "chest",
+      "origin": [-1.7, "chest_top - 0.6 - 0.75 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": false
+    },
+    {
+      "name": "f3",
+      "bone": "chest",
+      "origin": [-1.05, "chest_top - 0.6 - 0.938 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "f4",
+      "bone": "chest",
+      "origin": [-0.4, "chest_top - 0.6 - 1 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": false
+    },
+    {
+      "name": "f5",
+      "bone": "chest",
+      "origin": [0.25, "chest_top - 0.6 - 0.938 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "f6",
+      "bone": "chest",
+      "origin": [0.9, "chest_top - 0.6 - 0.75 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": false
+    },
+    {
+      "name": "f7",
+      "bone": "chest",
+      "origin": [1.55, "chest_top - 0.6 - 0.438 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "f8",
+      "bone": "chest",
+      "origin": [2.2, "chest_top - 0.6 - 0 * (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.35"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": false
+    },
+    {
+      "name": "sr0",
+      "bone": "chest",
+      "origin": [-3.3, "chest_top - 0.1 + 0", "chest_d / 2 * -0.8 - 0.4"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "sr1",
+      "bone": "chest",
+      "origin": [-3.3, "chest_top - 0.1 + 0.15", "chest_d / 2 * 0.5 - 0.4"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "sl0",
+      "bone": "chest",
+      "origin": [2.5, "chest_top - 0.1 + 0", "chest_d / 2 * -0.8 - 0.4"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "sl1",
+      "bone": "chest",
+      "origin": [2.5, "chest_top - 0.1 + 0.15", "chest_d / 2 * 0.5 - 0.4"],
+      "size": [0.8, 0.8, 0.8],
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "back",
+      "bone": "chest",
+      "origin": [-2.0, "chest_top - 0.25", "chest_d / 2 + 0.2"],
+      "size": [4.0, 0.7, 0.7],
+      "material": "wood"
+    },
+    {
+      "name": "big",
+      "bone": "chest",
+      "origin": [-0.65, "chest_top - 2.0 - (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.5"],
+      "size": [1.3, 1.3, 1.1],
+      "material": "wood"
+    },
+    {
+      "name": "tassel",
+      "bone": "chest",
+      "origin": [-0.35, "chest_top - 4.0 - (chest_top - chest_y) * 0.42", "-chest_d / 2 - bust_d - 1.3"],
+      "size": [0.7, 2.0, 0.6],
+      "slot": "alt",
+      "material": "cloth",
+      "cutout": "fur_tips"
+    }
+  ]
+}

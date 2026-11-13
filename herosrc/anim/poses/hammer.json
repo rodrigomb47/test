@@ -1,0 +1,54 @@
+{
+  "_comment": "Grip poses of the hammer style (G6c: Benika's iron club, two-handed; G5 builds the style's animations on them). The left hand holds the handle 2.6 px behind the right (solved on the teen form). Conventions in tools/herogen/anim/poses.py.",
+  "poses": {
+    "hammer.stance": {
+      "_comment": "The shoulder carry: feet apart, knees bent, the club resting on the right shoulder pointing up and back, both hands on the handle in front of the right shoulder.",
+      "knees": 12,
+      "bones": {
+        "leg_r": [4, 0, 6],
+        "leg_l": [-6, 0, -6],
+        "body": [4, 14, 0],
+        "chest": [0, 8, 0],
+        "neck": [-4, -22, 0],
+        "arm_r": [-40.2, -22.5, -23.9],
+        "forearm_r": [-99.7, 35.2, 0],
+        "hand_r": [6.4, 23.8, -35],
+        "arm_l": [-93.9, 31.6, -48.4],
+        "forearm_l": [-42.4, -11.4, 0],
+        "hand_l": [20, 14.8, 35]
+      },
+      "fix": ["level_feet", "ground"]
+    },
+    "hammer.raise": {
+      "_comment": "The overhead wind-up: the club raised behind the head with both hands, the chest arched back.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [-4, 6, 0],
+        "chest": [-8, 4, 0],
+        "neck": [8, -12, 0],
+        "arm_r": [-77.9, -10.2, -13.4],
+        "forearm_r": [-98.7, 58.9, 0],
+        "hand_r": [80.1, 60, -35.1],
+        "arm_l": [-121.6, 48.2, -47.3],
+        "forearm_l": [-18.7, -11.1, 0],
+        "hand_l": [24.5, -0.8, 6.7]
+      }
+    },
+    "hammer.slam": {
+      "_comment": "The slam at the moment it lands: bent forward, both arms down and forward, the club's head on the ground in front.",
+      "extends": "hammer.stance",
+      "knees": 22,
+      "bones": {
+        "body": [18, 4, 0],
+        "chest": [10, 0, 0],
+        "neck": [-24, -4, 0],
+        "arm_r": [-28.5, 19.5, -28.2],
+        "forearm_r": [-46.8, 19.6, 0],
+        "hand_r": [80.3, 15.4, -25],
+        "arm_l": [-17.1, 27.6, 40.1],
+        "forearm_l": [-24.5, -52.5, 0],
+        "hand_l": [45.2, -8.7, 2.6]
+      }
+    }
+  }
+}

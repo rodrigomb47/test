@@ -1,0 +1,72 @@
+{
+  "_comment": "A fan of five paper talismans (G6c; Hinae's left hand, and what she throws): strips fanned in the hand's plane, each with a band and brush strokes in the alt colour (the `script` emblem). Put away when sheathed.",
+  "id": "weapons/talisman_fan",
+  "category": "weapons",
+  "slots": {"main": "secondary", "alt": "primary"},
+  "hand": "left",
+  "style": "focus",
+  "sheath": "none",
+  "tip": [0, 0, -5.6],
+  "cubes": [
+    {
+      "name": "strip_0",
+      "origin": [-0.395, -0.75, -5.6],
+      "size": [0.15, 1.5, 5.0],
+      "rotation": [-36, 0, 0],
+      "pivot": [0, 0, -0.4],
+      "slot": "main",
+      "material": "paper",
+      "density": 2,
+      "outline": false,
+      "stamp": {"emblem": "script", "face": "east", "slot": "alt", "rotate": 90}
+    },
+    {
+      "name": "strip_1",
+      "origin": [-0.235, -0.75, -5.6],
+      "size": [0.15, 1.5, 5.0],
+      "rotation": [-18, 0, 0],
+      "pivot": [0, 0, -0.4],
+      "slot": "main",
+      "material": "paper",
+      "density": 2,
+      "outline": false,
+      "stamp": {"emblem": "script", "face": "west", "slot": "alt", "rotate": 90}
+    },
+    {
+      "name": "strip_2",
+      "origin": [-0.075, -0.75, -5.6],
+      "size": [0.15, 1.5, 5.0],
+      "rotation": [0, 0, 0],
+      "pivot": [0, 0, -0.4],
+      "slot": "main",
+      "material": "paper",
+      "density": 2,
+      "outline": false,
+      "stamp": {"emblem": "script", "face": "east", "slot": "alt", "rotate": 90}
+    },
+    {
+      "name": "strip_3",
+      "origin": [0.085, -0.75, -5.6],
+      "size": [0.15, 1.5, 5.0],
+      "rotation": [18, 0, 0],
+      "pivot": [0, 0, -0.4],
+      "slot": "main",
+      "material": "paper",
+      "density": 2,
+      "outline": false,
+      "stamp": {"emblem": "script", "face": "west", "slot": "alt", "rotate": 90}
+    },
+    {
+      "name": "strip_4",
+      "origin": [0.245, -0.75, -5.6],
+      "size": [0.15, 1.5, 5.0],
+      "rotation": [36, 0, 0],
+      "pivot": [0, 0, -0.4],
+      "slot": "main",
+      "material": "paper",
+      "density": 2,
+      "outline": false,
+      "stamp": {"emblem": "script", "face": "east", "slot": "alt", "rotate": 90}
+    }
+  ]
+}

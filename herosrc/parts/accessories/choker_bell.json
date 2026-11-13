@@ -1,0 +1,62 @@
+{
+  "_comment": "A ribbon choker with a bell (G6c; Natsuho's): a band round the neck (main), a small bow at the front (two loops) and a round bell hanging under it (alt, metal) with its loop and slit (detail). The loop and the bell hang 0.2 px in front of the chest (never on its plane).",
+  "id": "accessories/choker_bell",
+  "category": "accessories",
+  "slots": {"main": "trim", "alt": "accent", "detail": "leather"},
+  "occupies": ["neck"],
+  "cubes": [
+    {
+      "name": "band",
+      "bone": "neck",
+      "origin": ["-neck_w / 2 - 0.3", "chest_top + 0.3", "-neck_d / 2 - 0.3"],
+      "size": ["neck_w + 0.6", 0.9, "neck_d + 0.6"],
+      "material": "cloth"
+    },
+    {
+      "name": "loop",
+      "bone": "neck",
+      "origin": [-0.25, "chest_top - 0.3", "-chest_d / 2 - 0.6"],
+      "size": [0.5, 0.6, 0.4],
+      "slot": "alt",
+      "material": "metal"
+    },
+    {
+      "name": "bell",
+      "bone": "neck",
+      "origin": [-0.8, "chest_top - 1.85", "-chest_d / 2 - 1.45"],
+      "size": [1.6, 1.55, 1.25],
+      "slot": "alt",
+      "material": "metal",
+      "density": 2,
+      "stamp": {"emblem": "slit", "face": "north", "slot": "detail"}
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, 22],
+      "pivot": [0, "chest_top + 0.75", "-neck_d / 2 - 0.45"],
+      "cubes": [
+        {
+          "name": "bow_r",
+          "bone": "neck",
+          "origin": [-1.5, "chest_top + 0.35", "-neck_d / 2 - 0.65"],
+          "size": [1.4, 0.8, 0.35],
+          "material": "cloth"
+        }
+      ]
+    },
+    {
+      "rotation": [0, 0, -22],
+      "pivot": [0, "chest_top + 0.75", "-neck_d / 2 - 0.45"],
+      "cubes": [
+        {
+          "name": "bow_l",
+          "bone": "neck",
+          "origin": [0.1, "chest_top + 0.35", "-neck_d / 2 - 0.65"],
+          "size": [1.4, 0.8, 0.35],
+          "material": "cloth"
+        }
+      ]
+    }
+  ]
+}

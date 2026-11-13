@@ -98,14 +98,21 @@ class HeroAssets:
     def bones(self, group):
         return self.visual["bones"].get(group, [])
 
-    def hidden(self, phase=1, drawn=False, far=False):
+    def hidden(self, phase=1, drawn=False, far=False, riding=False):
         """Bones hidden in a frame: phase bones of a later phase, the sheathed copy while the weapon is drawn (or the
-        drawn one while it is sheathed), and the fine bones beyond the fine distance (4.9)."""
+        drawn one while it is sheathed), the fine bones beyond the fine distance (4.9), and the mounted copy of a
+        carrier weapon unless riding (G6c; while riding, the weapon's hand and sheathed copies instead)."""
         out = [b for b, p in self.visual["bones"].get("phase", {}).items() if phase < p]
+        if riding:
+            out += self.bones("weapon_drawn") + self.bones("weapon_sheathed")
+        else:
+            out += self.bones("mount")
         for ph in self.visual.get("phases", []):
             if ph["phase"] <= phase:
                 out += ph.get("hide", [])
-        if drawn:
+        if riding:
+            pass
+        elif drawn:
             out += self.bones("weapon_sheathed")
         else:
             out += self.bones("weapon_drawn")
@@ -155,30 +162,33 @@ class HeroAssets:
     # -------------------------------------------------------------- drawing
 
     def render(self, view, pose=None, face=(0, 0, 0), phase=1, drawn=False, far=False, tint=SASH_TINT,
-               bounds=None, pad=2, brightness=1.0, glow=True, frame=False):
+               bounds=None, pad=2, brightness=1.0, glow=True, frame=False, riding=False):
         """One image (RGBA array, or a raster.Frame with frame=True)."""
         pose = {b: v for b, v in (pose or {}).items() if b in self.geo.bones}
         tex, gl = self.textures(phase)
-        return raster.render(self.geo, tex, view, pose=pose, hidden=self.hidden(phase, drawn, far),
+        return raster.render(self.geo, tex, view, pose=pose, hidden=self.hidden(phase, drawn, far, riding),
                              uv_shift=self.face_shift(*face), tint=self.tint(tint), glow=gl if glow else None,
                              bounds=bounds, pad=pad, brightness=brightness, frame=frame)
 
-    def ties(self, view, pose=None, face=(0, 0, 0), phase=1, drawn=False, far=False, bounds=None, pad=2):
+    def ties(self, view, pose=None, face=(0, 0, 0), phase=1, drawn=False, far=False, bounds=None, pad=2,
+             riding=False):
         """raster.coplanar_ties for this hero in a frame: (mask, {(bone, bone): pixels}, Frame)."""
         pose = {b: v for b, v in (pose or {}).items() if b in self.geo.bones}
         tex, _ = self.textures(phase)
-        return raster.coplanar_ties(self.geo, tex, view, pose=pose, hidden=self.hidden(phase, drawn, far),
+        return raster.coplanar_ties(self.geo, tex, view, pose=pose, hidden=self.hidden(phase, drawn, far, riding),
                                     uv_shift=self.face_shift(*face), tint=self.tint(), bounds=bounds, pad=pad)
 
-    def tie_report(self, scale=TIE_SCALE, yaws=TIE_YAWS, pitch=PITCH):
+    def tie_report(self, scale=TIE_SCALE, yaws=TIE_YAWS, pitch=PITCH, stances=None):
         """Coplanar faces of different colour (raster.coplanar_ties: they z-fight in game) in the stances the hero
         is seen in most, from six directions round it: the idle stance, and the combat stance with the weapon drawn
         when it has one, in every phase it has. Returns {(bone, bone): pixels} summed over the views (empty when
-        clean); `herogen check` reports any as an error, `preview --ties` shows where."""
+        clean); `herogen check` reports any as an error, `preview --ties` shows where. `stances` (G6c: the hand
+        poses of the weapon's style, grips.py) replaces them: [(weapon drawn, pose)]."""
         out = {}
-        stances = [(False, self.stance(False))]
-        if self.bones("weapon_drawn"):
-            stances.append((True, self.stance(True)))
+        if stances is None:
+            stances = [(False, self.stance(False))]
+            if self.bones("weapon_drawn"):
+                stances.append((True, self.stance(True)))
         phases = sorted({1} | set(self.visual["bones"].get("phase", {}).values()))
         for phase in phases:
             for drawn, pose in stances:
@@ -188,12 +198,12 @@ class HeroAssets:
                         out[k] = out.get(k, 0) + n
         return out
 
-    def bounds(self, views, poses=(None,), phase=1, drawn=False, far=False):
+    def bounds(self, views, poses=(None,), phase=1, drawn=False, far=False, riding=False):
         """Common bounds of several views and poses."""
         bs = []
         for pose in poses:
             pose = {b: v for b, v in (pose or {}).items() if b in self.geo.bones}
-            bs.append(raster.model_bounds(self.geo, views, self.hidden(phase, drawn, far), pose))
+            bs.append(raster.model_bounds(self.geo, views, self.hidden(phase, drawn, far, riding), pose))
         return (min(b[0] for b in bs), max(b[1] for b in bs), min(b[2] for b in bs), max(b[3] for b in bs))
 
     def stance(self, drawn=False):

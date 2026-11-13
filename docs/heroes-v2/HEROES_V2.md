@@ -2230,6 +2230,21 @@ rule in the idle and combat stances), on the slim and large builds and at param 
 (conflicts name parts, `occupies` declared, exact mirrors), then the sample outfits on the six bases; about 10
 minutes. Sheets: `docs/heroes-v2/previews/parts/` (`herogen parts-previews [--check]`).
 
+**As built (G6c, 2026-11-13; `notes/artgen.md`, "G6c")**: the rest of the slice column, 94 parts in all. Accessories
+15 (10 new: `choker_bell`, `prayer_beads`, `foxfire_lanterns` on their own bones, `rope_belt`, `gourd` on a sprung
+bone, `talisman_strips`, `talisman_ring` (Hinae's phase 2), `kunai_holster`, `vial_bandolier`, `crow` with a head
+bone), markings 3 (`calico` patches over hair and tail, `arm_stripes` that glow in the phase look, `crest`: the hero
+entry's emblem on the back, chest or sleeves) and weapons 12 (11 new: `claw_gauntlet`, `folding_fan`, `iron_club`,
+`purification_wand`, `talisman_fan`, `katana` (long and short), `short_blade`, `kunai`, `longsword`, `kite_shield`,
+`cauldron_staff`). A weapon part names its `hand` (right, left, pair, both with a second grip), `grip` (forward or
+reverse), `sheath` (hip, obi, back, back up, flat on the back, across the small of the back, worn, none) and `style`;
+a hero's weapon may add an `offhand` prop, drawn from a phase (its holstered copy is hidden by the phase), and a
+`mount` (Ambrose's staff-broom: a `mount` bone under `root` with a copy of the staff at the seat height, for G10).
+Every slice weapon is checked in each hand pose of its style on all six bases (`grips.py`: clear of the body and the
+ground, the second hand on a two-handed prop, no coplanar faces with it drawn), in `herogen lint` and the tests;
+the hand poses (`herosrc/anim/poses/<style>.json`) were solved so the props clear a chibi's head too. Sheets:
+`details_accessories.png`, `weapons.png`, `weapons_poses.png`, `patterns_emblems.png`.
+
 ### 13.4 Palette and procedural painting (`paint.py`, `palette.py`)
 
 - **Ramps**: each palette slot becomes a 5-tone ramp in OKLCH: tones -2..+2 change lightness by 0.08 per step; shadows
@@ -2254,6 +2269,12 @@ minutes. Sheets: `docs/heroes-v2/previews/parts/` (`herogen parts-previews [--ch
 - **Patterns**: stripes, plaid, checks, dots, waves, hemp-leaf, petals, scales, fur tufts, lace, trim bands, and
   emblem stamps from the archetype (paw, flame, bell, crest, star, moon disc, leaf), each with 1-3 colour
   slots and a scale; applied per cube face with seams aligned across neighbouring faces.
+  As built (G6c): `stripes`, `checks`, `plaid`, `dots`, `pleats`, `waves`, `scales`, `hemp`, `petals`, `patches`
+  (seeded soft blobs: calico), `solid` and the `lace` cutout; **overlay** paint ops keep each texel's own slot and
+  shading and add only a pattern or an emblem; **emblem stamps** (`emblems.py`: paw, flame, bell, crest, star, moon,
+  leaf, lily, crane, plum, and small eye, slit and script marks, each drawn by hand at 5-11 texels) on a cube face or
+  at a point of a paint op, the hero entry's `emblem` through `"@"`, flipped on mirrored copies and kept upright
+  through a weapon's carry; `glow: "phase"` lights a region only in the phase texture.
 - **Glow mask and phase texture**: `glow` regions write `<id>_glowmask.png`; any phase palette change writes
   `<id>_p2.png` (and `_p2_glowmask.png`).
 - **Checks**: adjacent colour regions differ by delta-E 10 or more; the greyscale contrast rule of 13.1; no pure black
@@ -2693,7 +2714,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G5 | Style libraries for the slice: fists, focus, hammer, katana, twin_blades, sword_shield, staff | G3, G4 | M | each passes `check`; reviewed as GIFs on two bases |
 | G6a | Parts library, head: hair, ears, horns, tails, wings, headwear (30 parts of 13.3) and `lint` | G1 | M | `lint` clean; the head parts on all six bases reviewed on a sheet. Done 2026-11-12: 30 head parts (17 new, the slice heroes' first), strand tips, odd left-hand slots, fanned chain copies (nine tails), the `mask` bone; `herogen lint` clean on the 70 parts and the eight sample outfits; sheets in `docs/heroes-v2/previews/parts/` |
 | G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first). Done 2026-11-12: the G2 review's coplanar faces fixed (sash outermost, leg shells, ears, tail chain, scarf, bow, mantle, lames, fringe bases), the bell sleeve's lining (the swing's frame at 0.45 s), 34 body parts (16 new), the layer convention, the coplanar rule in `herogen check`, the slice looks as sample outfits on all six bases (`outfits.png`) |
-| G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style |
+| G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style. Done 2026-11-13: 24 parts (10 accessories, 3 markings, 11 weapons for the ten slice weapon looks), the painter's patterns, overlays, emblem stamps and phase glow, weapon hands, grips, sheaths, an off-hand from a phase and the staff-broom's mount point; the hand poses of the six slice styles solved for all six bases and every slice weapon checked in each (`grips.py`); `herogen lint` clean on the 94 parts and the eight sample outfits; sheets in `docs/heroes-v2/previews/parts/`; 291 Python tests |
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
 | A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`). Reviewed 2026-11-12: a dead copy no longer revives the record, `/fc hero info` shows where a hero is only to its faction and operators, `give` from another dimension fixed; uniqueness now also tested on the chunk-load path ("Review of A0-A2" below) |
 | A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file |

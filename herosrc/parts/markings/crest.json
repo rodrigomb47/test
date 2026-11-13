@@ -1,0 +1,92 @@
+{
+  "_comment": "A house crest (G6c; Kagenori's crane, Yugen's plum, Ilsabet's lily): the hero entry's `emblem` stamped over the clothes as an overlay: on the back between the shoulders (`back`), once on the chest front (`chest`, a tabard's lily), on both sides of the chest (`chest_pair` at `pair_y` of the chest's height: a formal coat's crests) and on the back of the upper sleeves (`sleeves`). Size 7 on chests 7 px wide and more, 5 below.",
+  "id": "markings/crest",
+  "category": "markings",
+  "slots": {"main": "secondary"},
+  "params": {
+    "back": {"min": 0, "max": 1, "default": 1},
+    "chest": {"min": 0, "max": 1, "default": 0},
+    "chest_pair": {"min": 0, "max": 1, "default": 0},
+    "pair_y": {"min": 0.2, "max": 0.8, "default": 0.65},
+    "sleeves": {"min": 0, "max": 1, "default": 0}
+  },
+  "occupies": ["crest"],
+  "paint": [
+    {
+      "cubes": ["chest", "waist", "upper_arm_*", "forearm_*", "outfit_top/*", "robes/*", "armour/*"],
+      "faces": ["south"],
+      "when": "back",
+      "stamp": {
+        "emblem": "@",
+        "face": "south",
+        "slot": "main",
+        "size": "5 + 2 * clamp(floor(chest_w - 6), 0, 1)",
+        "center": [0, "chest_top - 3.5", 0]
+      }
+    },
+    {
+      "cubes": ["chest", "waist", "upper_arm_*", "forearm_*", "outfit_top/*", "robes/*", "armour/*"],
+      "faces": ["north"],
+      "when": "chest",
+      "stamp": {
+        "emblem": "@",
+        "face": "north",
+        "slot": "main",
+        "size": "5 + 2 * clamp(floor(chest_w - 6), 0, 1)",
+        "center": [0, "(waist_y + chest_top) / 2 + 0.5", 0]
+      }
+    },
+    {
+      "cubes": ["chest", "waist", "upper_arm_*", "forearm_*", "outfit_top/*", "robes/*", "armour/*"],
+      "faces": ["north"],
+      "when": "chest_pair",
+      "x": [-20, 0],
+      "stamp": {
+        "emblem": "@",
+        "face": "north",
+        "slot": "main",
+        "size": 5,
+        "center": ["-chest_w / 4 - 0.25", "chest_y + (chest_top - chest_y) * pair_y", 0]
+      }
+    },
+    {
+      "cubes": ["chest", "waist", "upper_arm_*", "forearm_*", "outfit_top/*", "robes/*", "armour/*"],
+      "faces": ["north"],
+      "when": "chest_pair",
+      "x": [0, 20],
+      "stamp": {
+        "emblem": "@",
+        "face": "north",
+        "slot": "main",
+        "size": 5,
+        "center": ["chest_w / 4 + 0.25", "chest_y + (chest_top - chest_y) * pair_y", 0]
+      }
+    },
+    {
+      "cubes": ["chest", "waist", "upper_arm_*", "forearm_*", "outfit_top/*", "robes/*", "armour/*"],
+      "faces": ["south"],
+      "when": "sleeves",
+      "x": [-30, 0],
+      "stamp": {
+        "emblem": "@",
+        "face": "south",
+        "slot": "main",
+        "size": 5,
+        "center": ["-shoulder_x", "arm_top - 3.5", 0]
+      }
+    },
+    {
+      "cubes": ["chest", "waist", "upper_arm_*", "forearm_*", "outfit_top/*", "robes/*", "armour/*"],
+      "faces": ["south"],
+      "when": "sleeves",
+      "x": [0, 30],
+      "stamp": {
+        "emblem": "@",
+        "face": "south",
+        "slot": "main",
+        "size": 5,
+        "center": ["shoulder_x", "arm_top - 3.5", 0]
+      }
+    }
+  ]
+}

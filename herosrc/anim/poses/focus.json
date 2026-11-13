@@ -1,0 +1,50 @@
+{
+  "_comment": "Grip poses of the focus style (G6c: Yugen's fan, Hinae's wand and talismans; G5 builds the style's animations on them). Conventions in tools/herogen/anim/poses.py.",
+  "poses": {
+    "focus.stance": {
+      "_comment": "Casting ready: upright, weight on the back foot, the right hand at the side of the chest with the wrist bent so the prop points forward, up and a little out (clear of the head on every form), the left hand low at the hip with its prop (Hinae's talismans) fanned forward. Arm angles solved for grip and prop targets on the teen, with the props clear of the body and the hair on the chibi, teen and adult (notes/artgen.md, G6c).",
+      "knees": 6,
+      "bones": {
+        "leg_r": [5, 0, 2],
+        "leg_l": [-6, 0, -3],
+        "body": [0, 10, 0],
+        "chest": [0, 6, 0],
+        "neck": [0, -16, 0],
+        "arm_r": [-12.7, 2.7, 0.2],
+        "forearm_r": [-81.6, 0.9, 0],
+        "hand_r": [53.7, 8.4, 0.4],
+        "arm_l": [-2.1, -12.4, -13],
+        "forearm_l": [-23.8, -12.5, 0],
+        "hand_l": [40.3, -11.4, -0.9]
+      },
+      "fix": ["level_feet", "ground"]
+    },
+    "focus.cast": {
+      "_comment": "The cast: the right arm thrown straight forward at shoulder height, the wrist bent so the prop points at the target (a little up), the chest turned into it.",
+      "extends": "focus.stance",
+      "bones": {
+        "body": [2, -6, 0],
+        "chest": [2, -10, 0],
+        "neck": [-2, 16, 0],
+        "arm_r": [-97, 10.3, -4.9],
+        "forearm_r": [-1, 9.5, 0],
+        "hand_r": [69.5, 0.4, 6.6]
+      }
+    },
+    "focus.throw": {
+      "_comment": "The release of a throw with the off hand (talismans, a kunai): the left arm straight forward at shoulder height with the prop pointing at the target, the right hand drawn back beside the hip with its prop pointing up and back, clear of the head.",
+      "extends": "focus.stance",
+      "bones": {
+        "body": [4, 10, 0],
+        "chest": [4, 14, 0],
+        "neck": [-4, -24, 0],
+        "arm_l": [-93.9, -14.6, 1.3],
+        "forearm_l": [-1, -9.5, 0],
+        "hand_l": [67.6, -0.1, -8.8],
+        "arm_r": [16.3, 35.4, -4.4],
+        "forearm_r": [-80.6, 28.9, 0],
+        "hand_r": [4.3, 48.2, -1.7]
+      }
+    }
+  }
+}

@@ -24,8 +24,11 @@ bottom faces keep only what the side faces keep on their edge rows (a tapered or
 and a thin cube (one texel deep) cuts its narrow faces like the broad face's edge column (a triangular ear has no
 full-height side strip).
 """
+import math
+
 import numpy as np
 
+import emblems
 from rig import SIDE_FACES
 from rot import file_matrix
 from uvpack import texel_point, texels
@@ -81,9 +84,49 @@ def jag_depth(n, i, W, dmax):
     return int(np.floor(dmax * abs(p - t) / float(span) + 0.5))
 
 
+def stamp_char(stamp, rows, col, row):
+    """The emblem character at (col, row) of a stamp's bitmap (flipped for a mirrored copy), "." outside."""
+    h, w = len(rows), len(rows[0])
+    if not (0 <= row < h and 0 <= col < w):
+        return "."
+    return rows[row][w - 1 - col if stamp["flip"] else col]
+
+
+def stamp_slot(stamp, ch, slot):
+    """(slot, tone delta) a stamp character gives a texel whose own slot is `slot`; None for "."."""
+    if ch == "#":
+        return stamp["slot"], stamp["tone"]
+    if ch == "-":
+        return stamp["slot"], stamp["tone"] - 1
+    if ch == "+":
+        return (stamp["slot2"], 0) if stamp["slot2"] else (stamp["slot"], stamp["tone"] + 1)
+    if ch == "o":
+        return (stamp["slot2"], -1) if stamp["slot2"] else (stamp["slot"], stamp["tone"])
+    return None
+
+
+def face_uv(face, p, c):
+    """(u, v) of point p from centre c on a face, as seen from outside (u to the right, v down; uvpack's
+    orientation): front and back as seen from in front and behind, the right side with the back on the left, the
+    left side with the front on the left, the top with the front at the bottom."""
+    dx, dy, dz = p[0] - c[0], p[1] - c[1], p[2] - c[2]
+    if face == "north":
+        return dx, -dy
+    if face == "south":
+        return -dx, -dy
+    if face == "east":
+        return -dz, -dy
+    if face == "west":
+        return dz, -dy
+    if face == "up":
+        return dx, -dz
+    return dx, -dz                    # the bottom face: rows toward the front, as uvpack.texel_point lays them
+
+
 class Painter:
-    def __init__(self, model, ramps, base_layer):
+    def __init__(self, model, ramps, base_layer, phase_look=False):
         self.model = model
+        self.phase_look = phase_look          # painting the phase texture (_p2): "phase" glow lights up
         self.ramps = ramps
         self.base_layer = base_layer
         self.seed = seed_of(model.hero_id)
@@ -92,6 +135,7 @@ class Painter:
         self.solid = [c for c in model.cubes if c.flat_axis is None and c.rotation is None]
         self._ao = {c.name: self._ao_top(c) for c in model.cubes}
         self.head_y = model.env["head_y"]
+        self._rot = {}
 
     # -------------------------------------------------------------- geometry helpers
 
@@ -161,6 +205,7 @@ class Painter:
             if slot == tip["slot"] and cube.material == "hair":
                 group = ("hair", slot)
         x, y, z = p
+        overlays, glow = [], cube.glow
         for op, names in zip(self.ops, self.op_cubes):
             if cube.name not in names:
                 continue
@@ -173,7 +218,29 @@ class Painter:
             vee = op.get("vee")
             if vee is not None and not (y >= vee[0] - EPS and abs(x) <= (y - vee[0]) * vee[1] + EPS):
                 continue
+            if op.get("overlay"):
+                # keeps the texel's own slot and material; adds a pattern or an emblem on top (G6c)
+                st = op.get("stamp")
+                if st is not None:
+                    if face not in st["faces"]:
+                        continue
+                    rows = emblems.rotated(emblems.bitmap(st["emblem"], st["size"]), st["rotate"])
+                    u, v = face_uv(face, p, st["center"])
+                    d = cube.density
+                    col = int(math.floor(u * d + len(rows[0]) / 2.0 + st["offset"][0] + EPS))
+                    row = int(math.floor(v * d + len(rows) / 2.0 + st["offset"][1] + EPS))
+                    hit = stamp_slot(st, stamp_char(st, rows, col, row), slot)
+                    if hit is None:
+                        continue
+                    overlays.append(("stamp", hit))
+                    if op.get("glow"):
+                        glow = op["glow"]
+                elif op["pattern"]:
+                    overlays.append(("pattern", op["pattern"], op.get("glow")))
+                continue
             slot, mat, pattern, tone, is_trim = op["slot"], op["material"], op["pattern"], op["tone"], False
+            overlays = []
+            glow = op.get("glow") or cube.glow
             group = ("op",) + tuple(op["order"])
             t = op["trim"]
             if t and op["y"] is not None:
@@ -184,7 +251,7 @@ class Painter:
                     slot, mat = t["slot"], t.get("material", mat)
                     pattern, is_trim = None, True
         slot = self.base_layer.get(slot, slot)
-        return slot, mat, pattern, tone, is_trim, group
+        return slot, mat, pattern, tone, is_trim, group, tuple(overlays), glow
 
     # -------------------------------------------------------------- detail
 
@@ -235,9 +302,20 @@ class Painter:
             return 1
         return 0
 
+    def world_point(self, cube, p):
+        """Where a rest-space point of a cube ends up after the cube's own rotation (strands are rotated boxes)."""
+        if cube.rotation is None:
+            return p
+        m = self._rot.get(cube.name)
+        if m is None:
+            m = self._rot[cube.name] = file_matrix(cube.rotation)
+        pv = np.array(cube.pivot, dtype=float)
+        return tuple(pv + m @ (np.array(p, dtype=float) - pv))
+
     @staticmethod
-    def pattern_at(pattern, face, p, density):
-        """(slot or None, tone delta) of a pattern at a point."""
+    def pattern_at(pattern, face, p, density, world=None):
+        """(slot or None, tone delta) of a pattern at a point. `world`: the point after the cube's own rotation
+        (patches follow the real surface, so a blob runs across the strands of a hair mass)."""
         if not pattern:
             return None, 0
         vx, vy, vz = (int(np.floor(c * density + EPS)) for c in p)
@@ -262,6 +340,77 @@ class Painter:
             return (alt if vy % n == 0 and hh % n == 0 else None), 0
         if kind == "pleats":
             return None, (-1 if (h // n) % 2 == 1 else 0)
+        if kind == "solid":
+            return alt, 0                          # the whole region (an overlay band: a stripe of a marking)
+        alt2 = pattern["slots"][1] if len(pattern["slots"]) > 1 else alt
+        if kind in ("waves", "scales"):
+            # overlapping discs of radius n on a brick lattice (2n across, n up, every other row offset by n). waves
+            # (seigaiha): each lower row is in front, so the top halves show as fans, each with an outer and an
+            # inner ring; scales: each upper row is in front, so the bottom halves hang as scales with a rim and a
+            # darker lower half
+            px, py = h + 0.5, vy + 0.5
+            row0 = int(math.floor(py / n))
+            rows = range(row0 - 1, row0 + 2) if kind == "waves" else range(row0 + 1, row0 - 2, -1)
+            for r in rows:
+                off = (r % 2) * n
+                cx = math.floor((px - off) / (2.0 * n) + 0.5) * 2 * n + off
+                dist = math.hypot(px - cx, py - r * n)
+                if dist > n:
+                    continue
+                if kind == "waves":
+                    if dist > n - 1 or (n >= 4 and abs(dist - n * 0.55) <= 0.5):
+                        return alt, 0
+                    return None, 0
+                if dist > n - 1:
+                    return alt, 0
+                return None, (-1 if py < r * n - n * 0.35 else 0)
+            return None, 0
+        if kind == "hemp":
+            # hemp-leaf: a lattice of verticals and both diagonals every 2n texels (six-pointed stars)
+            p2 = 2 * n
+            if h % p2 == 0 or (h + vy) % p2 == 0 or (h - vy) % p2 == 0:
+                return alt, 0
+            return None, 0
+        if kind == "petals":
+            # small five-texel blossoms on a staggered grid (period n, default 5), the heart in the second slot
+            p2 = max(4, n)
+            row = vy // p2
+            hh = h + (row % 2) * (p2 // 2)
+            a, b = hh % p2, vy % p2
+            if (a, b) == (1, 1):
+                return alt2, 0
+            if (a, b) in ((0, 1), (2, 1), (1, 0), (1, 2)):
+                return alt, 0
+            return None, 0
+        if kind == "patches":
+            # soft blobs (calico, piebald): a smooth value noise over the 3D texel grid, cell n (default 4); the
+            # first slot where it is high, the second where it is low
+            cell = max(2, n)
+            seed = 0x9E3779B97F4A7C15 ^ pattern.get("seed", 0)
+            q = np.array(world if world is not None else p, dtype=float)
+            centre = pattern.get("center")
+            if centre is not None:
+                # by direction from a centre (the head's): every layer of strands shares one blob, where a 3D
+                # noise would change from the inner ring to the outer one and speckle the mass
+                d = q - np.array(centre, dtype=float)
+                q = d / (np.linalg.norm(d) or 1.0) * float(pattern.get("radius", 6.0))
+            q = np.floor(q * density + EPS) / float(density)
+            fx, fy, fz = (float(c) / cell for c in q)
+            ix, iy, iz = int(math.floor(fx)), int(math.floor(fy)), int(math.floor(fz))
+            tx, ty, tz = fx - ix, fy - iy, fz - iz
+            tx, ty, tz = (t * t * (3 - 2 * t) for t in (tx, ty, tz))
+            acc = 0.0
+            for dx in (0, 1):
+                for dy in (0, 1):
+                    for dz in (0, 1):
+                        w = (tx if dx else 1 - tx) * (ty if dy else 1 - ty) * (tz if dz else 1 - tz)
+                        acc += w * hash_unit(seed, ix + dx, iy + dy, iz + dz)
+            hi, lo = pattern.get("high", 0.62), pattern.get("low", 0.3)
+            if acc >= hi:
+                return alt, 0
+            if len(pattern["slots"]) > 1 and acc < lo:
+                return alt2, 0
+            return None, 0
         return None, 0
 
     @staticmethod
@@ -292,6 +441,13 @@ class Painter:
             return abs(i + 0.5 - W / 2.0) <= (j + 1) * (W / 2.0) / base + EPS
         if cut == "fur_tips":
             return not (j == H - 1 and H >= 2 and i % 2 == 1)
+        if cut == "lace":
+            # a lace edge: scallops on the bottom row (every other texel cut) and a row of holes above it
+            if j == H - 1 and H >= 2:
+                return i % 2 == 0
+            if j == H - 3 and H >= 4:
+                return i % 4 != 1
+            return True
         if cut == "torn":
             depth = hash_ints(len(cube.name), i) % 3
             return j < H - min(depth, H - 1)
@@ -355,12 +511,33 @@ class Painter:
             grid.append(row)
         kept = [[self.keep(cube, face, i, j, W, H) for i in range(W)] for j in range(H)]
         ends = [self._outline(cube, face, grid, i, H - 1, W, H, grid[H - 1][i][6]) for i in range(W)] if side else []
+        st = cube.stamp if cube.stamp is not None and face in cube.stamp["faces"] else None
+        if st is not None:
+            fit = (W, H) if st["rotate"] in (0, 180) else (H, W)
+            rows = emblems.rotated(emblems.bitmap(st["emblem"], st["size"], fit=fit), st["rotate"])
+            i0 = (W - len(rows[0])) // 2 + int(st["offset"][0])
+            j0 = (H - len(rows)) // 2 + int(st["offset"][1])
         for j in range(H):
             for i in range(W):
-                p, slot, mat, pattern, tone, is_trim, group = grid[j][i]
+                p, slot, mat, pattern, tone, is_trim, group, overlays, lit = grid[j][i]
                 pslot, ptone = self.pattern_at(pattern, face, p, cube.density)
                 if pslot:
                     slot = pslot
+                for kind, what, *rest in overlays:
+                    if kind == "pattern":
+                        wp = self.world_point(cube, p) if what["type"] == "patches" else None
+                        oslot, otone = self.pattern_at(what, face, p, cube.density, wp)
+                        if oslot:
+                            slot, ptone = oslot, 0
+                            if rest and rest[0]:
+                                lit = rest[0]
+                        ptone += otone
+                    else:                                  # an op's emblem: (slot, tone)
+                        slot, ptone = what[0], what[1]
+                if st is not None:
+                    hit = stamp_slot(st, stamp_char(st, rows, i - i0, j - j0), slot)
+                    if hit is not None:
+                        slot, ptone = hit
                 t = (0 if face == "up" and cube.shade == "mass" else face_light(cube, face)) + tone + ptone
                 if side and cube.outline and cube.shade != "mass":
                     if mat in BANDED and H >= (4 if mat == "hair" else 5) and j >= H - _band_rows(mat, H) and ends[i] \
@@ -381,7 +558,7 @@ class Painter:
                 r, g, b = self.ramps[slot][t + 2]
                 a = 255 if kept[j][i] else 0
                 img[v + j, u + i] = (r, g, b, a)
-                if (cube.glow or mat == "glow") and a:
+                if a and (lit is True or mat == "glow" or (lit == "phase" and self.phase_look)):
                     glow[v + j, u + i] = (r, g, b, 255)
 
     def _rests_on_body(self, cube, face, p):
@@ -423,9 +600,15 @@ def new_canvas(w, h):
     return np.zeros((h, w, 4), dtype=np.uint8)
 
 
-def paint_model(model, ramps, base_layer):
-    """Paint every non-fixed cube face. Returns (colour, glow) RGBA arrays."""
+def paint_model(model, ramps, base_layer, phase_look=False):
+    """Paint every non-fixed cube face. Returns (colour, glow) RGBA arrays. `phase_look`: the phase texture (_p2),
+    where "phase" glow lights up."""
     img = new_canvas(model.tex_w, model.tex_h)
     glow = new_canvas(model.tex_w, model.tex_h)
-    Painter(model, ramps, base_layer).paint(img, glow)
+    Painter(model, ramps, base_layer, phase_look).paint(img, glow)
     return img, glow
+
+
+def has_phase_glow(model):
+    """True when a cube or paint op glows only in the phase look."""
+    return any(c.glow == "phase" for c in model.cubes) or any(o.get("glow") == "phase" for o in model.paint_ops)

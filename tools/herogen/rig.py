@@ -151,6 +151,7 @@ class Cube:
     tone: int = 0
     outline: bool = True                          # dark hem row and lower band at the bottom of side faces
     tip: Optional[dict] = None                    # {slot, frac, edge}: the end of a strand in another colour
+    stamp: Optional[dict] = None                  # G6c: an emblem stamped on one face {emblem, rows, slot, slot2, face}
     uv: dict = field(default_factory=dict)        # face -> (u, v, w, h) in whole texels, net orientation
     order: int = 0
 
@@ -194,6 +195,8 @@ class Model:
         self.occupied = {}
         self.parts_used = []
         self.notes = []
+        self.phase_hide = {}           # phase -> bones the phase look hides (an off-hand's holstered copy, G6c)
+        self.mount = None              # the mounted copy of a carrier weapon (G6c, for G10)
         self.tex_w, self.tex_h = self.rig["budgets"]["textures"][0]
         for name in self.rig_order:
             if self.catalogue[name].required:
@@ -217,7 +220,8 @@ class Model:
     def declare_bone(self, name, parent, pivot, source, rotation=(0.0, 0.0, 0.0)):
         if name in self.catalogue:
             raise HerogenError("%s: bone %r already exists" % (source, name))
-        self.use_bone(parent)
+        if parent is not None:
+            self.use_bone(parent)
         b = Bone(name, parent, tuple(pivot), tuple(rotation), source=source)
         self.catalogue[name] = b
         self.extra_order.append(name)
@@ -302,6 +306,20 @@ class Model:
                 if n.startswith("p%d_" % p):
                     out[n] = p
         return out
+
+    def subtree_has_cubes(self, name):
+        """True when a cube sits on this bone or on any bone below it."""
+        used = {c.bone for c in self.cubes}
+        kids = {}
+        for b in self.bones.values():
+            kids.setdefault(b.parent, []).append(b.name)
+        todo = [name]
+        while todo:
+            n = todo.pop()
+            if n in used:
+                return True
+            todo += kids.get(n, [])
+        return False
 
     def fine_bones(self):
         return sorted(n for n in self.bones if n.startswith("fine_"))

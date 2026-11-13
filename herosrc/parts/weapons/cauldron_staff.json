@@ -1,0 +1,123 @@
+{
+  "_comment": "A gnarled staff with a small cauldron (G6c; Ambrose's, in the right hand; it is also his broom, MOBILITY_AND_WORK 15.8): a wooden shaft in three crooked segments with knots, a crook at the head (the head is forward, -z; the crook reaches toward the hand's -y, which is forward when the staff is held upright) from which a cauldron hangs on a chain (green brew glowing at its rim), and a bound bundle of herbs at the foot with ragged ends; from phase 2 broom bristles sprout round the bundle (`phase` 2 cubes: a core and a wider skirt, ragged). The bundle and the bristles are authored hanging and laid along the shaft by their rotation, so their cut tips are the far end. Carried on the back, head up and crook outward, when sheathed. `mount` is where it is ridden (G10's `move.ride`): its `seat` (a point on the shaft behind the grip) is the pivot of the `mount` bone, at `height` above the ground, the head forward. Lengths follow the form (`k`).",
+  "id": "weapons/cauldron_staff",
+  "category": "weapons",
+  "slots": {"main": "leather", "trim": "trim", "alt": "metal", "detail": "glow"},
+  "vars": {"k": "0.6 + 0.4 * head_y / 42", "zh": "-13 * k", "zf": "17 * k"},
+  "style": "staff",
+  "sheath": "back_up",
+  "tip": [0, -3.8, "zh - 1"],
+  "mount": {"seat": [0, 0.6, "7 * k"], "height": "hip_y - leg_d / 2"},
+  "cubes": [
+    {"name": "shaft", "origin": [-0.6, -0.6, "-5 * k"], "size": [1.2, 1.2, "10.2 * k"], "material": "wood"},
+    {
+      "name": "lower",
+      "origin": [-0.55, -0.55, "5 * k - 0.2"],
+      "size": [1.1, 1.1, "12.2 * k"],
+      "rotation": [0, 5, 0],
+      "pivot": [0, 0, "5 * k"],
+      "material": "wood"
+    },
+    {
+      "name": "upper",
+      "origin": [-0.55, -0.55, "-12.6 * k"],
+      "size": [1.1, 1.1, "7.6 * k + 0.2"],
+      "rotation": [-6, 0, 0],
+      "pivot": [0, 0, "-5 * k"],
+      "material": "wood"
+    },
+    {
+      "name": "knot_1",
+      "origin": [-0.8, -0.8, "-5.4 * k"],
+      "size": [1.6, 1.6, 0.9],
+      "material": "wood",
+      "tone": -1,
+      "fine": true
+    },
+    {
+      "name": "knot_2",
+      "origin": [-0.75, -0.75, "4.6 * k"],
+      "size": [1.5, 1.5, 0.8],
+      "material": "wood",
+      "tone": -1,
+      "fine": true
+    },
+    {"name": "crook", "origin": [-0.5, -3.9, "zh - 0.6"], "size": [1.0, 4.1, 1.0], "material": "wood"},
+    {
+      "name": "crook_end",
+      "origin": [-0.45, -4.3, "zh - 0.2"],
+      "size": [0.9, 0.9, 1.5],
+      "material": "wood",
+      "tone": -1,
+      "fine": true
+    },
+    {
+      "name": "chain",
+      "origin": [-0.15, -3.75, "zh + 0.4"],
+      "size": [0.3, 0.3, 1.2],
+      "slot": "alt",
+      "material": "metal",
+      "tone": 1,
+      "fine": true
+    },
+    {
+      "name": "pot",
+      "origin": [-1.6, -5.35, "zh + 1.5"],
+      "size": [3.2, 3.2, 2.8],
+      "slot": "alt",
+      "material": "metal",
+      "tone": -1
+    },
+    {"name": "rim", "origin": [-1.8, -5.55, "zh + 1.3"], "size": [3.6, 3.6, 0.6], "slot": "alt", "material": "metal"},
+    {
+      "name": "brew",
+      "origin": [-1.3, -5.05, "zh + 1.15"],
+      "size": [2.6, 2.6, 0.25],
+      "slot": "detail",
+      "material": "glow"
+    },
+    {
+      "name": "herbs",
+      "origin": [-1.1, "-3.4 * k", "zf - 1.1"],
+      "size": [2.2, "3.4 * k", 2.2],
+      "rotation": [90, 0, 0],
+      "pivot": [0, 0, "zf"],
+      "slot": "trim",
+      "material": "cloth",
+      "cutout": "jagged_1",
+      "shade": "flat"
+    },
+    {
+      "name": "tie",
+      "origin": [-1.25, -1.25, "zf - 0.3"],
+      "size": [2.5, 2.5, 0.7],
+      "slot": "main",
+      "material": "leather"
+    },
+    {
+      "name": "bristles",
+      "origin": [-1.5, "-6.4 * k", "zf - 0.9"],
+      "size": [3.0, "6.0 * k", 3.0],
+      "rotation": [90, 0, 0],
+      "pivot": [0, 0, "zf + 0.6"],
+      "slot": "trim",
+      "material": "cloth",
+      "tone": -1,
+      "cutout": "jagged_2",
+      "shade": "flat",
+      "phase": 2
+    },
+    {
+      "name": "skirt",
+      "origin": [-2.1, "-4.6 * k", "zf - 1.5"],
+      "size": [4.2, "4.0 * k", 4.2],
+      "rotation": [90, 0, 0],
+      "pivot": [0, 0, "zf + 0.6"],
+      "slot": "trim",
+      "material": "cloth",
+      "cutout": "jagged_2",
+      "shade": "flat",
+      "phase": 2
+    }
+  ]
+}

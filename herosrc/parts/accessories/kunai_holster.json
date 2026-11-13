@@ -1,0 +1,67 @@
+{
+  "_comment": "A kunai holster on the right thigh (G6c; Tobimaru's): a strap round the thigh (0.7 px out, its inner side short of the centre line like every leg shell), a leather pouch on the front of the thigh (its back 0.1 px inside the strap, never on its plane) and three kunai handles with ring pommels standing out of it.",
+  "id": "accessories/kunai_holster",
+  "category": "accessories",
+  "slots": {"main": "leather", "alt": "metal", "trim": "accent"},
+  "occupies": ["thigh_r"],
+  "cubes": [
+    {
+      "name": "strap",
+      "bone": "leg_r",
+      "origin": ["-hip_x - leg_w / 2 - 0.7", "knee_y + (hip_y - knee_y) * 0.45", "-leg_d / 2 - 0.7"],
+      "size": ["leg_w + 0.7 + max(0.05, min(0.7, hip_x - leg_w / 2 - 0.05))", 0.8, "leg_d + 1.4"],
+      "material": "leather",
+      "slot": "trim"
+    },
+    {
+      "name": "pouch",
+      "bone": "leg_r",
+      "origin": ["-hip_x - 1.3", "knee_y + (hip_y - knee_y) * 0.3", "-leg_d / 2 - 1.65"],
+      "size": [2.4, 3.0, 1.05],
+      "material": "leather",
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "k0",
+      "bone": "leg_r",
+      "origin": ["-hip_x - 1.05", "knee_y + (hip_y - knee_y) * 0.3 + 3.0", "-leg_d / 2 - 1.35"],
+      "size": [0.45, 1.6, 0.45],
+      "slot": "alt",
+      "material": "metal"
+    },
+    {
+      "name": "k1",
+      "bone": "leg_r",
+      "origin": ["-hip_x - 0.32", "knee_y + (hip_y - knee_y) * 0.3 + 3.0", "-leg_d / 2 - 1.35"],
+      "size": [0.45, 1.3, 0.45],
+      "slot": "alt",
+      "material": "metal"
+    },
+    {
+      "name": "k2",
+      "bone": "leg_r",
+      "origin": ["-hip_x + 0.42", "knee_y + (hip_y - knee_y) * 0.3 + 3.0", "-leg_d / 2 - 1.35"],
+      "size": [0.45, 1.6, 0.45],
+      "slot": "alt",
+      "material": "metal"
+    },
+    {
+      "name": "r0",
+      "bone": "leg_r",
+      "origin": ["-hip_x - 1.1", "knee_y + (hip_y - knee_y) * 0.3 + 4.6", "-leg_d / 2 - 1.55"],
+      "size": [0.55, 0.55, 0.85],
+      "slot": "alt",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "r2",
+      "bone": "leg_r",
+      "origin": ["-hip_x + 0.37", "knee_y + (hip_y - knee_y) * 0.3 + 4.6", "-leg_d / 2 - 1.55"],
+      "size": [0.55, 0.55, 0.85],
+      "slot": "alt",
+      "material": "metal",
+      "fine": true
+    }
+  ]
+}

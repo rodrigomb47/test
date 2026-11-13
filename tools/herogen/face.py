@@ -166,8 +166,9 @@ def _marks(raw):
         if m["type"] == "face_paint":
             m.setdefault("style", "stripes")
             m.setdefault("color", "accent")
-            if m["style"] not in ("stripes", "tear", "dots", "chevron"):
-                raise HerogenError("art.face.marks[%d]: face_paint style is stripes, tear, dots or chevron" % i)
+            if m["style"] not in ("stripes", "tear", "dots", "chevron", "whiskers"):
+                raise HerogenError("art.face.marks[%d]: face_paint style is stripes, tear, dots, chevron or whiskers"
+                                   % i)
         out.append(m)
     return out
 
@@ -422,6 +423,16 @@ def skin_layer(spec, col):
                 elif style == "chevron":
                     for (r, x) in ((17, 0), (18, 1), (17, 2)):
                         put(r, fc(x), paint)
+                elif style == "whiskers":
+                    # G6c: two faint whisker lines from the face's edge on each cheek, under the blush, the inner
+                    # end fading into the skin (a cat's face, never a scar)
+                    faint, fade = mix(paint, col.skin, 0.4), mix(paint, col.skin, 0.72)
+                    edge = 0 if side == "r" else FACE - 1
+                    step = 1 if side == "r" else -1
+                    for r in (17, 19):
+                        for k in range(3):
+                            put(r, edge + k * step, faint)
+                        put(r, edge + 3 * step, fade)
             elif t == "stubble":
                 # a soft solid shadow along the jaw and the chin (art direction pass 2: the old every-other-texel row
                 # read as stitches), a touch darker on the chin

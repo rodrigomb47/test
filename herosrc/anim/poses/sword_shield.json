@@ -1,0 +1,50 @@
+{
+  "_comment": "Grip poses of the sword_shield style (G6c: Ilsabet's longsword and kite shield; G5 builds the style's animations on them). The shield is on the left forearm; raised across the body it stands upright and faces forward. Conventions in tools/herogen/anim/poses.py.",
+  "poses": {
+    "sword_shield.stance": {
+      "_comment": "Shield forward: left foot forward, the left forearm raised across the body so the shield stands upright in front of the chest facing the target (its top below the chin, clear of the face on every form), the sword held back and up beside it, point forward. The shield arm solved for the shield's top, face and place on the teen (notes/artgen.md, G6c).",
+      "knees": 10,
+      "bones": {
+        "leg_r": [6, 0, 4],
+        "leg_l": [-8, 0, -4],
+        "body": [4, 16, 0],
+        "chest": [2, 6, 0],
+        "neck": [-4, -22, 0],
+        "arm_l": [-29.1, 32.6, -37.1],
+        "forearm_l": [-91.3, 5, 0],
+        "hand_l": [-24, -28.4, 35],
+        "arm_r": [-14, 0, 16],
+        "forearm_r": [-70, 0, 0],
+        "hand_r": [24, 0, 0]
+      },
+      "fix": ["level_feet", "ground"]
+    },
+    "sword_shield.guard": {
+      "_comment": "A high guard: the shield raised in front of the chest and chin, the sword hand beside the right temple with the blade pointing forward over the shield, ready to answer (clear of the head on every form).",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "arm_l": [-63.6, 22.6, -15.9],
+        "forearm_l": [-91.1, -10, 0],
+        "arm_r": [-99.8, 31.4, 47.2],
+        "forearm_r": [-36.8, -33.9, 0],
+        "hand_r": [80, -8.4, -26.8],
+        "hand_l": [28.6, -48.7, 35]
+      }
+    },
+    "sword_shield.cut": {
+      "_comment": "The cut at the moment it lands: the sword arm thrown forward past the shield, the blade level and pointing at the target a little to the left, the chest turned into it, the shield kept up on the left.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "body": [6, -4, 0],
+        "chest": [4, -16, 0],
+        "neck": [-6, 12, 0],
+        "arm_r": [-56.8, 9.2, 18.4],
+        "forearm_r": [-28.8, -3.2, 0],
+        "hand_r": [77.8, 2.3, -3],
+        "arm_l": [-59.5, 30.1, -23.3],
+        "forearm_l": [-64.3, 13.6, 0],
+        "hand_l": [-6.2, -32.4, 35.1]
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "_comment": "Grip poses of the twin_blades style (G6c: Tobimaru's reverse-grip short blade and kunai; G5 builds the style's animations on them). Conventions in tools/herogen/anim/poses.py.",
+  "poses": {
+    "twin_blades.stance": {
+      "_comment": "Crouched ready: knees deep, leaning forward, the right fist forward at chest height with the reversed blade lying back along the forearm, the left hand low and forward with the kunai pointing at the target (solved for the kunai's direction on the teen, clear on every form: notes/artgen.md, G6c).",
+      "knees": 26,
+      "bones": {
+        "leg_r": [8, 0, 6],
+        "leg_l": [-10, 0, -6],
+        "body": [14, 10, 0],
+        "chest": [6, 6, 0],
+        "neck": [-18, -16, 0],
+        "arm_r": [-40, 6, 14],
+        "forearm_r": [-78, 0, 0],
+        "hand_r": [28.2, -76.5, 17.9],
+        "arm_l": [-50.9, -10.2, -6.7],
+        "forearm_l": [-23.4, -10.2, 0],
+        "hand_l": [39.4, -12.1, 0.9]
+      },
+      "fix": ["level_feet", "ground"]
+    },
+    "twin_blades.slash": {
+      "_comment": "A backhand slash at the moment it cuts: the right arm swept across to the left at chest height, the blade trailing along the forearm, the chest turned left.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [14, -12, 0],
+        "chest": [6, -20, 0],
+        "neck": [-18, 26, 0],
+        "arm_r": [-82, -30, 4],
+        "forearm_r": [-36, 0, 0],
+        "hand_r": [28.2, -76.5, 17.9]
+      }
+    },
+    "twin_blades.throw": {
+      "_comment": "A kunai throw from the left hand at its release: the left arm straight forward, a little up, the wrist snapped so the kunai points at the target; the right drawn back.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [12, 18, 0],
+        "chest": [4, 16, 0],
+        "neck": [-14, -30, 0],
+        "arm_l": [-103.6, -26.3, 2],
+        "forearm_l": [-1, -8.8, 0],
+        "hand_l": [73, 4, -9.9],
+        "arm_r": [14, 0, 16],
+        "forearm_r": [-70, 0, 0],
+        "hand_r": [28.2, -76.5, 17.9]
+      }
+    }
+  }
+}

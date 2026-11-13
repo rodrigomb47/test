@@ -21,7 +21,8 @@ hand would make 250-cube heroes unmaintainable, so a part can carry generators n
   - "bones_by_angle" {bone: [a0, a1]} (arc only): each strand goes to the bone whose sector holds its angle (skirt
     panels on skirt_f, skirt_b, skirt_l, skirt_r).
   - cube fields shared by the group: bone, slot, material (default hair), taper, cutout, trim, shade, density,
-    inflate, tip, outline, fine (default true: strands are level-of-detail), mirror (a mirrored copy, for side
+    inflate, tip, outline, pattern, stamp (G6c: talisman strips), fine (default true: strands are level-of-detail),
+    mirror (a mirrored copy, for side
     groups), name.
 `chains` (a list): bones along a polyline and a box per segment aligned with it, with optional extra boxes rolled
   about the segment axis ("extra": [{"roll": 30, "scale": 0.85}]) to round the cross-section (big tails), and the
@@ -167,7 +168,8 @@ def strands(ctx, add_cube):
         sector = g.get("bones_by_angle")
         clear_face = bool(g.get("clear_face", True))
         base = {k: v for k, v in g.items() if k in ("slot", "material", "taper", "cutout", "trim", "shade",
-                                                     "density", "inflate", "glow", "faces", "tip", "outline")}
+                                                     "density", "inflate", "glow", "faces", "tip", "outline",
+                                                     "pattern", "stamp")}
         base.setdefault("material", "hair")
         for i, (p, o_xz, ang) in enumerate(anchors):
             w, d = _cycle(width, i), _cycle(depth, i)

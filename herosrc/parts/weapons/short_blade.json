@@ -1,0 +1,64 @@
+{
+  "_comment": "A straight short blade with a square guard (G6c; Tobimaru's), held in a reverse grip: authored like every prop (blade along -z) with `grip: reverse`, which turns it so the blade leaves the little-finger side and lies along the forearm when the arm is raised. Carried across the small of the back; the scabbard stays there while it is drawn.",
+  "id": "weapons/short_blade",
+  "category": "weapons",
+  "slots": {"main": "metal", "trim": "accent", "alt": "accent", "detail": "secondary"},
+  "params": {"blade": {"min": 6, "max": 12, "default": 9}},
+  "style": "twin_blades",
+  "grip": "reverse",
+  "sheath": "waist_back",
+  "scabbard_stays": true,
+  "tip": [0, 0, "-2.0 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+  "cubes": [
+    {
+      "name": "grip",
+      "origin": [-0.4, -0.5, -1.6],
+      "size": [0.8, 1.0, 3.8],
+      "slot": "alt",
+      "material": "cloth",
+      "pattern": {"type": "checks", "size": 1, "slots": ["trim"]}
+    },
+    {
+      "name": "pommel",
+      "origin": [-0.5, -0.6, 2.2],
+      "size": [1.0, 1.2, 0.5],
+      "slot": "main",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "guard",
+      "origin": [-0.95, -0.95, -2.0],
+      "size": [1.9, 1.9, 0.4],
+      "slot": "main",
+      "material": "metal",
+      "tone": -1
+    },
+    {
+      "name": "blade",
+      "origin": [-0.18, -0.5, "-2.0 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [0.36, 1.0, "(blade) * (0.6 + 0.4 * head_y / 42)"],
+      "material": "metal",
+      "trim": {"slot": "detail", "edge": "bottom", "width": 1},
+      "density": 2,
+      "role": "blade"
+    },
+    {
+      "name": "point",
+      "origin": [-0.15, -0.5, "-2.6 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [0.3, 0.6, 0.6],
+      "material": "metal",
+      "role": "blade"
+    }
+  ],
+  "scabbard": [
+    {
+      "name": "saya",
+      "origin": [-0.55, -0.7, "-2.8 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [1.1, 1.4, "(blade) * (0.6 + 0.4 * head_y / 42) + 0.8"],
+      "slot": "accent",
+      "material": "lacquer",
+      "trim": {"slot": "metal", "edge": "top", "width": 1}
+    }
+  ]
+}

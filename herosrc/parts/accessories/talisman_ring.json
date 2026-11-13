@@ -1,0 +1,34 @@
+{
+  "_comment": "A ring of floating talismans (G6c; Hinae's phase 2, `p2_talisman_ring` in SLICE_PLAN 3.4: worn with \"phase\": 2): seven paper talismans standing upright on a ring round the hero at mid-chest, facing out, clear of hanging sleeves, each with the `script` emblem; on their own bone (`talisman_ring`, under the body) so an orbit loop can turn them, painted glowing (they shine at night). Not level of detail: the ring is the phase's silhouette.",
+  "id": "accessories/talisman_ring",
+  "category": "accessories",
+  "slots": {"main": "primary", "alt": "secondary"},
+  "occupies": ["orbit_ring"],
+  "bones": [{"name": "talisman_ring", "parent": "body", "pivot": [0, "min(chest_top - 3, head_y - 5.75)", 0]}],
+  "strands": [
+    {
+      "name": "seal",
+      "path": "arc",
+      "center": [0, 0],
+      "radius": ["shoulder_x + arm_w / 2 + 7.5", "shoulder_x + arm_w / 2 + 7.5"],
+      "y": "min(chest_top - 3, head_y - 5.75)",
+      "angles": [25.714, 334.286],
+      "count": 7,
+      "dir": "up",
+      "width": 1.8,
+      "depth": 0.15,
+      "length": 4.25,
+      "flare": -8,
+      "drop": [0, 0.6, -0.4, 0.8, 0.2, -0.6, 0.5],
+      "bone": "talisman_ring",
+      "slot": "main",
+      "material": "paper",
+      "density": 2,
+      "outline": false,
+      "fine": false,
+      "glow": true,
+      "clear_face": false,
+      "stamp": {"emblem": "script", "face": "north", "slot": "alt"}
+    }
+  ]
+}

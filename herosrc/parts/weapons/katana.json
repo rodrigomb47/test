@@ -1,0 +1,85 @@
+{
+  "_comment": "A curved single-edged sword (G6c; Kagenori's long sword, and his short one at blade 10): a wrapped grip long enough for two hands (the left hand at z +2.6), a small round guard, a two-piece blade whose upper half curves back, a light edge line (detail), and a black lacquer scabbard that stays on the hip while the blade is drawn. Lengths shrink a little on the small forms.",
+  "id": "weapons/katana",
+  "category": "weapons",
+  "slots": {"main": "metal", "trim": "trim", "alt": "accent", "detail": "secondary"},
+  "params": {"blade": {"min": 8, "max": 20, "default": 16}},
+  "style": "katana",
+  "grip2": [0, 0, 2.6],
+  "sheath": "obi",
+  "scabbard_stays": true,
+  "tip": [0, -0.2, "-2.1 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+  "cubes": [
+    {
+      "name": "grip",
+      "origin": [-0.45, -0.55, -1.7],
+      "size": [0.9, 1.1, 5.0],
+      "slot": "detail",
+      "material": "cloth",
+      "pattern": {"type": "checks", "size": 1, "slots": ["alt"]}
+    },
+    {
+      "name": "pommel",
+      "origin": [-0.55, -0.65, 3.3],
+      "size": [1.1, 1.3, 0.6],
+      "slot": "trim",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "guard",
+      "origin": [-1.15, -1.25, -2.15],
+      "size": [2.3, 2.5, 0.45],
+      "slot": "trim",
+      "material": "metal",
+      "fine": "sheathed"
+    },
+    {
+      "name": "collar",
+      "origin": [-0.35, -0.65, -2.6],
+      "size": [0.7, 1.2, 0.45],
+      "slot": "trim",
+      "material": "metal",
+      "role": "blade",
+      "fine": true
+    },
+    {
+      "name": "blade_lo",
+      "origin": [-0.2, -0.6, "-2.55 - 0.55 * (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [0.4, 1.1, "0.55 * (blade) * (0.6 + 0.4 * head_y / 42) + 0.1"],
+      "material": "metal",
+      "trim": {"slot": "detail", "edge": "bottom", "width": 1},
+      "density": 2,
+      "role": "blade"
+    },
+    {
+      "name": "blade_hi",
+      "origin": [-0.18, -0.55, "-2.45 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [0.36, 1.0, "0.45 * (blade) * (0.6 + 0.4 * head_y / 42) + 0.05"],
+      "rotation": [-5, 0, 0],
+      "pivot": [0, 0, "-2.45 - 0.55 * (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "material": "metal",
+      "trim": {"slot": "detail", "edge": "bottom", "width": 1},
+      "density": 2,
+      "role": "blade"
+    }
+  ],
+  "scabbard": [
+    {
+      "name": "saya",
+      "origin": [-0.6, -0.75, "-2.75 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [1.2, 1.5, "(blade) * (0.6 + 0.4 * head_y / 42) + 0.6"],
+      "slot": "alt",
+      "material": "lacquer",
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "kojiri",
+      "origin": [-0.7, -0.85, "-3.15 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [1.4, 1.7, 0.5],
+      "slot": "trim",
+      "material": "metal",
+      "fine": true
+    }
+  ]
+}

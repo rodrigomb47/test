@@ -99,10 +99,16 @@ class PartsTest(unittest.TestCase):
         self.assertEqual(len([c for c in m2.cubes if c.bone == "weapon_back"]), 8)
         with self.assertRaises(HerogenError):
             apply_weapon(Model("t", "adult_f", "slim"), {"prop": "hair/short_crop"})
+        # G6c: a weapon_back a part already uses (under the chest) cannot move to the hips, so the hip scabbard
+        # gets a second sheathed bone under the hips; the part's cube stays where it was
         m3 = Model("t", "adult_f", "slim")
         apply_part(m3, inline(cubes=[dict(BOX, bone="weapon_back")]), 0)
+        apply_weapon(m3, {"prop": "weapons/sword_plain", "sheathed": "hip"})
+        self.assertEqual(m3.bones["weapon_back"].parent, "back")
+        self.assertEqual(m3.bones["weapon_back_2"].parent, "body")
+        self.assertEqual(len([c for c in m3.cubes if c.bone == "weapon_back_2"]), 4)
         with self.assertRaises(HerogenError):
-            apply_weapon(m3, {"prop": "weapons/sword_plain", "sheathed": "hip"})
+            apply_weapon(Model("t", "adult_f"), {"prop": "weapons/sword_plain", "sheathed": "belt"})
 
     def test_test_rig_assembles(self):
         m = build.assemble(build.load_hero("test_rig"))

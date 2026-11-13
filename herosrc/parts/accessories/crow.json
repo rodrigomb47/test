@@ -1,0 +1,98 @@
+{
+  "_comment": "A crow on the left shoulder (G6c; Ambrose's, visual only): its own bones (`crow` on the chest at the shoulder, `crow_head` for a head-turn idle), a body, folded wings, a tail angled down behind, a head with a beak (detail) and eyes (alt), and feet gripping the shoulder.",
+  "id": "accessories/crow",
+  "category": "accessories",
+  "slots": {"main": "secondary", "alt": "glow", "detail": "trim"},
+  "occupies": ["shoulder_l"],
+  "bones": [
+    {"name": "crow", "parent": "chest", "pivot": ["shoulder_x + 0.3", "chest_top + 1.2", 0]},
+    {"name": "crow_head", "parent": "crow", "pivot": ["shoulder_x + 0.3", "chest_top + 3.9", -1.0]}
+  ],
+  "cubes": [
+    {
+      "name": "body",
+      "bone": "crow",
+      "origin": ["shoulder_x + 0.3 - 1.3", "chest_top + 1.4", -1.8],
+      "size": [2.6, 2.6, 3.8],
+      "material": "cloth",
+      "density": 2
+    },
+    {
+      "name": "wing_r",
+      "bone": "crow",
+      "origin": ["shoulder_x + 0.3 - 1.65", "chest_top + 1.6", -1.4],
+      "size": [0.4, 2.1, 4.0],
+      "material": "cloth",
+      "tone": -1,
+      "cutout": "tip_jagged_2"
+    },
+    {
+      "name": "wing_l",
+      "bone": "crow",
+      "origin": ["shoulder_x + 0.3 + 1.25", "chest_top + 1.6", -1.4],
+      "size": [0.4, 2.1, 4.0],
+      "material": "cloth",
+      "tone": -1,
+      "cutout": "tip_jagged_2"
+    },
+    {
+      "name": "head",
+      "bone": "crow_head",
+      "origin": ["shoulder_x + 0.3 - 1.0", "chest_top + 3.8", -3.0],
+      "size": [2.0, 2.0, 2.1],
+      "material": "cloth",
+      "density": 2,
+      "stamp": {"emblem": "eye", "face": "east", "slot": "alt"}
+    },
+    {
+      "name": "head_eye_l",
+      "bone": "crow_head",
+      "origin": ["shoulder_x + 0.3 + 1.0", "chest_top + 4.6", -2.6],
+      "size": [0.05, 0.5, 0.5],
+      "slot": "alt",
+      "material": "glow",
+      "faces": ["west"]
+    },
+    {
+      "name": "beak",
+      "bone": "crow_head",
+      "origin": ["shoulder_x + 0.3 - 0.35", "chest_top + 4.2", -4.35],
+      "size": [0.7, 0.6, 1.4],
+      "slot": "detail",
+      "material": "bone"
+    },
+    {
+      "name": "foot_r",
+      "bone": "crow",
+      "origin": ["shoulder_x + 0.3 - 0.85", "chest_top + 0.75", -0.6],
+      "size": [0.4, 0.7, 0.9],
+      "slot": "detail",
+      "material": "bone"
+    },
+    {
+      "name": "foot_l",
+      "bone": "crow",
+      "origin": ["shoulder_x + 0.3 + 0.45", "chest_top + 0.75", -0.6],
+      "size": [0.4, 0.7, 0.9],
+      "slot": "detail",
+      "material": "bone"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [-38, 0, 0],
+      "pivot": ["shoulder_x + 0.3", "chest_top + 1.9", 1.9],
+      "cubes": [
+        {
+          "name": "tail",
+          "bone": "crow",
+          "origin": ["shoulder_x + 0.3 - 0.8", "chest_top + 1.6", 1.7],
+          "size": [1.6, 0.4, 3.0],
+          "material": "cloth",
+          "tone": -1,
+          "cutout": "jagged_2"
+        }
+      ]
+    }
+  ]
+}

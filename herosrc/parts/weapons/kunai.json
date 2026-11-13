@@ -1,0 +1,39 @@
+{
+  "_comment": "A kunai (G6c; Tobimaru's off hand, and what he throws): a leaf blade in two steps and a point, a wrapped handle and a ring pommel. Put away (it lives in the thigh holster accessory) when sheathed. The handle ends 0.05 px short of a hand's back face on every base.",
+  "id": "weapons/kunai",
+  "category": "weapons",
+  "slots": {"main": "metal", "trim": "trim", "alt": "accent"},
+  "style": "twin_blades",
+  "sheath": "none",
+  "tip": [0, 0, -6.3],
+  "cubes": [
+    {
+      "name": "handle",
+      "origin": [-0.3, -0.3, -1.4],
+      "size": [0.6, 0.6, 2.85],
+      "slot": "alt",
+      "material": "cloth",
+      "pattern": {"type": "stripes", "dir": "v", "size": 1, "slots": ["main"]}
+    },
+    {
+      "name": "ring_t",
+      "origin": [-0.15, 0.45, 1.45],
+      "size": [0.3, 0.3, 1.25],
+      "slot": "main",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "ring_b",
+      "origin": [-0.15, -0.75, 1.45],
+      "size": [0.3, 0.3, 1.25],
+      "slot": "main",
+      "material": "metal",
+      "fine": true
+    },
+    {"name": "ring_e", "origin": [-0.15, -0.75, 2.7], "size": [0.3, 1.5, 0.3], "slot": "main", "material": "metal"},
+    {"name": "base", "origin": [-0.15, -0.65, -3.4], "size": [0.3, 1.3, 2.0], "material": "metal", "role": "blade"},
+    {"name": "mid", "origin": [-0.12, -0.45, -5.0], "size": [0.24, 0.9, 1.65], "material": "metal", "role": "blade"},
+    {"name": "point", "origin": [-0.1, -0.2, -6.3], "size": [0.2, 0.4, 1.35], "material": "metal", "role": "blade"}
+  ]
+}

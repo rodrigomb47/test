@@ -2,7 +2,8 @@
 
 For every part (or the ids and globs given):
 - on each of the six bases in the standard build, alone on a mannequin (short hair, the default face, a sword at
-  the hip; a hair part replaces the hair, a weapon is carried in both hands): the whole build (assembly, packing into
+  the hip; a hair part replaces the hair; G6c: a weapon is carried as its part says, in its hand, sheath and grip,
+  and checked in each hand pose of its style, grips.py): the whole build (assembly, packing into
   the texture, painting, the animation chain), the asset checks of `herogen check` (budgets, whole-texel UVs, islands
   inside the texture, the clear face, the face planes), every cube above the ground in the rest pose, and the
   coplanar-face rule (no two coplanar faces of different colour in the idle stance and the combat stance with the
@@ -26,7 +27,7 @@ import numpy as np
 import build
 import validate
 from geo import GeoModel, geo_json
-from parts import apply_part, apply_weapon, load_part
+from parts import apply_part, apply_weapon, load_part, weapon_defaults
 from rig import BASE_IDS, BUILDS, Model
 from rot import rotate_points
 from util import HEROSRC, HerogenError, load_json
@@ -46,6 +47,27 @@ SHEET_SLOTS = {"ears": {"color": "hair", "alt": "blush", "detail": "accent"},
                "wings": {"color": "accent", "alt": "secondary", "trim": "trim"},
                "horns": {"color": "secondary", "alt": "primary", "detail": "trim"}}
 GROUND_EPS = 0.01
+# G6c: the emblem the mannequin's stamps take (a part offers a stamp with "emblem": "@"; a hero entry names it), and
+# the params a part is linted and shown with where its defaults would leave it empty
+EMBLEM = "crest"
+LINT_PARAMS = {"markings/crest": {"back": 1, "chest": 1, "sleeves": 1}}
+# a part's own default colour that would vanish on the sheet mannequin (the crest's cream on a cream shirt)
+SHEET_PART_SLOTS = {"markings/crest": {"color": "primary"}}
+
+
+def weapon_entry(pid, params=None, sheet=False):
+    """The art.weapon entry a weapon part is linted and shown with: its own hand, sheath and grip (the part's
+    defaults), the mounted copy when it has one, the mannequin's emblem, and the lint colours (the sheets keep the
+    part's own slots: steel, leather, wood)."""
+    d = weapon_defaults(pid)
+    entry = {"prop": pid, "emblem": EMBLEM}
+    if not sheet:
+        entry.update(SLOT_MAP)
+    if params:
+        entry["params"] = params
+    if d["mount"]:
+        entry["mount"] = True
+    return entry
 
 
 def part_ids(patterns=None):
@@ -67,18 +89,24 @@ def lint_hero(pid, base_id, params=None, sheet=False):
     art = {"base": family, "form": form, "build": "standard",
            "palette": dict(SHEET_PALETTE if sheet else LINT_PALETTE), "parts": parts,
            "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"}}
-    entry = {"part": pid}
+    entry = {"part": pid, "emblem": EMBLEM}
     cat = pid.split("/")[0]
     if not sheet:
         entry.update(SLOT_MAP)
     elif cat in SHEET_SLOTS:
         entry.update(SHEET_SLOTS[cat])
-    elif cat not in ("headwear",):
-        entry.update(SLOT_MAP)          # clothes in the sheet colours; headwear in its own default slots
+    elif cat not in ("headwear", "accessories", "markings"):
+        entry.update(SLOT_MAP)          # clothes in the sheet colours; headwear and details in their own slots
+    if sheet:
+        entry.update(SHEET_PART_SLOTS.get(pid, {}))
+    params = dict(LINT_PARAMS.get(pid, {}), **(params or {}))
     if params:
         entry["params"] = params
+    style = None
     if pid.startswith("weapons/"):
-        art["weapon"] = {"prop": pid, "hand": "pair", "sheathed": "hip"}
+        # G6c: the prop as its part says it is carried (hand, sheath, grip), in the hand poses of its style
+        art["weapon"] = weapon_entry(pid, params, sheet)
+        style = weapon_defaults(pid)["style"]
     elif not sheet:
         # a sword at the hip: the coplanar rule also runs on the combat stance (arms raised: the ends of sleeves,
         # cuffs and gauntlets show) and on a scabbard against skirts and coats
@@ -88,8 +116,11 @@ def lint_hero(pid, base_id, params=None, sheet=False):
     elif not pid.startswith("weapons/"):
         parts.append(entry)
     safe = pid.replace("/", "_")
+    anims = {"blink": "normal"}
+    if style:
+        anims["style"] = style
     return {"format": 2, "id": "lint_%s_%s" % (safe, base_id), "name": "%s on %s" % (pid, base_id),
-            "gender": family, "art": art, "animations": {"blink": "normal"}}
+            "gender": family, "art": art, "animations": anims}
 
 
 def outfit_hero(outfit, base_id):
@@ -141,7 +172,25 @@ def full_check(hero, ties=True):
     problems += _below_ground(b.model)
     if ties:
         problems += cli.tie_problems(hid, files, b, hint=False)
+    problems += hand_pose_problems(hero, files, b, ties)
     return problems
+
+
+def hand_pose_problems(hero, files, b, ties=True):
+    """G6c: the weapon in each hand pose of its style (grips.py): clear of the body and the ground, the second hand
+    on a two-handed prop, and (with `ties`) the coplanar rule with the weapon drawn."""
+    import grips
+    if grips.style_of_weapon(hero)[0] is None:
+        return []
+    assets = None
+    if ties:
+        from anim import library as animlib
+        from render.scene import HeroAssets
+        files = dict(files)
+        files.update(animlib.core().files())
+        files.update(animlib.style(animlib.style_of(b.hero)).files())
+        assets = HeroAssets(hero["id"], files, b.hero)
+    return grips.problems(hero, b, assets, ties)
 
 
 def geometry_check(pid, base_id, build_name="standard", params=None):
@@ -149,9 +198,9 @@ def geometry_check(pid, base_id, build_name="standard", params=None):
     m = Model("lint", base_id, build_name)
     try:
         if pid.startswith("weapons/"):
-            apply_weapon(m, {"prop": pid, "hand": "pair", "sheathed": "hip", "params": params or {}})
+            apply_weapon(m, weapon_entry(pid, params or {}))
         else:
-            entry = {"part": pid, "params": params or {}}
+            entry = {"part": pid, "params": dict(LINT_PARAMS.get(pid, {}), **(params or {})), "emblem": EMBLEM}
             entry.update(SLOT_MAP)
             apply_part(m, entry, 0)
         pack(m)
@@ -173,9 +222,11 @@ def static_check(pid, all_ids):
     m = Model("lint", "adult_m")
     try:
         if pid.startswith("weapons/"):
-            apply_weapon(m, {"prop": pid, "hand": "pair", "sheathed": "hip"})
+            apply_weapon(m, weapon_entry(pid))
         else:
-            entry = {"part": pid}
+            entry = {"part": pid, "emblem": EMBLEM}
+            if pid in LINT_PARAMS:
+                entry["params"] = dict(LINT_PARAMS[pid])
             entry.update(SLOT_MAP)
             apply_part(m, entry, 0)
     except HerogenError as e:

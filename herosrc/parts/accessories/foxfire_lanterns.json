@@ -1,0 +1,119 @@
+{
+  "_comment": "Three small paper lanterns floating round the hero (G6c; Yugen's foxfire): each on its own bone (`lantern_1..3`, under the body, so an orbit loop can key them; their cubes are fine detail: `fine_lantern_N`), a glowing paper body (glow), lacquered caps (alt) and a tassel (detail). They float clear of the widest sleeves at shoulder height.",
+  "id": "accessories/foxfire_lanterns",
+  "category": "accessories",
+  "slots": {"main": "glow", "alt": "leather", "detail": "trim"},
+  "occupies": ["orbit"],
+  "bones": [
+    {"name": "lantern_1", "parent": "body", "pivot": ["-chest_w / 2 - 6.5", "chest_top + 1.5", -3.0]},
+    {"name": "lantern_2", "parent": "body", "pivot": ["chest_w / 2 + 6.0", "chest_top + 3.5", 1.5]},
+    {"name": "lantern_3", "parent": "body", "pivot": ["-chest_w / 2 - 4.0", "chest_top + 5.0", 5.5]}
+  ],
+  "cubes": [
+    {
+      "name": "paper_0",
+      "bone": "lantern_1",
+      "origin": ["-chest_w / 2 - 6.5 - 1.05", "chest_top + 1.5 - 1.25", -4.05],
+      "size": [2.1, 2.6, 2.1],
+      "material": "glow",
+      "fine": true
+    },
+    {
+      "name": "cap_0",
+      "bone": "lantern_1",
+      "origin": ["-chest_w / 2 - 6.5 - 1.25", "chest_top + 1.5 + 1.35", -4.25],
+      "size": [2.5, 0.5, 2.5],
+      "slot": "alt",
+      "material": "lacquer",
+      "fine": true
+    },
+    {
+      "name": "base_0",
+      "bone": "lantern_1",
+      "origin": ["-chest_w / 2 - 6.5 - 1.15", "chest_top + 1.5 - 1.75", -4.15],
+      "size": [2.3, 0.5, 2.3],
+      "slot": "alt",
+      "material": "lacquer",
+      "fine": true
+    },
+    {
+      "name": "tassel_0",
+      "bone": "lantern_1",
+      "origin": ["-chest_w / 2 - 6.5 - 0.2", "chest_top + 1.5 - 2.95", -3.2],
+      "size": [0.4, 1.2, 0.4],
+      "slot": "detail",
+      "material": "cloth",
+      "fine": true
+    },
+    {
+      "name": "paper_1",
+      "bone": "lantern_2",
+      "origin": ["chest_w / 2 + 6.0 - 1.05", "chest_top + 3.5 - 1.25", 0.45],
+      "size": [2.1, 2.6, 2.1],
+      "material": "glow",
+      "fine": true
+    },
+    {
+      "name": "cap_1",
+      "bone": "lantern_2",
+      "origin": ["chest_w / 2 + 6.0 - 1.25", "chest_top + 3.5 + 1.35", 0.25],
+      "size": [2.5, 0.5, 2.5],
+      "slot": "alt",
+      "material": "lacquer",
+      "fine": true
+    },
+    {
+      "name": "base_1",
+      "bone": "lantern_2",
+      "origin": ["chest_w / 2 + 6.0 - 1.15", "chest_top + 3.5 - 1.75", 0.35],
+      "size": [2.3, 0.5, 2.3],
+      "slot": "alt",
+      "material": "lacquer",
+      "fine": true
+    },
+    {
+      "name": "tassel_1",
+      "bone": "lantern_2",
+      "origin": ["chest_w / 2 + 6.0 - 0.2", "chest_top + 3.5 - 2.95", 1.3],
+      "size": [0.4, 1.2, 0.4],
+      "slot": "detail",
+      "material": "cloth",
+      "fine": true
+    },
+    {
+      "name": "paper_2",
+      "bone": "lantern_3",
+      "origin": ["-chest_w / 2 - 4.0 - 1.05", "chest_top + 5.0 - 1.25", 4.45],
+      "size": [2.1, 2.6, 2.1],
+      "material": "glow",
+      "fine": true
+    },
+    {
+      "name": "cap_2",
+      "bone": "lantern_3",
+      "origin": ["-chest_w / 2 - 4.0 - 1.25", "chest_top + 5.0 + 1.35", 4.25],
+      "size": [2.5, 0.5, 2.5],
+      "slot": "alt",
+      "material": "lacquer",
+      "fine": true
+    },
+    {
+      "name": "base_2",
+      "bone": "lantern_3",
+      "origin": ["-chest_w / 2 - 4.0 - 1.15", "chest_top + 5.0 - 1.75", 4.35],
+      "size": [2.3, 0.5, 2.3],
+      "slot": "alt",
+      "material": "lacquer",
+      "fine": true
+    },
+    {
+      "name": "tassel_2",
+      "bone": "lantern_3",
+      "origin": ["-chest_w / 2 - 4.0 - 0.2", "chest_top + 5.0 - 2.95", 5.3],
+      "size": [0.4, 1.2, 0.4],
+      "slot": "detail",
+      "material": "cloth",
+      "fine": true
+    }
+  ]
+}

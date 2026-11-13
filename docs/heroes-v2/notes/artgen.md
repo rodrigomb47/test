@@ -1681,3 +1681,206 @@ sabotage: the G2 review's sash put back fails `check` with `sash/waist`, a sunk 
 - **G10**: the wings' loops (`sec.wings_*`) and Ambrose's staff-broom.
 - The coplanar rule runs on the standard builds; slim and large builds get the geometry checks only (their widths
   could bring a part onto another's plane: a later lint option).
+
+---
+
+## G6c: details, weapons in their hand poses, patterns and emblem stamps (2026-11-13)
+
+HEROES_V2.md 13.3 (the slice column: accessories, markings, weapons), 13.4 (patterns, emblem stamps) and 15.2 row
+G6c, on the approved look (style pass 2, rig v3). This task was interrupted by a usage-limit pause and finished by a
+second run: the first run had built the painter's patterns and stamps, the weapon carries and most parts; the second
+judged them on renders, re-solved the hand poses so every prop clears the body on all six bases, enlarged what did not
+read (the wand's paper, the fan, the talismans), added the tenth accessory, fixed the coplanar faces the lint found,
+and wrote the tests, sheets and docs. As before, the reference models were used only for measurements; every part,
+emblem and pose here is our own.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/parts/accessories/` (10 new) | `choker_bell` (Natsuho: ribbon band, bow, a bell with its slit), `prayer_beads` (Yugen: a bead loop over the chest, a big bead and tassel), `foxfire_lanterns` (Yugen: three glowing paper lanterns on their own bones `lantern_1..3`, at head height clear of the sleeves), `rope_belt` (Benika: a twisted rope with a knot and tufted ends), `gourd` (Benika: a lacquered gourd on its own sprung bone `gourd`), `talisman_strips` (Hinae: three ofuda hanging from the belt on the skirt bones), `talisman_ring` (Hinae's phase 2: seven glowing talismans on a ring round the chest on their own bone `talisman_ring`), `kunai_holster` (Tobimaru: a thigh strap, a pouch, three handles), `vial_bandolier` (Ambrose: a strap across the chest with four vials in his barrage colours), `crow` (Ambrose: on the left shoulder, bones `crow` and `crow_head` for a head-turn idle) |
+| `herosrc/parts/markings/` (3) | `calico` (patches over the hair and the tail), `arm_stripes` (bands round the arms that glow in the phase look), `crest` (the hero entry's emblem on the back, the chest, both breasts or the sleeves) |
+| `herosrc/parts/weapons/` (11 new) | `claw_gauntlet` (Natsuho, a pair: glove and plate worn always, three hooked claws when drawn), `folding_fan` (Yugen), `iron_club` (Benika, two-handed: `grip2`), `purification_wand` and `talisman_fan` (Hinae: right and left hand), `katana` (Kagenori's long sword, and his short one at `blade` 10), `short_blade` (Tobimaru, reverse grip) and `kunai` (his left hand), `longsword` and `kite_shield` (Ilsabet: right hand, left arm), `cauldron_staff` (Ambrose: also his broom, with a `mount`) |
+| `herosrc/anim/poses/{fists,focus,hammer,staff,sword_shield,twin_blades}.json` | the hand poses of the six slice styles beside G3's `katana.*` (unchanged): a stance and two or three key poses each, and `ride.broom` (the seat on the staff-broom) |
+| `tools/herogen/emblems.py` | the emblem bitmaps, drawn by hand at each size |
+| `tools/herogen/grips.py` | the hand-pose checks: every weapon in each hand pose of its style |
+| `paint.py`, `parts.py`, `gen.py`, `face.py`, `visual.py`, `build.py`, `render/scene.py`, `render/partsheet.py`, `lint.py` | the format and painter additions below |
+| `herosrc/style/outfits.json` | the eight sample outfits now carry their weapon (and off-hand prop), accessories, markings and emblems |
+| `tests/test_details.py` | 22 tests (below) |
+
+The parts library has 94 parts (was 70): head 30, body 34, accessories 15, markings 3, weapons 12.
+
+### Patterns, overlays and emblem stamps (13.4)
+
+- **Patterns** (on a cube or a paint op, 1-2 colour slots and a `size`): `waves` (seigaiha: two rings per arc on a
+  brick layout), `scales` (one rim per arc, a darker lower half), `hemp` (hemp-leaf: verticals and both diagonals
+  every 2 x size), `petals` (five-texel blossoms on a staggered grid, the heart in the second slot), `patches` (soft
+  blobs from a smooth seeded value noise: calico and piebald; with a `center` the noise is read by direction from it,
+  so the inner and outer strands of a hair mass share one blob instead of speckling), `solid` (the whole region: a
+  band of a marking). Cutout `lace` (scallops on the free edge and a row of holes above it).
+- **Overlay paint ops** (`overlay: true`, the default for a stamp without its own slot): the op keeps each texel's own
+  slot, material and shading and only adds its pattern or emblem, so calico patches go over any hair (every strand
+  keeps its lit root and dark tip) and a crest over any coat. Paint ops also take `when` and `optional` (no matching
+  cube is not an error: calico on a hero without a tail).
+- **Emblem stamps** (`emblems.py`): `paw`, `flame`, `bell`, `crest`, `star`, `moon`, `leaf`, `lily`, `crane`, `plum`
+  at 5, 7, 9 and (lily) 11 texels, and the small `eye`, `slit` and `script`. Each size is drawn by hand: a scaled
+  bitmap at these sizes is noise. Characters: `#` the stamp's slot, `-` a tone darker, `+` the second slot (or a tone
+  lighter), `o` the second slot a tone darker. A **cube** carries `stamp` {emblem, face(s), slot, slot2, size (default:
+  the largest that fits), offset, rotate, flip}: centred on that face; a **paint op** carries one with a `center`
+  point (it lands on whatever the op covers there: the crest across a haori's back). `"emblem": "@"` takes the hero
+  entry's `emblem` (Ilsabet's lily on the shield, the tabard and the standard), and an entry without one gets no
+  stamp. A mirrored (left-hand) copy stamps the mirrored face, flipped. A weapon's stamps are carried through the
+  sheath's axis permutation (`parts.stamp_through`), so the shield's lily stays upright on her back.
+- **Phase glow**: a cube or op with `glow: "phase"` glows only in the phase texture (`_p2`, `_p2_glowmask`); a hero
+  with a later phase then gets the phase texture even without a palette change, and `visual.json` points that phase
+  at it (Benika's stripes light up from phase 2).
+- **Face**: `face_paint` style `whiskers` (two faint lines from the face's edge on each cheek, fading inward).
+- `patterns_emblems.png` shows every pattern, cutout and emblem at its sizes, drawn straight from the painter.
+
+### Weapons: hands, grips, sheaths, the off-hand and the mount point
+
+A weapon is still authored once in grip space (the grip at 0,0,0, the head along -z, the striking side toward -y,
+the convention G4's tools use). New part fields: `hand` (`right`, `left`: a shield; `pair`: claws; `both`: one prop
+for two hands with the left on `grip2`), `style` (whose hand poses it is held in), `sheath`, `grip` (`reverse` turns
+it 180 degrees about the hand's y: the blade leaves the little-finger side and lies back along the forearm), `vars`
+(named values: `k = 0.6 + 0.4 x head_y / 42` shrinks a prop a little on the small forms, chibi 0.84), cube roles
+`hilt`, `blade`, `worn` (a gauntlet's glove: on the hand bone always), cube rotations in grip space, `phase` cubes
+(the staff's bristles from phase 2), `fine: "sheathed"` (a guard that is detail only on the carried copy),
+`scabbard_stays` (a katana's saya hangs on its own `sheath` bone and stays at the hip while the blade is out).
+
+| Sheath | Where (for a right-hand prop; mirrored for the left) | Used by |
+|---|---|---|
+| `hip`, `hip_same` | the opposite (or the same) hip, head down, swung back 55 degrees | longsword, fan |
+| `obi`, `obi_same` | thrust through the sash at the front of the hip, hilt forward and up, edge up | katana (both swords), Hinae's wand |
+| `back` | diagonally on the back, head down, hilt over the drawing shoulder | iron club |
+| `back_up` | diagonally on the back, head up, its striking side outward | cauldron staff |
+| `back_flat` | flat on the back, face out | kite shield |
+| `waist_back` | across the small of the back | short blade |
+| `worn` / `none` | the worn cubes stay on the hand / nothing is carried | claws / kunai, talismans |
+
+- **Off-hand** (`art.weapon.offhand` {prop, sheathed, phase, sheath_offset, colours}): a second prop in the left hand.
+  With `phase` N its drawn copy is a `pN_` child of `weapon_l` and its carried copy appears twice, as `pN_` under the
+  sheathed bone and on a `holstered` bone that `visual.json` hides from phase N: before Kagenori's phase 3 the short
+  sword rides at his hip, from phase 3 it is in his hand when he fights and back in its saya when he does not.
+- A second carried prop whose sheath needs another parent gets **`weapon_back_2`** (Ilsabet's sword at the hip, her
+  shield on the back); `visual.json` lists every sheathed bone (`weapon_back`, `weapon_back_2`) and counts a drawn
+  bone when anything below it has cubes.
+- **The mount point (for G10)**: a prop with `mount` {seat, height} and an entry with `"mount": true` get a `mount`
+  bone under `root` (so a hover bob carries it), its pivot the seat at `height` above the ground (`hip_y - leg_d / 2`:
+  under the thighs of a rider), with a whole copy of the prop laid along it head forward, bristles included from phase
+  2. `visual.json` has `bones.mount` and `weapon.mount`; the preview renderer shows the mount only while riding (and
+  then hides the hand and back copies). `ride.broom` is a placeholder seat (astride, thighs level) that checks the
+  height on every form; G10 authors `move.ride` side-saddle on the same point.
+
+### The hand poses (13.6 pose library; checked by `grips.py`)
+
+G5 builds the style libraries on these poses, so G6c fitted the props to them first. Each pose was solved offline
+(a Nelder-Mead over the arm, the forearm with its twist and the hand, wrists kept within 80 degrees of flexion, 35
+sideways and a 60-90 degree twist) for targets on the teen (where the grip is and where the prop points), with the props kept out
+of the body on every base (the head with a 1.5 px margin for the hair) and, for the club, the left hand on the
+handle on every base; the numbers are written into the pose files. The first run's poses were authored for the teen
+alone and failed on the other forms: a chibi's arm (9.75 px to the grip) is shorter than its head (10 px), so a wand
+held upright under the chin, a cast with the prop pointing up, a sword drawn back over the shoulder or a club raised
+overhead all ran into a chibi's head, and the club's second hand missed the handle by 2.4-3.8 px on the adults.
+
+| Style | Poses (the props) | What changed in the second run |
+|---|---|---|
+| `fists` | stance (fists before the chin, claws forward-up), strike (arm straight, claws leading), guard (forearms crossed in front of the chin) | all three re-solved: the fists sat 0.1-1.6 px inside a chibi's head |
+| `focus` | stance (the prop forward, up and out from the side of the chest; the talismans fanned low at the hip), cast (the arm straight, the wrist bent so the prop points at the target), throw (the left arm forward, its prop at the target; the right drawn back) | the cast pointed the prop up and back past the head; the stance held it upright under the chin |
+| `hammer` | stance (the club over the right shoulder), raise (the club held high and upright at the right side), slam (bent forward, the club head down in front) | the raise is no longer overhead (a chibi cannot lift its hands over its head); the slam pointed the club forward and up; the second hand now within 1.8 px of `grip2` on all six bases |
+| `staff` | stance (the staff upright beside the body), cast (the staff thrust forward, cauldron first); `ride.broom` | the cast pointed the cauldron up and back through the head |
+| `sword_shield` | stance (the shield upright before the chest, facing the target), cut (the blade level at the target past the shield), guard (the shield high, the sword hand by the right temple, blade forward over the shield) | the guard's sword went through the head; the shield touched a chibi's face |
+| `twin_blades` | stance (the reversed blade back along the forearm, the kunai forward), slash, throw (the kunai at the target) | the kunai pointed up instead of at the target |
+
+What `grips.problems` checks, for a hero with a weapon, in every hand pose of its style (held for a second, so the
+secondary bake hangs sleeves and capes): no prop cube more than 1 px inside the head, torso, legs or the other arm
+(the holding hand and forearm excepted, and both for a two-handed prop); nothing more than 1.5 px under the ground;
+the second hand within 2 px of `grip2`; with `ties`, no coplanar faces of different colour with the weapon drawn
+(six directions for the stance, three for the others). `herogen lint` runs it on every weapon part and every sample
+outfit, on all six bases.
+
+Rotations transfer between the forms and lengths do not, so contact points differ: the slam's club head is on the
+ground on a chibi and 6 px (teen) to 9 px (adult) above it; the staff's foot touches a chibi's ground and hangs 5-10
+px above it on the larger forms. One file serves every form, so these are the price; G5 can add a form-scaled root
+(`v.fc_dhip`) to a slam's impact frame if the gap shows in game.
+
+### Fixes found on the renders and by the lint
+
+- The wand's paper streamers were 0.15 px plates that vanished: now two zigzags of four 1.8 x 0.9 x 1.85 px folds.
+  The fan is wider toward its top (1.1, 2.0, 2.8 px). The waist talismans were four overlapping strips whose dense
+  script read as a red-and-white checker: now three strips a little apart, and the `script` emblem keeps the strip's
+  sides plain.
+- Coplanar faces the lint found (each moved 0.05-0.2 px off the shared plane): the choker's loop and bell on the
+  chest's front (chibi_f, teen_m); the rope belt's top on the hips' top (every base); the claws' outer faces on the
+  gauntlet plate's, and the glove's top on the wrist (a cuff now reaches 0.25 px past it); the kite shield's top rim
+  overlapping the main rim by 0.2 px in one plane; the kunai handle's end on a 3 px hand's back face (teen_m,
+  adult_f); the fan's rivet end on the stick's end on the adults; the staff's bristle skirt and core sharing their
+  top; and, newly visible with Kagenori's sword drawn, the G6b bracers' lower rim on the forearm's bottom face (it now
+  reaches 0.1 px past the wrist, as the G6b cuffs do). Hinae's wand carried across the small of the back sat on her
+  sash bow's loop: it is thrust through the sash at the hip (`obi`) instead. The talisman ring's front talismans
+  reached in front of a slim chibi's chin: the ring is never higher than 5.75 px under the chin.
+- The hand-pose coplanar check counts only pairs with a prop bone. Held poses with no secondary motion on `hair_back`
+  showed a tie between every hair style's `back_base` (its inner face at head-local z 5) and the head's back face,
+  through the jagged hem's teeth; the idle's bake rotation (-0.007 degrees) hides it in `herogen check`. It is a hair
+  kit matter (open item below), not a weapon's.
+- Patterns redrawn after the first sheet: `waves` and `scales` are now overlapping discs on a brick lattice (the
+  first draft drew a grid of crosses), shown at sizes 6 and 4 where they read; the crane emblem is a crane in flight
+  seen from below (the first draft's roundel did not read at 5-9 texels).
+- The library test carried every weapon as a pair at the hip: a staff hung there swung its foot up in front of the
+  face. Weapons are now linted and tested as their part says (`lint.weapon_entry`).
+- A hip sheath whose `weapon_back` a part already used now gets `weapon_back_2` (it used to be an error).
+
+### Sheets (`herogen parts-previews`, `docs/heroes-v2/previews/parts/`)
+
+New: `details_accessories.png` (every accessory and marking on the six bases, cropped to where it is worn),
+`weapons.png` (every weapon part drawn in the stance of its style on the six bases, then from the right and
+sheathed from the front and the back), `weapons_poses.png` (each slice outfit on its own base: sheathed front and
+back, every hand pose of its style from the front left and the right front, and its special look: claws away, the
+lanterns at night, the stripes glowing, the far view, both swords, the standard, the staff ridden) and
+`patterns_emblems.png`. Regenerated: `outfits.png` (weapons sheathed, with the details), `body_armour_back.png`
+(`gauntlets` gained `reach`, `bracers`' lower rim, `standard` stamps the emblem) and `body_tops_robes.png`
+(`open_coat` paints the bare forearms as skin); the head sheets and `body_bottoms_legwear.png` came out byte for byte.
+On the sheets a cell is as wide as its label, long param lists wrap, and the crest is shown in red on the mannequin's
+cream shirt (its own default colour would vanish there).
+
+### Tests (269 -> 291)
+
+`tests/test_details.py`: the slice column (10 accessories, 3 markings, a weapon for each slice hero); every slice
+weapon names a style with hand poses; emblems well formed, rotation, size fitting, every emblem a source names
+exists; the new patterns draw both colours, patches seeded and deterministic, the lace cutout; a cube stamp paints
+its emblem centred; the crest takes the entry's emblem or none; stamps stay upright through a carry; whiskers; calico
+is an overlay that changes part of the hair only; arm stripes glow only in the phase look and `visual.json` points
+the phase at the phase texture; the talisman ring is a phase-2 glowing ring clear of the arms; the reverse grip; worn
+claws; the saya that stays and the short sword from phase 3 (`holstered` hidden by the phase); the shield on the
+left and flat on the back with its emblem facing out; the staff-broom's mount point (bone, height, head forward,
+hidden unless riding, bristles from phase 2); **every slice weapon in every hand pose of its style on all six
+bases**; the props point where each pose says on the teen; sabotage: the first draft's cast runs the wand into a
+chibi's head and the check catches it. `test_style` and `test_parts` updated for the carries above.
+
+### Decisions (each deliberate)
+
+1. **Poses are solved for every form at once**, not for the teen alone: the check runs on all six bases and the
+   chibi's short arms set the limits (a raise beside the head, props pointing away from the face).
+2. **The mount is a second copy of the prop** on its own bone rather than the hand's copy moved at run time: no
+   re-parenting in `HeroModel`, and a riding animation keys the rider, not the prop.
+3. **Emblems are bitmaps drawn per size** (two to four sizes each) instead of a scaled vector: at 5-11 texels only a
+   hand-placed texel reads.
+4. **An off-hand from a phase has a holstered copy hidden by the phase** (`phases[].hide`), so the existing
+   `HeroLook` phase rules show the right one with no new engine field.
+5. **Kagenori's two swords are one part** (`katana`, `blade` 16 and 10) and Tobimaru's kunai is its own part (the
+   holster accessory carries three more), so the slice's ten weapon looks are eleven props.
+
+### Open items
+
+- **A2 / G10**: `HeroModel` must hide `visual.json` `bones.mount` unless the hero rides (today it would draw the
+  mounted staff under Ambrose's feet; no hero in the mod's resources has a mount yet, so nothing shows now), and hide
+  the hand and back copies while riding. `weapon_back_2`, `sheath` (always shown) and `holstered` (hidden by the
+  phase) already work through the lists `HeroLook` reads.
+- **G5**: the style libraries on these poses; the slam's contact on the larger forms (above); orbit loops for
+  `lantern_1..3` and `talisman_ring`, the crow's head turn, the gourd's swing (its `secondary` chain).
+- **C1-C4**: the heroes' own files take the sample outfits' entries (weapon, off-hand, emblem, phases).
+- The coplanar rule still runs on the standard builds only (slim and large: geometry checks).
+- **Hair kit (a later art pass or G7)**: every hair style's `back_base` has its inner face on the head's back face
+  (head-local z 5); through a jagged hem the two show and z-fight in any frame where `hair_back` is at rest. Moving
+  each `back_base` 0.1 px back fixes it; it changes the test rig, the fallback and every preview, so it was left out
+  of this task.

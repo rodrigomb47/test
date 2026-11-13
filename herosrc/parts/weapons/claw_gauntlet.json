@@ -1,0 +1,79 @@
+{
+  "_comment": "Claw gauntlets (G6c; Natsuho's, a pair): a leather glove over the hand to the wrist and a metal plate on its back (worn at all times: sheathed `worn`), and three claws from the back of the hand along the fingers, hooked at the end, shown only while the weapon is drawn. Layer: the glove 0.45 px out (gauntlet shells 0.35, bracers 0.4), its cuff 0.25 px past the wrist; the claws stand 0.1 px proud of the plate, so no two of them share a plane.",
+  "id": "weapons/claw_gauntlet",
+  "category": "weapons",
+  "slots": {"main": "metal", "trim": "trim", "alt": "leather"},
+  "hand": "pair",
+  "style": "fists",
+  "sheath": "worn",
+  "tip": ["-arm_w / 2 - 1.2", "hand_bottom - hand_y - 4.5", 0],
+  "cubes": [
+    {
+      "name": "glove",
+      "origin": ["-arm_w / 2 - 0.45", "hand_bottom - hand_y - 0.45", "-arm_d / 2 - 0.45"],
+      "size": ["arm_w + 0.9", "wrist_y - hand_bottom + 0.7", "arm_d + 0.9"],
+      "slot": "alt",
+      "material": "leather",
+      "trim": {"slot": "trim", "edge": "top", "width": 1},
+      "role": "worn"
+    },
+    {
+      "name": "plate",
+      "origin": ["-arm_w / 2 - 0.85", "hand_bottom - hand_y - 0.2", -1.3],
+      "size": [0.4, "wrist_y - hand_bottom - 0.2", 2.6],
+      "material": "metal",
+      "role": "worn"
+    },
+    {
+      "name": "claw_0",
+      "origin": ["-arm_w / 2 - 0.95", "hand_bottom - hand_y - 2.6", -1.0],
+      "size": [0.3, 2.9, 0.3],
+      "material": "metal",
+      "role": "blade"
+    },
+    {
+      "name": "hook_0",
+      "origin": ["-arm_w / 2 - 0.92", "hand_bottom - hand_y - 4.6", -0.97],
+      "size": [0.24, 2.1, 0.24],
+      "rotation": [0, 0, -14],
+      "pivot": ["-arm_w / 2 - 0.8", "hand_bottom - hand_y - 2.5", -0.85],
+      "material": "metal",
+      "role": "blade",
+      "fine": true
+    },
+    {
+      "name": "claw_1",
+      "origin": ["-arm_w / 2 - 0.95", "hand_bottom - hand_y - 2.6", -0.15],
+      "size": [0.3, 2.9, 0.3],
+      "material": "metal",
+      "role": "blade"
+    },
+    {
+      "name": "hook_1",
+      "origin": ["-arm_w / 2 - 0.92", "hand_bottom - hand_y - 4.6", -0.12],
+      "size": [0.24, 2.1, 0.24],
+      "rotation": [0, 0, -14],
+      "pivot": ["-arm_w / 2 - 0.8", "hand_bottom - hand_y - 2.5", 0.0],
+      "material": "metal",
+      "role": "blade",
+      "fine": true
+    },
+    {
+      "name": "claw_2",
+      "origin": ["-arm_w / 2 - 0.95", "hand_bottom - hand_y - 2.6", 0.7],
+      "size": [0.3, 2.9, 0.3],
+      "material": "metal",
+      "role": "blade"
+    },
+    {
+      "name": "hook_2",
+      "origin": ["-arm_w / 2 - 0.92", "hand_bottom - hand_y - 4.6", 0.73],
+      "size": [0.24, 2.1, 0.24],
+      "rotation": [0, 0, -14],
+      "pivot": ["-arm_w / 2 - 0.8", "hand_bottom - hand_y - 2.5", 0.85],
+      "material": "metal",
+      "role": "blade",
+      "fine": true
+    }
+  ]
+}

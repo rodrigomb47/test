@@ -1,15 +1,16 @@
 {
-  "_comment": "Gauntlets (style pass 2): a plate shell over the forearm, a cuff of plates flaring out at the elbow end, and a plate over the back of the hand.",
+  "_comment": "Gauntlets (style pass 2): a plate shell over the forearm, a cuff of plates flaring out at its elbow end, and a plate over the back of the hand. `reach` (G6c) is how far up the forearm the shell goes (1: to the elbow; 0.35 leaves the upper forearm bare for markings such as Benika's stripes).",
   "id": "armour/gauntlets",
   "category": "armour",
   "slots": {"main": "metal", "trim": "trim"},
+  "params": {"reach": {"min": 0.3, "max": 1, "default": 1}},
   "occupies": ["forearms"],
   "cubes": [
     {
       "name": "shell",
       "bone": "forearm_r",
       "origin": ["-shoulder_x - arm_w / 2 - 0.35", "wrist_y - 0.25", "-arm_d / 2 - 0.35"],
-      "size": ["arm_w + 0.7", "elbow_y - wrist_y - 0.5", "arm_d + 0.7"],
+      "size": ["arm_w + 0.7", "(elbow_y - wrist_y - 0.5) * reach", "arm_d + 0.7"],
       "material": "metal",
       "mirror": true
     },
@@ -30,7 +31,7 @@
       "path": "arc",
       "center": ["-shoulder_x", 0],
       "radius": ["arm_w / 2 + 0.5", "arm_d / 2 + 0.5"],
-      "y": "elbow_y - 1.75",
+      "y": "wrist_y - 1.25 + (elbow_y - wrist_y - 0.5) * reach",
       "angles": [-180, 120],
       "count": 6,
       "dir": "up",

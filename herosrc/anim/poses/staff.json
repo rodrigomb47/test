@@ -1,0 +1,57 @@
+{
+  "_comment": "Grip poses of the staff style (G6c: Ambrose's cauldron staff; G5 builds the style's animations on them, G10 the riding ones). Conventions in tools/herogen/anim/poses.py.",
+  "poses": {
+    "staff.stance": {
+      "_comment": "Caster ready: the right forearm raised forward so the staff stands upright beside the body, its head (the cauldron) above the shoulder, the left hand open and a little forward.",
+      "knees": 6,
+      "bones": {
+        "leg_r": [4, 0, 3],
+        "leg_l": [-5, 0, -3],
+        "body": [0, 8, 0],
+        "chest": [0, 4, 0],
+        "neck": [0, -12, 0],
+        "arm_r": [-15.1, 4.6, 16.3],
+        "forearm_r": [-92.3, 5, 0],
+        "hand_r": [21.6, 24.6, -6.9],
+        "arm_l": [-30, 0, -14],
+        "forearm_l": [-50, 0, 0],
+        "hand_l": [0, 0, 0]
+      },
+      "fix": ["level_feet", "ground"]
+    },
+    "staff.cast": {
+      "_comment": "The cast: the staff thrust forward and up at the target with the right arm straight, the left hand behind it.",
+      "extends": "staff.stance",
+      "bones": {
+        "body": [4, -4, 0],
+        "chest": [2, -8, 0],
+        "neck": [-4, 12, 0],
+        "arm_r": [-73.2, 22.5, 22.6],
+        "forearm_r": [-10.5, 1, 0],
+        "hand_r": [67.6, -2.6, 7.3],
+        "arm_l": [-60, 0, -10],
+        "forearm_l": [-30, 0, 0]
+      }
+    },
+    "ride.broom": {
+      "_comment": "A seat on the staff-broom, for the mount point (G6c: the prop's `mount.seat` is under the hips at the height of the thighs' undersides; G10 authors `move.ride`, side-saddle, on it): astride, thighs level and a little apart, shins tucked back, leaning forward, the right hand on the shaft in front and the left out, ready to cast. Not a hand pose of the style (its name is outside `staff.`).",
+      "bones": {
+        "leg_r": [-80, 0, 9],
+        "shin_r": [72, 0, 0],
+        "foot_r": [24, 0, 0],
+        "leg_l": [-80, 0, -9],
+        "shin_l": [84, 0, 0],
+        "foot_l": [30, 0, 0],
+        "body": [10, 0, 0],
+        "chest": [4, 0, 0],
+        "neck": [-12, 0, 0],
+        "arm_r": [-34, 0, -10],
+        "forearm_r": [-12, 0, 0],
+        "hand_r": [0, 0, 0],
+        "arm_l": [-24, 0, -34],
+        "forearm_l": [-46, 0, 0],
+        "hand_l": [0, 0, 0]
+      }
+    }
+  }
+}

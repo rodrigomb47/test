@@ -1,0 +1,51 @@
+{
+  "_comment": "A gourd flask (G6c; Benika's): hung at the front of the right hip (in a coat's opening) by a cord on its own bone (`gourd`, a spring: it swings), a small upper bulb, a tied waist, a big lower bulb and a stopper.",
+  "id": "accessories/gourd",
+  "category": "accessories",
+  "slots": {"main": "trim", "alt": "primary", "detail": "leather"},
+  "occupies": ["hip_r_item"],
+  "bones": [
+    {"name": "gourd", "parent": "body", "pivot": ["-(hips_w / 2 - 1.0)", "waist_y - 0.5", "-hips_d / 2 - 1.6"]}
+  ],
+  "cubes": [
+    {
+      "name": "cord",
+      "bone": "gourd",
+      "origin": ["-(hips_w / 2 - 1.0) - 0.15", "waist_y - 1.4", "-hips_d / 2 - 2.05"],
+      "size": [0.3, 1.0, 0.3],
+      "slot": "alt",
+      "material": "cloth"
+    },
+    {
+      "name": "stopper",
+      "bone": "gourd",
+      "origin": ["-(hips_w / 2 - 1.0) - 0.35", "waist_y - 1.95", "-hips_d / 2 - 2.25"],
+      "size": [0.7, 0.7, 0.7],
+      "slot": "detail",
+      "material": "wood"
+    },
+    {
+      "name": "top",
+      "bone": "gourd",
+      "origin": ["-(hips_w / 2 - 1.0) - 0.8", "waist_y - 3.45", "-hips_d / 2 - 2.7"],
+      "size": [1.6, 1.6, 1.6],
+      "material": "lacquer"
+    },
+    {
+      "name": "tie",
+      "bone": "gourd",
+      "origin": ["-(hips_w / 2 - 1.0) - 0.6", "waist_y - 3.95", "-hips_d / 2 - 2.5"],
+      "size": [1.2, 0.6, 1.2],
+      "slot": "alt",
+      "material": "cloth"
+    },
+    {
+      "name": "bottom",
+      "bone": "gourd",
+      "origin": ["-(hips_w / 2 - 1.0) - 1.25", "waist_y - 6.55", "-hips_d / 2 - 3.15"],
+      "size": [2.5, 2.7, 2.5],
+      "material": "lacquer"
+    }
+  ],
+  "secondary": {"chain": ["gourd"], "stiffness": 0.45, "damping": 0.55}
+}

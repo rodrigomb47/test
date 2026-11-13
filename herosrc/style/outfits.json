@@ -1,5 +1,5 @@
 {
-  "_comment": "Sample outfits (G6b): the slice heroes' looks (SLICE_PLAN.md section 3) dressed from the parts library, for `herogen lint` (each on all six bases: combinations a single part never shows, such as a sash over a hakama band) and the parts sheet docs/heroes-v2/previews/parts/outfits.png. They are not hero files: the C1-C4 tasks write the heroes (kits, animations, phases); weapons, emblems and small accessories come with G6c. `base` is the base the sheet shows the back view on.",
+  "_comment": "Sample outfits (G6b): the slice heroes' looks (SLICE_PLAN.md section 3) dressed from the parts library, for `herogen lint` (each on all six bases: combinations a single part never shows, such as a sash over a hakama band) and the parts sheet docs/heroes-v2/previews/parts/outfits.png. They are not hero files: the C1-C4 tasks write the heroes (kits, animations, phases); G6c added each hero's weapon (in the hand pose of its style, `animations.style`), small accessories, markings and emblem stamps. `base` is the base the sheet shows the back view on.",
   "outfits": [
     {
       "id": "natsuho",
@@ -46,7 +46,9 @@
             "alt": "secondary",
             "trim": "metal",
             "params": {"socks": 1}
-          }
+          },
+          {"part": "accessories/choker_bell", "color": "trim", "alt": "eyes", "detail": "leather"},
+          {"part": "markings/calico", "alt": "hair_accent", "detail": "leather"}
         ],
         "face": {
           "eyes": "cat",
@@ -56,10 +58,19 @@
           "brows": "thin_arched",
           "mouth": "cat",
           "fang": "left",
-          "blush": "soft"
+          "blush": "soft",
+          "marks": [{"type": "face_paint", "style": "whiskers", "color": "leather"}]
+        },
+        "weapon": {
+          "prop": "weapons/claw_gauntlet",
+          "hand": "pair",
+          "sheathed": "worn",
+          "color": "metal",
+          "alt": "leather",
+          "trim": "trim"
         }
       },
-      "animations": {"blink": "normal"}
+      "animations": {"blink": "normal", "style": "fists"}
     },
     {
       "id": "yugen",
@@ -93,7 +104,10 @@
             "alt": "leather",
             "trim": "trim",
             "params": {"sock": 0.4}
-          }
+          },
+          {"part": "accessories/prayer_beads", "color": "leather", "alt": "trim"},
+          {"part": "accessories/foxfire_lanterns", "color": "glow", "alt": "leather", "detail": "trim"},
+          {"part": "markings/crest", "emblem": "plum", "color": "secondary", "params": {"back": 1, "sleeves": 1}}
         ],
         "face": {
           "eyes": "narrow",
@@ -102,9 +116,18 @@
           "brows": "thin_arched",
           "mouth": "soft",
           "highlights": "one"
+        },
+        "weapon": {
+          "prop": "weapons/folding_fan",
+          "hand": "right",
+          "sheathed": "hip",
+          "color": "secondary",
+          "alt": "accent",
+          "trim": "hair_accent",
+          "detail": "trim"
         }
       },
-      "animations": {"blink": "calm"}
+      "animations": {"blink": "calm", "style": "focus"}
     },
     {
       "id": "benika",
@@ -131,20 +154,24 @@
           {"part": "horns/single_curved", "color": "primary", "params": {"size": 1.1}},
           {"part": "outfit_top/open_coat", "color": "primary", "alt": "leather", "trim": "trim"},
           {"part": "outfit_bottom/hakama", "color": "secondary", "trim": "trim", "params": {"drop": 0.85}},
-          {"part": "armour/gauntlets", "color": "metal", "trim": "trim"},
+          {"part": "armour/gauntlets", "color": "metal", "trim": "trim", "params": {"reach": 0.35}},
           {"part": "legwear/foot_wraps", "color": "secondary", "alt": "leather", "trim": "secondary"},
-          {"part": "accessories/sash_obi"}
+          {"part": "accessories/sash_obi"},
+          {"part": "accessories/rope_belt", "color": "accent", "alt": "hair_accent"},
+          {"part": "accessories/gourd", "color": "leather", "alt": "primary", "detail": "secondary"},
+          {"part": "markings/arm_stripes", "color": "hair_accent", "params": {"upper": 0}}
         ],
-        "face": {
-          "eyes": "sharp",
-          "lashes": 1,
-          "flick": "none",
-          "brows": "bold",
-          "mouth": "wide",
-          "fang": "both"
+        "face": {"eyes": "sharp", "lashes": 1, "flick": "none", "brows": "bold", "mouth": "wide", "fang": "both"},
+        "weapon": {
+          "prop": "weapons/iron_club",
+          "hand": "both",
+          "sheathed": "back",
+          "color": "metal",
+          "trim": "accent",
+          "alt": "secondary"
         }
       },
-      "animations": {"blink": "normal"}
+      "animations": {"blink": "normal", "style": "hammer"}
     },
     {
       "id": "hinae",
@@ -167,25 +194,25 @@
         "parts": [
           {"part": "hair/hime_long", "color": "hair", "trim": "primary"},
           {"part": "outfit_top/kimono_top", "color": "primary", "alt": "secondary", "trim": "trim"},
-          {
-            "part": "outfit_bottom/hakama",
-            "color": "secondary",
-            "trim": "secondary",
-            "params": {"drop": 1.75}
-          },
+          {"part": "outfit_bottom/hakama", "color": "secondary", "trim": "secondary", "params": {"drop": 1.75}},
           {"part": "legwear/geta", "color": "leather", "alt": "primary", "trim": "secondary"},
-          {"part": "accessories/sash_bow"}
+          {"part": "accessories/sash_bow"},
+          {"part": "accessories/talisman_strips", "color": "primary", "alt": "secondary"},
+          {"part": "accessories/talisman_ring", "color": "primary", "alt": "secondary", "phase": 2}
         ],
-        "face": {
-          "eyes": "round",
-          "lashes": 2,
-          "flick": "up",
-          "brows": "worried",
-          "mouth": "soft",
-          "blush": "soft"
+        "face": {"eyes": "round", "lashes": 2, "flick": "up", "brows": "worried", "mouth": "soft", "blush": "soft"},
+        "weapon": {
+          "prop": "weapons/purification_wand",
+          "hand": "right",
+          "sheathed": "obi",
+          "color": "trim",
+          "trim": "primary",
+          "alt": "primary",
+          "detail": "accent",
+          "offhand": {"prop": "weapons/talisman_fan", "sheathed": "none", "color": "primary", "alt": "secondary"}
         }
       },
-      "animations": {"blink": "normal"}
+      "animations": {"blink": "normal", "style": "focus"}
     },
     {
       "id": "kagenori",
@@ -213,18 +240,37 @@
           {"part": "armour/bracers", "color": "metal", "trim": "trim"},
           {"part": "legwear/tabi_sandals", "color": "secondary", "alt": "leather", "trim": "trim"},
           {"part": "accessories/sash_obi"},
-          {"part": "headwear/kabuto", "color": "metal", "trim": "trim", "phase": 2}
+          {"part": "headwear/kabuto", "color": "metal", "trim": "trim", "phase": 2},
+          {
+            "part": "markings/crest",
+            "emblem": "crane",
+            "color": "secondary",
+            "params": {"back": 1, "chest_pair": 1, "sleeves": 1}
+          }
         ],
-        "face": {
-          "eyes": "sharp",
-          "lashes": 0,
-          "flick": "none",
-          "brows": "straight_thick",
-          "mouth": "small"
-        },
-        "weapon": {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip"}
+        "face": {"eyes": "sharp", "lashes": 0, "flick": "none", "brows": "straight_thick", "mouth": "small"},
+        "weapon": {
+          "prop": "weapons/katana",
+          "hand": "right",
+          "sheathed": "obi",
+          "color": "metal",
+          "trim": "trim",
+          "alt": "hair",
+          "detail": "secondary",
+          "offhand": {
+            "prop": "weapons/katana",
+            "params": {"blade": 10},
+            "sheathed": "obi_same",
+            "sheath_offset": [-0.6, 0.5, -0.6],
+            "phase": 3,
+            "color": "metal",
+            "trim": "trim",
+            "alt": "hair",
+            "detail": "secondary"
+          }
+        }
       },
-      "animations": {"blink": "calm"}
+      "animations": {"blink": "calm", "style": "katana"}
     },
     {
       "id": "tobimaru",
@@ -257,17 +303,28 @@
           {"part": "outfit_bottom/trousers", "color": "primary", "alt": "accent", "params": {"wraps": 1}},
           {"part": "armour/bracers", "color": "accent", "trim": "metal", "params": {"length": 0.9}},
           {"part": "legwear/tabi_boots", "color": "leather", "trim": "metal"},
-          {"part": "accessories/sash_obi"}
+          {"part": "accessories/sash_obi"},
+          {"part": "accessories/kunai_holster", "color": "leather", "alt": "metal", "trim": "accent"}
         ],
-        "face": {
-          "eyes": "narrow",
-          "lashes": 0,
-          "flick": "none",
-          "brows": "straight",
-          "mouth": "small"
+        "face": {"eyes": "narrow", "lashes": 0, "flick": "none", "brows": "straight", "mouth": "small"},
+        "weapon": {
+          "prop": "weapons/short_blade",
+          "hand": "right",
+          "sheathed": "waist_back",
+          "color": "accent",
+          "trim": "accent",
+          "alt": "accent",
+          "detail": "metal",
+          "offhand": {
+            "prop": "weapons/kunai",
+            "sheathed": "none",
+            "color": "metal",
+            "trim": "secondary",
+            "alt": "accent"
+          }
         }
       },
-      "animations": {"blink": "calm"}
+      "animations": {"blink": "calm", "style": "twin_blades"}
     },
     {
       "id": "ilsabet",
@@ -302,19 +359,33 @@
             "color": "accent",
             "alt": "metal",
             "trim": "trim",
-            "phase": 3
-          }
+            "phase": 3,
+            "emblem": "lily",
+            "detail": "secondary"
+          },
+          {"part": "markings/crest", "emblem": "lily", "color": "accent", "params": {"back": 0, "chest": 1}}
         ],
-        "face": {
-          "eyes": "almond",
-          "lashes": 2,
-          "flick": "up",
-          "brows": "straight",
-          "mouth": "soft"
-        },
-        "weapon": {"prop": "weapons/sword_plain", "hand": "right", "sheathed": "hip"}
+        "face": {"eyes": "almond", "lashes": 2, "flick": "up", "brows": "straight", "mouth": "soft"},
+        "weapon": {
+          "prop": "weapons/longsword",
+          "hand": "right",
+          "sheathed": "hip",
+          "color": "metal",
+          "trim": "trim",
+          "alt": "leather",
+          "detail": "secondary",
+          "offhand": {
+            "prop": "weapons/kite_shield",
+            "sheathed": "back_flat",
+            "emblem": "lily",
+            "color": "secondary",
+            "trim": "trim",
+            "alt": "accent",
+            "detail": "leather"
+          }
+        }
       },
-      "animations": {"blink": "normal"}
+      "animations": {"blink": "normal", "style": "sword_shield"}
     },
     {
       "id": "ambrose",
@@ -338,16 +409,18 @@
         "parts": [
           {"part": "hair/messy_medium", "color": "hair"},
           {"part": "headwear/witch_hat", "color": "secondary", "trim": "trim", "detail": "primary"},
-          {
-            "part": "robes/long_coat",
-            "color": "primary",
-            "alt": "secondary",
-            "trim": "trim",
-            "detail": "trim"
-          },
+          {"part": "robes/long_coat", "color": "primary", "alt": "secondary", "trim": "trim", "detail": "trim"},
           {"part": "outfit_bottom/trousers", "color": "secondary"},
           {"part": "legwear/boots", "color": "leather", "trim": "trim"},
-          {"part": "accessories/sash_obi"}
+          {"part": "accessories/sash_obi"},
+          {
+            "part": "accessories/vial_bandolier",
+            "color": "leather",
+            "alt": "accent",
+            "detail": "metal",
+            "trim": "secondary"
+          },
+          {"part": "accessories/crow", "color": "secondary", "alt": "trim", "detail": "metal"}
         ],
         "face": {
           "eyes": "wide",
@@ -358,9 +431,19 @@
           "glasses": "round",
           "glasses_color": "metal",
           "marks": ["freckles"]
+        },
+        "weapon": {
+          "prop": "weapons/cauldron_staff",
+          "hand": "right",
+          "sheathed": "back_up",
+          "mount": true,
+          "color": "leather",
+          "trim": "trim",
+          "alt": "secondary",
+          "detail": "glow"
         }
       },
-      "animations": {"blink": "nervous"}
+      "animations": {"blink": "nervous", "style": "staff"}
     }
   ]
 }

@@ -1,0 +1,30 @@
+{
+  "_comment": "Talisman strips at the belt (G6c; Hinae's): three paper strips hanging from the waist at the front right (clear of a hanging sleeve), a little apart, on the skirt bones so they swing with a hakama, each with a band at the top and a line of brush strokes down the middle (the `script` emblem, alt) on its outer face.",
+  "id": "accessories/talisman_strips",
+  "category": "accessories",
+  "slots": {"main": "secondary", "alt": "primary"},
+  "occupies": ["belt_charms"],
+  "strands": [
+    {
+      "name": "strip",
+      "path": "arc",
+      "center": [0, 0],
+      "radius": ["hips_w / 2 + 1.0", "hips_d / 2 + 1.0"],
+      "y": "waist_y + 0.2",
+      "angles": [-62, -14],
+      "count": 3,
+      "width": 1.4,
+      "depth": 0.15,
+      "length": [5.5, 4.75, 5.0],
+      "flare": 10,
+      "bones_by_angle": {"skirt_f": [-60, 60], "skirt_r": [-150, -60], "skirt_b": [-180, -150]},
+      "bone": "skirt_r",
+      "slot": "main",
+      "material": "paper",
+      "density": 2,
+      "outline": false,
+      "fine": false,
+      "stamp": {"emblem": "script", "face": "north", "slot": "alt"}
+    }
+  ]
+}

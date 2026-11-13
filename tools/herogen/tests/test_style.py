@@ -14,6 +14,7 @@ from helpers import HEROGEN, mannequin
 
 import build
 import face as F
+import lint
 import validate
 from geo import GeoModel, geo_json
 from paint import Painter
@@ -46,7 +47,8 @@ class LibraryTest(unittest.TestCase):
                 with self.subTest(part=pid, base=bid):
                     m = Model("lint", bid)
                     if pid.startswith("weapons/"):
-                        apply_weapon(m, {"prop": pid, "hand": "pair", "sheathed": "hip"})
+                        # G6c: carried as the part says (its hand, sheath, grip and mount)
+                        apply_weapon(m, lint.weapon_entry(pid))
                     else:
                         apply_part(m, {"part": pid, "color": "primary", "trim": "trim", "alt": "secondary",
                                        "detail": "accent"}, 0)

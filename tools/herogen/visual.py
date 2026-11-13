@@ -33,9 +33,18 @@ def visual_json(hero, model, spec, textures, source_hash, moves=None, states=Non
     profile = dict(BLINK_PROFILES[blink])
     art = hero.get("art", {})
     phases = []
+    from paint import has_phase_glow
+    phase_glow = has_phase_glow(model)
+    auto_hide = getattr(model, "phase_hide", {})
     for ph in art.get("phases", []) or []:
-        phases.append({"phase": ph["phase"], "show": list(ph.get("show", [])), "hide": list(ph.get("hide", [])),
-                       "texture": "p2" if ph.get("palette") else "base", "eyes_glow": bool(ph.get("eyes_glow"))})
+        p2 = bool(ph.get("palette")) or (phase_glow and ph["phase"] >= 2)
+        hide = list(ph.get("hide", [])) + [b for b in auto_hide.get(ph["phase"], []) if b not in ph.get("hide", [])]
+        phases.append({"phase": ph["phase"], "show": list(ph.get("show", [])), "hide": hide,
+                       "texture": "p2" if p2 else "base", "eyes_glow": bool(ph.get("eyes_glow"))})
+    for n in sorted(set(auto_hide) - {ph["phase"] for ph in art.get("phases", []) or []}):
+        # a phase the weapon needs (an off-hand drawn from phase 3) but the hero's phases do not list
+        phases.append({"phase": n, "show": [], "hide": list(auto_hide[n]), "texture": "base", "eyes_glow": False})
+    phases.sort(key=lambda p: p["phase"])
     weapon = art.get("weapon", {}) or {}
     return {
         "format": VISUAL_FORMAT,
@@ -73,12 +82,27 @@ def visual_json(hero, model, spec, textures, source_hash, moves=None, states=Non
             "tint": model.tint_bones(),
             "fine": model.fine_bones(),
             "phase": model.phase_bones(),
-            "weapon_drawn": [b for b in ("weapon_r", "weapon_l") if any(c.bone == b for c in model.cubes)],
-            "weapon_sheathed": ["weapon_back"] if any(c.bone == "weapon_back" for c in model.cubes) else [],
+            # a bone counts when a cube sits on it or below it (an off-hand drawn from phase 3 is on p3_weapon_l)
+            "weapon_drawn": [b for b in ("weapon_r", "weapon_l") if b in model.bones and model.subtree_has_cubes(b)],
+            "weapon_sheathed": [b for b in ("weapon_back", "weapon_back_2")
+                                if b in model.bones and model.subtree_has_cubes(b)],
             "items": ["item_r", "item_l"],
+            # G6c: the mounted copy of a carrier weapon, shown only while riding (G10; HeroModel must hide it otherwise)
+            **({"mount": [model.mount["bone"]]} if model.mount else {}),
             "locators": sorted(n for n, b in model.bones.items() if b.kind == "locator"),
         },
-        "weapon": {"hand": weapon.get("hand", "right"), "sheathed": weapon.get("sheathed", "none")}
-        if weapon.get("prop") else None,
+        "weapon": _weapon_info(weapon, model) if weapon.get("prop") else None,
         "voice": hero.get("voice"),
     }
+
+
+def _weapon_info(weapon, model):
+    """The weapon block: hand and sheath as before; G6c adds the off-hand prop's sheath and phase, and the mounted
+    copy (`mount`: the bone G10's riding animations and the renderer show only while riding)."""
+    out = {"hand": weapon.get("hand", "right"), "sheathed": weapon.get("sheathed", "none")}
+    off = weapon.get("offhand")
+    if off:
+        out["offhand"] = {"sheathed": off.get("sheathed", "none"), "phase": off.get("phase", 1)}
+    if model.mount:
+        out["mount"] = dict(model.mount)
+    return out

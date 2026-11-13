@@ -1,0 +1,61 @@
+{
+  "_comment": "A twisted rope belt (G6c; Benika's gold rope): a thick cord cinched round the top of the hips just below the sash (its top 0.1 px over the hips' top, never on its plane), 1.45 px out at the sides and 1.4 at the front and back (off the plane of a club's studs on the back) so it lies over a coat's skirts (a hakama's band, a belt and the sash sit inside it), with diagonal twists (alt), knotted at the front left, two rope ends hanging from the knot with tasselled tips.",
+  "id": "accessories/rope_belt",
+  "category": "accessories",
+  "slots": {"main": "accent", "alt": "trim"},
+  "occupies": ["belt"],
+  "cubes": [
+    {
+      "name": "rope",
+      "bone": "body",
+      "origin": ["-hips_w / 2 - 1.45", "waist_y - 0.9", "-hips_d / 2 - 1.4"],
+      "size": ["hips_w + 2.9", 1.0, "hips_d + 2.8"],
+      "material": "cloth",
+      "pattern": {"type": "stripes", "dir": "d", "size": 1, "slots": ["alt"]}
+    },
+    {
+      "name": "knot",
+      "bone": "body",
+      "origin": [0.8, "waist_y - 1.25", "-hips_d / 2 - 2.15"],
+      "size": [1.6, 1.5, 0.8],
+      "material": "cloth",
+      "pattern": {"type": "stripes", "dir": "d", "size": 1, "slots": ["alt"]}
+    },
+    {
+      "name": "end_1",
+      "bone": "body",
+      "origin": [1.0, "waist_y - 4.2", "-hips_d / 2 - 2.05"],
+      "size": [0.6, 2.9, 0.6],
+      "material": "cloth",
+      "fine": true
+    },
+    {
+      "name": "end_2",
+      "bone": "body",
+      "origin": [1.9, "waist_y - 3.6", "-hips_d / 2 - 2.05"],
+      "size": [0.6, 2.3, 0.6],
+      "material": "cloth",
+      "fine": true
+    },
+    {
+      "name": "tuft_1",
+      "bone": "body",
+      "origin": [0.85, "waist_y - 5.2", "-hips_d / 2 - 2.15"],
+      "size": [0.9, 1.1, 0.9],
+      "slot": "alt",
+      "material": "cloth",
+      "cutout": "fur_tips",
+      "fine": true
+    },
+    {
+      "name": "tuft_2",
+      "bone": "body",
+      "origin": [1.75, "waist_y - 4.6", "-hips_d / 2 - 2.1"],
+      "size": [0.9, 1.1, 0.9],
+      "slot": "alt",
+      "material": "cloth",
+      "cutout": "fur_tips",
+      "fine": true
+    }
+  ]
+}

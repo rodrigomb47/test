@@ -22,7 +22,7 @@ import face as facemod
 import palette
 from anim import library as animlib
 from geo import geo_json
-from paint import paint_model
+from paint import has_phase_glow, paint_model
 from parts import apply_part, apply_weapon, part_path
 from rig import BASE_SLOTS, BUILDS, DEFAULT_BASE_LAYER, FORMS, RIG_FILE, Model, base_id_for
 from util import HEROSRC, ROOT, HerogenError, dumps_json, load_json, png_bytes, rel, sha256_bytes
@@ -130,13 +130,13 @@ def assemble(hero):
     return model
 
 
-def paint_all(model, hero, art_palette=None, face_changes=None):
+def paint_all(model, hero, art_palette=None, face_changes=None, phase_look=False):
     art = hero["art"]
     ramps = palette.resolve(art_palette if art_palette is not None else art.get("palette"), model.family)
     face = dict(art.get("face") or {})
     face.update(face_changes or {})
     spec = facemod.face_spec(face, model.family, ramps["_hex"])
-    img, glow = paint_model(model, ramps, base_layer_of(art))
+    img, glow = paint_model(model, ramps, base_layer_of(art), phase_look)
     facemod.paint_face(img, glow, model.rig, spec, ramps, ramps["_hex"])
     return spec, ramps, img, glow
 
@@ -147,13 +147,16 @@ def build(hero):
     p2 = p2_glow = None
     phases = hero["art"].get("phases", []) or []
     changes = [ph for ph in phases if ph.get("palette")]
-    if changes:
+    # G6c: a cube or paint op with glow "phase" lights up in the phase look (Benika's arm stripes from phase 2), so
+    # a hero with a later phase gets the phase texture even without a palette change
+    phase_glow = has_phase_glow(model) and any(ph.get("phase", 1) >= 2 for ph in phases)
+    if changes or phase_glow:
         pal = dict(hero["art"].get("palette", {}))
         for ph in sorted(changes, key=lambda p: p["phase"]):
             pal.update(ph["palette"])
         # a phase that recolours the eyes recolours the iris too, even when art.face.iris was authored
         face_changes = {"iris": pal["eyes"]} if any("eyes" in ph["palette"] for ph in changes) else None
-        _, _, p2, p2_glow = paint_all(model, hero, pal, face_changes)
+        _, _, p2, p2_glow = paint_all(model, hero, pal, face_changes, phase_look=True)
     return Built(hero, model, spec, ramps, img, glow, p2, p2_glow)
 
 

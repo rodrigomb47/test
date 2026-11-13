@@ -1,5 +1,5 @@
 {
-  "_comment": "A long open coat (G6b): the coat painted over the torso and arms with the chest showing in a wide open front (`alt`, wrapped in bands: Benika's chest wraps), broad lapels folded back, a standing collar, sleeves pushed up to the elbow with a turned cuff (the forearms bare), and long coat skirts from the waist toward the calves, open at the front, on the skirt bones outside a hakama.",
+  "_comment": "A long open coat (G6b): the coat painted over the torso and arms with the chest showing in a wide open front (`alt`, wrapped in bands: Benika's chest wraps), broad lapels folded back, a standing collar, sleeves pushed up to the elbow with a turned cuff (the forearms bare: painted skin, G6c fix), and long coat skirts from the waist toward the calves, open at the front, on the skirt bones outside a hakama.",
   "id": "outfit_top/open_coat",
   "category": "outfit_top",
   "slots": {
@@ -25,6 +25,7 @@
       "slot": "alt",
       "pattern": {"type": "stripes", "dir": "h", "slots": ["trim"]}
     },
+    {"cubes": ["forearm_*"], "material": "skin", "slot": "skin"},
     {"cubes": ["forearm_*"], "y": ["elbow_y - 1.5", 200], "material": "cloth", "slot": "main"}
   ],
   "cubes": [

@@ -1,0 +1,48 @@
+{
+  "_comment": "A kite shield (G6c; Ilsabet's, on the left arm): authored for the right hand like every prop, its face on the hand's outer side (-x) and its long axis along the hand's z (the point toward +z), so it stands upright and faces forward when the forearm is raised across the body (the sword_shield stance). Three layers, outside in: the face boards (stepped: a rounded top, the broad field, two narrowing steps), the metal rim plates 0.4 px larger all round (a border from the front and from behind), and the wooden back boards with the arm strap. The field carries the hero entry's `emblem` upright. Carried flat on the back when sheathed.",
+  "id": "weapons/kite_shield",
+  "category": "weapons",
+  "slots": {"main": "secondary", "trim": "trim", "alt": "accent", "detail": "leather"},
+  "vars": {"xo": "-arm_w / 2 - 1.6", "xr": "-arm_w / 2 - 1.15", "xb": "-arm_w / 2 - 0.75"},
+  "hand": "left",
+  "style": "sword_shield",
+  "sheath": "back_flat",
+  "tip": ["xo", 0, -6],
+  "cubes": [
+    {"name": "rim_0", "origin": ["xr", -3.0, -7.3], "size": [0.4, 6.0, 0.9], "slot": "trim", "material": "metal"},
+    {"name": "rim_1", "origin": ["xr", -3.9, -6.4], "size": [0.4, 7.8, 9.4], "slot": "trim", "material": "metal"},
+    {"name": "rim_2", "origin": ["xr", -2.9, 3.0], "size": [0.4, 5.8, 2.6], "slot": "trim", "material": "metal"},
+    {"name": "rim_3", "origin": ["xr", -1.7, 5.6], "size": [0.4, 3.4, 2.0], "slot": "trim", "material": "metal"},
+    {"name": "rim_4", "origin": ["xr", -0.7, 7.6], "size": [0.4, 1.4, 1.0], "slot": "trim", "material": "metal"},
+    {"name": "face_0", "origin": ["xo", -2.6, -6.9], "size": [0.45, 5.2, 0.9], "material": "lacquer"},
+    {
+      "name": "face",
+      "origin": ["xo", -3.5, -6.0],
+      "size": [0.45, 7.0, 9.0],
+      "material": "lacquer",
+      "density": 2,
+      "stamp": {"emblem": "@", "face": "east", "slot": "alt", "rotate": 90, "offset": [0, 0]}
+    },
+    {"name": "face_2", "origin": ["xo", -2.5, 3.0], "size": [0.45, 5.0, 2.6], "material": "lacquer"},
+    {"name": "face_3", "origin": ["xo", -1.3, 5.6], "size": [0.45, 2.6, 2.0], "material": "lacquer"},
+    {"name": "back_1", "origin": ["xb", -3.5, -6.0], "size": [0.15, 7.0, 9.0], "slot": "detail", "material": "wood"},
+    {"name": "back_2", "origin": ["xb", -2.5, 3.0], "size": [0.15, 5.0, 2.6], "slot": "detail", "material": "wood"},
+    {
+      "name": "back_3",
+      "origin": ["xb", -1.3, 5.6],
+      "size": [0.15, 2.6, 2.0],
+      "slot": "detail",
+      "material": "wood",
+      "fine": true
+    },
+    {
+      "name": "strap",
+      "origin": ["xb + 0.15", -0.5, -1.4],
+      "size": [0.3, 1.0, 2.8],
+      "slot": "detail",
+      "material": "leather",
+      "tone": -1,
+      "fine": true
+    }
+  ]
+}

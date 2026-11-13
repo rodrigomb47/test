@@ -1,0 +1,66 @@
+{
+  "_comment": "A knight's longsword (G6c; Ilsabet's): a leather grip, a broad cross guard with flared ends, a round pommel, a straight double-edged blade with light edges (detail) and a point; a leather scabbard with a metal chape that stays on the belt while it is drawn. `glow` on the hero's weapon entry lights the blade (\"phase\": from the phase look).",
+  "id": "weapons/longsword",
+  "category": "weapons",
+  "slots": {"main": "metal", "trim": "trim", "alt": "leather", "detail": "secondary"},
+  "params": {"blade": {"min": 10, "max": 20, "default": 15}},
+  "style": "sword_shield",
+  "sheath": "hip",
+  "scabbard_stays": true,
+  "tip": [0, 0, "-3.0 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+  "cubes": [
+    {"name": "grip", "origin": [-0.45, -0.45, -1.6], "size": [0.9, 0.9, 3.6], "slot": "alt", "material": "leather"},
+    {"name": "pommel", "origin": [-0.7, -0.7, 2.0], "size": [1.4, 1.4, 1.2], "slot": "trim", "material": "metal"},
+    {"name": "guard", "origin": [-0.5, -2.4, -2.2], "size": [1.0, 4.8, 0.6], "slot": "trim", "material": "metal"},
+    {
+      "name": "quillon_t",
+      "origin": [-0.6, 1.9, -2.5],
+      "size": [1.2, 0.9, 1.0],
+      "slot": "trim",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "quillon_b",
+      "origin": [-0.6, -2.8, -2.5],
+      "size": [1.2, 0.9, 1.0],
+      "slot": "trim",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "blade",
+      "origin": [-0.22, -0.7, "-2.2 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [0.44, 1.4, "(blade) * (0.6 + 0.4 * head_y / 42)"],
+      "material": "metal",
+      "trim": {"slot": "detail", "edge": "both", "width": 1},
+      "density": 2,
+      "role": "blade"
+    },
+    {
+      "name": "point",
+      "origin": [-0.18, -0.4, "-3.0 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [0.36, 0.8, 0.8],
+      "material": "metal",
+      "role": "blade"
+    }
+  ],
+  "scabbard": [
+    {
+      "name": "sheath",
+      "origin": [-0.55, -0.95, "-3.2 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [1.1, 1.9, "(blade) * (0.6 + 0.4 * head_y / 42) + 1.0"],
+      "slot": "alt",
+      "material": "leather",
+      "trim": {"slot": "trim", "edge": "top", "width": 1}
+    },
+    {
+      "name": "chape",
+      "origin": [-0.65, -1.05, "-3.6 - (blade) * (0.6 + 0.4 * head_y / 42)"],
+      "size": [1.3, 2.1, 0.6],
+      "slot": "trim",
+      "material": "metal",
+      "fine": true
+    }
+  ]
+}

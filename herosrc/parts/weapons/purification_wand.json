@@ -1,0 +1,106 @@
+{
+  "_comment": "A purification wand (G6c; Hinae's, in the right hand): a pale wooden rod with a capped head, two zigzag paper streamers hanging from the head down both sides of the rod (along +z: down the rod when it is held up; four folds each, stepping out and back, in the plane of the hand's x axis), a cluster of three gold bells on a cord below them, and a red and white cord at the grip. Thrust through the sash at the hip when sheathed (`obi`: across the small of the back it sat on a sash bow).",
+  "id": "weapons/purification_wand",
+  "category": "weapons",
+  "slots": {"main": "trim", "trim": "secondary", "alt": "primary", "detail": "accent"},
+  "style": "focus",
+  "sheath": "obi",
+  "tip": [0, 0, -10.6],
+  "cubes": [
+    {"name": "rod", "origin": [-0.35, -0.35, -10.2], "size": [0.7, 0.7, 12.8], "material": "wood"},
+    {
+      "name": "cap",
+      "origin": [-0.5, -0.5, -10.7],
+      "size": [1.0, 1.0, 0.5],
+      "slot": "detail",
+      "material": "metal",
+      "fine": true
+    },
+    {
+      "name": "cord",
+      "origin": [-0.45, -0.45, 1.0],
+      "size": [0.9, 0.9, 0.7],
+      "slot": "trim",
+      "material": "cloth",
+      "pattern": {"type": "stripes", "dir": "v", "size": 1, "slots": ["alt"]},
+      "fine": true
+    },
+    {"name": "bell_1", "origin": [-1.45, 0.35, -5.2], "size": [1.0, 1.0, 1.0], "slot": "detail", "material": "metal"},
+    {"name": "bell_2", "origin": [0.45, 0.35, -5.2], "size": [1.0, 1.0, 1.0], "slot": "detail", "material": "metal"},
+    {"name": "bell_3", "origin": [-0.5, 0.75, -4.3], "size": [1.0, 1.0, 1.0], "slot": "detail", "material": "metal"},
+    {
+      "name": "bell_cord",
+      "origin": [-0.15, 0.35, -5.6],
+      "size": [0.3, 0.4, 2.2],
+      "slot": "trim",
+      "material": "cloth",
+      "fine": true
+    },
+    {
+      "name": "shide_r0",
+      "origin": [-2.2, -0.45, -10.0],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false
+    },
+    {
+      "name": "shide_r1",
+      "origin": [-3.05, -0.45, -8.25],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false
+    },
+    {
+      "name": "shide_r2",
+      "origin": [-2.2, -0.45, -6.5],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false
+    },
+    {
+      "name": "shide_r3",
+      "origin": [-3.05, -0.45, -4.75],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false,
+      "fine": true
+    },
+    {
+      "name": "shide_l0",
+      "origin": [0.4, -0.45, -10.0],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false
+    },
+    {
+      "name": "shide_l1",
+      "origin": [1.25, -0.45, -8.25],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false
+    },
+    {
+      "name": "shide_l2",
+      "origin": [0.4, -0.45, -6.5],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false
+    },
+    {
+      "name": "shide_l3",
+      "origin": [1.25, -0.45, -4.75],
+      "size": [1.8, 0.9, 1.85],
+      "slot": "alt",
+      "material": "paper",
+      "outline": false,
+      "fine": true
+    }
+  ]
+}

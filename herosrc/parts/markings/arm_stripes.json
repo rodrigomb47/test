@@ -1,0 +1,46 @@
+{
+  "_comment": "Arm stripes (G6c; Benika's oni markings): pairs of thin bands round the forearms (`fore`) and the upper arms (`upper`), painted over whatever is there (an overlay: skin, a sleeve), in the main colour; they glow in the phase look (glow \"phase\": the hero's phase texture).",
+  "id": "markings/arm_stripes",
+  "category": "markings",
+  "slots": {"main": "primary"},
+  "params": {"fore": {"min": 0, "max": 1, "default": 1}, "upper": {"min": 0, "max": 1, "default": 1}},
+  "occupies": ["arm_marks"],
+  "paint": [
+    {
+      "cubes": ["forearm_*", "upper_arm_*"],
+      "faces": ["north", "south", "east", "west"],
+      "y": ["elbow_y - 2.9", "elbow_y - 2.4"],
+      "overlay": true,
+      "pattern": {"type": "solid", "slots": ["main"]},
+      "glow": "phase",
+      "when": "fore"
+    },
+    {
+      "cubes": ["forearm_*", "upper_arm_*"],
+      "faces": ["north", "south", "east", "west"],
+      "y": ["elbow_y - 4.2", "elbow_y - 3.7"],
+      "overlay": true,
+      "pattern": {"type": "solid", "slots": ["main"]},
+      "glow": "phase",
+      "when": "fore"
+    },
+    {
+      "cubes": ["forearm_*", "upper_arm_*"],
+      "faces": ["north", "south", "east", "west"],
+      "y": ["arm_top - 3.0", "arm_top - 2.2"],
+      "overlay": true,
+      "pattern": {"type": "solid", "slots": ["main"]},
+      "glow": "phase",
+      "when": "upper"
+    },
+    {
+      "cubes": ["forearm_*", "upper_arm_*"],
+      "faces": ["north", "south", "east", "west"],
+      "y": ["elbow_y + 1.6", "elbow_y + 2.4"],
+      "overlay": true,
+      "pattern": {"type": "solid", "slots": ["main"]},
+      "glow": "phase",
+      "when": "upper"
+    }
+  ]
+}
