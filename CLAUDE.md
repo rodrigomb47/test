@@ -12,9 +12,9 @@ README.md describes the mod for players; BALANCE.md lists every tunable and PROP
   No pull request unless the owner asks.
 - Commits: `git commit --author="rodrigomb47 <rodrigo_caderno@hotmail.com>" ...` and do NOT override user.name or
   user.email. The committer must stay the configured identity (Claude <noreply@anthropic.com>), so commits are
-  signed and GitHub shows them as verified. End every commit message with:
-  `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the current session's `Claude-Session:` line (the
-  session gives it). Never put model identifiers anywhere else (code, comments, docs).
+  signed and GitHub shows them as verified. End every commit message with the `Co-Authored-By:` and
+  `Claude-Session:` lines the current session gives (both can change between sessions, so never copy them from an
+  older commit). Never put model identifiers anywhere else (code, comments, docs).
 - Talk and report to the owner in **English** (their choice). Automatic messages after a usage-limit pause may
   arrive in Portuguese; keep answering in English. Code, comments, docs and commit messages are in English too.
 - The owner welcomes improvements you think are worth it (new roles, affixes, fixes), as long as you say what you
