@@ -658,5 +658,5 @@ Where it goes beyond or differs from the steps above (also `HEROES_V2.md` 15.2, 
 - C1-C4 put the `release`, `end`, phase, intro and quirk sounds into the animation recipes as markers (section 5).
 - **The yield's chimes**: done in S2 (2026-11-13; "S2 as built" above): `cues.fled`, `cues.revived` (the old spared),
   the new `cues.fallen` and `cues.last_stand`. The cue preview (`docs/heroes-v2/previews/sound/cue.mp3` and its sheet)
-  still has the old names and lacks the two new cues: rebuild it with `sfxgen preview cue` when the art workflow is not
-  writing the previews folder.
+  was rebuilt with `sfxgen preview` on 2026-11-13: it now has `fled`, `fallen`, `last_stand` and `revived` and no yield
+  or spared; every other preview came out byte for byte, and no sound changed.
