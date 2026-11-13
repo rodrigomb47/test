@@ -76,6 +76,7 @@ commits, language and testing are in `/CLAUDE.md`.
      more advanced weapons and guns" ("this can be added on the appropiate time").
    - faction tech levels ("they need a lab or something like that, a researcher, engineer and more types of npc, so
      only having materials is not enough to build, but having knowledge too").
+     Answered right after: "Vanilla things should stay always available": research gates only what the mod adds.
 
    Recorded in `docs/ROADMAP.md` (Phase 3 rows and Phase 6), with where each fits.
 
