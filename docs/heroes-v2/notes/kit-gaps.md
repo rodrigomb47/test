@@ -166,3 +166,44 @@ F5 (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `E
   about or in the way makes it step aside and go on; both use an escape's movement only.
 - **Morale** of an escape or a death counts at the hero's home base, a leader's at every base of its faction; nothing
   anywhere else.
+
+## Review of F1-F5 and A1b (2026-11-13)
+
+The review (HEROES_V2.md 15.2, "Review of F1-F5 and A1b") compared the eight slice fixtures with SLICE_PLAN section 3
+move by move and checked what the format now decides. Where each point of the list stands:
+
+| Point | Decided by the format | Still open (who decides) |
+|---|---|---|
+| 1, followups | all (F2) | - |
+| 2, values not set | the defaults (F2) | each hero's real cooldowns, weights and lines (C1-C4) |
+| 3, boss bar title | the fallback (`boss.intro.title`, the title, the name) | each hero's title (C1-C4) |
+| 4, ground marks | all (F2 shapes, F3 geometry) | - |
+| 5, ambiguous numbers | zones, combo strikes, the back bonus (F2) | which strike bleeds, Benika's waves (C1, C2) |
+| 6, durations and stacks | - | all (C1-C4) |
+| 7, reactions in the wrong phase | all (F2) | Kagenori's phase 3 list (C3) |
+| 8, weak points | `channel`, the back bonus window (F2, F3); `poise: 0` (below) | rate limits, hints, the broken-channel outcome (C1-C4) |
+| 9, work mastery | the knobs and talents beside them (F4), proficiency at the duty and Presence (F5) | the spymaster specialty, backpack sizes, talents while their hero trades away (L5m) |
+| 10, raid goals and refuge | all (F5, no yield) | - |
+| 11, rounding | all (F2, F4) | - |
+| 12, enrage | all (F2) | - |
+| 13, Ambrose | aerial phases, the dive form (F2, F5) | broom_dive (C3), the bristles (art) |
+| 14, Ilsabet | - | her shield, her phase 3 line, her base style (C4) |
+| 15, idle animations | - | all (art) |
+
+What the review decided or fixed in the format and the fixtures:
+
+- **"By melee"** (Yugen's `contract`, `on_hurt` by melee 25%): written as the passive's `if` with `target_close` at the
+  close band's 4 blocks (for a passive the target is the attacker, v1 11). The fixture had lost it, so an archer's
+  arrows would have marked the archer.
+- **The great brew** rains for 2 s after its 3 s channel (`duration` 2; the fixture had 3). "One of his three effects
+  at random" has no pick-one list in the format: the fixture gives each effect a 33% chance (0 to 3 effects per
+  splash, one on average). C3 decides whether that is close enough or the format needs a `one_of` list.
+- **Ilsabet's `rime_wall`** shields allies within 6 but taunts within 5: one move has one radius, so the fixture uses
+  5 for both. C4 decides (a radius on the shield effect, or 5 for both).
+- **`boss.poise: 0`** (12.10, a hero with another weakness) is a hero with no poise bar: it never staggers
+  (`BossRules.Poise.none`); before the fix the rules would have staggered it on every hit.
+- **A dive closes the gap** for 6.12's reach NOTE, as a leap does.
+- **An operator's override that would break its hero** is left out and the built-in hero loads (`override_breaks`).
+- **Unknown words of long lists** (archetypes, talents, format-2 conditions and line events, banner patterns) name the
+  document that lists them instead of HERO_FORMAT's Appendix B.
+- Open for L4: 6.7 gives every leader three phases; a rare or common hero that leads still has its file's two.

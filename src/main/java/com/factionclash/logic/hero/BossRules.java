@@ -219,7 +219,10 @@ public final class BossRules {
         }
     }
 
-    /** The allowed {@code boss.poise} (0 is read as none by the reader and raised to the role's default). */
+    /**
+     * The allowed {@code boss.poise}: 50-200, or 0 for a hero that never staggers (HEROES_V2 12.10: only with another
+     * weakness; the reader raises a 0 without one to the role's default).
+     */
     public static final int POISE_MIN = 50, POISE_MAX = 200;
     /** A parry (a heavy move blocked by a shield raised 5-11 ticks before), a charge into a wall, a downing. */
     public static final double PARRY_POISE = 25, WALL_POISE = 40, DOWNING_POISE = 30;
@@ -255,9 +258,11 @@ public final class BossRules {
      * enraged (6.10). While the hero is protected from a stagger (a transition, an ultimate's wind-up, a
      * {@code super_armor} move) the bar fills to just short of its maximum, so the next hit after the protection
      * staggers. During a stagger poise damage is ignored. A new fight starts from an empty bar and the base maximum.
+     * A {@code boss.poise} of 0 is a hero with no poise bar: it never staggers, whatever lands.
      */
     public static final class Poise {
         private final double base;
+        private final boolean none;
         private double value;
         private int staggers;
         private boolean enraged;
@@ -266,7 +271,13 @@ public final class BossRules {
         private long lastTick = Long.MIN_VALUE / 4;
 
         public Poise(double base) {
-            this.base = Math.max(1, base);
+            this.none = !(base > 0);
+            this.base = none ? 0 : base;
+        }
+
+        /** A hero with {@code boss.poise} 0: no bar, no stagger. */
+        public boolean none() {
+            return none;
         }
 
         public double max() {
@@ -296,7 +307,7 @@ public final class BossRules {
         /** Adds poise damage; returns true when this hit staggers the hero. */
         public boolean add(double amount, long now, boolean protectedFromStagger) {
             decay(now);
-            if (!(amount > 0) || staggered(now)) {
+            if (none || !(amount > 0) || staggered(now)) {
                 return false;
             }
             lastDamageTick = now;

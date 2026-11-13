@@ -73,7 +73,7 @@ public final class Problems {
         // the dive form (MOBILITY_AND_WORK 7.3, 8.3)
         DIVE_RULE,
         // the game's set of heroes (A1b, HeroAssembly): built-in definitions only, and operators' overrides
-        NOT_BUILTIN, OVERRIDE_NO_HERO, OVERRIDE_UNREADABLE, OVERRIDE_FIXED;
+        NOT_BUILTIN, OVERRIDE_NO_HERO, OVERRIDE_UNREADABLE, OVERRIDE_FIXED, OVERRIDE_BREAKS;
 
         public String id() {
             return name().toLowerCase(Locale.ROOT);

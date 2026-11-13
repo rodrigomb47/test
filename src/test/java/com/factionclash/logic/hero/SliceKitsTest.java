@@ -119,6 +119,26 @@ class SliceKitsTest {
         assertEquals("Kagenori Tsurumine: fights to the death", HeroReader2.endLine(load("kagenori_tsurumine")));
     }
 
+    /**
+     * Two kit details the review of F1-F5 found the fixtures had lost (SLICE_PLAN 3.2 and 3.8): Yugen's contract marks
+     * an attacker that hurt him "by melee" (an attacker within the close band), not an archer; the great brew rains
+     * for 2 s after its 3 s channel (its active part is the 3 + 2).
+     */
+    @Test
+    void contractAnswersMeleeAndTheGreatBrewRainsTwoSeconds() throws IOException {
+        HeroDef.Passive contract = load("yugen_kagaribi").passives().stream()
+                .filter(p -> p.name().equals("Contract")).findFirst().orElseThrow();
+        assertEquals(HeroDef.Trigger.ON_HURT, contract.trigger());
+        assertEquals(25, contract.chance());
+        assertEquals(new HeroDef.Condition(HeroDef.ConditionType.TARGET_CLOSE, (int) HeroCatalogue.CLOSE_MAX, null, null,
+                null), contract.cond(), "only an attacker in melee reach, within the close band");
+        HeroDef.Move brew = load("ambrose_nettlewick").v2().move("great_brew");
+        assertEquals(2, brew.ability().duration(), 1e-9, "ten splashes over 2 s");
+        assertEquals(10, brew.ability().count());
+        assertEquals(5.0, brew.frames().active(), 1e-9, "the 3 s channel, then the 2 s of rain");
+        assertEquals(15, brew.channel(), "breaks at 15% of his health");
+    }
+
     @Test
     void personalityDrivesFocusAndAggression() throws IOException {
         assertEquals(HeroDef.Focus.STRONGEST, load("benika_akagane").behaviour().focus(), "a battle maniac");

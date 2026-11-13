@@ -54,6 +54,18 @@ class DiveFormTest {
                 V2Files.read(hero(LEAPER, dive("crane_drop", ""))).problems().report());
     }
 
+    /** A dive lands on its target as a leap does, so it closes the gap for 6.12's reach NOTE. */
+    @Test
+    void aDiveIsAGapCloserForTheReachNote() {
+        String cut = "{\"id\": \"cut\", \"name\": \"Cut\", \"form\": \"melee\", \"effects\": [" + DMG + "]}";
+        HeroReader.Loaded with = V2Files.read(V2Files.hero2("\"moves\": [" + cut + ", " + dive("crane_drop", "")
+                + "], " + LEAPER));
+        assertTrue(V2Files.of(with, Problems.Code.NO_REACH).isEmpty(), with.problems().report());
+        HeroReader.Loaded without = V2Files.read(V2Files.hero2("\"moves\": [" + cut + "], " + LEAPER));
+        assertEquals(1, V2Files.of(without, Problems.Code.NO_REACH).size(), "the same hero without its dive");
+        assertTrue(V2Files.one(without, Problems.Code.NO_REACH).message().contains("leap, dash, charge or dive"));
+    }
+
     @Test
     void whereADiveStartsFollowsTheHerosMobility() {
         HeroDef fly = V2Files.def(hero(FLYER, dive("broom_dive", "")));

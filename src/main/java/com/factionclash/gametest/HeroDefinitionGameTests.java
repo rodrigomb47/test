@@ -254,6 +254,40 @@ public final class HeroDefinitionGameTests {
         }
     }
 
+    /**
+     * No soldier's withdrawal (HEROES_V2 3.5 and 6.1; the owner's rule of 2026-11-13: a hero escapes or fights until it
+     * dies): a hero at 15% of its health with an enemy in front of it never steps back to eat. A soldier beside it in
+     * the same state does, which shows the withdrawal would start here.
+     */
+    @GameTest(template = "platform", timeoutTicks = 120, batch = "hero_def_withdraw")
+    public static void heroNeverWithdrawsToEatAsSoldiersDo(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.STONEGUARD, 2, 11, 120);
+        try {
+            fixture(t, "fixture_withdraw", "katana", "");
+            HeroEntity hero = give(t, "fixture_withdraw", 6, 6);
+            FactionNpc soldier = t.npc(6, 9, NpcRole.SWORDSMAN);
+            Husk husk = t.track(h.spawn(EntityType.HUSK, new BlockPos(9, 2, 7)));
+            husk.setNoAi(true);
+            husk.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);
+            husk.setHealth(1000);
+            hero.setHealth(hero.getMaxHealth() * 0.15F);
+            soldier.setHealth(soldier.getMaxHealth() * 0.15F);
+            hero.setTarget(husk);
+            soldier.setTarget(husk);
+            long start = h.getTick();
+            t.onEachTick(() -> {
+                t.assertTrue(!hero.status().startsWith("Wounded"), "the hero withdrew like a soldier: " + hero.status());
+                t.assertTrue(hero.getHealth() < hero.getMaxHealth() * 0.3F && husk.isAlive(), "the setup changed");
+                if (h.getTick() - start >= 60 && soldier.status().startsWith("Wounded") && hero.getTarget() == husk) {
+                    t.succeed();
+                }
+            });
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
     // ------------------------------------------------------------------ dormant and reload
 
     /**

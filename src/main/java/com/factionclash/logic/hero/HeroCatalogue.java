@@ -264,6 +264,11 @@ public final class HeroCatalogue {
         public final List<String> words;
         public final Map<String, String> synonyms = new LinkedHashMap<>();
         private final Set<String> set;
+        /**
+         * Where a list too long to print in a message is written down (null: v1's allowlists, HERO_FORMAT.md
+         * Appendix B), so an unknown word's message points at the right document.
+         */
+        private String listedIn;
 
         Vocab(String name, String noun, List<String> words) {
             this.name = name;
@@ -287,6 +292,16 @@ public final class HeroCatalogue {
 
         public boolean has(String w) {
             return set.contains(w);
+        }
+
+        Vocab listedIn(String where) {
+            this.listedIn = where;
+            return this;
+        }
+
+        /** The document that lists the words, for a message about a list too long to print. */
+        public String listedIn() {
+            return listedIn == null ? "HERO_FORMAT.md Appendix B" : listedIn;
         }
 
         /** The word as written, its synonym's word, or null when it is not in this list. */
@@ -1154,9 +1169,9 @@ public final class HeroCatalogue {
                 : List.of(HeroDef.Band.MID, HeroDef.Band.FAR);
     }
 
-    /** Gap closers (HEROES_V2 6.12: a hero with neither a far-band move nor one of these gets a NOTE). */
+    /** Gap closers (HEROES_V2 6.12: a hero with neither a far-band move nor one of these gets a NOTE; a dive lands on its target like a leap). */
     public static boolean gapCloser(Form f) {
-        return f == Form.LEAP || f == Form.DASH || f == Form.CHARGE;
+        return f == Form.LEAP || f == Form.DASH || f == Form.CHARGE || f == Form.DIVE;
     }
 
     static {
@@ -1703,6 +1718,7 @@ public final class HeroCatalogue {
                 .syn("silence", "mute").syn("tether", "leash").syn("barrier", "ward")
                 .syn("spawn_add", "add", "spawn", "decoy").syn("call_guards", "call_soldiers");
         vocab2("condition2", "a condition", ConditionType.class)
+                .listedIn("HERO_FORMAT.md 11, HEROES_V2.md 6.6 and MOBILITY_AND_WORK.md 7.5")
                 .syn("target_blocking", "target_shielding").syn("target_drawing_bow", "target_aiming")
                 .syn("target_far", "far").syn("target_close", "close").syn("is_night", "night")
                 .syn("is_raining", "raining");
@@ -1711,13 +1727,13 @@ public final class HeroCatalogue {
                 .syn("on_skill", "on_cast").syn("every", "periodic", "interval").syn("on_fight_start", "on_combat_start")
                 .syn("on_ally_attack", "follow_up").syn("on_mark_full", "on_stacks_full")
                 .syn("on_phase", "on_phase_change").syn("on_stagger", "on_staggered").syn("on_escape", "on_flee");
-        vocab2("line_event2", "a line event", LineEvent.class)
+        vocab2("line_event2", "a line event", LineEvent.class).listedIn("HERO_FORMAT.md 23 and HEROES_V2.md 12.15")
                 .syn("summoned", "join", "recruited").syn("greeting", "hello", "talk").syn("fallen", "death", "dies")
                 .syn("revived", "respawn", "return").syn("victory", "win").syn("level_up", "levelup")
                 .syn("fight_start", "combat_start").syn("escape", "flee", "fled").syn("founding", "founded")
                 .syn("phase_2", "phase2").syn("phase_3", "phase3").syn("last_stand", "stand");
         vocab2("gender", "a gender", HeroDef.Gender.class).syn("female", "f", "woman").syn("male", "m", "man");
-        vocab("archetype", "an archetype", ARCHETYPES);
+        vocab("archetype", "an archetype", ARCHETYPES).listedIn("ROSTER_PLAN.md 2.3");
         vocab2("duel_style", "a duel style", HeroDef.DuelStyle.class).syn("all_rounder", "allrounder", "balanced");
         vocab2("move_class", "a move class", HeroDef.MoveClass.class).syn("ultimate", "ult");
         vocab2("dive_from", "where a dive starts", HeroDef.DiveFrom.class).syn("air", "flight", "sky", "glide")
@@ -1736,7 +1752,7 @@ public final class HeroCatalogue {
         vocab2("culture", "a culture", HeroDef.Culture.class);
         vocab2("base_style", "a base style", HeroDef.BaseStyle.class);
         vocab2("economy_focus", "an economy focus", HeroDef.EconomyFocus.class).syn("defence", "defense");
-        vocab2("talent", "a talent", HeroDef.TalentId.class);
+        vocab2("talent", "a talent", HeroDef.TalentId.class).listedIn("HEROES_V2.md 7.2");
         vocab2("blip", "a voice blip", HeroDef.Blip.class);
         vocab2("recruit_condition", "a recruit condition", HeroDef.RecruitCondition.class);
         vocab2("bond", "a relationship", HeroDef.Bond.class);
@@ -1748,7 +1764,8 @@ public final class HeroCatalogue {
         vocab2("carrier", "a carrier", HeroDef.Carrier.class);
         vocab2("avoid", "a terrain to avoid", HeroDef.Avoid.class);
         vocab2("dye", "a dye colour", HeroDef.Dye.class).syn("gray", "grey").syn("light_gray", "light_grey", "silver");
-        vocab("banner_pattern", "a banner pattern", BANNER_PATTERNS);
+        vocab("banner_pattern", "a banner pattern", BANNER_PATTERNS)
+                .listedIn("HEROES_V2.md 12.12 (Minecraft's loom patterns, such as stripe_top, circle or border)");
         vocab("mood", "a mood", HeroActions.MOODS);
     }
 }

@@ -427,7 +427,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 829 JUnit tests for the pure rules (the hero file format, both formats: reading a file with the
+* `./gradlew test` — 835 JUnit tests for the pure rules (the hero file format, both formats: reading a file with the
   line of every problem, every message the checker can write, thousands of damaged files that must load within every
   limit or be refused, the balance caps and cooldown floors, format 2's moves, boss block, personality and whether a
   hero escapes or fights to the death, the eight slice heroes' kits loading clean, the generated JSON Schema, the
@@ -442,7 +442,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   whom, the way over a hostile wall and out again with the goal inside, the dive form) and its work mastery
   (proficiency, specialties, Presence, every cap, never virtual enchantment levels and an extra loot roll on one drop);
   the game's set of heroes (built-in heroes only, an operator's override merged over one with each problem naming
-  its own file and line), what a definition makes of the hero (its role, its kit with no weapon for a fists hero,
+  its own file and line, and an override that would break its hero left out so the built-in hero still loads), what a definition makes of the hero (its role, its kit with no weapon for a fists hero,
   boss health at a level), what it says and to whom (its own line or a generic one, the placeholders, the rate
   limit, the name tag), the revival time with its floor and the revival_rite tier,
   a hero's hitbox from its model, its synced fields and revival time,
@@ -458,7 +458,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; only the test rig's definition ships yet, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 159 GameTests on a real headless server, including **heroes** (the shipped hero files load; a hero takes its definition: boss health, stats, kit, role, name tag and its summoned line in a speech bubble, with the dialogue rate limit; a fists hero holds no weapon and fights bare-handed; its health is the same whether a player or an NPC engages it; a broken or removed definition leaves it dormant and a good one brings it back; `/fc hero reload` applies an override and a changed definition at once; `/fc hero check` reports a broken file; its own revival block and the revival_rite talent shorten its return, never under 30 s; the war council weighs it by its war power; a saved speech bubble is dropped; a hero's synced fields, hitbox and its 1.98 cap; never drafted into a raid party; one entity per hero, a copy from a loaded chunk or a dead copy turned away; it fights, saves and reloads, falls and returns; its look and timings load; a preview copy is never the campaign's hero; a pose drives the synced fields and a played swing is cleared after its clip; fighting draws the weapon for 5 s after the last blow and sets the mood), **soldiers against a player
+* `./gradlew runGameTestServer` — 160 GameTests on a real headless server, including **heroes** (the shipped hero files load; a hero takes its definition: boss health, stats, kit, role, name tag and its summoned line in a speech bubble, with the dialogue rate limit; a fists hero holds no weapon and fights bare-handed; its health is the same whether a player or an NPC engages it; a badly hurt hero never steps back to eat as a soldier does; a broken or removed definition leaves it dormant and a good one brings it back; `/fc hero reload` applies an override and a changed definition at once; `/fc hero check` reports a broken file; its own revival block and the revival_rite talent shorten its return, never under 30 s; the war council weighs it by its war power; a saved speech bubble is dropped; a hero's synced fields, hitbox and its 1.98 cap; never drafted into a raid party; one entity per hero, a copy from a loaded chunk or a dead copy turned away; it fights, saves and reloads, falls and returns; its look and timings load; a preview copy is never the campaign's hero; a pose drives the synced fields and a played swing is cleared after its clip; fighting draws the weapon for 5 s after the last blow and sets the mood), **soldiers against a player
   they cannot reach** (open a pen's gate and close it behind them with the cow still in, and walk out through it after
   the fight, also after a fight longer than the gate memory; break a player's block in a broken doorway and never the
   wall, and go straight in once it is broken, but not again and again when the player puts it back; break the block

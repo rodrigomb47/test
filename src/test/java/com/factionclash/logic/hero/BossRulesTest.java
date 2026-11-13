@@ -214,6 +214,21 @@ class BossRulesTest {
     }
 
     @Test
+    void aHeroWithPoiseZeroNeverStaggers() {
+        Poise p = new Poise(0);
+        assertTrue(p.none());
+        assertFalse(p.add(1, 0, false), "one point of poise damage staggered a hero with no poise bar");
+        assertFalse(p.add(10_000, 1, false), "no blow staggers it, however big (12.10: 0 = never staggers)");
+        assertEquals(0, p.staggers());
+        assertFalse(p.staggered(2));
+        assertEquals(0, p.value(), EPS);
+        p.enraged(true);
+        assertFalse(p.add(500, 3, false), "nor while enraged");
+        assertFalse(new Poise(50).none(), "50 is the smallest bar");
+        assertFalse(new Poise(-5).add(100, 0, false), "a negative value is no bar either");
+    }
+
+    @Test
     void superArmourHoldsTheBarJustShortAndTheNextHitStaggers() {
         Poise p = new Poise(80);
         assertFalse(p.add(200, 0, true), "a transition: no stagger");

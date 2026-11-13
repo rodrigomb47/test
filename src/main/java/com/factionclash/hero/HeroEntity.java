@@ -578,6 +578,16 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return super.mobInteract(player, hand);
     }
 
+    /**
+     * No soldier's withdrawal (HEROES_V2 3.5 and 6.1; the owner's rule of 2026-11-13: a hero escapes or fights until it
+     * dies): a hero never steps back to eat and return at 60%. Its {@code retreat_below} only sets where an escaping
+     * hero leaves ({@code EscapeRules.fleeAt}, wired by A6/A12).
+     */
+    @Override
+    protected boolean withdrawsToRecover() {
+        return false;
+    }
+
     /** Every hero looks for enemies, whatever its duty (v1 25.6). */
     @Override
     public boolean isGuardDuty() {

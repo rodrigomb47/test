@@ -37,7 +37,7 @@
      "effects": [{"type": "damage", "amount": 4}, {"type": "effect", "id": "slowness", "level": 1, "seconds": 3}],
      "followups": [{"move": "broom_hops", "chance": 100, "max": 2}]},
     {"id": "great_brew", "name": "Great Brew", "form": "rain", "class": "area", "band": ["any"], "phases": [3],
-     "count": 10, "radius": 6, "duration": 3, "channel": {"interrupt": 15}, "cooldown": 20,
+     "count": 10, "radius": 6, "duration": 2, "channel": {"interrupt": 15}, "cooldown": 20,
      "frames": {"windup": 1.0, "active": 5.0, "recovery": 2.0},
      "effects": [{"type": "damage", "amount": 5},
                  {"type": "effect", "id": "poison", "level": 1, "seconds": 4, "chance": 33},

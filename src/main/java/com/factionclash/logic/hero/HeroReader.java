@@ -632,8 +632,7 @@ public final class HeroReader {
         }
 
         String allowed(Vocab v) {
-            return v.words.size() <= 30 ? "Allowed: " + v.allowed()
-                    : "Allowed: the list in HERO_FORMAT.md Appendix B";
+            return v.words.size() <= 30 ? "Allowed: " + v.allowed() : "Allowed: the list in " + v.listedIn();
         }
 
         /** A word: a synonym is read as its word (ADJUSTED); an unknown word goes by {@code mode}. */

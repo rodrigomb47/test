@@ -586,6 +586,33 @@ class HeroReaderV2Test {
         }
     }
 
+    /**
+     * A word list too long to print names the document that lists it (v1 26.3: every message says what is allowed):
+     * format 2's archetypes, talents, conditions, line events and banner patterns are not in HERO_FORMAT's Appendix B.
+     */
+    @Test
+    void anUnknownWordOfALongListNamesTheDocumentThatListsIt() {
+        Loaded l = read(hero2("\"archetype\": \"spaceman\", \"talents\": [{\"id\": \"juggler\"}], \"lines\":"
+                + " {\"dance_party\": [\"Hi.\"]}, \"leader\": {\"banner\": {\"base\": \"blue\", \"patterns\": [{\"pattern\":"
+                + " \"spiral\", \"color\": \"white\"}, {\"pattern\": \"circle\", \"color\": \"white\"}]}}, \"moves\": ["
+                + LUNGE.replace("\"form\": \"dash\"", "\"form\": \"dash\", \"prefer_when\": {\"condition\":"
+                + " \"target_sleeping\"}") + "]"));
+        Map<String, String> where = Map.of("archetype", "ROSTER_PLAN.md 2.3", "talents", "HEROES_V2.md 7.2", "lines",
+                "HERO_FORMAT.md 23 and HEROES_V2.md 12.15", "leader", "HEROES_V2.md 12.12",
+                "moves", "HERO_FORMAT.md 11, HEROES_V2.md 6.6 and MOBILITY_AND_WORK.md 7.5");
+        for (Map.Entry<String, String> e : where.entrySet()) {
+            Problem p = l.problems().all().stream().filter(x -> x.machinePath().startsWith(e.getKey())
+                    && x.message().contains("Allowed: the list in")).findFirst().orElseThrow(() -> new AssertionError(
+                    e.getKey() + " has no unknown-word message:\n" + l.problems().report()));
+            assertTrue(p.message().contains("Allowed: the list in " + e.getValue()), p.format());
+            assertFalse(p.message().contains("Appendix B"), p.format());
+        }
+        assertEquals("HERO_FORMAT.md Appendix B", HeroCatalogue.vocab("sound").listedIn(), "v1's allowlists stay there");
+        for (String v : List.of("archetype", "talent", "condition2", "line_event2", "banner_pattern")) {
+            assertTrue(HeroCatalogue.vocab(v).words.size() > 30, v + " is printed in full now; this test is stale");
+        }
+    }
+
     @Test
     void reactionsReadWhenMoveChanceAndCooldown() {
         Loaded l = read(hero2("\"moves\": [" + LUNGE + "], \"ultimate\": {\"id\": \"big\", \"name\": \"Big\", \"form\":"
@@ -1341,6 +1368,81 @@ class HeroReaderV2Test {
         assertEquals(4, d.v2().boss().weakPoints().size());
         assertEquals(3, d.v2().boss().phases().size());
         assertEquals(3, of(l, Code.LIST_TOO_LONG).size());
+    }
+
+    /** The values a field can be given that are not what it wants: every JSON type, empty, out of range or odd. */
+    private static final Object[] JUNK = {null, true, 0.0, -1.0, 1e9, -1e9, 0.5, "", "x", "#zzzzzz", List.of(),
+            Map.of(), List.of(Map.of()), List.of(""), List.of(-5.0), Map.of("a", 1.0)};
+
+    @SuppressWarnings("unchecked")
+    private static void paths(Object o, List<List<Object>> out, List<Object> at) {
+        if (o instanceof Map<?, ?> m) {
+            for (Object k : m.keySet()) {
+                List<Object> p = new ArrayList<>(at);
+                p.add(k);
+                out.add(p);
+                paths(m.get(k), out, p);
+            }
+        } else if (o instanceof List<?> l) {
+            for (int i = 0; i < l.size(); i++) {
+                List<Object> p = new ArrayList<>(at);
+                p.add(i);
+                out.add(p);
+                paths(l.get(i), out, p);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void put(Object root, List<Object> p, Object v) {
+        Object o = root;
+        for (int i = 0; i < p.size() - 1; i++) {
+            o = o instanceof Map<?, ?> m ? m.get(p.get(i)) : ((List<Object>) o).get((Integer) p.get(i));
+        }
+        Object k = p.get(p.size() - 1);
+        if (o instanceof Map<?, ?> m) {
+            ((Map<Object, Object>) m).put(k, v);
+        } else {
+            ((List<Object>) o).set((Integer) k, v);
+        }
+    }
+
+    /**
+     * Every field and list item of every slice kit, one at a time, given a value of the wrong kind (the type cycles
+     * with the place, so each kind lands on every part of a hero somewhere), read as a file and as an operator's
+     * override of that top-level field: the reader never throws and every hero that loads obeys every rule. (The review
+     * of F1-F5 ran every place with every kind, 57,000 reads, with nothing found; this keeps a fast slice of it.)
+     */
+    @Test
+    void everyPlaceOfEverySliceKitTakesJunkWithoutBreakingARule() throws IOException {
+        int n = 0, loaded = 0;
+        for (Source s : SliceKitsTest.sources()) {
+            Object clean = HeroReaderRobustnessTest.model(HeroJson.parse(s.text()).root());
+            List<List<Object>> all = new ArrayList<>();
+            paths(clean, all, new ArrayList<>());
+            for (List<Object> p : all) {
+                Object junk = JUNK[n++ % JUNK.length];
+                Object m = HeroReaderRobustnessTest.copy(clean);
+                put(m, p, HeroReaderRobustnessTest.copy(junk));
+                String text = HeroReaderRobustnessTest.write(m);
+                Map<String, Object> override = new java.util.LinkedHashMap<>();
+                override.put((String) p.get(0), ((Map<?, ?>) m).get(p.get(0)));
+                try {
+                    Loaded l = HeroReader.readAll(List.of(new Source(s.path(), text)), Options.BUILTIN);
+                    l.heroes().values().forEach(V2Sanity::sane);
+                    loaded += l.heroes().size();
+                    Loaded o = HeroAssembly.assemble(new HeroAssembly.Input(List.of(s), null, List.of(new Source(
+                            "config/factionclash/heroes/" + s.path(), HeroReaderRobustnessTest.write(override))),
+                            List.of(), Options.BUILTIN)).loaded();
+                    o.heroes().values().forEach(V2Sanity::sane);
+                    assertEquals(1, o.heroes().size(), "an override never takes a hero away: " + p + " = " + junk
+                            + "\n" + o.problems().report());
+                } catch (RuntimeException | AssertionError e) {
+                    throw new AssertionError(s.path() + " " + p + " = " + junk + ": " + e.getMessage(), e);
+                }
+            }
+        }
+        assertTrue(n > 2000 && loaded > n * 0.8, n + " places, " + loaded + " loaded");
     }
 
     @Test

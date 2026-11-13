@@ -44,6 +44,7 @@
                "line": "Nine lanterns, one bill. Shall we settle it?"},
   "passives": [
     {"name": "Contract", "trigger": "on_hurt", "chance": 25, "form": "trigger_enemy", "cooldown": 4,
+     "if": {"condition": "target_close", "value": 4},
      "effects": [{"type": "mark", "mark": "bewitched", "max_stacks": 3}]},
     {"name": "Bewitched", "trigger": "on_mark_full", "mark": "bewitched", "form": "trigger_enemy", "cooldown": 12,
      "effects": [{"type": "stun", "seconds": 1}]}

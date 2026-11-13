@@ -66,14 +66,47 @@ class HeroAssemblyTest {
         assertTrue(r.overridden().isEmpty());
     }
 
+    /**
+     * An override can never take a hero away (v1 26.5, 25.5; the same as an override the reader cannot parse): one that
+     * leaves the hero unable to load is not applied, the built-in hero loads as it is, and the report says why, at the
+     * override's own line, as PART LEFT OUT.
+     */
     @Test
-    void anOverrideThatBreaksItsHeroIsNotRecordedAsApplied() {
-        HeroAssembly.Result r = assemble(List.of(def("alpha_hero", "")), null,
-                List.of(new Source("config/factionclash/heroes/alpha_hero.json", "{\"basic_attack\": {\"style\": \"laser\"}}")),
+    void anOverrideThatBreaksItsHeroIsLeftOutAndTheBuiltInLoads() {
+        String file = "config/factionclash/heroes/alpha_hero.json";
+        HeroAssembly.Result r = assemble(List.of(def("alpha_hero", "\"title\": \"the First\""), def("beta_hero", "")),
+                null, List.of(new Source(file, "{\"title\": \"the Broken\",\n\"basic_attack\": {\"style\": \"laser\"}}")),
                 List.of());
-        assertNull(r.loaded().hero("alpha_hero"), "the merged hero is checked like any other: it does not load");
-        assertTrue(r.overridden().isEmpty());
+        HeroDef d = r.loaded().hero("alpha_hero");
+        assertNotNull(d, "the built-in hero still loads:\n" + r.loaded().problems().report());
+        assertEquals("the First", d.title(), "none of the override applies, not even its good fields");
+        assertNotNull(r.loaded().hero("beta_hero"));
+        assertTrue(r.overridden().isEmpty(), "the override is not recorded as applied");
+        assertTrue(r.loaded().notLoaded().isEmpty(), "nothing is reported not loaded");
+        List<Problems.Problem> ps = r.loaded().problems().all();
+        assertTrue(ps.stream().noneMatch(p -> p.severity() == Severity.NOT_LOADED), r.loaded().problems().report());
+        Problems.Problem lead = ps.stream().filter(p -> p.code().equals(Code.OVERRIDE_BREAKS.id())).findFirst()
+                .orElseThrow();
+        assertEquals(file, lead.file());
+        assertEquals(Severity.PART_LEFT_OUT, lead.severity());
+        assertTrue(lead.format().endsWith("Override PART LEFT OUT."), lead.format());
+        Problems.Problem why = ps.stream().filter(p -> p.machinePath().startsWith("basic_attack")).findFirst()
+                .orElseThrow(() -> new AssertionError(r.loaded().problems().report()));
+        assertEquals(file, why.file(), "the reason names the override");
+        assertEquals(2, why.line(), "at its own line");
+        assertEquals(Severity.PART_LEFT_OUT, why.severity());
+        assertTrue(why.message().contains("laser"), why.format());
+    }
+
+    @Test
+    void anOverrideOfABrokenBuiltInLeavesItNotLoaded() {
+        Source broken = new Source("data/factionclash/heroes/alpha_hero.json", "{\"format\": 2, \"id\": \"alpha_hero\"}");
+        HeroAssembly.Result r = assemble(List.of(broken), null,
+                List.of(new Source("config/factionclash/heroes/alpha_hero.json", "{\"title\": \"T\"}")), List.of());
+        assertNull(r.loaded().hero("alpha_hero"), "an override cannot mend a built-in that has no name");
         assertTrue(r.loaded().notLoaded().contains("alpha_hero"));
+        assertTrue(r.loaded().problems().all().stream().noneMatch(p -> p.code().equals(Code.OVERRIDE_BREAKS.id())),
+                "the override did not break it; the built-in was broken already");
     }
 
     @Test

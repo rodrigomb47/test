@@ -21,7 +21,9 @@ import java.util.TreeMap;
  * answer of 2026-11-12, built-in heroes only), each with an operator's override from
  * {@code config/factionclash/heroes/<id>.json} merged over it ({@link HeroOverride}), then the fixtures a test
  * registered, then all of it checked as built-in heroes by {@link HeroReader#readAll}. Every step's messages go into
- * the one report. Pure, unit-tested ({@code HeroAssemblyTest}).
+ * the one report. An override can never take a hero away (v1 26.5, 25.5): one that leaves its hero unable to load is
+ * not applied, the built-in hero loads as it is, and the report says why the override was left out, as it does for an
+ * override it cannot read. Pure, unit-tested ({@code HeroAssemblyTest}).
  */
 public final class HeroAssembly {
     private HeroAssembly() {
@@ -72,6 +74,8 @@ public final class HeroAssembly {
             byId.put(HeroReader.idFromFileName(s.path()), s);
         }
         Map<String, List<String>> overridden = new LinkedHashMap<>();
+        Map<String, Source> builtIns = new LinkedHashMap<>();
+        Map<String, String> overrideFiles = new LinkedHashMap<>();
         for (Source o : in.overrides()) {
             String id = HeroReader.idFromFileName(o.path());
             Source base = byId.get(id);
@@ -83,11 +87,38 @@ public final class HeroAssembly {
             HeroOverride.Merged m = HeroOverride.merge(base, o);
             m.problems().forEach(problems::add);
             if (!m.fields().isEmpty()) {
+                builtIns.putIfAbsent(id, base);
+                overrideFiles.put(id, o.path());
                 byId.put(id, m.source());
                 overridden.put(id, m.fields());
             }
         }
         Loaded l = HeroReader.readAll(new ArrayList<>(byId.values()), in.options());
+        // an override that leaves its hero unable to load is not applied: the built-in hero loads as it is
+        List<String> rescued = new ArrayList<>();
+        for (String id : overridden.keySet()) {
+            if (!l.heroes().containsKey(id)
+                    && HeroReader.readAll(List.of(builtIns.get(id)), in.options()).heroes().containsKey(id)) {
+                rescued.add(id);
+            }
+        }
+        if (!rescued.isEmpty()) {
+            Loaded merged = l;
+            for (String id : rescued) {
+                byId.put(id, builtIns.get(id));
+                overridden.remove(id);
+                problems.add(new Problem(Severity.PART_LEFT_OUT, Code.OVERRIDE_BREAKS.id(), id, overrideFiles.get(id), 0,
+                        0, "", "", "with the override the hero cannot load, for the reasons that follow; the override"
+                        + " was not applied and the built-in hero loads as it is", "Override"));
+                for (Problem p : merged.problems().all()) {
+                    if (id.equals(p.hero()) && p.severity() == Severity.NOT_LOADED) {
+                        problems.add(new Problem(Severity.PART_LEFT_OUT, p.code(), p.hero(), p.file(), p.line(),
+                                p.column(), p.path(), p.machinePath(), p.message(), "Override"));
+                    }
+                }
+            }
+            l = HeroReader.readAll(new ArrayList<>(byId.values()), in.options());
+        }
         problems.addAll(l.problems());
         List<String> nl = new ArrayList<>(notLoaded);
         nl.addAll(l.notLoaded());

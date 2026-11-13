@@ -158,7 +158,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new CreeperEvadeGoal(this));
         this.goalSelector.addGoal(2, new CivilianFleeGoal(this));
-        this.goalSelector.addGoal(2, new com.factionclash.combat.WithdrawGoal(this));
+        if (withdrawsToRecover()) {
+            this.goalSelector.addGoal(2, new com.factionclash.combat.WithdrawGoal(this));
+        }
         this.goalSelector.addGoal(3, new NpcRangedAttackGoal(this));
         this.goalSelector.addGoal(3, new NpcMeleeAttackGoal(this));
         this.goalSelector.addGoal(4, new OpenDoorGoal(this, true));
@@ -325,6 +327,16 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     public ItemStack tool() {
         return getMainHandItem();
+    }
+
+    /**
+     * Whether a badly wounded fighter steps back to eat and returns at 60% ({@link com.factionclash.combat.WithdrawGoal}),
+     * as soldiers do. Read once in {@link #registerGoals}, which runs in the constructor, so an override returns a
+     * constant and reads no field. A hero never withdraws (HEROES_V2 3.5 and 6.1): it escapes for good or fights to
+     * the death.
+     */
+    protected boolean withdrawsToRecover() {
+        return true;
     }
 
     /** Fights with its bare hands and never fetches a weapon (a fists-style hero, HEROES_V2 3.2); never an NPC. */

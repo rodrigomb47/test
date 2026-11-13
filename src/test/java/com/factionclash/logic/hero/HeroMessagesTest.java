@@ -343,8 +343,10 @@ class HeroMessagesTest {
                 () -> read(V2Files.hero2("\"boss\": {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 90}]}")));
         c(Problems.Code.PHASE_REPEATED, PL, "another phase already begins at 50%", () -> read(V2Files.hero2("\"boss\":"
                 + " {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}, {\"at\": 50}, {\"at\": 50}]}")));
-        c(Problems.Code.PHASE_NO_CHANGE, NO, "phase 2 only changes numbers", () -> read(V2Files.hero2("\"boss\":"
-                + " {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}, {\"at\": 50}]}")));
+        c(Problems.Code.PHASE_NO_CHANGE, NO, "phase 3 of the fight (from 30%) only changes numbers",
+                () -> read(V2Files.hero2("\"boss\": {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100},"
+                        + " {\"at\": 30}, {\"at\": 60, \"moves\": [\"lunge\"]}]}, \"moves\": [" + V2Files.LUNGE + ", "
+                        + V2Files.LUNGE.replace("lunge", "lunge_b") + "]")));
         c(Problems.Code.NO_WEAKNESS, NO, "the hero has no weakness", () -> read(V2Files.hero2("\"boss\": {\"phases\":"
                 + " [{\"at\": 100}]}")));
         c(Problems.Code.NO_REACH, NO, "no far-band move and no gap closer", () -> read(V2Files.hero2("\"moves\":"
@@ -424,6 +426,9 @@ class HeroMessagesTest {
         c(Problems.Code.OVERRIDE_UNREADABLE, PL, "the override could not be read: a comma is missing",
                 () -> assemble(List.of(new Source("test_hero.json", V2Files.hero2(""))), null,
                         List.of(new Source("config/factionclash/heroes/test_hero.json", "{\"name\": \"A\" \"title\": \"B\"}"))));
+        c(Problems.Code.OVERRIDE_BREAKS, PL, "with the override the hero cannot load",
+                () -> assemble(List.of(new Source("test_hero.json", V2Files.hero2(""))), null,
+                        List.of(new Source("config/factionclash/heroes/test_hero.json", "{\"behaviour\": 3}"))));
         c(Problems.Code.OVERRIDE_FIXED, NO, "\"id\" can never be overridden",
                 () -> assemble(List.of(new Source("test_hero.json", V2Files.hero2(""))), null,
                         List.of(new Source("config/factionclash/heroes/test_hero.json", "{\"id\": \"other\"}"))));

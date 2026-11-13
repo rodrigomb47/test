@@ -1939,7 +1939,7 @@ final class HeroReader2 {
                 || HeroCatalogue.gapCloser(m.form()));
         if (!reach) {
             c.report(Severity.NOTE, Code.NO_REACH, top.obj.line(), Path.ROOT.field("moves"), "the hero has no far-band"
-                    + " move and no gap closer (leap, dash or charge), so an enemy out of reach on a pillar or a wall"
+                    + " move and no gap closer (leap, dash, charge or dive), so an enemy out of reach on a pillar or a wall"
                     + " meets only its mobility (HEROES_V2 6.12)", null);
         }
         // phases that add nothing (6.7)
@@ -1958,9 +1958,9 @@ final class HeroReader2 {
                 if (added.isEmpty() && ph.states().isEmpty() && ph.adds().isEmpty()) {
                     Pos pos = c.where.get(ph);
                     c.report(Severity.NOTE, Code.PHASE_NO_CHANGE, pos == null ? top.obj.line() : pos.line(),
-                            pos == null ? Path.ROOT.field("boss") : pos.path(), "phase " + (i + 1) + " only changes"
-                            + " numbers: it adds no move, state or add (HEROES_V2 6.7 asks each phase for a new"
-                            + " mechanic)", null);
+                            pos == null ? Path.ROOT.field("boss") : pos.path(), "phase " + (i + 1) + " of the fight (from "
+                            + ph.at() + "%) only changes numbers: it adds no move, state or add (HEROES_V2 6.7 asks"
+                            + " each phase for a new mechanic)", null);
                 }
             }
             before = here;

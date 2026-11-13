@@ -480,7 +480,8 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 * Archers: back away (10 blocks) from a melee enemy within 6; every 2 s switch to a visible enemy in range with
   at least 2 health less than the current target.
 * Withdrawal: under 30% health with no golden apple, fall back toward the storehouse (or 12 blocks away from the
-  attacker near home) until over 60% or for at most 1200 ticks.
+  attacker near home) until over 60% or for at most 1200 ticks. Soldiers only: a hero never withdraws (it escapes for
+  good under its escape threshold or fights to the death, `HEROES_V2.md` 6.13).
 * War council (PROPOSED): target = the reported, still-standing base with the fewest soldiers at home (lair: its
   monsters), then the nearest. Party = every soldier beyond max(`homeDefenders`, a third of the garrison), at
   least `raidPartySize`. Strength is power, not heads: a soldier counts 1 + armour/20 (at most 1) + weapon material
