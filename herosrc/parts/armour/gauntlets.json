@@ -1,9 +1,9 @@
 {
-  "_comment": "Gauntlets (style pass 2): a plate shell over the forearm, a cuff of plates flaring out at its elbow end, and a plate over the back of the hand. `reach` (G6c) is how far up the forearm the shell goes (1: to the elbow; 0.35 leaves the upper forearm bare for markings such as Benika's stripes).",
+  "_comment": "Gauntlets (style pass 2): a plate shell over the forearm, a cuff of plates flaring out at its elbow end, and a plate over the back of the hand. `reach` (G6c) is how far up the forearm the shell goes (1: to the elbow; 0.3 leaves the upper forearm bare for markings such as Benika's stripes); `flare` 0 (art review) drops the flared cuff, so a short shell is a plain wrist guard and the bare forearm above it shows. The hand plate's lower face sits at hand_bottom + 0.875 (art review): a held grip is centred on the hand, so the faces of the slice grips lie at hand_bottom + 0.5-1.45 in steps of 0.05 on the six bases (0.75 is the plain sword's on a chibi, 0.8 the longsword's), and 0.875 is 0.025 px clear of all of them.",
   "id": "armour/gauntlets",
   "category": "armour",
   "slots": {"main": "metal", "trim": "trim"},
-  "params": {"reach": {"min": 0.3, "max": 1, "default": 1}},
+  "params": {"reach": {"min": 0.3, "max": 1, "default": 1}, "flare": {"min": 0, "max": 1, "default": 1}},
   "occupies": ["forearms"],
   "cubes": [
     {
@@ -17,8 +17,8 @@
     {
       "name": "hand_plate",
       "bone": "hand_r",
-      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "hand_bottom + 0.75", "-arm_d / 2 - 0.3"],
-      "size": ["arm_w + 0.6", "wrist_y - hand_bottom - 0.5", "arm_d + 0.6"],
+      "origin": ["-shoulder_x - arm_w / 2 - 0.3", "hand_bottom + 0.875", "-arm_d / 2 - 0.3"],
+      "size": ["arm_w + 0.6", "wrist_y - hand_bottom - 0.625", "arm_d + 0.6"],
       "material": "metal",
       "tone": -1,
       "mirror": true
@@ -27,6 +27,7 @@
   "strands": [
     {
       "name": "cuff",
+      "when": "flare",
       "bone": "forearm_r",
       "path": "arc",
       "center": ["-shoulder_x", 0],

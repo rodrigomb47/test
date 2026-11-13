@@ -47,6 +47,7 @@
   },
   "animations": {
     "move.leap": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.35},
       "description": "Kagenori's leap, the crane, a 1.2 s loop: arms spread like wings with the haori sleeves hanging from them, the right knee drawn high and the left leg straight below, rising and settling in one slow wing beat. Every jump one-shot of the core ends on the core move.leap's pose and blends into this one (the base controller's 4 ticks).",
       "length": 1.2,
       "loop": true,

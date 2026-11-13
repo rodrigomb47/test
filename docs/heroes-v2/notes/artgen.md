@@ -2323,3 +2323,171 @@ that follows the build (the leg's depth) instead of the form.
   surface_leap).
 - **Polish**: raised arms hide behind the big head from behind (the climb's hands were widened for it); Garrick's and
   Kagenori's hip scabbards point up while riding astride (they hang from `body`).
+
+---
+
+## Art review: G6c, G5, G10 (2026-11-13)
+
+An art director's review of G6c (b1fbd8a), G5 (dda14db) and G10 (6e0013a), with a second look at the G6a and G6b sheets,
+judged against the approved look (rig v3, style pass 2, the in-game checkpoint) and the owner's reference style
+(blocky, anime proportions, distinct faces, detailed outfits). Every committed sheet and GIF in
+`docs/heroes-v2/previews/parts/`, `anim/styles/` and `anim/locomotion/` was looked at; frames were pulled from the
+GIFs, and suspicious ones were rendered again at 3-9x from four directions with the slice outfits on (the committed
+GIFs are 420 px wide, too small for a blade or a stripe). Each finding below was checked with a number or a render
+before it was fixed. The style is unchanged: nothing here moves a silhouette, a proportion or a palette; no reference
+model was opened.
+
+### What holds
+
+- **The strings read as their weapons** on the adult and the chibi: the hammer's raise, overhead and slam (the club
+  rests over the right shoulder in the stance, its head behind the shoulder: from the front it reads as a club held
+  up and out), the katana's diagonal, level and thrust, the sword and shield's cuts and bash, the staff's casts and
+  bonk, the fists' jab, cross and rake, the twin blades' backhand and kunai work, the focus casts. Props stay in the
+  hands through every tick (`grips.animation_problems`, G5); the club's second hand is within 2 px of its grip on
+  all but three single ticks (the worst, 3.9 px on adult_m at 0.75 s of the slam's recovery, is G5's open item).
+- **Locomotion has weight where the move needs it**: the crouch jump's tell, the take-off's crouch, the 70 and 110
+  degree landings, the roll on the ground, the skid's braced heel, the kip-up; `move.jump` has no pre-crouch by
+  design (the entity is already rising when the clip starts).
+- **No part copies a known character's signature design.** The slice looks follow SLICE_PLAN 3's own descriptions;
+  the emblems are drawn per size here; the hime cut, the braided crown, the oni's single horn and the witch's hat are
+  genre staples, combined with this project's palettes and faces.
+- **Dark hair** (Hinae, Kagenori, Tobimaru) reads as a dark mass with cool sheen strands; the in-game checkpoint shows
+  the same look, which the owner approved, so the dark-hair ramp is unchanged.
+
+### Found and fixed
+
+1. **Coplanar faces left in the library** (`herogen lint` failed on 7 parts and 5 sample outfits with 63 problems,
+   G5's open item, plus G6c's hair-kit item). All fixed; `herogen lint` is clean on the 94 parts and the 8 outfits on
+   all six bases, and `herogen check --all --style` is clean.
+   - **Nested leg shells on one inner plane** (boots' cuff and shaft, trouser gathers and wraps under boots and
+     `tabi_boots`, `socks_shoes` and `thigh_socks` soles and straps, shorts, the kunai holster strap; Tobimaru's
+     shins up to 1240 px at 6x). On the inner side of a leg there is no room for the layer convention: the gap to
+     the centre line is 0.1-0.15 px on every base and build, so G6b's clamp put every shell's inner side 0.05 px from
+     the centre line. New `parts.settle_leg_shells` (run by `build.assemble`): among the shells whose inner sides lie
+     between a leg and the centre line and overlap in height (1.5 px margin: a bent knee brings a thigh shell and a
+     shin shell together), the outermost by the layer convention keeps the plane and each shell under it moves its
+     inner side 0.025 px toward the leg (a shell that would come within 0.02 px of the leg goes 0.12 px inside it,
+     covered by the shells over it). The outer layer is then the one seen between the legs, as on the outer side.
+     This is the one place where the generator places a layer itself (G6b's decision 1 holds elsewhere): the
+     convention has no room there. 0.025 px is enough depth up to about 27 blocks with a 24-bit depth buffer, where
+     the inner side of a leg is a pixel or two.
+   - **Joint wedges** (`thigh` / `shin` sides at a bent knee, 4-50 px on Ilsabet and Natsuho; `upper_arm` /
+     `forearm` at the elbow on Tobimaru). A joint that bends about x keeps the side faces of the two segments in one
+     plane, so they overlap in a wedge. The base template's forearm and shin are now 0.1 px narrower than the upper
+     arm, the hand, the thigh and the foot (0.05 px a side, under a texel): knees, elbows, wrists and ankles can no
+     longer tie. This rebuilds `test_rig` and `_fallback` (geometry and texture; names and the fallback chain
+     unchanged). The painter's ambient occlusion shades the top row of a cube that sits under one "at least as wide";
+     under the narrower forearm the hand lost its shaded top row on every hero (`test_paint`'s AO test caught it in
+     the finishing run). A cube above may now be narrower by a joint's 0.1 px on each axis (`paint.AO_NARROWER`), so
+     the hands are shaded as before.
+   - **Bracer rim against a wrap top's cuff** (Tobimaru's forearms, 325-472 px): both ended 0.1 px past the wrist.
+     The bracers' lower rim now reaches 0.2 px past it.
+   - **Gauntlet hand plate against a held grip**: the plain sword's grip in the fists guard on the chibis (8 px). A
+     held grip is centred on the hand, so the faces of the slice grips lie at `hand_bottom` + 0.5 to 1.45 in steps of
+     0.05 px on the six bases (0.75 is the plain sword's on a chibi, 0.8 the longsword's). The plate's lower face
+     moved from + 0.75 to + 0.875, 0.025 px clear of all of them (the interrupted run's + 0.8 put it on the
+     longsword's grip: the finishing run's lint caught it in Ilsabet's guard on both chibis, 18 and 32 px).
+   - **A doubled back panel in every full ring of panels** (`flared_skirt` on chibi_f, 4 px, the last failure of
+     the first lint run): an arc's angles include both ends, so `flared_skirt`, `pleated_skirt`, `hakama` and
+     `court_robe`, authored over [-180, 179.999], put their last panel on their first, one layer out, and the two
+     side faces z-fought. The rings now end one step short of 180 (150, 154.286 and 157.5 for 12, 14 and 16
+     panels): the same count, evenly spaced, with a panel at the front centre.
+   - **The hair kit's back slab on the head's back plane** (G6c's and G5's open item): every style's `back_base` now
+     starts at head-local z 5.1 (0.1 px behind the head) and is 0.1 px thinner, so its outer face does not move. The
+     stances no longer need their head bow to hide it (the bows stay: they read as a fighter's focus).
+2. **Benika's stripes and horn never lit up.** The sample outfit named no phases, so the `glow: "phase"` stripes had
+   no phase texture: the G6c sheet's "phase 2 at night: stripes" showed a dark figure with nothing glowing. The lower
+   stripe was also half a pixel tall and painted no texel at all on the adult and the chibi, and on the chibi the
+   gauntlets' flared cuff overlapped the coat's cuff, leaving no bare forearm. Now: her outfit has phases 2 and 3
+   (phase 3 with glowing eyes, SLICE_PLAN 3.3); `markings/arm_stripes` paints whole texel rows (elbow - 4 to - 3,
+   elbow - 6 to - 5) with a bare row between; `armour/gauntlets` has a `flare` param (0: a plain wrist shell, no
+   flared cuff) and Benika wears `reach` 0.3, `flare` 0, so the forearm is bare between the coat's cuff and the
+   shell: 3.75 px on her own form (the adult, both stripes show), 2.35 on a teen (one; the other is under the
+   shell), 0.95 on a chibi. There the first band lay on the wrist's row, under the shell, with a 0.2 px sliver above
+   it; it now takes the row above (`max(elbow_y - 4, wrist_y + 1)`, the finishing run), which shows. The adult and
+   the teen keep their rows. `horns/single_curved` has a `glow` param (an overlay that lights the horn in the phase
+   look) and Benika's horn glows from phase 2, as SLICE_PLAN asks.
+3. **The braided crown's back was a flat crate** (Ilsabet, `head_hair.png` back view): its back layers (radius
+   5.55-6) lay inside the back slab (out to 6.25), so from behind and from the side the lower head showed one plain
+   slab with a dark triangle. New `back` strands (7, combed down from the crown to the nape over the slab, radius
+   6.3-6.4, drawn together toward the nape) and the nape strands moved out to 6.55-6.65.
+4. **Capes, tails, ponytails and coat tails did not follow in flight.** The bake answers the parent's motion and
+   gravity only, so on a level body (the glide pitched 62 degrees, fast flight nearly flat) a cape and coat tails hung
+   straight down toward the ground and a tail or a fox's three tails stood straight up off the back (Yugen's glide,
+   Maren's fast flight). New recipe field `wind` {dir, strength, groups, limit, ramp, fade} (`secondary.Wind`): the
+   air streaming past a flying hero pulls the tips of the named groups (default tail, ponytail, cape, skirt) toward
+   `dir` in the world (+z behind the hero), like `hang`, with a larger turn limit (80 degrees) for those groups in that
+   clip. Given to `move.glide`, `move.glide_start` (ramped in), `move.gust`, `move.fly` (0.6), `move.fly_fast` (0.85),
+   `move.takeoff` (ramped in after the push), `move.fly_land` (faded out), `move.leap` (0.35, a long jump) and
+   `move.ride`, and to the broom and crane variants; an action without its own wind takes the wind of the base it
+   plays over (`move.ride_cast` over `move.ride`), so it starts on the base's baked follow-through (the settle rule
+   caught the first build). Ground clips feel no wind. Only `_core.animation.json` changes (chain-bone keys); no
+   event, frame or timing moves (the timing files change their source hash only).
+
+### Previews
+
+Regenerated, since the base template, the hair kit and the painter changed every model: the style set
+(`previews/style/`), the G2 set (`previews/render/`), the G3 filmstrips and GIFs, `previews/anim/core/`,
+`anim/styles/`, `anim/locomotion/` and every parts sheet (`previews/parts/`). `render-previews --check`,
+`anim-previews --core/--styles/--locomotion --check` and `parts-previews --check` pass. In the regenerated
+locomotion set the wind shows: Maren's hair and coat tails stream behind her in the glide, the gust, flight and the
+leap (her coat tails hung toward the ground before), and Tansy's tail trails out behind her; the turnarounds and the lineup keep their silhouettes and
+palettes (the skirt rings turn by half a panel, the forearms and shins are 0.1 px narrower).
+
+### The finishing run
+
+A usage-limit pause stopped the review while the full lint, the Python suite and the preview sets were running. A
+second run read the diff and these notes, reran every check and looked at the regenerated lineup, turnarounds, strings
+and locomotion. Three things failed or were wrong, all from this review's own fixes:
+
+- `herogen lint` (2090 builds and checks) found 2 problems: Ilsabet's `sword_shield.guard` on chibi_f and chibi_m,
+  `hand_r/weapon_r` 18 and 32 px: the gauntlet plate's first fix (+ 0.8) had moved it onto the longsword's grip. Now
+  + 0.875 (above).
+- The Python suite failed `test_paint.test_ao_under_the_sleeve`: the narrower forearm had cost every hand its shaded
+  top row. Fixed in the painter (above).
+- Benika's first stripe hid under the gauntlet shell on a chibi (a 0.2 px sliver): moved one row up there (above).
+
+The gauntlets, the stripes and the eight outfits were linted again on all six bases (clean), then `check --all
+--style`, `build --all --check`, the whole Python suite and every preview set.
+
+### Tests (331 -> 347: `tests/test_artreview.py`, 16)
+
+The glide trails the cape and the tail behind (+z), fast flight streams the ponytail and the back skirt panel; ground
+clips have no wind; `move.ride_cast` takes `move.ride`'s wind; ramp and fade; `Wind` validation; sabotage: the glide
+baked without wind lets the cape hang. A boot's cuff and shaft have inner planes 0.02 px or more apart on all 18
+bodies, the cuff (outer) nearer the centre line and short of it; trousers with wraps under `tabi_boots`: every pair
+of overlapping shells on its own plane, none on the leg's or the shin's plane; sabotage: with the pass disabled 19
+subtests fail. The forearm and the shin are 0.05 px a side narrower than the segments they bend against, on all 18
+bodies. Every hair style's back slab starts at z 5.1 or more; the braided crown's back strands lie over its slab.
+Benika's stripes and horn are in the phase glow mask (not the base one) on the chibi, the teen and the adult; the
+stripes are whole texel rows on every base; a glowing row shows between the coat's cuff and the gauntlet on her
+chibi, teen and adult (two on the adult; sabotage: the wrist-row band fails on the chibi). No full ring of panels puts its last panel on its first (sabotage: the old flared skirt
+fails).
+
+### Decisions
+
+1. **The generator places the inner sides of nested leg shells** (above): the layer convention cannot work in a
+   0.1 px gap, and authoring a different inner side per part pair would not survive a new combination.
+2. **Narrower forearms and shins rather than a wedge rule**: 0.05 px is invisible, it fixes every joint of every
+   hero at once, and no animation or part changes.
+3. **Wind is per clip, authored**: the server moves the entity physically and the bake cannot know the hero's speed,
+   so a flying clip says how much air it feels; the default groups leave ears, hair and sleeves to the bake.
+4. **The hammer stance and the dark hair stay** (above): they read as intended at the in-game scale.
+5. **The painter allows the joint's 0.1 px** instead of the joints going back to equal widths: the narrower forearm
+   fixes a z-fight at every bent elbow, while the shaded top row of a hand is a texture rule that only needs to know
+   a sleeve or a forearm sits on it.
+6. **The gauntlet plate sits off a 0.05 px grid** (+ 0.875): the slice grips put their faces on that grid on every
+   base, so any value on it ties with some grip on some form.
+
+### Open items
+
+- **A2**: nothing new; `visual.json` of `test_rig` and `_fallback` changed (geometry and texture), their names, bones
+  and the fallback chain did not.
+- **G5 polish (unchanged)**: the shield's pop at the draw; the club's second hand off the handle for one tick of the
+  slam's recovery; the slam's contact on the larger forms.
+- **Previews**: the jumps stand in place (root motion is physical); a preview-only arc for airborne clips would make
+  their weight easier to judge.
+- **Markings on small forms**: a chibi's forearm is 4 px, so under a short gauntlet and a pushed-up sleeve one band
+  of `arm_stripes` fits; a hero who needs the pair on a chibi needs a shorter sleeve or no gauntlet.
+- **Housekeeping (not this review's)**: the stray `/v3_styles_check.log` and `/v3_render_check.log` that the G5 run
+  left at the filesystem root still need removing by hand.

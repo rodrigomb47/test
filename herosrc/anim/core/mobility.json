@@ -2,6 +2,7 @@
   "_comment": "Core library, the mobility set (G10; MOBILITY_AND_WORK 4.1-4.3, HEROES_V2 4.4): the 27 locomotion animations of milestone 1 and the wing loops of the secondary controller. Loops are base clips; one-shots play on the base controller too and end on the first frame of the loop it queues after them (settle_to: move.leap, move.idle, move.fly, move.glide, move.ride), so its blend shows nothing; move.ride_cast and move.air_dive are actions. No root motion: movement is physical.",
   "animations": {
     "move.leap": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.35},
       "description": "In the air on a leap or any jump (the base controller's airborne loop, MOBILITY_AND_WORK 4.1), 1.0 s: the right knee up, the left leg trailing, arms out for balance, drifting slowly so a long leap stays alive; ears and tail stream behind (the bake). Every jump one-shot ends on its first frame. Not grounded.",
       "length": 1,
       "loop": true,
@@ -199,6 +200,7 @@
       ]
     },
     "move.glide": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.75},
       "description": "Gliding (glider, flyer gliding), a 2.4 s loop: the spread glide with a slow bank one way and the other (the arms tip like wings, the chest rolls), a gentle bob and the legs swaying a little. Not grounded.",
       "length": 2.4,
       "loop": true,
@@ -224,6 +226,7 @@
       ]
     },
     "move.glide_start": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.75, "ramp": [0.05, 0.35]},
       "description": "Opening a glide, 0.4 s: from the fall the arms sweep out wide (the carrier opens: a cape spreads, wings unfold), the body tips forward with a small overshoot and settles into move.glide; the rustle of cloth or feathers.",
       "length": 0.4,
       "settle_to": "move.glide",
@@ -239,6 +242,7 @@
       ]
     },
     "move.gust": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.75},
       "description": "A gust lifts the glider (fans, a wind sack, a kite: one upward push), 0.4 s: the body rises nearer upright with the arms swept up and the knees tucked (0.1 s, a burst of wind), then spreads out again into move.glide.",
       "length": 0.4,
       "settle_to": "move.glide",
@@ -260,6 +264,7 @@
       ]
     },
     "move.fly": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6},
       "description": "Powered flight (flyer; DATA_LOCO mode fly), a 1.6 s loop: leaning into the flight with the legs trailing, a slow bob and a small flutter of the legs and arms; wings beat by the secondary controller (sec.wings_flap). Not grounded.",
       "length": 1.6,
       "loop": true,
@@ -287,6 +292,7 @@
       ]
     },
     "move.fly_fast": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.85},
       "description": "Fast flight, a 0.8 s loop: nearly level and streamlined, a quick shallow bob, the legs fluttering. Not grounded.",
       "length": 0.8,
       "loop": true,
@@ -330,6 +336,7 @@
       ]
     },
     "move.takeoff": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6, "ramp": [0.3, 0.55]},
       "description": "Take-off (flyer), 0.6 s, the tell (MOBILITY_AND_WORK 2.2): a crouch with the arms opening like wings (0.2 s; the carrier opens), the upward push with the arms driven down (0.3 s, dust), the rise with the legs trailing and into move.fly's pose by 0.6 s; a determined face. The server plays the take-off cue and the hero's own take-off sound (SOUND.md 7).",
       "length": 0.6,
       "settle_to": "move.fly",
@@ -345,6 +352,7 @@
       ]
     },
     "move.fly_land": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6, "fade": [0, 0.25]},
       "description": "Landing from flight, 0.4 s: the flare (the body tips back, the legs swing down, the arms brake), touch-down (0.18 s), the knees take the weight (0.26 s), up into the idle stance by 0.4 s.",
       "length": 0.4,
       "settle_to": "move.idle",
@@ -489,6 +497,7 @@
       ]
     },
     "move.ride": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6},
       "description": "Riding a carrier (a broom, a mount part: DATA_LOCO mode ride), a 2.0 s loop: seated astride on the mount bone with both hands on the handle, a gentle bob (the mount, a child of the root, bobs with the rider) and a slow sway. The rider's seat stays on the mount on every form (quality.check_mount). Not grounded.",
       "length": 2,
       "loop": true,

@@ -10,7 +10,10 @@ ear twitch, the walk's tail sway) is intended and is added on top unchanged, whi
 A group with `hang` (0-1) also pulls its tip toward the bind direction in the world, as gravity does: a wide sleeve
 keeps hanging when the forearm is raised, a cape and a ponytail fall back toward vertical when the body leans
 (`hang_fade` fades that pull out as the parent points the link up, so a bell sleeve on a raised arm stays around it;
-`lag` caps how far the spring trails its target). The tip stays at the link's length from the pivot. The bone's
+`lag` caps how far the spring trails its target). A clip with `wind` (art review: flight) also pulls the tips of the
+groups it names toward a direction in the world, the air streaming past a hero who flies or glides: a cape, a tail,
+a ponytail or a skirt panel trails behind instead of hanging toward the ground or standing up off a level body. The
+tip stays at the link's length from the pivot. The bone's
 extra rotation is the turn from the authored direction to the simulated one (clamped to the group's limit),
 expressed in the bone's own frame as file angles and added to the authored angles, as GeckoLib adds animation
 angles. Links of a chain (a tail, a ponytail, a cape) are solved root first, so each one hangs from the swung one
@@ -167,10 +170,53 @@ def pose_function(clip, base=None, d=0.0):
     return pose
 
 
-def simulate(clip, skeleton, groups, base=None, movers=None):
+class Wind:
+    """The air streaming past a flying or gliding hero (a recipe's `wind`, art review): a direction in the world (file
+    space: +z is behind the hero, +y up), a strength 0-1 (how far the tip leans from where its parent and gravity put
+    it toward that direction, like `hang`), the groups it acts on, a limit that replaces a smaller group limit for
+    those groups (a tail may trail 80 degrees off its pose in the air, while 35 keeps it tidy on the ground), and a
+    `ramp` [t0, t1] (the strength rises from 0 to full: a take-off) or a `fade` [t0, t1] (full to 0: a landing)."""
+
+    def __init__(self, spec, where="wind"):
+        unknown = sorted(set(spec) - {"dir", "strength", "groups", "limit", "ramp", "fade"})
+        if unknown:
+            raise HerogenError("%s: unknown field(s) %s" % (where, ", ".join(unknown)))
+        d = np.asarray(spec.get("dir", [0, 0, 1]), dtype=float)
+        if d.shape != (3,) or np.linalg.norm(d) < 1e-9:
+            raise HerogenError("%s: dir must be a non-zero [x, y, z]" % where)
+        self.dir = d / np.linalg.norm(d)
+        self.strength = float(spec.get("strength", 0.6))
+        if not 0.0 < self.strength <= 1.0:
+            raise HerogenError("%s: strength must be in (0, 1]" % where)
+        self.groups = set(spec.get("groups", WIND_GROUPS))
+        self.limit = float(spec.get("limit", 80))
+        self.ramp = tuple(spec["ramp"]) if "ramp" in spec else None
+        self.fade = tuple(spec["fade"]) if "fade" in spec else None
+        for k in ("ramp", "fade"):
+            r = getattr(self, k)
+            if r is not None and not (len(r) == 2 and r[0] < r[1]):
+                raise HerogenError("%s: %s must be [t0, t1] with t0 < t1" % (where, k))
+
+    def at(self, t):
+        s = self.strength
+        if self.ramp is not None:
+            s *= min(1.0, max(0.0, (t - self.ramp[0]) / (self.ramp[1] - self.ramp[0])))
+        if self.fade is not None:
+            s *= 1.0 - min(1.0, max(0.0, (t - self.fade[0]) / (self.fade[1] - self.fade[0])))
+        return s
+
+    def limit_of(self, group):
+        return max(group.limit, self.limit) if group.name in self.groups else group.limit
+
+
+# the groups a wind acts on by default: the long hanging and trailing parts (ears, hair and sleeves keep their pose)
+WIND_GROUPS = ("tail", "ponytail", "cape", "skirt")
+
+
+def simulate(clip, skeleton, groups, base=None, movers=None, wind=None):
     """{bone: [offset (rx, ry, rz) per tick 0..N]} for the clip's length (N = length / tick). `base` is the clip an
     action plays over (its authored view, see authored_view); with `movers`, only the links below those bones are
-    simulated."""
+    simulated; `wind` (a Wind) pulls the tips of its groups toward the air's direction."""
     pose_at = pose_function(clip, base, skeleton.d)
     links = [ln for g in groups for ln in g.links if movers is None or below(skeleton, ln.bone, movers)]
     if not links:
@@ -205,6 +251,13 @@ def simulate(clip, skeleton, groups, base=None, movers=None):
                 want = (1.0 - g_hang) * carried + g_hang * ln.dir
                 n = np.linalg.norm(want)
                 carried = _rotate_toward(carried, want / n if n > 1e-9 else carried, ln.group.limit)
+            lim = wind.limit_of(ln.group) if wind is not None else ln.group.limit
+            if wind is not None and ln.group.name in wind.groups:
+                w = wind.at(t)
+                if w > 0.0:
+                    want = (1.0 - w) * carried + w * wind.dir
+                    n = np.linalg.norm(want)
+                    carried = _rotate_toward(carried, want / n if n > 1e-9 else carried, lim)
             target = pivot + carried * ln.length
             g = ln.group
             if ln.bone not in state:
@@ -232,7 +285,7 @@ def simulate(clip, skeleton, groups, base=None, movers=None):
             da = r_link @ ln.dir                    # where the authored pose carries the tip
             db = (x - pivot) / ln.length
             db = _rotate_toward(carried, db / np.linalg.norm(db), g.lag)      # the lag behind the target
-            db = _rotate_toward(da, db, g.limit)                               # the turn off the authored pose
+            db = _rotate_toward(da, db, lim)                                   # the turn off the authored pose
             x = pivot + db * ln.length
             state[ln.bone] = (x, v)
             prev[ln.bone] = (pivot, target)
@@ -252,7 +305,7 @@ def simulate(clip, skeleton, groups, base=None, movers=None):
     return out
 
 
-def bake(clip, skeleton, groups=None, tol=TOL, base=None, movers=None):
+def bake(clip, skeleton, groups=None, tol=TOL, base=None, movers=None, wind=None):
     """Add the follow-through to the clip's chain bones (in place); with `base`, the clip is an action simulated over
     that clip (as authored: authored_view) and a chain bone it does not key starts from the base's authored keys.
     With `movers` (an action: the bones it keys), only the chain bones below them are baked; the others keep the
@@ -261,7 +314,7 @@ def bake(clip, skeleton, groups=None, tol=TOL, base=None, movers=None):
     groups = groups if groups is not None else load_groups(skeleton)
     if base is not None:
         base = authored_view(base)
-    offsets = simulate(clip, skeleton, groups, base, movers)
+    offsets = simulate(clip, skeleton, groups, base, movers, wind)
     peaks = {}
     n_ticks = int(round(clip.length / TICK))
     for bone, offs in sorted(offsets.items()):

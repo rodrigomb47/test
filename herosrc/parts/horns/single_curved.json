@@ -1,5 +1,5 @@
 {
-  "_comment": "A single curved horn on the forehead (G6a): a four-bone chain rising from the forehead through the fringe, sweeping up and curling back, tapering to a point; bone-coloured by default (an oni's red horn: color primary). The chain bones are rigid (no secondary). Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
+  "_comment": "A single curved horn on the forehead (G6a): a four-bone chain rising from the forehead through the fringe, sweeping up and curling back, tapering to a point; bone-coloured by default (an oni's red horn: color primary). The chain bones are rigid (no secondary). `glow` 1 (art review) lights the horn in the phase look (Benika's horn glows from phase 2). Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10).",
   "id": "horns/single_curved",
   "category": "horns",
   "slots": {
@@ -7,7 +7,8 @@
     "alt": "trim"
   },
   "params": {
-    "size": {"default": 1, "max": 1.4, "min": 0.6}
+    "size": {"default": 1, "max": 1.4, "min": 0.6},
+    "glow": {"default": 0, "max": 1, "min": 0}
   },
   "occupies": ["horn_front"],
   "offset": [0, "head_y", 0],
@@ -34,5 +35,8 @@
       "taper_last": 0.6,
       "tone": [0, 0, 1, 1]
     }
+  ],
+  "paint": [
+    {"cubes": ["#*"], "overlay": true, "pattern": {"type": "solid", "slots": ["main"]}, "glow": "phase", "when": "glow"}
   ]
 }

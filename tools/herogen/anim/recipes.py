@@ -40,6 +40,10 @@ A recipe:
               over the forms (form-scaled): a roll whose spin turns the tucked body over on the ground
   contact     (G10) also "mount": a riding clip; the bones in `seat` (default the thighs, `leg_*`) rest on the rig's
               `mount` bone (its pivot, the seat, carried by the root) on every form (quality.check_mount)
+  wind        (art review) {dir, strength, groups, limit, ramp, fade}: the air streaming past a flying or gliding
+              hero; the bake pulls the tips of `groups` (default tail, ponytail, cape, skirt) toward `dir` in the
+              world (+z behind the hero), so capes, tails and coat tails trail instead of hanging (secondary.Wind);
+              an action without its own wind takes the wind of the base clip it plays over (a cast while riding)
 Pose keys: every bone any key's pose mentions is keyed at every pose key (0 where a pose leaves it out), so a key is
 a whole pose; the pose "@stance" is the first frame of the clip the action settles on (its authored channels: the
 style's stance for a restyled reaction), and `over: true` adds the key's pose to that stance (bones it leaves out
@@ -65,7 +69,7 @@ KEY_FIELDS = ("t", "pose", "ease", "root", "face", "marker", "sound", "particle"
               "settle", "settle_time", "over")
 RECIPE_FIELDS = ("length", "loop", "kind", "class", "settle_to", "secondary", "planted", "ground", "poses", "keys",
                  "layers", "markers", "bones", "description", "steps", "contact", "restyle", "copy", "plays_over",
-                 "arms_over", "seat", "floor")
+                 "arms_over", "seat", "floor", "wind")
 CONTACTS = ("soles", "body", "mount")
 STANCE = "@stance"
 ARM_GLOBS = ("arm_*", "forearm_*", "hand_*")
@@ -319,7 +323,13 @@ class Expander:
             movers = None
             if kind == "action":
                 movers = {b for b, _ in clip.tracks if b != FACE_BONE}
-            secondary.bake(clip, self.skeleton, groups, base=base, movers=movers)
+            # an action over a windy base (a cast while riding) feels the same air, so it starts on the base's
+            # baked follow-through
+            spec = recipe.get("wind") or (base.meta.get("wind") if base is not None and kind == "action" else None)
+            wind = secondary.Wind(spec, where + ": wind") if spec else None
+            if spec:
+                clip.meta["wind"] = spec
+            secondary.bake(clip, self.skeleton, groups, base=base, movers=movers, wind=wind)
         if (kind == "action" or clip.meta.get("settle_to")) and loop == "once":
             self._settle(clip, settle, where)    # a loop closes, a held clip (death) stays on its last frame
         self._finish(clip, where)

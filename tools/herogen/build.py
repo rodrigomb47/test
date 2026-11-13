@@ -23,7 +23,7 @@ import palette
 from anim import library as animlib
 from geo import geo_json
 from paint import has_phase_glow, paint_model
-from parts import apply_part, apply_weapon, part_path
+from parts import apply_part, apply_weapon, part_path, settle_leg_shells
 from rig import BASE_SLOTS, BUILDS, DEFAULT_BASE_LAYER, FORMS, RIG_FILE, Model, base_id_for
 from util import HEROSRC, ROOT, HerogenError, dumps_json, load_json, png_bytes, rel, sha256_bytes
 from uvpack import pack
@@ -121,6 +121,7 @@ def assemble(hero):
         apply_part(model, entry, i)
     if art.get("weapon"):
         apply_weapon(model, art["weapon"])
+    settle_leg_shells(model)
     budgets = model.rig["budgets"]
     if len(model.bones) > budgets["bones"]:
         raise HerogenError("%s: %d bones (budget %d)" % (hero["id"], len(model.bones), budgets["bones"]))

@@ -32,8 +32,8 @@
     {
       "name": "back_base",
       "bone": "hair_back",
-      "origin": [-5.75, 0.5, 5],
-      "size": [11.5, 10, 1.25],
+      "origin": [-5.75, 0.5, 5.1],
+      "size": [11.5, 10, 1.15],
       "material": "hair",
       "cutout": "jagged_6"
     }

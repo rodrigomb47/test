@@ -58,6 +58,7 @@
   },
   "animations": {
     "move.ride": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6},
       "description": "Riding the broom side-saddle, a 2.0 s loop: a gentle bob with the broom (the mount bone rides under the root), the crossed ankles swinging idly, the free hand on the knee.",
       "length": 2,
       "loop": true,
@@ -78,6 +79,7 @@
       ]
     },
     "move.takeoff": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6, "ramp": [0.3, 0.55]},
       "description": "Take-off on the broom, 0.6 s, the tell: a crouch (0.15 s), a hop with the knees lifted and the body turning (0.3 s; the staff appears on the mount bone under him), settling side-saddle onto the shaft by 0.6 s. The server plays the take-off cue and Ambrose's broom take-off (SOUND.md 7).",
       "length": 0.6,
       "settle_to": "move.ride",
@@ -108,6 +110,7 @@
       ]
     },
     "move.fly_land": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6, "fade": [0, 0.25]},
       "description": "Landing from the broom, 0.4 s: he slides off the shaft, the legs swinging down (0.15 s), the feet touch (0.25 s) and he stands (0.4 s); the engine then puts the staff back in his hand.",
       "length": 0.4,
       "settle_to": "move.idle",

@@ -151,10 +151,10 @@
         "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
         "parts": [
           {"part": "hair/wild_mane", "color": "hair", "alt": "hair_accent"},
-          {"part": "horns/single_curved", "color": "primary", "params": {"size": 1.1}},
+          {"part": "horns/single_curved", "color": "primary", "params": {"size": 1.1, "glow": 1}},
           {"part": "outfit_top/open_coat", "color": "primary", "alt": "leather", "trim": "trim"},
           {"part": "outfit_bottom/hakama", "color": "secondary", "trim": "trim", "params": {"drop": 0.85}},
-          {"part": "armour/gauntlets", "color": "metal", "trim": "trim", "params": {"reach": 0.35}},
+          {"part": "armour/gauntlets", "color": "metal", "trim": "trim", "params": {"reach": 0.3, "flare": 0}},
           {"part": "legwear/foot_wraps", "color": "secondary", "alt": "leather", "trim": "secondary"},
           {"part": "accessories/sash_obi"},
           {"part": "accessories/rope_belt", "color": "accent", "alt": "hair_accent"},
@@ -162,6 +162,7 @@
           {"part": "markings/arm_stripes", "color": "hair_accent", "params": {"upper": 0}}
         ],
         "face": {"eyes": "sharp", "lashes": 1, "flick": "none", "brows": "bold", "mouth": "wide", "fang": "both"},
+        "phases": [{"phase": 2}, {"phase": 3, "eyes_glow": true}],
         "weapon": {
           "prop": "weapons/iron_club",
           "hand": "both",

@@ -1,5 +1,5 @@
 {
-  "_comment": "Arm stripes (G6c; Benika's oni markings): pairs of thin bands round the forearms (`fore`) and the upper arms (`upper`), painted over whatever is there (an overlay: skin, a sleeve), in the main colour; they glow in the phase look (glow \"phase\": the hero's phase texture).",
+  "_comment": "Arm stripes (G6c; Benika's oni markings): pairs of thin bands round the forearms (`fore`) and the upper arms (`upper`), painted over whatever is there (an overlay: skin, a sleeve), in the main colour, each one texel row (art review: the first bands were half a pixel wide and painted no texel at all on some forms) with a bare row between (on a chibi's 4 px forearm the first band is the row above the wrist's, where a short gauntlet and a pushed-up sleeve leave the arm bare, and the second has no room); they glow in the phase look (glow \"phase\": the hero's phase texture).",
   "id": "markings/arm_stripes",
   "category": "markings",
   "slots": {"main": "primary"},
@@ -9,7 +9,7 @@
     {
       "cubes": ["forearm_*", "upper_arm_*"],
       "faces": ["north", "south", "east", "west"],
-      "y": ["elbow_y - 2.9", "elbow_y - 2.4"],
+      "y": ["max(elbow_y - 4, wrist_y + 1)", "max(elbow_y - 3, wrist_y + 2)"],
       "overlay": true,
       "pattern": {"type": "solid", "slots": ["main"]},
       "glow": "phase",
@@ -18,7 +18,7 @@
     {
       "cubes": ["forearm_*", "upper_arm_*"],
       "faces": ["north", "south", "east", "west"],
-      "y": ["elbow_y - 4.2", "elbow_y - 3.7"],
+      "y": ["elbow_y - 6", "elbow_y - 5"],
       "overlay": true,
       "pattern": {"type": "solid", "slots": ["main"]},
       "glow": "phase",

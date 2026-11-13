@@ -1,5 +1,5 @@
 {
-  "_comment": "Bracers (G6b, wrist and arm guards): a plate shell round each forearm from the wrist up `length` of the forearm, a raised rim at each end in the trim colour and two lacing bands; the hands bare; 0.4 px out, over a sleeve's cuff (0.3); the lower rim reaches 0.1 px past the wrist (G6c: its bottom was the forearm's plane, seen when the hand turns). Kagenori's wrist guards, Tobimaru's arm guards.",
+  "_comment": "Bracers (G6b, wrist and arm guards): a plate shell round each forearm from the wrist up `length` of the forearm, a raised rim at each end in the trim colour and two lacing bands; the hands bare; 0.4 px out, over a sleeve's cuff (0.3); the lower rim reaches 0.2 px past the wrist (G6c: its bottom was the forearm's plane, seen when the hand turns; art review: 0.1, as the jacket cuffs, put it in the plane of a wrap top's cuff under it). Kagenori's wrist guards, Tobimaru's arm guards.",
   "id": "armour/bracers",
   "category": "armour",
   "slots": {
@@ -22,8 +22,8 @@
     {
       "name": "rim_low",
       "bone": "forearm_r",
-      "origin": ["-shoulder_x - arm_w / 2 - 0.55", "wrist_y - 0.1", "-arm_d / 2 - 0.55"],
-      "size": ["arm_w + 1.1", 0.8, "arm_d + 1.1"],
+      "origin": ["-shoulder_x - arm_w / 2 - 0.55", "wrist_y - 0.2", "-arm_d / 2 - 0.55"],
+      "size": ["arm_w + 1.1", 0.9, "arm_d + 1.1"],
       "slot": "trim",
       "material": "metal",
       "mirror": true

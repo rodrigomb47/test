@@ -1,5 +1,5 @@
 {
-  "_comment": "A braided crown (G6a): neat hair drawn back, a soft side-swept fringe, short tucked layers at the nape, and a braid wound round the head from ear to ear over the crown, built as two rows of short boxes tilted alternately (zigzag) so they read as the braid's interlocking strands; the braid in a lighter tone of the hair. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px.",
+  "_comment": "A braided crown (G6a): neat hair drawn back, a soft side-swept fringe, the back combed down over the back slab to short tucked layers at the nape (art review: the first draft's back layers lay inside the back slab, so the back of the head read as a flat crate), and a braid wound round the head from ear to ear over the crown, built as two rows of short boxes tilted alternately (zigzag) so they read as the braid's interlocking strands; the braid in a lighter tone of the hair. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px.",
   "id": "hair/braid_crown",
   "category": "hair",
   "slots": {
@@ -61,8 +61,8 @@
     {
       "name": "back_base",
       "bone": "hair_back",
-      "origin": [-5.75, 2, 5],
-      "size": [11.5, 8.5, 1.25],
+      "origin": [-5.75, 2, 5.1],
+      "size": [11.5, 8.5, 1.15],
       "material": "hair"
     }
   ],
@@ -191,11 +191,27 @@
       "mirror": true
     },
     {
+      "name": "back",
+      "bone": "hair_back",
+      "path": "arc",
+      "y": 10.6,
+      "radius": [6.3, 6.4],
+      "angles": [118, 242],
+      "count": 7,
+      "width": 2.75,
+      "depth": 0.9,
+      "length": [6, 6.75, 7, 6.75, 6],
+      "flare": 5,
+      "fan": -12,
+      "jitter": 0.2,
+      "tone": [0, 1, 0, -1]
+    },
+    {
       "name": "nape",
       "bone": "hair_back",
       "path": "arc",
-      "y": 6.5,
-      "radius": [5.9, 6],
+      "y": 5.5,
+      "radius": [6.55, 6.65],
       "angles": [140, 220],
       "count": 5,
       "width": 2.25,

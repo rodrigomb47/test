@@ -1,5 +1,5 @@
 {
-  "_comment": "Body cubes shared by every base of rig v3 (HEROES_V2.md 4.3). Sizes and heights come from each base's dims (the form sets the heights, the family and build the widths), so every animation fits every base. The head is the same 10 px cube on every form. Slots: skin, base_top, base_bottom and shoes are the base layer that outfit parts paint over (a hero's art.base_layer maps them to palette slots). The hero's right side is -x.",
+  "_comment": "Body cubes shared by every base of rig v3 (HEROES_V2.md 4.3). Sizes and heights come from each base's dims (the form sets the heights, the family and build the widths), so every animation fits every base. The head is the same 10 px cube on every form. Slots: skin, base_top, base_bottom and shoes are the base layer that outfit parts paint over (a hero's art.base_layer maps them to palette slots). The hero's right side is -x. The forearm and the shin are 0.1 px narrower than the upper arm, the hand, the thigh and the foot (art review): a joint that bends about x keeps the side faces of the two segments in one plane, and where they overlap (a wedge at a bent knee, elbow, wrist or ankle) two differently painted faces z-fight; 0.05 px a side is under a texel and invisible.",
   "id": "_template",
   "cubes": [
     {"name": "head", "bone": "head", "origin": [-5, "head_y", -5], "size": [10, 10, 10], "slot": "skin", "material": "skin",
@@ -16,14 +16,14 @@
      "size": ["hips_w", "waist_y - hip_y", "hips_d"], "slot": "base_bottom", "material": "cloth"},
     {"name": "upper_arm_r", "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2", "elbow_y", "-arm_d / 2"],
      "size": ["arm_w", "arm_top - elbow_y", "arm_d"], "slot": "base_top", "material": "cloth", "mirror": true},
-    {"name": "forearm_r", "bone": "forearm_r", "origin": ["-shoulder_x - arm_w / 2", "wrist_y", "-arm_d / 2"],
-     "size": ["arm_w", "elbow_y - wrist_y", "arm_d"], "slot": "base_top", "material": "cloth", "mirror": true},
+    {"name": "forearm_r", "bone": "forearm_r", "origin": ["-shoulder_x - arm_w / 2 + 0.05", "wrist_y", "-arm_d / 2"],
+     "size": ["arm_w - 0.1", "elbow_y - wrist_y", "arm_d"], "slot": "base_top", "material": "cloth", "mirror": true},
     {"name": "hand_r", "bone": "hand_r", "origin": ["-shoulder_x - arm_w / 2", "hand_bottom", "-arm_d / 2"],
      "size": ["arm_w", "wrist_y - hand_bottom", "arm_d"], "slot": "skin", "material": "skin", "mirror": true},
     {"name": "thigh_r", "bone": "leg_r", "origin": ["-hip_x - leg_w / 2", "knee_y", "-leg_d / 2"],
      "size": ["leg_w", "hip_y - knee_y", "leg_d"], "slot": "base_bottom", "material": "cloth", "mirror": true},
-    {"name": "shin_r", "bone": "shin_r", "origin": ["-hip_x - leg_w / 2", "ankle_y", "-leg_d / 2"],
-     "size": ["leg_w", "knee_y - ankle_y", "leg_d"], "slot": "base_bottom", "material": "cloth", "mirror": true},
+    {"name": "shin_r", "bone": "shin_r", "origin": ["-hip_x - leg_w / 2 + 0.05", "ankle_y", "-leg_d / 2"],
+     "size": ["leg_w - 0.1", "knee_y - ankle_y", "leg_d"], "slot": "base_bottom", "material": "cloth", "mirror": true},
     {"name": "foot_r", "bone": "foot_r", "origin": ["-hip_x - leg_w / 2", 0, "-leg_d / 2 - toe"],
      "size": ["leg_w", "ankle_y", "leg_d + toe"], "slot": "shoes", "material": "leather", "mirror": true}
   ]

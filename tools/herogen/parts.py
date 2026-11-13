@@ -435,6 +435,79 @@ def _check_tags(ctx):
         model.occupied.setdefault(tag, ctx.pid)
 
 
+LEG_BONES = {"r": ("leg_r", "shin_r", "foot_r"), "l": ("leg_l", "shin_l", "foot_l")}
+INNER_MARGIN = 0.05         # px a leg shell's inner side stays short of the centre line (G6b)
+INNER_STEP = 0.025          # px between the inner sides of two nested shells (art review)
+INNER_MIN = 0.02            # px: a nested inner side closer to the leg than this goes inside the leg instead
+INNER_HIDE = 0.12           # px inside the leg for a hidden inner side (clear of the narrower shin's side, 0.05)
+JOINT_REACH = 1.5           # px: shells this close in height count as overlapping (a bent knee brings them together)
+
+
+def _leg_side(model, bone):
+    """"r" or "l" when the bone is a leg bone or nested under one (fine_, pN_), else None."""
+    b = bone
+    while b is not None:
+        for side, names in LEG_BONES.items():
+            if b in names:
+                return side
+        node = model.bones.get(b)
+        b = node.parent if node is not None else None
+    return None
+
+
+def settle_leg_shells(model):
+    """Nested leg shells get their own inner-side planes (art review). On the inner side of a leg there is no room
+    for the layer convention: the gap to the centre line is 0.1-0.15 px on every base, so G6b's clamp
+    (`max(0.05, min(e, hip_x - leg_w / 2 - 0.05))`) puts the inner side of every shell (a boot shaft at 0.3, its cuff
+    at 0.55, a trouser gather at 0.2, a holster strap) on one plane 0.05 px from the centre line, where two shells
+    worn on one another z-fight as soon as a stance spreads the legs. Among the shells whose inner sides lie on that
+    side of the leg and overlap in height (rest pose, JOINT_REACH margin, every bone of the leg: a bent knee keeps them in
+    one plane), the outermost (largest outer offset: the layer convention) keeps the plane; each shell under it moves
+    its inner side INNER_STEP px toward the leg, so the outer layer is the one seen between the legs, as on the outer
+    side; a shell that would come closer than INNER_MIN to the leg ends inside the leg instead (it is covered there by
+    the shells over it). Only the inner sides of unrotated non-base cubes between the leg's inner face and the centre
+    line move; everything else keeps its geometry."""
+    env = model.env
+    gap = env["hip_x"] - env["leg_w"] / 2.0
+    outer = env["hip_x"] + env["leg_w"] / 2.0
+    plane = gap - INNER_MARGIN
+    for side in ("r", "l"):
+        shells = []
+        for c in model.cubes:
+            if c.part == "base" or c.rotation is not None or c.inflate or _leg_side(model, c.bone) != side:
+                continue
+            x0, sx = c.origin[0], c.size[0]
+            if side == "r":
+                inner, e = x0 + sx, -x0 - outer         # inner side at +x (toward the centre), outer at -x
+                s = inner + gap
+            else:
+                inner, e = x0, x0 + sx - outer
+                s = gap - inner
+            if 1e-4 < s <= gap + 1e-6:
+                shells.append([c, round(e, 6), s])
+        if len(shells) < 2:
+            continue
+        shells.sort(key=lambda t: (-t[1], t[0].name))
+        level = {}
+        for i, (c, e, s) in enumerate(shells):
+            y0, y1 = c.origin[1], c.origin[1] + c.size[1]
+            over = [level[o.name] for o, _, _ in shells[:i]
+                    if o.origin[1] - JOINT_REACH < y1 and y0 < o.origin[1] + o.size[1] + JOINT_REACH]
+            level[c.name] = (max(over) + 1) if over else 0
+        for c, e, s in shells:
+            if level[c.name] == 0:
+                continue
+            want = plane - INNER_STEP * level[c.name]
+            if want < INNER_MIN:
+                want = -INNER_HIDE                       # inside the leg: covered by the shells over it
+            x0, sx = c.origin[0], c.size[0]
+            if side == "r":
+                c.size = (sx + (want - s),) + tuple(c.size[1:])
+            else:
+                c.origin = (x0 - (want - s),) + tuple(c.origin[1:])
+                c.size = (sx + (want - s),) + tuple(c.size[1:])
+
+
 def apply_part(model, entry, index):
     """Apply one art.parts entry ({part: id or inline object, color, trim, alt, detail, params, phase, ...})."""
     if isinstance(entry.get("part"), dict):

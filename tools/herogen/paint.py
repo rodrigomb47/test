@@ -8,7 +8,8 @@ that point; the tone (-2..+2 on the slot's ramp) is the sum of
   for cloth, hair, leather, fur, scale, wood,
   only where the region ends at the face's bottom edge (a garment that continues onto the cube below is shaded once, at
   its hem, not once per body cube, which would read as stripes);
-- ambient occlusion: -1 on the top row of a cube that sits under a cube at least as wide (cuffs, collars, belts),
+- ambient occlusion: -1 on the top row of a cube that sits under a cube at least as wide, give or take a joint's
+  0.1 px (cuffs, collars, belts; a forearm over a hand),
   only where the region above is a different one (a sleeve over a hand, a collar over a shirt);
 - an outline: -2 on the last row of a clothing or hair region (hems, sleeve ends, bangs) and on the lowest texel a
   cutout leaves in a column (jagged tips), never on skin;
@@ -40,6 +41,7 @@ OUTLINED = {"cloth", "hair", "leather", "fur"}
 RESTING = {"cloth", "leather"}
 SILHOUETTE_CUTS = {"tri_up", "tri_down", "peak", "round_top", "round_bottom"}   # cut through the front and back           # materials whose edges against the body get a soft shadow instead
 EPS = 1e-6
+AO_NARROWER = 0.1       # px a cube above may be narrower on each axis and still shade the top row under it (a joint)
 NORMALS = {"north": (0, 0, -1), "south": (0, 0, 1), "east": (-1, 0, 0), "west": (1, 0, 0), "up": (0, 1, 0),
            "down": (0, -1, 0)}
 
@@ -149,8 +151,10 @@ class Painter:
             if d is c:
                 continue
             a0, b0, c0, a1, b1, c1 = d.box
+            # "at least as wide", allowing the joint's narrowing (art review: the forearm and the shin are 0.1 px
+            # narrower than the hand and the foot, and nested leg shells give up to 0.1 px on their inner sides)
             if abs(b0 - y1) < 0.01 and a0 - EPS <= cx <= a1 + EPS and c0 - EPS <= cz <= c1 + EPS \
-                    and (a1 - a0) * (c1 - c0) >= area - 0.01:
+                    and (a1 - a0 + AO_NARROWER) * (c1 - c0 + AO_NARROWER) >= area - 0.01:
                 return True
         return False
 

@@ -23,7 +23,7 @@
       "path": "arc",
       "y": "waist_y + 0.25",
       "radius": ["hips_w / 2 + 0.15", "hips_d / 2 + 0.15"],
-      "angles": [-180, 179.999],
+      "angles": [-180, 154.286],
       "count": 14,
       "width": "(hips_w + hips_d) * 0.26 + 0.5",
       "depth": 0.75,
