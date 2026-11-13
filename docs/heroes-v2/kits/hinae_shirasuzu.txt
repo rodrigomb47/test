@@ -1,6 +1,7 @@
 Hinae Shirasuzu - "The White Bell Shrine Maiden"
 Female | shrine | support | radiant | sweet-natured | epic
-Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+Status: designed, not in the game yet (kit version 2, 2026-11-13: she fights the same against
+players and NPCs, and she never yields: see "When she is losing"). All numbers are first values,
 tuned after play.
 ====================================================================================================
 
@@ -35,9 +36,10 @@ area and ultimate move draws a ground mark that grows over its whole wind-up (a 
 and goes at the hit: her accent colour for normal moves, red for the ultimate. Light moves show only
 the animation. When a wind-up starts, her face goes "focused" and stops blinking, and the move's
 sound plays from where she stands. No wind-up gets shorter than its class minimum, even in phase 3
-or enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
-level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
-a player from full health to zero.
+or enraged. Each move's damage is capped the same whoever it hits, a player, a soldier or a hero [16
+for a move, 30 for the ultimate, in level-1 health points]: there is no extra damage to players and
+no protection from a one-hit kill; the wind-up is the warning everyone gets. Any number of heroes
+may gang up on one target, and any number of enemies on her.
 Her fighting: focus (the wand and talismans, thrown); duel style zoner. She keeps about 8 blocks
 away [keep_distance 8, the support default] and backs off like an archer when you come within 4; she
 protects her allies and goes for whoever threatens them first (the support focus). Her element is
@@ -62,9 +64,9 @@ each move are set when she is built.
     SEALING CIRCLE (sealing_circle) - boss phases 1, 2, 3
       What it does: a circle of light marks the ground where you stand and bursts once a moment
       later, hurting and slowing you. If you carry 3 or more seals, the burst also stuns you for 1 s
-      and wipes the seals. On a player a stun is heavy slowness [Slowness IV and Mining Fatigue II]:
-      you keep control, and you cannot be stunned again for twice as long. It is her answer to a
-      raised shield (50%).
+      and wipes the seals. The stun is the same for everyone: a stunned player cannot walk, jump,
+      attack or use items for that second (the camera still turns), as a stunned soldier cannot, and
+      nobody can be stunned again for twice as long. It is her answer to a raised shield (50%).
       The tell: she rings her bells for 1 s while a disc grows under you.
       Counter: walk out of the circle before it bursts. A shield does not help: circles ignore
       shields.
@@ -116,7 +118,7 @@ each move are set when she is built.
       of golden hearts; every enemy within 6 blocks is struck by holy light and slowed. It is a
       channel: enough damage breaks it.
       The tell: the full ultimate tell: the 1.6 s wind-up, a spoken line, a wide sound, a red ground
-      mark, and the screen darkens for 2 s for every player fighting her. She cannot be staggered
+      mark, and the screen darkens for 2 s for the players near the fight. She cannot be staggered
       during this wind-up. The boss bar shows a lightning mark when her ultimate is ready.
       Counter: be more than 6 blocks away when it goes off, or break it: deal 15% of her maximum
       health while she channels and she is left open for 2 s. One hit can never do it alone (a hit
@@ -132,25 +134,31 @@ each move are set when she is built.
     every 20 s).
 
 BOSS FIGHT
-- When: boss mode is on while a player is engaged with her (the player hurt her in the last 15 s, or
-  is her target, within 32 blocks; creative and spectator players never count). It ends 10 s after
-  the last engaged player leaves, and her health share never jumps. The first engagement with a
-  player each in-game day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and
-  cannot be staggered, a title on your screen (her name, title and faction) and her intro line. A
-  boss bar shows a star, her name and title, her phase pips and a lightning mark when her ultimate
-  is ready. (Her bar title is set when she is built.)
-- Health: her field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.25 for a
-  support, and +50% for each extra engaged player (counted up to 5). At level 10 against one player
-  that is 130 health (148 as a leader): about 27 s (31 s) of landed hits with an iron sword at 1.6
-  swings a second, half of them landing. A whole fight lasts two to three times that once you dodge
-  her wind-ups. No single player hit takes more than 12% of her boss health; the excess becomes
-  poise damage.
-- Poise: 80 (the support value). Your hits fill her poise bar [damage x weapon: sword 1.0, axe 1.6,
-  mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your shield
-  raised in the last 6 ticks before a heavy move lands) adds 25. The bar drains 15 per second after
-  3 s without poise damage. Full poise staggers her: 2.5 s kneeling dizzy, taking 25% more damage;
-  then the bar resets and its maximum grows 20% for the rest of the fight. No stagger during her
-  intro, a phase change or her ultimate's wind-up.
+- One mode, against anyone: she is a boss in every fight, whether she fights you, NPC soldiers,
+  another hero or monsters, with the same health, poise, phases, moves, reactions, weak points and
+  enrage. A fight runs from the first enemy engaged with her (it hurt her in the last 15 s, or is
+  her target, within 32 blocks; creative and spectator players are never enemies) until 10 s after
+  the last one leaves. Her first fight against people (a player, a soldier or a hero) each in-game
+  day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and cannot be staggered,
+  and her intro line; each player within 32 blocks gets a title on screen (her name, title and
+  faction) once that day. Players within 32 blocks see a boss bar whenever she fights anyone (a raid
+  between two NPC factions included): a star, her name and title, her phase pips and a lightning
+  mark when her ultimate is ready. (Her bar title is set when she is built.)
+- Health: her base health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.25 for a
+  support, always: it never changes with who or how many fight her. At level 10 that is 130 health
+  (148 as a leader): about 27 s (31 s) of landed hits for a player with an iron sword at 1.6 swings
+  a second, half of them landing; an iron-sword soldier needs about a fifth longer, and attackers
+  add up (six soldiers who all reach her need about a sixth of one soldier's time). A whole duel
+  lasts two to three times its hitting time once you dodge her wind-ups. No single hit, from anyone
+  (a player, a soldier, a hero, a monster, their arrows), takes more than 12% of her health
+  [max_hit_share 12]; the excess becomes poise damage. Damage with no attacker (lava, fire,
+  drowning) is not capped.
+- Poise: 80 (the support value). Every hit fills her poise bar, whoever lands it [damage x weapon:
+  sword 1.0, axe 1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and
+  a parry (a shield, yours or a soldier's, raised in the last 6 ticks before a heavy move lands)
+  adds 25. The bar drains 15 per second after 3 s without poise damage. Full poise staggers her: 2.5
+  s kneeling dizzy, taking 25% more damage; then the bar resets and its maximum grows 20% for the
+  rest of the fight. No stagger during her intro, a phase change or her ultimate's wind-up.
 - Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
   (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
   During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
@@ -173,46 +181,52 @@ BOSS FIGHT
   - Back: the bonus for hitting her from behind (more than 120 degrees from where she faces) doubles
     [during a recovery, +30% more instead of +15%].
   - The line or prop that hints at each weak point is set when she is built.
-- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built):
+- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built).
+  She reads an NPC the same way: a soldier raising its shield, an archer drawing, a soldier eating
+  from its food bar draw the same answers at the same chances:
   - You come close -> Exorcise (70%).
   - An allied hero falls under half health -> Purify (80%).
   - You raise a shield -> Sealing Circle (50%; circles ignore shields).
-- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
-  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All her damage bonuses
-  together never exceed +25%. She also enrages at once when the heart of her base is attacked while
-  she defends it. (The design gives 240 s for her as a leader; the 180 s otherwise is the design's
-  default.)
+- Enrage: after 180 s of fighting, whoever she fights (240 s as a leader): +15% damage, shorter
+  waits between moves (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All
+  her damage bonuses together never exceed +25%. She also enrages at once when the heart of her base
+  is attacked while she defends it. (The design gives 240 s for her as a leader; the 180 s otherwise
+  is the design's default.)
 - Intro: she bows and raises her wand. "Welcome, traveller. Will you put your weapon down? ...No?
   I'm sorry, then."
-- Yield: she kneels (honour 75; only heroes with honour 30 or less, or leaders with caution 70 or
-  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
-  she kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
-  finish". Her yield line: "I... see. You are very strong."
-  - Spared (sneak and use): she walks home and will not fight for 10 minutes (a defeat, not a death;
-    no gear dropped). "Thank you. I'll ring a bell for you tonight."
-  - Finished (strike): she dies. Rewards: XP orbs (7 x her level, at most 100), her non-kit gear
-    (her kit never drops) and a hero crest trophy (one per hero per player per in-game day).
-  - No choice in 5 s: she collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
-    beat, then death.
-- Escape: in a boss fight she never runs at low health: she fights to the yield and kneels. The one
-  order that pulls her out of a boss fight is a lost raid (her raid falls back, or its leader falls,
-  while she is in or near the target). Outside boss fights she escapes when her health drops under
-  her retreat point away from home [retreat_below 44%, worked out from the formula of design section
-  5.4], when her raid is lost, or, as a leader, when the base she is in falls or she is under 50%
-  health at its heart with no guard beside her. At her own base she does not escape: she withdraws
-  like a soldier and comes back at 60% health. Escaping, she starts no moves and runs with any
-  movement she has, even where no one can follow (an escape counts as travel, so her travel bonuses
-  are on); cornered with no way out for 3 s, she fights back, then runs again as soon as a way
-  opens. It ends inside her refuge's walls (her home base; for a leader the capital, or the nearest
-  other standing base; never the base she flees) or once no pursuer has been within 48 blocks for 10
-  s. Then she stays away 5 minutes and until she is above 50% health, and does not go back for those
-  she fled. At most one escape in 10 minutes: inside that window she withdraws, kneels or goes home
-  with the party instead. An escape drops nothing and gives no rewards; a killing blow while she
-  flees is a normal defeat.
-- Revival: like every hero she comes back 10 minutes after her death [heroes.reviveSeconds 600], at
-  her home base (a leader: at the capital, or the nearest standing base); her kit items vanish at
-  death and return with her. She has no death ability of her own. A hero of her faction with the
-  revival_rite talent (milestone 2) would bring her back 20 / 30 / 40% sooner, never under 30 s.
+- Ganging up: there are no turns. Any number of heroes may press the same enemy at once, and any
+  number of enemies may press her; nothing grows or shrinks with the crowd on either side.
+- When she is losing: away from home she escapes [her sweet-natured traits: aggression 30 + honour
+  75 - caution 60 = 45, under 65: she never wanted the fight]. Under 15% of her health [flee_at 15%:
+  a third of her retreat_below 44%, kept inside her last phase], in any fight, whoever she is
+  fighting, she breaks off for good. Her raid falling back while she is in or near the target sends
+  her off too. Escaping, she starts no moves and runs on foot, across water where she can (an escape
+  counts as travel, so her runner speed is back on, and she swims where soldiers wade). She stays a
+  boss while she runs: the 12% cap, her poise and her weak points still hold, so a stagger stops her
+  for 2.5 s where she is, and she has three or four sword blows of health left. Cornered with no way
+  out for 3 s, she fights back, then runs again as soon as a way opens. Her refuge is her home base;
+  the escape ends inside its walls or once no pursuer has been within 48 blocks for 10 s. Then she
+  stays away 5 minutes and until she is above 50% health, and does not go back for those she fled.
+  The boss bar shows "fled" for 3 s and goes. "I'm sorry... I can't stay. Please, let that be
+  enough."
+  - Never from her own base: at her home base, while its heart stands, she does not leave her people
+    [stands_for: home, from loyalty 80]. There, under 15% she has her last-stand beat (her
+    last-stand line, the only hard thing she says, and a determined face, once per fight) and fights
+    until she dies. "I won't leave them. Not while one lantern is still lit." If the heart falls,
+    she runs to another base of her faction.
+  - At most one escape in 10 minutes: caught again inside that window, she fights to the death.
+  - At zero health she dies like anyone: there is no kneeling and nothing stops a killing blow. The
+    bar shows "fallen" for 3 s. "The bell... someone, please, keep it ringing..."
+  - A hero that runs from her: with honour 60 or more she lets it go and takes another target.
+- Rewards: only when she dies, to whoever killed her (the side of the last player, NPC or hero that
+  hurt her in her last 15 s): XP orbs (7 x her level, at most 100), her non-kit gear (her kit never
+  drops) and a hero crest trophy (one per hero per winning side per in-game day). Soldiers of a
+  winning faction pick them up and carry them home. An escape drops nothing and gives nothing.
+- Revival: like every hero she comes back 10 minutes after her death, whoever killed her
+  [heroes.reviveSeconds 600], at her home base (a leader: at the capital, or the nearest standing
+  base); her kit items vanish at death and return with her. She has no death ability of her own. A
+  hero of her faction with the revival_rite talent (milestone 2) would bring her back 20 / 30 / 40%
+  sooner, never under 30 s.
 
 HOW TO BEAT HER
 1. Count your seals. Each talisman of her Talisman Fan seals you; with 3 or more, her next Sealing
@@ -230,6 +244,9 @@ HOW TO BEAT HER
 6. Fight her away from her allies, or take them down first. She heals and cleanses them (Purify 80%
    when an allied hero is under half health) and shields any ally under 35% health. Her poise is
    small (80): an axe (x1.6) or a mace (x2.0) staggers her quickly.
+7. Know where you fight her. Away from home she breaks off at 15% and runs, swimming where she can:
+   a stagger or a few arrows stop her. In her own base she never runs and fights to the end, with
+   her guards and her shields around her.
 
 MOVEMENT
 Mobility traits: runner (ceiling II) and swimmer (ceiling I). She has every feature from level 1;
@@ -251,10 +268,11 @@ has is the one exception).
     Oxygen bonus                            1.2   / 1.6   / 2.0
 - Out of fights: she swims across rivers and lakes instead of bridging or walking round, and as a
   guard she runs the shrine steps to any alarm.
-- In fights: her travel bonuses are off; she keeps her zoning and fights in water unslowed (players
-  are slowed there). If you stand where she cannot walk to you (a pillar, a pen, a ledge), she uses
-  her far-range moves, after 10 s digs and builds her way up at player speed, and after 30 s gives
-  up with a taunt and resets.
+- In fights (the same against a player and an NPC): her travel bonuses are off; she keeps her zoning
+  and fights in water unslowed (players and soldiers are slowed there). If you stand where she
+  cannot walk to you (a pillar, a pen, a ledge; an NPC archer on a tower the same), she uses her
+  far-range moves, after 10 s digs and builds her way up at player speed, and after 30 s gives up
+  with a taunt and resets.
 - Walls in raids: as a non-leader she joins her base's raids like a soldier [raids: joins, the
   support default]; as a leader she stays home (below). She neither climbs nor jumps walls: as a
   runner and swimmer she goes in through the gate or the breach at the head of the soldiers. Inside,
@@ -263,8 +281,8 @@ has is the one exception).
   heart with her party; which comes first is set when she is built. A goal ends after 60 s without
   progress. Defending, as a guard hero she joins the two nearest free guards against an enemy hero
   coming over her walls.
-- Escaping: her travel speed comes back on, and she may go wherever she can walk or swim, even where
-  no pursuer can follow.
+- Escaping (away from home, under 15%: see "When she is losing"): her travel speed comes back on,
+  and she may go wherever she can walk or swim, even where no pursuer can follow.
 - Signature animation: none of her own in the design; she uses the shared run and swim.
 
 WORK AND TALENTS
@@ -277,17 +295,17 @@ WORK AND TALENTS
   any NPC.
 - Presence (her specialty as a guard): mend and purifier count one tier higher while she is at her
   base (inside the walls or within 16 blocks) and not on a raid; at tier III they use the tier IV
-  numbers. Her personal touch: she heals the most hurt NPC within 16 blocks by hand [4 / 6 / 8
-  health every 20 s; a 2 s channel that damage breaks], and her purifying also cleanses member
-  players near her [once every 60 / 45 / 30 s].
+  numbers. Her personal touch: she heals the most hurt ally within 16 blocks by hand (an NPC, a hero
+  or a member player alike) [4 / 6 / 8 health every 20 s; a 2 s channel that damage breaks], and her
+  purifying also cleanses member players near her [once every 60 / 45 / 30 s].
 - Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where she is,
   inside the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never
   the sum; the realm talent, marked *, also works at every other base of her faction at tier I while
   she leads):
   - mend: out of combat, allies within 16 blocks heal 5 / 7 / 10% of their maximum health every 10 s
     [with Presence at home: 7 / 10 / 12%].
-  - purifier* (realm): NPCs at her base lose poison, wither and hunger effects every 30 / 20 / 10 s
-    [with Presence at home: every 20 / 10 / 5 s].
+  - purifier* (realm): allies at her base (NPCs, heroes and member players alike) lose poison,
+    wither and hunger effects every 30 / 20 / 10 s [with Presence at home: every 20 / 10 / 5 s].
   At home she also uses the shared praying and sweeping idles of shrine keepers.
 
 AS A FACTION LEADER
@@ -312,8 +330,9 @@ AS A FACTION LEADER
   raids, attacks on her base, a lost base, a fallen hero and recruit milestones in her own voice
   (her own lines for these are not written yet; her temperament's fallback lines fill in).
 - If she dies: everyone hears it; no new raids until she returns, and no vengeance raid (that needs
-  aggression 70 or more). She stays home from raids, so no raid waits on her. If her faction's last
-  base falls she becomes an exiled free hero, never a leader again in that campaign.
+  aggression 70 or more). She stays home from raids, so no raid waits on her, and at her capital she
+  never runs: a leader of hers dies at the heart rather than leave it. If her faction's last base
+  falls she becomes an exiled free hero, never a leader again in that campaign.
 - How her personality steers the faction. Her traits (out of 100): aggression 30, honour 75,
   ambition 40, caution 60, greed 25, sociability 90, loyalty 80, volatility 35. The numbers below
   are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
@@ -353,9 +372,10 @@ PERSONALITY AND VOICE
   more aggressive (30 against 25) and more careful (60 against 50).
 - In a fight: cautious (aggression 35 or less: she looks for enemies within 12 blocks and chases up
   to 32), so her zoning and defensive moves weigh a little more [x1.06; attacking moves x0.88]. She
-  protects her allies, goes for whoever threatens them, keeps about 8 blocks away, and never strikes
-  a yielding enemy (honour 60 or more). Outside boss fights she pulls back at 44% health
-  [retreat_below].
+  protects her allies, goes for whoever threatens them, keeps about 8 blocks away, and lets a hero
+  that runs from her go (honour 60 or more). Her retreat point [retreat_below 44%] no longer makes
+  her step back to eat: a third of it is where she escapes away from home [flee_at 15%] (see "When
+  she is losing").
 - Likes: poppies, sweet berries, lanterns. Dislikes: rotten flesh. (Gifts come in a later
   milestone.)
 - Quirk: "apologises to the monsters she defeats."
@@ -368,10 +388,12 @@ PERSONALITY AND VOICE
     Phase 2:   "Please... stop. I don't want to hurt you."
     Phase 3:   "Then I'll purify this fight myself!"
     Kill:      "Rest gently."
-    Yield:     "I... see. You are very strong."
-    Spared:    "Thank you. I'll ring a bell for you tonight."
-  Moments without a line of her own yet (her ultimate, enrage, stagger, escape, raid announcements
-  and others) use the sweet-natured fallback lines until hers are written.
+    Escape:    "I'm sorry... I can't stay. Please, let that be enough."
+    Last stand (at home): "I won't leave them. Not while one lantern is still lit."
+    Fallen:    "The bell... someone, please, keep it ringing..."
+  Moments without a line of her own yet (her ultimate, enrage, stagger, raid announcements and
+  others) use the sweet-natured fallback lines until hers are written. (Her first sheet had a yield
+  and a spared line; heroes no longer yield, so they are gone.)
 
 ANIMATIONS
 Her own, on top of the shared library:

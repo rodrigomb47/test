@@ -2,6 +2,11 @@
 
 Status: plan, 2026-11-12. Design: `HEROES_V2.md` ("design §n" below). Roster: `ROSTER_PLAN.md`.
 
+Changed on 2026-11-13 for three owner decisions (design §6): heroes treat players and NPCs alike (one combat mode,
+no player-only rule), any number of heroes may press one target (no attack tokens), and no hero yields: each of the
+eight either escapes or fights to the death when a fight is lost (section 3, "When a fight is lost"; criteria 9-15;
+sections 6 and 7).
+
 **Goal.** Eight complete original heroes (4 female, 4 male) with animated models, faces that blink and change
 expression, signature combat animations, boss fights and non-combat work, leading hero-led factions in a real
 multi-day campaign on a dedicated server, with a screenshot gallery for the owner. Every engine piece the other 192
@@ -27,7 +32,7 @@ section 7, and the release checklist (HANDOFF section 7) is complete.
 | Leadership | identity layer and slugs (M1, M3), neutral NPC skins and tint (M4), `LeaderBiases` hooks (M6), leader draft, identity from the leader, 6 new base styles, banners, leader spawn, `court` duty, leader death and revival, announcements, leaders for old campaigns (M5) | §5.1-5.6 | L1-L4 |
 | Talents | the 15 milestone-1 talents | §7.2 | L5 |
 | Content | the 8 heroes of section 3 | §12, §13 | C1-C4 |
-| Verification | about 81 new GameTests (four test-only fixture heroes included), unit tests, two 8-day campaigns, a regression run, an old-world load, render measurements, screenshots, review | §14 | V1-V5 |
+| Verification | about 87 new GameTests (four test-only fixture heroes included), unit tests, two 8-day campaigns, a regression run, an old-world load, render measurements, screenshots, review | §14 | V1-V5 |
 
 ### 1.2 Out of scope (later milestones)
 
@@ -55,7 +60,7 @@ agent sessions to A2 and loses marker keyframes (replaced by a sidecar timing fi
 | Hero entity | spawns, fights, works its duty, saves and reloads with its cooldowns and energy, dies and revives, is unique per id |
 | Renderer and face | the test rig and all 8 heroes render with idle, walk, run, blink (a GIF shows it), all 12 moods, the talking mouth, phase looks, the faction sash, held work tools, and the LOD switch at 20 blocks |
 | Move runner | `DATA_ACTION` is set at wind-up start; the hit lands exactly `frames.windup` ticks later; speed scaling and interrupts work |
-| Boss controller | every rule of design §6.2-6.14 has a GameTest or a recorded viewer-session check (section 6.5) |
+| Boss controller | every rule of design §6.1-6.15 has a GameTest or a recorded viewer-session check (section 6.5), each rule checked against an NPC and against a player; a lost fight ends in an escape or a death, never a yield |
 | Decoy | renders the owner's model, mimics its action, has no shadow, pops on a hit |
 | Generator | `herogen build --check` is clean; the preview matches the game within 1 px; `check` catches a broken marker, an over-budget model and a missing face frame (three negative tests) |
 | Identity | every player-visible faction name, colour, banner and style comes from `FactionIdentity`; legacy worlds look unchanged until they get leaders |
@@ -130,6 +135,12 @@ Ultimate `midnight_frenzy` (class ultimate, 1.5 / 0.2 / 1.5: a long stretch and 
 Reactions: blocking -> `scratch_dash` round the shield (50%); drawing a bow -> `pounce` (60%); eating -> `pounce`
 (70%). Enrage after 180 s (240 as leader). Intro: "Huh? You're in my harbour. ...Fine. I'll show you out myself."
 
+**When a fight is lost.** She escapes (`when_losing: escape`, authored: her traits alone, 65 + 65 - 45 = 85, would
+give a tsundere's last stand, but a cat bolts). She leaves it late, under 8% of her health (`retreat_below` 22.5),
+and goes over walls and roofs: two air jumps, wall kicks, no fall damage. Not from her own harbour: at her home base
+she fights to the death (`stands_for: home`, the default at loyalty 70; she would never admit it is for the
+workers). Cornered, or caught again within 10 minutes of an escape, she fights to the death too.
+
 **Personality.** Tsundere; traits a 65, h 65, m 60, c 45, g 55, s 40, l 70, v 45. Likes cod, salmon, string; dislikes
 pufferfish, water buckets. Quirk: "pretends not to listen, then remembers every word."
 
@@ -140,7 +151,8 @@ scouting.
 
 **Voice and lines.** Voice `xylophone`, pitch 1.35, rate 2. Founding: "This harbour's mine now. Don't get the wrong
 idea, I'm not doing it for you." Greeting: "{player}? I wasn't waiting for you. ...Did you bring fish?" Kill: "Hmph.
-Too slow." Yield: "W-whatever. I let you win." Spared: "...Thanks. Tell anyone and I'll scratch you."
+Too slow." Escape: "I-I'm not running away! I just... have fish to catch. Don't follow me!" Last stand (at home):
+"This is MY harbour. I'm not going anywhere. ...It's not for them, got it?!" Fallen: "Tch... keep my spot warm."
 
 **Own animations.** `move.claw_string`, `move.pounce`, `move.hiss`, `move.scratch_dash`, `move.cat_reflex`,
 `move.zoomies`, `ultimate`, `state.frenzy`, `phase.2` (tail puff, flustered face), `phase.3` (eyes narrow and glow),
@@ -174,7 +186,8 @@ always, tail-tip foxfire in phase 3, eyes in phase 3.
 
 Ultimate `ninefold_lantern` (1.6 / 1.8 / 1.5; the lanterns gather into a ring behind him): a barrage of 9 foxfire, 0.2 s
 apart, 3 arcane each and mark `bewitched`. Passives: `contract` (`on_hurt` by melee, 25%: mark `bewitched` on the
-attacker); `bewitched_full` (`on_mark_full` `bewitched` at 3: stun 1 s, players get Slowness; cooldown 12 s).
+attacker); `bewitched_full` (`on_mark_full` `bewitched` at 3: stun 1 s, which stops a player as it stops an NPC,
+design §6.15; cooldown 12 s).
 
 **Boss.** Health scale 350, poise 70. Weak points: `iron` (+15% from iron weapons; hint "Iron... how crude.") and
 `recovery`.
@@ -188,6 +201,11 @@ attacker); `bewitched_full` (`on_mark_full` `bewitched` at 3: stun 1 s, players 
 Reactions: target close -> `vanish` (70%); drawing a bow -> `foxfire_volley` (50%); behind him -> `fan_cut` (60%).
 Enrage 180 s (240 as leader). Intro: "A customer? How delightful. The price today is your patience."
 
+**When a fight is lost.** He escapes (45 + 20 - 70 = -5: a schemer's life is his best asset), early, under 15% of
+his health (`retreat_below` 44.5), at a fox's run: an escape is travel, so runner III and the sprint burst are on.
+Nothing holds him (loyalty 30, so `stands_for` is empty): he leaves a raid, an ally and even his own capital. He is
+the slice's escape test and escape session.
+
 **Personality.** Schemer; a 45, h 20, m 85, c 70, g 70, s 60, l 30, v 25. Likes gold ingots, emeralds, lanterns;
 dislikes iron ingots. Quirk: "smiles most when he is lying, and he is always smiling."
 
@@ -198,7 +216,8 @@ economy focus trade, lore.
 
 **Voice and lines.** Voice `flute`, pitch 1.0, rate 3. Founding: "Sign here, and here. Congratulations: you all work for
 the Veiled Lantern now." Greeting: "Ah, {player}. Buying or selling? With me it is always both." Kill: "Paid in full."
-Yield: "Mm. A poor bargain for me." Spared: "Mercy, freely given? I shall have to find out what it costs."
+Escape: "Mm. A poor bargain. Let us call the account... deferred." Fallen: "So the bill comes due after all. How
+novel."
 
 **Own animations.** One per move, `ultimate`, `phase.2` (tails fan out, a laugh behind the sleeve), `phase.3` (lanterns
 flare, eyes glow), `intro` (a slow bow with the fan), personal idles: sleeve laugh, lantern spin, tail groom.
@@ -243,8 +262,13 @@ her 10% damage for 5 s; hint "Ugh, cold! Who throws snow at an oni?!") and `char
 Reactions: blocking -> `grab_throw` (70%); target far -> `shoulder_charge` (60%); eating -> `shoulder_charge` (70%).
 Enrage 240 s as leader, also when her heart is attacked. Intro: "Oho! You look sturdy. Let's find out!"
 
-**Personality.** Battle maniac; a 95, h 70, m 70, c 5, g 25, s 55, l 55, v 60 (an honourable fighter who spares the
-beaten). Likes cake, honey bottles, iron ingots; dislikes snowballs. Quirk: "has a sweet tooth she defends with her
+**When a fight is lost.** She never escapes (95 + 70 - 5 = 160: a battle maniac wants the fight more than her life).
+Under 8% of her health she has her last-stand beat and keeps swinging until she dies; when her raid falls back she
+stays in her fight. Ten minutes later she is back and wants a rematch.
+
+**Personality.** Battle maniac; a 95, h 70, m 70, c 5, g 25, s 55, l 55, v 60 (an honourable fighter: she lets a hero
+that runs from her go, and as a leader she spares a faction that has just lost a base). Likes cake, honey bottles,
+iron ingots; dislikes snowballs. Quirk: "has a sweet tooth she defends with her
 club."
 
 **Leader.** Title "Warlord of the Crimson Anvil". Faction names "Crimson Anvil Warband", "The Red Horn Host"; short
@@ -253,8 +277,8 @@ club."
 economy focus military, mining.
 
 **Voice and lines.** Voice `guitar`, pitch 1.1, rate 2. Founding: "Listen up! From today we're the Crimson Anvil. We
-work hard and we fight harder!" Greeting: "{player}! Arm-wrestle later? No? Coward!" Kill: "Next!" Yield: "Hah...
-hah... that was GREAT." Spared: "You're soft. I like you anyway."
+work hard and we fight harder!" Greeting: "{player}! Arm-wrestle later? No? Coward!" Kill: "Next!" Last stand:
+"Hah... hah... this is GREAT! Don't you dare stop now!" Fallen: "Good one... Next time I break the club on you."
 
 **Own animations.** One per move, `ultimate`, `state.rage`, `phase.2` (horn flares, a roar), `phase.3` (steam, a grin),
 `intro` (plants the club, cracks her knuckles), personal idles: shoulder roll, gourd swig, club spin.
@@ -300,6 +324,11 @@ Reactions: target close -> `exorcise` (70%); an allied hero under half health ->
 `sealing_circle` (zones ignore shields; 50%). Enrage 240 s as leader, also when her heart is attacked. Intro: "Welcome,
 traveller. Will you put your weapon down? ...No? I'm sorry, then."
 
+**When a fight is lost.** Away from home she escapes (30 + 75 - 60 = 45: she never wanted the fight) under 15% of
+her health (`retreat_below` 44), on foot and across water where she can. At her own base she does not leave her
+people (`stands_for: home`, loyalty 80): there she fights to the death, and her last-stand line is the only hard
+thing she says.
+
 **Personality.** Sweet-natured; a 30, h 75, m 40, c 60, g 25, s 90, l 80, v 35. Likes poppies, sweet berries, lanterns;
 dislikes rotten flesh. Quirk: "apologises to the monsters she defeats."
 
@@ -309,15 +338,16 @@ dislikes rotten flesh. Quirk: "apologises to the monsters she defeats."
 east; economy focus food, people.
 
 **Voice and lines.** Voice `bell`, pitch 1.4, rate 3. Founding: "Everyone, welcome home. From today we are the Hearth of
-the White Bell." Greeting: "{player}! Have you eaten? There's rice by the station." Kill: "Rest gently." Yield: "I...
-see. You are very strong." Spared: "Thank you. I'll ring a bell for you tonight."
+the White Bell." Greeting: "{player}! Have you eaten? There's rice by the station." Kill: "Rest gently." Escape: "I'm
+sorry... I can't stay. Please, let that be enough." Last stand (at home): "I won't leave them. Not while one lantern
+is still lit." Fallen: "The bell... someone, please, keep it ringing..."
 
 **Own animations.** One per move, `ultimate` (+`.loop`), `phase.2` (talismans unfold into a ring), `phase.3` (eyes open
 glowing), `intro` (bows, raises the wand), personal idles: bell shake, sweeping, prayer.
 
 ### 3.5 Kagenori Tsurumine: the still crane samurai (M, samurai, striker, shock, stoic)
 
-**Concept.** A quiet swordsman of few words who announces his name before every duel, never strikes a kneeling foe,
+**Concept.** A quiet swordsman of few words who announces his name before every duel, never strikes a foe who runs,
 and fights like still water until the moment his blade moves.
 
 **Look.** Base `male`, build `standard`, scale 102. Long black high ponytail; an indigo coat with a white crane crest;
@@ -333,7 +363,7 @@ eyes glow, blade edges glow.
 | Move | Form | Class | Band | Frames | Effects | P |
 |---|---|---|---|---|---|---|
 | `three_cut` | combo, 3 strikes | light | close | 0.45 / 0.45 / 0.35 | 55%, 55%, 80% + knockback 1 | 1-3 |
-| `iai_stance` | counter, stance 1.5 s, absorb 80% | heavy | close | 1.5 (the stance: hand on hilt, a guard click) / 0.1 / 0.8 | riposte 140% + stun 1 s (players: Slowness); arrows are not countered | 1-3 |
+| `iai_stance` | counter, stance 1.5 s, absorb 80% | heavy | close | 1.5 (the stance: hand on hilt, a guard click) / 0.1 / 0.8 | riposte 140% + stun 1 s (the same for a player and an NPC, design §6.15); arrows are not countered | 1-3 |
 | `thunderclap_draw` | line 8, width 1 | heavy | mid | 1.3 (stillness, a glint) / 0.05 / 0.85 (re-sheathe) | 150% shock; followup `crane_step` 30% | 1-3 |
 | `crane_step` | dash 6 | heavy | mid | 0.8 / 0.25 / 0.8 | 80%; followup `three_cut` 70% | 1-3 |
 | `guard_splitter` | melee, breaks guard | heavy | close | 0.9 / 0.1 / 0.9 | 110% + `guard_break` 4 s | 2-3 |
@@ -356,6 +386,10 @@ re-sheathe) and `back`.
 Reactions: blocking -> `guard_splitter` (60%); drawing a bow -> `crane_step` (70%). Enrage 180 s (240 as leader).
 Intro: "Tsurumine Kagenori. Draw when you are ready."
 
+**When a fight is lost.** He never escapes (50 + 90 - 65 = 75: he does not turn his back). Under 9% of his health
+(`retreat_below` 28) he has his last-stand beat and fights on, both swords out, until he dies. With honour 90 he
+does not chase or strike a hero that runs from him.
+
 **Personality.** Stoic; a 50, h 90, m 45, c 65, g 25, s 30, l 85, v 10. Likes bamboo, cherry saplings; dislikes rotten
 flesh. Quirk: "re-ties his hair before every duel."
 
@@ -365,8 +399,8 @@ blue with `circle` white and `border` light grey. Base style `deepslate_keep`; c
 mining.
 
 **Voice and lines.** Voice `bass`, pitch 0.85, rate 3. Founding: "From today this land is the Still Crane's. Keep your
-blades clean." Greeting: "{player}. Walk with purpose." Kill: "Rest." Yield: "...Well struck." Spared: "I will
-remember this mercy."
+blades clean." Greeting: "{player}. Walk with purpose." Kill: "Rest." Last stand: "I do not turn my back. Come."
+Fallen: "...Well struck."
 
 **Own animations.** One per move, `ultimate`, `state.twin_sky` (draws the second sword), `phase.2` (puts on the helmet),
 `phase.3`, `intro` (a bow, then hand to hilt), personal idles: hilt rest, eyes-closed breathing, re-tying the hair.
@@ -390,16 +424,17 @@ mask until phase 3. Blink `calm`. Idle quirks: scarf adjust, crouching scan, kun
 | `kunai_fan` | volley 3, range 14 (look `flint`) | light | mid, far | 0.4 / 0.2 / 0.4 | blight damage over time 1.5/s 4 s | 1-3 |
 | `shadow_step` | self | heavy | any | 0.8 (smoke puff) / 0.1 / 0.8 (skipped when `backstab` follows) | Invisibility 3 s and Speed I 3 s; footstep puffs give him away; followup `backstab` 100% | 1-3 |
 | `backstab` | melee | light | close | 0.4 / 0.1 / 0.5 | 120%; +60% more when behind the target; weight 0 (followup only) | 1-3 |
-| `smoke_bomb` | nova, radius 4 | area | close | 1.0 / 0.1 / 0.8 | Darkness 3 s (players), Slowness I 3 s, hop back 5; prefer target close | 1-3 |
+| `smoke_bomb` | nova, radius 4 | area | close | 1.0 / 0.1 / 0.8 | Darkness 3 s (on an NPC it cuts sight and aim to 5 blocks, design §6.15), Slowness I 3 s, hop back 5; prefer target close | 1-3 |
 | `shadow_clones` | self, `spawn_add` decoy x2 | heavy | any | 0.8 / 0.2 / 0.8 | two decoys for 10 s; only he casts a shadow | 2-3 |
 | `log_swap` | self, `spawn_add` decoy x1 + hop back 4 | light | close | 0.4 / 0.1 / 0.3 | a decoy left where he stood; prefer target close | 2-3 |
 | `shadow_dash` | dash 7, repeatable | heavy | mid | 0.8 / 0.3 / 1.5 (kneels to reset) | 70% blight; followup itself 100% (a string of 4) | 3 |
 
-Ultimate `nightfall` (1.5 / 1.6 / 1.5; a column of smoke): enemies within 10 get Darkness 4 s (players); he vanishes 2 s,
+Ultimate `nightfall` (1.5 / 1.6 / 1.5; a column of smoke): enemies within 10 get Darkness 4 s (players and NPCs alike,
+design §6.15); he vanishes 2 s,
 then a combo of 4 strikes, 60% blight each, on his target. Passive `unseen` (`on_kill`: Invisibility 2 s and Speed I).
 
-**Boss.** Health scale 350, poise 80. Weak points: `light` (a torch or glowstone placed by a player within 4 blocks:
--10% for 10 s; hint "...Too bright.") and `recovery` (the kneel after the dash string).
+**Boss.** Health scale 350, poise 80. Weak points: `light` (a torch or glowstone placed by an enemy, a player or an
+NPC, within 4 blocks: -10% for 10 s; hint "...Too bright.") and `recovery` (the kneel after the dash string).
 
 | Phase | At | Adds | Transition line |
 |---|---|---|---|
@@ -410,6 +445,10 @@ then a combo of 4 strikes, 60% blight each, on his target. Passive `unseen` (`on
 Reactions: target far -> `kunai_fan` (60%); blocking -> `shadow_step` (60%); eating -> `shadow_step` (70%). Enrage 180
 s (240 as leader). Intro: "Leave. This is the only warning."
 
+**When a fight is lost.** He escapes (55 + 50 - 60 = 45: a lone wolf owes nobody his death) under 11% of his health
+(`retreat_below` 31.5) and is the slice's hardest hero to catch: up a 16-block face, over a ravine on two air jumps,
+no fall damage. Nothing holds him (loyalty 55): not a raid, not his own base.
+
 **Personality.** Lone wolf; a 55, h 50, m 40, c 60, g 40, s 10, l 55, v 30. Likes maps, compasses; dislikes bells.
 Quirk: "counts his steps out loud when he thinks nobody is near."
 
@@ -418,15 +457,16 @@ Quirk: "counts his steps out loud when he thinks nobody is near."
 `stripe_downleft` red and `border` black. Base style `bamboo_village`; culture east; economy focus scouting, military.
 
 **Voice and lines.** Voice `hat`, pitch 0.95, rate 3; few lines. Founding: "Quiet Ash. That is all you need to know."
-Greeting: "..." / "{player}. You're loud." Kill: "Gone." Yield: "...Hm." Spared: "I owe you one footprint."
+Greeting: "..." / "{player}. You're loud." Kill: "Gone." Escape: "...Another night." Fallen: "...One footprint too
+many."
 
 **Own animations.** One per move, `ultimate`, `phase.2` (a hand seal, smoke), `phase.3` (pulls the mask down), `intro`
 (drops from above into a crouch), personal idles: scarf adjust, crouching scan, kunai twirl.
 
 ### 3.7 Ilsabet Frostmere: the rime vow knight (F, knight, vanguard, frost, righteous)
 
-**Concept.** A knight-commander who swore to keep the weak behind her shield. She never strikes a kneeling foe and never
-breaks her word, and she will hold a gate until the last of her people is inside.
+**Concept.** A knight-commander who swore to keep the weak behind her shield. She never strikes a foe who runs and
+never breaks her word, and she will hold a gate until the last of her people is inside.
 
 **Look.** Base `female`, build `standard`, scale 104. Ash-blonde hair in a braided crown; light steel plate with a long
 blue-and-white tabard bearing a frost-lily emblem; a short blue cape; greaves. A longsword in the right hand and a kite
@@ -453,8 +493,7 @@ Ultimate `vow_of_winter` (1.6 / 0.2 / 1.5; sword raised, a ring of ice crystals 
 resistance +30, her `back` weakness doubles. Passive `oath_keeper` (`on_ally_low_health` 35: that ally takes 20% less
 damage for 6 s; cooldown 15 s).
 
-**Boss.** Health scale 350 (400 as leader), poise 140. Weak points: `back` and `charge_wall`. With honour 90 she never
-strikes a yielding enemy.
+**Boss.** Health scale 350 (400 as leader), poise 140. Weak points: `back` and `charge_wall`.
 
 | Phase | At | Adds | Transition line |
 |---|---|---|---|
@@ -466,6 +505,10 @@ Reactions: behind her -> `turning_sweep` (70%); drawing a bow -> `frost_lance_ch
 under half health -> `rime_wall` (80%). Enrage 240 s as leader, also when her heart is attacked. Intro: "Lower your
 weapon and I will lower mine. I keep my word."
 
+**When a fight is lost.** She never escapes (50 + 90 - 60 = 80: her vow is to stand between the enemy and her
+people). Under 8% of her health she has her last-stand beat and holds the line until she dies. With honour 90 she
+does not chase or strike a hero that runs.
+
 **Personality.** Righteous; a 50, h 90, m 50, c 60, g 15, s 60, l 85, v 25. Likes shields, iron ingots, white tulips;
 dislikes wither roses. Quirk: "polishes her shield every night, whether it needs it or not."
 
@@ -476,8 +519,8 @@ Banner light blue with `cross` white and `border` yellow. Base style `frost_hall
 defence, people.
 
 **Voice and lines.** Voice `chime`, pitch 1.15, rate 3. Founding: "By my oath, this is the Order of the Rime Vow. No one
-here will be left behind." Greeting: "{player}. Are you well? Good. Stay that way." Kill: "It is done." Yield: "I yield.
-I keep my word, so I expect you to keep yours." Spared: "You have honour. I will not forget it."
+here will be left behind." Greeting: "{player}. Are you well? Good. Stay that way." Kill: "It is done." Last stand:
+"My word is given. Not one step back." Fallen: "Hold the line... hold..."
 
 **Own animations.** One per move, `ultimate`, `state.bulwark`, `phase.2` (visor snaps down), `phase.3` (plants the
 standard), `intro` (salute with the blade), personal idles: shield tap, salute, glance back.
@@ -522,6 +565,10 @@ please don't interrupt!") and `recovery`.
 Reactions: target close -> `fume_step` (70%); blocking -> `cauldron` (60%); eating -> `hex_mark` (50%). Enrage 180 s
 (240 as leader). Intro: "Ah, a test subject! I mean, a guest. Hold still, please."
 
+**When a fight is lost.** He escapes (35 + 60 - 55 = 40: an experiment can be repeated, a researcher cannot) under
+13% of his health (`retreat_below` 37.5), on the broom, with no air budget and the travel ceiling: uncatchable
+unless he is shot down (five arrows) or staggered first. Nothing holds him (loyalty 50).
+
 **Personality.** Eccentric genius; a 35, h 60, m 75, c 55, g 50, s 55, l 50, v 70. Likes glass bottles, books, glow
 berries; dislikes milk buckets ("they ruin everything"). Quirk: "names every potion after the person it was tested on."
 
@@ -533,7 +580,8 @@ focus lore, craft.
 
 **Voice and lines.** Voice `pling`, pitch 1.05, rate 2. Founding: "Welcome to the Nettlewick Conclave! Please do not
 drink anything labelled 'maybe'." Greeting: "{player}! Perfect timing, I need someone to hold this. Don't sniff it."
-Kill: "Data acquired." Yield: "Fascinating... I lost. Noted." Spared: "Mercy! An unexpected variable. Thank you."
+Kill: "Data acquired." Escape: "Experiment concluded! Result: I should leave. Don't touch my notes!" Fallen:
+"Fascinating... so that is what it feels like. Noted."
 
 **Own animations.** One per move, `ultimate` (+`.loop`), `phase.2` (bristles sprout, a hop onto the staff), `phase.3`
 (hat brim lifts, eyes glow), `intro` (tips the hat, adjusts the glasses), personal idles: notebook scribble, vial
@@ -548,7 +596,7 @@ shake, crow peck.
 | Animations | 10-16 own | `_core` (about 45), 7 style libraries (about 14 each) |
 | Server definition | about 10-20 KB | - |
 | `visual.json` | move list, blink profile, mood overrides, voice | - |
-| Sounds (`SOUND.md`) | 20-34 events in `herosrc/sfx/<id>.sfx.json`: voice blips, a sound for each move's wind-up, release and impact where it has one, the ultimate, phases 2 and 3, intro, passives, weak points and idles; generated or vanilla by id; 179-248 KB of Ogg | the cue set: the six telegraph cues, parry, counter, poise, stagger, phase, shockwave, enrage, intro, yield, spared, mobility (32 events, 302 KB) |
+| Sounds (`SOUND.md`) | 20-34 events in `herosrc/sfx/<id>.sfx.json`: voice blips, a sound for each move's wind-up, release and impact where it has one, the ultimate, phases 2 and 3, intro, passives, weak points and idles; generated or vanilla by id; 179-248 KB of Ogg | the cue set: the six telegraph cues, parry, counter, poise, stagger, phase, shockwave, enrage, intro, the two end-of-fight chimes (built as `yield` and `spared`; with no yield they are reused or retired, `SOUND.md` 16), mobility (32 events, 302 KB) |
 
 ---
 
@@ -585,7 +633,7 @@ shake, crow peck.
 
 **Build and tests**
 1. `./gradlew build`, the unit tests and the GameTests pass; the counts are reported (today 145 unit tests and 108
-   GameTests per CLAUDE.md, plus the phase-1 additions, plus about 81 new GameTests).
+   GameTests per CLAUDE.md, plus the phase-1 additions, plus about 87 new GameTests).
 2. The jar embeds GeckoLib; a dedicated server from `tools/setup_server.sh` and the Xvfb client run with only our jar.
 3. `herogen build --check` is clean; `herogen check --slice` reports no errors; `./gradlew checkHeroes` loads all 8
    heroes with no NOT LOADED and no PART LEFT OUT (ADJUSTED and NOTE lines are listed in the report).
@@ -603,18 +651,30 @@ shake, crow peck.
 
 **Boss fights**
 
-9. A player's damage turns boss mode on (bar with name, title, phase pips and the ultimate mark; the intro title once
-   per in-game day) and leaving for 10 s turns it off; the health share never jumps.
-10. For each hero: the per-hit cap converts excess damage to poise; full poise staggers it for 2.5 s; phases begin at
-    60% and 25% with the transition (super armour, shockwave, line, look) and the listed new mechanic.
+9. One mode against anyone: each hero has its boss health from spawn, the same with nobody near, against NPC
+   soldiers, against a player and against both; a fight with a player or with NPCs shows the bar (name, title, phase
+   pips, the ultimate mark) to players within 32 blocks and the intro title once per in-game day, and ends 10 s after
+   the last engaged enemy is gone (`heroHasBossHealthAgainstAnyone`, `bossBarShownInAnyFightNearAPlayer`,
+   `fightEndsTenSecondsAfterLastEnemy`).
+10. For each hero: the per-hit cap converts excess damage to poise, for an NPC's hit as for a player's
+    (`hitCapHoldsForNpcAndPlayerHits`); full poise staggers it for 2.5 s; phases begin at 60% and 25% with the
+    transition (super armour, shockwave, line, look) and the listed new mechanic.
 11. Every heavy, area and ultimate move draws a growing ground decal for its whole wind-up and removes it afterwards;
     no decal outlives its hero (GameTest and viewer session).
 12. Reactions fire: a raised shield, a drawn bow and eating each trigger the listed answer at least once in the viewer
-    session or a GameTest.
-13. Yield works both ways: sparing sends the hero home with no fighting for 10 minutes; finishing kills it and starts
-    the revival timer.
-14. Fairness: no hero hit takes a full-health player to 0 (GameTest); at most 2 heroes press one player (GameTest);
-    knockback toward lava or a drop is reduced (GameTest).
+    session or a GameTest, and an NPC soldier raising its shield draws the same answer with the same chance and
+    cooldown as a player (`reactionFiresOnNpcShield`).
+13. A lost fight ends as each hero's nature says (section 3, "When a fight is lost"), against NPCs and a player
+    alike, and never in a yield: an escaping hero breaks off under its threshold, the bar shows `fled` and nothing
+    drops (`escapingHeroFleesAtThresholdFromNpcsAndPlayer`; Yugen in the escape tests of `MOBILITY_AND_WORK.md` 17.2);
+    a last-stand hero never flees, says its `last_stand` line once and dies fighting, the bar shows `fallen`, the
+    rewards go to the side that killed it and its 10-minute revival starts (`lastStandHeroNeverFleesAndDiesFighting`,
+    `rewardsDropOnlyOnDeath`); a hero that stands at home runs afield and dies at home
+    (`homeStandHeroFleesAfieldNotAtHome`). Nothing kneels and no killing blow is cancelled.
+14. Fairness, the same for every target: a hero's hits stay within the slot caps against a player as against an NPC
+    (`BossRulesTest.equalForPlayerAndNpc`); three heroes may press one target at once, an NPC soldier or a player
+    (`threeHeroesPressOneTarget`); a stun stops a player as it stops an NPC (`stunStopsPlayerLikeNpc`); knockback toward
+    lava or a drop is reduced for every receiver (`grabHoldsAndThrowsSafely`).
 15. `BossRulesTest.referenceDuel` computes each slice hero's boss health at level 10 against a reference player (iron
     sword, 1.6 swings per second, 50% of swings landing, vanilla armour reduction, weak points that an iron sword
     triggers): between 20 and 60 s of landed hitting for one player, as a leader and as a non-leader (a fight lasts two
@@ -633,6 +693,9 @@ shake, crow peck.
     | Ambrose (controller) | 130 (148) | 27 s (31 s) |
 
     (The earlier target of 45-150 s of hitting could not hold: without the role factor the same heroes gave 18-36 s.)
+    The health is the same against NPCs (no per-player scaling, design §6.2); the test also prints, for each hero, the
+    time one iron-sword soldier needs (about a fifth longer than the reference player) and the war power of design
+    §8.1 (for example Benika as a leader, 165 health: about 5.3 iron soldiers, power 11.8).
 
 **Factions and leadership**
 
@@ -678,16 +741,25 @@ shake, crow peck.
 
 ### 6.1 Unit tests
 
-Java: the v1 format tests (`HeroJsonTest`, `HeroReaderTest`, `HeroBalanceTest`, `HeroRulesTest`), `HeroReaderV2Test`,
-`HeroBalanceV2Test`, `MoveSelectorTest`, `BossRulesTest` (including `referenceDuel`), `HeroActionsTest`,
+Java: the v1 format tests (`HeroJsonTest`, `HeroReaderTest`, `HeroBalanceTest`, `HeroRulesTest`, the last with the war
+power of design §8.1), `HeroReaderV2Test`, `HeroBalanceV2Test`, `MoveSelectorTest`, `BossRulesTest` (including
+`referenceDuel` and `equalForPlayerAndNpc`), `EscapeRulesTest` (each hero's escape or last stand, its threshold and
+where it stands: design §6.13), `HeroActionsTest`,
 `PersonalityTest`, `TemperamentsTest`, `LeaderBiasesTest`, `LeaderDraftTest`, `FactionNameGenTest`, `PaletteTest`,
 `BannerDesignTest`, `TalentsTest`, `BuiltinHeroesTest` (the 8 load cleanly; no duplicate ids; the slice is 4 F and 4
 M), `HeroAssetsTest`. Python: `tools/herogen/tests` and `roster/check_roster.py`.
 
 ### 6.2 GameTests
 
-The list of design §14.5 (51 hero, boss, leader, talent and fixture-hero tests plus the 4 static ones: 55), on top of
-v1's ability tests built in A3 and A4 (about 26), so about 81 new GameTests. Every job-running test has its own `batch`; static checks share `workers_static`; test bases go
+The list of design §14.5 (57 hero, boss, leader, talent and fixture-hero tests plus the 4 static ones: 61), on top of
+v1's ability tests built in A3 and A4 (about 26), so about 87 new GameTests. Twelve of them check the owner's
+decisions of 2026-11-12 and 2026-11-13 and replace the first draft's boss-mode, yield and attack-token tests; each
+that names "an NPC soldier and a mock player" must give the same numbers for both: an NPC raising a shield triggers
+the reaction (`reactionFiresOnNpcShield`), NPC hits are capped (`hitCapHoldsForNpcAndPlayerHits`), an escaping-kind
+hero flees at its threshold from NPCs and from a player alike (`escapingHeroFleesAtThresholdFromNpcsAndPlayer`), a
+last-stand hero never flees and dies fighting (`lastStandHeroNeverFleesAndDiesFighting`), three heroes may press one
+target (`threeHeroesPressOneTarget`), and the others of design §14.5. The escape GameTests of `MOBILITY_AND_WORK.md`
+17.2 come on top. Every job-running test has its own `batch`; static checks share `workers_static`; test bases go
 through `GameTestBases.register` and are cleaned up; spawns are at known relative positions on the flat test world.
 
 ### 6.3 Asset checks
@@ -699,11 +771,13 @@ model over the cube budget and a missing eye frame each fail with a clear messag
 
 Server: `tools/setup_server.sh /srv/fc` (seed 20261107, RCON 25575). `sim.py` gains per-faction lines (leader,
 temperament, identity, the `LeaderBiases` knob values, raids launched and their targets) and per-hero lines (duty work
-counts, fights, boss fights, casts per move, phases reached, staggers, yields, spares, deaths, revivals).
+counts, fights by who the enemy was (a player, soldiers, a hero, monsters), casts per move, phases reached, staggers,
+escapes, last stands, deaths, revivals, war power) and per-raid lines (both sides' counted power, design §8.1, and
+whether a hero's presence or absence decided the odds).
 
 | Run | Setup | Length | Checks |
 |---|---|---|---|
-| A | `[leaders] fixed = ["benika_akagane", "yugen_kagaribi", "hinae_shirasuzu", "kagenori_tsurumine"]`, `fc start 256`; then `fc admin hero give <slug> <id>` for Natsuho (to the White Bell), Ilsabet (to the Still Crane), Ambrose (to the Veiled Lantern), Tobimaru (to the Crimson Anvil) | 8 days (`tools/days.sh /srv/fc 8 runA.log`) | criteria 16-18, 21, 22, 25; no stuck hero (recoveries); every move of every hero cast at least once in field mode (`sim.py`) |
+| A | `[leaders] fixed = ["benika_akagane", "yugen_kagaribi", "hinae_shirasuzu", "kagenori_tsurumine"]`, `fc start 256`; then `fc admin hero give <slug> <id>` for Natsuho (to the White Bell), Ilsabet (to the Still Crane), Ambrose (to the Veiled Lantern), Tobimaru (to the Crimson Anvil) | 8 days (`tools/days.sh /srv/fc 8 runA.log`) | criteria 16-18, 21, 22, 25; no stuck hero (recoveries); every move of every hero cast at least once in NPC wars, with no player near (`sim.py`); each hero ends its lost fights as its kind says (no last-stand hero escapes, no hero escapes from a place it stands for, nothing yields); raids won with and without a hero compared with the war council's odds (design §8.1) |
 | B | `fixed = ["natsuho_komezaki", "ilsabet_frostmere", "ambrose_nettlewick", "tobimaru_usugumo"]`; the other four given as second heroes | 8 days | as A, with the tsundere, righteous, eccentric and lone-wolf leaders; the phase-1 items still pending a campaign check (woodcutters digging their own dirt, two miners sharing a mine) are checked here too |
 | C | `leaders.personalityStrength = 0`, then `leaders.enabled = false` | 3 days each | criterion 19 |
 | Old world | a format-2 world from an earlier campaign | 1 day | criterion 20 |
@@ -715,11 +789,16 @@ With the server up and the Xvfb `clientViewer` joined (HANDOFF section 4): `game
 Viewer resistance infinite 4 true`, `effect give Viewer regeneration infinite 2 true`; bring a hero of a running campaign next to the viewer
 with `tp <hero uuid> Viewer`; engage it with `damage <hero uuid> 1 minecraft:player_attack by Viewer`; take screenshots at
 wind-ups (decals), at the intro title, at each phase (`fc admin hero health <id> <percent>` jumps to 61%, 59%, 26%,
-24%), at a stagger (`fc admin hero poise <id> full`), and at the yield (`fc admin hero health <id> 1`, then a strike
-for "finish" and a sneak-use for "spare", the latter through `fc admin hero yield <id> spare` since the viewer cannot be
-scripted to sneak-use). The server log line `[Heroes] reaction <id> <when> -> <move>` counts reactions (criterion 12):
-the viewer raises a shield and draws a bow through `item replace` and `/fc admin hero target-state <id> blocking|bow|
-eating` test hooks, which set the condition flags the reactions read.
+24%), at a stagger (`fc admin hero poise <id> full`), and at the end of a fight (criterion 13): Yugen pushed under
+15% (`fc admin hero health <id> 16`, then one hit) runs, the bar shows `fled`; in a second fight he is staggered as he
+turns (`fc admin hero poise <id> full`) and killed, the bar shows `fallen` and the rewards drop; Ambrose flies off at
+13% and is brought down by the viewer's arrows; Kagenori under 9% says his last-stand line and dies where he stands;
+`fc admin hero escape <id>` starts an escape on demand (the first draft's `yield` hook is gone). The server log line
+`[Heroes] reaction <id> <when> -> <move>` counts reactions (criterion 12): the viewer raises a shield and draws a bow
+through `item replace` and `/fc admin hero target-state <id> blocking|bow|eating` test hooks, which set the condition
+flags the reactions read. The same session brings a soldier of a rival faction next to the hero (`tp <soldier uuid>
+<hero uuid>`) and checks in the log that its shield draws the same reaction and its hits the same cap, with the bar
+shown to the viewer from 32 blocks (equal treatment).
 
 ### 6.6 Performance
 
@@ -746,7 +825,8 @@ report to the owner:
 3. **Signature moves**: for each hero, one wind-up with its ground decal and one hit frame (16 shots) and a GIF of the
    signature move (8 GIFs from the preview renderer).
 4. **Phases**: each hero's phase 2 and phase 3 look, mid-transition (16 shots).
-5. **Boss moments**: the intro title, the boss bar with pips, a stagger, the yield kneel (4 shots).
+5. **Boss moments**: the intro title, the boss bar with pips, a stagger, an escape (Yugen or Ambrose getting away, the
+   bar's `fled`), a last stand (Kagenori's line under 9%) and the bar over a raid between two NPC factions (6 shots).
 6. **Factions**: each capital with its banners, base style and the leader at the station (8 shots over runs A and B);
    the map screen and the station info screen with the leader section (2 shots).
 7. **People at work**: workers in faction tabards; Benika mining, Natsuho fishing, Ambrose at the enchanting table (4
@@ -763,7 +843,7 @@ kit changes; from C1 on herogen writes it from the hero source.
 | Checkpoint | Reached when | Shown to the owner |
 |---|---|---|
 | 1. Pipeline alive | A0, G1, G3, A1, A2 done: the test rig renders in game, blinks and walks | a GIF of the test rig blinking and walking, and the six base bodies |
-| 2. First hero end to end | Natsuho (C1) complete with every move, phase and face in game, boss mode on | her screenshots and GIFs; the owner's early feedback on the look is folded in before C2-C4 |
+| 2. First hero end to end | Natsuho (C1) complete with every move, phase and face in game, her boss fight working against a player and against NPC soldiers, her escape and her stand at home | her screenshots and GIFs; the owner's early feedback on the look is folded in before C2-C4 |
 | 3. All eight | C1-C4 done, review gates passed | the contact sheet and lineup |
 | 4. Campaigns | V1-V3 done | the full gallery and the campaign numbers |
 | 5. Release | V4-V5 done | the report: what changed, what was verified, what is left |
@@ -781,5 +861,6 @@ Parallel tracks from the start: F1-F4, G1 and L1-L3 need neither GeckoLib nor ea
 | The look does not meet the owner's expectation at checkpoint 2 | adjust base proportions, the painter and face templates before more heroes are made; this is why Natsuho is finished first |
 | Software GL on Xvfb is too slow for GIF capture in game | GIFs come from the preview renderer; the game provides still screenshots |
 | Boss numbers feel wrong in the viewer session | all numbers are PROPOSED config values; tune `boss.healthScale`, `maxHitShare` and poise defaults before release |
+| Heroes, now bosses against soldiers too, decide the NPC wars | the war power and its limits (design §8.1: the soldier-backbone cap, escapes and last stands, the 10-minute revival); `war.heroPowerPercent` tuned from runs A and B |
 | A leader personality stalls a campaign | the draft's war-balance rule; runs A and B use contrasting casts on purpose |
 | Display-entity decals misbehave (interpolation, clean-up) | particles-only telegraphs behind `boss.telegraphDecals = false` |

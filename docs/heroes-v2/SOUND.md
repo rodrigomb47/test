@@ -9,6 +9,11 @@ sounds, the previews). Nothing plays yet: S2 (Java) registers the events and pla
 `sounds.json` and the index are in `src/main/resources/assets/factionclash/`; the client loads `sounds.json` already,
 and an event nobody registers or plays does nothing.
 
+Changed on 2026-11-13 for the owner's decisions on heroes (`HEROES_V2.md` section 6): a hero fights the same against
+players and NPCs, any number of heroes may press one target, and no hero yields (it escapes or fights to the death).
+Sounds are presentation, so they stay for players, but they now play in every fight, whoever the hero fights, and
+the yield's two chimes lose their moment (section 7, section 16). No sound file was changed by this edit.
+
 ---
 
 ## 0. The owner's decision
@@ -336,8 +341,15 @@ shout, Ambrose's "a-HA!" (and his crow). Hurt and death stay vanilla player soun
 
 The server plays what every nearby player must hear and what decides nothing on the client (HEROES_V2 10.3:
 `level.playSound`, positional, the hero's category); the client plays what follows an animation frame or a local
-state. A *notification* is `ServerPlayer.playNotifySound` to each engaged player (heard in the head, not positioned),
-for the beats that are about the fight, not a place.
+state. A *notification* is `ServerPlayer.playNotifySound` to each player who sees the hero's boss bar (the players
+within 32 blocks of a fighting hero, HEROES_V2 6.1 and 6.13; heard in the head, not positioned), for the beats that
+are about the fight, not a place.
+
+**Who causes a cue does not matter** (equal treatment, HEROES_V2 6.15). Every cue plays in every fight, whoever the
+hero fights: a parry by an NPC soldier's shield plays `cues.parry` as a player's does, a stagger an NPC caused plays
+`cues.poise.break`, and a raid between two NPC factions sounds like a duel to a player watching it. Nothing in this
+section reads whether an enemy is a player; only the listeners are players (NPCs do not hear), so a fight with no
+player near plays its positional sounds to nobody and sends no notification.
 
 **The slot rule** (what S2 and C1-C4 apply, and `check` enforces):
 
@@ -362,16 +374,17 @@ play at the start. A heavy move with a 1.3 s wind-up thus hears its 0.78 s swell
 | A channel lasts (Hinae's rite, Ambrose's brew) | the move's `loop` | client, a looping sound following the hero |
 | A channel is broken | `cues.channel_break` + the move's `broken` | server |
 | Recovery details (paw lick, re-sheathe, kneel) | the move's `end` | client keyframe |
-| A player parries (shield raised in the last 6 ticks) | `cues.parry` (over vanilla's own shield block) | server, at the player |
+| A parry (a shield raised in the last 6 ticks, a player's or an NPC's) | `cues.parry` (over vanilla's own shield block) | server, at the one who parried |
 | A counter stance answers | `cues.counter` | server |
 | Poise passes 75% (once per cycle) | `cues.poise.crack` | server |
 | Poise breaks: stagger | `cues.poise.break`, then `cues.stagger` (2.4 s of dizzy stars) | server |
 | Phase transition | `cues.phase` (notification), `cues.shockwave` and `cues.super_armor` at the hero; the hero's `phases.N` from its `phase.N` animation | server + client keyframe |
 | Enrage | `cues.enrage` (notification and at the hero) | server |
-| Boss intro (first engagement in a day) | `cues.intro` (notification, with the title); the hero's `intro` from its `intro` animation | server + client keyframe |
+| Boss intro (its first fight against people in an in-game day, whoever they are) | `cues.intro` (notification, with the title, to each player within 32 blocks once that day); the hero's `intro` from its `intro` animation | server + client keyframe |
 | Ultimate becomes ready (the boss bar's lightning) | `cues.ultimate_ready` | server, at the hero, quiet |
 | A weak point triggers | `cues.weak_point` + the hero's `weak_points.<kind>` | server |
-| Yield, spared | `cues.yield`, `cues.spared` | server |
+| The end of a fight: the bar's `fled` or `fallen` (HEROES_V2 6.13) | `fled`: today's `cues.yield` chime (proposed new id `cues.fled`, section 16); `fallen`: a new sting, to be made; until then the hero's `voice.death` alone | server: notification to the players who saw the bar, and at the hero |
+| A last stand (a hero that will not or cannot leave drops under its threshold, once per fight) | a new short accent, to be made (section 16); until it exists the `last_stand` line carries the moment alone | server, at the hero |
 | A charge hits a wall | `cues.charge_wall` | server |
 | A decoy pops; a barrier takes a hit, breaks | `cues.decoy_pop`; `cues.barrier.hit`, `.break` | server |
 | States, passives | `states.<name>`, `passives.<name>` | server, when the state starts or the passive triggers |
@@ -433,7 +446,8 @@ Errors fail; notes advise. Audio rules run on the SHIPPED files (decoded by ffmp
 - Voices: each hero's reference line (section 6) within 1.5 dB of its `voice.line_loudness`.
 - Cue map: all of telegraph light, heavy, area, ultimate, unblockable, dive, parry, counter, poise crack and break,
   stagger, phase, shockwave, enrage, intro, yield, spared, take-off, landing, glide, decoy pop, weak point, channel
-  break.
+  break. (Since 2026-11-13 the `yield` slot means the bar's `fled` sting and `spared` has no moment; the map keeps
+  both names until the sound work renames or retires them, section 16.)
 - Files: every expected file exists and nothing stale; sounds.json and the index are current; mono; 44.1 or
   22.05 kHz; length within the kind's limit (loops exactly `length`); the first and last sample under -45 dBFS; a
   fade-in and a fade-out (the content's first 0.5 ms and last 1 ms well under its peak); no clicks inside (a burst of
@@ -535,7 +549,8 @@ The index `assets/factionclash/sounds/hero_sfx.json` (written by `sfxgen build`,
    (`SoundSource.valueOf(category.toUpperCase(Locale.ROOT))`), `level.playSound(null, x, y, z, event, source,
    volume, pitch)`; then each `with` companion after its `delay` ticks at the same place (a small per-level queue
    ticked by the server tick event), recursively (at most 2 deep). A notification is
-   `ServerPlayer.playNotifySound(event, source, volume, pitch)` to each engaged player, companions likewise.
+   `ServerPlayer.playNotifySound(event, source, volume, pitch)` to each player who sees the hero's boss bar,
+   companions likewise; never decided by whether the hero's enemy is a player.
 4. **Hooks** (server), by the slot rule of section 7:
    - the move runner's wind-up start: `heroes.<id>.moves.<move>.windup` at once; the class cue
      (`cues.telegraph.<class>`, grabs `.unblockable`, the `dive` form `.dive`, skipped when `heroes.telegraphCues`
@@ -545,8 +560,9 @@ The index `assets/factionclash/sounds/hero_sfx.json` (written by `sfxgen build`,
      `cues.channel_break`;
    - entering a state: `states.<name>`; a passive triggering: `passives.<name>`; a weak point: `weak_points.<kind>` +
      `cues.weak_point`;
-   - the boss controller's intro, phase, poise, stagger, parry, counter, enrage, yield, spare, ultimate ready, wall
-     stun, decoy and barrier beats (section 7's table, with the notifications it names);
+   - the boss controller's intro, phase, poise, stagger, parry (anyone's), counter, enrage, the end of a fight
+     (`fled`, `fallen`), the last stand, ultimate ready, wall stun, decoy and barrier beats (section 7's table, with
+     the notifications it names); there is no yield or spare beat;
    - `HeroMovement`'s take-off (`cues.takeoff` + `mobility.takeoff`), heavy landing and downing;
    - `HeroEntity.playStepSound` (vanilla step x `steps.volume`, plus `steps.with`); `getHurtSound`, `getDeathSound`
      and `getVoicePitch` from `voice.hurt` / `voice.death` (vanilla ids: `BuiltInRegistries.SOUND_EVENT`).
@@ -581,3 +597,10 @@ the category slider; the subtitle overlay merges lines whose components are equa
   Natsuho's `frenzy_rise`, Ilsabet's voice.
 - The kit set and the style libraries' own swing sounds come with batch 1 and G8.
 - C1-C4 put the `release`, `end`, phase, intro and quirk sounds into the animation recipes as markers (section 5).
+- **The yield's chimes** (the owner's decision of 2026-11-13: no hero yields; `HEROES_V2.md` 6.13 and 15.6). For the
+  sound work, not done here: `cues.yield` ("Hero yields", the soft falling three-note chime) is reused as the boss bar's
+  **fled** sting, renamed `cues.fled` with the subtitle "Hero flees" (its recipe and file can stay as they are);
+  `cues.spared` ("Hero is spared", the warm rising chime) has no moment left and is retired, or reused as the chime of a
+  hero's return at its revival. Two cues are new: a **fallen** sting for the bar's other end state (a short low toll, at
+  the sting loudness of section 8) and a **last stand** accent (short, at the hero, under the line). `check`'s cue map
+  and the S2 hooks follow whatever the sound work decides.

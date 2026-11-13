@@ -1,7 +1,8 @@
 Yugen Kagaribi - "The Lantern Fox"
 Male | fox | marksman | arcane | schemer | epic
-Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
-tuned after play.
+Status: designed, not in the game yet (kit version 2, 2026-11-13: he fights the same against players
+and NPCs, and he never yields: see "When he is losing"). All numbers are first values, tuned after
+play.
 ====================================================================================================
 
 WHO HE IS
@@ -35,9 +36,10 @@ area and ultimate move draws a ground mark that grows over its whole wind-up (a 
 and goes at the hit: his accent colour for normal moves, red for the ultimate. Light moves show only
 the animation. When a wind-up starts, his face goes "focused" and stops blinking, and the move's
 sound plays from where he stands. No wind-up gets shorter than its class minimum, even in phase 3 or
-enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
-level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
-a player from full health to zero.
+enraged. Each move's damage is capped the same whoever it hits, a player, a soldier or a hero [16
+for a move, 30 for the ultimate, in level-1 health points]: there is no extra damage to players and
+no protection from a one-hit kill; the wind-up is the warning everyone gets. Any number of heroes
+may gang up on one target, and any number of enemies on him.
 His fighting: focus (foxfire lanterns and a folding fan, thrown); duel style zoner. He keeps about
 10 blocks away [keep_distance 10] and backs off like an archer when you come within 5; he goes for
 the weakest enemy first (the schemer focus). His element, arcane, goes through armour and shields
@@ -113,7 +115,7 @@ set when he is built.
       after another, 0.2 s apart, each aimed at you as it fires; each one hurts and puts a Bewitched
       mark on you (see Passives).
       The tell: a 1.6 s wind-up as the lanterns gather, a spoken line, a wide sound, a red ground
-      mark, and the screen darkens for 2 s for the players fighting him. He cannot be staggered
+      mark, and the screen darkens for 2 s for the players near the fight. He cannot be staggered
       during this wind-up. The boss bar shows a lightning mark when his ultimate is ready.
       Counter: get a block between you and him before the flames start, or keep moving sideways;
       three marks on you mean a slow (see Passives).
@@ -124,30 +126,38 @@ set when he is built.
   Passives
     CONTRACT (contract): when you hit him in melee, 25% of the time he puts a Bewitched mark on you.
     BEWITCHED (bewitched_full): when someone carries 3 of his Bewitched marks, they are stunned for
-    1 s; players are not stunned but slowed instead (v1 turns a stun on a player into Slowness IV
-    and Mining Fatigue II). At most once every 12 s. How long a mark lasts and how many can stack
-    are set when he is built.
+    1 s, a player as surely as an NPC: for that second a player cannot walk, jump, attack or use
+    items (the camera still turns; v1's milder Slowness for players is gone, the same rule for
+    everyone). At most once every 12 s. How long a mark lasts and how many can stack are set when he
+    is built.
 
 BOSS FIGHT
-- When: boss mode is on while a player is engaged with him (the player hurt him in the last 15 s, or
-  is his target, within 32 blocks; creative and spectator players never count). It ends 10 s after
-  the last engaged player leaves, and his health share never jumps. The first engagement with a
-  player each in-game day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and
-  cannot be staggered, a title on your screen (his name, title and faction) and his intro line. A
-  boss bar shows a star, his name and title, his phase pips and a lightning mark when his ultimate
-  is ready. (His bar title is set when he is built.)
-- Health: his field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader: every leader
-  gets +50], x1.3 for a marksman, and +50% for each extra engaged player (counted up to 5). At level
-  10 against one player that is 130 health (148 as a leader): about 24 s (27 s) of landed hits with
-  an iron sword at 1.6 swings a second, half of them landing, his iron weakness counted. A whole
-  fight lasts two to three times that once you dodge his wind-ups. No single player hit takes more
-  than 12% of his boss health; the excess becomes poise damage.
-- Poise: 70 (the marksman value, the lowest there is). Your hits fill his poise bar [damage x
-  weapon: sword 1.0, axe 1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt
-  0.8], and a parry (your shield raised in the last 6 ticks before a heavy move lands) adds 25. The
-  bar drains 15 per second after 3 s without poise damage. Full poise staggers him: 2.5 s kneeling
-  dizzy, taking 25% more damage; then the bar resets and its maximum grows 20% for the rest of the
-  fight. No stagger during his intro, a phase change or his ultimate's wind-up.
+- One mode, against anyone: he is a boss in every fight, whether he fights you, NPC soldiers,
+  another hero or monsters, with the same health, poise, phases, moves, reactions, weak points and
+  enrage. A fight runs from the first enemy engaged with him (it hurt him in the last 15 s, or is
+  his target, within 32 blocks; creative and spectator players are never enemies) until 10 s after
+  the last one leaves. His first fight against people (a player, a soldier or a hero) each in-game
+  day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and cannot be staggered,
+  and his intro line; each player within 32 blocks gets a title on screen (his name, title and
+  faction) once that day. Players within 32 blocks see a boss bar whenever he fights anyone (a raid
+  between two NPC factions included): a star, his name and title, his phase pips and a lightning
+  mark when his ultimate is ready. (His bar title is set when he is built.)
+- Health: his base health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader: every leader
+  gets +50], x1.3 for a marksman, always: it never changes with who or how many fight him. At level
+  10 that is 130 health (148 as a leader): about 24 s (27 s) of landed hits for a player with an
+  iron sword at 1.6 swings a second, half of them landing, his iron weakness counted; an iron-sword
+  soldier needs about a fifth longer, and attackers add up (six soldiers who all reach him need
+  about a sixth of one soldier's time). A whole duel lasts two to three times its hitting time once
+  you dodge his wind-ups. No single hit, from anyone (a player, a soldier, a hero, a monster, their
+  arrows), takes more than 12% of his health [max_hit_share 12]; the excess becomes poise damage.
+  Damage with no attacker (lava, fire, drowning) is not capped.
+- Poise: 70 (the marksman value, the lowest there is). Every hit fills his poise bar, whoever lands
+  it [damage x weapon: sword 1.0, axe 1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6,
+  crossbow bolt 0.8], and a parry (a shield, yours or a soldier's, raised in the last 6 ticks before
+  a heavy move lands) adds 25. The bar drains 15 per second after 3 s without poise damage. Full
+  poise staggers him: 2.5 s kneeling dizzy, taking 25% more damage; then the bar resets and its
+  maximum grows 20% for the rest of the fight. No stagger during his intro, a phase change or his
+  ultimate's wind-up.
 - Pace: between moves he waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
   (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
   During any recovery he takes 15% more damage, and 15% more again from behind (more than 120
@@ -167,53 +177,48 @@ BOSS FIGHT
   - Iron: +15% damage from iron weapons (an iron sword, axe or other iron tool in your main hand).
     Hint line: "Iron... how crude."
   - Recovery: the punish bonus doubles during his recoveries [+30% instead of +15%].
-- How he reads you (each answer replaces his next pick; their cooldowns are set when he is built):
+- How he reads you (each answer replaces his next pick; their cooldowns are set when he is built).
+  He reads an NPC the same way: a soldier raising its shield, an archer drawing, a soldier eating
+  from its food bar draw the same answers at the same chances:
   - You come close -> Vanish (70%).
   - You draw a bow -> Foxfire Volley (50%).
   - You get behind him -> Fan Cut (60%).
-- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
-  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his damage bonuses
-  together never exceed +25%.
+- Enrage: after 180 s of fighting, whoever he fights (240 s as a leader): +15% damage, shorter waits
+  between moves (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his
+  damage bonuses together never exceed +25%.
 - Intro: a slow bow with the fan. "A customer? How delightful. The price today is your patience."
-- Yield: he REFUSES it. Heroes with honour 30 or less do not kneel (his honour is 20), and as a
-  leader his caution of 70 would make him refuse too. He is the only one of the first eight heroes
-  who runs instead of kneeling. When a killing blow from a player would start the yield, he stays at
-  1 health and escapes:
-  - Boss mode ends at once: the bar shows that he fled for 3 s and goes, the players who fought him
-    read "Yugen Kagaribi fled" in chat, nothing drops and there are no rewards. He says his escape
-    line (his own is not written yet; the schemer fallback lines cover it).
-  - From then on your hits are ordinary hits (no cap, no poise, no yield): at 1 health, the next
-    arrow, bolt or trident that reaches him kills him, and that is a real defeat with the usual
-    rewards (below).
-  - He runs for his refuge (his home base; as a leader the capital, or the nearest other standing
-    base; never the base he flees) with everything he has: an escape counts as travel, so his travel
-    speed and sprint burst are back on, and he may put a gap you cannot cross between you. He starts
-    no moves; cornered with no way out for 3 s, he fights back where he stands, then runs again as
-    soon as a way opens. The escape ends inside his refuge's walls, or once no pursuer has been
-    within 48 blocks for 10 s.
-  - Afterwards he stays away 5 minutes and until he is above 50% health, and does not go back for
-    the players he fled. He escapes at most once in 10 minutes: inside that window he kneels like
-    the others, so if you follow him home or meet him again soon, you get a real fight that ends in
-    the yield.
-  - When he does kneel (5 s, untouchable and passive, while you see "Sneak and use to spare, strike
-    to finish"): "Mm. A poor bargain for me."
-  - Spared (sneak and use): he walks home and will not fight for 10 minutes (a defeat, not a death;
-    no gear dropped). "Mercy, freely given? I shall have to find out what it costs."
-  - Finished (strike): he dies. Rewards: XP orbs (7 x his level, at most 100), his non-kit gear (his
-    kit never drops) and a hero crest trophy (one per hero per player per in-game day).
-  - No choice in 5 s: he collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
-    beat, then death.
-- Escape (other cases): outside boss fights he escapes when his health drops under his retreat point
-  away from home [retreat_below 44.5%, worked out from the formula of design section 5.4]: a trader
-  caught on the road gets away with a fox's turn of speed. He also escapes when his raid is lost
-  while he is in or near the target (the one order that pulls a hero out of a boss fight), or, as a
-  leader, when the base he is in falls or he is under 50% health at its heart with no guard beside
-  him. At his own base he withdraws like a soldier instead. The same refuge, stay-away,
-  once-in-10-minutes and no-reward rules apply.
-- Revival: like every hero he comes back 10 minutes after his death [heroes.reviveSeconds 600], at
-  his home base (a leader: at the capital, or the nearest standing base); his kit items vanish at
-  death and return with him. He has no death ability of his own. A hero of his faction with the
-  revival_rite talent (milestone 2) would bring him back 20 / 30 / 40% sooner, never under 30 s.
+- Ganging up: there are no turns. Any number of heroes may press the same enemy at once, and any
+  number of enemies may press him; nothing grows or shrinks with the crowd on either side.
+- When he is losing: he escapes, and early [his schemer traits: aggression 45 + honour 20 - caution
+  70 = -5, under 65: a schemer's life is his best asset]. Under 15% of his health [flee_at 15%: a
+  third of his retreat_below 44.5%, kept inside his last phase], in any fight, from a player,
+  soldiers, another hero or monsters alike, he breaks off for good. His raid falling back while he
+  is in or near the target, or the heart of the base he defends falling, sends him off too. Nothing
+  holds him anywhere [stands_for: none, loyalty 30]: he leaves a raid, an ally and even his own
+  capital. Escaping, he starts no moves and runs with a fox's turn of speed (an escape counts as
+  travel, so his travel speed and sprint burst are back on), and he may put a gap you cannot cross
+  between you. He stays a boss while he runs: the 12% cap, his poise and his weak points still hold,
+  so a stagger stops him for 2.5 s where he is, and he has three or four sword blows of health left.
+  Cornered with no way out for 3 s, he fights back, then runs again as soon as a way opens. His
+  refuge is his home base, never the base he flees (from a fight at his own base: another base of
+  his faction, or the wild until no one follows); the escape ends inside its walls or once no
+  pursuer has been within 48 blocks for 10 s. Then he stays away 5 minutes and until he is above 50%
+  health, and does not go back for those he fled. The boss bar shows "fled" for 3 s and goes, and
+  players within 32 blocks read "Yugen Kagaribi fled". "Mm. A poor bargain. Let us call the
+  account... deferred." He is the slice's escape test and escape session.
+  - At most one escape in 10 minutes: follow him home or meet him again soon, and inside that window
+    he fights to the death.
+  - At zero health he dies like anyone: there is no kneeling and nothing stops a killing blow. The
+    bar shows "fallen" for 3 s. "So the bill comes due after all. How novel."
+- Rewards: only when he dies, to whoever killed him (the side of the last player, NPC or hero that
+  hurt him in his last 15 s): XP orbs (7 x his level, at most 100), his non-kit gear (his kit never
+  drops) and a hero crest trophy (one per hero per winning side per in-game day). Soldiers of a
+  winning faction pick them up and carry them home. An escape drops nothing and gives nothing.
+- Revival: like every hero he comes back 10 minutes after his death, whoever killed him
+  [heroes.reviveSeconds 600], at his home base (a leader: at the capital, or the nearest standing
+  base); his kit items vanish at death and return with him. He has no death ability of his own. A
+  hero of his faction with the revival_rite talent (milestone 2) would bring him back 20 / 30 / 40%
+  sooner, never under 30 s.
 
 HOW TO BEAT HIM
 1. Fight him with iron: an iron sword or axe deals 15% more. An axe or a mace also fills his small
@@ -229,9 +234,10 @@ HOW TO BEAT HIM
 5. Watch your Bewitched marks: each melee hit you land has a 25% chance to mark you, and every flame
    of his ultimate marks you; at 3 marks you are slowed. Mix in ranged hits, and get a block between
    you and him when his ultimate starts.
-6. Keep a bow, crossbow or trident ready for the end: he will not kneel. At the killing blow he runs
-   at 1 health, and one shot that reaches him finishes him. With his runner speed back on, shoot
-   rather than chase.
+6. Keep a bow, crossbow or trident ready for the end: he runs early, at 15%, with his runner speed
+  back on. Shoot rather than chase: three or four hits finish him, and filling his small poise bar
+  staggers him for 2.5 s where he stands. If he gets away he is at his home base, hurt, for the next
+  5 minutes, and caught again within 10 minutes he does not run a second time.
 
 MOVEMENT
 Mobility traits: runner (ceiling III) and leaper (ceiling I). He has every feature from level 1; the
@@ -253,9 +259,10 @@ the one exception).
 - Out of fights: a 300-block village trip takes about a fifth less time at full power (speed, and no
   fence detours). He takes streams, gaps, fences and small ledges without detours or bridges, and
   his travel routes give hostile bases a wide berth.
-- In fights: his travel bonuses (speed, sprint) are off in boss fights. Leaping lets him hop onto
-  fences and 1.5-block ledges while keeping his distance; from ground a player cannot reach he comes
-  back within 4 s. A jump starts with a 0.3 s crouch (the tell).
+- In fights (the same against a player and an NPC): his travel bonuses (speed, sprint) are off in
+  every fight. Leaping lets him hop onto fences and 1.5-block ledges while keeping his distance;
+  from ground his enemies cannot reach he comes back within 4 s. A jump starts with a 0.3 s crouch
+  (the tell).
 - Walls in raids: as a non-leader he joins his base's raids like a soldier [raids: joins, the
   marksman default]; as a leader he stays home (below). His jumps reach rises of 1.5 blocks, not
   today's 5-block base walls, so he goes in by the gate with the soldiers (a jump across from higher
@@ -264,8 +271,8 @@ the one exception).
   base and carries it home) and clearing the defending archers (marksman and zoner heroes); which
   one he takes is set when he is built. A goal ends after 60 s without progress. The defenders
   answer him as any intruding hero (the alarm, the two nearest free guards and any hero at home).
-- Escaping: an escape counts as travel, so his speed and sprint come back on, and he may leave a gap
-  you cannot cross between you.
+- Escaping (under 15%, see "When he is losing"): an escape counts as travel, so his speed and sprint
+  come back on, and he may leave a gap you cannot cross between you.
 - Signature animation: his sprint is a fox lope.
 
 WORK AND TALENTS
@@ -316,8 +323,11 @@ AS A FACTION LEADER
   a lost base, a fallen hero and recruit milestones in his own voice (his own lines for these are
   not written yet; his temperament's fallback lines fill in).
 - If he dies: everyone hears it; no new raids until he returns, and no vengeance raid (that needs
-  aggression 70 or more). He stays home from raids, so no raid waits on him. If his faction's last
-  base falls he becomes an exiled free hero, never a leader again in that campaign.
+  aggression 70 or more). He stays home from raids, so no raid waits on him. If he escapes (he
+  would, even from his capital), his faction hears his escape line, and for 5 minutes and until he
+  is above half health he counts in no base's defence but his refuge's; there is no vengeance raid,
+  since nobody died. If his faction's last base falls he becomes an exiled free hero, never a leader
+  again in that campaign.
 - How his personality steers the faction. His traits (out of 100): aggression 45, honour 20,
   ambition 85, caution 70, greed 70, sociability 60, loyalty 30, volatility 25. The numbers below
   are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
@@ -353,8 +363,9 @@ PERSONALITY AND VOICE
 - In a fight: steady (aggression between 35 and 65: he looks for enemies within 20 blocks and chases
   up to 56), and his caution makes his zoning and defensive moves weigh a little more [x1.12;
   attacking moves x0.97]. He goes for the weakest enemy (the schemer focus) and keeps about 10
-  blocks away. With honour under 60 he has no rule against striking a yielding enemy. Outside boss
-  fights he pulls back at 44.5% health [retreat_below].
+  blocks away. With honour under 60 he chases a hero that runs from him as far as his leash goes.
+  His retreat point [retreat_below 44.5%] no longer makes him step back to eat: a third of it is
+  where he escapes [flee_at 15%] (see "When he is losing").
 - Likes: gold ingots, emeralds, lanterns. Dislikes: iron ingots. (Gifts come in a later milestone.)
 - Quirk: "smiles most when he is lying, and he is always smiling."
 - Voice: soft flute blips per syllable, medium pitch [pitch 1.0], unhurried [rate 3 ticks per
@@ -367,11 +378,12 @@ PERSONALITY AND VOICE
     Phase 3:   "Enough games. Let the lanterns speak."
     Hint:      "Iron... how crude."
     Kill:      "Paid in full."
-    Yield:     "Mm. A poor bargain for me."
-    Spared:    "Mercy, freely given? I shall have to find out what it costs."
-  Moments without a line of his own yet (his ultimate, enrage, stagger, escape, raid announcements
-  and others) use the schemer fallback lines until his are written. Since he refuses the yield, his
-  escape line is the one players will hear most at the end of a fight.
+    Escape:    "Mm. A poor bargain. Let us call the account... deferred."
+    Fallen:    "So the bill comes due after all. How novel."
+  Moments without a line of his own yet (his ultimate, enrage, stagger, raid announcements and
+  others) use the schemer fallback lines until his are written. His escape line is the one players
+  will hear most at the end of a fight. (His first sheet had a yield and a spared line; heroes no
+  longer yield, so they are gone.)
 
 ANIMATIONS
 His own, on top of the shared library:

@@ -1,7 +1,8 @@
 Tobimaru Usugumo - "The Quiet Ash Ninja"
 Male | ninja | skirmisher | blight | lone wolf | epic
-Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
-tuned after play.
+Status: designed, not in the game yet (kit version 2, 2026-11-13: he fights the same against players
+and NPCs, and he never yields: see "When he is losing"). All numbers are first values, tuned after
+play.
 ====================================================================================================
 
 WHO HE IS
@@ -35,9 +36,10 @@ area and ultimate move draws a ground mark that grows over its whole wind-up (a 
 and goes at the hit: his accent colour for normal moves, red for the ultimate. Light moves show only
 the animation. When a wind-up starts, his face goes "focused" and stops blinking, and the move's
 sound plays from where he stands. No wind-up gets shorter than its class minimum, even in phase 3 or
-enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
-level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
-a player from full health to zero.
+enraged. Each move's damage is capped the same whoever it hits, a player, a soldier or a hero [16
+for a move, 30 for the ultimate, in level-1 health points]: there is no extra damage to players and
+no protection from a one-hit kill; the wind-up is the warning everyone gets. Any number of heroes
+may gang up on one target, and any number of enemies on him.
 His fighting: twin blades; duel style rushdown. As a skirmisher he hits and runs: after each melee
 hit he steps back 3 blocks until his next swing is ready [keep_distance 4], and he goes for the
 weakest enemy first (the skirmisher default). His element is blight (the wither and wither skeletons
@@ -80,18 +82,19 @@ move are set when he is built.
       120% is set when he is built); weight 0 (a followup only); frames 0.4 / 0.1 / 0.5]
 
     SMOKE BOMB (smoke_bomb) - boss phases 1, 2, 3
-      What it does: a burst of smoke around him: players within 4 blocks get Darkness and everyone
-      in it is slowed, while he hops 5 blocks back. It deals no damage. He prefers it when you are
-      close.
+      What it does: a burst of smoke around him: everyone within 4 blocks gets Darkness (on a
+      soldier or a hero it cuts sight and aim to 5 blocks, about what you see) and is slowed, while
+      he hops 5 blocks back. It deals no damage. He prefers it when you are close.
       The tell: a disc grows on the ground around him during the 1.0 s wind-up, with a sound.
       Counter: step out of the 4-block disc during the wind-up.
-      Numbers: [area, close; nova, radius 4; Darkness 3 s (players), Slowness I 3 s; hop back 5;
+      Numbers: [area, close; nova, radius 4; Darkness 3 s (everyone), Slowness I 3 s; hop back 5;
       frames 1.0 / 0.1 / 0.8]
 
     SHADOW CLONES (shadow_clones) - boss phases 2, 3 (new in phase 2)
       What it does: two decoys of him appear and last 10 s. A decoy looks exactly like him, copies
       what he does a tenth of a second late [2 ticks], walks a short path, has 1 health and pops in
-      a puff of smoke at any hit. The design gives decoys no attack of their own.
+      a puff of smoke at any hit. The design gives decoys no attack of their own. Soldiers and
+      heroes are fooled as you are: they swing and shoot at a decoy as at him.
       The tell: a 0.8 s wind-up with a sound; the shape of its ground mark is set when he is built.
       Counter: find the real one: only he casts a shadow and only he makes footstep sounds. One hit
       pops a decoy.
@@ -120,15 +123,16 @@ move are set when he is built.
 
   Ultimate
     NIGHTFALL (nightfall)
-      What it does: a column of smoke rises around him; players within 10 blocks get Darkness for 4
-      s; he vanishes for 2 s, then strikes his target with a combo of 4 blight strikes.
+      What it does: a column of smoke rises around him; everyone within 10 blocks gets Darkness for
+      4 s (soldiers and heroes see and aim no farther than 5 blocks); he vanishes for 2 s, then
+      strikes his target with a combo of 4 blight strikes.
       The tell: the biggest in his kit: a 1.5 s wind-up with the smoke column, a spoken line, a wide
-      sound, a red ground mark, and the screen darkens for 2 s for the players fighting him. He
+      sound, a red ground mark, and the screen darkens for 2 s for the players near the fight. He
       cannot be staggered during this wind-up. The boss bar shows a lightning mark when his ultimate
       is ready.
       Counter: keep moving and keep a shield ready when he reappears; each strike of the combo can
       be dodged on its own. Hit him in the 1.5 s recovery.
-      Numbers: [ultimate; radius 10; Darkness 4 s (players); vanish 2 s; 4 strikes x 60% blight;
+      Numbers: [ultimate; radius 10; Darkness 4 s (everyone); vanish 2 s; 4 strikes x 60% blight;
       frames 1.5 / 1.6 / 1.5. Set when he is built: his ultimate line, the shape of its ground mark,
       how fast the energy bar fills and the minimum gap between two ultimates (20-60 s)]
 
@@ -137,25 +141,31 @@ move are set when he is built.
     [on_kill; how long the Speed lasts is set when he is built].
 
 BOSS FIGHT
-- When: boss mode is on while a player is engaged with him (the player hurt him in the last 15 s, or
-  is his target, within 32 blocks; creative and spectator players never count). It ends 10 s after
-  the last engaged player leaves, and his health share never jumps. The first engagement with a
-  player each in-game day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and
-  cannot be staggered, a title on your screen (his name, title and faction) and his intro line. A
-  boss bar shows a star, his name and title, his phase pips and a lightning mark when his ultimate
-  is ready. (His bar title is set when he is built.)
-- Health: his field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.25 for a
-  skirmisher, and +50% for each extra engaged player (counted up to 5). At level 10 against one
-  player that is 130 health (148 as a leader): about 27 s (31 s) of landed hits with an iron sword
-  at 1.6 swings a second, half of them landing. A whole fight lasts two to three times that once you
-  dodge his wind-ups. No single player hit takes more than 12% of his boss health; the excess
-  becomes poise damage.
-- Poise: 80 (the skirmisher value). Your hits fill his poise bar [damage x weapon: sword 1.0, axe
-  1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your
-  shield raised in the last 6 ticks before a heavy move lands) adds 25. The bar drains 15 per second
-  after 3 s without poise damage. Full poise staggers him: 2.5 s kneeling dizzy, taking 25% more
-  damage; then the bar resets and its maximum grows 20% for the rest of the fight. No stagger during
-  his intro, a phase change or his ultimate's wind-up.
+- One mode, against anyone: he is a boss in every fight, whether he fights you, NPC soldiers,
+  another hero or monsters, with the same health, poise, phases, moves, reactions, weak points and
+  enrage. A fight runs from the first enemy engaged with him (it hurt him in the last 15 s, or is
+  his target, within 32 blocks; creative and spectator players are never enemies) until 10 s after
+  the last one leaves. His first fight against people (a player, a soldier or a hero) each in-game
+  day opens with his intro: 1.0 to 1.5 s in which he takes 50% less damage and cannot be staggered,
+  and his intro line; each player within 32 blocks gets a title on screen (his name, title and
+  faction) once that day. Players within 32 blocks see a boss bar whenever he fights anyone (a raid
+  between two NPC factions included): a star, his name and title, his phase pips and a lightning
+  mark when his ultimate is ready. (His bar title is set when he is built.)
+- Health: his base health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.25 for a
+  skirmisher, always: it never changes with who or how many fight him. At level 10 that is 130
+  health (148 as a leader): about 27 s (31 s) of landed hits for a player with an iron sword at 1.6
+  swings a second, half of them landing; an iron-sword soldier needs about a fifth longer, and
+  attackers add up (six soldiers who all reach him need about a sixth of one soldier's time). A
+  whole duel lasts two to three times its hitting time once you dodge his wind-ups. No single hit,
+  from anyone (a player, a soldier, a hero, a monster, their arrows), takes more than 12% of his
+  health [max_hit_share 12]; the excess becomes poise damage. Damage with no attacker (lava, fire,
+  drowning) is not capped.
+- Poise: 80 (the skirmisher value). Every hit fills his poise bar, whoever lands it [damage x
+  weapon: sword 1.0, axe 1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt
+  0.8], and a parry (a shield, yours or a soldier's, raised in the last 6 ticks before a heavy move
+  lands) adds 25. The bar drains 15 per second after 3 s without poise damage. Full poise staggers
+  him: 2.5 s kneeling dizzy, taking 25% more damage; then the bar resets and its maximum grows 20%
+  for the rest of the fight. No stagger during his intro, a phase change or his ultimate's wind-up.
 - Pace: between moves he waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
   (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
   During any recovery he takes 15% more damage, and 15% more again from behind (more than 120
@@ -172,52 +182,55 @@ BOSS FIGHT
   everyone within 4 blocks back (no damage; softened near lava or a drop), he says the line, his
   face and look change, and the bar gains a pip.
 - Weak points:
-  - Light: a torch, a lantern, glowstone or any block that gives light of 12 or more, placed by a
-    player within 4 blocks of him, weakens him by 10% for 10 s. Hint line: "...Too bright." (Whether
-    the 10% is less damage dealt or more damage taken, and how often it can trigger, is set when he
-    is built.)
+  - Light: a torch, a lantern, glowstone or any block that gives light of 12 or more, placed by an
+    enemy within 4 blocks of him (a player or an NPC: the same), weakens him by 10% for 10 s. Hint
+    line: "...Too bright." (Whether the 10% is less damage dealt or more damage taken, and how often
+    it can trigger, is set when he is built.)
   - Recovery: the punish bonus doubles during his recoveries [+30% instead of +15%]; the kneel after
     the Shadow Dash string is the clearest one.
-- How he reads you (each answer replaces his next pick; their cooldowns are set when he is built):
+- How he reads you (each answer replaces his next pick; their cooldowns are set when he is built).
+  He reads an NPC the same way: a soldier raising its shield, an archer drawing, a soldier eating
+  from its food bar draw the same answers at the same chances:
   - You stand far away -> Kunai Fan (60%).
   - You raise a shield -> Shadow Step (60%), then Backstab, which goes for your back.
   - You eat -> Shadow Step (70%).
-- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
-  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his damage bonuses
-  together never exceed +25%.
+- Enrage: after 180 s of fighting, whoever he fights (240 s as a leader): +15% damage, shorter waits
+  between moves (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All his
+  damage bonuses together never exceed +25%.
 - Intro: he drops from above into a crouch. "Leave. This is the only warning."
-- Yield: he kneels (honour 50; only heroes with honour 30 or less, or leaders with caution 70 or
-  more, refuse, and his caution is 60). A killing blow from a player or a player's projectile is
-  stopped at 1 health, and he kneels for 5 s, untouchable and passive, while you see "Sneak and use
-  to spare, strike to finish". His yield line: "...Hm."
-  - Spared (sneak and use): he walks home and will not fight for 10 minutes (a defeat, not a death;
-    no gear dropped). "I owe you one footprint."
-  - Finished (strike): he dies. Rewards: XP orbs (7 x his level, at most 100), his non-kit gear (his
-    kit never drops) and a hero crest trophy (one per hero per player per in-game day).
-  - No choice in 5 s: he collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
-    beat, then death.
-- Escape: in a boss fight he never runs at low health: he fights to the yield and kneels. The one
-  order that pulls him out of a boss fight is a lost raid (his raid falls back, or its leader falls,
-  while he is in or near the target). Outside boss fights he escapes when his health drops under his
-  retreat point away from home [retreat_below 31.5%, worked out from the formula of design section
-  5.4], when his raid is lost, or, as a leader, when the base he is in falls or he is under 50%
-  health at its heart with no guard beside him. At his own base he does not escape: he withdraws
-  like a soldier and comes back at 60% health. Escaping, he starts no moves and runs with any
-  movement he has, even where no one can follow (an escape counts as travel, so his travel bonuses
-  are on); cornered with no way out for 3 s, he fights back, then runs again as soon as a way opens.
-  It ends inside his refuge's walls (his home base; for a leader the capital, or the nearest other
-  standing base; never the base he flees) or once no pursuer has been within 48 blocks for 10 s.
+- Ganging up: there are no turns. Any number of heroes may press the same enemy at once, and any
+  number of enemies may press him; nothing grows or shrinks with the crowd on either side.
+- When he is losing: he escapes [his lone-wolf traits: aggression 55 + honour 50 - caution 60 = 45,
+  under 65: a lone wolf owes nobody his death]. Under 11% of his health [flee_at 11%: a third of his
+  retreat_below 31.5%, kept inside his last phase], in any fight, from a player, soldiers, another
+  hero or monsters alike, he breaks off for good. His raid falling back while he is in or near the
+  target, or the heart of the base he defends falling, sends him off too. Nothing holds him anywhere
+  [stands_for: none, loyalty 55]: not a raid, not his own base. Escaping, he starts no moves and is
+  the slice's hardest hero to catch: up a 16-block face, over a ravine on two air jumps, with no
+  fall damage (an escape counts as travel). He stays a boss while he runs: the 12% cap, his poise
+  and his weak points still hold, so a stagger stops him for 2.5 s where he is (and a hit knocks him
+  off a wall), and he has two or three sword blows of health left. Cornered with no way out for 3 s,
+  he fights back, then runs again as soon as a way opens. His refuge is his home base, never the
+  base he flees (from a fight at his own base: another base of his faction, or the wild until no one
+  follows); the escape ends inside its walls or once no pursuer has been within 48 blocks for 10 s.
   Then he stays away 5 minutes and until he is above 50% health, and does not go back for those he
-  fled. At most one escape in 10 minutes: inside that window he withdraws, kneels or goes home with
-  the party instead. An escape drops nothing and gives no rewards; a killing blow while he flees is
-  a normal defeat. On a scouting round he also steps aside the same way when he sees enemy soldiers,
-  is badly hurt among monsters (under 40%) or meets a monster in the way; that is not a real escape
-  (no stay-away, no window spent, no line): he goes out of sight and on with his round, or home when
-  he retreats. Engage him and he fights instead.
-- Revival: like every hero he comes back 10 minutes after his death [heroes.reviveSeconds 600], at
-  his home base (a leader: at the capital, or the nearest standing base); his kit items vanish at
-  death and return with him. He has no death ability of his own. A hero of his faction with the
-  revival_rite talent (milestone 2) would bring him back 20 / 30 / 40% sooner, never under 30 s.
+  fled. The boss bar shows "fled" for 3 s and goes. "...Another night."
+  - At most one escape in 10 minutes: caught again inside that window, he fights to the death.
+  - At zero health he dies like anyone: there is no kneeling and nothing stops a killing blow. The
+    bar shows "fallen" for 3 s. "...One footprint too many."
+  - Not an escape: on a scouting round he steps aside the same way when he sees enemy soldiers, is
+    badly hurt among monsters (under 40%) or meets a monster in the way (no stay-away, no window
+    spent, no line): he goes out of sight and on with his round, or home when he retreats. Once an
+    enemy engages him it is a fight like any other.
+- Rewards: only when he dies, to whoever killed him (the side of the last player, NPC or hero that
+  hurt him in his last 15 s): XP orbs (7 x his level, at most 100), his non-kit gear (his kit never
+  drops) and a hero crest trophy (one per hero per winning side per in-game day). Soldiers of a
+  winning faction pick them up and carry them home. An escape drops nothing and gives nothing.
+- Revival: like every hero he comes back 10 minutes after his death, whoever killed him
+  [heroes.reviveSeconds 600], at his home base (a leader: at the capital, or the nearest standing
+  base); his kit items vanish at death and return with him. He has no death ability of his own. A
+  hero of his faction with the revival_rite talent (milestone 2) would bring him back 20 / 30 / 40%
+  sooner, never under 30 s.
 
 HOW TO BEAT HIM
 1. Carry torches. Placing a torch, a lantern or glowstone within 4 blocks of him weakens him by 10%
@@ -237,6 +250,9 @@ HOW TO BEAT HIM
 6. A pillar will not save you. He climbs 9 blocks or more from level 1, may hit you from a cling
    just under your feet, and can break the block under you at player speed. Any hit, or a knockback
    of 0.5 or more, knocks him off the wall.
+7. Stop him before 11%. Once he breaks off he climbs and jumps where you cannot follow; save a
+   stagger (an axe or a mace for his small poise) or a bow for the moment he turns, and hit him off
+   the wall if he starts to climb. Caught again within 10 minutes, he will not run a second time.
 
 MOVEMENT
 Mobility traits: acrobat (ceiling III) and climber (ceiling II). He has every feature from level 1;
@@ -258,11 +274,12 @@ has is the one exception).
   A base wall is 5 blocks high, so he climbs any of today's walls from level 1.
 - Out of fights: he double-jumps ravines instead of bridging them, and climbs cliffs and tall trees
   for a lookout: from 12 or more blocks up he sees 16 blocks farther.
-- In fights: no move changes. Between moves he uses wall kicks to get behind you for Shadow Step and
-  Backstab, and climbs out of a pit you dig. No move starts while he is in the air or clinging. He
-  goes for a player on a pillar or behind a wall at once; on a 1x1 pillar top he may land basic
-  attacks from a cling just under your feet, or break the block under your feet at player speed. He
-  may stand where you cannot reach him, but at most 4 s at a time; then he comes back.
+- In fights (the same against a player and an NPC): no move changes. Between moves he uses wall
+  kicks to get behind you for Shadow Step and Backstab, and climbs out of a pit dug under him. No
+  move starts while he is in the air or clinging. He goes for an enemy on a pillar or behind a wall
+  at once (a player or an NPC archer); on a 1x1 pillar top he may land basic attacks from a cling
+  just under your feet, or break the block under your feet at player speed. He may stand where his
+  enemies cannot reach him, but at most 4 s at a time; then he comes back.
 - Counters: any hit, or a knockback of 0.5 or more, knocks him off a wall (he falls, and needs 0.5 s
   before he can grip again). Ledges are useless against him (no fall damage), and he has no
   knockback resistance [0, the skirmisher's], so knockback moves him about.
@@ -276,7 +293,8 @@ has is the one exception).
   wall (any base NPC that sees him within 24 blocks raises it earlier), archers shoot, the two
   nearest free guards and any hero at home go for him, and a hit knocks him off the wall. Defending
   his own base, he reaches the wall top at once.
-- Escaping, or stepping aside on a scouting round, he climbs where no one follows.
+- Escaping (under 11%, see "When he is losing"), or stepping aside on a scouting round, he climbs
+  where no one follows.
 - Signature animation: none of his own in the design; he uses the shared acrobat and climber moves,
   with his scarf trailing behind him.
 
@@ -329,8 +347,9 @@ AS A FACTION LEADER
   fallback lines fill in).
 - If he dies: everyone hears it; no new raids until he returns, and no vengeance raid (that needs
   aggression 70 or more); a raid he was on falls back [(caution + 1 - loyalty) / 2 = 0.525, over
-  0.5]. If his faction's last base falls he becomes an exiled free hero, never a leader again in
-  that campaign.
+  0.5], and by the same rule it falls back when he escapes from it (his faction hears his escape
+  line; there is no vengeance raid, since nobody died). If his faction's last base falls he becomes
+  an exiled free hero, never a leader again in that campaign.
 - How his personality steers the faction. His traits (out of 100): aggression 55, honour 50,
   ambition 40, caution 60, greed 40, sociability 10, loyalty 55, volatility 30. The numbers below
   are worked out from the design's LeaderBiases formulas (design section 5.5) at the default
@@ -366,8 +385,9 @@ PERSONALITY AND VOICE
 - In a fight: steady (aggression between 35 and 65: he looks for enemies within 20 blocks and chases
   up to 56), so his attacking moves get only a small bonus [x1.03] and his caution makes defensive
   and zoning moves a little likelier [x1.06]. He goes for the weakest enemy (the skirmisher
-  default). His honour (50) is under 60, so the rule that keeps a hero from striking a yielding
-  enemy does not hold him back. Outside boss fights he pulls back at 31.5% health [retreat_below].
+  default). His honour (50) is under 60, so he chases a hero that runs from him as far as his leash
+  and his climbing go. His retreat point [retreat_below 31.5%] no longer makes him step back to eat:
+  a third of it is where he escapes [flee_at 11%] (see "When he is losing").
 - Likes: maps, compasses. Dislikes: bells. (Gifts come in a later milestone.)
 - Quirk: "counts his steps out loud when he thinks nobody is near."
 - Voice: soft clicking hi-hat blips per syllable, a little low [pitch 0.95], measured [rate 3 ticks
@@ -380,10 +400,11 @@ PERSONALITY AND VOICE
     Phase 3:   "No more hiding."
     Hint:      "...Too bright."
     Kill:      "Gone."
-    Yield:     "...Hm."
-    Spared:    "I owe you one footprint."
-  Moments without a line of his own yet (his ultimate, enrage, stagger, escape, raid announcements
-  and others) use the lone wolf fallback lines until his are written.
+    Escape:    "...Another night."
+    Fallen:    "...One footprint too many."
+  Moments without a line of his own yet (his ultimate, enrage, stagger, raid announcements and
+  others) use the lone wolf fallback lines until his are written. (His first sheet had a yield and a
+  spared line; heroes no longer yield, so they are gone.)
 
 ANIMATIONS
 His own, on top of the shared library:

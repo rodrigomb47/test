@@ -1,6 +1,7 @@
 Natsuho Komezaki - "The Harbour Cat"
 Female | cat | striker | physical | tsundere | epic
-Status: designed, not in the game yet (kit version 1, 2026-11-12). All numbers are first values,
+Status: designed, not in the game yet (kit version 2, 2026-11-13: she fights the same against
+players and NPCs, and she never yields: see "When she is losing"). All numbers are first values,
 tuned after play.
 ====================================================================================================
 
@@ -37,9 +38,10 @@ area and ultimate move draws a ground mark that grows over its whole wind-up (a 
 and goes at the hit: her accent colour for normal moves, red for the ultimate. Light moves show only
 the animation. When a wind-up starts, her face goes "focused" and stops blinking, and the move's
 sound plays from where she stands. No wind-up gets shorter than its class minimum, even in phase 3
-or enraged. Against a player each move's damage is capped [16 for a move, 30 for the ultimate, in
-level-1 health points], then x1.15 in a boss fight [damage_vs_players 115%], and no single hit takes
-a player from full health to zero.
+or enraged. Each move's damage is capped the same whoever it hits, a player, a soldier or a hero [16
+for a move, 30 for the ultimate, in level-1 health points]: there is no extra damage to players and
+no protection from a one-hit kill; the wind-up is the warning everyone gets. Any number of heroes
+may gang up on one target, and any number of enemies on her.
 Her fighting: fists (the claw gauntlets); duel style rushdown. She closes to melee and goes for the
 weakest enemy first (the striker default). Her element is physical: armour, shields and Protection
 work against it as usual. Cooldowns and how often she picks each move are set when she is built.
@@ -111,7 +113,7 @@ work against it as usual. Cooldowns and how often she picks each move are set wh
       What it does: a long stretch and a yowl, then she enters Frenzy for 8 s (she attacks faster,
       moves faster, and every hit makes you bleed), and a Pounce follows at once.
       The tell: the biggest in her kit: the 1.5 s stretch, a spoken line, a wide sound, a red ground
-      mark, and the screen darkens for 2 s for the players fighting her. She cannot be staggered
+      mark, and the screen darkens for 2 s for the players near the fight. She cannot be staggered
       during this wind-up. The boss bar shows a lightning mark when her ultimate is ready.
       Counter: get off the Pounce's landing disc, punish its paw lick, then block or keep out of
       reach until the 8 s of Frenzy run out.
@@ -126,25 +128,32 @@ work against it as usual. Cooldowns and how often she picks each move are set wh
     CAT CRIT (cat_crit): whenever she lands a jumping critical hit, she gets +15% speed for 3 s.
 
 BOSS FIGHT
-- When: boss mode is on while a player is engaged with her (the player hurt her in the last 15 s, or
-  is her target, within 32 blocks; creative and spectator players never count). It ends 10 s after
-  the last engaged player leaves, and her health share never jumps. The first engagement with a
-  player each in-game day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and
-  cannot be staggered, a title on your screen (her name, title and faction) and her intro line. A
-  boss bar shows a star, her name and title, her phase pips and a lightning mark when her ultimate
-  is ready. (Her bar title is set when she is built.)
-- Health: her field health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.2 for a
-  striker, and +50% for each extra engaged player (counted up to 5). At level 10 against one player
-  that is 129 health (147 as a leader): about 27 s (31 s) of landed hits with an iron sword at 1.6
-  swings a second, half of them landing. A whole fight lasts two to three times that once you dodge
-  her wind-ups. No single player hit takes more than 12% of her boss health; the excess becomes
-  poise damage.
-- Poise: 80. Your hits fill her poise bar [damage x weapon: sword 1.0, axe 1.6, mace 2.0 plus its
-  fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (your shield raised in the
-  last 6 ticks before a heavy move lands) adds 25. A Zoomies run that ends against a wall adds 40.
-  The bar drains 15 per second after 3 s without poise damage. Full poise staggers her: 2.5 s
-  kneeling dizzy, taking 25% more damage; then the bar resets and its maximum grows 20% for the rest
-  of the fight. No stagger during her intro, a phase change or her ultimate's wind-up.
+- One mode, against anyone: she is a boss in every fight, whether she fights you, NPC soldiers,
+  another hero or monsters, with the same health, poise, phases, moves, reactions, weak points and
+  enrage. A fight runs from the first enemy engaged with her (it hurt her in the last 15 s, or is
+  her target, within 32 blocks; creative and spectator players are never enemies) until 10 s after
+  the last one leaves. Her first fight against people (a player, a soldier or a hero) each in-game
+  day opens with her intro: 1.0 to 1.5 s in which she takes 50% less damage and cannot be
+  staggered, and her intro line; each player within 32 blocks gets a title on screen (her name,
+  title and faction) once that day. Players within 32 blocks see a boss bar whenever she fights
+  anyone (a raid between two NPC factions included): a star, her name and title, her phase pips and
+  a lightning mark when her ultimate is ready. (Her bar title is set when she is built.)
+- Health: her base health x3.5 (x4.0 as a leader) [health scale 350, 400 as a leader], x1.2 for a
+  striker, always: it never changes with who or how many fight her. At level 10 that is 129 health
+  (147 as a leader): about 27 s (31 s) of landed hits for a player with an iron sword at 1.6 swings
+  a second, half of them landing; an iron-sword soldier needs about a fifth longer, and attackers
+  add up (six soldiers who all reach her need about a sixth of one soldier's time). A whole duel
+  lasts two to three times its hitting time once you dodge her wind-ups. No single hit, from anyone
+  (a player, a soldier, a hero, a monster, their arrows), takes more than 12% of her health
+  [max_hit_share 12]; the excess becomes poise damage. Damage with no attacker (lava, fire,
+  drowning) is not capped.
+- Poise: 80. Every hit fills her poise bar, whoever lands it [damage x weapon: sword 1.0, axe 1.6,
+  mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8], and a parry (a shield,
+  yours or a soldier's, raised in the last 6 ticks before a heavy move lands) adds 25. A Zoomies run
+  that ends against a wall adds 40. The bar drains 15 per second after 3 s without poise damage.
+  Full poise staggers her: 2.5 s kneeling dizzy, taking 25% more damage; then the bar resets and its
+  maximum grows 20% for the rest of the fight. No stagger during her intro, a phase change or her
+  ultimate's wind-up.
 - Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
   (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
   During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
@@ -166,42 +175,48 @@ BOSS FIGHT
     into water, rain starting, a bubble column). Hint line: "Don't you DARE get me wet!"
   - Recovery: the punish bonus doubles during her recoveries [+30% instead of +15%]; the paw lick
     after Pounce is the clearest one.
-- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built):
+- How she reads you (each answer replaces her next pick; their cooldowns are set when she is built).
+  She reads an NPC the same way: a soldier raising its shield, an archer drawing, a soldier eating
+  from its food bar draw the same answers at the same chances:
   - You raise a shield -> Scratch Dash round the shield (50%). Between moves she hops hazards and
     kicks off arena walls to reach your side, and the dash starts from there.
   - You draw a bow -> Pounce (60%).
   - You eat -> Pounce (70%).
-- Enrage: after 180 s of boss mode (240 s as a leader): +15% damage, shorter waits between moves
-  (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All her damage bonuses
-  together never exceed +25%.
+- Enrage: after 180 s of fighting, whoever she fights (240 s as a leader): +15% damage, shorter
+  waits between moves (x0.7), poise maximum x1.25, a red bar, an angry face and an angry line. All
+  her damage bonuses together never exceed +25%.
 - Intro: arms crossed, she looks away, then glances back. "Huh? You're in my harbour. ...Fine. I'll
   show you out myself."
-- Yield: she kneels (honour 65; only heroes with honour 30 or less, or leaders with caution 70 or
-  more, refuse). A killing blow from a player or a player's projectile is stopped at 1 health, and
-  she kneels for 5 s, untouchable and passive, while you see "Sneak and use to spare, strike to
-  finish". Her yield line: "W-whatever. I let you win."
-  - Spared (sneak and use): she walks home and will not fight for 10 minutes (a defeat, not a death;
-    no gear dropped). "...Thanks. Tell anyone and I'll scratch you."
-  - Finished (strike): she dies. Rewards: XP orbs (7 x her level, at most 100), her non-kit gear
-    (her kit never drops) and a hero crest trophy (one per hero per player per in-game day).
-  - No choice in 5 s: she collapses and dies. Killed by NPCs or outside a boss fight: a 1 s defeat
-    beat, then death.
-- Escape: in a boss fight she never runs at low health: she fights to the yield and kneels. The one
-  order that pulls her out of a boss fight is a lost raid (her raid falls back, or its leader falls,
-  while she is in or near the target). Outside boss fights she escapes when her health drops under
-  her retreat point away from home [retreat_below 22.5%, worked out from the formula of design
-  section 5.4], when her raid is lost, or, as a leader, when the base she is in falls or she is
-  under 50% health at its heart with no guard beside her. At her own base she does not escape: she
-  withdraws like a soldier and comes back at 60% health. Escaping, she starts no moves and runs with
-  any movement she has, even where no one can follow (an escape counts as travel, so her travel
-  bonuses are on); cornered with no way out for 3 s, she fights back, then runs again as soon as a
-  way opens. It ends inside her refuge's walls (her home base; for a leader the capital, or the
-  nearest other standing base; never the base she flees) or once no pursuer has been within 48
-  blocks for 10 s. Then she stays away 5 minutes and until she is above 50% health, and does not go
-  back for those she fled. At most one escape in 10 minutes: inside that window she withdraws,
-  kneels or goes home with the party instead. An escape drops nothing and gives no rewards; a
-  killing blow while she flees is a normal defeat.
-- Revival: like every hero she comes back 10 minutes after her death [heroes.reviveSeconds 600], at
+- Ganging up: there are no turns. Any number of heroes may press the same enemy at once, and any
+  number of enemies may press her; nothing grows or shrinks with the crowd on either side.
+- When she is losing: she escapes [when_losing: escape, authored: her tsundere traits alone (65 +
+  65 - 45 = 85) would make her fight to the death, but a cat bolts]. She leaves it late: under 8% of
+  her health [flee_at 8%: a third of her retreat_below 22.5%, kept inside her last phase], in any
+  fight, whoever she is fighting, she breaks off for good. Her raid falling back while she is in or
+  near the target, or the heart of the base she defends falling, sends her off too. Escaping, she
+  starts no moves and runs with any movement she has, over walls and roofs where few can follow
+  (two air jumps, wall kicks, no fall damage; an escape counts as travel, so her travel bonuses are
+  on). She stays a boss while she runs: the 12% cap, her poise and her weak points still hold, so a
+  stagger stops her for 2.5 s where she is, and she has only two to four sword blows of health
+  left. Cornered with no way out for 3 s, she fights back, then runs again as soon as a way opens.
+  Her refuge is her home base, never the base she flees; the escape ends inside its walls or once
+  no pursuer has been within 48 blocks for 10 s. Then she stays away 5 minutes and until she is
+  above 50% health, and does not go back for those she fled. The boss bar shows "fled" for 3 s and
+  goes. "I-I'm not running away! I just... have fish to catch. Don't follow me!"
+  - Not from her own harbour: at her home base, while its heart stands, she never runs [stands_for:
+    home, the default at loyalty 70; she would never admit it is for the workers]. There, under 8%
+    she has her last-stand beat (her last-stand line and a determined face, once per fight) and
+    fights until she dies. "This is MY harbour. I'm not going anywhere. ...It's not for them, got
+    it?!" If the heart falls, she runs to another base of her faction.
+  - At most one escape in 10 minutes: caught again inside that window, she fights to the death.
+  - At zero health she dies like anyone: there is no kneeling and nothing stops a killing blow. The
+    bar shows "fallen" for 3 s. "Tch... keep my spot warm."
+- Rewards: only when she dies, to whoever killed her (the side of the last player, NPC or hero that
+  hurt her in her last 15 s): XP orbs (7 x her level, at most 100), her non-kit gear (her kit never
+  drops) and a hero crest trophy (one per hero per winning side per in-game day). Soldiers of a
+  winning faction pick them up and carry them home. An escape drops nothing and gives nothing.
+- Revival: like every hero she comes back 10 minutes after her death, whoever killed her
+  [heroes.reviveSeconds 600], at
   her home base (a leader: at the capital, or the nearest standing base); her kit items vanish at
   death and return with her. She has no death ability of her own. A hero of her faction with the
   revival_rite talent (milestone 2) would bring her back 20 / 30 / 40% sooner, never under 30 s.
@@ -221,6 +236,9 @@ HOW TO BEAT HER
 6. Mind what you do in front of her: eating draws a Pounce 70% of the time, drawing a bow 60%,
    raising a shield a Scratch Dash round it 50%. Just under 30% health she uses Nine Lives once (a
    shield, Speed II, a hop back), and at 25% she enters phase 3: do not overcommit there.
+7. Be ready for her to bolt at 8%. Away from her harbour she runs over walls and roofs with no fall
+   damage; keep an axe or a mace swing for her poise, or arrows to land the last blows, before she
+   is gone. In her own harbour she will not run: she fights to the end there.
 
 MOVEMENT
 Mobility traits: acrobat (ceiling III) and climber (ceiling I). She has every feature from level 1;
@@ -243,12 +261,13 @@ has is the one exception).
     Climb height (blocks)                   3    / 4    / 6
 - Out of fights: she takes ravines, streams, fences and ledges without bridges or detours, hops rock
   to rock and climbs pier pilings to reach open water a worker would bridge to or walk round.
-- In fights: no move changes. Between moves she hops ground hazards, kicks off arena walls to reach
-  the side of a player who is blocking, climbs out of a pit you dig, and may start Pounce from a
-  ledge she climbed. No move starts while she is in the air or clinging. She goes for a player on a
-  pillar or behind a wall at once when her jumps or climb reach; on a 1x1 pillar top she may land
-  basic attacks from a cling just under your feet or from the top of her jump. She may stand where
-  you cannot reach her, but at most 4 s at a time; then she comes back.
+- In fights (the same against a player and an NPC): no move changes. Between moves she hops ground
+  hazards, kicks off arena walls to reach the side of an enemy who is blocking (you or a shield
+  soldier), climbs out of a pit dug under her, and may start Pounce from a ledge she climbed. No
+  move starts while she is in the air or clinging. She goes for an enemy on a pillar or behind a
+  wall at once (a player or an NPC archer) when her jumps or climb reach; on a 1x1 pillar top she
+  may land basic attacks from a cling just under your feet or from the top of her jump. She may
+  stand where her enemies cannot reach her, but at most 4 s at a time; then she comes back.
 - Counters: any hit, or a knockback of 0.5 or more, knocks her off a wall (she falls, and needs 0.5
   s before she can grip again). Ledges are useless against her (no fall damage), but she is light
   [knockback resistance 10], so knockback still moves her about.
@@ -263,8 +282,8 @@ has is the one exception).
   24 blocks raises it earlier), and the two nearest free guards and any hero at home go for her.
   Defending her own base, she gets onto roofs and ledges at once, and onto the wall top from level
   13.
-- Escaping (never while she is still fighting to win), she uses all of this, even where no one can
-  follow.
+- Escaping (only when a fight is lost, away from her harbour; never while she is still fighting to
+  win), she uses all of this, even where no one can follow.
 - Signature animation: her own cat-twist air jump, with her tail as a counterweight.
 
 WORK AND TALENTS
@@ -345,8 +364,9 @@ PERSONALITY AND VOICE
   sociability 40, loyalty 70, volatility 45.
 - In a fight: bold (aggression 65 or more: she looks for enemies within 28 blocks and chases up to
   80), so her attacking moves weigh a little more [x1.09; zoning and defensive ones x0.97]. She goes
-  for the weakest enemy (the striker default) and never strikes a yielding enemy (honour 60 or
-  more). Outside boss fights she pulls back at 22.5% health [retreat_below].
+  for the weakest enemy (the striker default). With honour 60 or more she lets a hero that runs
+  from her go and takes another target. Her retreat point [retreat_below 22.5%] no longer makes her
+  step back to eat: a third of it is where she escapes [flee_at 8%] (see "When she is losing").
 - Likes: cod, salmon, string. Dislikes: pufferfish, water buckets. (Gifts come in a later
   milestone.)
 - Quirk: "pretends not to listen, then remembers every word."
@@ -359,10 +379,13 @@ PERSONALITY AND VOICE
     Phase 3:   "Nobody... corners... a cat!"
     Hint:      "Don't you DARE get me wet!"
     Kill:      "Hmph. Too slow."
-    Yield:     "W-whatever. I let you win."
-    Spared:    "...Thanks. Tell anyone and I'll scratch you."
-  Moments without a line of her own yet (her ultimate, enrage, stagger, escape, raid announcements
-  and others) use the tsundere fallback lines until hers are written.
+    Escape:    "I-I'm not running away! I just... have fish to catch. Don't follow me!"
+    Last stand (at home): "This is MY harbour. I'm not going anywhere. ...It's not for them, got
+               it?!"
+    Fallen:    "Tch... keep my spot warm."
+  Moments without a line of her own yet (her ultimate, enrage, stagger, raid announcements and
+  others) use the tsundere fallback lines until hers are written. (Her first sheet had a yield and a
+  spared line; heroes no longer yield, so they are gone.)
 
 ANIMATIONS
 Her own, on top of the shared library:

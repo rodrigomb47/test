@@ -58,11 +58,15 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
    leader identity, talents, voice, lines, art spec and animation recipes. The generator splits it into the server
    definition and the client assets. Attack timings exist once: the animation's `hit` markers and the server's move
    frames come from the same recipe, and a unit test fails if they ever differ.
-6. **Two combat modes.** In NPC wars a hero fights at v1 scale ("field mode", a strong officer worth about two to
-   three soldiers). When a player engages it, it switches to **boss mode**: scaled health that keeps its share, a
-   per-hit damage cap, poise and stagger, two or three phases that each add a mechanic, telegraphed attacks with
-   growing ground markers, reactions to what the player does, enrage, and a yield at zero health where the player may
-   spare or finish it.
+6. **One combat mode: a hero is a boss against anyone** (the owner's decisions of 2026-11-12 and 2026-11-13, section
+   6; the first draft had a "field mode" for NPC wars and a "boss mode" for players). Whoever it fights, a player, NPC
+   soldiers, another hero or monsters, it has the same boss health, a per-hit damage cap, poise and stagger, two or
+   three phases that each add a mechanic, telegraphed attacks with growing ground markers, reactions to what its
+   enemy does and enrage. No rule gives players more or less than NPCs, and any number of heroes may press one target
+   (attack tokens are gone). A hero never yields (the owner, 2026-11-13: "a hero shouldnt yield. they either try to
+   escape or fight until die depending of what they want"): when a fight goes badly it escapes or fights to the
+   death, as its own personality decides (6.13). Only presentation is for players: the boss bar, the intro title,
+   decals, sounds and speech.
 7. **Factions are slots with an identity generated from their leader** (name, short name, colours, banner, base
    style, seat, naming culture). `FactionType` stays an enum because saves, network sync and the GameTests depend on
    it. Milestone 1 uses the four existing slots; four more slots come in milestone 2.
@@ -77,8 +81,9 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
     batches of 24, each gated by checks, a contact sheet, in-game screenshots and a short campaign.
 11. **Player-like rules hold.** No teleporting (decoys are visual and pop; dashes, leaps and charges are physical
     pushes), abilities never place, break or ignite blocks, kit items are vanilla items bound to the hero, damage goes
-    through vanilla armour, shields and enchantments, NPC wars never see boss numbers. Superhuman mobility (decision
-    15) is physical movement too, so it keeps this rule.
+    through vanilla armour, shields and enchantments. (The first draft added "NPC wars never see boss numbers"; with
+    decision 6 they do, and 8.1 prices a hero's war power accordingly.) Superhuman mobility (decision 15) is
+    physical movement too, so it keeps this rule.
 12. **The v1 owner-hero workflow is retired** (open question 2): no hero folder with owner skins, no skin payloads. The
     config folder stays for operators to override a built-in hero's kit or personality; a format-1 file still loads
     and uses a neutral fallback model.
@@ -107,7 +112,7 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
 | Look | 64x64 player skin on the player model | GeckoLib model from a shared rig (three forms) and parts, 256x128 texture, face frames |
 | Animation | vanilla arm poses | 3 animation controllers plus a face system; a core library of about 45 animations, 16 weapon-style libraries of about 14 each, 10-16 own animations per hero |
 | Kit | 4 skills, ultimate, 4 passives, empowered state | up to 12 moves with frames, bands and phases; 8 new forms, 7 new effects; up to 3 states; v1 files still load |
-| Boss | a boss bar while it fights | boss mode (section 6) |
+| Boss | a boss bar while it fights | always a boss, against players and NPCs alike: boss health, phases, poise, reactions; no yield: it escapes or fights to the death (section 6) |
 | Factions | a starter hero per fixed faction | the leader founds the faction; identity and director decisions come from it |
 | Non-combat | 5 base abilities | 35 talents, duty, `court`, edicts (M2); work mastery (`MOBILITY_AND_WORK.md` part 2) |
 | Movement | player-like walking | a mobility trait per hero, flight included (`MOBILITY_AND_WORK.md` part 1); workers unchanged |
@@ -168,9 +173,18 @@ counts stay right; `retrainIdleWorker` never touches a hero.
 The director gathers soldiers with `getEntitiesOfClass(FactionNpc.class, ...)` filtered by role
 (`FactionDirector.raids`, the garrison `keep` count, `living(f, b, role)` needs), so without a rule a hero with a
 soldier role would be sorted into raid parties like any swordsman. Rule: a hero **counts** as one soldier of its role
-for needs, garrison and war-council strength, but is **never picked** for a raid party by the soldier sort; it joins a
-raid only through `LeaderBiases` "leader goes with the raid" (leaders) or its own `behaviour.raids` (others), and while
-it has the `court` duty it is never sent alone. GameTest `heroNotDraftedIntoRaidByDefault`.
+by heads (recruitment needs, the garrison `keep` count, the party size and the fall-back share), but is **never
+picked** for a raid party by the soldier sort; it joins a raid only through `LeaderBiases` "leader goes with the raid"
+(leaders) or its own `behaviour.raids` (others), and while it has the `court` duty it is never sent alone. GameTest
+`heroNotDraftedIntoRaidByDefault`.
+
+**Strength is not heads** (equal treatment, section 6: a hero has its boss health in NPC wars too, so "one soldier"
+would misprice every raid). In the war council a hero weighs its **war power** (8.1, about three to seven iron
+soldiers): added to the party's power when it goes with the raid, and to the defence of its home base while it is
+alive and at that base (not on a raid, not away after an escape: 6.13), at half while it is under half health. The
+faction's average `soldierPower`, by which rivals judge its garrison, is taken over its ordinary soldiers only, and a
+home hero's war power is added on top, so one hero does not inflate eight soldiers. GameTest
+`warCouncilCountsHeroPower`; the limits that keep a hero from deciding a war alone are in 8.1.
 
 ### 3.3 Hero state
 
@@ -178,22 +192,26 @@ it has the `court` duty it is never sent alone. GameTest `heroNotDraftedIntoRaid
 |---|---|
 | Synced entity data | `DATA_HERO` (String, hero id), `DATA_ACTION` (Integer), `DATA_STATE` (Byte), `DATA_MOOD` (Byte): section 10.1 |
 | Entity NBT `FcHero` | hero id, cooldown ready-at game times, charges, state timers, energy, current phase, low-health re-arm flags (as v1 §25.1) |
-| `CampaignData.heroes[id]` (`HeroState`) | owner faction or free, base, entity UUID, alive, `reviveAt`, level, XP, affixes, kills, deaths, casts per move, boss fights, staggers, yields, spares, definition hash; later bonds and posts |
-| Transient (`HeroCombat`, `BossController`) | move in progress and its stage, poise, boss-mode players, attack tokens, telegraph entities, reaction cooldowns; rebuilt on load (a reload ends boss mode and keeps the health share) |
+| `CampaignData.heroes[id]` (`HeroState`) | owner faction or free, base, entity UUID, alive, `reviveAt`, level, XP, affixes, kills, deaths, casts per move, fights, staggers, escapes, last stands, definition hash; later bonds and posts (the first draft's `yields` and `spares` are gone with the yield, 6.13; an escaped hero's away time is in its entity NBT, `MOBILITY_AND_WORK.md` 16) |
+| Transient (`HeroCombat`, `BossController`) | move in progress and its stage, poise, the engaged enemies and the fight clock (6.1), telegraph entities, reaction cooldowns; rebuilt on load (a reload ends the fight; health is saved with the entity as for any NPC, and the boss maximum is re-applied before it is read) |
 
 ### 3.4 Life cycle
 
 - **Spawn**: a leader at its capital's reporting station when the base is built (section 5.6); a hero joining by
   `/fc admin hero give` (milestone 1), tokens and recruitment (milestone 3). One living entity per hero id; a duplicate
   joining the level is discarded (v1 §25.1 rule).
-- **Death in field mode**: v1 revival (`heroes.reviveSeconds`, 600 s) at the home base's spawn point. Owner decision
+- **Death**: v1 revival (`heroes.reviveSeconds`, 600 s) at the home base's spawn point, whoever killed it. Owner decision
   (2026-11-12): every hero, leaders included, comes back 10 minutes after its death; there is no longer a separate
   leader timer (`leaders.reviveMultiplier` is gone). A death-related ability may change that (owner, same day): the
   `revival_rite` talent (7.2) brings the faction's fallen heroes back sooner, and a hero's own `revival` block (12.3)
   sets its own delay and where it rises (a phoenix reborn where it fell, a jiangshi rising again). With both, the
   hero's own delay comes first and the talent shortens it; never under `heroes.minReviveSeconds` (30, PROPOSED), so
   a hero cannot rise in the middle of the fight that killed it. Kit items vanish and return (v1 §7, §25.4).
-- **Defeat in boss mode**: the yield beat (section 6.13) first; finished or not spared in 5 s, it dies as above.
+- **The end of a losing fight** (6.13; the owner, 2026-11-13: no yield). There is no kneeling, no spare-or-finish
+  choice and no "spared" state, against players or NPCs. A hero of the escaping kind breaks off at its escape
+  threshold and gets away if it can (no rewards; it stays away 5 minutes); a hero of the last-stand kind, and any
+  hero that cannot or will not leave, fights until it dies as above. Lethal damage is never cancelled: at zero health
+  a hero dies like any NPC, whoever or whatever killed it.
 - **Removed or broken definition**: a hero whose definition disappears keeps its entity and saved state and fights as
   a plain soldier of its duty with the fallback model, name tag `(dormant)` (v1 §25.5).
 
@@ -202,12 +220,12 @@ it has the `court` duty it is never sent alone. GameTest `heroNotDraftedIntoRaid
 | Priority | Goal | Notes |
 |---|---|---|
 | 0 | `FloatGoal`, `StunnedGoal` | v1 |
-| 1 | `HeroYieldGoal` | kneels, passive, while yielding |
-| 2 | `HeroMoveGoal` | replaces v1's `HeroAbilityGoal`: picks and runs moves in both modes (section 6.3); MOVE+LOOK while a move runs |
+| 1 | `HeroEscapeGoal` | runs while the hero escapes (6.13, `MOBILITY_AND_WORK.md` 7.7): no moves and no basic attacks, any mobility, toward its refuge; cornered for 3 s it lets the goals below fight. Started by `EscapeRules` when an escaping-kind hero drops under its threshold in any fight, or its raid or the base it defends is lost. (The first draft had `HeroYieldGoal` here, a kneeling hero; there is no yield) |
+| 2 | `HeroMoveGoal` | replaces v1's `HeroAbilityGoal`: picks and runs moves in every fight, whoever the enemy (section 6.3); MOVE+LOOK while a move runs |
 | 3 | `NpcMeleeAttackGoal` / `NpcRangedAttackGoal` / `HeroThrowGoal` | basic attacks, leash from aggression (v1 §8), skirmisher step-back, `keep_distance` |
-| 4 | `WithdrawGoal` | `retreat_below` from personality (section 5.4); never while boss mode is on; away from its home base the withdrawal is an escape with any mobility (`MOBILITY_AND_WORK.md` 7.7); at home, and within 10 minutes of an escape, it withdraws as soldiers do |
+| - | (no `WithdrawGoal`) | soldiers keep v1's `WithdrawGoal` (step back under `retreat_below`, eat, return at 60%); a hero does not have it: a hero either escapes for good (priority 1) or stays in the fight to the death. Its `retreat_below` only sets where the escape threshold lies (6.13) |
 | 5+ | `WorkGoal` | its duty, or `court` for a leader |
-| target | `HeroTargetGoal` | focus, protects, aggression radius (v1 §8), attack tokens (section 6.2) |
+| target | `HeroTargetGoal` | focus, protects, aggression radius (v1 §8); no limit on how many heroes take the same target (6.2); a hero with honour 60 or more drops an escaping hero as its target (5.4) |
 
 ### 3.6 Size
 
@@ -406,7 +424,7 @@ defining it.
 
 | File | Contents |
 |---|---|
-| `_core.animation.json` | movement, rest, carry, work (16), emotes (10), hurt, stagger, stun, interrupt, death, defeated, generic dodge, intro and victory |
+| `_core.animation.json` | movement, rest, carry, work (16), emotes (10), hurt, stagger, stun, interrupt, death, defeated (built for the yield, which is gone: reused or retired, 15.6), generic dodge, intro and victory |
 | `_style_<style>.animation.json` (16) | `combat.idle`, `move.run` arm carry, `attack.1-3`, `attack.ranged`, `guard` (`.loop`, `.hit`), `dodge`, `draw`, `sheathe`, `intro`, `victory`, `taunt` |
 | `<hero>.animation.json` | `move.<id>` for each move, `ultimate` (`.loop`, `.end`), `phase.2`, `phase.3`, `intro`, `personal.1-3`, `state.<name>`, any override |
 
@@ -466,7 +484,8 @@ ponytails, a visor, a mask).
   glow layer renders through the same path, so the glow mask's eye frames line up. Plan B if it ever conflicts with
   something: one plane per frame, shown or hidden with `GeoBone.setHidden` (more cubes, no renderer code).
 - **Who picks the frame** (`HeroFace`, client, per entity; highest first):
-  1. dead or defeated: eyes closed, mouth neutral;
+  1. dead: eyes closed, mouth neutral (as built this also covers the first draft's yielding bit; that bit now
+     means escaping and must not close the eyes: 15.6);
   2. authored keys: the running action animation keys `face_ctrl` (`position.x` = eye frame + 1, `position.y` = mouth
      frame + 1, `position.z` = cheek frame + 1, 0 = no override; every change is a jump, written as a Bedrock
      pre/post key: GeckoLib's `step` easing is two steps and would sit on the midpoint frame for half a segment, G3):
@@ -485,7 +504,7 @@ ponytails, a visor, a mask).
   6. distance: beyond 16 blocks the face stays on the mood frame (no blink, no talk).
 - **Moods**: `calm`, `happy`, `angry`, `focused`, `hurt`, `tired`, `sad`, `smug`, `surprised`, `asleep`, `flustered`,
   `determined`. The server picks the mood from a small priority stack: hurt wince 0.5 s > wind-up focus > phase or
-  enrage > personality reaction (a kill, a spare, a yield, a gift) > situation (night, working, idle at home) >
+  enrage > personality reaction (a kill, an escape, a last stand, a gift) > situation (night, working, idle at home) >
   temperament default. No network traffic for blinking; mood and talking are a byte and a bit.
 
 ### 4.7 Layers
@@ -545,7 +564,8 @@ sheet lists it. The phase look uses `p2_`/`p3_` bones and, when the art spec ask
 - **Interrupts**: a stun or a knockback above 0.5 during a wind-up cancels it (v1 rule, half the cooldown back) and
   sends `interrupt`; a poise break sends `stagger`. The 2-tick transition cuts the swing cleanly.
 - **Chains (G4)**: a one-shot that leads into a loop ends on the loop's first frame, so the server plays them back to
-  back: `stun` then `stun.loop`; `defeated` then `defeated.loop`, then `spared` or `death`; `work.fish_cast`, then
+  back: `stun` then `stun.loop`; `defeated` then `defeated.loop`, then `spared` (built for the first draft's yield,
+  which is gone: 6.13; what the three clips are for now is the art follow-up of 15.6); `work.fish_cast`, then
   `work.fish_wait` (its `.loop` follows), then `work.fish_reel`. A code 0 between them snaps to the base pose. `death`
   holds its last frame (`hold_on_last_frame`). G4 review: 0.75 s, so with the 2-tick blend it ends on tick 17 and
   the body lies still before vanilla removes the entity at deathTime 20 (1.0 s ran past it: the hero vanished as it
@@ -643,22 +663,29 @@ tuff, red sandstone, polished diorite, quartz bricks), so builders repair with s
 
 | Trait | Low (0) | High (100) | Drives |
 |---|---|---|---|
-| `aggression` (a) | avoids war | seeks battle | raid rate, attack odds, soldier share, stranger hostility, its own fight AI |
-| `honour` (h) | anything goes | keeps its word | betrayal, declarations, sparing the beaten, duels, ambushes |
+| `aggression` (a) | avoids war | seeks battle | raid rate, attack odds, soldier share, stranger hostility, its own fight AI, a last stand (6.13) |
+| `honour` (h) | anything goes | keeps its word | betrayal, declarations, mercy to beaten factions, a last stand, letting a fleeing hero go, duels, ambushes |
 | `ambition` (m) | content | expansionist | recruitment pace, building ahead, glory targets, enchanting, tribute |
-| `caution` (c) | reckless | careful | garrison kept, attack threshold, food reserve, repairs, ranged share |
+| `caution` (c) | reckless | careful | garrison kept, attack threshold, food reserve, repairs, ranged share, escaping a lost fight and how early (6.13) |
 | `greed` (g) | generous | acquisitive | loot weight, storage, trade terms, payment conditions |
 | `sociability` (s) | isolationist | outgoing | pacts, opinion recovery, traders, festivals, welcome to strangers |
-| `loyalty` (l) | fickle | steadfast | joining allies, leaving losing allies, defection, raid cohesion |
+| `loyalty` (l) | fickle | steadfast | joining allies, leaving losing allies, defection, raid cohesion, never abandoning its home or its leader (6.13) |
 | `volatility` (v) | predictable | whimsical | noise on every decision (sigma 0.2 x v), whims |
 
 - **Temperament** (one of 30, appendix A) sets default values for all eight traits, the fight-AI defaults, dialogue
   tone, face defaults and at most one special rule. Authoring rule: each trait may differ from its temperament default
   by at most 20 (ADJUSTED otherwise), so the label stays true.
 - **Fight AI from personality** (any v1 `behaviour` field the file sets wins): aggression word = bold when a >= 65,
-  cautious when a <= 35, else steady; `retreat_below` = role default + 20 (c - 0.5) - 10 (a - 0.5), clamped 0-60;
+  cautious when a <= 35, else steady; `retreat_below` = role default + 20 (c - 0.5) - 10 (a - 0.5), clamped 0-60
+  (for a hero it no longer starts a soldier's withdrawal: a third of it, kept inside the last phase, is the health
+  at which an escaping-kind hero breaks off, 6.13);
   focus `heroes_first` for hot-blooded and proud temperaments, `strongest` for battle maniacs and the righteous,
-  `weakest` for schemers and tricksters, else by role; a hero with h >= 60 never strikes a yielding enemy.
+  `weakest` for schemers and tricksters, else by role. **Escape or last stand**: whether a losing hero runs or fights
+  to the death comes from its aggression, honour and caution, and where a runner still stands its ground from its
+  loyalty (6.13; appendix A lists each temperament's default; `personality.when_losing` and `stands_for` override
+  it, 12.11). **Honour and the fleeing** (replaces the first draft's "a hero with h >= 60 never strikes a yielding
+  enemy", which has no yield to refer to): a hero with h >= 60 does not chase or strike an escaping hero; it lets it
+  go and takes another target. Other heroes and every soldier pursue as far as their leash and their legs allow.
 - **Scaling**: every formula reads `t_eff = clamp(0.5 + k (t - 0.5), 0, 1)` with `k = leaders.personalityStrength /
   100` (0-2, default 1). `k = 0` makes every faction neutral, which reproduces today's numbers. The clamp matters: at
   `k = 2` an unclamped trait reaches -0.5 or 1.5, and products such as `a x m` in the raid target cost would turn two
@@ -718,7 +745,10 @@ fdist = 1 + 4 x territorial               territorial = 1 for delinquent and lon
 ```
 
 `lootEstimate` (0-1) uses only what scouts reported (population band, base age; a lair is 0.2). The attack-odds check
-still applies, so glory never means suicide. Hard rules: h >= 0.7 spares a faction that lost a base in the last
+still applies, so glory never means suicide. `defencePower`, and the party power in every odds row of the table above,
+count heroes at their war power (3.2 and 8.1, with the soldier-backbone cap there), so a base its hero is defending
+costs more to pick and needs a larger party, and a base whose hero is dead, away after an escape or out on a raid
+counts without it. Hard rules: h >= 0.7 spares a faction that lost a base in the last
 in-game day; h <= 0.3 gets an ambush bonus (cost -1500) against a faction whose army its scouts saw marching.
 
 Worked numbers (appendix A defaults, `k = 1`):
@@ -747,6 +777,13 @@ Worked numbers (appendix A defaults, `k = 1`):
 - **Death**: announced to everyone; no new raids until it returns unless a >= 0.7, in which case one vengeance raid
   goes against the killer's faction; a raid it was on falls back when `(c + 1 - l) / 2 > 0.5`. Revival after 10
   minutes, like every hero (3.4, death-related abilities included), at the capital or the nearest standing base. (Morale effects arrive with milestone 2.)
+- **Escape** (a leader of the escaping kind that broke off a losing fight: 6.13; a leader of the last-stand kind
+  never does, and neither does one its loyalty holds at its capital): announced to its own faction in its `escape`
+  line; it stays away from that fight for 5 minutes and until it is above half health, resting at its refuge
+  (`MOBILITY_AND_WORK.md` 7.7); a raid it was on falls back by the same `(c + 1 - l) / 2` rule as when it falls;
+  there is no vengeance raid, since nobody died. For that time its war power is in no party and in no base's defence
+  but its refuge's (3.2), so rivals see the base it left without it. There is no "spared" state: a leader is alive
+  and fighting, away after an escape, or dead for 10 minutes.
 - **Elimination** (last base falls; `CampaignManager.eliminate` kills every NPC today): heroes are no longer killed;
   the leader becomes an exiled free hero, never a leader again in this campaign, recruitable later (milestone 3).
 - **Succession** happens only with `leaders.permadeath` (off): the faction's highest-level hero with compatibility
@@ -784,39 +821,96 @@ boss craft, `research-archetypes.md` part 3 and `research-systems.md` section 3.
 title, a sound); durability with a per-hit ceiling; readable danger (every big attack has a visible, audible wind-up
 whose length grows with the danger, then a recovery that is the punish window); patterns that react to the player;
 phases that add a new mechanic; ways to win by skill (stagger, weak points, counters); pressure over time; arena sense;
-and a defeat moment.
+and an ending in character (it gets away, or it dies fighting: 6.13).
 
-### 6.1 Two modes
+**Owner decision (2026-11-12): one combat mode, the same for players and NPCs.** Asked whether a boss treats players
+and NPCs equally, the owner answered: "I would like player only features interactions to be removed, regardless if
+its good or bad for the player". So a hero fights as a boss against anyone: its boss health, poise and stagger,
+phases, enrage, moves, reactions, weak points and damage are the same whether it fights a player, an NPC soldier,
+another hero or a monster. The first draft's split between "field mode" (NPC wars, v1 numbers) and "boss mode" (on
+while a player was engaged) is gone, and so are the rules that existed only for players: extra damage to players
+(`damage_vs_players`), the protection from a one-hit kill, and health that grew with the number of engaged players.
+The rules that protected players now protect everyone (the per-hit cap, hazard-aware knockback, the v1 slot caps),
+the rules that answered players now answer NPCs as well (reactions, weak points, the fight-reach clock and altitude
+ceiling, the end of a fight and its rewards), and v1's rules that treated players differently are made equal (6.15).
+What stays on the players' side is presentation, because only players have screens: the boss bar, the intro title,
+the screen darkening, ground decals (drawn only where a player can see them), sounds and speech. Ordinary NPCs keep
+their own rules (soldiers stay player-like and get no extra knockback resistance); this section is about heroes.
 
-- **Field mode** (default): v1 numbers; a hero is a strong officer in NPC wars (v1 war power: a level-20 hero in iron
-  is about 2.3 soldiers). Moves, phases, animations and faces work the same; there is no boss bar, no health scaling,
-  and ground decals are drawn only when a player is within 32 blocks.
-- **Boss mode**: on while at least one player is **engaged** (it hurt the hero in the last 15 s or is its target,
-  within 32 blocks; creative and spectator never count). It ends 10 s after the last engaged player leaves. Entering
-  and leaving keep the current health share, so the bar never jumps.
+**Owner decision (2026-11-13): no attack tokens.** The first draft let at most two heroes press one player at a time;
+the equal-treatment pass had widened that limit to every target. The owner then answered: "its ok for more than 2
+heroes to target the same enemy". So the token rule is removed entirely, with its config key `boss.attackTokens`: any
+number of heroes may press the same target with any moves, whether it is a player, an NPC soldier or another hero.
+What a ganged-up target still has is what everyone has: each move's own wind-up and caps (6.2, 6.4).
+
+**Owner decision (2026-11-13): no yield.** "also i take a hero shouldnt yeld. they either try to escape or fight
+until die depending of what they want". The first draft ended a lost boss fight with a yield (the hero knelt at 1
+health and the winner spared or finished it), and the equal-treatment pass had extended that to NPC winners. All of
+it is removed: no kneeling, no spare-or-finish choice, no `HeroYieldGoal`, no "spared" outcome or rest, no yield to
+NPCs either, and no lethal blow is ever cancelled. When a fight goes badly a hero does what its own personality
+wants: it **escapes** (with any mobility it has, possibly where nobody can follow) or it **fights until it dies**.
+Which one is decided per hero from its temperament and traits, with an authored override and a few situation rules
+(some never abandon their home or their leader): 6.13. A dead hero comes back after 10 minutes (3.4); an escaped hero
+gives no rewards.
+
+The owner plays single-player only (ROADMAP phase 4), so nothing here is balanced for several players at once: the
+rules are written for "an enemy" and "a side" and simply hold for more than one player, with no extra numbers for it.
+
+**Reading rule** for every heroes-v2 document: where a rule had a field-mode value and a boss-mode value, the
+boss-mode value now holds in every fight; field-mode values survive only for raid travel outside a fight (flight
+altitude and the raid air budget, `MOBILITY_AND_WORK.md` 2.3 and 5.1.4). A hero is now worth several soldiers in NPC
+wars: its war power and the limits that keep NPC wars from being decided by heroes alone are in 8.1 and 3.2.
+
+### 6.1 One mode (the first draft had two)
+
+- **Engaged enemy**: a living enemy (v1 §10.1: a player in survival or adventure, an NPC or hero of a hostile faction,
+  a hostile monster, an enemy summon) that hurt the hero in the last 15 s or is its target, within 32 blocks.
+  Creative and spectator players are never enemies. **People** are players, faction NPCs and heroes; the word is
+  used only for the intro (6.13: a hero does not announce itself to a zombie). Every other rule of a fight, the end
+  of it included, is the same against monsters.
+- **Fighting**: from the first engaged enemy until 10 s after the last one leaves, dies or stops being an enemy (a
+  pact). The fight drives the move gap (6.3), enrage and reset (6.10), arena samples (6.12), the bar (6.13) and the
+  fight's air and reach rules (`MOBILITY_AND_WORK.md` 5.1). No rule in a fight reads whether an enemy is a player, and
+  none scales with how many enemies there are (the reach clock and the altitude ceiling look at where the engaged
+  enemies stand, not at who or how many they are).
+- **Always a boss**: the health of 6.2 is the hero's health at all times (from spawn, revival and load), so nothing
+  switches on or off and no health share has to survive a switch. Moves, phases, poise, reactions, weak points,
+  enrage, the end of the fight, animations and faces work the same in a duel with a player, a raid, a siege or a
+  fight with monsters.
+- **No yield and no soldier's withdrawal**: a hero never kneels and never steps back to eat and return at 60% as
+  soldiers do (`WithdrawGoal` is not a hero's goal, 3.5). A fight it is losing ends by its own nature, the same
+  against a player, NPC soldiers, another hero or monsters: an escaping-kind hero breaks off for good at its escape
+  threshold (`MOBILITY_AND_WORK.md` 7.7), a last-stand hero fights until it dies (6.13). A lost raid or a lost base
+  also sends an escaping-kind hero away; a last-stand hero finishes the fight it is in first (8.1).
+- **Presentation for players**: the boss bar and the intro title go to players within 32 blocks of a fighting hero;
+  telegraph decals are spawned only while a player is within 32 blocks (display entities only players see; a move's
+  timing, hit test and sounds never depend on them); sounds and speech play as `SOUND.md` section 7 says. None of
+  them decides anything.
 
 ### 6.2 Numbers (`logic/hero/BossRules`, pure)
 
 | Rule | Value (PROPOSED) |
 |---|---|
-| Boss health | `fieldMax x health_scale / 100 x role factor x (1 + 0.5 (n - 1))`, n = engaged players, at most 5; one attribute modifier `factionclash:boss_health` (`ADD_MULTIPLIED_TOTAL`) and `setHealth(share x newMax)` |
-| Role factor | vanguard 1.0, striker 1.2, skirmisher, support and controller 1.25, marksman and summoner 1.3 (12.4): the fragile roles start from 24-26 field health against a vanguard's 34, so without it a support boss dies in two-thirds of a vanguard's time |
+| Health | `baseMax x health_scale / 100 x role factor`, always, whoever and however many it fights (`baseMax`: the v1 health, role preset plus growth); one permanent attribute modifier `factionclash:boss_health` (`ADD_MULTIPLIED_TOTAL`, value `health_scale / 100 x role factor - 1`) applied at spawn, revival and load; when the maximum changes (a level, a config change) `setHealth(share x newMax)` keeps the share. There is no scaling by the number of attackers of any kind |
+| Role factor | vanguard 1.0, striker 1.2, skirmisher, support and controller 1.25, marksman and summoner 1.3 (12.4): the fragile roles start from 24-26 base health against a vanguard's 34, so without it a support boss dies in two-thirds of a vanguard's time |
 | `health_scale` default | common 250, rare 300, epic 350, legendary 400; a leader +50; allowed 200-600; config `boss.healthScale` (25-300%) multiplies every hero's value |
-| Example | an epic vanguard leader at level 10 (field 34 + 9 x 0.8 = 41) has 165 health against one player, 247 against two. At the reference rate (iron sword, 1.6 swings a second, half of them landing) that is about 36 s of landed hits, and a fight is two to three times its hitting time once wind-ups are dodged and phases change: about 70-110 s. Every slice hero lands between 24 and 39 s of hitting (SLICE_PLAN.md criterion 15) |
-| Damage cap from players | one player-sourced hit at most `boss.max_hit_share` (12%) of boss max health; the excess becomes poise damage |
-| Damage to players | v1 slot caps (skill 16, ultimate 30), then x `damage_vs_players` (115%, allowed 100-140) |
-| No one-shot | a hero hit never takes a player who was at full health below 1 health point |
-| Healing | no out-of-combat regeneration while in boss mode; authored `heal` and `drain` apply |
-| Attack tokens | at most `boss.attackTokens` (2) heroes **press** one player (melee and heavy moves) at a time; the others use ranged and support moves, guard allies or circle at 8-12 blocks; a token returns after the move's recovery; no tokens against NPCs |
+| Example | an epic vanguard leader at level 10 (base 34 + 9 x 0.8 = 41) has 165 health against anyone: a player, a hero or a raid party. At the reference rate (a player's iron sword, 1.6 swings a second, half of them landing) that is about 36 s of landed hits, and a duel is two to three times its hitting time once wind-ups are dodged and phases change: about 70-110 s. Every slice hero lands between 24 and 39 s of hitting (SLICE_PLAN.md criterion 15). An NPC soldier with the same sword (one swing a second, six in ten of them jump criticals, half landing) needs about 43 s, and attackers add up with nothing scaling against them: six soldiers who all reach it need about 7 s of hitting between them, which is the main limit on a hero in an NPC war (8.1) |
+| Per-hit cap | one hit from any attacker (a player, an NPC, a hero, a monster, their projectiles and summons; also a downing fall, `MOBILITY_AND_WORK.md` 2.4) takes at most `boss.max_hit_share` (12%) of max health; the excess becomes poise damage. Damage with no attacker (lava, fire, drowning, the void) is not capped, and `/kill` is never touched. 12% of 165 is about 20: an NPC soldier's iron sword never reaches it; a hero's big move, a falling mace or a stack of enchantments does |
+| Damage dealt | the v1 formula (v1 §6.3) with the v1 slot caps (skill 16, ultimate 30, at the level-1 reference), `heroes.maxHit` (40) and `heroes.powerScale`, the same against every target: no extra damage to players (`damage_vs_players` is gone) and none more or less to NPCs |
+| One-hit kills | no special rule (the first draft's protection of a full-health player is gone): a hero hit is limited by the caps above against a player as against an NPC, and the telegraph minimums of 6.4 are the warning both get |
+| Against heroes | a hero has boss health now, so v1's `target_max_health_percent` part is capped at 2% against a hero, as v1 caps it against vanilla bosses |
+| Healing | no out-of-combat regeneration while fighting; authored `heal` and `drain` apply |
+| Several heroes on one target | no limit (owner, 2026-11-13: "its ok for more than 2 heroes to target the same enemy"): any number of heroes may press the same target at once with melee and heavy moves, whether it is a player, an NPC or a hero. The first draft's attack tokens (at most 2 pressers, the others circling at 8-12 blocks) and the config key `boss.attackTokens` are gone; target choice is only `focus`, `protects` and the aggression radius (v1 §8). Nothing else scales with the crowd on either side: several heroes add their damage on one target, and several attackers add theirs on one hero |
 
 ### 6.3 The fight loop
 
 ```
-INTRO (first engagement of the in-game day, 1.0-1.5 s, super armour)
+INTRO (its first fight against people in an in-game day, 1.0-1.5 s, super armour)
   -> NEUTRAL (spacing, basic attacks, waits the phase's gap)
   -> MOVE: WINDUP -> ACTIVE -> RECOVERY   (a combo runs its strikes back to back)
   -> NEUTRAL ...
-     | REACTION (overrides the next pick)  | TRANSITION (phase)  | STAGGER  | YIELD
+     | REACTION (overrides the next pick)  | TRANSITION (phase)  | STAGGER
+     | ESCAPE (an escaping-kind hero under its threshold: 6.13)  | death at zero health (no yield)
 ```
 
 - **Gap** between moves (NEUTRAL time): phase 1 1.5-2.5 s, phase 2 1.0-2.0 s, phase 3 0.6-1.5 s; enraged x0.7. Basic
@@ -841,7 +935,8 @@ pick by weighted random among candidates with score > 0; none -> keep spacing an
   only the last move of a string plays its full recovery, so the punish window comes at the end of the string. A string
   is at most 4 moves long (the validator rejects longer or cyclic followup chains).
 - v1 rules stay: 1 s global cooldown between moves, cooldown floors from move weight, the ultimate's energy and its
-  20-60 s minimum gap. In field mode the same selector runs with the phase gap replaced by the global cooldown.
+  20-60 s minimum gap. The same loop runs in every fight, whoever the enemy (the first draft's field mode replaced the
+  phase gap with the global cooldown; that branch is gone).
 
 ### 6.4 Moves, classes and telegraphs
 
@@ -850,7 +945,7 @@ pick by weighted random among candidates with score > 0; none -> keep spacing an
 | `light` | 0.4 s | 0.3 s | animation |
 | `heavy` (heavy melee, leap, dash, charge, grab) | 0.8 s | 0.8 s | animation + sound + line or landing decal |
 | `area` (cone, nova, zone, wave, rain, sweep) | 1.0 s | 0.8 s | animation + ground decal + sound |
-| `ultimate` | 1.5 s | 1.5 s | all of the above + a spoken line + a wide sound + screen darkening for engaged players (2 s: the vanilla boss-bar flag `ServerBossEvent.setDarkenScreen(true)`, as the wither uses; no mob effect) |
+| `ultimate` | 1.5 s | 1.5 s | all of the above + a spoken line + a wide sound + screen darkening for the players who see its bar (2 s: the vanilla boss-bar flag `ServerBossEvent.setDarkenScreen(true)`, as the wither uses; no mob effect; presentation, 6.1) |
 
 - The validator raises a too-short wind-up or recovery to the class minimum (ADJUSTED); the class is inferred from the
   form when the file does not give it: `melee`, `combo`, `shot`, `volley`, `bolt`, `barrage`, `counter`, `self`, `ally`,
@@ -858,8 +953,9 @@ pick by weighted random among candidates with score > 0; none -> keep spacing an
   `sweep` area. An authored class may be heavier than the form's, never lighter, except for a move that deals no damage
   and applies no stun, freeze, knockback or pull to enemies (a taunt or a slow may be light; ADJUSTED otherwise).
   Telegraphs never shorten below these minimums, even in phase 3 or enraged.
-- **Ground decals** (`hero/Telegraphs`): vanilla `Display.BlockDisplay` entities, no client assets, laid flat (scale y
-  0.01) in the hero's accent colour (stained glass of the nearest dye for normal tells, purple for unblockable grabs,
+- **Ground decals** (`hero/Telegraphs`; spawned only while a player is within 32 blocks, 6.1, so a wind-up in an NPC
+  war with no player near is timed and heard the same but draws nothing): vanilla `Display.BlockDisplay` entities,
+  no client assets, laid flat (scale y 0.01) in the hero's accent colour (stained glass of the nearest dye for normal tells, purple for unblockable grabs,
   red for the ultimate): a disc for circles, a stretched strip for lines and charges, a fan of 3-5 strips for cones, a
   ring for waves, a landing disc for leaps, one disc per impact for rain. They **grow from 0 to full size over the
   wind-up** (display transformation interpolation): a readable charging timer. A block display is a square, so a
@@ -884,7 +980,7 @@ pick by weighted random among candidates with score > 0; none -> keep spacing an
 | `wave` | grounded enemies the expanding ring passes | `radius` 6-16 (10), `speed` 6-12 blocks/s (8), `waves` 1-3, `interval` 0.6-1.5 s | radius grows per tick; hits when `onGround` and the front is within 0.75 blocks: **jump to dodge** | damage x 1.5 x waves |
 | `rain` | enemies within 1-2 blocks of each impact | `count` 3-12 (6), `radius` 3-8 (5) around the target, `duration` 1-4 s, impact `delay` 0.75-1.0 s | each impact gets its own decal; zone caps per receiver (1.5 x slot) | damage x 1.5 x count / 3 |
 | `sweep` | enemies a rotating line passes | `range` 4-12 (8), `arc` 60-180 (120), `duration` 1-3 s, `width` 1-2 | a ray each tick from the hero's eyes, stopped by blocks (`level.clip`): leave the arc or break line of sight | damage x 1.5 x arc / 60 |
-| `grab` | the target, if reached | `range` 2-3 (2.5), `throw` 1-4, `up` 0-1 | always `unblockable` and `heavy`; holds 1 s (each tick the target's velocity is set toward the hero's hand, `setDeltaMovement` + `hurtMarked`; never a teleport, and a player can still turn and use items), then throws (hazard-aware, 6.12); a miss costs a 1.2 s recovery | damage + throw / 2 + 2 |
+| `grab` | the target, if reached | `range` 2-3 (2.5), `throw` 1-4, `up` 0-1 | always `unblockable` and `heavy`; holds 1 s (each tick the target's velocity is set toward the hero's hand, `setDeltaMovement` + `hurtMarked`; never a teleport; the receiver keeps its own actions: a player can still turn and use items, an NPC can still swing), then throws (hazard-aware, 6.12); a miss costs a 1.2 s recovery | damage + throw / 2 + 2 |
 | `counter` | the attacker | `stance` 0.8-2 s, `absorb` 50-90% (80), `ranged` false | a `HeroStatus` stance flag read in `onIncomingDamage`; the stance is the move's wind-up for the class minimum and the riposte is instant; the riposte's effects stay within the skill cap; arrows are not countered unless `ranged` | riposte x 0.75 |
 | `barrage` | the target, shot after shot | `count` 3-10 (5), `interval` 0.15-0.6 s, `projectile`, optional `per_shot` effect lists (cycled) | sequential v1 `shot`s re-aimed at fire time | damage x count x 0.75 |
 
@@ -895,9 +991,9 @@ airborne mobility trait: `MOBILITY_AND_WORK.md` section 7.3, with the new condit
 
 | Effect | Fields | What it does |
 |---|---|---|
-| `guard_break` | `seconds` 2-5 | a player's raised shield is disabled (vanilla `Player.disableShield`, the axe rule); heroes and NPCs lower theirs |
+| `guard_break` | `seconds` 2-5 | a raised shield is disabled for its seconds, the same for everyone (6.15): a player's by vanilla `Player.disableShield` (the axe rule; the cooldown shows on the hotbar), an NPC's or a hero's by a `HeroStatus` flag that lowers it and keeps it down until then |
 | `poise` | `amount` 10-60 | poise damage to a hero (heroes fighting each other) |
-| `silence` | `seconds` 1-3 | heroes and casting NPCs cannot start moves; nothing on players |
+| `silence` | `seconds` 1-3 | the receiver cannot start moves: heroes and casting NPCs; a player or an ordinary NPC has no moves to stop, so nothing else changes for either |
 | `tether` | `seconds` 2-6, `max` 4-10 blocks | the receiver is pulled back when it goes farther than `max` from the anchor |
 | `barrier` | `hits` 2-8, `seconds` 3-15, optional `focus` add | blocks all damage to the hero until it has taken that many hits; with a living focus add it cannot drop below 1 hit; killing the focus breaks it and staggers the hero |
 | `spawn_add` | `add` (catalogue id), `count` 1-4 | spawns adds (section 6.11); milestone 1 has only `decoy` |
@@ -905,12 +1001,18 @@ airborne mobility trait: `MOBILITY_AND_WORK.md` section 7.3, with the new condit
 
 New **conditions** (for `if`, `prefer_when` and reactions): `target_blocking`, `target_airborne`,
 `target_drawing_bow`, `target_eating`, `target_behind`, `target_above` (blocks), `target_below`,
-`target_unreachable`, `target_is_player`, `phase` (1-3), `enraged`, `players_engaged` (count), `allies_near` (count),
-`adds_alive` (count), `in_home_base`, `is_night`, `is_raining`, `low_ceiling`, `in_water`, `self_state` (state name).
+`target_unreachable`, `phase` (1-3), `enraged`, `enemies_engaged` (count of engaged enemies of every kind),
+`allies_near` (count), `adds_alive` (count), `in_home_base`, `is_night`, `is_raining`, `low_ceiling`, `in_water`, `self_state` (state name).
+The first draft's `target_is_player` and `players_engaged` single out players, so they are gone (6.15): the reader
+turns `target_is_player` into v1 `target_is` with the new kind `person` (a player, an NPC or a hero) and
+`players_engaged` into `enemies_engaged`, each ADJUSTED with the owner's rule in the message.
 
 New **passive triggers**: `on_phase` (value = phase), `on_enrage`, `on_stagger`, `on_counter`, `on_guard_broken` (its
-own attack was blocked), `on_target_heal`, `on_add_died`, `on_yield`, `on_intro`; and `once_per_fight: true` on any
-passive.
+own attack was blocked), `on_target_heal`, `on_add_died`, `on_intro`, `on_escape` (its escape starts: a smoke puff, a
+parting hex; self and look effects only, since an escaping hero starts no attack) and `on_last_stand` (a hero that
+will not leave drops under the health where it would have fled, once per fight: 6.13); and `once_per_fight: true` on
+any passive. The first draft's `on_yield` is gone with the yield: the reader leaves a passive with that trigger out
+(PART LEFT OUT, naming `on_escape` and `on_last_stand`).
 
 ### 6.7 Phases
 
@@ -926,18 +1028,19 @@ passive.
 - `rebirth` (legendary only): once per fight, lethal damage instead starts a final phase at 30%; the bar shows it as
   an extra pip from the start, so it is never a surprise.
 
-### 6.8 Reactions: reading the player
+### 6.8 Reactions: reading the enemy
 
 `boss.reactions`: up to 8 `{ when, move, chance, cooldown }`, checked every 5 ticks; a true `when` with a ready move
 and a passed chance replaces the next pick (never a move in progress).
 
-Reactions read **whatever the hero is fighting**, player or NPC, in both modes (owner, 2026-11-12: "if a boss
+Reactions read **whatever the hero is fighting**, player or NPC, in every fight (owner, 2026-11-12: "if a boss
 punishes the player for raising a shield, it does the same when an NPC raises one"). Every `target_*` condition is
 computed from the target's own state with the same test: `isBlocking()` (faction soldiers raise shields against
 archers today), using a bow or crossbow (NPC archers draw like players), eating (an NPC eating from its food bar),
 airborne or above (an NPC on a pillar or a scaffold), behind, far, unreachable. The chances and cooldowns are the same.
-What stays player-only is the boss layer of 6.1-6.2, which exists to keep fights fair for people: boss health
-scaling and the bar, the per-hit damage cap, `damage_vs_players`, the no-one-shot rule and attack tokens.
+The first draft kept a player-only boss layer beside this (health scaling per player, a per-hit cap for player hits
+only, extra damage to players, the no-one-shot rule, attack tokens); the owner's later decisions removed it (the top
+of this section), so nothing in this section or the next ones depends on whether the target is a player.
 
 | `when` | Typical answer |
 |---|---|
@@ -952,11 +1055,12 @@ scaling and the bar, the per-hit damage cap, `damage_vs_players`, the no-one-sho
 ### 6.9 Poise, stagger, punish windows, weak points, counters
 
 - **Poise** (`boss.poise`, 50-200; default by role: vanguard 140, striker 100, skirmisher, support and controller 80,
-  marksman and summoner 70): each player hit adds `damage x weapon factor` (sword 1.0, axe 1.6, mace 2.0 plus its fall
-  bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8); a **parry** (blocking a heavy move with a shield raised in the
-  last 6 ticks; vanilla only blocks once a shield has been up 5 ticks, so this is `isBlocking()` with
-  `getTicksUsingItem()` 5-11 when the hit lands) adds 25; a `charge` ending against a wall adds 40; damage over the per-hit cap converts 1:1. Poise
-  decays 15 per second after 3 s without poise damage.
+  marksman and summoner 70): each hit adds `damage x weapon factor`, whoever lands it (a player, an NPC, a hero or a
+  monster; sword 1.0, axe 1.6, mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8, anything else
+  1.0); a **parry** (blocking a heavy move with a shield raised in the last 6 ticks, a player's or an NPC's: faction
+  soldiers raise theirs with the same item use; vanilla only blocks once a shield has been up 5 ticks, so this is
+  `isBlocking()` with `getTicksUsingItem()` 5-11 when the hit lands) adds 25; a `charge` ending against a wall adds
+  40; damage over the per-hit cap converts 1:1. Poise decays 15 per second after 3 s without poise damage.
 - **Stagger** at full poise: 2.5 s kneeling dizzy (`stagger` animation, stars, `on_stagger` passives), +25% damage
   taken; poise resets and its maximum grows 20% for the rest of the fight (no stun-lock). No stagger during
   transitions, an ultimate's wind-up or moves marked `super_armor`.
@@ -975,30 +1079,34 @@ scaling and the bar, the per-hit damage cap, `damage_vs_players`, the no-one-sho
 | `channel` | a channelled move breaks after `interrupt` damage (15% of max) and gives a 2 s recovery | casters, priests, brewers |
 | `iron` / `gold` | +15% from iron / golden weapons | folklore spirits / undead and fiends |
 | `snowball`, `water` | a snowball hit or a water splash douses a fire hero (its burning state ends, -10% damage for 5 s) or startles a water-hating one | fire heroes, cats |
-| `bell` | ringing a bell within 8 blocks stuns a spirit hero 1 s (once per 30 s) | spirits, undead |
-| `light` | a torch or glowstone a player places within 4 blocks weakens a shadow hero 10% for 10 s | shadow and night heroes |
+| `bell` | a bell rung within 8 blocks, by anyone, stuns a spirit hero 1 s (once per 30 s) | spirits, undead |
+| `light` | a torch or glowstone an enemy (a player or an NPC) places within 4 blocks weakens a shadow hero 10% for 10 s | shadow and night heroes |
 | `crit_above` | a falling critical hit staggers at once (a talisman on the forehead, a dish on the head) | hopping revenants, kappa |
 
-  Each weak point shows on the hero sheet and is hinted by a dialogue line or a visible prop. Every trigger is a
-  vanilla event a player can cause: `iron`/`gold` the attacker's main-hand `TieredItem` tier; `snowball` a
-  `ProjectileImpactEvent` of a `Snowball` on the hero; `water` a thrown water bottle (`ThrownPotion` with water
-  contents) hitting it, or the rising edge of `isInWaterRainOrBubble`; `bell` a player using a bell block
-  (`PlayerInteractEvent.RightClickBlock`) or a projectile hitting one within 8 blocks; `light` a player placing a block
-  with light emission 12 or more within 4 blocks (`BlockEvent.EntityPlaceEvent`); `crit_above` NeoForge's
-  `CriticalHitEvent` from an attacker falling from above the hero's eyes.
+  Each weak point shows on the hero sheet and is hinted by a dialogue line or a visible prop. Every trigger is an
+  event a player or an NPC can cause, and both count the same (6.15): `iron`/`gold` the attacker's main-hand
+  `TieredItem` tier; `snowball` a `ProjectileImpactEvent` of a `Snowball` on the hero, whoever threw it; `water` a
+  thrown water bottle (`ThrownPotion` with water contents) hitting it, or the rising edge of `isInWaterRainOrBubble`;
+  `bell` a bell rung within 8 blocks: a player using it (`PlayerInteractEvent.RightClickBlock`), a projectile hitting
+  it, or an NPC or hero ringing it through the mod's own ring helper (a hero's home bell, 6.12); `light` an enemy
+  placing a block with light emission 12 or more within 4 blocks: a player (`BlockEvent.EntityPlaceEvent`) or an NPC
+  (the mod's block-placing helper fires the same check); `crit_above` a critical hit from an attacker falling from
+  above the hero's eyes: a player's (NeoForge's `CriticalHitEvent`) or an NPC's or hero's jump critical hit
+  (`FactionNpc.doHurtTarget`, v1 §13.3 `crit_damage`).
 - **Counter stance** (`counter` form): a melee hit during the stance is answered at once and mostly absorbed; the
   answer is ranged damage or waiting it out.
 
 ### 6.10 Enrage, reset, leash
 
-- **Soft enrage** after `boss.enrage.after` s in boss mode (leaders 240, others 180; allowed 120-300): +15% damage,
-  gap x0.7, poise maximum x1.25, the bar turns red, an angry face and line. All damage bonuses together never exceed
-  +25%.
+- **Soft enrage** after `boss.enrage.after` s of fighting (6.1; leaders 240, others 180; allowed 120-300), whoever it
+  fights: +15% damage, gap x0.7, poise maximum x1.25, the bar turns red, an angry face and line. All damage bonuses
+  together never exceed +25%.
 - **Hard enrage triggers** (chosen per hero): `ally_hero_died` nearby, `heart_attacked` while defending,
-  `favoured_hurt` (its favoured hero or leader is hit).
-- **Reset**: no engaged player for 10 s ends boss mode; 30 s out of combat heals 1% of field max health per second;
-  a phase re-arms when health climbs 10% above its threshold. A leashed hero walks back to its post; it never
-  teleports.
+  `favoured_hurt` (its favoured hero or leader is hit), by a player or an NPC alike.
+- **Reset**: no engaged enemy for 10 s ends the fight; 30 s out of a fight it heals 1% of its base (v1) max health per
+  second (0.25-0.4% of its boss maximum: about 7 minutes from empty to full for a 400% hero); a phase re-arms when
+  health climbs 10% above its threshold. The leash (v1 §8, from aggression) holds against any enemy; a leashed hero
+  walks back to its post; it never teleports.
 
 ### 6.11 Adds
 
@@ -1006,60 +1114,182 @@ scaling and the bar, the per-hit damage cap, `damage_vs_players`, the no-one-sho
 |---|---|---|
 | `call_guards` | real soldiers of its faction take its target; nothing spawned | 1-4 per use |
 | v1 `summon` | vanilla wolf, snow golem, iron golem (v1 §20) | v1 caps: 3 per hero, 12 per faction |
-| `decoy` (milestone 1) | `hero/HeroDecoy`: renders **the owner hero's own model** (same GeckoLib model, synced owner id), copies its current action with a 2-tick delay, walks a short path, has 1 health and **no shadow** (the real hero has the vanilla shadow, the tell) and **no footstep sounds** (a second tell: players can switch entity shadows off, and shader packs often draw no vanilla shadow), pops with a smoke puff on any hit or after 10 s | 3 per hero |
+| `decoy` (milestone 1) | `hero/HeroDecoy`: renders **the owner hero's own model** (same GeckoLib model, synced owner id), copies its current action with a 2-tick delay, walks a short path, has 1 health and **no shadow** (the real hero has the vanilla shadow, the tell) and **no footstep sounds** (a second tell: players can switch entity shadows off, and shader packs often draw no vanilla shadow), pops with a smoke puff on any hit or after 10 s; NPCs and heroes are fooled as players are: a decoy is a valid target for them and draws their blows and arrows like the hero it copies (6.15) | 3 per hero |
 | spirit adds (milestone 2) | `hero/HeroAdd` with a generated model per add type (wisp, paper familiar, flower sprite, drone, focus crystal, imp, hatchling, helper animal) and one behaviour (chaser, turret, orbiter, focus, guard); a `look` on `summon` draws a vanilla-stat creature with an add model ("wolves drawn as paper foxes") | 4 alive per hero, 12 per fight; 10-60 s; no loot or XP; never more than 3 blocks above the ground |
 
 ### 6.12 Arena awareness and anti-cheese
 
-- Every 2 s in boss mode the hero samples its surroundings: ceiling height (3 blocks or less: no `leap`, no knock-up
-  moves, thrusts preferred), water and lava along dash and charge paths (those moves are skipped), drops over 4 blocks
-  along a path (dashes and charges stop short), open sky (needed by visual lightning and `rain` outdoors).
-- **Hazard-aware knockback** on players: if the landing area 4 blocks away has lava, fire, a drop over 6 or the void,
-  the push is cut to 0.5 strength. No cheap deaths.
-- **Unreachable target**: a hero first uses its mobility, at once, to reach a player on a pillar, in a pen or behind a
-  wall (climb, leap, glide, flight, a reach flight outside aerial phases; on a player who left no cell beside him, a
-  basic attack from the cling, the jump's apex or the air: `MOBILITY_AND_WORK.md` 3.7, the owner's answer of
-  2026-11-12). When no link reaches (no path, or no melee reach for 5 s): far-band moves; after 10 s the hero uses the
-  NPCs' own tools at player speed (`DigOut` pillaring and bridging, `BlockWork` breaking) to reach the player, exactly
-  as a player would; after 30 s it disengages with a taunt line and resets. A hero without any far-band move gets a
-  NOTE.
+- Every 2 s while fighting (6.1) the hero samples its surroundings: ceiling height (3 blocks or less: no `leap`, no
+  knock-up moves, thrusts preferred), water and lava along dash and charge paths (those moves are skipped), drops over
+  4 blocks along a path (dashes and charges stop short), open sky (needed by visual lightning and `rain` outdoors).
+- **Hazard-aware knockback** on every receiver (a player, an NPC, a hero): if the landing area 4 blocks away has lava,
+  fire, a drop over 6 or the void, the push is cut to 0.5 strength. No cheap deaths, for anyone.
+- **Unreachable target**: a hero first uses its mobility, at once, to reach an enemy (a player or an NPC archer alike)
+  on a pillar, in a pen, on a wall or behind one (climb, leap, glide, flight, a reach flight outside aerial phases; on
+  a target that left no cell beside it, a basic attack from the cling, the jump's apex or the air:
+  `MOBILITY_AND_WORK.md` 3.7, the owner's answer of 2026-11-12). When no link reaches (no path, or no melee reach for
+  5 s): far-band moves; after 10 s the hero uses the NPCs' own tools at player speed (`DigOut` pillaring and bridging,
+  `BlockWork` breaking) to reach the target, exactly as a player would; after 30 s it disengages with a taunt line and
+  resets. A hero without any far-band move gets a NOTE.
 - **Home ground**: the `in_home_base` condition lets a hero use its walls (a bell rung to call guards, a stand at the
   heart).
 
-### 6.13 Intro, boss bar, yield and rewards
+### 6.13 Intro, boss bar, the end of a fight and rewards
 
-- **Intro**: the first engagement between a player and a hero in an in-game day plays the `intro` animation (1.0-1.5
-  s, super armour, 50% less damage), sends a title to engaged players (`ClientboundSetTitleTextPacket`: name in its
-  colour, subtitle "title · faction", fade 10/40/10 ticks) and says the `intro` line.
+- **Intro**: a hero's first fight against people in an in-game day, whoever they are (a player, an NPC soldier, a
+  hero), plays the `intro` animation (1.0-1.5 s, super armour, 50% less damage) and says its `intro` line. The title
+  is presentation: each player within 32 blocks of a fighting hero gets it once per hero per in-game day, the first
+  time they are near it in a fight (`ClientboundSetTitleTextPacket`: name in its colour, subtitle "title · faction",
+  fade 10/40/10 ticks).
 - **Boss bar** (`ServerBossEvent`, `hero/HeroBossBars`): `★ Name · title  ◆◆◇` plus `⚡` when the ultimate is ready;
   colour = the nearest of the 7 bar colours to the hero's primary, red when enraged; shown to players within 32 blocks
-  while boss mode is on; a second hero adds a second bar.
-- **Yield**: in boss mode a killing blow from a player or a player's projectile is cancelled at 1 health; the hero
-  kneels for 5 s, invulnerable and passive (`defeated.loop`, a defeat face, its `yield` line); engaged players see an
-  action-bar prompt "Sneak and use to spare, strike to finish". **Spare**: it walks home (no combat for 10 minutes,
-  counted as a defeat, not a death, no gear dropped; its `spared` line; standing and opinion effects in milestone 2).
-  **Finish**: it dies (revival timer, v1 drops). No choice in 5 s: it collapses and dies. Killed by NPCs or in field
-  mode: a 1 s defeat beat, then death. **Refused yield**: a hero with honour 30 or less, or a leader with caution 70
-  or more, does not kneel but escapes at 1 health, once in 10 minutes: boss mode ends, nothing drops, no rewards, and
-  the next hit that reaches it kills it (`MOBILITY_AND_WORK.md` 7.7).
-- **Rewards** for a player-defeated hero: XP orbs (`7 x level`, at most 100), its non-kit gear, a `hero_crest`
-  trophy item (named, one per hero per player per in-game day), and (milestone 3) a chance of a token fragment.
+  whenever the hero is fighting anyone (a raid between two NPC factions included); a second hero adds a second bar, and
+  a player sees at most 3, the nearest fighting heroes first (PROPOSED). A fight the hero does not win ends the bar in
+  one of two states, shown for 3 s before it goes: `★ Name · fled` (it escaped; the bar keeps its health share) or
+  `★ Name · fallen` (it died; the bar is empty). There is no third state: nobody is "spared".
+- **The end of a fight: escape or last stand** (the owner, 2026-11-13: "a hero shouldnt yield. they either try to
+  escape or fight until die depending of what they want"). Nothing cancels a killing blow, nobody kneels, and there
+  is no spare-or-finish choice for a player or for an NPC side. A hero that is losing does one of two things, in
+  every fight alike (against a player, NPC soldiers, another hero or monsters), and which one is its own nature
+  (`logic/hero/EscapeRules`, pure; numbers PROPOSED):
+  - **Escape**: under its escape threshold it breaks off for good and runs with any mobility it has, even where
+    nobody can follow, to its refuge; it stays away 5 minutes and can do this once in 10 minutes
+    (`MOBILITY_AND_WORK.md` 7.7 has the movement, the refuge and the limits). An escape is neither a death nor a
+    win for anyone: nothing drops and nobody is rewarded.
+  - **Last stand**: it never leaves a fight. It fights until its enemies are dead or gone or until it dies, and
+    then comes back after 10 minutes like every hero (3.4).
+
+  **Which one** comes from three traits (raw values 0-100, like the aggression word of 5.4; not scaled by
+  `leaders.personalityStrength`, because this is the hero's own fight AI and not a director knob):
+
+  ```
+  nerve = aggression + honour - caution
+  last stand   when nerve >= 65      battle-loving, proud or righteous: it wants the fight, or will not turn its back
+  escape       otherwise             cautious, self-preserving or scheming: it wants to live
+  ```
+
+  Worked, with appendix A's defaults: a battle maniac (95 + 55 - 5 = 145) and the righteous (60 + 95 - 45 = 110)
+  never run, and a stoic (50 + 80 - 65 = 65) stands; a schemer (45 + 15 - 70 = -10), a coward who rises
+  (20 + 65 - 90 = -5) and a shy hero (25 + 70 - 80 = 15) run. Twelve of the 30 temperaments stand by default and
+  eighteen escape (appendix A, the "When a fight goes badly" table). The validator NOTEs a hero whose authored
+  traits flip its temperament's default ("a stoic usually stands; this one escapes: caution 70"), so a sheet never
+  surprises its author.
+
+  **Where an escaping hero stands anyway** (situation rules, from loyalty: in these places it behaves as a
+  last-stand hero):
+
+  | `stands_for` | It does not escape | Default when |
+  |---|---|---|
+  | `home` | inside its home base (the walls box plus 16 blocks; a leader's home is its capital) while that base's heart stands: it does not abandon its own people | loyalty 70 or more |
+  | `leader` | while its faction's leader is fighting within 32 blocks of it (heroes other than the leader): it does not leave its leader in a fight | loyalty 85 or more |
+
+  A stand ends with its reason: when the heart is destroyed, or the leader falls or leaves, the hero is an escaping
+  hero again (a lost base sends it away at once, whatever its health: 7.7 there). Temperament rules on top of the
+  formula: `sleepy` stands everywhere (its rule "bold under half health": once it is that awake it sees the fight
+  through); `yandere` gets a third situation with milestone 3's relationships (never while its favoured hero fights
+  beside it). A hero with an unspent `rebirth` (6.7) does not escape before it; the threshold is read again after
+  the rebirth.
+
+  **The authored override** (12.11): `personality.when_losing` (`escape` or `last_stand`) replaces the formula's
+  answer, and `personality.stands_for` (a list of `home` and `leader`; `[]` means nowhere) replaces the loyalty
+  defaults. A v1 `behaviour.retreat_below` authored as 0 ("never retreats") also reads as `last_stand`. An operator's
+  config override may set them like any personality field.
+
+  **The escape threshold** (`flee_at`, a share of max health). v1's `retreat_below` (20-40% by role, moved by
+  caution and aggression: 5.4) was a share of v1 health, at which a soldier-like hero stepped back to eat. Against
+  boss health it would end every fight before the last phase, so a hero reads it at a third and inside its last
+  phase:
+
+  ```
+  flee_at = clamp( round(retreat_below / 3), 8, 15 )     percent of max health (a half rounds up),
+            and never above (the last phase's start - 10), with a floor of 5
+  ```
+
+  So an escaping hero shows every phase it has and leaves in the middle of the last one (a phase 3 that begins at
+  25% is fought down to 15-8%), with two to four sword blows of health left: enough to get away from a slow
+  pursuer, not from a fast or a lucky one. A cautious marksman (`retreat_below` 44) goes at 15%, a bold striker (22)
+  at 8%. The validator NOTEs an escaping hero whose last phase starts under 18% (it would leave as the phase
+  begins). The hero sheet and the kit sheet say which kind a hero is and where it stands ("When losing: escapes under
+  15%, never from its home" or "When losing: fights to the death").
+
+  **What became of `WithdrawGoal`.** Soldiers keep v1's withdrawal (step back under `retreat_below`, eat, return at
+  60%). A hero has no such state: under `flee_at` an escaping hero hands over to `HeroEscapeGoal` (3.5) and does not
+  come back to that fight, and a last-stand hero has no low-health behaviour at all. When an escape is not possible
+  the hero fights on to the death where it stands: within 10 minutes of its last escape (it cannot run twice: 7.7
+  there), cornered with no way out for 3 s, held by a situation rule, or with `heroes.escape = false`.
+
+  **The last-stand beat.** The first time in a fight that a hero which will not or cannot leave drops under the
+  `flee_at` it has or would have had, it says its `last_stand` line with a `determined` face and its
+  `on_last_stand` passives fire (6.6). No number changes; phase 3 and the enrage are already its escalation. At zero
+  health it dies like any NPC: the `death` animation inside vanilla's 20 death ticks, its `fallen` line (v1 §23) to
+  its faction, the bar's `fallen` state, its kit items gone until it returns. With no person engaged (monsters
+  alone, a fall, lava) it is the same death.
+
+  **Pursuit, and stopping an escape.** An escaping hero is pursued by whoever it fled, each by its own means: a
+  player as far as they can follow; soldiers as far as their leash and their legs go (`Pursuit` is unchanged: no
+  links, no flight); enemy heroes with their own mobility within their aggression leash, except that a hero with
+  honour 60 or more lets it go (5.4). It stays a boss while it runs: the per-hit cap, poise and weak points do not
+  switch off, so filling its poise staggers it for 2.5 s where it is, and arrows bring a flyer down (air poise,
+  `MOBILITY_AND_WORK.md` 2.4). That is how an escape is stopped. Killed on the run, it has died, and the rewards
+  below drop.
+- **Rewards** come only with a death, and go to whoever killed it, by the same rule for a player and an NPC side.
+  The winning side is the side of the last person (a player, an NPC or a hero) that hurt it in its last 15 s; a
+  monster's blow or a fall then counts for that side, and a player with no faction is a side of one. Where it died:
+  XP orbs (`7 x level`, at most 100), a `hero_crest` trophy item (named; one per hero per winning side per in-game
+  day, a side being a player or a faction) and its non-kit gear (v1). A player picks them up; the NPCs of a winning
+  NPC side collect them as they collect loot and experience orbs after a fight (they pick up orbs like players) and
+  carry them home to their storehouse, where the crest stays as a trophy. Killed with no person involved, it drops
+  its non-kit gear as any NPC does, with no orbs and no crest. An escape gives nothing to anyone. Milestone 3: a
+  chance of a token fragment at a death, dropped and collected the same way (a faction's director can use tokens,
+  v1 §25).
+- **Not a yield: duels (milestone 3, open).** Sparring and "beat it in a duel" recruitment (7.4, section 8) used to
+  end "at the yield". They need their own non-lethal bout rule instead, agreed before the first blow (for example
+  first to a set share of health), which is a different thing from giving up a real fight: open design point 6 of
+  section 17.
 
 ### 6.14 Fairness rules (enforced by the mod, not by authors)
 
-1. Every telegraph meets its class minimum; no move is both unblockable and without a decal.
-2. Stuns on players stay v1's Slowness and Mining Fatigue; knock-ups lift at most 1 block; grabs hold at most 1 s.
-3. No single hero hit takes a player from full health to zero.
-4. At most 2 heroes press one player.
-5. Hazard-aware knockback (6.12).
-6. Boss mode never starts against creative or spectator players; the damage cap applies only to player sources, so NPC
-   wars are unaffected.
+Every rule here holds for every attacker and every target, player or NPC (the owner's decision at the top of this
+section); none of them reads whether an entity is a player.
+
+1. Every telegraph meets its class minimum; no move is both unblockable and without a decal (where decals are drawn,
+   6.1; the wind-up is the same with or without one).
+2. Control is the same for every receiver: a stun stops a player as it stops an NPC (6.15); knock-ups lift at most 1
+   block; grabs hold at most 1 s.
+3. Caps both ways: a hit on a hero takes at most `max_hit_share` of its health whoever lands it (6.2); a hero's hit is
+   held to the v1 slot caps and `heroes.maxHit` whoever it lands on. (The first draft's "no hero hit takes a player
+   from full health to zero" is gone with the owner's rule.)
+4. No limit on how many heroes press one target (owner, 2026-11-13; the first draft's "at most 2 heroes press one
+   player" is gone, for players and NPCs alike): rules 1-3 are what a ganged-up target has.
+5. Hazard-aware knockback for every receiver (6.12).
+6. Creative and spectator players are never enemies; nothing else depends on an enemy being a player.
 7. Mobility, as counterplay rather than limits on where a hero may go (the owner accepts "unfair" abilities,
    2026-11-12): an air budget per take-off, melee only on the ground or as a telegraphed `dive` (a basic attack may
-   land from the air or a cling on a player who left no standable cell beside him), air poise (shot down by arrows,
-   bolts, tridents, wind charges), travel bonuses off in fights, and while fighting at most 4 s at a time where no
-   engaged player can reach it before it comes back. Heroes may cross any base's walls and reach players anywhere, and
-   an escaping hero may go where no one can follow (`MOBILITY_AND_WORK.md` sections 3.7, 5 and 7.7).
+   land from the air or a cling on a target who left no standable cell beside it), air poise (shot down by arrows,
+   bolts, tridents, wind charges, a player's or an NPC archer's), travel bonuses off in fights, and while fighting at
+   most 4 s at a time where no engaged enemy, player or NPC, can reach it before it comes back. Heroes may cross any
+   base's walls and reach players and NPCs anywhere, and an escaping hero may go where no one can follow
+   (`MOBILITY_AND_WORK.md` sections 3.7, 5 and 7.7).
+
+### 6.15 Equal treatment of v1's player exceptions (owner, 2026-11-12)
+
+Format 1 (`HERO_FORMAT.md`) treated players differently in a few places, mostly to keep player control. For every hero,
+format 1 and 2, these now read as follows (PROPOSED numbers):
+
+| v1 rule | Now |
+|---|---|
+| `stun` (v1 §13.4): mobs and NPCs cannot move, attack or cast; players get Slowness IV and Mining Fatigue II instead and keep control | a stun stops every receiver for its seconds. An NPC or a hero: `StunnedGoal` as before. A player cannot walk, jump, attack, use or place items or break blocks: a `factionclash:stun` modifier of -100% on movement speed and jump strength, and the attack, use, interact, place and break events cancelled while `HeroStatus` says stunned; the camera still turns and knockback still moves the player. The caps stay (2 s per skill, 3 per ultimate, immune for twice the duration after); brain-based mobs keep v1's Slowness V, vanilla bosses stay immune |
+| `taunt` (v1 §13.4): monsters and enemy NPCs re-target; players are not forced, the hero glows for them | the same hold on every receiver: mobs and NPCs re-target as before, and every receiver, players included, deals 50% less damage to anyone but the taunting hero for the taunt's seconds and sees the hero glow |
+| `blindness`, `darkness` (v1 appendix B.1): players only | on an NPC or a hero they cut its search, follow and ranged-attack range to 5 blocks for their seconds, about what a blinded player sees; on players as vanilla |
+| `guard_break` (6.6): a player's shield disabled, NPCs lower theirs | the same seconds for everyone (6.6) |
+| `protects: players` (the faction's players within 24 blocks); `allies` meant NPCs and heroes of its side | `allies` is everyone of its side, players included; `players` is read as `allies` (ADJUSTED) |
+| `target_is` kinds `player` and `npc` (v1 §11) | read as the new kind `person` (a player, an NPC or a hero; ADJUSTED), so no move prefers or avoids players; `hero`, `monster`, `undead`, `arthropod`, `illager` and `boss` stay. Format 2's `target_is_player` and `players_engaged` go the same way (6.6) |
+| Decoys (6.11) were made to fool a player's eye | NPCs and heroes may target a decoy like any enemy |
+| Weak-point triggers a player causes (6.9) | the same triggers caused by NPCs count the same |
+| Talents that help only NPCs (7.2): `purifier` (NPCs at the base), `triage` (an ally NPC), `war_drummer` (soldiers); Hinae's personal heal (an NPC) | they help every ally the same way: NPCs, heroes and member players. Job talents (speeds, ranges, stock, recruits) act on jobs, which players do not have, and are unchanged |
+| Line placeholders: `{player}` in `intro` (12.15; the first draft's `yield` and `spared` lines are gone with the yield, 6.13) | `{enemy}`: the one it faces, a player or an NPC by name; `{player}` there is read as `{enemy}`. The lines of the end of a fight (`escape`, `last_stand`, v1 `fallen`) use `{enemy}` too |
+| Attack tokens (first draft: at most 2 heroes press one player) | removed for everyone (owner, 2026-11-13; 6.2) |
+| The ultimate's screen darkening, the boss bar, the intro title, decals, sounds, speech | presentation, kept for players (6.1) |
 
 ---
 
@@ -1109,9 +1339,9 @@ already use; they never create items, place or break blocks outside the existing
 | `festival_host` | unlocks the festival edict; festival morale +15/20/25 | morale, edicts | 2 |
 | `steward` | a second base run by this hero uses its personality for that base's knobs | `LeaderBiases` source per base | 2 |
 | `mend` | out of combat, allies within 16 blocks heal 5/7/10% of max health every 10 s | v1 hook | 1 |
-| `triage` | in a fight, an ally NPC under 30% within 12 blocks is healed 4/6/8 once per 30 s, paid with one food item | combat tick, `FactionStorage.extract` | 2 |
+| `triage` | in a fight, an ally under 30% within 12 blocks (an NPC, a hero or a member player alike, 6.15) is healed 4/6/8 once per 30 s, paid with one food item | combat tick, `FactionStorage.extract` | 2 |
 | `revival_rite` | fallen heroes of the faction return 20/30/40% sooner (3.4) | `HeroManager` revival | 2 |
-| `purifier` | NPCs at the base lose poison, wither and hunger effects every 30/20/10 s | `FactionNpc.tick` | 1 |
+| `purifier` | allies at the base (NPCs, heroes and member players alike, 6.15) lose poison, wither and hunger effects every 30/20/10 s | `FactionNpc.tick` | 1 |
 | `lookout` | line-of-sight alarm within 32/40/48 blocks | v1 hook | 1 |
 | `cartographer` | scouts reach +16/32/48 blocks; each report marks the 3x3 sectors around it explored | `ScoutJob`, `FactionState.explored` | 1 |
 | `spymaster` | base reports carry garrison counts and whether the leader is home; enemy raids announced 0.5/1/2 minutes before they reach the walls | `ScoutJob` notes, `Report.count` | 1 |
@@ -1126,7 +1356,7 @@ already use; they never create items, place or break blocks outside the existing
 | `engineer` | rails laid 20/30/40% faster | future rail engineer (ROADMAP phase 2) | later |
 | `warden_of_walls` | defence alarm radius +8/16/24; repair scan budget x1.5/2/2.5 | `defenceAlarm`, `repairScan` | 1 |
 | `tactician` | raid parties fall back 10% later and gather at cover; joint raids need 10/15/20% less strength | `FactionDirector.raids` | 2 |
-| `war_drummer` | soldiers within 16 blocks +5/8/10% attack speed during a defence | transient `ATTACK_SPEED` modifier | 2 |
+| `war_drummer` | soldiers, heroes and member players within 16 blocks +5/8/10% attack speed during a defence (6.15) | transient `ATTACK_SPEED` modifier | 2 |
 
 Milestone 1 implements the 15 talents marked "1": the ones the slice heroes use, plus `aura`, whose v1 hook needs no new system. A hero whose
 talent is not yet live shows "not active yet" on its sheet; `alchemist` and `engineer` heroes always carry a working
@@ -1156,7 +1386,9 @@ its own personal idle (`personal.1-3`: a cat licks a paw, a smith inspects a bla
 
 Talk (right-click: the hero sheet plus a talk tab with personality lines), gifts (sneak-use a liked item: bond and
 standing up, a disliked one: down), petitions to the leader (ranked members), sparring and duels in a ring of decals
-(non-lethal, ends at the yield), recruiting a wandering hero by meeting its condition, a one-day escort (non-leaders,
+(non-lethal; the bout rule is an open design point, section 17 question 6: a hero never yields a real fight, so a
+duel needs its own agreed end, for example first to a set share of health), recruiting a wandering hero by meeting
+its condition, a one-day escort (non-leaders,
 by bond), commissioned work (a forgemaster repairs the player's gear with the player's materials at the base anvil;
 a chef cooks the player's raw food). All as in `research-systems.md` section 5.4.
 
@@ -1181,12 +1413,111 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
   leader assigns (general, steward, envoy, warden) or their own duty.
 - **Recruiting more heroes** (milestone 3): v1 tokens; wandering heroes with a personality-driven join condition
   (duel, payment, reputation, gifts, visits, cause, rescue); heroes of fallen factions; defection when loyalty falls.
+  The `duel` condition ("beat it in a duel") needs a formal non-lethal bout, since no hero yields a real fight
+  (6.13): an open design point, section 17 question 6.
   Compatibility with the leader:
   `comp = 1 - (0.4|h - h_L| + 0.3|a - a_L| + 0.2|s - s_L| + 0.1|m - m_L|) + temperament affinity (±0.2) +
   relationship (friend, sibling, mentor, student, admirer +0.3; rival -0.2; sworn enemy -1)`; joins when comp >= 0.45
   (0.3 for paid mercenaries); loyalty `L = 0.6 l + 0.4 comp + bond / 100`.
 - **Bonds** (milestone 3): heroes who fight together gain bond points; at 20 a pair gets +5% damage near each other and
   bond dialogue; `relationships` in the file start or block bonds.
+
+### 8.1 War power: what a hero is worth in an NPC war (equal treatment; PROPOSED)
+
+v1 priced a hero for the war council as "the soldier formula + 1 + level / 10" (v1 §25.7: a level-20 hero in full
+iron was 5.25, about 2.3 iron soldiers) and counted a hero at home as 2 defenders. That was a hero with v1 health.
+With one combat mode (section 6) a hero has its boss health against NPC soldiers too, four to five times as much, so
+it is priced again.
+
+**The estimate.** One hero against n soldiers who all reach it: they hurt it together while it cuts them down one at
+a time, so the damage it takes grows with n (n + 1) / 2, and it holds about
+
+```
+n = sqrt( 2 x H x D / (h x d) )
+H   the hero's max health (6.2)
+D   what it deals to one soldier per second: basic attacks plus moves under the slot caps, about 12 at level 10
+h   what one soldier takes to kill: an iron soldier's 20 health behind 15 armour, about 36 points of the hero's damage
+d   what one soldier deals to it per second: an iron sword, one swing a second, six in ten jump criticals,
+    half of them landing, about 3.7 (6.2's example)
+```
+
+Benika as a leader at level 10 (165 health): sqrt(2 x 165 x 12 / (36 x 3.7)) = about 5.5 iron soldiers. A common
+marksman at level 1 (24 x 2.5 x 1.3 = 78 health, D about 9): about 3.2. An epic vanguard leader at level 20 (197
+health, D about 15): about 6.7. The numbers are estimates (D and the share of blows that land are guesses until the
+slice campaigns measure them); the formula below is fitted to them and is the thing to tune.
+
+**The formula** the war council uses (`HeroRules.heroPower`, pure; it replaces v1 §25.7's):
+
+```
+soldiers = sqrt(maxHealth / 20) x (1.5 + level / 30)      the hero in iron soldiers
+power    = 2.25 x soldiers x war.heroPowerPercent / 100   2.25: FactionDirector.power of a soldier in full iron
+```
+
+| Hero | Max health | In iron soldiers | Power |
+|---|---|---|---|
+| a common marksman, level 1 | 78 | 3.0 | 6.8 |
+| Kagenori (epic striker), level 10, not leading | 129 | 4.7 | 10.5 |
+| Benika (epic vanguard) as a leader, level 10 | 165 | 5.3 | 11.8 |
+| the same at level 20 | 197 | 6.8 | 15.3 |
+| a legendary vanguard leader, level 30 | 257 | 9.0 | 20.2 |
+
+It reads the hero's real maximum, so `boss.healthScale`, the rarity and the leader's +50 move it without another
+rule. A hero is worth more of badly armed soldiers and fewer of well armed ones, which is why the power is in the
+director's units and not a head count.
+
+**Where it counts** (3.2, 5.5):
+
+- A raid party's power: the hero's power is added when it goes with the raid.
+- A base's defence: the power of each hero whose home it is, while that hero is alive and at that base (not on a
+  raid, not away after an escape: 6.13), and at half while it is under half health. `defencePower` in every odds
+  check and in the target cost is `soldiers at home x the faction's soldierPower + the heroes' power`.
+- `soldierPower`, the faction's average, is taken over ordinary soldiers only.
+- By heads a hero is still one: recruitment needs, the garrison's `keep`, the party size and the fall-back share.
+
+**A worked raid.** Benika (leader, level 10) leads six iron soldiers against a Still Crane base held by five iron
+soldiers and Kagenori (leader, level 10: 147 health, 5.0 soldiers, power 11.2).
+
+| | Soldiers | Heroes | Counted |
+|---|---|---|---|
+| Benika's party | 6 x 2.25 = 13.5 | 11.8 | 25.3 |
+| The defence | 5 x 2.25 = 11.3 | 11.2 | 22.4 |
+
+Odds 25.3 : 22.4 = 1.13: enough for a neutral leader (0.667) and for Benika (0.40). With v1's count it would have
+been 7 x 2.25 against 6 x 2.25, the same answer here, because both sides have a hero. The difference shows when one
+side's hero is missing. Kagenori dead and waiting for his 10 minutes: the defence is 11.3, the odds 2.25, and the
+counter-attack rule (party : defence of 1.5, 5.5) lets the raid go out early. Benika dead instead: 13.5 against 22.4
+is 0.60, and a neutral leader would not attack at all. In the fight itself the sum holds only while both sides are
+whole: Kagenori caught alone by the six soldiers and Benika takes about 6 x 3.7 + 10 = 32 a second when everything
+lands, under 5 s of landed blows (perhaps 15 s of real fighting), so a hero does not hold a gate against a party by
+itself.
+
+**What keeps NPC wars from being decided by heroes alone** (each is a rule; they are collected here):
+
+1. **The soldier backbone** (new): in every odds check the heroes of a side count for at most 1.5 times the power of
+   that side's ordinary soldiers, so at most 60% of the counted total. Two level-10 heroes with three iron soldiers
+   (23 + 6.8 of power) count as 10.1 + 6.8 = 16.9, not 29.8: against a garrison of twelve (27) that is odds of 0.63,
+   no attack, where the uncapped sum would have said 1.10. The party-size minimum is still taken from soldiers
+   (3.2).
+2. **Numbers add up against a hero.** Its health does not grow with the number of attackers and its per-hit cap is
+   above any soldier's blow (6.2), so six soldiers hurt it six times as fast; it does not regenerate in a fight, and
+   afterwards it heals 1% of its v1 health a second, minutes from low to full (6.10).
+3. **Heroes gang up too.** There are no attack tokens: any number of enemy heroes may press it at once (6.2).
+4. **It is never drafted** by the soldier sort; it goes on a raid only by its leader rule or its own `behaviour.raids`
+   (3.2), and one faction has at most `heroes.maxPerFaction` of them (milestone 3).
+5. **Its own ending removes it** (6.13). An escaping hero leaves a losing fight with 8-15% of its health, is gone
+   from the raid, stays away 5 minutes and until it is above half health, and for that time counts in no party and
+   in no defence but its refuge's. A last-stand hero does not go home with a party that falls back: it finishes the
+   fight it is in, usually alone inside the enemy's walls, and usually dies there.
+6. **The 10-minute revival** (3.4). A dead hero is out for half an in-game day; rival councils count its base
+   without it, and the counter-attack rule can use the window. `revival_rite` shortens it, never under 30 s.
+7. **A raid still needs soldiers.** The fall-back share is counted in heads, so a party that has lost its soldiers
+   falls back whatever its hero is doing; a hero's goal inside the walls never ends a raid
+   (`MOBILITY_AND_WORK.md` 5.2); a leader's death or escape can end it (5.6).
+8. **A hurt hero counts for less**: half its power in its base's defence while it is under half health, the same
+   line as an escaped hero's return.
+9. **Tuning**: `war.heroPowerPercent` (100, 0-200; 0 counts heroes by heads only, as before) scales the formula;
+   `sim.py` prints each hero's war power and, per raid, the two sides' counted power and whether a hero's presence
+   or absence decided the odds; the slice campaigns compare raids won with and without a hero (SLICE_PLAN.md 6.4).
 
 ---
 
@@ -1199,7 +1530,7 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
 | `FactionState` | `opinion`, `reputation`, `playerOpinion`, `ranks`, `edicts`, `grudgeTop` | 2 | neutral |
 | `CampaignData` | `relations` list `{a, b, state, since, until, declaredAt}`, `coalitionAgainst` | 2 | today's pact converts to `PACT` relations plus `coalitionAgainst` |
 | `BaseState` | `morale`, `steward` | 2 | morale baseline |
-| `HeroState` | `bond` map, `post`, `exiled`, `spareCooldowns`; `wanderers` list in `CampaignData` | 3 | empty |
+| `HeroState` | `bond` map, `post`, `exiled`; `wanderers` list in `CampaignData` (the first draft's `spareCooldowns` is gone with the yield) | 3 | empty |
 | Entity `FcHero` | hero id, cooldown ready-at times, charges, state timers, energy, phase, re-arm flags | 1 | a fresh hero runtime |
 
 - **Old saves** (format 2): the four legacy slots keep their names, colours and styles (identity defaults). On the
@@ -1211,8 +1542,10 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
 - **Definitions** live in the jar, so they cannot break between restarts; an operator override in the config folder
   that fails validation keeps the built-in definition (and is reported). A hero id removed from the jar (renamed in a
   later version) leaves a dormant hero (section 3.4); the roster never renames shipped ids.
-- **Config**: new sections `[leaders]`, `[boss]` and additions to `[heroes]`; `campaign.humanFactions` widens to 2-8
-  in milestone 2. `docs/factionclash-common.toml` is regenerated (CLAUDE.md rule).
+- **Config**: new sections `[leaders]`, `[boss]` and additions to `[heroes]` and `[war]` (`war.heroPowerPercent`,
+  8.1); the first draft's `boss.attackTokens` and `boss.damageVsPlayers` do not exist (section 6);
+  `campaign.humanFactions` widens to 2-8 in milestone 2. `docs/factionclash-common.toml` is regenerated (CLAUDE.md
+  rule).
 
 ---
 
@@ -1224,7 +1557,7 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
 |---|---|---|
 | `DATA_HERO` | String | hero id; set once at spawn |
 | `DATA_ACTION` | Integer | bits 0-7 action code (appendix D); 8-11 sequence (+1 per new action, so a repeat restarts); 12-17 speed (`0.5 + n x 1.5 / 63`); 18-23 variant (combo step or a random variant); 24-31 reserved |
-| `DATA_STATE` | Byte | bits 0-1 phase - 1; 2 enraged; 3 super armour; 4 weapon drawn; 5 talking; 6 in a wind-up or channel (no blinking); 7 yielding |
+| `DATA_STATE` | Byte | bits 0-1 phase - 1; 2 enraged; 3 super armour; 4 weapon drawn; 5 talking; 6 in a wind-up or channel (no blinking); 7 escaping (6.13: the client shows the fleeing face and no fight idle; as built in A1a the bit is named `STATE_YIELDING`, renamed with the yield's removal, 15.6) |
 | `DATA_MOOD` | Byte | bits 0-3 mood (12 values); 4-5 intensity; 6 blush; 7 eyes glow |
 | `DATA_LOCO` | Byte | locomotion mode (fly, glide, climb, hover...), one-shot and sequence bits, tired: `MOBILITY_AND_WORK.md` 4.2 |
 
@@ -1286,8 +1619,9 @@ The server reads the built-in definitions with a `SimpleJsonResourceReloadListen
 overrides, then validates everything with the v1 pipeline extended for format 2 (section 14.1). Commands are v1 §27
 without the skin parts: `/fc hero list|info|check|reload`, `/fc admin hero give|token|revive|release|test`, plus
 `/fc admin hero lineup|preview|pose` for screenshots (section 13.8) and the operator test hooks `/fc admin hero
-health|poise|yield|target-state` (set a health share, fill poise, resolve a yield as spare or finish, force a
-reaction condition such as blocking or eating) used by screenshot sessions and manual checks. A v1 file (`"format": 1`) still loads: `skills`
+health|poise|escape|target-state` (set a health share, fill poise, start an escape whatever the hero's kind or
+health, force a reaction condition such as blocking or eating; the first draft's `yield` hook is gone with the
+yield) used by screenshot sessions and manual checks. A v1 file (`"format": 1`) still loads: `skills`
 read as moves, `empowered` as one state, `base_abilities` as talents; it gets the `_fallback` model.
 
 ### 12.2 Conventions
@@ -1408,8 +1742,7 @@ condition `self_state` reads it. The animation `state.<name>` plays on entering.
 | Field | Type | Default | Meaning |
 |---|---|---|---|
 | `health_scale` | whole % 200-600 | by rarity, +50 for leaders (6.2) | boss health multiplier; the role's boss factor (12.4) applies on top |
-| `max_hit_share` | whole % 5-25 | 12 | per-hit cap from players |
-| `damage_vs_players` | whole % 100-140 | 115 | |
+| `max_hit_share` | whole % 5-25 | 12 | per-hit cap on one hit from any attacker, player or NPC (6.2) |
 | `poise` | 0 or 50-200 | by role | 0 only with another weakness |
 | `phases` | 1-3 of `{ at, moves, states, adds, stats, transition }` | 2 or 3 by rarity | `at`: health share where it begins (first 100); `transition`: `{ seconds 0.8-2, line, shockwave {radius, strength}, effects, face }`; an `unlock_level` is read and ignored with a NOTE (every phase from level 1: section 8) |
 | `reactions` | 0-8 of `{ when, move, chance, cooldown }` | none | 6.8 |
@@ -1417,9 +1750,21 @@ condition `self_state` reads it. The animation `state.<name>` plays on entering.
 | `enrage` | `{ after, triggers, line }` | 180/240 s, none | 6.10 |
 | `adds` | list of `{ id, count }` | none | adds its moves may spawn |
 | `intro` | `{ line, title }` | from lines | 6.13 |
-| `defeat` | `{ yield }` | true | |
 | `rebirth` | boolean | false | legendary only |
 | `arena` | `prefers`: `open`, `tight`, `home` | `open` | adjusts move weights by surroundings |
+
+**Removed fields** (the owner's decisions of 2026-11-12 and 2026-11-13; a file that still has one loads, and each
+gets a NOTE in the v1 message format, so an old draft or an operator override says why it does nothing):
+
+| Field | NOTE |
+|---|---|
+| `damage_vs_players` | "read and ignored: a hero deals the same damage to players and NPCs" |
+| `defeat` (`{ yield }`) | "read and ignored: heroes do not yield; set `personality.when_losing` to choose between escaping and a last stand" |
+| `attack_tokens`, `tokens` (never in a shipped file; the limit was the config key `boss.attackTokens`) | "read and ignored: any number of heroes may press one target" |
+| `health_per_player`, `players` in `health_scale` (first-draft notes) | "read and ignored: boss health does not change with the number of attackers" |
+
+How a losing fight ends is not a `boss` field: it belongs to the hero's nature, `personality.when_losing` and
+`stands_for` (12.11, 6.13).
 
 ### 12.11 `personality`
 
@@ -1427,6 +1772,8 @@ condition `self_state` reads it. The animation `state.<name>` plays on entering.
 |---|---|---|
 | `temperament` | one of 30 (appendix A) | defaults for the traits, fight AI, tone, face, special rule |
 | `traits` | map trait to 0-100 | each at most ±20 from the temperament default (ADJUSTED otherwise) |
+| `when_losing` | `escape`, `last_stand` | optional; default from the traits and the temperament (6.13: last stand when aggression + honour - caution is 65 or more, appendix A). What the hero does when a fight goes badly: break off at its escape threshold, or fight until it dies. Synonyms (ADJUSTED): `flee`, `run`, `retreat` → `escape`; `stand`, `fight_to_death`, `never_flees` → `last_stand`; `yield`, `kneel`, `surrender` are refused (PART LEFT OUT: "heroes do not yield") and the default applies |
+| `stands_for` | list of 0-2 of `home`, `leader` | optional; default from loyalty (`home` at 70 or more, `leader` at 85 or more). Where an `escape` hero fights to the death anyway (6.13); `[]`: nowhere. Ignored with a NOTE on a `last_stand` hero, which stands everywhere |
 | `likes`, `dislikes` | 0-6 item ids each | gifts and recruitment (milestone 3) |
 | `quirks` | 0-3 short texts | flavour for the hero sheet ("polishes her mallet when nervous") |
 
@@ -1470,16 +1817,18 @@ v1 §23 events and rules, plus:
 | Event | When | Placeholders |
 |---|---|---|
 | `founding` | it founds its faction at campaign start | `{name}`, `{faction}` |
-| `intro` | boss intro | `{name}`, `{player}` |
+| `intro` | boss intro | `{name}`, `{enemy}` (`{player}` is read as `{enemy}`, 6.15) |
 | `phase_2`, `phase_3` | phase transitions | `{name}` |
 | `enrage`, `stagger`, `counter` | those moments (rate-limited) | `{name}`, `{enemy}` |
-| `yield`, `spared` | the defeat beat; spared | `{name}`, `{player}` |
-| `escape` | it escapes: a refused yield, low health away from home, a lost raid, a leader saving itself (`MOBILITY_AND_WORK.md` 7.7) | `{name}`, `{enemy}` |
+| `escape` | it escapes: under its threshold in a losing fight, a lost raid, a lost base (6.13, `MOBILITY_AND_WORK.md` 7.7) | `{name}`, `{enemy}` |
+| `last_stand` | a hero that will not or cannot leave drops under the health where it would have fled (once per fight, 6.13) | `{name}`, `{enemy}` |
 | `raid_announce`, `base_lost`, `hero_fallen` | leader announcements | `{name}`, `{faction}`, `{target_faction}` |
 | `work`, `night`, `small_talk` | idle moments at home | `{name}`, `{player}` |
 | `pact_offer`, `pact_accepted`, `pact_refused`, `peace_offer`, `declare_war`, `betrayal`, `betrayed`, `stranger_warning`, `welcome`, `gift_liked`, `gift_disliked` | milestone 2 and 3 events (read now, used later) | as they need, plus `{item}` |
 
-v1's `unlock` event never fires for a format-2 hero (nothing unlocks: section 8); format-1 files keep it.
+v1's `unlock` event never fires for a format-2 hero (nothing unlocks: section 8); format-1 files keep it. A hero's
+death line is v1's `fallen` (v1 §23). The first draft's `yield` and `spared` events are gone: lines under them are
+left out with a NOTE ("heroes do not yield; use `escape`, `last_stand` or `fallen`").
 
 Each temperament has a fallback bank (`herosrc/temperaments/<t>.json`, 2-4 lines per event), so a hero needs only its
 own voice for the events that matter: the authoring target is 40-60 lines per hero.
@@ -1525,7 +1874,7 @@ The slice samurai (SLICE_PLAN.md section 3.5), as a source file; `// ...` marks 
     { "id": "iai_stance", "name": "Still Water", "form": "counter", "class": "heavy", "band": ["close"],
       "stance": 1.5, "absorb": 80,
       "effects": [ { "type": "damage", "amount": { "attack_percent": 140 } }, { "type": "stun", "seconds": 1 } ],
-      "prefer_when": { "condition": "target_is", "kind": "player" }, "cooldown": 10,
+      "prefer_when": { "condition": "target_is", "kind": "person" }, "cooldown": 10,
       "look": { "particle": "electric_spark", "sound": "item.shield.block" } },
     { "id": "thunderclap_draw", "name": "Thunderclap Draw", "form": "line", "class": "heavy", "band": ["mid"],
       "range": 8, "width": 1,
@@ -1578,6 +1927,7 @@ The slice samurai (SLICE_PLAN.md section 3.5), as a source file; `// ...` marks 
     "temperament": "stoic",
     "traits": { "aggression": 50, "honour": 90, "ambition": 45, "caution": 65, "greed": 25,
                 "sociability": 30, "loyalty": 85, "volatility": 10 },
+    // "when_losing" is not written: 50 + 90 - 65 = 75, so he makes a last stand (6.13)
     "likes": ["bamboo", "cherry_sapling"], "dislikes": ["rotten_flesh"],
     "quirks": ["re-ties his hair before every duel"]
   },
@@ -1597,8 +1947,8 @@ The slice samurai (SLICE_PLAN.md section 3.5), as a source file; `// ...` marks 
     "founding": ["From today this land is the Still Crane's. Keep your blades clean."],
     "greeting": ["{player}. Walk with purpose."],
     "kill": ["Rest."],
-    "yield": ["...Well struck."],
-    "spared": ["I will remember this mercy."]
+    "last_stand": ["I do not turn my back. Come."],
+    "fallen": ["...Well struck."]
     // ... about 45 more lines
   },
   "art": {
@@ -2087,7 +2437,19 @@ adds these rules (same outcomes and message format as v1 §26):
   `barrage`; new forms' parameters in range; new effects' recipient classes; cooldown floors with the new weights
   (6.5);
 - boss: phases ascending from 100; each later phase adds a move, state, add or mechanic (NOTE otherwise); at least one
-  weakness (NOTE); at least one far-band move or a gap closer (NOTE); `rebirth` only for legendary heroes;
+  weakness (NOTE); at least one far-band move or a gap closer (NOTE); `rebirth` only for legendary heroes; the removed
+  fields of 12.10 (`damage_vs_players`, `defeat`, token and per-player fields) are read and ignored, each with its
+  NOTE;
+- equal treatment (6.15): no loaded hero can single out players. `target_is` kinds `player` and `npc` and the
+  condition `target_is_player` read as `person`, `players_engaged` as `enemies_engaged`, `protects: players` as
+  `allies`, `{player}` in fight lines as `{enemy}` (each ADJUSTED, with the owner's rule in the message); the
+  `on_yield` trigger and the `yield` and `spared` line events are left out (PART LEFT OUT / NOTE, naming what
+  replaces them);
+- the end of a fight (6.13): `personality.when_losing` and `stands_for` words (the yield words refused); a NOTE when
+  the authored traits flip the temperament's default kind; `stands_for` on a last-stand hero ignored with a NOTE;
+  `flee_at` computed from `retreat_below` and the last phase and printed on the sheet; a NOTE on an escaping hero
+  whose last phase starts under 18%; `on_escape` passives limited to self and look effects (an enemy effect is
+  PART LEFT OUT);
 - personality: every trait within ±20 of its temperament (ADJUSTED); leader: names unique across loaded heroes (NOTE),
   banner patterns from the vanilla list and never `mojang`, base style known, colours valid; talents known and at most
   one `realm`; voice ranges; lines' events and placeholders (v1 rules);
@@ -2120,11 +2482,12 @@ Java (`src/test/java/com/factionclash/logic/hero/` and `.../logic/leader/`):
 
 | Test | Covers |
 |---|---|
-| `HeroJsonTest`, `HeroReaderTest`, `HeroBalanceTest`, `HeroRulesTest` | v1 §31.1 as designed there (format 1 still loads) |
+| `HeroJsonTest`, `HeroReaderTest`, `HeroBalanceTest`, `HeroRulesTest` | v1 §31.1 as designed there (format 1 still loads), with the equal readings of 6.15; `HeroRulesTest` also has the war power of 8.1 (the table's five rows, `war.heroPowerPercent`, the soldier-backbone cap, half power under half health) |
 | `HeroReaderV2Test` | every new field, form, effect, condition, trigger; format-1-to-2 mapping; limits |
 | `HeroBalanceV2Test` | class minimums, new weights and floors, combo cap, zone caps for rain |
 | `MoveSelectorTest` | bands, novelty, posture, prefer, followups, reactions overriding, seeded picks |
-| `BossRulesTest` | health scaling keeps the share, player cap, per-hit cap to poise, poise factors, parry window, stagger growth, enrage timing and the +25% ceiling, attack tokens, no one-shot |
+| `BossRulesTest` | boss health the same whoever and however many attack (the share kept when the maximum changes), the per-hit cap for every attacker with the excess to poise and none for damage without an attacker, poise factors by weapon, the parry window, stagger growth, enrage timing and the +25% ceiling; `equalForPlayerAndNpc`: every rule fed a player attacker and an NPC attacker with the same numbers gives the same result (the API takes no "is a player" input); nothing limits how many heroes press one target; `referenceDuel` (SLICE_PLAN.md criterion 15) |
+| `EscapeRulesTest` (with `MOBILITY_AND_WORK.md` 17.1) | escape or last stand from the traits (the 30 temperament defaults of appendix A, the slice heroes, `sleepy`'s rule, the authored override, v1 `retreat_below` 0); the situation rules from loyalty and their end; `flee_at` (a third of `retreat_below`, 8-15, inside the last phase, the rounding); no escape inside the 10-minute window, cornered, or with `heroes.escape` off: a last stand instead; the last-stand beat once per fight; `rebirth` before any escape |
 | `HeroActionsTest` | `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD` packing; code-to-name table |
 | `HeroFaceRulesTest` | the frame choice of 4.6 as pure logic (`logic/hero/FaceRules`, used by the client's `HeroFace`): priority order, blink timing per profile and seed, no blink while bit 6 is set, the whole-number rule for `face_ctrl`, mood hold time |
 | `PersonalityTest`, `TemperamentsTest` | `t_eff`, the ±20 rule, appendix A table |
@@ -2149,22 +2512,52 @@ bake, writer format, raster golden images) and `roster/check_roster.py`.
    transition and one face close-up; GIF previews of the signature moves.
 4. **The owner's review** of the slice; for later batches see open question 3.
 5. **A 3-day campaign smoke** with four leaders from the batch: no crash, no stuck hero (recoveries), every move cast
-   at least once in boss or field mode (`sim.py` hero lines), tick time within budget.
+   at least once (`sim.py` hero lines), tick time within budget.
 
 ### 14.5 GameTests (milestone 1; each job-running test its own `batch`, test bases through `GameTestBases.register`, spawns at known relative positions on the flat test world)
 
 Static (`workers_static`): `builtinHeroesLoad`, `heroSyncedFieldsDefaults`, `legacyIdentityUnchanged`,
 `identityRenamesNameTagAndStation`.
 Each its own batch: `heroMoveSetsActionAtWindup`, `heroHitLandsAfterWindupFrames`, `heroStunInterruptsWindup`,
-`heroSpeedScalesFrames`, `bossModeOnPlayerEngage` (mock player: bar, health scaled, share kept),
-`bossModeEndsAfterLeaving`, `bossDamageCapToPoise`, `staggerAtFullPoise`, `phaseTransitionAtThreshold`,
+`heroSpeedScalesFrames`, `staggerAtFullPoise`, `phaseTransitionAtThreshold`,
 `telegraphDecalsGrowAndClean`, `comboStrikesTimed`, `chargeWallStagger`, `waveMissesJumpingTarget`,
 `rainImpactsAfterDelay`, `sweepStopsAtBlocks`, `grabHoldsAndThrowsSafely` (never toward lava), `counterAbsorbsMelee`,
-`barrageReaims`, `barrierBreaksAfterHits`, `decoyPopsAndHasNoShadow`, `guardBreakDisablesShield`,
-`callGuardsRetargets`, `yieldThenSpare`, `yieldThenFinish`, `attackTokensLimitPressers`, `leaderSpawnsAtStation`,
+`barrageReaims`, `barrierBreaksAfterHits`, `decoyPopsAndHasNoShadow`, `guardBreakDisablesShield` (a mock player's
+and an NPC soldier's raised shield, the same seconds), `callGuardsRetargets`, `leaderSpawnsAtStation`,
 `leaderCourtDutyStaysHome`, `leaderRevivesAtCapital`, `leaderBiasesChangeRaidInterval`,
 `talentSurveyorWidensMineSearch`, `talentAnglerWidensFishing`, `talentMendHealsAllies`, `heroWorksItsDuty` (a
 miner-duty hero mines), `heroKitNeverDrops`, `heroNotDraftedIntoRaidByDefault` (3.2).
+
+Equal treatment, no tokens and no yield (the owner's decisions of 2026-11-12 and 2026-11-13; these twelve replace the
+first draft's `bossModeOnPlayerEngage`, `bossModeEndsAfterLeaving`, `bossDamageCapToPoise`, `yieldThenSpare`,
+`yieldThenFinish` and `attackTokensLimitPressers`; each its own batch):
+
+- `heroHasBossHealthAgainstAnyone`: a fixture hero has its boss maximum from spawn, the same with nobody near, with an
+  NPC soldier engaged, with a mock player engaged and with both; a second attacker changes nothing.
+- `bossBarShownInAnyFightNearAPlayer`: a hero fighting an NPC soldier shows its bar and intro title to a mock player
+  within 32 blocks and to nobody when no player is near; the fight itself (frames, damage) is the same in both.
+- `fightEndsTenSecondsAfterLastEnemy`: the bar goes 10 s after the last engaged enemy, NPC or player, is gone;
+  healing starts after 30 s; a phase re-arms 10% above its threshold.
+- `hitCapHoldsForNpcAndPlayerHits`: an oversized blow from an NPC and the same blow from a mock player each take 12%
+  of the hero's maximum and put the excess into poise; lava is not capped.
+- `reactionFiresOnNpcShield`: an NPC soldier raising a shield draws the hero's `target_blocking` answer with the same
+  chance and cooldown as a mock player raising one (the same seed, the same picks).
+- `stunStopsPlayerLikeNpc`: a hero's stun stops a mock player's movement, attack and item use for its seconds, as
+  `StunnedGoal` stops an NPC (6.15).
+- `threeHeroesPressOneTarget`: three hostile heroes are all in melee on one NPC soldier at once, and in a second run
+  on one mock player; none circles or waits for a turn.
+- `escapingHeroFleesAtThresholdFromNpcsAndPlayer`: an escaping-kind fixture (schemer traits) brought under its
+  `flee_at` by NPC soldiers breaks off, the bar shows `fled`, nothing drops; the same fixture against a mock player
+  does the same at the same health.
+- `lastStandHeroNeverFleesAndDiesFighting`: a last-stand fixture (battle maniac traits) at 5% health is still
+  attacking, says its `last_stand` line once, dies at zero with no kneel and no cancelled blow, the bar shows
+  `fallen`, and its revival timer starts; killed by NPCs or by a mock player alike.
+- `homeStandHeroFleesAfieldNotAtHome`: an escaping-kind fixture with loyalty 80 runs from a fight outside its test
+  base and fights to the death inside it; with the heart destroyed it runs.
+- `rewardsDropOnlyOnDeath`: XP orbs, the crest and non-kit gear drop where a hero died, for an NPC killer and for a
+  mock player; an escaped hero drops nothing; soldiers of the winning side pick the orbs up.
+- `warCouncilCountsHeroPower` (3.2, 8.1): a base's defence with its hero home, on a raid, away after an escape and
+  dead; the soldier-backbone cap.
 
 One GameTest per remaining milestone-1 talent, so every live talent has its effect tested in the world (their tier
 numbers and the strongest-copy rule are in the unit test `TalentsTest`): `talentAuraAddsAffixStack`,
@@ -2182,7 +2575,10 @@ JSON strings inside the GameTest classes, registered for the test's duration wit
 `rareHeroAuthoredThirdPhaseAtLevelOne`, `legendaryRebirthStartsFinalPhase`, `bowHeroShootsRealArrows`,
 `summonerHeroSummonsWithinCaps`.
 
-These 55 come on top of the v1 ability GameTests (v1 §31.2, about 26, built in A3 and A4): about 81 new GameTests.
+These 61 (41 in the two lists above, 12 talent tests, 4 fixture tests and the 4 static ones) come on top of the v1
+ability GameTests (v1 §31.2, about 26, built in A3 and A4): about 87 new GameTests. The mock player is a
+`FakePlayer` in survival mode; wherever a test names "an NPC soldier and a mock player", both runs must give the
+same numbers, which is the test of equal treatment.
 
 ### 14.6 Campaign verification
 
@@ -2236,7 +2632,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5 |
 | A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5 |
-| A6 | Boss controller: modes, scaling, damage cap, poise and stagger, phases and transitions, reactions, weak points, enrage and reset, arena checks, attack tokens, telegraph decals (access transformer), intro title, boss bar, yield; operator test hooks `/fc admin hero health/poise/yield/target-state` | A5 | L | the boss GameTests of 14.5; split into A6a (modes, scaling, cap, poise, phases, decals) and A6b (reactions, weak points, enrage, arena, tokens, intro, bar, yield, hooks) if it grows |
+| A6 | Boss controller, one mode (section 6): the permanent boss health, the engaged-enemy set and the fight clock, the per-hit cap for every attacker, poise and stagger, phases and transitions, reactions to players and NPCs alike, weak points, enrage and reset, arena checks, telegraph decals (access transformer), the intro title and boss bar for nearby players with the `fled` and `fallen` end states, death without a yield and the rewards to the winning side; no attack tokens, no player-only rule (15.6); operator test hooks `/fc admin hero health/poise/escape/target-state` | A5 | L | the boss and equal-treatment GameTests of 14.5; split into A6a (health, fight clock, cap, poise, phases, decals) and A6b (reactions, weak points, enrage, arena, intro, bar, the end of a fight and rewards, hooks) if it grows |
 | A7 | `HeroDecoy` | A2, A5 | M | `decoyPopsAndHasNoShadow`; a screenshot of a decoy beside its hero |
 | L1 | Identity layer M1 + slugs M3: `FactionIdentity`, `Factions`, the ~60 reads routed, `FactionIdentityPayload`, `ClientFactions`, `MapPayload` RGB | F4 | L | every existing test unchanged; identity GameTests |
 | L2 | Neutral NPC skins and tint layer (M4) | L1 | S | screenshots: four factions in new colours |
@@ -2250,12 +2646,12 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | F5 | Mobility and work-mastery pure logic: `MobilityRules` (ceilings and level power), `LeapSolver`, `FlightPlanner`, link rules, `WallEntry`, `EscapeRules`, `WorkMastery`; the `mobility` block and the `dive` form in the catalogue and validator (`MOBILITY_AND_WORK.md` 18.1) | F1, F2 | M | `MobilityRulesTest`, `LeapSolverTest`, `FlightPlannerTest`, `HeroLinksTest`, `WorkMasteryTest`, `WallEntryTest`, `EscapeRulesTest` |
 | A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2 |
 | A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, walls as terrain for heroes, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration (mobility first, no 10 s wait) | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day |
-| A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape and the refused yield, the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
+| A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape (`HeroEscapeGoal`, `EscapeRules`: 6.13; there is no yield to refuse), the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
 | S1 | Sound design and generator: `SOUND.md`, `tools/sfxgen` (synthesiser, recipes, build, check, previews, tests), the shared cue set and the eight slice heroes' sounds (generated or vanilla by id), sounds.json and the index | - | M | done and reviewed 2026-11-12: 240 events (197 generated in 298 Ogg files, 2.08 MB; 41 vanilla references, 2 aliases), `sfxgen check` clean, 32 Python tests (each rule's test fails when the rule is broken); previews in `docs/heroes-v2/previews/sound/` |
 | S2 | Sound engine: register the events from the index (fixed ranges), subtitles, `HeroSounds` (server cues by the slot rule, telegraph cues timed by `hit_at`, companions, notifications), the GeckoLib sound keyframe handler, `HeroVoice` blips with the note-block fallback, looping sounds, steps, hurt and death, `[heroes]` sound config (`SOUND.md` sections 7 and 15) | S1, A2, A5, A6 | M | wind-up cue GameTests (a 1.3 s heavy wind-up: its own sound at tick 0, the class cue at tick 10); every hero map slot resolves to a registered event; the owner's listening pass on the real client |
-| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 81 new ones and the 39 of `MOBILITY_AND_WORK.md` 17.2 pass |
+| V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 87 new ones and the 39 of `MOBILITY_AND_WORK.md` 17.2 pass |
 | V2 | Screenshot session for the owner (SLICE_PLAN.md section 7) and render measurements | A2, C1-C4 | M | the gallery exists; numbers recorded |
 | V3 | Campaign runs A and B (8 days each), C (3 + 3 days), the 2-day baseline, the old-world load, tick time (SLICE_PLAN.md 6.4) | all | L | SLICE_PLAN.md section 6 criteria met |
 | V4 | Adversarial review and fixes | V1-V3 | M | review findings closed |
@@ -2556,6 +2952,120 @@ with batches 1-3.
 Balance pass from cast, damage and fight-length statistics across all 200; performance with all 200 loaded (heap,
 reload time, a 64-hero lineup); the 30-day soak; adversarial review; docs; release.
 
+### 15.6 Implementation notes (equal treatment, no attack tokens, no yield)
+
+The owner's decisions of 2026-11-12 and 2026-11-13 (section 6) as work for the Java tasks. They change no task's
+size; each line names the task that carries it. One test of all of it: no method of `logic/hero/` takes "is a
+player" as an input, and every GameTest that names "an NPC soldier and a mock player" gives the same numbers for
+both (14.5).
+
+**Format and validation (F1, F2: `HeroCatalogue`, `HeroReader`, `HeroDef`)**
+
+- Already in F1 as built (15.2 "F1 as built"): `target_is` kinds `player` and `npc` read as `person`,
+  `protects: players` as `allies` (ADJUSTED, with the owner's rule in the message).
+- Add: the condition `target_is_player` reads as `target_is` `person` and `players_engaged` as `enemies_engaged`;
+  `{player}` in fight lines (`intro`) reads as `{enemy}`; `boss.damage_vs_players`, `boss.defeat` and any token or
+  per-player field are read and ignored, each with the NOTE of 12.10; the `on_yield` trigger is left out and
+  `on_escape` and `on_last_stand` exist (6.6); the line events `yield` and `spared` are left out with a NOTE and
+  `escape` and `last_stand` exist (12.15); `personality.when_losing` and `stands_for` with their synonyms, the
+  refusal of the yield words, the NOTE when traits flip the temperament's default and the NOTE on a late last phase
+  (12.11, 14.1).
+- `HeroDef`: the personality carries `whenLosing` (authored or absent) and `standsFor` (authored or absent); nothing
+  in `HeroDef` names a yield, a spare or a player multiplier.
+
+**`HeroBalance` (F1, F2)**
+
+- The slot caps (skill 16, ultimate 30), `heroes.maxHit` and the cooldown floors are checked against the definition,
+  so they hold against any target. No budget has an "against players" column: `damage_vs_players` is not an input,
+  and no cap is relaxed or tightened by the kind of the receiver.
+- Control caps are the same for every receiver (stun 2 s per skill, 3 per ultimate, `guard_break` 2-5 s, grabs 1 s).
+  Where a budget weighs a stun as milder because v1 gave players Slowness instead, that weight goes: a stun now
+  stops a player (6.15).
+- It computes and prints `flee_at` (6.13) with the kind ("escapes under 15%, never from its home" / "fights to the
+  death") on the validator's sheet, next to the level table of v1 §22.2.
+
+**`HeroRules` (F1)**
+
+- Damage: one path for every target (it is so already); `targetIsBoss` is true for a hero, so
+  `target_max_health_percent` counts at most 2% against one (6.2).
+- War power: `heroPower(maxHealth, level, percent)` is the formula of 8.1 and replaces the provisional body;
+  `HERO_DEFENDERS` and `WAR_POWER_IS_PROVISIONAL` go; add `countedPower(soldiersPower, heroesPower)` (the
+  soldier-backbone cap: heroes at most 1.5 times the soldiers) and the half weight under half health;
+  `HeroRulesTest.warPowerIsAHookUntilTheDesignLands` becomes the five rows of 8.1's table and the cap.
+- Rewards: `rewardXp(level)` = min(100, 7 x level); the crest key is (hero, winning side, in-game day), a side being
+  a player or a faction. Nothing here knows of a yield or a spare.
+
+**`BossRules` (F3)**
+
+- `maxHealth(baseMax, healthScale, roleFactor)`: no player count, no attacker count.
+- `capHit(amount, maxHealth, share)` returns what lands and what goes to poise, for a hit with any attacking entity;
+  damage with no attacker is not passed through it.
+- Poise by weapon kind, the parry by `isBlocking` and the ticks the shield has been up, whoever holds it; stagger
+  growth; the enrage clock on fight seconds.
+- Not to be built: attack tokens, the no-one-shot rule, `damageVsPlayers`, health per engaged player, and the
+  interrupted draft's `BossRules.spares` (an NPC leader deciding to spare): there is nothing to spare.
+- The fight is a set of engaged enemies of any kind and a clock that ends 10 s after the last leaves (6.1).
+
+**`MoveSelector` (F3)**
+
+- One loop in every fight: no field-mode branch (the phase gap is never replaced by the global cooldown).
+- Conditions read one `TargetState` (blocking, drawing a bow, eating, airborne, above, behind, far, unreachable)
+  filled the same way from a player and from an NPC; it has no "is a player" field, and reactions use the same
+  chance and cooldown for both.
+- No token check: a melee or heavy move is never filtered by how many heroes already press the target.
+- It is not asked for a move while the hero escapes; a cornered hero asks again.
+
+**`EscapeRules` (F5, with `MOBILITY_AND_WORK.md` 18.1)**
+
+- `kind(traits, temperament, authored, retreatBelow)`: escape or last stand (nerve 65, `sleepy`, the override, v1
+  `retreat_below` 0); `standsFor(loyalty, authored)`; `fleeAt(retreatBelow, lastPhaseAt)`.
+- `decide(...)`: under `flee_at` in any fight (the enemy's kind is not an input), a lost raid, a lost base; no
+  escape inside the 10-minute window, when cornered, held by a situation, with an unspent `rebirth`, or with
+  `heroes.escape` off: then the last-stand beat, once per fight.
+- The first draft's "refused yield" trigger (honour 30, a cautious leader) and "a leader saving itself" are not
+  built.
+
+**Game side (A3-A6, A12, L3, L4)**
+
+- `BossController` (A6): the health modifier is permanent (spawn, revival, load); the hit cap sits in the hero's
+  incoming-damage hook for any entity source; **no code path cancels lethal damage**; bar, intro title and decals go
+  to players within 32 blocks and decide nothing; the bar's `fled` and `fallen` states; rewards at death to the
+  winning side, with soldiers picking up orbs and the crest.
+- Goals (A6, A12): `HeroEscapeGoal` at priority 1, no `HeroYieldGoal`; `HeroEntity` does not register the soldiers'
+  `WithdrawGoal`; `HeroTargetGoal` has no token and drops an escaping hero when its own honour is 60 or more.
+- `HeroStatus` (A4): a stun holds a player (the speed and jump modifier, the cancelled attack, use, place and break
+  events), a taunt halves every receiver's damage to others, blindness and darkness cut an NPC's ranges, a
+  `guard_break` keeps an NPC's shield down (6.15).
+- `HeroActions` (as built in A1a): bit 7 of `DATA_STATE` is renamed from `STATE_YIELDING` to `STATE_ESCAPING` (same
+  bit, `HeroActionsTest` updated); codes 21 and 22 keep their numbers and clip names until the art follow-up below
+  is decided. `FaceRules`' first rule ("dead or defeated: eyes closed") reads only "dead"; an escaping hero's face is
+  its mood byte.
+- `FactionDirector` (L3): `soldierPower` averages ordinary soldiers only; the party's power adds the heroes that go;
+  `defenders` becomes a defence power (soldiers at home x `soldierPower` + the home heroes' war power, half under
+  half health, none while away or dead) and the target score uses it in soldier units; the soldier-backbone cap on
+  both sides; the fall-back share stays in heads; a leader's escape ends its raid by the rule of 5.6.
+- `HeroState`: `escapes` and `lastStands`; no `yields`, `spares`, `restUntil` or `spareCooldowns`.
+- Commands and tools: `/fc admin hero escape <id>` replaces the `yield` hook (12.1); `sim.py` hero lines count
+  fights, staggers, escapes, last stands, deaths and revivals, and print the war power.
+- Config: no `boss.attackTokens`, no `boss.damageVsPlayers`; `war.heroPowerPercent`; `heroes.escape`,
+  `escapeAwaySeconds`, `escapeCooldownSeconds` (`MOBILITY_AND_WORK.md` 8.5).
+
+**Art and sound follow-ups (for the art and sound work; nothing was edited by this pass)**
+
+- Animations (`notes/artgen.md`, G4): the core clips `defeated`, `defeated.loop` and `spared` (action codes 21 and
+  22, with a restyled copy per style library) were the yield's kneel and the rise of a spared hero. No hero yields
+  now. Proposed reuse rather than deletion, so the codes do not move: the kneel and its loop as the **wounded rest**
+  of an escaped hero at its refuge (it stays there 5 minutes, hurt), and `spared` as its **rise** when it goes back
+  to its duty; a rename (`rest.wounded`, `rest.wounded.loop`, `rest.rise`) can come with any later rebuild of
+  `_core`. If the reuse is not wanted they are retired: removed from `_core`, the restyled copies and
+  `anim/core_preview.py`, with codes 21 and 22 marked reserved.
+- Sounds (`SOUND.md` 16): `cues.yield` (the chime "Hero yields") is reused as the bar's **fled** sting (proposed id
+  `cues.fled`, subtitle "Hero flees"); `cues.spared` ("Hero is spared") is retired, or reused as the chime of a
+  hero's return at its revival; a **fallen** sting for the bar's other end state and a **last stand** accent are
+  new, generated or vanilla by id.
+- Lines (C1-C4): each slice hero's `yield` and `spared` lines are replaced by an `escape` line, a `last_stand` line
+  or both, and a `fallen` line (SLICE_PLAN.md section 3).
+
 ---
 
 ## 16. Risks and mitigations
@@ -2568,7 +3078,9 @@ reload time, a 64-hero lineup); the 30-day soak; adversarial review; docs; relea
 | Client cost with many heroes on screen | frame drops in big wars | cube budget, LOD, culling, measurements after the slice and batches 4 and 8; most scenes have a few heroes |
 | Client memory for 200 baked models | larger heap | measured; lazy baking if over 100 MB |
 | Animation and server timings drift | unfair hits | one recipe writes both; `HeroAssetsTest` fails on a difference |
-| Boss mode feels unfair or too easy | bad fights | class minimums, fairness rules enforced in code, PROPOSED numbers tuned from the slice campaign and the owner's play session |
+| Boss fights feel unfair or too easy | bad fights | class minimums, fairness rules enforced in code and the same for everyone, PROPOSED numbers tuned from the slice campaign and the owner's play session |
+| Heroes decide NPC wars by themselves, now that they have boss health against soldiers | one hero makes or breaks every raid | the war power and its limits (8.1: the soldier-backbone cap, numbers adding up against a hero, escapes and last stands, the 10-minute revival); `war.heroPowerPercent`; `sim.py` counts raids decided by a hero's presence |
+| Escapes frustrate (five of the eight slice heroes can run) | a fight with no ending and no reward | one escape in 10 minutes and a last stand inside that window, a stagger or a shot-down flyer stops it, the hero is found hurt at its refuge, two of the five never run from their own base; `heroes.escape = false` makes every hero fight to the death |
 | Personality makes campaigns end early or stall | bad campaigns | draft war-balance rule, `personalityStrength`, campaign checks comparing personalities |
 | Refactoring `FactionType` reads breaks something | regressions | M1 is mechanical and keeps every test unchanged; slots and identity are separate steps |
 | A future Minecraft upgrade | GeckoLib 5 rewrite | assets are Bedrock files and stay; only the renderer and model glue (about 600-900 lines) change |
@@ -2602,6 +3114,14 @@ reload time, a 64-hero lineup); the 30-day soak; adversarial review; docs; relea
    too: section 8), and an escaping hero may make pursuit impossible. The size of the extra output was not answered:
    those numbers stay and are tuned after you play. Later the same day the owner confirmed: keep the extra output
    sizes (tuned after play), and keep a common or rare hero's third phase and the awakened second ultimate from level 1.
+
+6. **Duels (milestone 3; a design point, not a question that blocks the slice).** Heroes no longer yield (your
+   decision of 2026-11-13), and a yield was how sparring, duels and "beat it in a duel" recruitment ended. Those need
+   a formal non-lethal bout instead: both sides agree before the first blow, and it ends at a set point (PROPOSED:
+   first to half health, as Kagenori's dawn sparring with soldiers already does; nobody dies, nothing drops). An
+   agreed bout is not a yield in a real fight: a hero attacked in earnest still escapes or fights to the death. Left
+   open until milestone 3: who may call a bout and where (the ring of decals), what breaks it off (a third party's
+   blow, an alarm), and what winning gives (a wanderer joins, a delinquent's respect, a hot-blooded hero's word).
 
 ---
 
@@ -2646,6 +3166,45 @@ compatibility (±20 / ±0.2).
 
 Special rules that need milestone 2 systems (pacts, morale, duels) stay inactive in milestone 1; the trait values work
 from the start.
+
+**When a fight goes badly** (6.13; the defaults that follow from the table above, and what `personality.when_losing`
+and `stands_for` override). Nerve is a + h - c: 65 or more is a last stand. An escaping temperament still stands at
+its home base with loyalty 70 or more, and beside its fighting leader with 85 or more.
+
+| Temperament | Nerve | When losing | Stands anyway |
+|---|---|---|---|
+| hot_blooded | 130 | last stand | |
+| stoic | 65 | last stand | |
+| cool_headed | 45 | escapes | at home |
+| tsundere | 85 | last stand | |
+| shy | 15 | escapes | at home |
+| sweet_natured | 50 | escapes | at home |
+| yandere | 75 | last stand | (milestone 3: beside its favoured) |
+| genki | 105 | last stand | |
+| lone_wolf | 55 | escapes | nowhere |
+| proud_noble | 75 | last stand | |
+| delinquent | 100 | last stand | |
+| chuunibyou | 95 | last stand | |
+| airhead | 55 | escapes | nowhere |
+| big_sibling | 55 | escapes | at home, beside its leader |
+| trickster | 35 | escapes | nowhere |
+| sleepy | 30 | last stand (its rule: bold under half health) | |
+| battle_maniac | 145 | last stand | |
+| gentle_giant | 45 | escapes | at home, beside its leader |
+| schemer | -10 | escapes | nowhere |
+| righteous | 110 | last stand | |
+| melancholic | 45 | escapes | at home |
+| glutton | 45 | escapes | nowhere |
+| perfectionist | 55 | escapes | nowhere |
+| charmer | 40 | escapes | nowhere |
+| ancient_sage | 25 | escapes | at home |
+| coward_who_rises | -5 | escapes | at home (the coward who rises) |
+| gruff_veteran | 60 | escapes | at home |
+| eccentric_genius | 30 | escapes | nowhere |
+| merchant | 35 | escapes | nowhere |
+| tyrant | 80 | last stand | |
+
+Twelve stand and eighteen escape; nine of the eighteen never run from their own base.
 
 ## Appendix B: base style families
 
@@ -2701,3 +3260,8 @@ for the faction name generator, the folklore weak point it suggests, and 2-3 kit
 | 64-75 | `move.<id>` for move slots 0-11 (names from `visual.json`, in the server's move order) |
 | 76-79 | `ultimate`, `ultimate.end` (`ultimate.loop` plays automatically when it exists), `ultimate.awakened`, reserved |
 | 80-255 | reserved |
+
+Codes 21 and 22 (`defeated` with its loop, `spared`) were the yield's kneel and the rise of a spared hero. No hero
+yields (6.13), so the server no longer sends them at the end of a fight; the clips and the codes stay as built until
+the art follow-up of 15.6 decides between reusing them (the wounded rest of an escaped hero and its rise) and
+retiring them.

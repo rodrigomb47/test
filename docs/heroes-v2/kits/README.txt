@@ -12,8 +12,13 @@ in them is invented: where the design leaves something open, the sheet says "set
 or "set when he is built".
 
 STATUS
-Kit version 1, 2026-11-12: the eight heroes of milestone 1 (the vertical slice) are designed, not in
-the game yet. All numbers are first values, tuned after play.
+Kit version 2, 2026-11-13: the eight heroes of milestone 1 (the vertical slice) are designed, not in
+the game yet. All numbers are first values, tuned after play. Version 2 follows the owner's
+decisions of 2026-11-12 and 2026-11-13: a hero fights the same against players and NPCs (one combat
+mode, with the same health, caps and rules whoever it fights; no extra damage to players and no
+protection from a one-hit kill), any number of heroes may gang up on one target, and no hero yields:
+each sheet's "When ... is losing" says whether that hero escapes or fights to the death, and why.
+Version 1 (2026-11-12) had a player-only boss mode and a yield.
 
 WHEN THEY CHANGE
 The sheets are regenerated whenever a hero is built or its kit changes, and each new or changed
@@ -39,3 +44,7 @@ HOW TO READ A SHEET
   points (2 points = 1 heart). Ranges are in blocks: close up to 4, mid 4 to 10, far 10 to 24.
 - Every hero has all of its abilities from level 1; levels 1 / 10 / 20 only change how strong they
   are.
+- "You" is the reader, but nothing a hero does depends on whether its enemy is a player: a soldier
+  raising a shield, an NPC archer on a pillar or an NPC hit on the hero counts exactly as yours.
+  Only what you see and hear (the boss bar, the intro title, the ground marks, the sounds and the
+  lines) is for players.
