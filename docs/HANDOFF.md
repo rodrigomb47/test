@@ -58,6 +58,20 @@ commits, language and testing are in `/CLAUDE.md`.
    live check in a fresh campaign ("Live check 2") fixed three more: a player against a pen's far fence (soldiers now
    go round through the gate), home guards held for good on a monster they could not get at, and wounded workers
    shut in a pit with the player.
+8. **Later additions** (owner, 2026-11-13: "you may add it when its a good fit in the development state, so no need to
+   rush it"):
+   - Nether fortress raids;
+   - netherite tools and armour;
+   - Wither and Ender Dragon boss raids ("factions may look to fight a boss, in the fight with the ender dragon, they
+     should know how to destroy the crystals");
+   - vehicles ("light and heavy vehicles, like bikes for scout, a car with a turret, tank, helicopter and jets",
+     "customizable by the faction, and it needs a certain building to build the vehicle");
+   - far-apart starts ("first bases spawning far away from each other, and factions should be able to clash as they
+     explore and create more bases and find out about each other");
+   - procedural buildings ("factions dont need one exactly blueprint for a building, but a template for it and it can
+     be built based on the terrain and resource available").
+
+   Recorded in `docs/ROADMAP.md` (Phase 3 rows and a new Phase 6), with where each fits.
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 

@@ -4,6 +4,20 @@ Agreed with the owner on 2026-11-10. Phases are in order; within a phase, items 
 Every item is "done" only when it is implemented, covered by tests, checked in a multi-day campaign on a dedicated
 server, documented (README/BALANCE) and shipped in the download jar. Keep the Status column current.
 
+Additions of 2026-11-13. The owner asked for these "when it's a good fit in the development state, so no need to
+rush it":
+- Nether fortress raids, netherite tools and armour.
+- Wither and Ender Dragon boss raids; against the dragon, factions know to destroy the end crystals.
+- Vehicles: light and heavy, customised by the faction, built at their own building.
+- First bases far apart, with factions clashing as they explore and found more bases.
+- Procedural buildings from templates fitted to the terrain and the resources at hand.
+
+They are placed below (Phase 3 and the new Phase 6). Suggested fit:
+- Far-apart starts and templated buildings go with the hero slice's leadership work (L4 founds the hero-led
+  factions and gives each its base style), or right after it.
+- The Nether, netherite and the boss raids come after the Nether expeditions they build on.
+- Vehicles come last, after their own design pass.
+
 ## Phase 1: finish what is half done
 
 | Item | Why | Status |
@@ -26,10 +40,15 @@ server, documented (README/BALANCE) and shipped in the download jar. Keep the St
 | Item | Notes | Status |
 |---|---|---|
 | Raids on known pillager outposts and woodland mansions | Scouts already report them; soldiers clear them for loot (crossbows, totems, emeralds) | planned |
-| Forward outposts and perimeter expansion (§11) | Watchtowers near resources or contested ground; wall expansion; more variety in builders' buildings | planned |
+| Forward outposts and perimeter expansion (§11) | Watchtowers near resources or contested ground; wall expansion; builders' buildings come from the templates row below | planned |
+| Far-apart starts, expansion and new bases (owner, 2026-11-13) | **Today:** the four first bases start too close together (the map's half-width is 320 blocks).<br>**Asked:** each faction's first base starts far from the others, on a much larger map (replaces Phase 5's "larger maps"). Factions grow by exploring with their scouts and founding new bases where the resources are. They find out about each other only through what their scouts see (player-like knowledge), and clash where their territories meet.<br>**Design points:** the start distance; when and where a faction founds a base; how bases share people and goods (haulers, the rail engineer of Phase 2); defending several bases; the war council's view of distant enemies | planned |
+| Procedural buildings from templates (owner, 2026-11-13) | A building has no single fixed blueprint. Instead it has a template: its purpose, the rooms or parts it needs, its size range, material roles, and style rules taken from the leader's base style (Phase 4, L4). The builder fits it to the terrain (slope, water, trees, rock) and builds it from the materials the faction actually has. So two halls of the same faction differ, and a hall in the mountains differs from one by the sea | planned |
 | Radio / communication tower (§12) | Scouts report from a distance instead of walking back to the station | planned |
 | Nether expeditions (§15) | A portal, Nether wart, quartz, blaze rods; unlocks potions and better enchanting | planned |
+| Nether fortress raids (owner, 2026-11-13) | Soldiers clear fortresses found by Nether scouts for blaze rods, Nether wart and wither skeleton skulls. They face blazes, wither skeletons and lava like a player would | planned |
+| Netherite tools and armour (owner, 2026-11-13) | Miners dig ancient debris in the Nether at player speed with a diamond pickaxe. Netherite upgrade templates come from raided bastion remnants (or are copied with diamonds at a crafting table). The blacksmith smelts scrap, crafts ingots and upgrades diamond gear at a smithing table. The war council counts the stronger gear | planned |
 | Overworld/Nether dungeons and bosses, reward chests, hero tokens (§15, §17) | Ties into Phase 4 heroes | planned |
+| Boss raids: the Wither and the Ender Dragon (owner, 2026-11-13) | A faction may decide to go after a boss. The leader's personality and the war council weigh the reward against the risk.<br>**Wither:** summoned well away from any base once fortress raids have brought three skulls and soul sand; rewards the nether star (a beacon).<br>**Ender Dragon:** eyes of ender (blaze powder, ender pearls), scouts find the stronghold, the portal is filled, then an End expedition. Soldiers know the fight: destroy the end crystals first, archers shooting the open ones and climbers pillaring up to break the caged ones as a player does; then they fight the dragon and keep clear of its breath and of the void | planned |
 
 ## Phase 4: original heroes (§2, §16), the next milestone
 
@@ -80,4 +99,18 @@ hero sound is generated by our code or a vanilla sound referenced by its id (`do
 |---|---|
 | A real play session by the owner (joining, commands, screens, early game) and fixes from it | planned |
 | Balance pass from those impressions | planned |
-| Larger maps (radius 512+) | planned |
+| Larger maps: moved to Phase 3, "Far-apart starts, expansion and new bases" (2026-11-13) | moved |
+
+## Phase 6: vehicles (owner, 2026-11-13)
+
+Vehicles come after their own design pass (`docs/design/vehicles.md`, to be written). The owner asked for light and
+heavy vehicles. A faction builds each vehicle at a building it must put up first (a vehicle workshop), and
+customises it (its colours, plating, weapons, engine). The player-like rule here means that NPCs use vehicles as a
+player would: built from real items, fuelled, repaired, and driven within the vehicle's limits.
+
+| Item | Notes | Status |
+|---|---|---|
+| Design | **Models:** GeckoLib, like the heroes.<br>**Physics and handling** per kind; how NPCs drive (roads and terrain; air paths for the aircraft).<br>**Supplies:** fuel and ammunition from vanilla resources, an open question (for example coal or blaze rods for fuel, redstone for the electronics, iron and netherite for plating).<br>**Customisation** options; how the workshop and its tiers unlock kinds.<br>**Combat balance** against soldiers and heroes; whether the player may drive the faction's vehicles | planned |
+| Light vehicles | A bike for scouts (faster scouting and reports) and light transport | planned |
+| Heavy ground vehicles | A car with a turret, a tank | planned |
+| Aircraft | A helicopter, jets | planned |
