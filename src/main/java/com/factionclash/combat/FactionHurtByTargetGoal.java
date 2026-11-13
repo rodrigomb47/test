@@ -19,7 +19,7 @@ public class FactionHurtByTargetGoal extends HurtByTargetGoal {
         if (attacker != null && CombatRules.sameSide(npc, attacker)) {
             return false;
         }
-        if (npc.job() != null && npc.job().ignoresCombat()) {
+        if (npc.jobIgnoresCombat()) {
             return false;
         }
         return super.canUse();

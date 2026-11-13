@@ -21,9 +21,14 @@ import java.util.EnumSet;
  * broken, it builds itself up or breaks the block under a target standing too high, or it waits out of the target's
  * reach until there is a way. While chasing, the path toward the target is searched again every 4 to 10 ticks as in
  * vanilla; once the target is known to be out of reach that stops.
+ *
+ * <p>Heroes (task A4; HERO_FORMAT.md 5.2 and 8): the leash is the hero's aggression's ({@link FactionNpc#meleeLeash}), a
+ * hero of any duty fights on under half health ({@link FactionNpc#fightsLikeSoldier}), a skirmisher steps 3 blocks
+ * back after each hit until its next swing is ready, and a melee hero with a keep distance holds it while a move of its
+ * can land from there, backing away from an enemy inside half of it ({@link FactionNpc#holdsDistance}). Soldiers are
+ * unchanged.
  */
 public class NpcMeleeAttackGoal extends Goal {
-    private static final double LEASH = 56;
     private static final double SPEED = 1.2;
     private final FactionNpc npc;
     private Path path;
@@ -34,6 +39,8 @@ public class NpcMeleeAttackGoal extends Goal {
     private Pursuit.Mode lastMode = Pursuit.Mode.CHASE;
     /** Whether its path had been walked to its end at the last chase tick. */
     private boolean pathEnded;
+    /** A skirmisher steps back until this tick (v1 5.2). */
+    private int stepBackUntil;
 
     public NpcMeleeAttackGoal(FactionNpc npc) {
         this.npc = npc;
@@ -41,7 +48,7 @@ public class NpcMeleeAttackGoal extends Goal {
     }
 
     private boolean ranged() {
-        return npc.getRole().ranged && (npc.getMainHandItem().getItem() instanceof BowItem
+        return npc.rangedFighter() && (npc.getMainHandItem().getItem() instanceof BowItem
                 || npc.getMainHandItem().getItem() instanceof net.minecraft.world.item.CrossbowItem) && !npc.ammo().isEmpty();
     }
 
@@ -57,7 +64,7 @@ public class NpcMeleeAttackGoal extends Goal {
         if (raiding || away) {
             return false;
         }
-        return Math.sqrt(t.distanceToSqr(b.center.getX(), t.getY(), b.center.getZ())) > LEASH;
+        return Math.sqrt(t.distanceToSqr(b.center.getX(), t.getY(), b.center.getZ())) > npc.meleeLeash();
     }
 
     /**
@@ -72,8 +79,8 @@ public class NpcMeleeAttackGoal extends Goal {
     }
 
     private boolean blocked() {
-        return ranged() || !npc.fightsInMelee() || npc.job() != null && npc.job().ignoresCombat()
-                || npc.getRole().isCivilian() && npc.getHealth() < npc.getMaxHealth() * 0.5F;
+        return ranged() || !npc.fightsInMelee() || npc.jobIgnoresCombat()
+                || !npc.fightsLikeSoldier() && npc.getHealth() < npc.getMaxHealth() * 0.5F;
     }
 
     @Override
@@ -168,7 +175,9 @@ public class NpcMeleeAttackGoal extends Goal {
                 repath = 0; // back from working or waiting: look for the way at once
                 pathedX = pathedY = pathedZ = 0;
             }
-            chase(t);
+            if (!spacing(t)) {
+                chase(t);
+            }
         } else {
             pursuit.tick(t);
         }
@@ -182,6 +191,44 @@ public class NpcMeleeAttackGoal extends Goal {
         boolean fighting = canStrike || npc.tickCount - npc.lastAttackTick() < 40;
         pursuit.watchStuck(t, fighting);
         pursuit.watchBoxedIn(t, canStrike); // (a lucky blow from the bottom of a pit, at the top of a bounce, does not get it out)
+    }
+
+    /**
+     * A hero's spacing (v1 5.2 and 8): a skirmisher's step back after a hit, or a held keep distance. True when it moved
+     * itself this tick (no chase); soldiers never space.
+     */
+    private boolean spacing(LivingEntity t) {
+        if (stepBackUntil > npc.tickCount) {
+            if (npc.getNavigation().isDone()) {
+                stepAway(t, com.factionclash.logic.hero.TargetRules.SKIRMISH_STEP);
+            }
+            return true;
+        }
+        double keep = npc.holdsDistance();
+        if (keep <= 0) {
+            return false;
+        }
+        double d = npc.distanceTo(t);
+        if (com.factionclash.logic.hero.TargetRules.backAway(d, keep)) {
+            if (npc.getNavigation().isDone() || npc.tickCount % 20 == 0) {
+                stepAway(t, keep);
+            }
+            return true;
+        }
+        if (d <= keep + 0.5) {
+            npc.getNavigation().stop();
+            return true;
+        }
+        return false;
+    }
+
+    /** Walks away from the target, about {@code blocks} (a random spot that leads away, as a kiting archer's). */
+    private void stepAway(LivingEntity t, double blocks) {
+        net.minecraft.world.phys.Vec3 away = net.minecraft.world.entity.ai.util.DefaultRandomPos.getPosAway(npc,
+                (int) Math.ceil(blocks) + 2, 3, t.position());
+        if (away != null) {
+            npc.getNavigation().moveTo(away.x, away.y, away.z, SPEED);
+        }
     }
 
     /** Vanilla's chase: a fresh path to the target every 4-10 ticks (less often far away) while it moves or now and then. */
@@ -248,7 +295,11 @@ public class NpcMeleeAttackGoal extends Goal {
         if (canPerformAttack(target)) {
             ticksUntilNextAttack = adjustedTickDelay(20);
             npc.swing(InteractionHand.MAIN_HAND);
-            npc.doHurtTarget(target);
+            if (npc.doHurtTarget(target) && npc.skirmishes()) {
+                // hit and run: back 3 blocks until the next swing is nearly ready (v1 5.2)
+                stepBackUntil = npc.tickCount + Math.max(4, ticksUntilNextAttack - 4);
+                stepAway(target, com.factionclash.logic.hero.TargetRules.SKIRMISH_STEP);
+            }
         }
     }
 

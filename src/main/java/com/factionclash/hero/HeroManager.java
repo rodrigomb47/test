@@ -454,6 +454,33 @@ public final class HeroManager {
         }
     }
 
+    // ------------------------------------------------------------------ combat XP from the war (v1 22.1, task A4)
+
+    /**
+     * A raid ended: each hero still alive among the raiders of a won raid earns {@code XP_RAID_WON} (100); when the
+     * target stood, each living hero of the defending faction at that base earns {@code XP_DEFENCE} (30). The same for
+     * every hero, whoever the raiders and defenders were.
+     */
+    public static void raidEnded(ServerLevel level, FactionState raiders, BaseState target, boolean won) {
+        if (won) {
+            for (java.util.UUID u : raiders.raiders) {
+                if (level.getEntity(u) instanceof HeroEntity h && h.isAlive()) {
+                    h.awardCombatXp(HeroRules.XP_RAID_WON);
+                }
+            }
+            return;
+        }
+        if (target == null || target.destroyed) {
+            return;
+        }
+        for (HeroEntity h : HeroEntity.live()) {
+            if (h.isAlive() && h.level() == level && h.getFaction() == target.faction
+                    && target.contains(h.blockPosition(), 16)) {
+                h.awardCombatXp(HeroRules.XP_DEFENCE);
+            }
+        }
+    }
+
     // ------------------------------------------------------------------ previews (screenshots)
 
     /**

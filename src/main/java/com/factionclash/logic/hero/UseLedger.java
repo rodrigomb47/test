@@ -20,11 +20,13 @@ import java.util.Map;
  * </pre>
  * where the form factor is 1.5 for a lasting zone (v1 16.1) and 1.25 for a combo (HEROES_V2 6.5). Damage is held as
  * the raw amount, before the element and the damage factors (clamped 0..2) and {@code heroes.maxHit} per hit; DoTs as
- * one application's total ({@code per second x seconds}), heals and shields as points restored. Nothing here knows
+ * one application's total ({@code per second x seconds}), heals and shields as points restored, stuns as seconds at
+ * the slot's own cap (2 s a skill, 3 an ultimate, 1 a passive or finisher; v1 16.1). Nothing here knows
  * who the receiver is beyond the key the game gives it. Pure, unit-tested ({@code AbilityRuntimeTest}).
  */
 public final class UseLedger {
-    public enum Kind { DAMAGE, DOT, HEAL, SHIELD }
+    /** What a use lands, each held to its slot's cap; {@code STUN} in seconds, which no power or gear scales (A4). */
+    public enum Kind { DAMAGE, DOT, HEAL, SHIELD, STUN }
 
     private final double[] caps = new double[Kind.values().length];
     private final Map<String, double[]> spent = new HashMap<>();
@@ -34,6 +36,7 @@ public final class UseLedger {
         caps[Kind.DOT.ordinal()] = c.dot() * scale;
         caps[Kind.HEAL.ordinal()] = c.heal() * scale;
         caps[Kind.SHIELD.ordinal()] = c.shield() * scale;
+        caps[Kind.STUN.ordinal()] = c.stun();
     }
 
     /**

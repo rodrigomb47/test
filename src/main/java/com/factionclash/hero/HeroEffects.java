@@ -43,8 +43,9 @@ import java.util.Optional;
 /**
  * The effects of HERO_FORMAT.md 13 that the engine runs (task A3: {@code damage}, {@code dot}, {@code heal},
  * {@code shield}, {@code effect}, {@code stat}, {@code knockback}, {@code pull}, {@code ignite}, {@code freeze},
- * {@code cleanse}, {@code energy}, {@code cooldown_cut}, {@code move_self}, {@code mark}, {@code clear_marks}; the
- * rest are A4's and A5's and are skipped). Each effect goes to the receivers its {@code to} names
+ * {@code cleanse}, {@code energy}, {@code cooldown_cut}, {@code move_self}, {@code mark}, {@code clear_marks}; task A4:
+ * {@code stun}, {@code taunt}, {@code dispel}, {@code empower}, {@code summon}; the format-2 effects are A5's and are
+ * skipped). Each effect goes to the receivers its {@code to} names
  * ({@link EffectRouting}), only to those its recipient class allows, rolled by its {@code chance} and checked by its
  * {@code if} for each receiver ({@link Conditions}). Amounts read the hero's attack power, health and armour and the
  * receiver's health and marks at hit time ({@link HeroRules#amountAtHit}), grow with ability power and
@@ -159,13 +160,13 @@ public final class HeroEffects {
                 double x = use.ledger.take(UseLedger.Kind.HEAL, key(r), raw(use, h.amount(), r));
                 float before = r.getHealth();
                 r.heal((float) x);
-                restored(use, r.getHealth() - before);
+                restored(use, r, r.getHealth() - before);
                 particles(hero.level(), r, ParticleTypes.HEART, 3);
             }
             case HeroDef.Shield s -> {
                 double x = use.ledger.take(UseLedger.Kind.SHIELD, key(r), raw(use, s.amount(), r));
                 if (x > 0) {
-                    restored(use, HeroStatus.of(r).shield(r, x, s.seconds()));
+                    restored(use, r, HeroStatus.of(r).shield(r, x, s.seconds()));
                 }
             }
             case HeroDef.PotionEffect p -> {
@@ -224,15 +225,52 @@ public final class HeroEffects {
                 }
             }
             case HeroDef.ClearMarks m -> HeroStatus.of(r).book().clearMarks(m.mark(), now);
+            case HeroDef.Stun st -> {
+                // the slot's stun seconds per use and receiver (v1 16.1); the receiver's immunity decides the rest (6.14)
+                double secs = use.ledger.take(UseLedger.Kind.STUN, key(r), st.seconds());
+                if (secs > 0 && HeroStatus.stun(r, secs)) {
+                    use.landed |= enemy;
+                    particles(hero.level(), r, ParticleTypes.CRIT, 8);
+                }
+            }
+            case HeroDef.Taunt t -> {
+                if (HeroStatus.taunt(r, hero, t.seconds())) {
+                    use.landed |= enemy;
+                    particles(hero.level(), r, ParticleTypes.ANGRY_VILLAGER, 2);
+                    if (!use.taunted) {
+                        use.taunted = true;
+                        hero.playAction(com.factionclash.logic.hero.HeroActions.actionCode("taunt"), 1.0, 0);
+                    }
+                }
+            }
+            case HeroDef.Dispel x -> {
+                if (HeroStatus.dispel(r)) {
+                    use.landed |= enemy;
+                    particles(hero.level(), r, ParticleTypes.SMOKE, 6);
+                }
+            }
+            case HeroDef.Empower em -> {
+                String state = com.factionclash.logic.hero.MoveSelector.stateOf(em, use.def.v2());
+                if (state != null) {
+                    hero.combat().enterState(state, em.seconds());
+                }
+            }
+            case HeroDef.Summon sm -> HeroSummons.summon(hero, sm.creature(), sm.count(), sm.seconds(), sm.name());
             default -> {
             }
         }
     }
 
-    /** Energy for healing and shielding (v1 14: 1 per 2 points restored, at most 8 per use). */
-    private static void restored(HeroUse use, double points) {
+    /**
+     * Energy for healing and shielding (v1 14: 1 per 2 points restored, at most 8 per use; the hero counts as an
+     * ally, A3) and combat XP for what it restores to others (v1 22.1: 1 per 5 points; healing itself earns none).
+     */
+    private static void restored(HeroUse use, LivingEntity r, double points) {
         if (points <= 0) {
             return;
+        }
+        if (r != use.hero) {
+            use.hero.addHealXp(points);
         }
         double give = Math.min(HeroRules.ENERGY_PER_EVENT_CAP - use.healEnergy, HeroRules.energyFromHealing(points));
         if (give > 0) {
@@ -350,7 +388,7 @@ public final class HeroEffects {
 
     /**
      * {@code cleanse} (v1 13.2): harmful potion effects, hero DoTs, marks an enemy put on it, harmful stat modifiers,
-     * fire and freezing (stuns are A4's).
+     * fire, freezing and a stun.
      */
     static void cleanse(LivingEntity r, long now) {
         List<Holder<MobEffect>> bad = new ArrayList<>();
@@ -367,6 +405,7 @@ public final class HeroEffects {
             st.book().consumeStatsDirty();
             HeroStatus.applyStats(r, now);
         }
+        HeroStatus.releaseIfFree(r); // a cleanse ends a stun (its immunity stays, A4)
         particles(r.level(), r, ParticleTypes.HAPPY_VILLAGER, 6);
     }
 

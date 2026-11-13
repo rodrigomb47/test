@@ -118,6 +118,22 @@ public class HeroProjectile extends ThrowableItemProjectile {
         hero.level().addFreshEntity(p);
     }
 
+    /**
+     * A passive's {@code shot} (v1 17.2, task A4): its effects at the event's enemy, range {@code range}. It is never a
+     * basic hit, so it sets off no {@code on_hit} passive (the loop guard, v1 17.3).
+     */
+    public static void launchPassive(HeroEntity hero, HeroUse use, List<HeroDef.Effect> effects, String look, Vec3 to,
+                                     double range) {
+        HeroProjectile p = make(hero, look == null ? "arrow" : look);
+        p.kind = Kind.MOVE;
+        p.use = use;
+        p.effects = effects;
+        p.splash = 0;
+        p.range = range + 4;
+        p.aim(to, 0, p.gravity ? ARROW_SPEED : ITEM_SPEED);
+        hero.level().addFreshEntity(p);
+    }
+
     /** A {@code thrown} basic attack: {@code raw} damage of {@code element}, aimed at {@code to}. */
     public static HeroProjectile launchBasic(HeroEntity hero, String look, Element element, double raw, Vec3 to) {
         HeroProjectile p = make(hero, look);

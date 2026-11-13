@@ -196,6 +196,26 @@ public final class HeroActions {
         };
     }
 
+    /**
+     * The telegraph pose of a move's wind-up (v1 10.5 {@code look.pose}; task A4): the clip that holds the pose while
+     * the hero gathers, or 0 for none ({@code none}, or no look). The decals are A6's; A5 plays a move's own
+     * {@code move.<id>} clip by its timing file in place of these.
+     */
+    public static int telegraphPose(HeroDef.Pose pose) {
+        if (pose == null) {
+            return CODE_NONE;
+        }
+        String clip = switch (pose) {
+            case NONE -> null;
+            case SWING -> "attack.1";
+            case BLOCK -> "guard";
+            case BOW_DRAW, SPEAR_THROW, CROSSBOW_CHARGE -> "attack.ranged";
+            case HORN -> "emote.cheer";
+            case SPYGLASS -> "emote.think";
+        };
+        return clip == null ? CODE_NONE : actionCode(clip);
+    }
+
     /** The code of a fixed animation name ({@code attack.1}, {@code work.mine}, ...), or -1. */
     public static int actionCode(String name) {
         for (int c = 1; c < 256; c++) {

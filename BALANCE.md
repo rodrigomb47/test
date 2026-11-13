@@ -733,11 +733,12 @@ a faction with `/fc admin hero give`.
   **1.2 blocks** (PROPOSED; an 85% chibi would be 1.04) and at most **1.98** (a 110% adult would be 2.00; the eyes drop
   in proportion), so every hero walks through a 2-high doorway; the model itself draws at its full scale. The culling
   box is 1.5 blocks larger all round (wings, tails, long weapons).
-* Role: a hero counts as one soldier of the role its basic attack and weapon fit (bow archer, crossbow crossbowman;
-  melee with an axe or a mace, or an axe, hammer or scythe style, axe fighter; every other melee, trident and thrown
-  hero swordsman) for recruitment needs and the garrison by heads, but the raid party's soldier sort never picks it.
-  It is never retrained. Between its moves (A3, below) it fights with that role's basic attacks; a thrown hero
-  throws instead (`HeroThrowGoal`).
+* Role: a guard hero (`duty: guard`, the default) counts as one soldier of the role its basic attack and weapon fit
+  (bow archer, crossbow crossbowman; melee with an axe or a mace, or an axe, hammer or scythe style, axe fighter; every
+  other melee, trident and thrown hero swordsman) for recruitment needs and the garrison by heads, but the raid party's
+  soldier sort never picks it. A hero with a worker duty (A4) takes that worker's role instead: it counts as that worker
+  for its base's needs and does that job between fights. It is never retrained. Between its moves (A3, below) it
+  fights with its style's basic attacks whatever its duty; a thrown hero throws instead (`HeroThrowGoal`).
 * Kit: the `gear` of its file (names and enchantments included), bound to the hero: never dropped, never deposited,
   gone when better storehouse gear of the same kind replaces it, given again on its return. A **fists**-style hero
   holds no weapon: the stone sword the checker adds to a melee kit with none is left out, and it never fetches or
@@ -840,6 +841,67 @@ others are PROPOSED.
 * Thrown basic attack (v1 9): one throw every `interval` seconds within **14** blocks and in sight; backs away like an
   archer when an enemy comes closer than half its `keep_distance`; the throw deals its `amount` plus the hero's attack
   bonuses of its element.
+
+## Hero control, passives, states, summons and behaviour (config `heroes`; `StatusBook`, `PassiveBook`, `TargetRules`, `SummonRules`, `HeroStatus`, `HeroPassives`, `HeroStates`, `HeroSummons`, `HeroTalents`, `HeroTargetGoal`) — A4
+The same numbers against every receiver, player or NPC (HEROES_V2 6.15). v1 marks HERO_FORMAT.md's numbers; the
+others are PROPOSED.
+* Stun (v1 13.4, HEROES_V2 6.14-6.15): stops every receiver for its seconds (0.5-2): movement speed and jump strength
+  **-100%** (`factionclash:stun`), a goal-based mob's or NPC's goals held by `StunnedGoal` (priority **0**), a player's
+  attacks, item use, interactions, block breaking and placing cancelled, any stunned attacker's melee blow cancelled,
+  no item use started; the camera turns and knock-back still moves it. After a stun nobody stuns it again until
+  **3x** the stun's length from its start (immune for twice its length after it ends): at most 2 s stopped in any 6 s.
+  At most **2 s** a skill, **3 s** an ultimate, **1 s** a passive or finisher per use and receiver, never on a basic hit
+  (the slot caps, `UseLedger.Kind.STUN`). A move that stuns is at least heavy (F2). Vanilla bosses are immune. A
+  cleanse ends a stun but not its immunity. A hero stunned in its wind-up loses the move with **half** its cooldown back.
+* Taunt (v1 13.4, 6.15): 1-8 s; a goal-based mob or NPC targets the taunting hero at once and again every **16**
+  ticks (within 48 blocks; a brain-based mob keeps its mind); every receiver, players included, deals **50%** to anyone
+  but the taunting hero; the newest taunt replaces an older one; the hero glows for the taunt's seconds.
+* Dispel (v1 13.4): the receiver's helpful potion effects (absorption included), helpful hero stat changes and hero
+  shield go; harmful ones stay.
+* Blindness or darkness on an NPC or a hero (6.15): its search and follow range and its bow's range are cut to **5**
+  blocks for their seconds (a player sees as vanilla shows it).
+* States (12.9, v1 18): entered by `empower` for its seconds (3-20), refreshed by entering again, replaced by another;
+  stat bonuses **+-30%** held on the hero's own status book; `on_hit` effects share the basic attack's on-hit cap;
+  `size` 100-**110%** (`generic.scale`, the hitbox never past 1.98); an aura every **10** ticks; its face held; with
+  `skills_locked` only basic attacks and the ultimate; its own `moves` replace the move list (the ultimate stays); a
+  move whose only effect enters the state it is in is not cast again. Saved with the hero.
+* Passives (v1 17): fired by their triggers with their `chance`, internal cooldown (raised to the passive floor when
+  read) and `once_per_fight`; `on_low_health` (default **35%**) re-arms **20** points above its value; `on_ally_*`
+  reach allies within **12** blocks (`on_ally_ultimate` **24**); `on_ally_low_health` once per ally per **20 s**;
+  `on_fight_start` after **10 s** without a target; `every` on its period while fighting; `always` stat bonuses held
+  while their `if` holds, checked every **20** ticks; `bolt` and `shot` reach **16** blocks; `nova` **4** and `allies`
+  **8** blocks by default. **The loop guard** (v1 17.3): damage from passives and summons never sets off `on_hit`,
+  `on_crit` or `on_ally_attack`; a hero's moves are no "weapon or arrow" for `on_ally_attack`; a passive's effects never
+  set off that passive; at most **8** firings a hero a second (the rest dropped with one warning).
+* Summons (v1 13.5, 20): wolves (at most **3** a use), snow golems (**2**) and iron golems (**1**) for 10-60 s, beside the
+  hero (within **2** blocks); at most **3** alive a hero (the oldest go), **1** iron golem (a new one replaces it), **12**
+  a faction (fewer are called); they take the hero's target or the nearest enemy of its side within **16** blocks and
+  follow it back beyond **16**; gone when their time is up, the hero dies or is gone (**100** ticks of grace after a
+  chunk load) or **48** blocks away. No loot, no experience, never tamed, no snow trail. `heroes.summons` **true**.
+* Target (v1 8): looked for every **2 s** (every **0.5 s** while it has none) within **12 / 20 / 28** blocks (cautious /
+  steady / bold), in sight; protection first, then the focus; between two within half a block (or half a health point)
+  the current target stays. Honour **60**+ lets an escaping hero go. No attack tokens: any number of heroes may take one
+  target.
+* Spacing (v1 5.2, 8): chase leash from its base **32 / 56 / 80** blocks (cautious / steady / bold); a skirmisher steps
+  **3** blocks back after each landed blow until **4** ticks before its next swing; a bow hero backs away inside **half**
+  its keep distance; a melee hero with a keep distance (not a skirmisher) holds it while a move of its that reaches
+  that far is ready (checked every **10** ticks) and backs away inside half of it; with nothing ready it closes in.
+* Duty (v1 8, HEROES_V2 7.1): a worker-duty hero takes its duty's tool from the storehouse (its kit weapon goes to its
+  backpack) and draws its kit weapon again within **5** ticks of having a target; it fights like a soldier, answers
+  alarms (`callGuards` and the base defence take heroes of any duty) and never flees as workers do; only a woodcutter's
+  pillar keeps it out of a fight.
+* Base abilities read as talents (v1 21, HEROES_V2 7.2; tiers I/II/III at levels 1/10/20, `Talents`): at its home base
+  (inside the walls or within **16** blocks, not on a raid), the strongest copy of each at a base counts: `aura` **1/2/3**
+  extra stacks of one work affix for the listed roles (the affix's cap and job rule hold); `rally` recruits **10 / 15 /
+  20%** cheaper in food; `drill` soldiers at the base **1/2/3** work XP every in-game hour (1000 ticks) by day; `mend`
+  out of a fight, allies within **16** heal **5 / 7 / 10%** of their max health every **10 s**; `lookout` enemies it sees
+  within **32 / 40 / 48** call its side's free fighters, with one faction line a minute. Rebuilt every **40** ticks.
+* Combat XP (v1 22.1) x `heroes.xpRate` **100%** (0-500): a kill **10 + its max health / 2**, the ultimate **5**, healing
+  or shielding another **1** per 5 points, each in-game day alive **40**, a won raid it survived **100**, a defence of
+  its base that held **30**. Levels on the NPC curve (40 + 30n) grow its numbers by its growth profile.
+* Telegraph poses (v1 10.5): a move's `look.pose` held through its wind-up (`swing` attack.1, `block` guard, a drawn
+  bow, a spear or a crossbow attack.ranged, `horn` emote.cheer, `spyglass` emote.think); a stunned hero plays `stun`, a
+  taunting one `taunt`, a hero entering a state its `state.<n>`.
 
 ## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no

@@ -48,9 +48,13 @@ public final class CombatRules {
         return attacker != null && (attacker.getType().is(EntityTypeTags.ZOMBIES) || attacker.getType().is(EntityTypeTags.SKELETONS));
     }
 
+    /** The faction an entity fights for: an NPC's or hero's, a member player's, a hero's summon's (A4), else null. */
     public static FactionType factionOf(Entity e) {
         if (e instanceof FactionNpc n) {
             return n.getFaction();
+        }
+        if (e instanceof net.minecraft.world.entity.Mob m && !(e instanceof net.minecraft.world.entity.player.Player)) {
+            return com.factionclash.hero.HeroSummons.factionOf(m);
         }
         if (e instanceof ServerPlayer p) {
             return CampaignData.get(p.server).players.get(p.getUUID());

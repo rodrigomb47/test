@@ -39,7 +39,7 @@ public class CivilianFleeGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (!npc.getRole().isCivilian() || npc.getHealth() >= npc.getMaxHealth() * 0.5F || jobDecides()) {
+        if (!npc.getRole().isCivilian() || npc.fightsLikeSoldier() || npc.getHealth() >= npc.getMaxHealth() * 0.5F || jobDecides()) {
             return false;
         }
         threat = currentThreat();

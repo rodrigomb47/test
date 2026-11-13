@@ -221,4 +221,91 @@ class StatusBookTest {
         c.clear();
         assertTrue(c.isEmpty());
     }
+
+    // ------------------------------------------------------------------ control (A4)
+
+    @Test
+    void aStunHoldsForItsSecondsThenLeavesTwiceItsLengthOfImmunity() {
+        StatusBook b = new StatusBook();
+        assertTrue(b.stun(1, 0));
+        assertTrue(b.stunned(0));
+        assertTrue(b.stunned(19));
+        assertEquals(20, b.stunEndsAt(5));
+        assertFalse(b.stun(1, 10), "no second stun while one holds");
+        Expired x = b.expire(20);
+        assertTrue(x.stun(), "the stun ended");
+        assertFalse(b.stunned(20));
+        assertTrue(b.stunImmune(20));
+        assertFalse(b.stun(2, 59), "immune for twice its length after it ends (6.14), whoever stuns");
+        assertTrue(b.stun(2, 60), "the immunity is over at 3 x its length from its start");
+        assertTrue(b.stunned(99));
+        assertFalse(b.stunned(100));
+    }
+
+    @Test
+    void atMostTwoSecondsStoppedInAnySixFromSkillStuns() {
+        // two heroes trying to chain 2 s stuns every tick: the receiver is stopped 40 ticks of every 120
+        StatusBook b = new StatusBook();
+        int stopped = 0;
+        for (long t = 0; t < 1200; t++) {
+            b.expire(t);
+            b.stun(2, t);
+            if (b.stunned(t)) {
+                stopped++;
+            }
+        }
+        assertEquals(400, stopped, "a third of the time, never more (6.14)");
+    }
+
+    @Test
+    void aCleanseEndsAStunButNotItsImmunity() {
+        StatusBook b = new StatusBook();
+        b.stun(2, 0);
+        b.cleanse(null);
+        assertFalse(b.stunned(1));
+        assertFalse(b.stun(1, 2), "the immunity stays: a cleanse never opens the way to a second stun");
+    }
+
+    @Test
+    void aTauntNamesItsHeroAndTheNewestWins() {
+        StatusBook b = new StatusBook();
+        assertNull(b.tauntedBy(0));
+        b.taunt("hero_a", 3, 0);
+        assertEquals("hero_a", b.tauntedBy(59));
+        b.taunt("hero_b", 2, 10);
+        assertEquals("hero_b", b.tauntedBy(20));
+        assertTrue(b.expire(50).taunt());
+        assertNull(b.tauntedBy(50));
+    }
+
+    @Test
+    void aDispelTakesTheHelpfulPartOnly() {
+        StatusBook b = new StatusBook();
+        b.stat("h", "up", Stat.ATTACK, 20, 8, 1, 0);
+        b.stat("h", "guard", Stat.DAMAGE_TAKEN, -20, 8, 1, 0);
+        b.stat("e", "down", Stat.SPEED, -20, 8, 1, 0);
+        b.shield(6, 10, 0);
+        b.mark("brand", 1, 3, 10, "e", false, true, 0);
+        b.consumeStatsDirty();
+        StatusBook.Dispelled d = b.dispel();
+        assertTrue(d.stats());
+        assertEquals(6, d.shield(), EPS);
+        assertEquals(0, b.statPercent(Stat.ATTACK, 1), EPS);
+        assertEquals(0, b.statPercent(Stat.DAMAGE_TAKEN, 1), EPS, "less damage taken is helpful");
+        assertEquals(-20, b.statPercent(Stat.SPEED, 1), EPS, "the harmful slow stays");
+        assertEquals(1, b.marks("brand", 1), "marks stay");
+        assertTrue(b.consumeStatsDirty());
+    }
+
+    @Test
+    void theCapNeverDropsAStun() {
+        StatusBook b = new StatusBook();
+        b.stun(1, 0);
+        for (int i = 0; i < StatusBook.MAX_STATUSES + 5; i++) {
+            b.mark("m" + i, 1, 5, 10, "h", false, true, 1);
+        }
+        assertTrue(b.stunned(2), "flooding marks cannot clear a stun");
+        assertTrue(b.stunImmune(2));
+        assertEquals(StatusBook.MAX_STATUSES, b.size());
+    }
 }

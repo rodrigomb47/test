@@ -58,7 +58,7 @@ public class NpcRangedAttackGoal extends Goal {
     }
 
     private boolean armed() {
-        return npc.getRole().ranged && (npc.getMainHandItem().getItem() instanceof BowItem || crossbow()) && !npc.ammo().isEmpty();
+        return npc.rangedFighter() && (npc.getMainHandItem().getItem() instanceof BowItem || crossbow()) && !npc.ammo().isEmpty();
     }
 
     private boolean crossbow() {
@@ -96,6 +96,9 @@ public class NpcRangedAttackGoal extends Goal {
             return;
         }
         double range = crossbow() ? CROSSBOW_RANGE : RANGE;
+        if (npc.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS) || npc.hasEffect(net.minecraft.world.effect.MobEffects.DARKNESS)) {
+            range = com.factionclash.hero.HeroControlEvents.BLIND_RANGE; // HEROES_V2 6.15: it shoots only what it sees
+        }
         if (++retarget >= 40) {
             retarget = 0;
             t = focus(t, range);
@@ -104,7 +107,7 @@ public class NpcRangedAttackGoal extends Goal {
         double d2 = npc.distanceToSqr(t);
         boolean sees = npc.getSensing().hasLineOfSight(t);
         seeTime = sees ? seeTime + 1 : 0;
-        LivingEntity close = nearestThreat(6.0);
+        LivingEntity close = nearestThreat(npc.kiteDistance());
         if (close != null) {
             // kiting: someone got close - back away to shooting distance, like an archer player
             if (npc.getNavigation().isDone() || npc.tickCount % 20 == 0) {

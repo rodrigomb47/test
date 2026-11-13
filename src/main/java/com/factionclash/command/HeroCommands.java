@@ -147,7 +147,8 @@ public final class HeroCommands {
     public static List<String> sheet(HeroDef d, String style, int level) {
         List<String> out = new java.util.ArrayList<>();
         out.add(d.name() + (d.title() == null || d.title().isEmpty() ? "" : " \u00b7 " + d.title()) + " (" + d.id() + "): "
-                + d.rarity().id() + " " + d.behaviour().role().id() + ", fights as " + com.factionclash.logic.hero.HeroLoadout.roleId(d, style)
+                + d.rarity().id() + " " + d.behaviour().role().id() + ", fights as " + com.factionclash.logic.hero.HeroLoadout.combatRoleId(d, style)
+                + (com.factionclash.logic.hero.HeroLoadout.dutyRoleId(d) == null ? "" : ", works as " + com.factionclash.logic.hero.HeroLoadout.dutyRoleId(d))
                 + (com.factionclash.logic.hero.HeroLoadout.bareHanded(d, style) ? " with its bare hands" : "")
                 + ", " + d.basicAttack().style().id() + " basic attack, style " + (style == null ? "-" : style));
         int scale = FCConfig.BOSS_HEALTH_SCALE.get();

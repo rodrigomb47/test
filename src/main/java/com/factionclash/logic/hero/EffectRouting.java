@@ -71,7 +71,7 @@ public final class EffectRouting {
         };
     }
 
-    // ------------------------------------------------------------------ what the engine runs (A3)
+    // ------------------------------------------------------------------ what the engine runs (A3, A4)
 
     /**
      * The forms the engine runs today: v1's fourteen and the combo (task A3). The other format-2 forms ({@code charge},
@@ -83,13 +83,14 @@ public final class EffectRouting {
             Form.COMBO);
 
     /**
-     * The effects the engine runs today (A3, HERO_FORMAT.md 32 phase 4). {@code stun}, {@code taunt},
-     * {@code dispel}, {@code empower} and {@code summon} are A4's, the format-2 effects A5's.
+     * The effects the engine runs today: A3's (HERO_FORMAT.md 32 phase 4) and A4's control and the rest of v1
+     * ({@code stun}, {@code taunt}, {@code dispel}, {@code empower}, {@code summon}); the format-2 effects are A5's.
      */
     public static final Set<EffectType> EFFECTS = EnumSet.of(EffectType.DAMAGE, EffectType.DOT, EffectType.HEAL,
             EffectType.SHIELD, EffectType.EFFECT, EffectType.STAT, EffectType.KNOCKBACK, EffectType.PULL,
             EffectType.IGNITE, EffectType.FREEZE, EffectType.CLEANSE, EffectType.ENERGY, EffectType.COOLDOWN_CUT,
-            EffectType.MOVE_SELF, EffectType.MARK, EffectType.CLEAR_MARKS);
+            EffectType.MOVE_SELF, EffectType.MARK, EffectType.CLEAR_MARKS, EffectType.STUN, EffectType.TAUNT,
+            EffectType.DISPEL, EffectType.EMPOWER, EffectType.SUMMON);
 
     /**
      * Whether the engine runs the whole move: its form and every effect of it (its effects, each strike's and each

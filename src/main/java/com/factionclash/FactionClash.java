@@ -36,6 +36,7 @@ public final class FactionClash {
         NeoForge.EVENT_BUS.register(new com.factionclash.achieve.AchievementEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroCombatEvents());
+        NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroControlEvents());
     }
 
     private static void onAttributes(EntityAttributeCreationEvent event) {

@@ -16,9 +16,13 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -32,15 +36,26 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.WeakHashMap;
 
 /**
- * What heroes' moves leave on a living entity (HERO_FORMAT.md 13 and 19; task A3): its {@link StatusBook} of marks,
- * damage over time, stat modifiers, shield and freeze hold, applied to the entity the same way whoever carries it (a
- * player, an NPC, a hero or a monster). A data attachment ({@link HeroAttachments#STATUS}), saved with its entity and
+ * What heroes' moves leave on a living entity (HERO_FORMAT.md 13 and 19; tasks A3 and A4): its {@link StatusBook} of
+ * marks, damage over time, stat modifiers, shield, freeze hold, stun and taunt, applied to the entity the same way
+ * whoever carries it (a player, an NPC, a hero or a monster). A data attachment ({@link HeroAttachments#STATUS}), saved with its entity and
  * with every expiry as a game time, so a status keeps running across a save; stat modifiers are applied again on
  * load. Every entity carrying something is ticked once a server tick ({@link #tickAll}): expiry, the DoTs' seconds
  * ({@link HeroDamage#dotTick}), the freeze hold and the attribute modifiers of the stats.
+ *
+ * <p><b>Control</b> (A4, HEROES_V2 6.14-6.15): a stun stops every receiver for its seconds. Everyone stunned gets the
+ * {@code factionclash:stun} modifier of -100% on movement speed and jump strength; a goal-based mob (an NPC, a hero, a
+ * zombie) also gets {@link com.factionclash.combat.StunnedGoal}, which stops its attack and move goals (a hero's move in
+ * its wind-up is interrupted); a player's attacks, item use, interactions, block breaking and placing are cancelled by
+ * {@link HeroControlEvents}, and so is a stunned attacker's melee blow of any kind. The camera still turns and a
+ * knock-back still moves it. After a stun nobody can stun it again for twice its length. Vanilla bosses are immune. A
+ * taunt holds every receiver the same way: a mob or an NPC targets the taunting hero again every second (a
+ * brain-based mob keeps its own mind), and every receiver, players included, deals 50% less damage to anyone but the
+ * taunting hero for its seconds; the hero glows meanwhile. A dispel takes the helpful part away.
  */
 public final class HeroStatus {
     private final StatusBook book = new StatusBook();
@@ -111,6 +126,9 @@ public final class HeroStatus {
         }
         Expired x = book.expire(now);
         if (x != Expired.NONE) {
+            if (x.stun() && !book.stunned(now)) {
+                releaseStun(e);
+            }
             if (x.shield() > 0) {
                 removeShield(e, x.shield());
             }
@@ -119,6 +137,15 @@ public final class HeroStatus {
                 if (g != null && g.getDuration() > 0 && g.isAmbient()) {
                     e.removeEffect(MobEffects.GLOWING);
                 }
+            }
+        }
+        if (book.stunned(now)) {
+            holdStun(e);
+        }
+        if ((now & 15) == 0 && e instanceof Mob m) {
+            String by = book.tauntedBy(now);
+            if (by != null) {
+                retarget(m, by);
             }
         }
         if (book.frozen(now) && e.canFreeze()) {
@@ -142,6 +169,7 @@ public final class HeroStatus {
     /** Drops everything and undoes what it changed on the entity (death). */
     void clearAll(LivingEntity e) {
         boolean hadStats = book.entries().stream().anyMatch(x -> x.kind == StatusBook.Kind.STAT);
+        releaseStun(e);
         book.clear();
         book.consumeStatsDirty();
         if (hadStats) {
@@ -248,6 +276,173 @@ public final class HeroStatus {
             max.removeModifier(SHIELD_ID);
         }
         e.setAbsorptionAmount((float) Math.max(0, e.getAbsorptionAmount() - left));
+    }
+
+    // ------------------------------------------------------------------ control (A4: stun, taunt, dispel)
+
+    /** The modifier that stops a stunned entity's walking and jumping (-100%), on players and NPCs alike. */
+    public static final ResourceLocation STUN_ID = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "stun");
+
+    /** Vanilla's bosses ignore stuns and taunts (v1 13.4); a hero is not one of them here. */
+    public static boolean immuneToControl(LivingEntity e) {
+        return HeroSenses.boss(e) && !(e instanceof HeroEntity);
+    }
+
+    /** A brain-based mob (a villager, a piglin, a warden: no goals) keeps its own mind under a taunt (v1 13.4). */
+    public static boolean brainBased(Mob m) {
+        return m.goalSelector.getAvailableGoals().isEmpty();
+    }
+
+    /** Whether the entity is stunned now. */
+    public static boolean stunned(LivingEntity e) {
+        HeroStatus s = peek(e);
+        return s != null && !s.book.isEmpty() && s.book.stunned(e.level().getGameTime());
+    }
+
+    /**
+     * Stuns {@code r} for {@code seconds}, the same for every receiver (HEROES_V2 6.15): false, and nothing changes,
+     * when it is a vanilla boss or an earlier stun's immunity still holds (6.14: it belongs to the receiver, whoever
+     * stunned it). A held item is lowered (a drawn bow, a raised shield, food); a hero's move in its wind-up is
+     * interrupted.
+     */
+    public static boolean stun(LivingEntity r, double seconds) {
+        if (r.level().isClientSide || !r.isAlive() || immuneToControl(r)) {
+            return false;
+        }
+        HeroStatus s = of(r);
+        if (!s.book.stun(seconds, r.level().getGameTime())) {
+            return false;
+        }
+        holdStun(r);
+        if (r.isUsingItem()) {
+            r.stopUsingItem();
+        }
+        if (r instanceof Mob m) {
+            com.factionclash.combat.StunnedGoal.ensure(m);
+            m.getNavigation().stop();
+            m.setJumping(false);
+        }
+        if (r instanceof HeroEntity h) {
+            h.combat().stunned();
+        }
+        r.hurtMarked = true;
+        return true;
+    }
+
+    /** Keeps the stun's modifiers on (applied at the stun and again on load). */
+    static void holdStun(LivingEntity e) {
+        modifier(e, Attributes.MOVEMENT_SPEED, -1);
+        modifier(e, Attributes.JUMP_STRENGTH, -1);
+    }
+
+    /** Takes the stun's modifiers off when it is no longer stunned (a cleanse removed the stun). */
+    static void releaseIfFree(LivingEntity e) {
+        if (!stunned(e)) {
+            releaseStun(e);
+        }
+    }
+
+    static void releaseStun(LivingEntity e) {
+        modifier(e, Attributes.MOVEMENT_SPEED, 0);
+        modifier(e, Attributes.JUMP_STRENGTH, 0);
+        if (e instanceof HeroEntity h && com.factionclash.logic.hero.HeroActions.code(h.action())
+                == com.factionclash.logic.hero.HeroActions.actionCode("stun")) {
+            h.stopAction(); // the stun pose ends with the stun
+        }
+    }
+
+    private static void modifier(LivingEntity e, Holder<Attribute> attr, double amount) {
+        AttributeInstance inst = e.getAttribute(attr);
+        if (inst == null) {
+            return;
+        }
+        AttributeModifier old = inst.getModifier(STUN_ID);
+        if (amount == 0) {
+            if (old != null) {
+                inst.removeModifier(STUN_ID);
+            }
+        } else if (old == null) {
+            inst.addTransientModifier(new AttributeModifier(STUN_ID, amount, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        }
+    }
+
+    /**
+     * Taunts {@code r} for {@code seconds} by {@code hero} (HEROES_V2 6.15): a goal-based mob or NPC targets the hero
+     * now and again every 16 ticks; every receiver deals half damage to anyone but the hero meanwhile
+     * ({@link #tauntFactor}); the hero glows for the taunt's seconds (presentation). False for a vanilla boss.
+     */
+    public static boolean taunt(LivingEntity r, HeroEntity hero, double seconds) {
+        if (r.level().isClientSide || !r.isAlive() || immuneToControl(r)) {
+            return false;
+        }
+        HeroStatus s = of(r);
+        s.book.taunt(hero.getStringUUID(), seconds, r.level().getGameTime());
+        if (r instanceof Mob m && !brainBased(m)) {
+            m.setTarget(hero);
+        }
+        int ticks = (int) com.factionclash.logic.hero.HeroRules.ticks(seconds);
+        MobEffectInstance glow = hero.getEffect(MobEffects.GLOWING);
+        if (glow == null || glow.getDuration() < ticks) {
+            hero.addEffect(new MobEffectInstance(MobEffects.GLOWING, ticks, 0, true, false));
+        }
+        return true;
+    }
+
+    private static void retarget(Mob m, String heroUuid) {
+        if (brainBased(m) || !(m.level() instanceof ServerLevel sl)) {
+            return;
+        }
+        UUID id;
+        try {
+            id = UUID.fromString(heroUuid);
+        } catch (IllegalArgumentException ex) {
+            return;
+        }
+        Entity h = sl.getEntity(id);
+        if (h instanceof HeroEntity hero && hero.isAlive() && m.getTarget() != hero && m.distanceToSqr(hero) < 48 * 48) {
+            m.setTarget(hero);
+        }
+    }
+
+    /**
+     * The share of its damage an attacker deals to {@code target}: 0.5 while a taunt binds it to another hero (to the
+     * taunting hero itself, the full amount), else 1. The same for players, NPCs, heroes and monsters (6.15).
+     */
+    public static double tauntFactor(LivingEntity attacker, Entity target) {
+        HeroStatus s = peek(attacker);
+        if (s == null || s.book.isEmpty()) {
+            return 1;
+        }
+        String by = s.book.tauntedBy(attacker.level().getGameTime());
+        return by == null || by.equals(target.getStringUUID()) ? 1 : 0.5;
+    }
+
+    /**
+     * {@code dispel} (v1 13.4): the receiver's helpful potion effects (absorption included), its helpful hero stat
+     * modifiers and its hero shield. Returns whether anything went.
+     */
+    public static boolean dispel(LivingEntity r) {
+        List<Holder<MobEffect>> good = new ArrayList<>();
+        for (MobEffectInstance i : r.getActiveEffects()) {
+            if (i.getEffect().value().getCategory() == MobEffectCategory.BENEFICIAL) {
+                good.add(i.getEffect());
+            }
+        }
+        good.forEach(r::removeEffect);
+        boolean any = !good.isEmpty();
+        HeroStatus st = peek(r);
+        if (st != null && !st.book.isEmpty()) {
+            StatusBook.Dispelled d = st.book.dispel();
+            if (d.stats()) {
+                st.book.consumeStatsDirty();
+                applyStats(r, r.level().getGameTime());
+            }
+            if (d.shield() > 0) {
+                removeShield(r, d.shield());
+            }
+            any |= d.any();
+        }
+        return any;
     }
 
     // ------------------------------------------------------------------ saving

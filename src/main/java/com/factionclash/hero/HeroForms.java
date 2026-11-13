@@ -41,10 +41,13 @@ public final class HeroForms {
     /** A target may drift this much past a form's range during the wind-up before the move is called off. */
     public static final double RANGE_SLACK = 2.0;
 
-    /** Never touched by a hero's move: animals, villagers, golems, armour stands, display copies. */
+    /**
+     * Never touched by a hero's move: animals, villagers, golems, armour stands, display copies (a hero's summon is no
+     * bystander: it is of its hero's side, A4).
+     */
     static boolean bystander(LivingEntity e) {
-        return e instanceof Animal || e instanceof AbstractVillager || e instanceof AbstractGolem || e instanceof ArmorStand
-                || e instanceof FactionNpc n && n.isDisplayOnly();
+        return (e instanceof Animal || e instanceof AbstractVillager || e instanceof AbstractGolem || e instanceof ArmorStand
+                || e instanceof FactionNpc n && n.isDisplayOnly()) && !HeroSummons.isSummon(e);
     }
 
     /** Whether {@code e} is an enemy of the hero (see the class comment); the same test for players and NPCs. */
@@ -57,6 +60,9 @@ public final class HeroForms {
         }
         if (e instanceof Player p) {
             return p instanceof ServerPlayer sp && CombatRules.isEnemyPlayer(hero, sp);
+        }
+        if (HeroSummons.isSummon(e)) {
+            return Diplomacy.hostile(hero.getServer(), hero.getFaction(), HeroSummons.factionOf(e));
         }
         return e == hero.getTarget() || e instanceof Enemy && CombatRules.isHostileMonster(e);
     }

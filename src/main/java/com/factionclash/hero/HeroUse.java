@@ -31,6 +31,8 @@ public final class HeroUse {
     double healEnergy;
     /** Whether anything of the use landed on an enemy (followups, A5's timing). */
     public boolean landed;
+    /** Whether the hero already struck its taunting pose for this use (A4). */
+    boolean taunted;
     /** Where the area of a nova, zone or leap is (its allies-in-area effects use it). */
     Vec3 areaCenter;
     double areaRadius;

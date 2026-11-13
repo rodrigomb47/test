@@ -8,14 +8,15 @@ public final class Alerts {
     private Alerts() {
     }
 
+    /** Its side's fighters within {@code radius} take up the threat: soldiers and heroes of any duty (v1 29.3, A4). */
     public static int callGuards(FactionNpc caller, LivingEntity threat, double radius) {
         if (threat == null || !threat.isAlive() || CombatRules.sameSide(caller, threat)) {
             return 0;
         }
         int n = 0;
         for (FactionNpc g : caller.level().getEntitiesOfClass(FactionNpc.class, caller.getBoundingBox().inflate(radius),
-                o -> o != caller && o.isAlive() && !o.isDisplayOnly() && o.getFaction() == caller.getFaction() && o.getRole().combatant)) {
-            if (g.getTarget() == null || !g.getTarget().isAlive()) {
+                o -> o != caller && o.isAlive() && !o.isDisplayOnly() && o.getFaction() == caller.getFaction() && o.fightsLikeSoldier())) {
+            if ((g.getTarget() == null || !g.getTarget().isAlive()) && g.senses(threat)) {
                 g.setTarget(threat);
                 n++;
             }
@@ -33,7 +34,7 @@ public final class Alerts {
         }
         int n = 0;
         for (FactionNpc g : caller.level().getEntitiesOfClass(FactionNpc.class, caller.getBoundingBox().inflate(radius),
-                o -> o != caller && o.isAlive() && !o.isDisplayOnly() && o.getFaction() == caller.getFaction() && o.getRole().ranged)) {
+                o -> o != caller && o.isAlive() && !o.isDisplayOnly() && o.getFaction() == caller.getFaction() && o.rangedFighter())) {
             if (g.getTarget() == null || !g.getTarget().isAlive()) {
                 g.setTarget(threat);
                 n++;

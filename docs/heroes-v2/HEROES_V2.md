@@ -2753,7 +2753,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file. Done 2026-11-13: `HeroRegistry` reads the format-2 definitions (`hero/HeroDefinitions`, a reload listener on `data/factionclash/heroes`; built-in heroes only; operators' overrides merged by `logic/hero/HeroOverride` with each problem naming its own file and line; `logic/hero/HeroAssembly`), a broken or removed definition leaves its hero dormant (neutral model, plain soldier, `(dormant)`); the entity takes its definition (`logic/hero/HeroLoadout`: stats with growth, boss health at all times and the same against anyone, role, kit with no weapon for a fists hero), the name tag with `[Fighting N%]`, lines with v1's rate limit, audiences and speech bubbles (`logic/hero/HeroSpeech`), the revival block and the `revival_rite` talent on the 10-minute rule with the 30 s floor, `/fc hero check` and `/fc hero reload`, the test rig's minimal format-2 definition, the war council counting heroes by war power, `sim.py`'s hero and council lines; 829 unit tests (36 new) and 159 GameTests (10 new); the moves themselves run from A3/A5 ("A1b as built" below); reviewed 2026-11-13 ("Review of F1-F5 and A1b" below) |
 | A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash. Done 2026-11-12: `client/hero/` (`HeroModel`, `HeroRenderer`, `HeroFace`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals`), `hero/HeroAnimator` (the three controllers), `hero/HeroLook`, `hero/HeroTimingFiles`, pure `logic/hero/` (`FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); 230 unit tests (39 new) and 149 GameTests (4 new); in the Xvfb viewer the test rig idles, walks, swings (`hit` logged at animation tick 10.4-10.7 for the file's 10), blinks, shows all 12 moods, talks, tints its sash per faction, holds a pickaxe and mines, shows its phase-2 halo and glowing eyes, and drops its `fine_` bones beyond 20 blocks; the six style fixtures stand beside it (`docs/screenshots/hero_a2_*`). Reviewed 2026-11-12: the per-frame allocations of the render path removed, the walk/run flicker at an NPC's travel pace fixed ("Review of A0-A2" below); checkpoint 1 stands |
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core. Done 2026-11-13: a hero picks its moves with F3's selector after the fight's opening gap and runs each select -> wind-up -> hit ticks -> recovery (`hero/HeroCombat`, `combat/HeroAbilityGoal`, `logic/hero/MovePlan`, where A5 plugs in the timing files, `DATA_ACTION` and interrupts); v1's fourteen forms and the combo, with projectile and zone entities and chains; the effects of phase 4 (damage, dot, heal, shield, effect, stat, knockback, pull, ignite, freeze, cleanse, energy, cooldown_cut, move_self, mark, clear_marks) with Amounts at hit time and `Conditions` per receiver; element damage types and resistances; the slot caps per use and receiver against any target (`logic/hero/UseLedger`); marks, stacks and statuses on any entity, saved with it (`hero/HeroStatus`, `logic/hero/StatusBook`); energy built (ranged hits too) and spent by the ultimate; cooldowns and energy kept across a save; the thrown basic attack's own goal (`combat/HeroThrowGoal`); a move with a later task's form or effect is not picked yet; `heroes.powerScale`, `maxHit`, `maxDotPerSecond`; 877 unit tests (41 new) and 183 GameTests (23 new), every effect that can land on a player giving an NPC soldier and a mock player the same numbers ("A3 as built" below) |
-| A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5 |
+| A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5. Done 2026-11-13: stun, taunt, dispel, empower and summon run (`hero/HeroStatus`, `HeroEffects`, `HeroSummons`, `combat/StunnedGoal`, `hero/HeroControlEvents`), the same on every receiver (6.15: a stun stops a player as it stops an NPC, with its immunity from any source; a taunt halves anyone's damage to others; blindness cuts an NPC's ranges); the format-2 states and v1's empowered state (`hero/HeroStates`; the selector reads `skills_locked` and a state's move list); passives with every trigger the game has now and the loop guard (`logic/hero/PassiveBook`, `hero/HeroPassives`); `combat/HeroTargetGoal` (focus, protects, aggression radius, no attack tokens; `logic/hero/TargetRules`); the leash by aggression, the skirmisher's step back and a held keep distance; duties (a worker-duty hero takes that worker's role, tool and job and still fights like a soldier) and alarms; the v1 base abilities as their five talents (`hero/HeroTalents`); combat XP and growth; telegraph poses; the ground leap and dash checked at drops and walls; `heroes.summons`, `heroes.xpRate`; 911 unit tests (34 new) and 203 GameTests (20 new), every control checked on an NPC soldier and a mock player ("A4 as built" below) |
 | A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5 |
 | A6 | Boss controller, one mode (section 6): the permanent boss health, the engaged-enemy set and the fight clock, the per-hit cap for every attacker, poise and stagger, phases and transitions, reactions to players and NPCs alike, weak points, enrage and reset, arena checks, telegraph decals (access transformer), the intro title and boss bar for nearby players with the `fled` and `fallen` end states, death without a yield and the rewards to the winning side; no attack tokens, no player-only rule (15.6); operator test hooks `/fc admin hero health/poise/escape/target-state` | A5 | L | the boss and equal-treatment GameTests of 14.5; split into A6a (health, fight clock, cap, poise, phases, decals) and A6b (reactions, weak points, enrage, arena, intro, bar, the end of a fight and rewards, hooks) if it grows |
 | A7 | `HeroDecoy` | A2, A5 | M | `decoyPopsAndHasNoShadow`; a screenshot of a decoy beside its hero |
@@ -3549,6 +3549,127 @@ phase 4, and the row above:
   poise, phases and decals (A6); custom projectile and zone looks (A9); the station sheet's moves. Not yet checked on a
   dedicated server in a campaign: only the test rig ships, and its one move (a dash) runs now.
 
+A4 as built (2026-11-13), where it goes beyond or differs from 3.5, 6.6, 6.14-6.15, 7.1-7.2, 8, 12.9, HERO_FORMAT 8,
+13.4-13.5, 17-22 and 32 phase 5, and the row above:
+- **Stun** (`HeroStatus.stun`, `logic/hero/StatusBook`): one rule for every receiver (6.15). Everyone stunned gets
+  `factionclash:stun` (-100% movement speed and jump strength); a goal-based mob, an NPC or a hero gets
+  `combat/StunnedGoal` (priority 0, MOVE and LOOK, added the first time it is stunned and again when it loads stunned),
+  which stops its attack, move and ability goals; a player's attacks, item use, block and entity interactions, block
+  breaking and placing are cancelled by `hero/HeroControlEvents`, as is any stunned attacker's melee blow (a player's
+  or an NPC's) and any item use a stunned entity starts. The camera still turns and a knock-back still moves it. The
+  immunity (`BossRules.stunImmuneUntil`, F3) is kept in the receiver's own book: no stun from anyone lands until 3x the
+  stun's length from its start, so at most 2 s stopped in any 6 s; a cleanse ends a stun but not its immunity; the 32
+  status cap never drops a stun. The slot's stun seconds per use and receiver (2 s a skill, 3 an ultimate, 1 a passive
+  or finisher, none on a basic hit) are held by `UseLedger.Kind.STUN`, which no power or gear scales. A hero stunned in
+  its wind-up loses the move through the interrupt path A3 left (`HeroCombat.stunned` -> `stopRun`: half the cooldown
+  back; A6's escape takes the same path) and plays `stun`. Vanilla bosses are immune.
+- **Taunt**: the newest taunt binds the receiver to its hero (`StatusBook.taunt`); a goal-based mob or NPC targets the
+  hero at once and again every 16 ticks (a brain-based mob keeps its mind); every receiver, players included, deals 50%
+  to anyone but that hero (`HeroStatus.tauntFactor`, read for all damage with an attacker); the hero glows for the
+  taunt's seconds (vanilla Glowing, seen by everyone: presentation) and plays `taunt` once a use.
+- **Dispel**: helpful potion effects (absorption included), helpful hero stats and the hero shield (`StatusBook.dispel`).
+- **Blindness and darkness on an NPC or a hero** (6.15): its follow range is cut to 5 blocks, it takes and is
+  alarmed onto nothing farther (`FactionNpc.senses`, also read by `defenceAlarm` and `Alerts`), its bow shoots 5 blocks
+  and a target farther than 6 is dropped; a hero's target goal searches 5 blocks.
+- **States** (`hero/HeroStates`, 12.9; v1's `empowered` is the mapped first state): `empower` enters one for its
+  seconds (refresh, or replace another); its stat bonuses sit on the hero's own status book (so they show, save and
+  are cleansed or dispelled like any stat: a dispel takes a state's helpful bonuses too), its `on_hit` effects join
+  the basic attack's under one on-hit cap, its `size` sets `generic.scale` (the hitbox clamp of 3.6 holds), its aura
+  shows every 10 ticks, its `face` holds the mood, it plays `state.<n>` and says its line on entering; it is saved (name
+  and end as a game time) and ends on time. The selector reads it (`MoveSelector.stateAllows`): `skills_locked` leaves
+  only the ultimates, a state's `moves` replace the move list (the ultimates stay), a move whose only effect enters the
+  state it is in is not cast (v1 18). A phase or a passive enters a state through `HeroCombat.enterState` (A6). The
+  bones a state shows or hides need a client flag: left for A5 with `DATA_ACTION`.
+- **Passives** (`logic/hero/PassiveBook`, `hero/HeroPassives`, v1 17): cooldowns (the floors F1 already applied),
+  chance, `once_per_fight`, the `if` read with the event's enemy as the target, the low-health re-arm 20 points above,
+  once per ally per 20 s for `on_ally_low_health`, `every` on its period while fighting, `always` stat bonuses held
+  while their `if` holds (checked every second) and taken off when it stops; forms `self`, `trigger_enemy`,
+  `trigger_ally`, `ally`, `allies`, `nova`, `bolt` and `shot` (a passive shot is never a basic hit), with the passive
+  slot's caps. Hooked now: `on_hit`, `on_crit`, `on_hurt` (anyone not of its side that hurt it), `on_kill`, `on_skill`,
+  `on_ultimate`, `on_ally_ultimate` (24 blocks), `on_fight_start`, `on_low_health`, `on_ally_low_health`,
+  `on_ally_hurt`, `on_ally_attack` (an ally's weapon or arrow within 12 blocks), `on_mark_full`, `every`, `always`,
+  and two of format 2's: `on_target_heal` and `on_guard_broken` (its own blow blocked by a shield, whoever held it).
+  `on_phase`, `on_enrage`, `on_stagger`, `on_counter`, `on_add_died`, `on_intro`, `on_escape` and `on_last_stand` are
+  read the same way when A5, A6 and A12 call `HeroCombat.trigger` with them. **The loop guard** (v1 17.3): damage from
+  passives and summons never sets off `on_hit`, `on_crit` or `on_ally_attack` (a hero's move or passive deals hero
+  damage, which is no weapon blow; a summon's bite is flagged), a passive's own effects never set it off again, and
+  at most 8 firings a hero a second, the rest dropped with one warning. Hooks inside another entity's hurt, heal or
+  shield block answer on the hero's next tick (`HeroCombat.triggerLater`), so a passive never strikes into a hurt
+  still being worked out.
+- **Summons** (`hero/HeroSummons`, `logic/hero/SummonRules`, v1 20): plain vanilla wolves, snow golems and iron golems
+  (their own looks are A8's) tagged `factionclash:summon` (owner, faction, expiry), their target goals replaced by "the
+  hero's target, else the nearest enemy of its side within 16" and a follow-the-hero goal (leash 16); they count as
+  their faction for `CombatRules.factionOf` (no friendly fire, an enemy hero's moves hit them, they are no bystanders);
+  they vanish at their time, at the hero's death, without their hero for 100 ticks after a chunk load, or 48 blocks
+  away; no loot, no experience, never tamed, no snow trail; 3 a hero (the oldest go), one iron golem (replaced), 12 a
+  faction (fewer called); `heroes.summons`.
+- **Target and spacing** (`combat/HeroTargetGoal`, `logic/hero/TargetRules`): it replaces the soldiers' nearest-target
+  goals for heroes (retaliation stays above it); every 2 s (0.5 s with no target), within 12/20/28 blocks by
+  aggression, in sight: protection first (`protects`, or the `threat_to_allies` focus: an enemy whose target or last
+  victim of 5 s is of its side, or a worker for `workers`), then the focus, the current target kept between equals.
+  **No attack tokens**: nothing counts who else presses a target (`threeHeroesPressOneTarget` and its player twin). An
+  honour of 60 lets an escaping hero go. The melee leash follows the aggression (32/56/80); a skirmisher steps 3 blocks
+  back after each landed blow until its next swing; a bow hero kites inside half its keep distance; a melee hero with
+  a keep distance that is no skirmisher (a melee support or controller) holds it while a move of its that reaches that
+  far is ready, backs away inside half of it, and closes in when nothing is ready (A4's reading of v1 8, kit-gaps "A4
+  decisions"). `protects: heart` keeps no ground yet (the base-defence stay is L4's).
+- **Duty and alarms** (v1 8 and 25.6, 7.1): a worker duty makes the hero that worker (`HeroLoadout.dutyRoleId`; its
+  role, roster entry and needs count; the sheet says "works as"); it takes the duty's tool from the storehouse (its
+  bound kit weapon goes to its backpack, never lost) and works the job between fights; it draws its kit weapon again
+  within 5 ticks of having a target; it fights like a soldier (`FactionNpc.fightsLikeSoldier`: no civilian flight,
+  no half-health stand-down, breaks and builds toward a target as soldiers do), only a woodcutter's pillar keeps it out
+  of a fight, and alarms call heroes of any duty (`Alerts.callGuards`, `defenceAlarm`). Guard heroes keep their style's
+  soldier role. Ordinary NPCs read the same methods with the same results as before.
+- **Base abilities** (v1 21, read as talents since F2; `hero/HeroTalents`): `aura`, `rally`, `drill`, `mend` and
+  `lookout` with the talents' tier numbers (`logic/leader/Talents`), at the hero's home base (16 blocks round the walls,
+  not on a raid), the strongest copy of each at a base: `FactionNpc.affix` adds the aura's stacks within the affix's cap
+  and job rule, `Recruitment.foodCost` takes off the rally, the drill gives soldiers their XP each in-game hour by day,
+  mend heals allies within 16 out of a fight (players and NPCs alike), lookout calls its side's free fighters onto
+  enemies it sees and gives one faction line a minute. Rebuilt every 40 ticks. The other ten talents are L5's.
+- **Combat XP and growth** (v1 22.1, `HeroRules`): a kill 10 + the victim's max health / 2, the ultimate 5, healing or
+  shielding another 1 per 5 points (carried across uses; healing itself earns none), each in-game day alive 40 (saved),
+  a won raid it survived 100 and a defence of its base that held 30 (at the end of a raid, `HeroManager.raidEnded`), x
+  `heroes.xpRate`; a level grows its numbers (A1b's `applyNumbers`) and rolls an affix as any NPC.
+- **Telegraph poses** (v1 10.5): a move's `look.pose` is held through its wind-up as an action clip (swing `attack.1`,
+  block `guard`, a drawn bow, spear or crossbow `attack.ranged`, horn `emote.cheer`, spyglass `emote.think`;
+  `HeroActions.telegraphPose`) and ends at the release; A5 replaces it with the move's own `move.<id>` clip.
+- **Leap and dash** stay A3's ground versions; A4 checks that a dash stops at the edge of a drop and at a wall with the
+  hero on its feet and unhurt (`dashStopsAtDropsAndWalls`); a stun ends a running leap or dash with its move.
+- **Tests**: `PassiveBookTest` (11), `TargetRulesTest` (7), `SummonRulesTest` (5) and new cases in `StatusBookTest`
+  (6), `MoveSelectorTest` (2), `AbilityRuntimeTest` (1), `HeroActionsTest` (1) and `HeroLoadoutTest` (1): 911 unit tests.
+  `HeroControlGameTests` (20): `stunStopsPlayerLikeNpc` (one nova stops an NPC soldier and a mock player alike: speed
+  and jump at 0, no blow lands, no shield goes up, no item is thrown, the soldier's goals held and its feet still, both
+  free on time, a second hero's stun and any stun inside the window doing nothing), `heroStunInterruptsWindup`,
+  `heroTauntRetargets` (the soldier re-targeted and held, the soldier's and the player's blows on others halved,
+  their blows on the hero whole), `dispelTakesTheHelpfulPart` (NPC and player), `heroEmpowerAppliesAndEnds`
+  (Natsuho's Midnight Frenzy: the frenzy's stats, face and bleed, kept over a save, gone after 8 s),
+  `heroSummonFightsAndVanishes`, `heroPassiveOnHitFires`, `heroFollowUpDoesNotLoop` (two `on_ally_attack` heroes each
+  join one ally blow once and never each other's, nor a summon's bites), `heroMarkFullFires`,
+  `heroPassivesAnswerNpcAndPlayerAlike` (`on_hurt` marks an NPC and a player alike, `on_low_health`, `always`),
+  `threeHeroesPressOneTarget` and `threeHeroesPressOnePlayer`, `skirmisherStepsBackAfterAHit`,
+  `meleeSupportHoldsItsDistance`, `heroWorksItsDuty` (a fisherman-duty hero catches fish at a pond),
+  `heroAnswersAlarmsAndDrawsItsWeapon`, `heroBaseAbilitiesWork` (aura, rally, mend on an NPC and a player alike),
+  `heroCombatXpAndGrowth`, `dashStopsAtDropsAndWalls` and `blindedNpcSeesFiveBlocks`: 203 GameTests, all passing.
+  Sabotage checks, each caught: seven in the pure rules (no loop guard, no firing limit, an immunity only as long as
+  the stun, no protection first, no summon cap per hero, stun seconds scaled by power, states ignored) and 23 in the
+  game over four runs (a stunned player's blow cancelled neither as an attack nor as damage, which first went unseen
+  because a hurt cooldown hid the blow, so the test now clears it; players never stunned; a stun that does not
+  interrupt; no taunt cut; no re-taunt; a dispel that leaves the shield; no state stats; summons that never expire;
+  no `on_hit`; no `on_hurt`; no `on_mark_full`; summon bites not guarded; attack tokens; no skirmish; no held distance;
+  no duty role; no weapon drawn; no aura; mend skipping players; no kill XP; a dash blind to drops; blindness ignored
+  (also through the follow range and the dropped target, which first hid a narrower sabotage)).
+- **Elsewhere**: `HeroEntity.live()` (the heroes in server levels, a snapshot made only when one joins or leaves);
+  `CombatRules.factionOf` knows summons; the friendly-fire rule covers summons; `HeroProjectile.launchPassive`;
+  `HeroUse.taunted`; `FactionNpc` hooks `fightsLikeSoldier`, `jobIgnoresCombat`, `rangedFighter`, `meleeLeash`,
+  `kiteDistance`, `skirmishes`, `holdsDistance`, `senses` (ordinary NPCs answer as before); `FCGameTests`'s pond helpers
+  are package-visible for the duty test. New config `[heroes]` `summons`, `xpRate` (`docs/factionclash-common.toml`
+  regenerated from a fresh server).
+- **Left open**: the format-2 forms and effects, `DATA_ACTION` with the timing files, a state's bones (A5); the boss
+  triggers (`on_phase`, `on_enrage`, `on_stagger`, `on_intro`), the decals (A6); `on_escape`, `on_last_stand` (A6, A12);
+  summons' own looks (A8); the other ten talents and the work-mastery numbers (L5, L5m); `protects: heart` (L4); heroes
+  in raid parties, so the won-raid XP waits for L4/A12. Not yet checked on a dedicated server in a campaign: only the
+  test rig ships (a guard with one dash), so A4 changes nothing it does in a campaign but its target choice.
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3698,7 +3819,8 @@ both (14.5).
   escaping hero when its own honour is 60 or more.
 - `HeroStatus` (A4): a stun holds a player (the speed and jump modifier, the cancelled attack, use, place and break
   events), a taunt halves every receiver's damage to others, blindness and darkness cut an NPC's ranges, a
-  `guard_break` keeps an NPC's shield down (6.15).
+  `guard_break` keeps an NPC's shield down (6.15). Done in A4 (15.2 "A4 as built") but for `guard_break`, a format-2
+  effect (A5).
 - `HeroActions` (as built in A1a; the rename is done in F3): bit 7 of `DATA_STATE` is renamed from `STATE_YIELDING` to
   `STATE_ESCAPING` (same bit, `HeroActionsTest` updated); codes 21 and 22 keep their numbers and clip names until the
   art follow-up below

@@ -116,9 +116,19 @@ public final class Recruitment {
         return new GearPlan(finished, materials, arrow, arrowMaterials);
     }
 
+    /**
+     * The food a recruit costs at this base: {@code recruitment.foodValue}, less a hero's {@code rally} at the base
+     * (v1 21: {@code round(food x (1 - rally))}; task A4).
+     */
+    public static int foodCost(BaseState base) {
+        int food = FCConfig.RECRUIT_FOOD_VALUE.get();
+        double rally = com.factionclash.hero.HeroTalents.rallyPercent(base);
+        return rally <= 0 ? food : (int) Math.round(food * (1 - rally / 100.0));
+    }
+
     /** True if the base can pay for {@code role} right now; {@code why} receives what is missing. */
     public static boolean canAfford(ServerLevel level, BaseState base, NpcRole role, List<String> why) {
-        int needFood = FCConfig.RECRUIT_FOOD_VALUE.get();
+        int needFood = foodCost(base);
         FoodPayment.Plan plan = FoodPayment.plan(foodOptions(level, base), needFood);
         if (plan == null) {
             why.add("food (" + storedFoodValue(level, base) + "/" + needFood + " hunger points)");
@@ -129,7 +139,7 @@ public final class Recruitment {
 
     public static Result recruit(ServerLevel level, CampaignData data, BaseState base, NpcRole role, String reason) {
         List<String> missing = new ArrayList<>();
-        int needFood = FCConfig.RECRUIT_FOOD_VALUE.get();
+        int needFood = foodCost(base);
         FoodPayment.Plan food = FoodPayment.plan(foodOptions(level, base), needFood);
         if (food == null) {
             missing.add("food (" + storedFoodValue(level, base) + "/" + needFood + " hunger points)");

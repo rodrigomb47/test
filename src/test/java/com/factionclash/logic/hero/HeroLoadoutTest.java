@@ -154,4 +154,17 @@ class HeroLoadoutTest {
         assertNotEquals(s, HeroLoadout.signature(List.of(a), true), "the arrow counts");
         assertNotEquals(s, HeroLoadout.signature(List.of(), false));
     }
+
+    @Test
+    void aWorkerDutyMakesTheRoleButNotHowItFights() {
+        HeroDef guard = melee("[\"iron_sword\"]");
+        assertEquals("guard", guard.behaviour().duty());
+        assertNull(HeroLoadout.dutyRoleId(guard));
+        assertEquals("swordsman", HeroLoadout.roleId(guard, "katana"));
+        String miner = V2Files.hero2("").replace("\"combat_role\": \"striker\"", "\"combat_role\": \"striker\", \"duty\": \"miner\"");
+        HeroDef m = V2Files.def(miner);
+        assertEquals("miner", HeroLoadout.dutyRoleId(m));
+        assertEquals("miner", HeroLoadout.roleId(m, "katana"), "it counts as that worker (v1 8)");
+        assertEquals("swordsman", HeroLoadout.combatRoleId(m, "katana"), "and fights with its style");
+    }
 }

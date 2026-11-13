@@ -246,3 +246,52 @@ projectiles and zones; HEROES_V2.md 15.2 "A3 as built") decided what the kits an
 - **Looks for now**: projectiles look like vanilla items, zones and novas are particle rings, a wind-up shows a smoke
   ring where a nova, zone or leap will land, an ultimate with a `lightning` look calls a visual-only bolt. The decals,
   the timing files' frames and custom models are A5, A6 and A9's.
+
+## A4 decisions on control, passives, states and behaviour (2026-11-13)
+
+A4 (stun, taunt, dispel, empower and summon, states, passives, the target goal, spacing, duties, base abilities and
+combat XP: `HeroStatus`, `HeroStates`, `HeroPassives`, `HeroSummons`, `HeroTalents`, `HeroControlEvents`,
+`combat/HeroTargetGoal`, `combat/StunnedGoal`; HEROES_V2.md 15.2 "A4 as built") decided what the kits and the format
+leave open:
+
+- **A worker duty makes the hero that worker.** 3.2 gives a hero its style's soldier role; with a worker `duty`
+  (fisherman, miner, woodcutter, ...) its role is now that worker (`HeroLoadout.dutyRoleId`): it counts toward the
+  base's needs and roster as one, takes the duty's tool from the storehouse and works the job between fights. Its bound
+  kit weapon goes to its backpack while it holds the tool (never dropped, never lost) and is drawn again within 5
+  ticks of having a target. It still fights like a soldier (no civilian flight, no half-health stand-down, no
+  withdrawal), and alarms call it whatever its duty. `guard` and `court` keep the style's soldier role. The sheet shows
+  both ("fights as X, works as Y").
+- **A stun on a player** leaves the camera free and lets a knock-back move them, as it does an NPC; everything a
+  player could do with their hands (attack, use, interact, break, place) is cancelled while it lasts. A stunned NPC's
+  or player's melee blow is cancelled as damage too, so nothing slips through between the two.
+- **A taunted hero glows for everyone** (vanilla Glowing, presentation only): the taunted player sees whom to hit, and
+  so does everyone else.
+- **Healing XP is for others.** Healing or shielding another (player or NPC of its side) earns 1 XP per 5 points,
+  the remainder carried to the next heal; healing itself earns none (energy still counts self-healing, A3).
+- **Passive triggers raised inside another entity's hurt, heal or shield block answer on the hero's next tick**
+  (`on_ally_hurt`, `on_ally_low_health`, `on_ally_attack`, `on_target_heal`, `on_guard_broken`, and `on_hit`, which a
+  hero's arrow raises inside its target's hurt); the hero's own events (`on_hurt`, `on_low_health`, `on_crit` after
+  its blow has landed, `on_kill`, `on_skill`, `on_ultimate`, `on_mark_full`, `on_fight_start`) answer at once. A passive
+  never deals damage inside another entity's hurt still being worked out, which would overwrite that victim's last
+  damage source and break vanilla's hurt bookkeeping. One tick (50 ms) is not visible.
+- **Melee keep distance.** v1 8 says a ranged hero backs away inside half its keep distance; for a melee hero with a
+  keep distance that is no skirmisher (a support or controller with a reaching move) A4 reads it as: hold that
+  distance while a move of its that reaches that far is ready, back away inside half of it, close in to melee when
+  nothing is ready. A skirmisher steps 3 blocks back after each landed blow and comes in again when its swing is
+  ready.
+- **The base abilities are the five talents** (`aura`, `rally`, `drill`, `mend`, `lookout`), with 7.2's tier numbers
+  and its "strongest copy at a base" rule, at the hero's home base and never on a raid. `mend` heals players and NPCs
+  of its side alike.
+- **A won raid's XP waits for heroes on raids.** Heroes are never drafted into a raid party yet (A1a), so the 100 XP of
+  a raid won is in place but no hero earns it until L4/A12 send them; a defence that held pays its 30 now.
+- **Triggers wired later.** `on_phase`, `on_enrage`, `on_stagger`, `on_counter`, `on_intro`, `on_escape`,
+  `on_last_stand` and `on_add_died` are read by `PassiveBook` now; A5, A6 and A12 call `HeroCombat.trigger` when those
+  events exist.
+- **What a state shows.** Entering plays its `state.<n>` clip through `DATA_ACTION` and holds its face; the bones it
+  shows or hides need a client state flag and are A5's with the timing files. `guard_break` is a format-2 effect (A5).
+- **Moves that run now.** With A4's effects in, these slice moves join those A3 ran: Hinae's sealing circle and
+  exorcise, Ilsabet's shield bash and rime wall, Natsuho's Midnight Frenzy. Still waiting for A5's forms and effects:
+  Ambrose's potion barrage, great brew and grand experiment; Benika's shoulder charge, stomp, grab and crash waves;
+  Hinae's seven talismans and purifying dance; Ilsabet's turning sweep, lance charge and the call; Kagenori's iai
+  stance and guard splitter; Natsuho's cat reflex and zoomies; Tobimaru's clones and log swap; Yugen's mirage, foxfire
+  rain and ninefold lantern.

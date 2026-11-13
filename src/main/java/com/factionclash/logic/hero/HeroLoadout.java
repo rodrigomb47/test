@@ -35,6 +35,25 @@ public final class HeroLoadout {
      * weapon style (null when the hero has no model of its own).
      */
     public static String roleId(HeroDef d, String style) {
+        String duty = dutyRoleId(d);
+        return duty != null ? duty : combatRoleId(d, style);
+    }
+
+    /**
+     * The worker role a hero's {@code duty} makes it (v1 8, HEROES_V2 7.1; task A4): the duty itself for every duty but
+     * {@code guard} (and a leader's {@code court}), or null. Such a hero counts as that worker for its base's needs,
+     * does that job between fights and still fights like a soldier.
+     */
+    public static String dutyRoleId(HeroDef d) {
+        String duty = d.behaviour().duty();
+        if (duty == null || duty.isBlank() || "guard".equals(duty) || "court".equals(duty)) {
+            return null;
+        }
+        return duty;
+    }
+
+    /** The soldier role its weapon style fits (3.2), whatever its duty: how it fights. */
+    public static String combatRoleId(HeroDef d, String style) {
         return switch (d.basicAttack().style()) {
             case BOW -> "archer";
             case CROSSBOW -> "crossbowman";

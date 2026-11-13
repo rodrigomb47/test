@@ -561,4 +561,45 @@ class MoveSelectorTest {
         assertEquals(MoveSelector.frames(m, 2.0), MoveSelector.frames(m, 9.0), "speed clamped to 2");
         assertEquals(MoveSelector.frames(m, 1.0), MoveSelector.frames(m, Double.NaN));
     }
+
+    // ------------------------------------------------------------------ states (A4, HEROES_V2 12.9)
+
+    @Test
+    void aStateLocksSkillsOrReplacesTheMoveList() {
+        HeroDef.V2 kit = kitWith("\"states\": [{\"name\": \"rage\", \"stats\": [{\"stat\": \"attack\", \"percent\": 20}],"
+                        + " \"skills_locked\": true}, {\"name\": \"stance\", \"stats\": [{\"stat\": \"armor\", \"percent\": 20}],"
+                        + " \"moves\": [\"cut\"]}]", null,
+                move("cut", "melee", ""), move("bash", "melee", ""),
+                move("enrage", "self", "\"effects\": [{\"type\": \"empower\", \"seconds\": 8, \"state\": \"rage\"}]"));
+        MoveSelector s = new MoveSelector(kit, 50, 50, false, 1);
+        Move cut = kit.move("cut"), bash = kit.move("bash"), enrage = kit.move("enrage");
+        Sense sense = at(2);
+        assertTrue(s.stateAllows(cut, sense) && s.stateAllows(bash, sense) && s.stateAllows(enrage, sense));
+        sense.state = "rage";
+        sense.empowered = true;
+        assertFalse(s.stateAllows(cut, sense), "skills_locked: only basic attacks and the ultimate");
+        assertFalse(s.stateAllows(enrage, sense));
+        sense.state = "stance";
+        assertTrue(s.stateAllows(cut, sense), "its own move list");
+        assertFalse(s.stateAllows(bash, sense), "replaced while the stance lasts");
+        assertEquals("rage", MoveSelector.onlyEnters(enrage, kit));
+        assertNull(MoveSelector.onlyEnters(cut, kit));
+        assertFalse(s.eligible(bash, 0, sense), "the selector itself reads it");
+    }
+
+    @Test
+    void aMoveThatOnlyEntersTheStateItIsInIsNotCastAgain() {
+        HeroDef.V2 kit = kitWith("\"states\": [{\"name\": \"frenzy\", \"stats\": [{\"stat\": \"speed\", \"percent\": 20}]}]",
+                null, move("rush", "self", "\"effects\": [{\"type\": \"empower\", \"seconds\": 8, \"state\": \"frenzy\"}]"),
+                move("cut", "melee", ""));
+        MoveSelector s = new MoveSelector(kit, 50, 50, false, 1);
+        Sense sense = at(2);
+        sense.state = "frenzy";
+        sense.empowered = true;
+        assertFalse(s.stateAllows(kit.move("rush"), sense), "v1 18: not while already in it");
+        assertTrue(s.stateAllows(kit.move("cut"), sense));
+        sense.state = null;
+        sense.empowered = false;
+        assertTrue(s.stateAllows(kit.move("rush"), sense));
+    }
 }

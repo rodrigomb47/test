@@ -134,8 +134,10 @@ class AbilityRuntimeTest {
         assertTrue(EffectRouting.runs(MovePlanTest.move("cut", "melee", "")));
         assertTrue(EffectRouting.runs(MovePlanTest.move("arc", "chain", "")));
         assertFalse(EffectRouting.runs(MovePlanTest.move("rush", "charge", "")), "a format-2 form A5 adds");
-        assertFalse(EffectRouting.runs(MovePlanTest.move("bash", "melee", "\"class\": \"heavy\", \"effects\": "
-                + "[{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"stun\", \"seconds\": 1}]")), "a stun is A4's");
+        assertTrue(EffectRouting.runs(MovePlanTest.move("bash", "melee", "\"class\": \"heavy\", \"effects\": "
+                + "[{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"stun\", \"seconds\": 1}]")), "a stun runs since A4");
+        assertFalse(EffectRouting.runs(MovePlanTest.move("snap", "melee", "\"effects\": "
+                + "[{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"silence\", \"seconds\": 1}]")), "a silence is A5's");
         HeroDef natsuho = SliceFixtures.load("natsuho_komezaki");
         List<String> runs = new ArrayList<>();
         for (Move m : natsuho.v2().allMoves()) {
@@ -143,8 +145,8 @@ class AbilityRuntimeTest {
                 runs.add(m.id());
             }
         }
-        assertEquals(List.of("claw_string", "pounce", "hiss", "scratch_dash"), runs,
-                "the counter, the charge and the empower ultimate wait for A4-A5");
+        assertEquals(List.of("claw_string", "pounce", "hiss", "scratch_dash", "midnight_frenzy"), runs,
+                "the empower ultimate runs since A4; the counter and the charge wait for A5");
     }
 
     @Test
@@ -259,5 +261,17 @@ class AbilityRuntimeTest {
         assertEquals(0, s.energy);
         assertTrue(s.enemies.isEmpty() && s.allies.isEmpty());
         assertNotNull(s.target);
+    }
+
+    @Test
+    void stunSecondsAreHeldToTheSlotWhateverThePower() {
+        UseLedger skill = UseLedger.of(Slot.SKILL, 3.0, 200, 1);
+        assertEquals(2, skill.cap(Kind.STUN), 1e-9, "2 s a skill, however strong the hero (v1 16.1)");
+        assertEquals(1.5, skill.take(Kind.STUN, "a", 1.5), 1e-9);
+        assertEquals(0.5, skill.take(Kind.STUN, "a", 1.5), 1e-9, "the rest of the use's 2 s on that receiver");
+        assertEquals(1.5, skill.take(Kind.STUN, "b", 1.5), 1e-9, "per receiver");
+        assertEquals(3, UseLedger.of(Slot.ULTIMATE, 1, 100, 1).cap(Kind.STUN), 1e-9);
+        assertEquals(1, UseLedger.of(Slot.PASSIVE, 1, 100, 1).cap(Kind.STUN), 1e-9);
+        assertEquals(0, UseLedger.of(Slot.ON_HIT, 1, 100, 1).take(Kind.STUN, "a", 1), 1e-9, "never on a basic hit");
     }
 }

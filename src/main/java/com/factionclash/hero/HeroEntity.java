@@ -53,10 +53,13 @@ import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * A hero (HEROES_V2 3): a faction NPC with everything a faction NPC has (inventory, hunger, gear and wear, traits,
@@ -79,6 +82,15 @@ import java.util.Map;
  * a mood, the weapon flag, a base pose and any flag for screenshots ({@code /fc admin hero pose}); a <b>preview</b> is a
  * display copy for screenshots ({@code /fc admin hero preview|lineup}): it stands still, cannot be hurt, has no job,
  * hunger or roster entry, is not the campaign's hero and is never counted by the director.
+ *
+ * <p><b>Task A4</b>: its target comes from {@link com.factionclash.combat.HeroTargetGoal} (focus, protects, its
+ * aggression's radius, no attack tokens); it works its {@code duty} as that worker (its role is the duty's, it takes
+ * the duty's tool from the storehouse and stows its kit weapon while it works, then draws the weapon again when a fight
+ * starts) and still fights like a soldier, answers alarms and never flees as workers do; its aggression sets its
+ * chase leash, a skirmisher steps back after each hit and a melee hero with a keep distance holds it; its passives hear
+ * {@code on_hurt}, {@code on_low_health}, {@code on_crit}, {@code on_kill} and {@code on_fight_start} here; it earns
+ * combat XP (v1 22.1: kills, the ultimate, heals and shields for others, each day alive, raids and defences) and grows
+ * with its levels; its summons vanish when it dies. It never withdraws to eat (A1b's review).
  */
 public class HeroEntity extends FactionNpc implements GeoEntity {
     /** The hero id ({@code ""} until set; set once at spawn). */
@@ -183,6 +195,45 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         super.registerGoals();
         this.goalSelector.addGoal(2, new com.factionclash.combat.HeroAbilityGoal(this));
         this.goalSelector.addGoal(3, new com.factionclash.combat.HeroThrowGoal(this));
+        // its own target choice (focus, protects, aggression radius; no attack tokens) replaces the soldiers' nearest
+        this.targetSelector.removeAllGoals(g -> g instanceof net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal);
+        this.targetSelector.addGoal(2, new com.factionclash.combat.HeroTargetGoal(this));
+    }
+
+    // ------------------------------------------------------------------ the heroes in the world
+
+    /** Every campaign hero entity in a server level (not previews): the passives' world hooks walk it. */
+    private static final Set<HeroEntity> LIVE = Collections.newSetFromMap(new WeakHashMap<>());
+    private static List<HeroEntity> liveView = List.of();
+    private static boolean liveDirty;
+
+    /**
+     * The heroes in server levels now: an unmodifiable snapshot, made again only when one joins or leaves, so a hook
+     * may walk it while what it sets off changes the set.
+     */
+    public static List<HeroEntity> live() {
+        if (liveDirty) {
+            liveDirty = false;
+            liveView = List.copyOf(LIVE);
+        }
+        return liveView;
+    }
+
+    @Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+        if (!level().isClientSide && !preview) {
+            LIVE.add(this);
+            liveDirty = true;
+        }
+    }
+
+    @Override
+    public void onRemovedFromLevel() {
+        super.onRemovedFromLevel();
+        if (LIVE.remove(this)) {
+            liveDirty = true;
+        }
     }
 
     /** Its fight runtime (task A3): moves, cooldowns and charges, energy gains, basic hits' effects. */
@@ -403,17 +454,155 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     /**
      * Its weapon is its kit's: a bare-handed hero needs none, and one holding its bound kit weapon (a mace, a sword)
-     * needs no trip to the storehouse for its role's tool.
+     * needs no trip to the storehouse for its role's tool. A hero on a worker duty needs its duty's tool to work, as
+     * that worker does (a miner-duty hero mines with a pickaxe, not its sword; task A4).
      */
     @Override
     public boolean needsRoleTool() {
+        if (onWorkerDuty()) {
+            return getRole().tool != com.factionclash.npc.ToolKind.NONE && !getRole().tool.matches(getMainHandItem());
+        }
         return !fightsBareHanded() && !HeroKit.isKit(getMainHandItem());
     }
 
-    /** A better storehouse weapon of the same kind replaces its kit weapon (v1 7); a bare-handed hero takes none. */
+    /**
+     * A better storehouse weapon of the same kind replaces its kit weapon (v1 7); a bare-handed hero takes none. A
+     * hero on a worker duty takes its duty's tool from the storehouse as that worker does.
+     */
     @Override
     public boolean takesStoreWeapons() {
+        if (onWorkerDuty()) {
+            return getRole().tool != com.factionclash.npc.ToolKind.NONE;
+        }
         return !fightsBareHanded() && (getMainHandItem().isEmpty() || getRole().tool.matches(getMainHandItem()));
+    }
+
+    // ------------------------------------------------------------------ duty, spacing and the soldier's rules (A4)
+
+    /** Whether its duty is a worker's (its role is not a soldier's): it works that job between fights. */
+    public boolean onWorkerDuty() {
+        return !dormant() && !getRole().combatant;
+    }
+
+    /** A hero of any duty fights like a soldier, answers alarms and never flees as workers do (v1 25.6). */
+    @Override
+    public boolean fightsLikeSoldier() {
+        return true;
+    }
+
+    /** Its job keeps it from a fight only while it stands on a woodcutter's pillar (a hero always fights, v1 25.6). */
+    @Override
+    public boolean jobIgnoresCombat() {
+        return job() != null && job().onScaffold();
+    }
+
+    /** It shoots when its basic attack is a bow or crossbow, whatever its duty. */
+    @Override
+    public boolean rangedFighter() {
+        HeroDef d = dormant() ? null : definition();
+        if (d == null) {
+            return super.rangedFighter();
+        }
+        return d.basicAttack().style() == HeroDef.Style.BOW || d.basicAttack().style() == HeroDef.Style.CROSSBOW;
+    }
+
+    private double keepDistance() {
+        HeroDef d = dormant() ? null : definition();
+        return d == null ? 0 : d.behaviour().keepDistance();
+    }
+
+    /** A bow hero backs away inside half its keep distance (v1 8). */
+    @Override
+    public double kiteDistance() {
+        double k = keepDistance();
+        return k > 0 ? k / 2 : super.kiteDistance();
+    }
+
+    /** Its aggression's chase leash (v1 8: cautious 32, steady 56, bold 80). */
+    @Override
+    public double meleeLeash() {
+        HeroDef d = dormant() ? null : definition();
+        return com.factionclash.logic.hero.TargetRules.leash(d == null ? null : d.behaviour().aggression());
+    }
+
+    @Override
+    public boolean skirmishes() {
+        HeroDef d = dormant() ? null : definition();
+        return d != null && com.factionclash.logic.hero.TargetRules.spacing(d.behaviour().role(), keepDistance())
+                == com.factionclash.logic.hero.TargetRules.Spacing.SKIRMISH;
+    }
+
+    private long holdCheckedAt = -1;
+    private double held;
+
+    /**
+     * A melee hero with a keep distance that is no skirmisher (a melee support or controller) holds it while one of
+     * its moves is ready and reaches from there, and closes in when none is (checked twice a second).
+     */
+    @Override
+    public double holdsDistance() {
+        long now = level().getGameTime();
+        if (now - holdCheckedAt < 10) {
+            return held;
+        }
+        holdCheckedAt = now;
+        held = 0;
+        HeroDef d = dormant() ? null : definition();
+        double keep = keepDistance();
+        if (d == null || keep <= 0 || com.factionclash.logic.hero.TargetRules.spacing(d.behaviour().role(), keep)
+                != com.factionclash.logic.hero.TargetRules.Spacing.HOLD) {
+            return 0;
+        }
+        com.factionclash.logic.hero.MoveSelector s = combat().selector();
+        if (s == null) {
+            return 0;
+        }
+        for (HeroDef.Move m : d.v2().moves()) {
+            if (readyFrom(s, m, now, keep)) {
+                held = keep;
+                return held;
+            }
+        }
+        if (readyFrom(s, d.v2().ultimate(), now, keep) || readyFrom(s, d.v2().awakened(), now, keep)) {
+            held = keep;
+        }
+        return held;
+    }
+
+    private boolean readyFrom(com.factionclash.logic.hero.MoveSelector s, HeroDef.Move m, long now, double keep) {
+        return m != null && com.factionclash.logic.hero.EffectRouting.runs(m) && s.charges(m, now, energy) > 0
+                && com.factionclash.logic.hero.MoveSelector.reach(m) >= keep;
+    }
+
+    /**
+     * A worker-duty hero stows its kit weapon to work and draws it again when a fight starts: the duty's tool goes
+     * to its backpack (a fists hero's hands are empty again), the bound weapon back into its hand.
+     */
+    private void armForFight() {
+        ItemStack hand = getMainHandItem();
+        if (HeroKit.isKit(hand) || !onWorkerDuty()) {
+            return;
+        }
+        int kit = -1;
+        for (int i = 0; i < inventory().getContainerSize(); i++) {
+            ItemStack x = inventory().getItem(i);
+            if (HeroKit.isKit(x) && fits(x, EquipmentSlot.MAINHAND)) {
+                kit = i;
+                break;
+            }
+        }
+        if (kit < 0 && !fightsBareHanded()) {
+            return; // no kit weapon to draw: it fights with what it holds, as that worker would
+        }
+        ItemStack weapon = kit < 0 ? ItemStack.EMPTY : inventory().removeItemNoUpdate(kit);
+        if (!hand.isEmpty()) {
+            ItemStack rest = com.factionclash.work.Crafting.addAll(inventory(), hand.copy());
+            if (!rest.isEmpty()) {
+                spawnAtLocation(rest);
+            }
+        }
+        setItemSlot(EquipmentSlot.MAINHAND, weapon);
+        inventory().setChanged();
     }
 
     /** Only a hero whose kit has a shield takes one from the storehouse (a katana hero fights without). */
@@ -842,7 +1031,42 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             if (!preview) {
                 fightTick();
                 combat().tick();
+                if (getTarget() != null && getTarget().isAlive() && tickCount % 5 == 0) {
+                    armForFight();
+                }
+                if (++dayTicks >= DAY_TICKS) {
+                    dayTicks = 0;
+                    awardCombatXp(HeroRules.XP_DAY_ALIVE); // v1 22.1: each in-game day alive
+                }
             }
+        }
+    }
+
+    // ------------------------------------------------------------------ combat XP (v1 22.1, task A4)
+
+    /** One in-game day: a hero alive this long earns {@code XP_DAY_ALIVE}. */
+    public static final int DAY_TICKS = 24000;
+    private int dayTicks;
+    private double healXpCarry;
+
+    /** Combat XP worth {@code base}, x {@code heroes.xpRate}; a level grows its numbers ({@link #awardXp}). */
+    public void awardCombatXp(double base) {
+        if (level().isClientSide || preview || !isAlive()) {
+            return;
+        }
+        int x = HeroRules.xp(base, FCConfig.HERO_XP_RATE.get());
+        if (x > 0) {
+            awardXp(x);
+        }
+    }
+
+    /** Healing or shielding others: 1 XP per 5 points (v1 22.1), carried across uses so small heals add up. */
+    public void addHealXp(double points) {
+        healXpCarry += HeroRules.healXp(points);
+        if (healXpCarry >= 1) {
+            int whole = (int) healXpCarry;
+            healXpCarry -= whole;
+            awardCombatXp(whole);
         }
     }
 
@@ -863,6 +1087,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
                 if (fresh) {
                     countFight(t);
                     say(LineEvent.FIGHT_START, Map.of("enemy", nameOf(t)), null);
+                    combat().trigger(com.factionclash.logic.hero.PassiveBook.Event.of(HeroDef.Trigger.ON_FIGHT_START), t, null);
                 }
             }
             lastTargetTick = tickCount;
@@ -952,6 +1177,17 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
                 lowHealthArmed = false;
                 say(LineEvent.LOW_HEALTH);
             }
+            if (isAlive()) {
+                // v1 17.1: on_hurt (anyone not of its side that damaged it) and on_low_health
+                LivingEntity attacker = source.getEntity() instanceof LivingEntity a && a != this ? a : null;
+                boolean bySummonOrPassive = HeroSummons.isSummon(source.getEntity());
+                if (attacker != null && !HeroForms.ally(this, attacker)) {
+                    combat().trigger(new com.factionclash.logic.hero.PassiveBook.Event(HeroDef.Trigger.ON_HURT, null, share,
+                            null, 0, bySummonOrPassive), attacker, null);
+                }
+                combat().trigger(new com.factionclash.logic.hero.PassiveBook.Event(HeroDef.Trigger.ON_LOW_HEALTH, null, share,
+                        null, 0, bySummonOrPassive), attacker, null);
+            }
         }
         return r;
     }
@@ -962,6 +1198,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (!lowHealthArmed && getHealth() / Math.max(1F, getMaxHealth()) >= LOW_HEALTH_REARM) {
             lowHealthArmed = true;
         }
+        if (!level().isClientSide && combat != null) {
+            combat.healthChanged(getHealth() / Math.max(1F, getMaxHealth()));
+        }
     }
 
     /**
@@ -970,10 +1209,14 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
      */
     @Override
     public boolean doHurtTarget(Entity target) {
+        boolean crit = critical() && target instanceof LivingEntity;
         boolean hit = super.doHurtTarget(target);
         if (hit && !level().isClientSide && !preview) {
             if (target instanceof LivingEntity l) {
                 combat().onBasicHit(l, this);
+                if (crit) {
+                    combat().trigger(com.factionclash.logic.hero.PassiveBook.Event.of(HeroDef.Trigger.ON_CRIT), l, null);
+                }
             } else {
                 gainEnergy(HeroRules.ENERGY_BASIC_HIT);
             }
@@ -993,6 +1236,8 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
                 CampaignData.get(level.getServer()).setDirty();
             }
             say(LineEvent.KILL, Map.of("enemy", nameOf(victim)), null);
+            awardCombatXp(HeroRules.killXp(victim.getMaxHealth())); // v1 22.1: 10 + its max health / 2
+            combat().trigger(com.factionclash.logic.hero.PassiveBook.Event.of(HeroDef.Trigger.ON_KILL), victim, null);
         }
         return r;
     }
@@ -1018,7 +1263,8 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (stateFlag(HeroActions.STATE_WEAPON_DRAWN) != drawn) {
             setStateFlag(HeroActions.STATE_WEAPON_DRAWN, drawn);
         }
-        int mood = MoodRules.pick(forcedMood, hurtTime > 0, isSleeping(), stateFlag(HeroActions.STATE_WINDUP), fighting,
+        int held = forcedMood >= 0 ? forcedMood : combat().stateMood(); // a state holds its face (12.9)
+        int mood = MoodRules.pick(held, hurtTime > 0, isSleeping(), stateFlag(HeroActions.STATE_WINDUP), fighting,
                 getHealth() / Math.max(1F, getMaxHealth()));
         byte moodByte = mood();
         if (HeroActions.mood(moodByte) != mood) {
@@ -1078,9 +1324,16 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     // ------------------------------------------------------------------ kit
 
-    /** Better gear replacing a kit item: the kit item vanishes instead of going to the backpack (and the storehouse). */
+    /**
+     * Better gear replacing a kit item: the kit item vanishes instead of going to the backpack (and the storehouse).
+     * A worker-duty hero's tool is the exception: its kit weapon goes to its backpack while it works (A4).
+     */
     @Override
     public void equip(ItemStack stack) {
+        if (!stack.isEmpty() && onWorkerDuty() && getRole().tool.matches(stack)) {
+            super.equip(stack);
+            return;
+        }
         if (!stack.isEmpty()) {
             for (EquipmentSlot slot : EquipmentSlot.values()) {
                 if (slot.getType() != EquipmentSlot.Type.ANIMAL_ARMOR && HeroKit.isKit(getItemBySlot(slot)) && fits(stack, slot)) {
@@ -1121,6 +1374,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (combat != null) {
             combat.reset();
         }
+        if (!level().isClientSide) {
+            HeroSummons.dismissAll(this);
+        }
         super.die(source);
         if (level() instanceof ServerLevel sl && isDeadOrDying()) {
             HeroManager.onDeath(sl.getServer(), this, source);
@@ -1160,6 +1416,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             h.putInt("pose", forcedPose());
         }
         h.putInt("energy", energy);
+        h.putInt("dayTicks", dayTicks);
         h.putString("kit", kitSignature);
         if (combat != null) {
             combat.save(h);
@@ -1179,6 +1436,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         CompoundTag h = tag.getCompound("FcHero");
         preview = h.getBoolean("preview");
         energy = Math.max(0, Math.min(HeroRules.ENERGY_MAX, h.getInt("energy")));
+        dayTicks = Math.max(0, Math.min(DAY_TICKS - 1, h.getInt("dayTicks")));
         kitSignature = h.getString("kit");
         combat().load(h);
         setHeroId(h.getString("id"));

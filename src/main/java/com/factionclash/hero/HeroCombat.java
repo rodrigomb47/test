@@ -16,10 +16,12 @@ import com.factionclash.logic.hero.HeroDef.LineEvent;
 import com.factionclash.logic.hero.HeroDef.Move;
 import com.factionclash.logic.hero.HeroDef.Slot;
 import com.factionclash.logic.hero.HeroDef.Stat;
+import com.factionclash.logic.hero.HeroDef.Trigger;
 import com.factionclash.logic.hero.HeroRules;
 import com.factionclash.logic.hero.MovePlan;
 import com.factionclash.logic.hero.MovePlan.MoveStage;
 import com.factionclash.logic.hero.MoveSelector;
+import com.factionclash.logic.hero.PassiveBook;
 import com.factionclash.logic.hero.Sense;
 import com.factionclash.logic.hero.UseLedger;
 import com.factionclash.logic.leader.Temperaments;
@@ -61,6 +63,12 @@ import java.util.Set;
  * damage taken 1 per 2 health (at most 8 a hit), a kill 10, heals and shields for allies 1 per 2 points (at most 8 a
  * use), an {@code energy} effect its amount; each times the ultimate's {@code charge_rate} and the {@code energy_gain}
  * stat. The ultimate needs 100 and spends all of it.
+ *
+ * <p><b>Task A4</b> adds the hero's state ({@link HeroStates}: entered by {@code empower}, its stats, on-hit effects,
+ * size, aura, face, locked skills and move list), its passives ({@link HeroPassives} over {@code PassiveBook}, with the
+ * loop guard), stuns (a stunned hero picks nothing and a move in its wind-up is interrupted, half its cooldown back),
+ * the triggers it sets off ({@code on_skill}, {@code on_ultimate}, {@code on_ally_ultimate}, {@code on_hit},
+ * {@code on_mark_full}...), combat XP for the ultimate (v1 22.1) and the wind-up's telegraph pose.
  */
 public final class HeroCombat {
     /** A leap that has not landed after this long lands where it is (v1 29.4: "a 40-tick timeout"). */
@@ -84,9 +92,16 @@ public final class HeroCombat {
     /** The last move it started, when, and when it first released (game times; -1: not yet). */
     private String lastMove = "";
     private long lastMoveStart = -1, lastRelease = -1;
+    /** Its state (A4). */
+    final HeroStates states;
+    /** Its passives (A4). */
+    final HeroPassives passives;
+    private boolean restoreStates;
 
     HeroCombat(HeroEntity hero) {
         this.hero = hero;
+        this.states = new HeroStates(hero);
+        this.passives = new HeroPassives(hero);
     }
 
     // ------------------------------------------------------------------ the definition and the selector
@@ -159,6 +174,17 @@ public final class HeroCombat {
      * the running move advances one tick (so its timing never depends on when the goal selector runs).
      */
     void tick() {
+        if (restoreStates) {
+            restoreStates = false;
+            states.restore();
+        }
+        if (!later.isEmpty()) {
+            for (int i = 0; i < later.size(); i++) {
+                Later l = later.get(i);
+                trigger(l.e(), l.enemy(), l.ally());
+            }
+            later.clear();
+        }
         if (run != null) {
             run.step();
         }
@@ -168,8 +194,11 @@ public final class HeroCombat {
             if (s != null) {
                 s.fightStarted(now());
             }
+            passives.fightStarted();
         }
         fighting = f;
+        states.tick();
+        passives.tick(fighting);
         if (!zones.isEmpty()) {
             zones.removeIf(Entity::isRemoved);
         }
@@ -221,7 +250,7 @@ public final class HeroCombat {
         }
         nextCheckAt = now + MoveSelector.CHECK_TICKS;
         LivingEntity t = hero.getTarget();
-        if (t == null || !t.isAlive() || !fighting) {
+        if (t == null || !t.isAlive() || !fighting || HeroStatus.stunned(hero)) {
             return false;
         }
         MoveSelector s = selector();
@@ -272,6 +301,9 @@ public final class HeroCombat {
             HeroState.count(rec.casts, m.id());
             CampaignData.get(hero.getServer()).setDirty();
         }
+        if (ultimate) {
+            hero.awardCombatXp(HeroRules.XP_ULTIMATE);
+        }
         String line = a.line();
         if (line != null && !line.isBlank()) {
             hero.speak(ultimate ? LineEvent.ULTIMATE : LineEvent.SKILL, line);
@@ -292,6 +324,20 @@ public final class HeroCombat {
             FactionClash.LOGGER.debug("[Heroes] {} starts {} ({}) at {}", hero.heroId(), m.id(), p.source(), now());
         }
         run.begin();
+        // v1 17.1: on_skill / on_ultimate, and every other hero of its side within 24 blocks hears on_ally_ultimate
+        LivingEntity t = hero.getTarget();
+        if (ultimate) {
+            trigger(PassiveBook.Event.of(Trigger.ON_ULTIMATE), t, null);
+            for (HeroEntity other : HeroEntity.live()) {
+                if (other != hero && other.isAlive() && other.level() == hero.level()
+                        && other.distanceToSqr(hero) <= PassiveBook.ALLY_ULTIMATE_RADIUS * PassiveBook.ALLY_ULTIMATE_RADIUS
+                        && HeroForms.ally(other, hero)) {
+                    other.combat().trigger(PassiveBook.Event.of(Trigger.ON_ALLY_ULTIMATE), other.getTarget(), hero);
+                }
+            }
+        } else {
+            trigger(PassiveBook.Event.of(Trigger.ON_SKILL), t, null);
+        }
     }
 
     /** A new use (its projectiles and zones carry it until they are gone). */
@@ -332,12 +378,91 @@ public final class HeroCombat {
         r.end(true);
     }
 
-    /** Discards the running move and any pick (death, a reload). */
+    /** Discards the running move and any pick (death, a reload); its state and held passive stats end. */
     void reset() {
         if (run != null) {
             run.end(true);
         }
         pending = null;
+        states.exit();
+        passives.reset();
+    }
+
+    /**
+     * It was stunned (HEROES_V2 6.15, task A4): a move in its wind-up is interrupted (half the cooldown back, v1 10.3;
+     * the path an escape takes in A6), one past it simply ends, a pick waiting to start is dropped; it shows its
+     * {@code stun} pose.
+     */
+    void stunned() {
+        pending = null;
+        if (run != null) {
+            stopRun();
+        }
+        hero.playAction(HeroActions.actionCode("stun"), 1.0, 0);
+    }
+
+    // ------------------------------------------------------------------ states and passives (A4)
+
+    /** Enters (or refreshes) one of its states for {@code seconds}: {@code empower}, a phase or a passive. */
+    public boolean enterState(String name, double seconds) {
+        return states.enter(name, seconds);
+    }
+
+    /** The state it is in now, or null. */
+    public String stateName() {
+        return states.name();
+    }
+
+    /** The game time its state ends (0: none). */
+    public long stateUntil() {
+        return states.name() == null ? 0 : states.until();
+    }
+
+    /** The mood its state holds (-1: none). */
+    public int stateMood() {
+        return states.mood();
+    }
+
+    /**
+     * An event for its passives (v1 17.1, HEROES_V2 6.6): its {@code enemy} (the one hit, the attacker, the marked
+     * one) and {@code ally} (the hurt or low ally), either may be null. A5, A6 and A12 send theirs here too
+     * ({@code on_counter}, {@code on_phase}, {@code on_stagger}, {@code on_escape}...).
+     */
+    public void trigger(PassiveBook.Event e, LivingEntity enemy, LivingEntity ally) {
+        if (passives.has(e.trigger())) {
+            passives.fire(e, enemy, ally);
+        }
+    }
+
+    /** An event the world's hooks saw inside another entity's hurt or heal: its passives answer it on the hero's tick. */
+    private record Later(PassiveBook.Event e, LivingEntity enemy, LivingEntity ally) {
+    }
+
+    private final List<Later> later = new ArrayList<>();
+
+    /**
+     * {@link #trigger}, on the hero's next tick: hooks inside another entity's hurt, heal or shield block send theirs here,
+     * so a passive never strikes into a hurt that is still being worked out.
+     */
+    public void triggerLater(PassiveBook.Event e, LivingEntity enemy, LivingEntity ally) {
+        if (passives.has(e.trigger()) && later.size() < 32) {
+            later.add(new Later(e, enemy, ally));
+        }
+    }
+
+    /** Whether it has a passive with this trigger (the world's hooks ask first). */
+    public boolean hasPassive(Trigger t) {
+        return passives.has(t);
+    }
+
+    /** How many times its passives fired (tests, {@code sim.py}). */
+    public int passiveFirings() {
+        return passives.firings;
+    }
+
+    /** Its health share changed (a heal): low-health passives re-arm 20 points above their value. */
+    void healthChanged(double share) {
+        passives.health(share);
     }
 
     // ------------------------------------------------------------------ basic hits (v1 9, 14)
@@ -355,16 +480,24 @@ public final class HeroCombat {
         basicHits++;
         List<LivingEntity> to = List.of(target);
         HeroDef.BasicAttack b = d.basicAttack();
-        if (!b.onHit().isEmpty()) {
+        List<HeroDef.Effect> stateHit = states.onHit();
+        if (!b.onHit().isEmpty() || !stateHit.isEmpty()) {
+            // the basic on_hit and the state's share one per-hit cap (v1 16.1)
             HeroUse use = newUse(d, null, Slot.ON_HIT, Form.MELEE, "basic",
                     UseLedger.of(Slot.ON_HIT, abilityPower(), HeroEffects.powerScale(), 1));
-            HeroEffects.apply(use, b.onHit(), 0, to, direct);
+            if (!b.onHit().isEmpty()) {
+                HeroEffects.apply(use, b.onHit(), 0, to, direct);
+            }
+            if (!stateHit.isEmpty() && target.isAlive()) {
+                HeroEffects.apply(use, stateHit, 2, to, direct);
+            }
         }
         if (b.everyNthHit() != null && b.everyNthHit().n() > 0 && basicHits % b.everyNthHit().n() == 0) {
             HeroUse use = newUse(d, null, Slot.NTH_HIT, Form.MELEE, "finisher",
                     UseLedger.of(Slot.NTH_HIT, abilityPower(), HeroEffects.powerScale(), 1));
             HeroEffects.apply(use, b.everyNthHit().effects(), 1, to, direct);
         }
+        triggerLater(PassiveBook.Event.of(Trigger.ON_HIT), target, null); // an arrow's hit comes inside the target's hurt
     }
 
     // ------------------------------------------------------------------ effects that act on the hero
@@ -403,11 +536,12 @@ public final class HeroCombat {
         return hero.tickCount <= ownHopUntil;
     }
 
-    /** A mark this hero applies reached its maximum: the {@code on_mark_full} passives are A4's. */
+    /** A mark this hero applies reached its maximum: its {@code on_mark_full} passives for that mark (v1 17.1). */
     void markFull(String mark, LivingEntity on) {
         if (FactionClash.LOGGER.isDebugEnabled()) {
             FactionClash.LOGGER.debug("[Heroes] {}: mark {} full on {}", hero.heroId(), mark, on.getName().getString());
         }
+        trigger(new PassiveBook.Event(Trigger.ON_MARK_FULL, mark, 1, null, 0, false), on == hero ? null : on, null);
     }
 
     void zoneStarted(HeroZone z) {
@@ -438,10 +572,13 @@ public final class HeroCombat {
             h.put("cooldowns", c);
         }
         h.putInt("basicHits", basicHits);
+        states.save(h);
     }
 
     void load(CompoundTag h) {
         basicHits = h.getInt("basicHits");
+        states.load(h);
+        restoreStates = true;
         if (!h.contains("cooldowns")) {
             return;
         }
@@ -481,6 +618,8 @@ public final class HeroCombat {
         final Set<Integer> dashHit = new HashSet<>();
         /** A chain's links so far. */
         final List<LivingEntity> chain = new ArrayList<>();
+        /** It holds a telegraph pose until its first release (A4). */
+        boolean posed;
 
         Run(Move move, MoveSelector.Source source, MovePlan.Plan plan, HeroUse use, LivingEntity target) {
             this.move = move;
@@ -495,10 +634,23 @@ public final class HeroCombat {
         void begin() {
             hero.getNavigation().stop();
             hero.setStateFlag(HeroActions.STATE_WINDUP, plan.windup() > 0);
+            int pose = HeroActions.telegraphPose(move.ability().look() == null ? null : move.ability().look().pose());
+            if (pose > 0 && plan.windup() > 0) {
+                hero.playAction(pose, 1.0, 0); // the wind-up's telegraph pose (A5 plays the move's own clip)
+                posed = true;
+            }
             if (hero.level() instanceof ServerLevel sl) {
                 HeroEffects.particles(sl, hero, HeroEffects.particle(move.ability().look(), element(), color()), 8);
             }
             // the hero's tick steps it from this tick on
+        }
+
+        /** The telegraph pose ends with the wind-up. */
+        void unpose() {
+            if (posed) {
+                posed = false;
+                hero.stopAction();
+            }
         }
 
         HeroDef.Element element() {
@@ -546,6 +698,7 @@ public final class HeroCombat {
                 if (hit == 0) {
                     hero.setStateFlag(HeroActions.STATE_WINDUP, false);
                     lastRelease = now();
+                    unpose();
                 }
                 if (target != null && target.isAlive()) {
                     aim = target.position();
@@ -591,6 +744,7 @@ public final class HeroCombat {
             done = true;
             motion = 0;
             hero.setStateFlag(HeroActions.STATE_WINDUP, false);
+            unpose();
             if (run == this) {
                 run = null;
             }

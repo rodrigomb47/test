@@ -101,7 +101,7 @@ public final class HeroSenses {
         ts.burning = t.isOnFire();
         ts.freezing = t.getTicksFrozen() > 0;
         ts.slowed = t.hasEffect(MobEffects.MOVEMENT_SLOWDOWN);
-        ts.stunned = false; // stuns are A4's
+        ts.stunned = HeroStatus.stunned(t);
         HeroStatus st = HeroStatus.peek(t);
         if (st != null && !st.book().isEmpty()) {
             ts.hasDot = st.book().hasDot(now);
@@ -149,7 +149,10 @@ public final class HeroSenses {
         HeroStatus st = HeroStatus.peek(hero);
         if (st != null && !st.book().isEmpty()) {
             s.marks.putAll(st.book().marks(now));
+            s.stunned = st.book().stunned(now);
         }
+        s.state = hero.combat().stateName();
+        s.empowered = s.state != null;
         s.dashPathHazard = target != null && hazardBetween(hero, target);
     }
 

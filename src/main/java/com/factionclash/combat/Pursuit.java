@@ -414,7 +414,7 @@ public final class Pursuit {
         boolean known = futile(t, pathReach);
         plan = null;
         // a worker defends itself but does not break or build its way to anyone
-        if (!known && !npc.getRole().isCivilian() && broken < MAX_BREAKS && unansweredTotal < UNANSWERED_TOTAL && npc.onGround()) {
+        if (!known && npc.fightsLikeSoldier() && broken < MAX_BREAKS && unansweredTotal < UNANSWERED_TOTAL && npc.onGround()) {
             int blocks = Math.min(MAX_PILLAR, pillarBlocks());
             plan = ReachPlanner.plan(Reach.world(level(), npc, k -> brokenCells.contains(k)), cell(standCell()), cell(targetCell(t)),
                     blocks, true, MAX_PLAN_COST);
@@ -718,7 +718,7 @@ public final class Pursuit {
     }
 
     private void holdTick(LivingEntity t) {
-        if (npc.getRole().isCivilian()) {
+        if (!npc.fightsLikeSoldier()) {
             // a worker does not stand guard: it steps out of the target's reach, then lets it be (its job takes over)
             if (horizontal(npc, t) >= HOLD_MIN || ++heldFor > CIVILIAN_STEP_AWAY) {
                 npc.setTarget(null);

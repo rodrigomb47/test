@@ -53,6 +53,8 @@ public final class FCConfig {
     public static final ModConfigSpec.IntValue HERO_POWER_SCALE;
     public static final ModConfigSpec.IntValue HERO_MAX_HIT;
     public static final ModConfigSpec.IntValue HERO_MAX_DOT_PER_SECOND;
+    public static final ModConfigSpec.BooleanValue HERO_SUMMONS;
+    public static final ModConfigSpec.IntValue HERO_XP_RATE;
     public static final ModConfigSpec.IntValue BOSS_HEALTH_SCALE;
     public static final ModConfigSpec.IntValue HERO_POWER_PERCENT;
 
@@ -187,6 +189,10 @@ public final class FCConfig {
                 .defineInRange("maxHit", 40, 10, 100);
         HERO_MAX_DOT_PER_SECOND = b.comment("One hero's damage over time on one target deals at most this much per second (PROPOSED: 6).")
                 .defineInRange("maxDotPerSecond", 6, 1, 20);
+        HERO_SUMMONS = b.comment("Heroes may summon wolves and golems that fight for their side for a while (at most 3 a hero, 12 a faction).")
+                .define("summons", true);
+        HERO_XP_RATE = b.comment("Multiplies the experience heroes earn from fights, raids, defences and days alive, in percent (PROPOSED: 100).")
+                .defineInRange("xpRate", 100, 0, 500);
         b.pop();
 
         b.comment("Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)").push("boss");

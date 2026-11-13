@@ -191,6 +191,12 @@
 	# Default: 6
 	# Range: 1 ~ 20
 	maxDotPerSecond = 6
+	#Heroes may summon wolves and golems that fight for their side for a while (at most 3 a hero, 12 a faction).
+	summons = true
+	#Multiplies the experience heroes earn from fights, raids, defences and days alive, in percent (PROPOSED: 100).
+	# Default: 100
+	# Range: 0 ~ 500
+	xpRate = 100
 
 #Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)
 [boss]

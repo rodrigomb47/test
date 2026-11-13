@@ -49,12 +49,16 @@ public record HeroEntry(String id, String name, String title, HeroVisual visual,
     }
 
     /**
-     * The soldier role it counts as (HEROES_V2 3.2): from its definition's basic attack, kit and weapon style
-     * ({@link HeroLoadout#roleId}); without a definition, the one that fits its visual file's weapon style.
+     * The role it counts as (HEROES_V2 3.2, 7.1): its duty's worker role, or for a guard the soldier role its
+     * definition's basic attack, kit and weapon style fit ({@link HeroLoadout#roleId}); without a definition, the one
+     * that fits its visual file's weapon style.
      */
     public NpcRole role() {
         String id = def != null ? HeroLoadout.roleId(def, visual.style()) : HeroIdentity.combatRoleId(visual.style());
         NpcRole r = NpcRole.byId(id);
+        if (r == null && def != null) {
+            r = NpcRole.byId(HeroLoadout.combatRoleId(def, visual.style())); // an unknown duty: it guards
+        }
         return r == null ? NpcRole.SWORDSMAN : r;
     }
 

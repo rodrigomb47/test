@@ -2579,7 +2579,7 @@ public final class FCGameTests {
      * A pond dug into the platform: water at relative y 0..1 (its surface level with the floor) over a stone bottom
      * and sides, so a fisherman can walk right up to the bank. Returns its water (absolute).
      */
-    private static java.util.Set<BlockPos> sunkenPond(GameTestHelper h, int x0, int z0, int x1, int z1) {
+    static java.util.Set<BlockPos> sunkenPond(GameTestHelper h, int x0, int z0, int x1, int z1) {
         java.util.Set<BlockPos> water = new java.util.HashSet<>();
         for (int x = x0 - 1; x <= x1 + 1; x++) {
             for (int z = z0 - 1; z <= z1 + 1; z++) {
@@ -2599,7 +2599,7 @@ public final class FCGameTests {
     }
 
     /** Checks a found fishing spot: bobber in {@code pond}, stand on dry solid ground with head room, 2..5 away and 1..2 above. */
-    private static void assertGoodSpot(GameTestHelper h, com.factionclash.logic.FishingWater.Spot s, java.util.Set<BlockPos> pond,
+    static void assertGoodSpot(GameTestHelper h, com.factionclash.logic.FishingWater.Spot s, java.util.Set<BlockPos> pond,
                                        java.util.Set<BlockPos> never) {
         var level = h.getLevel();
         h.assertTrue(s != null, "a fishing spot should be found in the pond");
@@ -2680,7 +2680,7 @@ public final class FCGameTests {
     }
 
     /** A Lure III rod: the bite comes sooner, so the fishing tests run in reasonable time. */
-    private static ItemStack lureRod(GameTestHelper h) {
+    static ItemStack lureRod(GameTestHelper h) {
         ItemStack rod = new ItemStack(Items.FISHING_ROD);
         var reg = h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
         rod.enchant(reg.getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.LURE), 3);

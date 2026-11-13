@@ -120,4 +120,19 @@ class HeroActionsTest {
         }
         assertEquals(-1, HeroActions.actionCode("attack.9"));
     }
+
+    @Test
+    void telegraphPosesMapToClips() {
+        assertEquals(HeroActions.actionCode("attack.1"), HeroActions.telegraphPose(HeroDef.Pose.SWING));
+        assertEquals(HeroActions.actionCode("guard"), HeroActions.telegraphPose(HeroDef.Pose.BLOCK));
+        assertEquals(HeroActions.actionCode("attack.ranged"), HeroActions.telegraphPose(HeroDef.Pose.BOW_DRAW));
+        assertEquals(HeroActions.actionCode("attack.ranged"), HeroActions.telegraphPose(HeroDef.Pose.CROSSBOW_CHARGE));
+        assertEquals(HeroActions.actionCode("emote.cheer"), HeroActions.telegraphPose(HeroDef.Pose.HORN));
+        assertEquals(HeroActions.actionCode("emote.think"), HeroActions.telegraphPose(HeroDef.Pose.SPYGLASS));
+        assertEquals(HeroActions.CODE_NONE, HeroActions.telegraphPose(HeroDef.Pose.NONE));
+        assertEquals(HeroActions.CODE_NONE, HeroActions.telegraphPose(null));
+        for (HeroDef.Pose p : HeroDef.Pose.values()) {
+            assertTrue(HeroActions.telegraphPose(p) >= 0, p + " maps to a real clip");
+        }
+    }
 }

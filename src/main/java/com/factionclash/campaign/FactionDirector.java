@@ -440,7 +440,7 @@ public final class FactionDirector {
             return 0;
         }
         List<FactionNpc> guards = level.getEntitiesOfClass(FactionNpc.class, walls.inflate(24, 8, 24),
-                g -> g.isAlive() && g.getFaction() == b.faction && g.getRole().combatant && !g.isDisplayOnly());
+                g -> g.isAlive() && g.getFaction() == b.faction && g.fightsLikeSoldier() && !g.isDisplayOnly());
         // raiders and enemy players first, then monsters: two guards on a monster must not leave an intruder unattended
         intruders.sort(Comparator.comparingInt(e -> e instanceof net.minecraft.world.entity.monster.Monster ? 1 : 0));
         int assigned = 0;
@@ -454,7 +454,7 @@ public final class FactionDirector {
                 }
                 net.minecraft.world.entity.LivingEntity cur = g.getTarget();
                 boolean busy = cur != null && cur.isAlive() && !(atHeart && !cur.blockPosition().closerThan(heart, 8));
-                if (!busy && !g.pursuit().ignores(intruder)) { // (not one it gave up on: a monster it cannot get at)
+                if (!busy && !g.pursuit().ignores(intruder) && g.senses(intruder)) { // (not one it gave up on; a blinded one sees 5 blocks)
                     g.setTarget(intruder);
                     assigned++;
                 }
@@ -584,6 +584,8 @@ public final class FactionDirector {
             if (f.raiders.isEmpty() || t - f.raidStartedAt > 72000) {
                 Messages.toFaction(level.getServer(), f.type, Component.literal("Raid on " + (target == null ? "?" : target.faction.displayName)
                         + " has ended" + (target != null && target.destroyed ? " in victory" : "")));
+                // v1 22.1: heroes of a won raid who survived it, and the heroes who held the base it failed against
+                com.factionclash.hero.HeroManager.raidEnded(level, f, target, target != null && target.destroyed);
                 f.raidTarget = -1;
                 if (t - f.raidStartedAt > 72000) {
                     f.raiders.clear();

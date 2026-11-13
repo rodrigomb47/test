@@ -87,8 +87,9 @@ public final class FCEvents {
             return;
         }
         if (attacker != event.getEntity() && CombatRules.sameSide(attacker, event.getEntity())
-                && (attacker instanceof FactionNpc || event.getEntity() instanceof FactionNpc)) {
-            event.setCanceled(true); // no friendly fire between faction members and their NPCs
+                && (attacker instanceof FactionNpc || event.getEntity() instanceof FactionNpc
+                || com.factionclash.hero.HeroSummons.isSummon(attacker) || com.factionclash.hero.HeroSummons.isSummon(event.getEntity()))) {
+            event.setCanceled(true); // no friendly fire between faction members, their NPCs and their heroes' summons
             return;
         }
         if (event.getEntity() instanceof FactionNpc && CombatRules.isUndeadHalfDamageSource(attacker)) {

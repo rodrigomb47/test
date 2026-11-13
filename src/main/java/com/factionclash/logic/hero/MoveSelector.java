@@ -492,7 +492,7 @@ public final class MoveSelector {
     }
 
     private boolean eligible(Move m, long now, Sense s, boolean needCharge) {
-        if (!runnable.test(m) || !m.phases().contains(s.phase)) {
+        if (!runnable.test(m) || !m.phases().contains(s.phase) || !stateAllows(m, s)) {
             return false;
         }
         if (needCharge && (isUltimate(m) ? !ultimateReady(m, now, s.energy) : refill(m, now).left <= 0)) {
@@ -525,6 +525,43 @@ public final class MoveSelector {
             }
         }
         return Conditions.useWhen(m, s);
+    }
+
+    /**
+     * The state the hero is in (HEROES_V2 12.9, v1 18; task A4): {@code skills_locked} leaves only the ultimates; a
+     * state's own {@code moves} replace the move list while it lasts (the ultimates stay); and a move whose only effect
+     * enters the state it is already in is not cast again.
+     */
+    public boolean stateAllows(Move m, Sense s) {
+        boolean ult = isUltimate(m);
+        if (s.state != null) {
+            HeroDef.State st = kit.state(s.state);
+            if (st != null && !ult && (st.skillsLocked() || !st.moves().isEmpty() && !st.moves().contains(m.id()))) {
+                return false;
+            }
+        }
+        String enters = onlyEnters(m, kit);
+        return enters == null || !s.empowered || !enters.equals(s.state);
+    }
+
+    /**
+     * The state a move only enters (its one effect list is a single {@code empower}), or null. A format-1
+     * {@code empower} names no state and enters the hero's first (its mapped {@code empowered}).
+     */
+    public static String onlyEnters(Move m, HeroDef.V2 kit) {
+        List<HeroDef.Effect> fx = m.ability().effects();
+        if (fx.size() != 1 || !m.strikes().isEmpty() || !(fx.get(0) instanceof HeroDef.Empower e)) {
+            return null;
+        }
+        return stateOf(e, kit);
+    }
+
+    /** The state an {@code empower} enters: its {@code state}, or the hero's first state (v1's {@code empowered}). */
+    public static String stateOf(HeroDef.Empower e, HeroDef.V2 kit) {
+        if (e.state() != null) {
+            return e.state();
+        }
+        return kit == null || kit.states().isEmpty() ? null : kit.states().get(0).name();
     }
 
     /** {@code weight x band fit x prefer fit x novelty x posture} (6.3). */

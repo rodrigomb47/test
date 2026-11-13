@@ -172,12 +172,12 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
         this.targetSelector.addGoal(1, new FactionHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
-                e -> isGuardDuty() && CombatRules.isHostileMonster(e) && !pursuit.ignores(e)));
+                e -> isGuardDuty() && CombatRules.isHostileMonster(e) && !pursuit.ignores(e) && senses(e)));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, FactionNpc.class, 10, true, false,
                 e -> isGuardDuty() && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), o.getFaction())
-                        && !pursuit.ignores(e)));
+                        && !pursuit.ignores(e) && senses(e)));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
-                e -> isGuardDuty() && e instanceof ServerPlayer p && CombatRules.isEnemyPlayer(this, p) && !pursuit.ignores(e)));
+                e -> isGuardDuty() && e instanceof ServerPlayer p && CombatRules.isEnemyPlayer(this, p) && !pursuit.ignores(e) && senses(e)));
     }
 
     /** What it does about a target it cannot walk up to and hit (break, build, or wait out of reach). */
@@ -225,6 +225,93 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     /** Combatants actively look for enemies; civilians only defend themselves. */
     public boolean isGuardDuty() {
         return getRole().combatant;
+    }
+
+    /**
+     * Whether it fights like a soldier whatever its role (HERO_FORMAT.md 29.3, task A4): a combatant, or a hero of any
+     * duty (a miner-duty hero still fights, answers alarms and never flees as civilians do). The civilian rules (flee
+     * under half health, defend only close by) read this, not the role.
+     */
+    public boolean fightsLikeSoldier() {
+        return getRole().combatant;
+    }
+
+    /** Whether its job keeps it from a fight now (a scout on retreat, a woodcutter on its pillar). */
+    public boolean jobIgnoresCombat() {
+        return job != null && job.ignoresCombat();
+    }
+
+    /** Whether it fights with a bow or crossbow: its role's (a hero: its basic attack's style). */
+    public boolean rangedFighter() {
+        return getRole().ranged;
+    }
+
+    /** An archer backs away from an enemy closer than this (6 blocks; a hero half its keep distance, v1 8). */
+    public double kiteDistance() {
+        return 6.0;
+    }
+
+    /** How far from its base it chases an enemy when defending (soldiers 56; a hero by its aggression, v1 8). */
+    public double meleeLeash() {
+        return 56;
+    }
+
+    /** A skirmisher steps back after each melee hit until its next swing is ready (v1 5.2); soldiers never do. */
+    public boolean skirmishes() {
+        return false;
+    }
+
+    /**
+     * The distance it keeps from its target in melee instead of closing (a melee hero with a keep distance and a move
+     * ready, v1 8; task A4), 0 to close in as soldiers do.
+     */
+    public double holdsDistance() {
+        return 0;
+    }
+
+    /** Blindness or darkness: an NPC's search and follow range is cut to 5 blocks (HEROES_V2 6.15). */
+    private boolean blindCut;
+
+    /**
+     * Whether it can take up {@code e} by its own senses or an alarm: always, except under Blindness or Darkness beyond
+     * 5 blocks (HEROES_V2 6.15).
+     */
+    public boolean senses(LivingEntity e) {
+        boolean blind = hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS) || hasEffect(net.minecraft.world.effect.MobEffects.DARKNESS);
+        return !blind || distanceTo(e) <= com.factionclash.hero.HeroControlEvents.BLIND_RANGE;
+    }
+    private static final net.minecraft.resources.ResourceLocation BLIND_ID =
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("factionclash", "blind_range");
+
+    private void blindRange() {
+        boolean blind = hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS) || hasEffect(net.minecraft.world.effect.MobEffects.DARKNESS);
+        if (!blind && !blindCut) {
+            return; // the usual case: two effect lookups a tick, nothing else
+        }
+        var inst = getAttribute(Attributes.FOLLOW_RANGE);
+        if (inst == null) {
+            return;
+        }
+        var old = inst.getModifier(BLIND_ID);
+        blindCut = blind;
+        if (!blind) {
+            if (old != null) {
+                inst.removeModifier(BLIND_ID);
+            }
+            return;
+        }
+        double without = inst.getValue() - (old == null ? 0 : old.amount());
+        double cut = Math.min(0, com.factionclash.hero.HeroControlEvents.BLIND_RANGE - without);
+        if (old == null || Math.abs(old.amount() - cut) > 1e-6) {
+            inst.removeModifier(BLIND_ID);
+            if (cut < 0) {
+                inst.addTransientModifier(new AttributeModifier(BLIND_ID, cut, AttributeModifier.Operation.ADD_VALUE));
+            }
+        }
+        LivingEntity t = getTarget();
+        if (blind && t != null && distanceTo(t) > com.factionclash.hero.HeroControlEvents.BLIND_RANGE + 1) {
+            setTarget(null); // it cannot follow what it cannot see
+        }
     }
 
     // ---------------------------------------------------------------- movement
@@ -535,8 +622,13 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return affixes;
     }
 
+    /** Its stacks of an affix, with a hero's {@code aura} at its base (v1 21; the affix's own cap still holds). */
     public double affix(Affix a) {
-        return AffixRoller.total(affixes, a);
+        int aura = com.factionclash.hero.HeroTalents.auraStacks(this, a);
+        if (aura <= 0) {
+            return AffixRoller.total(affixes, a);
+        }
+        return Math.min(affixes.getOrDefault(a, 0) + aura, a.maxStacks) * a.perStack;
     }
 
     /** Awards experience to this NPC for completed work and rolls one affix per level gained (spec 18). */
@@ -673,6 +765,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (tickCount % 10 == 0) {
             pickUpExperience();
         }
+        blindRange();
         if (tickCount % 200 == 0) {
             // Adventuring Time: every biome the faction's NPCs set foot in
             level().getBiome(blockPosition()).unwrapKey().ifPresent(k ->
@@ -686,7 +779,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (t != null) {
             long busy = Math.max(Math.max(lastHurtTime, lastAttackTime), pursuit.engagedAt);
             boolean stale = tickCount - busy > 200 && tickCount - targetSetAt > 200;
-            boolean farForCivilian = getRole().isCivilian() && distanceToSqr(t) > 100;
+            boolean farForCivilian = getRole().isCivilian() && !fightsLikeSoldier() && distanceToSqr(t) > 100;
             if (!t.isAlive() || stale || farForCivilian) {
                 if (stale) {
                     pursuit.staleTarget(t);
@@ -873,7 +966,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         }
         LivingEntity t = getTarget();
         boolean raise = false;
-        if (shieldCooldown == 0 && t != null && t.isAlive() && getRole().combatant && !getRole().ranged) {
+        if (shieldCooldown == 0 && t != null && t.isAlive() && fightsLikeSoldier() && !rangedFighter()) {
             double d = distanceTo(t);
             boolean shooter = t instanceof net.minecraft.world.entity.monster.RangedAttackMob
                     || t instanceof FactionNpc o && o.getRole().ranged;

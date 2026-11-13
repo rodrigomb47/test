@@ -28,7 +28,11 @@ import java.util.function.Predicate;
  * {@code heroes.maxDotPerSecond}.</li>
  * <li><b>Stat modifiers</b> per source and key, refreshed or stacked the same way; seconds 0 is held until removed.
  * {@link #statPercent} is their sum per stat.</li>
- * <li>At most {@link #MAX_STATUSES} entries (v1 19); the oldest goes first.</li>
+ * <li><b>Control</b> (task A4, HEROES_V2 6.14-6.15): a stun stops its carrier for its seconds, whoever carries it, and
+ * leaves an immunity for twice as long after it ends ({@link BossRules#stunImmuneUntil}): the immunity belongs to the
+ * carrier, so no second stun from anyone lands inside it. A taunt names the hero it binds the carrier to.</li>
+ * <li>At most {@link #MAX_STATUSES} entries (v1 19); the oldest goes first (never a stun or its immunity, so the cap
+ * cannot be used to clear a stun).</li>
  * </ul>
  * Pure, unit-tested ({@code StatusBookTest}).
  */
@@ -40,7 +44,15 @@ public final class StatusBook {
     /** A held status (an {@code always} passive's stat): it never expires by time. */
     public static final long HELD = Long.MAX_VALUE;
 
-    public enum Kind { MARK, DOT, STAT, SHIELD, FREEZE }
+    public enum Kind {
+        MARK, DOT, STAT, SHIELD, FREEZE,
+        /** stopped: cannot move, attack, use items or start moves (A4) */
+        STUN,
+        /** no new stun lands until it runs out (6.14: twice the stun's length after it ends) */
+        IMMUNE,
+        /** bound to the hero named by {@code source} (A4, HEROES_V2 6.15) */
+        TAUNT
+    }
 
     /**
      * One status. {@code id}: the mark id, the DoT's or the stat's key; {@code source}: who applied it (a hero's id
@@ -90,12 +102,26 @@ public final class StatusBook {
     public record DotDue(String source, Element element, double perSecond) {
     }
 
-    /** What an {@link #expire} removed: whether stats changed, the shield that ran out (its amount), a freeze ending. */
-    public record Expired(boolean stats, double shield, boolean freeze, boolean marks) {
-        public static final Expired NONE = new Expired(false, 0, false, false);
+    /**
+     * What an {@link #expire} removed: whether stats changed, the shield that ran out (its amount), a freeze, marks, a
+     * stun or a taunt ending.
+     */
+    public record Expired(boolean stats, double shield, boolean freeze, boolean marks, boolean stun, boolean taunt) {
+        public static final Expired NONE = new Expired(false, 0, false, false, false, false);
+
+        public Expired(boolean stats, double shield, boolean freeze, boolean marks) {
+            this(stats, shield, freeze, marks, false, false);
+        }
 
         public boolean any() {
-            return stats || shield > 0 || freeze || marks;
+            return stats || shield > 0 || freeze || marks || stun || taunt;
+        }
+    }
+
+    /** What a {@link #dispel} took: whether a stat changed, and the shield it removed (its amount; 0: none). */
+    public record Dispelled(boolean stats, double shield) {
+        public boolean any() {
+            return stats || shield > 0;
         }
     }
 
@@ -152,11 +178,14 @@ public final class StatusBook {
     /** Over {@link #MAX_STATUSES}: the oldest entries go. */
     private void trim() {
         while (entries.size() > MAX_STATUSES) {
-            Entry oldest = entries.get(0);
+            Entry oldest = null;
             for (Entry e : entries) {
-                if (e.order < oldest.order) {
+                if (e.kind != Kind.STUN && e.kind != Kind.IMMUNE && (oldest == null || e.order < oldest.order)) {
                     oldest = e;
                 }
+            }
+            if (oldest == null) {
+                return;
             }
             entries.remove(oldest);
             if (oldest.kind == Kind.STAT) {
@@ -425,6 +454,88 @@ public final class StatusBook {
         return false;
     }
 
+    // ------------------------------------------------------------------ control (A4: stun, taunt, dispel)
+
+    private Entry first(Kind k) {
+        for (Entry e : entries) {
+            if (e.kind == k) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * A stun of {@code seconds} (HEROES_V2 6.14-6.15): the carrier is stopped until it runs out, then cannot be stunned
+     * again by anyone for twice its length ({@link BossRules#stunImmuneUntil}). False, and nothing changes, while an
+     * earlier stun's immunity holds (a stun running now holds it too).
+     */
+    public boolean stun(double seconds, long now) {
+        if (seconds <= 0 || stunImmune(now)) {
+            return false;
+        }
+        entries.removeIf(e -> e.kind == Kind.STUN || e.kind == Kind.IMMUNE);
+        add(new Entry(Kind.STUN, "stun", "")).expiresAt = until(now, seconds);
+        add(new Entry(Kind.IMMUNE, "stun", "")).expiresAt = Math.max(now + 1, BossRules.stunImmuneUntil(now, seconds));
+        return true;
+    }
+
+    /** Whether it is stunned at {@code now}. */
+    public boolean stunned(long now) {
+        Entry e = first(Kind.STUN);
+        return e != null && e.active(now);
+    }
+
+    /** Whether a new stun would do nothing at {@code now} (a stun or its immunity is on). */
+    public boolean stunImmune(long now) {
+        Entry e = first(Kind.IMMUNE);
+        return e != null && e.active(now) || stunned(now);
+    }
+
+    /** The game time its stun ends (0: not stunned). */
+    public long stunEndsAt(long now) {
+        Entry e = first(Kind.STUN);
+        return e != null && e.active(now) ? e.expiresAt : 0;
+    }
+
+    /**
+     * A taunt by the hero {@code source} (its id string) for {@code seconds}: the newest taunt replaces any other (one
+     * hero holds the carrier at a time; v1 13.4 caps a taunt at 8 s).
+     */
+    public void taunt(String source, double seconds, long now) {
+        entries.removeIf(e -> e.kind == Kind.TAUNT);
+        add(new Entry(Kind.TAUNT, "taunt", source)).expiresAt = until(now, seconds);
+    }
+
+    /** The hero that taunts it now (its id string), or null. */
+    public String tauntedBy(long now) {
+        Entry e = first(Kind.TAUNT);
+        return e != null && e.active(now) ? e.source : null;
+    }
+
+    /**
+     * {@code dispel} (v1 13.4): removes the helpful stat modifiers ({@link Stat#helpful}) and the hero shield. The
+     * potion effects and the absorption are the game's to remove.
+     */
+    public Dispelled dispel() {
+        boolean stats = false;
+        double shield = 0;
+        for (int i = entries.size() - 1; i >= 0; i--) {
+            Entry e = entries.get(i);
+            if (e.kind == Kind.STAT && e.stat != null && helpful(e.stat, e.amount)) {
+                entries.remove(i);
+                stats = true;
+            } else if (e.kind == Kind.SHIELD) {
+                entries.remove(i);
+                shield = Math.max(shield, e.amount > 0 ? e.amount : Double.MIN_VALUE);
+            }
+        }
+        if (stats) {
+            statsDirty = true;
+        }
+        return new Dispelled(stats, shield);
+    }
+
     // ------------------------------------------------------------------ expiry and cleansing
 
     /** Removes what ran out by {@code now} and says what the game must undo. */
@@ -432,7 +543,7 @@ public final class StatusBook {
         if (entries.isEmpty()) {
             return Expired.NONE;
         }
-        boolean stats = false, freeze = false, marks = false;
+        boolean stats = false, freeze = false, marks = false, stun = false, taunt = false;
         double shield = 0;
         for (int i = entries.size() - 1; i >= 0; i--) {
             Entry e = entries.get(i);
@@ -445,6 +556,8 @@ public final class StatusBook {
                 case SHIELD -> shield = Math.max(shield, e.amount > 0 ? e.amount : Double.MIN_VALUE);
                 case FREEZE -> freeze = true;
                 case MARK -> marks = true;
+                case STUN -> stun = true;
+                case TAUNT -> taunt = true;
                 default -> {
                 }
             }
@@ -452,12 +565,13 @@ public final class StatusBook {
         if (stats) {
             statsDirty = true;
         }
-        return stats || freeze || marks || shield > 0 ? new Expired(stats, shield, freeze, marks) : Expired.NONE;
+        return stats || freeze || marks || shield > 0 || stun || taunt
+                ? new Expired(stats, shield, freeze, marks, stun, taunt) : Expired.NONE;
     }
 
     /**
-     * {@code cleanse} (v1 13.2): removes hero DoTs, marks an enemy put on it, the freeze hold and harmful stat
-     * modifiers ({@link Stat#helpful}). {@code sourceIsEnemy} tells, for a mark whose applier is known only by its id
+     * {@code cleanse} (v1 13.2): removes hero DoTs, marks an enemy put on it, the freeze hold, a stun (its immunity
+     * stays: a cleanse never opens the way to a second stun) and harmful stat modifiers ({@link Stat#helpful}). {@code sourceIsEnemy} tells, for a mark whose applier is known only by its id
      * string, whether that applier is hostile now (the entry's own {@code enemy} flag counts too). Returns whether a
      * stat changed.
      */
@@ -466,10 +580,10 @@ public final class StatusBook {
         for (int i = entries.size() - 1; i >= 0; i--) {
             Entry e = entries.get(i);
             boolean go = switch (e.kind) {
-                case DOT, FREEZE -> true;
+                case DOT, FREEZE, STUN -> true;
                 case MARK -> e.enemy || sourceIsEnemy != null && sourceIsEnemy.test(e.source);
                 case STAT -> e.stat != null && !helpful(e.stat, e.amount);
-                case SHIELD -> false;
+                case SHIELD, IMMUNE, TAUNT -> false;
             };
             if (go) {
                 entries.remove(i);

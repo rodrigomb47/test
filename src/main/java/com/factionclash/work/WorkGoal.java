@@ -21,7 +21,7 @@ public class WorkGoal extends Goal {
             return false;
         }
         if (npc.getTarget() != null && npc.getTarget().isAlive()) {
-            if (job.ignoresCombat()) {
+            if (npc.jobIgnoresCombat()) {
                 npc.setTarget(null);
                 return true;
             }
