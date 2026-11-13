@@ -20,7 +20,7 @@ from anim.clip import (EASINGS, GECKO_EASINGS, TICK, Clip, Event, Key, Track, de
                        simplify)
 from anim.writer import animation_file, clip_timing, frames_of
 from rig import BASE_IDS
-from util import HerogenError, ROOT, dumps_json
+from util import HerogenError, ROOT, dumps_json, load_json
 
 
 def lib_json(built):
@@ -384,9 +384,10 @@ class LibraryRulesTest(unittest.TestCase):
         self.assertEqual((core_clip("move.walk").length, core_clip("move.run").length,
                           core_clip("move.idle").length), (1.0, 0.6, 24.0))
         kat = library.style("katana").by_name
-        self.assertTrue({"attack.1", "combat.idle"} <= set(kat))
-        # G4: the core's restyled reactions, re-expanded over the katana stance
-        self.assertEqual(sorted(set(kat) - {"attack.1", "combat.idle"}), sorted(library.restyled_recipes()))
+        own = set(load_json(library.style_recipe_path("katana"))["animations"])
+        self.assertTrue({"attack.1", "combat.idle"} <= own <= set(kat))
+        # G4: the core's restyled reactions, re-expanded over the katana stance (G5: but those the style defines)
+        self.assertEqual(sorted(set(kat) - own), sorted(set(library.restyled_recipes()) - own))
 
     def test_one_file_serves_every_form(self):
         """Every keyed bone is a rig bone, so it has the same name and a pivot from the rig on every base."""

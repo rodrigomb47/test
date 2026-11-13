@@ -15,7 +15,7 @@
         "hand_l": [-24, -28.4, 35],
         "arm_r": [-14, 0, 16],
         "forearm_r": [-70, 0, 0],
-        "hand_r": [24, 0, 0]
+        "hand_r": [24, 0, 3]
       },
       "fix": ["level_feet", "ground"]
     },

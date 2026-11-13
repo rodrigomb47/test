@@ -8,6 +8,12 @@ A recipe:
   class       light, heavy, area, ultimate: the anticipation and recovery minimums the hit markers must meet (6.4)
   settle_to   the clip an action must end on (every channel it keys ends on that clip's first key): default
               "combat.idle" in a style library, "move.idle" elsewhere
+  plays_over  (G5) the base clip the action starts over (its "@stance", the base of its bake and of the feet rules),
+              when it is not the one it settles on: a style's `draw` starts over move.idle (the weapon sheathed) and
+              settles on combat.idle, `sheathe` the other way round
+  arms_over   (G5) a pose name: keys with `over` add their arm bones (arm_*, forearm_*, hand_*) to that pose's arms
+              instead of the stance's (the "@stance" keys keep the stance): a style's restyled death, kneel or stagger
+              lowers the weapon arm (library.py `restyle_arms`) instead of folding the guard into the face
   secondary   true (default), false, or a list of group names of herosrc/anim/secondary.json to bake
   planted     the feet must not move (default: true unless a layer is a gait); ground: a sole must touch y 0
   poses       extra poses for this recipe ({name: pose spec}, poses.py)
@@ -50,8 +56,10 @@ from util import HerogenError
 KEY_FIELDS = ("t", "pose", "ease", "root", "face", "marker", "sound", "particle", "overshoot", "overshoot_time",
               "settle", "settle_time", "over")
 RECIPE_FIELDS = ("length", "loop", "kind", "class", "settle_to", "secondary", "planted", "ground", "poses", "keys",
-                 "layers", "markers", "bones", "description", "steps", "contact", "restyle", "copy")
+                 "layers", "markers", "bones", "description", "steps", "contact", "restyle", "copy", "plays_over",
+                 "arms_over")
 STANCE = "@stance"
+ARM_GLOBS = ("arm_*", "forearm_*", "hand_*")
 DEFAULT_EASE = "easeInOutSine"
 SETTLE_BLEND = 0.15
 FACE_BONE = "face_ctrl"
@@ -219,6 +227,7 @@ class Expander:
         self.lookup = lookup or (lambda name: None)
         self.default_settle = default_settle
         self.stance = None
+        self.over_base = None
 
     def expand(self, name, recipe, where=None):
         where = where or "animation %s" % name
@@ -239,12 +248,23 @@ class Expander:
         if kind == "action":
             # `over`: the base controller's clip the action plays over (its "@stance", the base of its bake and of
             # the feet rules); `settle_to`: the clip a one-shot ends on (the same, or the .loop it leads into)
-            clip.meta["over"] = self.default_settle
+            clip.meta["over"] = recipe.get("plays_over", self.default_settle)
             clip.meta["settle_to"] = recipe.get("settle_to", self.default_settle)
             base = self.lookup(clip.meta["over"])
             settle = self.lookup(clip.meta["settle_to"])
         self.stance = stance_of(base)
         lib = self.poses.with_specs(recipe.get("poses"), where) if recipe.get("poses") else self.poses
+        self.over_base = None
+        if recipe.get("arms_over"):
+            base_chans = _copy_chans(self._stance(where))
+            arms = P.resolve(lib.get(recipe["arms_over"]), self.forms)
+            for b in list(base_chans):
+                if any(fnmatch.fnmatchcase(b, g) for g in ARM_GLOBS):
+                    del base_chans[b]
+            for b, cs in arms.items():
+                if any(fnmatch.fnmatchcase(b, g) for g in ARM_GLOBS) and "rotation" in cs:
+                    base_chans[b] = {"rotation": cs["rotation"]}
+            self.over_base = base_chans
         self._pose_keys(clip, recipe.get("keys", []), lib, where)
         gait = False
         for i, layer in enumerate(recipe.get("layers", [])):
@@ -316,7 +336,7 @@ class Expander:
                 contact = False
             if k.get("over"):
                 globs = None if k["over"] is True else list(k["over"])
-                chans = _add_chans(self._stance(w), chans, globs)
+                chans = _add_chans(self.over_base or self._stance(w), chans, globs)
                 if not k.get("root") and _legs_offset(chans, self._stance(w)) and (
                         globs is None or any(fnmatch.fnmatchcase("leg_r", g) for g in globs)):
                     # leg offsets over the stance (a knee bend in a style's own footing): its soles back on the
@@ -337,6 +357,7 @@ class Expander:
                            if ch in CHANNELS})
         prev, prev_k = {}, {}
         zero = (0.0, 0.0, 0.0)
+        pose_times = [t for t, k, _, _, _ in resolved if k.get("pose") or k.get("root") or k.get("over")]
         for t, k, chans, w, _ in resolved:
             if k.get("pose") or k.get("root") or k.get("over"):
                 ez = k.get("ease", DEFAULT_EASE)
@@ -344,6 +365,13 @@ class Expander:
                 over = 0.15 if over is True else float(over or 0)
                 settle = k.get("settle")
                 settle = 0.1 if settle is True else float(settle or 0)
+                later = [x for x in pose_times if x > t + 1e-9]
+                for amount, field, default in ((over, "overshoot_time", 0.1), (settle, "settle_time", 0.15)):
+                    extra = t + float(k.get(field, default))
+                    if amount and later and extra >= later[0] - 1e-9:
+                        raise HerogenError("%s: its %s key at %.3f s falls on or after the next pose key (%.3f s): "
+                                           "it would pull the pose back after that key" % (
+                                               w, field.split("_")[0], extra, later[0]))
                 for bc in animated:
                     cs = chans.get(bc[0], {})
                     v = cs.get(bc[1], zero)

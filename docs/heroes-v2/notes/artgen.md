@@ -1884,3 +1884,252 @@ chibi's head and the check catches it. `test_style` and `test_parts` updated for
   (head-local z 5); through a jagged hem the two show and z-fight in any frame where `hair_back` is at rest. Moving
   each `back_base` 0.1 px back fixes it; it changes the test rig, the fallback and every preview, so it was left out
   of this task.
+
+---
+
+## G5: the style libraries of the slice (2026-11-13)
+
+HEROES_V2.md 13.6 "Style libraries" and 15.2 row G5, on G3's generator, G4's core and G6c's hand poses. Three runs
+were interrupted (container restarts and a usage-limit pause). The first two wrote katana, fists and focus and the
+generator additions. The third reviewed that work (the bugs under "Found and fixed"), wrote hammer, twin_blades,
+sword_shield and staff, the previews, the tests and these notes, and stopped just before its commit. A fourth run
+repeated the checks and fixed the four stances that `herogen lint` caught (under "Found at the commit check"),
+and was stopped in its turn while the preview checks ran. A fifth reran the checks, regenerated the two weapon
+sheets the stance fix had made stale and committed. The approved look (rig v3, style pass 2) is unchanged: this
+task adds motion only. As before, no reference model's animation, pose or timing is in the
+repository.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/anim/styles/{fists,focus,hammer,katana,twin_blades,sword_shield,staff}.json` | the seven slice libraries: `restyle_arms`, the file's own `poses` (the in-between keys of its clips; the hand poses stay in `herosrc/anim/poses/<style>.json`) and `animations` |
+| outputs | `_style_<style>.animation.json` and `hero_timings/_style_<style>.json` for the seven (`_style_fists` was the empty file of `_fallback`'s style; katana grew from 17 clips to 25; the other five are new) |
+| `anim/library.py` | `style_poses` (a style file's poses join the pose library for its clips and its heroes' own files) and `restyle_arms` |
+| `anim/recipes.py` | `plays_over`, `arms_over`, and the error for a settle or overshoot key that lands after the next pose key |
+| `anim/primitives.py` | `run_cycle` with `upper: 0` (the legs and torso of the run; the arms are left to the recipe's carry pose: `combat.run`) |
+| `grips.py` | `animation_problems` (the props through every tick of a library's clips) and the second hand's slide along the handle |
+| `anim/style_preview.py`, `herogen anim-previews --styles [--check]` | the previews below |
+| `herosrc/anim/poses/twin_blades.json` | the crouch now uses the form-scaled `floor` fix (below) |
+| `herosrc/anim/poses/{focus,hammer,staff,sword_shield}.json` | the stances' head bowed 3 degrees more (focus, hammer, staff) and the sword wrist turned 3 degrees sideways (sword_shield): the coplanar rule (below) |
+| `tests/test_styles.py` | 18 tests (below) |
+
+### The seven libraries
+
+Every library has `combat.idle`, `combat.run` (the core run's legs and lean with the style's carry: the run while
+the weapon is drawn, decision 7), `draw`, `sheathe`,
+`attack.1-3`, `guard`, `guard.loop`, `guard.hit`, `guard.hit.loop` (a copy of `guard.loop`: the guard stays up after a
+blow until the next code), `dodge`, `intro`, `victory`, `taunt`, and the twelve restyled core reactions over its own
+stance (G4). 24-25 clips each.
+
+| Style | Slice prop (preview heroes) | Stance and string (the hit at clip time) | Ranged | Draw / sheathe | Guard | Dodge, intro, victory, taunt | `combat.run` |
+|---|---|---|---|---|---|---|---|
+| `fists` | Natsuho's claws (Natsuho on chibi_f and adult_f) | guard up; lead jab 0.40, cross 0.40, claw rake 0.45 | - | the claws flexed out (`weapon:drawn` 0.35) / shaken in | forearms crossed | a cat's spring back; the claws knocked together; a fist pump with a fang grin; a neck crack and a beckon | fists high and pumping |
+| `focus` | Hinae's wand and talismans (chibi_f), Yugen's fan (adult_m) | casting ready; one-hand cast 0.40, off-hand flick 0.40, two-hand burst 0.45 | overhand toss 0.40 | from the hip, a flourish | a ward, the prop upright and the palm out | a light hop; a bow over the prop; the prop raised with a twirl; a wagging hand | the prop trailing like a baton |
+| `hammer` | Benika's club, both hands (chibi_f, adult_f) | the club on the shoulder; overhead 0.45, side swing 0.45, slam 0.55 | - | over the right shoulder from the back | the club as a bar | a heavy hop; the club levelled one-handed at the enemy; hoisted with a laugh; bounced on the shoulder with a beckon | the shoulder carry |
+| `katana` | Kagenori's long sword (chibi_m, adult_m) | low ready; diagonal 0.40, level 0.40, thrust 0.45 | - | the quick draw from the obi into a draw-cut; the chiburi and the slide home | the blade across | a hop; a salute; the chiburi and the lowered blade; a beckon | the blade trailing |
+| `twin_blades` | Tobimaru's reversed blade and kunai (chibi_m, adult_m) | crouched; backhand slash 0.40, kunai stab 0.40 and slash 0.60, the whirl 0.45 | the kunai 0.40 | the blade from the small of the back, the kunai from the thigh holster | crossed before the face | a low hop; the blade raised before the face; the blades lowered, eyes closed; a kunai twirl | the ninja run, arms back |
+| `sword_shield` | Ilsabet's longsword and kite shield (chibi_f, adult_f) | shield forward; diagonal cut 0.40, level cut 0.40, shield bash 0.45 | - | the sword from the left hip and the shield from the back; a flick and the slide home | the shield high | a step-hop behind the shield; a salute; the sword raised; the sword tapped on the rim | behind the shield |
+| `staff` | Ambrose's cauldron staff (chibi_m, adult_m) | caster ready; forward cast 0.40, upward cast 0.45, the bonk 0.50 | a vial 0.40 | from the back | the staff as a bar | a startled hop; the staff planted with a flourish; raised with a cheer; a beckon, leaning on the staff | the staff upright beside the body |
+
+Work strokes where they matter (13.6, 7.3): the hammer's `work.mine` (Benika is a miner: the hammer's raise and
+overhead strike with a pick at `item_r` and the left hand on its handle) and the katana's `work.chop` (the level cut
+of `attack.2` with an axe, the edge leading, as 7.3's example asks). Both play over `move.idle`, settle on it and key
+the upper body only, like the core's strokes. The other styles use the core's.
+
+The style's own `enrage` replaces the restyled one where the core's roar did not fit: the twin blades' deep crouch
+(the roar bent the legs from its own footing and slid a foot), the hammer (the hunch put the head into the club on the
+shoulder) and the staff (the arms flung down and back drove the staff's foot into the ground). The fists' was written
+by the first run (the roar with the root an offset over the stance).
+
+**Markers and timing.** Every string attack is class light. The wind-up meets the 0.4 s minimum before the first hit
+and the recovery the 0.3 s after the last. The timing file gives the server's wind-up as the hit's clip time plus the
+action controller's 2-tick blend: 10-11 ticks for the strings, 13 for the slam. The heavy weapons take longer: the
+hammer's attacks last 1.05-1.35 s, the blades' 0.75-1.0 s. `draw` and `sheathe` carry `weapon:drawn` and
+`weapon:sheathed` on the tick the hand reaches the carried prop, and the timing files list them, so the server swaps the
+weapon flag (the drawn and carried copies, 4.3) on the frame the swap shows. The swap tick is placed where the copy in
+the hand is nearest the carried one. A blade drawn from an obi swaps once it has started to slide out (katana 0.25 s,
+sword 0.35 s): at the grip the blade still lay through a chibi_m's waist. A shield cannot be in the same place on the
+back and on the arm, so it pops in the middle of a swing. Marker sounds are vanilla events (SOUND.md 5: the style
+libraries keep vanilla sounds until a style kit exists): `entity.player.attack.{sweep,strong,weak,knockback,nodamage}`,
+`entity.evoker.cast_spell` and `.prepare_attack`, `entity.snowball.throw`, `entity.splash_potion.throw`,
+`item.armor.equip_{iron,chain,leather}`, `item.book.page_turn`, `item.shield.block` and `block.wood.place`. `vfx:`
+names (`slash_arc`, `thrust`, `impact`, `ground_slam`, `cast`, `burst`, `claw_jab`, `claw_marks`, `roar`) have no
+particle handler yet (A2).
+
+### Generator additions
+
+1. **Style poses**: a style file's `poses` are the in-between keys of its clips (a wind-up peak, a follow-through, a
+   reach to the carried prop). They join the pose library for that style's clips and for its heroes' own files (C1-C4
+   can reuse them). A name already in `herosrc/anim/poses` is an error. The hand poses that `grips.py` checks stay in
+   the pose library.
+2. **`plays_over`**: the base clip an action starts over, when it is not the one it settles on. `draw` starts over
+   `move.idle` (sheathed) and settles on `combat.idle`; `sheathe` does the opposite; work strokes play over and settle
+   on `move.idle`.
+3. **`run_cycle` with `upper: 0`**: the core run's legs, lean and bob, with the arms left to a carry pose (a club on the
+   shoulder, a shield before the chest).
+4. **`arms_over` and `restyle_arms`**: the restyled reactions add their arm offsets to the guard, so a death, a kneel or
+   a dizzy stagger folded the weapon into the head. In the renders and the clearance check: the katana 3 px into a
+   chibi's head in `death`, the claws 2-4.6 px in `stagger`, `defeated` and `death`, the fan and the wand in `death`.
+   A style file's `restyle_arms` {pose, clips} gives those copies the recipe field `arms_over`: keys with `over` add
+   their arm offsets to that pose's arms, while the `@stance` keys keep the guard, so the clip still starts and ends
+   on the stance. Every style lowers its arms (`stance.relaxed`) in `death`, `defeated`, `defeated.loop` and
+   `stagger`. Focus uses `focus.rest`: the prop points down and forward, off the kneeling thigh. The staff uses
+   `staff.rest` (its foot rides up behind) and also lowers its arms in `hurt.heavy`, `stun` and `stun.loop`: the
+   cauldron stands beside a chibi's head and the foot near its shins.
+5. **A settle or overshoot key after the next pose key is an error.** The first runs held each wind-up with `settle:
+   -0.06`. Its extra key landed 0.15 s later, after the hit, and pulled the arm back to the wind-up for a frame: the
+   claw rake at 0.50 s, the focus cast at 0.45 s and the burst. The recipe expander now refuses such a key.
+6. **The twin blades' crouch** (knees 26) uses the form-scaled `floor` fix (feet only). The three-form compromise of
+   `ground` left a chibi's soles 0.64 px in the ground and an adult's above it (the 0.6 px rule failed on four bases
+   for `combat.idle` and every restyled reaction). The hand pose is otherwise unchanged and passes G6c's checks.
+7. **`grips.animation_problems`** (written by the first run, now tested): the body, ground and second-hand measures of
+   the hand-pose check through every tick of every clip, with the action layered over its base clip and the weapon
+   drawn or sheathed as its markers say. Lying reactions may rest the prop on the ground. Two-handed props must stay
+   in both hands in `combat.idle`, `combat.run`, the attacks and the guard, within 4 px between keys (`ANIM_GRIP2`, was 3:
+   each arm interpolates on its own chain, so between two keys with the hand on the handle it drifts off for a frame or
+   two, and the slam's recovery drifts 3.0-3.9 px even through a solved waypoint). The second hand may now **slide
+   1.2 px along the handle** either way of `grip2` (`GRIP2_SLIDE`). The left hand of the hammer's bar sat 3.5 px from
+   `grip2` on a chibi_m, but on the handle, a little up it. The hand-pose check (2 px) uses the same measure.
+
+### Found and fixed (the interrupted runs' work)
+
+- The settle keys after the hit (above): `fists` attack.3, `focus` attack.1 and attack.3.
+- `focus` did not build: attack.3's sound marker sat at 0.36 s, off the tick grid.
+- `focus` attack.1 and attack.ranged overshot the straightened elbow to 8.7 and 7.3 degrees of hyperextension.
+- The restyled reactions with the weapon in the face (above).
+- The katana's draw: the swap at 0.20 s left the blade 1.2 px inside a chibi_m's waist; it now swaps at 0.25 s.
+- The pose solver now keeps every elbow at 1 degree of flexion or more (the joint limit is 0-150).
+
+### Found at the commit check (the fourth run)
+
+`herogen lint` failed on seven weapon parts (42 problems), all with the coplanar rule, which `lint` and `check` run on
+the first frame of the style's `combat.idle` with the weapon drawn (`HeroAssets.stance`). Before G5 these four styles
+had no `combat.idle`, so the rule saw `move.idle` instead. The interrupted run had started this lint just before the
+pause.
+
+- **focus, hammer and staff** (the wand, both fans, the club, the cauldron staff): `hair_back/head` 54-120 px at 6x.
+  These stances held the head level (the body, chest and neck pitches summed to 0), so the bake left the hair at rest,
+  and the hair kit's `back_base` z-fights with the head's back plane through the jagged hem (the hair-kit item of
+  G6c). The katana, fists, twin_blades and sword_shield stances bow the head 1-3 degrees and the hair hangs off it.
+  The three stances now bow the head 3 degrees more (`neck` pitch 0 to 3, the hammer's -4 to -1; a caster's eyes on
+  the target): the bake hangs `hair_back` 1.2 degrees back through the whole loop. The hand poses are unchanged.
+- **sword_shield** (the longsword and the kite shield): `forearm_r/hand_r` 8-35 px. The stance's sword wrist was
+  flexed with no sideways turn (`hand_r` [24, 0, 0]), so the hand's side faces lay in the forearm's planes and
+  overlapped at the wrist. It is now [24, 0, 3]: the blade leans 3 degrees.
+
+The four libraries were rebuilt (the timing files change only their source hash: no hit, marker or frame moved), the
+hand-pose and clip clearance checks rerun on all six bases, and their previews re-rendered, with the parts sheets
+`weapons.png` and `weapons_poses.png` (they draw each slice weapon in its style's stance and hand poses) and
+`render/turnaround_style_maren.png` (Maren's drawn sword is in the sword_shield stance). A new test
+(`test_the_combat_stance_passes_the_coplanar_rule`) runs the rule on each slice weapon in its style's stance.
+
+**Not fixed here: part geometry that the combat stances expose.** After these fixes the full `herogen lint` still
+reports 63 coplanar problems, all outside the weapons: `legwear/boots`, `greaves`, `socks_shoes`, `thigh_socks`,
+`outfit_bottom/shorts` and `flared_skirt`, `armour/gauntlets`, and the sample outfits of Ambrose, Ilsabet, Natsuho,
+Tobimaru and Yugen. None is in a G5 file. The lint now stands every part in a real combat stance: a part's mannequin
+has no style, so it takes `fists`, whose `combat.idle` was empty until G5, and each outfit takes its own style's. These
+stances spread the legs and raise the forearms, and that shows faces that `move.idle` keeps hidden. The causes, by the
+cubes the tied pixels belong to:
+
+1. **Inner sides of nested leg shells** (most of the pixels; Tobimaru's shins up to 1240 px at 6x): G6b's clamp
+   `max(0.05, min(e, hip_x - leg_w / 2 - 0.05))` keeps a shell from crossing the centre line, but the gap between the
+   legs is 0.1-0.15 px on every base. So every shell's inner face lands at 0.05 px whatever its layer: boots `cuff` and
+   `shaft`, trousers `gather` and `wrap` against boots and `tabi_boots`, `socks_shoes` and `thigh_socks` `sole`,
+   `strap` and `shoe`, shorts `cuff` and `leg`, `tabi_boots` `band` against shorts, the kunai holster strap against
+   the trousers. The fix belongs to the layer convention (inner sides that keep their order, or that stop inside the
+   layer under them). The test rig's `tights_boots` uses the same clamp, so the fix rebuilds the test rig and its
+   previews.
+2. **Knee sides** (`thigh_l` / `shin_l`, 4-50 px; greaves, thigh socks, Ilsabet, Natsuho): a bent knee turns the shin
+   about x only, so its side faces stay in the thigh's planes and overlap in a small wedge at the knee. Painted in two
+   colours, the wedge flickers. The walk and the run bend the knee as well, so it shows in game already. This is a
+   rig-level question (a shin 0.05 px narrower than the thigh, for instance), and the fix rebuilds every hero.
+3. **Bracer rims and jacket cuffs** (Tobimaru's forearms, 280-470 px): both end 0.1 px past the wrist (G6b's cuff
+   rule, G6c's rim), so their bottom faces tie wherever a raised forearm shows them. One of them needs another value.
+4. Small ones: `gauntlets`' hand plate against the plain sword's grip in the fists guard on the chibis (8-24 px), and two
+   `flared_skirt` back panels on chibi_f (4 px).
+
+### How the poses were made
+
+As in G4 and G6c: each in-between pose was solved offline for grip, prop-direction and edge targets on the teen. The
+solver is a Nelder-Mead over the arm, the forearm with its twist and the hand, with the wrists within the G6c limits.
+It keeps the props, hands and forearms out of the body and every prop at least 0.8 px above the ground on the chibi,
+teen and adult. For the club, it also holds the left hand on `grip2`, over four forms where one form was not enough.
+The numbers are written into the style files. The clips were then checked through every tick on all six bases.
+Recoveries got waypoints where joint-space interpolation took a prop through the body. The hammer's guard swings the
+club forward off the shoulder before it turns it into a bar, and its slam and side swing come back up through a
+two-handed haul. The staff's bonk comes back up through a high twirl. The twin blades' sheathe swings out to the right
+before it reaches behind the back.
+
+Contacts differ by form, as G6c measured for the hand poses: the slam's club head reaches 1.7 px from the ground on a
+chibi, 6.1 on a teen and 8.9 on an adult, even with the knees giving 10 degrees (a form-scaled root keeps the soles
+down). A deeper drop on the larger forms would need form-scaled angles, which the files do not have (only the root
+height is scaled).
+
+### Previews (`docs/heroes-v2/previews/anim/styles/`)
+
+For each style, the chibi and the adult of its preview heroes (the sample outfits of `herosrc/style/outfits.json`,
+holding their slice props): `<style>_string.gif` (attack.1, attack.2 and attack.3 back to back over `combat.idle`, as
+the server sends them), `<style>_set.gif` (draw from the idle, guard and its hit, dodge, attack.ranged, taunt, intro,
+victory, sheathe, `combat.run`, the work strokes with preview tools) and `<style>.png` (a contact sheet of every clip the
+style defines, 7 frames each). They play the written files through G2's controller emulation, with the weapon flag
+swapped on the draw and sheathe markers and the base controller's 4-tick blend between `move.idle` and
+`combat.idle`. `herogen anim-previews --styles --check` fails on a stale preview.
+
+### Tests (291 -> 309: `tests/test_styles.py`, 18)
+
+The full list in each style (ranged and work where expected, every attack class light with a hit, settling on the
+stance, every restyled reaction present); the quality rules and the timing agreement on all six bases for the seven;
+each string's server wind-up is its hit tick plus the blend, and the twin blades' attack.2 has two hits; draw and
+sheathe swap the weapon flag and settle where they should; the strikes leave the legs to the walk (the slam bends the
+knees with a form-scaled root). On the teen: the slam drives the club head from over the shoulder to under the hands,
+the side swing crosses the front to the left, the shield bash drives the shield forward with its face leading, the casts
+and the kunai point at the target, the twin blades alternate hands, the hammer's `work.mine` and the katana's
+`work.chop` hold the tool as the core's strokes do. The slow one (about 4 minutes): every sample outfit's props
+through every second tick of every clip of its style on all six bases. Sabotage: the claws' stagger without
+`restyle_arms` folds them into the head; the first run's settled rake fails to build. Also: `arms_over` and an unknown
+`arms_over` pose, the deep crouch's soles on the ground on every base, the previews' heroes hold the style's prop,
+and each slice weapon in its style's combat stance passes the coplanar rule with the hair hanging off the head (the
+fourth run's fix; with the first stances it found the seven parts `lint` found). `test_anim`'s katana set now counts the style's own clips (the G5 list) beside the restyled reactions.
+
+### Decisions (each deliberate)
+
+1. **Basic attacks are class light** for every style, with longer clips for the heavy weapon, so a club reads heavy
+   (1.05-1.35 s) while the server's basic-attack rules stay one class.
+2. **The strikes key the hips and the upper body**, except the hammer's slam, which bends the knees with planted feet.
+   A hero can swing while the base controller walks it, as G3 decided for the katana.
+3. **The restyled reactions lower the weapon arm** (`restyle_arms`) rather than being authored seven times twelve.
+   The arms differ from the core's by the stance only where the guard can fold into the body.
+4. **Work strokes only where they matter**: Benika's mining and the samurai's chop of 7.3. A style without one uses
+   the core's.
+5. **Vanilla marker sounds** until style kits exist (SOUND.md 5).
+6. **The twin blades' whirl is not a full turn.** A 360-degree root spin would end 360 degrees off the stance's first
+   key. GeckoLib would snap it back when the action stops, or ease it back the long way round. The whirl is a
+   130-degree coil and unwind of the hips and chest.
+7. **The style's run is `combat.run`, not `move.run`** (a deviation from 13.6's list, which says "`move.run` arm
+   carry"). GeckoLib resolves a name through the hero's chain, so a style's `move.run` would replace the core's run
+   whatever the weapon flag. The first run's katana and fists did that, and the G2 previews showed it: the fists
+   fixtures ran in a boxer's guard in `run.gif`. A hero whose club, shield or staff is on its back would run
+   with both hands round nothing. So the carry is `combat.run`, the counterpart of `combat.idle`. The engine plays the
+   core's `move.run` until A2 tries `combat.run` first while the weapon is drawn (open item).
+
+### Open items
+
+- **A2**: `HeroClips.baseCandidates` should try `combat.run` before `move.run` while the weapon is drawn, as it tries
+  `combat.idle` before `move.idle` (decision 7; until then a hero with its weapon drawn runs the core's run).
+- **A1b / A5**: swap the weapon flag on the `weapon:drawn` / `weapon:sheathed` ticks of the timing file. Play
+  `guard` then `guard.loop`, and `guard.hit` then `guard.hit.loop`, until the next code.
+- **A2**: a particle handler for the `vfx:` names above.
+- **G10**: the staff-broom's riding clips (`move.ride`, `move.ride_cast`) on the mount point. The locomotion set may
+  be overridden per style (13.6, MOBILITY 4.1).
+- **C1-C4**: the heroes' own clips can use their style's poses (`style_poses`); Kagenori's `twin_sky` and the
+  off-hand from a phase need their own guard and string over the two-sword stance.
+- **Polish**: the shield's pop at the draw's swap. The hammer's left hand drifts up to 4 px off the handle between
+  keys. The slam's contact on the larger forms (above).
+- **Parts (G6b / G6c follow-up)**: the 63 coplanar problems above, which the combat stances expose (the inner
+  sides of nested leg shells, the bracer rim against the jacket cuff, the gauntlet plate, two skirt panels). Until then
+  `herogen lint` fails on 7 parts and 5 sample outfits, while every weapon part passes. The knee wedge is a question
+  for the rig.
+- **Hair kit** (G6c's item, still open): the coplanar rule sees only the first frame of each stance. Any frame where
+  the head is level and still, so `hair_back` comes to rest, z-fights through the hem in game until each `back_base`
+  moves 0.1 px back. The stance bow above keeps the combat idles clear; the fix belongs to the hair kit.

@@ -2439,6 +2439,37 @@ test.
 | `fan` | dance steps; gust; fan cut |
 | `instrument` | play loop; beat; chord blast |
 
+As built for the slice (G5, 2026-11-13; `notes/artgen.md`, "G5"): `fists`, `focus`, `hammer`, `katana`,
+`twin_blades`, `sword_shield` and `staff`, each with the whole list above (`guard.hit.loop` holds a guard after a
+blow; the run that carries the weapon is named `combat.run`, the counterpart of `combat.idle`, so a hero with its
+weapon sheathed keeps the core's `move.run`: A2's base controller should try `combat.run` first while the weapon is
+drawn), `attack.ranged` for the three styles whose heroes throw (focus: a toss; twin_blades: the kunai; staff: a vial),
+`work.mine` for the hammer (Benika mines two-handed) and `work.chop` for the katana (7.3), and the core's restyled
+reactions over each stance; 24-25 clips per library, every one passing `herogen check` on all six bases.
+
+| Style | Slice prop | Stance | String (hit at clip time) | Guard |
+|---|---|---|---|---|
+| `fists` | Natsuho's claws | guard up | lead jab 0.40, cross 0.40, claw rake 0.45 | forearms crossed |
+| `focus` | Hinae's wand and talismans, Yugen's fan | casting ready | one-hand cast 0.40, off-hand flick 0.40, two-hand burst 0.45; toss 0.40 | a ward |
+| `hammer` | Benika's club (two hands) | club on the shoulder | overhead 0.45, side swing 0.45, slam 0.55 (the knees give, the root form-scaled) | the club as a bar |
+| `katana` | Kagenori's sword | low ready | diagonal 0.40, level 0.40, thrust 0.45; quick draw and chiburi | blade across |
+| `twin_blades` | Tobimaru's reversed blade and kunai | crouched | backhand slash 0.40, kunai stab 0.40 + slash 0.60, whirl 0.45; kunai throw 0.40 | crossed before the face |
+| `sword_shield` | Ilsabet's sword and kite shield | shield forward | diagonal cut 0.40, level cut 0.40, shield bash 0.45 | shield high |
+| `staff` | Ambrose's cauldron staff | caster ready | forward cast 0.40, upward cast 0.45, the bonk 0.50; vial toss 0.40 | the staff as a bar |
+
+Every string attack is class light (the server's frames come from its `hit`: wind-up = clip time + the 2-tick blend,
+4.8), keys the upper body and hips only (the hammer's slam also bends the knees, feet planted), and settles on the
+stance; `draw` plays over `move.idle` and settles on `combat.idle`, `sheathe` the other way, and their
+`weapon:drawn` / `weapon:sheathed` markers are the ticks at which the server swaps the weapon flag (the timing files
+list them). Marker sounds are vanilla events (SOUND.md 5) until style kits exist. G5 generator additions: a style
+file's own in-between `poses`, `plays_over`, `arms_over` with the style file's `restyle_arms` (a restyled death,
+kneel or stagger lowers the weapon arm instead of folding the guard into the head), `run_cycle` with `upper: 0` (a
+run that carries its weapon), an error for a `settle` or `overshoot` key that lands after the next pose key, the
+form-scaled `floor` fix on the deep twin-blades crouch, and `grips.animation_problems` (the props through every tick
+of every clip on all six bases, `tests/test_styles.py`). Previews: `docs/heroes-v2/previews/anim/styles/` (the string
+and the rest of the set as GIFs on a chibi and an adult holding the slice prop, a contact sheet per style;
+`herogen anim-previews --styles [--check]`).
+
 **Per hero**: `move.<id>` for every move, `ultimate` (and `.loop`, `.end` for channelled ones), `phase.2`, `phase.3`,
 `intro`, `state.<name>`, 1-3 `personal.*`; typically 10-16 animations.
 
@@ -2471,7 +2502,9 @@ tests in `tools/herogen/tests/` (`python3 -m unittest discover tools/herogen/tes
 rounded to 3 decimals, randomness seeded from the hero id, PNGs written without metadata. As built for G3 the
 animation side also has `anim/clip.py`, `anim/skeleton.py`, `anim/quality.py`, `anim/library.py`, `anim/timing.py`
 (the move frames `kit.py` will write) and `anim/preview.py`, and the commands `anim` (list the libraries) and
-`anim-previews` (filmstrips and GIFs); keyframe maps keep their time order (`util.Ordered`).
+`anim-previews` (filmstrips and GIFs); keyframe maps keep their time order (`util.Ordered`). G4 added
+`anim-previews --core` and G5 `anim-previews --styles` (both with `--check`: render in a temporary folder and fail on
+a stale committed preview).
 
 Gradle: `./gradlew checkHeroes` (Java kit validator over `data/factionclash/heroes`, as v1's task) runs in `check`;
 `./gradlew verifyHeroAssets` (runs `herogen build --check`, needs Python) is separate so a machine without Python can
@@ -2711,7 +2744,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G2 | Software preview renderer, `preview`, `faces`, `sheet`, `gif`; fidelity test against an in-game screenshot | G1, A2 | M | golden images; silhouettes match the game within 1 px. Renderer done 2026-11-12 (215 Python tests, golden images, the owner's set in `docs/heroes-v2/previews/render/`); the fidelity test waits for A2. Review 2026-11-12: two stale GIFs regenerated (the swing's events were a frame late), `render-previews --check`, the coplanar-face check, larger GIFs; 217 Python tests |
 | G3 | Animation generator: poses, primitives, recipes, secondary bake, markers, writer, frames into the server file, quality rules | G1 | L | done 2026-11-12: 181 Python tests; `_core` (idle 24 s, walk, run) and `_style_katana` (`combat.idle`, `attack.1` with its `hit` at tick 8) pass the rules on all six bases; timing files beside them; previews in `docs/heroes-v2/previews/anim/` (A2 plays them in game) |
 | G4 | Core animation library | G3 | M | all core animations pass `check`; reviewed as GIFs. Done 2026-11-12: 55 animations in `_core` (plus 15 restyled reactions in `_style_katana`) pass `check` on all six bases; form-scaled roots for kneels, sits, sleep and death (`v.fc_dhip`, set by A2); GIFs and sheets in `docs/heroes-v2/previews/anim/core/` reviewed; 245 Python tests. Reviewed 2026-11-12 (`notes/artgen.md`, "G4 review"): checked against GeckoLib's own loader; tool strokes re-solved so chop, till, smith, sweep, fishing and planting read as the work; death fits vanilla's 20 ticks; 255 Python tests |
-| G5 | Style libraries for the slice: fists, focus, hammer, katana, twin_blades, sword_shield, staff | G3, G4 | M | each passes `check`; reviewed as GIFs on two bases |
+| G5 | Style libraries for the slice: fists, focus, hammer, katana, twin_blades, sword_shield, staff | G3, G4 | M | each passes `check`; reviewed as GIFs on two bases. Done 2026-11-13: the seven libraries with the whole list of 13.6 (24-25 clips each: `combat.idle`, `combat.run` (the run's carry while the weapon is drawn), draw and sheathe with the weapon-flag markers, the string `attack.1-3`, `attack.ranged` for focus, twin_blades and staff, guard with `.loop`, `.hit` and `.hit.loop`, dodge, intro, victory, taunt, the hammer's `work.mine` and the katana's `work.chop`, and the restyled core reactions), every clip passing `herogen check` on all six bases and every slice prop clear of the body through every clip (`grips.animation_problems`); GIFs and sheets of each style on a chibi and an adult in `docs/heroes-v2/previews/anim/styles/`; every slice weapon part passes `herogen lint` (the focus, hammer, staff and sword_shield stances adjusted for the coplanar rule); the new combat stances make the lint show 63 coplanar problems in legwear, shorts, bracers and five sample outfits, all in part geometry (open item, `notes/artgen.md` G5); 309 Python tests |
 | G6a | Parts library, head: hair, ears, horns, tails, wings, headwear (30 parts of 13.3) and `lint` | G1 | M | `lint` clean; the head parts on all six bases reviewed on a sheet. Done 2026-11-12: 30 head parts (17 new, the slice heroes' first), strand tips, odd left-hand slots, fanned chain copies (nine tails), the `mask` bone; `herogen lint` clean on the 70 parts and the eight sample outfits; sheets in `docs/heroes-v2/previews/parts/` |
 | G6b | Parts library, body: outfit tops and bottoms, robes, armour, legwear, back (29 parts) | G6a | M | `lint` clean; sample outfits on all six bases reviewed on a sheet; no coplanar faces of different colour (`preview --ties`; the sash layers found in the G2 review first). Done 2026-11-12: the G2 review's coplanar faces fixed (sash outermost, leg shells, ears, tail chain, scarf, bow, mantle, lames, fringe bases), the bell sleeve's lining (the swing's frame at 0.45 s), 34 body parts (16 new), the layer convention, the coplanar rule in `herogen check`, the slice looks as sample outfits on all six bases (`outfits.png`) |
 | G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style. Done 2026-11-13: 24 parts (10 accessories, 3 markings, 11 weapons for the ten slice weapon looks), the painter's patterns, overlays, emblem stamps and phase glow, weapon hands, grips, sheaths, an off-hand from a phase and the staff-broom's mount point; the hand poses of the six slice styles solved for all six bases and every slice weapon checked in each (`grips.py`); `herogen lint` clean on the 94 parts and the eight sample outfits; sheets in `docs/heroes-v2/previews/parts/`; 291 Python tests |

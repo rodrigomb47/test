@@ -1,0 +1,635 @@
+{
+  "_comment": "Style library: hammer (HEROES_V2.md 13.6; G5). A two-handed club or hammer (Benika's iron club; the left hand on its second grip): the shoulder carry; the string overhead blow, side swing and slam; the club taken from the back on draw's 'weapon:drawn' and slung back on sheathe's 'weapon:sheathed'; guard (the club as a bar; .loop, .hit), dodge, intro, victory, taunt, the run's shoulder carry and a two-handed work.mine. Hand poses in herosrc/anim/poses/hammer.json; the poses below are the clips' in-between keys, solved on the teen with the club clear of the body and both hands on it on the chibi, teen and adult.",
+  "style": "hammer",
+  "restyle_arms": {
+    "pose": "stance.relaxed",
+    "clips": ["death", "defeated", "defeated.loop", "stagger"]
+  },
+  "poses": {
+    "hammer.h1_peak": {
+      "_comment": "attack.1's last stretch of the wind-up: the club raised at the right side and tipped back, the chest arched back (both hands on the handle).",
+      "extends": "hammer.raise",
+      "bones": {
+        "body": [-6, 8, 0],
+        "chest": [-11, 6, 0],
+        "neck": [10, -14, 0],
+        "arm_r": [-80.1, -14.4, -10.4],
+        "forearm_r": [-106.0, 55.5, 0.0],
+        "hand_r": [78.5, 34.6, -35.0],
+        "arm_l": [-120.2, 45.6, -43.0],
+        "forearm_l": [-14.5, -19.9, 0.0],
+        "hand_l": [25.7, -5.8, 16.7]
+      }
+    },
+    "hammer.h1_strike": {
+      "_comment": "attack.1's contact: the club brought down and forward, its head level with the target's chest at the belly's height, the hips folding into the blow.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [9, -4, 0],
+        "chest": [7, -6, 0],
+        "neck": [-12, 8, 0],
+        "arm_r": [-32.6, -15.9, 0.8],
+        "forearm_r": [-70.5, 27.5, 0.0],
+        "hand_r": [80.4, 5.9, -4.1],
+        "arm_l": [-94.6, 46.7, -61.8],
+        "forearm_l": [-34.4, 8.9, 0.0],
+        "hand_l": [11.7, 13.0, 35.0]
+      }
+    },
+    "hammer.h1_follow": {
+      "_comment": "attack.1's follow-through: the club's weight carries its head on down in front.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [11, -6, 0],
+        "chest": [9, -8, 0],
+        "neck": [-14, 10, 0],
+        "arm_r": [-38.2, 6.1, -34.2],
+        "forearm_r": [-46.0, 58.2, 0.0],
+        "hand_r": [77.3, 35.1, -14.5],
+        "arm_l": [-78.0, 49.0, -68.4],
+        "forearm_l": [-60.4, -2.5, 0.0],
+        "hand_l": [17.8, 11.6, 35.0]
+      }
+    },
+    "hammer.h2_wind": {
+      "_comment": "attack.2's wind-up: the club swung back level at the right side, its head behind, the hips and chest coiled right.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [2, 12, 0],
+        "waist": [0, 10, 0],
+        "chest": [-2, 24, 0],
+        "neck": [0, -38, 0],
+        "arm_r": [-37.9, -2.8, -32.4],
+        "forearm_r": [-100.4, 56.6, 0.0],
+        "hand_r": [36.4, 35.2, -34.9],
+        "arm_l": [-101.5, 51.8, -47.1],
+        "forearm_l": [-14.0, -8.9, 0.0],
+        "hand_l": [17.8, 19.2, 23.3]
+      }
+    },
+    "hammer.h2_hit": {
+      "_comment": "attack.2's contact: the side swing across the front at chest height, the head leading to the left and rising a little, the hips and chest turned into it (where the solve over the forms settled with the club clear of the body).",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [6, -10, 0],
+        "waist": [1, -10, 0],
+        "chest": [4, -22, 0],
+        "neck": [-6, 26, 0],
+        "arm_r": [-5.6, -18.2, 1.3],
+        "forearm_r": [-117.7, 34.7, 0.0],
+        "hand_r": [80.2, -35.0, -0.2],
+        "arm_l": [-134.7, 31.3, -85.6],
+        "forearm_l": [-35.0, 40.9, 0.0],
+        "hand_l": [-0.4, 18.4, 3.9]
+      }
+    },
+    "hammer.h2_follow": {
+      "_comment": "attack.2's follow-through: the club carried round to the left side, its head pointing back.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [6, -14, 0],
+        "waist": [2, -14, 0],
+        "chest": [5, -30, 0],
+        "neck": [-6, 38, 0],
+        "arm_r": [-13.3, -31.3, 26.2],
+        "forearm_r": [-110.2, 18.0, 0.0],
+        "hand_r": [80.1, 35.0, -32.6],
+        "arm_l": [-113.4, 40.4, -70.1],
+        "forearm_l": [-43.4, 34.6, 0.0],
+        "hand_l": [13.5, 16.9, 29.3]
+      }
+    },
+    "hammer.h3_peak": {
+      "_comment": "attack.3's wind-up peak: the club raised high at the right side and tipped back, the body arched (the slam's contact is hammer.slam).",
+      "extends": "hammer.raise",
+      "bones": {
+        "body": [-7, 6, 0],
+        "chest": [-12, 4, 0],
+        "neck": [12, -12, 0],
+        "arm_r": [-81.5, -12.2, -5.6],
+        "forearm_r": [-108.5, 50.5, 0.0],
+        "hand_r": [80.0, 35.0, -34.3],
+        "arm_l": [-119.2, 47.8, -43.7],
+        "forearm_l": [-19.1, -25.8, 0.0],
+        "hand_l": [10.7, -9.3, 20.1]
+      }
+    },
+    "hammer.haul": {
+      "_comment": "attack.3's recovery: the club hauled up from the ground with both hands, its head forward and up at the right side, on its way back to the shoulder.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [8, 4, 0],
+        "chest": [4, 2, 0],
+        "neck": [-10, -8, 0],
+        "arm_r": [-28.2, -13.9, -10.9],
+        "forearm_r": [-88.4, 41.7, 0.0],
+        "hand_r": [51.0, 35.0, -35.0],
+        "arm_l": [-98.8, 51.2, -46.9],
+        "forearm_l": [-5.3, -11.2, 0.0],
+        "hand_l": [4.0, 10.7, 35.1]
+      }
+    },
+    "hammer.pry": {
+      "_comment": "attack.3's recovery: the club pried out of the ground with both hands, its head forward and level with the knees.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [14, 4, 0],
+        "chest": [7, 1, 0],
+        "neck": [-20, -6, 0],
+        "arm_r": [-24.5, -10.0, -14.4],
+        "forearm_r": [-67.1, 42.1, 0.0],
+        "hand_r": [38.9, 35.1, -32.4],
+        "arm_l": [-94.9, 51.9, -52.5],
+        "forearm_l": [-3.7, -6.7, 0.0],
+        "hand_l": [1.7, 9.9, 35.1]
+      }
+    },
+    "hammer.reach_back": {
+      "_comment": "The draw and the sheathe: the right hand over the right shoulder at the club's handle on the back.",
+      "bones": {
+        "chest": [-2, 6, 0],
+        "neck": [0, -8, 0],
+        "arm_r": [-199.6, -1.1, -43.9],
+        "forearm_r": [-149.2, -4.6, 0],
+        "hand_r": [79.7, 29.2, -0.7],
+        "arm_l": [0, 0, -10],
+        "forearm_l": [-20, 0, 0]
+      }
+    },
+    "hammer.h2_back": {
+      "_comment": "attack.2's recovery: the club brought back up in front of the chest, head up, both hands on it, on its way to the shoulder.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [5, -6, 0],
+        "waist": [1, -6, 0],
+        "chest": [3, -12, 0],
+        "neck": [-4, 14, 0],
+        "arm_r": [-24.7, -10.8, 3.7],
+        "forearm_r": [-122.1, 34.1, 0.0],
+        "hand_r": [56.0, 35.1, -23.9],
+        "arm_l": [-132.6, 23.7, -82.2],
+        "forearm_l": [-22.1, 33.0, 0.0],
+        "hand_l": [-3.8, 16.1, 10.2]
+      }
+    },
+    "hammer.bar": {
+      "_comment": "The guard: the club held across the chest as a bar with both hands, its head to the left and its face forward.",
+      "extends": "hammer.stance",
+      "bones": {
+        "chest": [-2, 4, 0],
+        "neck": [-2, -10, 0],
+        "arm_r": [-57.2, -14.2, 32.5],
+        "forearm_r": [-88.1, -6.1, 0.0],
+        "hand_r": [61.9, -21.9, -35.0],
+        "arm_l": [-99.4, 32.8, -45.2],
+        "forearm_l": [-29.4, -11.9, 0.0],
+        "hand_l": [20.8, 16.2, 31.2]
+      }
+    },
+    "hammer.point": {
+      "_comment": "The intro: the club pointed one-handed at the enemy, the left hand on the hip.",
+      "extends": "hammer.stance",
+      "bones": {
+        "body": [4, -4, 0],
+        "chest": [2, -10, 0],
+        "neck": [-4, 12, 0],
+        "arm_r": [-40.5, 7.7, 13.8],
+        "forearm_r": [-86.9, 33.5, 0.0],
+        "hand_r": [80.0, 28.4, -31.7],
+        "arm_l": [58.6, 2.7, -19.9],
+        "forearm_l": [-76.5, 16.2, 0],
+        "hand_l": [15.3, -0.5, -6.8]
+      }
+    },
+    "hammer.hoist": {
+      "_comment": "The victory: the club hoisted high one-handed at the right side, the left hand on the hip.",
+      "extends": "hammer.stance",
+      "bones": {
+        "chest": [-5, 6, 0],
+        "neck": [-2, -16, 0],
+        "arm_r": [-106.6, 6.4, -10.2],
+        "forearm_r": [-86.2, 21.0, 0.0],
+        "hand_r": [55.3, 35.0, -34.9],
+        "arm_l": [58.6, 2.7, -19.9],
+        "forearm_l": [-76.5, 16.2, 0],
+        "hand_l": [15.3, -0.5, -6.8]
+      }
+    },
+    "hammer.beckon": {
+      "_comment": "The taunt: the club on the shoulder in the right hand alone, the left hand held out palm up (curled by an oscillation).",
+      "extends": "hammer.stance",
+      "bones": {
+        "chest": [2, 4, 0],
+        "neck": [-4, -14, 0],
+        "arm_r": [-39.4, -19.9, -23.0],
+        "forearm_r": [-112.5, 36.7, 0.0],
+        "hand_r": [10.3, 28.8, -35.0],
+        "arm_l": [-39.6, 8.7, -43.9],
+        "forearm_l": [-57.7, -31.3, 0],
+        "hand_l": [-18.1, 35.0, 8.7]
+      }
+    },
+    "hammer.slam_low": {
+      "_comment": "attack.3's contact with the weight in it: hammer.slam's upper body and arms with the knees bent 10 degrees more than the stance (a key with `over` on the legs: the soles stay on the ground on every form, the root form-scaled).",
+      "bones": {
+        "body": [18.0, 4.0, 0.0],
+        "chest": [10.0, 0.0, 0.0],
+        "neck": [-24.0, -4.0, 0.0],
+        "arm_r": [-28.5, 19.5, -28.2],
+        "forearm_r": [-46.8, 19.6, 0.0],
+        "hand_r": [80.3, 15.4, -25.0],
+        "arm_l": [-17.1, 27.6, 40.1],
+        "forearm_l": [-24.5, -52.5, 0.0],
+        "hand_l": [45.2, -8.7, 2.6],
+        "leg_r": [-10, 0, 0],
+        "shin_r": [20, 0, 0],
+        "foot_r": [-10, 0, 0],
+        "leg_l": [-10, 0, 0],
+        "shin_l": [20, 0, 0],
+        "foot_l": [-10, 0, 0]
+      }
+    },
+    "hammer.roar": {
+      "_comment": "The enrage's roar: the club hoisted high (hammer.hoist), the chest thrown out and the head up, the free fist flung out.",
+      "extends": "hammer.hoist",
+      "bones": {
+        "body": [-4, 0, 0],
+        "chest": [-10, 0, 0],
+        "neck": [-14, 0, 0],
+        "arm_l": [10, 0, -40],
+        "forearm_l": [-30, 0, 0]
+      }
+    },
+    "hammer.bar_jolt": {
+      "_comment": "A blow on the bar: the chest and the club knocked back.",
+      "extends": "hammer.bar",
+      "bones": {"body": [-3, 14, 0], "chest": [-9, 6, 0], "neck": [8, -14, 0]}
+    },
+    "hammer.run_carry": {
+      "_comment": "combat.run's arms: the stance's shoulder carry, both hands on the handle.",
+      "bones": {
+        "arm_r": [-40.2, -22.5, -23.9],
+        "forearm_r": [-99.7, 35.2, 0.0],
+        "hand_r": [6.4, 23.8, -35.0],
+        "arm_l": [-93.9, 31.6, -48.4],
+        "forearm_l": [-42.4, -11.4, 0.0],
+        "hand_l": [20.0, 14.8, 35.0]
+      }
+    },
+    "hammer.dodge_back": {
+      "_comment": "The dodge's air pose, offsets over the stance: a short heavy hop back, the knees tucked a little, the club kept on the shoulder.",
+      "bones": {
+        "leg_r": [-18, 0, 0],
+        "shin_r": [34, 0, 0],
+        "foot_r": [-16, 0, 0],
+        "leg_l": [-10, 0, 0],
+        "shin_l": [30, 0, 0],
+        "foot_l": [-20, 0, 0],
+        "body": [-6, 4, 0],
+        "chest": [-4, 2, 0],
+        "neck": [8, -4, 0],
+        "ear_r": [-16, 0, 8],
+        "ear_l": [-16, 0, -8]
+      }
+    },
+    "hammer.dodge_land": {
+      "_comment": "The dodge's landing, offsets over the stance: a heavy landing on deeply bent knees.",
+      "bones": {
+        "leg_r": [-12, 0, 0],
+        "shin_r": [24, 0, 0],
+        "foot_r": [-12, 0, 0],
+        "leg_l": [-12, 0, 0],
+        "shin_l": [24, 0, 0],
+        "foot_l": [-12, 0, 0],
+        "body": [8, 0, 0],
+        "chest": [4, 0, 0],
+        "neck": [-6, 0, 0]
+      }
+    }
+  },
+  "animations": {
+    "combat.idle": {
+      "description": "The shoulder carry (hammer.stance), breathing at 1.6 s with the club riding the shoulder a little, 3.2 s loop.",
+      "length": 3.2,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "hammer.stance"}, {"t": 3.2, "pose": "hammer.stance"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.6, "depth": 1.3}}
+      ]
+    },
+    "attack.1": {
+      "description": "The string's overhead blow: the club lifted off the shoulder and raised at the right side (0.22 s), tipped back with the chest arching to 0.35 s, brought down and forward so it lands at 0.45 s (hit) with the hips folding in, its weight carrying the head on down (0.55 s), a heavy beat, back onto the shoulder by 1.05 s. Keys the hips and the upper body; the legs stay the base controller's.",
+      "length": 1.05,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "hammer.raise", "ease": "easeOutCubic"},
+        {
+          "t": 0.35,
+          "pose": "hammer.h1_peak",
+          "ease": "easeInOutSine",
+          "sound": "minecraft:entity.player.attack.strong"
+        },
+        {
+          "t": 0.45,
+          "pose": "hammer.h1_strike",
+          "ease": "easeInCubic",
+          "marker": "hit;vfx:impact",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.56, "pose": "hammer.h1_follow", "ease": "easeOutCubic"},
+        {"t": 0.7, "pose": "hammer.h1_follow"},
+        {"t": 0.8, "face": "none"},
+        {"t": 1.05, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.2": {
+      "description": "The string's side swing: the club swung back level at the right with the hips and chest coiled (0.25 s), held to 0.35 s, the swing comes round across the chest, its head rising a little, and lands at 0.45 s (hit) with the hips unwinding, carries on round to the left side (0.58 s), and is brought back up in front of the chest (0.86 s) onto the shoulder by 1.05 s. Keys the hips and the upper body.",
+      "length": 1.05,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "hammer.h2_wind", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "hammer.h2_wind", "sound": "minecraft:entity.player.attack.sweep"},
+        {
+          "t": 0.45,
+          "pose": "hammer.h2_hit",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:slash_arc",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.58, "pose": "hammer.h2_follow", "ease": "easeOutCubic"},
+        {"t": 0.68, "pose": "hammer.h2_follow"},
+        {"t": 0.8, "face": "none"},
+        {"t": 0.86, "pose": "hammer.h2_back", "ease": "easeInOutSine"},
+        {"t": 1.05, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.3": {
+      "description": "The string's finisher, the slam: the club hoisted high at the right side with the body arching back (0.3 s) and tipped back to 0.4 s, then driven down through the level (0.49 s, both hands on it) so its head strikes the ground in front at 0.55 s (hit; the knees give 10 degrees under the weight, a ground crack), held stuck a beat with a fang grin, pried out of the ground (0.8 s) and hauled up in both hands (0.93 s) to the right side (1.14 s) and back onto the shoulder by 1.35 s. Keys the whole body (the knees bend with planted feet; the root is form-scaled).",
+      "length": 1.35,
+      "class": "light",
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.3, "pose": "hammer.raise", "ease": "easeOutCubic"},
+        {
+          "t": 0.4,
+          "pose": "hammer.h3_peak",
+          "ease": "easeInOutSine",
+          "sound": "minecraft:entity.player.attack.knockback"
+        },
+        {"t": 0.49, "pose": "hammer.h1_strike", "ease": "easeInCubic"},
+        {
+          "t": 0.55,
+          "pose": "hammer.slam_low",
+          "over": ["leg_*", "shin_*", "foot_*"],
+          "ease": "easeInSine",
+          "marker": "hit;vfx:ground_slam",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.62, "face": {"eyes": 4, "mouth": 7}},
+        {"t": 0.7, "pose": "hammer.slam_low", "over": ["leg_*", "shin_*", "foot_*"]},
+        {"t": 0.8, "pose": "hammer.pry", "ease": "easeInOutSine"},
+        {"t": 0.93, "pose": "hammer.haul", "ease": "easeInOutSine"},
+        {"t": 1.05, "face": "none"},
+        {"t": 1.14, "pose": "hammer.raise", "ease": "easeInOutSine"},
+        {"t": 1.35, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "draw": {
+      "description": "Taking up the club (code 12) from the idle: the right hand reaches over the right shoulder to the handle on the back (0.25 s), the club is out on 'weapon:drawn' (0.28 s), hauled up over the shoulder (0.45 s) and the left hand joins it in the shoulder carry by 0.9 s. Keys the hips and the upper body.",
+      "length": 0.9,
+      "plays_over": "move.idle",
+      "settle_to": "combat.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "hammer.reach_back", "ease": "easeInOutSine"},
+        {"t": 0.3, "marker": "weapon:drawn", "sound": "minecraft:item.armor.equip_iron"},
+        {"t": 0.32, "pose": "hammer.reach_back"},
+        {"t": 0.55, "pose": "hammer.hoist", "ease": "easeOutCubic", "face": {"eyes": 4, "mouth": 7}},
+        {"t": 0.7, "face": "none"},
+        {"t": 0.9, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "sheathe": {
+      "description": "Putting the club away (code 13): lifted off the shoulder and up (0.3 s), slung over the right shoulder onto the back (0.55 s: 'weapon:sheathed'), the hand lets go and the arms fall to the idle stance by 1.1 s. Keys the hips and the upper body.",
+      "length": 1.1,
+      "plays_over": "combat.idle",
+      "settle_to": "move.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {"t": 0.3, "pose": "hammer.hoist", "ease": "easeOutCubic"},
+        {
+          "t": 0.55,
+          "pose": "hammer.reach_back",
+          "ease": "easeInOutSine",
+          "marker": "weapon:sheathed",
+          "sound": "minecraft:item.armor.equip_iron"
+        },
+        {"t": 0.68, "pose": "hammer.reach_back"},
+        {"t": 1.1, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ]
+    },
+    "guard": {
+      "description": "Raising the guard (code 5): the club swings forward off the shoulder (0.1 s, clear of the head) and across the chest as a bar by 0.22 s with a small overshoot; guard.loop holds it.",
+      "length": 0.35,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance", "face": "focused"},
+        {"t": 0.1, "pose": "hammer.h1_strike", "ease": "easeInOutSine"},
+        {"t": 0.22, "pose": "hammer.bar", "ease": "easeOutCubic", "overshoot": 0.06, "overshoot_time": 0.08},
+        {"t": 0.35, "pose": "hammer.bar"}
+      ]
+    },
+    "guard.loop": {
+      "description": "Holding the bar, 2.0 s loop on the action controller until the next code: heavy breathing, focused eyes.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [{"t": 0, "pose": "hammer.bar", "face": "focused"}, {"t": 2.0, "pose": "hammer.bar"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 1.0}}
+      ]
+    },
+    "guard.hit": {
+      "description": "A blow on the bar (code 6), 0.45 s: the club and the chest knocked back in two ticks with gritted teeth, back on the bar by 0.32 s; guard.hit.loop holds it.",
+      "length": 0.45,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.bar", "face": {"eyes": 7, "mouth": 4}},
+        {"t": 0.1, "pose": "hammer.bar_jolt", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "hammer.bar", "ease": "easeInOutSine", "face": {"eyes": 4, "mouth": 7}},
+        {"t": 0.45, "pose": "hammer.bar"}
+      ]
+    },
+    "guard.hit.loop": {"copy": "guard.loop"},
+    "dodge": {
+      "description": "The heavy dodge (code 7), 0.6 s: a short hop back with the club kept on the shoulder (0.16 s), a heavy landing on deeply bent knees (0.34 s), back up into the stance by 0.6 s. Offsets over the stance; in place (the server moves the hero).",
+      "length": 0.6,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {"t": 0.04, "face": {"eyes": 8, "mouth": 4}},
+        {"t": 0.16, "pose": "hammer.dodge_back", "over": true, "root": [0, 1.2, 0], "ease": "easeOutQuad"},
+        {"t": 0.34, "pose": "hammer.dodge_land", "over": true, "root": [0, -0.5, 0], "ease": "easeInQuad"},
+        {"t": 0.48, "face": "none"},
+        {"t": 0.6, "pose": "hammer.stance"}
+      ]
+    },
+    "intro": {
+      "description": "The brute's intro (code 16), 1.8 s: the club swung off the shoulder and levelled one-handed at the enemy (0.4 s) with a fang grin and the left hand on the hip, held, a laugh (the chest bobbing), back onto the shoulder by 1.8 s. Keys the hips and the upper body.",
+      "length": 1.8,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {
+          "t": 0.4,
+          "pose": "hammer.point",
+          "ease": "easeOutCubic",
+          "overshoot": 0.06,
+          "sound": "minecraft:entity.player.attack.sweep",
+          "face": {"eyes": 4, "mouth": 7}
+        },
+        {"t": 1.35, "pose": "hammer.point", "face": "none"},
+        {"t": 1.8, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"chest": [-3, 0, 0], "neck": [-4, 0, 0]},
+            "period": 0.22,
+            "shape": "pulse",
+            "window": [0.65, 0.7, 1.1, 1.2]
+          }
+        }
+      ]
+    },
+    "victory": {
+      "description": "The brute's victory (code 20), 2.2 s: the club hoisted high one-handed with a roaring laugh and the left hand on the hip (0.35 s), shaken twice, back onto the shoulder by 2.2 s. Keys the hips and the upper body.",
+      "length": 2.2,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {
+          "t": 0.35,
+          "pose": "hammer.hoist",
+          "ease": "easeOutCubic",
+          "overshoot": 0.08,
+          "face": {"eyes": 3, "mouth": 3}
+        },
+        {"t": 1.7, "pose": "hammer.hoist", "face": "none"},
+        {"t": 2.2, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"arm_r": [-6, 0, 0], "forearm_r": [6, 0, 0], "chest": [-2, 0, 0]},
+            "period": 0.3,
+            "shape": "pulse",
+            "window": [0.55, 0.6, 1.3, 1.4]
+          }
+        }
+      ]
+    },
+    "taunt": {
+      "description": "The brute's taunt (code 14), 1.5 s: the club bounced twice on the shoulder in the right hand while the left hand is held out palm up and curls 'come on', a fang grin, back into the carry by 1.5 s. Keys the hips and the upper body.",
+      "length": 1.5,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {"t": 0.28, "pose": "hammer.beckon", "ease": "easeOutCubic", "face": {"eyes": 4, "mouth": 7}},
+        {"t": 1.2, "pose": "hammer.beckon"},
+        {"t": 1.25, "face": "none"},
+        {"t": 1.5, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"forearm_l": [-22, 0, 0], "hand_l": [-28, 0, 0]},
+            "period": 0.24,
+            "shape": "pulse",
+            "window": [0.32, 0.38, 0.8, 0.88]
+          }
+        },
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"arm_r": [-5, 0, 0], "forearm_r": [-6, 0, 0]},
+            "period": 0.3,
+            "shape": "pulse",
+            "window": [0.85, 0.9, 1.1, 1.18]
+          }
+        }
+      ]
+    },
+    "enrage": {
+      "description": "Enraged (code 19) with the club, 1.3 s: the club gripped in both hands and raised at the right side, teeth gritted (0.25 s), then hoisted high one-handed with the chest thrown out and the head up in a roar (0.5 s: a roar mark), trembling, back onto the shoulder by 1.3 s. The style's own: the core's restyled roar hunches the head into the club on the shoulder. Keys the hips and the upper body.",
+      "length": 1.3,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "hammer.stance"},
+        {"t": 0.25, "pose": "hammer.raise", "ease": "easeInOutSine", "face": {"eyes": 4, "mouth": 4}},
+        {
+          "t": 0.5,
+          "pose": "hammer.roar",
+          "ease": "easeOutQuad",
+          "marker": "vfx:roar",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 1.0, "pose": "hammer.roar"},
+        {"t": 1.15, "face": "none"},
+        {"t": 1.3, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"chest": [1.5, 0, 1], "arm_l": [2, 0, 0]}, "period": 0.1, "window": [0.55, 0.6, 0.95, 1.05]}
+        }
+      ]
+    },
+    "combat.run": {
+      "description": "The brute's run (0.6 s loop): the core run's legs and lean with the club kept on the shoulder in both hands, bouncing with the stride. The run while the weapon is drawn: the base controller plays combat.run instead of the core's move.run, as it plays combat.idle instead of move.idle; with the weapon sheathed a hero runs the core's move.run.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "hammer.run_carry"}, {"t": 0.6, "pose": "hammer.run_carry"}],
+      "layers": [
+        {"primitive": "run_cycle", "params": {"upper": 0, "lean": 11.0}, "add": false},
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"arm_r": [-3, 0, 0], "arm_l": [-3, 0, 0]}, "period": 0.3, "phase": 0.1}
+        }
+      ]
+    },
+    "work.mine": {
+      "description": "The miner's stroke with the hammer style's two-handed swing (Benika), 0.8 s: the pickaxe raised high at the right side in both hands (0.24 s), driven down into the block in front (contact at 0.38 s), bites and bounces (0.46 s), back to the idle by 0.8 s. The pick at item_r (the grip convention of HEROES_V2 4.7), the left hand on its handle. Upper body only, over move.idle.",
+      "length": 0.8,
+      "plays_over": "move.idle",
+      "settle_to": "move.idle",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {"t": 0.05, "face": {"eyes": 8}},
+        {"t": 0.24, "pose": "hammer.raise", "ease": "easeOutCubic"},
+        {"t": 0.38, "pose": "hammer.h1_strike", "ease": "easeInQuad", "face": {"eyes": 8, "mouth": 4}},
+        {"t": 0.46, "pose": "hammer.h1_follow", "ease": "easeOutQuad"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.8, "pose": "@stance", "ease": "easeInOutSine"}
+      ]
+    }
+  }
+}

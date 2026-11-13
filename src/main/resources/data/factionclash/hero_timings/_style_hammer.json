@@ -1,0 +1,264 @@
+{
+  "animations": {
+    "attack.1": {
+      "class": "light",
+      "events": [
+        {"t": 0.45, "tick": 9, "type": "sfx", "value": "minecraft:entity.player.attack.strong"},
+        {"t": 0.55, "tick": 11, "type": "hit"},
+        {"t": 0.55, "tick": 11, "type": "vfx", "value": "impact"}
+      ],
+      "frame_ticks": {"active": 1, "recovery": 11, "windup": 11},
+      "frames": {"active": 0.05, "recovery": 0.55, "windup": 0.55},
+      "hits": [0.55],
+      "kind": "action",
+      "length": 1.05,
+      "loop": "once",
+      "ticks": 21,
+      "total_ticks": 23,
+      "transition_ticks": 2
+    },
+    "attack.2": {
+      "class": "light",
+      "events": [
+        {"t": 0.45, "tick": 9, "type": "sfx", "value": "minecraft:entity.player.attack.sweep"},
+        {"t": 0.55, "tick": 11, "type": "hit"},
+        {"t": 0.55, "tick": 11, "type": "vfx", "value": "slash_arc"}
+      ],
+      "frame_ticks": {"active": 1, "recovery": 11, "windup": 11},
+      "frames": {"active": 0.05, "recovery": 0.55, "windup": 0.55},
+      "hits": [0.55],
+      "kind": "action",
+      "length": 1.05,
+      "loop": "once",
+      "ticks": 21,
+      "total_ticks": 23,
+      "transition_ticks": 2
+    },
+    "attack.3": {
+      "class": "light",
+      "events": [
+        {"t": 0.5, "tick": 10, "type": "sfx", "value": "minecraft:entity.player.attack.knockback"},
+        {"t": 0.65, "tick": 13, "type": "hit"},
+        {"t": 0.65, "tick": 13, "type": "vfx", "value": "ground_slam"}
+      ],
+      "frame_ticks": {"active": 1, "recovery": 15, "windup": 13},
+      "frames": {"active": 0.05, "recovery": 0.75, "windup": 0.65},
+      "hits": [0.65],
+      "kind": "action",
+      "length": 1.35,
+      "loop": "once",
+      "ticks": 27,
+      "total_ticks": 29,
+      "transition_ticks": 2
+    },
+    "combat.idle": {
+      "events": [],
+      "kind": "base",
+      "length": 3.2,
+      "loop": "loop",
+      "ticks": 64,
+      "total_ticks": 68,
+      "transition_ticks": 4
+    },
+    "combat.run": {
+      "events": [],
+      "kind": "base",
+      "length": 0.6,
+      "loop": "loop",
+      "ticks": 12,
+      "total_ticks": 16,
+      "transition_ticks": 4
+    },
+    "death": {
+      "events": [],
+      "kind": "action",
+      "length": 0.75,
+      "loop": "hold",
+      "ticks": 15,
+      "total_ticks": 17,
+      "transition_ticks": 2
+    },
+    "defeated": {
+      "events": [],
+      "kind": "action",
+      "length": 0.9,
+      "loop": "once",
+      "ticks": 18,
+      "total_ticks": 20,
+      "transition_ticks": 2
+    },
+    "defeated.loop": {
+      "events": [],
+      "kind": "action",
+      "length": 3,
+      "loop": "loop",
+      "ticks": 60,
+      "total_ticks": 62,
+      "transition_ticks": 2
+    },
+    "dodge": {
+      "events": [],
+      "kind": "action",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 14,
+      "transition_ticks": 2
+    },
+    "draw": {
+      "events": [
+        {"t": 0.4, "tick": 8, "type": "weapon", "value": "drawn"},
+        {"t": 0.4, "tick": 8, "type": "sfx", "value": "minecraft:item.armor.equip_iron"}
+      ],
+      "kind": "action",
+      "length": 0.9,
+      "loop": "once",
+      "ticks": 18,
+      "total_ticks": 20,
+      "transition_ticks": 2
+    },
+    "enrage": {
+      "events": [{"t": 0.6, "tick": 12, "type": "vfx", "value": "roar"}],
+      "kind": "action",
+      "length": 1.3,
+      "loop": "once",
+      "ticks": 26,
+      "total_ticks": 28,
+      "transition_ticks": 2
+    },
+    "guard": {
+      "events": [],
+      "kind": "action",
+      "length": 0.35,
+      "loop": "once",
+      "ticks": 7,
+      "total_ticks": 9,
+      "transition_ticks": 2
+    },
+    "guard.hit": {
+      "events": [],
+      "kind": "action",
+      "length": 0.45,
+      "loop": "once",
+      "ticks": 9,
+      "total_ticks": 11,
+      "transition_ticks": 2
+    },
+    "guard.hit.loop": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "loop",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "guard.loop": {
+      "events": [],
+      "kind": "action",
+      "length": 2,
+      "loop": "loop",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "hurt.heavy": {
+      "events": [],
+      "kind": "action",
+      "length": 0.5,
+      "loop": "once",
+      "ticks": 10,
+      "total_ticks": 12,
+      "transition_ticks": 2
+    },
+    "interrupt": {
+      "events": [],
+      "kind": "action",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 14,
+      "transition_ticks": 2
+    },
+    "intro": {
+      "events": [{"t": 0.5, "tick": 10, "type": "sfx", "value": "minecraft:entity.player.attack.sweep"}],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "sheathe": {
+      "events": [
+        {"t": 0.65, "tick": 13, "type": "weapon", "value": "sheathed"},
+        {"t": 0.65, "tick": 13, "type": "sfx", "value": "minecraft:item.armor.equip_iron"}
+      ],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "stagger": {
+      "events": [{"t": 0.5, "tick": 10, "type": "vfx", "value": "stars"}],
+      "kind": "action",
+      "length": 2.5,
+      "loop": "once",
+      "ticks": 50,
+      "total_ticks": 52,
+      "transition_ticks": 2
+    },
+    "stun": {
+      "events": [],
+      "kind": "action",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 10,
+      "transition_ticks": 2
+    },
+    "stun.loop": {
+      "events": [{"t": 0.1, "tick": 2, "type": "vfx", "value": "stars"}],
+      "kind": "action",
+      "length": 2,
+      "loop": "loop",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    },
+    "taunt": {
+      "events": [],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "victory": {
+      "events": [],
+      "kind": "action",
+      "length": 2.2,
+      "loop": "once",
+      "ticks": 44,
+      "total_ticks": 46,
+      "transition_ticks": 2
+    },
+    "work.mine": {
+      "events": [],
+      "kind": "action",
+      "length": 0.8,
+      "loop": "once",
+      "ticks": 16,
+      "total_ticks": 18,
+      "transition_ticks": 2
+    }
+  },
+  "file": "_style_hammer",
+  "format": 2,
+  "generator": "herogen 1",
+  "source_sha256": "2aa858a6f6056dfef0cbd9e60c025a81b667d6a76216fbcefe8a7cbcd1db1522",
+  "tick": 0.05
+}

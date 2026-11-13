@@ -1,0 +1,424 @@
+{
+  "_comment": "Style library: sword_shield (HEROES_V2.md 13.6; G5). A one-hand sword in the right hand and a shield on the left forearm (Ilsabet's longsword and kite shield): shield forward; the string diagonal cut, level cut and shield bash; the sword from the left hip and the shield from the back on draw's 'weapon:drawn', put back on sheathe's 'weapon:sheathed'; guard (the shield high; .loop, .hit), dodge, intro (a salute), victory, taunt (the sword tapped on the rim) and the run behind the shield. Hand poses in herosrc/anim/poses/sword_shield.json; the poses below are the clips' in-between keys, solved on the teen with the props clear of the body on the chibi, teen and adult.",
+  "style": "sword_shield",
+  "restyle_arms": {
+    "pose": "stance.relaxed",
+    "clips": ["death", "defeated", "defeated.loop", "stagger"]
+  },
+  "poses": {
+    "sword_shield.c1_wind": {
+      "_comment": "attack.1's wind-up: the sword raised high at the right, the blade back over the shoulder, the chest turned right behind the shield.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "waist": [-1, 8, 0],
+        "chest": [-4, 18, 2],
+        "neck": [-2, -36, 0],
+        "arm_r": [-49.2, 10.3, -1.5],
+        "forearm_r": [-105.8, 25.1, 0.0],
+        "hand_r": [33.5, 35.1, 3.8]
+      }
+    },
+    "sword_shield.c1_hit": {
+      "_comment": "attack.1's contact: the diagonal cut down and across past the shield, the edge leading.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "body": [6, -4, 0],
+        "waist": [2, -8, 0],
+        "chest": [5, -18, 0],
+        "neck": [-8, 8, 0],
+        "arm_r": [-27.0, 11.7, 31.4],
+        "forearm_r": [-65.1, 4.5, 0.0],
+        "hand_r": [77.6, 21.1, -17.1]
+      }
+    },
+    "sword_shield.c1_follow": {
+      "_comment": "attack.1's follow-through: the blade carried on down to the left.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "body": [7, -6, 0],
+        "waist": [2, -10, 0],
+        "chest": [6, -22, 0],
+        "neck": [-9, 12, 0],
+        "arm_r": [-21.6, -7.8, 23.4],
+        "forearm_r": [-61.0, -10.4, 0.0],
+        "hand_r": [75.4, -3.3, -7.3]
+      }
+    },
+    "sword_shield.c2_wind": {
+      "_comment": "attack.2's wind-up: the sword drawn back level beside the right hip, the hips turned right (the contact is sword_shield.cut).",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "body": [4, 22, 0],
+        "waist": [0, 6, 0],
+        "chest": [0, 16, 0],
+        "neck": [-4, -34, 0],
+        "arm_r": [-22.1, 26.2, -12.3],
+        "forearm_r": [-63.8, 37.8, 0.0],
+        "hand_r": [53.5, 2.0, 35.1]
+      }
+    },
+    "sword_shield.c2_follow": {
+      "_comment": "attack.2's follow-through: the level cut carried on round to the left.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "body": [6, -8, 0],
+        "waist": [2, -6, 0],
+        "chest": [4, -24, 0],
+        "neck": [-6, 18, 0],
+        "arm_r": [-28.1, -5.1, 22.1],
+        "forearm_r": [-71.8, -8.0, 0.0],
+        "hand_r": [63.9, -5.1, -5.0]
+      }
+    },
+    "sword_shield.bash_wind": {
+      "_comment": "attack.3's wind-up: the shield drawn in to the chest with the left shoulder back, the sword held back at the right.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "body": [2, -10, 0],
+        "waist": [0, -6, 0],
+        "chest": [-2, -10, 0],
+        "neck": [-2, 12, 0],
+        "arm_r": [42.2, -26.1, 36.1],
+        "forearm_r": [-66.1, -24.2, 0.0],
+        "hand_r": [4.7, -12.7, -11.7],
+        "arm_l": [-37.6, 38.2, -43.6],
+        "forearm_l": [-94.8, 17.9, 0.0],
+        "hand_l": [-19.0, -28.8, 35.1]
+      }
+    },
+    "sword_shield.bash": {
+      "_comment": "attack.3's contact: the shield driven straight forward with the left shoulder and the hips behind it, the sword held back.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "body": [8, 26, 0],
+        "waist": [2, 6, 0],
+        "chest": [4, 10, 0],
+        "neck": [-8, -40, 0],
+        "arm_r": [-3.6, 17.5, -3.6],
+        "forearm_r": [-74.6, 18.5, 0.0],
+        "hand_r": [16.0, 27.8, 12.2],
+        "arm_l": [-25.1, 5.5, -51.5],
+        "forearm_l": [-80.3, -13.6, 0.0],
+        "hand_l": [-25.1, -34.9, 35.1]
+      }
+    },
+    "sword_shield.reach": {
+      "_comment": "The draw and the sheathe: the right hand at the hilt on the left hip, the left hand behind the left hip at the shield's lower rim on the back (the shield swings round low, clear of a chibi's head).",
+      "bones": {
+        "body": [0, -6, 0],
+        "waist": [2, -3, 0],
+        "chest": [6, -8, 0],
+        "neck": [-8, 12, 0],
+        "arm_r": [-82.2, -54.5, 29.4],
+        "forearm_r": [-36.2, -89.2, 0],
+        "hand_r": [38.8, 33.3, -35.4],
+        "arm_l": [38.5, 9.8, -7.9],
+        "forearm_l": [-60.9, 8.4, 0],
+        "hand_l": [-4.9, 0.2, 2.3]
+      }
+    },
+    "sword_shield.salute": {
+      "_comment": "The intro's salute: the sword upright before the face, the shield lowered at the side.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "chest": [-2, -4, 0],
+        "neck": [-2, 6, 0],
+        "arm_r": [-37.0, -16.6, 3.8],
+        "forearm_r": [-95.3, -10.0, 0.0],
+        "hand_r": [35.6, 4.2, 5.5],
+        "arm_l": [10, 0, -14],
+        "forearm_l": [-30, 0, 0],
+        "hand_l": [0, 0, 0]
+      }
+    },
+    "sword_shield.raise": {
+      "_comment": "The victory: the sword raised high at the right side, the shield lowered.",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "chest": [-2, -4, 0],
+        "neck": [-2, 6, 0],
+        "arm_r": [-68.1, 55.1, 55.2],
+        "forearm_r": [-73.4, 29.0, 0.0],
+        "hand_r": [71.5, 9.0, 5.9],
+        "arm_l": [10, 0, -14],
+        "forearm_l": [-30, 0, 0],
+        "hand_l": [0, 0, 0]
+      }
+    },
+    "sword_shield.tap": {
+      "_comment": "The taunt: the flat of the sword laid on the shield's top rim (tapped by an oscillation).",
+      "extends": "sword_shield.stance",
+      "bones": {
+        "chest": [0, 4, 0],
+        "neck": [-4, -16, 0],
+        "arm_r": [-54.7, -3.7, 26.6],
+        "forearm_r": [-68.1, -13.0, 0.0],
+        "hand_r": [29.0, -17.2, -6.3]
+      }
+    },
+    "sword_shield.run_carry": {
+      "_comment": "combat.run's arms: the shield before the chest, the sword trailing low behind.",
+      "bones": {
+        "arm_r": [23.6, -44.7, -5.0],
+        "forearm_r": [-6.9, -44.7, 0],
+        "hand_r": [80.1, -11.1, -35.0],
+        "arm_l": [-29.1, 32.6, -37.1],
+        "forearm_l": [-91.3, 5, 0],
+        "hand_l": [-24, -28.4, 35]
+      }
+    },
+    "sword_shield.guard_jolt": {
+      "_comment": "A blow on the raised shield: the chest and both arms knocked back.",
+      "extends": "sword_shield.guard",
+      "bones": {"body": [0, 18, 0], "chest": [-8, 8, 0], "neck": [6, -24, 0]}
+    },
+    "sword_shield.dodge_back": {
+      "_comment": "The dodge's air pose, offsets over the stance: a step-hop back behind the shield, the knees tucked a little.",
+      "bones": {
+        "leg_r": [-16, 0, 0],
+        "shin_r": [32, 0, 0],
+        "foot_r": [-16, 0, 0],
+        "leg_l": [-12, 0, 0],
+        "shin_l": [30, 0, 0],
+        "foot_l": [-18, 0, 0],
+        "body": [-6, 4, 0],
+        "chest": [-4, 2, 0],
+        "neck": [8, -4, 0]
+      }
+    },
+    "sword_shield.dodge_land": {
+      "_comment": "The dodge's landing, offsets over the stance: on bent knees behind the shield.",
+      "bones": {
+        "leg_r": [-8, 0, 0],
+        "shin_r": [16, 0, 0],
+        "foot_r": [-8, 0, 0],
+        "leg_l": [-8, 0, 0],
+        "shin_l": [16, 0, 0],
+        "foot_l": [-8, 0, 0],
+        "body": [4, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-3, 0, 0]
+      }
+    }
+  },
+  "animations": {
+    "combat.idle": {
+      "description": "Shield forward (sword_shield.stance), breathing at 1.5 s: 3.0 s loop.",
+      "length": 3.0,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "sword_shield.stance"}, {"t": 3.0, "pose": "sword_shield.stance"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.5, "depth": 1.1}}
+      ]
+    },
+    "attack.1": {
+      "description": "The string's first cut, diagonal: the sword raised high at the right with the chest turned behind the shield (0.2 s), held, cut down and across past the shield to land at 0.40 s (hit), carried on down to the left (0.52 s), back behind the shield by 0.9 s. Keys the hips and the upper body.",
+      "length": 0.9,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.2, "pose": "sword_shield.c1_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "sword_shield.c1_wind", "sound": "minecraft:entity.player.attack.sweep"},
+        {
+          "t": 0.4,
+          "pose": "sword_shield.c1_hit",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:slash_arc",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.52, "pose": "sword_shield.c1_follow", "ease": "easeOutCubic"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.9, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.2": {
+      "description": "The string's second cut, level: the sword drawn back beside the right hip with the hips turned (0.2 s), held, swept level at the target past the shield to land at 0.40 s (hit), carried round to the left (0.52 s), back behind the shield by 0.9 s. Keys the hips and the upper body.",
+      "length": 0.9,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.2, "pose": "sword_shield.c2_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "sword_shield.c2_wind", "sound": "minecraft:entity.player.attack.sweep"},
+        {
+          "t": 0.4,
+          "pose": "sword_shield.cut",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:slash_arc",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.52, "pose": "sword_shield.c2_follow", "ease": "easeOutCubic"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.9, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.3": {
+      "description": "The string's finisher, the shield bash: the shield drawn in to the chest with the left shoulder back (0.25 s), held, driven straight forward with the shoulder and the hips to land at 0.45 s (hit), held a beat, back into the stance by 1.0 s. Keys the hips and the upper body.",
+      "length": 1.0,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "sword_shield.bash_wind", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "sword_shield.bash_wind", "sound": "minecraft:entity.player.attack.knockback"},
+        {
+          "t": 0.45,
+          "pose": "sword_shield.bash",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:impact",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.6, "pose": "sword_shield.bash"},
+        {"t": 0.7, "face": "none"},
+        {"t": 1.0, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "draw": {
+      "description": "Drawing (code 12) from the idle: the right hand crosses to the hilt at the left hip while the left reaches behind the hip for the shield (0.25 s), both come free as the arms move (0.35 s: 'weapon:drawn'), the sword sweeps out to the right as the shield swings round to the front (0.5 s), into the stance by 0.95 s. Keys the hips and the upper body.",
+      "length": 0.95,
+      "plays_over": "move.idle",
+      "settle_to": "combat.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "sword_shield.reach", "ease": "easeInOutSine"},
+        {"t": 0.3, "pose": "sword_shield.reach"},
+        {"t": 0.35, "marker": "weapon:drawn", "sound": "minecraft:item.armor.equip_iron"},
+        {"t": 0.52, "pose": "sword_shield.c2_wind", "ease": "easeOutCubic"},
+        {"t": 0.72, "face": "none"},
+        {"t": 0.95, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "sheathe": {
+      "description": "Sheathing (code 13): the blade flicked down and across to shake it clean (0.25 s), then it goes home at the left hip and the shield onto the back (0.55 s: 'weapon:sheathed', as the hilt reaches the scabbard's mouth), the arms fall to the idle stance by 1.15 s. Keys the hips and the upper body.",
+      "length": 1.15,
+      "plays_over": "combat.idle",
+      "settle_to": "move.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {"t": 0.25, "pose": "sword_shield.c1_follow", "ease": "easeOutCubic"},
+        {"t": 0.55, "marker": "weapon:sheathed", "sound": "minecraft:item.armor.equip_chain", "face": {"eyes": 2}},
+        {"t": 0.58, "pose": "sword_shield.reach", "ease": "easeInOutSine"},
+        {"t": 0.72, "pose": "sword_shield.reach"},
+        {"t": 0.85, "face": "none"},
+        {"t": 1.15, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ]
+    },
+    "guard": {
+      "description": "Raising the guard (code 5): the shield comes up high before the chest and chin and the sword hand to the temple in 0.18 s with a small overshoot; guard.loop holds it.",
+      "length": 0.3,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance", "face": "focused"},
+        {"t": 0.18, "pose": "sword_shield.guard", "ease": "easeOutCubic", "overshoot": 0.08, "overshoot_time": 0.08},
+        {"t": 0.3, "pose": "sword_shield.guard"}
+      ]
+    },
+    "guard.loop": {
+      "description": "Holding the shield high, 2.0 s loop on the action controller until the next code: steady breathing, focused eyes.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [{"t": 0, "pose": "sword_shield.guard", "face": "focused"}, {"t": 2.0, "pose": "sword_shield.guard"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 0.9}}
+      ]
+    },
+    "guard.hit": {
+      "description": "A blow on the shield (code 6), 0.45 s: knocked back in two ticks with gritted teeth, back on the guard by 0.32 s; guard.hit.loop holds it.",
+      "length": 0.45,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.guard", "face": {"eyes": 7, "mouth": 4}},
+        {"t": 0.08, "pose": "sword_shield.guard_jolt", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "sword_shield.guard", "ease": "easeInOutSine", "face": "determined"},
+        {"t": 0.45, "pose": "sword_shield.guard"}
+      ]
+    },
+    "guard.hit.loop": {"copy": "guard.loop"},
+    "dodge": {
+      "description": "The knight's dodge (code 7), 0.55 s: a step-hop back behind the shield (0.14 s), landing on bent knees (0.3 s), back in the stance by 0.55 s. Offsets over the stance; in place (the server moves the hero).",
+      "length": 0.55,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {"t": 0.04, "face": {"eyes": 8, "mouth": 4}},
+        {"t": 0.14, "pose": "sword_shield.dodge_back", "over": true, "root": [0, 1.3, 0], "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "sword_shield.dodge_land", "over": true, "root": [0, -0.3, 0], "ease": "easeInQuad"},
+        {"t": 0.45, "face": "none"},
+        {"t": 0.55, "pose": "sword_shield.stance"}
+      ]
+    },
+    "intro": {
+      "description": "The knight's intro (code 16), 1.6 s: the sword raised upright before the face in a salute with the shield lowered (0.4 s), eyes closed, opened with resolve (1.0 s), and the shield brought up into the stance by 1.6 s. Keys the hips and the upper body.",
+      "length": 1.6,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {
+          "t": 0.4,
+          "pose": "sword_shield.salute",
+          "ease": "easeInOutSine",
+          "sound": "minecraft:entity.player.attack.sweep"
+        },
+        {"t": 0.45, "face": {"eyes": 2}},
+        {"t": 1.0, "pose": "sword_shield.salute", "face": "determined"},
+        {"t": 1.35, "face": "none"},
+        {"t": 1.6, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "victory": {
+      "description": "The knight's victory (code 20), 2.2 s: the sword raised high with the shield lowered and a bright face (0.35 s), held, back into the stance by 2.2 s. Keys the hips and the upper body.",
+      "length": 2.2,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {"t": 0.35, "pose": "sword_shield.raise", "ease": "easeOutCubic", "overshoot": 0.06, "face": "happy"},
+        {"t": 1.7, "pose": "sword_shield.raise", "face": "none"},
+        {"t": 2.2, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "taunt": {
+      "description": "The knight's taunt (code 14), 1.4 s: the flat of the sword laid on the shield's rim and tapped twice, a firm look, back into the stance by 1.4 s. Upper body only.",
+      "length": 1.4,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "sword_shield.stance"},
+        {"t": 0.25, "pose": "sword_shield.tap", "ease": "easeOutCubic", "face": "determined"},
+        {"t": 1.1, "pose": "sword_shield.tap"},
+        {"t": 1.15, "face": "none"},
+        {"t": 1.4, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"forearm_r": [-12, 0, 0]}, "period": 0.28, "shape": "pulse", "window": [0.32, 0.38, 0.9, 1.0]}
+        }
+      ],
+      "markers": [{"t": 0.45, "sound": "minecraft:item.shield.block"}, {"t": 0.75, "sound": "minecraft:item.shield.block"}]
+    },
+    "combat.run": {
+      "description": "The knight's run (0.6 s loop): the core run's legs and lean, the shield kept before the chest, the sword trailing low behind. The run while the weapon is drawn: the base controller plays combat.run instead of the core's move.run, as it plays combat.idle instead of move.idle; with the weapon sheathed a hero runs the core's move.run.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "sword_shield.run_carry"}, {"t": 0.6, "pose": "sword_shield.run_carry"}],
+      "layers": [
+        {"primitive": "run_cycle", "params": {"upper": 0}, "add": false},
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"arm_r": [-8, 0, 0], "arm_l": [2, 0, 0]}, "period": 0.6, "phase": 0.25}
+        }
+      ]
+    }
+  }
+}

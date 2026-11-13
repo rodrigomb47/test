@@ -1,13 +1,283 @@
 {
-  "_comment": "Style library: katana (HEROES_V2.md 13.6). G3 builds the ready stance and the first cut of the string; G5 completes the library (attack.2-3, draw, sheathe, guard, dodge, intro, victory, taunt).",
+  "_comment": "Style library: katana (HEROES_V2.md 13.6). One-handed long sword in the right hand (the left free, or holding the short sword from a phase). G3 built combat.idle and attack.1; G5 the rest of the list: the string's level cut and thrust, the quick draw and the sheathe (the 'weapon:drawn' and 'weapon:sheathed' markers tell the server when to swap the weapon flag), guard (.loop, .hit), dodge, intro, victory, taunt, the running carry and a swordsman's work.chop. The poses below are the clips' in-between keys; the hand poses are in herosrc/anim/poses/katana.json.",
   "style": "katana",
+  "restyle_arms": {
+    "pose": "stance.relaxed",
+    "clips": ["death", "defeated", "defeated.loop", "stagger"]
+  },
+  "poses": {
+    "katana.h_wind": {
+      "_comment": "attack.2's wind-up: the blade drawn back level at the right side, point behind, edge forward; the chest turned right.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [0, 8, 0],
+        "chest": [-2, 20, 0],
+        "neck": [-2, -22, 0],
+        "arm_r": [-5.9, 61.8, -12],
+        "forearm_r": [-110.8, 28.4, 0],
+        "hand_r": [80, 35, 24.6]
+      }
+    },
+    "katana.h_wind_peak": {
+      "extends": "katana.h_wind",
+      "bones": {"waist": [0, 10, 0], "chest": [-3, 24, 0], "neck": [-2, -27, 0]}
+    },
+    "katana.h_cut": {
+      "_comment": "attack.2's contact: the blade level in front of the chest, swept forward and left, the edge leading.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [2, -10, 0],
+        "chest": [4, -20, 0],
+        "neck": [-4, 30, 0],
+        "arm_r": [-47.2, 23.5, -5.1],
+        "forearm_r": [-50.6, 17.8, 0],
+        "hand_r": [80.2, 35.1, -31.6]
+      }
+    },
+    "katana.h_follow": {
+      "_comment": "attack.2's follow-through: the arm across the chest, the blade out to the left.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [2, -14, 0],
+        "chest": [5, -28, 0],
+        "neck": [-5, 40, 0],
+        "arm_r": [-41.3, -16, 3.6],
+        "forearm_r": [-51.4, 6.6, 0],
+        "hand_r": [80.2, 35, -35]
+      }
+    },
+    "katana.t_wind": {
+      "_comment": "attack.3's wind-up: the blade chambered at the right side, point forward and level, the left hand reaching forward to aim.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [-1, 6, 0],
+        "chest": [-3, 16, 0],
+        "neck": [0, -18, 0],
+        "arm_r": [41.5, 18.4, 14.3],
+        "forearm_r": [-108.8, 2.9, 0],
+        "hand_r": [79.8, 33.6, -35],
+        "arm_l": [-50, 0, -10],
+        "forearm_l": [-30, 0, 0]
+      }
+    },
+    "katana.t_coil": {
+      "extends": "katana.t_wind",
+      "bones": {
+        "body": [1, -10, 0],
+        "waist": [-2, 8, 0],
+        "chest": [-4, 20, 0],
+        "neck": [0, -24, 0]
+      }
+    },
+    "katana.t_thrust": {
+      "_comment": "attack.3's contact: the arm thrown straight forward at chest height, the blade level at the target, the hips and chest driving in, the left arm back for balance.",
+      "extends": "katana.stance",
+      "bones": {
+        "body": [8, -16, 0],
+        "waist": [3, -6, 0],
+        "chest": [5, -12, 0],
+        "neck": [-12, 30, 0],
+        "arm_r": [-87.7, 26.9, -16.2],
+        "forearm_r": [-12.1, 23.3, 0],
+        "hand_r": [80.1, 29.9, -16.9],
+        "arm_l": [20, 0, -25],
+        "forearm_l": [-20, 0, 0]
+      }
+    },
+    "katana.t_recoil": {
+      "extends": "katana.t_thrust",
+      "bones": {
+        "body": [6, -15, 0],
+        "chest": [3, -10, 0],
+        "arm_r": [-80, 25, -12],
+        "forearm_r": [-24, 20, 0]
+      }
+    },
+    "katana.guard": {
+      "_comment": "The block: the blade raised diagonally across the front of the body, point up and to the left, edge to the enemy; the left hand kept low in front of the belly.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [0, 2, 0],
+        "chest": [-2, 6, 0],
+        "neck": [-2, -8, 0],
+        "arm_r": [-27.6, 11.4, 32.9],
+        "forearm_r": [-98.4, -12.9, 0],
+        "hand_r": [51.7, 0.4, -6.8],
+        "arm_l": [-18, 0, -16],
+        "forearm_l": [-46, 0, 0]
+      }
+    },
+    "katana.guard_jolt": {
+      "extends": "katana.guard",
+      "bones": {
+        "waist": [-2, 4, 0],
+        "chest": [-9, 9, 0],
+        "neck": [5, -10, 0],
+        "arm_r": [-20, 14, 36],
+        "forearm_r": [-104, -12, 0]
+      }
+    },
+    "katana.draw_reach": {
+      "_comment": "The cross-draw grip: the right hand on the hilt at the left hip (the blade still in line with the saya), the left hand on the saya below it; the hips turned a little left. draw and sheathe swap the weapon flag here.",
+      "bones": {
+        "body": [0, -4, 0],
+        "waist": [2, -3, 0],
+        "chest": [7, -8, 0],
+        "neck": [-9, 12, 0],
+        "arm_r": [-59, -38.4, 16.7],
+        "forearm_r": [-59, -82, 0],
+        "hand_r": [58.9, 13.4, -40],
+        "arm_l": [21.2, 26, -25.2],
+        "forearm_l": [-86.2, 16, 0],
+        "hand_l": [5.3, -17.3, 40]
+      }
+    },
+    "katana.draw_half": {
+      "_comment": "Half out: the blade slides forward along the saya's line, the left hand still on the saya.",
+      "extends": "katana.draw_reach",
+      "bones": {
+        "arm_r": [-79, 7.8, 35.6],
+        "forearm_r": [-78.1, -76.5, 0],
+        "hand_r": [38.9, -2.3, -40.1]
+      }
+    },
+    "katana.draw_cut": {
+      "_comment": "The draw-cut: the blade leaves the saya in a level sweep out to the right front, the arm straight.",
+      "bones": {
+        "body": [2, 8, 0],
+        "waist": [1, 6, 0],
+        "chest": [3, 10, 0],
+        "neck": [-4, -16, 0],
+        "arm_r": [-78.6, -18.8, 30.3],
+        "forearm_r": [-4, 0.8, 0],
+        "hand_r": [80.1, -14.4, 32.8],
+        "arm_l": [-10, 0, -12],
+        "forearm_l": [-34, 0, 0],
+        "hand_l": [0, 0, 0]
+      }
+    },
+    "katana.chiburi_up": {
+      "_comment": "Before the sheathe: the blade raised beside the right shoulder.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [-1, 6, 0],
+        "chest": [-4, 12, 0],
+        "neck": [2, -14, 0],
+        "arm_r": [-67.2, 22.8, -8.4],
+        "forearm_r": [-111.4, 15.2, 0],
+        "hand_r": [67.4, -2.9, 11.3]
+      }
+    },
+    "katana.chiburi": {
+      "_comment": "The flick that shakes the blade clean: the arm snapped down and out to the right, the blade pointing down and forward.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [2, 4, 0],
+        "chest": [5, 8, 0],
+        "neck": [-6, -10, 0],
+        "arm_r": [-43.4, 15.6, 21.3],
+        "forearm_r": [0, 3.7, 0],
+        "hand_r": [70.8, 4.9, -2.3]
+      }
+    },
+    "katana.salute": {
+      "_comment": "The intro's salute: the blade upright before the chest and face, edge forward.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [0, -4, 0],
+        "chest": [-2, -6, 0],
+        "neck": [0, 8, 0],
+        "arm_r": [-27.5, 3.2, -12.6],
+        "forearm_r": [-95, 2.7, 0],
+        "hand_r": [30.5, -13.9, 3.7],
+        "arm_l": [-10, 0, -10],
+        "forearm_l": [-20, 0, 0]
+      }
+    },
+    "katana.rest_low": {
+      "_comment": "The blade lowered at the right side, point down and forward: the calm after a fight.",
+      "extends": "katana.stance",
+      "bones": {
+        "waist": [0, -2, 0],
+        "chest": [-2, -4, 0],
+        "neck": [4, 10, 0],
+        "arm_r": [6.8, 16.3, 14.5],
+        "forearm_r": [-9.7, 5.5, 0],
+        "hand_r": [34.7, 7.7, -2.4],
+        "arm_l": [4, 0, -8],
+        "forearm_l": [-14, 0, 0]
+      }
+    },
+    "katana.beckon": {
+      "_comment": "The taunt: the left hand held out palm up and the fingers curling (an oscillation of the forearm), the blade kept in the stance.",
+      "extends": "katana.stance",
+      "bones": {
+        "chest": [1, -10, 0],
+        "neck": [-4, 30, 0],
+        "arm_l": [-52, -20, -18],
+        "forearm_l": [-40, -70, 0],
+        "hand_l": [-10, 0, 0]
+      }
+    },
+    "katana.run_carry": {
+      "_comment": "combat.run's arms: the sword hand trailing low behind with the blade pointing back, the left hand steadying the saya at the hip.",
+      "bones": {
+        "arm_r": [26, -26.5, -1.9],
+        "forearm_r": [-10, -31.6, 0],
+        "hand_r": [100.1, 3.7, -31.1],
+        "arm_l": [27, 25.7, -25.9],
+        "forearm_l": [-86.5, 21.3, 0],
+        "hand_l": [0, -23.8, 37.4]
+      }
+    },
+    "katana.dodge_back": {
+      "_comment": "The dodge's air pose, offsets over the stance: knees tucked in a hop back, the body leaning back and the blade pulled in across the chest.",
+      "bones": {
+        "leg_r": [-24, 0, 0],
+        "shin_r": [46, 0, 0],
+        "foot_r": [-22, 0, 0],
+        "leg_l": [-14, 0, 0],
+        "shin_l": [40, 0, 0],
+        "foot_l": [-26, 0, 0],
+        "body": [-8, 6, 0],
+        "chest": [-6, 4, 0],
+        "neck": [10, -6, 0],
+        "arm_r": [-6, 8, 6],
+        "forearm_r": [-14, 0, 0],
+        "arm_l": [-20, 0, -14],
+        "forearm_l": [-30, 0, 0],
+        "ear_r": [-24, 0, 10],
+        "ear_l": [-24, 0, -10],
+        "tail_1": [20, 0, 0]
+      }
+    },
+    "katana.dodge_land": {
+      "bones": {
+        "leg_r": [-8, 0, 0],
+        "shin_r": [16, 0, 0],
+        "foot_r": [-8, 0, 0],
+        "leg_l": [-8, 0, 0],
+        "shin_l": [16, 0, 0],
+        "foot_l": [-8, 0, 0],
+        "body": [4, 0, 0],
+        "chest": [3, 0, 0],
+        "neck": [-3, 0, 0],
+        "arm_r": [-4, 0, 2],
+        "forearm_r": [-6, 0, 0],
+        "ear_r": [-14, 0, 6],
+        "ear_l": [-14, 0, -6]
+      }
+    }
+  },
   "animations": {
     "combat.idle": {
       "description": "Ready stance, breathing twice as fast as the idle.",
       "length": 3,
       "loop": true,
       "keys": [{"t": 0, "pose": "katana.stance"}, {"t": 3, "pose": "katana.stance"}],
-      "layers": [{"primitive": "breathe", "params": {"period": 1.5, "depth": 1.2}}]
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.5, "depth": 1.2}}
+      ]
     },
     "attack.1": {
       "description": "A one-handed diagonal cut from over the right shoulder: the wind-up eases out to 0.20 s and stretches to 0.30 s, the cut accelerates through two ticks and lands at 0.40 s (the 'hit' marker), follow-through to 0.55 s, back on the ready stance at 0.90 s. Upper body only, so the legs keep walking under it.",
@@ -35,6 +305,238 @@
         {"t": 0.55, "pose": "katana.follow", "ease": "easeOutCubic"},
         {"t": 0.7, "face": "none"},
         {"t": 0.9, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.2": {
+      "description": "The string's second cut, level from right to left: the blade drawn back beside the right hip with the chest turned away (0.20 s), a last coil to 0.32 s, the sweep across the front lands at 0.40 s (hit), the arm carries on across the chest to 0.52 s, back on the stance at 0.90 s. Upper body only.",
+      "length": 0.9,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.2, "pose": "katana.h_wind", "ease": "easeOutCubic"},
+        {
+          "t": 0.3,
+          "pose": "katana.h_wind_peak",
+          "ease": "easeInOutSine",
+          "sound": "minecraft:entity.player.attack.sweep"
+        },
+        {
+          "t": 0.4,
+          "pose": "katana.h_cut",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:slash_arc",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.52, "pose": "katana.h_follow", "ease": "easeOutCubic", "overshoot": 0.08},
+        {"t": 0.72, "face": "none"},
+        {"t": 0.9, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.3": {
+      "description": "The string's finisher, a thrust: the blade chambered at the right side with the left hand reaching out to aim (0.25 s), coiled to 0.38 s, the arm and the hips drive straight in and the point lands at 0.45 s (hit), held a beat, drawn back to the stance by 1.0 s. Keys the hips too (they drive the thrust); the legs stay the base controller's.",
+      "length": 1.0,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "katana.t_wind", "ease": "easeOutCubic"},
+        {
+          "t": 0.35,
+          "pose": "katana.t_coil",
+          "ease": "easeInOutSine",
+          "sound": "minecraft:entity.player.attack.nodamage"
+        },
+        {
+          "t": 0.45,
+          "pose": "katana.t_thrust",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:thrust",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.62, "pose": "katana.t_recoil", "ease": "easeOutSine"},
+        {"t": 0.78, "face": "none"},
+        {"t": 1.0, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "draw": {
+      "description": "The quick draw (code 12) from the idle: the right hand crosses to the hilt at the left hip while the left hand takes the saya (0.18 s), the blade starts to slide out and the weapon flag swaps (0.25 s: 'weapon:drawn', when the server shows the blade in hand), the blade slides on out along the saya and whips out in a level draw-cut to the right front (0.42 s), then rises into the ready stance (0.85 s). Keys the hips and upper body; the legs follow the base controller (idle, then the combat stance from the swap).",
+      "length": 0.85,
+      "plays_over": "move.idle",
+      "settle_to": "combat.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.18, "pose": "katana.draw_reach", "ease": "easeInOutSine"},
+        {"t": 0.25, "marker": "weapon:drawn"},
+        {"t": 0.22, "pose": "katana.draw_reach"},
+        {"t": 0.3, "pose": "katana.draw_half", "ease": "easeInQuad", "sound": "minecraft:item.armor.equip_iron"},
+        {"t": 0.42, "pose": "katana.draw_cut", "ease": "easeOutCubic"},
+        {"t": 0.55, "pose": "katana.draw_cut"},
+        {"t": 0.7, "face": "none"},
+        {"t": 0.85, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "sheathe": {
+      "description": "Sheathing (code 13): the blade raised beside the shoulder (0.20 s) and flicked down clean (0.30 s, a chiburi), brought across to the saya's mouth at the left hip (0.62 s) and slid home (0.82 s: 'weapon:sheathed' and the click), the hand resting on the hilt, then the arms fall to the idle stance by 1.3 s. Keys the hips and upper body.",
+      "length": 1.3,
+      "plays_over": "combat.idle",
+      "settle_to": "move.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.2, "pose": "katana.chiburi_up", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "katana.chiburi", "ease": "easeInQuad", "sound": "minecraft:entity.player.attack.sweep"},
+        {"t": 0.42, "pose": "katana.chiburi"},
+        {"t": 0.45, "face": {"eyes": 8}},
+        {"t": 0.62, "pose": "katana.draw_half", "ease": "easeInOutSine"},
+        {
+          "t": 0.8,
+          "pose": "katana.draw_reach",
+          "ease": "easeOutSine",
+          "marker": "weapon:sheathed",
+          "sound": "minecraft:item.armor.equip_chain"
+        },
+        {"t": 0.85, "face": {"eyes": 2}},
+        {"t": 1.0, "pose": "katana.draw_reach"},
+        {"t": 1.1, "face": "none"},
+        {"t": 1.3, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ]
+    },
+    "guard": {
+      "description": "Raising the guard (code 5): the blade comes up diagonally across the front in 0.18 s with a small overshoot; guard.loop holds it.",
+      "length": 0.3,
+      "settle_to": "guard.loop",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance", "face": "focused"},
+        {"t": 0.18, "pose": "katana.guard", "ease": "easeOutCubic", "overshoot": 0.08, "overshoot_time": 0.08},
+        {"t": 0.3, "pose": "katana.guard"}
+      ]
+    },
+    "guard.loop": {
+      "description": "Holding the guard, 2.0 s loop on the action controller until the next code: tense, quick breathing, focused eyes.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [{"t": 0, "pose": "katana.guard", "face": "focused"}, {"t": 2.0, "pose": "katana.guard"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 0.9}}
+      ]
+    },
+    "guard.hit": {
+      "description": "A blow caught on the guard (code 6), 0.45 s: the blade and the chest knocked back in two ticks with gritted teeth, back on the guard by 0.32 s; guard.hit.loop (the same hold as guard.loop) follows, so the guard stays up until the next code.",
+      "length": 0.45,
+      "settle_to": "guard.loop",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.guard", "face": {"eyes": 7, "mouth": 4}},
+        {"t": 0.08, "pose": "katana.guard_jolt", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "katana.guard", "ease": "easeInOutSine", "face": "focused"},
+        {"t": 0.45, "pose": "katana.guard"}
+      ]
+    },
+    "guard.hit.loop": {"copy": "guard.loop"},
+    "dodge": {
+      "description": "The katana's dodge (code 7), 0.55 s: a light hop back with the knees tucked, the body swaying back and the blade drawn in across the chest (0.14 s), landing on bent knees (0.3 s), back on the stance at 0.55 s. Offsets over the stance; in place (the server moves the hero).",
+      "length": 0.55,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.04, "face": {"eyes": 8, "mouth": 4}},
+        {"t": 0.14, "pose": "katana.dodge_back", "over": true, "root": [0, 1.6, 0], "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "katana.dodge_land", "over": true, "root": [0, -0.3, 0], "ease": "easeInQuad"},
+        {"t": 0.45, "face": "none"},
+        {"t": 0.55, "pose": "katana.stance"}
+      ]
+    },
+    "intro": {
+      "description": "The katana's intro (code 16), 1.8 s: the blade raised upright before the face in a salute (0.45 s), eyes closed, a breath, eyes open with resolve (0.95 s), a sweep down to the right side (1.2 s), into the stance by 1.8 s. Upper body.",
+      "length": 1.8,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.45, "pose": "katana.salute", "ease": "easeInOutSine", "face": {"eyes": 2}},
+        {"t": 0.9, "pose": "katana.salute"},
+        {"t": 0.95, "face": "determined"},
+        {
+          "t": 1.2,
+          "pose": "katana.rest_low",
+          "ease": "easeInOutQuad",
+          "sound": "minecraft:entity.player.attack.sweep"
+        },
+        {"t": 1.45, "face": "none"},
+        {"t": 1.8, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "victory": {
+      "description": "The katana's victory (code 20), 2.2 s: the blade flicked clean (0.35 s), lowered point down at the right side with the eyes closed and a faint smile (0.6-1.8 s), back into the stance by 2.2 s. Upper body.",
+      "length": 2.2,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.22, "pose": "katana.chiburi_up", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "katana.chiburi", "ease": "easeInQuad", "sound": "minecraft:entity.player.attack.sweep"},
+        {"t": 0.6, "pose": "katana.rest_low", "ease": "easeInOutSine", "face": {"eyes": 2, "mouth": 1}},
+        {"t": 1.8, "pose": "katana.rest_low", "face": "none"},
+        {"t": 2.2, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "taunt": {
+      "description": "The katana's taunt (code 14), 1.4 s: the blade stays forward while the left hand comes up palm up and beckons twice, a smug look. Upper body.",
+      "length": 1.4,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "katana.stance"},
+        {"t": 0.25, "pose": "katana.beckon", "ease": "easeOutCubic", "face": "smug"},
+        {"t": 1.1, "pose": "katana.beckon"},
+        {"t": 1.2, "face": "none"},
+        {"t": 1.4, "pose": "katana.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"forearm_l": [-22, 0, 0], "hand_l": [-25, 0, 0]},
+            "period": 0.35,
+            "shape": "pulse",
+            "window": [0.3, 0.38, 0.95, 1.05]
+          }
+        }
+      ]
+    },
+    "combat.run": {
+      "description": "The katana's run (0.6 s loop): the core run's legs and torso, the sword hand trailing low behind with the blade pointing back, the left hand steadying the saya at the hip; both arms swing a little with the stride. The run while the weapon is drawn: the base controller plays combat.run instead of the core's move.run, as it plays combat.idle instead of move.idle; with the weapon sheathed a hero runs the core's move.run.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "katana.run_carry"}, {"t": 0.6, "pose": "katana.run_carry"}],
+      "layers": [
+        {"primitive": "run_cycle", "params": {"upper": 0}, "add": false},
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"arm_r": [-8, 0, 0], "arm_l": [5, 0, 0], "forearm_r": [-4, 0, 0]}, "period": 0.6, "phase": 0.25}
+        }
+      ]
+    },
+    "work.chop": {
+      "description": "Woodcutting in the swordsman's manner (HEROES_V2 7.3: a samurai's work.chop uses the katana's cut), 0.8 s: the axe drawn back level beside the right hip with the chest turned away (0.24 s), swept flat into the trunk at chest height with the edge leading, the level cut of attack.2 (contact at 0.4 s), carried a little on (0.48 s), back to the idle by 0.8 s. The axe at item_r (the grip convention of HEROES_V2 4.7). Upper body only, over move.idle.",
+      "length": 0.8,
+      "plays_over": "move.idle",
+      "settle_to": "move.idle",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {"t": 0.05, "face": {"eyes": 8}},
+        {"t": 0.24, "pose": "katana.h_wind", "ease": "easeOutCubic"},
+        {"t": 0.4, "pose": "katana.h_cut", "ease": "easeInQuad", "face": {"eyes": 8, "mouth": 4}},
+        {"t": 0.48, "pose": "katana.h_follow", "ease": "easeOutQuad"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.8, "pose": "@stance", "ease": "easeInOutSine"}
       ]
     }
   }

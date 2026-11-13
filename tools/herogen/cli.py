@@ -2,7 +2,8 @@
 (rig v3: the style set) and stats; G3 adds the animation libraries to build and check, the animation rules and the
 timing agreement to check, `anim` (list the libraries and their timings) and `anim-previews` (filmstrips and GIFs);
 G2 adds `preview`, `gif`, `faces`, `sheet` (written to build/herogen/ unless --out says otherwise) and
-`render-previews` (the owner's set, render/showcase.py). `check --style` also checks the style fixtures in
+`render-previews` (the owner's set, render/showcase.py); G5 adds `anim-previews --styles` (the style libraries'
+films and sheets). `check --style` also checks the style fixtures in
 herosrc/style (built in memory, never written). G6a/b add the coplanar-face rule to `check` and `lint` (the parts
 library on every base and the sample outfits, lint.py)."""
 import argparse
@@ -196,6 +197,20 @@ def cmd_anim_previews(args):
                 print("OK   %s: the committed previews match a fresh render" % out)
             return 1 if problems else 0
         for k, p in sorted(core_preview.write_all(out, args.groups or None, gifs=not args.no_gif).items()):
+            print("%s: %s" % (k, p))
+        return 0
+    if args.styles is not None:         # G5: the style libraries' previews (anim/style_preview.py)
+        from anim import style_preview
+        out = args.out or style_preview.OUT_DIR
+        styles = args.styles or None
+        if args.check:
+            problems = style_preview.check(out, styles, gifs=not args.no_gif)
+            for p in problems:
+                print("DIFF " + p)
+            if not problems:
+                print("OK   %s: the committed previews match a fresh render" % out)
+            return 1 if problems else 0
+        for k, p in sorted(style_preview.write_all(out, styles, gifs=not args.no_gif).items()):
             print("%s: %s" % (k, p))
         return 0
     out = args.out or preview.ANIM_PREVIEW_DIR
@@ -418,8 +433,11 @@ def main(argv=None):
                                                         "docs/heroes-v2/previews/anim/core")
     ap.add_argument("--groups", nargs="*", help="with --core: movement, work, work_home, emotes, combat, "
                                                 "combat_katana")
-    ap.add_argument("--check", action="store_true", help="with --core: render in a temporary folder and fail if a "
-                                                         "committed preview differs")
+    ap.add_argument("--styles", nargs="*", default=None, help="the style libraries' previews (G5) in "
+                                                              "docs/heroes-v2/previews/anim/styles (all, or the "
+                                                              "styles named)")
+    ap.add_argument("--check", action="store_true", help="with --core or --styles: render in a temporary folder and "
+                                                         "fail if a committed preview differs")
     ap.set_defaults(fn=cmd_anim_previews)
     for name, fn, hlp in (("preview", cmd_preview, "render a hero to PNG (a pose, an animation frame or frames)"),
                           ("gif", cmd_gif, "an animated preview of one or more heroes")):

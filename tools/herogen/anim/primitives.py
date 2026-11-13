@@ -314,7 +314,7 @@ WALK = {"stride": 21.0, "knee": 42.0, "load": 9.0, "knee_at": 0.68, "knee_width"
 RUN = {"stride": 36.0, "knee": 96.0, "load": 20.0, "knee_at": 0.64, "knee_width": 0.12, "arms": 32.0, "arm_out": 7.0,
        "elbow": 72.0, "elbow_swing": 14.0, "lean": 9.0, "waist_lean": 1.5, "chest_lean": 2.5, "head_level": 0.85,
        "twist": 6.5, "tilt": 2.0, "sway": 0.18, "toe_off": 22.0, "heel": 4.0, "flight_at": 0.42, "tail_sway": 5.0,
-       "tail_lift": -12.0}
+       "tail_lift": -12.0, "upper": 1.0}
 
 
 def _params(defaults, given, what):
@@ -336,7 +336,8 @@ def walk_cycle(ctx, **params):
 
 def run_cycle(ctx, flight=0.7, **params):
     """A run cycle in place (0.6 s): a longer stride, a high knee in the swing, a 9 degree forward lean, arms bent
-    and pumping, a short flight phase after each push-off."""
+    and pumping, a short flight phase after each push-off. `upper` 0 (G5) leaves the arms to the recipe's pose keys:
+    a style's run that carries its weapon."""
     return _gait(ctx, "run_cycle", _params(RUN, params, "run_cycle"), flight=float(flight))
 
 

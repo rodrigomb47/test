@@ -1,0 +1,532 @@
+{
+  "_comment": "Style library: staff (HEROES_V2.md 13.6; G5). A long staff in the right hand (Ambrose's cauldron staff; the broom's riding clips are G10): caster ready; the string forward cast, upward cast and the bonk; attack.ranged, a thrown vial from the free hand; the staff taken from the back on draw's 'weapon:drawn' and slung back on sheathe's 'weapon:sheathed'; guard (the staff as a bar; .loop, .hit), dodge, intro (the staff planted), victory, taunt and the run with the staff over the shoulder. Hand poses in herosrc/anim/poses/staff.json; the poses below are the clips' in-between keys, solved on the teen with the staff clear of the body on the chibi, teen and adult.",
+  "style": "staff",
+  "restyle_arms": {
+    "pose": "staff.rest",
+    "clips": ["death", "defeated", "defeated.loop", "stagger", "hurt.heavy", "stun", "stun.loop"]
+  },
+  "poses": {
+    "staff.c1_wind": {
+      "_comment": "attack.1's wind-up: the staff drawn back over the right shoulder, the cauldron behind, the chest turned away (the contact is staff.cast).",
+      "extends": "staff.stance",
+      "bones": {
+        "waist": [-1, 6, 0],
+        "chest": [-4, 16, 0],
+        "neck": [-2, -30, 0],
+        "arm_r": [-17.4, 18.9, -5.5],
+        "forearm_r": [-124.7, 25.7, 0.0],
+        "hand_r": [19.4, 35.1, 8.7],
+        "arm_l": [-50, 0, -14],
+        "forearm_l": [-40, 0, 0]
+      }
+    },
+    "staff.up_wind": {
+      "_comment": "attack.2's wind-up: the staff lowered in front of the right hip, the cauldron forward and a little down, the body turned right (the foot of the staff stays off the legs and the ground on every form).",
+      "extends": "staff.stance",
+      "bones": {
+        "body": [6, 10, 0],
+        "chest": [6, 10, 0],
+        "neck": [-8, -20, 0],
+        "arm_r": [-19.6, -4.4, 18.6],
+        "forearm_r": [-60.7, -4.3, 0.0],
+        "hand_r": [58.1, 27.2, -12.7]
+      }
+    },
+    "staff.up_cast": {
+      "_comment": "attack.2's contact: the staff swung up and forward, the cauldron flung high at the target, the chest arching back.",
+      "extends": "staff.stance",
+      "bones": {
+        "body": [-2, -6, 0],
+        "chest": [-6, -10, 0],
+        "neck": [4, 14, 0],
+        "arm_r": [-30.4, 22.7, 28.6],
+        "forearm_r": [-100.9, 17.1, 0.0],
+        "hand_r": [53.4, 34.1, -9.7],
+        "arm_l": [-40, 0, -24],
+        "forearm_l": [-20, 0, 0]
+      }
+    },
+    "staff.bonk_raise": {
+      "_comment": "attack.3's wind-up: the staff twirled up high at the right side, the cauldron up and back.",
+      "extends": "staff.stance",
+      "bones": {
+        "body": [-2, 8, 0],
+        "chest": [-8, 8, 0],
+        "neck": [6, -14, 0],
+        "arm_r": [-41.9, 16.6, 13.6],
+        "forearm_r": [-118.3, 20.9, 0.0],
+        "hand_r": [38.1, 35.0, 0.7],
+        "arm_l": [-30, 0, -20]
+      }
+    },
+    "staff.bonk": {
+      "_comment": "attack.3's contact: the cauldron brought down on the target's head at arm's length, the body folding into it.",
+      "extends": "staff.stance",
+      "bones": {
+        "body": [8, -6, 0],
+        "chest": [8, -10, 0],
+        "neck": [-12, 12, 0],
+        "arm_r": [-24.0, 10.6, 20.5],
+        "forearm_r": [-92.6, 9.5, 0.0],
+        "hand_r": [70.4, 33.0, -7.1]
+      }
+    },
+    "staff.bar": {
+      "_comment": "The guard: the staff held across the chest as a bar, the left hand on the shaft.",
+      "extends": "staff.stance",
+      "bones": {
+        "chest": [-2, 2, 0],
+        "neck": [-2, -8, 0],
+        "arm_r": [-39.3, 1.8, 44.2],
+        "forearm_r": [-87.6, -14.4, 0.0],
+        "hand_r": [30.6, 4.3, -28.6],
+        "arm_l": [-31.2, 3.5, -13.4],
+        "forearm_l": [-87.8, 2.7, 0.0],
+        "hand_l": [-8.7, 0.1, 0.6]
+      }
+    },
+    "staff.reach": {
+      "_comment": "The draw and the sheathe: the right hand at the staff's shaft on the back.",
+      "bones": {
+        "body": [0, 6, 0],
+        "chest": [2, 8, 0],
+        "neck": [0, -10, 0],
+        "arm_r": [65.6, 47.0, -53.5],
+        "forearm_r": [-31.0, -13.4, 0],
+        "hand_r": [-14.5, 35.8, -16.2],
+        "arm_l": [0, 0, -10],
+        "forearm_l": [-20, 0, 0]
+      }
+    },
+    "staff.plant": {
+      "_comment": "The intro: the staff planted upright beside the right foot, the left hand raised out in a flourish.",
+      "extends": "staff.stance",
+      "bones": {
+        "chest": [-3, 4, 0],
+        "neck": [-4, -10, 0],
+        "arm_r": [-0.3, 6.6, 15.7],
+        "forearm_r": [-102.2, 7.0, 0.0],
+        "hand_r": [8.0, 19.4, -4.9],
+        "arm_l": [-60, 0, -70],
+        "forearm_l": [-30, 0, 0],
+        "hand_l": [0, 0, -20]
+      }
+    },
+    "staff.raise": {
+      "_comment": "The victory: the staff raised high at the right side.",
+      "extends": "staff.stance",
+      "bones": {
+        "chest": [-4, 6, 0],
+        "neck": [-4, -14, 0],
+        "arm_r": [-61.5, 31.6, 31.8],
+        "forearm_r": [-101.5, 27.1, 0.0],
+        "hand_r": [56.1, 35.0, -1.2],
+        "arm_l": [-20, 0, -30],
+        "forearm_l": [-60, 0, 0]
+      }
+    },
+    "staff.beckon": {
+      "_comment": "The taunt: leaning on the planted staff, the left hand held out palm up (curled by an oscillation).",
+      "extends": "staff.stance",
+      "bones": {
+        "chest": [2, 6, 0],
+        "neck": [-4, -14, 0],
+        "arm_r": [-11.2, 2.6, 16.3],
+        "forearm_r": [-97.6, 3.0, 0.0],
+        "hand_r": [5.5, 18.5, -4.5],
+        "arm_l": [-39.6, 8.7, -43.9],
+        "forearm_l": [-57.7, -31.3, 0],
+        "hand_l": [-18.1, 35.0, 8.7]
+      }
+    },
+    "staff.run_carry": {
+      "_comment": "combat.run's right arm: the staff carried upright, held a little higher than the stance with the cauldron tipped forward, beside the legs and off the ground (the left arm pumps).",
+      "extends": "staff.stance",
+      "bones": {
+        "arm_r": [-17.3, 10.8, 20.2],
+        "forearm_r": [-119.8, 9.8, 0.0],
+        "hand_r": [29.6, 27.3, -9.0]
+      }
+    },
+    "staff.hold_low": {
+      "_comment": "The arms of the restyled reactions (`restyle_arms`): the staff slanted forward and up, held lower than the stance, the cauldron away from the head and the foot off the legs.",
+      "extends": "staff.stance",
+      "bones": {
+        "arm_r": [-1.7, 9.8, -1.3],
+        "forearm_r": [-77.3, 11.4, 0.0],
+        "hand_r": [-0.7, 31.7, -10.0]
+      }
+    },
+    "staff.rest": {
+      "_comment": "The arms of the restyled reactions (`restyle_arms`): the arm hanging out from the side, the staff beside the legs with the wrist bent so the cauldron tips up and the foot rides up off the ground behind, off the legs and the ground.",
+      "bones": {
+        "arm_r": [0, 0, 32],
+        "forearm_r": [-8, 0, 0],
+        "hand_r": [36, 0, -2],
+        "arm_l": [0, 0, -8],
+        "forearm_l": [-7, 0, 0],
+        "hand_l": [0, 0, 2]
+      }
+    },
+    "staff.roar": {
+      "_comment": "The enrage's roar: the staff raised high (staff.raise), the chest thrown out and the head up, the free arm flung out.",
+      "extends": "staff.raise",
+      "bones": {
+        "body": [-4, 0, 0],
+        "chest": [-10, 0, 0],
+        "neck": [-14, 0, 0],
+        "arm_l": [10, 0, -40],
+        "forearm_l": [-20, 0, 0]
+      }
+    },
+    "staff.toss_wind": {
+      "_comment": "attack.ranged's wind-up: a vial raised back beside the left ear (the arm numbers of the focus style's toss), the staff upright in the right hand.",
+      "extends": "staff.stance",
+      "bones": {
+        "chest": [-4, -16, 0],
+        "neck": [-2, 4, 0],
+        "arm_l": [-1.8, -40.9, -6.2],
+        "forearm_l": [-139.6, -41.3, 0],
+        "hand_l": [56.9, -24.0, -10.9]
+      }
+    },
+    "staff.toss": {
+      "_comment": "attack.ranged's release: the left arm thrown straight forward (the vial is the server's projectile), the staff upright.",
+      "extends": "staff.stance",
+      "bones": {
+        "body": [4, 10, 0],
+        "chest": [4, 14, 0],
+        "neck": [-4, -24, 0],
+        "arm_l": [-93.9, -14.6, 1.3],
+        "forearm_l": [-1, -9.5, 0],
+        "hand_l": [67.6, -0.1, -8.8]
+      }
+    },
+    "staff.bonk_bounce": {
+      "_comment": "attack.3's rebound: the cauldron bounces up off the target.",
+      "extends": "staff.bonk",
+      "bones": {"body": [5, -5, 0], "chest": [4, -8, 0], "neck": [-8, 10, 0]}
+    },
+    "staff.bar_jolt": {
+      "_comment": "A blow on the staff bar: the chest knocked back.",
+      "extends": "staff.bar",
+      "bones": {"body": [-3, 10, 0], "chest": [-9, 4, 0], "neck": [8, -12, 0]}
+    },
+    "staff.dodge_back": {
+      "_comment": "The dodge's air pose, offsets over the stance: a startled hop back, the knees up, the free arm flung out.",
+      "bones": {
+        "leg_r": [-20, 0, 0],
+        "shin_r": [42, 0, 0],
+        "foot_r": [-22, 0, 0],
+        "leg_l": [-14, 0, 0],
+        "shin_l": [36, 0, 0],
+        "foot_l": [-22, 0, 0],
+        "body": [-8, 0, 0],
+        "chest": [-6, 0, 0],
+        "neck": [10, 0, 0],
+        "arm_l": [0, 0, -30],
+        "forearm_l": [12, 0, 0],
+        "forearm_r": [-14, 0, 0],
+        "ear_r": [-20, 0, 10],
+        "ear_l": [-20, 0, -10]
+      }
+    },
+    "staff.dodge_land": {
+      "_comment": "The dodge's landing, offsets over the stance: on bent knees, the free arm settling.",
+      "bones": {
+        "leg_r": [-8, 0, 0],
+        "shin_r": [16, 0, 0],
+        "foot_r": [-8, 0, 0],
+        "leg_l": [-8, 0, 0],
+        "shin_l": [16, 0, 0],
+        "foot_l": [-8, 0, 0],
+        "body": [4, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-3, 0, 0],
+        "arm_l": [0, 0, -8],
+        "forearm_r": [-12, 0, 0]
+      }
+    }
+  },
+  "animations": {
+    "combat.idle": {
+      "description": "Caster ready (staff.stance), breathing at 1.6 s: 3.2 s loop.",
+      "length": 3.2,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "staff.stance"}, {"t": 3.2, "pose": "staff.stance"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.6, "depth": 1.1}}
+      ]
+    },
+    "attack.1": {
+      "description": "The string's forward cast: the staff drawn back over the right shoulder with the chest turned away (0.22 s), held, thrust forward cauldron first so it points at the target at 0.40 s (hit: the cast lands or launches), held, back to the ready stance by 0.85 s. Upper body only.",
+      "length": 0.85,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "staff.c1_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "staff.c1_wind", "sound": "minecraft:entity.evoker.cast_spell"},
+        {
+          "t": 0.4,
+          "pose": "staff.cast",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:cast",
+          "face": {"eyes": 8, "mouth": 3}
+        },
+        {"t": 0.55, "pose": "staff.cast"},
+        {"t": 0.65, "face": "none"},
+        {"t": 0.85, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.2": {
+      "description": "The string's upward cast: the staff swung down and out low at the right with the body turned (0.25 s), held, swung up and forward so the cauldron flings high at the target at 0.45 s (hit), held, back to the stance by 0.9 s. Keys the hips and the upper body.",
+      "length": 0.9,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "staff.up_wind", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "staff.up_wind", "sound": "minecraft:entity.player.attack.sweep"},
+        {
+          "t": 0.45,
+          "pose": "staff.up_cast",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:cast",
+          "face": {"eyes": 6, "mouth": 3}
+        },
+        {"t": 0.58, "pose": "staff.up_cast"},
+        {"t": 0.65, "face": "none"},
+        {"t": 0.9, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.3": {
+      "description": "The string's finisher, the bonk: the staff twirled up high at the right side (0.3 s, a quick twirl of the wrist), held, brought down so the cauldron lands on the target's head at 0.5 s (hit) with a cheerful shout, bounces back up (0.6 s), twirled back up high (0.85 s) and set down in the stance by 1.1 s. Keys the hips and the upper body.",
+      "length": 1.1,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.3, "pose": "staff.bonk_raise", "ease": "easeOutCubic"},
+        {"t": 0.4, "pose": "staff.bonk_raise", "sound": "minecraft:entity.player.attack.strong"},
+        {
+          "t": 0.5,
+          "pose": "staff.bonk",
+          "ease": "easeInCubic",
+          "marker": "hit;vfx:impact",
+          "face": {"eyes": 3, "mouth": 3}
+        },
+        {"t": 0.6, "pose": "staff.bonk_bounce", "ease": "easeOutQuad"},
+        {"t": 0.75, "face": "none"},
+        {"t": 0.85, "pose": "staff.raise", "ease": "easeInOutSine"},
+        {"t": 1.1, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"hand_r": [0, 0, 12]}, "period": 0.14, "window": [0.06, 0.1, 0.2, 0.24]}
+        }
+      ]
+    },
+    "attack.ranged": {
+      "description": "The thrown vial (code 4): a vial raised back beside the left ear (0.24 s), tossed overhand and released at 0.40 s (hit: the server launches it on this tick), back to the stance by 0.75 s. The staff stays upright in the right hand. Upper body only.",
+      "length": 0.75,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.24, "pose": "staff.toss_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "staff.toss_wind", "sound": "minecraft:entity.splash_potion.throw"},
+        {"t": 0.4, "pose": "staff.toss", "ease": "easeInQuad", "marker": "hit", "face": "happy"},
+        {"t": 0.5, "pose": "staff.toss"},
+        {"t": 0.58, "face": "none"},
+        {"t": 0.75, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "draw": {
+      "description": "Taking up the staff (code 12) from the idle: the right hand reaches back to the staff's shaft (0.25 s), it comes off the back and is in hand on 'weapon:drawn' (0.4 s), swung up high over the shoulder (0.55 s) and set upright in the ready stance by 0.95 s. Keys the hips and the upper body.",
+      "length": 0.95,
+      "plays_over": "move.idle",
+      "settle_to": "combat.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "staff.reach", "ease": "easeInOutSine"},
+        {"t": 0.3, "pose": "staff.reach"},
+        {"t": 0.4, "marker": "weapon:drawn", "sound": "minecraft:item.armor.equip_leather"},
+        {"t": 0.55, "pose": "staff.raise", "ease": "easeOutCubic", "face": "happy"},
+        {"t": 0.75, "face": "none"},
+        {"t": 0.95, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "sheathe": {
+      "description": "Putting the staff away (code 13): the staff swung up high (0.3 s) and slung onto the back (0.6 s: 'weapon:sheathed'), the arms fall to the idle stance by 1.1 s. Keys the hips and the upper body.",
+      "length": 1.1,
+      "plays_over": "combat.idle",
+      "settle_to": "move.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.3, "pose": "staff.raise", "ease": "easeOutCubic"},
+        {
+          "t": 0.6,
+          "pose": "staff.reach",
+          "ease": "easeInCubic",
+          "marker": "weapon:sheathed",
+          "sound": "minecraft:item.armor.equip_leather"
+        },
+        {"t": 0.72, "pose": "staff.reach"},
+        {"t": 1.1, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ]
+    },
+    "guard": {
+      "description": "Raising the guard (code 5): the staff comes across the chest as a bar, the left hand on the shaft, in 0.18 s with a small overshoot; guard.loop holds it.",
+      "length": 0.3,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance", "face": "focused"},
+        {"t": 0.18, "pose": "staff.bar", "ease": "easeOutCubic", "overshoot": 0.08, "overshoot_time": 0.08},
+        {"t": 0.3, "pose": "staff.bar"}
+      ]
+    },
+    "guard.loop": {
+      "description": "Holding the staff bar, 2.0 s loop on the action controller until the next code: quick breathing, focused eyes.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [{"t": 0, "pose": "staff.bar", "face": "focused"}, {"t": 2.0, "pose": "staff.bar"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 0.9}}
+      ]
+    },
+    "guard.hit": {
+      "description": "A blow on the staff bar (code 6), 0.45 s: knocked back in two ticks with a pained face, back on the guard by 0.32 s; guard.hit.loop holds it.",
+      "length": 0.45,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.bar", "face": {"eyes": 7, "mouth": 4}},
+        {"t": 0.08, "pose": "staff.bar_jolt", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "staff.bar", "ease": "easeInOutSine", "face": "focused"},
+        {"t": 0.45, "pose": "staff.bar"}
+      ]
+    },
+    "guard.hit.loop": {"copy": "guard.loop"},
+    "dodge": {
+      "description": "The caster's dodge (code 7), 0.55 s: a startled hop back with the free arm flung out (0.15 s), landing on bent knees (0.32 s), back in the stance by 0.55 s. Offsets over the stance; in place (the server moves the hero).",
+      "length": 0.55,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.04, "face": {"eyes": 6, "mouth": 2}},
+        {"t": 0.15, "pose": "staff.dodge_back", "over": true, "root": [0, 1.4, 0], "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "staff.dodge_land", "over": true, "root": [0, -0.3, 0], "ease": "easeInQuad"},
+        {"t": 0.44, "face": "none"},
+        {"t": 0.55, "pose": "staff.stance"}
+      ]
+    },
+    "intro": {
+      "description": "The caster's intro (code 16), 1.8 s: the staff planted upright beside the foot with a thump and the free hand thrown out in a flourish, a delighted face (0.35 s), held, back into the ready stance by 1.8 s. Keys the hips and the upper body.",
+      "length": 1.8,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {
+          "t": 0.35,
+          "pose": "staff.plant",
+          "ease": "easeOutCubic",
+          "overshoot": 0.06,
+          "sound": "minecraft:block.wood.place",
+          "face": "happy"
+        },
+        {"t": 1.3, "pose": "staff.plant", "face": "none"},
+        {"t": 1.8, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "victory": {
+      "description": "The caster's victory (code 20), 2.0 s: the staff raised high with a cheer (0.35 s), shaken twice, back into the stance by 2.0 s. Keys the hips and the upper body.",
+      "length": 2.0,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.35, "pose": "staff.raise", "ease": "easeOutCubic", "overshoot": 0.08, "face": {"eyes": 3, "mouth": 3}},
+        {"t": 1.55, "pose": "staff.raise", "face": "none"},
+        {"t": 2.0, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"arm_r": [-6, 0, 0], "forearm_r": [6, 0, 0]},
+            "period": 0.3,
+            "shape": "pulse",
+            "window": [0.5, 0.55, 1.15, 1.25]
+          }
+        }
+      ]
+    },
+    "taunt": {
+      "description": "The caster's taunt (code 14), 1.5 s: leaning on the planted staff, the free hand held out palm up and curled twice with a smug look, back into the stance by 1.5 s. Keys the hips and the upper body.",
+      "length": 1.5,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.28, "pose": "staff.beckon", "ease": "easeOutCubic", "face": "smug"},
+        {"t": 1.2, "pose": "staff.beckon"},
+        {"t": 1.25, "face": "none"},
+        {"t": 1.5, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"forearm_l": [-22, 0, 0], "hand_l": [-28, 0, 0]},
+            "period": 0.24,
+            "shape": "pulse",
+            "window": [0.34, 0.4, 1.0, 1.08]
+          }
+        }
+      ]
+    },
+    "enrage": {
+      "description": "Enraged (code 19) with the staff, 1.3 s: the staff drawn up high at the right side with teeth gritted (0.25 s), then thrust up with the chest thrown out and the head up in a roar (0.5 s: a roar mark), trembling, back into the stance by 1.3 s. The style's own: the core's restyled roar flings the arms down and back, which drives the staff's foot into the ground. Keys the hips and the upper body.",
+      "length": 1.3,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "staff.stance"},
+        {"t": 0.25, "pose": "staff.bonk_raise", "ease": "easeInOutSine", "face": {"eyes": 4, "mouth": 4}},
+        {"t": 0.5, "pose": "staff.roar", "ease": "easeOutQuad", "marker": "vfx:roar", "face": {"eyes": 4, "mouth": 3}},
+        {"t": 1.0, "pose": "staff.roar"},
+        {"t": 1.15, "face": "none"},
+        {"t": 1.3, "pose": "staff.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"chest": [1.5, 0, 1], "arm_l": [2, 0, 0]}, "period": 0.1, "window": [0.55, 0.6, 0.95, 1.05]}
+        }
+      ]
+    },
+    "combat.run": {
+      "description": "The caster's run (0.6 s loop): the core run's legs and lean, the staff carried upright beside the body, held a little high, the free arm pumping. The run while the weapon is drawn: the base controller plays combat.run instead of the core's move.run, as it plays combat.idle instead of move.idle; with the weapon sheathed a hero runs the core's move.run.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "staff.run_carry"}, {"t": 0.6, "pose": "staff.run_carry"}],
+      "layers": [
+        {"primitive": "run_cycle", "params": {"upper": 0}, "add": false},
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"arm_l": [30, 0, 0], "forearm_l": [8, 0, 0]}, "period": 0.6, "phase": 0.25}
+        }
+      ]
+    }
+  }
+}

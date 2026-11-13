@@ -1,0 +1,519 @@
+{
+  "_comment": "Style library: twin_blades (HEROES_V2.md 13.6; G5). A reverse-grip short blade in the right hand and a kunai (or a second blade) in the left (Tobimaru's): the crouched ready stance; the string backhand slash, kunai stab with a slash after it, and the whirl; attack.ranged, the kunai throw; the blade taken from the small of the back on draw's 'weapon:drawn' and put back on sheathe's 'weapon:sheathed'; guard (crossed; .loop, .hit), dodge, intro, victory, taunt (a kunai twirl) and the ninja run. Hand poses in herosrc/anim/poses/twin_blades.json; the poses below are the clips' in-between keys, solved on the teen with the blades clear of the body on the chibi, teen and adult.",
+  "style": "twin_blades",
+  "restyle_arms": {
+    "pose": "stance.relaxed",
+    "clips": ["death", "defeated", "defeated.loop", "stagger"]
+  },
+  "poses": {
+    "twin_blades.s_wind": {
+      "_comment": "attack.1's wind-up: the right arm drawn back and out at the right side, the reversed blade lying back along the forearm, the chest coiled right.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [14, 16, 0],
+        "chest": [5, 20, 0],
+        "neck": [-18, -34, 0],
+        "arm_r": [-23.3, 15.4, 26.1],
+        "forearm_r": [-97.1, 1.8, 0.0],
+        "hand_r": [40.0, -35.3, 16.3]
+      }
+    },
+    "twin_blades.s_follow": {
+      "_comment": "attack.1's follow-through: the right arm carried on across to the left, the chest turned well left.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [14, -16, 0],
+        "chest": [6, -26, 0],
+        "neck": [-18, 34, 0],
+        "arm_r": [-54.0, -31.8, -3.2],
+        "forearm_r": [-59.5, -12.9, 0.0],
+        "hand_r": [44.6, -35.2, 18.9]
+      }
+    },
+    "twin_blades.k_wind": {
+      "_comment": "attack.2's first wind-up: the kunai pulled back beside the left hip, point forward.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [14, -8, 0],
+        "chest": [6, -12, 0],
+        "neck": [-18, 4, 0],
+        "arm_l": [5.1, 1.7, -11.8],
+        "forearm_l": [-79.5, 1.3, 0.0],
+        "hand_l": [45.9, -12.7, 17.6]
+      }
+    },
+    "twin_blades.k_stab": {
+      "_comment": "attack.2's first contact: the kunai stabbed straight forward at chest height, the left shoulder driving in.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [16, 14, 0],
+        "chest": [6, 18, 0],
+        "neck": [-20, -28, 0],
+        "arm_l": [-77.0, -29.7, -20.3],
+        "forearm_l": [-26.8, -13.8, 0.0],
+        "hand_l": [74.8, -15.1, 3.0]
+      }
+    },
+    "twin_blades.rip": {
+      "_comment": "attack.2's second wind-up: the right arm cocked back at the right side while the kunai recoils (the slash that follows is twin_blades.slash).",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [14, 16, 0],
+        "chest": [6, 24, 0],
+        "neck": [-18, -36, 0],
+        "arm_r": [-66.1, -9.0, -1.7],
+        "forearm_r": [-57.6, 4.8, 0.0],
+        "hand_r": [55.9, -35.2, 25.5],
+        "arm_l": [2.1, -40.1, 11.4],
+        "forearm_l": [-89.9, -40.9, 0.0],
+        "hand_l": [46.4, -2.7, 10.1]
+      }
+    },
+    "twin_blades.coil": {
+      "_comment": "attack.3's wind-up: the whole torso coiled to the right with both arms tucked in, the blades back.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [12, 30, 0],
+        "waist": [0, 8, 0],
+        "chest": [4, 22, 0],
+        "neck": [-16, -50, 0],
+        "arm_r": [5.2, -0.8, 22.0],
+        "forearm_r": [-101.8, -6.2, 0.0],
+        "hand_r": [36.0, -35.2, 20.3],
+        "arm_l": [-13.1, 16.5, -35.0],
+        "forearm_l": [-109.0, 19.9, 0.0],
+        "hand_l": [59.4, -26.1, 26.5]
+      }
+    },
+    "twin_blades.whirl": {
+      "_comment": "attack.3's contact: the torso unwound to the left, both arms flung out in a wide double slash.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [14, -36, 0],
+        "waist": [2, -8, 0],
+        "chest": [6, -26, 0],
+        "neck": [-18, 56, 0],
+        "arm_r": [-42.6, 1.3, 9.8],
+        "forearm_r": [-87.8, -0.6, 0.0],
+        "hand_r": [51.0, -35.2, 24.8],
+        "arm_l": [-59.1, 5.4, -4.7],
+        "forearm_l": [-44.6, -3.2, 0.0],
+        "hand_l": [59.7, -17.9, 9.9]
+      }
+    },
+    "twin_blades.toss_wind": {
+      "_comment": "attack.ranged's wind-up: the kunai raised back beside the left ear (the release is twin_blades.throw).",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [10, -10, 0],
+        "chest": [2, -16, 0],
+        "neck": [-14, 8, 0],
+        "arm_l": [-52.8, -43.4, 6.7],
+        "forearm_l": [-133.0, -46.2, 0.0],
+        "hand_l": [79.0, -10.9, -5.3]
+      }
+    },
+    "twin_blades.cross": {
+      "_comment": "The guard: the right forearm raised across in front of the face with the reversed blade along it, the kunai crossed below.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [10, 4, 0],
+        "chest": [0, 4, 0],
+        "neck": [-10, -8, 0],
+        "arm_r": [-89.9, -10.3, 35.1],
+        "forearm_r": [-77.2, -30.4, 0.0],
+        "hand_r": [46.3, -35.3, 4.3],
+        "arm_l": [-53.4, 23.1, 5.1],
+        "forearm_l": [-63.7, 0.2, 0.0],
+        "hand_l": [29.5, -21.8, -0.6]
+      }
+    },
+    "twin_blades.reach": {
+      "_comment": "The draw and the sheathe: the right hand behind the back at the blade across the small of the back, the left hand at the kunai holster on the right thigh.",
+      "bones": {
+        "body": [6, -10, 0],
+        "chest": [4, -6, 0],
+        "neck": [-6, 10, 0],
+        "arm_r": [48.2, 23.6, -34.2],
+        "forearm_r": [-61.9, 26.8, 0],
+        "hand_r": [-1.3, 34.8, -8.1],
+        "arm_l": [-30.7, -4.7, 35.8],
+        "forearm_l": [-1.0, 5.5, 0],
+        "hand_l": [31.5, -5.1, -2.0]
+      }
+    },
+    "twin_blades.ready_high": {
+      "_comment": "The intro: the right fist raised before the face with the forearm upright (the blade down along it), the kunai pointed at the enemy.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "body": [10, 4, 0],
+        "chest": [2, 4, 0],
+        "neck": [-12, -8, 0],
+        "arm_r": [-60.7, -13.5, 3.9],
+        "forearm_r": [-97.4, -4.9, 0.0],
+        "hand_r": [48.4, -35.2, 27.9],
+        "arm_l": [-70.4, -6.6, -10.1],
+        "forearm_l": [-18.5, -7.9, 0.0],
+        "hand_l": [59.5, -13.0, 4.8]
+      }
+    },
+    "twin_blades.twirl": {
+      "_comment": "The taunt: the kunai raised before the chest, twirled by an oscillation of the wrist.",
+      "extends": "twin_blades.stance",
+      "bones": {
+        "chest": [4, -4, 0],
+        "neck": [-14, 6, 0],
+        "arm_l": [-33.0, -1.1, -7.0],
+        "forearm_l": [-100.9, -2.2, 0.0],
+        "hand_l": [32.4, -14.0, 6.0]
+      }
+    },
+    "twin_blades.run_back": {
+      "_comment": "combat.run's arms: both arms trailing back (the ninja run), the blades along the forearms, the kunai pointing back.",
+      "bones": {
+        "arm_r": [50, 8, 12],
+        "forearm_r": [-20, 0, 0],
+        "hand_r": [28.2, -76.5, 17.9],
+        "arm_l": [38.8, -35.2, -26.2],
+        "forearm_l": [-8.2, -29.3, 0],
+        "hand_l": [28.4, -28.8, -2.6]
+      }
+    },
+    "twin_blades.cross_jolt": {
+      "_comment": "A blow on the crossed blades: the chest and the arms knocked back.",
+      "extends": "twin_blades.cross",
+      "bones": {"body": [4, 6, 0], "chest": [-8, 4, 0], "neck": [-2, -10, 0]}
+    },
+    "twin_blades.lowered": {
+      "_comment": "The victory: both arms lowered at the sides, the blades along the forearms, the chest upright.",
+      "bones": {
+        "body": [6, 0, 0],
+        "chest": [0, 0, 0],
+        "neck": [-6, 0, 0],
+        "arm_r": [0, 0, 8],
+        "forearm_r": [-12, 0, 0],
+        "hand_r": [28.2, -76.5, 17.9],
+        "arm_l": [0, 0, -8],
+        "forearm_l": [-12, 0, 0],
+        "hand_l": [30, 0, 0]
+      }
+    },
+    "twin_blades.dodge_back": {
+      "_comment": "The dodge's air pose, offsets over the crouched stance: a low quick hop back, knees tucked, the body ducking under.",
+      "bones": {
+        "leg_r": [-22, 0, 0],
+        "shin_r": [40, 0, 0],
+        "foot_r": [-18, 0, 0],
+        "leg_l": [-14, 0, 0],
+        "shin_l": [36, 0, 0],
+        "foot_l": [-22, 0, 0],
+        "body": [-4, -4, 0],
+        "chest": [6, 0, 0],
+        "neck": [-4, 4, 0],
+        "arm_r": [-6, 0, 4],
+        "arm_l": [-6, 0, -4],
+        "ear_r": [-20, 0, 10],
+        "ear_l": [-20, 0, -10],
+        "tail_1": [18, 0, 0]
+      }
+    },
+    "twin_blades.dodge_land": {
+      "_comment": "The dodge's landing, offsets over the stance: lower still, then up.",
+      "bones": {
+        "leg_r": [-6, 0, 0],
+        "shin_r": [12, 0, 0],
+        "foot_r": [-6, 0, 0],
+        "leg_l": [-6, 0, 0],
+        "shin_l": [12, 0, 0],
+        "foot_l": [-6, 0, 0],
+        "body": [4, 0, 0],
+        "neck": [-4, 0, 0]
+      }
+    }
+  },
+  "animations": {
+    "combat.idle": {
+      "description": "The crouched ready stance (twin_blades.stance), quick shallow breathing (1.2 s), the weight rocking a little: 2.4 s loop.",
+      "length": 2.4,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "twin_blades.stance"}, {"t": 2.4, "pose": "twin_blades.stance"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.2, "depth": 0.9}}
+      ]
+    },
+    "attack.1": {
+      "description": "The string's backhand slash: the right arm drawn back and out with the chest coiled (0.2 s), held a beat, whipped across the front so the reversed blade cuts at 0.40 s (hit), carried on to the left (0.48 s), back to the crouch by 0.75 s. Keys the hips and the upper body.",
+      "length": 0.75,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.2, "pose": "twin_blades.s_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "twin_blades.s_wind", "sound": "minecraft:entity.player.attack.sweep"},
+        {
+          "t": 0.4,
+          "pose": "twin_blades.slash",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:slash_arc",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.48, "pose": "twin_blades.s_follow", "ease": "easeOutCubic"},
+        {"t": 0.55, "face": "none"},
+        {"t": 0.75, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.2": {
+      "description": "The string's two quick strikes: the kunai pulled back to the hip (0.22 s), stabbed straight in at 0.40 s (hit), and as it recoils the right arm cocks back (0.5 s) and the reversed blade slashes across at 0.60 s (hit), back to the crouch by 0.95 s. Keys the hips and the upper body.",
+      "length": 0.95,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "twin_blades.k_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "twin_blades.k_wind", "sound": "minecraft:entity.player.attack.weak"},
+        {
+          "t": 0.4,
+          "pose": "twin_blades.k_stab",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:thrust",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {
+          "t": 0.5,
+          "pose": "twin_blades.rip",
+          "ease": "easeInOutSine",
+          "sound": "minecraft:entity.player.attack.sweep"
+        },
+        {"t": 0.6, "pose": "twin_blades.slash", "ease": "easeInQuad", "marker": "hit;vfx:slash_arc"},
+        {"t": 0.68, "pose": "twin_blades.s_follow", "ease": "easeOutCubic"},
+        {"t": 0.75, "face": "none"},
+        {"t": 0.95, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.3": {
+      "description": "The string's finisher, the whirl: the whole torso coiled to the right with both blades tucked in (0.25 s), held, then unwound in a wide double slash to the left that lands at 0.45 s (hit), held in the follow-through to 0.6 s, back to the crouch by 1.0 s. Keys the hips and the upper body.",
+      "length": 1.0,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "twin_blades.coil", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "twin_blades.coil", "sound": "minecraft:entity.player.attack.sweep"},
+        {
+          "t": 0.45,
+          "pose": "twin_blades.whirl",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:slash_arc",
+          "face": {"eyes": 4, "mouth": 3}
+        },
+        {"t": 0.6, "pose": "twin_blades.whirl"},
+        {"t": 0.7, "face": "none"},
+        {"t": 1.0, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.ranged": {
+      "description": "The kunai throw (code 4): the kunai raised back beside the left ear (0.24 s), thrown overhand and released at 0.40 s (hit: the server launches it on this tick), the arm following through, back to the crouch by 0.75 s. Upper body only.",
+      "length": 0.75,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.24, "pose": "twin_blades.toss_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "twin_blades.toss_wind", "sound": "minecraft:entity.snowball.throw"},
+        {"t": 0.4, "pose": "twin_blades.throw", "ease": "easeInQuad", "marker": "hit"},
+        {"t": 0.5, "pose": "twin_blades.throw"},
+        {"t": 0.58, "face": "none"},
+        {"t": 0.75, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "draw": {
+      "description": "Drawing (code 12) from the idle: the right hand goes behind the back to the blade across the small of the back and the left to the kunai holster (0.22 s), both are out on 'weapon:drawn' (0.25 s), the blade whips out to the right in the reverse grip (0.42 s) and the hero sinks into the crouch by 0.85 s. Keys the hips and the upper body; the legs follow the base controller.",
+      "length": 0.85,
+      "plays_over": "move.idle",
+      "settle_to": "combat.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "twin_blades.reach", "ease": "easeInOutSine"},
+        {"t": 0.25, "marker": "weapon:drawn", "sound": "minecraft:item.armor.equip_iron"},
+        {"t": 0.28, "pose": "twin_blades.reach"},
+        {"t": 0.42, "pose": "twin_blades.s_wind", "ease": "easeOutCubic"},
+        {"t": 0.65, "face": "none"},
+        {"t": 0.85, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "sheathe": {
+      "description": "Putting the blades away (code 13): the blade raised before the face (0.22 s), a last look, swung out to the right (0.36 s), then both hands go behind the back and to the holster (0.5 s: 'weapon:sheathed'), and the arms fall to the idle stance by 1.0 s. Keys the hips and the upper body.",
+      "length": 1.0,
+      "plays_over": "combat.idle",
+      "settle_to": "move.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {"t": 0.22, "pose": "twin_blades.ready_high", "ease": "easeOutCubic"},
+        {"t": 0.36, "pose": "twin_blades.s_wind", "ease": "easeInOutSine"},
+        {"t": 0.48, "pose": "twin_blades.reach", "ease": "easeInOutSine"},
+        {"t": 0.5, "marker": "weapon:sheathed", "sound": "minecraft:item.armor.equip_iron", "face": {"eyes": 2}},
+        {"t": 0.6, "pose": "twin_blades.reach"},
+        {"t": 0.7, "face": "none"},
+        {"t": 1.0, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ]
+    },
+    "guard": {
+      "description": "Raising the guard (code 5): the right forearm comes up across the face with the blade along it and the kunai crosses below, in 0.16 s with a small overshoot; guard.loop holds it.",
+      "length": 0.3,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance", "face": "focused"},
+        {"t": 0.16, "pose": "twin_blades.cross", "ease": "easeOutCubic", "overshoot": 0.08, "overshoot_time": 0.08},
+        {"t": 0.3, "pose": "twin_blades.cross"}
+      ]
+    },
+    "guard.loop": {
+      "description": "Holding the crossed guard, 2.0 s loop on the action controller until the next code: quick shallow breathing, focused eyes.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [{"t": 0, "pose": "twin_blades.cross", "face": "focused"}, {"t": 2.0, "pose": "twin_blades.cross"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 0.8}}
+      ]
+    },
+    "guard.hit": {
+      "description": "A blow on the crossed blades (code 6), 0.45 s: knocked back in two ticks with gritted teeth, back on the guard by 0.3 s; guard.hit.loop holds it.",
+      "length": 0.45,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.cross", "face": {"eyes": 7, "mouth": 4}},
+        {"t": 0.08, "pose": "twin_blades.cross_jolt", "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "twin_blades.cross", "ease": "easeInOutSine", "face": "focused"},
+        {"t": 0.45, "pose": "twin_blades.cross"}
+      ]
+    },
+    "guard.hit.loop": {"copy": "guard.loop"},
+    "dodge": {
+      "description": "The skirmisher's dodge (code 7), 0.45 s: a low quick hop back with the knees tucked (0.12 s), landing lower still (0.26 s), back in the crouch by 0.45 s. Offsets over the stance; in place (the server moves the hero).",
+      "length": 0.45,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {"t": 0.04, "face": {"eyes": 8}},
+        {"t": 0.12, "pose": "twin_blades.dodge_back", "over": true, "root": [0, 1.6, 0], "ease": "easeOutQuad"},
+        {"t": 0.26, "pose": "twin_blades.dodge_land", "over": true, "root": [0, -0.3, 0], "ease": "easeInQuad"},
+        {"t": 0.36, "face": "none"},
+        {"t": 0.45, "pose": "@stance"}
+      ]
+    },
+    "intro": {
+      "description": "The skirmisher's intro (code 16), 1.6 s: the right fist raised before the face with the blade down along the upright forearm and the kunai levelled at the enemy (0.35 s), eyes closed a moment, opened narrow (0.95 s), back into the crouch by 1.6 s. Keys the hips and the upper body.",
+      "length": 1.6,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {
+          "t": 0.35,
+          "pose": "twin_blades.ready_high",
+          "ease": "easeOutCubic",
+          "sound": "minecraft:entity.player.attack.nodamage"
+        },
+        {"t": 0.4, "face": {"eyes": 2}},
+        {"t": 0.95, "pose": "twin_blades.ready_high", "face": "focused"},
+        {"t": 1.35, "face": "none"},
+        {"t": 1.6, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "victory": {
+      "description": "The skirmisher's victory (code 20), 2.0 s: the blades flicked across the chest (0.3 s), then both arms lowered at the sides with the chest upright and the eyes closed (0.6-1.6 s), back into the crouch by 2.0 s. Keys the hips and the upper body.",
+      "length": 2.0,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {
+          "t": 0.3,
+          "pose": "twin_blades.cross",
+          "ease": "easeOutCubic",
+          "sound": "minecraft:entity.player.attack.sweep"
+        },
+        {"t": 0.6, "pose": "twin_blades.lowered", "ease": "easeInOutSine", "face": {"eyes": 2}},
+        {"t": 1.6, "pose": "twin_blades.lowered", "face": "none"},
+        {"t": 2.0, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "taunt": {
+      "description": "The skirmisher's taunt (code 14), 1.4 s: the kunai raised before the chest and twirled on the wrist with a smug look, back into the crouch by 1.4 s. Upper body only.",
+      "length": 1.4,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "twin_blades.stance"},
+        {"t": 0.25, "pose": "twin_blades.twirl", "ease": "easeOutCubic", "face": "smug"},
+        {"t": 1.1, "pose": "twin_blades.twirl"},
+        {"t": 1.15, "face": "none"},
+        {"t": 1.4, "pose": "twin_blades.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"hand_l": [55, 0, 0]}, "period": 0.15, "window": [0.3, 0.36, 0.95, 1.05]}
+        }
+      ]
+    },
+    "combat.run": {
+      "description": "The ninja run (0.6 s loop): the core run's legs with a deeper forward lean and both arms trailing straight back, the blades along the forearms. The run while the weapon is drawn: the base controller plays combat.run instead of the core's move.run, as it plays combat.idle instead of move.idle; with the weapon sheathed a hero runs the core's move.run.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "twin_blades.run_back"}, {"t": 0.6, "pose": "twin_blades.run_back"}],
+      "layers": [
+        {"primitive": "run_cycle", "params": {"upper": 0, "lean": 16.0}, "add": false},
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"arm_r": [4, 0, 0], "arm_l": [-4, 0, 0]}, "period": 0.6, "phase": 0.25}
+        }
+      ]
+    },
+    "enrage": {
+      "description": "Enraged (code 19) in the crouched stance (twin_blades.stance): the core's roar (enrage.load, enrage.roar) on the upper body only, so the legs stay in the crouch the base controller plays (the core's restyled copy bends the legs from the roar's own footing, which slides a foot of this deep stance).",
+      "length": 1.3,
+      "keys": [
+        {"t": 0, "pose": "@stance"},
+        {
+          "t": 0.25,
+          "pose": "enrage.load",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 4, "mouth": 4},
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {
+          "t": 0.5,
+          "pose": "enrage.roar",
+          "ease": "easeOutQuad",
+          "marker": "vfx:roar",
+          "face": {"eyes": 4, "mouth": 3},
+          "over": ["leg_*", "shin_*", "foot_*"]
+        },
+        {"t": 1.0, "pose": "enrage.roar", "over": ["leg_*", "shin_*", "foot_*"]},
+        {"t": 1.15, "face": "none"},
+        {"t": 1.3, "pose": "@stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"chest": [1.5, 0, 1], "arm_r": [2, 0, 0], "arm_l": [2, 0, 0]},
+            "period": 0.1,
+            "window": [0.55, 0.6, 0.95, 1.05]
+          }
+        }
+      ],
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"]
+    }
+  }
+}

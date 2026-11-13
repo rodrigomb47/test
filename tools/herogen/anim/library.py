@@ -12,6 +12,12 @@ library, then the core, so every file of that chain is always written (an empty 
 
 Clips are built on the reference skeleton (skeleton.REFERENCE_BASE) and are the same for every body form.
 
+A style file may carry its own `poses` (G5: the in-between keys of its clips, beside the hand poses of
+herosrc/anim/poses/<style>.json); they are added to the pose library for that style's clips and for the own files of
+its heroes (style_poses). Its `restyle_arms` {"pose": name, "clips": [...]} gives those restyled reactions the
+recipe field `arms_over` (recipes.py): their arm offsets go over that pose (a lowered weapon arm) instead of the
+guard, so a death, a kneel or a dizzy stagger does not fold the weapon into the head.
+
 Restyled reactions (G4): a core recipe with `restyle: true` (hurt.heavy, stagger, stun, interrupt, dodge, intro,
 victory, ...) starts and ends on "@stance", the first frame of the clip it settles on. The core expands it over
 move.idle; every style library with a combat.idle also gets its own copy expanded over that stance (unless the style
@@ -189,6 +195,23 @@ def core():
 
 
 @functools.lru_cache(maxsize=None)
+def style_poses(style_name):
+    """The pose library a style's clips are expanded with (G5): herosrc/anim/poses plus the style file's own `poses`,
+    the in-between keys of its clips. Those are not hand poses (grips.py checks the hand poses of
+    herosrc/anim/poses/<style>.json); grips.animation_problems checks the props through every frame of the clips
+    instead. A style pose may not reuse a pose library name."""
+    lib = pose_library()
+    path = style_recipe_path(style_name)
+    if not os.path.exists(path):
+        return lib
+    own = load_json(path).get("poses") or {}
+    clash = sorted(n for n in own if n in lib.specs)
+    if clash:
+        raise HerogenError("%s: poses %s are already in herosrc/anim/poses" % (rel(path), ", ".join(clash)))
+    return lib.with_specs(own, "%s poses" % rel(path)) if own else lib
+
+
+@functools.lru_cache(maxsize=None)
 def style(style_name):
     if style_name not in STYLES:
         raise HerogenError("style %r is unknown" % style_name)
@@ -203,10 +226,17 @@ def style(style_name):
     settle = "combat.idle" if "combat.idle" in recipes else "move.idle"
     sources = _shared_sources() + [path]
     if "combat.idle" in recipes:
+        arms = (data.get("restyle_arms") or {}) if os.path.exists(path) else {}
+        unknown = sorted(set(arms.get("clips", ())) - set(restyled_recipes()))
+        if unknown:
+            raise HerogenError("%s: restyle_arms names %s, which are not restyled reactions" % (rel(path),
+                                                                                              ", ".join(unknown)))
         for name, r in restyled_recipes().items():
+            if name in arms.get("clips", ()):
+                r = dict(r, arms_over=arms["pose"])
             recipes.setdefault(name, r)
         sources += core_recipe_paths()
-    return _build(style_file(style_name), recipes, pose_library(), [c], settle, sources)
+    return _build(style_file(style_name), recipes, style_poses(style_name), [c], settle, sources)
 
 
 def hero(hero_obj, hero_source=None):
@@ -218,12 +248,14 @@ def hero(hero_obj, hero_source=None):
             if name in recipes:
                 raise HerogenError("%s: animation %s is both a signature and an override" % (hero_obj["id"], name))
             recipes[name] = r
-    lib = pose_library()
+    lib = style_poses(style_of(hero_obj))
     if anim.get("poses"):
         lib = lib.with_specs(anim["poses"], "%s animations.poses" % hero_obj["id"])
     st = style(style_of(hero_obj))
     settle = "combat.idle" if "combat.idle" in st.by_name else "move.idle"
     sources = _shared_sources() + ([hero_source] if hero_source else [])
+    if recipes:
+        sources.append(style_recipe_path(style_of(hero_obj)))      # its clips may use the style's own poses
     return _build(hero_obj["id"], recipes, lib, [st, core()], settle, sources)
 
 
@@ -246,5 +278,6 @@ def resolve(hero_obj, name):
 def clear_caches():
     core.cache_clear()
     style.cache_clear()
+    style_poses.cache_clear()
     pose_library.cache_clear()
     S.for_base.cache_clear()

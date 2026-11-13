@@ -1,0 +1,475 @@
+{
+  "_comment": "Style library: focus (HEROES_V2.md 13.6; G5). A one-hand prop (Hinae's wand, Yugen's fan) with an off-hand prop or an empty off hand (Hinae's talismans): casting ready; the string one-hand cast, off-hand flick, two-hand burst; attack.ranged, an overhand toss (the basic thrown foxfire or talisman); the prop taken from the left hip on draw's 'weapon:drawn' and put back on sheathe's 'weapon:sheathed'; guard (a ward; .loop, .hit), dodge, intro, victory, taunt and the run's trailing carry. Hand poses in herosrc/anim/poses/focus.json; the poses below are the clips' in-between keys, solved on the teen with the props clear of the body on the chibi, teen and adult.",
+  "style": "focus",
+  "restyle_arms": {
+    "pose": "focus.rest",
+    "clips": ["death", "defeated", "defeated.loop", "stagger"]
+  },
+  "poses": {
+    "focus.cast_wind": {
+      "_comment": "attack.1's wind-up: the prop drawn back beside the right shoulder, pointing up and back (outside a chibi's head), the chest turned away.",
+      "extends": "focus.stance",
+      "bones": {
+        "chest": [-3, 18, 0],
+        "neck": [-2, -28, 0],
+        "arm_r": [-5.7, 16.1, 0.3],
+        "forearm_r": [-139.1, 14.2, 0.0],
+        "hand_r": [53.5, 20.7, 20.3]
+      }
+    },
+    "focus.flick_wind": {
+      "_comment": "attack.2's wind-up: the off hand swung back past the left hip with its prop (Hinae's talismans), the chest turned back to the left.",
+      "extends": "focus.stance",
+      "bones": {
+        "body": [2, 0, 0],
+        "chest": [2, -10, 0],
+        "neck": [-2, 10, 0],
+        "arm_l": [12.6, -26.4, -32.5],
+        "forearm_l": [-1.0, -32.8, 0.0],
+        "hand_l": [80.1, -8.5, -22.2]
+      }
+    },
+    "focus.flick": {
+      "_comment": "attack.2's release: the off hand flung forward at waist height, the prop pointing at the target, the hips and chest turned in behind it.",
+      "extends": "focus.stance",
+      "bones": {
+        "body": [4, 12, 0],
+        "chest": [4, 16, 0],
+        "neck": [-4, -28, 0],
+        "arm_l": [-44.2, -14.6, -25.2],
+        "forearm_l": [-32.4, -12.9, 0.0],
+        "hand_l": [59.5, -15.1, 1.9]
+      }
+    },
+    "focus.gather": {
+      "_comment": "attack.3's wind-up: both hands drawn in to the chest with the props upright, the chest leaning back: gathering power.",
+      "extends": "focus.stance",
+      "bones": {
+        "body": [-2, 0, 0],
+        "chest": [-5, 0, 0],
+        "neck": [2, -10, 0],
+        "arm_r": [-11.9, -5.9, 2.1],
+        "forearm_r": [-104.1, -8.1, 0.0],
+        "hand_r": [45.7, 13.7, 2.4],
+        "arm_l": [-21.4, 6.6, 5.3],
+        "forearm_l": [-68.6, -0.9, 0.0],
+        "hand_l": [25.6, -9.6, 11.2]
+      }
+    },
+    "focus.burst": {
+      "_comment": "attack.3's release: both arms thrust forward at shoulder height, the props pointing at the target, the body leaning in.",
+      "extends": "focus.stance",
+      "bones": {
+        "body": [5, 0, 0],
+        "chest": [6, 0, 0],
+        "neck": [-8, -10, 0],
+        "arm_r": [-68.4, -4.4, -8.1],
+        "forearm_r": [-55.3, 2.0, 0.0],
+        "hand_r": [73.8, 12.5, 2.7],
+        "arm_l": [-79.3, 3.9, -5.8],
+        "forearm_l": [-33.6, -11.3, 0.0],
+        "hand_l": [63.3, -21.0, 1.4]
+      }
+    },
+    "focus.toss_wind": {
+      "_comment": "attack.ranged's wind-up: the off hand raised back beside the left ear, the left shoulder back.",
+      "extends": "focus.stance",
+      "bones": {
+        "chest": [-4, -16, 0],
+        "neck": [-2, 4, 0],
+        "arm_l": [-1.8, -40.9, -6.2],
+        "forearm_l": [-139.6, -41.3, 0.0],
+        "hand_l": [56.9, -24.0, -10.9]
+      }
+    },
+    "focus.ward": {
+      "_comment": "The guard: the prop held upright before the right side of the face, the off hand raised palm out before the chest: a ward.",
+      "extends": "focus.stance",
+      "bones": {
+        "chest": [-2, 2, 0],
+        "neck": [-2, -12, 0],
+        "arm_r": [-49.4, -7.9, -4.4],
+        "forearm_r": [-85.7, -6.3, 0.0],
+        "hand_r": [50.7, 6.9, -2.3],
+        "arm_l": [-28.6, -1.3, -10.9],
+        "forearm_l": [-78.0, -4.1, 0.0],
+        "hand_l": [30.2, -12.2, 1.2]
+      }
+    },
+    "focus.reach": {
+      "_comment": "The draw and the sheathe: the right hand at the carried prop's grip on the left hip (Hinae's wand in the sash, Yugen's fan), the left hand at the talisman strips.",
+      "bones": {
+        "body": [0, -4, 0],
+        "waist": [2, -3, 0],
+        "chest": [7, -8, 0],
+        "neck": [-9, 12, 0],
+        "arm_r": [-41.9, -24.0, 18.4],
+        "forearm_r": [-68.6, -63.7, 0],
+        "hand_r": [43.9, 9.8, 5.5],
+        "arm_l": [0.0, 3.3, -15.3],
+        "forearm_l": [-28.1, 4.2, 0],
+        "hand_l": [8.6, -7.8, 10.5]
+      }
+    },
+    "focus.flourish": {
+      "_comment": "The draw's flourish: the prop swept up beside the right shoulder, pointing up.",
+      "extends": "focus.stance",
+      "bones": {
+        "chest": [-2, 8, 0],
+        "neck": [-2, -18, 0],
+        "arm_r": [-46.1, -1.0, -2.6],
+        "forearm_r": [-89.7, -0.0, 0.0],
+        "hand_r": [63.8, 11.0, 0.8]
+      }
+    },
+    "focus.bow_hold": {
+      "_comment": "The intro's bow: the prop held upright before the chest, the body bowing.",
+      "extends": "focus.stance",
+      "bones": {
+        "body": [8, 0, 0],
+        "chest": [14, 0, 0],
+        "neck": [8, -10, 0],
+        "arm_r": [-12.8, -5.3, 1.8],
+        "forearm_r": [-111.6, -7.1, 0.0],
+        "hand_r": [45.1, 20.0, 20.5],
+        "arm_l": [-5.0, 6.3, -2.8],
+        "forearm_l": [-104.9, 5.3, 0.0],
+        "hand_l": [41.3, -19.0, 6.4]
+      }
+    },
+    "focus.raise": {
+      "_comment": "The victory: the prop raised high at the right side (clear of a chibi's head), the off hand at the chest.",
+      "extends": "focus.stance",
+      "bones": {
+        "chest": [-4, 6, 0],
+        "neck": [-4, -16, 0],
+        "arm_r": [-95.9, 19.4, 12.3],
+        "forearm_r": [-78.9, 10.1, 0.0],
+        "hand_r": [80.1, -5.6, 7.4],
+        "arm_l": [0.2, -1.3, -3.8],
+        "forearm_l": [-102.4, -1.5, 0.0],
+        "hand_l": [43.2, -18.8, 4.8]
+      }
+    },
+    "focus.wag": {
+      "_comment": "The taunt: the off hand raised before the chest, wagged side to side by an oscillation.",
+      "extends": "focus.stance",
+      "bones": {
+        "chest": [0, 2, 0],
+        "neck": [-4, -10, 0],
+        "arm_l": [-37.9, -7.5, -18.1],
+        "forearm_l": [-80.3, -8.3, 0.0],
+        "hand_l": [36.4, -15.0, 0.6]
+      }
+    },
+    "focus.run_carry": {
+      "_comment": "combat.run's right arm: the prop held low beside the hip and trailing back like a baton (an empty hand when it is carried).",
+      "bones": {
+        "arm_r": [23.6, -51.4, 1.5],
+        "forearm_r": [-25.5, -53.0, 0],
+        "hand_r": [80.1, 2.7, -35.0],
+        "arm_l": [0, 0, -7],
+        "forearm_l": [-79, 0, 0]
+      }
+    },
+    "focus.ward_jolt": {
+      "_comment": "A blow on the ward: the chest knocked back.",
+      "extends": "focus.ward",
+      "bones": {"body": [-3, 10, 0], "chest": [-10, 2, 0], "neck": [8, -12, 0]}
+    },
+    "focus.dodge_back": {
+      "_comment": "The dodge's air pose, offsets over the stance: a light hop back, the arms lifted out to the sides (the sleeves flare), the body swaying back.",
+      "bones": {
+        "leg_r": [-18, 0, 0],
+        "shin_r": [40, 0, 0],
+        "foot_r": [-22, 0, 0],
+        "leg_l": [-12, 0, 0],
+        "shin_l": [34, 0, 0],
+        "foot_l": [-22, 0, 0],
+        "body": [-8, 0, 0],
+        "chest": [-6, 0, 0],
+        "neck": [10, 0, 0],
+        "arm_r": [0, 0, 18],
+        "forearm_r": [10, 0, 0],
+        "arm_l": [0, 0, -22],
+        "forearm_l": [10, 0, 0],
+        "ear_r": [-20, 0, 10],
+        "ear_l": [-20, 0, -10],
+        "tail_1": [16, 0, 0]
+      }
+    },
+    "focus.dodge_land": {
+      "_comment": "The dodge's landing, offsets over the stance: soft on bent knees, the arms settling.",
+      "bones": {
+        "leg_r": [-8, 0, 0],
+        "shin_r": [16, 0, 0],
+        "foot_r": [-8, 0, 0],
+        "leg_l": [-8, 0, 0],
+        "shin_l": [16, 0, 0],
+        "foot_l": [-8, 0, 0],
+        "body": [4, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-3, 0, 0],
+        "arm_r": [0, 0, 6],
+        "arm_l": [0, 0, -6]
+      }
+    },
+    "focus.rest": {
+      "_comment": "The arms of the restyled death, kneel and stagger (`restyle_arms`): hanging like stance.relaxed, the casting arm a little out and the wrist bent so the prop points down and forward, off the kneeling thigh.",
+      "bones": {
+        "arm_r": [0, 0, 16],
+        "forearm_r": [-10, 0, 0],
+        "hand_r": [50, 0, -6],
+        "arm_l": [0, 0, -8],
+        "forearm_l": [-7, 0, 0],
+        "hand_l": [0, 0, 2]
+      }
+    }
+  },
+  "animations": {
+    "combat.idle": {
+      "description": "Casting ready (focus.stance), breathing at 1.5 s, the casting hand drifting a little: 3.0 s loop.",
+      "length": 3,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "focus.stance"}, {"t": 3, "pose": "focus.stance"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.5, "depth": 1.1}}
+      ]
+    },
+    "attack.1": {
+      "description": "The string's one-hand cast: the prop drawn back beside the right shoulder with the chest turned away (0.22 s), held, thrown forward with the arm straight so the prop points at the target at 0.40 s (hit: the server's cast lands or launches), an overshoot, back to the ready stance by 0.8 s. Upper body only.",
+      "length": 0.8,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "focus.cast_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "focus.cast_wind", "sound": "minecraft:entity.player.attack.weak"},
+        {
+          "t": 0.4,
+          "pose": "focus.cast",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:cast",
+          "face": {"eyes": 8, "mouth": 3}
+        },
+        {"t": 0.52, "pose": "focus.cast"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.8, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.2": {
+      "description": "The string's off-hand flick: the left hand swung back past the hip (0.22 s), flung forward at waist height and released at 0.40 s (hit) with the hips turning in behind it, back to the stance by 0.8 s. Keys the hips too.",
+      "length": 0.8,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "focus.flick_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "focus.flick_wind", "sound": "minecraft:entity.player.attack.weak"},
+        {
+          "t": 0.4,
+          "pose": "focus.flick",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:cast",
+          "face": {"eyes": 8, "mouth": 3},
+          "overshoot": 0.08,
+          "overshoot_time": 0.06
+        },
+        {"t": 0.52, "pose": "focus.flick"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.8, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.3": {
+      "description": "The string's finisher, a two-hand burst: both hands drawn in to the chest with the props upright and the body leaning back (0.28 s: gathering), held a beat, both arms thrust forward and the burst lands at 0.45 s (hit), held, back to the stance by 1.0 s. Keys the hips too.",
+      "length": 1.0,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.05, "face": {"eyes": 2}},
+        {"t": 0.28, "pose": "focus.gather", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "focus.gather", "sound": "minecraft:entity.evoker.prepare_attack", "face": "focused"},
+        {
+          "t": 0.45,
+          "pose": "focus.burst",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:burst",
+          "face": {"eyes": 6, "mouth": 3},
+          "overshoot": 0.06,
+          "overshoot_time": 0.06
+        },
+        {"t": 0.62, "pose": "focus.burst"},
+        {"t": 0.74, "face": "none"},
+        {"t": 1.0, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.ranged": {
+      "description": "The basic ranged attack (code 4): the off hand raised back beside the ear with the left shoulder back (0.24 s), an overhand toss released at 0.40 s (hit: the server launches the foxfire or the talisman on this tick), back to the stance by 0.75 s. Upper body only.",
+      "length": 0.75,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.24, "pose": "focus.toss_wind", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "focus.toss_wind", "sound": "minecraft:entity.snowball.throw"},
+        {"t": 0.4, "pose": "focus.throw", "ease": "easeInQuad", "marker": "hit"},
+        {"t": 0.5, "pose": "focus.throw"},
+        {"t": 0.58, "face": "none"},
+        {"t": 0.75, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "draw": {
+      "description": "Taking up the prop (code 12) from the idle: the right hand crosses to the prop on the left hip and the left to the talisman strips (0.22 s), the prop is out on 'weapon:drawn' (0.25 s), swept up beside the shoulder in a flourish (0.5 s), into the ready stance by 0.9 s. Keys the hips and upper body.",
+      "length": 0.9,
+      "plays_over": "move.idle",
+      "settle_to": "combat.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "focus.reach", "ease": "easeInOutSine"},
+        {"t": 0.25, "marker": "weapon:drawn", "sound": "minecraft:item.book.page_turn"},
+        {"t": 0.28, "pose": "focus.reach"},
+        {"t": 0.5, "pose": "focus.flourish", "ease": "easeOutCubic", "overshoot": 0.06},
+        {"t": 0.7, "face": "none"},
+        {"t": 0.9, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "sheathe": {
+      "description": "Putting the prop away (code 13): a last flourish (0.25 s), the prop back on the left hip on 'weapon:sheathed' (0.55 s), the hands rest a moment, then fall to the idle stance by 1.1 s. Keys the hips and upper body.",
+      "length": 1.1,
+      "plays_over": "combat.idle",
+      "settle_to": "move.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.25, "pose": "focus.flourish", "ease": "easeOutCubic"},
+        {"t": 0.52, "pose": "focus.reach", "ease": "easeInOutSine"},
+        {"t": 0.55, "marker": "weapon:sheathed", "sound": "minecraft:item.book.page_turn", "face": {"eyes": 2}},
+        {"t": 0.7, "pose": "focus.reach"},
+        {"t": 0.8, "face": "none"},
+        {"t": 1.1, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ]
+    },
+    "guard": {
+      "description": "Raising a ward (code 5): the prop comes up upright before the face and the off hand palm out in 0.18 s; guard.loop holds it.",
+      "length": 0.3,
+      "settle_to": "guard.loop",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance", "face": "focused"},
+        {"t": 0.18, "pose": "focus.ward", "ease": "easeOutCubic", "overshoot": 0.06, "overshoot_time": 0.08},
+        {"t": 0.3, "pose": "focus.ward"}
+      ]
+    },
+    "guard.loop": {
+      "description": "Holding the ward, 2.0 s loop on the action controller until the next code: quick breathing, focused eyes.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [{"t": 0, "pose": "focus.ward", "face": "focused"}, {"t": 2.0, "pose": "focus.ward"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 0.9}}
+      ]
+    },
+    "guard.hit": {
+      "description": "A blow on the ward (code 6), 0.45 s: the chest knocked back in two ticks with a pained face, back on the ward by 0.32 s; guard.hit.loop holds it.",
+      "length": 0.45,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.ward", "face": {"eyes": 7, "mouth": 4}},
+        {"t": 0.08, "pose": "focus.ward_jolt", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "focus.ward", "ease": "easeInOutSine", "face": "focused"},
+        {"t": 0.45, "pose": "focus.ward"}
+      ]
+    },
+    "guard.hit.loop": {"copy": "guard.loop"},
+    "dodge": {
+      "description": "The caster's dodge (code 7), 0.55 s: a light hop back with the arms lifted out to the sides (0.15 s), a soft landing on bent knees (0.32 s), back on the stance by 0.55 s. Offsets over the stance; in place (the server moves the hero).",
+      "length": 0.55,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.04, "face": {"eyes": 6, "mouth": 2}},
+        {"t": 0.15, "pose": "focus.dodge_back", "over": true, "root": [0, 1.4, 0], "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "focus.dodge_land", "over": true, "root": [0, -0.3, 0], "ease": "easeInQuad"},
+        {"t": 0.44, "face": "none"},
+        {"t": 0.55, "pose": "focus.stance"}
+      ]
+    },
+    "intro": {
+      "description": "The caster's intro (code 16), 1.8 s: a slow bow with the prop held upright before the chest and the eyes closed (0.5-0.95 s), up again into a flourish (1.25 s), into the ready stance by 1.8 s. Keys the hips and upper body.",
+      "length": 1.8,
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.5, "pose": "focus.bow_hold", "ease": "easeInOutSine", "face": {"eyes": 2, "mouth": 1}},
+        {"t": 0.95, "pose": "focus.bow_hold"},
+        {"t": 1.0, "face": "determined"},
+        {
+          "t": 1.25,
+          "pose": "focus.flourish",
+          "ease": "easeOutCubic",
+          "sound": "minecraft:entity.evoker.prepare_attack"
+        },
+        {"t": 1.5, "face": "none"},
+        {"t": 1.8, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "victory": {
+      "description": "The caster's victory (code 20), 2.0 s: the prop raised high at the side with a little twirl of the wrist and happy eyes (0.35 s), the off hand at the chest, lowered into the stance by 2.0 s. Upper body.",
+      "length": 2.0,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.35, "pose": "focus.raise", "ease": "easeOutCubic", "overshoot": 0.08, "face": "happy"},
+        {"t": 1.55, "pose": "focus.raise", "face": "none"},
+        {"t": 2.0, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"hand_r": [0, 0, 18]}, "period": 0.4, "window": [0.5, 0.6, 1.3, 1.45]}
+        }
+      ]
+    },
+    "taunt": {
+      "description": "The caster's taunt (code 14), 1.4 s: the off hand raised before the chest and wagged side to side with a smug look, back into the stance by 1.4 s. Upper body.",
+      "length": 1.4,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "focus.stance"},
+        {"t": 0.25, "pose": "focus.wag", "ease": "easeOutCubic", "face": "smug"},
+        {"t": 1.1, "pose": "focus.wag"},
+        {"t": 1.2, "face": "none"},
+        {"t": 1.4, "pose": "focus.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"hand_l": [0, 0, 24], "arm_l": [0, 0, -4]}, "period": 0.3, "window": [0.3, 0.36, 0.95, 1.05]}
+        }
+      ]
+    },
+    "combat.run": {
+      "description": "The caster's run (0.6 s loop): the core run's legs and lean, the prop held low beside the hip and trailing back like a baton, the off arm pumping; the prop arm swings a little with the stride. The run while the weapon is drawn: the base controller plays combat.run instead of the core's move.run, as it plays combat.idle instead of move.idle; with the weapon sheathed a hero runs the core's move.run.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "keys": [{"t": 0, "pose": "focus.run_carry"}, {"t": 0.6, "pose": "focus.run_carry"}],
+      "layers": [
+        {"primitive": "run_cycle", "params": {"upper": 0}, "add": false},
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"arm_r": [-10, 0, 0], "arm_l": [30, 0, 0], "forearm_l": [8, 0, 0]}, "period": 0.6, "phase": 0.25}
+        }
+      ]
+    }
+  }
+}

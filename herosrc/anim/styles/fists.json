@@ -1,0 +1,500 @@
+{
+  "_comment": "Style library: fists (HEROES_V2.md 13.6; G5). Bare hands or claw gauntlets on both hands (Natsuho's): guard up; the string jab (lead hand), cross, claw rake; the claws come out on draw's 'weapon:drawn' and go in on sheathe's 'weapon:sheathed'; guard (.loop, .hit), dodge, intro, victory, taunt and the run's high carry. The hand poses are in herosrc/anim/poses/fists.json; the poses below are the clips' in-between keys, solved for grip and claw targets on the teen with the claws clear of the body on the chibi, teen and adult.",
+  "style": "fists",
+  "restyle_arms": {
+    "pose": "stance.relaxed",
+    "clips": ["death", "defeated", "defeated.loop", "stagger"]
+  },
+  "poses": {
+    "fists.jab_cock": {
+      "_comment": "attack.1's wind-up: the lead (left) fist drawn back to the chin, the chest turned back to the left a little to load the jab.",
+      "extends": "fists.stance",
+      "bones": {
+        "waist": [1, -2, 0],
+        "chest": [4, 2, 0],
+        "neck": [-6, -12, 0],
+        "arm_l": [-24.6, 0.1, -8.5],
+        "forearm_l": [-116.7, 4.0, 0.0],
+        "hand_l": [3.3, 4.7, -10.3]
+      }
+    },
+    "fists.jab": {
+      "_comment": "attack.1's contact: the left arm straight forward at shoulder height, the claws leading at the target, the chest turned right behind it, the right fist kept at the chin.",
+      "extends": "fists.stance",
+      "bones": {
+        "waist": [0, 6, 0],
+        "chest": [2, 20, 0],
+        "neck": [-6, -36, 0],
+        "arm_l": [-58.7, -26.8, -14.2],
+        "forearm_l": [-61.1, -10.9, 0.0],
+        "hand_l": [17.6, -6.5, 5.9]
+      }
+    },
+    "fists.cross_cock": {
+      "_comment": "attack.2's wind-up: the right fist drawn back beside the right cheek, the chest coiled to the right.",
+      "extends": "fists.stance",
+      "bones": {
+        "waist": [0, 8, 0],
+        "chest": [0, 22, 0],
+        "neck": [-6, -40, 0],
+        "arm_r": [-37.2, -11.1, 12.7],
+        "forearm_r": [-108.1, -14.3, 0.0],
+        "hand_r": [-3.6, 5.8, -1.7]
+      }
+    },
+    "fists.rake_wind": {
+      "_comment": "attack.3's wind-up: the right claw raised high and out at the right side, the claws up and back, the chest turned away (clear of a chibi's head).",
+      "extends": "fists.stance",
+      "bones": {
+        "waist": [-1, 8, 0],
+        "chest": [-4, 24, 2],
+        "neck": [0, -32, 0],
+        "arm_r": [-77.2, 10.3, 5.6],
+        "forearm_r": [-86.9, 2.8, 0.0],
+        "hand_r": [-10.4, 0.8, 13.6]
+      }
+    },
+    "fists.rake": {
+      "_comment": "attack.3's contact: the claw rakes down and across the front at chest height, the claws leading down and to the left, the hips and chest driving into it.",
+      "extends": "fists.stance",
+      "bones": {
+        "body": [10, -6, 0],
+        "waist": [2, -8, 0],
+        "chest": [6, -24, 0],
+        "neck": [-12, 30, 0],
+        "arm_r": [-29.3, 4.1, 10.7],
+        "forearm_r": [-91.4, 1.9, 0.0],
+        "hand_r": [22.2, 23.3, -5.5]
+      }
+    },
+    "fists.rake_follow": {
+      "_comment": "attack.3's follow-through: the claw carried on down past the left hip, the chest turned well to the left.",
+      "extends": "fists.stance",
+      "bones": {
+        "body": [12, -8, 0],
+        "waist": [3, -10, 0],
+        "chest": [8, -30, 0],
+        "neck": [-14, 40, 0],
+        "arm_r": [-17.6, -9.6, 12.1],
+        "forearm_r": [-75.5, -8.5, 0.0],
+        "hand_r": [18.4, 19.4, -5.9]
+      }
+    },
+    "fists.flex": {
+      "_comment": "The draw: both fists raised before the chin, forearms upright, wrists cocked (the claws come out here).",
+      "bones": {
+        "chest": [2, 0, 0],
+        "neck": [-2, 0, 0],
+        "arm_r": [-21.8, -9.0, 14.5],
+        "forearm_r": [-101.9, -9.0, 0],
+        "hand_r": [-28.7, -8.5, 7.3],
+        "arm_l": [-21.8, 9.0, -14.5],
+        "forearm_l": [-101.9, 9.0, 0],
+        "hand_l": [-28.7, 8.6, -7.4]
+      }
+    },
+    "fists.snap": {
+      "_comment": "The draw's flick: both arms snapped down and out with the claws pointing out to the sides.",
+      "bones": {
+        "chest": [4, 0, 0],
+        "neck": [-4, 0, 0],
+        "arm_r": [-6.5, -1.4, 27.0],
+        "forearm_r": [-37.7, -1.1, 0],
+        "hand_r": [-3.4, 0.4, -0.8],
+        "arm_l": [-6.5, 1.4, -27.1],
+        "forearm_l": [-37.7, 1.2, 0],
+        "hand_l": [-3.4, -0.5, 0.8]
+      }
+    },
+    "fists.shake": {
+      "_comment": "The sheathe: both hands lowered in front of the hips, wrists loose, shaking the claws back in.",
+      "bones": {
+        "chest": [6, 0, 0],
+        "neck": [-2, 0, 0],
+        "arm_r": [-16.2, -5.7, 6.5],
+        "forearm_r": [-35.2, -5.4, 0],
+        "hand_r": [-3.1, -2.7, -8.2],
+        "arm_l": [-16.1, 5.7, -6.6],
+        "forearm_l": [-35.3, 5.5, 0],
+        "hand_l": [-3.1, 2.7, 8.2]
+      }
+    },
+    "fists.bump": {
+      "_comment": "The intro: the two fists knocked together in front of the chest, the claws up.",
+      "extends": "fists.stance",
+      "bones": {
+        "chest": [4, 4, 0],
+        "neck": [4, -12, 0],
+        "arm_r": [-42.2, -20.1, 9.9],
+        "forearm_r": [-90.9, -21.8, 0.0],
+        "hand_r": [-29.5, -6.4, 15.3],
+        "arm_l": [-25.0, 1.9, -13.7],
+        "forearm_l": [-112.3, 7.8, 0.0],
+        "hand_l": [-22.2, 13.9, -16.5]
+      }
+    },
+    "fists.pump": {
+      "_comment": "The victory: the right fist pumped up beside the head (the claws up, clear of a chibi's head), the left hand on the hip.",
+      "extends": "fists.stance",
+      "bones": {
+        "waist": [-1, 4, 0],
+        "chest": [-5, 6, 0],
+        "neck": [-2, -18, 0],
+        "arm_r": [-97.8, 12.5, 2.7],
+        "forearm_r": [-83.9, 9.3, 0.0],
+        "hand_r": [-2.1, 24.4, -5.1],
+        "arm_l": [58.6, 2.7, -19.9],
+        "forearm_l": [-76.5, 16.2, 0],
+        "hand_l": [15.3, -0.5, -6.8]
+      }
+    },
+    "fists.beckon": {
+      "_comment": "The taunt: the lead hand held out palm up (curled twice by an oscillation of the forearm), the right fist kept up.",
+      "extends": "fists.stance",
+      "bones": {
+        "chest": [2, 6, 0],
+        "neck": [-4, -14, 0],
+        "arm_l": [-39.6, 8.7, -43.9],
+        "forearm_l": [-57.7, -31.3, 0],
+        "hand_l": [-18.1, 35.0, 8.7]
+      }
+    },
+    "fists.guard_jolt": {
+      "_comment": "A blow on the cross block: the chest knocked back, the arms with it.",
+      "extends": "fists.guard",
+      "bones": {"body": [-2, 4, 0], "chest": [-9, 2, 0], "neck": [9, -6, 0]}
+    },
+    "fists.bump_nod": {
+      "_comment": "The intro's nod over the knocked fists.",
+      "extends": "fists.bump",
+      "bones": {"neck": [14, -12, 0]}
+    },
+    "fists.tilt_r": {
+      "_comment": "The taunt's neck crack, to the right.",
+      "extends": "fists.stance",
+      "bones": {"neck": [-6, -20, -16]}
+    },
+    "fists.tilt_l": {
+      "_comment": "The taunt's neck crack, to the left.",
+      "extends": "fists.stance",
+      "bones": {"neck": [-6, -20, 16]}
+    },
+    "fists.dodge_back": {
+      "_comment": "The dodge's air pose, offsets over the stance: a cat's spring back with the knees tucked high, the body ducked, the fists pulled in to the chin.",
+      "bones": {
+        "leg_r": [-30, 0, 0],
+        "shin_r": [58, 0, 0],
+        "foot_r": [-26, 0, 0],
+        "leg_l": [-20, 0, 0],
+        "shin_l": [50, 0, 0],
+        "foot_l": [-30, 0, 0],
+        "body": [-6, -4, 0],
+        "chest": [4, 0, 0],
+        "neck": [4, 4, 0],
+        "arm_r": [-6, 0, -2],
+        "forearm_r": [-6, 0, 0],
+        "arm_l": [-6, 0, 2],
+        "forearm_l": [-6, 0, 0],
+        "ear_r": [-28, 0, 12],
+        "ear_l": [-28, 0, -12],
+        "tail_1": [26, 0, 0]
+      }
+    },
+    "fists.dodge_land": {
+      "_comment": "The dodge's landing, offsets over the stance: low on bent knees, the fists still up.",
+      "bones": {
+        "leg_r": [-10, 0, 0],
+        "shin_r": [20, 0, 0],
+        "foot_r": [-10, 0, 0],
+        "leg_l": [-10, 0, 0],
+        "shin_l": [20, 0, 0],
+        "foot_l": [-10, 0, 0],
+        "body": [6, 0, 0],
+        "chest": [2, 0, 0],
+        "neck": [-4, 0, 0],
+        "ear_r": [-12, 0, 6],
+        "ear_l": [-12, 0, -6]
+      }
+    }
+  },
+  "animations": {
+    "combat.idle": {
+      "description": "Guard up (fists.stance), breathing fast (a 1 s breath), 2.0 s loop.",
+      "length": 2,
+      "loop": true,
+      "keys": [{"t": 0, "pose": "fists.stance"}, {"t": 2, "pose": "fists.stance"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 1.0}}
+      ]
+    },
+    "attack.1": {
+      "description": "The string's jab with the lead (left) claw: the fist drawn back to the chin with the chest turned to load it (0.22 s), held a beat, the arm snaps straight and the claws land at 0.40 s (hit), held one tick past, pulled back to the guard by 0.75 s. Upper body only.",
+      "length": 0.75,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "fists.jab_cock", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "fists.jab_cock", "sound": "minecraft:entity.player.attack.weak"},
+        {
+          "t": 0.4,
+          "pose": "fists.jab",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:claw_jab",
+          "face": {"eyes": 4, "mouth": 3},
+          "overshoot": 0.06,
+          "overshoot_time": 0.05
+        },
+        {"t": 0.5, "pose": "fists.jab"},
+        {"t": 0.6, "face": "none"},
+        {"t": 0.75, "pose": "fists.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.2": {
+      "description": "The string's cross with the right claw: the fist drawn back by the cheek and the chest coiled right (0.22 s), held, the arm drives straight through and lands at 0.40 s (hit) with the chest turned left behind it, an overshoot, back to the guard by 0.8 s. Upper body only.",
+      "length": 0.8,
+      "class": "light",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.22, "pose": "fists.cross_cock", "ease": "easeOutCubic"},
+        {"t": 0.3, "pose": "fists.cross_cock", "sound": "minecraft:entity.player.attack.strong"},
+        {
+          "t": 0.4,
+          "pose": "fists.strike",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:claw_jab",
+          "face": {"eyes": 4, "mouth": 3},
+          "overshoot": 0.08,
+          "overshoot_time": 0.06
+        },
+        {"t": 0.52, "pose": "fists.strike"},
+        {"t": 0.62, "face": "none"},
+        {"t": 0.8, "pose": "fists.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "attack.3": {
+      "description": "The string's finisher, a claw rake: the right claw raised high and out with the chest turned away (0.25 s), a last stretch to 0.35 s, the claw rakes down and across the front and lands at 0.45 s (hit) with the hips driving in and a fang grin, follows through past the left hip (0.58 s), back to the guard by 1.0 s. Keys the hips too; the legs stay the base controller's.",
+      "length": 1.0,
+      "class": "light",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "fists.rake_wind", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "fists.rake_wind", "sound": "minecraft:entity.player.attack.sweep"},
+        {
+          "t": 0.45,
+          "pose": "fists.rake",
+          "ease": "easeInQuad",
+          "marker": "hit;vfx:claw_marks",
+          "face": {"eyes": 4, "mouth": 7}
+        },
+        {"t": 0.58, "pose": "fists.rake_follow", "ease": "easeOutCubic"},
+        {"t": 0.7, "pose": "fists.rake_follow"},
+        {"t": 0.78, "face": "none"},
+        {"t": 1.0, "pose": "fists.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "draw": {
+      "description": "Baring the claws (code 12) from the idle: both fists come up before the chin with the wrists cocked (0.25 s), the claws come out on 'weapon:drawn' (0.35 s) and the arms flick down and out to show them (0.42 s), then rise into the guard by 0.9 s. Keys the hips and upper body.",
+      "length": 0.9,
+      "plays_over": "move.idle",
+      "settle_to": "combat.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "stance.relaxed"},
+        {"t": 0.05, "face": "focused"},
+        {"t": 0.25, "pose": "fists.flex", "ease": "easeInOutSine"},
+        {"t": 0.32, "pose": "fists.flex"},
+        {"t": 0.35, "marker": "weapon:drawn", "sound": "minecraft:item.armor.equip_iron"},
+        {"t": 0.42, "pose": "fists.snap", "ease": "easeOutQuad", "face": {"eyes": 4, "mouth": 7}},
+        {"t": 0.55, "pose": "fists.snap"},
+        {"t": 0.7, "face": "none"},
+        {"t": 0.9, "pose": "fists.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "sheathe": {
+      "description": "Putting the claws away (code 13): the hands drop before the hips (0.25 s) and shake loose, the claws go in on 'weapon:sheathed' (0.35 s), the arms fall to the idle stance by 1.0 s. Keys the hips and upper body.",
+      "length": 1.0,
+      "plays_over": "combat.idle",
+      "settle_to": "move.idle",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.25, "pose": "fists.shake", "ease": "easeInOutSine"},
+        {"t": 0.35, "marker": "weapon:sheathed", "sound": "minecraft:item.armor.equip_leather"},
+        {"t": 0.55, "pose": "fists.shake"},
+        {"t": 0.6, "face": "none"},
+        {"t": 1.0, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {"bones": {"hand_r": [28, 0, 0], "hand_l": [28, 0, 0]}, "period": 0.1, "window": [0.25, 0.3, 0.45, 0.55]}
+        }
+      ]
+    },
+    "guard": {
+      "description": "Raising the guard (code 5): the forearms cross before the chin in 0.15 s with a small overshoot; guard.loop holds it.",
+      "length": 0.3,
+      "settle_to": "guard.loop",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance", "face": "focused"},
+        {"t": 0.15, "pose": "fists.guard", "ease": "easeOutCubic", "overshoot": 0.08, "overshoot_time": 0.08},
+        {"t": 0.3, "pose": "fists.guard"}
+      ]
+    },
+    "guard.loop": {
+      "description": "Holding the cross block, 2.0 s loop on the action controller until the next code: quick breathing, focused eyes.",
+      "length": 2.0,
+      "loop": true,
+      "kind": "action",
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [{"t": 0, "pose": "fists.guard", "face": "focused"}, {"t": 2.0, "pose": "fists.guard"}],
+      "layers": [
+        {"primitive": "breathe", "params": {"period": 1.0, "depth": 0.9}}
+      ]
+    },
+    "guard.hit": {
+      "description": "A blow on the cross block (code 6), 0.45 s: knocked back in two ticks with gritted teeth, back on the guard by 0.32 s; guard.hit.loop holds it.",
+      "length": 0.45,
+      "settle_to": "guard.loop",
+      "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.guard", "face": {"eyes": 7, "mouth": 4}},
+        {"t": 0.08, "pose": "fists.guard_jolt", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "fists.guard", "ease": "easeInOutSine", "face": "focused"},
+        {"t": 0.45, "pose": "fists.guard"}
+      ]
+    },
+    "guard.hit.loop": {"copy": "guard.loop"},
+    "dodge": {
+      "description": "The brawler's dodge (code 7), 0.5 s: a cat's spring back with the knees tucked high and the fists at the chin (0.13 s), landing low on bent knees (0.28 s), back in the guard by 0.5 s. Offsets over the stance; in place (the server moves the hero).",
+      "length": 0.5,
+      "steps": true,
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.04, "face": {"eyes": 6, "mouth": 4}},
+        {"t": 0.13, "pose": "fists.dodge_back", "over": true, "root": [0, 2.0, 0], "ease": "easeOutQuad"},
+        {"t": 0.28, "pose": "fists.dodge_land", "over": true, "root": [0, -0.4, 0], "ease": "easeInQuad"},
+        {"t": 0.4, "face": "none"},
+        {"t": 0.5, "pose": "fists.stance"}
+      ]
+    },
+    "intro": {
+      "description": "The brawler's intro (code 16), 1.6 s: the claws knocked together before the chest (0.35 s), a short nod over them (0.7 s), a determined look, into the guard by 1.6 s. Upper body.",
+      "length": 1.6,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.35, "pose": "fists.bump", "ease": "easeOutCubic", "sound": "minecraft:item.armor.equip_iron"},
+        {"t": 0.4, "face": {"eyes": 2}},
+        {"t": 0.7, "pose": "fists.bump_nod", "ease": "easeInOutSine"},
+        {"t": 0.95, "pose": "fists.bump", "ease": "easeInOutSine"},
+        {"t": 1.0, "face": "determined"},
+        {"t": 1.35, "face": "none"},
+        {"t": 1.6, "pose": "fists.stance", "ease": "easeInOutSine"}
+      ]
+    },
+    "victory": {
+      "description": "The brawler's victory (code 20), 2.0 s: the right fist punched up beside the head with the other hand on the hip and a fang grin (0.3 s), two little pumps, back into the guard by 2.0 s. Upper body.",
+      "length": 2.0,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.3, "pose": "fists.pump", "ease": "easeOutCubic", "overshoot": 0.1, "face": {"eyes": 3, "mouth": 7}},
+        {"t": 1.55, "pose": "fists.pump", "face": "none"},
+        {"t": 2.0, "pose": "fists.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"arm_r": [-7, 0, 0], "forearm_r": [10, 0, 0]},
+            "period": 0.35,
+            "shape": "pulse",
+            "window": [0.5, 0.55, 1.15, 1.25]
+          }
+        }
+      ]
+    },
+    "taunt": {
+      "description": "The brawler's taunt (code 14), 1.5 s: the neck cracked to one side and the other (0.2, 0.35 s), then the lead hand held out palm up and curled twice with a smug look, back into the guard by 1.5 s. Upper body.",
+      "length": 1.5,
+      "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {"t": 0.18, "pose": "fists.tilt_r", "ease": "easeOutCubic"},
+        {"t": 0.36, "pose": "fists.tilt_l", "ease": "easeInOutSine"},
+        {"t": 0.5, "pose": "fists.stance", "ease": "easeInOutSine"},
+        {"t": 0.7, "pose": "fists.beckon", "ease": "easeOutCubic", "face": "smug"},
+        {"t": 1.2, "pose": "fists.beckon"},
+        {"t": 1.3, "face": "none"},
+        {"t": 1.5, "pose": "fists.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"forearm_l": [-22, 0, 0], "hand_l": [-28, 0, 0]},
+            "period": 0.22,
+            "shape": "pulse",
+            "window": [0.72, 0.78, 1.1, 1.18]
+          }
+        }
+      ]
+    },
+    "combat.run": {
+      "description": "The brawler's run (0.6 s loop): the core run's legs and lean with the fists carried high and pumping close (elbows at 95 degrees, the claws up and forward), a boxer's sprint. The run while the weapon is drawn: the base controller plays combat.run instead of the core's move.run, as it plays combat.idle instead of move.idle; with the weapon sheathed a hero runs the core's move.run.",
+      "length": 0.6,
+      "loop": true,
+      "ground": false,
+      "layers": [
+        {
+          "primitive": "run_cycle",
+          "params": {"arms": 26, "elbow": 95, "elbow_swing": 10, "arm_out": 9},
+          "add": false
+        }
+      ]
+    },
+    "enrage": {
+      "description": "Enraged (code 19) in the guard: the core's roar (enrage.load, enrage.roar) over the fists stance, with the root an offset over the stance's too (the core's copy keys the roar's straight-leg root height under the stance's bent knees, which lifts a foot 0.58 px off the deep fists stance).",
+      "length": 1.3,
+      "keys": [
+        {"t": 0, "pose": "fists.stance"},
+        {
+          "t": 0.25,
+          "pose": "enrage.load",
+          "ease": "easeInOutSine",
+          "face": {"eyes": 4, "mouth": 4},
+          "over": ["leg_*", "shin_*", "foot_*", "root"]
+        },
+        {
+          "t": 0.5,
+          "pose": "enrage.roar",
+          "ease": "easeOutQuad",
+          "marker": "vfx:roar",
+          "face": {"eyes": 4, "mouth": 3},
+          "over": ["leg_*", "shin_*", "foot_*", "root"]
+        },
+        {"t": 1.0, "pose": "enrage.roar", "over": ["leg_*", "shin_*", "foot_*", "root"]},
+        {"t": 1.15, "face": "none"},
+        {"t": 1.3, "pose": "fists.stance"}
+      ],
+      "layers": [
+        {
+          "primitive": "oscillate",
+          "params": {
+            "bones": {"chest": [1.5, 0, 1], "arm_r": [2, 0, 0], "arm_l": [2, 0, 0]},
+            "period": 0.1,
+            "window": [0.55, 0.6, 0.95, 1.05]
+          }
+        }
+      ]
+    }
+  }
+}

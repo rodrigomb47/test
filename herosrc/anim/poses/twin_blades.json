@@ -2,7 +2,7 @@
   "_comment": "Grip poses of the twin_blades style (G6c: Tobimaru's reverse-grip short blade and kunai; G5 builds the style's animations on them). Conventions in tools/herogen/anim/poses.py.",
   "poses": {
     "twin_blades.stance": {
-      "_comment": "Crouched ready: knees deep, leaning forward, the right fist forward at chest height with the reversed blade lying back along the forearm, the left hand low and forward with the kunai pointing at the target (solved for the kunai's direction on the teen, clear on every form: notes/artgen.md, G6c).",
+      "_comment": "Crouched ready: knees deep, leaning forward, the right fist forward at chest height with the reversed blade lying back along the forearm, the left hand low and forward with the kunai pointing at the target (solved for the kunai's direction on the teen, clear on every form: notes/artgen.md, G6c). The crouch is deep (knees 26), so the soles are put on the ground with the form-scaled `floor` fix (G5): the three-form compromise of `ground` left a chibi's soles 0.64 px in the ground and an adult's above it.",
       "knees": 26,
       "bones": {
         "leg_r": [8, 0, 6],
@@ -17,7 +17,8 @@
         "forearm_l": [-23.4, -10.2, 0],
         "hand_l": [39.4, -12.1, 0.9]
       },
-      "fix": ["level_feet", "ground"]
+      "fix": ["level_feet", "floor"],
+      "floor": ["foot_*"]
     },
     "twin_blades.slash": {
       "_comment": "A backhand slash at the moment it cuts: the right arm swept across to the left at chest height, the blade trailing along the forearm, the chest turned left.",
