@@ -413,7 +413,12 @@ public final class MoveSelector {
             return false;
         }
         if (s.airborne && !(f == Form.SHOT || f == Form.VOLLEY || f == Form.BOLT || f == Form.BARRAGE
-                || f == Form.RAIN)) {
+                || f == Form.RAIN || f == Form.DIVE)) {
+            return false;
+        }
+        // a dive from the air starts only in the air; one from the apex starts with its jump (MOBILITY_AND_WORK 7.3)
+        if (f == Form.DIVE && (s.inWater || s.lowCeiling
+                || m.extra().diveFrom() == HeroDef.DiveFrom.AIR && !s.airborne)) {
             return false;
         }
         boolean mover = f == Form.LEAP || f == Form.DASH || f == Form.CHARGE;

@@ -1702,7 +1702,7 @@
           "$ref": "#/$defs/mark_id"
         },
         "form": {
-          "enum": ["melee", "shot", "volley", "bolt", "chain", "cone", "line", "nova", "zone", "leap", "dash", "self", "ally", "allies", "combo", "charge", "wave", "rain", "sweep", "grab", "counter", "barrage"]
+          "enum": ["melee", "shot", "volley", "bolt", "chain", "cone", "line", "nova", "zone", "leap", "dash", "self", "ally", "allies", "combo", "charge", "wave", "rain", "sweep", "grab", "counter", "barrage", "dive"]
         },
         "range": {
           "type": "number",
@@ -1945,6 +1945,9 @@
         "awakened": {
           "description": "Only on the ultimate.",
           "not": {}
+        },
+        "from": {
+          "enum": ["air", "apex"]
         }
       },
       "patternProperties": {
@@ -1970,7 +1973,7 @@
           "$ref": "#/$defs/mark_id"
         },
         "form": {
-          "enum": ["melee", "shot", "volley", "bolt", "chain", "cone", "line", "nova", "zone", "leap", "dash", "self", "ally", "allies", "combo", "charge", "wave", "rain", "sweep", "grab", "counter", "barrage"]
+          "enum": ["melee", "shot", "volley", "bolt", "chain", "cone", "line", "nova", "zone", "leap", "dash", "self", "ally", "allies", "combo", "charge", "wave", "rain", "sweep", "grab", "counter", "barrage", "dive"]
         },
         "range": {
           "type": "number",
@@ -2212,6 +2215,9 @@
         },
         "awakened": {
           "$ref": "#/$defs/ultimate"
+        },
+        "from": {
+          "enum": ["air", "apex"]
         }
       },
       "patternProperties": {

@@ -128,10 +128,13 @@ public record HeroDef(int format, String id, String name, String title, String d
 
     public enum Style implements Word { MELEE, BOW, CROSSBOW, TRIDENT, THROWN }
 
-    /** Ability forms; the last eight are format 2's new forms (HEROES_V2 6.5). */
+    /**
+     * Ability forms; the last nine are format 2's new forms (HEROES_V2 6.5, and the {@code dive} of MOBILITY_AND_WORK
+     * 7.3 for heroes with an airborne trait).
+     */
     public enum Form implements Word {
         MELEE, SHOT, VOLLEY, BOLT, CHAIN, CONE, LINE, NOVA, ZONE, LEAP, DASH, SELF, ALLY, ALLIES,
-        COMBO(2), CHARGE(2), WAVE(2), RAIN(2), SWEEP(2), GRAB(2), COUNTER(2), BARRAGE(2);
+        COMBO(2), CHARGE(2), WAVE(2), RAIN(2), SWEEP(2), GRAB(2), COUNTER(2), BARRAGE(2), DIVE(2);
 
         private final int since;
 
@@ -1034,12 +1037,27 @@ public record HeroDef(int format, String id, String name, String title, String d
      * a counter's stance seconds, absorbed share and whether it counters arrows. Unused fields are 0 or false. Other
      * new-form numbers live in the ability's own fields: range, radius, {@code count} (rain impacts, barrage shots),
      * {@code angle} (a sweep's arc), {@code width}, {@code duration}, {@code delay} (rain impact delay) and
-     * {@code interval} (between waves, or shots).
+     * {@code interval} (between waves, or shots). {@code diveFrom}: where a dive starts (null on other forms).
      */
     public record FormExtra(double speed, boolean wallStun, int waves, double throwStrength, double up,
-                            double stance, int absorb, boolean ranged) {
-        public static final FormExtra NONE = new FormExtra(0, false, 0, 0, 0, 0, 0, false);
+                            double stance, int absorb, boolean ranged, DiveFrom diveFrom) {
+        public static final FormExtra NONE = new FormExtra(0, false, 0, 0, 0, 0, 0, false, null);
+
+        public FormExtra(double speed, boolean wallStun, int waves, double throwStrength, double up, double stance,
+                         int absorb, boolean ranged) {
+            this(speed, wallStun, waves, throwStrength, up, stance, absorb, ranged, null);
+        }
+
+        public FormExtra withDiveFrom(DiveFrom d) {
+            return new FormExtra(speed, wallStun, waves, throwStrength, up, stance, absorb, ranged, d);
+        }
     }
+
+    /**
+     * Where a {@code dive} starts (MOBILITY_AND_WORK 7.3): from the air (flyers and gliders) or from the apex of the
+     * hero's own jump (leapers and acrobats). Null on every other form.
+     */
+    public enum DiveFrom implements Word { AIR, APEX }
 
     /**
      * A format-2 move (HEROES_V2 12.7): a v1 ability ({@link #ability}: form, form fields, effects, look, line,

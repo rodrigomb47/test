@@ -716,7 +716,8 @@ public final class HeroBalance {
         // 3. frames: the class minimums; a zone's delay runs inside its wind-up
         HeroDef.Frames fr = m0.frames();
         double windup = Double.isNaN(fr.windup()) ? cls.minWindup : fr.windup();
-        double recovery = Double.isNaN(fr.recovery()) ? cls.minRecovery : fr.recovery();
+        double recovery = Double.isNaN(fr.recovery()) ? form == HeroDef.Form.DIVE
+                ? Math.max(cls.minRecovery, HeroCatalogue.DIVE_MIN_RECOVERY) : cls.minRecovery : fr.recovery();
         double active = Double.isNaN(fr.active()) ? HeroCatalogue.DEFAULT_ACTIVE : fr.active();
         if (windup < cls.minWindup - 1e-9) {
             sink.report(where, "frames", Code.FRAMES_RAISED, "a wind-up of " + Problems.seconds(windup) + " is"
@@ -729,6 +730,13 @@ public final class HeroBalance {
                     + " shorter than " + Problems.article(cls.id()) + " move's " + Problems.seconds(cls.minRecovery)
                     + " (its punish window, HEROES_V2 6.4). Raised to " + Problems.seconds(cls.minRecovery));
             recovery = cls.minRecovery;
+        }
+        if (form == HeroDef.Form.DIVE && recovery < HeroCatalogue.DIVE_MIN_RECOVERY - 1e-9) {
+            sink.report(where, "frames", Code.FRAMES_RAISED, "a recovery of " + Problems.seconds(recovery) + " is"
+                    + " shorter than a dive's " + Problems.seconds(HeroCatalogue.DIVE_MIN_RECOVERY) + " on the ground"
+                    + " after it lands (its punish window, MOBILITY_AND_WORK 7.3). Raised to "
+                    + Problems.seconds(HeroCatalogue.DIVE_MIN_RECOVERY));
+            recovery = HeroCatalogue.DIVE_MIN_RECOVERY;
         }
         if (form == HeroDef.Form.ZONE && a.delay() > windup + 1e-9) {
             sink.report(where, "delay", Code.FRAMES_RAISED, "a format-2 zone lands as its wind-up ends, so the wind-up"
@@ -926,7 +934,8 @@ public final class HeroBalance {
                 yield w;
             }
             default -> listWeight(a.effects(), formMultiplier(a), a.effectiveHits() * a.pulses(), r, states)
-                    + (a.form() == Form.LEAP || a.form() == Form.DASH ? HeroCatalogue.MOVE_FORM_WEIGHT : 0);
+                    + (a.form() == Form.LEAP || a.form() == Form.DASH ? HeroCatalogue.MOVE_FORM_WEIGHT : 0)
+                    + (a.form() == Form.DIVE ? HeroCatalogue.MOVE_FORM_WEIGHT + HeroCatalogue.DIVE_EXTRA_WEIGHT : 0);
         };
     }
 

@@ -749,6 +749,45 @@ Only the test model ships so far; an operator gives a hero to a faction with `/f
   ears back **25** and out **15** while hurt or angry; chain sway at most **25** degrees (`Sway`: 0.8 + 3.5 x stiffness
   Hz, damping ratio 0.8 x damping).
 
+## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
+All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no
+modifiers, 18 slots, 1 + Diligence).
+* Power by level: `p(L) = 0.6 + 0.4 x (min(L, 20) - 1) / 19` (`mobility.levelPowerAtOne` **60**, 30-100;
+  `mobility.fullPowerLevel` **20**, 10-30): 60% at level 1, 79% at 10, 100% from 20. A bonus over a worker's value
+  scales as worker + p x (ceiling - worker), a reach a worker lacks as p x ceiling, a wait as ceiling / p; link sizes
+  round down. Floors: a leaper jumps at least **1.8** blocks, a gap or hover gap is at least **2**.
+* Full values (ceiling I / II / III): runner travel +10/15/20%, efficiency 0/0.5/1.0, travel hunger -20/35/50%,
+  III sprint +40% for 3 s every 15 s; charger knockback +0.1/0.2/0.3 while travelling, safe fall 5/7/9, II-III
+  charge +60% every 20/12 s; leaper jump 1.8/2.5/3.5 (strength 0.52/0.62/0.75), gaps 5/6/8, safe fall 6/10/16;
+  acrobat air jumps 1/1/2 of 1.25 each, gaps 4/5/6, safe fall 8/16/none; climber 6/16/any; glider sink 3.0/2.4/2.0
+  and forward 7/8/10 b/s for 10/15/20 s; flyer stamina 30/45/60 s, cruise 6/7/8, climb 2/3/4 b/s, take-off at
+  30/25/20%, regain 2.0/2.5/3.0 a second after 1 s; hover 0.5/1.0/1.5 high over gaps of 2/3/4; swimmer x1.5/2.0/2.5.
+* Jump heights in vanilla's air physics: strength 0.42 = **1.25** blocks, 0.52 = **1.84**, 0.62 = **2.52**, 0.75 =
+  **3.54**; a leap lands within **0.15** of the cell centre (3 gap: 0.42, 0.52; 5: 0.50, 0.72; 6: 0.54, 0.82; 8: 0.63,
+  1.00); a jump-up link is the jump (with air jumps) minus **0.3**, 1.5 to 3 blocks; at most **8** links a node.
+* Flight: drain 1.0 a second powered, 0.5 cruising, 2.0 hovering, 0 gliding; x1.5 loaded, x1.5 fighting; head for a
+  landing at **25%**, exhausted at 0 until **50%**; take-off 0.6 s, a 1.5-block push, **4** blocks of headroom over its
+  footprint; reserve to the best landing seen **+25%**; cruise **6-10** blocks over the terrain, samples every **4**
+  blocks and **2** to each side, one **24**-block waypoint (48 samples) at a time; a head bump for **10** ticks or under
+  **1** block of progress in **2 s** ends a flight (dead for 10 minutes); fly a waypoint when the ground route is
+  **1.5x** the line or the trip is over **40** blocks and flying is faster.
+* Fights (any enemy): **8 s** a take-off (`mobility.bossAirSeconds`, 4-10), **6 s** on the ground (4 in phase 3), at
+  most **40%** of any 30 s in the air; a raid's approach 10 s, 6 s; ceilings: travel and escape **24** above the
+  ground (`mobility.travelAltitude`, 8-48), raid **10**, fight **6** above the ground or the highest engaged enemy.
+* Walls (`WallEntry`): chosen **24** blocks from the walls after the muster; a goal ends after **60 s** without progress;
+  a greedy raider (greed **65**) loots the storehouse first; a flyer's way out regains its take-off share within **20 s**.
+* Escape: away **300 s** (`heroes.escapeAwaySeconds`), one in **600 s** (`heroes.escapeCooldownSeconds`), cornered
+  after **3 s**, over at the refuge or **10 s** with no pursuer within **48**; in the wild at least **64** blocks from the
+  fight; morale -4 at home (-6 everywhere for a leader) against -8 and -20 for a death.
+* Work mastery at its duty (tier I / II / III at levels 1 / 10 / 20): work speed +15/25/35%, backpack 21/24/27, reach
+  +0.5/1.0/1.5, wear -10/20/30%, hunger -10/15/20%, work XP +10/20/30%, guard alarm reach +8/12/16. Caps: work speed
+  **2x**, an extra roll **75%** and only one, virtual levels within III with the tool's own (none with Silk Touch),
+  wear **40%** and hunger **50%** of a worker's at least, **36** slots, prices **-40%**, furnaces **2x** vanilla, trips
+  **+40%**; `work.outputCap` **3.0** (1.5-5.0). Specialties and Presence (tier IV) are the tables of
+  MOBILITY_AND_WORK 11.1 and 11.2 (`WorkMastery`).
+* The dive (format 2's ninth new form): range 4-12 (8), radius 1-3 (2), heavy, a landing decal, weight as a leap + 1,
+  at least **1.0 s** of recovery on the ground.
+
 ## Historical values (before the worker redesign)
 These numbers belonged to the old fixed workplaces. New bases no longer have them; they matter only for campaigns
 saved by an earlier version, which load and convert (`CampaignData.FORMAT` 2; each record converts itself in

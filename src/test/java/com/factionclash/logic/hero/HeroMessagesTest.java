@@ -400,6 +400,9 @@ class HeroMessagesTest {
                 "\"mobility\": {\"primary\": {\"trait\": \"leaper\", \"tier\": 3}}")));
         c(Problems.Code.MOBILITY_CARRIER, NO, "needs a carrier its model can show", () -> read(V2Files.hero2(
                 "\"mobility\": {\"primary\": {\"trait\": \"glider\"}}")));
+        c(Problems.Code.DIVE_RULE, PL, "a dive needs an airborne mobility trait", () -> read(V2Files.withMove(
+                "\"id\": \"swoop\", \"name\": \"Swoop\", \"form\": \"dive\", \"effects\": [{\"type\":"
+                        + " \"damage\", \"amount\": 3}]")));
         c(Problems.Code.FLYERS_SHARE, NO, "8 of the 8 loaded heroes fly, more than 15%", () -> {
             List<Source> s = new java.util.ArrayList<>();
             for (int i = 0; i < 8; i++) {

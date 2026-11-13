@@ -18,8 +18,8 @@ import java.util.stream.Stream;
 /**
  * {@code ./gradlew checkHeroes} (HEROES_V2 13.7 and 14.1): the kit rules over the built-in hero definitions, with no
  * game running. Reads every {@code .json} under the folders given (default
- * {@code src/main/resources/data/factionclash/heroes}) as built-in heroes, prints the report of v1 26.4 and one line
- * per hero for the end of its fights, and fails when a hero is NOT LOADED or a part of one is LEFT OUT. ADJUSTED
+ * {@code src/main/resources/data/factionclash/heroes}) as built-in heroes, prints the report of v1 26.4, one line
+ * per hero for the end of its fights and its mobility at levels 1, 10 and 20 (MOBILITY_AND_WORK 8.3), and fails when a hero is NOT LOADED or a part of one is LEFT OUT. ADJUSTED
  * and NOTE lines are printed and pass, unless {@code --strict} is given (then anything to report fails). A folder
  * that does not exist yet is an empty roster, not a failure.
  */
@@ -79,6 +79,13 @@ public final class HeroCheckMain {
         for (HeroDef d : l.heroes().values()) {
             if (d.v2() != null && d.format() >= 2) {
                 out.println(HeroReader2.endLine(d));
+                HeroDef.Mobility m = d.v2().mobility();
+                if (m != null) {
+                    // MOBILITY_AND_WORK 8.3: its mobility numbers at levels 1, 10 and 20
+                    for (String line : MobilityRules.sheet(m.primary(), m.secondary(), MobilityRules.Config.DEFAULT)) {
+                        out.println("  mobility: " + line);
+                    }
+                }
             }
         }
         out.println(l.problems().summary(l.heroes().keySet(), l.notLoaded()));

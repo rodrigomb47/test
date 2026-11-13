@@ -748,6 +748,11 @@ final class HeroReader2 {
                     ff.containsKey("stance") ? c.number(f, ff, "stance", 1) : 0,
                     ff.containsKey("absorb") ? (int) c.number(f, ff, "absorb", 80) : 0,
                     ff.containsKey("ranged") && c.bool(f, "ranged", false));
+            if (ff.containsKey("from")) {
+                // a dive's start: from the file, else from the hero's mobility once it is read (diveRules)
+                String dw = c.word(f, "from", "dive_from", null, "its mobility's", Mode.OPTIONAL, null);
+                extra = extra.withDiveFrom(dw == null ? null : HeroCatalogue.enumOf(HeroDef.DiveFrom.class, dw));
+            }
         }
         Map<String, Field> sh = HeroCatalogue.MOVE;
         double windup = c.number(f, sh, "windup", Double.NaN);
@@ -790,7 +795,7 @@ final class HeroReader2 {
             f.unused("use_value", "\"use_value\" is not used by use_when \"" + useWhen.id() + "\"");
         }
         c.unlockIgnored(f);
-        boolean moveForm = form == Form.LEAP || form == Form.DASH || form == Form.CHARGE;
+        boolean moveForm = form == Form.LEAP || form == Form.DASH || form == Form.CHARGE || form == Form.DIVE;
         FxCtx ctx = new FxCtx(slot, ult ? "this ultimate" : "this move", form.id(), form.friendly(), form == Form.SELF,
                 moveForm, false, null);
         List<Effect> fx;
@@ -1281,6 +1286,7 @@ final class HeroReader2 {
         List<Relationship> rel = relationships();
         Revival revival = revival();
         Mobility mobility = mobility(element);
+        diveRules(mobility);
         moveRules(boss);
         EndOfFight end = endOfFight(behaviour, boss);
         return new V2(gender, archetype, hybrid, moves, ultimate, awakened, states, boss, personality, end, leader,
@@ -1806,6 +1812,80 @@ final class HeroReader2 {
      * follows itself only when {@code repeatable}, the string of 4 moves counts every repeat, {@code max} caps the
      * repeats; no loops through other moves), moves nothing leads to, reach, and phases that add nothing.
      */
+    /**
+     * The {@code dive} form's rules (MOBILITY_AND_WORK 7.3 and 8.3), now that the mobility is known; each one is NOT
+     * LOADED for that move: a dive needs an airborne trait (leaper, acrobat, glider or flyer, primary or secondary); a
+     * dive {@code from: air} needs flight or gliding; a dive is never unblockable (a shield blocks it like any heavy
+     * move); and a dive never leads into a grab (nothing carries anyone through the air, 5.1.12: a grab in an aerial
+     * window). A dive whose file gives no {@code from} starts from the air when the hero flies or glides, else from
+     * its jump's apex.
+     */
+    void diveRules(Mobility mob) {
+        boolean airborne = mob != null && (mob.primary().trait().airborne()
+                || mob.secondary() != null && mob.secondary().trait().airborne());
+        boolean flight = mob != null && (has(mob, MobilityTrait.FLYER) || has(mob, MobilityTrait.GLIDER));
+        Map<String, Move> byId = new LinkedHashMap<>();
+        for (Move m : allMoves()) {
+            byId.put(m.id(), m);
+        }
+        for (Move m : new ArrayList<>(allMoves())) {
+            if (m.form() != Form.DIVE) {
+                continue;
+            }
+            String why = null;
+            if (!airborne) {
+                why = "a dive needs an airborne mobility trait (leaper, acrobat, glider or flyer: MOBILITY_AND_WORK 7.3)"
+                        + "; this hero " + (mob == null ? "has no mobility" : "is a " + mob.primary().trait().id()
+                        + (mob.secondary() == null ? "" : " and " + mob.secondary().trait().id()));
+            } else if (m.unblockable()) {
+                why = "a dive is never unblockable: a shield blocks it like any heavy move (MOBILITY_AND_WORK 7.3)";
+            } else if (m.extra().diveFrom() == HeroDef.DiveFrom.AIR && !flight) {
+                why = "\"from\": \"air\" needs flight or gliding; this hero dives from its jump's apex (\"from\":"
+                        + " \"apex\")";
+            } else {
+                for (Followup fu : m.followups()) {
+                    Move to = byId.get(fu.move());
+                    if (to != null && to.form() == Form.GRAB) {
+                        why = "a dive may not lead into a grab (\"" + to.id() + "\"): nothing carries anyone through"
+                                + " the air (MOBILITY_AND_WORK 5.1.12)";
+                        break;
+                    }
+                }
+            }
+            if (why != null) {
+                c.report(Severity.PART_LEFT_OUT, Code.DIVE_RULE, moveLines.get(m), movePaths.get(m), why,
+                        m.ability().slot() == Slot.ULTIMATE ? "Ultimate" : "Move");
+                dropMove(m);
+                continue;
+            }
+            if (m.extra().diveFrom() == null) {
+                HeroDef.DiveFrom from = flight ? HeroDef.DiveFrom.AIR : HeroDef.DiveFrom.APEX;
+                replace(m, new Move(m.id(), m.ability(), m.cls(), m.frames(), m.bands(), m.weight(), m.phases(),
+                        m.preferWhen(), m.followups(), m.repeatable(), m.breaksGuard(), m.unblockable(),
+                        m.superArmor(), m.channel(), m.telegraph(), m.extra().withDiveFrom(from), m.strikes(),
+                        m.perShot(), m.anim()));
+            }
+        }
+    }
+
+    private static boolean has(Mobility m, MobilityTrait t) {
+        return m.primary().trait() == t || m.secondary() != null && m.secondary().trait() == t;
+    }
+
+    /** Leaves a move out (its path and line go with it; an ultimate left out takes its awakened twin along). */
+    private void dropMove(Move m) {
+        movePaths.remove(m);
+        moveLines.remove(m);
+        if (!moves.remove(m)) {
+            if (m == ultimate) {
+                ultimate = null;
+                awakened = null;
+            } else if (m == awakened) {
+                awakened = null;
+            }
+        }
+    }
+
     void moveRules(Boss boss) {
         int phaseCount = boss.phases().size();
         // phases: the move's own list, else the boss phases that list it, else every phase

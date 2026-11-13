@@ -22,8 +22,11 @@ import java.util.Map;
  * situation rules ({@link #heldBy}), the 10-minute window ({@link #inWindow}), an unspent {@code rebirth} and
  * {@code heroes.escape}; then the last-stand beat once per fight. Around the escape: cornered ({@link #cornered}),
  * its end ({@link #escapeOver}), the refuge ({@link #refuge}), the stay away ({@link #mayReturn}) and the pursuing
- * heroes that let it go ({@link #heroPursues}). The game calls {@link #lowHealth} after every hit that lands on the
- * hero and once a tick ({@code HeroEscapeGoal}, A6/A12). Pure, unit-tested ({@code EscapeRulesTest}).
+ * heroes that let it go ({@link #heroPursues}). The game calls {@link #decide} after every hit that lands on the
+ * hero and once a tick ({@code HeroEscapeGoal}, A6/A12). F5 adds the rest of MOBILITY_AND_WORK 7.7: a scout's step
+ * aside or retreat, which uses an escape's movement and nothing else ({@link Departure}), who pursues, the wild's
+ * distance, no rewards for an escape, the morale changes, and the war council while it is away. The movement rules
+ * an escape lifts and keeps are {@code MobilityRules.holds}. Pure, unit-tested ({@code EscapeRulesTest}).
  */
 public final class EscapeRules {
     private EscapeRules() {
@@ -293,6 +296,131 @@ public final class EscapeRules {
             }
         }
         return best == null ? null : best.id();
+    }
+
+    /**
+     * One entry point for the game (HEROES_V2 15.6, called after every hit that lands on the hero and once a tick):
+     * the trigger's own rule, {@link #lowHealth}, {@link #lostRaid} or {@link #lostBase}.
+     */
+    public static Outcome decide(EndOfFight e, Trigger t, double healthShare, boolean beatDone,
+                                 boolean inOrNearTarget, boolean fighting, Context c) {
+        return switch (t) {
+            case LOW_HEALTH -> lowHealth(e, healthShare, beatDone, c);
+            case LOST_RAID -> lostRaid(e, inOrNearTarget, fighting, c);
+            case LOST_BASE -> lostBase(e, fighting, c);
+        };
+    }
+
+    // ================================================================== escapes and what is not one (MOBILITY_AND_WORK 7.7)
+
+    /**
+     * A hero leaving where it is with an escape's movement (any mobility, MOBILITY_AND_WORK 7.7): an escape, or a
+     * scout's step aside or retreat, which uses the movement and none of the rest: no boss bar, no stay away, no
+     * window spent, no morale, no line, no leaving a raid.
+     */
+    public enum Departure {
+        ESCAPE, SCOUT_STEP_ASIDE, SCOUT_RETREAT;
+
+        /** Any mobility, even where no pursuer can follow (the rules of 5.1 a fight keeps are lifted). */
+        public boolean usesEscapeMovement() {
+            return true;
+        }
+
+        /** The escape's own consequences: the bar's {@code fled} for 3 s, the window, the stay away, morale, the line. */
+        public boolean isEscape() {
+            return this == ESCAPE;
+        }
+
+        /** A step aside goes out of sight and on with its round; a retreat goes home; an escape to its refuge. */
+        public boolean goesOnWithItsRound() {
+            return this == SCOUT_STEP_ASIDE;
+        }
+    }
+
+    /** A scout retreats home from monsters when under this share of its health (ScoutJob's {@code BADLY_HURT}). */
+    public static final double SCOUT_BADLY_HURT = 0.4;
+
+    /**
+     * A scouting hero's way off (ScoutJob's rules, with an escape's movement): enemy soldiers seen, or badly hurt
+     * among monsters, send it home (a retreat); a monster about or in the way makes it step aside and go on. Once an
+     * enemy has engaged it, it is in a fight like any other (null: the fight's rules decide, {@link #lowHealth}).
+     */
+    public static Departure scoutDeparture(boolean engaged, boolean enemySoldiersSeen, double healthShare,
+                                           boolean monstersNear, boolean monsterInTheWay) {
+        if (engaged) {
+            return null;
+        }
+        if (enemySoldiersSeen || monstersNear && healthShare < SCOUT_BADLY_HURT) {
+            return Departure.SCOUT_RETREAT;
+        }
+        return monstersNear || monsterInTheWay ? Departure.SCOUT_STEP_ASIDE : null;
+    }
+
+    /**
+     * Who chases an escaping hero: the enemies engaged in the fight it fled, of every kind, and anything whose target
+     * it is; an enemy hero only with honour under 60 (it lets the escaper go, HEROES_V2 5.4).
+     */
+    public static boolean pursues(boolean engagedInTheFightItFled, boolean targetsIt, boolean enemyHero,
+                                  int enemyHeroHonour) {
+        if (!engagedInTheFightItFled && !targetsIt) {
+            return false;
+        }
+        return !enemyHero || heroPursues(enemyHeroHonour);
+    }
+
+    /**
+     * The wild (no base to run to): during its stay-away time it keeps at least 64 blocks from the fight it left;
+     * true when it must move farther off.
+     */
+    public static boolean keepFarther(double distanceFromTheFight, long now, long escapedAt, int awaySeconds) {
+        return now - escapedAt < awaySeconds(awaySeconds) * 20L && distanceFromTheFight < WILD_KEEP_AWAY;
+    }
+
+    /** How a hero left its last fight: it died there (or on the way), or it escaped. */
+    public enum End { DIED, ESCAPED }
+
+    /**
+     * An escape is neither a death nor a defeat: nothing drops, nobody gets XP orbs, a crest or a token fragment, and it
+     * keeps its gear and what it carries (raid loot included). Killed during the escape, it has died: the usual rewards
+     * and drops, to whoever killed it ({@code HeroRules.rewardXp}, {@code HeroRules.winningSide}).
+     */
+    public static boolean rewards(End end) {
+        return end == End.DIED;
+    }
+
+    /** Morale (milestone 2): an escape -4 at its home base, a leader's -6 at every base of its faction. */
+    public static final int MORALE_ESCAPE = -4, MORALE_LEADER_ESCAPE = -6;
+    /** Against a hero killed (-8 at its home base) and a leader killed (-20 at every base of its faction). */
+    public static final int MORALE_KILLED = -8, MORALE_LEADER_KILLED = -20;
+
+    /**
+     * The morale change at one base: {@code ofItsFaction} the base belongs to the hero's faction,
+     * {@code itsHome} it is the hero's home base. Nothing for the side it fled (or that killed it).
+     */
+    public static int moraleDelta(End end, boolean leader, boolean ofItsFaction, boolean itsHome) {
+        if (!ofItsFaction) {
+            return 0;
+        }
+        if (leader) {
+            return end == End.ESCAPED ? MORALE_LEADER_ESCAPE : MORALE_LEADER_KILLED;
+        }
+        if (!itsHome) {
+            return 0;
+        }
+        return end == End.ESCAPED ? MORALE_ESCAPE : MORALE_KILLED;
+    }
+
+    /**
+     * The war council while an escaped hero is away: its war power is in no raid party and in no base's defence but
+     * its refuge's (at half until it is above half health: {@code HeroRules.defencePower}).
+     */
+    public static boolean countsInDefence(String baseId, String refugeId) {
+        return baseId != null && baseId.equals(refugeId);
+    }
+
+    /** An escape leaves the raid: the hero is out of the party ({@code f.raiders}), now and for the stay away. */
+    public static boolean inRaidParty(boolean escapingOrAway) {
+        return !escapingOrAway;
     }
 
     /** The sheet's line: "fights to the death", "escapes under 15%" or "escapes under 8%, never from its home". */

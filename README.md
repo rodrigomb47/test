@@ -426,7 +426,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 717 JUnit tests for the pure rules (the hero file format, both formats: reading a file with the
+* `./gradlew test` — 793 JUnit tests for the pure rules (the hero file format, both formats: reading a file with the
   line of every problem, every message the checker can write, thousands of damaged files that must load within every
   limit or be refused, the balance caps and cooldown floors, format 2's moves, boss block, personality and whether a
   hero escapes or fights to the death, the eight slice heroes' kits loading clean, the generated JSON Schema, the
@@ -435,7 +435,11 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   poise and stagger, phases, enrage, the move picker with its opening gap, followups and reactions, the ground marks'
   geometry, escape or last stand in a lost fight, raid or base, and each slice hero's reference duel; a leader's
   personality and every director number it moves (neutral equals today's), the leader draft, faction names,
-  colours, banners, base styles, talent tiers and a hero's war power;
+  colours, banners, base styles, talent tiers and a hero's war power; a hero's mobility (its numbers by ceiling and
+  level, flight stamina, the air budget and altitude ceilings, the leap solver's re-simulation of vanilla's air
+  physics, the flight planner over a height map, its jump, gap, drop, climb, chimney and glide links, who can reach
+  whom, the way over a hostile wall and out again with the goal inside, the dive form) and its work mastery
+  (proficiency, specialties, Presence, every cap, never virtual enchantment levels and an extra loot roll on one drop);
   a hero's hitbox from its model, its synced fields and revival time,
   its face (which frame each plane shows, blink timing, the talking mouth, the mood hold), which animation clip plays
   (a teleport is not running; one clip per motion class; walk and run do not flip about the threshold), the form-scaled animation keys' variable,

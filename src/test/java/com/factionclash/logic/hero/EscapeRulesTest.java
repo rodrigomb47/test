@@ -335,6 +335,106 @@ class EscapeRulesTest {
         assertTrue(!EscapeRules.heroPursues(95));
     }
 
+    // ================================================================== F5: the rest of MOBILITY_AND_WORK 7.7
+
+    @Test
+    void decideDispatchesEachTrigger() {
+        EscapeRules.Context c = afield();
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.decide(ESCAPER, EscapeRules.Trigger.LOW_HEALTH, 0.05,
+                false, false, true, c));
+        assertEquals(EscapeRules.Outcome.FIGHT_ON, EscapeRules.decide(ESCAPER, EscapeRules.Trigger.LOW_HEALTH, 0.5,
+                false, false, true, c));
+        assertEquals(EscapeRules.Outcome.GO_ON_FOOT, EscapeRules.decide(ESCAPER, EscapeRules.Trigger.LOST_RAID, 0.9,
+                false, false, false, c));
+        assertEquals(EscapeRules.Outcome.FINISH_FIGHT, EscapeRules.decide(STANDER, EscapeRules.Trigger.LOST_BASE, 0.9,
+                false, false, true, ctx(true, true, false, false, true, 0)));
+        // whoever it fights: the context has no field for the enemy, so a player and NPCs give the same outcome
+        for (EscapeRules.Trigger t : EscapeRules.Trigger.values()) {
+            for (EndOfFight e : List.of(ESCAPER, HOME_ESCAPER, LOYAL, STANDER)) {
+                EscapeRules.Outcome a = EscapeRules.decide(e, t, 0.05, false, true, true, c);
+                EscapeRules.Outcome b = EscapeRules.decide(e, t, 0.05, false, true, true, c);
+                assertEquals(a, b);
+            }
+        }
+    }
+
+    @Test
+    void aScoutsStepAsideIsAnEscapesMovementOnly() throws IOException {
+        // ScoutJob's rules: soldiers or badly hurt among monsters: home; a monster about or in the way: aside and on
+        String scout = Files.readString(Path.of("src/main/java/com/factionclash/work/ScoutJob.java"));
+        assertTrue(scout.contains("BADLY_HURT = " + (float) EscapeRules.SCOUT_BADLY_HURT + "F"), "ScoutJob's 40%");
+        assertEquals(EscapeRules.Departure.SCOUT_RETREAT, EscapeRules.scoutDeparture(false, true, 1, false, false));
+        assertEquals(EscapeRules.Departure.SCOUT_RETREAT, EscapeRules.scoutDeparture(false, false, 0.39, true,
+                false));
+        assertEquals(EscapeRules.Departure.SCOUT_STEP_ASIDE, EscapeRules.scoutDeparture(false, false, 0.4, true,
+                false));
+        assertEquals(EscapeRules.Departure.SCOUT_STEP_ASIDE, EscapeRules.scoutDeparture(false, false, 0.1, false,
+                true), "a monster in the way, none about");
+        assertEquals(null, EscapeRules.scoutDeparture(false, false, 1, false, false));
+        assertEquals(null, EscapeRules.scoutDeparture(true, true, 0.1, true, true), "engaged: a fight like any other");
+        for (EscapeRules.Departure d : EscapeRules.Departure.values()) {
+            assertTrue(d.usesEscapeMovement(), "any mobility: " + d);
+            assertEquals(d == EscapeRules.Departure.ESCAPE, d.isEscape(), "no bar, window, stay away, morale or line");
+        }
+        assertTrue(EscapeRules.Departure.SCOUT_STEP_ASIDE.goesOnWithItsRound());
+        assertTrue(!EscapeRules.Departure.SCOUT_RETREAT.goesOnWithItsRound());
+        // the movement an escape uses: the rules of 5.1 a fight keeps are lifted, the counterplay is not
+        MobilityRules.Situation esc = MobilityRules.Situation.ESCAPE;
+        for (MobilityRules.Rule r : List.of(MobilityRules.Rule.AIR_BUDGET, MobilityRules.Rule.REACH_IN_THE_AIR,
+                MobilityRules.Rule.UNFOLLOWABLE_PLACES, MobilityRules.Rule.COME_BACK)) {
+            assertTrue(!MobilityRules.holds(r, esc), r.name());
+        }
+        for (MobilityRules.Rule r : List.of(MobilityRules.Rule.NO_TELEPORT, MobilityRules.Rule.AIR_POISE,
+                MobilityRules.Rule.NO_CARRYING, MobilityRules.Rule.HAZARDS)) {
+            assertTrue(MobilityRules.holds(r, esc), r.name());
+        }
+        assertTrue(MobilityRules.travelBonusesOn(esc), "an escape is travel");
+        assertTrue(!MobilityRules.mayAttack(esc, false) && MobilityRules.mayAttack(esc, true), "cornered: fights back");
+        // it stays a boss: the per-hit cap and poise have no escaping input, so a hit lands as in the fight
+        assertTrue(MobilityRules.bossRulesHold(esc));
+        BossRules.Capped hit = BossRules.capHit(100, 400, 12);
+        assertEquals(48, hit.landed(), 1e-9, "12% of 400, escaping or not");
+        assertEquals(52, hit.toPoise(), 1e-9, "the excess to poise");
+    }
+
+    @Test
+    void pursuersAreTheFledFightsEnemiesOfEveryKind() {
+        assertTrue(EscapeRules.pursues(true, false, false, 0), "a player or a soldier engaged in the fight");
+        assertTrue(EscapeRules.pursues(false, true, false, 0), "anything whose target it is");
+        assertTrue(!EscapeRules.pursues(false, false, false, 0));
+        assertTrue(EscapeRules.pursues(true, false, true, 59));
+        assertTrue(!EscapeRules.pursues(true, true, true, 60), "an honourable hero lets it go");
+        // the wild: 64 blocks from the fight for its stay-away time
+        long at = 10_000;
+        assertTrue(EscapeRules.keepFarther(40, at + 100, at, 300));
+        assertTrue(!EscapeRules.keepFarther(64, at + 100, at, 300));
+        assertTrue(!EscapeRules.keepFarther(10, at + 6000, at, 300), "after its stay away it walks home");
+    }
+
+    @Test
+    void anEscapeGivesNoRewardsAndCostsMoraleAtHome() {
+        assertTrue(!EscapeRules.rewards(EscapeRules.End.ESCAPED), "nothing drops, no orbs, no crest, no fragment");
+        assertTrue(EscapeRules.rewards(EscapeRules.End.DIED), "killed during the escape: it has died");
+        // morale: -4 at its home for an escape, -6 everywhere for a leader's; -8 and -20 for deaths; nothing elsewhere
+        assertEquals(-4, EscapeRules.moraleDelta(EscapeRules.End.ESCAPED, false, true, true));
+        assertEquals(0, EscapeRules.moraleDelta(EscapeRules.End.ESCAPED, false, true, false));
+        assertEquals(-6, EscapeRules.moraleDelta(EscapeRules.End.ESCAPED, true, true, false));
+        assertEquals(-6, EscapeRules.moraleDelta(EscapeRules.End.ESCAPED, true, true, true));
+        assertEquals(-8, EscapeRules.moraleDelta(EscapeRules.End.DIED, false, true, true));
+        assertEquals(-20, EscapeRules.moraleDelta(EscapeRules.End.DIED, true, true, false));
+        for (EscapeRules.End e : EscapeRules.End.values()) {
+            for (boolean leader : new boolean[]{false, true}) {
+                assertEquals(0, EscapeRules.moraleDelta(e, leader, false, false), "nothing for the side it fled");
+            }
+        }
+        // the war council while it is away: no raid party, no defence but its refuge's
+        assertTrue(EscapeRules.countsInDefence("west", "west"));
+        assertTrue(!EscapeRules.countsInDefence("home", "west"));
+        assertTrue(!EscapeRules.countsInDefence("home", null), "in the wild: no base's defence");
+        assertTrue(!EscapeRules.inRaidParty(true));
+        assertTrue(EscapeRules.inRaidParty(false));
+    }
+
     @Test
     void noRuleTakesTheEnemysKind() {
         // the API has no parameter for who the enemy is (equal treatment: the same end against players and NPCs)

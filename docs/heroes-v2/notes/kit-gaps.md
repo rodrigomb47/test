@@ -126,3 +126,43 @@ of every sheet agrees (`LeaderBiasesTest.theSliceKitSheetsAgreeNumberForNumber`)
   talents while their hero trades away) stay with L5m.
 - **The eccentric genius rule** ("crafting and lore projects first") stays undefined until projects have a priority
   list (L4); it changes no knob.
+
+## F5 decisions on mobility and work mastery (2026-11-13)
+
+F5 (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `EscapeRules`' last parts,
+`WorkMastery` and the `dive` form, HEROES_V2.md 15.2 "F5 as built") decided the points MOBILITY_AND_WORK leaves open:
+
+- **Leap limits**: a hero's vertical impulse is bounded by its jump height and its horizontal impulse by the slowest
+  leap over its widest gap on level ground, so a 3-block leaper cannot carry 8 blocks on a flat, fast leap. A leap
+  over a rise needs about 0.07 more vertical, so a leaper whose jump is at its floor may lack the rise its gap allows.
+- **Who can reach whom** (the reach clock's ground input, 5.1.15): an ordinary person, a player or an NPC soldier
+  alike, walks, steps up 1, towers up 2 and steps over, drops 3, swims and sprint-jumps a gap of up to 3 landing no
+  higher; an enemy hero adds its own links (fight rules: no risky gap). The search stays within 32 blocks.
+- **The strike from a link** (3.7): from a cling when the hero climbs to the cell under the target's feet, from the
+  apex when the target is within 3 blocks of the top of its jump with its air jumps, from the air for a flyer.
+- **The cruise layer** looks one segment ahead: a point clears the segment it ends and the one it starts, so the hero
+  is over an obstacle when it reaches the obstacle's station; the ceiling is measured over that terrain, so the
+  6-10-block layer always fits under it. A waypoint with no ground route at all counts as a detour (fly).
+- **The way in** reads the hero's whole mobility (a climber secondary climbs like a primary) in the order flight, climb,
+  a jump onto the top, a glide; a charger leads the breach only when the gate does not open for soldiers. A flyer's
+  flight over the wall must fit the raid's 10 s per take-off at the powered drain.
+- **The goal inside**, in order: open the way while the party is held outside; hunt the home hero for a
+  `heroes_first` focus with a home hero known to be in, or when one is seen inside; clear the archers for a
+  `marksman` role or a `zoner` duel style when the base has archers; the storehouse for greed 65 or more; the heart.
+- **Proficiency** applies at the hero's duty only (its backpack too); on guard duty the alarm reach replaces the work
+  speed and the rest applies. Thrifty and Hardy multiply with the proficiency's cut (then the 40% and 50% floors).
+  An `aura_<affix>` hero counts its own stacks within the cap plus 2 / 3 / 4.
+- **One or the other** (13): the expected count with the virtual levels against the tool's own (ores vanilla's
+  1 + F(F+1) / 2(F+2), crops the binomial bonus of carrots and potatoes, leaves the sapling chance, kills 1 + L/2)
+  against 1 + the roll's chance; a tie goes to the roll. Luck of the Sea and Lure change no count: the main catch
+  carries them and a second catch rolls with the real rod.
+- **Presence** lifts the base-wide part only; personal effects stay at the hero's own tier; a quantity 11.2 gives no
+  tier-IV number for keeps its tier-III value (tactician's "25%" is its joint-raid cut).
+- **The dive**: `from` defaults to the air for a hero that flies or glides, else the apex; "a grab in an aerial
+  window" is a dive that names a grab as a followup, and that dive is NOT LOADED (the grab stays for the ground); a
+  dive ultimate left out takes its awakened twin; with no `frames` its recovery is 1.0 s silently, a shorter authored
+  one is raised (ADJUSTED). The dive counts as an area form (a landing radius) and swings in its look.
+- **The scout's departure**: enemy soldiers seen, or under 40% among monsters, send it home (a retreat); a monster
+  about or in the way makes it step aside and go on; both use an escape's movement only.
+- **Morale** of an escape or a death counts at the hero's home base, a leader's at every base of its faction; nothing
+  anywhere else.

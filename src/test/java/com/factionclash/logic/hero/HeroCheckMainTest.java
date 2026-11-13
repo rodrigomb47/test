@@ -31,6 +31,9 @@ class HeroCheckMainTest {
         assertTrue(r.out().contains("Heroes: 8 loaded"), r.out());
         assertTrue(r.out().contains("Kagenori Tsurumine: fights to the death"), r.out());
         assertTrue(r.out().contains("Natsuho Komezaki: escapes under 8%, never from its home"), r.out());
+        // the mobility sheet of MOBILITY_AND_WORK 8.3 and 15.9: levels 1, 10 and 20
+        assertTrue(r.out().contains("  mobility: stamina (s) 27.0 / 35.5 / 45.0"), r.out());
+        assertTrue(r.out().contains("  mobility: climb height (blocks) 9 / 12 / 16"), r.out());
         assertTrue(r.out().endsWith("checkHeroes: passed (8 files)\n"), r.out());
         assertEquals(0, run("--strict", "src/test/resources/heroes/slice").code(), "nothing to report at all");
     }

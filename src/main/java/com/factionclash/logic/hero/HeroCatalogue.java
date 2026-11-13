@@ -792,7 +792,7 @@ public final class HeroCatalogue {
     /** Forms whose receivers can be several entities (multiplier A = 1.5 in the weight, v1 15). */
     public static boolean areaForm(Form f) {
         return f == Form.NOVA || f == Form.CONE || f == Form.LINE || f == Form.ZONE || f == Form.CHAIN
-                || f == Form.LEAP || f == Form.ALLIES;
+                || f == Form.LEAP || f == Form.ALLIES || f == Form.DIVE;
     }
 
     /** Wind-up default (v1 10): the ultimate 0.5, a leap 0.3, other skills 0. */
@@ -831,7 +831,8 @@ public final class HeroCatalogue {
 
     /** The pose a form shows when the look gives none: melee forms swing (v1 10.5). */
     public static HeroDef.Pose defaultPose(Form f) {
-        return f == Form.MELEE || f == Form.LEAP || f == Form.DASH ? HeroDef.Pose.SWING : HeroDef.Pose.NONE;
+        return f == Form.MELEE || f == Form.LEAP || f == Form.DASH || f == Form.DIVE ? HeroDef.Pose.SWING
+                : HeroDef.Pose.NONE;
     }
 
     // ------------------------------------------------------------------ conditions (v1 11)
@@ -1105,7 +1106,7 @@ public final class HeroCatalogue {
     public static HeroDef.MoveClass classOf(Form f) {
         return switch (f) {
             case MELEE, COMBO, SHOT, VOLLEY, BOLT, BARRAGE, COUNTER, SELF, ALLY, ALLIES -> HeroDef.MoveClass.LIGHT;
-            case LEAP, DASH, CHARGE, GRAB, LINE, CHAIN -> HeroDef.MoveClass.HEAVY;
+            case LEAP, DASH, CHARGE, GRAB, LINE, CHAIN, DIVE -> HeroDef.MoveClass.HEAVY;
             case CONE, NOVA, ZONE, WAVE, RAIN, SWEEP -> HeroDef.MoveClass.AREA;
         };
     }
@@ -1114,7 +1115,8 @@ public final class HeroCatalogue {
      * The decal a move heavier than light draws when the file names none (HEROES_V2 6.4; kit-gaps 4): a disc where
      * the hero or its target stands for self, counter-free melee and chain moves, a strip along lines, dashes,
      * charges, shots and grabs (purple for a grab), a fan for cones and sweeps, a ring for waves and counter
-     * stances, a landing disc for leaps, one disc per impact for rain. A light move shows only its animation.
+     * stances, a landing disc for leaps and dives, one disc per impact for rain. A light move shows only its
+     * animation.
      */
     public static HeroDef.Decal decalOf(Form f) {
         return switch (f) {
@@ -1122,7 +1124,7 @@ public final class HeroCatalogue {
             case SHOT, BOLT, LINE, DASH, CHARGE, GRAB, BARRAGE -> HeroDef.Decal.STRIP;
             case VOLLEY, CONE, SWEEP -> HeroDef.Decal.FAN;
             case WAVE, COUNTER -> HeroDef.Decal.RING;
-            case LEAP -> HeroDef.Decal.LANDING;
+            case LEAP, DIVE -> HeroDef.Decal.LANDING;
             case RAIN -> HeroDef.Decal.IMPACTS;
         };
     }
@@ -1167,6 +1169,7 @@ public final class HeroCatalogue {
         FORMS.put(Form.GRAB, new FormSpec(2, 3, 2.5, false, NA, NA, NA, false, false, false, false, false, false));
         FORMS.put(Form.COUNTER, new FormSpec(NA, NA, NA, false, NA, NA, NA, false, false, false, false, false, false));
         FORMS.put(Form.BARRAGE, new FormSpec(4, 24, 16, false, NA, NA, NA, true, false, false, false, true, false));
+        FORMS.put(Form.DIVE, new FormSpec(4, 12, 8, false, 1, 3, 2, false, false, false, false, false, false));
     }
 
     /**
@@ -1176,7 +1179,7 @@ public final class HeroCatalogue {
     public static final Map<Form, Map<String, Field>> FORM_FIELDS = new EnumMap<>(Form.class);
     /** Every name {@link #FORM_FIELDS} uses, plus format 1's form fields: what a form may leave unused. */
     public static final List<String> NEW_FORM_FIELD_NAMES = List.of("strikes", "speed", "wall_stun", "waves", "arc",
-            "throw", "up", "stance", "absorb", "ranged", "per_shot");
+            "throw", "up", "stance", "absorb", "ranged", "per_shot", "from");
 
     static {
         FORM_FIELDS.put(Form.COMBO, shape(req(list("strikes", 2, 4))));
@@ -1196,6 +1199,9 @@ public final class HeroCatalogue {
         FORM_FIELDS.put(Form.BARRAGE, shape(num("range", Unit.BLOCKS, 4, 24, 16), whole("count", Unit.NONE, 3, 10, 5),
                 num("interval", Unit.SECONDS, 0.15, 0.6, 0.3), word("projectile", "projectile"),
                 list("per_shot", 1, 10)));
+        // MOBILITY_AND_WORK 7.3: from the air (flight, a glide) or the apex of its own jump onto a landing decal
+        FORM_FIELDS.put(Form.DIVE, shape(num("range", Unit.BLOCKS, 4, 12, 8), num("radius", Unit.BLOCKS, 1, 3, 2),
+                word("from", "dive_from")));
     }
 
     /**
@@ -1204,6 +1210,11 @@ public final class HeroCatalogue {
      * with its arc; rain counts a third of its impacts on one receiver).
      */
     public static final double CHARGE_EXTRA_WEIGHT = 2, GRAB_BASE_WEIGHT = 2, COUNTER_WEIGHT = 0.75;
+    /**
+     * MOBILITY_AND_WORK 7.3: a dive weighs as a leap + 1 (its cooldown floor follows), lands with at least 1.0 s of
+     * recovery on the ground, and plays a 0.5 s touch-down between the dives of one aerial window's string.
+     */
+    public static final double DIVE_EXTRA_WEIGHT = 1, DIVE_MIN_RECOVERY = 1.0, DIVE_TOUCH_DOWN = 0.5;
 
     /** MOBILITY_AND_WORK 4.4: names a move id may not take, because {@code move.<id>} would shadow the core clip. */
     public static final Set<String> LOCOMOTION_NAMES = Set.of("idle", "walk", "run", "swim", "fall", "climb", "crouch",
@@ -1540,7 +1551,7 @@ public final class HeroCatalogue {
             num("speed", Unit.NONE, 6, 200, Double.NaN), of("wall_stun", Kind.BOOL), whole("waves", Unit.NONE, 1, 3, 1),
             whole("arc", Unit.DEGREES, 60, 180, 120), num("throw", Unit.NONE, 1, 4, 2), num("up", Unit.BLOCKS, 0, 1, 0),
             num("stance", Unit.SECONDS, 0.8, 2, 1), whole("absorb", Unit.PERCENT, 50, 90, 80), of("ranged", Kind.BOOL),
-            of("awakened", Kind.OBJECT));
+            of("awakened", Kind.OBJECT), word("from", "dive_from"));
 
     public static final Map<String, Field> FRAMES = shape(num("windup", Unit.SECONDS, 0, 4, Double.NaN),
             num("active", Unit.SECONDS, 0, 6, Double.NaN), num("recovery", Unit.SECONDS, 0, 4, Double.NaN));
@@ -1676,7 +1687,8 @@ public final class HeroCatalogue {
                 .syn("leap", "jump", "slam").syn("dash", "rush").syn("self", "buff_self").syn("ally", "heal_ally")
                 .syn("allies", "team", "party", "group").syn("combo", "flurry", "string").syn("charge", "tackle")
                 .syn("grab", "grapple", "throw").syn("counter", "parry", "riposte").syn("barrage", "salvo")
-                .syn("wave", "ground_wave").syn("rain", "rainfall", "meteor").syn("sweep", "spin");
+                .syn("wave", "ground_wave").syn("rain", "rainfall", "meteor").syn("sweep", "spin")
+                .syn("dive", "swoop", "plunge", "dive_bomb");
         // v1 read "barrier" as a shield; it is an effect of its own now
         vocab2("effect_type2", "an effect type", EffectType.class)
                 .syn("damage", "dmg", "attack", "hit").syn("dot", "damage_over_time", "bleed", "burn_damage")
@@ -1708,6 +1720,8 @@ public final class HeroCatalogue {
         vocab("archetype", "an archetype", ARCHETYPES);
         vocab2("duel_style", "a duel style", HeroDef.DuelStyle.class).syn("all_rounder", "allrounder", "balanced");
         vocab2("move_class", "a move class", HeroDef.MoveClass.class).syn("ultimate", "ult");
+        vocab2("dive_from", "where a dive starts", HeroDef.DiveFrom.class).syn("air", "flight", "sky", "glide")
+                .syn("apex", "jump", "jump_apex", "top");
         vocab2("band", "a band", HeroDef.Band.class).syn("close", "near", "melee").syn("far", "long");
         vocab2("decal", "a decal shape", HeroDef.Decal.class).syn("disc", "circle", "disk").syn("strip", "line")
                 .syn("fan", "cone").syn("landing", "landing_disc");

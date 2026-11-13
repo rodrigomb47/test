@@ -3218,6 +3218,61 @@ F4 as built (2026-11-13), where it goes beyond or differs from sections 5, 7.2, 
 - **Left open**: the game hooks (L1-L5); the special rules that need milestone 2 systems; the boss bar colours are
   approximations of the bar textures.
 
+F5 as built (2026-11-13), where it goes beyond or differs from `MOBILITY_AND_WORK.md` sections 1-3, 5, 7, 8 and 9-13
+and the row above (all pure, in `logic/hero/`, none read by the game yet; A10-A12 and L5m wire them in):
+- **`MobilityRules`**: the nine families and two footings with their full numbers by ceiling, the features a ceiling
+  gives (all from level 1; counts such as air jumps are features), the power `p(L)` with both config keys, the three
+  kinds of number, link sizes rounded down and the floors (a leaper's 1.8-block jump, a 2-block gap); a hero's
+  `Profile` at its level (primary and secondary together, the better number counting; `NONE` for workers, format-1
+  heroes and `mobility.enabled` off; `mobility.flight` off keeps the glide and the dive), the vanilla attribute
+  modifiers named `factionclash:mobility_<trait>` (travel bonuses only while travelling), flight stamina with its drain,
+  regain, the 25% landing and the exhaustion until 50%, the average flight speed of 2.1, the take-off refusals, the
+  stamina reserve, the air budget (8 s a take-off, 6 s on the ground, 4 in phase 3, 40% of any 30 s; a raid's
+  approach 10 s), the ceilings of 2.3, which rule of 5.1 holds while fighting, travelling, on a raid's approach and
+  while escaping, the reach clock's input from engaged enemies of any kind, the bursts, and the sheet of levels 1, 10
+  and 20 (`checkHeroes` prints it). Its tests hold 15.9's table for the eight slice heroes.
+- **`LeapSolver`**: vanilla's air physics (vertical (v - 0.08) x 0.98, horizontal x 0.91, the vertical move resolved
+  before the horizontal) on a vertical slice with fences 1.5 high; jump heights 1.25 / 1.84 / 2.52 / 3.54 for 0.42 /
+  0.52 / 0.62 / 0.75 and the attribute a height needs; the lowest-speed impulse on a 0.01 grid that lands within
+  0.15 of the cell centre with the hero's box clear along the arc (1.6's four leaps come out exactly), the table of
+  3.9 with a solve within the hero's limits, the in-air re-check and an acrobat's air-jump correction, and the
+  take-off refusals (water, powder snow, a cobweb, honey, soul sand, Slowness, Levitation, Slow Falling, moving).
+- **`FlightPlanner`**: stations every 4 blocks with 2-block side samples, one 24-block waypoint at a time and only
+  over loaded terrain, the cruise layer 6-10 blocks over the segments it ends and starts, the ceilings, the
+  hostile-base berth (x3 within the walls box + 16 on a trip or an escape, a cost and never a ban; the line on a raid),
+  legal landings, the take-off headroom over the footprint, the forward probe, the stuck watch (10 ticks of head bumps
+  or under 1 block in 2 s) and the walk-or-fly choice of 3.5.
+- **`HeroLinks`**: jump-up, gap (from the leap solver), drop, climb (round a one-block overhang at III), chimney and
+  glide links on a pure grid, at most 8 a node and only where a worker's own step fails; hazards refused, risky gaps
+  refused in a fight and allowed with a wide landing out of one or while escaping; a hostile wall is climbed like any
+  wall; who can reach the hero (an ordinary person, a player or an NPC soldier alike, and an enemy hero on its own
+  links), and the strike from a link (a basic attack only, only with no standable cell in reach).
+- **`WallEntry`** (new): the way in by the hero's whole mobility, taken only with a way out (the gate, flight with
+  its stamina back within 20 s, the inside face climbed or jumped), the soldiers' way otherwise (a charger leads the
+  breach when the gate does not open for them), the goal inside (open the way, hunt the hero, clear the archers, the
+  storehouse, the heart) and its end (its own condition, the raid's end or 60 s without progress), the campaign
+  check's counter.
+- **`EscapeRules`**, the rest of 7.7: `decide` dispatches the three triggers; a scout's step aside and retreat use an
+  escape's movement and nothing else (`Departure`); who pursues; the wild's 64 blocks; no rewards for an escape; the
+  morale changes; the war council while away.
+- **`WorkMastery`** (new): today's worker numbers (read from the sources by the test), proficiency by tier at the
+  duty, the specialties of every production talent with the roster's duties (`TALENT_DUTY`, read from
+  `check_roster.py`), `aura` stacks over the cap, virtual enchantment levels, extra rolls, the one-or-the-other rule,
+  furnace progress, prices, repairs, trips, `sage_of_letters`' rerolls, Presence's tier IV and the personal effects,
+  every cap of 13 and the output flag (the worked 2.75x day).
+- **The `dive` form** (7.3, 8.3): format 2's ninth new form (`range` 4-12, `radius` 1-3, `from` air or apex), heavy,
+  a landing decal, weight as a leap + 1, at least 1.0 s of recovery; refused (`dive_rule`, PART LEFT OUT) for a hero
+  without an airborne trait, `from: air` without flight or gliding, an unblockable dive and a dive that leads into a
+  grab; the move selector starts an air dive only in the air and an apex dive with its jump. The schema is
+  regenerated. Decisions: `docs/heroes-v2/notes/kit-gaps.md`, "F5 decisions".
+- **Tests** (76 new, 793 unit tests in all): `MobilityRulesTest` (17), `LeapSolverTest` (7), `FlightPlannerTest` (10),
+  `HeroLinksTest` (13), `WallEntryTest` (9), `WorkMasteryTest` (11), `EscapeRulesTest` (+4), `DiveFormTest` (4) and
+  one `HeroMessagesTest` case. Ten sabotage checks, each caught.
+- **Left open**: everything that reads these classes in the game (A10-A12, L5m); the touch-and-go string of dives
+  (0.5 s touch-downs, `HeroCatalogue.DIVE_TOUCH_DOWN`) is the selector's in A12; the slice fixtures keep Ambrose's
+  `broom_hops` (his `broom_dive` is C3's proposal); hover, deep swimming and lava walking are milestone 2's (A13), and
+  their numbers are in the tables but not exercised by a fixture.
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3334,7 +3389,8 @@ both (14.5).
 **`EscapeRules` (F5, with `MOBILITY_AND_WORK.md` 18.1)**
 
 - Done in F3 (15.2 "F3 as built"): `kind`, `standsFor` and `fleeAt` (F2) and the runtime decision below, as
-  `lowHealth`, `lostRaid` and `lostBase`; cornered, the refuge and the stay away beside them.
+  `lowHealth`, `lostRaid` and `lostBase`; cornered, the refuge and the stay away beside them. Done in F5 (15.2 "F5
+  as built"): `decide` over the three, the scout's step aside, pursuers, the wild, no rewards, morale, the war council.
 
 - `kind(traits, temperament, authored, retreatBelow)`: escape or last stand (nerve 65, `sleepy`, the override, v1
   `retreat_below` 0); `standsFor(loyalty, authored)`; `fleeAt(retreatBelow, lastPhaseAt)`.

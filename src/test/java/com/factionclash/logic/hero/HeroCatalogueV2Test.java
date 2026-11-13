@@ -181,7 +181,8 @@ class HeroCatalogueV2Test {
             assertNotNull(HeroCatalogue.FORMS.get(f), f.id());
             assertTrue(f.since() == 1 || f.since() == 2, f.id());
         }
-        assertEquals(8, HeroDef.Form.values().length - Word.inFormat(HeroDef.Form.class, 1).size(), "8 new forms");
+        assertEquals(9, HeroDef.Form.values().length - Word.inFormat(HeroDef.Form.class, 1).size(),
+                "8 new forms of HEROES_V2 6.5 and the dive of MOBILITY_AND_WORK 7.3");
         assertEquals(7, HeroDef.EffectType.values().length - Word.inFormat(HeroDef.EffectType.class, 1).size(),
                 "7 new effects");
         // no synonym hides a word of its own list
