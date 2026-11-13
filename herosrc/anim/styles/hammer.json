@@ -230,11 +230,11 @@
       }
     },
     "hammer.slam_low": {
-      "_comment": "attack.3's contact with the weight in it: hammer.slam's upper body and arms with the knees bent 10 degrees more than the stance (a key with `over` on the legs: the soles stay on the ground on every form, the root form-scaled).",
+      "_comment": "attack.3's contact with the weight in it: hammer.slam's upper body and arms with the knees bent 10 degrees more than the stance (a key with `over` on the legs: the soles stay on the ground on every form, the root form-scaled). The hips fold by form (`form`: 35.6 + 1.93 x v.fc_dhip degrees, 23.5 on a chibi, 39 on a teen, 47.7 on an adult; the neck lifts a little against it) so the club head lands on the ground on every form: the hands are higher above the ground on the longer forms while the club stays about one length (polish after the art review; it stopped 6.2 px above the ground on a teen and 8.9 on an adult).",
       "bones": {
-        "body": [18.0, 4.0, 0.0],
+        "body": [35.6, 4.0, 0.0],
         "chest": [10.0, 0.0, 0.0],
-        "neck": [-24.0, -4.0, 0.0],
+        "neck": [-30.0, -4.0, 0.0],
         "arm_r": [-28.5, 19.5, -28.2],
         "forearm_r": [-46.8, 19.6, 0.0],
         "hand_r": [80.3, 15.4, -25.0],
@@ -247,6 +247,10 @@
         "leg_l": [-10, 0, 0],
         "shin_l": [20, 0, 0],
         "foot_l": [-10, 0, 0]
+      },
+      "form": {
+        "body": [1.93, 0, 0],
+        "neck": [-0.6, 0, 0]
       }
     },
     "hammer.roar": {
@@ -399,6 +403,28 @@
         {"t": 1.05, "face": "none"},
         {"t": 1.14, "pose": "hammer.raise", "ease": "easeInOutSine"},
         {"t": 1.35, "pose": "hammer.stance", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "_comment": "Between the held slam (0.7 s) and the pry (0.8 s) each arm swings on its own chain and the left hand left the handle by up to 3.9 px at 0.75 s; this bump on the left arm (solved over the six bases) keeps it within 1.6 px (polish after the art review).",
+          "primitive": "oscillate",
+          "params": {"shape": "pulse", "period": 0.1, "window": [0.7, 0.7, 0.8, 0.8],
+                     "bones": {"arm_l": [1.8, 13.8, 0], "forearm_l": [6.1, -3.0, 0], "hand_l": [0.7, -0.7, 5.0]}},
+          "add": true
+        },
+        {
+          "_comment": "The same on the downswing's middle tick (0.5 s: up to 2.75 px on a chibi_m, now 2.05 at most) and the haul's (1.0 s: 2.1 px on an adult_f, now 1.5).",
+          "primitive": "oscillate",
+          "params": {"shape": "pulse", "period": 0.1, "phase": 0.5, "window": [0.45, 0.45, 0.55, 0.55],
+                     "bones": {"arm_l": [-2.5, 7.9, 2.9], "forearm_l": [7.9, -4.2, 0], "hand_l": [-5.7, 0.3, -1.6]}},
+          "add": true
+        },
+        {
+          "primitive": "oscillate",
+          "params": {"shape": "pulse", "period": 0.1, "phase": 0.5, "window": [0.95, 0.95, 1.05, 1.05],
+                     "bones": {"arm_l": [1.6, -2.0, 3.1], "forearm_l": [-2.0, -2.4, 0], "hand_l": [0.7, -0.5, 2.8]}},
+          "add": true
+        }
       ]
     },
     "draw": {

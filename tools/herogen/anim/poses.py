@@ -12,6 +12,10 @@ A pose file is {"poses": {name: pose}}; a pose is
             "floor" (G4: root y set so the lowest point of the base body touches y 0 on EVERY form: the knee of a
             kneel, the seat of a sit, the back of a lying pose; a form-scaled key, anim/clip.py)
   floor     globs of the bones whose base cubes may touch the floor (default: all of the base body)
+  form      {bone: [kx, ky, kz]}  degrees per pixel of FORM_VAR added to that bone's rotation (anim/clip.py): a
+            rotation that differs by body form, written as "v + k * v.fc_dhip" like a form-scaled root (polish
+            after the art review: the slam folds the hips deeper on the longer forms so the club head reaches the
+            ground on all three; rotations otherwise transfer unchanged). Mirrored with the bones; inherited
 Conventions (file space, derived from rot.file_matrix and pinned by tests): positive rx leans an upright bone forward
 (its top toward -z) and swings a hanging bone backward; a forward arm or leg swing is negative rx; elbow flexion is
 negative rx on forearm_*, knee flexion positive rx on shin_*; positive ry turns toward the hero's right; positive rz
@@ -30,21 +34,25 @@ K_PREFIX = "k:"             # chans[bone]["k:position"]: the FORM_VAR coefficien
 
 
 class Pose:
-    def __init__(self, name, rotation=None, position=None, fixes=(), knees=0.0, floor=None):
+    def __init__(self, name, rotation=None, position=None, fixes=(), knees=0.0, floor=None, form=None):
         self.name = name
         self.rotation = dict(rotation or {})
         self.position = dict(position or {})
         self.fixes = tuple(fixes)
         self.knees = float(knees)
         self.floor = list(floor) if floor else None
+        self.form = dict(form or {})
 
     def chans(self):
-        """{bone: {"rotation": v, "position": v}}"""
+        """{bone: {"rotation": v, "position": v, "k:rotation": FORM_VAR coefficients}}"""
         out = {}
         for b, v in self.rotation.items():
             out.setdefault(b, {})["rotation"] = tuple(v)
         for b, v in self.position.items():
             out.setdefault(b, {})["position"] = tuple(v)
+        for b, k in self.form.items():
+            out.setdefault(b, {}).setdefault("rotation", (0.0, 0.0, 0.0))
+            out[b][K_PREFIX + "rotation"] = tuple(k)
         return out
 
 
@@ -74,13 +82,15 @@ def _vec3(v, where):
 def parse(name, spec, lookup, where="pose"):
     """A Pose from its spec; `lookup(name)` resolves `extends`."""
     for k in spec:
-        if k not in ("bones", "position", "extends", "mirror", "knees", "fix", "floor", "_comment"):
+        if k not in ("bones", "position", "extends", "mirror", "knees", "fix", "floor", "form", "_comment"):
             raise HerogenError("%s %s: unknown field %r" % (where, name, k))
     rot = {b: _vec3(v, "%s %s.bones.%s" % (where, name, b)) for b, v in (spec.get("bones") or {}).items()}
     pos = {b: _vec3(v, "%s %s.position.%s" % (where, name, b)) for b, v in (spec.get("position") or {}).items()}
+    form = {b: _vec3(v, "%s %s.form.%s" % (where, name, b)) for b, v in (spec.get("form") or {}).items()}
     if spec.get("mirror"):
         rot = _mirrored(rot, mirror_rotation)
         pos = _mirrored(pos, mirror_position)
+        form = _mirrored(form, mirror_rotation)
     fixes = list(spec.get("fix", []))
     for f in fixes:
         if f not in FIXES:
@@ -91,6 +101,7 @@ def parse(name, spec, lookup, where="pose"):
         base = lookup(spec["extends"])
         rot = dict(base.rotation, **rot)
         pos = dict(base.position, **pos)
+        form = dict(base.form, **form)
         inherited = [f for f in base.fixes if not (f == "ground" and "floor" in fixes)
                      and not (f == "floor" and "ground" in fixes)]     # a pose's own placement fix wins
         fixes = inherited + [f for f in fixes if f not in inherited]
@@ -98,7 +109,7 @@ def parse(name, spec, lookup, where="pose"):
         floor = floor if floor is not None else base.floor
     if "floor" in fixes and "ground" in fixes:
         raise HerogenError("%s %s: fix ground and floor exclude each other" % (where, name))
-    return Pose(name, rot, pos, fixes, knees, floor)
+    return Pose(name, rot, pos, fixes, knees, floor, form)
 
 
 class Library:

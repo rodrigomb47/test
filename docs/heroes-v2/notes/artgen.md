@@ -2623,3 +2623,87 @@ tests fail.
   kit's active window is longer than a tick); `herogen check --slice` runs on the slice heroes as their sources land.
 - When the test rig's definition is regenerated or its `lunge` gets a clip, the move-list exception has no user left
   and can become plain equality.
+
+---
+
+## Polish after the art review: the shield's swap, the club's second hand, the slam's contact (2026-11-13)
+
+The three G5 items the art review left open. The approved look is unchanged (no part, palette or proportion moved),
+and no hit tick, marker tick or timing-file entry moved: the two style libraries' timing files change their source
+hash only (checked entry by entry), and `test_polish` pins the ticks.
+
+### The shield no longer pops at the draw and the sheathe
+
+The weapon flag swaps the shield from its carried copy (flat on the back, `back_flat`) to the copy on the left forearm
+on the draw's `weapon:drawn` tick (0.35 s) and back on the sheathe's `weapon:sheathed` (0.55 s). At those ticks the arm
+was behind the hip, so the shield jumped 12-17 px (centres) and turned 50-70 degrees in one frame. Now
+`sword_shield.reach` slides the left forearm behind the back under the shield's strap: the carried copy is a rigid map
+of the hand's copy (a proper rotation, fitted from the cube centres), so the arm was solved for the corners of the
+shield's 13 cubes to land on the carried copy's corners, on the chibi, the teen and the adult together, with the
+shield kept off a chibi's head (the carried copy itself sits 0.8-1 px into a chibi's hair line) and the forearm out of
+the back: `arm_l` [51.1, -31.7, 77.7], `forearm_l` [-104.5, -58.6, 0], `hand_l` [-80, -40, 3.2] (the wrist at its
+80-degree flexion limit). At the swap the corners are now 2.0-3.3 px apart on average (at most 5.3 px at a far corner
+on an adult_m), the faces 4-6 degrees apart. The first solve matched only the cube centres and turned the shield edge-on
+to the back (its centres all lie in one plane, so the width axis was free): the renders showed it, the corners fixed it.
+- The draw holds the shield in place to the swap with a new key at 0.35 s, `sword_shield.draw_free`: the sword arm
+  and the torso where they were at that tick before (the blade has started out of the scabbard, so it still clears a
+  chibi_m's waist), the shield arm still under the strap; then `c2_wind` by 0.52 s (`easeOutQuad`, the rest of the old
+  `easeOutCubic` segment).
+- The sheathe keeps its keys (`reach` at 0.58 s, 98% of the way at the swap); a pulse on `arm_l` (rz -15 at 0.425 s,
+  zero at 0.3 and at the swap) swings the shield out a little on its way round, so it passes clear of the hips (it
+  went 1.1-1.3 px into a teen's and an adult's hips at 0.45 s without it).
+
+### The club stays in both hands through the slam
+
+Between two keys each arm swings on its own chain, so the left hand left the handle by up to 3.9 px at 0.75 s of the
+slam's recovery (adult_m), 2.75 at 0.50 s of the downswing (chibi_m) and 2.1 at 1.0 s of the haul (adult_f). Three
+`oscillate` pulses on the left arm (`add`, one tick wide, zero at the neighbouring keys) were solved over the six
+bases for the worst distance: the second hand now stays within 2.06 px of the handle on every tick of `attack.3` on
+every base (`grips.measure`, the G5 measure with its 1.2 px slide). Nothing else of the clip moved. Still above 2 px,
+not on the open list: the club string's hits on a chibi_m (`attack.1` and `attack.2` at 0.45 s, 2.6-2.9 px) and the
+guard (2.7 px), all key poses solved on the teen.
+
+### The slam's club head reaches the ground on every form
+
+Rotations transfer between the forms, lengths do not: the hands are higher above the ground on the longer forms while
+the club stays about one length, so at the hit the club head stopped 1.7 px above the ground on a chibi, 6.2 on a teen
+and 8.9 on an adult. The extra hip fold that puts it on the ground was solved per base (5.3, 21.6 and 29.3 degrees)
+and is almost linear in the form variable, so `hammer.slam_low` now folds the hips by form: `body` rx
+35.6 + 1.93 x `v.fc_dhip` (23.5 degrees on a chibi, 39 on a teen, 47.7 on an adult) and the neck lifts against it
+(-30 - 0.6 x `v.fc_dhip`). The club head lands 0.2-0.4 px above the ground on all six bases. The rest of the body is
+unchanged: the legs hang from `root`, so the feet stay planted, and the hands keep the club because the whole upper
+body turns about the hips.
+
+**Generator addition: form-scaled rotations.** A pose may carry `form` {bone: [kx, ky, kz]}, degrees per pixel of
+`v.fc_dhip` added to that bone's rotation (inherited with `extends`, mirrored with `mirror`). The recipe expander, the
+writer, the readers and the quality rules already handled a key's form coefficient on any channel (G4 used it for the
+root's height only); the writer now also writes rotation components as `"v + k * v.fc_dhip"`. GeckoLib 4.9.3 accepts
+it: `BakedAnimationsAdapter` converts only a constant rotation to radians (negating x and y) at load, and
+`AnimationController.getAnimationPointAtTick` does the same at run time for a value that is not a constant (read with
+`javap -c` in the jar whose SHA-256 4.2 records), so a Molang rotation is in file degrees like a constant, and a
+segment between a constant key and a Molang key interpolates consistently. HeroModel already sets `v.fc_dhip`; where
+it is not set, the slam plays the middle form's fold.
+
+### Previews
+
+Regenerated: `docs/heroes-v2/previews/anim/styles/hammer.png`, `hammer_string.gif`, `sword_shield.png` and
+`sword_shield_set.gif` (the other style previews came out byte for byte). Looked at frame by frame: the shield stays on
+the back through the draw's swap and swings round the left side to the front; on the sheathe it comes round the side
+and settles where it hangs; at the slam's hit frame the club head is on the ground on the chibi and the adult, the
+adult folded deep over it.
+
+### Tests (374 -> 383: `tests/test_polish.py`, 9)
+
+The shield's corners at both swaps on all six bases (mean under 3.5 px, at most 5.5) and the swap ticks unchanged;
+draw and sheathe clear of the body (`grips.animation_problems`); the club head at the hit within -0.5..0.8 px of the
+ground and the second hand within 2.1 px on every tick, on all six bases; the slam's hit and its timing-file frames
+unchanged; the pose `form` field (inherited, mirrored, validated); the slam's body rotation written as Molang, read
+back per form, deeper on the adult; FK of a sampled form-scaled rotation is the file rotation. Sabotage: with the
+style sources of before the polish, the shield test fails on every base (11-18 px) and the club tests fail (the head
+1.7-8.9 px above the ground, the hand 3.0 px off).
+
+### Open items
+
+- The club string's hits and the guard on a chibi_m (2.6-2.9 px off the handle, above).
+- In game (A2, CP2): the slam's form-scaled fold depends on `v.fc_dhip`, which HeroModel sets; worth a look on an adult
+  hero that the hips fold and the club meets the ground.

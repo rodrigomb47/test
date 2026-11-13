@@ -103,7 +103,7 @@
       }
     },
     "sword_shield.reach": {
-      "_comment": "The draw and the sheathe: the right hand at the hilt on the left hip, the left hand behind the left hip at the shield's lower rim on the back (the shield swings round low, clear of a chibi's head).",
+      "_comment": "The draw and the sheathe: the right hand at the hilt on the left hip; the left arm reaches behind the back with the forearm slid under the shield's strap, so the shield on the forearm lies where the carried one hangs (solved for the carried copy's corners on the chibi, the teen and the adult, with the shield kept off a chibi's head and the forearm out of the back: 2-3 px apart on average, against 12-17 px and a 50-70 degree turn before) and the weapon flag's swap shows no jump (polish after the art review).",
       "bones": {
         "body": [0, -6, 0],
         "waist": [2, -3, 0],
@@ -112,9 +112,22 @@
         "arm_r": [-82.2, -54.5, 29.4],
         "forearm_r": [-36.2, -89.2, 0],
         "hand_r": [38.8, 33.3, -35.4],
-        "arm_l": [38.5, 9.8, -7.9],
-        "forearm_l": [-60.9, 8.4, 0],
-        "hand_l": [-4.9, 0.2, 2.3]
+        "arm_l": [51.1, -31.7, 77.7],
+        "forearm_l": [-104.5, -58.6, 0],
+        "hand_l": [-80.0, -40.0, 3.2]
+      }
+    },
+    "sword_shield.draw_free": {
+      "_comment": "The draw at its swap (weapon:drawn, 0.35 s): the sword already leaving the scabbard on its way out to the right (where the arms were at that tick before the polish, so the blade clears a chibi's waist), the left arm still behind the back under the shield.",
+      "extends": "sword_shield.reach",
+      "bones": {
+        "body": [2.2, 9.1, 0],
+        "waist": [0.9, 1.8, 0],
+        "chest": [2.8, 4.9, 0],
+        "neck": [-5.8, -12.8, 0],
+        "arm_r": [-49.8, -11.0, 6.9],
+        "forearm_r": [-51.1, -20.8, 0],
+        "hand_r": [46.7, 16.4, 2.6]
       }
     },
     "sword_shield.salute": {
@@ -278,7 +291,7 @@
       ]
     },
     "draw": {
-      "description": "Drawing (code 12) from the idle: the right hand crosses to the hilt at the left hip while the left reaches behind the hip for the shield (0.25 s), both come free as the arms move (0.35 s: 'weapon:drawn'), the sword sweeps out to the right as the shield swings round to the front (0.5 s), into the stance by 0.95 s. Keys the hips and the upper body.",
+      "description": "Drawing (code 12) from the idle: the right hand crosses to the hilt at the left hip while the left forearm slides under the shield's strap behind the back (0.25 s), the sword starts out of the scabbard as the shield, still where it hung, comes free on the arm (0.35 s: 'weapon:drawn'; the arm's copy takes the carried one's place), the sword sweeps out to the right as the shield swings round to the front (0.5 s), into the stance by 0.95 s. Keys the hips and the upper body.",
       "length": 0.95,
       "plays_over": "move.idle",
       "settle_to": "combat.idle",
@@ -288,14 +301,14 @@
         {"t": 0.05, "face": "focused"},
         {"t": 0.25, "pose": "sword_shield.reach", "ease": "easeInOutSine"},
         {"t": 0.3, "pose": "sword_shield.reach"},
-        {"t": 0.35, "marker": "weapon:drawn", "sound": "minecraft:item.armor.equip_iron"},
-        {"t": 0.52, "pose": "sword_shield.c2_wind", "ease": "easeOutCubic"},
+        {"t": 0.35, "pose": "sword_shield.draw_free", "marker": "weapon:drawn", "sound": "minecraft:item.armor.equip_iron"},
+        {"t": 0.52, "pose": "sword_shield.c2_wind", "ease": "easeOutQuad"},
         {"t": 0.72, "face": "none"},
         {"t": 0.95, "pose": "sword_shield.stance", "ease": "easeInOutSine"}
       ]
     },
     "sheathe": {
-      "description": "Sheathing (code 13): the blade flicked down and across to shake it clean (0.25 s), then it goes home at the left hip and the shield onto the back (0.55 s: 'weapon:sheathed', as the hilt reaches the scabbard's mouth), the arms fall to the idle stance by 1.15 s. Keys the hips and the upper body.",
+      "description": "Sheathing (code 13): the blade flicked down and across to shake it clean (0.25 s), then it goes home at the left hip and the shield onto the back (0.55 s: 'weapon:sheathed', as the hilt reaches the scabbard's mouth and the shield, on the forearm slid behind the back, lies where it hangs), the arms fall to the idle stance by 1.15 s. Keys the hips and the upper body.",
       "length": 1.15,
       "plays_over": "combat.idle",
       "settle_to": "move.idle",
@@ -308,6 +321,15 @@
         {"t": 0.72, "pose": "sword_shield.reach"},
         {"t": 0.85, "face": "none"},
         {"t": 1.15, "pose": "stance.relaxed", "ease": "easeInOutSine"}
+      ],
+      "layers": [
+        {
+          "_comment": "The shield arm swings out a little on its way round to the back (peak 0.425 s, gone by the swap), so the shield passes clear of the hips (polish after the art review).",
+          "primitive": "oscillate",
+          "params": {"shape": "pulse", "period": 0.25, "phase": 0.8, "window": [0.3, 0.3, 0.55, 0.55],
+                     "bones": {"arm_l": [0, 0, -15]}},
+          "add": true
+        }
       ]
     },
     "guard": {
