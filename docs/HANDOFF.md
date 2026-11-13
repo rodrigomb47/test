@@ -81,6 +81,11 @@ commits, language and testing are in `/CLAUDE.md`.
      i will leave it for you to design and add more tech stuff and the npcs that handle them"), "when the time comes".
 
    Recorded in `docs/ROADMAP.md` (Phase 3 rows and Phase 6), with where each fits.
+9. **Hero kill feed and unknown far deaths** (owner, 2026-11-13): "a kill feed for the heroes in the game chat, the same
+   way it shows when a player dies"; and "when a npc dies and it is far away from the base, the faction shouldnt
+   automatically know about it, but if someone whos is meant to return base doesnt return after a set amount of time
+   then the faction should assume that they died and replace them". Recorded in `docs/ROADMAP.md` (Phase 4 owner
+   decisions; Phase 1 row "Deaths far from home are not known at once").
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 

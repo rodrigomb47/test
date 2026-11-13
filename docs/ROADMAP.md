@@ -30,6 +30,7 @@ They are placed below (Phase 3 and the new Phase 6). Suggested fit:
 | Two miners can share one mine | With `maxOpenMines` (3) reached, extra miners stand idle ("Every mine site of the base is taken") | implemented and tested (`docs/design/notes/phase1.md`); campaign check pending |
 | Gate choice avoids pits | An NPC leaving for a target on the far side of a ravine can still pick the gate that leads along it | planned |
 | 30-day soak campaign | Find late-game problems: the ring of mines around a base filling up, saved records growing, tick time, economy drift | planned |
+| Deaths far from home are not known at once (owner, 2026-11-13) | **Today:** when a faction NPC dies anywhere, its faction knows at once: the record turns dead, the faction's players get "X was killed", and recruitment replaces it. That breaks the player-like rule that a faction only knows what its people saw.<br>**Asked:** a death far from the base is unknown to the faction. Anyone who was meant to come back (a scout, a raider, a far miner or explorer, a hauler) and is not back after a set time is first missing, then presumed dead, and only then replaced.<br>**Design (first draft):** the faction learns of a death at once only near a base or through a witness, and a witness who is away brings the news home. Each trip sets an expected return time; past it plus a grace the NPC is missing, and after a configurable wait it is presumed dead. The faction's chat lines follow what the faction knows ("missing", "presumed dead", or "killed" when a witness reports it). An NPC presumed dead who comes back alive rejoins. Heroes follow the same knowledge rule, and their 10-minute revival is unchanged | planned: next Java round after the hero mobility round |
 
 ## Phase 2: the spec's missing roles
 
@@ -81,6 +82,9 @@ fights as a boss against anyone (one combat mode, the same health, caps and reac
 boss bar, title, decals, sounds and speech stay player-side), attack tokens are gone (any number of heroes may press
 one target), and no hero yields: each escapes or fights to the death as its own personality decides
 (`docs/heroes-v2/HEROES_V2.md` section 6).
+A hero kill feed (2026-11-13): every death in which a hero is the victim or the killer shows in chat for all players,
+worded like a vanilla player's death message (with faction names, following the showDeathMessages game rule);
+planned with the next hero round.
 Each hero has one body for good (2026-11-13): no hero changes form, and the form fits the character (adult by default,
 chibi only for a kid or a small species).
 The owner plays single-player only: nothing is tuned for multiplayer or co-op (it should not break, but it is not a
