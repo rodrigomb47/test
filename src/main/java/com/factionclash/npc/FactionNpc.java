@@ -256,6 +256,15 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return 56;
     }
 
+    /**
+     * Where its melee leash is measured from: its base's centre (null: no base, no leash). A hero overrides it: a fight
+     * it is caught in far from home is leashed to where that fight began.
+     */
+    public BlockPos leashCentre() {
+        BaseState b = base();
+        return b == null ? null : b.center;
+    }
+
     /** A skirmisher steps back after each melee hit until its next swing is ready (v1 5.2); soldiers never do. */
     public boolean skirmishes() {
         return false;

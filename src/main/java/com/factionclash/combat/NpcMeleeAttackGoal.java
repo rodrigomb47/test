@@ -1,9 +1,9 @@
 package com.factionclash.combat;
 
-import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.FactionState;
 import com.factionclash.npc.FactionNpc;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.LivingEntity;
@@ -54,8 +54,7 @@ public class NpcMeleeAttackGoal extends Goal {
 
     private boolean leashed() {
         LivingEntity t = npc.getTarget();
-        BaseState b = npc.base();
-        if (t == null || b == null || npc.level().getServer() == null) {
+        if (t == null || npc.base() == null || npc.level().getServer() == null) {
             return false;
         }
         FactionState f = CampaignData.get(npc.level().getServer()).factions.get(npc.getFaction());
@@ -64,7 +63,9 @@ public class NpcMeleeAttackGoal extends Goal {
         if (raiding || away) {
             return false;
         }
-        return Math.sqrt(t.distanceToSqr(b.center.getX(), t.getY(), b.center.getZ())) > npc.meleeLeash();
+        // from its base's centre; a hero caught in a fight far from home measures from where that fight began
+        BlockPos c = npc.leashCentre();
+        return c != null && Math.sqrt(t.distanceToSqr(c.getX(), t.getY(), c.getZ())) > npc.meleeLeash();
     }
 
     /**

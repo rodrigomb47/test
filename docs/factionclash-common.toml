@@ -168,7 +168,7 @@
 	# Default: 32
 	# Range: 8 ~ 128
 	dialogueRadius = 32
-	#At most one line per hero this often (summoned, fallen, revived, ultimate and greetings ignore it).
+	#At most one line per hero this often (summoned, fallen, revived, ultimate, intro, enrage, escape, last stand, phase changes and greetings ignore it).
 	# Default: 20
 	# Range: 5 ~ 300
 	dialogueCooldownSeconds = 20

@@ -786,7 +786,7 @@ public final class HeroBoss {
             } else if (!combat.running() && !combat.staggered() && transition == null && !HeroStatus.stunned(hero)) {
                 introCheck = false;
                 long day = BossRules.day(hero.level().getDayTime());
-                if (BossRules.introDue(introDay, hero.level().getDayTime(), personEngaged(now))) {
+                if (BossRules.introDue(lastIntroDay(), hero.level().getDayTime(), personEngaged(now))) {
                     startIntro(d, day, now);
                 }
             }
@@ -887,8 +887,20 @@ public final class HeroBoss {
         return disengages;
     }
 
+    /** The day its intro last played: this entity's, or the hero's record's (a revival the same day is a new entity). */
+    private long lastIntroDay() {
+        HeroState rec = hero.campaignRecord();
+        return rec != null && rec.introDay != Long.MIN_VALUE && (introDay == Long.MIN_VALUE || rec.introDay > introDay)
+                ? rec.introDay : introDay;
+    }
+
     private void startIntro(HeroDef d, long day, long now) {
         introDay = day;
+        HeroState rec = hero.campaignRecord();
+        if (rec != null) {
+            rec.introDay = day;
+            CampaignData.get(hero.getServer()).setDirty();
+        }
         HeroTimings.Clip clip = HeroTimingFiles.clip(hero.entry(), "intro");
         int ticks = BossRules.introTicks(clip == null ? 0 : clip.ticks());
         introEnds = now + ticks;
@@ -921,6 +933,10 @@ public final class HeroBoss {
     /** Operators and tests: today's intro has played (or not, {@code false}: the next fight against people opens with it). */
     public void introPlayedToday(boolean played) {
         introDay = played ? BossRules.day(hero.level().getDayTime()) : Long.MIN_VALUE;
+        HeroState rec = hero.campaignRecord();
+        if (rec != null) {
+            rec.introDay = introDay;
+        }
     }
 
     // ------------------------------------------------------------------ enrage (6.10)

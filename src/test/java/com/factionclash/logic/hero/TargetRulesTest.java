@@ -35,6 +35,17 @@ class TargetRulesTest {
         assertEquals(80, TargetRules.leash(Aggression.BOLD));
     }
 
+    /** The live check of the combat engine: a fight far from home is leashed to where it began, not to home. */
+    @Test
+    void leashFromHomeOnlyWhenDefending() {
+        double steady = TargetRules.leash(Aggression.STEADY);
+        assertTrue(TargetRules.leashFromHome(0, steady), "at home");
+        assertTrue(TargetRules.leashFromHome(56, steady), "at its leash's edge it still defends");
+        assertFalse(TargetRules.leashFromHome(56.5, steady), "beyond it the fight is afield");
+        assertFalse(TargetRules.leashFromHome(146, steady), "a hero in the wild (the live check's stage)");
+        assertTrue(TargetRules.leashFromHome(70, TargetRules.leash(Aggression.BOLD)), "a bold hero defends further out");
+    }
+
     @Test
     void eachFocusPicksItsOwn() {
         List<Candidate> cs = List.of(

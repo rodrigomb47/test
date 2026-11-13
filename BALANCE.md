@@ -882,7 +882,9 @@ others are PROPOSED.
   steady / bold), in sight; protection first, then the focus; between two within half a block (or half a health point)
   the current target stays. Honour **60**+ lets an escaping hero go. No attack tokens: any number of heroes may take one
   target.
-* Spacing (v1 5.2, 8): chase leash from its base **32 / 56 / 80** blocks (cautious / steady / bold); a skirmisher steps
+* Spacing (v1 5.2, 8): chase leash from its base **32 / 56 / 80** blocks (cautious / steady / bold), measured from its base
+  when the fight begins within that distance of home and from where it began otherwise (a hero caught afield fights
+  there; the combat engine's live check); a skirmisher steps
   **3** blocks back after each landed blow until **4** ticks before its next swing; a bow hero backs away inside **half**
   its keep distance; a melee hero with a keep distance (not a skirmisher) holds it while a move of its that reaches
   that far is ready (checked every **10** ticks) and backs away inside half of it; with nothing ready it closes in.

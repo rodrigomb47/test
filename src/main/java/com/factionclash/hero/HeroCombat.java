@@ -507,6 +507,10 @@ public final class HeroCombat {
             FactionClash.LOGGER.debug("[Heroes] {} starts {} ({}) at {}: code {} speed {} plan {}", hero.heroId(), m.id(),
                     p.source(), now(), timing.code(), timing.speed(), timing.plan());
         }
+        if (HeroCombatLog.ON) {
+            HeroCombatLog.move(hero, m.id(), m.cls() == null ? "-" : m.cls().name().toLowerCase(java.util.Locale.ROOT),
+                    p.source().name().toLowerCase(java.util.Locale.ROOT), timing.plan().toString(), hero.getTarget());
+        }
         run.begin();
         // v1 17.1: on_skill / on_ultimate, and every other hero of its side within 24 blocks hears on_ally_ultimate
         LivingEntity t = hero.getTarget();

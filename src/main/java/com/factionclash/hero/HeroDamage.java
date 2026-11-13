@@ -178,7 +178,11 @@ public final class HeroDamage {
                 lastHurt(target, last);
             }
         }
-        return Math.max(0, before - (target.isAlive() ? target.getHealth() + target.getAbsorptionAmount() : 0));
+        float lost = Math.max(0, before - (target.isAlive() ? target.getHealth() + target.getAbsorptionAmount() : 0));
+        if (HeroCombatLog.ON) {
+            HeroCombatLog.dealt(target, src, amount, lost);
+        }
+        return lost;
     }
 
     /**

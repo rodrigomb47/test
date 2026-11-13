@@ -978,10 +978,12 @@ public final class HeroCatalogue {
     /**
      * Events a hero says whatever its dialogue cooldown (v1 23); {@code greeting} has its own short one. Task A6b adds
      * the moments a fight has at most once: the intro (once a day), the enrage (once a fight), the escape (once in 10
-     * minutes) and the last stand (once a fight), so a skill's line a moment before never hides them.
+     * minutes) and the last stand (once a fight), so a skill's line a moment before never hides them; the live check of
+     * the combat engine adds the phase transitions' lines (once per phase and fight).
      */
     public static final Set<LineEvent> UNLIMITED_EVENTS = Set.of(LineEvent.SUMMONED, LineEvent.FALLEN,
-            LineEvent.REVIVED, LineEvent.ULTIMATE, LineEvent.INTRO, LineEvent.ENRAGE, LineEvent.ESCAPE, LineEvent.LAST_STAND);
+            LineEvent.REVIVED, LineEvent.ULTIMATE, LineEvent.INTRO, LineEvent.ENRAGE, LineEvent.ESCAPE, LineEvent.LAST_STAND,
+            LineEvent.PHASE_2, LineEvent.PHASE_3);
     public static final double GREETING_COOLDOWN_SECONDS = 5;
     public static final double IDLE_EVERY_SECONDS = 15 * 60;
 

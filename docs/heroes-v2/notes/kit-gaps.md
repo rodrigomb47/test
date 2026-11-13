@@ -486,3 +486,18 @@ sheets say:
 - **A barrier's focus** is the last of a hero's decoys to go when its own `spawn_add` keeps the cap of 3; killing it
   staggers the hero on its next tick through 6.9's protections (not in a transition, the intro, an ultimate's wind-up, a
   super-armour move, or while it already kneels).
+
+## Live check of the combat engine (2026-11-13)
+
+Seen with Natsuho's and Hinae's kits on the test rig on a dedicated server with the real client (HEROES_V2 15.2
+"Combat engine in game"); left for the owner or C content:
+
+- **Five basic soldiers kill a slice hero in about 10 s.** Natsuho at level 2 (118.9 health) lost about 11 a second to
+  five Ember swordsmen (stone 4.96, iron 5.95 a blow): each soldier lands within its own hurt window (6.2), and nothing
+  in 6.15 sets a hero apart against a squad. Whether a slice hero should last longer against basic soldiers is a
+  balance call (6.16 measured one player against heroes).
+- **A thrown hero keeps a melee weapon's damage in its throw.** `attackPower` for `thrown` is the amount plus the attack
+  attribute minus 1, so Hinae's feathers took the test rig's iron sword (+5) when her kit was worn over the rig's gear.
+  A thrown hero's own file should give no melee weapon (C content), or the rule should read the hero's bare attack.
+- **Natsuho's `water` weak point on fisherman duty.** She wades in to fish and flinches (at most once in 20 s; out of a
+  fight it costs only the flinch). In character for a cat; C1 may prefer a fishing stand on the bank.

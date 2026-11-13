@@ -544,7 +544,9 @@ public final class HeroStatus {
             if (tag instanceof ListTag list) {
                 for (int i = 0; i < list.size(); i++) {
                     Entry e = readEntry(list.getCompound(i));
-                    if (e != null) {
+                    // an enrage's bonus lasts its fight, and no fight survives a load: a hero saved enraged would
+                    // otherwise keep +15% damage for good (seen in the live check of the combat engine)
+                    if (e != null && !fightScoped(e)) {
                         s.book.restore(e);
                     }
                 }
@@ -564,6 +566,11 @@ public final class HeroStatus {
             return list;
         }
     };
+
+    /** An entry that lasts only the fight it was given in (the enrage's damage bonus): never restored by a load. */
+    static boolean fightScoped(Entry e) {
+        return HeroBoss.ENRAGE_SOURCE.equals(e.source);
+    }
 
     static CompoundTag writeEntry(Entry e) {
         CompoundTag t = new CompoundTag();

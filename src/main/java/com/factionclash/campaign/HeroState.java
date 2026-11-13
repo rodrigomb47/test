@@ -60,6 +60,12 @@ public final class HeroState {
      */
     public long lastEscapeAt;
     /**
+     * The in-game day its boss intro last played (Long.MIN_VALUE: never): the intro plays once a day for the hero, not
+     * once for each entity, so a hero back from its revival the same day does not open its next fight with it again (the
+     * live check of the combat engine saw it twice).
+     */
+    public long introDay = Long.MIN_VALUE;
+    /**
      * The in-game day each winning side last took this hero's crest ({@code HeroRules.Side} key to day): one crest per
      * hero per winning side per day (6.13).
      */
@@ -101,6 +107,9 @@ public final class HeroState {
         t.putFloat("maxHealth", maxHealth);
         if (lastEscapeAt > 0) {
             t.putLong("lastEscapeAt", lastEscapeAt);
+        }
+        if (introDay != Long.MIN_VALUE) {
+            t.putLong("introDay", introDay);
         }
         if (!crests.isEmpty()) {
             CompoundTag c = new CompoundTag();
@@ -146,6 +155,7 @@ public final class HeroState {
         s.health = t.getFloat("health");
         s.maxHealth = t.getFloat("maxHealth");
         s.lastEscapeAt = t.getLong("lastEscapeAt");
+        s.introDay = t.contains("introDay") ? t.getLong("introDay") : Long.MIN_VALUE;
         CompoundTag c = t.getCompound("crests");
         for (String k : c.getAllKeys()) {
             s.crests.put(k, c.getLong(k));

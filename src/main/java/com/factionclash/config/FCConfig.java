@@ -182,7 +182,7 @@ public final class FCConfig {
                 .define("dialogue", "local", v -> v instanceof String t && (t.equals("local") || t.equals("faction") || t.equals("off")));
         HERO_DIALOGUE_RADIUS = b.comment("Blocks within which players hear a hero's local lines.")
                 .defineInRange("dialogueRadius", 32, 8, 128);
-        HERO_DIALOGUE_COOLDOWN_SECONDS = b.comment("At most one line per hero this often (summoned, fallen, revived, ultimate and greetings ignore it).")
+        HERO_DIALOGUE_COOLDOWN_SECONDS = b.comment("At most one line per hero this often (summoned, fallen, revived, ultimate, intro, enrage, escape, last stand, phase changes and greetings ignore it).")
                 .defineInRange("dialogueCooldownSeconds", 20, 5, 300);
         HERO_DEFAULT_LINES = b.comment("Short generic lines for the events a hero's own file has no line for.")
                 .define("defaultLines", true);

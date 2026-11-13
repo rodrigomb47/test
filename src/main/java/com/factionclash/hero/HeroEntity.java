@@ -15,9 +15,11 @@ import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.logic.hero.HeroSize;
 import com.factionclash.logic.hero.HeroTimings;
 import com.factionclash.logic.hero.MoodRules;
+import com.factionclash.logic.hero.TargetRules;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
@@ -542,6 +544,35 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     public double kiteDistance() {
         double k = keepDistance();
         return k > 0 ? k / 2 : super.kiteDistance();
+    }
+
+    /** Where its present fight's leash is measured from (null: none yet); cleared with its target. */
+    private BlockPos leashAnchor;
+
+    /**
+     * Its fight's leash centre: its base's centre when the fight began within its leash of home (it defends), else
+     * where it stood when the fight began ({@link TargetRules#leashFromHome}).
+     */
+    @Override
+    public BlockPos leashCentre() {
+        BlockPos home = super.leashCentre();
+        if (home == null || getTarget() == null) {
+            leashAnchor = null;
+            return home;
+        }
+        if (leashAnchor == null) {
+            double d = Math.sqrt(home.distToCenterSqr(getX(), home.getY() + 0.5, getZ()));
+            leashAnchor = TargetRules.leashFromHome(d, meleeLeash()) ? home : blockPosition();
+        }
+        return leashAnchor;
+    }
+
+    @Override
+    public void setTarget(LivingEntity target) {
+        if (target == null) {
+            leashAnchor = null; // the next fight measures its leash afresh
+        }
+        super.setTarget(target);
     }
 
     /** Its aggression's chase leash (v1 8: cautious 32, steady 56, bold 80). */
@@ -1279,6 +1310,8 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             lastBefore = lastHurt;
         }
         float before = getHealth();
+        // the combat log prints what this hurt landed, not a hit before it that the boss path saw
+        com.factionclash.logic.hero.BossRules.Landed landedBefore = HeroCombatLog.ON && server ? combat().boss().lastLanded() : null;
         boolean r = super.hurt(source, amount);
         if (perAttacker) {
             if (inWindow) {
@@ -1291,6 +1324,10 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         }
         float lost = before - getHealth();
         if (server) {
+            if (HeroCombatLog.ON) {
+                com.factionclash.logic.hero.BossRules.Landed landed = combat().boss().lastLanded();
+                HeroCombatLog.took(this, source, amount, lost, landed == landedBefore ? null : landed);
+            }
             combat().boss().afterHurt(lost, source);
         }
         if (r && lost > 0 && !level().isClientSide && !preview) {
@@ -1336,7 +1373,11 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     @Override
     public boolean doHurtTarget(Entity target) {
         boolean crit = critical() && target instanceof LivingEntity;
+        float hpBefore = HeroCombatLog.ON && target instanceof LivingEntity lt ? lt.getHealth() + lt.getAbsorptionAmount() : 0;
         boolean hit = super.doHurtTarget(target);
+        if (HeroCombatLog.ON && hit && !level().isClientSide && target instanceof LivingEntity lt) {
+            HeroCombatLog.basic(this, lt, hpBefore - (lt.isAlive() ? lt.getHealth() + lt.getAbsorptionAmount() : 0), crit);
+        }
         if (hit && !level().isClientSide && !preview) {
             if (target instanceof LivingEntity l) {
                 combat().onBasicHit(l, this);

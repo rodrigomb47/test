@@ -43,6 +43,16 @@ public final class TargetRules {
     }
 
     /**
+     * Whether a fight's leash is measured from home (v1 8 "from its base when defending"): when the fight begins with
+     * the hero within its leash of its base's centre. Further out (at a far work site, on the road, in the wild) the
+     * leash is measured from where the fight began, so a hero caught afield fights there; before the live check of the
+     * combat engine (HEROES_V2 15.2 "Combat engine in game") it measured from home and a hero afield never fought at all.
+     */
+    public static boolean leashFromHome(double distanceFromHome, double leash) {
+        return distanceFromHome <= leash;
+    }
+
+    /**
      * One enemy as the target goal sees it. {@code attackingProtected}: it attacks someone the hero protects (its
      * {@code protects} word decides who that is; the game fills it the same way for a player and an NPC);
      * {@code escapingHero}: a hero escaping a lost fight; {@code current}: the hero's target now.

@@ -602,14 +602,18 @@ public final class HeroReviewGameTests {
             HeroEntity[] both = {cat, priest};
             BossRules.Landed[] seen = new BossRules.Landed[2];
             boolean[] fought = new boolean[2];
+            // hurt at any tick: Hinae's rite and Purify can heal her back to full before the end
+            boolean[] hurt = new boolean[2];
             t.onEachTick(() -> {
                 for (int i = 0; i < 2; i++) {
                     HeroEntity x = both[i];
                     if (!x.isAlive()) {
+                        hurt[i] = true;
                         continue;
                     }
                     HeroBoss b = x.combat().boss();
                     fought[i] |= b.fighting();
+                    hurt[i] |= x.getHealth() < x.getMaxHealth();
                     BossRules.Landed l = b.lastLanded();
                     if (l != null && l != seen[i]) {
                         seen[i] = l;
@@ -631,8 +635,8 @@ public final class HeroReviewGameTests {
                     for (int i = 0; i < 2; i++) {
                         t.assertTrue(fought[i], both[i].heroId() + " never fought");
                         t.assertTrue(both[i].combat().lastMoveStart() >= 0, both[i].heroId() + " never picked a move");
-                        t.assertTrue(both[i].getHealth() < both[i].getMaxHealth() || !both[i].isAlive(),
-                                both[i].heroId() + " was never hurt");
+                        t.assertTrue(hurt[i], both[i].heroId() + " was never hurt (the other's last move "
+                                + both[1 - i].combat().lastMove() + ", " + (both[1 - i].isAlive() ? "alive" : "dead") + ")");
                     }
                     t.succeed();
                 }
