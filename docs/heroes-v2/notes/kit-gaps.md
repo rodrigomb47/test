@@ -295,3 +295,78 @@ leave open:
   Hinae's seven talismans and purifying dance; Ilsabet's turning sweep, lance charge and the call; Kagenori's iai
   stance and guard splitter; Natsuho's cat reflex and zoomies; Tobimaru's clones and log swap; Yugen's mirage, foxfire
   rain and ninefold lantern.
+
+## A5 decisions on the move runner, the new forms and the new effects (2026-11-13)
+
+A5 (the move runner, format 2's forms and effects: `HeroCombat`, `HeroMoveEvents`, `HeroStatus`, `entity/HeroDecoy`,
+`logic/hero/MoveTiming`, `MovePlan`, `FormGeometry`, `StatusBook`; HEROES_V2.md 15.2 "A5 as built") decided what the
+kits and the format leave open:
+
+- **Frames come from the clip the client plays.** A move's wind-up, active part, recovery and hit ticks are read from
+  the hero's timing files, through the same animation chain the client plays from, for the clip its `DATA_ACTION` code
+  names (`move.<id>` by the move's place in its `visual.json` list, `ultimate`, `ultimate.awakened`); the clip's `hit`
+  markers are the hits when there are as many as the form has (a combo's strikes, a barrage's shots). Without a clip the
+  move's own frames are used and it holds A4's telegraph pose, so the test rig and the fixtures still run.
+- **One speed for the clip and the plan.** Haste and Mining Fatigue move it by 10% a level (vanilla's attack-speed
+  share), Slowness by 15% a level (vanilla's walking share), the `attack_speed` stat by its percent, 0.5-2.0. It is held
+  so that neither the wind-up nor the recovery ends under its class minimum, then rounded down to a `DATA_ACTION` speed
+  step, so the client's clip and the server's plan divide by exactly the same number; the plan's ticks round up (the
+  server never lands a hit before the clip shows it).
+- **What stops a move**: a stun or a stagger at any stage, a knock-back stronger than 0.5 after the hero's knock-back
+  resistance in a wind-up (a plain blow is 0.4, a sprinting one 0.5: neither; a `super_armor` move and an ultimate shrug
+  it off), damage of a channelled move's `channel` share in its wind-up or active part (a 2 s recovery follows, nothing
+  comes back: it is a punish), an escape (A6/A12: a wind-up is cancelled, an active part plays out its tick), death.
+  Half the cooldown comes back only for a wind-up stopped by force. A target that dies, goes or leaves reach in a
+  wind-up still calls the move off with its charge kept (v1), except a grab (reaching for someone who stepped back is
+  the miss the kit describes, with its 1.2 s recovery) and a counter (its stance answers whoever strikes).
+- **The channel share is the move's own**: a move with `channel` breaks at its `interrupt` share (15% when it gives
+  none); the weak point `channel` of 6.9 names the same thing on the sheet (A6b may give channelled moves without the
+  field a default).
+- **Charge**: 100% speed is 5 blocks a second (about a sprint), so Benika's 160% shoulder charge runs 10 blocks in 25
+  ticks and Natsuho's zoomies 14 blocks in 32; it runs straight along its aim at release (a target that sidesteps in
+  the wind-up is missed), hits each enemy within 1.5 blocks of its path once and stops at a wall, a drop, water or lava.
+- **Wave**: the ring is centred where the hero stood at its release and rolls on by itself (a stun after the release
+  does not stop a ring already rolling); it reaches feet within 1.5 blocks of its height; one hit per wave and receiver.
+- **Rain**: each impact is called at its turn of the duration around where the target stands then (the rain follows
+  its target), on the ground there, and lands its `delay` later (never shortened by speed: it is the tell); it hits
+  enemies within 1.5 blocks; the use's caps are a zone's (x1.5), as the balance already counted.
+- **Sweep**: the line turns from -arc/2 to +arc/2 of the facing at its release, evenly over its duration (scaled by
+  speed); each tick it covers the wedge since the last, so a fast sweep skips nobody; a block between the hero's eyes
+  and a receiver stops it there.
+- **Grab**: reach is measured to the target's box; the hand is a block in front of the hero, 0.6 up; the hold is a
+  velocity toward it each tick (half the gap, at most 0.8 a tick), never a teleport; the throw tries straight ahead,
+  then 45, 90 and 135 degrees to either side, then behind, and takes the first whose path and landing hold no lava, fire
+  or deep drop (6.12, the same for every receiver); with none safe it throws ahead softened to 0.5. The move's effects
+  land at the throw ("hurls you away in a burst of fire"), unblockable.
+- **Counter**: the stance is the wind-up; the first melee blow from an enemy in it (an arrow only with `ranged`) is
+  caught after shields and armour: its `absorb` share goes, the riposte (the move's effects on that attacker) answers
+  on the hero's next tick (A4's rule: nothing strikes into a hurt still being worked out; 50 ms) and the move goes on
+  to its active part and recovery; a hero's damage over time is no blow. A stance nobody hits releases nothing and plays
+  its full recovery (Kagenori's weak point).
+- **Barrage**: every shot carries the move's `effects` and its `per_shot` list in turn (Ambrose's 3 damage on each vial
+  plus poison, slowness, weakness), all one use under one cap.
+- **Unblockable and `breaks_guard`**: an unblockable move (every grab) goes through a raised shield, a player's and an
+  NPC's alike; a `breaks_guard` move knocks a raised shield aside for 5 s (the axe rule) unless it has its own
+  `guard_break`, whose seconds then hold (Kagenori's guard splitter: 4 s).
+- **`guard_break`** lands only on a raised shield; the receiver's status keeps any shield from going up for its seconds
+  (an NPC that tries every tick and a player alike), and a player's shield also gets vanilla's cooldown (the hotbar
+  shows it).
+- **`tether`**: to the spot where the receiver stood when it landed; past its length the receiver is pulled back each
+  tick (at least 0.15, at most 0.6 blocks a tick), whoever it is. Cleansed like any harmful status.
+- **`silence`**: on a hero it blocks new moves (picks, reactions and followups) for its seconds, never a move already
+  running; on anyone else it changes nothing. Cleansed like any harmful status.
+- **`poise`**: fills an enemy hero's poise bar (nobody else has one); the stagger it can cause is the hook A6a
+  completes (A5: the move is interrupted, no move for 2.5 s, the `stagger` clip, `on_stagger`). A charge into a wall with
+  `wall_stun` fills the hero's own bar by 40. A new fight empties the bar.
+- **`barrier`**: blocks all damage to the hero but `/kill` and the void; a blow from anyone (damage with an attacker,
+  not a hero's damage over time) costs it one hit, fire and falls are blocked without counting; a dispel takes it, a
+  cleanse leaves it. With a `focus` add (milestone 1: a decoy) its last hit holds while the focus lives, and killing the
+  focus breaks it and staggers the hero.
+- **`spawn_add`**: milestone 1 spawns decoys only (a move with a spirit add is not picked until A8); at most 3 a hero, a
+  new one popping the oldest; a decoy is of its hero's side (an enemy hero's moves strike it, its own hero's never), has
+  1 health, pops at any hit or after 10 s, walks to a spot 3-5 blocks away, attacks nobody, drops nothing and is never
+  saved; its pop is `on_add_died`. Its look (the hero's own model, its action 2 ticks late, no shadow, no footsteps) and
+  NPC soldiers taking it as a target are A7's; until then the client draws a plain humanoid.
+- **`call_guards`**: up to `count` real soldiers of its faction within 32 blocks (never heroes), the free ones first,
+  then the nearest, take its target; a blinded soldier answers only within its sight; nothing is spawned.
+- **Moves that run now**: every move of the eight slice fixtures (no slice hero has a `dive`, which waits for A12).

@@ -814,8 +814,8 @@ others are PROPOSED.
   **1** per 2 health lost (at most **8** a hit), a kill **10**, healing and shielding **1** per 2 points restored (at most
   **8** a use), an `energy` effect its amount. The ultimate needs **100** and spends all of it.
 * Moves: the selector asks every **5** ticks while the hero fights and runs no move (the gap, charges, followups and
-  reactions are F3's numbers, `MoveSelector`); a move runs its authored wind-up, active part and recovery (A5 brings the
-  timing files and speed); a move whose target dies or moves more than **2** blocks past its range during the wind-up
+  reactions are F3's numbers, `MoveSelector`); a move runs its wind-up, active part and recovery (since A5 from its timing
+  file at the hero's speed, below); a move whose target dies or moves more than **2** blocks past its range during the wind-up
   is called off with its charge kept; a stopped wind-up gives half the cooldown back (v1 10.3); no move lasts more than
   **30 s**. Cooldowns and charges are saved as game times; a saved recharge never waits longer than the move's
   cooldown now. `cooldown_cut` brings every running recharge sooner, never sooner than **half** the full cooldown
@@ -902,6 +902,44 @@ others are PROPOSED.
 * Telegraph poses (v1 10.5): a move's `look.pose` held through its wind-up (`swing` attack.1, `block` guard, a drawn
   bow, a spear or a crossbow attack.ranged, `horn` emote.cheer, `spyglass` emote.think); a stunned hero plays `stun`, a
   taunting one `taunt`, a hero entering a state its `state.<n>`.
+
+## Hero move runner, format 2's forms and effects (`HeroCombat`, `MoveTiming`, `MovePlan`, `FormGeometry`, `StatusBook`, `HeroStatus`, `HeroDecoy`, `HeroMoveEvents`) — A5
+The same numbers against every receiver, player or NPC (HEROES_V2 6.15). Numbers of HEROES_V2 6.4-6.6 and 6.9 are
+marked; the others are PROPOSED. No new config.
+* Timing (4.8): a move's wind-up, active part, recovery and hit ticks come from its clip in the hero's timing files
+  (the `hit` markers are the hits), else from its own frames. Speed: x (1 + `attack_speed` / 100) x (1 + **10%** a Haste
+  level) x (1 - **10%** a Mining Fatigue level) x (1 - **15%** a Slowness level), held to **0.5-2.0**, then held so the
+  wind-up and the recovery never end under their class minimums (6.4: light **0.4 / 0.3 s**, heavy **0.8 / 0.8**, area
+  **1.0 / 0.8**, ultimate **1.5 / 1.5**) and rounded down to one of `DATA_ACTION`'s **63** speed steps; each tick of the
+  plan divided by it, rounded up.
+* Interrupts: a stun or a stagger at any stage; a knock-back stronger than **0.5** (after knock-back resistance; a plain
+  blow is 0.4, a sprinting one 0.5) in a wind-up, never through `super_armor` or an ultimate; a channelled move breaks
+  after its `channel` share of max health (**15%** by default, 6.9) in its wind-up or active part and stands in a
+  **2 s** recovery; **half** the cooldown back for a wind-up stopped by a stun, a stagger, a knock-back or an escape;
+  the whole charge kept when the target dies or leaves reach (+**2** blocks) in a wind-up.
+* Stagger hook (A6a completes it): no move for **2.5 s** (6.9), the `stagger` clip, `on_stagger`; the poise bar is the
+  hero's `boss.poise`, emptied when a fight starts; a charge into a wall with `wall_stun` is **+40** (6.9).
+* Charge: **5** blocks a second at 100% (`speed` 120-200%), so 10 blocks at 160% take **25** ticks; at most **80**
+  ticks; enemies within **1.5** blocks of its path hit once; stops at a wall, a drop, water or lava.
+* Wave: the front at `speed` blocks a second (6-12), one ring per `waves` every `interval`; hits a receiver on the ground
+  within **0.75** blocks of the front (6.5) and **1.5** blocks of the ring's height, once a ring.
+* Rain: impacts called evenly over its `duration`, each a point within its `radius` of where the target stands then,
+  landing its `delay` later (0.75-1.0 s, never shortened by speed) on enemies within **1.5** blocks; a zone's caps (x1.5).
+* Sweep: the line turns from **-arc/2** to **+arc/2** of the facing over its `duration` (scaled by speed), hits each
+  enemy it passes once within its `range`, widened by its `width`; a block between stops it.
+* Grab: held **1 s** (20 ticks, 6.14) at a hand **1** block ahead and **0.6** up, pulled at half the gap a tick, at most
+  **0.8** blocks a tick; slips free beyond **4** blocks; thrown like a knock-back of its `throw` (0.4 a point) with a lift
+  of up to its `up`, along the first safe of eight directions (ahead, 45, 90, 135 degrees each side, behind: no lava,
+  fire or drop of more than 6 where it lands or on the way), else ahead at **0.5**; a miss: **1.2 s** of recovery.
+* Counter: the stance is the wind-up; the first enemy melee blow (an arrow only with `ranged`) loses its `absorb` share
+  (50-90%, **80** by default), the riposte answers **1** tick later within the skill's caps.
+* Barrage: a shot every `interval` (0.15-0.6 s), re-aimed at fire time, the move's effects plus its `per_shot` list in
+  turn.
+* `guard_break` **2-5 s** (5 by default), only on a raised shield; `breaks_guard` **5 s** (the axe rule) unless the move
+  has its own `guard_break`. `silence` **1-3 s** (heroes start no move). `tether` **2-6 s**, length **4-10** blocks, pulled
+  back at **0.15-0.6** blocks a tick. `barrier` **2-8** hits for **3-15 s**. `poise` **10-60**. `call_guards` **1-4**
+  soldiers within **32** blocks. `spawn_add` decoys: **1** health, **10 s**, a walk of **3-5** blocks, at most **3** a
+  hero.
 
 ## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no

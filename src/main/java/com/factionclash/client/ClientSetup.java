@@ -19,6 +19,7 @@ public final class ClientSetup {
         event.registerEntityRenderer(ModEntities.HERO.get(), com.factionclash.client.hero.HeroRenderer::new);
         event.registerEntityRenderer(ModEntities.HERO_PROJECTILE.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.HERO_ZONE.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.HERO_DECOY.get(), com.factionclash.client.hero.HeroDecoyRenderer::new);
     }
 
     /** Hero visual files a resource pack adds (preview fixtures for screenshots, HEROES_V2 15.2 A2). */

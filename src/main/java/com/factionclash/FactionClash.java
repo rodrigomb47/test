@@ -37,11 +37,13 @@ public final class FactionClash {
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroCombatEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroControlEvents());
+        NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroMoveEvents());
     }
 
     private static void onAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.FACTION_NPC.get(), FactionNpc.createAttributes().build());
         event.put(ModEntities.HERO.get(), com.factionclash.hero.HeroEntity.createAttributes().build());
+        event.put(ModEntities.HERO_DECOY.get(), com.factionclash.hero.entity.HeroDecoy.createAttributes().build());
     }
 
     private static void onTickets(RegisterTicketControllersEvent event) {

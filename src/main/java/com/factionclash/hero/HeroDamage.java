@@ -194,6 +194,30 @@ public final class HeroDamage {
         return hit(target, source(target.level(), e, dot, direct, hero), (float) dealt);
     }
 
+    /** Whether a hit being dealt now is an unblockable move's (a shield does not stop it; A5). Server thread only. */
+    private static int unblockableDepth;
+
+    /** Whether the hero hit being dealt now goes through shields ({@link HeroMoveEvents} reads it in the shield event). */
+    public static boolean dealingUnblockable() {
+        return unblockableDepth > 0;
+    }
+
+    /** {@link #deal} for an {@code unblockable} move (a grab's throw among them): a raised shield does not stop it. */
+    public static float dealUnblockable(LivingEntity hero, Entity direct, LivingEntity target, Element e, double raw) {
+        unblockableDepth++;
+        try {
+            return deal(hero, direct, target, e, raw, false);
+        } finally {
+            unblockableDepth--;
+        }
+    }
+
+    /** Whether {@code src} is a hero's damage over time (one of the {@code _dot} types). */
+    public static boolean isDot(DamageSource src) {
+        var key = src.typeHolder().unwrapKey().orElse(null);
+        return key != null && DOT.containsValue(key);
+    }
+
     /**
      * One second of a source's DoTs on {@code target} (v1 13.1): their sum held to {@code heroes.maxDotPerSecond}
      * (per hero and target), through the factors and {@code maxHit}, with the element's {@code _dot} type. The hero

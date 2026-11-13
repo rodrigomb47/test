@@ -150,7 +150,9 @@ public final class HeroSenses {
         if (st != null && !st.book().isEmpty()) {
             s.marks.putAll(st.book().marks(now));
             s.stunned = st.book().stunned(now);
+            s.silenced = st.book().silenced(now); // 6.6: a silenced hero starts no move
         }
+        s.addsAlive = hero.combat().addsAlive();
         s.state = hero.combat().stateName();
         s.empowered = s.state != null;
         s.dashPathHazard = target != null && hazardBetween(hero, target);

@@ -119,6 +119,24 @@ public class HeroProjectile extends ThrowableItemProjectile {
     }
 
     /**
+     * One shot of a {@code barrage} (HEROES_V2 6.5, task A5): {@code effects} (the move's and this shot's
+     * {@code per_shot} list) at {@code to}, as list {@code listIndex} of the use, so its once-per-use effects stay apart.
+     */
+    public static void launchShot(HeroEntity hero, HeroUse use, HeroDef.Ability a, List<HeroDef.Effect> effects, int listIndex,
+                                  Vec3 to) {
+        String look = a.projectile() == null ? "arrow" : a.projectile();
+        HeroProjectile p = make(hero, look);
+        p.kind = Kind.MOVE;
+        p.use = use;
+        p.effects = effects;
+        p.listIndex = listIndex;
+        p.splash = a.radius();
+        p.range = (a.range() > 0 ? a.range() : 16) + 4;
+        p.aim(to, 0, p.gravity ? ARROW_SPEED : ITEM_SPEED);
+        hero.level().addFreshEntity(p);
+    }
+
+    /**
      * A passive's {@code shot} (v1 17.2, task A4): its effects at the event's enemy, range {@code range}. It is never a
      * basic hit, so it sets off no {@code on_hit} passive (the loop guard, v1 17.3).
      */

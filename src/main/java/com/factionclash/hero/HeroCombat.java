@@ -3,40 +3,60 @@ package com.factionclash.hero;
 import com.factionclash.FactionClash;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.HeroState;
+import com.factionclash.hero.entity.HeroDecoy;
 import com.factionclash.hero.entity.HeroProjectile;
 import com.factionclash.hero.entity.HeroZone;
+import com.factionclash.logic.hero.BossRules;
 import com.factionclash.logic.hero.EffectRouting;
 import com.factionclash.logic.hero.FormGeometry;
 import com.factionclash.logic.hero.HeroActions;
+import com.factionclash.logic.hero.HeroCatalogue;
+import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.logic.hero.HeroDef;
 import com.factionclash.logic.hero.HeroDef.Ability;
 import com.factionclash.logic.hero.HeroDef.Direction;
 import com.factionclash.logic.hero.HeroDef.Form;
+import com.factionclash.logic.hero.HeroDef.Frames;
 import com.factionclash.logic.hero.HeroDef.LineEvent;
 import com.factionclash.logic.hero.HeroDef.Move;
 import com.factionclash.logic.hero.HeroDef.Slot;
 import com.factionclash.logic.hero.HeroDef.Stat;
 import com.factionclash.logic.hero.HeroDef.Trigger;
 import com.factionclash.logic.hero.HeroRules;
+import com.factionclash.logic.hero.HeroTimings;
 import com.factionclash.logic.hero.MovePlan;
 import com.factionclash.logic.hero.MovePlan.MoveStage;
 import com.factionclash.logic.hero.MoveSelector;
+import com.factionclash.logic.hero.MoveTiming;
+import com.factionclash.logic.hero.MoveTiming.Interrupt;
 import com.factionclash.logic.hero.PassiveBook;
 import com.factionclash.logic.hero.Sense;
 import com.factionclash.logic.hero.UseLedger;
 import com.factionclash.logic.leader.Temperaments;
+import com.factionclash.registry.ModEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayDeque;
@@ -46,6 +66,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A hero's fight runtime (HEROES_V2 3.3 and 6.3; HERO_FORMAT.md 14, 15, 32 phase 4; task A3): its energy, which it
@@ -53,11 +74,18 @@ import java.util.Set;
  * gap, reactions, followups), the ability power of its level, and the move it runs. One loop in every fight, whoever
  * the enemy is: nothing here reads whether a target is a player.
  *
- * <p><b>A move</b> goes select -> wind-up -> resolve at its hit ticks -> recovery ({@link MovePlan}). The plan comes
- * from the move's authored frames today; A5 plugs in the timing files' frames at the hero's speed, the
- * {@code DATA_ACTION} code and interrupts at {@link #planFor} and {@link Run#begin} without changing the rest. The
- * forms are v1's fourteen and the combo ({@link EffectRouting#FORMS}); a move with a form or effect the engine does
- * not run yet is never picked.
+ * <p><b>The move runner</b> (task A5; HEROES_V2 4.8, 6.3-6.5, SLICE_PLAN 2 "Move runner"). A move goes select ->
+ * wind-up -> hits -> recovery ({@link MovePlan}). Its frames come from the hero's timing file through its animation
+ * chain (the clip its {@code DATA_ACTION} code names; the clip's {@code hit} markers are its hits) or, without one, from
+ * the move's own frames; the plan is then played at the hero's speed (Haste, Mining Fatigue, Slowness and the
+ * {@code attack_speed} stat, never under the class minimums: {@link MoveTiming}). {@code DATA_ACTION} gets the move's
+ * code ({@code move.<slot>} from its {@code visual.json} list, {@code ultimate}, {@code ultimate.awakened}) at that
+ * speed on the tick the wind-up starts, so the clip's {@code hit} marker shows on the tick the server lands the hit; a
+ * hero with no clip for the move holds its look's telegraph pose instead (A4). Interrupts ({@link #interrupt}): a stun,
+ * a stagger (A6a calls {@link #stagger}), a knock-back over 0.5 in a wind-up, a broken channel, an escape (A6/A12),
+ * death, and a target lost or out of reach in a wind-up (its charge kept). Format 2's forms run here: {@code charge},
+ * {@code wave}, {@code rain}, {@code sweep}, {@code grab}, {@code counter}, {@code barrage} (and A3's {@code combo});
+ * waves and rain impacts, once released, roll on as flights of their own; the {@code dive} is A12's.
  *
  * <p><b>Energy</b> (v1 14): basic hits land 5 (melee, thrown and arrows alike), a skill's use its {@code energy_gain},
  * damage taken 1 per 2 health (at most 8 a hit), a kill 10, heals and shields for allies 1 per 2 points (at most 8 a
@@ -68,13 +96,17 @@ import java.util.Set;
  * size, aura, face, locked skills and move list), its passives ({@link HeroPassives} over {@code PassiveBook}, with the
  * loop guard), stuns (a stunned hero picks nothing and a move in its wind-up is interrupted, half its cooldown back),
  * the triggers it sets off ({@code on_skill}, {@code on_ultimate}, {@code on_ally_ultimate}, {@code on_hit},
- * {@code on_mark_full}...), combat XP for the ultimate (v1 22.1) and the wind-up's telegraph pose.
+ * {@code on_mark_full}...), combat XP for the ultimate (v1 22.1) and the wind-up's telegraph pose. <b>Task A5</b> adds
+ * {@code on_counter}, {@code on_stagger} and {@code on_add_died}, the hero's poise (filled by the {@code poise} effect and
+ * a charge into a wall; hits fill it from A6a), its barrier and its decoys.
  */
 public final class HeroCombat {
     /** A leap that has not landed after this long lands where it is (v1 29.4: "a 40-tick timeout"). */
     public static final int LEAP_TIMEOUT = 40;
     /** At most this many zones of one hero; a new one ends the oldest (v1 10.1). */
     public static final int MAX_ZONES = 2;
+    /** A grabbed receiver this far from the hero's hand has slipped away (a teleport, a wall): the hold ends. */
+    public static final double GRAB_SLIP = 4.0;
 
     private final HeroEntity hero;
     private MoveSelector selector;
@@ -92,11 +124,25 @@ public final class HeroCombat {
     /** The last move it started, when, and when it first released (game times; -1: not yet). */
     private String lastMove = "";
     private long lastMoveStart = -1, lastRelease = -1;
+    /** The DATA_ACTION code, speed and plan of the last move it started (tests, the marker log). */
+    private int lastCode = -1;
+    private double lastSpeed = 1;
+    private MovePlan.Plan lastPlan;
     /** Its state (A4). */
     final HeroStates states;
     /** Its passives (A4). */
     final HeroPassives passives;
     private boolean restoreStates;
+    /** A5: its poise (from its definition), the end of a stagger, waves and rain impacts in flight, its decoys. */
+    private BossRules.Poise poise;
+    private HeroDef poiseFor;
+    private long staggerUntil = Long.MIN_VALUE / 4;
+    private final List<Flight> flights = new ArrayList<>();
+    private final ArrayDeque<HeroDecoy> decoys = new ArrayDeque<>();
+    /** The add a barrier depends on (6.6: its focus), or null. */
+    private UUID barrierFocus;
+    /** A blow its counter stance caught this tick: the riposte answers it on the hero's next tick. */
+    private LivingEntity riposteOn;
 
     HeroCombat(HeroEntity hero) {
         this.hero = hero;
@@ -170,8 +216,9 @@ public final class HeroCombat {
     // ------------------------------------------------------------------ the fight clock (6.3)
 
     /**
-     * Every server tick, after the hero's AI and movement: the fight's opening gap starts when its fight starts, and
-     * the running move advances one tick (so its timing never depends on when the goal selector runs).
+     * Every server tick, after the hero's AI and movement: the fight's opening gap starts when its fight starts, a
+     * caught blow is answered, the running move advances one tick (so its timing never depends on when the goal
+     * selector runs), and waves and rain impacts in flight roll on.
      */
     void tick() {
         if (restoreStates) {
@@ -185,6 +232,22 @@ public final class HeroCombat {
             }
             later.clear();
         }
+        if (riposteOn != null) {
+            LivingEntity a = riposteOn;
+            riposteOn = null;
+            if (run != null) {
+                run.riposte(a);
+            }
+        }
+        // what is in flight first: a wave or an impact released this tick starts rolling on the next one, so a rain
+        // impact lands exactly its delay after its call
+        if (!flights.isEmpty()) {
+            for (int i = 0; i < flights.size(); i++) {
+                if (flights.get(i).step()) {
+                    flights.remove(i--);
+                }
+            }
+        }
         if (run != null) {
             run.step();
         }
@@ -195,12 +258,19 @@ public final class HeroCombat {
                 s.fightStarted(now());
             }
             passives.fightStarted();
+            BossRules.Poise p = poise();
+            if (p != null) {
+                p.reset(); // a new fight starts from an empty bar (6.9)
+            }
         }
         fighting = f;
         states.tick();
         passives.tick(fighting);
         if (!zones.isEmpty()) {
             zones.removeIf(Entity::isRemoved);
+        }
+        if (!decoys.isEmpty() && (hero.tickCount & 7) == 0) {
+            decoys.removeIf(d -> d.isRemoved() || d.popped());
         }
     }
 
@@ -231,9 +301,29 @@ public final class HeroCombat {
         return lastRelease;
     }
 
+    /** The {@code DATA_ACTION} code the last move started with (-1: none, a telegraph pose or nothing played). */
+    public int lastCode() {
+        return lastCode;
+    }
+
+    /** The speed the last move played at (its clip and its plan). */
+    public double lastSpeed() {
+        return lastSpeed;
+    }
+
+    /** The plan the last move ran with (ticks from its start; null before any). */
+    public MovePlan.Plan lastPlan() {
+        return lastPlan;
+    }
+
     /** The stage of the running move (DONE when none). */
     public MoveStage stage() {
-        return run == null ? MoveStage.DONE : run.plan.stageAt(run.t);
+        return run == null ? MoveStage.DONE : run.stage();
+    }
+
+    /** Whether it is in a move's wind-up now. */
+    public boolean windingUp() {
+        return run != null && run.stage() == MoveStage.WINDUP;
     }
 
     /**
@@ -250,7 +340,7 @@ public final class HeroCombat {
         }
         nextCheckAt = now + MoveSelector.CHECK_TICKS;
         LivingEntity t = hero.getTarget();
-        if (t == null || !t.isAlive() || !fighting || HeroStatus.stunned(hero)) {
+        if (t == null || !t.isAlive() || !fighting || HeroStatus.stunned(hero) || staggered()) {
             return false;
         }
         MoveSelector s = selector();
@@ -271,9 +361,72 @@ public final class HeroCombat {
         }
     }
 
-    /** The frames a move runs with: its authored ones (A5: the timing file's at the hero's speed). */
-    MovePlan.Plan planFor(Move m) {
-        return MovePlan.of(m);
+    // ------------------------------------------------------------------ timing (A5: frames, DATA_ACTION, speed)
+
+    /** How a move runs: its plan at its speed, the {@code DATA_ACTION} code its clip plays (-1: none), that speed. */
+    public record Timing(MovePlan.Plan plan, int code, double speed, boolean fromFile) {
+    }
+
+    /**
+     * The hero's move speed now (4.8): Haste, Mining Fatigue, Slowness and its {@code attack_speed} stat, 0.5-2.0
+     * ({@link MoveTiming#speed}). The same rule for every hero; nothing else changes it.
+     */
+    public double speed() {
+        double stat = HeroStatus.clampStat(Stat.ATTACK_SPEED, HeroStatus.percent(hero, Stat.ATTACK_SPEED));
+        return MoveTiming.speed(stat, level(MobEffects.DIG_SPEED), level(MobEffects.DIG_SLOWDOWN),
+                level(MobEffects.MOVEMENT_SLOWDOWN));
+    }
+
+    private int level(net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> e) {
+        MobEffectInstance i = hero.getEffect(e);
+        return i == null ? 0 : i.getAmplifier() + 1;
+    }
+
+    /**
+     * How {@code m} runs now: its code from the hero's {@code visual.json} move list (the ultimates' fixed names), its
+     * clip through the hero's timing files (the same chain the client plays from), the clip's frames and {@code hit}
+     * markers, or the move's own frames without one; the plan at the hero's speed, held to the class minimums.
+     */
+    public Timing timingFor(Move m) {
+        HeroDef d = def();
+        HeroEntry entry = hero.entry();
+        HeroLook look = entry.visual().look();
+        boolean awakened = d != null && d.v2() != null && d.v2().awakened() != null && d.v2().awakened().id().equals(m.id())
+                && MoveSelector.isUltimate(m);
+        boolean ultimate = MoveSelector.isUltimate(m) && !awakened;
+        int code = HeroActions.moveCode(m.id(), ultimate, awakened, look.moves());
+        String clipName = code < 0 ? null : HeroClips.actionClip(code, look.moves(), look.states());
+        HeroTimings.Clip clip = clipName == null ? null : HeroTimingFiles.clip(entry, clipName);
+        if ((ultimate || awakened) && clip == null) {
+            code = -1; // the client finds an ultimate's clip by its fixed name in the chain: none here, nothing to play
+        }
+        Frames f = m.frames();
+        int[] markers = null;
+        boolean fromFile = clip != null && clip.windup() >= 0 && clip.active() >= 0 && clip.recovery() >= 0;
+        if (fromFile) {
+            f = new Frames(clip.windup() / 20.0, clip.active() / 20.0, clip.recovery() / 20.0);
+            markers = hitMarkers(clip);
+        }
+        MovePlan.Plan base = MovePlan.of(m, f, markers);
+        double s = MoveTiming.playback(speed(), base.windup(), base.recoveryEnd() - base.activeEnd(), m.cls());
+        return new Timing(MoveTiming.scale(base, s, m.cls()), code, s, fromFile);
+    }
+
+    private static int[] hitMarkers(HeroTimings.Clip c) {
+        int n = 0;
+        for (HeroTimings.Event e : c.events()) {
+            if ("hit".equals(e.type())) {
+                n++;
+            }
+        }
+        int[] out = new int[n];
+        int i = 0;
+        for (HeroTimings.Event e : c.events()) {
+            if ("hit".equals(e.type())) {
+                out[i++] = e.tick();
+            }
+        }
+        return out;
     }
 
     private void begin(MoveSelector.Pick p) {
@@ -287,10 +440,14 @@ public final class HeroCombat {
         Slot slot = ultimate ? Slot.ULTIMATE : Slot.SKILL;
         UseLedger ledger = UseLedger.of(slot, abilityPower(), HeroEffects.powerScale(), UseLedger.formFactor(m));
         HeroUse use = newUse(d, m, slot, m.form(), m.id(), ledger);
-        run = new Run(m, p.source(), planFor(m), use, hero.getTarget());
+        Timing timing = timingFor(m);
+        run = new Run(m, p.source(), timing, use, hero.getTarget());
         lastMove = m.id();
         lastMoveStart = now();
         lastRelease = -1;
+        lastCode = timing.code();
+        lastSpeed = timing.speed();
+        lastPlan = timing.plan();
         if (ultimate) {
             hero.setEnergy(0); // the ultimate uses all of it (v1 14)
         } else {
@@ -321,7 +478,8 @@ public final class HeroCombat {
             }
         }
         if (FactionClash.LOGGER.isDebugEnabled()) {
-            FactionClash.LOGGER.debug("[Heroes] {} starts {} ({}) at {}", hero.heroId(), m.id(), p.source(), now());
+            FactionClash.LOGGER.debug("[Heroes] {} starts {} ({}) at {}: code {} speed {} plan {}", hero.heroId(), m.id(),
+                    p.source(), now(), timing.code(), timing.speed(), timing.plan());
         }
         run.begin();
         // v1 17.1: on_skill / on_ultimate, and every other hero of its side within 24 blocks hears on_ally_ultimate
@@ -360,16 +518,18 @@ public final class HeroCombat {
         return run != null;
     }
 
+    // ------------------------------------------------------------------ interrupts (A5)
+
     /**
-     * The goal stopped: a move still in its wind-up is interrupted (v1 10.3: half the cooldown back; the same path a
-     * stun takes in A4, and an escape in A6), one past it simply ends.
+     * The goal stopped: a move still in its wind-up is interrupted (v1 10.3: half the cooldown back), one past it simply
+     * ends; its clip stops.
      */
     public void stopRun() {
         if (run == null) {
             return;
         }
         Run r = run;
-        if (r.plan.stageAt(r.t) == MoveStage.WINDUP) {
+        if (r.stage() == MoveStage.WINDUP) {
             MoveSelector s = selector();
             if (s != null) {
                 s.interrupted(r.move, now());
@@ -378,12 +538,55 @@ public final class HeroCombat {
         r.end(true);
     }
 
-    /** Discards the running move and any pick (death, a reload); its state and held passive stats end. */
+    /**
+     * Stops the running move for {@code why} when {@link MoveTiming#stops} says it does (HEROES_V2 4.8, 6.9, 6.13): a
+     * stun or a stagger at any stage, a knock-back over 0.5 in a wind-up (never a {@code super_armor} move's or an
+     * ultimate's), a broken channel (a 2 s recovery follows), an escape (a wind-up is cancelled, an active part plays out
+     * its tick), death. A wind-up stopped gives half the cooldown back where v1 says so; the interrupt's clip plays
+     * ({@code stun}, {@code stagger}, {@code interrupt}). Returns whether it stopped a move.
+     */
+    public boolean interrupt(Interrupt why) {
+        Run r = run;
+        if (r == null) {
+            return false;
+        }
+        MoveStage st = r.stage();
+        Move m = r.move;
+        boolean armour = m.superArmor() || MoveSelector.isUltimate(m);
+        if (!MoveTiming.stops(why, st, armour, m.channel() > 0)) {
+            return false;
+        }
+        if (why == Interrupt.CHANNEL) {
+            r.breakChannel();
+            return true;
+        }
+        if (why == Interrupt.ESCAPE && st == MoveStage.ACTIVE) {
+            r.lastActiveTick = true; // 6.13: a move in its active part plays out that tick and stops
+            return true;
+        }
+        if (MoveTiming.refunds(why, st)) {
+            MoveSelector s = selector();
+            if (s != null) {
+                s.interrupted(m, now());
+            }
+        }
+        r.end(true);
+        String clip = MoveTiming.clip(why);
+        if (clip != null && why != Interrupt.STUN && why != Interrupt.STAGGER) {
+            hero.playAction(HeroActions.actionCode(clip), 1.0, 0);
+        }
+        return true;
+    }
+
+    /** Discards the running move, any pick and what is in flight (death, a reload); its state and held passive stats end. */
     void reset() {
         if (run != null) {
             run.end(true);
         }
         pending = null;
+        riposteOn = null;
+        flights.clear();
+        popDecoys();
         states.exit();
         passives.reset();
     }
@@ -396,9 +599,242 @@ public final class HeroCombat {
     void stunned() {
         pending = null;
         if (run != null) {
-            stopRun();
+            interrupt(Interrupt.STUN);
         }
         hero.playAction(HeroActions.actionCode("stun"), 1.0, 0);
+    }
+
+    // ------------------------------------------------------------------ poise and stagger (the hook A6a completes)
+
+    /** Its poise bar ({@code boss.poise}; null while it has no definition; {@code none()} with poise 0). */
+    public BossRules.Poise poise() {
+        HeroDef d = def();
+        if (d == null || d.v2() == null) {
+            return null;
+        }
+        if (poise == null || poiseFor != d) {
+            poise = new BossRules.Poise(d.v2().boss().poise());
+            poiseFor = d;
+        }
+        return poise;
+    }
+
+    /**
+     * Poise damage on the hero (the {@code poise} effect, a charge of its own into a wall; A6a adds every hit): at
+     * full poise it staggers, unless a {@code super_armor} move or an ultimate's wind-up protects it (6.9). Returns
+     * whether it staggered.
+     */
+    public boolean poiseDamage(double amount) {
+        BossRules.Poise p = poise();
+        if (p == null || !hero.isAlive()) {
+            return false;
+        }
+        boolean protectedNow = run != null && (run.move.superArmor()
+                || MoveSelector.isUltimate(run.move) && run.stage() == MoveStage.WINDUP);
+        if (p.add(amount, now(), protectedNow)) {
+            stagger();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * The stagger hook (6.9; task A5, completed by A6a): the running move is interrupted (half the cooldown back in its
+     * wind-up), it starts no move for 2.5 s, plays {@code stagger} and its {@code on_stagger} passives fire. A6a adds the
+     * kneeling hold, the +25% damage taken and the stars.
+     */
+    public void stagger() {
+        pending = null;
+        staggerUntil = now() + BossRules.STAGGER_TICKS;
+        if (run != null) {
+            interrupt(Interrupt.STAGGER);
+        }
+        hero.playAction(HeroActions.actionCode("stagger"), 1.0, 0);
+        hero.getNavigation().stop();
+        HeroEffects.particles(hero.level(), hero, ParticleTypes.CRIT, 10);
+        trigger(PassiveBook.Event.of(Trigger.ON_STAGGER), hero.getTarget(), null);
+    }
+
+    /** Whether it is staggered now (no move starts). */
+    public boolean staggered() {
+        return now() < staggerUntil;
+    }
+
+    // ------------------------------------------------------------------ counter, barrier, channel (A5)
+
+    /**
+     * A blow on the hero (from the damage event, after shields and armour): while a {@code counter} stance is up
+     * (its wind-up) the first melee blow from an enemy (or an arrow, when the counter takes {@code ranged}) is caught:
+     * the stance's {@code absorb} share of it is taken off and the riposte answers it on the hero's next tick
+     * (6.5: "the riposte is instant"). Returns the share of the blow that lands (1: not caught). A hero's damage over
+     * time is no blow. The same for a player's blow and an NPC's.
+     */
+    public double counterBlow(DamageSource src) {
+        Run r = run;
+        if (r == null || r.move.form() != Form.COUNTER || r.countered || r.stage() != MoveStage.WINDUP) {
+            return 1;
+        }
+        LivingEntity a = src.getEntity() instanceof LivingEntity l && l != hero ? l : null;
+        if (a == null || HeroForms.ally(hero, a) || HeroDamage.isDot(src)) {
+            return 1;
+        }
+        boolean melee = src.getDirectEntity() == a;
+        boolean ranged = !melee && src.getDirectEntity() instanceof Projectile;
+        if (!melee && !(ranged && r.move.extra().ranged())) {
+            return 1;
+        }
+        r.countered = true;
+        riposteOn = a;
+        int absorb = r.move.extra().absorb() > 0 ? r.move.extra().absorb() : 80;
+        return Math.max(0, 1 - absorb / 100.0);
+    }
+
+    /** Whether a counter stance is up now (its wind-up, not yet answered). */
+    public boolean countering() {
+        return run != null && run.move.form() == Form.COUNTER && !run.countered && run.stage() == MoveStage.WINDUP;
+    }
+
+    /**
+     * Damage the hero took ({@code amount} after reductions): a channelled move breaks after its {@code channel} share
+     * of max health in its wind-up and active part (6.9: a 2 s recovery).
+     */
+    void damaged(double amount) {
+        Run r = run;
+        if (r == null || r.move.channel() <= 0 || !(amount > 0)) {
+            return;
+        }
+        MoveStage st = r.stage();
+        if (st != MoveStage.WINDUP && st != MoveStage.ACTIVE) {
+            return;
+        }
+        r.channelDamage += amount;
+        if (BossRules.channelBroken(r.channelDamage, hero.getMaxHealth(), r.move.channel())) {
+            interrupt(Interrupt.CHANNEL);
+        }
+    }
+
+    /** {@code barrier} (6.6): blocks all damage until it has taken {@code hits} blows or {@code seconds} pass. */
+    void barrier(int hits, double seconds, HeroDef.AddKind focus) {
+        HeroStatus.of(hero).book().barrier(hits, seconds, now());
+        barrierFocus = null;
+        if (focus != null) {
+            List<HeroDecoy> f = spawnAdds(focus, 1);
+            if (!f.isEmpty()) {
+                barrierFocus = f.get(0).getUUID();
+            }
+        }
+        HeroEffects.particleRing(hero.level(), hero.position().add(0, 1, 0), 1.2, ParticleTypes.END_ROD);
+        hero.level().playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.ENCHANTMENT_TABLE_USE,
+                SoundSource.HOSTILE, 0.8F, 1.4F);
+    }
+
+    /** The blows its barrier still blocks (0: none). */
+    public int barrierHits() {
+        HeroStatus s = HeroStatus.peek(hero);
+        return s == null || s.book().isEmpty() ? 0 : s.book().barrierHits(now());
+    }
+
+    /**
+     * Whether its barrier stops this damage (from {@link HeroEntity#hurt}, before anything else): all of it is
+     * blocked; a blow from anyone (any damage with an attacker but a hero's damage over time) costs the barrier one hit,
+     * and its last hit holds while its focus add lives. {@code /kill} and the void go through.
+     */
+    boolean barrierBlocks(DamageSource src) {
+        if (src.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return false;
+        }
+        HeroStatus s = HeroStatus.peek(hero);
+        if (s == null || s.book().isEmpty() || s.book().barrierHits(now()) <= 0) {
+            return false;
+        }
+        if (src.getEntity() == null || HeroDamage.isDot(src)) {
+            return true; // blocked, but no blow: fire, a fall, a damage over time
+        }
+        var result = s.book().barrierHit(now(), focusAlive());
+        if (hero.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.END_ROD, hero.getX(), hero.getY(0.6), hero.getZ(), 4, 0.4, 0.5, 0.4, 0.05);
+            sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), result == com.factionclash.logic.hero.StatusBook.BarrierHit.BROKE
+                    ? SoundEvents.GLASS_BREAK : SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.8F, 1.2F);
+        }
+        return true;
+    }
+
+    private boolean focusAlive() {
+        if (barrierFocus == null) {
+            return false;
+        }
+        for (HeroDecoy d : decoys) {
+            if (d.getUUID().equals(barrierFocus) && d.isAlive() && !d.popped()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ------------------------------------------------------------------ adds (A5: spawn_add's decoys)
+
+    /**
+     * {@code spawn_add} (6.11): {@code count} adds of {@code kind} beside the hero. Milestone 1 has only the
+     * {@code decoy} ({@link HeroDecoy}); at most {@link HeroCatalogue#MAX_DECOYS} live a hero (the oldest pop first).
+     */
+    List<HeroDecoy> spawnAdds(HeroDef.AddKind kind, int count) {
+        List<HeroDecoy> made = new ArrayList<>();
+        if (kind != HeroDef.AddKind.DECOY || !(hero.level() instanceof ServerLevel sl)) {
+            return made;
+        }
+        for (int i = 0; i < Math.max(1, count); i++) {
+            decoys.removeIf(d -> d.isRemoved() || d.popped());
+            while (decoys.size() >= HeroCatalogue.MAX_DECOYS) {
+                decoys.removeFirst().pop();
+            }
+            HeroDecoy d = ModEntities.HERO_DECOY.get().create(sl);
+            if (d == null) {
+                break;
+            }
+            double a = hero.getRandom().nextDouble() * Math.PI * 2;
+            double r = HeroDecoy.WALK_MIN + hero.getRandom().nextDouble() * (HeroDecoy.WALK_MAX - HeroDecoy.WALK_MIN);
+            Vec3 at = hero.position().add(Math.cos(a) * 0.6, 0, Math.sin(a) * 0.6);
+            d.moveTo(at.x, at.y, at.z, hero.getYRot(), 0F);
+            d.bind(hero, hero.position().add(Math.cos(a) * r, 0, Math.sin(a) * r));
+            sl.addFreshEntity(d);
+            sl.sendParticles(ParticleTypes.POOF, at.x, at.y + 1, at.z, 8, 0.3, 0.5, 0.3, 0.02);
+            decoys.addLast(d);
+            made.add(d);
+        }
+        return made;
+    }
+
+    /** Its adds alive now (the {@code adds_alive} condition). */
+    public int addsAlive() {
+        int n = 0;
+        for (HeroDecoy d : decoys) {
+            if (d.isAlive() && !d.popped()) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /** One of its adds is gone (popped, timed out): {@code on_add_died}; its barrier's focus breaks the barrier. */
+    public void addGone(HeroDecoy d) {
+        decoys.remove(d);
+        if (barrierFocus != null && barrierFocus.equals(d.getUUID())) {
+            barrierFocus = null;
+            HeroStatus s = HeroStatus.peek(hero);
+            if (s != null && s.book().breakBarrier()) {
+                stagger(); // 6.6: killing the focus breaks the barrier and staggers the hero
+            }
+        }
+        trigger(PassiveBook.Event.of(Trigger.ON_ADD_DIED), null, null);
+    }
+
+    private void popDecoys() {
+        while (!decoys.isEmpty()) {
+            HeroDecoy d = decoys.removeFirst();
+            if (!d.popped()) {
+                d.pop();
+            }
+        }
     }
 
     // ------------------------------------------------------------------ states and passives (A4)
@@ -594,13 +1030,109 @@ public final class HeroCombat {
         selectorFor = null;
     }
 
+    // ------------------------------------------------------------------ flights: waves and rain impacts (A5)
+
+    /** Something a move released that rolls on by itself (a wave's ring, a rain impact); true when it is done. */
+    private interface Flight {
+        boolean step();
+    }
+
+    /**
+     * A {@code wave} (6.5): a ring that grows from where the hero stood at its release at {@code speed} blocks a second
+     * to its {@code radius}; each enemy on the ground within 0.75 blocks of its front is hit once (jump to dodge).
+     */
+    private final class WaveFlight implements Flight {
+        final HeroUse use;
+        final Vec3 centre;
+        final double radius, speed;
+        final List<HeroDef.Effect> effects;
+        final Set<Integer> hit = new HashSet<>();
+        final ParticleOptions look;
+        int age;
+
+        WaveFlight(HeroUse use, Vec3 centre, double radius, double speed, List<HeroDef.Effect> effects, ParticleOptions look) {
+            this.use = use;
+            this.centre = centre;
+            this.radius = radius;
+            this.speed = speed;
+            this.effects = effects;
+            this.look = look;
+        }
+
+        @Override
+        public boolean step() {
+            age++;
+            double front = FormGeometry.waveFront(age, speed);
+            if (front > radius + FormGeometry.WAVE_BAND || !hero.isAlive()) {
+                return true;
+            }
+            List<LivingEntity> rs = null;
+            for (LivingEntity e : HeroForms.enemiesNear(hero, centre, front + FormGeometry.WAVE_BAND + 1)) {
+                double dx = e.getX() - centre.x, dz = e.getZ() - centre.z;
+                if (FormGeometry.waveHits(Math.sqrt(dx * dx + dz * dz), e.getBbWidth() / 2, e.getY() - centre.y,
+                        e.onGround(), front, radius) && hit.add(e.getId())) {
+                    if (rs == null) {
+                        rs = new ArrayList<>(2);
+                    }
+                    rs.add(e);
+                }
+            }
+            if (rs != null) {
+                HeroEffects.apply(use, effects, 0, rs, hero);
+            }
+            if ((age & 1) == 0) {
+                HeroEffects.particleRing(hero.level(), centre, Math.max(0.5, front), look);
+            }
+            return false;
+        }
+    }
+
+    /** One {@code rain} impact (6.5): called at a spot, it lands {@code delay} later on enemies within 1.5 blocks of it. */
+    private final class RainFlight implements Flight {
+        final HeroUse use;
+        final Vec3 at;
+        final int landsIn;
+        final List<HeroDef.Effect> effects;
+        final ParticleOptions look;
+        int age;
+
+        RainFlight(HeroUse use, Vec3 at, int landsIn, List<HeroDef.Effect> effects, ParticleOptions look) {
+            this.use = use;
+            this.at = at;
+            this.landsIn = landsIn;
+            this.effects = effects;
+            this.look = look;
+        }
+
+        @Override
+        public boolean step() {
+            age++;
+            if (!hero.isAlive()) {
+                return true;
+            }
+            if (age < landsIn) {
+                if ((age & 3) == 0 && hero.level() instanceof ServerLevel sl) {
+                    // the tell: a falling column over the spot (its ground disc is A6's decal)
+                    sl.sendParticles(look, at.x, at.y + 3 - 3.0 * age / landsIn, at.z, 2, 0.2, 0.1, 0.2, 0);
+                }
+                return false;
+            }
+            HeroEffects.particleRing(hero.level(), at, FormGeometry.RAIN_IMPACT_RADIUS, look);
+            HeroEffects.apply(use, effects, 0, HeroForms.enemiesNear(hero, at.add(0, 0.5, 0), FormGeometry.RAIN_IMPACT_RADIUS), hero);
+            return true;
+        }
+    }
+
     // ------------------------------------------------------------------ one running move
+
+    private static final int M_NONE = 0, M_LEAP = 1, M_DASH = 2, M_CHARGE = 3, M_SWEEP = 4, M_GRAB = 5;
 
     /** A move from its start to the end of its recovery. */
     final class Run {
         final Move move;
         final MoveSelector.Source source;
         final MovePlan.Plan plan;
+        final Timing timing;
         final HeroUse use;
         LivingEntity target;
         Vec3 aim;
@@ -608,9 +1140,10 @@ public final class HeroCombat {
         /** The next hit of the plan to release (each is released once, even while the active part is held). */
         int nextHit;
         boolean done;
-        /** Leap and dash motion. */
+        /** Leap, dash, charge, sweep and grab motion. */
         int motion;
         int motionTicks;
+        int motionLimit;
         boolean leftGround;
         Vec3 dashDir;
         double dashSpeed;
@@ -618,26 +1151,67 @@ public final class HeroCombat {
         final Set<Integer> dashHit = new HashSet<>();
         /** A chain's links so far. */
         final List<LivingEntity> chain = new ArrayList<>();
-        /** It holds a telegraph pose until its first release (A4). */
+        /** It holds a telegraph pose until its first release (A4: a hero with no clip for the move). */
         boolean posed;
+        /** The {@code DATA_ACTION} sequence it started (its clip stops with the run unless something replaced it). */
+        int actionSequence = -1;
+        /** The recovery ends here instead (a grab's miss, a broken channel); -1: the plan's. */
+        int recoveryEnd = -1;
+        /** No followup after this run (a miss, a broken channel). */
+        boolean noFollowup;
+        /** A counter stance caught a blow. */
+        boolean countered;
+        /** Damage taken in its channel. */
+        double channelDamage;
+        /** An escape: this active tick is its last. */
+        boolean lastActiveTick;
+        /** A charge into a wall. */
+        boolean wallHit;
+        /** The sweep's facing at its start and its length in ticks. */
+        Vec3 sweepFacing;
+        int sweepTicks;
+        /** The receiver a grab holds. */
+        LivingEntity grabbed;
 
-        Run(Move move, MoveSelector.Source source, MovePlan.Plan plan, HeroUse use, LivingEntity target) {
+        Run(Move move, MoveSelector.Source source, Timing timing, HeroUse use, LivingEntity target) {
             this.move = move;
             this.source = source;
-            this.plan = plan;
+            this.timing = timing;
+            this.plan = timing.plan();
             this.use = use;
             this.target = target;
             this.aim = target != null ? target.position() : hero.position();
         }
 
-        /** The wind-up starts: the hero stops and gathers (A5 adds {@code DATA_ACTION} here). */
+        MoveStage stage() {
+            if (done) {
+                return MoveStage.DONE;
+            }
+            MoveStage st = plan.stageAt(t);
+            return st == MoveStage.DONE && t < recoveryEnd() ? MoveStage.RECOVERY : st;
+        }
+
+        int recoveryEnd() {
+            return Math.max(plan.recoveryEnd(), recoveryEnd);
+        }
+
+        /**
+         * The wind-up starts: the hero stops and gathers, and {@code DATA_ACTION} gets the move's code at its speed
+         * (4.8), or, with no clip for the move, its look's telegraph pose (A4).
+         */
         void begin() {
             hero.getNavigation().stop();
             hero.setStateFlag(HeroActions.STATE_WINDUP, plan.windup() > 0);
-            int pose = HeroActions.telegraphPose(move.ability().look() == null ? null : move.ability().look().pose());
-            if (pose > 0 && plan.windup() > 0) {
-                hero.playAction(pose, 1.0, 0); // the wind-up's telegraph pose (A5 plays the move's own clip)
-                posed = true;
+            hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, move.superArmor());
+            if (timing.code() >= 0) {
+                hero.playAction(timing.code(), timing.speed(), 0);
+                actionSequence = HeroActions.sequence(hero.action());
+            } else {
+                int pose = HeroActions.telegraphPose(move.ability().look() == null ? null : move.ability().look().pose());
+                if (pose > 0 && plan.windup() > 0) {
+                    hero.playAction(pose, 1.0, 0); // no clip of its own: the wind-up's telegraph pose (A4)
+                    posed = true;
+                }
             }
             if (hero.level() instanceof ServerLevel sl) {
                 HeroEffects.particles(sl, hero, HeroEffects.particle(move.ability().look(), element(), color()), 8);
@@ -662,17 +1236,21 @@ public final class HeroCombat {
             return use.def.color();
         }
 
-        boolean enemyForm() {
-            return MoveSelector.needsTarget(move);
+        /**
+         * Whether a target that dies, goes or moves out of reach calls the wind-up off (v1 10.3): not a counter (its
+         * stance answers whoever strikes) and not a grab (reaching for a target that stepped away is a miss, 6.5).
+         */
+        boolean callsOffOnTarget() {
+            return MoveSelector.needsTarget(move) && move.form() != Form.COUNTER && move.form() != Form.GRAB;
         }
 
         void step() {
             if (done) {
                 return;
             }
-            MoveStage stage = plan.stageAt(t);
+            MoveStage stage = stage();
             if (stage == MoveStage.WINDUP) {
-                if (enemyForm() && (target == null || !target.isAlive() || target.isRemoved()
+                if (callsOffOnTarget() && (target == null || !target.isAlive() || target.isRemoved()
                         || hero.distanceTo(target) > MoveSelector.reach(move) + HeroForms.RANGE_SLACK)) {
                     // v1 10.3: the target died or left range during the wind-up; the charge is not spent
                     MoveSelector s = selector();
@@ -682,7 +1260,7 @@ public final class HeroCombat {
                     end(true);
                     return;
                 }
-                if (target != null) {
+                if (target != null && target.isAlive()) {
                     aim = target.position();
                     hero.getLookControl().setLookAt(target, 30F, 30F);
                 }
@@ -690,7 +1268,7 @@ public final class HeroCombat {
                 if (t % 5 == 0) {
                     tell();
                 }
-            } else if (stage == MoveStage.ACTIVE && target != null && target.isAlive()) {
+            } else if (stage == MoveStage.ACTIVE && target != null && target.isAlive() && motion != M_SWEEP) {
                 hero.getLookControl().setLookAt(target, 30F, 30F);
             }
             while (!done && nextHit < plan.hitCount() && plan.hit(nextHit) <= t) {
@@ -705,16 +1283,27 @@ public final class HeroCombat {
                 }
                 release(hit);
             }
-            if (motion != 0) {
-                motionTick();
+            if (done) {
+                return;
             }
-            if (t == plan.activeEnd() - 1 && motion != 0 && motionTicks < LEAP_TIMEOUT) {
-                return; // the active part lasts until the leap lands or the dash ends
+            if (motion != M_NONE) {
+                motionTick();
+                if (done) {
+                    return; // the motion's end interrupted the move (a charge into a wall that staggers)
+                }
+            }
+            if (lastActiveTick) {
+                end(true);
+                return;
+            }
+            if (t == plan.activeEnd() - 1 && motion != M_NONE && motionTicks < motionLimit) {
+                return; // the active part lasts until the motion ends
             }
             t++;
             if (t == plan.activeEnd() && !done) {
                 hero.setStateFlag(HeroActions.STATE_WINDUP, false);
-                if (use.landed) {
+                motion = M_NONE;
+                if (use.landed && !noFollowup) {
                     MoveSelector s = selector();
                     if (s != null && target != null && target.isAlive()) {
                         HeroSenses.fill(hero, target, sense, hero.energy(), 0);
@@ -728,23 +1317,29 @@ public final class HeroCombat {
                     }
                 }
             }
-            if (t >= plan.recoveryEnd()) {
+            if (t >= recoveryEnd()) {
                 end(true);
             }
         }
 
         /**
          * The run is over. {@code gap}: the string ends and the selector's next gap starts now (false only when a
-         * followup takes over the recovery, 6.3).
+         * followup takes over the recovery, 6.3). Its clip stops unless another action replaced it.
          */
         void end(boolean gap) {
             if (done) {
                 return;
             }
             done = true;
-            motion = 0;
+            motion = M_NONE;
+            grabbed = null;
             hero.setStateFlag(HeroActions.STATE_WINDUP, false);
+            hero.setStateFlag(HeroActions.STATE_SUPER_ARMOUR, false);
             unpose();
+            if (actionSequence >= 0 && HeroActions.sequence(hero.action()) == actionSequence
+                    && HeroActions.code(hero.action()) == timing.code()) {
+                hero.stopAction();
+            }
             if (run == this) {
                 run = null;
             }
@@ -754,25 +1349,77 @@ public final class HeroCombat {
             }
         }
 
+        /** A broken channel (6.9): nothing more lands, the clip shows the interruption, a 2 s recovery follows. */
+        void breakChannel() {
+            nextHit = plan.hitCount();
+            motion = M_NONE;
+            noFollowup = true;
+            hero.setStateFlag(HeroActions.STATE_WINDUP, false);
+            unpose();
+            int from = Math.max(t, plan.windup());
+            t = Math.max(t, Math.min(plan.activeEnd(), from));
+            if (t < plan.activeEnd()) {
+                t = plan.activeEnd();
+            }
+            recoveryEnd = t + MoveTiming.CHANNEL_BREAK_RECOVERY;
+            hero.playAction(HeroActions.actionCode("interrupt"), 1.0, 0);
+            actionSequence = -1;
+        }
+
         /**
-         * The wind-up's tell for an area (v1 10.3): a ring of smoke where it will land, every 5 ticks (the growing
-         * ground decals are A6's; the wind-up is the same with or without them).
+         * The counter's riposte (6.5): the move's effects at the one whose blow the stance caught, at once, then its
+         * active part and recovery; {@code on_counter} fires. The riposte's effects keep the skill's caps.
+         */
+        void riposte(LivingEntity a) {
+            if (done || move.form() != Form.COUNTER) {
+                return;
+            }
+            nextHit = plan.hitCount(); // the stance's end releases nothing more
+            hero.setStateFlag(HeroActions.STATE_WINDUP, false);
+            unpose();
+            lastRelease = now();
+            if (a.isAlive() && !HeroForms.ally(hero, a)) {
+                hero.getLookControl().setLookAt(a, 90F, 90F);
+                aim = a.position();
+                target = a;
+                hero.swing(InteractionHand.MAIN_HAND);
+                HeroEffects.apply(use, move.ability().effects(), 0, List.of(a), hero);
+                use.landed = true;
+                HeroEffects.particles(hero.level(), a, HeroEffects.particle(move.ability().look(), element(), color()), 10);
+            }
+            trigger(PassiveBook.Event.of(Trigger.ON_COUNTER), a, null);
+            hero.say(LineEvent.COUNTER, Map.of("enemy", a.getName().getString()), null);
+            t = Math.max(t, plan.windup());
+        }
+
+        /**
+         * The wind-up's tell (v1 10.3): smoke where a nova, zone, leap or wave will land and around a rain's target,
+         * a line along a charge, a purple ring at a grab's reach (unblockable), every 5 ticks (the growing ground decals
+         * are A6's; the wind-up is the same with or without them).
          */
         void tell() {
             Ability a = move.ability();
-            Vec3 at;
+            Level level = hero.level();
             switch (move.form()) {
-                case NOVA -> at = hero.position();
-                case ZONE -> at = a.zoneAt() == HeroDef.ZoneAt.TARGET ? aim : hero.position();
-                case LEAP -> at = aim;
+                case NOVA -> HeroEffects.particleRing(level, hero.position(), Math.max(1, a.radius()), ParticleTypes.SMOKE);
+                case ZONE -> HeroEffects.particleRing(level, a.zoneAt() == HeroDef.ZoneAt.TARGET ? aim : hero.position(),
+                        Math.max(1, a.radius()), ParticleTypes.SMOKE);
+                case LEAP -> HeroEffects.particleRing(level, aim, Math.max(1, a.radius()), ParticleTypes.SMOKE);
+                case WAVE -> HeroEffects.particleRing(level, hero.position(), Math.max(1, a.radius()), ParticleTypes.SMOKE);
+                case RAIN -> HeroEffects.particleRing(level, aim, Math.max(1, a.radius()), ParticleTypes.SMOKE);
+                case CHARGE -> {
+                    Vec3 f = HeroForms.facing(hero, aim);
+                    double range = a.range() > 0 ? a.range() : 10;
+                    HeroEffects.particleLine(level, hero.position().add(0, 0.1, 0),
+                            hero.position().add(f.x * range, 0.1, f.z * range), ParticleTypes.SMOKE);
+                }
+                case GRAB -> HeroEffects.particleRing(level, hero.position(), Math.max(1, a.range()), ParticleTypes.WITCH);
                 default -> {
-                    return;
                 }
             }
-            HeroEffects.particleRing(hero.level(), at, Math.max(1, a.radius()), net.minecraft.core.particles.ParticleTypes.SMOKE);
         }
 
-        // ---------------------------------------------------------------- the forms (v1 10.1)
+        // ---------------------------------------------------------------- the forms (v1 10.1, HEROES_V2 6.5)
 
         void release(int hit) {
             Ability a = move.ability();
@@ -824,8 +1471,23 @@ public final class HeroCombat {
                 case ZONE -> zone(a);
                 case LEAP -> leap(a);
                 case DASH -> dash(a);
+                case CHARGE -> charge(a);
+                case WAVE -> {
+                    double speed = move.extra().speed() > 0 ? move.extra().speed() : 8;
+                    double radius = a.radius() > 0 ? a.radius() : 10;
+                    flights.add(new WaveFlight(use, hero.position(), radius, speed, fx,
+                            HeroEffects.particle(a.look(), element(), color())));
+                    hero.swing(InteractionHand.MAIN_HAND);
+                }
+                case RAIN -> rainImpact(a);
+                case SWEEP -> sweep(a);
+                case GRAB -> grab(a);
+                case COUNTER -> {
+                    // the stance ended with no blow to answer: nothing lands, its recovery is the punish window
+                }
+                case BARRAGE -> barrageShot(a, hit);
                 default -> {
-                    // forms the engine does not run are never picked (EffectRouting.FORMS)
+                    // dive (A12) is never picked (EffectRouting.FORMS)
                 }
             }
             if (a.look() != null && a.look().lightning() && MoveSelector.isUltimate(move) && hero.level() instanceof ServerLevel sl) {
@@ -898,6 +1560,26 @@ public final class HeroCombat {
             hero.swing(InteractionHand.MAIN_HAND);
         }
 
+        /**
+         * One shot of a {@code barrage} (6.5): aimed again at the target as it fires, carrying the move's effects and
+         * its {@code per_shot} list for this shot (cycled); every shot is the same use, under the same caps.
+         */
+        void barrageShot(Ability a, int hit) {
+            Vec3 to = target != null && target.isAlive() ? target.position().add(0, target.getBbHeight() * 0.6, 0) : aim;
+            List<HeroDef.Effect> fx = a.effects();
+            int list = 0;
+            if (!move.perShot().isEmpty()) {
+                int i = hit % move.perShot().size();
+                List<HeroDef.Effect> both = new ArrayList<>(fx.size() + move.perShot().get(i).size());
+                both.addAll(fx);
+                both.addAll(move.perShot().get(i));
+                fx = both;
+                list = 1 + i;
+            }
+            HeroProjectile.launchShot(hero, use, a, fx, list, to);
+            hero.swing(InteractionHand.MAIN_HAND);
+        }
+
         /** A zone at the target, at the hero or following it (v1 10.1); at most two per hero. */
         void zone(Ability a) {
             boolean follow = a.zoneAt() == HeroDef.ZoneAt.FOLLOW_SELF;
@@ -908,6 +1590,32 @@ public final class HeroCombat {
             if (z != null) {
                 zoneStarted(z);
             }
+        }
+
+        /**
+         * One call of a {@code rain} (6.5): a spot within its radius of the target (where it stands now, or the aim),
+         * on the ground there; it lands {@code delay} seconds later (0.75-1.0: never shortened, it is the tell).
+         */
+        void rainImpact(Ability a) {
+            Vec3 c = target != null && target.isAlive() ? target.position() : aim;
+            double radius = a.radius() > 0 ? a.radius() : 5;
+            double[] off = FormGeometry.discPoint(hero.getRandom().nextDouble(), hero.getRandom().nextDouble(), radius);
+            Vec3 spot = ground(c.x + off[0], c.y, c.z + off[1]);
+            int delay = (int) Math.max(1, HeroRules.ticks(a.delay() > 0 ? a.delay() : 0.9));
+            flights.add(new RainFlight(use, spot, delay, a.effects(), HeroEffects.particle(a.look(), element(), color())));
+        }
+
+        /** The top of the ground at (x, z) near height y: the first solid block from 2 above down to 4 below. */
+        Vec3 ground(double x, double y, double z) {
+            Level level = hero.level();
+            BlockPos p = BlockPos.containing(x, y + 2, z);
+            for (int i = 0; i <= 6; i++) {
+                BlockPos q = p.below(i);
+                if (!level.getBlockState(q).getCollisionShape(level, q).isEmpty()) {
+                    return new Vec3(x, q.getY() + 1, z);
+                }
+            }
+            return new Vec3(x, y, z);
         }
 
         /** A leap: a physical arc to beside the target; on landing, every enemy within the radius (v1 10.1). */
@@ -921,8 +1629,7 @@ public final class HeroCombat {
             FormGeometry.Impulse i = FormGeometry.leap(Math.min(d, a.range() + 1), aim.y - o.y);
             takeOff(f.x * i.horizontal(), i.vertical(), f.z * i.horizontal());
             ownHopUntil = hero.tickCount + i.airTicks() + LEAP_TIMEOUT;
-            motion = 1;
-            motionTicks = 0;
+            startMotion(M_LEAP, LEAP_TIMEOUT);
             leftGround = false;
         }
 
@@ -936,49 +1643,130 @@ public final class HeroCombat {
             dashSpeed = FormGeometry.dashSpeed(dist);
             dashTicks = FormGeometry.DASH_TICKS;
             hero.getNavigation().stop();
-            motion = 2;
-            motionTicks = 0;
+            startMotion(M_DASH, LEAP_TIMEOUT);
             dashHit.clear();
+        }
+
+        /**
+         * A {@code charge} (6.5): a straight run along the aim at its {@code speed} for its {@code range}, through
+         * everyone in the way (each hit once); it stops at walls, drops and water, and a run that ends against a wall
+         * with {@code wall_stun} fills the hero's own poise by 40.
+         */
+        void charge(Ability a) {
+            if (hero.isInWater()) {
+                return;
+            }
+            double pct = move.extra().speed() > 0 ? move.extra().speed() : 160;
+            double range = a.range() > 0 ? a.range() : 10;
+            dashDir = HeroForms.facing(hero, aim);
+            dashSpeed = FormGeometry.chargeSpeed(pct);
+            dashTicks = FormGeometry.chargeTicks(range, pct);
+            hero.getNavigation().stop();
+            startMotion(M_CHARGE, dashTicks + 2);
+            dashHit.clear();
+        }
+
+        /**
+         * A {@code sweep} (6.5): a line from the hero's eyes turning across its {@code arc} over its {@code duration};
+         * each enemy it passes within its {@code range} is hit once, unless a block stands between them.
+         */
+        void sweep(Ability a) {
+            sweepFacing = HeroForms.facing(hero, aim);
+            sweepTicks = MoveTiming.at((int) Math.max(1, HeroRules.ticks(a.duration() > 0 ? a.duration() : 1.5)), timing.speed());
+            dashHit.clear();
+            hero.swing(InteractionHand.MAIN_HAND);
+            startMotion(M_SWEEP, sweepTicks);
+        }
+
+        /**
+         * A {@code grab} (6.5): the target, if it is within reach, is held at the hero's hand for 1 s (its velocity set
+         * toward the hand each tick; never a teleport: it keeps its own actions), then thrown, never toward lava or a
+         * drop (6.12), and the move's effects land on it. A miss leaves the hero in a 1.2 s recovery.
+         */
+        void grab(Ability a) {
+            double range = a.range() > 0 ? a.range() : 2.5;
+            LivingEntity g = target;
+            boolean inReach = g != null && g.isAlive() && HeroForms.enemy(hero, g)
+                    && HeroForms.distance(g, hero.position().add(0, hero.getBbHeight() / 2, 0)) <= range;
+            if (!inReach) {
+                // 6.5: a miss costs a 1.2 s recovery
+                noFollowup = true;
+                t = Math.max(t, plan.activeEnd() - 1);
+                recoveryEnd = plan.activeEnd() + MoveTiming.GRAB_MISS_RECOVERY;
+                return;
+            }
+            grabbed = g;
+            hero.swing(InteractionHand.MAIN_HAND);
+            startMotion(M_GRAB, BossRules.GRAB_HOLD_TICKS + 1);
+        }
+
+        void startMotion(int kind, int limit) {
+            motion = kind;
+            motionTicks = 0;
+            motionLimit = limit;
         }
 
         void motionTick() {
             motionTicks++;
-            if (motion == 1) {
-                if (!hero.onGround()) {
-                    leftGround = true;
-                }
-                if (leftGround && hero.onGround() || motionTicks >= LEAP_TIMEOUT) {
-                    motion = 0;
-                    Ability a = move.ability();
-                    use.area(hero.position(), a.radius());
-                    HeroEffects.particleRing(hero.level(), hero.position(), a.radius(), HeroEffects.particle(a.look(), element(), color()));
-                    HeroEffects.apply(use, a.effects(), 0, HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), a.radius()), hero);
-                }
-                return;
-            }
-            if (motion == 2) {
-                if (dashTicks <= 0 || motionTicks > 1 && hero.horizontalCollision || dropAhead()) {
-                    motion = 0;
-                    hero.setDeltaMovement(hero.getDeltaMovement().multiply(0.2, 1, 0.2));
-                    return;
-                }
-                dashTicks--;
-                Vec3 v = hero.getDeltaMovement();
-                hero.setDeltaMovement(dashDir.x * dashSpeed, v.y, dashDir.z * dashSpeed);
-                hero.hasImpulse = true;
-                List<LivingEntity> hits = new ArrayList<>();
-                for (LivingEntity e : HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), FormGeometry.DASH_REACH)) {
-                    if (dashHit.add(e.getId())) {
-                        hits.add(e);
-                    }
-                }
-                if (!hits.isEmpty()) {
-                    HeroEffects.apply(use, move.ability().effects(), 0, hits, hero);
-                }
+            switch (motion) {
+                case M_LEAP -> leapTick();
+                case M_DASH -> pushTick(false);
+                case M_CHARGE -> pushTick(true);
+                case M_SWEEP -> sweepTick();
+                case M_GRAB -> grabTick();
+                default -> motion = M_NONE;
             }
         }
 
-        /** No floor within a block and a half ahead (a dash stops at walls and drops, v1 10.1). */
+        void leapTick() {
+            if (!hero.onGround()) {
+                leftGround = true;
+            }
+            if (leftGround && hero.onGround() || motionTicks >= LEAP_TIMEOUT) {
+                motion = M_NONE;
+                Ability a = move.ability();
+                use.area(hero.position(), a.radius());
+                HeroEffects.particleRing(hero.level(), hero.position(), a.radius(), HeroEffects.particle(a.look(), element(), color()));
+                HeroEffects.apply(use, a.effects(), 0, HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), a.radius()), hero);
+            }
+        }
+
+        /** A dash's or a charge's tick: the push, the stops (a wall, a drop, water), each enemy in the way once. */
+        void pushTick(boolean charge) {
+            boolean wall = motionTicks > 1 && hero.horizontalCollision;
+            if (dashTicks <= 0 || wall || dropAhead() || charge && waterAhead()) {
+                motion = M_NONE;
+                hero.setDeltaMovement(hero.getDeltaMovement().multiply(0.2, 1, 0.2));
+                if (charge && wall) {
+                    wallHit = true;
+                    HeroEffects.particles(hero.level(), hero, ParticleTypes.CRIT, 12);
+                    hero.level().playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.SHIELD_BLOCK,
+                            SoundSource.HOSTILE, 1F, 0.6F);
+                    if (move.extra().wallStun()) {
+                        poiseDamage(BossRules.WALL_POISE); // 6.9: a charge ending against a wall
+                    }
+                }
+                return;
+            }
+            dashTicks--;
+            Vec3 v = hero.getDeltaMovement();
+            hero.setDeltaMovement(dashDir.x * dashSpeed, v.y, dashDir.z * dashSpeed);
+            hero.hasImpulse = true;
+            List<LivingEntity> hits = null;
+            for (LivingEntity e : HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), FormGeometry.DASH_REACH)) {
+                if (dashHit.add(e.getId())) {
+                    if (hits == null) {
+                        hits = new ArrayList<>(2);
+                    }
+                    hits.add(e);
+                }
+            }
+            if (hits != null) {
+                HeroEffects.apply(use, move.ability().effects(), 0, hits, hero);
+            }
+        }
+
+        /** No floor within a block and a half ahead (a dash or a charge stops at walls and drops, v1 10.1). */
         boolean dropAhead() {
             BlockPos ahead = BlockPos.containing(hero.getX() + dashDir.x * (dashSpeed + 0.6), hero.getY() - 0.2,
                     hero.getZ() + dashDir.z * (dashSpeed + 0.6));
@@ -989,6 +1777,130 @@ public final class HeroCombat {
                 }
             }
             return true;
+        }
+
+        /** Water or lava just ahead at the feet (a charge stops at water, 6.5). */
+        boolean waterAhead() {
+            if (hero.isInWater() || hero.isInLava()) {
+                return true;
+            }
+            BlockPos p = BlockPos.containing(hero.getX() + dashDir.x * (dashSpeed + 0.6), hero.getY() + 0.2,
+                    hero.getZ() + dashDir.z * (dashSpeed + 0.6));
+            var fluid = hero.level().getFluidState(p);
+            return fluid.is(FluidTags.WATER) || fluid.is(FluidTags.LAVA);
+        }
+
+        void sweepTick() {
+            if (motionTicks > sweepTicks) {
+                motion = M_NONE;
+                return;
+            }
+            Ability a = move.ability();
+            double arc = a.angle() > 0 ? a.angle() : 120;
+            double range = a.range() > 0 ? a.range() : 8;
+            double width = a.width() > 0 ? a.width() : 1;
+            double from = FormGeometry.sweepAngle(motionTicks - 1, sweepTicks, arc);
+            double to = FormGeometry.sweepAngle(motionTicks, sweepTicks, arc);
+            double[] dir = FormGeometry.turn(sweepFacing.x, sweepFacing.z, to);
+            hero.setYRot((float) Math.toDegrees(Math.atan2(-dir[0], dir[1])));
+            hero.setYBodyRot(hero.getYRot());
+            Vec3 eye = hero.getEyePosition();
+            Vec3 tip = eye.add(dir[0] * range, 0, dir[1] * range);
+            var clip = hero.level().clip(new ClipContext(eye, tip, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, hero));
+            Vec3 end = clip.getType() == HitResult.Type.MISS ? tip : clip.getLocation();
+            if ((motionTicks & 1) == 0) {
+                HeroEffects.particleLine(hero.level(), eye, end, HeroEffects.particle(a.look(), element(), color()));
+            }
+            List<LivingEntity> hits = null;
+            for (LivingEntity e : HeroForms.enemiesNear(hero, hero.position(), range + 1)) {
+                if (dashHit.contains(e.getId())) {
+                    continue;
+                }
+                double dx = e.getX() - hero.getX(), dz = e.getZ() - hero.getZ();
+                if (!FormGeometry.inSweep(dx, dz, sweepFacing.x, sweepFacing.z, from, to, range, width, e.getBbWidth() / 2)) {
+                    continue;
+                }
+                Vec3 mid = e.position().add(0, e.getBbHeight() / 2, 0);
+                var ray = hero.level().clip(new ClipContext(eye, mid, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, hero));
+                if (ray.getType() != HitResult.Type.MISS) {
+                    continue; // 6.5: a block between them stops the line
+                }
+                dashHit.add(e.getId());
+                if (hits == null) {
+                    hits = new ArrayList<>(2);
+                }
+                hits.add(e);
+            }
+            if (hits != null) {
+                HeroEffects.apply(use, a.effects(), 0, hits, hero);
+            }
+        }
+
+        /** The hand a grab holds its receiver in. */
+        Vec3 hand() {
+            Vec3 f = HeroForms.facing(hero, grabbed != null ? grabbed.position() : aim);
+            return hero.position().add(f.x * FormGeometry.GRAB_HAND_FORWARD, FormGeometry.GRAB_HAND_UP, f.z * FormGeometry.GRAB_HAND_FORWARD);
+        }
+
+        void grabTick() {
+            LivingEntity g = grabbed;
+            if (g == null || !g.isAlive() || g.isRemoved() || g.distanceToSqr(hand()) > GRAB_SLIP * GRAB_SLIP) {
+                grabbed = null;
+                motion = M_NONE;
+                return;
+            }
+            hero.getNavigation().stop();
+            hero.getLookControl().setLookAt(g, 30F, 30F);
+            if (motionTicks <= BossRules.GRAB_HOLD_TICKS) {
+                Vec3 h = hand();
+                double[] v = FormGeometry.grabHold(h.x - g.getX(), h.y - g.getY(), h.z - g.getZ());
+                g.setDeltaMovement(v[0], v[1], v[2]);
+                g.hasImpulse = true;
+                g.hurtMarked = true;
+                g.resetFallDistance();
+                return;
+            }
+            throwGrabbed(g);
+            grabbed = null;
+            motion = M_NONE;
+        }
+
+        /**
+         * The throw: away along the first of {@link FormGeometry#THROW_TRIES} whose landing is safe (no lava, fire, deep
+         * drop or void: 6.12, the same for every receiver); when none is, straight ahead and softened to 0.5. Then the
+         * move's effects land on it (unblockable, as every grab is).
+         */
+        void throwGrabbed(LivingEntity g) {
+            double strength = move.extra().throwStrength() > 0 ? move.extra().throwStrength() : 2;
+            double up = move.extra().up();
+            FormGeometry.Impulse i = FormGeometry.throwImpulse(strength, up);
+            double dist = FormGeometry.throwDistance(strength, up);
+            Vec3 f = HeroForms.facing(hero, g.position());
+            double[] dir = null;
+            for (double deg : FormGeometry.THROW_TRIES) {
+                double[] d = FormGeometry.turn(f.x, f.z, deg);
+                if (!HeroEffects.landingHazard(g, d[0], d[1], dist)) {
+                    dir = d;
+                    break;
+                }
+            }
+            double h = i.horizontal();
+            if (dir == null) {
+                dir = new double[] {f.x, f.z};
+                h = BossRules.safeKnockback(h, true);
+            }
+            hero.swing(InteractionHand.MAIN_HAND);
+            // the effects first: a blow's own knock-back must not bend the throw toward what it avoided
+            HeroEffects.apply(use, move.ability().effects(), 0, List.of(g), hero);
+            use.landed = true;
+            if (!g.isAlive()) {
+                return;
+            }
+            double res = 1 - Math.max(0, Math.min(1, g.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE)));
+            g.setDeltaMovement(dir[0] * h * res, i.vertical(), dir[1] * h * res);
+            g.hasImpulse = true;
+            g.hurtMarked = true;
+            HeroEffects.particles(hero.level(), g, HeroEffects.particle(move.ability().look(), element(), color()), 10);
         }
     }
 }

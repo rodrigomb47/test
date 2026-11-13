@@ -308,4 +308,73 @@ class StatusBookTest {
         assertTrue(b.stunImmune(2));
         assertEquals(StatusBook.MAX_STATUSES, b.size());
     }
+    // ------------------------------------------------------------------ format 2's effects (task A5)
+
+    @Test
+    void aSilenceLastsItsSecondsAndACleanseEndsIt() {
+        StatusBook b = new StatusBook();
+        b.silence(2, 100);
+        assertTrue(b.silenced(100));
+        assertTrue(b.silenced(139));
+        assertFalse(b.silenced(140));
+        b.silence(2, 200);
+        b.cleanse(null);
+        assertFalse(b.silenced(200), "a silence is harmful: a cleanse ends it");
+    }
+
+    @Test
+    void aTetherRemembersItsAnchorAndANewOneReplacesIt() {
+        StatusBook b = new StatusBook();
+        b.tether("hero", 4, 6, 1, 2, 3, 0);
+        Entry t = b.tether(10);
+        assertNotNull(t);
+        assertEquals(6, t.amount, 1e-9);
+        assertEquals(1, t.x, 1e-9);
+        assertEquals(3, t.z, 1e-9);
+        b.tether("hero", 4, 8, 5, 2, 5, 20);
+        assertEquals(1, b.entries().stream().filter(e -> e.kind == Kind.TETHER).count());
+        assertEquals(5, b.tether(20).x, 1e-9);
+        assertNull(b.tether(20 + 81));
+    }
+
+    @Test
+    void aBrokenGuardKeepsTheLongerAndACleanseLiftsIt() {
+        StatusBook b = new StatusBook();
+        b.guardBreak(4, 0);
+        assertEquals(80, b.guardUntil(0));
+        b.guardBreak(2, 10);
+        assertEquals(80, b.guardUntil(10), "a shorter break never shortens one");
+        b.guardBreak(5, 10);
+        assertEquals(110, b.guardUntil(10));
+        assertTrue(b.guardBroken(109));
+        assertFalse(b.guardBroken(110));
+        b.guardBreak(5, 200);
+        b.cleanse(null);
+        assertFalse(b.guardBroken(200));
+    }
+
+    @Test
+    void aBarrierBlocksItsHitsAndItsFocusHoldsTheLast() {
+        StatusBook b = new StatusBook();
+        assertEquals(StatusBook.BarrierHit.NONE, b.barrierHit(0, false));
+        b.barrier(3, 12, 0);
+        assertEquals(3, b.barrierHits(0));
+        assertEquals(StatusBook.BarrierHit.BLOCKED, b.barrierHit(1, false));
+        assertEquals(StatusBook.BarrierHit.BLOCKED, b.barrierHit(2, false));
+        assertEquals(1, b.barrierHits(2));
+        assertEquals(StatusBook.BarrierHit.BLOCKED, b.barrierHit(3, true), "a living focus keeps its last hit");
+        assertEquals(1, b.barrierHits(3));
+        assertEquals(StatusBook.BarrierHit.BROKE, b.barrierHit(4, false));
+        assertEquals(0, b.barrierHits(4));
+        b.barrier(7, 12, 100);
+        assertEquals(0, b.barrierHits(100 + 240), "it ends on time");
+        b.barrier(7, 12, 400);
+        assertTrue(b.dispel().barrier(), "a barrier is helpful: a dispel takes it");
+        assertEquals(0, b.barrierHits(400));
+        b.barrier(7, 12, 500);
+        b.cleanse(null);
+        assertEquals(7, b.barrierHits(500), "a cleanse leaves it");
+        assertTrue(b.breakBarrier());
+        assertEquals(0, b.barrierHits(500));
+    }
 }

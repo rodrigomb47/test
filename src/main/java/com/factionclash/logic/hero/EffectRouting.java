@@ -74,23 +74,22 @@ public final class EffectRouting {
     // ------------------------------------------------------------------ what the engine runs (A3, A4)
 
     /**
-     * The forms the engine runs today: v1's fourteen and the combo (task A3). The other format-2 forms ({@code charge},
-     * {@code wave}, {@code rain}, {@code sweep}, {@code grab}, {@code counter}, {@code barrage}: A5; {@code dive}: A12)
-     * come with their tasks; a move of one of them is never picked until then.
+     * The forms the engine runs: v1's fourteen and the combo (task A3) and format 2's other seven (task A5:
+     * {@code charge}, {@code wave}, {@code rain}, {@code sweep}, {@code grab}, {@code counter}, {@code barrage}).
+     * TODO(A12): {@code dive} (MOBILITY_AND_WORK 7.3) needs the airborne runtime; until then a dive move is never picked,
+     * answered or followed, so a hero with one fights on the ground with the rest of its kit.
      */
     public static final Set<Form> FORMS = EnumSet.of(Form.MELEE, Form.SHOT, Form.VOLLEY, Form.BOLT, Form.CHAIN,
             Form.CONE, Form.LINE, Form.NOVA, Form.ZONE, Form.LEAP, Form.DASH, Form.SELF, Form.ALLY, Form.ALLIES,
-            Form.COMBO);
+            Form.COMBO, Form.CHARGE, Form.WAVE, Form.RAIN, Form.SWEEP, Form.GRAB, Form.COUNTER, Form.BARRAGE);
 
     /**
-     * The effects the engine runs today: A3's (HERO_FORMAT.md 32 phase 4) and A4's control and the rest of v1
-     * ({@code stun}, {@code taunt}, {@code dispel}, {@code empower}, {@code summon}); the format-2 effects are A5's.
+     * The effects the engine runs: A3's (HERO_FORMAT.md 32 phase 4), A4's control and the rest of v1 ({@code stun},
+     * {@code taunt}, {@code dispel}, {@code empower}, {@code summon}) and format 2's seven (task A5: {@code guard_break},
+     * {@code poise}, {@code silence}, {@code tether}, {@code barrier}, {@code spawn_add}, {@code call_guards}): all of
+     * them.
      */
-    public static final Set<EffectType> EFFECTS = EnumSet.of(EffectType.DAMAGE, EffectType.DOT, EffectType.HEAL,
-            EffectType.SHIELD, EffectType.EFFECT, EffectType.STAT, EffectType.KNOCKBACK, EffectType.PULL,
-            EffectType.IGNITE, EffectType.FREEZE, EffectType.CLEANSE, EffectType.ENERGY, EffectType.COOLDOWN_CUT,
-            EffectType.MOVE_SELF, EffectType.MARK, EffectType.CLEAR_MARKS, EffectType.STUN, EffectType.TAUNT,
-            EffectType.DISPEL, EffectType.EMPOWER, EffectType.SUMMON);
+    public static final Set<EffectType> EFFECTS = EnumSet.allOf(EffectType.class);
 
     /**
      * Whether the engine runs the whole move: its form and every effect of it (its effects, each strike's and each
@@ -108,10 +107,17 @@ public final class EffectRouting {
         return true;
     }
 
-    /** Whether every effect of a list is one the engine runs. */
+    /**
+     * Whether every effect of a list is one the engine runs: a {@code spawn_add} or a barrier's {@code focus} only with
+     * an add of milestone 1 (the {@code decoy}, HEROES_V2 6.11); the spirit adds come with A8.
+     */
     public static boolean runs(List<Effect> effects) {
         for (Effect e : effects) {
             if (!EFFECTS.contains(e.type())) {
+                return false;
+            }
+            if (e instanceof HeroDef.SpawnAdd a && (a.add() == null || a.add().milestone > 1)
+                    || e instanceof HeroDef.Barrier b && b.focus() != null && b.focus().milestone > 1) {
                 return false;
             }
         }

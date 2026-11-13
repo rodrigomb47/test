@@ -104,4 +104,57 @@ class MovePlanTest {
         assertTrue(p.recoveryEnd() <= MovePlan.MAX_TICKS);
         assertTrue(p.windup() <= MovePlan.MAX_TICKS);
     }
+    // ------------------------------------------------------------------ format 2's forms (task A5)
+
+    @Test
+    void aBarrageShootsEveryInterval() {
+        Move m = move("lanterns", "barrage", "\"count\": 4, \"interval\": 0.2, \"range\": 16, \"frames\": {\"windup\": 0.6,"
+                + " \"active\": 0.8, \"recovery\": 0.8}");
+        Plan p = MovePlan.of(m);
+        assertArrayEquals(new int[] {12, 16, 20, 24}, p.hits());
+        assertTrue(p.activeEnd() > 24);
+    }
+
+    @Test
+    void wavesRollEveryInterval() {
+        Move m = move("crash", "wave", "\"class\": \"area\", \"radius\": 8, \"speed\": 8, \"waves\": 3, \"interval\": 0.6,"
+                + " \"frames\": {\"windup\": 1.0, \"active\": 1.8, \"recovery\": 0.8}");
+        assertArrayEquals(new int[] {20, 32, 44}, MovePlan.of(m).hits());
+        Move one = move("stomp", "wave", "\"class\": \"area\", \"radius\": 8, \"frames\": {\"windup\": 1.0, \"active\": 1.0,"
+                + " \"recovery\": 0.8}");
+        assertArrayEquals(new int[] {20}, MovePlan.of(one).hits(), "one wave by default");
+    }
+
+    @Test
+    void rainCallsItsImpactsOverItsDuration() {
+        Move m = move("foxfire", "rain", "\"class\": \"area\", \"count\": 8, \"radius\": 5, \"duration\": 2, \"delay\": 0.9,"
+                + " \"frames\": {\"windup\": 1.0, \"active\": 2.0, \"recovery\": 0.8}");
+        Plan p = MovePlan.of(m);
+        assertEquals(8, p.hitCount());
+        assertEquals(20, p.hit(0));
+        assertEquals(20 + 7 * 5, p.hit(7), "40 ticks over 8 impacts: one every 5");
+    }
+
+    @Test
+    void aSweepAndAGrabHoldTheirActivePart() {
+        Move sweep = move("dance", "sweep", "\"class\": \"area\", \"range\": 8, \"arc\": 180, \"duration\": 2,"
+                + " \"frames\": {\"windup\": 1.0, \"active\": 0.5, \"recovery\": 1.5}");
+        Plan s = MovePlan.of(sweep);
+        assertEquals(1, s.hitCount());
+        assertTrue(s.activeEnd() >= 20 + 40, "the 2 s sweep fits its active part: " + s);
+        Move grab = move("seize", "grab", "\"class\": \"heavy\", \"range\": 2.5, \"throw\": 3, \"frames\": {\"windup\": 0.9,"
+                + " \"active\": 0.2, \"recovery\": 1.2}");
+        Plan g = MovePlan.of(grab);
+        assertTrue(g.activeEnd() >= 18 + BossRules.GRAB_HOLD_TICKS + 1, "the 1 s hold fits: " + g);
+    }
+
+    @Test
+    void theOtherNewFormsReleaseOnce() {
+        for (String f : new String[] {"charge", "counter", "grab"}) {
+            Move m = move("m_" + f, f, "\"class\": \"heavy\"");
+            Plan p = MovePlan.of(m);
+            assertEquals(1, p.hitCount(), f);
+            assertEquals(p.windup(), p.hit(0), f);
+        }
+    }
 }

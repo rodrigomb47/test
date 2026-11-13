@@ -64,6 +64,10 @@ public final class HeroForms {
         if (HeroSummons.isSummon(e)) {
             return Diplomacy.hostile(hero.getServer(), hero.getFaction(), HeroSummons.factionOf(e));
         }
+        if (e instanceof com.factionclash.hero.entity.HeroDecoy d) {
+            // an enemy hero's decoy fools a hero as it fools a player (HEROES_V2 6.11, 6.15)
+            return d.faction() != null && Diplomacy.hostile(hero.getServer(), hero.getFaction(), d.faction());
+        }
         return e == hero.getTarget() || e instanceof Enemy && CombatRules.isHostileMonster(e);
     }
 

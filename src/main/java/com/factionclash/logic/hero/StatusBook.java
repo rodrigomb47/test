@@ -31,6 +31,10 @@ import java.util.function.Predicate;
  * <li><b>Control</b> (task A4, HEROES_V2 6.14-6.15): a stun stops its carrier for its seconds, whoever carries it, and
  * leaves an immunity for twice as long after it ends ({@link BossRules#stunImmuneUntil}): the immunity belongs to the
  * carrier, so no second stun from anyone lands inside it. A taunt names the hero it binds the carrier to.</li>
+ * <li>Format 2's effects (task A5, HEROES_V2 6.6), the same on every carrier: a <b>silence</b> (a hero cannot start
+ * moves; nobody else has moves to stop), a <b>tether</b> to the spot where it landed (pulled back past its length), a
+ * <b>broken guard</b> (no shield goes up until it ends), and a hero's <b>barrier</b> (it blocks all damage until it has
+ * taken its hits; with a living focus add its last hit holds).</li>
  * <li>At most {@link #MAX_STATUSES} entries (v1 19); the oldest goes first (never a stun or its immunity, so the cap
  * cannot be used to clear a stun).</li>
  * </ul>
@@ -51,7 +55,15 @@ public final class StatusBook {
         /** no new stun lands until it runs out (6.14: twice the stun's length after it ends) */
         IMMUNE,
         /** bound to the hero named by {@code source} (A4, HEROES_V2 6.15) */
-        TAUNT
+        TAUNT,
+        /** cannot start moves (A5, 6.6) */
+        SILENCE,
+        /** pulled back toward its anchor ({@code x, y, z}) past {@code amount} blocks (A5) */
+        TETHER,
+        /** its shield is down and stays down (A5: {@code guard_break}) */
+        GUARD,
+        /** a hero's barrier: blocks all damage until {@code stacks} more hits (A5) */
+        BARRIER
     }
 
     /**
@@ -72,6 +84,8 @@ public final class StatusBook {
         public long nextTickAt;
         public boolean glow;
         public boolean enemy;
+        /** A tether's anchor. */
+        public double x, y, z;
         long order;
 
         public Entry(Kind kind, String id, String source) {
@@ -118,10 +132,17 @@ public final class StatusBook {
         }
     }
 
-    /** What a {@link #dispel} took: whether a stat changed, and the shield it removed (its amount; 0: none). */
-    public record Dispelled(boolean stats, double shield) {
+    /**
+     * What a {@link #dispel} took: whether a stat changed, the shield it removed (its amount; 0: none) and whether a
+     * barrier went (A5).
+     */
+    public record Dispelled(boolean stats, double shield, boolean barrier) {
+        public Dispelled(boolean stats, double shield) {
+            this(stats, shield, false);
+        }
+
         public boolean any() {
-            return stats || shield > 0;
+            return stats || shield > 0 || barrier;
         }
     }
 
@@ -514,11 +535,11 @@ public final class StatusBook {
     }
 
     /**
-     * {@code dispel} (v1 13.4): removes the helpful stat modifiers ({@link Stat#helpful}) and the hero shield. The
-     * potion effects and the absorption are the game's to remove.
+     * {@code dispel} (v1 13.4): removes the helpful stat modifiers ({@link Stat#helpful}), the hero shield and a barrier
+     * (A5). The potion effects and the absorption are the game's to remove.
      */
     public Dispelled dispel() {
-        boolean stats = false;
+        boolean stats = false, barrier = false;
         double shield = 0;
         for (int i = entries.size() - 1; i >= 0; i--) {
             Entry e = entries.get(i);
@@ -528,12 +549,127 @@ public final class StatusBook {
             } else if (e.kind == Kind.SHIELD) {
                 entries.remove(i);
                 shield = Math.max(shield, e.amount > 0 ? e.amount : Double.MIN_VALUE);
+            } else if (e.kind == Kind.BARRIER) {
+                entries.remove(i);
+                barrier = true;
             }
         }
         if (stats) {
             statsDirty = true;
         }
-        return new Dispelled(stats, shield);
+        return new Dispelled(stats, shield, barrier);
+    }
+
+    // ------------------------------------------------------------------ format 2's effects (A5: silence, tether, guard, barrier)
+
+    private Entry timed(Kind k, String id, double seconds, long now, boolean longerWins) {
+        long t = until(now, seconds);
+        Entry e = first(k);
+        if (e != null && e.active(now)) {
+            e.expiresAt = longerWins ? Math.max(e.expiresAt, t) : t;
+            return e;
+        }
+        entries.removeIf(x -> x.kind == k);
+        e = add(new Entry(k, id, ""));
+        e.expiresAt = t;
+        return e;
+    }
+
+    /** A silence for {@code seconds} (the longer one wins): a hero cannot start moves. */
+    public void silence(double seconds, long now) {
+        timed(Kind.SILENCE, "silence", seconds, now, true);
+    }
+
+    public boolean silenced(long now) {
+        Entry e = first(Kind.SILENCE);
+        return e != null && e.active(now);
+    }
+
+    /**
+     * A tether of {@code max} blocks to the anchor {@code (ax, ay, az)} for {@code seconds}, by {@code source}: a newer
+     * tether replaces an older one.
+     */
+    public void tether(String source, double seconds, double max, double ax, double ay, double az, long now) {
+        entries.removeIf(e -> e.kind == Kind.TETHER);
+        Entry e = add(new Entry(Kind.TETHER, "tether", source));
+        e.amount = Math.max(0, max);
+        e.x = ax;
+        e.y = ay;
+        e.z = az;
+        e.expiresAt = until(now, seconds);
+    }
+
+    /** The tether on now (its anchor and length), or null. */
+    public Entry tether(long now) {
+        Entry e = first(Kind.TETHER);
+        return e != null && e.active(now) ? e : null;
+    }
+
+    /** A broken guard for {@code seconds} (the longer one wins): no shield goes up until it ends. */
+    public void guardBreak(double seconds, long now) {
+        timed(Kind.GUARD, "guard", seconds, now, true);
+    }
+
+    public boolean guardBroken(long now) {
+        Entry e = first(Kind.GUARD);
+        return e != null && e.active(now);
+    }
+
+    /** The game time a broken guard ends (0: none). */
+    public long guardUntil(long now) {
+        Entry e = first(Kind.GUARD);
+        return e != null && e.active(now) ? e.expiresAt : 0;
+    }
+
+    /** A barrier of {@code hits} for {@code seconds}: it replaces an earlier one. */
+    public void barrier(int hits, double seconds, long now) {
+        entries.removeIf(e -> e.kind == Kind.BARRIER);
+        Entry e = add(new Entry(Kind.BARRIER, "barrier", ""));
+        e.stacks = Math.max(1, hits);
+        e.maxStacks = e.stacks;
+        e.expiresAt = until(now, seconds);
+    }
+
+    /** The hits a barrier still blocks (0: none). */
+    public int barrierHits(long now) {
+        Entry e = first(Kind.BARRIER);
+        return e != null && e.active(now) ? e.stacks : 0;
+    }
+
+    /** What one blow did to a barrier. */
+    public enum BarrierHit {
+        /** no barrier: the blow lands */
+        NONE,
+        /** blocked; the barrier holds (one hit fewer, or held at its last by a living focus) */
+        BLOCKED,
+        /** blocked, and that was its last hit: the barrier is gone */
+        BROKE
+    }
+
+    /**
+     * A blow on a barrier: blocked, and one hit fewer; the last hit breaks it, unless {@code focusAlive} (its focus add
+     * lives), which keeps it at one.
+     */
+    public BarrierHit barrierHit(long now, boolean focusAlive) {
+        Entry e = first(Kind.BARRIER);
+        if (e == null || !e.active(now)) {
+            return BarrierHit.NONE;
+        }
+        if (e.stacks <= 1 && focusAlive) {
+            e.stacks = 1;
+            return BarrierHit.BLOCKED;
+        }
+        e.stacks--;
+        if (e.stacks <= 0) {
+            entries.remove(e);
+            return BarrierHit.BROKE;
+        }
+        return BarrierHit.BLOCKED;
+    }
+
+    /** Ends a barrier at once (its focus add was killed); true when there was one. */
+    public boolean breakBarrier() {
+        return entries.removeIf(e -> e.kind == Kind.BARRIER);
     }
 
     // ------------------------------------------------------------------ expiry and cleansing
@@ -571,7 +707,8 @@ public final class StatusBook {
 
     /**
      * {@code cleanse} (v1 13.2): removes hero DoTs, marks an enemy put on it, the freeze hold, a stun (its immunity
-     * stays: a cleanse never opens the way to a second stun) and harmful stat modifiers ({@link Stat#helpful}). {@code sourceIsEnemy} tells, for a mark whose applier is known only by its id
+     * stays: a cleanse never opens the way to a second stun), a silence, a tether, a broken guard (A5) and harmful stat
+     * modifiers ({@link Stat#helpful}). {@code sourceIsEnemy} tells, for a mark whose applier is known only by its id
      * string, whether that applier is hostile now (the entry's own {@code enemy} flag counts too). Returns whether a
      * stat changed.
      */
@@ -580,10 +717,10 @@ public final class StatusBook {
         for (int i = entries.size() - 1; i >= 0; i--) {
             Entry e = entries.get(i);
             boolean go = switch (e.kind) {
-                case DOT, FREEZE, STUN -> true;
+                case DOT, FREEZE, STUN, SILENCE, TETHER, GUARD -> true;
                 case MARK -> e.enemy || sourceIsEnemy != null && sourceIsEnemy.test(e.source);
                 case STAT -> e.stat != null && !helpful(e.stat, e.amount);
-                case SHIELD, IMMUNE, TAUNT -> false;
+                case SHIELD, IMMUNE, TAUNT, BARRIER -> false;
             };
             if (go) {
                 entries.remove(i);

@@ -48,6 +48,19 @@ public final class ModEntities {
                     .fireImmune()
                     .build("hero_zone"));
 
+    /**
+     * A hero's decoy add (task A5, HEROES_V2 6.11): 1 health, pops at any hit, gone after 10 s, not saved. Its own look
+     * (the hero's model) is A7's.
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<com.factionclash.hero.entity.HeroDecoy>> HERO_DECOY =
+            ENTITIES.register("hero_decoy", () -> EntityType.Builder.<com.factionclash.hero.entity.HeroDecoy>of(
+                            com.factionclash.hero.entity.HeroDecoy::new, MobCategory.MISC)
+                    .sized(0.6F, 1.8F)
+                    .eyeHeight(1.62F)
+                    .clientTrackingRange(10)
+                    .noSave()
+                    .build("hero_decoy"));
+
     private ModEntities() {
     }
 }

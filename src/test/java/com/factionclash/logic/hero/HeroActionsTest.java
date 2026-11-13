@@ -135,4 +135,24 @@ class HeroActionsTest {
             assertTrue(HeroActions.telegraphPose(p) >= 0, p + " maps to a real clip");
         }
     }
+    /** Task A5: a move's code names its clip through the hero's visual move list, as the client resolves it. */
+    @Test
+    void aMovesCodeNamesItsClipOnTheClient() {
+        java.util.List<String> visual = java.util.List.of("claw_string", "move.pounce", "hiss");
+        assertEquals(HeroActions.FIRST_MOVE, HeroActions.moveCode("claw_string", false, false, visual));
+        int pounce = HeroActions.moveCode("pounce", false, false, visual);
+        assertEquals(HeroActions.FIRST_MOVE + 1, pounce, "a name with its prefix");
+        assertEquals("move.pounce", HeroClips.actionClip(pounce, visual, java.util.List.of()), "the client plays move.pounce");
+        assertEquals("move.hiss", HeroClips.actionClip(HeroActions.moveCode("hiss", false, false, visual), visual,
+                java.util.List.of()));
+        assertEquals(-1, HeroActions.moveCode("zoomies", false, false, visual), "no slot: no code");
+        assertEquals(HeroActions.ULTIMATE, HeroActions.moveCode("frenzy", true, false, visual));
+        assertEquals("ultimate", HeroActions.actionName(HeroActions.moveCode("frenzy", true, false, visual)));
+        assertEquals("ultimate.awakened", HeroActions.actionName(HeroActions.moveCode("dawn", true, true, visual)));
+        java.util.List<String> thirteen = new java.util.ArrayList<>();
+        for (int i = 0; i < 13; i++) {
+            thirteen.add("m" + i);
+        }
+        assertEquals(-1, HeroActions.moveCode("m12", false, false, thirteen), "only 12 move slots");
+    }
 }

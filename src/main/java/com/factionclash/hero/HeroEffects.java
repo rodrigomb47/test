@@ -44,8 +44,9 @@ import java.util.Optional;
  * The effects of HERO_FORMAT.md 13 that the engine runs (task A3: {@code damage}, {@code dot}, {@code heal},
  * {@code shield}, {@code effect}, {@code stat}, {@code knockback}, {@code pull}, {@code ignite}, {@code freeze},
  * {@code cleanse}, {@code energy}, {@code cooldown_cut}, {@code move_self}, {@code mark}, {@code clear_marks}; task A4:
- * {@code stun}, {@code taunt}, {@code dispel}, {@code empower}, {@code summon}; the format-2 effects are A5's and are
- * skipped). Each effect goes to the receivers its {@code to} names
+ * {@code stun}, {@code taunt}, {@code dispel}, {@code empower}, {@code summon}; task A5: format 2's {@code guard_break},
+ * {@code poise}, {@code silence}, {@code tether}, {@code barrier}, {@code spawn_add}, {@code call_guards}, a move's
+ * {@code breaks_guard} and {@code unblockable}). Each effect goes to the receivers its {@code to} names
  * ({@link EffectRouting}), only to those its recipient class allows, rolled by its {@code chance} and checked by its
  * {@code if} for each receiver ({@link Conditions}). Amounts read the hero's attack power, health and armour and the
  * receiver's health and marks at hit time ({@link HeroRules#amountAtHit}), grow with ability power and
@@ -72,7 +73,7 @@ public final class HeroEffects {
         for (int i = 0; i < effects.size(); i++) {
             Effect e = effects.get(i);
             if (!EffectRouting.EFFECTS.contains(e.type())) {
-                continue; // A4's and A5's effects
+                continue;
             }
             EffectRouting.Receivers to = EffectRouting.receivers(e, use.form);
             if (EffectRouting.oncePerUse(e) && !use.firstTime(listIndex, i)) {
@@ -134,7 +135,15 @@ public final class HeroEffects {
                 double raw = raw(use, d.amount(), r);
                 raw = use.ledger.take(UseLedger.Kind.DAMAGE, key(r), raw);
                 Element el = element(use, d.element());
-                float lost = HeroDamage.deal(hero, direct, r, el, raw, false);
+                // 6.9: a breaks_guard move knocks a raised shield aside (the axe rule) unless it has its own guard_break;
+                // an unblockable move, every grab among them, goes through a shield (the same for every receiver)
+                boolean guardUp = use.move != null && use.move.breaksGuard() && HeroStatus.shieldUp(r);
+                boolean unblockable = use.move != null && (use.move.unblockable() || use.move.form() == HeroDef.Form.GRAB);
+                float lost = unblockable ? HeroDamage.dealUnblockable(hero, direct, r, el, raw)
+                        : HeroDamage.deal(hero, direct, r, el, raw, false);
+                if (guardUp && !hasGuardBreak(use.move) && HeroStatus.guardBreak(r, BREAKS_GUARD_SECONDS)) {
+                    use.landed |= enemy;
+                }
                 if (lost > 0) {
                     use.landed |= enemy;
                     hero.markAttacked();
@@ -256,9 +265,52 @@ public final class HeroEffects {
                 }
             }
             case HeroDef.Summon sm -> HeroSummons.summon(hero, sm.creature(), sm.count(), sm.seconds(), sm.name());
+            // ---- format 2's effects (HEROES_V2 6.6; task A5), the same on every receiver
+            case HeroDef.GuardBreak g -> {
+                if (HeroStatus.guardBreak(r, g.seconds())) {
+                    use.landed |= enemy;
+                    particles(hero.level(), r, ParticleTypes.CRIT, 6);
+                }
+            }
+            case HeroDef.Poise p -> {
+                // poise damage is a hero's (heroes fighting each other); anyone else has no poise to fill
+                if (r instanceof HeroEntity h && h != hero) {
+                    h.combat().poiseDamage(p.amount());
+                    use.landed |= enemy;
+                }
+            }
+            case HeroDef.Silence si -> {
+                HeroStatus.silence(r, si.seconds());
+                use.landed |= enemy;
+                particles(hero.level(), r, ParticleTypes.SMOKE, 4);
+            }
+            case HeroDef.Tether te -> {
+                HeroStatus.tether(r, hero, te.seconds(), te.max());
+                use.landed |= enemy;
+            }
+            case HeroDef.Barrier b -> hero.combat().barrier(b.hits(), b.seconds(), b.focus());
+            case HeroDef.SpawnAdd a -> hero.combat().spawnAdds(a.add(), a.count());
+            case HeroDef.CallGuards c -> com.factionclash.combat.Alerts.callGuards(hero, hero.getTarget(),
+                    CALL_GUARDS_RADIUS, c.count());
             default -> {
             }
         }
+    }
+
+    /** A {@code breaks_guard} move knocks a raised shield aside for 5 s, as an axe does (6.9). */
+    public static final double BREAKS_GUARD_SECONDS = 5;
+    /** {@code call_guards} reaches soldiers of the hero's faction this far (6.6). */
+    public static final double CALL_GUARDS_RADIUS = 32;
+
+    private static boolean hasGuardBreak(HeroDef.Move m) {
+        for (List<Effect> l : m.effectLists()) {
+            for (Effect e : l) {
+                if (e instanceof HeroDef.GuardBreak) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -368,6 +420,47 @@ public final class HeroEffects {
         r.setDeltaMovement(dx / l * v, Math.max(r.getDeltaMovement().y, FormGeometry.PULL_LIFT), dz / l * v);
         r.hasImpulse = true;
         r.hurtMarked = true;
+    }
+
+    /**
+     * Whether a throw of about {@code blocks} along (dx, dz) would land {@code r} in danger (HEROES_V2 6.12, task A5):
+     * lava or fire where it lands or on the way, or no floor within 6 blocks below (a deep drop or the void). The same
+     * test for every receiver.
+     */
+    public static boolean landingHazard(LivingEntity r, double dx, double dz, double blocks) {
+        Level level = r.level();
+        double l = Math.sqrt(dx * dx + dz * dz);
+        if (l < 1e-6) {
+            return false;
+        }
+        double ux = dx / l, uz = dz / l;
+        int steps = (int) Math.ceil(Math.max(1, blocks + 1));
+        for (int s = 1; s <= steps; s++) {
+            double d = Math.min(s, blocks + 1);
+            BlockPos land = BlockPos.containing(r.getX() + ux * d, r.getY() + 0.1, r.getZ() + uz * d);
+            if (!level.getBlockState(land).getCollisionShape(level, land).isEmpty()
+                    && !level.getBlockState(land.above()).getCollisionShape(level, land.above()).isEmpty()) {
+                return false; // a wall stops the throw here, before anything further
+            }
+            boolean floor = false;
+            for (int i = -1; i <= 6; i++) {
+                BlockPos p = land.below(i);
+                var st = level.getBlockState(p);
+                if (level.getFluidState(p).is(FluidTags.LAVA) || st.is(net.minecraft.tags.BlockTags.FIRE)
+                        || st.is(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK)
+                        || st.is(net.minecraft.tags.BlockTags.CAMPFIRES)) {
+                    return true;
+                }
+                if (i >= 0 && !st.getCollisionShape(level, p).isEmpty()) {
+                    floor = true;
+                    break;
+                }
+            }
+            if (!floor && s >= steps - 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Lava where a push of about {@code blocks} along (dx, dz) would land it, or no floor within 3 blocks below. */

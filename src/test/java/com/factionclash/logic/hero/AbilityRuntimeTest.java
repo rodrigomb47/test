@@ -133,11 +133,16 @@ class AbilityRuntimeTest {
     void theEngineRunsWholeMovesOnly() throws IOException {
         assertTrue(EffectRouting.runs(MovePlanTest.move("cut", "melee", "")));
         assertTrue(EffectRouting.runs(MovePlanTest.move("arc", "chain", "")));
-        assertFalse(EffectRouting.runs(MovePlanTest.move("rush", "charge", "")), "a format-2 form A5 adds");
+        assertTrue(EffectRouting.runs(MovePlanTest.move("rush", "charge", "")), "a format-2 form, since A5");
         assertTrue(EffectRouting.runs(MovePlanTest.move("bash", "melee", "\"class\": \"heavy\", \"effects\": "
                 + "[{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"stun\", \"seconds\": 1}]")), "a stun runs since A4");
-        assertFalse(EffectRouting.runs(MovePlanTest.move("snap", "melee", "\"effects\": "
-                + "[{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"silence\", \"seconds\": 1}]")), "a silence is A5's");
+        assertTrue(EffectRouting.runs(MovePlanTest.move("snap", "melee", "\"effects\": "
+                + "[{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"silence\", \"seconds\": 1}]")), "a silence runs since A5");
+        assertFalse(EffectRouting.runs(MovePlanTest.move("wisps", "self", "\"effects\": "
+                + "[{\"type\": \"spawn_add\", \"add\": \"wisp\", \"count\": 1}]")), "a spirit add is milestone 2's (A8)");
+        assertTrue(EffectRouting.runs(MovePlanTest.move("mirror", "self", "\"class\": \"heavy\", \"effects\": "
+                + "[{\"type\": \"spawn_add\", \"add\": \"decoy\", \"count\": 2}]")), "a decoy runs since A5");
+        assertFalse(EffectRouting.FORMS.contains(HeroDef.Form.DIVE), "the dive is A12's");
         HeroDef natsuho = SliceFixtures.load("natsuho_komezaki");
         List<String> runs = new ArrayList<>();
         for (Move m : natsuho.v2().allMoves()) {
@@ -145,13 +150,20 @@ class AbilityRuntimeTest {
                 runs.add(m.id());
             }
         }
-        assertEquals(List.of("claw_string", "pounce", "hiss", "scratch_dash", "midnight_frenzy"), runs,
-                "the empower ultimate runs since A4; the counter and the charge wait for A5");
+        assertEquals(List.of("claw_string", "pounce", "hiss", "scratch_dash", "cat_reflex", "zoomies", "midnight_frenzy"), runs,
+                "every move runs since A5 (the counter and the charge with it)");
+        for (String id : SliceKitsTest.IDS) {
+            HeroDef d = SliceFixtures.load(id);
+            for (Move m : d.v2().allMoves()) {
+                assertTrue(EffectRouting.runs(m), id + "'s " + m.id() + " runs since A5 (no slice hero has a dive)");
+            }
+        }
     }
 
     @Test
     void theSelectorNeverPicksAMoveTheEngineCannotRun() {
-        HeroDef.V2 kit = MoveSelectorTest.kit(null, MoveSelectorTest.move("rush", "charge", "\"range\": 10"),
+        HeroDef.V2 kit = MoveSelectorTest.kit(null, MoveSelectorTest.move("rush", "bolt", "\"range\": 10, \"effects\": "
+                        + "[{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"spawn_add\", \"add\": \"wisp\"}]"),
                 MoveSelectorTest.move("cut", "melee", ""));
         MoveSelector s = new MoveSelector(kit, 50, 50, false, 7).runnable(EffectRouting::runs);
         s.fightStarted(0);
@@ -165,7 +177,7 @@ class AbilityRuntimeTest {
         far.fightStarted(0);
         Pick[] out = new Pick[1];
         assertEquals(-1, MoveSelectorTest.firstPick(far, 0, 400, MoveSelectorTest.at(9), out),
-                "the charge would reach, but it is not runnable");
+                "the bolt would reach, but its spirit add is not runnable yet");
     }
 
     // ------------------------------------------------------------------ cooldowns across a save, cooldown_cut

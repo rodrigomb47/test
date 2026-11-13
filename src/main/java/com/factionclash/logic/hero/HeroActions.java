@@ -216,6 +216,32 @@ public final class HeroActions {
         return clip == null ? CODE_NONE : actionCode(clip);
     }
 
+    /**
+     * The action code of a move (appendix D; task A5): {@code ultimate} (76) or {@code ultimate.awakened} (78) for the
+     * ultimates, else {@code move.<slot>} (64 + slot) for the move's place in the hero's {@code visual.json} move list,
+     * whose names may carry the {@code move.} prefix; -1 when that list does not have it within the 12 slots (the client
+     * could not name its clip).
+     */
+    public static int moveCode(String id, boolean ultimate, boolean awakened, List<String> visualMoves) {
+        if (awakened) {
+            return ULTIMATE_AWAKENED;
+        }
+        if (ultimate) {
+            return ULTIMATE;
+        }
+        if (id == null || visualMoves == null) {
+            return -1;
+        }
+        int n = Math.min(MOVE_SLOTS, visualMoves.size());
+        for (int i = 0; i < n; i++) {
+            String v = visualMoves.get(i);
+            if (v != null && (v.equals(id) || v.equals("move." + id))) {
+                return FIRST_MOVE + i;
+            }
+        }
+        return -1;
+    }
+
     /** The code of a fixed animation name ({@code attack.1}, {@code work.mine}, ...), or -1. */
     public static int actionCode(String name) {
         for (int c = 1; c < 256; c++) {

@@ -1167,11 +1167,17 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        if (!level().isClientSide && !preview && isAlive() && combat().barrierBlocks(source)) {
+            return false; // its barrier (6.6, task A5) blocks all damage until it has taken its hits
+        }
         float before = getHealth();
         boolean r = super.hurt(source, amount);
         float lost = before - getHealth();
         if (r && lost > 0 && !level().isClientSide && !preview) {
             gainEnergy(HeroRules.energyFromDamage(lost));
+            if (isAlive()) {
+                combat().damaged(lost); // a channelled move breaks after its share (6.9, task A5)
+            }
             float share = getHealth() / Math.max(1F, getMaxHealth());
             if (isAlive() && lowHealthArmed && share < LOW_HEALTH) {
                 lowHealthArmed = false;

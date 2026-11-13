@@ -14,10 +14,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * The server timing files ({@code data/factionclash/hero_timings/<file>.json}, HEROES_V2 4.8), read from the mod file
  * (like the visual files, so a dedicated server has them) and looked up through a hero's animation chain, the same
  * order the client plays from: the hero's own file, its style library, the core library. The server clears an action
- * code once its clip has played; the move runner (A5) will time wind-ups and hits from the same records.
+ * code once its clip has played; the move runner (A5, {@link HeroCombat}) times a move's wind-up, hits and recovery from
+ * the same records. GameTests may register a timing file of their own for their fixtures ({@link #registerTransient});
+ * the generated files are never written here.
  */
 public final class HeroTimingFiles {
     private static final Map<String, HeroTimings> CACHE = new ConcurrentHashMap<>();
+    /** Timing files GameTests register for their fixtures (they win over a file of the same name). */
+    private static final Map<String, HeroTimings> TRANSIENT = new ConcurrentHashMap<>();
     private static final HeroTimings NONE = new HeroTimings("", -1, Map.of());
 
     private HeroTimingFiles() {
@@ -36,7 +40,17 @@ public final class HeroTimingFiles {
 
     /** One timing file (an empty one when the mod has no such file). */
     public static HeroTimings file(String name) {
-        return CACHE.computeIfAbsent(name, HeroTimingFiles::read);
+        HeroTimings t = TRANSIENT.isEmpty() ? null : TRANSIENT.get(name);
+        return t != null ? t : CACHE.computeIfAbsent(name, HeroTimingFiles::read);
+    }
+
+    /**
+     * A test fixture's timing file under {@code name} (a name its fixture's animation chain lists) until the returned
+     * handle is closed. Never used for the mod's own heroes.
+     */
+    public static AutoCloseable registerTransient(String name, HeroTimings timings) {
+        TRANSIENT.put(name, timings);
+        return () -> TRANSIENT.remove(name, timings);
     }
 
     /** Forgets the files (read again on the next lookup; at every server start, with the hero registry). */

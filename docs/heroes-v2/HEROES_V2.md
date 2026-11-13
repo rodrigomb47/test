@@ -2775,7 +2775,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash. Done 2026-11-12: `client/hero/` (`HeroModel`, `HeroRenderer`, `HeroFace`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals`), `hero/HeroAnimator` (the three controllers), `hero/HeroLook`, `hero/HeroTimingFiles`, pure `logic/hero/` (`FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); 230 unit tests (39 new) and 149 GameTests (4 new); in the Xvfb viewer the test rig idles, walks, swings (`hit` logged at animation tick 10.4-10.7 for the file's 10), blinks, shows all 12 moods, talks, tints its sash per faction, holds a pickaxe and mines, shows its phase-2 halo and glowing eyes, and drops its `fine_` bones beyond 20 blocks; the six style fixtures stand beside it (`docs/screenshots/hero_a2_*`). Reviewed 2026-11-12: the per-frame allocations of the render path removed, the walk/run flicker at an NPC's travel pace fixed ("Review of A0-A2" below); checkpoint 1 stands |
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core. Done 2026-11-13: a hero picks its moves with F3's selector after the fight's opening gap and runs each select -> wind-up -> hit ticks -> recovery (`hero/HeroCombat`, `combat/HeroAbilityGoal`, `logic/hero/MovePlan`, where A5 plugs in the timing files, `DATA_ACTION` and interrupts); v1's fourteen forms and the combo, with projectile and zone entities and chains; the effects of phase 4 (damage, dot, heal, shield, effect, stat, knockback, pull, ignite, freeze, cleanse, energy, cooldown_cut, move_self, mark, clear_marks) with Amounts at hit time and `Conditions` per receiver; element damage types and resistances; the slot caps per use and receiver against any target (`logic/hero/UseLedger`); marks, stacks and statuses on any entity, saved with it (`hero/HeroStatus`, `logic/hero/StatusBook`); energy built (ranged hits too) and spent by the ultimate; cooldowns and energy kept across a save; the thrown basic attack's own goal (`combat/HeroThrowGoal`); a move with a later task's form or effect is not picked yet; `heroes.powerScale`, `maxHit`, `maxDotPerSecond`; 877 unit tests (41 new) and 183 GameTests (23 new), every effect that can land on a player giving an NPC soldier and a mock player the same numbers ("A3 as built" below) |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5. Done 2026-11-13: stun, taunt, dispel, empower and summon run (`hero/HeroStatus`, `HeroEffects`, `HeroSummons`, `combat/StunnedGoal`, `hero/HeroControlEvents`), the same on every receiver (6.15: a stun stops a player as it stops an NPC, with its immunity from any source; a taunt halves anyone's damage to others; blindness cuts an NPC's ranges); the format-2 states and v1's empowered state (`hero/HeroStates`; the selector reads `skills_locked` and a state's move list); passives with every trigger the game has now and the loop guard (`logic/hero/PassiveBook`, `hero/HeroPassives`); `combat/HeroTargetGoal` (focus, protects, aggression radius, no attack tokens; `logic/hero/TargetRules`); the leash by aggression, the skirmisher's step back and a held keep distance; duties (a worker-duty hero takes that worker's role, tool and job and still fights like a soldier) and alarms; the v1 base abilities as their five talents (`hero/HeroTalents`); combat XP and growth; telegraph poses; the ground leap and dash checked at drops and walls; `heroes.summons`, `heroes.xpRate`; 911 unit tests (34 new) and 203 GameTests (20 new), every control checked on an NPC soldier and a mock player ("A4 as built" below) |
-| A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5 |
+| A5 | Move runner: frames, `DATA_ACTION`, speed, interrupts; new forms (combo, charge, wave, rain, sweep, grab, counter, barrage); new effects (guard_break, barrier, spawn_add, call_guards, tether, silence, poise); new conditions and triggers | A3, F3 | L | the form and effect GameTests of 14.5. Done 2026-11-13: the move runner in `hero/HeroCombat` (`logic/hero/MoveTiming`): a move's frames and hit ticks from the hero's timing files through its animation chain (the clip its code names; its `hit` markers are the hits), else its own frames; `DATA_ACTION` gets the move's code (`move.<slot>` by its `visual.json` list, `ultimate`, `ultimate.awakened`) at the move's speed on the tick its wind-up starts and the hit lands exactly the wind-up later; speed from Haste, Mining Fatigue, Slowness and the `attack_speed` stat, held to the class minimums and rounded down to a `DATA_ACTION` step so clip and plan agree; interrupts (stun, the stagger hook A6a completes, a knock-back over 0.5 in a wind-up, a broken channel, an escape, death, a target lost or out of reach) with their clips and half the cooldown back where v1 says; followups, strings and the opening gap as F3's selector holds them; the forms charge, wave, rain, sweep, grab, counter and barrage beside A3's combo (the `dive` waits for A12); the effects guard_break, barrier, spawn_add (decoys, `entity/HeroDecoy`; their look is A7's), call_guards, tether, silence and poise, `breaks_guard` and `unblockable`; `on_counter`, `on_stagger`, `on_add_died`, `adds_alive` and `silenced` filled; 937 unit tests (26 new) and 224 GameTests (21 new), the counter, the grab, the wave, the guard break, the barrier, the tether and the unblockable hit each on an NPC soldier and a mock player with the same numbers ("A5 as built" below) |
 | A6 | Boss controller, one mode (section 6): the permanent boss health, the engaged-enemy set and the fight clock, the per-hit cap for every attacker, poise and stagger, phases and transitions, reactions to players and NPCs alike, weak points, enrage and reset, arena checks, telegraph decals (access transformer), the intro title and boss bar for nearby players with the `fled` and `fallen` end states, death without a yield and the rewards to the winning side; no attack tokens, no player-only rule (15.6); operator test hooks `/fc admin hero health/poise/escape/target-state` | A5 | L | the boss and equal-treatment GameTests of 14.5; split into A6a (health, fight clock, cap, poise, phases, decals) and A6b (reactions, weak points, enrage, arena, intro, bar, the end of a fight and rewards, hooks) if it grows |
 | A7 | `HeroDecoy` | A2, A5 | M | `decoyPopsAndHasNoShadow`; a screenshot of a decoy beside its hero |
 | L1 | Identity layer M1 + slugs M3: `FactionIdentity`, `Factions`, the ~60 reads routed, `FactionIdentityPayload`, `ClientFactions`, `MapPayload` RGB | F4 | L | every existing test unchanged; identity GameTests |
@@ -3691,6 +3691,86 @@ A4 as built (2026-11-13), where it goes beyond or differs from 3.5, 6.6, 6.14-6.
   in raid parties, so the won-raid XP waits for L4/A12. Not yet checked on a dedicated server in a campaign: only the
   test rig ships (a guard with one dash), so A4 changes nothing it does in a campaign but its target choice.
 
+A5 as built (2026-11-13), where it goes beyond or differs from 4.8, 6.3-6.6, 6.9, 6.11-6.12, 12.7, 14.5 and the row above:
+- **The runner** (`hero/HeroCombat`, `logic/hero/MoveTiming`, `MovePlan`): A3's loop keeps its shape; `timingFor(move)`
+  now gives the plan, the code and the speed. The code is `move.<slot>` from the move's place in the hero's
+  `visual.json` move list (names with or without the `move.` prefix, 12 slots; `HeroActions.moveCode`), `ultimate` or
+  `ultimate.awakened`; the clip it names is looked up in the hero's timing files through its animation chain
+  (`HeroTimingFiles`, the client's own order), and its `frame_ticks` and `hit` markers make the plan (`MovePlan.of(move,
+  frames, markers)`: the markers are the hits when there are as many as the form has). A move with no clip uses its own
+  frames and holds A4's telegraph pose; an ultimate without its clip sends no code. `DATA_ACTION` is set in
+  `Run.begin` on the tick the wind-up starts, at the move's speed, and cleared when the run ends unless another action
+  replaced it; the hit lands exactly the plan's wind-up later (`heroHitLandsAfterWindupFrames`).
+- **Speed** (4.8): x (1 + `attack_speed` / 100) x (1 + 10% a Haste level) x (1 - 10% a Mining Fatigue level) x (1 - 15% a
+  Slowness level), 0.5-2.0; then held so neither the wind-up nor the recovery ends under its class minimum (6.4), and
+  rounded **down** to a step of `DATA_ACTION`'s speed (63 steps), so client and server divide by exactly the same number;
+  each tick of the plan is divided by it and rounded up (`MoveTiming.scale`). A heavy move at 2x plays at 1.119 and keeps
+  its 16-tick wind-up (`heroSpeedScalesFrames`).
+- **Interrupts** (`HeroCombat.interrupt`, `MoveTiming.Interrupt`): a stun (A4's path) and a stagger at any stage; a
+  knock-back stronger than 0.5 after the hero's knock-back resistance, in a wind-up only, never through `super_armor` or
+  an ultimate (`HeroMoveEvents`, `LivingKnockBackEvent`); damage of a channelled move's `channel` share in its wind-up or
+  active part (a 2 s recovery, nothing back); an escape (A6/A12 call it: a wind-up is cancelled, an active part plays out
+  its tick); death (`reset`: the run, flights and decoys go). Half the cooldown comes back for a wind-up stopped by a
+  stun, a stagger, a knock-back or an escape; a target that dies, goes or leaves reach in a wind-up calls it off with its
+  charge kept (not a grab's, whose miss is part of its kit, nor a counter's). Clips: `stun`, `stagger`, `interrupt`; a
+  called-off move's code is cleared. **The stagger hook** (`HeroCombat.stagger`, A6a completes it): the move is
+  interrupted, no move starts for 2.5 s, `stagger` plays and `on_stagger` fires; `poiseDamage` fills the hero's poise bar
+  (`BossRules.Poise`, emptied when a fight starts) from the `poise` effect and a charge into a wall; A6a adds every hit.
+- **Forms** (6.5): `charge` (100% is 5 blocks a second; a straight run along the aim at release, each enemy within 1.5
+  blocks of its path hit once, stopped by a wall, a drop, water or lava; a wall with `wall_stun` is +40 poise on the
+  hero), `wave` (rings centred where the hero stood, one per `waves` every `interval`, rolling on by themselves; a
+  grounded receiver within 1.5 blocks of the ring's height and 0.75 of its front is hit once a ring), `rain` (impacts
+  called evenly over its duration around the target, on the ground there, each landing its `delay` later, unscaled,
+  within 1.5 blocks; a zone's caps), `sweep` (a line from the eyes turning across its arc over its duration; each tick
+  covers the wedge since the last; a block between stops it), `grab` (reach to the box; held at a hand a block ahead,
+  0.6 up, by velocity for 1 s; then the effects, then the throw along the first safe of eight directions, softened to 0.5
+  when none is; a miss: 1.2 s of recovery), `counter` (the wind-up is the stance; the first melee blow from an enemy, or
+  an arrow with `ranged`, after shields and armour: its `absorb` share goes and the riposte answers on the hero's next
+  tick, then the active part and recovery; `on_counter`), `barrage` (a shot every `interval`, re-aimed at fire time,
+  carrying the move's effects and its `per_shot` list in turn). Waves and rain impacts, once released, are flights the
+  hero's tick steps before its run (a stun does not recall them). The `dive` stays out of `EffectRouting.FORMS` with a
+  TODO for A12.
+- **Effects** (6.6, `HeroEffects`, `HeroStatus`, `StatusBook`): `guard_break` (a raised shield goes down and no shield goes
+  up for its seconds, the use cancelled for a player and an NPC alike; a player's also gets vanilla's cooldown on the
+  hotbar), `poise` (an enemy hero's bar), `silence` (a hero starts no move; `Sense.silenced`), `tether` (to where the
+  receiver stood; pulled back past its length, at 0.15-0.6 blocks a tick), `barrier` (blocks all damage but `/kill` and
+  the void; a blow from anyone costs a hit, fire and falls count none; dispelled, not cleansed; a focus add holds its last
+  hit and its death breaks it and staggers the hero), `spawn_add` (decoys: `hero/entity/HeroDecoy`, 1 health, a pop at
+  any hit or after 10 s, a short walk, of its hero's side so enemy heroes strike it, not saved, at most 3 a hero, its pop
+  `on_add_died`, counted by `adds_alive`; a spirit add (milestone 2) keeps its move unpicked), `call_guards`
+  (`Alerts.callGuards` with a count: soldiers only, free ones first, then the nearest). A move's `unblockable` (every
+  grab) goes through a raised shield (`HeroMoveEvents`, `LivingShieldBlockEvent`) and `breaks_guard` knocks one aside for
+  5 s unless the move has its own `guard_break`.
+- **Equal treatment**: nothing in A5 reads whether anyone is a player; the counter, the grab, the wave, the guard break,
+  the barrier, the tether and the unblockable hit are each checked on an NPC soldier and a mock player with the same
+  numbers. Ordinary NPCs are unchanged: their shields follow the same broken-guard status, and `call_guards` calls them
+  as `callGuards` always did.
+- **Elsewhere**: `HeroTimingFiles.registerTransient` (a GameTest fixture's own timing file; the generated files are never
+  touched), `HeroDamage.isDot` and `dealUnblockable`, `HeroProjectile.launchShot`, `HeroEffects.landingHazard`,
+  `CombatRules.factionOf` and `HeroForms.enemy` know decoys, `UseLedger.formFactor` gives rain a zone's 1.5,
+  `EffectRouting.FORMS` and `EFFECTS` hold every form but the dive and every effect, `HeroSenses` fills `silenced` and
+  `addsAlive`, `ModEntities.HERO_DECOY` with a plain humanoid renderer on the client (A7 draws the hero's own model).
+  No new config.
+- **Tests**: `MoveTimingTest` (10) and new cases in `MovePlanTest` (5), `FormGeometryTest` (6), `StatusBookTest` (4),
+  `HeroActionsTest` (1) and `AbilityRuntimeTest`: 937 unit tests. `HeroMoveGameTests` (21): `heroMoveSetsActionAtWindup`,
+  `heroHitLandsAfterWindupFrames`, `heroSpeedScalesFrames`, `heroKnockbackInterruptsWindup`, `heroTargetLostCancelsWindup`,
+  `comboStrikesTimed`, `chargeWallStagger`, `waveMissesJumpingTarget`, `rainImpactsAfterDelay`, `sweepStopsAtBlocks`,
+  `grabHoldsAndThrowsSafely`, `counterAbsorbsMelee`, `barrageReaims`, `barrierBreaksAfterHits`, `guardBreakDisablesShield`,
+  `callGuardsRetargets`, `silencePoiseOnHeroes`, `tetherPullsBackNpcAndPlayer`, `spawnAddMakesDecoys`,
+  `channelBreaksAfterItsShare` and `unblockableGoesThroughShields`; with A4's `heroStunInterruptsWindup` the interrupts
+  by stun stay covered: 224 GameTests, all passing. Sabotage checks, each caught: six in the pure rules (no class
+  minimum, the speed step rounded up, a focus that holds nothing, barrage shots one tick apart, a runnable dive, an
+  unbounded tether pull) and 24 in the game over three runs (no `DATA_ACTION`, no knock-back interrupt, markers ignored,
+  a wave that hits the air, a sweep through walls, no absorb, fire through a barrier, a call that ignores its count, a
+  tether that skips players, no channel break; speed ignored, no wall poise, rain landing at once, a throw toward lava,
+  no re-aim, a guard break that skips players, no silence, no decoy cap, a blockable grab; the timing file ignored, a
+  stagger that leaves the move running, super armour knocked out, no `on_counter`, no `breaks_guard`).
+- **Left open**: the decals, the per-hit cap, poise from hits and the stagger's hold and damage bonus (A6a); the decoy's
+  look and NPC soldiers taking a decoy as a target (A7); the `dive` (A12); a state's shown and hidden bones (A4 left them
+  to A5 with `DATA_ACTION`; they need a synced state slot and the visual file's lists, still open); weak point
+  `channel` defaults for moves without the field (A6b). Not yet checked on a dedicated server in a campaign: only the test
+  rig ships (its one move, a dash, has no clip, so it plays as before).
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3841,7 +3921,7 @@ both (14.5).
 - `HeroStatus` (A4): a stun holds a player (the speed and jump modifier, the cancelled attack, use, place and break
   events), a taunt halves every receiver's damage to others, blindness and darkness cut an NPC's ranges, a
   `guard_break` keeps an NPC's shield down (6.15). Done in A4 (15.2 "A4 as built") but for `guard_break`, a format-2
-  effect (A5).
+  effect, done in A5 (15.2 "A5 as built": the same seconds for a player's shield and an NPC's).
 - `HeroActions` (as built in A1a; the rename is done in F3): bit 7 of `DATA_STATE` is renamed from `STATE_YIELDING` to
   `STATE_ESCAPING` (same bit, `HeroActionsTest` updated); codes 21 and 22 keep their numbers and clip names until the
   art follow-up below

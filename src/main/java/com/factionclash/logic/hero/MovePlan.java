@@ -15,18 +15,24 @@ import java.util.List;
  * first hit tick, the active part runs from it to {@link Plan#activeEnd}, and the recovery (the punish window) ends on
  * {@link Plan#recoveryEnd}.
  *
- * <p>The frames come in from outside: in A3 they are the move's authored {@code frames} (class minimums already
- * applied by the reader); A5 hands in the frames of the hero's timing file scaled by its speed
- * ({@link MoveSelector#frames}), and nothing else here changes. Hit ticks by form:
+ * <p>The frames come in from outside: the move's authored (or herogen's generated) {@code frames}, or those of the
+ * hero's timing file with its {@code hit} markers ({@link #of(Move, Frames, int[])}); the runner then scales the plan by
+ * the hero's speed ({@link MoveTiming#scale}). Hit ticks by form:
  * <ul>
  * <li>{@code melee}, {@code bolt}, {@code nova}, {@code cone}, {@code line} with {@code hits} n: the first at the end
  * of the wind-up, then one every {@code hit_interval} (v1 10.3);</li>
  * <li>{@code combo}: one per strike; a strike with its own {@code windup} follows the previous strike's {@code active}
  * plus that wind-up, the others share the move's active part evenly, so the last strike lands at its end;</li>
  * <li>{@code chain}: one jump per target, 0.15 s apart (v1 10.1);</li>
+ * <li>{@code barrage}: one shot per {@code count}, {@code interval} apart; {@code wave}: one ring per {@code waves},
+ * {@code interval} apart; {@code rain}: one impact called per {@code count}, spread over its {@code duration} (each lands
+ * its {@code delay} later); task A5;</li>
  * <li>every other form: one release at the end of the wind-up (a shot or volley is launched, a zone is laid, a leap
- * takes off, a dash starts; what they hit is resolved later by the projectile, the zone or the motion).</li>
+ * takes off, a dash or a charge starts, a sweep begins to turn, a grab reaches, a counter stance ends; what they hit
+ * is resolved later by the projectile, the zone or the motion). A sweep's active part lasts at least its
+ * {@code duration} and a grab's at least its hold.</li>
  * </ul>
+ * With a timing file's {@code hit} markers, the markers are the hits when there are as many as the form has.
  * Pure, unit-tested ({@code MovePlanTest}).
  */
 public final class MovePlan {
@@ -102,28 +108,63 @@ public final class MovePlan {
         return of(m, m.frames());
     }
 
-    /** The plan of {@code m} with {@code f} (A5: the timing file's frames at the hero's speed). */
+    /** The plan of {@code m} with {@code f} (its own frames, or a timing file's without markers). */
     public static Plan of(Move m, Frames f) {
+        return of(m, f, null);
+    }
+
+    /**
+     * The plan of {@code m} with {@code f} at speed 1 and, from a timing file, its {@code hit} markers in ticks from the
+     * action's start ({@code markers}; null or a different count: the form's own hit ticks). The runner scales it.
+     */
+    public static Plan of(Move m, Frames f, int[] markers) {
         Ability a = m.ability();
         int windup = clampTicks(HeroRules.ticks(f.windup()));
         int active = clampTicks(HeroRules.ticks(f.active()));
         int recovery = clampTicks(HeroRules.ticks(f.recovery()));
-        int[] hits = hits(m.form(), a, m.strikes(), windup, active);
+        int[] hits = hits(m, windup, active);
+        if (markers != null && markers.length == hits.length && markers.length > 0 && sorted(markers)) {
+            hits = markers.clone();
+            windup = Math.min(MAX_TICKS - 1, Math.max(0, hits[0]));
+        }
         int last = hits.length == 0 ? windup : hits[hits.length - 1];
         // the active part covers every hit: at least one tick past the last
-        int activeEnd = Math.min(MAX_TICKS, Math.max(windup + active, last + 1));
+        int activeEnd = Math.max(windup + active, last + 1);
+        if (m.form() == Form.SWEEP) {
+            activeEnd = Math.max(activeEnd, windup + (int) Math.max(1, HeroRules.ticks(a.duration())));
+        } else if (m.form() == Form.GRAB) {
+            activeEnd = Math.max(activeEnd, windup + BossRules.GRAB_HOLD_TICKS + 1);
+        }
+        activeEnd = Math.min(MAX_TICKS, activeEnd);
         int recoveryEnd = Math.min(MAX_TICKS, activeEnd + recovery);
         return new Plan(windup, hits, activeEnd, Math.max(activeEnd, recoveryEnd));
+    }
+
+    private static boolean sorted(int[] h) {
+        for (int i = 0; i < h.length; i++) {
+            if (h[i] < 0 || i > 0 && h[i] <= h[i - 1]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static int clampTicks(long t) {
         return (int) Math.max(0, Math.min(MAX_TICKS, t));
     }
 
-    static int[] hits(Form form, Ability a, List<Strike> strikes, int windup, int active) {
+    static int[] hits(Move m, int windup, int active) {
+        Ability a = m.ability();
+        Form form = m.form();
         return switch (form) {
-            case COMBO -> comboHits(strikes, windup, active);
+            case COMBO -> comboHits(m.strikes(), windup, active);
             case CHAIN -> spaced(windup, Math.max(1, a.count()), CHAIN_JUMP_TICKS);
+            case BARRAGE -> spaced(windup, Math.max(1, a.count()), Math.max(1, (int) HeroRules.ticks(a.interval())));
+            case WAVE -> spaced(windup, Math.max(1, m.extra().waves()), Math.max(1, (int) HeroRules.ticks(a.interval())));
+            case RAIN -> {
+                int n = Math.max(1, a.count());
+                yield spaced(windup, n, Math.max(1, (int) Math.round(HeroRules.ticks(a.duration()) / (double) n)));
+            }
             default -> HeroCatalogue.FORMS.containsKey(form) && HeroCatalogue.formUsesHits(form)
                     ? spaced(windup, Math.max(1, a.hits()), Math.max(1, (int) HeroRules.ticks(a.hitInterval())))
                     : new int[] {windup};

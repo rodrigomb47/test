@@ -214,4 +214,176 @@ public final class FormGeometry {
         double blocks = Math.min(PULL_BLOCKS_PER_STRENGTH * Math.max(0, strength), Math.max(0, distance - PULL_STOP));
         return blocks / groundStartDistance(1, airTicks(PULL_LIFT, 0));
     }
+    // ------------------------------------------------------------------ format 2's forms (HEROES_V2 6.5; task A5)
+
+    /** A {@code charge} at 100% runs this fast (blocks per tick: 5 blocks a second, about a sprint). */
+    public static final double CHARGE_BASE_SPEED = 0.25;
+    /** A charge never runs longer than this (a guard against a broken file: 16 blocks at 120% take 54 ticks). */
+    public static final int CHARGE_MAX_TICKS = 80;
+    /** A wave's front hits a grounded receiver within this much of it (6.5: "the front is within 0.75 blocks"). */
+    public static final double WAVE_BAND = 0.75;
+    /** A wave reaches receivers whose feet are within this height of its centre (it rolls along the ground). */
+    public static final double WAVE_HEIGHT = 1.5;
+    /** A rain impact hits enemies within this much of where it lands (6.5: 1-2 blocks; F3's decal of 1.5). */
+    public static final double RAIN_IMPACT_RADIUS = 1.5;
+    /** A grab pulls its receiver toward the hero's hand at most this fast (blocks per tick) and holds it there. */
+    public static final double GRAB_PULL_MAX = 0.8, GRAB_PULL_GAIN = 0.5;
+    /** The hand a grab holds its receiver in: this far in front of the hero, this high above its feet. */
+    public static final double GRAB_HAND_FORWARD = 1.0, GRAB_HAND_UP = 0.6;
+    /** A tether pulls back at most this fast (blocks per tick), and at least this fast once past its length. */
+    public static final double TETHER_PULL_MAX = 0.6, TETHER_PULL_MIN = 0.15;
+
+    /** A charge's speed in blocks per tick for its {@code speed} percent (120-200). */
+    public static double chargeSpeed(double speedPercent) {
+        return CHARGE_BASE_SPEED * Math.max(0, speedPercent) / 100.0;
+    }
+
+    /** The ticks a charge of {@code range} blocks at {@code speedPercent} runs (at least one, at most the cap). */
+    public static int chargeTicks(double range, double speedPercent) {
+        double v = chargeSpeed(speedPercent);
+        if (!(v > 0)) {
+            return 1;
+        }
+        return (int) Math.max(1, Math.min(CHARGE_MAX_TICKS, Math.ceil(Math.max(0, range) / v - 1e-9)));
+    }
+
+    /** A wave's front, in blocks from its centre, {@code ticks} after its release at {@code blocksPerSecond}. */
+    public static double waveFront(int ticks, double blocksPerSecond) {
+        return Math.max(0, ticks) * Math.max(0, blocksPerSecond) / 20.0;
+    }
+
+    /** The ticks a wave rolls before its front passes {@code radius} (it ends then). */
+    public static int waveTicks(double radius, double blocksPerSecond) {
+        if (!(blocksPerSecond > 0)) {
+            return 1;
+        }
+        return (int) Math.max(1, Math.ceil(Math.max(0, radius) * 20.0 / blocksPerSecond - 1e-9));
+    }
+
+    /**
+     * Whether a wave's front at {@code front} blocks hits a receiver {@code distance} blocks (horizontally) from its
+     * centre whose half width is {@code halfWidth}, feet {@code dy} above the centre: only on the ground (jump to dodge),
+     * within {@link #WAVE_BAND} of the front, inside the wave's radius.
+     */
+    public static boolean waveHits(double distance, double halfWidth, double dy, boolean onGround, double front,
+                                   double radius) {
+        return onGround && Math.abs(dy) <= WAVE_HEIGHT && front <= radius + WAVE_BAND
+                && Math.abs(distance - front) <= WAVE_BAND + Math.max(0, halfWidth);
+    }
+
+    /**
+     * A point in a disc of {@code radius} from two uniform numbers in [0, 1): spread evenly over the area (a rain's
+     * impacts around its target). Returns {x, z}.
+     */
+    public static double[] discPoint(double u1, double u2, double radius) {
+        double a = 2 * Math.PI * u1;
+        double r = Math.max(0, radius) * Math.sqrt(Math.max(0, Math.min(1, u2)));
+        return new double[] {Math.cos(a) * r, Math.sin(a) * r};
+    }
+
+    /**
+     * A sweep's line {@code t} ticks into a sweep of {@code durationTicks} across {@code arc} degrees, in degrees from
+     * the hero's facing at its start (measured as {@link #turn} turns): from -arc/2 to +arc/2, evenly.
+     */
+    public static double sweepAngle(int t, int durationTicks, double arc) {
+        double f = durationTicks <= 0 ? 1 : Math.max(0, Math.min(1, t / (double) durationTicks));
+        return -arc / 2 + arc * f;
+    }
+
+    /**
+     * Whether a receiver at {@code (dx, dz)} from the hero (horizontal), {@code halfWidth} wide, is touched by a
+     * sweep's line between {@code fromDeg} and {@code toDeg} (degrees from the facing {@code (fx, fz)}, measured as
+     * {@link #turn} turns) this tick: within {@code range} and inside that wedge widened by the line's {@code width}.
+     * Blocks are the caller's (a ray to the receiver).
+     */
+    public static boolean inSweep(double dx, double dz, double fx, double fz, double fromDeg, double toDeg,
+                                  double range, double width, double halfWidth) {
+        double d = Math.sqrt(dx * dx + dz * dz);
+        if (d > range + halfWidth) {
+            return false;
+        }
+        if (d < 0.5) {
+            return true;
+        }
+        double fl = Math.sqrt(fx * fx + fz * fz);
+        if (fl < 1e-9) {
+            return false;
+        }
+        double facing = Math.atan2(fz, fx), at = Math.atan2(dz, dx);
+        double rel = Math.toDegrees(wrap(at - facing));
+        double margin = Math.toDegrees(Math.atan2(Math.max(0.5, width) / 2 + Math.max(0, halfWidth), d));
+        double lo = Math.min(fromDeg, toDeg) - margin, hi = Math.max(fromDeg, toDeg) + margin;
+        return rel >= lo - 1e-9 && rel <= hi + 1e-9;
+    }
+
+    /** An angle in radians wrapped to (-pi, pi]. */
+    static double wrap(double a) {
+        double r = a % (2 * Math.PI);
+        if (r <= -Math.PI) {
+            r += 2 * Math.PI;
+        } else if (r > Math.PI) {
+            r -= 2 * Math.PI;
+        }
+        return r;
+    }
+
+    /** The unit direction {@code deg} degrees from {@code (fx, fz)}, turned the same way {@link #inSweep} measures. */
+    public static double[] turn(double fx, double fz, double deg) {
+        double l = Math.sqrt(fx * fx + fz * fz);
+        if (l < 1e-9) {
+            return new double[] {0, 0};
+        }
+        double r = Math.toRadians(deg), c = Math.cos(r), s = Math.sin(r);
+        double x = fx / l, z = fz / l;
+        return new double[] {x * c - z * s, x * s + z * c};
+    }
+
+    /**
+     * The velocity that holds a grabbed receiver at the hero's hand: toward it at half the gap a tick, at most
+     * {@link #GRAB_PULL_MAX}; {@code (dx, dy, dz)} is from the receiver to the hand. A velocity, never a teleport.
+     */
+    public static double[] grabHold(double dx, double dy, double dz) {
+        double vx = dx * GRAB_PULL_GAIN, vy = dy * GRAB_PULL_GAIN, vz = dz * GRAB_PULL_GAIN;
+        double l = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        if (l > GRAB_PULL_MAX) {
+            double k = GRAB_PULL_MAX / l;
+            vx *= k;
+            vy *= k;
+            vz *= k;
+        }
+        return new double[] {vx, vy, vz};
+    }
+
+    /**
+     * The directions a throw tries, in degrees from the hero's facing, in order: straight ahead, then 45 and 90 degrees
+     * to either side, then behind. The game takes the first whose landing is safe (6.12: never toward lava or a drop);
+     * when none is, it throws ahead softened.
+     */
+    public static final double[] THROW_TRIES = {0, 45, -45, 90, -90, 135, -135, 180};
+
+    /** A throw's horizontal speed for {@code strength} (1-4: as a knock-back of that strength) and its lift. */
+    public static Impulse throwImpulse(double strength, double upBlocks) {
+        double h = knockbackStrength(strength);
+        double vy = Math.max(PULL_LIFT, liftImpulse(upBlocks));
+        return new Impulse(h, vy, airTicks(vy, 0));
+    }
+
+    /** Where a throw would land (blocks from the start, horizontally): the arc of {@link #throwImpulse}, then a skid. */
+    public static double throwDistance(double strength, double upBlocks) {
+        Impulse i = throwImpulse(strength, upBlocks);
+        return airDistance(i.horizontal(), i.airTicks()) + i.horizontal() * Math.pow(LeapSolver.HORIZONTAL_DRAG, i.airTicks())
+                * GROUND_FRICTION / (1 - GROUND_FRICTION);
+    }
+
+    /**
+     * A tether's pull: the speed (blocks per tick) toward its anchor for a receiver {@code distance} blocks away on a
+     * tether of {@code max} blocks; 0 while it is within the length.
+     */
+    public static double tetherPull(double distance, double max) {
+        double over = distance - Math.max(0, max);
+        if (!(over > 0)) {
+            return 0;
+        }
+        return Math.min(TETHER_PULL_MAX, Math.max(TETHER_PULL_MIN, over * 0.5));
+    }
 }

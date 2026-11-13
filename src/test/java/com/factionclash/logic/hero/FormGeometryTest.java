@@ -142,4 +142,76 @@ class FormGeometryTest {
         assertTrue(FormGeometry.pullSpeed(1, 10) < FormGeometry.airSpeedFor(2, FormGeometry.airTicks(FormGeometry.PULL_LIFT, 0))
                 * 2, "the ground's friction is counted");
     }
+    // ------------------------------------------------------------------ format 2's forms (task A5)
+
+    @Test
+    void aChargeRunsItsRangeAtItsSpeed() {
+        assertEquals(0.4, FormGeometry.chargeSpeed(160), EPS, "160% of 5 blocks a second, per tick");
+        assertEquals(25, FormGeometry.chargeTicks(10, 160), "10 blocks at 0.4 a tick");
+        assertEquals(32, FormGeometry.chargeTicks(14, 180), "Natsuho's zoomies: 14 blocks at 0.45 a tick");
+        assertTrue(FormGeometry.chargeTicks(16, 120) <= FormGeometry.CHARGE_MAX_TICKS);
+        assertEquals(1, FormGeometry.chargeTicks(10, 0));
+    }
+
+    @Test
+    void aWaveHitsOnlyTheGroundAtItsFront() {
+        assertEquals(4.0, FormGeometry.waveFront(10, 8), EPS, "8 blocks a second: 4 blocks after 10 ticks");
+        assertEquals(20, FormGeometry.waveTicks(8, 8));
+        assertTrue(FormGeometry.waveHits(4.2, 0.3, 0, true, 4.0, 8), "at the front, on the ground");
+        assertFalse(FormGeometry.waveHits(4.2, 0.3, 0, false, 4.0, 8), "jump to dodge");
+        assertFalse(FormGeometry.waveHits(6.0, 0.3, 0, true, 4.0, 8), "the front has not reached it yet");
+        assertFalse(FormGeometry.waveHits(2.0, 0.3, 0, true, 4.0, 8), "the front has passed it");
+        assertFalse(FormGeometry.waveHits(4.0, 0.3, 3, true, 4.0, 8), "on a ledge above the ring");
+        assertFalse(FormGeometry.waveHits(9.5, 0.3, 0, true, 9.5, 8), "beyond the radius");
+    }
+
+    @Test
+    void rainImpactsSpreadEvenlyOverTheirDisc() {
+        int inner = 0;
+        for (int i = 0; i < 1000; i++) {
+            double[] p = FormGeometry.discPoint((i * 0.618034) % 1, (i * 0.381966 + 0.5) % 1, 5);
+            double r = Math.sqrt(p[0] * p[0] + p[1] * p[1]);
+            assertTrue(r <= 5 + EPS);
+            if (r <= 2.5) {
+                inner++;
+            }
+        }
+        assertTrue(inner > 180 && inner < 320, "a quarter of the area holds about a quarter of the impacts: " + inner);
+    }
+
+    @Test
+    void aSweepTurnsAcrossItsArcAndCatchesWhatItPasses() {
+        assertEquals(-60, FormGeometry.sweepAngle(0, 20, 120), EPS);
+        assertEquals(0, FormGeometry.sweepAngle(10, 20, 120), EPS);
+        assertEquals(60, FormGeometry.sweepAngle(20, 20, 120), EPS);
+        // facing +x; a receiver straight ahead is caught by the tick whose line passes 0 degrees
+        assertTrue(FormGeometry.inSweep(5, 0, 1, 0, -6, 0, 8, 1, 0.3));
+        assertFalse(FormGeometry.inSweep(5, 0, 1, 0, 20, 30, 8, 1, 0.3), "the line is elsewhere this tick");
+        assertFalse(FormGeometry.inSweep(10, 0, 1, 0, -6, 6, 8, 1, 0.3), "out of range");
+        double[] d = FormGeometry.turn(1, 0, 25);
+        assertTrue(FormGeometry.inSweep(d[0] * 6, d[1] * 6, 1, 0, 20, 30, 8, 1, 0.3), "turn and inSweep agree on the sign");
+        assertFalse(FormGeometry.inSweep(d[0] * 6, d[1] * 6, 1, 0, -30, -20, 8, 1, 0.3));
+    }
+
+    @Test
+    void aGrabHoldsByVelocityNeverATeleport() {
+        double[] v = FormGeometry.grabHold(1, 0, 0);
+        assertEquals(0.5, v[0], EPS, "half the gap a tick");
+        double[] far = FormGeometry.grabHold(10, 0, 0);
+        assertEquals(FormGeometry.GRAB_PULL_MAX, Math.sqrt(far[0] * far[0] + far[1] * far[1] + far[2] * far[2]), EPS,
+                "never faster than its cap");
+        assertEquals(0, FormGeometry.THROW_TRIES[0], EPS, "ahead first");
+        assertEquals(180, FormGeometry.THROW_TRIES[FormGeometry.THROW_TRIES.length - 1], EPS, "behind last");
+        Impulse t = FormGeometry.throwImpulse(3, 1);
+        assertEquals(1.2, t.horizontal(), EPS, "a throw of 3 is a knock-back of 3");
+        assertTrue(t.vertical() > 0.3 && t.vertical() <= LeapSolver.strengthFor(1) + EPS, "lifted by up to a block: " + t.vertical());
+        assertTrue(FormGeometry.throwDistance(3, 1) > FormGeometry.throwDistance(1, 0), "a harder throw goes further");
+    }
+
+    @Test
+    void aTetherPullsBackOnlyPastItsLength() {
+        assertEquals(0, FormGeometry.tetherPull(5, 6), EPS);
+        assertEquals(FormGeometry.TETHER_PULL_MIN, FormGeometry.tetherPull(6.1, 6), EPS);
+        assertEquals(FormGeometry.TETHER_PULL_MAX, FormGeometry.tetherPull(20, 6), EPS);
+    }
 }

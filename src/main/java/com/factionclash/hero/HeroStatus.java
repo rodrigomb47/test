@@ -27,6 +27,8 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
 import net.neoforged.neoforge.attachment.IAttachmentSerializer;
 
@@ -56,6 +58,11 @@ import java.util.WeakHashMap;
  * taunt holds every receiver the same way: a mob or an NPC targets the taunting hero again every second (a
  * brain-based mob keeps its own mind), and every receiver, players included, deals 50% less damage to anyone but the
  * taunting hero for its seconds; the hero glows meanwhile. A dispel takes the helpful part away.
+ *
+ * <p><b>Format 2's effects</b> (A5, HEROES_V2 6.6), the same on every carrier: a silence (a hero starts no move), a
+ * tether to the spot where it landed (pulled back each tick past its length), a broken guard (a raised shield goes down,
+ * none goes up for its seconds, a player's shield also on vanilla's cooldown) and a hero's barrier (in the book; the hero
+ * blocks with it).
  */
 public final class HeroStatus {
     private final StatusBook book = new StatusBook();
@@ -147,6 +154,10 @@ public final class HeroStatus {
             if (by != null) {
                 retarget(m, by);
             }
+        }
+        StatusBook.Entry te = book.tether(now);
+        if (te != null) {
+            tetherTick(e, te, now);
         }
         if (book.frozen(now) && e.canFreeze()) {
             // held fully frozen, as powder snow holds it (v1 13.1); vanilla thaws 2 a tick, so the hold stays full
@@ -445,6 +456,84 @@ public final class HeroStatus {
         return any;
     }
 
+    // ------------------------------------------------------------------ format 2's effects (A5: silence, tether, guard)
+
+    /** A silence (HEROES_V2 6.6): a hero cannot start moves for its seconds; it changes nothing for anyone else. */
+    public static void silence(LivingEntity r, double seconds) {
+        if (!r.level().isClientSide && r.isAlive()) {
+            of(r).book.silence(seconds, r.level().getGameTime());
+        }
+    }
+
+    public static boolean silenced(LivingEntity e) {
+        HeroStatus s = peek(e);
+        return s != null && !s.book.isEmpty() && s.book.silenced(e.level().getGameTime());
+    }
+
+    /**
+     * A tether (6.6) of {@code max} blocks to the spot where {@code r} stands now, for {@code seconds}, by {@code hero}:
+     * past its length it is pulled back, every tick, the same for every receiver (a velocity, never a teleport).
+     */
+    public static void tether(LivingEntity r, HeroEntity hero, double seconds, double max) {
+        if (!r.level().isClientSide && r.isAlive()) {
+            of(r).book.tether(hero.getStringUUID(), seconds, max, r.getX(), r.getY(), r.getZ(), r.level().getGameTime());
+        }
+    }
+
+    private static void tetherTick(LivingEntity e, StatusBook.Entry te, long now) {
+        double dx = te.x - e.getX(), dy = te.y - e.getY(), dz = te.z - e.getZ();
+        double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        double v = com.factionclash.logic.hero.FormGeometry.tetherPull(d, te.amount);
+        if (v > 0 && d > 1e-4) {
+            Vec3 m = e.getDeltaMovement();
+            e.setDeltaMovement(dx / d * v, Math.max(m.y, dy / d * v), dz / d * v);
+            e.hasImpulse = true;
+            e.hurtMarked = true;
+        }
+        if ((now & 7) == 0 && e.level() instanceof ServerLevel sl) {
+            int n = (int) Math.min(12, Math.max(2, d * 2));
+            for (int i = 0; i <= n; i++) {
+                double f = i / (double) n;
+                sl.sendParticles(ParticleTypes.CRIT, te.x + (e.getX() - te.x) * f, te.y + 0.5 + (e.getY(0.5) - te.y - 0.5) * f,
+                        te.z + (e.getZ() - te.z) * f, 1, 0, 0, 0, 0);
+            }
+        }
+    }
+
+    /** Whether {@code e} holds a shield up now (raised, not yet necessarily blocking): a player's or an NPC's. */
+    public static boolean shieldUp(LivingEntity e) {
+        return e.isUsingItem() && e.getUseItem().canPerformAction(net.neoforged.neoforge.common.ItemAbilities.SHIELD_BLOCK);
+    }
+
+    /**
+     * {@code guard_break} (6.6, 6.15): a raised shield goes down and stays down for {@code seconds}, the same for
+     * everyone: no shield goes up while its status lasts (the use is cancelled for a player and an NPC alike), and a
+     * player's shield also gets vanilla's cooldown for those seconds (the axe rule, shown on the hotbar). False when no
+     * shield was up.
+     */
+    public static boolean guardBreak(LivingEntity r, double seconds) {
+        if (r.level().isClientSide || !r.isAlive() || !shieldUp(r)) {
+            return false;
+        }
+        of(r).book.guardBreak(seconds, r.level().getGameTime());
+        net.minecraft.world.item.ItemStack used = r.getUseItem();
+        r.stopUsingItem();
+        if (r instanceof net.minecraft.world.entity.player.Player p) {
+            p.getCooldowns().addCooldown(used.getItem(), (int) Math.max(1, com.factionclash.logic.hero.HeroRules.ticks(seconds)));
+            r.level().broadcastEntityEvent(p, (byte) 30); // the shield-break sound, as Player.disableShield sends it
+        } else {
+            r.level().playSound(null, r.getX(), r.getY(), r.getZ(), net.minecraft.sounds.SoundEvents.SHIELD_BREAK,
+                    r.getSoundSource(), 0.8F, 0.8F + r.getRandom().nextFloat() * 0.4F);
+        }
+        return true;
+    }
+
+    /** Whether {@code e}'s guard is broken now (no shield may go up). */
+    public static boolean guardBroken(LivingEntity e) {
+        HeroStatus s = peek(e);
+        return s != null && !s.book.isEmpty() && s.book.guardBroken(e.level().getGameTime());
+    }
+
     // ------------------------------------------------------------------ saving
 
     /** Written with the entity (nothing when it carries no status); every time is a game time. */
@@ -494,6 +583,11 @@ public final class HeroStatus {
         t.putLong("next", e.nextTickAt);
         t.putBoolean("glow", e.glow);
         t.putBoolean("enemy", e.enemy);
+        if (e.kind == StatusBook.Kind.TETHER) {
+            t.putDouble("x", e.x);
+            t.putDouble("y", e.y);
+            t.putDouble("z", e.z);
+        }
         return t;
     }
 
@@ -524,6 +618,9 @@ public final class HeroStatus {
         e.nextTickAt = t.getLong("next");
         e.glow = t.getBoolean("glow");
         e.enemy = t.getBoolean("enemy");
+        e.x = t.getDouble("x");
+        e.y = t.getDouble("y");
+        e.z = t.getDouble("z");
         return e;
     }
 }

@@ -18,7 +18,7 @@ import java.util.Map;
  * <pre>
  *   slot cap x ability power at the hero's level x heroes.powerScale / 100 x 1.5 (gear and buffs, v1 6.2) x form factor
  * </pre>
- * where the form factor is 1.5 for a lasting zone (v1 16.1) and 1.25 for a combo (HEROES_V2 6.5). Damage is held as
+ * where the form factor is 1.5 for a lasting zone or a rain (v1 16.1) and 1.25 for a combo (HEROES_V2 6.5). Damage is held as
  * the raw amount, before the element and the damage factors (clamped 0..2) and {@code heroes.maxHit} per hit; DoTs as
  * one application's total ({@code per second x seconds}), heals and shields as points restored, stuns as seconds at
  * the slot's own cap (2 s a skill, 3 an ultimate, 1 a passive or finisher; v1 16.1). Nothing here knows
@@ -54,10 +54,16 @@ public final class UseLedger {
                 * Math.max(0, formFactor);
     }
 
-    /** 1.5 for a zone that pulses more than once (v1 16.1), 1.25 for a combo (HEROES_V2 6.5), else 1. */
+    /**
+     * 1.5 for a zone that pulses more than once (v1 16.1) and for a rain (a lasting zone of impacts, HEROES_V2 6.5: "zone
+     * caps per receiver"), 1.25 for a combo (6.5), else 1.
+     */
     public static double formFactor(Move m) {
         if (m.form() == Form.COMBO) {
             return HeroCatalogue.COMBO_CAP_FACTOR;
+        }
+        if (m.form() == Form.RAIN) {
+            return HeroCatalogue.ZONE_CAP_FACTOR;
         }
         return m.form() == Form.ZONE && m.ability().pulses() > 1 ? HeroCatalogue.ZONE_CAP_FACTOR : 1;
     }
