@@ -105,7 +105,7 @@ class HeroReaderRobustnessTest {
                 + " \"size\": 101, \"skills_locked\": false, \"line\": \"The tide is in.\"}, \"passives\": [");
         List<String> passives = new ArrayList<>();
         int i = 0;
-        for (Trigger t : Trigger.values()) {
+        for (Trigger t : HeroDef.Word.inFormat(Trigger.class, 1)) {
             if (passives.size() == 4) {
                 break;
             }
@@ -273,7 +273,7 @@ class HeroReaderRobustnessTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Object copy(Object o) {
+    static Object copy(Object o) {
         if (o instanceof Map<?, ?> m) {
             Map<String, Object> c = new LinkedHashMap<>();
             ((Map<String, Object>) m).forEach((k, v) -> c.put(k, copy(v)));
@@ -289,7 +289,7 @@ class HeroReaderRobustnessTest {
 
     /** One random change: junk for a value, a lost or misspelled field, a list grown past its limit, a moved part. */
     @SuppressWarnings("unchecked")
-    private static void damage(Object root, Random r) {
+    static void damage(Object root, Random r) {
         List<Slot2> all = new ArrayList<>();
         places(root, all);
         Slot2 s = all.get(r.nextInt(all.size()));
@@ -750,7 +750,8 @@ class HeroReaderRobustnessTest {
         sane(d);
         Set<HeroDef.EffectType> types = EnumSet.noneOf(HeroDef.EffectType.class);
         HeroBalance.effectLists(d).forEach(list -> list.forEach(e -> types.add(e.type())));
-        assertEquals(EnumSet.allOf(HeroDef.EffectType.class), types, "every effect type is in it");
+        assertEquals(EnumSet.copyOf(HeroDef.Word.inFormat(HeroDef.EffectType.class, 1)), types, "every format-1 effect"
+                + " type is in it");
     }
 
     @Test
@@ -798,7 +799,7 @@ class HeroReaderRobustnessTest {
                 "{\"type\": \"summon\", \"creature\": \"wolf\", \"count\": 3}", "{\"type\": \"energy\", \"amount\": 30}",
                 "{\"type\": \"dot\", \"amount\": 10, \"seconds\": 10}", "{\"type\": \"empower\", \"seconds\": 20}"};
         int n = 0;
-        for (Trigger t : Trigger.values()) {
+        for (Trigger t : HeroDef.Word.inFormat(Trigger.class, 1)) {
             for (HeroDef.PassiveForm f : HeroDef.PassiveForm.values()) {
                 for (String fx : effects) {
                     String text = HeroReaderTest.hero("\"empowered\": {\"name\": \"E\"}, \"passives\": [{\"name\": \"P\","
@@ -810,7 +811,7 @@ class HeroReaderRobustnessTest {
                 }
             }
         }
-        for (Form f : Form.values()) {
+        for (Form f : HeroDef.Word.inFormat(Form.class, 1)) {
             for (String fx : effects) {
                 for (String slot : List.of("skills", "ultimate")) {
                     String a = "{\"name\": \"A\", \"form\": \"" + f.id() + "\", \"hits\": 5, \"count\": 5, \"duration\":"
@@ -825,7 +826,7 @@ class HeroReaderRobustnessTest {
                 }
             }
         }
-        assertEquals(Trigger.values().length * HeroDef.PassiveForm.values().length * effects.length
-                + Form.values().length * effects.length * 2, n);
+        assertEquals(HeroDef.Word.inFormat(Trigger.class, 1).size() * HeroDef.PassiveForm.values().length
+                * effects.length + HeroDef.Word.inFormat(Form.class, 1).size() * effects.length * 2, n);
     }
 }

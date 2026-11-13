@@ -1,0 +1,108 @@
+{
+  "_comment": "Test data for SliceKitsTest (HEROES_V2 15.2 F2): SLICE_PLAN 3.1's kit as a format-2 server definition. Not the authored hero (C1 writes that from herosrc/). Numbers above a cap or under a floor are written at the cap or the floor, so the file validates clean; the list is in SliceKitsTest.",
+  "format": 2,
+  "id": "natsuho_komezaki",
+  "name": "Natsuho Komezaki",
+  "title": "the Harbour Cat",
+  "description": "A prickly dock brawler who insists she only fights for fish.",
+  "gender": "female",
+  "archetype": "cat",
+  "rarity": "epic",
+  "element": "physical",
+  "gear": [{"item": "iron_sword", "name": "Claw Gauntlets"}],
+  "behaviour": {"combat_role": "striker", "duel_style": "rushdown", "duty": "fisherman"},
+  "basic_attack": {"style": "melee", "combo": 3,
+                   "on_hit": [{"type": "dot", "amount": 1, "seconds": 3, "max_stacks": 2, "chance": 30}]},
+  "moves": [
+    {"id": "claw_string", "name": "Claw String", "form": "combo", "class": "light", "band": ["close"], "phases": [1, 2, 3],
+     "weight": 6, "cooldown": 10, "frames": {"windup": 0.45, "active": 0.5, "recovery": 0.35},
+     "strikes": [
+       {"effects": [{"type": "damage", "amount": {"attack_percent": 45}}]},
+       {"effects": [{"type": "damage", "amount": {"attack_percent": 45}}]},
+       {"effects": [{"type": "damage", "amount": {"attack_percent": 70}},
+                    {"type": "dot", "amount": 1, "seconds": 4, "max_stacks": 2}]}]},
+    {"id": "pounce", "name": "Pounce", "form": "leap", "class": "heavy", "band": ["mid"], "range": 8, "radius": 1.5,
+     "cooldown": 10, "frames": {"windup": 0.8, "active": 0.2, "recovery": 1.0},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 110}}, {"type": "knockback", "strength": 1}]},
+    {"id": "hiss", "name": "Hiss", "form": "cone", "class": "area", "band": ["close"], "range": 4, "angle": 90,
+     "cooldown": 9, "frames": {"windup": 1.0, "active": 0.1, "recovery": 0.8},
+     "effects": [{"type": "effect", "id": "weakness", "level": 1, "seconds": 4}, {"type": "knockback", "strength": 2}],
+     "look": {"sound": "minecraft:entity.cat.hiss"}},
+    {"id": "scratch_dash", "name": "Scratch Dash", "form": "dash", "class": "heavy", "band": ["mid"], "range": 6,
+     "cooldown": 8, "frames": {"windup": 0.8, "active": 0.25, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 80}},
+                 {"type": "dot", "amount": 1, "seconds": 4, "max_stacks": 2}],
+     "followups": [{"move": "claw_string", "chance": 60}]},
+    {"id": "cat_reflex", "name": "Cat Reflex", "form": "counter", "class": "heavy", "band": ["close"], "phases": [2, 3],
+     "stance": 1.0, "absorb": 70, "cooldown": 10, "frames": {"windup": 1.0, "active": 0.1, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 60}},
+                 {"type": "damage", "amount": {"attack_percent": 60}},
+                 {"type": "move_self", "direction": "back", "distance": 3}]},
+    {"id": "zoomies", "name": "Zoomies", "form": "charge", "class": "heavy", "band": ["mid", "far"], "phases": [3],
+     "range": 14, "speed": 180, "wall_stun": true, "repeatable": true, "cooldown": 10,
+     "frames": {"windup": 0.9, "active": 0.8, "recovery": 1.2},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 90}}, {"type": "knockback", "strength": 2}],
+     "followups": [{"move": "zoomies", "chance": 50}]}
+  ],
+  "ultimate": {"id": "midnight_frenzy", "name": "Midnight Frenzy", "form": "self", "class": "ultimate",
+               "frames": {"windup": 1.5, "active": 0.2, "recovery": 1.5},
+               "effects": [{"type": "empower", "seconds": 8, "state": "frenzy"}],
+               "followups": [{"move": "pounce", "chance": 100}],
+               "line": "Midnight's mine. Try and keep up!"},
+  "states": [
+    {"name": "frenzy", "stats": [{"stat": "attack_speed", "percent": 25}, {"stat": "speed", "percent": 20}],
+     "on_hit": [{"type": "dot", "amount": 0.5, "seconds": 2}], "face": "angry"}
+  ],
+  "passives": [
+    {"name": "Nine Lives", "trigger": "on_low_health", "trigger_value": 30, "once_per_fight": true, "cooldown": 6,
+     "effects": [{"type": "shield", "amount": 4}, {"type": "effect", "id": "speed", "level": 2, "seconds": 6},
+                 {"type": "move_self", "direction": "back", "distance": 6}]},
+    {"name": "Cat Crit", "trigger": "on_crit", "form": "self", "cooldown": 3,
+     "effects": [{"type": "stat", "stat": "speed", "percent": 15, "seconds": 3}]}
+  ],
+  "boss": {
+    "health_scale": 350, "poise": 80,
+    "weak_points": [{"point": "water", "hint": "Don't you DARE get me wet!"}, "recovery"],
+    "phases": [
+      {"at": 100},
+      {"at": 60, "transition": {"seconds": 1.0, "line": "F-fine! I'll take you seriously, but only this once!",
+                                "face": "flustered"}},
+      {"at": 25, "transition": {"seconds": 1.2, "line": "Nobody... corners... a cat!"}}
+    ],
+    "reactions": [
+      {"when": "target_blocking", "move": "scratch_dash", "chance": 50, "cooldown": 8},
+      {"when": "target_drawing_bow", "move": "pounce", "chance": 60, "cooldown": 8},
+      {"when": "target_eating", "move": "pounce", "chance": 70, "cooldown": 10}
+    ],
+    "intro": {"line": "Huh? You're in my harbour. ...Fine. I'll show you out myself."}
+  },
+  "personality": {
+    "temperament": "tsundere",
+    "traits": {"aggression": 65, "honour": 65, "ambition": 60, "caution": 45, "greed": 55, "sociability": 40,
+               "loyalty": 70, "volatility": 45},
+    "when_losing": "escape",
+    "likes": ["cod", "salmon", "string"], "dislikes": ["pufferfish", "water_bucket"],
+    "quirks": ["pretends not to listen, then remembers every word"]
+  },
+  "leader": {
+    "title": "Boss of the Harbour",
+    "faction_names": ["Bellwhisker Harbour", "The Calico Wharf League"],
+    "short_name": "Bellwhisker",
+    "motto": "Nobody asked for your help.",
+    "colors": {"primary": "#E0823A", "secondary": "#F4EFE6", "accent": "#2A2526"},
+    "banner": {"base": "orange", "patterns": [{"pattern": "triangles_top", "color": "black"},
+                                              {"pattern": "circle", "color": "white"}]},
+    "base_style": "tide_port", "culture": "east", "economy_focus": ["food", "scouting"]
+  },
+  "talents": [{"id": "angler_lord", "realm": true}, "lookout"],
+  "voice": {"blip": "xylophone", "pitch": 1.35, "rate": 2},
+  "lines": {
+    "founding": ["This harbour's mine now. Don't get the wrong idea, I'm not doing it for you."],
+    "greeting": ["{player}? I wasn't waiting for you. ...Did you bring fish?"],
+    "kill": ["Hmph. Too slow."],
+    "escape": ["I-I'm not running away! I just... have fish to catch. Don't follow me!"],
+    "last_stand": ["This is MY harbour. I'm not going anywhere. ...It's not for them, got it?!"],
+    "fallen": ["Tch... keep my spot warm."]
+  },
+  "mobility": {"primary": {"trait": "acrobat", "tier": 3}, "secondary": {"trait": "climber", "tier": 1}}
+}

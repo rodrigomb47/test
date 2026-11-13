@@ -1,0 +1,98 @@
+{
+  "_comment": "Test data for SliceKitsTest (HEROES_V2 15.2 F2): SLICE_PLAN 3.4's kit as a format-2 server definition. Not the authored hero (C1 writes that from herosrc/). The dance's prayer is a channel (kit-gaps 8).",
+  "format": 2,
+  "id": "hinae_shirasuzu",
+  "name": "Hinae Shirasuzu",
+  "title": "the White Bell",
+  "description": "A gentle shrine keeper whose talismans never miss when she finally throws them.",
+  "gender": "female",
+  "archetype": "shrine",
+  "rarity": "epic",
+  "element": "radiant",
+  "behaviour": {"combat_role": "support", "duel_style": "zoner", "duty": "guard"},
+  "basic_attack": {"style": "thrown", "projectile": "feather", "amount": 4, "interval": 1.5},
+  "moves": [
+    {"id": "talisman_fan", "name": "Talisman Fan", "form": "volley", "class": "light", "band": ["mid", "far"],
+     "count": 5, "range": 16, "cooldown": 14, "frames": {"windup": 0.5, "active": 0.3, "recovery": 0.4},
+     "effects": [{"type": "damage", "amount": 4}, {"type": "mark", "mark": "seal", "max_stacks": 5}]},
+    {"id": "sealing_circle", "name": "Sealing Circle", "form": "zone", "class": "area", "band": ["mid"],
+     "zone_at": "target", "range": 12, "radius": 3, "delay": 1.0, "cooldown": 13,
+     "frames": {"windup": 1.0, "active": 0.1, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": 6}, {"type": "effect", "id": "slowness", "level": 2, "seconds": 3},
+                 {"type": "stun", "seconds": 1, "if": {"condition": "target_has_mark", "mark": "seal", "value": 3}},
+                 {"type": "clear_marks", "mark": "seal",
+                  "if": {"condition": "target_has_mark", "mark": "seal", "value": 3}}],
+     "look": {"sound": "block.bell.use"}},
+    {"id": "purify", "name": "Purify", "form": "allies", "class": "light", "band": ["any"], "radius": 8,
+     "use_when": "ally_health_below", "use_value": 60, "cooldown": 8,
+     "frames": {"windup": 0.6, "active": 0.1, "recovery": 0.4},
+     "effects": [{"type": "cleanse"}, {"type": "heal", "amount": 4}]},
+    {"id": "exorcise", "name": "Exorcise", "form": "nova", "class": "area", "band": ["close"], "radius": 4,
+     "cooldown": 10, "frames": {"windup": 1.0, "active": 0.1, "recovery": 0.8}, "prefer_when": "target_close",
+     "effects": [{"type": "damage", "amount": 3}, {"type": "dispel"}, {"type": "knockback", "strength": 2}]},
+    {"id": "seven_talismans", "name": "Seven Talismans", "form": "self", "class": "heavy", "band": ["any"],
+     "phases": [2, 3], "cooldown": 20, "frames": {"windup": 0.8, "active": 0.2, "recovery": 0.8},
+     "effects": [{"type": "barrier", "hits": 7, "seconds": 12}]},
+    {"id": "purifying_dance", "name": "Purifying Dance", "form": "sweep", "class": "area", "band": ["close", "mid"],
+     "phases": [3], "range": 8, "arc": 180, "duration": 2, "channel": {"interrupt": 15}, "cooldown": 16,
+     "frames": {"windup": 1.0, "active": 2.0, "recovery": 1.5},
+     "effects": [{"type": "damage", "amount": 5},
+                 {"type": "effect", "id": "regeneration", "level": 1, "seconds": 4, "to": "allies", "radius": 8}]}
+  ],
+  "ultimate": {"id": "thousand_bell_rite", "name": "Thousand Bell Rite", "form": "nova", "class": "ultimate",
+               "radius": 6, "channel": {"interrupt": 15}, "frames": {"windup": 1.6, "active": 0.3, "recovery": 1.5},
+               "effects": [{"type": "damage", "amount": 10},
+                           {"type": "effect", "id": "slowness", "level": 2, "seconds": 4},
+                           {"type": "heal", "amount": 10, "to": "allies", "radius": 10},
+                           {"type": "shield", "amount": 8, "to": "allies", "radius": 10}],
+               "line": "Let every bell answer."},
+  "passives": [
+    {"name": "Guardian Charm", "trigger": "on_ally_low_health", "trigger_value": 35, "form": "trigger_ally",
+     "cooldown": 15, "effects": [{"type": "shield", "amount": 4}]}
+  ],
+  "boss": {
+    "health_scale": 350, "poise": 80,
+    "weak_points": ["channel", "back"],
+    "phases": [
+      {"at": 100},
+      {"at": 60, "transition": {"seconds": 1.2, "line": "Please... stop. I don't want to hurt you.", "face": "sad"}},
+      {"at": 25, "transition": {"seconds": 1.2, "line": "Then I'll purify this fight myself!",
+                                "face": "determined"}}
+    ],
+    "reactions": [
+      {"when": "target_close", "move": "exorcise", "chance": 70, "cooldown": 8},
+      {"when": {"condition": "ally_hero_health_below", "value": 50}, "move": "purify", "chance": 80, "cooldown": 10},
+      {"when": "target_blocking", "move": "sealing_circle", "chance": 50, "cooldown": 10}
+    ],
+    "enrage": {"triggers": ["heart_attacked"]},
+    "intro": {"line": "Welcome, traveller. Will you put your weapon down? ...No? I'm sorry, then."}
+  },
+  "personality": {
+    "temperament": "sweet_natured",
+    "traits": {"aggression": 30, "honour": 75, "ambition": 40, "caution": 60, "greed": 25, "sociability": 90,
+               "loyalty": 80, "volatility": 35},
+    "likes": ["poppy", "sweet_berries", "lantern"], "dislikes": ["rotten_flesh"],
+    "quirks": ["apologises to the monsters she defeats"]
+  },
+  "leader": {
+    "title": "Keeper of the White Bell",
+    "faction_names": ["Hearth of the White Bell", "White Bell Sanctum"],
+    "short_name": "White Bell",
+    "motto": "Every lantern lit, every door open.",
+    "colors": {"primary": "#F6F3EE", "secondary": "#C8323C", "accent": "#D9B44A"},
+    "banner": {"base": "white", "patterns": [{"pattern": "straight_cross", "color": "red"},
+                                             {"pattern": "stripe_center", "color": "yellow"}]},
+    "base_style": "shrine_pavilion", "culture": "east", "economy_focus": ["food", "people"]
+  },
+  "talents": ["mend", {"id": "purifier", "realm": true}],
+  "voice": {"blip": "bell", "pitch": 1.4, "rate": 3},
+  "lines": {
+    "founding": ["Everyone, welcome home. From today we are the Hearth of the White Bell."],
+    "greeting": ["{player}! Have you eaten? There's rice by the station."],
+    "kill": ["Rest gently."],
+    "escape": ["I'm sorry... I can't stay. Please, let that be enough."],
+    "last_stand": ["I won't leave them. Not while one lantern is still lit."],
+    "fallen": ["The bell... someone, please, keep it ringing..."]
+  },
+  "mobility": {"primary": {"trait": "runner", "tier": 2}, "secondary": {"trait": "swimmer", "tier": 1}}
+}

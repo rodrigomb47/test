@@ -55,9 +55,10 @@ class HeroCatalogueTest {
         return words(block(name));
     }
 
+    /** The words of format 1 (the reference checker's format): format 2's additions are in HeroCatalogueV2Test. */
     private static <E extends Enum<E> & HeroDef.Word> List<String> ids(Class<E> c) {
         List<String> l = new ArrayList<>();
-        for (E e : c.getEnumConstants()) {
+        for (E e : HeroDef.Word.inFormat(c, 1)) {
             l.add(e.id());
         }
         return l;
@@ -204,7 +205,7 @@ class HeroCatalogueTest {
             assertEquals(kv, java, r.group(1));
             n++;
         }
-        assertEquals(Role.values().length, n);
+        assertEquals(HeroDef.Word.inFormat(Role.class, 1).size(), n);
         Matcher t = Pattern.compile("\"([a-z_]+)\": \\[([^\\]]*)\\]").matcher(block("TRIGGER_FORMS"));
         n = 0;
         while (t.find()) {
@@ -213,7 +214,7 @@ class HeroCatalogueTest {
             assertEquals(words(t.group(2)), ts.forms().stream().map(HeroDef.Word::id).toList(), t.group(1));
             n++;
         }
-        assertEquals(HeroDef.Trigger.values().length, n);
+        assertEquals(HeroDef.Word.inFormat(HeroDef.Trigger.class, 1).size(), n);
         Matcher d = Pattern.compile("\"([a-z_]+)\": \"([a-z_]+)\"").matcher(block("TRIGGER_DEFAULT_FORM"));
         while (d.find()) {
             assertEquals(d.group(2), HeroCatalogue.TRIGGERS.get(HeroCatalogue.enumOf(HeroDef.Trigger.class,
@@ -243,7 +244,7 @@ class HeroCatalogueTest {
                     ph.group(1))), ph.group(1));
             n++;
         }
-        assertEquals(HeroDef.LineEvent.values().length, n);
+        assertEquals(HeroDef.Word.inFormat(HeroDef.LineEvent.class, 1).size(), n);
     }
 
     @Test

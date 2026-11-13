@@ -940,7 +940,12 @@ pick by weighted random among candidates with score > 0; none -> keep spacing an
 - **Followups**: when a move hits, each listed followup may start at once (its own chance), which is how recognisable
   strings form ("the dash, then the rising cut 70% of the time"). A followup replaces the recovery of the move it follows;
   only the last move of a string plays its full recovery, so the punish window comes at the end of the string. A string
-  is at most 4 moves long (the validator rejects longer or cyclic followup chains).
+  is at most 4 moves long (the validator rejects longer or cyclic followup chains). Every move of a string still plays
+  its own wind-up, sound and ground mark; only the recovery between two of them is cut. A move follows itself only
+  when it is `repeatable`: such a self-followup is the one loop allowed, its `max` (1-3) caps the repeats, and the 4
+  moves of the string count every repeat (Natsuho's `zoomies` runs at most 4 times in a row, Ambrose's `broom_hops`
+  with `max: 2` hops 3 times). The validator checks the longest string through other moves (kit-gaps 1, decided in
+  F2).
 - v1 rules stay: 1 s global cooldown between moves, cooldown floors from move weight, the ultimate's energy and its
   20-60 s minimum gap. The same loop runs in every fight, whoever the enemy (the first draft's field mode replaced the
   phase gap with the global cooldown; that branch is gone).
@@ -1777,7 +1782,7 @@ because everything is there from level 1: section 8) plus:
 | `weight` | 0-10 | 5 | selector weight; 0 = only as a followup or reaction answer (a NOTE if nothing leads to it) |
 | `phases` | list of 1-3 | all | the phases it belongs to (also settable from `boss.phases[].moves`) |
 | `prefer_when` | condition | none | doubles the score when true |
-| `followups` | list of `{ move, chance }` | none | strings (6.3) |
+| `followups` | list of `{ move, chance, max }` or move ids | none | strings (6.3); `chance` 1-100 (100), `max` 1-3 only on a repeatable move's own repeat |
 | `repeatable`, `breaks_guard`, `unblockable`, `super_armor` | booleans | false | 6.4, 6.9 |
 | `channel` | `{ interrupt }` % 5-30 | none | breakable by that share of max health in damage (weak point `channel`) |
 | `telegraph` | `{ shape, color }` | from form | decal override (`disc`, `strip`, `fan`, `ring`, `landing`, `impacts`, `none` for light moves) |
@@ -2498,7 +2503,7 @@ adds these rules (same outcomes and message format as v1 §26):
   when it is `repeatable` (the string limit then stops it); `per_shot` only on
   `barrage`; new forms' parameters in range; new effects' recipient classes; cooldown floors with the new weights
   (6.5);
-- boss: phases ascending from 100; each later phase adds a move, state, add or mechanic (NOTE otherwise); at least one
+- boss: phases from 100 down (the first is read as 100); each later phase adds a move, state, add or mechanic (NOTE otherwise); at least one
   weakness (NOTE); at least one far-band move or a gap closer (NOTE); `rebirth` only for legendary heroes; the removed
   fields of 12.10 (`damage_vs_players`, `defeat`, token and per-player fields) are read and ignored, each with its
   NOTE;
@@ -2675,7 +2680,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
 | F1 | v1 format core in Java: `HeroJson`, `HeroCatalogue`, `HeroDef`, `HeroReader`, `Problems`, `HeroBalance`, `HeroRules` (v1 §32 phase 1, minus skins) | - | L | v1 unit tests of §31.1 green. Done 2026-11-13: the seven classes in `logic/hero/` with 473 unit tests in all (237 new: one case per message code, 117 of them; 6,000 seeded damaged files that must load within every range, cap and floor or be refused; 38 cases cross-checked against `tools/herotool/herotool.py`); the three v1 examples load with nothing to report; no game code reads the classes yet ("F1 as built" below) |
-| F2 | Format 2: catalogue additions (12), sense rules (14.1), `checkHeroes` task, schema generation | F1 | L | `HeroReaderV2Test`, `HeroBalanceV2Test` |
+| F2 | Format 2: catalogue additions (12), sense rules (14.1), `checkHeroes` task, schema generation | F1 | L | `HeroReaderV2Test`, `HeroBalanceV2Test`. Done 2026-11-13: format 2 read and balanced in `logic/hero/` (`HeroReader2`, `EscapeRules`, `HeroSchemaGen`, `HeroCheckMain` new; the F1 classes extended), 613 unit tests in all (140 new: 50 new message codes with one case each, 2,000 seeded damaged slice kits), the eight slice kits of SLICE_PLAN section 3 as format-2 test fixtures that load with nothing to report, `./gradlew checkHeroes` in `check`, the generated `docs/heroes-v2/hero2.schema.json` ("F2 as built" below) |
 | F3 | `BossRules`, `MoveSelector`, `HeroActions`, decal geometry helpers | F1 | M | their unit tests |
 | F4 | `Personality`, `Temperaments`, `LeaderBiases`, `LeaderDraft`, `FactionNameGen`, `Palette`, `BannerDesign`, `BaseStyles`, `Talents` | - | M | their unit tests (neutral equals today) |
 | G1 | herogen core: rig v1, 6 bases, UV template, packer, palette ramps, painter, face painter, geo writer, `visual.json`, determinism | - | L | Python tests; a test rig with face frames builds byte-identically twice |
@@ -2982,6 +2987,100 @@ F1 as built (2026-11-13), where it goes beyond or differs from v1 §26 and §29.
   taunt on every basic hit; a v1 gap, not changed here); a `thrown` hero with both a kit weapon and a `held_item`
   loads with both and the game side must choose which it holds.
 
+F2 as built (2026-11-13), where it goes beyond or differs from sections 12 and 14.1 and the row above:
+- **Four new pure classes** in `logic/hero/`: `HeroReader2` (format 2's parts, read inside `HeroReader` once the
+  file's format is known; a format-1 file goes through F1's code unchanged), `EscapeRules` (6.13: the kind, where an
+  escaping hero stands, `retreat_below` from the personality and `flee_at`; the runtime `decide` comes with F5/A12),
+  `HeroSchemaGen` and `HeroCheckMain`. `HeroDef` gains a `V2` part: moves (class, frames, bands, weight, phases,
+  `prefer_when`, followups, the four flags, channel, telegraph, the new forms' fields, strikes, per-shot lists, the
+  animation id), the ultimate and its awakened twin, states, the boss block, personality and the end of a fight,
+  leader, talents, voice, recruit, relationships, revival, mobility and the generated hash. Every word of the format
+  knows the format that added it (`Word.inFormat`): format 1's lists are frozen, so a format-1 file reads exactly as
+  before, and v1 synonyms that became words of their own (`charge`, `barrier`, `sweep`, `rain`, `barrage`) mean the
+  new word only in format 2.
+- **Format 1 maps to format 2** silently (`HeroReader2.mapV1`): each skill is a move (its id from its name, its class
+  from its form and heavy with a stun, its wind-up raised to the class minimum, a zone's delay folded into the
+  wind-up), the ultimate is a move of class `ultimate`, `empowered` a state, base abilities talents, `retreat_below: 0`
+  a last stand; no mobility block (MOBILITY_AND_WORK 8.2). In a format-2 file `skills`, `empowered`,
+  `base_abilities` and `stats.size` are read as their format-2 parts with a NOTE; `starter_for`, `factions`,
+  `skin_model` and `color` are ignored with a NOTE.
+- **Equal treatment, no yield, no tokens** (6.15, 15.6) as listed there, and: a test walks every record component
+  and enum constant of `HeroDef` and every word list (none names a player, an NPC, a yield, a spare or a token);
+  `{player}` stays in non-fight lines (a greeting names whom it greets). `health_scale: { base, players }` keeps its
+  base and ignores the per-player part with 12.10's NOTE; `attack_tokens`, `tokens` and `health_per_player` are read
+  and ignored the same way.
+- **Levels** (8): `unlock_level` on moves, the ultimate, passives and phases, and the `unlock` line event, are read and
+  ignored with a NOTE; every loaded part has unlock level 1.
+- **The end of a fight** (6.13): the kind from `when_losing`, else a v1 `retreat_below` the file wrote as 0, else the
+  nerve a + h - c (65 or more stands; `sleepy` always stands); `stands_for` as written (`[]` is nowhere) or from
+  loyalty (home at 70, beside the leader at 85); a `retreat_below` the file leaves out comes from the role's default
+  + 20 (c - 0.5) - 10 (a - 0.5), clamped to 0-60, a half rounding up (kit-gaps 11); `flee_at` is a third of it, a half
+  rounding up, within 8-15, at most the last phase's start less 10 and never under 5. The 30 temperaments give
+  Appendix A's table and the slice heroes SLICE_PLAN's lines ("escapes under 8%, never from its home"; `/fc hero
+  check` and `checkHeroes` print them). NOTEs: traits that flip the temperament's usual kind, `stands_for` on a hero
+  that fights to the death, a last phase under 18% for an escaping hero.
+- **Personality into behaviour** (5.4): traits stay within 20 of the temperament's (ADJUSTED); when `behaviour` names
+  no `aggression`, it comes from the trait (65 or more bold, 35 or less cautious), and no `focus` from the
+  temperament where it has a rule (strongest: battle maniac, righteous; heroes first: hot-blooded, proud noble;
+  weakest: schemer, trickster), else the role's; `duty: court` is read as `guard` (the game sets it while the hero
+  leads).
+- **Balance** (6.4, 6.5) on top of F1's caps: the class of 6.4 (a lighter class only for a move with no damage, DoT,
+  stun, freeze, knockback or pull; a stun makes it heavy); frames raised to the class minimums (none written: the
+  minimums, silently); a zone lands as its wind-up ends, so the wind-up covers its delay and the delay becomes 0
+  (kit-gaps 5); the decal by form (`HeroCatalogue.decalOf`, kit-gaps 4), `none` only for light moves and never for an
+  unblockable one; slot caps by form (a combo's strikes together within 1.25 x the cap, a rain's third of its impacts
+  within the zone cap, every barrage shot on the one target with the per-shot lists cycling, a wave's waves as hits);
+  6.5's weights for the new forms and their cooldown floors; a state's `on_hit` shares the on-hit cap with the basic
+  attack's. The seven new effects weigh (PROPOSED, 6.6 gives none): `guard_break` s/2, `poise` amount/10, `silence`
+  2 per s, `tether` s/2, `barrier` 2 per hit, `spawn_add` its count, `call_guards` 1.5 per guard; at most 3 decoys.
+- **Format decisions for kit-gaps.md** (each recorded there): 1, a move follows itself only when `repeatable`, `max`
+  1-3 caps the repeats, the string limit of 4 counts the repeats and the validator checks the longest string
+  through other moves (6.3); 2, the defaults (weight 5, a reaction's chance 50 and cooldown 10, a transition 1 s,
+  energy gain 10, charge rate 100) and a NOTE for an ultimate without its line; 5, a strike carries its own effects,
+  and "+60% from behind" is a second damage with a `target_behind` condition; 7, a reaction whose move is not in the
+  current phase waits for a phase that has it (no message: Benika and Kagenori answer a shield only from phase 2);
+  8, `channel` is a move field (true, a percent or `{ interrupt }`, 15% by default) and a `channel` weak point
+  without a channelled move is a NOTE; 12, enrage after 180 s, 240 s as leader; 13, a flyer's phases come from
+  `mobility.aerial` (Ambrose: phase 2); the `dive` form stays F5/A12's.
+- **Sound references** (SOUND.md 3, 5): format 2 checks only a sound id's form (`minecraft:<event>`, a bare vanilla
+  event, `factionclash:hero.cue.*`, `hero.kit.*`, `hero.voice.<id>` or a hero's own set; `HeroCatalogue.SOUND_ID_REGEX`
+  is also the schema's pattern); format 1 keeps its allowlist.
+- **Mobility** (MOBILITY_AND_WORK 8): 8.2's defaults (the archetype's first allowed primary of `check_roster.py` at
+  tier 1, its flight carrier, aerial phases 2-3, or 1-3 for a legendary flyer, `water` avoided by a hero with a water
+  weak point) and 8.3's rules, each ADJUSTED or a NOTE: an unknown or footing-only primary, tier 3 only for epic and
+  legendary heroes, a secondary of at most min(2, the primary's tier) that pairs with the primary and the element,
+  `aerial` only for a flyer, a flyer's carrier, the aerial numbers in range.
+- **Across built-in files** (NOTEs): `gender`, `archetype`, `personality` and `leader` present; leader names and short
+  names not taken twice; the uniqueness signature (archetype, element, basic attack style, the ultimate's form and the
+  signature move's form and effects) not shared;
+  relationships that name a loaded hero; flyers at most 15% of 8 or more heroes.
+- **`checkHeroes`**: `./gradlew checkHeroes [-PheroDir=<folder>,...] [-PheroStrict]` runs `HeroCheckMain` (in `check`):
+  the folders read as built-in heroes, the report, each hero's end-of-fight line and the summary; it fails on NOT
+  LOADED or PART LEFT OUT (`--strict`: on anything). The default folder `src/main/resources/data/factionclash/heroes`
+  does not exist until C1-C4 write it, so it passes with nothing to check; on the slice fixtures it prints "Heroes: 8
+  loaded".
+- **Schema**: `HeroSchemaGen` writes `docs/heroes-v2/hero2.schema.json` (draft 2020-12, `./gradlew heroSchema`) from
+  the catalogue, and `HeroSchemaGenTest` fails when the file is stale. It describes a clean file: canonical words,
+  values within range, `_` comments anywhere, `unlock_level`, `skills`, `empowered`, `base_abilities`, `stats.size`
+  and the `unlock` event marked deprecated; rules across fields stay the validator's. The eight slice fixtures
+  validate with Python's `jsonschema` (Draft202012Validator) and with the test's subset validator, and broken copies
+  (an unknown field, a yield line, a removed boss field, `target_is_player`, a bad sound id, another effect's field,
+  format 3) are refused.
+- **Tests** (140 new, 613 unit tests in all): `HeroReaderV2Test` (42: every new field, form, effect, condition,
+  trigger and line event, the boss block, the end of a fight, leader to mobility, sounds, the generated block, the
+  format-1 mapping, the limits, and 2,000 seeded damaged slice kits that must load sane or be refused),
+  `HeroBalanceV2Test` (18), `EscapeRulesTest` (10, against Appendix A's table), `HeroCatalogueV2Test` (7, against
+  `check_roster.py` and Appendix A), `SliceKitsTest` (7: the fixtures load clean, keep every format-2 invariant
+  (`V2Sanity`), end their fights as SLICE_PLAN says, and each number they lowered to a cap is shown to be over it),
+  `HeroSchemaGenTest` (3), `HeroCheckMainTest` (4), and one `HeroMessagesTest` case per new message code (50).
+- **The slice fixtures** (`src/test/resources/heroes/slice/`, test data, not the authored heroes of C1-C4): where
+  SLICE_PLAN's number is over a cap the fixture writes the cap (Natsuho's `nine_lives` shield 4, not 8: the passive
+  shield cap; her `frenzy` bleed 0.5 per second for 2 s: the basic attack's bleed already uses most of the shared
+  on-hit cap) and a cooldown SLICE_PLAN leaves open is at or above its floor (`three_cut` 10, not 12.18's 6).
+- **Left open**: the `dive` form and `EscapeRules.decide` (F5/A12); the boss bar's title (`boss.intro.title`, else the
+  hero's `title`, else its name alone: a presentation choice for A3); the schema does not encode each form's own
+  fields (the reader's NOTE); war power is still F1's hook; the guide writer (`HeroDocs`) is not written.
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3036,6 +3135,9 @@ both (14.5).
   (12.11, 14.1).
 - `HeroDef`: the personality carries `whenLosing` (authored or absent) and `standsFor` (authored or absent); nothing
   in `HeroDef` names a yield, a spare or a player multiplier.
+
+- Done in F2 (15.2 "F2 as built"): all of the above, with a test that no `HeroDef` component, enum constant or word
+  names a player, an NPC, a yield, a spare or a token.
 
 **`HeroBalance` (F1, F2)**
 

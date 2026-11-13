@@ -43,8 +43,8 @@ public final class HeroCatalogue {
 
     // ------------------------------------------------------------------ file limits (v1 3, 26.5)
 
-    /** The newest {@code format} this build reads. */
-    public static final int MAX_FORMAT = 1;
+    /** The newest {@code format} this build reads (2: HEROES_V2 12). */
+    public static final int MAX_FORMAT = 2;
     public static final int MAX_FILE_BYTES = 128 * 1024;
     public static final int MAX_DEPTH = 8;
     public static final int MAX_STRING = 1000;
@@ -308,12 +308,31 @@ public final class HeroCatalogue {
         return v;
     }
 
+    /** A word list of format 1: the enum's format-1 words only ({@link HeroDef.Word#since}). */
     private static <E extends Enum<E> & HeroDef.Word> Vocab vocab(String name, String noun, Class<E> cls) {
+        return vocab(name, noun, ids(HeroDef.Word.inFormat(cls, 1)));
+    }
+
+    /** A word list of format 2: every word of the enum. */
+    private static <E extends Enum<E> & HeroDef.Word> Vocab vocab2(String name, String noun, Class<E> cls) {
+        return vocab(name, noun, ids(HeroDef.Word.inFormat(cls, MAX_FORMAT)));
+    }
+
+    private static List<String> ids(List<? extends HeroDef.Word> l) {
         List<String> w = new ArrayList<>();
-        for (E e : cls.getEnumConstants()) {
+        for (HeroDef.Word e : l) {
             w.add(e.id());
         }
-        return vocab(name, noun, w);
+        return w;
+    }
+
+    /**
+     * The word list a field of a {@code format} file reads: format 2's own list ({@code name + "2"}) where format 2
+     * changed it (new words, and synonyms that became words: v1 read {@code charge} as {@code dash}, format 2 has a
+     * {@code charge} form), else the shared one.
+     */
+    public static String vocabName(String name, int format) {
+        return format >= 2 && VOCABS.containsKey(name + "2") ? name + "2" : name;
     }
 
     public static Vocab vocab(String name) {
@@ -342,7 +361,15 @@ public final class HeroCatalogue {
                     + " included")),
             "target_kind", Map.of(
                     "player", new EqualReading("person", "a person is a player, an NPC or a hero alike"),
-                    "npc", new EqualReading("person", "a person is a player, an NPC or a hero alike")));
+                    "npc", new EqualReading("person", "a person is a player, an NPC or a hero alike")),
+            "condition2", Map.of("players_engaged", new EqualReading("enemies_engaged", "it counts the engaged"
+                    + " enemies of every kind")));
+
+    /**
+     * Format 2's {@code target_is_player} condition (the first draft's): read as {@code target_is} with the kind
+     * {@code person} (HEROES_V2 6.6), ADJUSTED with the owner's rule.
+     */
+    public static final String TARGET_IS_PLAYER = "target_is_player";
 
     /** Lower case, {@code minecraft:} dropped, spaces and hyphens as {@code _}, repeated {@code _} merged. */
     public static String norm(String s) {
@@ -825,9 +852,10 @@ public final class HeroCatalogue {
     /** Who an effect type may reach; {@code effect} and {@code stat} decide by their id or sign ({@link #reach}). */
     public static Reach reach(HeroDef.Effect e) {
         return switch (e.type()) {
-            case DAMAGE, DOT, KNOCKBACK, PULL, IGNITE, FREEZE, STUN, TAUNT, DISPEL -> Reach.ENEMY;
+            case DAMAGE, DOT, KNOCKBACK, PULL, IGNITE, FREEZE, STUN, TAUNT, DISPEL, GUARD_BREAK, POISE, SILENCE,
+                    TETHER -> Reach.ENEMY;
             case HEAL, SHIELD, CLEANSE, ENERGY -> Reach.ALLY;
-            case COOLDOWN_CUT, MOVE_SELF, EMPOWER, SUMMON -> Reach.SELF;
+            case COOLDOWN_CUT, MOVE_SELF, EMPOWER, SUMMON, BARRIER, SPAWN_ADD, CALL_GUARDS -> Reach.SELF;
             case EFFECT -> ((HeroDef.PotionEffect) e).helpful() ? Reach.ALLY : Reach.ENEMY;
             case STAT -> ((HeroDef.StatMod) e).helpful() ? Reach.ALLY : Reach.ENEMY;
             case MARK, CLEAR_MARKS -> Reach.EITHER;
@@ -1005,7 +1033,708 @@ public final class HeroCatalogue {
             case "empowered" -> EMPOWERED;
             case "stat_bonus" -> STAT_BONUS;
             case "gear_item" -> GEAR_ITEM;
-            default -> throw new IllegalArgumentException(kind);
+            default -> {
+                Map<String, Field> s = SHAPES2.get(kind);
+                if (s == null) {
+                    throw new IllegalArgumentException(kind);
+                }
+                yield s;
+            }
         };
+    }
+
+    // ================================================================== format 2 (HEROES_V2 12, MOBILITY_AND_WORK 8)
+
+    /** At most this many moves, states, reactions, weak points, talents, relationships and lines per event (12.17). */
+    public static final int MAX_MOVES = 12, MAX_STATES = 3, MAX_PHASES = 3, MAX_REACTIONS = 8, MAX_WEAK_POINTS = 4,
+            MAX_TALENTS = 3, MAX_RELATIONSHIPS = 4, MAX_LINES_PER_EVENT_2 = 12, MOVE_ID_MIN = 2, MOVE_ID_MAX = 24;
+    /** HEROES_V2 6.3: a followup string is at most this many moves long, the first included. */
+    public static final int STRING_MAX = 4;
+    /** HEROES_V2 6.2: a leading hero's health scale is this much higher. */
+    public static final int LEADER_HEALTH_BONUS = 50;
+    /** HEROES_V2 6.5: a combo's strikes together deal at most this many times the slot cap. */
+    public static final double COMBO_CAP_FACTOR = 1.25;
+    /** HEROES_V2 6.4: with no generated frames, the active part of a move without one of its own. */
+    public static final double DEFAULT_ACTIVE = 0.1;
+
+    /** HEROES_V2 6.2: health scale by rarity (allowed 200-600; a leader adds 50 in the game). */
+    public static final Map<HeroDef.Rarity, Integer> HEALTH_SCALE = new EnumMap<>(Map.of(
+            HeroDef.Rarity.COMMON, 250, HeroDef.Rarity.RARE, 300, HeroDef.Rarity.EPIC, 350,
+            HeroDef.Rarity.LEGENDARY, 400));
+
+    /** HEROES_V2 12.4's last two columns: poise and the boss health factor by role. */
+    public record RoleBoss(int poise, double healthFactor) {
+    }
+
+    public static final Map<Role, RoleBoss> ROLE_BOSS = new EnumMap<>(Role.class);
+
+    static {
+        ROLE_BOSS.put(Role.VANGUARD, new RoleBoss(140, 1.0));
+        ROLE_BOSS.put(Role.STRIKER, new RoleBoss(100, 1.2));
+        ROLE_BOSS.put(Role.SKIRMISHER, new RoleBoss(80, 1.25));
+        ROLE_BOSS.put(Role.MARKSMAN, new RoleBoss(70, 1.3));
+        ROLE_BOSS.put(Role.SUPPORT, new RoleBoss(80, 1.25));
+        ROLE_BOSS.put(Role.CONTROLLER, new RoleBoss(80, 1.25));
+        ROLE_BOSS.put(Role.SUMMONER, new RoleBoss(70, 1.3));
+        // the two new role presets of 12.4 (format 2 only: a format-1 file cannot name them)
+        ROLES.put(Role.CONTROLLER, new RolePreset(26, 0, 1, 100, 0, Growth.MYSTIC, Focus.RANGED_FIRST, 8,
+                Protects.ALLIES, Aggression.STEADY, 35, Raids.JOINS));
+        ROLES.put(Role.SUMMONER, new RolePreset(24, 0, 1, 100, 0, Growth.MYSTIC, Focus.THREAT_TO_ALLIES, 10,
+                Protects.NONE, Aggression.CAUTIOUS, 40, Raids.JOINS));
+    }
+
+    /** HEROES_V2 6.7: phases by rarity (common and rare 2, epic and legendary 3) and where each begins by default. */
+    public static int defaultPhaseCount(HeroDef.Rarity r) {
+        return r == HeroDef.Rarity.COMMON || r == HeroDef.Rarity.RARE ? 2 : 3;
+    }
+
+    public static List<Integer> defaultPhaseStarts(int count) {
+        return switch (count) {
+            case 1 -> List.of(100);
+            case 2 -> List.of(100, 50);
+            default -> List.of(100, 60, 25);
+        };
+    }
+
+    /** HEROES_V2 6.10: the soft enrage, leaders 240 s and others 180 s, when the file sets none. */
+    public static final double ENRAGE_SECONDS = 180, ENRAGE_SECONDS_LEADER = 240;
+
+    // ------------------------------------------------------------------ moves (6.3, 6.4, 6.5, 12.7)
+
+    /** HEROES_V2 6.4: the class a form gives when the file names none. */
+    public static HeroDef.MoveClass classOf(Form f) {
+        return switch (f) {
+            case MELEE, COMBO, SHOT, VOLLEY, BOLT, BARRAGE, COUNTER, SELF, ALLY, ALLIES -> HeroDef.MoveClass.LIGHT;
+            case LEAP, DASH, CHARGE, GRAB, LINE, CHAIN -> HeroDef.MoveClass.HEAVY;
+            case CONE, NOVA, ZONE, WAVE, RAIN, SWEEP -> HeroDef.MoveClass.AREA;
+        };
+    }
+
+    /**
+     * The decal a move heavier than light draws when the file names none (HEROES_V2 6.4; kit-gaps 4): a disc where
+     * the hero or its target stands for self, counter-free melee and chain moves, a strip along lines, dashes,
+     * charges, shots and grabs (purple for a grab), a fan for cones and sweeps, a ring for waves and counter
+     * stances, a landing disc for leaps, one disc per impact for rain. A light move shows only its animation.
+     */
+    public static HeroDef.Decal decalOf(Form f) {
+        return switch (f) {
+            case MELEE, COMBO, CHAIN, NOVA, ZONE, SELF, ALLY, ALLIES -> HeroDef.Decal.DISC;
+            case SHOT, BOLT, LINE, DASH, CHARGE, GRAB, BARRAGE -> HeroDef.Decal.STRIP;
+            case VOLLEY, CONE, SWEEP -> HeroDef.Decal.FAN;
+            case WAVE, COUNTER -> HeroDef.Decal.RING;
+            case LEAP -> HeroDef.Decal.LANDING;
+            case RAIN -> HeroDef.Decal.IMPACTS;
+        };
+    }
+
+    /** The decal a move of this class and form draws by default: none for a light move, else {@link #decalOf}. */
+    public static HeroDef.Decal defaultDecal(HeroDef.MoveClass c, Form f) {
+        return c == HeroDef.MoveClass.LIGHT ? HeroDef.Decal.NONE : decalOf(f);
+    }
+
+    /** Close up to 4 blocks, mid 4-10, far 10-24 (6.3). */
+    public static final double CLOSE_MAX = 4, MID_MAX = 10;
+
+    /** The bands a move likes when the file names none: from its form and reach (12.7). */
+    public static List<HeroDef.Band> defaultBands(Form f, double range, HeroDef.ZoneAt zoneAt) {
+        HeroDef.Band c = HeroDef.Band.CLOSE, m = HeroDef.Band.MID, fa = HeroDef.Band.FAR;
+        return switch (f) {
+            case MELEE, COMBO, COUNTER, GRAB, NOVA -> List.of(c);
+            case SELF, ALLY, ALLIES -> List.of(c, m, fa);
+            case WAVE -> List.of(c, m);
+            case ZONE -> zoneAt == HeroDef.ZoneAt.TARGET ? byReach(range) : List.of(c);
+            default -> byReach(range);
+        };
+    }
+
+    private static List<HeroDef.Band> byReach(double r) {
+        return r <= CLOSE_MAX ? List.of(HeroDef.Band.CLOSE) : r <= MID_MAX ? List.of(HeroDef.Band.MID)
+                : List.of(HeroDef.Band.MID, HeroDef.Band.FAR);
+    }
+
+    /** Gap closers (HEROES_V2 6.12: a hero with neither a far-band move nor one of these gets a NOTE). */
+    public static boolean gapCloser(Form f) {
+        return f == Form.LEAP || f == Form.DASH || f == Form.CHARGE;
+    }
+
+    static {
+        // the new forms in format 1's form table, so the shared code (weights, splash) knows their reach
+        FORMS.put(Form.COMBO, new FormSpec(3.5, 3.5, 3.5, true, NA, NA, NA, false, false, false, false, false, false));
+        FORMS.put(Form.CHARGE, new FormSpec(6, 16, 10, false, NA, NA, NA, false, false, false, false, false, false));
+        FORMS.put(Form.WAVE, new FormSpec(NA, NA, NA, false, 6, 16, 10, false, false, false, false, false, false));
+        FORMS.put(Form.RAIN, new FormSpec(4, 24, 16, false, 3, 8, 5, true, false, false, false, false, false));
+        FORMS.put(Form.SWEEP, new FormSpec(4, 12, 8, false, NA, NA, NA, false, true, true, false, false, false));
+        FORMS.put(Form.GRAB, new FormSpec(2, 3, 2.5, false, NA, NA, NA, false, false, false, false, false, false));
+        FORMS.put(Form.COUNTER, new FormSpec(NA, NA, NA, false, NA, NA, NA, false, false, false, false, false, false));
+        FORMS.put(Form.BARRAGE, new FormSpec(4, 24, 16, false, NA, NA, NA, true, false, false, false, true, false));
+    }
+
+    /**
+     * The new forms' own fields with their ranges and defaults (HEROES_V2 6.5): the move reads them instead of format
+     * 1's shared ability fields of the same name. A field of this table that a form does not list gets a NOTE.
+     */
+    public static final Map<Form, Map<String, Field>> FORM_FIELDS = new EnumMap<>(Form.class);
+    /** Every name {@link #FORM_FIELDS} uses, plus format 1's form fields: what a form may leave unused. */
+    public static final List<String> NEW_FORM_FIELD_NAMES = List.of("strikes", "speed", "wall_stun", "waves", "arc",
+            "throw", "up", "stance", "absorb", "ranged", "per_shot");
+
+    static {
+        FORM_FIELDS.put(Form.COMBO, shape(req(list("strikes", 2, 4))));
+        FORM_FIELDS.put(Form.CHARGE, shape(num("range", Unit.BLOCKS, 6, 16, 10), whole("speed", Unit.PERCENT, 120, 200,
+                160), of("wall_stun", Kind.BOOL)));
+        FORM_FIELDS.put(Form.WAVE, shape(num("radius", Unit.BLOCKS, 6, 16, 10), num("speed", Unit.NONE, 6, 12, 8),
+                whole("waves", Unit.NONE, 1, 3, 1), num("interval", Unit.SECONDS, 0.6, 1.5, 1)));
+        FORM_FIELDS.put(Form.RAIN, shape(num("range", Unit.BLOCKS, 4, 24, 16), whole("count", Unit.NONE, 3, 12, 6),
+                num("radius", Unit.BLOCKS, 3, 8, 5), num("duration", Unit.SECONDS, 1, 4, 2),
+                num("delay", Unit.SECONDS, 0.75, 1.0, 0.9)));
+        FORM_FIELDS.put(Form.SWEEP, shape(num("range", Unit.BLOCKS, 4, 12, 8), whole("arc", Unit.DEGREES, 60, 180,
+                120), num("duration", Unit.SECONDS, 1, 3, 1.5), num("width", Unit.BLOCKS, 1, 2, 1)));
+        FORM_FIELDS.put(Form.GRAB, shape(num("range", Unit.BLOCKS, 2, 3, 2.5), num("throw", Unit.NONE, 1, 4, 2),
+                num("up", Unit.BLOCKS, 0, 1, 0)));
+        FORM_FIELDS.put(Form.COUNTER, shape(num("stance", Unit.SECONDS, 0.8, 2, 1), whole("absorb", Unit.PERCENT, 50,
+                90, 80), of("ranged", Kind.BOOL)));
+        FORM_FIELDS.put(Form.BARRAGE, shape(num("range", Unit.BLOCKS, 4, 24, 16), whole("count", Unit.NONE, 3, 10, 5),
+                num("interval", Unit.SECONDS, 0.15, 0.6, 0.3), word("projectile", "projectile"),
+                list("per_shot", 1, 10)));
+    }
+
+    /**
+     * HEROES_V2 6.5's weight column: the receivers' multiplier A and the repeats that multiply a move's effects, and
+     * what is added on top, for the new forms ({@code strikes}: a combo is the sum of its strikes; a sweep's A grows
+     * with its arc; rain counts a third of its impacts on one receiver).
+     */
+    public static final double CHARGE_EXTRA_WEIGHT = 2, GRAB_BASE_WEIGHT = 2, COUNTER_WEIGHT = 0.75;
+
+    /** MOBILITY_AND_WORK 4.4: names a move id may not take, because {@code move.<id>} would shadow the core clip. */
+    public static final Set<String> LOCOMOTION_NAMES = Set.of("idle", "walk", "run", "swim", "fall", "climb", "crouch",
+            "jump", "crouch_jump", "leap", "air_jump", "wall_kick", "mantle", "land", "land_heavy", "land_roll",
+            "climb_idle", "climb_down", "glide_start", "glide", "gust", "takeoff", "fly", "fly_fast", "fly_hover",
+            "fly_land", "hover", "drift", "swim_fast", "tread", "swim_down", "surface_leap", "sprint", "charge_run",
+            "skid", "downed", "winded", "ride", "ride_cast", "air_dive");
+
+    // ------------------------------------------------------------------ the new effects (6.6)
+
+    static {
+        EFFECTS.put(EffectType.GUARD_BREAK, shape(num("seconds", Unit.SECONDS, 2, 5, 5)));
+        EFFECTS.put(EffectType.POISE, shape(req(whole("amount", Unit.NONE, 10, 60, Double.NaN))));
+        EFFECTS.put(EffectType.SILENCE, shape(num("seconds", Unit.SECONDS, 1, 3, 2)));
+        EFFECTS.put(EffectType.TETHER, shape(num("seconds", Unit.SECONDS, 2, 6, 4), num("max", Unit.BLOCKS, 4, 10, 6)));
+        EFFECTS.put(EffectType.BARRIER, shape(whole("hits", Unit.NONE, 2, 8, 4), num("seconds", Unit.SECONDS, 3, 15, 8),
+                word("focus", "add")));
+        EFFECTS.put(EffectType.SPAWN_ADD, shape(req(word("add", "add")), whole("count", Unit.NONE, 1, 4, 1)));
+        EFFECTS.put(EffectType.CALL_GUARDS, shape(whole("count", Unit.NONE, 1, 4, 2)));
+    }
+
+    /** Fields format 2 adds to a format-1 effect type: {@code empower} names the state it enters (12.9). */
+    public static final Map<EffectType, Map<String, Field>> EFFECTS_2 = new EnumMap<>(Map.of(EffectType.EMPOWER,
+            shape(of("state", Kind.MARK))));
+
+    /** At most this many decoys alive per hero (6.11), and {@code call_guards} reaches soldiers this far. */
+    public static final int MAX_DECOYS = 3;
+    /** PROPOSED weights of the new effects (6.6 gives none): see HeroBalance.effectWeight. */
+    public static final double BARRIER_WEIGHT_PER_HIT = 2, CALL_GUARDS_WEIGHT = 1.5, SILENCE_WEIGHT = 2;
+
+    // ------------------------------------------------------------------ conditions (6.6, 6.8, MOBILITY 7.5)
+
+    /** A condition's one number: range, default (NaN: required) and unit. */
+    public record CondValue(double min, double max, double dflt, Unit unit, String what) {
+    }
+
+    /** Format 2's conditions that take a number; format 1's keep their own rules. */
+    public static final Map<ConditionType, CondValue> CONDITION_VALUES = new EnumMap<>(ConditionType.class);
+
+    static {
+        CONDITION_VALUES.put(ConditionType.TARGET_ABOVE, new CondValue(1, 24, 2, Unit.BLOCKS, "blocks above the hero"));
+        CONDITION_VALUES.put(ConditionType.TARGET_BELOW, new CondValue(1, 24, 2, Unit.BLOCKS, "blocks below the hero"));
+        CONDITION_VALUES.put(ConditionType.TARGET_FAR, new CondValue(4, 24, 10, Unit.BLOCKS, "blocks away at least"));
+        CONDITION_VALUES.put(ConditionType.TARGET_CLOSE, new CondValue(2, 10, 4, Unit.BLOCKS, "blocks away at most"));
+        CONDITION_VALUES.put(ConditionType.PHASE, new CondValue(1, 3, 2, Unit.NONE, "the boss phase"));
+        CONDITION_VALUES.put(ConditionType.ENEMIES_ENGAGED, new CondValue(1, 12, 2, Unit.NONE, "engaged enemies"));
+        CONDITION_VALUES.put(ConditionType.ALLIES_NEAR, new CondValue(1, 12, 2, Unit.NONE, "allies within 12 blocks"));
+        CONDITION_VALUES.put(ConditionType.ADDS_ALIVE, new CondValue(1, 12, 1, Unit.NONE, "adds alive"));
+        CONDITION_VALUES.put(ConditionType.ALLY_HERO_HEALTH_BELOW, new CondValue(1, 99, 50, Unit.PERCENT,
+                "an allied hero's health share"));
+        CONDITION_VALUES.put(ConditionType.SELF_STAMINA_BELOW, new CondValue(1, 99, 25, Unit.PERCENT,
+                "its flight stamina"));
+    }
+
+    // ------------------------------------------------------------------ passives (6.6)
+
+    static {
+        PassiveForm s = PassiveForm.SELF, te = PassiveForm.TRIGGER_ENEMY, as = PassiveForm.ALLIES, n = PassiveForm.NOVA,
+                b = PassiveForm.BOLT, sh = PassiveForm.SHOT;
+        trig(Trigger.ON_PHASE, new ValueRange(2, 3, 2), s, as, n);
+        trig(Trigger.ON_ENRAGE, null, s, as, n);
+        trig(Trigger.ON_STAGGER, null, s, n, as);
+        trig(Trigger.ON_COUNTER, null, te, s, n);
+        trig(Trigger.ON_GUARD_BROKEN, null, s, te, n);
+        trig(Trigger.ON_TARGET_HEAL, null, te, s, b, sh);
+        trig(Trigger.ON_ADD_DIED, null, s, as, n);
+        trig(Trigger.ON_INTRO, null, s, as, n);
+        // an escaping hero starts no attack: self and look effects only (6.6)
+        trig(Trigger.ON_ESCAPE, null, s);
+        trig(Trigger.ON_LAST_STAND, null, s, as, n);
+    }
+
+    // ------------------------------------------------------------------ the end of a fight and the yield (6.13)
+
+    /** The yield's words, refused in format 2 (PART LEFT OUT: "heroes do not yield"). */
+    public static final Set<String> YIELD_WORDS = Set.of("yield", "yields", "kneel", "surrender", "spare");
+    public static final Set<String> YIELD_TRIGGERS = Set.of("on_yield");
+    public static final Set<String> YIELD_EVENTS = Set.of("yield", "spared");
+
+    /**
+     * The boss fields the owner's decisions removed (12.10): each is read and ignored with a NOTE that says why, so an
+     * old draft or an operator override is not silently wrong.
+     */
+    public static final Map<String, String> REMOVED_BOSS_FIELDS = ordered(
+            "damage_vs_players", "read and ignored: a hero deals the same damage to players and NPCs",
+            "defeat", "read and ignored: heroes do not yield; set \"personality.when_losing\" to choose between"
+                    + " escaping and a last stand",
+            "attack_tokens", "read and ignored: any number of heroes may press one target",
+            "tokens", "read and ignored: any number of heroes may press one target",
+            "health_per_player", "read and ignored: boss health does not change with the number of attackers",
+            "players", "read and ignored: boss health does not change with the number of attackers");
+
+    /** Format 1's top-level fields that format 2 does not use, with the reason. */
+    public static final Map<String, String> V1_ONLY_TOP = ordered(
+            "starter_for", "is a format-1 field (format 2's leaders are drafted, 5.2)",
+            "factions", "is a format-1 field (format 2's heroes are recruited by their own conditions, 12.16)",
+            "skin_model", "is a format-1 skin field (a format-2 hero's look comes from its art)",
+            "color", "is a format-1 field (a format-2 hero's colours are its leader colours and palette)");
+
+    /** Format 1's fields that format 2 reads as its own (12.1 and 12.3), with what they become. */
+    public static final Map<String, String> V1_READ_AS = ordered("skills", "moves", "empowered", "a state",
+            "base_abilities", "talents");
+
+    // ------------------------------------------------------------------ personality (5.4, Appendix A)
+
+    /** Appendix A: the eight defaults of each temperament (aggression, honour, ambition, caution, greed, ...). */
+    public static final Map<HeroDef.Temperament, int[]> TEMPERAMENT_TRAITS = new EnumMap<>(HeroDef.Temperament.class);
+    /** HEROES_V2 5.4: each trait stays within this of its temperament's default (ADJUSTED otherwise). */
+    public static final int TRAIT_DRIFT = 20;
+
+    static {
+        int[][] t = {
+                {80, 70, 65, 20, 30, 65, 75, 55}, {50, 80, 45, 65, 30, 30, 85, 10}, {45, 70, 55, 70, 35, 35, 70, 15},
+                {65, 65, 60, 45, 40, 45, 70, 45}, {25, 70, 30, 80, 30, 35, 80, 20}, {25, 75, 40, 50, 25, 90, 80, 35},
+                {70, 40, 55, 35, 35, 40, 95, 60}, {70, 60, 75, 25, 35, 85, 65, 80}, {55, 60, 40, 60, 40, 10, 40, 30},
+                {55, 70, 80, 50, 60, 50, 60, 30}, {75, 55, 55, 30, 45, 55, 85, 55}, {65, 60, 80, 30, 30, 60, 65, 75},
+                {35, 60, 40, 40, 30, 75, 60, 95}, {40, 75, 45, 60, 30, 75, 85, 30}, {55, 25, 60, 45, 55, 65, 40, 70},
+                {25, 60, 25, 55, 30, 45, 60, 20}, {95, 55, 70, 5, 25, 45, 55, 60}, {20, 85, 30, 60, 20, 70, 85, 15},
+                {45, 15, 85, 70, 70, 45, 30, 25}, {60, 95, 50, 45, 15, 60, 80, 25}, {40, 70, 25, 65, 20, 25, 75, 20},
+                {40, 55, 45, 50, 65, 70, 60, 50}, {50, 70, 70, 65, 40, 35, 65, 10}, {35, 50, 55, 45, 45, 90, 45, 50},
+                {30, 75, 55, 80, 30, 50, 75, 10}, {20, 65, 35, 90, 35, 60, 70, 40}, {55, 70, 40, 65, 35, 40, 80, 15},
+                {35, 50, 75, 55, 50, 40, 50, 70}, {40, 45, 60, 50, 90, 70, 40, 35}, {85, 30, 95, 35, 70, 25, 40, 40}};
+        HeroDef.Temperament[] all = HeroDef.Temperament.values();
+        for (int i = 0; i < all.length; i++) {
+            TEMPERAMENT_TRAITS.put(all[i], t[i]);
+        }
+    }
+
+    /** A temperament's default traits as a map (all 50 with no temperament). */
+    public static Map<HeroDef.Trait, Integer> defaultTraits(HeroDef.Temperament t) {
+        Map<HeroDef.Trait, Integer> m = new EnumMap<>(HeroDef.Trait.class);
+        int[] v = t == null ? null : TEMPERAMENT_TRAITS.get(t);
+        for (HeroDef.Trait tr : HeroDef.Trait.values()) {
+            m.put(tr, v == null ? 50 : v[tr.ordinal()]);
+        }
+        return m;
+    }
+
+    /** HEROES_V2 5.4: focus from temperament where the file sets none (null: by role). */
+    public static Focus temperamentFocus(HeroDef.Temperament t) {
+        if (t == null) {
+            return null;
+        }
+        return switch (t) {
+            case HOT_BLOODED, PROUD_NOBLE -> Focus.HEROES_FIRST;
+            case BATTLE_MANIAC, RIGHTEOUS -> Focus.STRONGEST;
+            case SCHEMER, TRICKSTER -> Focus.WEAKEST;
+            default -> null;
+        };
+    }
+
+    /** HEROES_V2 5.4: bold at aggression 65 or more, cautious at 35 or less, else steady. */
+    public static Aggression aggressionWord(int aggression) {
+        return aggression >= 65 ? Aggression.BOLD : aggression <= 35 ? Aggression.CAUTIOUS : Aggression.STEADY;
+    }
+
+    // ------------------------------------------------------------------ the voice (12.14)
+
+    public static final double VOICE_PITCH_FEMALE = 1.25, VOICE_PITCH_MALE = 0.9, VOICE_PITCH_OTHER = 1.0;
+
+    // ------------------------------------------------------------------ archetypes and mobility (ROSTER_PLAN 2.3)
+
+    /** The 54 archetype ids of ROSTER_PLAN 2.3 ({@code tools/roster/check_roster.py} {@code ARCHETYPES}). */
+    public static final List<String> ARCHETYPES = List.of("cat", "fox", "wolf", "tanuki", "moon_rabbit", "oni",
+            "tengu", "snow_spirit", "kappa", "spider_weaver", "east_dragon", "west_dragon", "komainu", "plant_spirit",
+            "shrine", "onmyoji", "samurai", "wanderer", "ninja", "warrior_monk", "fan_dancer", "delinquent",
+            "battle_chef", "storm_drummer", "sword_cultivator", "martial_artist", "jiangshi", "phoenix", "knight",
+            "paladin", "battle_priest", "witch", "elf", "vampire", "demon_lord", "angel", "reaper", "necromancer",
+            "beast_tamer", "dragoon", "berserker", "arbalist", "corsair", "bard", "alchemist", "siren", "idol",
+            "magical", "maid_butler", "noble_fencer", "android", "tactician", "smith", "grappler");
+
+    /** {@code check_roster.py} {@code ARCH_MOBILITY}'s first entry: the primary a format-2 hero gets by default (8.2). */
+    public static final Map<String, HeroDef.MobilityTrait> ARCH_PRIMARY;
+    /** The flight carrier of each archetype that flies ({@code FLIGHT_CARRIER}), as a carrier kind. */
+    public static final Map<String, HeroDef.Carrier> ARCH_CARRIER;
+
+    static {
+        String[] prim = {"acrobat", "runner", "runner", "charger", "leaper", "charger", "flyer", "hover", "swimmer",
+                "climber", "flyer", "flyer", "charger", "climber", "runner", "glider", "charger", "runner", "acrobat",
+                "charger", "acrobat", "runner", "runner", "leaper", "flyer", "acrobat", "leaper", "flyer", "charger",
+                "charger", "runner", "flyer", "runner", "flyer", "flyer", "flyer", "hover", "hover", "runner",
+                "leaper", "charger", "runner", "swimmer", "runner", "runner", "swimmer", "acrobat", "flyer", "runner",
+                "acrobat", "hover", "runner", "charger", "leaper"};
+        Map<String, HeroDef.MobilityTrait> m = new LinkedHashMap<>();
+        for (int i = 0; i < ARCHETYPES.size(); i++) {
+            m.put(ARCHETYPES.get(i), enumOf(HeroDef.MobilityTrait.class, prim[i]));
+        }
+        ARCH_PRIMARY = Collections.unmodifiableMap(m);
+        Map<String, HeroDef.Carrier> c = new LinkedHashMap<>();
+        String[][] cc = {{"tengu", "wings"}, {"east_dragon", "cloud"}, {"west_dragon", "wings"},
+                {"onmyoji", "crane"}, {"sword_cultivator", "sword"}, {"phoenix", "wings"}, {"paladin", "light"},
+                {"witch", "broom"}, {"vampire", "wings"}, {"demon_lord", "wings"}, {"angel", "wings"},
+                {"magical", "light"}, {"android", "jets"}};
+        for (String[] p : cc) {
+            c.put(p[0], enumOf(HeroDef.Carrier.class, p[1]));
+        }
+        ARCH_CARRIER = Collections.unmodifiableMap(c);
+    }
+
+    /** MOBILITY_AND_WORK 7.4: a flyer's aerial phases when the file names none (legendary from phase 1). */
+    public static List<Integer> defaultAerialPhases(HeroDef.Rarity r) {
+        return r == HeroDef.Rarity.LEGENDARY ? List.of(1, 2, 3) : List.of(2, 3);
+    }
+
+    /** MOBILITY_AND_WORK 8.3: flyers above this share of the loaded built-in heroes get a NOTE. */
+    public static final double MAX_FLYER_SHARE = 0.15;
+
+    // ------------------------------------------------------------------ leader (12.12)
+
+    /** Vanilla 1.21.1's banner patterns ({@code BannerPatterns}; the textures of {@code entity/banner}). */
+    public static final List<String> BANNER_PATTERNS = List.of("border", "bricks", "circle", "creeper", "cross",
+            "curly_border", "diagonal_left", "diagonal_right", "diagonal_up_left", "diagonal_up_right", "flow",
+            "flower", "globe", "gradient", "gradient_up", "guster", "half_horizontal", "half_horizontal_bottom",
+            "half_vertical", "half_vertical_right", "mojang", "piglin", "rhombus", "skull", "small_stripes",
+            "square_bottom_left", "square_bottom_right", "square_top_left", "square_top_right", "straight_cross",
+            "stripe_bottom", "stripe_center", "stripe_downleft", "stripe_downright", "stripe_left", "stripe_middle",
+            "stripe_right", "stripe_top", "triangle_bottom", "triangle_top", "triangles_bottom", "triangles_top");
+    /** The company-logo pattern, refused (12.12). */
+    public static final String REFUSED_PATTERN = "mojang";
+
+    // ------------------------------------------------------------------ lines (12.15)
+
+    /**
+     * Format 2's placeholders by event: format 1's, with {@code {enemy}} for {@code fallen} too (the end of a fight
+     * names the one it faces, 6.15), and the new events'.
+     */
+    public static final Map<LineEvent, List<String>> PLACEHOLDERS_2 = new EnumMap<>(LineEvent.class);
+
+    static {
+        PLACEHOLDERS_2.putAll(PLACEHOLDERS);
+        List<String> n = List.of("name"), ne = List.of("name", "enemy"), nf = List.of("name", "faction"),
+                np = List.of("name", "player"), nft = List.of("name", "faction", "target_faction"),
+                dip = List.of("name", "faction", "target_faction", "player"), gift = List.of("name", "player", "item");
+        PLACEHOLDERS_2.put(LineEvent.FALLEN, ne);
+        PLACEHOLDERS_2.put(LineEvent.FOUNDING, nf);
+        PLACEHOLDERS_2.put(LineEvent.INTRO, ne);
+        PLACEHOLDERS_2.put(LineEvent.PHASE_2, n);
+        PLACEHOLDERS_2.put(LineEvent.PHASE_3, n);
+        for (LineEvent e : List.of(LineEvent.ENRAGE, LineEvent.STAGGER, LineEvent.COUNTER, LineEvent.ESCAPE,
+                LineEvent.LAST_STAND)) {
+            PLACEHOLDERS_2.put(e, ne);
+        }
+        for (LineEvent e : List.of(LineEvent.RAID_ANNOUNCE, LineEvent.BASE_LOST, LineEvent.HERO_FALLEN)) {
+            PLACEHOLDERS_2.put(e, nft);
+        }
+        for (LineEvent e : List.of(LineEvent.WORK, LineEvent.NIGHT, LineEvent.SMALL_TALK)) {
+            PLACEHOLDERS_2.put(e, np);
+        }
+        for (LineEvent e : List.of(LineEvent.PACT_OFFER, LineEvent.PACT_ACCEPTED, LineEvent.PACT_REFUSED,
+                LineEvent.PEACE_OFFER, LineEvent.DECLARE_WAR, LineEvent.BETRAYAL, LineEvent.BETRAYED,
+                LineEvent.STRANGER_WARNING, LineEvent.WELCOME)) {
+            PLACEHOLDERS_2.put(e, dip);
+        }
+        PLACEHOLDERS_2.put(LineEvent.GIFT_LIKED, gift);
+        PLACEHOLDERS_2.put(LineEvent.GIFT_DISLIKED, gift);
+    }
+
+    public static final Set<String> ALL_PLACEHOLDERS_2 = Set.of("name", "faction", "player", "enemy", "ability",
+            "ally", "level", "target_faction", "item");
+
+    // ------------------------------------------------------------------ sound references (SOUND.md 3, 5)
+
+    /**
+     * A sound id format 2 accepts by its form only (SOUND.md 5; existence is checked by {@code sfxgen check} and the
+     * game's registry): {@code minecraft:<event>}, a bare vanilla event, or {@code factionclash:hero.<set>.<name>}
+     * ({@code cue}, {@code voice.<id>}, {@code kit.<name>} or a hero's own set).
+     */
+    public static boolean soundIdForm(String id) {
+        return SOUND_ID.matcher(id.trim()).matches();
+    }
+
+    /** {@link #soundIdForm} as one regular expression (the schema's {@code sound} pattern uses it too). */
+    public static final String SOUND_ID_REGEX = "[a-z0-9_\\-/]([a-z0-9_.\\-/]*[a-z0-9_\\-/])?"
+            + "|minecraft:[a-z0-9_.\\-/]*[a-z0-9_\\-/]"
+            + "|factionclash:hero\\.(cue|kit)\\.[a-z0-9_]+(\\.[a-z0-9_]+)*"
+            + "|factionclash:hero\\.voice\\.[a-z][a-z0-9_]*"
+            + "|factionclash:hero\\.[a-z][a-z0-9_]*\\.[a-z0-9_]+(\\.[a-z0-9_]+)*";
+    private static final java.util.regex.Pattern SOUND_ID = java.util.regex.Pattern.compile(SOUND_ID_REGEX);
+
+    // ------------------------------------------------------------------ the shapes of format 2
+
+    private static Map<String, Field> with(Map<String, Field> base, Field... more) {
+        Map<String, Field> m = new LinkedHashMap<>(base);
+        for (Field f : more) {
+            m.put(f.name, f);
+        }
+        return Collections.unmodifiableMap(m);
+    }
+
+    private static Map<String, Field> retyped(Map<String, Field> base, String field, String vocab) {
+        Map<String, Field> m = new LinkedHashMap<>(base);
+        Field f = m.get(field);
+        m.put(field, new Field(f.name, f.kind, f.unit, f.min, f.max, f.dflt, vocab, f.required));
+        return Collections.unmodifiableMap(m);
+    }
+
+    public static final Map<String, Field> TOP_2 = shape(
+            req(whole("format", Unit.NONE, 1, 99, Double.NaN)), of("id", Kind.ID), req(text("name", 1, 24)),
+            text("title", 0, 32), text("description", 0, 300), word("gender", "gender"),
+            word("archetype", "archetype"), word("hybrid", "archetype"), word("rarity", "rarity"),
+            word("element", "element"), of("stats", Kind.OBJECT), of("resistances", Kind.MAP), list("gear", 0, 6),
+            req(of("behaviour", Kind.OBJECT)), req(of("basic_attack", Kind.OBJECT)), list("moves", 0, MAX_MOVES),
+            list("skills", 0, MAX_MOVES), of("ultimate", Kind.OBJECT), list("passives", 0, 4),
+            list("states", 0, MAX_STATES), of("empowered", Kind.OBJECT), of("boss", Kind.OBJECT),
+            of("personality", Kind.OBJECT), of("leader", Kind.OBJECT), list("talents", 0, MAX_TALENTS),
+            list("base_abilities", 0, MAX_TALENTS), of("voice", Kind.OBJECT), of("lines", Kind.MAP),
+            of("recruit", Kind.OBJECT), list("relationships", 0, MAX_RELATIONSHIPS), of("revival", Kind.OBJECT),
+            of("mobility", Kind.OBJECT), of("art", Kind.OBJECT), of("animations", Kind.OBJECT),
+            of("generated", Kind.OBJECT));
+
+    public static final Map<String, Field> BEHAVIOUR_2 = with(retyped(BEHAVIOUR, "combat_role", "combat_role2"),
+            word("duel_style", "duel_style"));
+
+    public static final Map<String, Field> BASIC_ATTACK_2 = with(BASIC_ATTACK, whole("combo", Unit.NONE, 1, 4, 3));
+
+    public static final Map<String, Field> MOVE = shape(
+            req(text("name", 1, 24)), text("description", 0, 200), of("id", Kind.MARK), req(word("form", "form2")),
+            num("range", Unit.BLOCKS, 2, 24, Double.NaN), num("radius", Unit.BLOCKS, 0, 16, Double.NaN),
+            whole("count", Unit.NONE, 2, 12, 3), whole("angle", Unit.DEGREES, 30, 120, 70),
+            num("width", Unit.BLOCKS, 1, 3, 1), whole("hits", Unit.NONE, 1, 5, 1),
+            num("hit_interval", Unit.SECONDS, 0.2, 1, 0.3), word("projectile", "projectile"),
+            word("zone_at", "zone_at"), num("delay", Unit.SECONDS, 0, 3, Double.NaN),
+            num("duration", Unit.SECONDS, 0, 10, 0), num("interval", Unit.SECONDS, 0.15, 3, 1),
+            num("windup", Unit.SECONDS, 0, 4, Double.NaN), num("cooldown", Unit.SECONDS, 2, 120, 8),
+            whole("charges", Unit.NONE, 1, 3, 1), whole("energy_gain", Unit.NONE, 0, 30, 10),
+            whole("charge_rate", Unit.PERCENT, 50, 150, 100), word("use_when", "use_when"),
+            num("use_value", Unit.NONE, 2, 90, Double.NaN), whole("unlock_level", Unit.LEVEL, 1, 30, 1),
+            list("effects", 1, 5), of("look", Kind.OBJECT), text("line", 1, 120),
+            word("class", "move_class"), of("frames", Kind.OBJECT), list("band", 1, 3),
+            whole("weight", Unit.NONE, 0, 10, 5), list("phases", 1, 3), of("prefer_when", Kind.CONDITION),
+            list("followups", 0, 4), of("repeatable", Kind.BOOL), of("breaks_guard", Kind.BOOL),
+            of("unblockable", Kind.BOOL), of("super_armor", Kind.BOOL), of("channel", Kind.OBJECT),
+            of("telegraph", Kind.OBJECT), list("per_shot", 1, 10), list("strikes", 2, 4),
+            num("speed", Unit.NONE, 6, 200, Double.NaN), of("wall_stun", Kind.BOOL), whole("waves", Unit.NONE, 1, 3, 1),
+            whole("arc", Unit.DEGREES, 60, 180, 120), num("throw", Unit.NONE, 1, 4, 2), num("up", Unit.BLOCKS, 0, 1, 0),
+            num("stance", Unit.SECONDS, 0.8, 2, 1), whole("absorb", Unit.PERCENT, 50, 90, 80), of("ranged", Kind.BOOL),
+            of("awakened", Kind.OBJECT));
+
+    public static final Map<String, Field> FRAMES = shape(num("windup", Unit.SECONDS, 0, 4, Double.NaN),
+            num("active", Unit.SECONDS, 0, 6, Double.NaN), num("recovery", Unit.SECONDS, 0, 4, Double.NaN));
+    public static final Map<String, Field> FOLLOWUP = shape(req(of("move", Kind.MARK)),
+            whole("chance", Unit.PERCENT, 1, 100, 100), whole("max", Unit.NONE, 1, 3, Double.NaN));
+    public static final Map<String, Field> CHANNEL = shape(whole("interrupt", Unit.PERCENT, 5, 30, 15));
+    public static final Map<String, Field> TELEGRAPH = shape(word("shape", "decal"), of("color", Kind.COLOR));
+    public static final Map<String, Field> STRIKE = shape(num("windup", Unit.SECONDS, 0, 2, 0),
+            num("active", Unit.SECONDS, 0, 2, 0), num("radius", Unit.BLOCKS, 0, 3, 0), req(list("effects", 1, 3)));
+    public static final Map<String, Field> PASSIVE_2 = with(retyped(PASSIVE, "trigger", "trigger2"),
+            of("once_per_fight", Kind.BOOL));
+    public static final Map<String, Field> STATE = shape(req(of("name", Kind.MARK)), text("description", 0, 200),
+            list("stats", 1, 4), list("on_hit", 1, 2), word("particle", "particle"), of("color", Kind.COLOR),
+            whole("size", Unit.PERCENT, 100, 110, 100), of("skills_locked", Kind.BOOL), list("moves", 0, MAX_MOVES),
+            list("show", 0, 12), list("hide", 0, 12), word("face", "mood"), text("line", 1, 120));
+    public static final Map<String, Field> CONDITION_2 = shape(req(word("condition", "condition2")),
+            whole("value", Unit.NONE, 1, 99, Double.NaN), of("mark", Kind.MARK), word("kind", "target_kind"),
+            of("state", Kind.MARK));
+    public static final Map<String, Field> BOSS = shape(whole("health_scale", Unit.PERCENT, 200, 600, Double.NaN),
+            whole("max_hit_share", Unit.PERCENT, 5, 25, 12), whole("poise", Unit.NONE, 0, 200, Double.NaN),
+            list("phases", 1, MAX_PHASES), list("reactions", 0, MAX_REACTIONS),
+            list("weak_points", 1, MAX_WEAK_POINTS), of("enrage", Kind.OBJECT), list("adds", 0, 4),
+            of("intro", Kind.OBJECT), of("rebirth", Kind.BOOL), of("arena", Kind.OBJECT));
+    public static final Map<String, Field> PHASE = shape(req(whole("at", Unit.PERCENT, 1, 100, Double.NaN)),
+            list("moves", 0, MAX_MOVES), list("states", 0, MAX_STATES), list("adds", 0, 4), list("stats", 1, 4),
+            of("transition", Kind.OBJECT), whole("unlock_level", Unit.LEVEL, 1, 30, 1));
+    public static final Map<String, Field> TRANSITION = shape(num("seconds", Unit.SECONDS, 0.8, 2, 1),
+            text("line", 1, 120), of("shockwave", Kind.OBJECT), list("effects", 1, 3), word("face", "mood"));
+    public static final Map<String, Field> SHOCKWAVE = shape(num("radius", Unit.BLOCKS, 2, 8, 4),
+            num("strength", Unit.NONE, 0, 4, 2));
+    public static final Map<String, Field> REACTION = shape(req(of("when", Kind.CONDITION)), req(of("move",
+            Kind.MARK)), whole("chance", Unit.PERCENT, 1, 100, 50), num("cooldown", Unit.SECONDS, 2, 60, 10));
+    public static final Map<String, Field> WEAK_SPOT = shape(req(word("point", "weak_point")), text("hint", 1, 120));
+    public static final Map<String, Field> ENRAGE = shape(num("after", Unit.SECONDS, 120, 300, Double.NaN),
+            list("triggers", 0, 3), text("line", 1, 120));
+    public static final Map<String, Field> ADD = shape(req(word("id", "add")), whole("count", Unit.NONE, 1, 4, 1));
+    public static final Map<String, Field> INTRO = shape(text("line", 1, 120), text("title", 0, 32));
+    public static final Map<String, Field> ARENA = shape(word("prefers", "arena"));
+    public static final Map<String, Field> PERSONALITY = shape(word("temperament", "temperament"),
+            of("traits", Kind.MAP), word("when_losing", "when_losing"), list("stands_for", 0, 2),
+            list("likes", 0, 6), list("dislikes", 0, 6), list("quirks", 0, 3));
+    public static final Map<String, Field> LEADER = shape(of("eligible", Kind.BOOL), text("title", 0, 40),
+            list("faction_names", 2, 4), text("short_name", 1, 14), text("motto", 0, 80), of("colors", Kind.OBJECT),
+            of("banner", Kind.OBJECT), word("base_style", "base_style"), word("culture", "culture"),
+            list("economy_focus", 1, 2), text("seat", 1, 16));
+    public static final Map<String, Field> COLORS = shape(of("primary", Kind.COLOR), of("secondary", Kind.COLOR),
+            of("accent", Kind.COLOR));
+    public static final Map<String, Field> BANNER = shape(req(word("base", "dye")), list("patterns", 2, 4));
+    public static final Map<String, Field> BANNER_LAYER = shape(req(word("pattern", "banner_pattern")),
+            req(word("color", "dye")));
+    public static final Map<String, Field> TALENT = shape(req(word("id", "talent")), of("realm", Kind.BOOL),
+            word("affix", "affix"), list("roles", 1, 32));
+    public static final Map<String, Field> VOICE = shape(word("blip", "blip"), num("pitch", Unit.NONE, 0.5, 2,
+            Double.NaN), whole("rate", Unit.NONE, 2, 4, 3), num("hurt_pitch", Unit.NONE, 0.5, 2, Double.NaN));
+    public static final Map<String, Field> RECRUIT = shape(req(word("condition", "recruit_condition")),
+            whole("value", Unit.NONE, 0, 100, 0));
+    public static final Map<String, Field> RELATIONSHIP = shape(req(of("hero", Kind.ID)), req(word("kind", "bond")));
+    public static final Map<String, Field> REVIVAL = shape(whole("seconds", Unit.SECONDS, 30, 3600, 600),
+            word("where", "rise_where"), word("at", "rise_at"), text("line", 1, 120));
+    public static final Map<String, Field> MOBILITY = shape(of("primary", Kind.OBJECT), of("secondary", Kind.OBJECT),
+            of("carrier", Kind.OBJECT), of("aerial", Kind.OBJECT), of("travel", Kind.BOOL), list("avoid", 0, 4));
+    public static final Map<String, Field> TRAIT_TIER = shape(req(word("trait", "mobility_trait")),
+            whole("tier", Unit.NONE, 1, 3, 1));
+    public static final Map<String, Field> CARRIER = shape(req(word("kind", "carrier")), text("part", 1, 48));
+    public static final Map<String, Field> AERIAL = shape(list("phases", 1, 3), num("max_air", Unit.SECONDS, 4, 8, 8),
+            whole("dives", Unit.NONE, 1, 3, 3), whole("weight", Unit.NONE, 0, 10, 4));
+    public static final Map<String, Field> GENERATED = shape(text("generator", 0, 40), text("hash", 0, 64),
+            list("moves", 0, MAX_MOVES + 2));
+    public static final Map<String, Field> GENERATED_MOVE = shape(req(of("id", Kind.MARK)), text("anim", 1, 48),
+            of("frames", Kind.OBJECT));
+
+    /** Format 2's shapes by the names the reader and the schema generator use. */
+    public static final Map<String, Map<String, Field>> SHAPES2 = new LinkedHashMap<>();
+
+    static {
+        SHAPES2.put("top_2", TOP_2);
+        SHAPES2.put("behaviour_2", BEHAVIOUR_2);
+        SHAPES2.put("basic_attack_2", BASIC_ATTACK_2);
+        SHAPES2.put("move", MOVE);
+        SHAPES2.put("frames", FRAMES);
+        SHAPES2.put("followup", FOLLOWUP);
+        SHAPES2.put("channel", CHANNEL);
+        SHAPES2.put("telegraph", TELEGRAPH);
+        SHAPES2.put("strike", STRIKE);
+        SHAPES2.put("passive_2", PASSIVE_2);
+        SHAPES2.put("state", STATE);
+        SHAPES2.put("condition_2", CONDITION_2);
+        SHAPES2.put("boss", BOSS);
+        SHAPES2.put("phase", PHASE);
+        SHAPES2.put("transition", TRANSITION);
+        SHAPES2.put("shockwave", SHOCKWAVE);
+        SHAPES2.put("reaction", REACTION);
+        SHAPES2.put("weak_spot", WEAK_SPOT);
+        SHAPES2.put("enrage", ENRAGE);
+        SHAPES2.put("add", ADD);
+        SHAPES2.put("intro", INTRO);
+        SHAPES2.put("arena", ARENA);
+        SHAPES2.put("personality", PERSONALITY);
+        SHAPES2.put("leader", LEADER);
+        SHAPES2.put("colors", COLORS);
+        SHAPES2.put("banner", BANNER);
+        SHAPES2.put("banner_layer", BANNER_LAYER);
+        SHAPES2.put("talent", TALENT);
+        SHAPES2.put("voice", VOICE);
+        SHAPES2.put("recruit", RECRUIT);
+        SHAPES2.put("relationship", RELATIONSHIP);
+        SHAPES2.put("revival", REVIVAL);
+        SHAPES2.put("mobility", MOBILITY);
+        SHAPES2.put("trait_tier", TRAIT_TIER);
+        SHAPES2.put("carrier", CARRIER);
+        SHAPES2.put("aerial", AERIAL);
+        SHAPES2.put("generated", GENERATED);
+        SHAPES2.put("generated_move", GENERATED_MOVE);
+    }
+
+    // ------------------------------------------------------------------ format 2's word lists
+
+    static {
+        vocab2("combat_role2", "a combat role", Role.class)
+                .syn("vanguard", "tank", "guardian", "defender", "protector")
+                .syn("striker", "fighter", "warrior", "dps", "brawler", "assassin", "berserker")
+                .syn("skirmisher", "rogue", "duelist", "skirmish")
+                .syn("marksman", "archer", "ranger", "sniper", "gunner", "caster", "mage")
+                .syn("support", "healer", "buffer", "medic", "bard", "sustain")
+                .syn("controller", "crowd_control", "cc", "debuffer", "trapper")
+                .syn("summoner", "pet", "tamer", "necromancer", "conjurer");
+        // v1 read "barrage", "sweep", "rain" and "charge" as other forms; they are forms of their own now
+        vocab2("form2", "a form", Form.class)
+                .syn("melee", "strike", "slash", "hit").syn("shot", "projectile", "arrow", "fireball")
+                .syn("volley", "multishot", "fan").syn("bolt", "beam", "ray", "spell", "instant")
+                .syn("chain", "bounce").syn("cone", "breath", "arc").syn("line", "pierce", "lance")
+                .syn("nova", "aoe", "burst", "shockwave", "around_self").syn("zone", "ground", "circle", "area", "field")
+                .syn("leap", "jump", "slam").syn("dash", "rush").syn("self", "buff_self").syn("ally", "heal_ally")
+                .syn("allies", "team", "party", "group").syn("combo", "flurry", "string").syn("charge", "tackle")
+                .syn("grab", "grapple", "throw").syn("counter", "parry", "riposte").syn("barrage", "salvo")
+                .syn("wave", "ground_wave").syn("rain", "rainfall", "meteor").syn("sweep", "spin");
+        // v1 read "barrier" as a shield; it is an effect of its own now
+        vocab2("effect_type2", "an effect type", EffectType.class)
+                .syn("damage", "dmg", "attack", "hit").syn("dot", "damage_over_time", "bleed", "burn_damage")
+                .syn("heal", "heal_percent", "restore").syn("shield", "absorb", "absorption")
+                .syn("effect", "potion", "buff", "debuff", "status").syn("stat", "modifier", "stat_buff")
+                .syn("knockback", "push").syn("ignite", "burn", "fire").syn("freeze", "chill", "frost")
+                .syn("stun", "daze", "paralyze").syn("taunt", "provoke").syn("cleanse", "purify")
+                .syn("dispel", "strip", "purge").syn("energy", "charge").syn("cooldown_cut", "reset", "refresh")
+                .syn("move_self", "hop", "jump_back", "evade").syn("mark", "stack", "brand")
+                .syn("clear_marks", "consume_marks", "detonate").syn("empower", "transform", "enhance", "stance")
+                .syn("guard_break", "shield_break", "break_guard").syn("poise", "poise_damage")
+                .syn("silence", "mute").syn("tether", "leash").syn("barrier", "ward")
+                .syn("spawn_add", "add", "spawn", "decoy").syn("call_guards", "call_soldiers");
+        vocab2("condition2", "a condition", ConditionType.class)
+                .syn("target_blocking", "target_shielding").syn("target_drawing_bow", "target_aiming")
+                .syn("target_far", "far").syn("target_close", "close").syn("is_night", "night")
+                .syn("is_raining", "raining");
+        vocab2("trigger2", "a trigger", Trigger.class)
+                .syn("on_hit", "on_attack").syn("on_crit", "on_critical").syn("on_hurt", "on_damaged", "when_hit")
+                .syn("on_skill", "on_cast").syn("every", "periodic", "interval").syn("on_fight_start", "on_combat_start")
+                .syn("on_ally_attack", "follow_up").syn("on_mark_full", "on_stacks_full")
+                .syn("on_phase", "on_phase_change").syn("on_stagger", "on_staggered").syn("on_escape", "on_flee");
+        vocab2("line_event2", "a line event", LineEvent.class)
+                .syn("summoned", "join", "recruited").syn("greeting", "hello", "talk").syn("fallen", "death", "dies")
+                .syn("revived", "respawn", "return").syn("victory", "win").syn("level_up", "levelup")
+                .syn("fight_start", "combat_start").syn("escape", "flee", "fled").syn("founding", "founded")
+                .syn("phase_2", "phase2").syn("phase_3", "phase3").syn("last_stand", "stand");
+        vocab2("gender", "a gender", HeroDef.Gender.class).syn("female", "f", "woman").syn("male", "m", "man");
+        vocab("archetype", "an archetype", ARCHETYPES);
+        vocab2("duel_style", "a duel style", HeroDef.DuelStyle.class).syn("all_rounder", "allrounder", "balanced");
+        vocab2("move_class", "a move class", HeroDef.MoveClass.class).syn("ultimate", "ult");
+        vocab2("band", "a band", HeroDef.Band.class).syn("close", "near", "melee").syn("far", "long");
+        vocab2("decal", "a decal shape", HeroDef.Decal.class).syn("disc", "circle", "disk").syn("strip", "line")
+                .syn("fan", "cone").syn("landing", "landing_disc");
+        vocab2("weak_point", "a weak point", HeroDef.WeakPoint.class);
+        vocab2("enrage_trigger", "an enrage trigger", HeroDef.EnrageTrigger.class);
+        vocab2("arena", "an arena", HeroDef.Arena.class);
+        vocab2("temperament", "a temperament", HeroDef.Temperament.class);
+        vocab2("trait", "a trait", HeroDef.Trait.class).syn("honour", "honor");
+        vocab2("when_losing", "a way to end a lost fight", HeroDef.WhenLosing.class)
+                .syn("escape", "flee", "run", "retreat").syn("last_stand", "stand", "fight_to_death", "never_flees");
+        vocab2("stands_for", "a place it stands", HeroDef.StandsFor.class);
+        vocab2("culture", "a culture", HeroDef.Culture.class);
+        vocab2("base_style", "a base style", HeroDef.BaseStyle.class);
+        vocab2("economy_focus", "an economy focus", HeroDef.EconomyFocus.class).syn("defence", "defense");
+        vocab2("talent", "a talent", HeroDef.TalentId.class);
+        vocab2("blip", "a voice blip", HeroDef.Blip.class);
+        vocab2("recruit_condition", "a recruit condition", HeroDef.RecruitCondition.class);
+        vocab2("bond", "a relationship", HeroDef.Bond.class);
+        vocab2("rise_where", "a place to rise", HeroDef.RiseWhere.class);
+        vocab2("rise_at", "a time to rise", HeroDef.RiseAt.class);
+        vocab2("add", "an add", HeroDef.AddKind.class);
+        vocab2("mobility_trait", "a mobility trait", HeroDef.MobilityTrait.class).syn("ember_stride", "emberstride")
+                .syn("snowstride", "snow_stride");
+        vocab2("carrier", "a carrier", HeroDef.Carrier.class);
+        vocab2("avoid", "a terrain to avoid", HeroDef.Avoid.class);
+        vocab2("dye", "a dye colour", HeroDef.Dye.class).syn("gray", "grey").syn("light_gray", "light_grey", "silver");
+        vocab("banner_pattern", "a banner pattern", BANNER_PATTERNS);
+        vocab("mood", "a mood", HeroActions.MOODS);
     }
 }

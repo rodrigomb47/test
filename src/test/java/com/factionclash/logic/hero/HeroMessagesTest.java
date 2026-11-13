@@ -77,6 +77,12 @@ class HeroMessagesTest {
         return sb.toString();
     }
 
+    /** A dash move {@code id} with a followup {@code to} (none when null), for strings of followups. */
+    private static String chain(String id, String to) {
+        return "{\"id\": \"" + id + "\", \"name\": \"" + id + "\", \"form\": \"dash\", \"effects\": [{\"type\":"
+                + " \"damage\", \"amount\": 2}]" + (to == null ? "" : ", \"followups\": [\"" + to + "\"]") + "}";
+    }
+
     private static Loaded gear(String items) {
         return read(hero("").replace("\"gear\": [\"iron_sword\"]", "\"gear\": [" + items + "]"));
     }
@@ -266,6 +272,142 @@ class HeroMessagesTest {
                 + " \"amount\": 2}, {\"type\": \"clear_marks\", \"mark\": \"nobody\"}"));
         c(Problems.Code.TOO_MANY_HEROES, NL, "loads at most 1 heroes", () -> HeroReader.readAll(List.of(
                 new Source("abc_hero.json", hero("")), new Source("bcd_hero.json", hero(""))), new Options(true, 1)));
+        // format 2 (HEROES_V2 12 and 14.1)
+        c(Problems.Code.V1_FIELD, NO, "its entries were read as moves", () -> read(V2Files.hero2("\"skills\":"
+                + " [{\"name\": \"Jab\", \"form\": \"melee\", \"effects\": [{\"type\": \"damage\", \"amount\": 2}]}]")));
+        c(Problems.Code.SOURCE_ONLY, NO, "is a source field that herogen reads", () -> read(V2Files.hero2("\"art\":"
+                + " {\"form\": \"adult\"}")));
+        c(Problems.Code.UNLOCK_IGNORED, NO, "read and ignored: a hero has all of its abilities from level 1",
+                () -> read(V2Files.withMove("\"id\": \"jab\", \"name\": \"Jab\", \"form\": \"melee\", \"unlock_level\":"
+                        + " 5, \"effects\": [{\"type\": \"damage\", \"amount\": 2}]")));
+        c(Problems.Code.BUILTIN_MISSING, NO, "a built-in hero needs \"gender\"", () -> HeroReader.read("test_hero.json",
+                V2Files.hero2(""), Options.BUILTIN));
+        c(Problems.Code.COURT_DUTY, AD, "\"court\" is set by the game while the hero leads", () -> read(V2Files.hero2("")
+                .replace("\"striker\"}", "\"striker\", \"duty\": \"court\"}")));
+        c(Problems.Code.MOVE_ID, AD, "\"id\" is missing; the name gives it: \"jab\"", () -> read(V2Files.withMove(
+                "\"name\": \"Jab\", \"form\": \"melee\", \"effects\": [{\"type\": \"damage\", \"amount\": 2}]")));
+        c(Problems.Code.NAME_TAKEN, PL, "another move already has the id \"lunge\"", () -> read(V2Files.withMove(
+                "\"id\": \"lunge\", \"name\": \"Again\", \"form\": \"melee\", \"effects\": [{\"type\": \"damage\","
+                        + " \"amount\": 2}]")));
+        c(Problems.Code.MOVE_ID_RESERVED, PL, "is a movement animation's name", () -> read(V2Files.withMove("\"id\":"
+                + " \"leap\", \"name\": \"Leap\", \"form\": \"leap\", \"effects\": [{\"type\": \"damage\", \"amount\":"
+                + " 2}]")));
+        c(Problems.Code.UNKNOWN_REFERENCE, PL, "\"nope\" is not a move of this hero", () -> read(V2Files.hero2(
+                "\"boss\": {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}], \"reactions\": [{\"when\":"
+                        + " \"target_blocking\", \"move\": \"nope\"}]}")));
+        c(Problems.Code.ITEM_ID, PL, "is not an item id", () -> read(V2Files.hero2("\"personality\": {\"likes\":"
+                + " [\"Not An Item!\"]}")));
+        c(Problems.Code.SOUND_ID, AD, "is not a sound id", () -> read(V2Files.withMove("\"id\": \"jab\", \"name\":"
+                + " \"Jab\", \"form\": \"melee\", \"effects\": [{\"type\": \"damage\", \"amount\": 2}], \"look\":"
+                + " {\"sound\": \"Not:A Sound\"}")));
+        c(Problems.Code.CLASS_RAISED, AD, "class \"light\" is lighter than form \"cone\"'s \"area\"",
+                () -> read(V2Files.withMove("\"id\": \"fan\", \"name\": \"Fan\", \"form\": \"cone\", \"class\":"
+                        + " \"light\", \"effects\": [{\"type\": \"damage\", \"amount\": 2}]")));
+        c(Problems.Code.FRAMES_RAISED, AD, "is shorter than a heavy move's 0.8 seconds", () -> read(V2Files.withMove(
+                "\"id\": \"rush\", \"name\": \"Rush\", \"form\": \"dash\", \"frames\": {\"windup\": 0.3},"
+                        + " \"effects\": [{\"type\": \"damage\", \"amount\": 2}]")));
+        c(Problems.Code.FRAMES_GENERATED, NO, "has no generated animation", () -> read(V2Files.hero2("\"moves\": ["
+                + V2Files.LUNGE + "], \"generated\": {\"moves\": []}")));
+        c(Problems.Code.TELEGRAPH_NONE, AD, "draws its ground mark over its wind-up", () -> read(V2Files.withMove(
+                "\"id\": \"rush\", \"name\": \"Rush\", \"form\": \"dash\", \"telegraph\": \"none\", \"effects\":"
+                        + " [{\"type\": \"damage\", \"amount\": 2}]")));
+        c(Problems.Code.GRAB_RULE, AD, "a grab is always unblockable", () -> read(V2Files.withMove("\"id\": \"grip\","
+                + " \"name\": \"Grip\", \"form\": \"grab\", \"unblockable\": false, \"effects\": [{\"type\": \"damage\","
+                + " \"amount\": 2}]")));
+        c(Problems.Code.ULTIMATE_LINE, NO, "an ultimate speaks a line as its wind-up starts", () -> read(V2Files.hero2(
+                "\"ultimate\": {\"id\": \"big\", \"name\": \"Big\", \"form\": \"nova\", \"effects\": [{\"type\":"
+                        + " \"damage\", \"amount\": 8}]}")));
+        c(Problems.Code.FOLLOWUP_SELF, PL, "a move follows itself only when it is \"repeatable\": true",
+                () -> read(V2Files.withMove("\"id\": \"jab\", \"name\": \"Jab\", \"form\": \"melee\", \"effects\":"
+                        + " [{\"type\": \"damage\", \"amount\": 2}], \"followups\": [\"jab\"]")));
+        c(Problems.Code.FOLLOWUP_LOOP, PL, "followups may not form a loop", () -> read(V2Files.hero2("\"moves\": ["
+                + "{\"id\": \"a1\", \"name\": \"A\", \"form\": \"dash\", \"effects\": [{\"type\": \"damage\","
+                + " \"amount\": 2}], \"followups\": [\"b1\"]}, {\"id\": \"b1\", \"name\": \"B\", \"form\": \"melee\","
+                + " \"effects\": [{\"type\": \"damage\", \"amount\": 2}], \"followups\": [\"a1\"]}]")));
+        c(Problems.Code.FOLLOWUP_STRING, PL, "a string is at most 4 moves long", () -> read(V2Files.hero2("\"moves\":"
+                + " [" + chain("m1", "m2") + ", " + chain("m2", "m3") + ", " + chain("m3", "m4") + ", " + chain("m4",
+                "m5") + ", " + chain("m5", null) + "]")));
+        c(Problems.Code.FOLLOWUP_ULTIMATE, PL, "is an ultimate, which fires on its energy", () -> read(V2Files.hero2(
+                "\"moves\": [{\"id\": \"a1\", \"name\": \"A\", \"form\": \"dash\", \"effects\": [{\"type\": \"damage\","
+                        + " \"amount\": 2}], \"followups\": [\"big\"]}], \"ultimate\": {\"id\": \"big\", \"name\": \"Big\","
+                        + " \"form\": \"nova\", \"line\": \"Now!\", \"effects\": [{\"type\": \"damage\", \"amount\":"
+                        + " 8}]}")));
+        c(Problems.Code.NEVER_PICKED, NO, "weight 0 means it is never picked on its own", () -> read(V2Files.withMove(
+                "\"id\": \"jab\", \"name\": \"Jab\", \"form\": \"melee\", \"weight\": 0, \"effects\": [{\"type\":"
+                        + " \"damage\", \"amount\": 2}]")));
+        c(Problems.Code.PHASE_ORDER, AD, "the first phase begins at full health; 90 was read as 100",
+                () -> read(V2Files.hero2("\"boss\": {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 90}]}")));
+        c(Problems.Code.PHASE_REPEATED, PL, "another phase already begins at 50%", () -> read(V2Files.hero2("\"boss\":"
+                + " {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}, {\"at\": 50}, {\"at\": 50}]}")));
+        c(Problems.Code.PHASE_NO_CHANGE, NO, "phase 2 only changes numbers", () -> read(V2Files.hero2("\"boss\":"
+                + " {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}, {\"at\": 50}]}")));
+        c(Problems.Code.NO_WEAKNESS, NO, "the hero has no weakness", () -> read(V2Files.hero2("\"boss\": {\"phases\":"
+                + " [{\"at\": 100}]}")));
+        c(Problems.Code.NO_REACH, NO, "no far-band move and no gap closer", () -> read(V2Files.hero2("\"moves\":"
+                + " [{\"id\": \"jab\", \"name\": \"Jab\", \"form\": \"melee\", \"effects\": [{\"type\": \"damage\","
+                + " \"amount\": 2}]}]")));
+        c(Problems.Code.CHANNEL_NONE, NO, "but no move of this hero has \"channel\"", () -> read(V2Files.hero2(
+                "\"boss\": {\"weak_points\": [\"channel\"], \"phases\": [{\"at\": 100}]}")));
+        c(Problems.Code.REBIRTH_RARITY, AD, "is for legendary heroes only", () -> read(V2Files.hero2("\"boss\":"
+                + " {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}], \"rebirth\": true}")));
+        c(Problems.Code.POISE_RANGE, AD, "poise is 0 (none) or 50 to 200", () -> read(V2Files.hero2("\"boss\":"
+                + " {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}], \"poise\": 30}")));
+        c(Problems.Code.REMOVED_FIELD, NO, "a hero deals the same damage to players and NPCs", () -> read(V2Files.hero2(
+                "\"boss\": {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}], \"damage_vs_players\": 150}")));
+        c(Problems.Code.YIELD_WORD, PL, "heroes do not yield", () -> read(V2Files.hero2("\"personality\":"
+                + " {\"when_losing\": \"yield\"}")));
+        c(Problems.Code.YIELD_EVENT, NO, "heroes do not yield; use \"escape\", \"last_stand\" or \"fallen\"",
+                () -> read(V2Files.hero2("\"lines\": {\"yield\": [\"I give up.\"]}")));
+        c(Problems.Code.KIND_FLIP, NO, "a stoic usually fights to the death; with these traits this one escapes",
+                () -> read(V2Files.hero2("\"personality\": {\"temperament\": \"stoic\", \"traits\": {\"caution\":"
+                        + " 70}}")));
+        c(Problems.Code.STANDS_IGNORED, NO, "a hero that fights to the death stands everywhere", () -> read(V2Files.hero2(
+                "\"personality\": {\"temperament\": \"battle_maniac\", \"stands_for\": [\"home\"]}")));
+        c(Problems.Code.LATE_LAST_PHASE, NO, "its last phase starts at 15%, under 18%", () -> read(V2Files.hero2(
+                "\"boss\": {\"weak_points\": [\"back\"], \"phases\": [{\"at\": 100}, {\"at\": 15, \"moves\":"
+                        + " [\"lunge\"]}]}, \"moves\": [{\"id\": \"jab\", \"name\": \"Jab\", \"form\": \"melee\","
+                        + " \"phases\": [1], \"effects\": [{\"type\": \"damage\", \"amount\": 2}]}, " + V2Files.LUNGE
+                        .replace("\"form\": \"dash\"", "\"form\": \"dash\", \"phases\": [2]") + "]")));
+        c(Problems.Code.ESCAPE_SELF, PL, "an \"on_escape\" passive acts on the hero itself only",
+                () -> read(V2Files.hero2("\"passives\": [{\"name\": \"Smoke\", \"trigger\": \"on_escape\","
+                        + " \"effects\": [{\"type\": \"shield\", \"amount\": 2, \"to\": \"allies\"}]}]")));
+        c(Problems.Code.TRAIT_DRIFT, AD, "aggression 100 is more than 20 from a tsundere's 65", () -> read(V2Files.hero2(
+                "\"personality\": {\"temperament\": \"tsundere\", \"traits\": {\"aggression\": 100}}")));
+        c(Problems.Code.LEADER_NAME_TAKEN, NO, "\"Shared Name\" is also a faction name of", () -> HeroReader.readAll(
+                List.of(new Source("abc_hero.json", V2Files.hero2("\"leader\": {\"faction_names\": [\"Shared Name\","
+                        + " \"Name A\"]}").replace("test_hero", "abc_hero")), new Source("bcd_hero.json",
+                        V2Files.hero2("\"leader\": {\"faction_names\": [\"Shared Name\", \"Name B\"]}")
+                                .replace("test_hero", "bcd_hero"))), Options.DEFAULT));
+        c(Problems.Code.BANNER_MOJANG, PL, "the company-logo pattern is not for faction banners",
+                () -> read(V2Files.hero2("\"leader\": {\"banner\": {\"base\": \"red\", \"patterns\": [{\"pattern\":"
+                        + " \"mojang\", \"color\": \"black\"}, {\"pattern\": \"circle\", \"color\": \"white\"},"
+                        + " {\"pattern\": \"border\", \"color\": \"white\"}]}}")));
+        c(Problems.Code.LEADER_SHORT, NO, "a leader names 2 to 4 factions", () -> read(V2Files.hero2("\"leader\":"
+                + " {\"faction_names\": [\"Only One\"]}")));
+        c(Problems.Code.REALM_ONE, AD, "only one talent of a leader works in every base", () -> read(V2Files.hero2(
+                "\"talents\": [{\"id\": \"drill\", \"realm\": true}, {\"id\": \"mentor\", \"realm\": true}]")));
+        c(Problems.Code.RELATION_UNKNOWN, NO, "\"someone_else\" is not a loaded hero", () -> read(V2Files.hero2(
+                "\"relationships\": [{\"hero\": \"someone_else\", \"kind\": \"rival\"}]")));
+        c(Problems.Code.RELATION_SELF, PL, "a hero has no relationship with itself", () -> read(V2Files.hero2(
+                "\"relationships\": [{\"hero\": \"test_hero\", \"kind\": \"rival\"}]")));
+        c(Problems.Code.SIGNATURE_SHARED, NO, "share archetype, element, style, ultimate form and signature move",
+                () -> HeroReader.readAll(List.of(new Source("abc_hero.json", V2Files.hero2("\"archetype\": \"cat\"")
+                        .replace("test_hero", "abc_hero")), new Source("bcd_hero.json", V2Files.hero2("\"archetype\":"
+                        + " \"cat\"").replace("test_hero", "bcd_hero"))), Options.DEFAULT));
+        c(Problems.Code.MOBILITY_UNKNOWN, NO, "is not a mobility trait", () -> read(V2Files.hero2("\"mobility\":"
+                + " {\"primary\": {\"trait\": \"teleporter\"}}")));
+        c(Problems.Code.MOBILITY_ADJUSTED, AD, "tier 3 is for epic and legendary heroes", () -> read(V2Files.hero2(
+                "\"mobility\": {\"primary\": {\"trait\": \"leaper\", \"tier\": 3}}")));
+        c(Problems.Code.MOBILITY_CARRIER, NO, "needs a carrier its model can show", () -> read(V2Files.hero2(
+                "\"mobility\": {\"primary\": {\"trait\": \"glider\"}}")));
+        c(Problems.Code.FLYERS_SHARE, NO, "8 of the 8 loaded heroes fly, more than 15%", () -> {
+            List<Source> s = new java.util.ArrayList<>();
+            for (int i = 0; i < 8; i++) {
+                s.add(new Source("flyer_" + (char) ('a' + i) + ".json", V2Files.hero2("\"archetype\": \"angel\"")
+                        .replace("test_hero", "flyer_" + (char) ('a' + i))));
+            }
+            return HeroReader.readAll(s, Options.BUILTIN);
+        });
         // the JSON reader's own
         j(HeroJson.Code.BOM, NO, "byte-order mark", "\uFEFF" + hero(""));
         j(HeroJson.Code.CRLF, NO, "Windows line ends", hero("").replace(", ", ",\r\n"));

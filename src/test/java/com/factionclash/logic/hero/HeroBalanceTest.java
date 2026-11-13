@@ -117,7 +117,8 @@ class HeroBalanceTest {
         for (int i = 0; i < rows.length; i++) {
             assertEquals(rows[i][1], rows[i][0], EPS, "row " + i);
         }
-        assertEquals(HeroDef.EffectType.values().length, rows.length - 2, "every effect type is in the table");
+        assertEquals(HeroDef.Word.inFormat(HeroDef.EffectType.class, 1).size(), rows.length - 2, "every format-1 effect"
+                + " type is in the table (format 2's are in HeroBalanceV2Test)");
     }
 
     @Test

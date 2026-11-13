@@ -83,9 +83,18 @@ public final class HeroReader {
     private HeroReader() {
     }
 
-    /** Server settings the checker needs: {@code heroes.summons} and {@code heroes.maxLoaded}. */
-    public record Options(boolean summons, int maxLoaded) {
-        public static final Options DEFAULT = new Options(true, HeroCatalogue.MAX_LOADED);
+    /**
+     * Server settings the checker needs: {@code heroes.summons} and {@code heroes.maxLoaded}; {@code builtin} when the
+     * files are the mod's own heroes (format 2 then asks for the fields only built-ins must have: gender, archetype,
+     * personality and leader, HEROES_V2 12.3; an operator's override need not repeat them).
+     */
+    public record Options(boolean summons, int maxLoaded, boolean builtin) {
+        public static final Options DEFAULT = new Options(true, HeroCatalogue.MAX_LOADED, false);
+        public static final Options BUILTIN = new Options(true, HeroCatalogue.MAX_LOADED, true);
+
+        public Options(boolean summons, int maxLoaded) {
+            this(summons, maxLoaded, false);
+        }
     }
 
     /** A file: its path (relative, used for messages and the alphabetical order) and its text. */
@@ -111,10 +120,11 @@ public final class HeroReader {
 
     // ------------------------------------------------------------------ files
 
-    private record MarkRef(String mark, Path path, int line) {
+    record MarkRef(String mark, Path path, int line) {
     }
 
-    private record Read(HeroDef def, String file, Set<String> applied, List<MarkRef> refs) {
+    /** One hero read from a file, with what the checks across files need ({@code across}: format 2's). */
+    record Read(HeroDef def, String file, Set<String> applied, List<MarkRef> refs, HeroReader2.Across across) {
     }
 
     /** Every file, in alphabetical path order, then the checks across files (v1 26.1 step 6). */
@@ -172,6 +182,7 @@ public final class HeroReader {
                 }
             }
         }
+        HeroReader2.acrossFiles(loaded.values(), problems, opt);
         Map<String, HeroDef> heroes = new TreeMap<>();
         Map<String, String> files = new TreeMap<>();
         for (Read r : loaded.values()) {
@@ -281,32 +292,42 @@ public final class HeroReader {
     // ------------------------------------------------------------------ one hero
 
     /** Where a record came from, for the balance pass's messages; {@code fields} is null for a plain value. */
-    private record Pos(Path path, int line, Ctx.Fields fields) {
+    record Pos(Path path, int line, Ctx.Fields fields) {
     }
 
     /** What the reader must do when a required value is missing or unreadable. */
-    private record Need(Severity severity, String part) {
+    record Need(Severity severity, String part) {
     }
 
-    private enum Mode { OPTIONAL, PART, CORE }
+    enum Mode { OPTIONAL, PART, CORE }
 
     /**
      * The context an effect list is read in: its slot, owner wording, form (null for the basic attack's lists, which
      * have none) and the rules that follow from them.
      */
-    private record FxCtx(Slot slot, String owner, String formId, boolean friendly, boolean receiverIsHero,
-                         boolean moveForm, boolean always, Trigger trigger) {
+    record FxCtx(Slot slot, String owner, String formId, boolean friendly, boolean receiverIsHero,
+                 boolean moveForm, boolean always, Trigger trigger) {
     }
 
     private static final Map<EffectType, Map<String, Field>> EFFECT_SHAPES = new EnumMap<>(EffectType.class);
     private static final Map<String, Field> ALL_EFFECT_FIELDS = new LinkedHashMap<>();
+    /** Format 2's: the new types, and the fields format 2 adds to format 1's ({@code empower}'s {@code state}). */
+    private static final Map<EffectType, Map<String, Field>> EFFECT_SHAPES_2 = new EnumMap<>(EffectType.class);
+    private static final Map<String, Field> ALL_EFFECT_FIELDS_2 = new LinkedHashMap<>();
 
     static {
         for (EffectType t : EffectType.values()) {
             Map<String, Field> m = new LinkedHashMap<>(HeroCatalogue.EFFECT_COMMON);
             m.putAll(HeroCatalogue.EFFECTS.get(t));
-            EFFECT_SHAPES.put(t, m);
-            ALL_EFFECT_FIELDS.putAll(m);
+            if (t.since() == 1) {
+                EFFECT_SHAPES.put(t, m);
+                ALL_EFFECT_FIELDS.putAll(m);
+            }
+            Map<String, Field> m2 = new LinkedHashMap<>(m);
+            m2.putAll(HeroCatalogue.EFFECTS_2.getOrDefault(t, Map.of()));
+            m2.put("if", new Field("if", HeroCatalogue.Kind.CONDITION, Unit.NONE, 0, 0, Double.NaN, null, false));
+            EFFECT_SHAPES_2.put(t, m2);
+            ALL_EFFECT_FIELDS_2.putAll(m2);
         }
     }
 
@@ -314,7 +335,7 @@ public final class HeroReader {
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([A-Za-z_]+)}");
     private static final Pattern NUMBER_TEXT = Pattern.compile("(-?\\d+(?:\\.\\d+)?)\\s*([a-z%°_ ]*)");
 
-    private static final class Ctx {
+    static final class Ctx {
         final String file;
         final Options opt;
         final Problems problems;
@@ -323,6 +344,10 @@ public final class HeroReader {
         final List<MarkRef> refs = new ArrayList<>();
         String hero;
         boolean dead;
+        /** The hero's format as peeked before it is checked (1 or 2): it picks the field tables and word lists. */
+        int format = 1;
+        /** Format 2's reader for this hero (null for format 1). */
+        HeroReader2 v2Reader;
         Element element = Element.PHYSICAL;
         boolean hasEmpowered;
         /** Problems of this hero listed so far, and those past the limit with the worst outcome among them. */
@@ -790,13 +815,17 @@ public final class HeroReader {
                 }
                 hero = s.value();
             }
-            Fields top = fields(o, Path.ROOT, HeroCatalogue.TOP);
+            // the format decides the field tables, so peek at it first (the message about it comes below)
+            format = peekFormat(o);
+            boolean v2 = format >= 2;
+            Fields top = v2 ? new Fields(o, Path.ROOT, HeroCatalogue.TOP_2, HeroCatalogue.V1_ONLY_TOP)
+                    : fields(o, Path.ROOT, HeroCatalogue.TOP);
             // format
-            int format = 0;
+            int declared = 0;
             Node fn = top.node("format");
             if (fn == null) {
                 report(Severity.NOT_LOADED, Code.FORMAT_MISSING, o.line(), Path.ROOT, "\"format\" is missing. Write"
-                        + " \"format\": " + HeroCatalogue.MAX_FORMAT + " at the top of the hero", null);
+                        + " \"format\": " + likelyFormat(o) + " at the top of the hero", null);
             } else {
                 double f = Double.NaN;
                 if (fn instanceof Num x) {
@@ -808,13 +837,13 @@ public final class HeroReader {
                 }
                 if (Double.isNaN(f) || f < 1 || f != Math.rint(f)) {
                     report(Severity.NOT_LOADED, Code.FORMAT_INVALID, fn.line(), Path.ROOT.field("format"), shown(fn)
-                            + " is not a format. Write \"format\": " + HeroCatalogue.MAX_FORMAT, null);
+                            + " is not a format. Write \"format\": " + likelyFormat(o), null);
                 } else if (f > HeroCatalogue.MAX_FORMAT) {
                     report(Severity.NOT_LOADED, Code.FORMAT_NEWER, fn.line(), Path.ROOT.field("format"), "this file is"
-                            + " for a newer Faction Clash (format " + num(f) + "; this build reads format "
+                            + " for a newer Faction Clash (format " + num(f) + "; this build reads formats 1 and "
                             + HeroCatalogue.MAX_FORMAT + ")", null);
                 } else {
-                    format = (int) f;
+                    declared = (int) f;
                 }
             }
             // id
@@ -835,17 +864,22 @@ public final class HeroReader {
                 report(Severity.NOT_LOADED, Code.MISSING, o.line(), Path.ROOT, "\"name\" is missing. Add the hero's"
                         + " display name, for example \"name\": \"" + HeroIdentity.nameFromId(hero) + "\"", null);
             }
+            // format 2: the personality comes first, because the fight AI's defaults follow from it (HEROES_V2 5.4)
+            HeroReader2 r2 = v2 ? new HeroReader2(this, top) : null;
+            if (v2) {
+                r2.readEarly();
+            }
             // behaviour (the role decides the defaults) and the basic attack's style
             Role role = null;
             Fields beh = null;
             Node bn = top.node("behaviour");
             if (bn instanceof Obj bo) {
-                beh = fields(bo, Path.ROOT.field("behaviour"), HeroCatalogue.BEHAVIOUR);
+                beh = fields(bo, Path.ROOT.field("behaviour"), v2 ? HeroCatalogue.BEHAVIOUR_2 : HeroCatalogue.BEHAVIOUR);
                 if (!beh.has("combat_role")) {
                     report(Severity.NOT_LOADED, Code.MISSING, bo.line(), beh.path, "\"combat_role\" is missing. "
-                            + allowed(HeroCatalogue.vocab("combat_role")), null);
+                            + allowed(HeroCatalogue.vocab(vocab("combat_role"))), null);
                 } else {
-                    String r = word(beh, "combat_role", "combat_role", null, null, Mode.CORE, null);
+                    String r = word(beh, "combat_role", vocab("combat_role"), null, null, Mode.CORE, null);
                     role = r == null ? null : HeroCatalogue.enumOf(Role.class, r);
                 }
             } else {
@@ -865,7 +899,8 @@ public final class HeroReader {
             Style style = null;
             Fields ba = null;
             if (an instanceof Obj ao) {
-                ba = fields(ao, Path.ROOT.field("basic_attack"), HeroCatalogue.BASIC_ATTACK);
+                ba = fields(ao, Path.ROOT.field("basic_attack"), v2 ? HeroCatalogue.BASIC_ATTACK_2
+                        : HeroCatalogue.BASIC_ATTACK);
                 if (!ba.has("style")) {
                     report(Severity.NOT_LOADED, Code.MISSING, ao.line(), ba.path, "\"style\" is missing. "
                             + allowed(HeroCatalogue.vocab("style")), null);
@@ -880,7 +915,7 @@ public final class HeroReader {
                         + " { ... }, not " + shown(an), null);
             }
             Style s0 = style == null ? Style.MELEE : style;
-            Behaviour behaviour = behaviour(beh, r0, preset);
+            Behaviour behaviour = v2 ? r2.behaviour(beh, r0, preset) : behaviour(beh, r0, preset);
             if (role != null && style != null && (style == Style.THROWN && HeroCatalogue.meleeRole(role)
                     || style == Style.MELEE && role == Role.MARKSMAN)) {
                 report(Severity.NOTE, Code.ROLE_STYLE, ba.line("style"), ba.at("style"), "a " + role.id() + " that "
@@ -891,29 +926,40 @@ public final class HeroReader {
             String title = orEmpty(text(top, "title", 32, null));
             String description = orEmpty(text(top, "description", 300, null));
             String rar = word(top, "rarity", "rarity", "rare", null, Mode.OPTIONAL, null);
-            String starter = word(top, "starter_for", "faction", null, null, Mode.OPTIONAL, null);
-            List<String> factions = factions(top);
-            String skin = word(top, "skin_model", "skin_model", "classic", null, Mode.OPTIONAL, null);
-            int color = color(top, "color", "the faction colour");
+            HeroDef.Rarity rarity = HeroCatalogue.enumOf(HeroDef.Rarity.class, rar);
+            String starter = v2 ? null : word(top, "starter_for", "faction", null, null, Mode.OPTIONAL, null);
+            List<String> factions = v2 ? HeroCatalogue.FACTIONS : factions(top);
+            String skin = v2 ? "classic" : word(top, "skin_model", "skin_model", "classic", null, Mode.OPTIONAL, null);
+            int color = v2 ? HeroDef.NO_COLOR : color(top, "color", "the faction colour");
             Map<Element, Integer> resist = resistances(top);
-            Empowered empowered = empowered(top, stats);
-            hasEmpowered = empowered != null;
+            Empowered empowered = null;
+            if (v2) {
+                r2.readStates(stats);
+            } else {
+                empowered = empowered(top, stats);
+                hasEmpowered = empowered != null;
+            }
             BasicAttack basic = basicAttack(ba, s0);
             List<GearItem> gear = gear(top, s0);
             List<Ability> skills = new ArrayList<>();
-            List<Node> sk = list(top, "skills", 4, "skill", "Skill", false);
-            for (int i = 0; i < sk.size(); i++) {
-                Ability a = ability(sk.get(i), Path.ROOT, Slot.SKILL, i);
-                if (a != null) {
-                    skills.add(a);
+            Ability ultimate = null;
+            List<Passive> passives = new ArrayList<>();
+            List<BaseAbility> bases = new ArrayList<>();
+            if (v2) {
+                r2.readMoves(rarity);
+            } else {
+                List<Node> sk = list(top, "skills", 4, "skill", "Skill", false);
+                for (int i = 0; i < sk.size(); i++) {
+                    Ability a = ability(sk.get(i), Path.ROOT, Slot.SKILL, i);
+                    if (a != null) {
+                        skills.add(a);
+                    }
+                }
+                Node un = top.node("ultimate");
+                if (un != null) {
+                    ultimate = ability(un, Path.ROOT, Slot.ULTIMATE, -1);
                 }
             }
-            Ability ultimate = null;
-            Node un = top.node("ultimate");
-            if (un != null) {
-                ultimate = ability(un, Path.ROOT, Slot.ULTIMATE, -1);
-            }
-            List<Passive> passives = new ArrayList<>();
             List<Node> ps = list(top, "passives", 4, "passive", "Passive", false);
             for (int i = 0; i < ps.size(); i++) {
                 Passive p = passive(ps.get(i), i);
@@ -921,26 +967,65 @@ public final class HeroReader {
                     passives.add(p);
                 }
             }
-            List<BaseAbility> bases = new ArrayList<>();
-            List<Node> bs = list(top, "base_abilities", 3, "base ability", "Base ability", false);
-            for (int i = 0; i < bs.size(); i++) {
-                BaseAbility b = baseAbility(bs.get(i), i);
-                if (b != null) {
-                    bases.add(b);
+            if (!v2) {
+                List<Node> bs = list(top, "base_abilities", 3, "base ability", "Base ability", false);
+                for (int i = 0; i < bs.size(); i++) {
+                    BaseAbility b = baseAbility(bs.get(i), i);
+                    if (b != null) {
+                        bases.add(b);
+                    }
                 }
             }
             Map<LineEvent, List<String>> lines = lines(top);
             finishOwnMarks();
-            if (dead || role == null || style == null || name == null || format < 1
-                    || format > HeroCatalogue.MAX_FORMAT) {
+            HeroDef.V2 part2 = v2 ? r2.finish(name, rarity, r0, s0, element, resist, stats, behaviour, passives, lines)
+                    : null;
+            if (dead || role == null || style == null || name == null || declared < 1
+                    || declared > HeroCatalogue.MAX_FORMAT) {
                 return null;
             }
-            HeroDef draft = new HeroDef(format, hero, name, title, description,
-                    HeroCatalogue.enumOf(HeroDef.Rarity.class, rar), starter, factions, skin, color, element, stats,
-                    resist, gear, behaviour, basic, List.copyOf(skills), ultimate, List.copyOf(passives), empowered,
-                    List.copyOf(bases), lines);
+            HeroDef draft = new HeroDef(declared, hero, name, title, description, rarity, starter, factions, skin, color,
+                    element, stats, resist, gear, behaviour, basic, List.copyOf(skills), ultimate, List.copyOf(passives),
+                    empowered, List.copyOf(bases), lines, part2);
             HeroDef def = HeroBalance.apply(draft, this::balanced);
-            return new Read(def, file, Set.copyOf(applied), List.copyOf(refs));
+            if (!v2) {
+                def = def.withV2(HeroReader2.mapV1(def));
+            }
+            return new Read(def, file, Set.copyOf(applied), List.copyOf(refs), v2 ? r2.across(def) : null);
+        }
+
+        /** The format a hero says, before it is checked: 2 for format 2, else 1 (format 1's field tables). */
+        int peekFormat(Obj o) {
+            Node fn = o.get("format");
+            for (Member m : o.members()) {
+                // a misspelled "format" is read as one by the field table below, so it is peeked at the same way
+                String k = m.key(), nk = HeroCatalogue.norm(k);
+                if (fn != null) {
+                    break;
+                }
+                if (!k.startsWith("_") && !HeroCatalogue.TOP.containsKey(k) && !HeroCatalogue.TOP_2.containsKey(k)
+                        && (nk.equals("format") || Problems.distance(nk, "format") <= 2)) {
+                    fn = m.value();
+                }
+            }
+            double f = fn instanceof Num x ? x.value() : fn instanceof Str s && parseUnit(s.value(), Unit.NONE) != null
+                    ? parseUnit(s.value(), Unit.NONE) : Double.NaN;
+            return f == 2 ? 2 : 1;
+        }
+
+        /** For a missing or broken {@code format}: 2 when the hero uses a field only format 2 has, else 1. */
+        int likelyFormat(Obj o) {
+            for (Member m : o.members()) {
+                if (!HeroCatalogue.TOP.containsKey(m.key()) && HeroCatalogue.TOP_2.containsKey(m.key())) {
+                    return 2;
+                }
+            }
+            return 1;
+        }
+
+        /** The word list a field reads in this hero's format ({@link HeroCatalogue#vocabName}). */
+        String vocab(String name) {
+            return HeroCatalogue.vocabName(name, format);
         }
 
         /**
@@ -984,10 +1069,19 @@ public final class HeroReader {
             }
             Fields f = fields(o, top.at("stats"), sh);
             String g = word(f, "growth", "growth", rp.growth().id(), "the role's growth", Mode.OPTIONAL, null);
+            int size = 100;
+            if (format >= 2) {
+                if (f.has("size")) {
+                    report(Severity.NOTE, Code.V1_FIELD, f.line("size"), f.at("size"), "\"stats.size\" is replaced by"
+                            + " \"art.scale\" in format 2 (the size comes from the hero's model); it was ignored", null);
+                }
+            } else {
+                size = (int) number(f, sh, "size", 100);
+            }
             return new Stats(number(f, sh, "health", rp.health()), number(f, sh, "attack", rp.attack()),
                     number(f, sh, "armor", rp.armor()), (int) number(f, sh, "speed", rp.speed()),
                     (int) number(f, sh, "knockback_resistance", rp.knockbackResistance()),
-                    (int) number(f, sh, "size", 100), HeroCatalogue.enumOf(HeroDef.Growth.class, g));
+                    size, HeroCatalogue.enumOf(HeroDef.Growth.class, g));
         }
 
         Behaviour behaviour(Fields f, Role role, RolePreset rp) {
@@ -1311,7 +1405,8 @@ public final class HeroReader {
                 report(Severity.PART_LEFT_OUT, Code.WRONG_TYPE, nn.line(), f.at("every_nth_hit"), "should be an object"
                         + " { \"n\": 3, \"effects\": [...] }, not " + shown(nn), "Finisher");
             }
-            BasicAttack b = new BasicAttack(style, proj, held, amount, interval, el, onHit, nth);
+            int combo = format >= 2 ? (int) number(f, HeroCatalogue.BASIC_ATTACK_2, "combo", 3) : 3;
+            BasicAttack b = new BasicAttack(style, proj, held, amount, interval, el, onHit, nth, combo);
             where.put(b, new Pos(f.path, f.obj.line(), f));
             return b;
         }
@@ -1564,7 +1659,8 @@ public final class HeroReader {
             Fields f = fields(o, lp, HeroCatalogue.LOOK);
             String particle = word(f, "particle", "particle", null, "the element's particle", Mode.OPTIONAL, null);
             int color = color(f, "color", "the hero colour");
-            String sound = word(f, "sound", "sound", null, null, Mode.OPTIONAL, null);
+            String sound = format >= 2 ? v2Reader.sound(f) : word(f, "sound", "sound", null, null, Mode.OPTIONAL,
+                    null);
             Pose pose = HeroCatalogue.enumOf(Pose.class, word(f, "pose", "pose", dfltPose.id(), null, Mode.OPTIONAL,
                     null));
             boolean lightning = bool(f, "lightning", false);
@@ -1592,9 +1688,9 @@ public final class HeroReader {
                         + " \"trigger\": ..., \"effects\": [...] }, not " + shown(n), "Passive");
                 return null;
             }
-            Fields f = fields(o, p, HeroCatalogue.PASSIVE);
+            Map<String, Field> sh = format >= 2 ? HeroCatalogue.PASSIVE_2 : HeroCatalogue.PASSIVE;
+            Fields f = fields(o, p, sh);
             Need need = new Need(Severity.PART_LEFT_OUT, "Passive");
-            Map<String, Field> sh = HeroCatalogue.PASSIVE;
             String name = text(f, "name", 24, need);
             if (name == null) {
                 if (!f.has("name") || f.node("name") instanceof Str) {
@@ -1605,10 +1701,18 @@ public final class HeroReader {
             }
             if (!f.has("trigger")) {
                 report(Severity.PART_LEFT_OUT, Code.MISSING, o.line(), p, "\"trigger\" is missing. "
-                        + allowed(HeroCatalogue.vocab("trigger")), "Passive");
+                        + allowed(HeroCatalogue.vocab(vocab("trigger"))), "Passive");
                 return null;
             }
-            String tw = word(f, "trigger", "trigger", null, null, Mode.PART, "Passive");
+            if (format >= 2 && f.node("trigger") instanceof Str yt
+                    && HeroCatalogue.YIELD_TRIGGERS.contains(HeroCatalogue.norm(yt.value()))) {
+                report(Severity.PART_LEFT_OUT, Code.YIELD_WORD, yt.line(), f.at("trigger"), "heroes do not yield"
+                        + " (the owner's rule of 2026-11-13); a passive for the end of a fight uses \"on_escape\" (its"
+                        + " escape starts) or \"on_last_stand\" (a hero that will not leave drops under the health"
+                        + " where it would have fled)", "Passive");
+                return null;
+            }
+            String tw = word(f, "trigger", vocab("trigger"), null, null, Mode.PART, "Passive");
             if (tw == null) {
                 return null;
             }
@@ -1696,15 +1800,30 @@ public final class HeroReader {
                 pendingOwn.add(new MarkRef(mark, f.at("mark"), f.line("mark")));
             }
             Look look = look(f, p, Pose.NONE, false, form == PassiveForm.NOVA);
+            int unlock = format >= 2 ? unlockIgnored(f) : (int) number(f, sh, "unlock_level", 1);
+            boolean once = format >= 2 && bool(f, "once_per_fight", false);
             Passive ps = new Passive(name, orEmpty(text(f, "description", 200, null)), trigger, tv, mark, chance,
                     cooldown, form, radius, projectile, cond, fx, look, text(f, "line", HeroCatalogue.LINE_MAX, null),
-                    (int) number(f, sh, "unlock_level", 1), Numbers.NONE);
+                    unlock, Numbers.NONE, once);
             where.put(ps, new Pos(p, o.line(), f));
             return ps;
         }
 
         /** {@code on_mark_full} passives whose mark this hero did not apply (yet): checked when the hero is read. */
         final List<MarkRef> pendingOwn = new ArrayList<>();
+
+        /**
+         * Format 2: an {@code unlock_level} is read and ignored with a NOTE, since a hero has everything from level 1
+         * and only its power grows (HEROES_V2 8, the owner's answer of 2026-11-12). Returns 1.
+         */
+        int unlockIgnored(Fields f) {
+            if (f.has("unlock_level")) {
+                report(Severity.NOTE, Code.UNLOCK_IGNORED, f.line("unlock_level"), f.at("unlock_level"), "read and"
+                        + " ignored: a hero has all of its abilities from level 1, and only their power grows with its"
+                        + " level", null);
+            }
+            return 1;
+        }
 
         // -------------------------------------------------------------- base abilities (v1 21)
 
@@ -1822,13 +1941,20 @@ public final class HeroReader {
                         + " not " + shown(n) + ". The built-in lines are used", null);
                 return Collections.unmodifiableMap(out);
             }
-            Vocab ev = HeroCatalogue.vocab("line_event");
+            Vocab ev = HeroCatalogue.vocab(vocab("line_event"));
+            boolean v2 = format >= 2;
+            int maxLines = v2 ? HeroCatalogue.MAX_LINES_PER_EVENT_2 : HeroCatalogue.MAX_LINES_PER_EVENT;
             for (Member m : o.members()) {
                 if (m.key().startsWith("_") || nothing(m, lp)) {
                     continue;
                 }
                 Path ep = lp.field(m.key());
                 String w = HeroCatalogue.norm(m.key());
+                if (v2 && HeroCatalogue.YIELD_EVENTS.contains(w)) {
+                    report(Severity.NOTE, Code.YIELD_EVENT, m.line(), ep, "heroes do not yield; use \"escape\","
+                            + " \"last_stand\" or \"fallen\". These lines were left out", null);
+                    continue;
+                }
                 String e = ev.resolve(w);
                 if (e == null) {
                     report(Severity.PART_LEFT_OUT, Code.LINE_EVENT, m.line(), ep, "\"" + m.key() + "\" is not a line"
@@ -1840,6 +1966,12 @@ public final class HeroReader {
                             + "\"", null);
                 }
                 LineEvent event = HeroCatalogue.enumOf(LineEvent.class, e);
+                if (v2 && event == LineEvent.UNLOCK) {
+                    report(Severity.NOTE, Code.UNLOCK_IGNORED, m.line(), ep, "the \"unlock\" event never fires for a"
+                            + " format-2 hero (nothing unlocks: it has everything from level 1); these lines were left"
+                            + " out", null);
+                    continue;
+                }
                 List<Node> items;
                 if (m.value() instanceof Arr a) {
                     items = a.items();
@@ -1853,9 +1985,9 @@ public final class HeroReader {
                     Node ln = items.get(i);
                     Path p = ep.item("", i, "line", null, false);
                     p = new Path(p.friendly(), ep.machine() + "[" + i + "]");
-                    if (lines.size() >= HeroCatalogue.MAX_LINES_PER_EVENT) {
+                    if (lines.size() >= maxLines) {
                         report(Severity.PART_LEFT_OUT, Code.LIST_TOO_LONG, ln.line(), p, "an event has at most "
-                                + HeroCatalogue.MAX_LINES_PER_EVENT + " lines", "Line");
+                                + maxLines + " lines", "Line");
                         continue;
                     }
                     String t = line(ln, p, event);
@@ -1894,12 +2026,22 @@ public final class HeroReader {
                         + HeroCatalogue.LINE_MAX + ". Cut to " + HeroCatalogue.LINE_MAX, null);
                 t = cut(t, HeroCatalogue.LINE_MAX);
             }
-            List<String> ok = HeroCatalogue.PLACEHOLDERS.get(event);
+            boolean v2 = format >= 2;
+            List<String> ok = (v2 ? HeroCatalogue.PLACEHOLDERS_2 : HeroCatalogue.PLACEHOLDERS).get(event);
+            Set<String> all = v2 ? HeroCatalogue.ALL_PLACEHOLDERS_2 : HeroCatalogue.ALL_PLACEHOLDERS;
             Matcher m = PLACEHOLDER.matcher(t);
             StringBuilder sb = new StringBuilder();
             while (m.find()) {
                 String ph = m.group(1).toLowerCase(Locale.ROOT);
-                if (!HeroCatalogue.ALL_PLACEHOLDERS.contains(ph)) {
+                if (v2 && ph.equals("player") && ok.contains("enemy") && !ok.contains("player")) {
+                    // a fight line names the one it faces, a player or an NPC alike (HEROES_V2 6.15)
+                    report(Severity.ADJUSTED, Code.EQUAL_TREATMENT, n.line(), p, "{player} was read as {enemy}: heroes"
+                            + " treat players and NPCs alike, and a fight line names the one it faces, a player or an"
+                            + " NPC", null);
+                    m.appendReplacement(sb, Matcher.quoteReplacement("{enemy}"));
+                    continue;
+                }
+                if (!all.contains(ph)) {
                     report(Severity.PART_LEFT_OUT, Code.LINE_PLACEHOLDER, n.line(), p, "{" + ph + "} is not a"
                             + " placeholder. Allowed for \"" + event.id() + "\": {" + String.join("}, {", ok) + "}",
                             "Line");
@@ -1923,6 +2065,9 @@ public final class HeroReader {
         Condition condition(Fields owner, String name, Need need) {
             Node n = owner.node(name);
             Path p = owner.at(name);
+            if (format >= 2) {
+                return v2Reader.condition(n, p, need);
+            }
             if (!(n instanceof Obj o)) {
                 need(need, Code.WRONG_TYPE, n.line(), p, "should be an object { \"condition\": ... }, not " + shown(n));
                 return null;
@@ -2090,14 +2235,15 @@ public final class HeroReader {
             String presetPotion = null;
             String tw = HeroCatalogue.norm(ts.value());
             EffectType type;
-            if (HeroCatalogue.vocab("effect_type").resolve(tw) == null && (HeroCatalogue.HELPFUL_POTIONS.containsKey(tw)
+            String typeVocab = vocab("effect_type");
+            if (HeroCatalogue.vocab(typeVocab).resolve(tw) == null && (HeroCatalogue.HELPFUL_POTIONS.containsKey(tw)
                     || HeroCatalogue.HARMFUL_POTIONS.containsKey(tw))) {
                 report(Severity.ADJUSTED, Code.SYNONYM, ts.line(), p.field("type"), "\"" + ts.value() + "\" was read"
                         + " as \"type\": \"effect\", \"id\": \"" + tw + "\"", null);
                 type = EffectType.EFFECT;
                 presetPotion = tw;
             } else {
-                String w = resolve(ts.value(), "effect_type", null, null, Mode.PART, part, ts.line(), p.field("type"));
+                String w = resolve(ts.value(), typeVocab, null, null, Mode.PART, part, ts.line(), p.field("type"));
                 if (w == null) {
                     return null;
                 }
@@ -2108,9 +2254,9 @@ public final class HeroReader {
                         + " changes only: \"stat\" effects without \"seconds\", not \"" + type.id() + "\"", part);
                 return null;
             }
-            Map<String, Field> sh = EFFECT_SHAPES.get(type);
+            Map<String, Field> sh = (format >= 2 ? EFFECT_SHAPES_2 : EFFECT_SHAPES).get(type);
             Map<String, String> elsewhere = new HashMap<>();
-            for (String k : ALL_EFFECT_FIELDS.keySet()) {
+            for (String k : (format >= 2 ? ALL_EFFECT_FIELDS_2 : ALL_EFFECT_FIELDS).keySet()) {
                 if (!sh.containsKey(k)) {
                     elsewhere.put(k, "is not used by the \"" + type.id() + "\" effect");
                 }
@@ -2139,7 +2285,15 @@ public final class HeroReader {
             if (e == null) {
                 return null;
             }
-            return recipients(e, toGiven, ctx, p, o.line());
+            Effect r = recipients(e, toGiven, ctx, p, o.line());
+            if (r != null && ctx.trigger == Trigger.ON_ESCAPE && r.c().to() != To.SELF && r.c().to() != To.TARGETS) {
+                // an escaping hero starts no attack and helps nobody on the way: self and look effects only (6.6)
+                report(Severity.PART_LEFT_OUT, Code.ESCAPE_SELF, o.line(), p, "an \"on_escape\" passive acts on the"
+                        + " hero itself only (an escaping hero starts nothing against anyone); \"to\": \""
+                        + r.c().to().id() + "\" is not allowed", "Effect");
+                return null;
+            }
+            return r;
         }
 
         Member typeMember(Obj o) {
@@ -2150,7 +2304,7 @@ public final class HeroReader {
             for (Member m : o.members()) {
                 String nk = HeroCatalogue.norm(m.key());
                 if (!m.key().startsWith("_") && (nk.equals("type") || Problems.distance(nk, "type") <= 1)
-                        && !ALL_EFFECT_FIELDS.containsKey(nk)) {
+                        && !(format >= 2 ? ALL_EFFECT_FIELDS_2 : ALL_EFFECT_FIELDS).containsKey(nk)) {
                     return m;
                 }
             }
@@ -2324,6 +2478,9 @@ public final class HeroReader {
                     return new HeroDef.ClearMarks(c, m);
                 }
                 case EMPOWER -> {
+                    if (format >= 2) {
+                        return v2Reader.empower(f, sh, c, p, o, need);
+                    }
                     if (!hasEmpowered) {
                         report(Severity.PART_LEFT_OUT, Code.EMPOWER_NO_STATE, o.line(), p, "\"empower\" needs an"
                                 + " \"empowered\" state at the top level of the hero", "Effect");
@@ -2355,6 +2512,46 @@ public final class HeroReader {
                     }
                     return new HeroDef.Summon(c, HeroCatalogue.enumOf(HeroDef.Creature.class, cr),
                             (int) number(f, sh, "count", 1), number(f, sh, "seconds", 20), text(f, "name", 24, null));
+                }
+                case GUARD_BREAK -> {
+                    return new HeroDef.GuardBreak(c, number(f, sh, "seconds", 5));
+                }
+                case POISE -> {
+                    if (missing(f, "amount", o, p, need, "poise damage, 10 to 60")) {
+                        return null;
+                    }
+                    double a = number(f, sh, "amount", need);
+                    return Double.isNaN(a) ? null : new HeroDef.Poise(c, (int) a);
+                }
+                case SILENCE -> {
+                    return new HeroDef.Silence(c, number(f, sh, "seconds", 2));
+                }
+                case TETHER -> {
+                    return new HeroDef.Tether(c, number(f, sh, "seconds", 4), number(f, sh, "max", 6));
+                }
+                case BARRIER -> {
+                    String focus = word(f, "focus", "add", null, null, Mode.OPTIONAL, null);
+                    return new HeroDef.Barrier(c, (int) number(f, sh, "hits", 4), number(f, sh, "seconds", 8),
+                            focus == null ? null : HeroCatalogue.enumOf(HeroDef.AddKind.class, focus));
+                }
+                case SPAWN_ADD -> {
+                    if (ctx.slot != Slot.SKILL && ctx.slot != Slot.ULTIMATE) {
+                        report(Severity.PART_LEFT_OUT, Code.SUMMON_SLOT, o.line(), p, "\"spawn_add\" only works in"
+                                + " moves and the ultimate", "Effect");
+                        return null;
+                    }
+                    if (missing(f, "add", o, p, need, HeroCatalogue.vocab("add").allowed())) {
+                        return null;
+                    }
+                    String a = word(f, "add", "add", null, null, Mode.PART, "Effect");
+                    if (a == null) {
+                        return null;
+                    }
+                    return new HeroDef.SpawnAdd(c, HeroCatalogue.enumOf(HeroDef.AddKind.class, a),
+                            (int) number(f, sh, "count", 1));
+                }
+                case CALL_GUARDS -> {
+                    return new HeroDef.CallGuards(c, (int) number(f, sh, "count", 2));
                 }
                 default -> throw new IllegalStateException(type.name());
             }

@@ -426,10 +426,12 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 473 JUnit tests for the pure rules (the hero file format: reading a file with the line of every
-  problem, every message the checker can write, thousands of damaged files that must load within every limit or be
-  refused, the balance caps and cooldown floors, the damage formula, energy, growth and revival time, and the same
-  verdicts as the Python reference checker on the example heroes; a hero's hitbox from its model, its synced fields and revival time,
+* `./gradlew test` — 613 JUnit tests for the pure rules (the hero file format, both formats: reading a file with the
+  line of every problem, every message the checker can write, thousands of damaged files that must load within every
+  limit or be refused, the balance caps and cooldown floors, format 2's moves, boss block, personality and whether a
+  hero escapes or fights to the death, the eight slice heroes' kits loading clean, the generated JSON Schema, the
+  damage formula, energy, growth and revival time, and the same verdicts as the Python reference checker on the
+  example heroes; a hero's hitbox from its model, its synced fields and revival time,
   its face (which frame each plane shows, blink timing, the talking mouth, the mood hold), which animation clip plays
   (a teleport is not running; one clip per motion class; walk and run do not flip about the threshold), the form-scaled animation keys' variable,
   the level of detail by distance, the chain sway, its mood, and the animation timing files, each clip written for the
@@ -440,6 +442,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   step out from every cell, never beside water, a drop or an earlier patch), branch ends in protected wood, replanting (2x2 for mega spruces and jungle trees) and the grove, fishing water and stand rules including vanilla's open-water test, work zones, scouts'
   escape routes and structure sightings, cave survey walk graph, vanilla experience levels, the vanilla food bar,
   the logistics ledger, food payment, affix caps, XP curve, stuck-recovery selection, scout rules).
+* `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
+  `check`; no hero definitions ship yet, `-PheroDir=<folder>` checks another folder).
 * `./gradlew runGameTestServer` — 149 GameTests on a real headless server, including **heroes** (the shipped hero files load; a hero's synced fields, hitbox and its 1.98 cap; never drafted into a raid party; one entity per hero, a copy from a loaded chunk or a dead copy turned away; it fights, saves and reloads, falls and returns; its look and timings load; a preview copy is never the campaign's hero; a pose drives the synced fields and a played swing is cleared after its clip; fighting draws the weapon for 5 s after the last blow and sets the mood), **soldiers against a player
   they cannot reach** (open a pen's gate and close it behind them with the cow still in, and walk out through it after
   the fight, also after a fight longer than the gate memory; break a player's block in a broken doorway and never the

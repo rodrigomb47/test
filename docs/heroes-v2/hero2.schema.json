@@ -1,0 +1,3587 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:factionclash:hero:2",
+  "title": "Faction Clash hero file, format 2",
+  "description": "A hero definition of format 2 (HEROES_V2.md section 12), as the reader loads it with nothing to report. Generated from HeroCatalogue by HeroSchemaGen; do not edit by hand.",
+  "type": "object",
+  "required": ["format", "name", "behaviour", "basic_attack"],
+  "properties": {
+    "format": {
+      "const": 2
+    },
+    "id": {
+      "$ref": "#/$defs/hero_id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 24
+    },
+    "title": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 32
+    },
+    "description": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 300
+    },
+    "gender": {
+      "enum": ["female", "male"]
+    },
+    "archetype": {
+      "enum": ["cat", "fox", "wolf", "tanuki", "moon_rabbit", "oni", "tengu", "snow_spirit", "kappa", "spider_weaver", "east_dragon", "west_dragon", "komainu", "plant_spirit", "shrine", "onmyoji", "samurai", "wanderer", "ninja", "warrior_monk", "fan_dancer", "delinquent", "battle_chef", "storm_drummer", "sword_cultivator", "martial_artist", "jiangshi", "phoenix", "knight", "paladin", "battle_priest", "witch", "elf", "vampire", "demon_lord", "angel", "reaper", "necromancer", "beast_tamer", "dragoon", "berserker", "arbalist", "corsair", "bard", "alchemist", "siren", "idol", "magical", "maid_butler", "noble_fencer", "android", "tactician", "smith", "grappler"]
+    },
+    "hybrid": {
+      "enum": ["cat", "fox", "wolf", "tanuki", "moon_rabbit", "oni", "tengu", "snow_spirit", "kappa", "spider_weaver", "east_dragon", "west_dragon", "komainu", "plant_spirit", "shrine", "onmyoji", "samurai", "wanderer", "ninja", "warrior_monk", "fan_dancer", "delinquent", "battle_chef", "storm_drummer", "sword_cultivator", "martial_artist", "jiangshi", "phoenix", "knight", "paladin", "battle_priest", "witch", "elf", "vampire", "demon_lord", "angel", "reaper", "necromancer", "beast_tamer", "dragoon", "berserker", "arbalist", "corsair", "bard", "alchemist", "siren", "idol", "magical", "maid_butler", "noble_fencer", "android", "tactician", "smith", "grappler"]
+    },
+    "rarity": {
+      "enum": ["common", "rare", "epic", "legendary"]
+    },
+    "element": {
+      "enum": ["physical", "fire", "frost", "shock", "venom", "blight", "arcane", "radiant"]
+    },
+    "stats": {
+      "$ref": "#/$defs/stats"
+    },
+    "resistances": {
+      "type": "object",
+      "properties": {
+        "physical": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        },
+        "fire": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        },
+        "frost": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        },
+        "shock": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        },
+        "venom": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        },
+        "blight": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        },
+        "arcane": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        },
+        "radiant": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 60
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "gear": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "$ref": "#/$defs/gear_item"
+      }
+    },
+    "behaviour": {
+      "$ref": "#/$defs/behaviour"
+    },
+    "basic_attack": {
+      "$ref": "#/$defs/basic_attack"
+    },
+    "moves": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/move"
+      }
+    },
+    "skills": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/move"
+      },
+      "deprecated": true,
+      "description": "Format 1's skills; read as moves (each id from its name)."
+    },
+    "ultimate": {
+      "$ref": "#/$defs/ultimate"
+    },
+    "passives": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/passive"
+      }
+    },
+    "states": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/state"
+      }
+    },
+    "empowered": {
+      "$ref": "#/$defs/empowered",
+      "deprecated": true,
+      "description": "Format 1's empowered; read as a state."
+    },
+    "boss": {
+      "$ref": "#/$defs/boss"
+    },
+    "personality": {
+      "$ref": "#/$defs/personality"
+    },
+    "leader": {
+      "$ref": "#/$defs/leader"
+    },
+    "talents": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/talent"
+      }
+    },
+    "base_abilities": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/base_ability"
+      },
+      "deprecated": true,
+      "description": "Format 1's base abilities; read as talents."
+    },
+    "voice": {
+      "$ref": "#/$defs/voice"
+    },
+    "lines": {
+      "$ref": "#/$defs/lines"
+    },
+    "recruit": {
+      "$ref": "#/$defs/recruit"
+    },
+    "relationships": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/relationship"
+      }
+    },
+    "revival": {
+      "$ref": "#/$defs/revival"
+    },
+    "mobility": {
+      "$ref": "#/$defs/mobility"
+    },
+    "art": {
+      "description": "Read by the art generator (herogen) only; the server ignores it.",
+      "type": "object"
+    },
+    "animations": {
+      "description": "Read by the art generator (herogen) only; the server ignores it.",
+      "type": "object"
+    },
+    "generated": {
+      "$ref": "#/$defs/generated"
+    }
+  },
+  "patternProperties": {
+    "^_": {}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "hero_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{2,31}$"
+    },
+    "mark_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,23}$"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "sound": {
+      "type": "string",
+      "pattern": "^(?:[a-z0-9_\\-/]([a-z0-9_.\\-/]*[a-z0-9_\\-/])?|minecraft:[a-z0-9_.\\-/]*[a-z0-9_\\-/]|factionclash:hero\\.(cue|kit)\\.[a-z0-9_]+(\\.[a-z0-9_]+)*|factionclash:hero\\.voice\\.[a-z][a-z0-9_]*|factionclash:hero\\.[a-z][a-z0-9_]*\\.[a-z0-9_]+(\\.[a-z0-9_]+)*)$"
+    },
+    "item_id": {
+      "type": "string",
+      "pattern": "^(minecraft:)?[a-z0-9_]+$"
+    },
+    "bone": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,47}$"
+    },
+    "line": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "amount": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        {
+          "type": "object",
+          "properties": {
+            "base": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "attack_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 300
+            },
+            "max_health_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 40
+            },
+            "armor_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "target_max_health_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "target_missing_health_percent": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 30
+            },
+            "mark": {
+              "$ref": "#/$defs/mark_id"
+            },
+            "per_mark_stack": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false,
+          "minProperties": 1,
+          "dependentRequired": {
+            "mark": ["per_mark_stack"],
+            "per_mark_stack": ["mark"]
+          }
+        }
+      ]
+    },
+    "condition": {
+      "oneOf": [
+        {
+          "enum": ["target_health_below", "target_health_above", "self_health_below", "self_health_above", "target_has_mark", "self_has_mark", "target_burning", "target_freezing", "target_slowed", "target_stunned", "target_has_dot", "target_is", "self_empowered", "self_shielded", "target_blocking", "target_airborne", "target_drawing_bow", "target_eating", "target_behind", "target_above", "target_below", "target_unreachable", "target_far", "target_close", "target_flying", "target_in_water", "phase", "enraged", "enemies_engaged", "allies_near", "adds_alive", "ally_hero_health_below", "in_home_base", "is_night", "is_raining", "low_ceiling", "in_water", "self_state", "self_airborne", "self_flying", "self_climbing", "self_stamina_below"]
+        },
+        {
+          "type": "object",
+          "required": ["condition"],
+          "properties": {
+            "condition": {
+              "enum": ["target_health_below", "target_health_above", "self_health_below", "self_health_above", "target_has_mark", "self_has_mark", "target_burning", "target_freezing", "target_slowed", "target_stunned", "target_has_dot", "target_is", "self_empowered", "self_shielded", "target_blocking", "target_airborne", "target_drawing_bow", "target_eating", "target_behind", "target_above", "target_below", "target_unreachable", "target_far", "target_close", "target_flying", "target_in_water", "phase", "enraged", "enemies_engaged", "allies_near", "adds_alive", "ally_hero_health_below", "in_home_base", "is_night", "is_raining", "low_ceiling", "in_water", "self_state", "self_airborne", "self_flying", "self_climbing", "self_stamina_below"]
+            },
+            "value": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 99
+            },
+            "mark": {
+              "$ref": "#/$defs/mark_id"
+            },
+            "kind": {
+              "enum": ["monster", "undead", "arthropod", "illager", "person", "hero", "boss"]
+            },
+            "state": {
+              "$ref": "#/$defs/mark_id"
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "effect": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["damage", "dot", "heal", "shield", "effect", "stat", "knockback", "pull", "ignite", "freeze", "stun", "taunt", "cleanse", "dispel", "energy", "cooldown_cut", "move_self", "mark", "clear_marks", "empower", "summon", "guard_break", "poise", "silence", "tether", "barrier", "spawn_add", "call_guards"]
+        },
+        "to": {
+          "enum": ["targets", "self", "allies", "ally"]
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 12
+        },
+        "chance": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "if": {
+          "$ref": "#/$defs/condition"
+        },
+        "amount": {},
+        "element": {},
+        "drain": {},
+        "seconds": {},
+        "max_stacks": {},
+        "id": {},
+        "level": {},
+        "stat": {},
+        "percent": {},
+        "strength": {},
+        "up": {},
+        "direction": {},
+        "distance": {},
+        "mark": {},
+        "stacks": {},
+        "glow": {},
+        "state": {},
+        "creature": {},
+        "count": {},
+        "name": {},
+        "max": {},
+        "hits": {},
+        "focus": {},
+        "add": {}
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "damage"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"],
+            "properties": {
+              "amount": {
+                "$ref": "#/$defs/amount"
+              },
+              "element": {
+                "enum": ["physical", "fire", "frost", "shock", "venom", "blight", "arcane", "radiant"]
+              },
+              "drain": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 50
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "amount", "element", "drain"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "dot"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"],
+            "properties": {
+              "amount": {
+                "$ref": "#/$defs/amount"
+              },
+              "seconds": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 10
+              },
+              "element": {
+                "enum": ["physical", "fire", "frost", "shock", "venom", "blight", "arcane", "radiant"]
+              },
+              "max_stacks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "amount", "seconds", "element", "max_stacks"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "heal"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"],
+            "properties": {
+              "amount": {
+                "$ref": "#/$defs/amount"
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "amount"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "shield"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"],
+            "properties": {
+              "amount": {
+                "$ref": "#/$defs/amount"
+              },
+              "seconds": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 30
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "amount", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "effect"
+              }
+            }
+          },
+          "then": {
+            "required": ["id", "seconds"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^(minecraft:)?(speed|haste|strength|regeneration|resistance|fire_resistance|water_breathing|jump_boost|slow_falling|invisibility|slowness|weakness|mining_fatigue|poison|wither|glowing|levitation|blindness|darkness)$"
+              },
+              "level": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "seconds": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 30
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "id", "level", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "stat"
+              }
+            }
+          },
+          "then": {
+            "required": ["stat", "percent"],
+            "properties": {
+              "stat": {
+                "enum": ["attack", "damage_dealt", "damage_taken", "armor", "speed", "attack_speed", "healing_received", "knockback_resistance", "crit_damage", "energy_gain"]
+              },
+              "percent": {
+                "type": "integer",
+                "minimum": -50,
+                "maximum": 60
+              },
+              "seconds": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 30
+              },
+              "max_stacks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "stat", "percent", "seconds", "max_stacks"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "knockback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "strength": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "up": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 3
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "strength", "up"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "pull"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "strength": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 3
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "strength"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "ignite"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 8
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "freeze"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 6
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "stun"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 0.5,
+                "maximum": 2
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "taunt"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 8
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "cleanse"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "dispel"
+              }
+            }
+          },
+          "then": {
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "energy"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"],
+            "properties": {
+              "amount": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 30
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "amount"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "cooldown_cut"
+              }
+            }
+          },
+          "then": {
+            "required": ["seconds"],
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 10
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "move_self"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "direction": {
+                "enum": ["back", "forward", "up"]
+              },
+              "distance": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 8
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "direction", "distance"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "mark"
+              }
+            }
+          },
+          "then": {
+            "required": ["mark"],
+            "properties": {
+              "mark": {
+                "$ref": "#/$defs/mark_id"
+              },
+              "stacks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "max_stacks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10
+              },
+              "seconds": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 30
+              },
+              "glow": {
+                "type": "boolean"
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "mark", "stacks", "max_stacks", "seconds", "glow"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "clear_marks"
+              }
+            }
+          },
+          "then": {
+            "required": ["mark"],
+            "properties": {
+              "mark": {
+                "$ref": "#/$defs/mark_id"
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "mark"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "empower"
+              }
+            }
+          },
+          "then": {
+            "required": ["seconds"],
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 3,
+                "maximum": 20
+              },
+              "state": {
+                "$ref": "#/$defs/mark_id"
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds", "state"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "summon"
+              }
+            }
+          },
+          "then": {
+            "required": ["creature"],
+            "properties": {
+              "creature": {
+                "enum": ["wolf", "snow_golem", "iron_golem"]
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              },
+              "seconds": {
+                "type": "number",
+                "minimum": 10,
+                "maximum": 60
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 24
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "creature", "count", "seconds", "name"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "guard_break"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 5
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "poise"
+              }
+            }
+          },
+          "then": {
+            "required": ["amount"],
+            "properties": {
+              "amount": {
+                "type": "integer",
+                "minimum": 10,
+                "maximum": 60
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "amount"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "silence"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 3
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "tether"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "seconds": {
+                "type": "number",
+                "minimum": 2,
+                "maximum": 6
+              },
+              "max": {
+                "type": "number",
+                "minimum": 4,
+                "maximum": 10
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "seconds", "max"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "barrier"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "hits": {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 8
+              },
+              "seconds": {
+                "type": "number",
+                "minimum": 3,
+                "maximum": 15
+              },
+              "focus": {
+                "enum": ["decoy", "wisp", "paper_familiar", "flower_sprite", "drone", "focus_crystal", "imp", "hatchling", "helper_animal"]
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "hits", "seconds", "focus"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "spawn_add"
+              }
+            }
+          },
+          "then": {
+            "required": ["add"],
+            "properties": {
+              "add": {
+                "enum": ["decoy", "wisp", "paper_familiar", "flower_sprite", "drone", "focus_crystal", "imp", "hatchling", "helper_animal"]
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "add", "count"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "const": "call_guards"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              }
+            },
+            "propertyNames": {
+              "anyOf": [
+                {
+                  "enum": ["type", "to", "radius", "chance", "if", "count"]
+                },
+                {
+                  "pattern": "^_"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "effects": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/effect"
+      }
+    },
+    "look": {
+      "type": "object",
+      "properties": {
+        "particle": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(angry_villager|ash|bubble_pop|cherry_leaves|cloud|crimson_spore|crit|damage_indicator|dragon_breath|dust|electric_spark|enchant|enchanted_hit|end_rod|explosion|firework|flame|glow|gust|happy_villager|heart|large_smoke|nautilus|note|poof|portal|reverse_portal|scrape|sculk_soul|small_flame|small_gust|smoke|snowflake|sonic_boom|soul|soul_fire_flame|spore_blossom_air|splash|sweep_attack|totem_of_undying|trial_spawner_detection|warped_spore|wax_on|white_ash|witch)$"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "sound": {
+          "$ref": "#/$defs/sound"
+        },
+        "pose": {
+          "enum": ["none", "swing", "block", "bow_draw", "spear_throw", "crossbow_charge", "horn", "spyglass"]
+        },
+        "lightning": {
+          "type": "boolean"
+        },
+        "fangs": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "stat_bonus": {
+      "type": "object",
+      "required": ["stat", "percent"],
+      "properties": {
+        "stat": {
+          "enum": ["attack", "damage_dealt", "damage_taken", "armor", "speed", "attack_speed", "healing_received", "knockback_resistance", "crit_damage", "energy_gain"]
+        },
+        "percent": {
+          "type": "integer",
+          "minimum": -30,
+          "maximum": 30
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "health": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 40
+        },
+        "attack": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "armor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 8
+        },
+        "speed": {
+          "type": "integer",
+          "minimum": 90,
+          "maximum": 120
+        },
+        "knockback_resistance": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 85,
+          "maximum": 110,
+          "deprecated": true,
+          "description": "Replaced by the art's scale; read and ignored."
+        },
+        "growth": {
+          "enum": ["balanced", "tough", "fierce", "swift", "mystic"]
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "behaviour": {
+      "type": "object",
+      "required": ["combat_role"],
+      "properties": {
+        "combat_role": {
+          "enum": ["vanguard", "striker", "skirmisher", "marksman", "support", "controller", "summoner"]
+        },
+        "focus": {
+          "enum": ["nearest", "weakest", "strongest", "ranged_first", "threat_to_allies", "heroes_first"]
+        },
+        "keep_distance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "aggression": {
+          "enum": ["cautious", "steady", "bold"]
+        },
+        "protects": {
+          "enum": ["none", "allies", "workers", "heart"]
+        },
+        "retreat_below": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "raids": {
+          "enum": ["leads", "joins", "stays_home"]
+        },
+        "duty": {
+          "enum": ["guard", "scout", "builder", "miner", "farmer", "woodcutter", "blacksmith", "chef", "smelter", "animal_carer", "butcher", "fisherman", "cave_explorer", "hauler", "enchanter", "trader"]
+        },
+        "duel_style": {
+          "enum": ["rushdown", "zoner", "grappler", "counter", "trapper", "all_rounder", "stance", "summoner"]
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "basic_attack": {
+      "type": "object",
+      "required": ["style"],
+      "properties": {
+        "style": {
+          "enum": ["melee", "bow", "crossbow", "trident", "thrown"]
+        },
+        "projectile": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+        },
+        "held_item": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(stick|blaze_rod|breeze_rod|book|amethyst_shard|echo_shard|prismarine_shard|heart_of_the_sea|nautilus_shell|feather|bone|spyglass|compass|clock|lantern|soul_lantern|poppy|cornflower)$"
+        },
+        "amount": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 10
+        },
+        "interval": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 3
+        },
+        "element": {
+          "enum": ["physical", "fire", "frost", "shock", "venom", "blight", "arcane", "radiant"]
+        },
+        "on_hit": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "every_nth_hit": {
+          "$ref": "#/$defs/every_nth_hit"
+        },
+        "combo": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "every_nth_hit": {
+      "type": "object",
+      "required": ["n", "effects"],
+      "properties": {
+        "n": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 6
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "gear_item": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/gear_id"
+        },
+        {
+          "type": "object",
+          "required": ["item"],
+          "properties": {
+            "item": {
+              "type": "string",
+              "pattern": "^(minecraft:)?(wooden_sword|stone_sword|iron_sword|golden_sword|wooden_axe|stone_axe|iron_axe|golden_axe|mace|bow|crossbow|trident|shield|turtle_helmet|leather_helmet|leather_chestplate|leather_leggings|leather_boots|chainmail_helmet|chainmail_chestplate|chainmail_leggings|chainmail_boots|iron_helmet|iron_chestplate|iron_leggings|iron_boots|golden_helmet|golden_chestplate|golden_leggings|golden_boots)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 24
+            },
+            "enchantments": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^(minecraft:)?(sharpness|smite|bane_of_arthropods|knockback|fire_aspect|sweeping_edge|density|breach|power|punch|flame|quick_charge|piercing|multishot|impaling|loyalty|protection|fire_protection|blast_protection|projectile_protection|thorns|feather_falling|respiration|aqua_affinity|depth_strider|unbreaking)$"
+              },
+              "additionalProperties": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              },
+              "maxProperties": 3
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "gear_id": {
+      "type": "string",
+      "pattern": "^(minecraft:)?(wooden_sword|stone_sword|iron_sword|golden_sword|wooden_axe|stone_axe|iron_axe|golden_axe|mace|bow|crossbow|trident|shield|turtle_helmet|leather_helmet|leather_chestplate|leather_leggings|leather_boots|chainmail_helmet|chainmail_chestplate|chainmail_leggings|chainmail_boots|iron_helmet|iron_chestplate|iron_leggings|iron_boots|golden_helmet|golden_chestplate|golden_leggings|golden_boots)$"
+    },
+    "frames": {
+      "type": "object",
+      "properties": {
+        "windup": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "active": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "recovery": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "followup": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/mark_id"
+        },
+        {
+          "type": "object",
+          "required": ["move"],
+          "properties": {
+            "move": {
+              "$ref": "#/$defs/mark_id"
+            },
+            "chance": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "channel": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 30
+        },
+        {
+          "type": "object",
+          "properties": {
+            "interrupt": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 30
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "telegraph": {
+      "oneOf": [
+        {
+          "enum": ["disc", "strip", "fan", "ring", "landing", "impacts", "none"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "shape": {
+              "enum": ["disc", "strip", "fan", "ring", "landing", "impacts", "none"]
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "strike": {
+      "type": "object",
+      "required": ["effects"],
+      "properties": {
+        "windup": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "active": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "move": {
+      "type": "object",
+      "required": ["name", "form"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "id": {
+          "$ref": "#/$defs/mark_id"
+        },
+        "form": {
+          "enum": ["melee", "shot", "volley", "bolt", "chain", "cone", "line", "nova", "zone", "leap", "dash", "self", "ally", "allies", "combo", "charge", "wave", "rain", "sweep", "grab", "counter", "barrage"]
+        },
+        "range": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 24
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 12
+        },
+        "angle": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 120
+        },
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "hits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "hit_interval": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1
+        },
+        "projectile": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(arrow|spectral_arrow|trident|snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+        },
+        "zone_at": {
+          "enum": ["target", "self", "follow_self"]
+        },
+        "delay": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "interval": {
+          "type": "number",
+          "minimum": 0.15,
+          "maximum": 3
+        },
+        "windup": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "cooldown": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 120
+        },
+        "charges": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "energy_gain": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "charge_rate": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 150
+        },
+        "use_when": {
+          "enum": ["always", "self_health_below", "ally_health_below", "target_health_below", "enemies_near", "target_far", "target_close", "big_fight", "out_of_combat"]
+        },
+        "use_value": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 90
+        },
+        "unlock_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "deprecated": true,
+          "description": "Read and ignored: every ability works from level 1 (HEROES_V2 8)."
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "look": {
+          "$ref": "#/$defs/look"
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "class": {
+          "enum": ["light", "heavy", "area", "ultimate"]
+        },
+        "frames": {
+          "$ref": "#/$defs/frames"
+        },
+        "band": {
+          "oneOf": [
+            {
+              "enum": ["close", "mid", "far", "any"]
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "items": {
+                "enum": ["close", "mid", "far", "any"]
+              }
+            }
+          ]
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          }
+        },
+        "prefer_when": {
+          "$ref": "#/$defs/condition"
+        },
+        "followups": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/followup"
+          }
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "breaks_guard": {
+          "type": "boolean"
+        },
+        "unblockable": {
+          "type": "boolean"
+        },
+        "super_armor": {
+          "type": "boolean"
+        },
+        "channel": {
+          "$ref": "#/$defs/channel"
+        },
+        "telegraph": {
+          "$ref": "#/$defs/telegraph"
+        },
+        "per_shot": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/$defs/effect"
+            }
+          }
+        },
+        "strikes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/strike"
+          }
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 6,
+          "maximum": 200
+        },
+        "wall_stun": {
+          "type": "boolean"
+        },
+        "waves": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "arc": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 180
+        },
+        "throw": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "up": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stance": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 2
+        },
+        "absorb": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 90
+        },
+        "ranged": {
+          "type": "boolean"
+        },
+        "awakened": {
+          "description": "Only on the ultimate.",
+          "not": {}
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "ultimate": {
+      "type": "object",
+      "required": ["name", "form"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "id": {
+          "$ref": "#/$defs/mark_id"
+        },
+        "form": {
+          "enum": ["melee", "shot", "volley", "bolt", "chain", "cone", "line", "nova", "zone", "leap", "dash", "self", "ally", "allies", "combo", "charge", "wave", "rain", "sweep", "grab", "counter", "barrage"]
+        },
+        "range": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 24
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 12
+        },
+        "angle": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 120
+        },
+        "width": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "hits": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "hit_interval": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1
+        },
+        "projectile": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(arrow|spectral_arrow|trident|snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+        },
+        "zone_at": {
+          "enum": ["target", "self", "follow_self"]
+        },
+        "delay": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "interval": {
+          "type": "number",
+          "minimum": 0.15,
+          "maximum": 3
+        },
+        "windup": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "cooldown": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 120
+        },
+        "charges": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "energy_gain": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "charge_rate": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 150
+        },
+        "use_when": {
+          "enum": ["always", "self_health_below", "ally_health_below", "target_health_below", "enemies_near", "target_far", "target_close", "big_fight", "out_of_combat"]
+        },
+        "use_value": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 90
+        },
+        "unlock_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "deprecated": true,
+          "description": "Read and ignored: every ability works from level 1 (HEROES_V2 8)."
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "look": {
+          "$ref": "#/$defs/look"
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "class": {
+          "enum": ["light", "heavy", "area", "ultimate"]
+        },
+        "frames": {
+          "$ref": "#/$defs/frames"
+        },
+        "band": {
+          "oneOf": [
+            {
+              "enum": ["close", "mid", "far", "any"]
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "items": {
+                "enum": ["close", "mid", "far", "any"]
+              }
+            }
+          ]
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          }
+        },
+        "prefer_when": {
+          "$ref": "#/$defs/condition"
+        },
+        "followups": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/followup"
+          }
+        },
+        "repeatable": {
+          "type": "boolean"
+        },
+        "breaks_guard": {
+          "type": "boolean"
+        },
+        "unblockable": {
+          "type": "boolean"
+        },
+        "super_armor": {
+          "type": "boolean"
+        },
+        "channel": {
+          "$ref": "#/$defs/channel"
+        },
+        "telegraph": {
+          "$ref": "#/$defs/telegraph"
+        },
+        "per_shot": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/$defs/effect"
+            }
+          }
+        },
+        "strikes": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/strike"
+          }
+        },
+        "speed": {
+          "type": "number",
+          "minimum": 6,
+          "maximum": 200
+        },
+        "wall_stun": {
+          "type": "boolean"
+        },
+        "waves": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "arc": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 180
+        },
+        "throw": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "up": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "stance": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 2
+        },
+        "absorb": {
+          "type": "integer",
+          "minimum": 50,
+          "maximum": 90
+        },
+        "ranged": {
+          "type": "boolean"
+        },
+        "awakened": {
+          "$ref": "#/$defs/ultimate"
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "passive": {
+      "type": "object",
+      "required": ["name", "trigger", "effects"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "trigger": {
+          "enum": ["always", "on_hit", "on_crit", "on_hurt", "on_kill", "on_skill", "on_ultimate", "on_fight_start", "on_low_health", "on_ally_low_health", "on_ally_hurt", "on_ally_attack", "on_ally_ultimate", "on_mark_full", "every", "on_phase", "on_enrage", "on_stagger", "on_counter", "on_guard_broken", "on_target_heal", "on_add_died", "on_intro", "on_escape", "on_last_stand"]
+        },
+        "trigger_value": {
+          "type": "number",
+          "minimum": 3,
+          "maximum": 60
+        },
+        "mark": {
+          "$ref": "#/$defs/mark_id"
+        },
+        "chance": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "cooldown": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 120
+        },
+        "form": {
+          "enum": ["self", "trigger_enemy", "trigger_ally", "ally", "allies", "nova", "bolt", "shot"]
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 12
+        },
+        "projectile": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(arrow|spectral_arrow|trident|snowball|fire_charge|wind_charge|slime_ball|magma_cream|amethyst_shard|prismarine_shard|prismarine_crystals|echo_shard|blaze_powder|feather|bone|flint|heart_of_the_sea|nautilus_shell)$"
+        },
+        "if": {
+          "$ref": "#/$defs/condition"
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "look": {
+          "$ref": "#/$defs/look"
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "unlock_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "deprecated": true,
+          "description": "Read and ignored: every ability works from level 1 (HEROES_V2 8)."
+        },
+        "once_per_fight": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/mark_id"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "stats": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/stat_bonus"
+          }
+        },
+        "on_hit": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "particle": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(angry_villager|ash|bubble_pop|cherry_leaves|cloud|crimson_spore|crit|damage_indicator|dragon_breath|dust|electric_spark|enchant|enchanted_hit|end_rod|explosion|firework|flame|glow|gust|happy_villager|heart|large_smoke|nautilus|note|poof|portal|reverse_portal|scrape|sculk_soul|small_flame|small_gust|smoke|snowflake|sonic_boom|soul|soul_fire_flame|spore_blossom_air|splash|sweep_attack|totem_of_undying|trial_spawner_detection|warped_spore|wax_on|white_ash|witch)$"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 110
+        },
+        "skills_locked": {
+          "type": "boolean"
+        },
+        "moves": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/mark_id"
+          }
+        },
+        "show": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/bone"
+          }
+        },
+        "hide": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/bone"
+          }
+        },
+        "face": {
+          "enum": ["calm", "happy", "angry", "focused", "hurt", "tired", "sad", "smug", "surprised", "asleep", "flustered", "determined"]
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "empowered": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "stats": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/stat_bonus"
+          }
+        },
+        "on_hit": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "particle": {
+          "type": "string",
+          "pattern": "^(minecraft:)?(angry_villager|ash|bubble_pop|cherry_leaves|cloud|crimson_spore|crit|damage_indicator|dragon_breath|dust|electric_spark|enchant|enchanted_hit|end_rod|explosion|firework|flame|glow|gust|happy_villager|heart|large_smoke|nautilus|note|poof|portal|reverse_portal|scrape|sculk_soul|small_flame|small_gust|smoke|snowflake|sonic_boom|soul|soul_fire_flame|spore_blossom_air|splash|sweep_attack|totem_of_undying|trial_spawner_detection|warped_spore|wax_on|white_ash|witch)$"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 110
+        },
+        "skills_locked": {
+          "type": "boolean"
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "boss": {
+      "type": "object",
+      "properties": {
+        "health_scale": {
+          "type": "integer",
+          "minimum": 200,
+          "maximum": 600
+        },
+        "max_hit_share": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 25
+        },
+        "poise": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/phase"
+          }
+        },
+        "reactions": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/reaction"
+          }
+        },
+        "weak_points": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/weak_point"
+          }
+        },
+        "enrage": {
+          "$ref": "#/$defs/enrage"
+        },
+        "adds": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/add"
+          }
+        },
+        "intro": {
+          "$ref": "#/$defs/intro"
+        },
+        "rebirth": {
+          "type": "boolean"
+        },
+        "arena": {
+          "$ref": "#/$defs/arena"
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "phase": {
+      "type": "object",
+      "required": ["at"],
+      "properties": {
+        "at": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "moves": {
+          "type": "array",
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/mark_id"
+          }
+        },
+        "states": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/mark_id"
+          }
+        },
+        "adds": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/add"
+          }
+        },
+        "stats": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/stat_bonus"
+          }
+        },
+        "transition": {
+          "$ref": "#/$defs/transition"
+        },
+        "unlock_level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30,
+          "deprecated": true,
+          "description": "Read and ignored: every ability works from level 1 (HEROES_V2 8)."
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "transition": {
+      "type": "object",
+      "properties": {
+        "seconds": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 2
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "shockwave": {
+          "$ref": "#/$defs/shockwave"
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "face": {
+          "enum": ["calm", "happy", "angry", "focused", "hurt", "tired", "sad", "smug", "surprised", "asleep", "flustered", "determined"]
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "shockwave": {
+      "type": "object",
+      "properties": {
+        "radius": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 8
+        },
+        "strength": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 4
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "reaction": {
+      "type": "object",
+      "required": ["when", "move"],
+      "properties": {
+        "when": {
+          "$ref": "#/$defs/condition"
+        },
+        "move": {
+          "$ref": "#/$defs/mark_id"
+        },
+        "chance": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "cooldown": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 60
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "weak_point": {
+      "oneOf": [
+        {
+          "enum": ["back", "recovery", "charge_wall", "channel", "iron", "gold", "snowball", "water", "bell", "light", "crit_above"]
+        },
+        {
+          "type": "object",
+          "required": ["point"],
+          "properties": {
+            "point": {
+              "enum": ["back", "recovery", "charge_wall", "channel", "iron", "gold", "snowball", "water", "bell", "light", "crit_above"]
+            },
+            "hint": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "enrage": {
+      "type": "object",
+      "properties": {
+        "after": {
+          "type": "number",
+          "minimum": 120,
+          "maximum": 300
+        },
+        "triggers": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "enum": ["ally_hero_died", "heart_attacked", "favoured_hurt"]
+          }
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "add": {
+      "oneOf": [
+        {
+          "enum": ["decoy", "wisp", "paper_familiar", "flower_sprite", "drone", "focus_crystal", "imp", "hatchling", "helper_animal"]
+        },
+        {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": {
+              "enum": ["decoy", "wisp", "paper_familiar", "flower_sprite", "drone", "focus_crystal", "imp", "hatchling", "helper_animal"]
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "intro": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/line"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "line": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "title": {
+              "type": "string",
+              "minLength": 0,
+              "maxLength": 32
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "arena": {
+      "oneOf": [
+        {
+          "enum": ["open", "tight", "home"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "prefers": {
+              "enum": ["open", "tight", "home"]
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "personality": {
+      "type": "object",
+      "properties": {
+        "temperament": {
+          "enum": ["hot_blooded", "stoic", "cool_headed", "tsundere", "shy", "sweet_natured", "yandere", "genki", "lone_wolf", "proud_noble", "delinquent", "chuunibyou", "airhead", "big_sibling", "trickster", "sleepy", "battle_maniac", "gentle_giant", "schemer", "righteous", "melancholic", "glutton", "perfectionist", "charmer", "ancient_sage", "coward_who_rises", "gruff_veteran", "eccentric_genius", "merchant", "tyrant"]
+        },
+        "traits": {
+          "type": "object",
+          "properties": {
+            "aggression": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "honour": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "ambition": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "caution": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "greed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "sociability": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "loyalty": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "volatility": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        },
+        "when_losing": {
+          "enum": ["escape", "last_stand"]
+        },
+        "stands_for": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "enum": ["home", "leader"]
+          }
+        },
+        "likes": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/item_id"
+          }
+        },
+        "dislikes": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "$ref": "#/$defs/item_id"
+          }
+        },
+        "quirks": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "leader": {
+      "type": "object",
+      "properties": {
+        "eligible": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "faction_names": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          }
+        },
+        "short_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 14
+        },
+        "motto": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "colors": {
+          "$ref": "#/$defs/colors"
+        },
+        "banner": {
+          "$ref": "#/$defs/banner"
+        },
+        "base_style": {
+          "enum": ["ember_fortress", "grove_lodge", "tide_port", "stone_hold", "shrine_pavilion", "cherry_court", "bamboo_village", "frost_hall", "dark_manor", "deepslate_keep", "desert_court", "ivory_palace", "jungle_haven", "tuff_workshop", "mud_town", "coral_port"]
+        },
+        "culture": {
+          "enum": ["east", "west", "mixed"]
+        },
+        "economy_focus": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": {
+            "enum": ["military", "mining", "farming", "food", "trade", "craft", "lore", "building", "scouting", "defence", "growth", "people"]
+          }
+        },
+        "seat": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "colors": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "$ref": "#/$defs/color"
+        },
+        "secondary": {
+          "$ref": "#/$defs/color"
+        },
+        "accent": {
+          "$ref": "#/$defs/color"
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "banner": {
+      "type": "object",
+      "required": ["base"],
+      "properties": {
+        "base": {
+          "enum": ["white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"]
+        },
+        "patterns": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/banner_layer"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "banner_layer": {
+      "type": "object",
+      "required": ["pattern", "color"],
+      "properties": {
+        "pattern": {
+          "enum": ["border", "bricks", "circle", "creeper", "cross", "curly_border", "diagonal_left", "diagonal_right", "diagonal_up_left", "diagonal_up_right", "flow", "flower", "globe", "gradient", "gradient_up", "guster", "half_horizontal", "half_horizontal_bottom", "half_vertical", "half_vertical_right", "mojang", "piglin", "rhombus", "skull", "small_stripes", "square_bottom_left", "square_bottom_right", "square_top_left", "square_top_right", "straight_cross", "stripe_bottom", "stripe_center", "stripe_downleft", "stripe_downright", "stripe_left", "stripe_middle", "stripe_right", "stripe_top", "triangle_bottom", "triangle_top", "triangles_bottom", "triangles_top"]
+        },
+        "color": {
+          "enum": ["white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"]
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "talent": {
+      "oneOf": [
+        {
+          "enum": ["aura", "master_chef", "forgemaster", "surveyor", "forester", "harvest_blessing", "beastmaster", "angler_lord", "ember_keeper", "quartermaster", "rally", "mentor", "renown", "drill", "festival_host", "steward", "mend", "triage", "revival_rite", "purifier", "lookout", "cartographer", "spymaster", "pathfinder", "envoy", "intimidation", "merchant_prince", "tribute_master", "sage_of_letters", "architect", "alchemist", "engineer", "warden_of_walls", "tactician", "war_drummer"]
+        },
+        {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": {
+              "enum": ["aura", "master_chef", "forgemaster", "surveyor", "forester", "harvest_blessing", "beastmaster", "angler_lord", "ember_keeper", "quartermaster", "rally", "mentor", "renown", "drill", "festival_host", "steward", "mend", "triage", "revival_rite", "purifier", "lookout", "cartographer", "spymaster", "pathfinder", "envoy", "intimidation", "merchant_prince", "tribute_master", "sage_of_letters", "architect", "alchemist", "engineer", "warden_of_walls", "tactician", "war_drummer"]
+            },
+            "realm": {
+              "type": "boolean"
+            },
+            "affix": {
+              "enum": ["diligence", "prospector", "regrowth", "green_thumb", "mason", "marksman", "thrifty", "hardy", "duelist", "angler", "haggler"]
+            },
+            "roles": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32,
+              "items": {
+                "enum": ["builder", "miner", "farmer", "woodcutter", "blacksmith", "chef", "smelter", "animal_carer", "butcher", "fisherman", "cave_explorer", "hauler", "enchanter", "trader", "scout", "swordsman", "archer", "crossbowman", "axe_fighter"]
+              }
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "base_ability": {
+      "deprecated": true,
+      "description": "Format 1's base abilities; read as talents.",
+      "type": "object"
+    },
+    "voice": {
+      "type": "object",
+      "properties": {
+        "blip": {
+          "enum": ["harp", "bell", "chime", "flute", "xylophone", "bit", "hat", "bass", "guitar", "pling"]
+        },
+        "pitch": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2
+        },
+        "rate": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4
+        },
+        "hurt_pitch": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 2
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "recruit": {
+      "type": "object",
+      "required": ["condition"],
+      "properties": {
+        "condition": {
+          "enum": ["duel", "payment", "reputation", "gift", "visits", "cause", "rescue"]
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "relationship": {
+      "type": "object",
+      "required": ["hero", "kind"],
+      "properties": {
+        "hero": {
+          "$ref": "#/$defs/hero_id"
+        },
+        "kind": {
+          "enum": ["friend", "rival", "sibling", "mentor", "student", "sworn_enemy", "admirer"]
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "revival": {
+      "type": "object",
+      "properties": {
+        "seconds": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 3600
+        },
+        "where": {
+          "enum": ["home", "where_it_fell", "nearest_base"]
+        },
+        "at": {
+          "enum": ["any", "night"]
+        },
+        "line": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "mobility": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "$ref": "#/$defs/trait_tier"
+        },
+        "secondary": {
+          "$ref": "#/$defs/trait_tier"
+        },
+        "carrier": {
+          "$ref": "#/$defs/carrier"
+        },
+        "aerial": {
+          "$ref": "#/$defs/aerial"
+        },
+        "travel": {
+          "type": "boolean"
+        },
+        "avoid": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "enum": ["water", "lava", "snow", "heights"]
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "trait_tier": {
+      "type": "object",
+      "required": ["trait"],
+      "properties": {
+        "trait": {
+          "enum": ["runner", "charger", "leaper", "acrobat", "climber", "glider", "flyer", "hover", "swimmer", "snowstride", "ember_stride"]
+        },
+        "tier": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "carrier": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["wings", "broom", "cloud", "sword", "crane", "jets", "light", "cape", "fans", "kite", "canopy", "levitation"]
+        },
+        "part": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "aerial": {
+      "type": "object",
+      "properties": {
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          }
+        },
+        "max_air": {
+          "type": "number",
+          "minimum": 4,
+          "maximum": 8
+        },
+        "dives": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "weight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "generated": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "hash": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 64
+        },
+        "moves": {
+          "type": "array",
+          "maxItems": 14,
+          "items": {
+            "$ref": "#/$defs/generated_move"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "generated_move": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/mark_id"
+        },
+        "anim": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "frames": {
+          "$ref": "#/$defs/frames"
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    },
+    "lines": {
+      "type": "object",
+      "properties": {
+        "summoned": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "greeting": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "idle": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "fight_start": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "skill": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "ultimate": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "low_health": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "kill": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "ally_fallen": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "victory": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "raid_start": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "base_attacked": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "level_up": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "unlock": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          },
+          "deprecated": true,
+          "description": "Never fires for a format-2 hero (every ability works from level 1)."
+        },
+        "fallen": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "revived": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "founding": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "intro": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "phase_2": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "phase_3": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "enrage": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "stagger": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "counter": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "escape": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "last_stand": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "raid_announce": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "base_lost": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "hero_fallen": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "work": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "night": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "small_talk": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "pact_offer": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "pact_accepted": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "pact_refused": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "peace_offer": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "declare_war": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "betrayal": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "betrayed": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "stranger_warning": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "welcome": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "gift_liked": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "gift_disliked": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        }
+      },
+      "patternProperties": {
+        "^_": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

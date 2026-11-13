@@ -1,0 +1,100 @@
+{
+  "_comment": "Test data for SliceKitsTest (HEROES_V2 15.2 F2): SLICE_PLAN 3.3's kit as a format-2 server definition. Not the authored hero (C2 writes that from herosrc/). The ultimate's 'three fire waves of 8' are a followup wave move (weight 0) of reach 8.",
+  "format": 2,
+  "id": "benika_akagane",
+  "name": "Benika Akagane",
+  "title": "the Iron Club Oni",
+  "description": "A laughing oni smith-warrior who wants an opponent worth breaking her club on.",
+  "gender": "female",
+  "archetype": "oni",
+  "rarity": "epic",
+  "element": "fire",
+  "gear": [{"item": "mace", "name": "Ironmaw", "enchantments": {"density": 1}}],
+  "behaviour": {"combat_role": "vanguard", "duel_style": "grappler", "duty": "miner"},
+  "basic_attack": {"style": "melee", "combo": 3},
+  "moves": [
+    {"id": "overhead_slam", "name": "Overhead Slam", "form": "cone", "class": "area", "band": ["close"], "range": 4,
+     "angle": 40, "cooldown": 11, "frames": {"windup": 1.0, "active": 0.15, "recovery": 1.2},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 150}},
+                 {"type": "knockback", "strength": 1, "up": 1}]},
+    {"id": "shoulder_charge", "name": "Shoulder Charge", "form": "charge", "class": "heavy", "band": ["mid"],
+     "range": 10, "speed": 160, "wall_stun": true, "cooldown": 9,
+     "frames": {"windup": 0.9, "active": 0.6, "recovery": 0.9},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 90}}, {"type": "knockback", "strength": 3}]},
+    {"id": "ground_stomp", "name": "Ground Stomp", "form": "wave", "class": "area", "band": ["close", "mid"],
+     "radius": 8, "speed": 8, "waves": 1, "cooldown": 12, "frames": {"windup": 1.0, "active": 1.0, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": 6}, {"type": "ignite", "seconds": 2}]},
+    {"id": "gourd_swig", "name": "Gourd Swig", "form": "self", "class": "light", "band": ["any"], "cooldown": 13,
+     "frames": {"windup": 1.2, "active": 0.1, "recovery": 0.6},
+     "prefer_when": {"condition": "self_health_below", "value": 50},
+     "effects": [{"type": "heal", "amount": 6}, {"type": "stat", "stat": "attack", "percent": 15, "seconds": 8}]},
+    {"id": "grab_throw", "name": "Grab and Throw", "form": "grab", "class": "heavy", "band": ["close"],
+     "phases": [2, 3], "range": 2.5, "throw": 3, "up": 1, "cooldown": 10,
+     "frames": {"windup": 0.9, "active": 1.0, "recovery": 1.2},
+     "effects": [{"type": "damage", "amount": 8}]},
+    {"id": "meteor_club", "name": "Meteor Club", "form": "leap", "class": "heavy", "band": ["mid", "far"],
+     "phases": [3], "range": 10, "radius": 3, "cooldown": 12, "frames": {"windup": 1.0, "active": 0.6, "recovery": 1.2},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 120}}],
+     "followups": [{"move": "ground_stomp", "chance": 100}]},
+    {"id": "crash_waves", "name": "Crash Waves", "form": "wave", "class": "area", "band": ["close", "mid"],
+     "weight": 0, "radius": 8, "speed": 8, "waves": 3, "interval": 0.6, "cooldown": 14,
+     "frames": {"windup": 1.0, "active": 1.8, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": 4}]}
+  ],
+  "ultimate": {"id": "iron_mountain_crash", "name": "Iron Mountain Crash", "form": "leap", "class": "ultimate",
+               "range": 10, "radius": 4, "frames": {"windup": 1.8, "active": 2.0, "recovery": 1.6},
+               "effects": [{"type": "damage", "amount": 12}, {"type": "knockback", "strength": 2}],
+               "followups": [{"move": "crash_waves", "chance": 100}],
+               "line": "Hold still, this'll be fun!"},
+  "states": [
+    {"name": "rage", "stats": [{"stat": "attack", "percent": 20}, {"stat": "knockback_resistance", "percent": 30}],
+     "size": 105, "face": "angry"}
+  ],
+  "passives": [
+    {"name": "Battle Joy", "trigger": "on_hurt", "form": "self", "cooldown": 2,
+     "effects": [{"type": "stat", "stat": "attack", "percent": 5, "seconds": 10, "max_stacks": 4}]}
+  ],
+  "boss": {
+    "health_scale": 350, "poise": 140,
+    "weak_points": [{"point": "snowball", "hint": "Ugh, cold! Who throws snow at an oni?!"}, "charge_wall"],
+    "phases": [
+      {"at": 100},
+      {"at": 60, "states": ["rage"], "transition": {"seconds": 1.2, "line": "Now THIS is a fight!", "face": "angry"}},
+      {"at": 25, "transition": {"seconds": 1.2, "line": "Don't you dare fall down yet!"}}
+    ],
+    "reactions": [
+      {"when": "target_blocking", "move": "grab_throw", "chance": 70, "cooldown": 10},
+      {"when": "target_far", "move": "shoulder_charge", "chance": 60, "cooldown": 8},
+      {"when": "target_eating", "move": "shoulder_charge", "chance": 70, "cooldown": 10}
+    ],
+    "enrage": {"triggers": ["heart_attacked"]},
+    "intro": {"line": "Oho! You look sturdy. Let's find out!"}
+  },
+  "personality": {
+    "temperament": "battle_maniac",
+    "traits": {"aggression": 95, "honour": 70, "ambition": 70, "caution": 5, "greed": 25, "sociability": 55,
+               "loyalty": 55, "volatility": 60},
+    "likes": ["cake", "honey_bottle", "iron_ingot"], "dislikes": ["snowball"],
+    "quirks": ["has a sweet tooth she defends with her club"]
+  },
+  "leader": {
+    "title": "Warlord of the Crimson Anvil",
+    "faction_names": ["Crimson Anvil Warband", "The Red Horn Host"],
+    "short_name": "Crimson Anvil",
+    "motto": "Bring me someone worth breaking.",
+    "colors": {"primary": "#A3202A", "secondary": "#1B1717", "accent": "#D4A23A"},
+    "banner": {"base": "red", "patterns": [{"pattern": "triangles_bottom", "color": "black"},
+                                           {"pattern": "circle", "color": "yellow"}]},
+    "base_style": "ember_fortress", "culture": "east", "economy_focus": ["military", "mining"]
+  },
+  "talents": [{"id": "surveyor", "realm": true}, "drill"],
+  "voice": {"blip": "guitar", "pitch": 1.1, "rate": 2},
+  "lines": {
+    "founding": ["Listen up! From today we're the Crimson Anvil. We work hard and we fight harder!"],
+    "greeting": ["{player}! Arm-wrestle later? No? Coward!"],
+    "kill": ["Next!"],
+    "last_stand": ["Hah... hah... this is GREAT! Don't you dare stop now!"],
+    "fallen": ["Good one... Next time I break the club on you."]
+  },
+  "mobility": {"primary": {"trait": "charger", "tier": 3}, "secondary": {"trait": "leaper", "tier": 1}}
+}

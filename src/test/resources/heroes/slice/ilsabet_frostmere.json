@@ -1,0 +1,100 @@
+{
+  "_comment": "Test data for SliceKitsTest (HEROES_V2 15.2 F2): SLICE_PLAN 3.7's kit as a format-2 server definition. Not the authored hero (C4 writes that from herosrc/).",
+  "format": 2,
+  "id": "ilsabet_frostmere",
+  "name": "Ilsabet Frostmere",
+  "title": "the Rime Vow",
+  "description": "A knight-commander who swore to keep the weak behind her shield.",
+  "gender": "female",
+  "archetype": "knight",
+  "rarity": "epic",
+  "element": "frost",
+  "gear": ["iron_sword", "shield"],
+  "behaviour": {"combat_role": "vanguard", "duel_style": "counter", "duty": "guard"},
+  "basic_attack": {"style": "melee", "combo": 3},
+  "moves": [
+    {"id": "shield_bash", "name": "Shield Bash", "form": "dash", "class": "heavy", "band": ["close"], "range": 3,
+     "cooldown": 12, "frames": {"windup": 0.8, "active": 0.2, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 70}}, {"type": "stun", "seconds": 1},
+                 {"type": "knockback", "strength": 2}]},
+    {"id": "oath_strike", "name": "Oath Strike", "form": "combo", "class": "light", "band": ["close"], "cooldown": 8,
+     "frames": {"windup": 0.45, "active": 0.35, "recovery": 0.4},
+     "strikes": [{"effects": [{"type": "damage", "amount": {"attack_percent": 60}}]},
+                 {"effects": [{"type": "damage", "amount": {"attack_percent": 80}}, {"type": "freeze", "seconds": 2}]}]},
+    {"id": "rime_wall", "name": "Rime Wall", "form": "nova", "class": "light", "band": ["any"], "radius": 5,
+     "cooldown": 12, "frames": {"windup": 0.6, "active": 0.1, "recovery": 0.5},
+     "prefer_when": {"condition": "allies_near", "value": 2},
+     "effects": [{"type": "shield", "amount": 6, "seconds": 10, "to": "allies"}, {"type": "taunt", "seconds": 3}]},
+    {"id": "turning_sweep", "name": "Turning Sweep", "form": "sweep", "class": "area", "band": ["close"], "range": 4,
+     "arc": 180, "duration": 1.0, "cooldown": 14, "frames": {"windup": 1.0, "active": 1.0, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 70}}]},
+    {"id": "frost_lance_charge", "name": "Frost Lance Charge", "form": "charge", "class": "heavy",
+     "band": ["mid", "far"], "phases": [2, 3], "range": 14, "speed": 170, "wall_stun": true, "cooldown": 12,
+     "frames": {"windup": 1.0, "active": 0.8, "recovery": 1.0},
+     "effects": [{"type": "damage", "amount": {"attack_percent": 100}}, {"type": "freeze", "seconds": 2},
+                 {"type": "knockback", "strength": 2}]},
+    {"id": "frozen_standard", "name": "Frozen Standard", "form": "zone", "class": "area", "band": ["any"],
+     "phases": [3], "zone_at": "self", "radius": 6, "duration": 10, "interval": 1, "cooldown": 30,
+     "frames": {"windup": 1.2, "active": 0.1, "recovery": 0.8},
+     "effects": [{"type": "stat", "stat": "damage_dealt", "percent": 15, "seconds": 2, "to": "allies"},
+                 {"type": "effect", "id": "slowness", "level": 1, "seconds": 2}]},
+    {"id": "call_the_guard", "name": "Call the Guard", "form": "self", "class": "light", "band": ["any"],
+     "phases": [3], "cooldown": 20, "frames": {"windup": 0.6, "active": 0.1, "recovery": 0.4},
+     "effects": [{"type": "call_guards", "count": 3}]}
+  ],
+  "ultimate": {"id": "vow_of_winter", "name": "Vow of Winter", "form": "nova", "class": "ultimate", "radius": 6,
+               "frames": {"windup": 1.6, "active": 0.2, "recovery": 1.5},
+               "effects": [{"type": "damage", "amount": 14}, {"type": "freeze", "seconds": 3},
+                           {"type": "shield", "amount": 10, "to": "allies", "radius": 8}],
+               "line": "By my vow, winter holds this line!"},
+  "states": [
+    {"name": "bulwark", "stats": [{"stat": "armor", "percent": 25}, {"stat": "knockback_resistance", "percent": 30}],
+     "face": "determined"}
+  ],
+  "passives": [
+    {"name": "Oath Keeper", "trigger": "on_ally_low_health", "trigger_value": 35, "form": "trigger_ally",
+     "cooldown": 15, "effects": [{"type": "stat", "stat": "damage_taken", "percent": -20, "seconds": 6}]}
+  ],
+  "boss": {
+    "health_scale": 350, "poise": 140, "weak_points": ["back", "charge_wall"],
+    "phases": [
+      {"at": 100},
+      {"at": 60, "states": ["bulwark"],
+       "transition": {"seconds": 1.2, "line": "Then I will stand against you properly.", "face": "determined"}},
+      {"at": 25, "transition": {"seconds": 1.4, "line": "To me, Rime Vow! Hold the line!"}}
+    ],
+    "reactions": [{"when": "target_behind", "move": "turning_sweep", "chance": 70, "cooldown": 8},
+                  {"when": "target_drawing_bow", "move": "frost_lance_charge", "chance": 50, "cooldown": 10},
+                  {"when": {"condition": "ally_hero_health_below", "value": 50}, "move": "rime_wall", "chance": 80,
+                   "cooldown": 12}],
+    "enrage": {"triggers": ["heart_attacked"]},
+    "intro": {"line": "Lower your weapon and I will lower mine. I keep my word."}
+  },
+  "personality": {
+    "temperament": "righteous",
+    "traits": {"aggression": 50, "honour": 90, "ambition": 50, "caution": 60, "greed": 15, "sociability": 60,
+               "loyalty": 85, "volatility": 25},
+    "likes": ["shield", "iron_ingot", "white_tulip"], "dislikes": ["wither_rose"],
+    "quirks": ["polishes her shield every night, whether it needs it or not"]
+  },
+  "leader": {
+    "title": "Knight-Commander of the Rime Vow",
+    "faction_names": ["Order of the Rime Vow", "The Frostmere Guard"],
+    "short_name": "Rime Vow",
+    "motto": "No one falls while we stand.",
+    "colors": {"primary": "#5E9BD1", "secondary": "#EEF3F7", "accent": "#CFAF5A"},
+    "banner": {"base": "light_blue", "patterns": [{"pattern": "cross", "color": "white"},
+                                                  {"pattern": "border", "color": "yellow"}]},
+    "base_style": "frost_hall", "culture": "west", "economy_focus": ["defence", "people"]
+  },
+  "talents": [{"id": "rally", "realm": true}, "warden_of_walls"],
+  "voice": {"blip": "chime", "pitch": 1.15, "rate": 3},
+  "lines": {
+    "founding": ["By my oath, this is the Order of the Rime Vow. No one here will be left behind."],
+    "greeting": ["{player}. Are you well? Good. Stay that way."],
+    "kill": ["It is done."],
+    "last_stand": ["My word is given. Not one step back."],
+    "fallen": ["Hold the line... hold..."]
+  },
+  "mobility": {"primary": {"trait": "charger", "tier": 3}, "secondary": {"trait": "snowstride", "tier": 1}}
+}

@@ -104,7 +104,7 @@ class HeroReaderTest {
 
     @Test
     void everyRoleGivesItsPreset() {
-        for (Role r : Role.values()) {
+        for (Role r : HeroDef.Word.inFormat(Role.class, 1)) { // format 1's roles (format 2 adds two)
             HeroDef d = def(MIN.replace("striker", r.id()) + "}");
             RolePreset p = HeroCatalogue.ROLES.get(r);
             assertEquals(p.health(), d.stats().health(), r.id());
@@ -148,8 +148,9 @@ class HeroReaderTest {
 
     @Test
     void theFormatMustBeOneThisBuildReads() {
-        assertEquals("this file is for a newer Faction Clash (format 2; this build reads format 1)",
-                one(read(hero("").replace("\"format\": 1", "\"format\": 2")), Problems.Code.FORMAT_NEWER).message());
+        // format 2 (HEROES_V2 12) is read since F2; a newer one is refused
+        assertEquals("this file is for a newer Faction Clash (format 3; this build reads formats 1 and 2)",
+                one(read(hero("").replace("\"format\": 1", "\"format\": 3")), Problems.Code.FORMAT_NEWER).message());
         for (String bad : List.of("0", "-1", "1.5", "\"one\"", "true")) {
             Loaded l = read(hero("").replace("\"format\": 1", "\"format\": " + bad));
             assertTrue(l.heroes().isEmpty(), bad);
@@ -463,7 +464,7 @@ class HeroReaderTest {
         String all = "\"range\": 6, \"radius\": 2, \"count\": 4, \"angle\": 60, \"width\": 2, \"hits\": 2,"
                 + " \"hit_interval\": 0.5, \"projectile\": \"snowball\", \"zone_at\": \"target\", \"delay\": 1,"
                 + " \"duration\": 2, \"interval\": 1, ";
-        for (Form f : Form.values()) {
+        for (Form f : HeroDef.Word.inFormat(Form.class, 1)) { // format 1's forms (format 2 adds eight)
             String fx = f.friendly() ? "{\"type\": \"cleanse\"}" : "{\"type\": \"damage\", \"amount\": 2}";
             Ability a = def(hero(skill("\"form\": \"" + f.id() + "\", \"effects\": [" + fx + "]"))).skills().get(0);
             FormSpec fs = HeroCatalogue.FORMS.get(f);
@@ -572,7 +573,7 @@ class HeroReaderTest {
 
     @Test
     void triggersAndFormsPairAsTheTableSays() {
-        for (Trigger t : Trigger.values()) {
+        for (Trigger t : HeroDef.Word.inFormat(Trigger.class, 1)) { // format 1's triggers
             HeroCatalogue.TriggerSpec ts = HeroCatalogue.TRIGGERS.get(t);
             for (PassiveForm f : PassiveForm.values()) {
                 String fx = t == Trigger.ALWAYS ? "{\"type\": \"stat\", \"stat\": \"armor\", \"percent\": 10}"

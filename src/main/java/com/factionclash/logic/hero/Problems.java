@@ -55,7 +55,21 @@ public final class Problems {
         SLOT_CAP, SHARED_ON_HIT, COOLDOWN_FLOOR, PASSIVE_FLOOR, EVERY_FLOOR, THROWN_RATE, POTION_LEVEL,
         POTION_SECONDS, STAT_CAP, SUMMON_COUNT,
         // across files (v1 26.1 step 6)
-        DUPLICATE_ID, STARTER_CONFLICT, MARK_UNUSED, TOO_MANY_HEROES;
+        DUPLICATE_ID, STARTER_CONFLICT, MARK_UNUSED, TOO_MANY_HEROES,
+        // format 2 (HEROES_V2 12 and 14.1): fields and references
+        V1_FIELD, SOURCE_ONLY, UNLOCK_IGNORED, BUILTIN_MISSING, COURT_DUTY, MOVE_ID, NAME_TAKEN, MOVE_ID_RESERVED,
+        UNKNOWN_REFERENCE, ITEM_ID, SOUND_ID,
+        // moves: classes, frames, decals, strings
+        CLASS_RAISED, FRAMES_RAISED, FRAMES_GENERATED, TELEGRAPH_NONE, GRAB_RULE, ULTIMATE_LINE, FOLLOWUP_SELF,
+        FOLLOWUP_LOOP, FOLLOWUP_STRING, FOLLOWUP_ULTIMATE, NEVER_PICKED,
+        // the boss block
+        PHASE_ORDER, PHASE_REPEATED, PHASE_NO_CHANGE, NO_WEAKNESS, NO_REACH, CHANNEL_NONE, REBIRTH_RARITY,
+        POISE_RANGE, REMOVED_FIELD,
+        // the end of a fight (no yield) and the personality
+        YIELD_WORD, YIELD_EVENT, KIND_FLIP, STANDS_IGNORED, LATE_LAST_PHASE, ESCAPE_SELF, TRAIT_DRIFT,
+        // leader, talents, relationships, mobility
+        LEADER_NAME_TAKEN, BANNER_MOJANG, LEADER_SHORT, REALM_ONE, RELATION_UNKNOWN, RELATION_SELF,
+        SIGNATURE_SHARED, MOBILITY_UNKNOWN, MOBILITY_ADJUSTED, MOBILITY_CARRIER, FLYERS_SHARE;
 
         public String id() {
             return name().toLowerCase(Locale.ROOT);
@@ -296,6 +310,12 @@ public final class Problems {
             s = s.substring(0, s.length() - 1);
         }
         return s;
+    }
+
+    /** "a heavy", "an area", "an ultimate": a word with its article. */
+    public static String article(String word) {
+        return ("aeiou".indexOf(word.isEmpty() ? 'x' : Character.toLowerCase(word.charAt(0))) >= 0 ? "an " : "a ")
+                + word;
     }
 
     /** "1 second", "2.5 seconds". */

@@ -1,0 +1,93 @@
+{
+  "_comment": "Test data for SliceKitsTest (HEROES_V2 15.2 F2): SLICE_PLAN 3.2's kit as a format-2 server definition. Not the authored hero (C2 writes that from herosrc/).",
+  "format": 2,
+  "id": "yugen_kagaribi",
+  "name": "Yugen Kagaribi",
+  "title": "the Lantern Fox",
+  "description": "A soft-spoken fox merchant-lord whose foxfire burns blue and cold.",
+  "gender": "male",
+  "archetype": "fox",
+  "rarity": "epic",
+  "element": "arcane",
+  "behaviour": {"combat_role": "marksman", "duel_style": "zoner", "duty": "trader"},
+  "basic_attack": {"style": "thrown", "projectile": "blaze_powder", "amount": 4, "interval": 1.5},
+  "moves": [
+    {"id": "foxfire_volley", "name": "Foxfire Volley", "form": "volley", "class": "light", "band": ["mid", "far"],
+     "count": 5, "range": 16, "cooldown": 13, "frames": {"windup": 0.5, "active": 0.3, "recovery": 0.4},
+     "effects": [{"type": "damage", "amount": 4}]},
+    {"id": "lantern_ring", "name": "Lantern Ring", "form": "zone", "class": "area", "band": ["close"],
+     "zone_at": "self", "radius": 4, "delay": 1.0, "duration": 3, "interval": 1, "cooldown": 20,
+     "frames": {"windup": 1.0, "active": 3.0, "recovery": 0.8}, "prefer_when": "target_close",
+     "effects": [{"type": "damage", "amount": 3}, {"type": "effect", "id": "slowness", "level": 1, "seconds": 2}]},
+    {"id": "fan_cut", "name": "Fan Cut", "form": "combo", "class": "light", "band": ["close"], "cooldown": 6,
+     "frames": {"windup": 0.4, "active": 0.3, "recovery": 0.3},
+     "strikes": [{"effects": [{"type": "damage", "amount": {"attack_percent": 60}}]},
+                 {"effects": [{"type": "damage", "amount": {"attack_percent": 60}}, {"type": "knockback", "strength": 2}]}],
+     "followups": [{"move": "vanish", "chance": 80}]},
+    {"id": "vanish", "name": "Vanish", "form": "self", "class": "light", "band": ["close"], "cooldown": 8,
+     "frames": {"windup": 0.4, "active": 0.1, "recovery": 0.3},
+     "effects": [{"type": "effect", "id": "invisibility", "seconds": 2}, {"type": "move_self", "direction": "back",
+                                                                         "distance": 6}],
+     "followups": [{"move": "foxfire_volley", "chance": 70}]},
+    {"id": "mirage", "name": "Mirage", "form": "self", "class": "heavy", "band": ["any"], "phases": [2, 3],
+     "cooldown": 16, "frames": {"windup": 0.8, "active": 0.2, "recovery": 0.8},
+     "effects": [{"type": "spawn_add", "add": "decoy", "count": 2}]},
+    {"id": "foxfire_rain", "name": "Foxfire Rain", "form": "rain", "class": "area", "band": ["mid", "far"],
+     "phases": [3], "count": 8, "radius": 5, "duration": 2, "delay": 0.9, "cooldown": 14,
+     "frames": {"windup": 1.0, "active": 2.0, "recovery": 0.8},
+     "effects": [{"type": "damage", "amount": 5}]}
+  ],
+  "ultimate": {"id": "ninefold_lantern", "name": "Ninefold Lantern", "form": "barrage", "class": "ultimate",
+               "count": 9, "interval": 0.2, "range": 16, "projectile": "blaze_powder",
+               "frames": {"windup": 1.6, "active": 1.8, "recovery": 1.5},
+               "effects": [{"type": "damage", "amount": 3}, {"type": "mark", "mark": "bewitched", "max_stacks": 3}],
+               "line": "Nine lanterns, one bill. Shall we settle it?"},
+  "passives": [
+    {"name": "Contract", "trigger": "on_hurt", "chance": 25, "form": "trigger_enemy", "cooldown": 4,
+     "effects": [{"type": "mark", "mark": "bewitched", "max_stacks": 3}]},
+    {"name": "Bewitched", "trigger": "on_mark_full", "mark": "bewitched", "form": "trigger_enemy", "cooldown": 12,
+     "effects": [{"type": "stun", "seconds": 1}]}
+  ],
+  "boss": {
+    "health_scale": 350, "poise": 70,
+    "weak_points": [{"point": "iron", "hint": "Iron... how crude."}, "recovery"],
+    "phases": [
+      {"at": 100},
+      {"at": 60, "transition": {"seconds": 1.2, "line": "Which of me is lying? All of us, perhaps."}},
+      {"at": 25, "transition": {"seconds": 1.2, "line": "Enough games. Let the lanterns speak."}}
+    ],
+    "reactions": [
+      {"when": "target_close", "move": "vanish", "chance": 70, "cooldown": 8},
+      {"when": "target_drawing_bow", "move": "foxfire_volley", "chance": 50, "cooldown": 8},
+      {"when": "target_behind", "move": "fan_cut", "chance": 60, "cooldown": 8}
+    ],
+    "intro": {"line": "A customer? How delightful. The price today is your patience."}
+  },
+  "personality": {
+    "temperament": "schemer",
+    "traits": {"aggression": 45, "honour": 20, "ambition": 85, "caution": 70, "greed": 70, "sociability": 60,
+               "loyalty": 30, "volatility": 25},
+    "likes": ["gold_ingot", "emerald", "lantern"], "dislikes": ["iron_ingot"],
+    "quirks": ["smiles most when he is lying, and he is always smiling"]
+  },
+  "leader": {
+    "title": "Master of the Veiled Lantern",
+    "faction_names": ["Veiled Lantern Exchange", "The Blue Lantern Company"],
+    "short_name": "Veiled Lantern",
+    "motto": "Every promise has a price.",
+    "colors": {"primary": "#6B2148", "secondary": "#D8DCE6", "accent": "#5AA9FF"},
+    "banner": {"base": "purple", "patterns": [{"pattern": "circle", "color": "light_blue"},
+                                              {"pattern": "triangles_top", "color": "white"}]},
+    "base_style": "cherry_court", "culture": "east", "economy_focus": ["trade", "lore"]
+  },
+  "talents": [{"id": "merchant_prince", "realm": true}, "spymaster"],
+  "voice": {"blip": "flute", "pitch": 1.0, "rate": 3},
+  "lines": {
+    "founding": ["Sign here, and here. Congratulations: you all work for the Veiled Lantern now."],
+    "greeting": ["Ah, {player}. Buying or selling? With me it is always both."],
+    "kill": ["Paid in full."],
+    "escape": ["Mm. A poor bargain. Let us call the account... deferred."],
+    "fallen": ["So the bill comes due after all. How novel."]
+  },
+  "mobility": {"primary": {"trait": "runner", "tier": 3}, "secondary": {"trait": "leaper", "tier": 1}}
+}

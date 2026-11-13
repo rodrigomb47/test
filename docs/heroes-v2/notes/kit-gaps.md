@@ -23,3 +23,52 @@ leader revival in SLICE_PLAN was fixed to 10 minutes when this list was made.)
 13. Ambrose: the phase 2 flight with broom_dive is only a proposal in MOBILITY_AND_WORK 15.8 and is not in SLICE_PLAN 3.8. Three puddles exceed the v1 limit of 2 zones. His broom bristles are a phase 2 part, yet he flies the staff-broom in every phase.
 14. Ilsabet: her shield blocking is not specified. Her phase 3 line names the Rime Vow even when she serves another faction (run A). Her base style is frost_hall in SLICE_PLAN but stone_hold in ROSTER_PLAN.
 15. Idle animations differ between the look and the own-animation list for Natsuho, Yugen, Benika and Hinae; the sheets flag each one. ROSTER_PLAN row 22 puts Benika's grab in phase 3, where SLICE_PLAN has it in phase 2.
+
+## F2 decisions on the format (2026-11-13)
+
+F2 (the format-2 validator, HEROES_V2.md 15.2 "F2 as built") decided the points that are rules of the format, in the
+spirit of the design; C1-C4 still decide the content points (numbers, lines, looks) and update the kit sheets.
+
+- **1, followups**: a move follows itself only when it is `repeatable`; a self-followup's `max` (1-3) caps its
+  repeats; the string limit of 4 moves counts every move played, repeats included (zoomies runs at most 4 times in
+  a row, broom_hops with `max: 2` hops 3 times, shadow_dash's string of 4 is legal). The validator refuses loops
+  through other moves and checks the longest string through other moves. Every move of a string plays its own
+  wind-up, sound and ground mark; only the recovery between two of them is cut (HEROES_V2 6.3).
+- **2, values not set**: a move's weight defaults to 5, a reaction's chance to 50% and its cooldown to 10 s, a phase
+  transition to 1 s, energy gain to 10 and charge rate to 100%; the gap between ultimates is clamp(weight, 20, 60).
+  An ultimate without a line loads with a NOTE. Cooldowns stay the authors'; under the floor they are raised
+  (ADJUSTED).
+- **4, ground marks**: from the form when a move names none (`HeroCatalogue.decalOf`): a disc for self, melee, combo,
+  chain, nova and zone moves, a strip for lines, dashes, charges, shots, bolts, barrages and grabs, a fan for cones,
+  volleys and sweeps, a ring for waves and counter stances, a landing disc for leaps, one disc per impact for rain.
+  A light move shows only its animation; `none` on a heavier or an unblockable move is read as the form's mark.
+- **5, ambiguous numbers**: a zone's delay runs inside its wind-up (the wind-up is raised to the delay, the delay
+  becomes 0); each combo strike carries its own effects, so "60%" is per strike; "+60% from behind" is a second
+  damage effect with a `target_behind` condition (added, not multiplied). Which strike bleeds and what Benika's
+  "waves of 8" are stay content choices (the test fixtures put the bleed on the third strike and read 8 as the
+  waves' reach).
+- **7, reactions in the wrong phase**: a reaction whose move is not in the current phase waits for a phase that has
+  it, with no message (Benika's and Kagenori's answers to a shield start in phase 2).
+- **8, weak points**: `channel` is a move field (`true` is 15%, a number 5-30, or `{ interrupt }`); a `channel` weak
+  point with no channelled move is a NOTE. Rate limits, hints and the broken-channel outcome stay content.
+- **11, rounding**: a `retreat_below` made from the personality is rounded half up to a whole percent (22.5 is 23,
+  44.5 is 45), and `flee_at` rounds a half up too.
+- **12, enrage**: 180 s by default, 240 s as a leader, for every hero.
+- **13, Ambrose**: a flyer's aerial phases come from `mobility.aerial` (his: phase 2, MOBILITY_AND_WORK 8.4); the
+  `dive` form itself is F5/A12's. The test fixture makes broom_hops' puddle the landing's slowness, so he has no
+  third zone.
+
+### F2: numbers the test fixtures wrote at a cap or a floor
+
+The eight slice kits are written as format-2 test fixtures (`src/test/resources/heroes/slice/`, test data, not the
+authored heroes). They must validate clean, so where SLICE_PLAN section 3's number is over a cap the fixture writes
+the cap, and `SliceKitsTest.theNumbersTheFixturesLoweredAreReallyOverTheirCaps` shows each one is adjusted when put
+back:
+
+- Natsuho's `nine_lives` shield: 4, not 8 (a passive's shield cap is 4).
+- Natsuho's `frenzy` "every hit bleeds": 0.5 per second for 2 s, not her basic bleed's 1 per second for 3 s (a
+  state's on-hit effects share the on-hit cap with the basic attack's, and her basic bleed uses most of it).
+- Kagenori's `three_cut` cooldown: 10 s, not HEROES_V2 12.18's 6 (its cooldown floor at its weight).
+
+Cooldowns SLICE_PLAN leaves open were set at or above their floors (for example Benika's `overhead_slam` 11 s,
+Ilsabet's `turning_sweep` 14 s); C1-C4 choose the real ones.

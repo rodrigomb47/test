@@ -116,3 +116,27 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.compilerArgs << '-Xlint:deprecation'
 }
+
+// HEROES_V2 13.7 / 14.1: the kit rules over the built-in hero definitions (HeroCheckMain), with no game running.
+// ./gradlew checkHeroes [-PheroDir=<folder>[,<folder>...]] [-PheroStrict]; part of `check`.
+tasks.register('checkHeroes', JavaExec) {
+    group = 'verification'
+    description = 'Validates the hero definitions (format 1 and 2) under data/factionclash/heroes.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.output + sourceSets.main.compileClasspath
+    mainClass = 'com.factionclash.logic.hero.HeroCheckMain'
+    var dirs = project.findProperty('heroDir')?.toString()?.split(',')?.toList() ?: ['src/main/resources/data/factionclash/heroes']
+    args((project.hasProperty('heroStrict') ? ['--strict'] : []) + dirs)
+    inputs.files(dirs.collect { file(it) }).optional().skipWhenEmpty(false)
+}
+tasks.named('check') { dependsOn 'checkHeroes' }
+
+// Rewrites docs/heroes-v2/hero2.schema.json from HeroCatalogue (HeroSchemaGenTest holds the file to the generator).
+tasks.register('heroSchema', JavaExec) {
+    group = 'documentation'
+    description = 'Writes the JSON Schema of hero format 2.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.output + sourceSets.main.compileClasspath
+    mainClass = 'com.factionclash.logic.hero.HeroSchemaGen'
+    args 'docs/heroes-v2/hero2.schema.json'
+}
