@@ -11,7 +11,7 @@ import java.util.List;
  * DATA_ACTION (int)  bits 0-7 action code; 8-11 sequence (+1 per new action, so a repeat restarts);
  *                    12-17 speed (0.5 + n x 1.5 / 63); 18-23 variant; 24-31 reserved
  * DATA_STATE  (byte) bits 0-1 phase - 1; 2 enraged; 3 super armour; 4 weapon drawn; 5 talking;
- *                    6 in a wind-up or channel (no blinking); 7 yielding
+ *                    6 in a wind-up or channel (no blinking); 7 escaping (HEROES_V2 6.13: there is no yield)
  * DATA_MOOD   (byte) bits 0-3 mood (12 values); 4-5 intensity; 6 blush; 7 eyes glow
  * DATA_LOCO   (byte) bits 0-3 locomotion mode; 4-5 one-shot; 6 one-shot sequence toggle; 7 tired
  * </pre>
@@ -73,7 +73,8 @@ public final class HeroActions {
     public static final int STATE_TALKING = 1 << 5;
     /** In a wind-up or a channel: the face does not blink. */
     public static final int STATE_WINDUP = 1 << 6;
-    public static final int STATE_YIELDING = 1 << 7;
+    /** Escaping a lost fight (HEROES_V2 6.13, 15.6: the same bit the first draft's yield used; nobody yields). */
+    public static final int STATE_ESCAPING = 1 << 7;
 
     /** The boss phase, 1 to 4 (bits 0-1 hold phase - 1). */
     public static int phase(int state) {

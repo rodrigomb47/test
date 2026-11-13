@@ -2702,7 +2702,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 |---|---|---|---|---|
 | F1 | v1 format core in Java: `HeroJson`, `HeroCatalogue`, `HeroDef`, `HeroReader`, `Problems`, `HeroBalance`, `HeroRules` (v1 §32 phase 1, minus skins) | - | L | v1 unit tests of §31.1 green. Done 2026-11-13: the seven classes in `logic/hero/` with 473 unit tests in all (237 new: one case per message code, 117 of them; 6,000 seeded damaged files that must load within every range, cap and floor or be refused; 38 cases cross-checked against `tools/herotool/herotool.py`); the three v1 examples load with nothing to report; no game code reads the classes yet ("F1 as built" below) |
 | F2 | Format 2: catalogue additions (12), sense rules (14.1), `checkHeroes` task, schema generation | F1 | L | `HeroReaderV2Test`, `HeroBalanceV2Test`. Done 2026-11-13: format 2 read and balanced in `logic/hero/` (`HeroReader2`, `EscapeRules`, `HeroSchemaGen`, `HeroCheckMain` new; the F1 classes extended), 613 unit tests in all (140 new: 50 new message codes with one case each, 2,000 seeded damaged slice kits), the eight slice kits of SLICE_PLAN section 3 as format-2 test fixtures that load with nothing to report, `./gradlew checkHeroes` in `check`, the generated `docs/heroes-v2/hero2.schema.json` ("F2 as built" below) |
-| F3 | `BossRules`, `MoveSelector`, `HeroActions`, decal geometry helpers | F1 | M | their unit tests |
+| F3 | `BossRules`, `MoveSelector`, `HeroActions`, decal geometry helpers | F1 | M | their unit tests. Done 2026-11-13: `BossRules`, `MoveSelector`, `Sense`, `Conditions`, `Decals` new in `logic/hero/`, the runtime half of `EscapeRules` (escape or last stand in a fight, a lost raid, a lost base, the window, cornered, the refuge), the rewards in `HeroRules`, `STATE_ESCAPING`; 674 unit tests in all (61 new, `referenceDuel` matching SLICE_PLAN criterion 15 to the second); no game code reads them yet ("F3 as built" below) |
 | F4 | `Personality`, `Temperaments`, `LeaderBiases`, `LeaderDraft`, `FactionNameGen`, `Palette`, `BannerDesign`, `BaseStyles`, `Talents` | - | M | their unit tests (neutral equals today) |
 | G1 | herogen core: rig v1, 6 bases, UV template, packer, palette ramps, painter, face painter, geo writer, `visual.json`, determinism | - | L | Python tests; a test rig with face frames builds byte-identically twice |
 | G1s | Style pass after the owner's reference: rig v2 (three forms x two families x three builds, 10 px head, 20x20 face), larger eye frames, the layered hair kit, volumetric ears and tails, outfit volume parts, six original style fixtures, the style preview set | G1 | L | done 2026-11-12: all parts on all six bases pass the checks; previews in `docs/heroes-v2/previews/style/` |
@@ -3102,6 +3102,64 @@ F2 as built (2026-11-13), where it goes beyond or differs from sections 12 and 1
   hero's `title`, else its name alone: a presentation choice for A3); the schema does not encode each form's own
   fields (the reader's NOTE); war power is still F1's hook; the guide writer (`HeroDocs`) is not written.
 
+F3 as built (2026-11-13), where it goes beyond or differs from section 6, `MOBILITY_AND_WORK.md` 2.3-2.4, 5.1 and 7.7
+and the row above (all pure, none read by the game yet; A3-A6 and A12 wire them in):
+- **`BossRules`**: boss health (`healthScale(authored, leading, boss.healthScale)`, `maxHealth(baseMax, scale,
+  roleFactor)`, the modifier's value, the share kept when the maximum changes), with no attacker or player count; the
+  per-hit cap for any attacker with its excess to poise (`capHit`, `land`: damage with no attacker is neither capped
+  nor poise); the hurt cooldown per attacker (`hurtCooldown`, and `HurtLedger` keyed by the attacking entity with one
+  shared key for no attacker, dropping records after 10 ticks; `invulnerableTime` and `lastHurt` for 15.6's
+  `HeroEntity.hurt`); poise by weapon kind, the parry (shield up 5-11 ticks, a heavy move or heavier), `Poise` with
+  decay, the 2.5 s stagger, the maximum x1.2 per stagger and x1.25 enraged; the damage-taken windows (stagger +25,
+  recovery +15, from behind in the recovery +15 more, downed +20, iron or gold +15 on that weakness, the `back` and
+  `recovery` weak points doubling theirs, super armour halving the sum) and the other weak points' tests; the fight
+  clock (`engaged`, `Fight`: 15 s memory, 32 blocks, the end 10 s after the last enemy, healing 30 s after at 1% of
+  the base maximum a second); enrage (180 s, 240 s leading, 120-300 authored, a hard trigger at once) and the +25%
+  ceiling on the boss layer's bonuses (maluses count on top); phases forward only, the re-arm 10% above, the
+  transition's 0.8-2.0 s, the rebirth and its pip; the intro once a day against people; hazard-aware knockback; the
+  receiver's stun immunity (`stunImmuneUntil`: at most 2 s stopped in any 6 s, however many heroes try); `AirPoise`
+  (`MOBILITY_AND_WORK.md` 2.4); the fight's ceiling from the highest engaged enemy and `ReachClock` (4 s out of
+  reach, held by a telegraphed wind-up, off while escaping).
+- **`MoveSelector`** with **`Sense`** (what the hero senses at one check, 15.6's `TargetState` inside it, with no
+  field that says who anyone is) and **`Conditions`** (every condition of both formats and v1's `use_when`): the gap
+  by phase and enrage, the opening gap (a full phase-1 gap from the fight's start or the intro's end, never
+  shortened: nothing lands before 1.9 s, 2.3 s heavy, 3.0 s ultimate, tested over 200 seeds), v1's 1 s between two
+  starts, the score of 6.3, charges and cooldowns with v1's refunds (a cancelled start costs nothing, an interrupted
+  wind-up gets half its cooldown back), the ultimates (full energy and their least gap), followup strings, reactions,
+  the arena and footing filters (water, a hazard on the dash path, a low ceiling, airborne, clinging), the
+  chuunibyou's opener, and `frames(move, speed)` that never shortens a wind-up or a recovery below its class
+  minimum. No token check anywhere; nothing is picked while the hero is stunned, silenced or escaping.
+- **Decisions** (recorded in `notes/kit-gaps.md`, "F3 decisions"): a reaction rolls once per occurrence of its
+  condition (again only when its cooldown has passed while the condition holds), and its answer waits for the gap; a
+  followup needs its own charge and reach, not the gap, and a move repeating itself is the same use (one charge for
+  zoomies' four bounds); postures by form (self, ally, allies and counter defensive; zone, wave and rain zoning; the
+  rest offensive); the `phase` condition is the current phase exactly; the back bonus is part of the punish window
+  (kit-gaps 8); super armour holds poise just short of its maximum so the next hit staggers; the ground decals of
+  every form (kit-gaps 4).
+- **`Decals`**: flat boxes for block displays: a disc is two squares of side 2r cos 22.5 degrees, so the star they
+  draw never falls inside its circle (its points reach about 31% beyond); strips along the aim; fans of 3-5 ribs (one
+  per 30 degrees); rings of 6-12 strips tangent outside the radius; the display translation for a piece spawned at its
+  centre and the scale-0 translation that keeps its grow point fixed (strips grow from the hero, discs from their
+  centre); the colours (red ultimate, purple unblockable, else the accent's dye); `growTicks`; the budget of 12 pieces
+  (a disc falls back to one square of side 2r, a fan or ring thins, the rest waits).
+- **`EscapeRules`, the runtime half** (6.13, `MOBILITY_AND_WORK.md` 7.7): `lowHealth` (strictly under `flee_at`:
+  escape, or the last-stand beat once), `lostRaid`, `lostBase` (the home stand ends with the heart), `heldBy` (home
+  while the heart stands, beside the fighting leader), `mayEscape` (the window of `heroes.escapeCooldownSeconds`,
+  `heroes.escape`; an unspent `rebirth` holds only the health trigger), `cornered` (3 s), `escapeOver` (the refuge's
+  walls or 10 s clear of pursuers within 48), `mayReturn` (`heroes.escapeAwaySeconds` and above half), `refuge`
+  (never the base it flees: home, else the nearest standing base, else the wild) and `heroPursues` (honour 60 lets it
+  go). `EscapeRulesTest` walks the sequences of 7.7 ("Why it cannot loop").
+- **Rewards** (`HeroRules`): `rewardXp` (7 a level, at most 100), `winningSide` (the side of the last person who hurt it
+  in its last 15 s; a member player and its faction's NPCs are one side, a factionless player a side of one) and
+  `crestKey` (hero, side, in-game day).
+- **`HeroActions`**: bit 7 of `DATA_STATE` is `STATE_ESCAPING` (15.6).
+- **Tests** (61 new, 674 unit tests in all): `BossRulesTest` (23, with `referenceDuel`, which gives SLICE_PLAN
+  criterion 15's table to the second, and `equalForPlayerAndNpc`, which walks every method, parameter, field and record
+  component of the new classes for a name that singles out players, NPCs, tokens or a yield), `MoveSelectorTest` (18),
+  `ConditionsTest` (4), `DecalsTest` (7), `EscapeRulesTest` (+8), `HeroRulesTest` (+1).
+- **Left open**: the `dive` form and the air budget (F5); decals' block states and the access transformer (A3);
+  everything that reads these classes in the game.
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3186,6 +3244,8 @@ both (14.5).
 
 **`BossRules` (F3)**
 
+- Done in F3 (15.2 "F3 as built"): every line below, with the fight-reach clock, air poise and the rewards.
+
 - `maxHealth(baseMax, healthScale, roleFactor)`: no player count, no attacker count.
 - `capHit(amount, maxHealth, share)` returns what lands and what goes to poise, for a hit with any attacking entity;
   damage with no attacker is not passed through it.
@@ -3201,6 +3261,8 @@ both (14.5).
 
 **`MoveSelector` (F3)**
 
+- Done in F3 (15.2 "F3 as built"): every line below; the conditions read `Sense`, which holds the `TargetState`.
+
 - One loop in every fight: no field-mode branch (the phase gap is never replaced by the global cooldown). The gap
   timer starts when the fight starts (or when the intro ends), so the first pick, reaction answers included, waits a
   full phase-1 gap (6.3).
@@ -3211,6 +3273,9 @@ both (14.5).
 - It is not asked for a move while the hero escapes; a cornered hero asks again.
 
 **`EscapeRules` (F5, with `MOBILITY_AND_WORK.md` 18.1)**
+
+- Done in F3 (15.2 "F3 as built"): `kind`, `standsFor` and `fleeAt` (F2) and the runtime decision below, as
+  `lowHealth`, `lostRaid` and `lostBase`; cornered, the refuge and the stay away beside them.
 
 - `kind(traits, temperament, authored, retreatBelow)`: escape or last stand (nerve 65, `sleepy`, the override, v1
   `retreat_below` 0); `standsFor(loyalty, authored)`; `fleeAt(retreatBelow, lastPhaseAt)`.
@@ -3241,8 +3306,9 @@ both (14.5).
 - `HeroStatus` (A4): a stun holds a player (the speed and jump modifier, the cancelled attack, use, place and break
   events), a taunt halves every receiver's damage to others, blindness and darkness cut an NPC's ranges, a
   `guard_break` keeps an NPC's shield down (6.15).
-- `HeroActions` (as built in A1a): bit 7 of `DATA_STATE` is renamed from `STATE_YIELDING` to `STATE_ESCAPING` (same
-  bit, `HeroActionsTest` updated); codes 21 and 22 keep their numbers and clip names until the art follow-up below
+- `HeroActions` (as built in A1a; the rename is done in F3): bit 7 of `DATA_STATE` is renamed from `STATE_YIELDING` to
+  `STATE_ESCAPING` (same bit, `HeroActionsTest` updated); codes 21 and 22 keep their numbers and clip names until the
+  art follow-up below
   is decided. `FaceRules`' first rule ("dead or defeated: eyes closed") reads only "dead"; an escaping hero's face is
   its mood byte.
 - `FactionDirector` (L3): `soldierPower` averages ordinary soldiers only; the party's power adds the heroes that go;

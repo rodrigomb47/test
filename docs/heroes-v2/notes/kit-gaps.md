@@ -72,3 +72,41 @@ back:
 
 Cooldowns SLICE_PLAN leaves open were set at or above their floors (for example Benika's `overhead_slam` 11 s,
 Ilsabet's `turning_sweep` 14 s); C1-C4 choose the real ones.
+
+## F3 decisions on the fight rules (2026-11-13)
+
+F3 (the boss rules, the move selector and the decal geometry, HEROES_V2.md 15.2 "F3 as built") decided the points of
+this list that are rules of a fight, in the spirit of HEROES_V2 6; C1-C4 still choose the content.
+
+- **4, ground marks: where each shape lies and how large it is** (`logic/hero/Decals`). A mark covers the ground the
+  move can hit, never less, so whoever stands outside it is safe:
+  - a disc is two squares, the second turned 45 degrees, of side 2r cos 22.5 degrees: the star they draw never falls
+    inside the circle of radius r (its points reach about 31% beyond it);
+  - heavy self moves (`cat_reflex`, `mirage`, `seven_talismans`, `shadow_step`, `shadow_clones`) and self-state
+    ultimates (`midnight_frenzy`, `nightfall`, in red): a disc on the hero's own ground, its radius or at least 1.5;
+  - heavy melee (`guard_splitter`) and combo moves: a disc in front of the hero out to its reach (3.5) plus its splash;
+  - chains (`chain_draw`): a disc around the target of the chain's jump radius (where the lightning can spread);
+  - counter stances (`iai_stance`): a ring at the reach it answers (4 blocks) around the hero;
+  - sweeps (`turning_sweep`, `purifying_dance`): a fan of ribs from the hero across the arc, one per 30 degrees,
+    3-5, its range long; cones the same across their angle; a volley's fan its arrows' spread (10 degrees apart);
+  - waves: a ring of 6-12 strips tangent outside the furthest front; leaps: a disc of their radius where they land;
+    rain: one disc of 1.5 blocks per impact (6.5's "1-2 blocks", PROPOSED);
+  - strips from the hero along the aim: a line its width, a dash, charge or grab one body wide, a shot, bolt or
+    barrage a narrow track;
+  - strips grow from the hero outward, discs and rings from their centre; at most 12 pieces per hero (a disc falls
+    back to one square of side 2r, a fan or a ring thins, the rest waits).
+- **8, the back bonus outside recoveries**: the "+15% more from behind" is part of the punish window (6.9: "during
+  recovery ... and +15% more from behind"), so a hit from behind outside a recovery lands as one from the front; a
+  `back` weak point doubles it inside the window (Ilsabet's Bulwark-doubled back is a content number for C4).
+- **Reactions**: each occurrence of a reaction's condition gets one roll of its chance (a condition held on gets a
+  new roll each time the reaction's cooldown passes), so a 50% reaction answers about half the time instead of almost
+  always over the six checks of a gap; the answer replaces the next pick and waits for the gap (never before the
+  opening gap); its cooldown starts when the answer starts.
+- **Followups**: a followup needs its own charge and reach but not the gap or the 1 s between starts; a move
+  repeating itself in a string is the same use (zoomies' four bounds and broom_hops' three hops cost one charge).
+- **Postures** (6.3's "offensive" and "zoning and defensive" moves): self, ally, allies and counter moves are
+  defensive; zones, waves and rain zoning; every other form offensive.
+- **The `phase` condition** (6.6) is the current phase exactly ("phase 2" is true in phase 2 only).
+- **Poise under super armour**: during a transition, an ultimate's wind-up or a `super_armor` move the bar fills to
+  just short of its maximum, so the first hit after the protection staggers; during a stagger poise damage is
+  ignored (no stun-lock), and each stagger raises the maximum by 20% for the rest of the fight.

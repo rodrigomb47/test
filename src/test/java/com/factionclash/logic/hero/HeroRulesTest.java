@@ -297,6 +297,42 @@ class HeroRulesTest {
         assertEquals(1000, HeroRules.ticksToNightfall(-12000), "negative day times wrap");
     }
 
+    // ------------------------------------------------------------------ rewards at a death (HEROES_V2 6.13)
+
+    @Test
+    void rewardsGoToTheSideOfTheLastPersonWhoHurtIt() {
+        assertEquals(7, HeroRules.rewardXp(1));
+        assertEquals(70, HeroRules.rewardXp(10));
+        assertEquals(98, HeroRules.rewardXp(14));
+        assertEquals(100, HeroRules.rewardXp(15), "at most 100");
+        assertEquals(100, HeroRules.rewardXp(30));
+        assertEquals(7, HeroRules.rewardXp(-3));
+        HeroRules.Side ember = HeroRules.Side.faction("ember_legion");
+        HeroRules.Side grove = HeroRules.Side.faction("grove_covenant");
+        HeroRules.Side loner = HeroRules.Side.loner("1234");
+        // a member player and an NPC soldier of the same faction are one side
+        assertEquals(HeroRules.Side.faction("ember_legion"), ember);
+        assertEquals(grove, HeroRules.winningSide(List.of(new HeroRules.Blow(100, ember),
+                new HeroRules.Blow(200, grove), new HeroRules.Blow(250, null)), 260), "a monster's blow after it"
+                + " counts for the last person's side");
+        assertEquals(loner, HeroRules.winningSide(List.of(new HeroRules.Blow(100, ember),
+                new HeroRules.Blow(150, loner)), 200), "a factionless player is a side of one");
+        assertEquals(null, HeroRules.winningSide(List.of(new HeroRules.Blow(100, ember)), 400),
+                "no person within 15 s: no orbs, no crest");
+        assertEquals(ember, HeroRules.winningSide(List.of(new HeroRules.Blow(100, ember)), 399));
+        assertEquals(null, HeroRules.winningSide(List.of(new HeroRules.Blow(100, null)), 110), "lava alone");
+        assertEquals(null, HeroRules.winningSide(List.of(), 110));
+        assertEquals(grove, HeroRules.winningSide(List.of(new HeroRules.Blow(100, ember),
+                new HeroRules.Blow(100, grove)), 110), "the same tick: the later record");
+        // one crest per hero per winning side per in-game day
+        assertEquals(HeroRules.crestKey("benika_akagane", ember, 100), HeroRules.crestKey("benika_akagane", ember,
+                23_999));
+        assertFalse(HeroRules.crestKey("benika_akagane", ember, 100).equals(HeroRules.crestKey("benika_akagane", ember,
+                24_000)));
+        assertFalse(HeroRules.crestKey("benika_akagane", ember, 100).equals(HeroRules.crestKey("benika_akagane", grove,
+                100)));
+    }
+
     // ------------------------------------------------------------------ war power: a hook (HEROES_V2 3.2, 8)
 
     /**

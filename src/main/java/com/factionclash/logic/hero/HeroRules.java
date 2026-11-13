@@ -434,6 +434,61 @@ public final class HeroRules {
         return Math.floorMod(NIGHT_START - t, 24000L);
     }
 
+    // ------------------------------------------------------------------ rewards at a death (HEROES_V2 6.13)
+
+    /** XP orbs at a hero's death: 7 x level, at most 100. */
+    public static final int REWARD_XP_PER_LEVEL = 7, REWARD_XP_MAX = 100;
+    /** The winning side is the side of the last person that hurt the hero within this many ticks (15 s). */
+    public static final int WINNER_MEMORY_TICKS = 15 * 20;
+
+    public static int rewardXp(int level) {
+        return Math.min(REWARD_XP_MAX, REWARD_XP_PER_LEVEL * clampLevel(level));
+    }
+
+    /**
+     * A side for the rewards: a faction (its members, players or NPCs, are all of it) or a factionless player, who is
+     * a side of one. The game builds the key ({@link #faction} or {@link #loner}); nothing else tells sides apart.
+     */
+    public record Side(String key) {
+        public static Side faction(String factionId) {
+            return new Side("faction:" + factionId);
+        }
+
+        public static Side loner(String uniqueId) {
+            return new Side("alone:" + uniqueId);
+        }
+    }
+
+    /** One blow on the hero: when, and the side of the person who struck it (null: a monster, a fall, lava...). */
+    public record Blow(long tick, Side side) {
+    }
+
+    /**
+     * Who won a hero's death (6.13): the side of the last person (a player, an NPC or a hero) that hurt it in its last
+     * 15 s, so a monster's blow or a fall after it counts for that side; null when no person hurt it in that time
+     * (then it drops only its non-kit gear: no orbs, no crest). An escape is not a death and never reaches this.
+     */
+    public static Side winningSide(List<Blow> blows, long deathTick) {
+        Side best = null;
+        long bestTick = Long.MIN_VALUE;
+        for (Blow b : blows) {
+            if (b.side() != null && b.tick() <= deathTick && deathTick - b.tick() < WINNER_MEMORY_TICKS
+                    && b.tick() >= bestTick) {
+                best = b.side();
+                bestTick = b.tick();
+            }
+        }
+        return best;
+    }
+
+    /** The {@code hero_crest} drops once per hero per winning side per in-game day: this key says which. */
+    public record CrestKey(String heroId, Side side, long day) {
+    }
+
+    public static CrestKey crestKey(String heroId, Side side, long gameTime) {
+        return new CrestKey(heroId, side, Math.floorDiv(gameTime, 24000L));
+    }
+
     // ------------------------------------------------------------------ war power: HOOK, NOT FINAL
     //
     // WAR POWER HOOK. What a hero weighs in the war council (a raid party's strength, its home base's defence) is

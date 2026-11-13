@@ -188,6 +188,153 @@ class EscapeRulesTest {
                 new EndOfFight(WhenLosing.ESCAPE, List.of(StandsFor.HOME, StandsFor.LEADER), 10, 30)));
     }
 
+    // ================================================================== the runtime decision (F3)
+
+    private static final EndOfFight ESCAPER = new EndOfFight(WhenLosing.ESCAPE, List.of(), 12, 36);
+    private static final EndOfFight HOME_ESCAPER = new EndOfFight(WhenLosing.ESCAPE, List.of(StandsFor.HOME), 8, 23);
+    private static final EndOfFight LOYAL = new EndOfFight(WhenLosing.ESCAPE, List.of(StandsFor.HOME,
+            StandsFor.LEADER), 10, 30);
+    private static final EndOfFight STANDER = new EndOfFight(WhenLosing.LAST_STAND, List.of(), 9, 28);
+
+    /** Afield, its heart standing, no leader near, no rebirth, escapes on, never escaped, at tick 100000. */
+    private static EscapeRules.Context afield() {
+        return new EscapeRules.Context(false, true, false, false, true, 100_000, 0, 600);
+    }
+
+    private static EscapeRules.Context ctx(boolean atHome, boolean heart, boolean leader, boolean rebirth,
+                                           boolean enabled, long lastEscapeAt) {
+        return new EscapeRules.Context(atHome, heart, leader, rebirth, enabled, 100_000, lastEscapeAt, 600);
+    }
+
+    @Test
+    void underItsThresholdAnEscaperBreaksOffAndAStanderSaysItsLineOnce() {
+        EscapeRules.Context c = afield();
+        assertEquals(EscapeRules.Outcome.FIGHT_ON, EscapeRules.lowHealth(ESCAPER, 0.12, false, c), "12% is not under 12");
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lowHealth(ESCAPER, 0.1199, false, c));
+        assertEquals(EscapeRules.Outcome.FIGHT_ON, EscapeRules.lowHealth(STANDER, 0.5, false, c));
+        assertEquals(EscapeRules.Outcome.LAST_STAND_BEAT, EscapeRules.lowHealth(STANDER, 0.05, false, c),
+                "the first time under the flee_at it would have had");
+        assertEquals(EscapeRules.Outcome.FIGHT_ON, EscapeRules.lowHealth(STANDER, 0.01, true, c), "once per fight");
+        assertEquals(EscapeRules.Outcome.LAST_STAND_BEAT, EscapeRules.lowHealth(STANDER, 0.001, false, c),
+                "a last stand never escapes, at any health");
+    }
+
+    @Test
+    void noEscapeInsideTheWindowWithEscapesOffOrBeforeAnUnspentRebirth() {
+        long now = 100_000;
+        assertTrue(EscapeRules.inWindow(now, now - 11_999, 600), "within 600 s of its last escape");
+        assertTrue(!EscapeRules.inWindow(now, now - 12_000, 600), "600 s later the window is over");
+        assertTrue(!EscapeRules.inWindow(now, 0, 600), "never escaped");
+        assertEquals(EscapeRules.Outcome.LAST_STAND_BEAT, EscapeRules.lowHealth(ESCAPER, 0.05, false,
+                ctx(false, true, false, false, true, now - 6000)), "caught again inside the window: a last stand");
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lowHealth(ESCAPER, 0.05, false,
+                ctx(false, true, false, false, true, now - 12_000)));
+        assertEquals(EscapeRules.Outcome.LAST_STAND_BEAT, EscapeRules.lowHealth(ESCAPER, 0.05, false,
+                ctx(false, true, false, false, false, 0)), "heroes.escape = false: every hero fights to the death");
+        assertEquals(EscapeRules.Outcome.LAST_STAND_BEAT, EscapeRules.lowHealth(ESCAPER, 0.05, false,
+                ctx(false, true, false, true, true, 0)), "an unspent rebirth first");
+        // the window's config is clamped (120-1800 s)
+        assertTrue(EscapeRules.inWindow(now, now - 2399, 10), "at least 120 s");
+        assertEquals(1800, EscapeRules.windowSeconds(99_999));
+        assertEquals(300, EscapeRules.awaySeconds(300));
+        assertEquals(60, EscapeRules.awaySeconds(1));
+        assertEquals(1200, EscapeRules.awaySeconds(5000));
+    }
+
+    @Test
+    void theSituationRulesHoldAnEscaperAndEndWithTheirReason() {
+        assertEquals(StandsFor.HOME, EscapeRules.heldBy(HOME_ESCAPER, ctx(true, true, false, false, true, 0)));
+        assertEquals(EscapeRules.Outcome.LAST_STAND_BEAT, EscapeRules.lowHealth(HOME_ESCAPER, 0.05, false,
+                ctx(true, true, false, false, true, 0)), "it does not abandon its own people");
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lowHealth(HOME_ESCAPER, 0.05, false,
+                ctx(false, true, false, false, true, 0)), "afield it runs");
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lowHealth(HOME_ESCAPER, 0.05, false,
+                ctx(true, false, false, false, true, 0)), "the heart is gone: the stand ends");
+        assertEquals(StandsFor.LEADER, EscapeRules.heldBy(LOYAL, ctx(false, true, true, false, true, 0)));
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lowHealth(LOYAL, 0.05, false,
+                ctx(false, true, false, false, true, 0)), "the leader fell or left: an escaper again");
+        assertEquals(null, EscapeRules.heldBy(HOME_ESCAPER, ctx(false, true, true, false, true, 0)),
+                "loyal to its home, not to its leader");
+        assertEquals(null, EscapeRules.heldBy(STANDER, ctx(true, true, true, false, true, 0)),
+                "a last stand needs no situation");
+    }
+
+    @Test
+    void aLostRaidSendsAnEscaperHomeAndAStanderFinishesItsFight() {
+        EscapeRules.Context c = afield();
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lostRaid(ESCAPER, true, false, c), "in the target");
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lostRaid(ESCAPER, false, true, c), "fighting");
+        assertEquals(EscapeRules.Outcome.GO_ON_FOOT, EscapeRules.lostRaid(ESCAPER, false, false, c),
+                "elsewhere it walks home with the party");
+        assertEquals(EscapeRules.Outcome.FINISH_FIGHT, EscapeRules.lostRaid(STANDER, true, true, c));
+        assertEquals(EscapeRules.Outcome.GO_ON_FOOT, EscapeRules.lostRaid(STANDER, true, false, c));
+        assertEquals(EscapeRules.Outcome.GO_ON_FOOT, EscapeRules.lostRaid(ESCAPER, true, true,
+                ctx(false, true, false, false, true, 100_000 - 100)), "inside the window: home with the party");
+        assertEquals(EscapeRules.Outcome.FINISH_FIGHT, EscapeRules.lostRaid(LOYAL, true, true,
+                ctx(false, true, true, false, true, 0)), "held beside its fighting leader");
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lostRaid(ESCAPER, true, true,
+                ctx(false, true, false, true, true, 0)), "a rebirth holds only the health threshold");
+    }
+
+    @Test
+    void aLostBaseEndsTheHomeStandAtOnceWhateverItsHealth() {
+        EscapeRules.Context home = ctx(true, true, false, false, true, 0);
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lostBase(HOME_ESCAPER, true, home));
+        assertEquals(EscapeRules.Outcome.FINISH_FIGHT, EscapeRules.lostBase(STANDER, true, home));
+        assertEquals(EscapeRules.Outcome.GO_ON_FOOT, EscapeRules.lostBase(STANDER, false, home));
+        assertEquals(EscapeRules.Outcome.GO_ON_FOOT, EscapeRules.lostBase(HOME_ESCAPER, true,
+                ctx(true, true, false, false, true, 100_000 - 100)), "inside the window: to the next base on foot");
+        assertEquals(EscapeRules.Outcome.FINISH_FIGHT, EscapeRules.lostBase(LOYAL, true,
+                ctx(true, true, true, false, true, 0)), "its leader still fights beside it");
+    }
+
+    @Test
+    void theRefugeIsNeverTheBaseItFlees() {
+        List<EscapeRules.BaseOption> standing = List.of(new EscapeRules.BaseOption("home", 90),
+                new EscapeRules.BaseOption("east", 200), new EscapeRules.BaseOption("west", 150));
+        assertEquals("home", EscapeRules.refuge(EscapeRules.Trigger.LOW_HEALTH, "home", null, standing), "afield");
+        assertEquals("home", EscapeRules.refuge(EscapeRules.Trigger.LOST_RAID, "home", "rival", standing));
+        assertEquals("west", EscapeRules.refuge(EscapeRules.Trigger.LOW_HEALTH, "home", "home", standing),
+                "a fight at home: the nearest other base");
+        assertEquals("west", EscapeRules.refuge(EscapeRules.Trigger.LOST_BASE, "home", "home",
+                standing.subList(1, 3)), "home fell: the nearest standing base");
+        assertEquals(null, EscapeRules.refuge(EscapeRules.Trigger.LOW_HEALTH, "home", "home",
+                List.of(new EscapeRules.BaseOption("home", 0))), "no other base: the wild");
+        assertEquals("east", EscapeRules.refuge(EscapeRules.Trigger.LOW_HEALTH, "home", null,
+                List.of(new EscapeRules.BaseOption("east", 300))), "its home has fallen");
+        assertEquals(null, EscapeRules.refuge(EscapeRules.Trigger.LOST_BASE, "home", "home", List.of()));
+    }
+
+    @Test
+    void anEscapeAlwaysEndsAndCannotLoop() {
+        // cornered for 3 s: it fights back; a way opens: it runs again
+        assertTrue(!EscapeRules.cornered(59));
+        assertTrue(EscapeRules.cornered(60));
+        // over at the refuge's walls or 10 s with no pursuer within 48 blocks
+        assertTrue(EscapeRules.escapeOver(true, 0));
+        assertTrue(!EscapeRules.escapeOver(false, 199));
+        assertTrue(EscapeRules.escapeOver(false, 200));
+        // away 300 s and above half health
+        long at = 50_000;
+        assertTrue(!EscapeRules.mayReturn(at + 5999, at, 300, 0.9));
+        assertTrue(!EscapeRules.mayReturn(at + 6000, at, 300, 0.5), "above half, not at half");
+        assertTrue(EscapeRules.mayReturn(at + 6000, at, 300, 0.51));
+        // the sequence: escape at t0, back at t0 + 300 s, beaten again at t0 + 400 s: a last stand, not a second run
+        long t0 = 200_000;
+        EscapeRules.Context again = new EscapeRules.Context(false, true, false, false, true, t0 + 8000, t0, 600);
+        assertEquals(EscapeRules.Outcome.LAST_STAND_BEAT, EscapeRules.lowHealth(ESCAPER, 0.05, false, again));
+        EscapeRules.Context later = new EscapeRules.Context(false, true, false, false, true, t0 + 12_000, t0, 600);
+        assertEquals(EscapeRules.Outcome.ESCAPE, EscapeRules.lowHealth(ESCAPER, 0.05, false, later),
+                "a new lost fight after the window");
+    }
+
+    @Test
+    void anHonourableHeroLetsAnEscaperGo() {
+        assertTrue(EscapeRules.heroPursues(59));
+        assertTrue(!EscapeRules.heroPursues(60));
+        assertTrue(!EscapeRules.heroPursues(95));
+    }
+
     @Test
     void noRuleTakesTheEnemysKind() {
         // the API has no parameter for who the enemy is (equal treatment: the same end against players and NPCs)

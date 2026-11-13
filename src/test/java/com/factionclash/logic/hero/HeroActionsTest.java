@@ -55,9 +55,9 @@ class HeroActionsTest {
         s = HeroActions.withPhase(s, 3);
         assertEquals(3, HeroActions.phase(s));
         assertTrue(HeroActions.has(s, HeroActions.STATE_TALKING), "the phase leaves the flags alone");
-        s = HeroActions.with(s, HeroActions.STATE_YIELDING, true);
+        s = HeroActions.with(s, HeroActions.STATE_ESCAPING, true);
         assertTrue(s < 0, "bit 7 is the sign bit of the byte");
-        assertTrue(HeroActions.has(s, HeroActions.STATE_YIELDING));
+        assertTrue(HeroActions.has(s, HeroActions.STATE_ESCAPING));
         s = HeroActions.with(s, HeroActions.STATE_TALKING, false);
         assertFalse(HeroActions.has(s, HeroActions.STATE_TALKING));
         assertEquals(3, HeroActions.phase(s));

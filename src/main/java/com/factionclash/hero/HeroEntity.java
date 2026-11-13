@@ -50,7 +50,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     private static final EntityDataAccessor<String> DATA_HERO = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.STRING);
     /** The action the {@code action} controller plays: code, sequence, speed, variant ({@link HeroActions}). */
     private static final EntityDataAccessor<Integer> DATA_ACTION = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.INT);
-    /** Phase, enraged, super armour, weapon drawn, talking, wind-up, yielding ({@link HeroActions}). */
+    /** Phase, enraged, super armour, weapon drawn, talking, wind-up, escaping ({@link HeroActions}). */
     private static final EntityDataAccessor<Byte> DATA_STATE = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.BYTE);
     /** Mood, intensity, blush, glowing eyes ({@link HeroActions}). */
     private static final EntityDataAccessor<Byte> DATA_MOOD = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.BYTE);
