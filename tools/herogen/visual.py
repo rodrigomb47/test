@@ -3,7 +3,7 @@
 Fields: form, build, height_px and head_y (model pixels), render_scale (rig v3: model pixels to world pixels for the
 whole model; the hitbox is height_px x render_scale x scale / 16 blocks), style library, blink profile, face frame layout and the resolved mood table (defaults with the hero's
 overrides applied, so the Java side needs no copy of the defaults), move list (index -> animation name; filled by the
-animation generator), states, phase looks, bone groups the renderer treats specially (tint, fine, phase, weapon,
+animation generator; G7: the hero's move ids in its order), states, phase looks, bone groups the renderer treats specially (tint, fine, phase, weapon,
 items), texture facts and voice.
 G3 adds `animation_chain` (the animation files GeckoLib looks a name up in, in order: the hero's own, its style
 library, the core; HeroModel.getAnimationResource and its fallbacks) and `secondary` (the chains the hero's parts
@@ -72,10 +72,13 @@ def visual_json(hero, model, spec, textures, source_hash, moves=None, states=Non
             "mood_order": MOODS,
             "moods": mood_table(spec),
             "overrides": spec.get("overrides", {}),
+            # G7: an eye patch, a different left iris or a one-sided mark: the eyes need not mirror (14.2)
+            "asymmetric": bool(spec.get("asymmetric")),
             "blink": {"profile": blink, "interval": profile["interval"], "ticks": profile["ticks"],
                       "double_chance": 0.15, "over_eyes": BLINK_OVER},
         },
-        "moves": list(moves or []),
+        # the move slots of the action codes (move.N = the Nth id), in the definition's order: the hero's moves
+        "moves": list(moves) if moves is not None else [m["id"] for m in hero.get("moves", []) or [] if m.get("id")],
         "states": list(states or [s.get("name") for s in hero.get("states", []) or []]),
         "phases": phases,
         "bones": {

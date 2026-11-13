@@ -6,20 +6,17 @@ G2 adds `preview`, `gif`, `faces`, `sheet` (written to build/herogen/ unless --o
 films and sheets). `check --style` also checks the style fixtures in
 herosrc/style (built in memory, never written). G6a/b add the coplanar-face rule to `check` and `lint` (the parts
 library on every base and the sample outfits, lint.py). G10 adds `anim-previews --locomotion` (the mobility set's
-films and sheets)."""
+films and sheets). G7 makes `check` cover all of 14.2: the file-level rules of assets.py on what the mod ships (the
+ones the Java HeroAssetsTest mirrors), `--slice`, and the distinctness NOTEs of distinct.py."""
 import argparse
-import io
 import json
 import os
 import sys
 
 import numpy as np
-from PIL import Image
 
 import build
 import palette
-import validate
-from geo import GeoModel
 from util import HerogenError
 
 
@@ -130,7 +127,27 @@ def tie_problems(hero_id, files, b, hint=True):
             % (", ".join("%s/%s %d" % (k[0], k[1], n) for k, n in worst[:6]), where)]
 
 
+def _check_ids(args):
+    """The heroes `check` covers: the ids given (or all), `--style` adds the style fixtures, `--slice` the eight slice
+    heroes (SLICE_PLAN 6.3) that have a source in herosrc/heroes."""
+    import assets
+    if getattr(args, "slice", False):
+        have = set(build.hero_ids())
+        ids = [h for h in assets.slice_ids() if h in have]
+        missing = [h for h in assets.slice_ids() if h not in have]
+        if missing:
+            print("NOTE  slice heroes without a source in herosrc/heroes yet (C1-C4): %s" % ", ".join(missing))
+        return ids + list(args.ids or []) + (build.style_ids() if args.style else [])
+    return _ids(args)
+
+
 def cmd_check(args):
+    """14.2 (G7): the animation libraries; then per hero the file-level rules on what the mod ships (assets.py: the
+    rules the Java HeroAssetsTest mirrors), the animation rules on its built clips, the coplanar rule and the
+    reproducible build; then the distinctness NOTEs (distinct.py)."""
+    import assets
+    import distinct
+    from anim import library as animlib
     bad = 0
     lib = _library_problems() + build.check_library_files(build.library_files())
     for p in lib:
@@ -138,22 +155,40 @@ def cmd_check(args):
     if not lib:
         print("OK    animation libraries")
     bad += len(lib)
-    for hid in _ids(args):
+    table = assets.action_table()
+    looks = []
+    committed = set(build.hero_ids())
+    for hid in _check_ids(args):
         files, b = build.build_files(hid)
-        paths = build.out_paths(hid)
-        geo = GeoModel(json.loads(files[paths["geo"]]))
-        tex = np.array(Image.open(io.BytesIO(files[paths["texture"]])).convert("RGBA"))
-        problems = validate.check_built(geo, tex, asymmetric=b.spec["asymmetric"])
+        definition, _ = assets.definition_of(hid)
+        if hid in committed:
+            # what the mod ships (build.check_files below says it is what the sources build)
+            problems, notes = assets.check_files(hid, assets.committed_files(hid), definition, table)
+        else:
+            shipped = dict(files)
+            shipped.update(animlib.core().files())
+            shipped.update(animlib.style(animlib.style_of(b.hero)).files())
+            problems, notes = assets.check_files(hid, shipped, definition, table)
         problems += _anim_problems(hid, b)
         if not args.no_ties:
             problems += tie_problems(hid, files, b)
-        if hid in build.hero_ids():
+        if hid in committed:
             problems += build.check_files(hid, files)
         for p in problems:
             print("ERROR %s: %s" % (hid, p))
+        for n in notes:
+            print("NOTE  %s: %s" % (hid, n))
         if not problems:
             print("OK    %s" % hid)
         bad += len(problems)
+        archetype = (definition or {}).get("archetype") or b.hero.get("archetype")
+        if archetype and archetype != "fixture" and not hid.startswith("_") and not args.no_distinct:
+            from render.scene import HeroAssets
+            a = HeroAssets(hid, dict(files, **animlib.core().files(),
+                                     **animlib.style(animlib.style_of(b.hero)).files()), b.hero)
+            looks.append(distinct.Look(hid, archetype, a, b.ramps))
+    for n in distinct.notes(looks):
+        print("NOTE  distinct: %s" % n)
     return 1 if bad else 0
 
 
@@ -428,11 +463,15 @@ def main(argv=None):
     b.add_argument("--all", action="store_true")
     b.add_argument("--check", action="store_true", help="rebuild in memory and fail if committed files differ")
     b.set_defaults(fn=cmd_build)
-    c = sub.add_parser("check", help="asset checks (geometry, UVs, face frames, reproducibility)")
+    c = sub.add_parser("check", help="asset checks (HEROES_V2 14.2: files, geometry, UVs, face frames, action codes, "
+                                     "move lists and frames, animations, coplanar faces, reproducibility; "
+                                     "distinctness NOTEs)")
     c.add_argument("ids", nargs="*")
     c.add_argument("--all", action="store_true")
     c.add_argument("--style", action="store_true", help="also check the style fixtures (herosrc/style)")
+    c.add_argument("--slice", action="store_true", help="the eight slice heroes (SLICE_PLAN 6.3) that have a source")
     c.add_argument("--no-ties", action="store_true", help="skip the coplanar-face rule (it renders six views)")
+    c.add_argument("--no-distinct", action="store_true", help="skip the distinctness NOTEs (they render two views)")
     c.set_defaults(fn=cmd_check)
     v = sub.add_parser("previews", help="write the style preview set (bases, lineup, face close-ups, character "
                                         "sheets, test rig, fallback) to docs/heroes-v2/previews/style")

@@ -12,6 +12,7 @@
   },
   "build": "slim",
   "face": {
+    "asymmetric": false,
     "blink": {
       "double_chance": 0.15,
       "interval": [2.5, 6],

@@ -2491,3 +2491,135 @@ fails).
   of `arm_stripes` fits; a hero who needs the pair on a chibi needs a shorter sleeve or no gauntlet.
 - **Housekeeping (not this review's)**: the stray `/v3_styles_check.log` and `/v3_render_check.log` that the G5 run
   left at the filesystem root still need removing by hand.
+
+---
+
+## G7: `herogen check` covers 14.2 (2026-11-13)
+
+HEROES_V2.md 14.2 and 15.2 row G7, the Python side. `herogen check` now runs every rule of 14.2, and SLICE_PLAN 6.3's
+three negative tests fail it with a clear message. The Java `HeroAssetsTest` and `verifyHeroAssets` are the Java
+workflow's (next); 15.2 G7 lists exactly which Python functions they mirror. No art, animation, hit tick or timing file
+changed: the only generated change is `visual.json`'s new `face.asymmetric` (test rig and fallback: `false`).
+
+### What exists
+
+| Path | What |
+|---|---|
+| `tools/herogen/assets.py` | the file-level rules: everything that needs only the files the mod ships (the geometry, the textures, `visual.json`, the animation and timing files of the hero's chain, the hero's server definition and the action-code table of `HeroActions.java`), so the Java test can mirror it one to one |
+| `tools/herogen/distinct.py` | the distinctness NOTEs (silhouette and colour regions of two heroes of the same archetype) |
+| `cli.py` `check` | runs the file-level rules on each hero's committed files (on the in-memory build for the style fixtures), the animation rules on its built clips, the coplanar rule, `build --check`, then the NOTEs; `--slice` (the eight slice heroes that have a source, SLICE_PLAN 6.3), `--no-distinct` |
+| `visual.py` | `face.asymmetric` (an eye patch, `iris2`, a one-sided mark: the mirror rule is skipped), and `moves` now lists the hero source's move ids in its order (empty for the test rig and the fallback, which have none) |
+| `tests/test_assets.py` | 27 tests (below) |
+
+### The rules of 14.2 and where each one is
+
+| 14.2 rule | Where | New in G7 |
+|---|---|---|
+| JSON syntax | `assets.check_json` (strict: no NaN or Infinity) on every JSON file of the hero and its chain | yes (before: only implied by `build --check`) |
+| geometry `format_version` 1.12.0 | `assets.check_geometry` (an error line; `geo.GeoModel` used to raise) | yes, as a reported problem |
+| budgets: bones, cubes, texture size | `validate.check_geometry` (100 bones, 300 cubes, 256x128 or 256x256), refused earlier by `build.assemble` | - |
+| budgets: animations | `anim/quality.check_built(own_file=True)` (24 in a hero's own file) | - |
+| bone names from the rig or declared by a part | by construction: `rig.Model.use_bone` refuses any other name; in the file, `validate.check_geometry` (lower_snake_case, unique, parents first) | - |
+| required bones | `validate.check_geometry` (the 33) | - |
+| face planes on the fixed UV regions | `validate._check_uvs`; `assets.check_visual` also checks `visual.json` `face.regions` against the rig | the `visual.json` half |
+| texture size matches the geometry | `validate.check_geometry` (PNG against the geometry); `assets.check_visual` (`visual.json` `texture` against the geometry, and the glow mask and phase texture it names exist) | the `visual.json` half |
+| UV islands inside the texture, not overlapping; whole-texel UVs | `validate._check_uvs` | - |
+| every action code the server can send resolves through the hero's chain | `assets.check_codes` with `assets.required_actions`; the code table is read from `HeroActions.java` as text (`assets.action_table`) | yes |
+| `hit` markers equal the server `frames` within one tick | `anim/quality.check_timing` (each timing file against its animation file, now on the committed pair) and `assets.check_frames` (each move's, the ultimate's and the awakened ultimate's clip against the definition's `frames` or `generated` entry: wind-up, active and recovery ticks, each within one) | the definition half |
+| `face_ctrl` changes are jumps | `anim/quality.check_face` on the built clips; `assets.check_face_keys` on the written files | the file half |
+| joint limits, planted feet, closed loops | `anim/quality.check_joints`, `check_feet`, `check_slide`, `check_mount`, `check_keys` on the built clips; `assets.check_channels` on the written files (times ascend in file order, the first at 0, none after the end, a loop keyed at its end with its start value) | the file half |
+| actions end on the idle settle key | `anim/quality.check_settle` and `check_start` | - |
+| alpha holes under the planes; nothing in front of the face below head-local y 5.5 | `validate.check_face_texture`, `validate._check_clear_face` | - |
+| at most 130 cubes outside `fine_` bones | `validate.check_geometry` (`lod_cubes`) | - |
+| the eyes mirror unless asymmetric by design | `validate.check_face_texture(asymmetric=...)`, the flag now read from `visual.json` `face.asymmetric` on the committed files | the flag in the file |
+| `visual.json` move list equals the server move list | `assets.check_lists` (moves and states against the definition) | yes |
+| every file in the chain exists | `assets.check_chain` (`animation_chain` is [hero, `_style_<style>`, `_core`], and each animation and timing file exists) | yes (before: a test only) |
+| the build is reproducible | `build.check_files`, `build.check_library_files` | - |
+| no coplanar faces of different colour | `cli.tie_problems` (`HeroAssets.tie_report`) | - |
+| distinctness NOTEs | `distinct.notes` | yes |
+
+**Which definition.** `assets.definition_of`: `data/factionclash/heroes/<id>.json`, else the slice's format-2 fixture
+`src/test/resources/heroes/slice/<id>.json` (the slice's real kit until C1-C4 write the definitions). The test rig's
+definition is the hand-written one of A1b; the fallback has none.
+
+**Which codes are required** (`required_actions`, HEROES_V2 appendix D): every fixed name of the table except the
+conditional ones; `attack.ranged` when the basic attack is not `melee` (the slice's thrown basics: Yugen and Hinae on
+`focus`, Ambrose on `staff`, whose libraries have it); `phase.2` and `phase.3` with that many boss phases;
+`state.<name>` and `move.<id>` for the slots `visual.json` names; `ultimate` and `ultimate.awakened` when the definition
+has them; `ultimate.end` when the chain has an `ultimate.loop` to end. `defeated` and `spared` stay required while
+they are in the Java table (the core serves them). Reading the table as text means a code added to `HeroActions` is
+checked without touching herogen; the layout (`actionName`'s ranges) is ported, and a test pins known codes.
+
+**The move list.** `visual.json` `moves` (bare ids, the slot order of `move.N`) must equal the definition's moves in
+its order, except that a move with no `move.<id>` clip anywhere in the chain may be left out: the server then gives it
+no code and plays its look's telegraph pose (A4). That exception is a NOTE (the test rig's hand-written `lunge`, the
+one case today), and an error when the definition gives the move `frames` (the kit says how it is timed, so the art
+must show it: every slice move). With every move animated, as every roster hero will be, the rule is plain equality.
+States are compared exactly. Why not plain equality now: the test rig's `visual.json` would have to list `lunge`,
+which changes what the engine sends while the Java workflow's live check runs (a code 64 with no clip instead of no
+code); the rule as built is what the engine does, crisply.
+
+**Frames.** For a move whose definition gives `frames`, its clip's `frame_ticks` (from the action's start, the 2-tick
+blend included, as the server counts) must match each of wind-up, active and recovery within one tick. A single `hit`
+gives an active of one tick, so a move whose kit says 0.2 s active (Natsuho's pounce) needs a first and a last
+marker 4 ticks apart (a `cast` at the take-off and the `hit`, say): C1-C4 author them that way.
+
+### Distinctness NOTEs (`distinct.py`)
+
+For every two heroes of the same archetype (the definition's, else the source's; the pipeline fixtures' `fixture` and
+the fallback are skipped): their front and side silhouettes, rendered by the preview renderer at 4x in the idle stance
+(weapon sheathed, phase 1, a level camera) in one frame shared by the batch, overlap more than 90% (intersection over
+union of the two views together); and their two largest colour regions are both within CIE76 delta-E 15 of the other's
+two (best pairing). A colour region is a palette slot: every texel the painter writes is a tone of one slot's ramp, so
+a visible pixel names its slot (a mixed face texel goes to the nearest ramp colour), the region's colour is the slot's
+authored colour, and the faction-tinted sash is left out. On the test rig: hair 5,395 px, primary 3,638, accent 2,623,
+secondary 2,229. The test rig against style Tansy overlaps 42%; Maren against the test rig, both adult_f, 78%; a copy
+100% (both NOTEs); a recolour 100% (the silhouette NOTE only). Both are NOTEs for review gate 2, never errors.
+
+### The three negative tests (SLICE_PLAN 6.3) and the rest
+
+`NegativeTest` copies what the Java test reads for the test rig (its committed outputs, the `_style_katana` and
+`_core` animation and timing files, its definition, `HeroActions.java`) into a temporary root, breaks one file and
+runs the check `herogen check` runs on committed files (`assets.check_committed`):
+- **a marker moved by 3 ticks**: `attack.1`'s `hit` written at 0.65 s instead of 0.50 s fails with
+  `_style_katana: attack.1: markers [... (0.65, 'hit') ...] in the animation, [... (0.5, 'hit') ...] in the timing
+  file` and `wind-up 0.50 s in the timing file, first hit at 0.65 s`; the timing file's wind-up moved
+  3 ticks fails with `attack.1: wind-up 0.65 s in the timing file, first hit at 0.50 s`; and a kit hero whose
+  definition says 3 ticks more than its clip fails with `move quick_cut: windup 19 ticks in t_signature (move.quick_cut,
+  its first hit or cast at tick 19 of the action), 22 in the definition's frames (1.10 s): more than one tick apart`;
+- **over the cube budget**: 120 cubes added to the body fail with `307 cubes (budget 300)` and
+  `228 cubes outside fine_ bones (budget 130): move detail (strands, frills, trims) onto fine_ bones`;
+- **a missing eye frame**: frame 4 erased fails with `eyes frame 4 is not fully opaque (missing frame?)`, and painted
+  over with skin with `eyes frame 4 is blank skin (missing frame?)`.
+Also: a missing chain file, broken JSON, a wrong geometry version, `visual.json` texture or regions that disagree, and
+a definition with three phases (no `phase.2`/`phase.3` in the test rig's chain) each fail.
+
+### Tests (347 -> 374: `tests/test_assets.py`, 27)
+
+The code table read from the Java source (known codes; an unreadable table is a clear error); the committed heroes
+pass, the test rig's `lunge` is a NOTE; `visual.json` carries the source's move ids and the asymmetry; the negative
+tests above; the face-key, channel, code, list and frame rules one by one, each with passing and failing inputs; the
+written libraries pass the file rules; the eight slice kits (the format-2 fixtures) against their style libraries as
+written, with every per-hero clip present (stand-ins with the kit's frames): every code resolves, the lists and frames
+hold, and the thrown basics find `attack.ranged`; a missing signature is named; a built kit hero passes and its moved
+hit fails; the NOTEs (regions are palette slots without the sash, a copy gets both, a recolour the silhouette one,
+different heroes or archetypes none). Sabotage: with `check_timing`, `check_frames` or `check_face_keys` emptied, 5
+tests fail.
+
+### Decisions
+
+1. **The file-level rules are their own module** (`assets.py`), so the Java side has one list to mirror, and `check`
+   runs them on what the mod ships (`build --check` then ties the committed files to the sources).
+2. **The code table is read from the Java source** rather than copied: one table, two readers.
+3. **A move without a clip may be left out of the move list** only when its definition gives no frames (above).
+4. **`face.asymmetric` is written to `visual.json`** so the mirror rule can be checked from the files alone.
+5. **Distinctness compares palette slots**, not clustered pixel colours: the slots are what an author changes, and
+   the painter's tones (light, shade, outlines) would split one garment into several clusters.
+
+### Open items
+
+- **Java (G7, next)**: `HeroAssetsTest` and `verifyHeroAssets` (15.2 G7 lists the functions to mirror).
+- **C1-C4**: author each move's markers so its clip's frames match the kit's within one tick (two markers where the
+  kit's active window is longer than a tick); `herogen check --slice` runs on the slice heroes as their sources land.
+- When the test rig's definition is regenerated or its `lunge` gets a clip, the move-list exception has no user left
+  and can become plain equality.
