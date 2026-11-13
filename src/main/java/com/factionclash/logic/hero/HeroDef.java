@@ -321,10 +321,19 @@ public record HeroDef(int format, String id, String name, String title, String d
         }
     }
 
-    /** One kit item: an allowlisted vanilla id, an optional custom name and its enchantments (id to level). */
-    public record GearItem(String item, String name, Map<String, Integer> enchantments, GearSlot slot) {
+    /**
+     * One kit item: an allowlisted vanilla id, an optional custom name and its enchantments (id to level).
+     * {@code added} marks the style's basic item the reader put in a kit that lacked one (v1 7: a melee kit with no
+     * weapon gets a stone sword); a fists-style hero leaves that placeholder out and fights bare-handed
+     * ({@link HeroLoadout#kit}).
+     */
+    public record GearItem(String item, String name, Map<String, Integer> enchantments, GearSlot slot, boolean added) {
         public GearItem {
             enchantments = frozen(new LinkedHashMap<>(), enchantments);
+        }
+
+        public GearItem(String item, String name, Map<String, Integer> enchantments, GearSlot slot) {
+            this(item, name, enchantments, slot, false);
         }
     }
 

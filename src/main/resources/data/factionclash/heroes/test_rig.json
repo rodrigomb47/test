@@ -1,0 +1,31 @@
+{
+  "_comment": "The art pipeline's test model as a minimal format-2 hero (HEROES_V2 15.2, task A1b): written by hand, not by herogen. It is what the GameTests and the dedicated-server checks give to a faction; it never leads a faction.",
+  "format": 2,
+  "id": "test_rig",
+  "name": "Test Rig",
+  "title": "the Test Model",
+  "description": "The rig every hero is built on, standing in for a real hero while the engine is built.",
+  "gender": "female",
+  "archetype": "samurai",
+  "rarity": "common",
+  "element": "physical",
+  "gear": [{"item": "iron_sword", "name": "Test Blade"}],
+  "behaviour": {"combat_role": "striker", "duel_style": "all_rounder", "duty": "guard"},
+  "basic_attack": {"style": "melee", "combo": 3},
+  "moves": [
+    {"id": "lunge", "name": "Lunge", "form": "dash", "effects": [{"type": "damage", "amount": 2}]}
+  ],
+  "boss": {"weak_points": ["back"], "phases": [{"at": 100}]},
+  "personality": {"temperament": "stoic"},
+  "leader": {"eligible": false},
+  "voice": {"blip": "bell", "pitch": 1.2, "rate": 3},
+  "lines": {
+    "summoned": ["Test Rig, reporting to the {faction}."],
+    "greeting": ["Hello, {player}. I am only a test."],
+    "fight_start": ["Testing, testing!"],
+    "kill": ["Test passed."],
+    "victory": ["All tests green."],
+    "fallen": ["Test... failed..."],
+    "revived": ["Test Rig, back online."]
+  }
+}

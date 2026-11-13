@@ -109,7 +109,14 @@ public final class HeroGameTests {
         h.assertTrue(rig.visual().style().equals("katana") && rig.role() == NpcRole.SWORDSMAN, "a katana hero is a swordsman");
         h.assertTrue(rig.visual().animationChain().equals(List.of("test_rig", "_style_katana", "_core")), "chain " + rig.visual().animationChain());
         h.assertTrue(rig.model().equals(ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "geo/hero/test_rig.geo.json")), "model " + rig.model());
-        h.assertTrue(rig.name().equals("Test Rig"), "name " + rig.name());
+        h.assertTrue(rig.name().equals("Test Rig") && rig.title().equals("the Test Model"), "name " + rig.name() + " · " + rig.title());
+        // A1b: its server definition (data/factionclash/heroes/test_rig.json) loads with nothing to report
+        h.assertTrue(rig.def() != null && !rig.dormant() && rig.def().format() == 2, "the test rig has no definition: "
+                + HeroRegistry.report().problems().report());
+        // (a NOTE across files may name a shipped hero beside a test's fixture; anything worse is a broken shipped file)
+        var bad = HeroRegistry.report().problems().all().stream().filter(p -> p.file().startsWith("data/")
+                && p.severity() != com.factionclash.logic.hero.Problems.Severity.NOTE).toList();
+        h.assertTrue(bad.isEmpty(), "problems in the shipped definitions: " + bad);
         h.assertTrue(HeroRegistry.get(HeroIdentity.FALLBACK) == null, "the fallback model is not a hero");
         h.assertTrue(HeroRegistry.fallback().id().equals(HeroIdentity.FALLBACK) && HeroRegistry.fallback().ownModel(), "no fallback model");
         for (HeroEntry e : HeroRegistry.heroes()) {
@@ -141,6 +148,9 @@ public final class HeroGameTests {
             HeroEntity hero = give(t, "fixture_sync", 6, 6);
             hero.setNoAi(true);
             t.assertTrue(hero.heroId().equals("fixture_sync"), "hero id " + hero.heroId());
+            // (A1b: it has just said its summoned line, so its face talks: bit 5, cleared after the 3 s of the line)
+            t.assertTrue(hero.isTalking() && !hero.lastLine().isEmpty(), "no summoned line: " + hero.lastLine());
+            hero.setTalking(false);
             t.assertTrue(hero.action() == 0 && hero.state() == 0 && hero.mood() == 0 && hero.loco() == 0,
                     "fresh fields " + hero.action() + "/" + hero.state() + "/" + hero.mood() + "/" + hero.loco());
             t.assertTrue(HeroActions.phase(hero.state()) == 1, "phase 1");
@@ -161,11 +171,13 @@ public final class HeroGameTests {
             NpcRecord r = t.data.faction(FactionType.TIDE_ALLIANCE).roster.get(hero.getUUID());
             t.assertTrue(r != null && r.isHero() && r.heroId.equals("fixture_sync") && r.role == NpcRole.SWORDSMAN && r.baseId == t.base.id,
                     "roster record " + (r == null ? "missing" : r.heroId + " " + r.role));
-            t.assertTrue(hero.getMainHandItem().is(Items.STONE_SWORD) && HeroKit.isKit(hero.getMainHandItem()), "kit weapon " + hero.getMainHandItem());
+            // A1b: a fists-style hero holds no weapon (the reader's stone-sword placeholder is left out) and needs none
+            t.assertTrue(hero.getMainHandItem().isEmpty() && hero.fightsBareHanded() && !hero.needsRoleTool() && !hero.takesStoreWeapons(),
+                    "a fists hero holds " + hero.getMainHandItem());
             HeroState s = t.data.heroes.get("fixture_sync");
             t.assertTrue(s != null && s.alive && s.owner == FactionType.TIDE_ALLIANCE && hero.getUUID().equals(s.uuid) && s.baseId == t.base.id,
                     "campaign record");
-            t.assertTrue(hero.npcName().equals("Fixture Sync"), "name " + hero.npcName());
+            t.assertTrue(hero.npcName().equals("Fixture Sync") && !hero.dormant(), "name " + hero.npcName());
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();

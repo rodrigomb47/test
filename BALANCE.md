@@ -704,26 +704,64 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
   encounter, or after 40 escapes on one expedition (a typical trip needs well under 20); cornered with a monster within 3.5 blocks it fights back for 100 ticks while over half health. An
   encounter ends after 100 quiet ticks. Enemy soldiers: retreat home as before (2 threats, or 1 under 60% health).
 * Raids: interval 36000 ticks, party at least 3 (see the war council above), 3 home defenders kept; assault takes 400 ticks at the target heart.
+* Heroes in the war council (HEROES_V2 8.1, A1b): `soldierPower` is the average of the ordinary soldiers only; a
+  base's defence is its soldiers at home x that power plus the war power of each hero whose home it is (alive, at
+  home, not on a raid; **half** under half health), the heroes counting at most **1.5x** the soldiers' power (the
+  soldier backbone). A hero's war power is `2.25 x sqrt(maxHealth / 20) x (1.5 + level / 30) x war.heroPowerPercent /
+  100` (`heroPowerPercent` **100**, 0-200; 0 counts a hero as one soldier by heads, as before). The target score reads
+  the defence in soldier units. With no hero on either side every decision is the same as before.
 * Hollow lairs: start with 5 monsters, +1 per day up to 12; raid every 30000 ticks on the nearest settlement within 300 blocks.
 * Damage: zombies, skeletons and variants deal ×0.5 to NPCs; with `survival.hunger` off, NPCs regenerate 1 HP per 4 s once 10 s have passed since they were last hurt; with it on (the default) they heal only through the food bar (see Hunger).
 * Victory rule (proposed): a base falls when its **Faction Heart** is destroyed; a faction with no standing bases is eliminated; the last faction standing (The Hollow included) wins. The reporting station is not the defeat core.
 
-## Heroes (config `heroes`; `HeroSize`, `HeroManager`, `HeroIdentity`, `HeroClips`, `FaceRules`, `HeroLod`) — in development
-Only the test model ships so far; an operator gives a hero to a faction with `/fc admin hero give`.
+## Heroes (config `heroes`, `boss`; `HeroSize`, `HeroManager`, `HeroIdentity`, `HeroLoadout`, `HeroSpeech`, `HeroClips`, `FaceRules`, `HeroLod`) — in development
+Only the test model ships so far (its definition is `data/factionclash/heroes/test_rig.json`); an operator gives a hero to
+a faction with `/fc admin hero give`.
+* Definition (`HeroLoadout`, A1b): the stats of the hero's file with growth (v1 5.1-5.3) and **boss health at all times,
+  whoever and however many it fights** (one mode): `MAX_HEALTH` base = the v1 health, one `factionclash:boss_health`
+  modifier (`ADD_MULTIPLIED_TOTAL`) = `health_scale / 100 x role factor - 1`; `health_scale` by rarity **250 / 300 /
+  350 / 400** (common to legendary; a leader +50 once leaders exist), times `boss.healthScale` **100%** (25-300);
+  role factor vanguard **1.0**, striker **1.2**, skirmisher, support and controller **1.25**, marksman and summoner
+  **1.3**. The test rig (a common striker) has 28 x 2.5 x 1.2 = **84** health at level 1. `stats.attack` and
+  `stats.armor` are added like the Might and Toughness affixes, `stats.speed` multiplies the walking speed,
+  `knockback_resistance` / 100 is its knock-back resistance (heroes only; ordinary NPCs keep a player's). A change of
+  maximum (a level, a reload) keeps the share of health. A hero whose definition is broken or gone is **dormant**:
+  20 health, nothing added, the neutral model, `(dormant)` on its name tag.
 * Hitbox (`HeroSize`): the model's height, `height_px x render_scale x scale / 16` blocks (rig v3 at render scale 0.56:
   adult 1.82, teen 1.58, chibi 1.23), eyes at `(head_y + 3) x render_scale x scale / 16`; width 0.6 x scale. At least
   **1.2 blocks** (PROPOSED; an 85% chibi would be 1.04) and at most **1.98** (a 110% adult would be 2.00; the eyes drop
   in proportion), so every hero walks through a 2-high doorway; the model itself draws at its full scale. The culling
   box is 1.5 blocks larger all round (wings, tails, long weapons).
-* Role: a hero counts as one soldier of the role its weapon style fits (bow archer, crossbow crossbowman, axe,
-  hammer and scythe axe fighter, every other style swordsman) for recruitment needs, the garrison and the war council,
-  but the raid party's soldier sort never picks it. It is never retrained. Until the kit engine it fights as a plain
-  soldier of that role, with the role's basic weapon (stone sword, stone axe, bow and arrow, crossbow) as its kit.
-* Kit items are bound to the hero: they never drop, are never deposited, and vanish when better storehouse gear
-  replaces them; a returning hero gets them again.
+* Role: a hero counts as one soldier of the role its basic attack and weapon fit (bow archer, crossbow crossbowman;
+  melee with an axe or a mace, or an axe, hammer or scythe style, axe fighter; every other melee, trident and thrown
+  hero swordsman) for recruitment needs and the garrison by heads, but the raid party's soldier sort never picks it.
+  It is never retrained. Until the kit engine (A3) it fights with that role's basic attacks.
+* Kit: the `gear` of its file (names and enchantments included), bound to the hero: never dropped, never deposited,
+  gone when better storehouse gear of the same kind replaces it, given again on its return. A **fists**-style hero
+  holds no weapon: the stone sword the checker adds to a melee kit with none is left out, and it never fetches or
+  takes a weapon (thrown heroes fight bare-handed too until A3). A hero takes a storehouse shield only when its kit
+  has one; a hero holding a kit weapon of another kind than its role's tool (a mace) keeps it. Bow and crossbow heroes
+  carry the one never-used-up arrow. A dormant hero gets its role's basic weapon as a plain soldier.
+* Name tag: `★ Name · title` in the hero's colour (its file's `color`, else its faction's), `[Fighting 80%]` while it
+  has a target (its energy; `heroes.showEnergy`), `(dormant)`. Energy (v1 14, minimal until A3): a landed melee
+  basic hit **5**, a kill **10**, **1** per 2 health lost (at most 8 a hit), each x its ultimate's `charge_rate`;
+  0-100, saved, 0 after a revival.
+* Lines (`HeroSpeech`, v1 23): one line per hero per `heroes.dialogueCooldownSeconds` **20** (5-300); `summoned`,
+  `fallen`, `revived` and `ultimate` always; greetings **5 s** apart, `idle` at most every **15 min**. Chances:
+  `fight_start` **50%**, `kill` **30%**, `skill` 25%, others always. Heard by: nearby players within
+  `heroes.dialogueRadius` **32** (8-128), the faction (summoned, fallen, revived, level-up, raid and base news) or the
+  player greeted; `heroes.dialogue` `local` / `faction` / `off`. In chat as `<★ Name> line` and, with
+  `heroes.speechBubbles`, in a text display **0.75** blocks above the head for **3 s** while the face talks. Events
+  (PROPOSED where v1 is silent): a fight starts when it takes a target after **10 s** without one; it is won after
+  **5 s** with no target and no hostile within **16** blocks; low health under **30%**, said again only after it has
+  been back above **50%**; `idle` at its base with a faction player within **12** blocks; `ally_fallen` for a member of
+  its side within **24**. Events a file has no line for use short generic lines (`heroes.defaultLines`).
 * Death: `heroes.reviveSeconds` **600** (30-3600) later the hero returns at its home base's spawn point (or its
   faction's first standing base), at full health with its kit, level, experience and traits, as a new entity; a faction
-  with no standing base loses it (released). A hero the director finds missing (gone from a loaded area for 2400
+  with no standing base loses it (released). Its own `revival` block sets its delay instead (30-3600 s) and where it
+  rises (`home`, `where_it_fell`, `nearest_base`; `at: night` waits for nightfall); the faction's best `revival_rite`
+  talent (any of its heroes; tier by the holder's level: I from 1, II from 10, III from 20) shortens it by **20 / 30 /
+  40%**; never under `heroes.minReviveSeconds` **30** (30-3600; it can only be raised). A hero the director finds missing (gone from a loaded area for 2400
   ticks) counts as fallen. One living entity per hero id: any other copy is discarded when it joins the level
   (spawned or loaded with a chunk), and so is a dead or dying copy (saved within the second after its fall).
 * Animation (`HeroClips`, client): standing below a ground speed of **0.015** blocks/tick, running from **0.245**

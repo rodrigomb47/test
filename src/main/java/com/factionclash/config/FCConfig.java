@@ -43,6 +43,15 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue FISHING_TREASURE;
     public static final ModConfigSpec.BooleanValue REMOTE_WORK_IN_DAYLIGHT_ONLY;
     public static final ModConfigSpec.IntValue HERO_REVIVE_SECONDS;
+    public static final ModConfigSpec.IntValue HERO_MIN_REVIVE_SECONDS;
+    public static final ModConfigSpec.ConfigValue<String> HERO_DIALOGUE;
+    public static final ModConfigSpec.IntValue HERO_DIALOGUE_RADIUS;
+    public static final ModConfigSpec.IntValue HERO_DIALOGUE_COOLDOWN_SECONDS;
+    public static final ModConfigSpec.BooleanValue HERO_DEFAULT_LINES;
+    public static final ModConfigSpec.BooleanValue HERO_SPEECH_BUBBLES;
+    public static final ModConfigSpec.BooleanValue HERO_SHOW_ENERGY;
+    public static final ModConfigSpec.IntValue BOSS_HEALTH_SCALE;
+    public static final ModConfigSpec.IntValue HERO_POWER_PERCENT;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -143,11 +152,37 @@ public final class FCConfig {
                 .defineInRange("lairMaxCap", 12, 0, 80);
         LAIR_RAID_INTERVAL_TICKS = b.comment("Minimum ticks between Hollow raids from one lair.")
                 .defineInRange("lairRaidIntervalTicks", 30000, 1200, 480000);
+        HERO_POWER_PERCENT = b.comment("How much a hero weighs in the war councils' odds, in percent of its war power (PROPOSED: 100;",
+                        "a level-10 epic leader is worth about five iron soldiers). 0 counts a hero as one soldier by heads, as before.")
+                .defineInRange("heroPowerPercent", 100, 0, 200);
         b.pop();
 
         b.comment("Heroes (in development: only the test model ships yet; an operator gives one with /fc admin hero give)").push("heroes");
-        HERO_REVIVE_SECONDS = b.comment("A hero that falls returns at its home base this many seconds later (PROPOSED: 600, ten minutes).")
+        HERO_REVIVE_SECONDS = b.comment("A hero that falls returns at its home base this many seconds later (PROPOSED: 600, ten minutes).",
+                        "A hero's own revival ability and the revival_rite talent can change that, never under minReviveSeconds.")
                 .defineInRange("reviveSeconds", 600, 30, 3600);
+        HERO_MIN_REVIVE_SECONDS = b.comment("No ability brings a fallen hero back sooner than this (PROPOSED: 30), so it never rises in the fight",
+                        "that killed it.")
+                .defineInRange("minReviveSeconds", 30, 30, 3600);
+        HERO_DIALOGUE = b.comment("Who hears heroes' lines: local (players within dialogueRadius; faction news to the faction), faction",
+                        "(only the hero's own faction) or off.")
+                .define("dialogue", "local", v -> v instanceof String t && (t.equals("local") || t.equals("faction") || t.equals("off")));
+        HERO_DIALOGUE_RADIUS = b.comment("Blocks within which players hear a hero's local lines.")
+                .defineInRange("dialogueRadius", 32, 8, 128);
+        HERO_DIALOGUE_COOLDOWN_SECONDS = b.comment("At most one line per hero this often (summoned, fallen, revived, ultimate and greetings ignore it).")
+                .defineInRange("dialogueCooldownSeconds", 20, 5, 300);
+        HERO_DEFAULT_LINES = b.comment("Short generic lines for the events a hero's own file has no line for.")
+                .define("defaultLines", true);
+        HERO_SPEECH_BUBBLES = b.comment("Show a hero's line above its head for 3 seconds as well as in chat.")
+                .define("speechBubbles", true);
+        HERO_SHOW_ENERGY = b.comment("Show a fighting hero's energy on its name tag: [Fighting 80%].")
+                .define("showEnergy", true);
+        b.pop();
+
+        b.comment("Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)").push("boss");
+        BOSS_HEALTH_SCALE = b.comment("Multiplies every hero's boss health, in percent (PROPOSED: 100). A hero's health is its v1 health x its",
+                        "health_scale (rarity: common 250, rare 300, epic 350, legendary 400) x its role factor, whoever and however many it fights.")
+                .defineInRange("healthScale", 100, 25, 300);
         b.pop();
         SPEC = b.build();
     }

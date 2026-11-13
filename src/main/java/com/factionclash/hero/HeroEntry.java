@@ -1,7 +1,9 @@
 package com.factionclash.hero;
 
 import com.factionclash.FactionClash;
+import com.factionclash.logic.hero.HeroDef;
 import com.factionclash.logic.hero.HeroIdentity;
+import com.factionclash.logic.hero.HeroLoadout;
 import com.factionclash.npc.NpcRole;
 import net.minecraft.resources.ResourceLocation;
 
@@ -10,16 +12,29 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * One hero the registry knows: its id, the name and title it goes by, its visual side and where its client files
- * are. A1a has no kit format yet: the name comes from the id unless a config override gives one, and the hero fights
- * as a plain soldier of {@link #role()}. A1b adds the definition (moves, lines) beside this.
+ * One hero the registry knows: its id, the name and title it goes by, its visual side, where its client files are,
+ * and its server definition (A1b: {@code data/factionclash/heroes/<id>.json} with the operator's override merged,
+ * checked by {@code HeroAssembly}). A hero with no valid definition ({@code def} null) is <b>dormant</b> (HEROES_V2
+ * 3.4): it fights as a plain soldier with the neutral model and its name tag says {@code (dormant)}. A client that
+ * joined a dedicated server knows the visual side only; the entity's synced dormant flag tells it which look to draw.
  *
  * @param ownModel  whether {@code geo/hero/<id>.geo.json} ships; without it the hero is drawn with the neutral
- *                  {@code _fallback} model (test fixtures, a removed hero)
+ *                  {@code _fallback} model (test fixtures, a definition without art)
  * @param overrides the config override's fields that changed this hero (empty without one)
+ * @param def       the checked definition, or null (dormant; always null for preview fixtures and on a remote client)
  */
 public record HeroEntry(String id, String name, String title, HeroVisual visual, Source source, boolean ownModel,
-                        List<String> overrides) {
+                        List<String> overrides, HeroDef def) {
+
+    public HeroEntry(String id, String name, String title, HeroVisual visual, Source source, boolean ownModel,
+                     List<String> overrides) {
+        this(id, name, title, visual, source, ownModel, overrides, null);
+    }
+
+    /** No valid definition: a plain soldier with the neutral look (a preview fixture is never dormant: it has none). */
+    public boolean dormant() {
+        return def == null && source != Source.FIXTURE;
+    }
 
     /**
      * Where the entry came from: the mod's files, a test's fixture, or a preview fixture (an operator's
@@ -33,10 +48,19 @@ public record HeroEntry(String id, String name, String title, HeroVisual visual,
         return source == Source.FIXTURE;
     }
 
-    /** The soldier role it counts as: the one that fits its weapon style (HEROES_V2 3.2). */
+    /**
+     * The soldier role it counts as (HEROES_V2 3.2): from its definition's basic attack, kit and weapon style
+     * ({@link HeroLoadout#roleId}); without a definition, the one that fits its visual file's weapon style.
+     */
     public NpcRole role() {
-        NpcRole r = NpcRole.byId(HeroIdentity.combatRoleId(visual.style()));
+        String id = def != null ? HeroLoadout.roleId(def, visual.style()) : HeroIdentity.combatRoleId(visual.style());
+        NpcRole r = NpcRole.byId(id);
         return r == null ? NpcRole.SWORDSMAN : r;
+    }
+
+    /** The weapon style its kit is read with: its visual file's (a definition without art has the neutral model's fists). */
+    public String style() {
+        return visual.style();
     }
 
     /**

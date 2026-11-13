@@ -327,6 +327,26 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return getMainHandItem();
     }
 
+    /** Fights with its bare hands and never fetches a weapon (a fists-style hero, HEROES_V2 3.2); never an NPC. */
+    public boolean fightsBareHanded() {
+        return false;
+    }
+
+    /** Whether it goes to the storehouse for its role's tool when it has none in hand (a hero with its kit weapon does not). */
+    public boolean needsRoleTool() {
+        return true;
+    }
+
+    /** Whether a better tool or weapon of its role's kind from the storehouse replaces the one it holds. */
+    public boolean takesStoreWeapons() {
+        return true;
+    }
+
+    /** Whether it takes a shield from the storehouse (swordsmen fight sword and board). */
+    public boolean takesShield() {
+        return getRole() == NpcRole.SWORDSMAN;
+    }
+
     @Override
     public boolean canFireProjectileWeapon(ProjectileWeaponItem weapon) {
         return weapon instanceof BowItem || weapon instanceof net.minecraft.world.item.CrossbowItem;

@@ -52,6 +52,10 @@ class HeroMessagesTest {
         return HeroReader.read(file, text);
     }
 
+    private static Loaded assemble(List<Source> defs, Set<String> shipped, List<Source> overrides) {
+        return HeroAssembly.assemble(new HeroAssembly.Input(defs, shipped, overrides, List.of(), Options.DEFAULT)).loaded();
+    }
+
     private static Loaded withBasic(String basic) {
         return read(MIN.replace("\"basic_attack\": {\"style\": \"melee\"}, ", "") + ", \"basic_attack\": " + basic
                 + "}");
@@ -411,6 +415,18 @@ class HeroMessagesTest {
             }
             return HeroReader.readAll(s, Options.BUILTIN);
         });
+        // the game's set of heroes (HeroAssembly, HeroOverride)
+        c(Problems.Code.NOT_BUILTIN, NL, "\"test_hero\" is not one of the mod's heroes: only the built-in heroes load",
+                () -> assemble(List.of(new Source("test_hero.json", V2Files.hero2(""))), Set.of("other_hero"), List.of()));
+        c(Problems.Code.OVERRIDE_NO_HERO, NO, "there is no built-in hero \"ghost_hero\" to override",
+                () -> assemble(List.of(new Source("test_hero.json", V2Files.hero2(""))), null,
+                        List.of(new Source("config/factionclash/heroes/ghost_hero.json", "{\"name\": \"Ghost\"}"))));
+        c(Problems.Code.OVERRIDE_UNREADABLE, PL, "the override could not be read: a comma is missing",
+                () -> assemble(List.of(new Source("test_hero.json", V2Files.hero2(""))), null,
+                        List.of(new Source("config/factionclash/heroes/test_hero.json", "{\"name\": \"A\" \"title\": \"B\"}"))));
+        c(Problems.Code.OVERRIDE_FIXED, NO, "\"id\" can never be overridden",
+                () -> assemble(List.of(new Source("test_hero.json", V2Files.hero2(""))), null,
+                        List.of(new Source("config/factionclash/heroes/test_hero.json", "{\"id\": \"other\"}"))));
         // the JSON reader's own
         j(HeroJson.Code.BOM, NO, "byte-order mark", "\uFEFF" + hero(""));
         j(HeroJson.Code.CRLF, NO, "Windows line ends", hero("").replace(", ", ",\r\n"));

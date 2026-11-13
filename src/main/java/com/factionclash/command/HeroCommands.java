@@ -8,7 +8,13 @@ import com.factionclash.hero.HeroEntity;
 import com.factionclash.hero.HeroEntry;
 import com.factionclash.hero.HeroManager;
 import com.factionclash.hero.HeroRegistry;
+import com.factionclash.config.FCConfig;
 import com.factionclash.logic.hero.HeroActions;
+import com.factionclash.logic.hero.HeroAssembly;
+import com.factionclash.logic.hero.HeroDef;
+import com.factionclash.logic.hero.HeroReader;
+import com.factionclash.logic.hero.HeroRules;
+import com.factionclash.logic.hero.Problems;
 import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.logic.hero.HeroRevival;
 import com.factionclash.logic.hero.HeroSize;
@@ -41,9 +47,10 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Hero commands (HEROES_V2 12.1; v1 27): {@code /fc hero list|info <id>} for everyone and
- * {@code /fc admin hero give <id> <faction> [pos]|release <id>|revive <id>} for operators. {@code check}, {@code reload}
- * and the sheet screen come with the kit format (A1b).
+ * Hero commands (HEROES_V2 12.1; v1 27): {@code /fc hero list|info <id>} for everyone, {@code /fc hero check <id|all>}
+ * (the definitions read and checked now, nothing applied) and {@code /fc hero reload} (read, checked and applied to the
+ * living heroes) for operators, and {@code /fc admin hero give <id> <faction> [pos]|release <id>|revive <id>}. The
+ * sheet screen comes later; {@code info} prints the sheet as text.
  *
  * <p>Screenshot tools (A2, operators): {@code preview <id> [faction] [pos] [yaw]} stands a display copy of a hero
  * ({@link HeroManager#preview}); {@code lineup [first] [count] [spacing] [faction]} stands a row of them in front of the
@@ -65,7 +72,145 @@ public final class HeroCommands {
     public static LiteralArgumentBuilder<CommandSourceStack> player() {
         return Commands.literal("hero")
                 .then(Commands.literal("list").executes(HeroCommands::list))
-                .then(Commands.literal("info").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES).executes(HeroCommands::info)));
+                .then(Commands.literal("info").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES).executes(HeroCommands::info)))
+                .then(Commands.literal("check").requires(src -> src.hasPermission(2))
+                        .executes(c -> check(c, "all"))
+                        .then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES_OR_ALL).executes(c -> check(c, id(c)))))
+                .then(Commands.literal("reload").requires(src -> src.hasPermission(2)).executes(HeroCommands::reload));
+    }
+
+    // ------------------------------------------------------------------ check and reload (A1b; v1 26.4, 27)
+
+    /** At most this many problem lines in chat; the rest are in the log and {@code config/factionclash/heroes/_report.txt}. */
+    private static final int CHAT_LINES = 30;
+
+    /**
+     * {@code /fc hero check <id|all>}: reads the definitions now (the server's packs and the config overrides) and checks
+     * them without applying anything; prints the problems, then what the mod makes of the hero (v1 26.4).
+     */
+    private static int check(CommandContext<CommandSourceStack> c, String id) {
+        MinecraftServer server = c.getSource().getServer();
+        HeroAssembly.Result r = HeroRegistry.check(com.factionclash.hero.HeroDefinitions.read(server.getResourceManager()));
+        HeroReader.Loaded l = r.loaded();
+        boolean all = id.equals("all");
+        List<Problems.Problem> problems = new java.util.ArrayList<>();
+        for (Problems.Problem p : l.problems().all()) {
+            if (all || id.equals(p.hero()) || p.file().endsWith("/" + id + ".json")) {
+                problems.add(p);
+            }
+        }
+        if (!all && l.hero(id) == null && problems.isEmpty()) {
+            c.getSource().sendFailure(Component.literal("No hero definition \"" + id + "\" (data/" + com.factionclash.FactionClash.MODID
+                    + "/heroes/" + id + ".json). /fc hero list shows the heroes."));
+            return 0;
+        }
+        c.getSource().sendSuccess(() -> Component.literal(l.problems().summary(all ? l.heroes().keySet()
+                : l.hero(id) == null ? List.of() : List.of(id), all ? l.notLoaded() : l.notLoaded().contains(id) ? List.of(id) : List.of())
+                + (problems.isEmpty() ? ", nothing to report" : ", " + problems.size() + " problem(s)")).withStyle(ChatFormatting.GOLD), false);
+        problems.sort(java.util.Comparator.comparing((Problems.Problem p) -> p.severity().ordinal()).thenComparing(Problems.Problem::file)
+                .thenComparingInt(Problems.Problem::line));
+        int shown = 0;
+        for (Problems.Problem p : problems) {
+            if (shown++ >= CHAT_LINES) {
+                int rest = problems.size() - CHAT_LINES;
+                c.getSource().sendSuccess(() -> Component.literal(" ... and " + rest + " more (server log, config/"
+                        + com.factionclash.FactionClash.MODID + "/heroes/_report.txt after a reload)").withStyle(ChatFormatting.GRAY), false);
+                break;
+            }
+            ChatFormatting colour = switch (p.severity()) {
+                case NOT_LOADED -> ChatFormatting.RED;
+                case PART_LEFT_OUT -> ChatFormatting.GOLD;
+                case ADJUSTED -> ChatFormatting.YELLOW;
+                case NOTE -> ChatFormatting.GRAY;
+            };
+            String line = p.format();
+            c.getSource().sendSuccess(() -> Component.literal(" " + line).withStyle(colour), false);
+        }
+        if (!all && l.hero(id) != null) {
+            HeroEntry e = HeroRegistry.get(id);
+            for (String line : sheet(l.hero(id), e == null ? null : e.style(), currentLevel(server, id))) {
+                c.getSource().sendSuccess(() -> Component.literal(" " + line), false);
+            }
+        }
+        return l.notLoaded().isEmpty() || !all && !l.notLoaded().contains(id) ? 1 : 0;
+    }
+
+    private static int currentLevel(MinecraftServer server, String id) {
+        HeroState s = CampaignData.get(server).heroes.get(id);
+        return s == null ? 1 : Math.max(1, s.level);
+    }
+
+    /**
+     * What the mod makes of a hero (v1 26.4): role and style, its numbers with boss health at levels 1, its current one
+     * and 30, its kit, moves and ultimates with their classes, the end of its fights, its revival, talents and lines.
+     */
+    public static List<String> sheet(HeroDef d, String style, int level) {
+        List<String> out = new java.util.ArrayList<>();
+        out.add(d.name() + (d.title() == null || d.title().isEmpty() ? "" : " \u00b7 " + d.title()) + " (" + d.id() + "): "
+                + d.rarity().id() + " " + d.behaviour().role().id() + ", fights as " + com.factionclash.logic.hero.HeroLoadout.roleId(d, style)
+                + (com.factionclash.logic.hero.HeroLoadout.bareHanded(d, style) ? " with its bare hands" : "")
+                + ", " + d.basicAttack().style().id() + " basic attack, style " + (style == null ? "-" : style));
+        int scale = FCConfig.BOSS_HEALTH_SCALE.get();
+        for (int lv : new java.util.TreeSet<>(List.of(1, Math.max(1, level), com.factionclash.logic.hero.HeroCatalogue.MAX_LEVEL))) {
+            var n = com.factionclash.logic.hero.HeroLoadout.numbers(d, lv, false, scale);
+            out.add(String.format(Locale.ROOT, " level %d: %.0f health (%.1f x %.0f%% x %.2f), +%.2f attack, +%.2f armour, speed %.0f%%,"
+                            + " knock-back resistance %.0f%%, war power %.1f", lv, n.maxHealth(), n.baseHealth(), n.healthScale(), n.roleFactor(),
+                    n.attackBonus(), n.armorBonus(), (1 + n.speedModifier()) * 100, n.knockbackResistance() * 100,
+                    HeroRules.heroPower(n.maxHealth(), lv, FCConfig.HERO_POWER_PERCENT.get())));
+        }
+        StringBuilder kit = new StringBuilder(" kit:");
+        for (HeroDef.GearItem g : com.factionclash.logic.hero.HeroLoadout.kit(d, style)) {
+            kit.append(' ').append(g.item()).append(g.name() == null ? "" : " \"" + g.name() + "\"").append(g.enchantments().isEmpty() ? "" : " " + g.enchantments());
+        }
+        out.add(kit.length() == 5 ? " kit: nothing (bare hands)" : kit.toString());
+        StringBuilder moves = new StringBuilder(" moves:");
+        for (HeroDef.Move m : d.v2().allMoves()) {
+            moves.append(' ').append(m.id()).append(" (").append(m.cls().id()).append(' ').append(m.form().id()).append(')');
+        }
+        out.add(moves.length() == 7 ? " moves: none (basic attacks only)" : moves + "; run by the move engine from A3/A5");
+        out.add(" end of a fight: " + d.v2().end().sheetLine() + "; phases " + d.v2().boss().phases().size() + ", poise "
+                + d.v2().boss().poise() + ", per-hit cap " + d.v2().boss().maxHitShare() + "%");
+        HeroDef.Revival rv = d.v2().revival();
+        int own = rv == null ? 0 : rv.seconds();
+        out.add(" revival: returns " + HeroRevival.countdown(HeroRules.reviveDelaySeconds(FCConfig.HERO_REVIVE_SECONDS.get(), own, 0,
+                FCConfig.HERO_MIN_REVIVE_SECONDS.get()) * 20L) + " after a death" + (rv == null ? "" : " (its own revival: "
+                + rv.where().id() + (rv.at() == HeroDef.RiseAt.NIGHT ? ", at nightfall" : "") + ")")
+                + "; a faction's revival_rite shortens it, never under " + FCConfig.HERO_MIN_REVIVE_SECONDS.get() + " s");
+        out.add(" talents: " + (d.v2().talents().isEmpty() ? "none" : String.join(", ", d.v2().talents().stream()
+                .map(t -> t.id().id() + (t.realm() ? " (realm)" : "")).toList())));
+        int lines = d.lines().values().stream().mapToInt(List::size).sum();
+        out.add(" lines: " + lines + " in " + d.lines().size() + " event(s): " + String.join(", ", d.lines().keySet().stream().map(HeroDef.LineEvent::id).toList()));
+        return out;
+    }
+
+    /**
+     * {@code /fc hero reload}: the definitions read again from the server's packs, the overrides and the visual files
+     * from disk, checked, applied to every loaded hero at once (a broken or removed file leaves its hero dormant), and
+     * the summary with every NOT LOADED and PART LEFT OUT line in chat (v1 26.4).
+     */
+    private static int reload(CommandContext<CommandSourceStack> c) {
+        MinecraftServer server = c.getSource().getServer();
+        HeroRegistry.reload(server.getResourceManager());
+        int refreshed = HeroManager.refreshAll(server);
+        HeroReader.Loaded l = HeroRegistry.report();
+        c.getSource().sendSuccess(() -> Component.literal(l.problems().summary(l.heroes().keySet(), l.notLoaded()) + "; "
+                + refreshed + " hero(es) in the world updated").withStyle(ChatFormatting.GOLD), true);
+        int shown = 0;
+        for (Problems.Problem p : l.problems().all()) {
+            if (p.severity() != Problems.Severity.NOT_LOADED && p.severity() != Problems.Severity.PART_LEFT_OUT) {
+                continue;
+            }
+            if (shown++ >= CHAT_LINES) {
+                break;
+            }
+            String line = p.format();
+            ChatFormatting colour = p.severity() == Problems.Severity.NOT_LOADED ? ChatFormatting.RED : ChatFormatting.GOLD;
+            c.getSource().sendSuccess(() -> Component.literal(" " + line).withStyle(colour), false);
+        }
+        for (String p : HeroRegistry.problems()) {
+            c.getSource().sendSuccess(() -> Component.literal(" " + p).withStyle(ChatFormatting.YELLOW), false);
+        }
+        return l.heroes().size();
     }
 
     /** {@code /fc admin hero ...} */
@@ -410,8 +555,9 @@ public final class HeroCommands {
         long now = server.overworld().getGameTime();
         for (HeroEntry e : heroes) {
             HeroState s = data.heroes.get(e.id());
-            String line = " " + e.name() + " (" + e.id() + "): " + status(s, now);
-            ChatFormatting colour = s != null && s.owner != null ? s.owner.color : ChatFormatting.GRAY;
+            String line = " " + e.name() + (e.title().isEmpty() ? "" : " \u00b7 " + e.title()) + " (" + e.id() + "): " + status(s, now)
+                    + (e.dormant() ? " (dormant: no valid definition)" : e.previewOnly() ? " (preview fixture)" : "");
+            ChatFormatting colour = e.dormant() ? ChatFormatting.DARK_GRAY : s != null && s.owner != null ? s.owner.color : ChatFormatting.GRAY;
             c.getSource().sendSuccess(() -> Component.literal(line).withStyle(colour), false);
         }
         // heroes in the campaign whose files are gone: dormant, they fight as plain soldiers with the neutral look
@@ -421,9 +567,11 @@ public final class HeroCommands {
                         + status(s, now) + " (dormant: no hero files)").withStyle(ChatFormatting.DARK_GRAY), false);
             }
         }
-        if (c.getSource().hasPermission(2) && !HeroRegistry.problems().isEmpty()) {
-            c.getSource().sendSuccess(() -> Component.literal(" " + HeroRegistry.problems().size()
-                    + " problem(s) in the hero files (see the server log)").withStyle(ChatFormatting.YELLOW), false);
+        HeroReader.Loaded report = HeroRegistry.report();
+        if (c.getSource().hasPermission(2) && (!HeroRegistry.problems().isEmpty() || !report.problems().all().isEmpty())) {
+            c.getSource().sendSuccess(() -> Component.literal(" " + report.problems().summary(report.heroes().keySet(), report.notLoaded())
+                    + "; " + (HeroRegistry.problems().size() + report.problems().all().size())
+                    + " problem(s) in the hero files (/fc hero check)").withStyle(ChatFormatting.YELLOW), false);
         }
         return heroes.size();
     }
@@ -490,8 +638,19 @@ public final class HeroCommands {
                 size.clamped() ? ", capped at 1.98" : size.floored() ? ", raised to the 1.2 minimum" : ""));
         lines.add(" Model: " + shown.model().getPath() + (e != null && e.ownModel() ? "" : " (neutral model)")
                 + "; animations " + String.join(" > ", v.animationChain()));
-        lines.add(" Kit, moves and lines: not in this build yet (plain soldier's attacks)"
-                + (e != null && !e.overrides().isEmpty() ? "; config override: " + String.join(", ", e.overrides()) : ""));
+        if (e != null && e.def() != null) {
+            List<String> sheet = sheet(e.def(), e.style(), s == null ? 1 : Math.max(1, s.level));
+            lines.addAll(sheet.subList(1, sheet.size()));
+            if (!e.overrides().isEmpty()) {
+                lines.add(" Config override: " + String.join(", ", e.overrides()));
+            }
+        } else {
+            lines.add(" Dormant: no valid definition; it fights as a plain soldier with the neutral look (/fc hero check " + id + ")");
+        }
+        if (s != null) {
+            lines.add(" Record: " + s.kills + " kill(s), " + s.deaths + " death(s), " + s.revivals + " revival(s), fights " + s.fights
+                    + (h != null ? String.format(Locale.ROOT, ", energy %d%%%s", h.energy(), h.lastLine().isEmpty() ? "" : ", last said \"" + h.lastLine() + "\"") : ""));
+        }
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
             ChatFormatting colour = i == 0 ? ChatFormatting.GOLD : ChatFormatting.WHITE;

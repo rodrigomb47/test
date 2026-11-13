@@ -394,10 +394,30 @@ public final class HeroRules {
      * its own) and not who killed it.
      */
     public static int reviveDelaySeconds(int configSeconds, int ownSeconds, int riteTier) {
+        return reviveDelaySeconds(configSeconds, ownSeconds, riteTier, MIN_REVIVE_SECONDS);
+    }
+
+    /**
+     * The same with {@code heroes.minReviveSeconds} as the floor ({@code floorSeconds}; it is never below
+     * {@link #MIN_REVIVE_SECONDS}, so a config cannot bring a hero back in the fight that killed it).
+     */
+    public static int reviveDelaySeconds(int configSeconds, int ownSeconds, int riteTier, int floorSeconds) {
         int base = ownSeconds > 0 ? Math.min(ownSeconds, OWN_REVIVE_MAX_SECONDS) : Math.max(1, configSeconds);
         int tier = Math.max(0, Math.min(3, riteTier));
         double s = base * (100 - REVIVAL_RITE_PERCENT[tier]) / 100.0;
-        return (int) Math.max(MIN_REVIVE_SECONDS, Math.round(s));
+        return (int) Math.max(Math.max(MIN_REVIVE_SECONDS, floorSeconds), Math.round(s));
+    }
+
+    /**
+     * The faction's {@code revival_rite} tier (0: none): the best of its heroes that have the talent, each at the tier
+     * of its own level (7.2: the strongest copy counts, never the sum). {@code holderLevels} are those heroes' levels.
+     */
+    public static int riteTier(List<Integer> holderLevels) {
+        int best = 0;
+        for (int level : holderLevels) {
+            best = Math.max(best, talentTier(level));
+        }
+        return best;
     }
 
     /**

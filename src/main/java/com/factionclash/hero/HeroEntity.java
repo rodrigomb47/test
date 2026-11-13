@@ -1,12 +1,36 @@
 package com.factionclash.hero;
 
 import com.factionclash.FactionClash;
+import com.factionclash.campaign.CampaignData;
+import com.factionclash.campaign.HeroState;
+import com.factionclash.combat.CombatRules;
+import com.factionclash.config.FCConfig;
 import com.factionclash.logic.hero.HeroActions;
+import com.factionclash.logic.hero.HeroDef;
+import com.factionclash.logic.hero.HeroDef.LineEvent;
+import com.factionclash.logic.hero.HeroLoadout;
+import com.factionclash.logic.hero.HeroRules;
+import com.factionclash.logic.hero.HeroSpeech;
 import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.logic.hero.HeroSize;
 import com.factionclash.logic.hero.HeroTimings;
 import com.factionclash.logic.hero.MoodRules;
 import com.factionclash.npc.FactionNpc;
+import com.factionclash.npc.NpcRole;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -29,13 +53,24 @@ import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * A hero (HEROES_V2 3): a faction NPC with everything a faction NPC has (inventory, hunger, gear and wear, traits,
  * levels, its job, navigation, stuck recovery, roster record, alarms, war council) plus a hero id, the synced fields
  * the animated model is driven by (10.1) and a hitbox sized from its model (3.6). It counts as one soldier of the
  * role that fits its weapon style and fights with that role's basic attacks until the kit engine (A3) exists.
+ *
+ * <p><b>Its definition</b> (A1b, {@link #applyDefinition}): the stats of its file with growth, boss health at all
+ * times (one mode, HEROES_V2 6.1: nothing reads who it fights), the role its style fits, the kit of its file (bound
+ * items; a fists-style hero holds no weapon and never fetches one), the name tag {@code ★ Name · title} with
+ * {@code [Fighting 80%]} while it fights, and its lines ({@link #say}: the rate limit of v1 23, chat to the event's
+ * audience and a speech bubble above the head). A hero whose definition is broken or gone is <b>dormant</b>
+ * (HEROES_V2 3.4): it keeps its entity and saved state and fights as a plain soldier with the neutral model and a
+ * {@code (dormant)} tag; the synced flag tells clients which look to draw.
  *
  * <p>GeckoLib is on both sides, so implementing {@link GeoEntity} is safe on a dedicated server; nothing here
  * touches a client class. Its three animation controllers are {@link HeroAnimator}'s (A2); they run only in the client
@@ -63,6 +98,30 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
      */
     private static final EntityDataAccessor<Byte> DATA_POSE = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.BYTE);
 
+    /** No valid definition: a plain soldier drawn with the neutral model (HEROES_V2 3.4); set by the server. */
+    private static final EntityDataAccessor<Boolean> DATA_DORMANT = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.BOOLEAN);
+
+    /** The attribute modifiers a definition sets (fixed ids, so a reload or level-up never stacks them). */
+    public static final ResourceLocation BOSS_HEALTH = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "boss_health"),
+            HERO_ATTACK = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "hero_attack"),
+            HERO_ARMOR = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "hero_armor"),
+            HERO_SPEED = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "hero_speed"),
+            HERO_KNOCKBACK = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "hero_knockback");
+
+    /** A fight starts when it takes a target after this long without one (v1 23's {@code fight_start}; 10 s). */
+    public static final int FIGHT_GAP = 200;
+    /** A fight is won when it has had no target this long and no hostile is within {@link #VICTORY_RADIUS}. */
+    public static final int VICTORY_AFTER = 100;
+    public static final double VICTORY_RADIUS = 16;
+    /** {@code low_health} under 30% of max health, said again only after it has been back above half. */
+    public static final float LOW_HEALTH = 0.3F, LOW_HEALTH_REARM = 0.5F;
+    /** {@code idle}: at its base, a faction player within 12 blocks, checked every 10 s (the clock allows one per 15 min). */
+    public static final double IDLE_RADIUS = 12;
+    /** {@code ally_fallen}: a member of its side dying within this many blocks (v1 23). */
+    public static final double ALLY_RADIUS = 24;
+    /** The tag a speech bubble carries (a bubble saved with a chunk is discarded when it loads again). */
+    public static final String BUBBLE_TAG = "fc_hero_speech";
+
     /** After its last blow or shot it keeps the weapon drawn this long (ticks). */
     public static final int WEAPON_DRAWN_AFTER_FIGHT = 100;
 
@@ -87,6 +146,23 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     /** The client renderer's per-hero state (face clocks, level of detail, sway); null on a server. */
     private Object clientState;
 
+    /** Energy 0-100 (v1 14): basic hits, kills and damage taken fill it; a revival starts at 0. Saved. */
+    private int energy;
+    /** The kit it was last equipped with ({@link HeroLoadout#signature}); a reload re-equips it only when this changes. */
+    private String kitSignature = "";
+    /** From its definition at the last {@link #applyDefinition}: a bare-handed kit, a kit with a shield. */
+    private boolean bareHandedKit, shieldKit;
+    /** The fight: the last tick it had a target, whether a fight is on, whether the low-health line is armed. */
+    private int lastTargetTick = -100000;
+    private boolean inFight;
+    private boolean lowHealthArmed = true;
+    /** Its dialogue clock (v1 23), the last line it said and its speech bubble (a text display above the head). */
+    private final HeroSpeech.Clock clock = new HeroSpeech.Clock();
+    private String lastLine = "";
+    private Display.TextDisplay bubble;
+    private int bubbleUntil;
+    private int talkUntil = -1;
+
     public HeroEntity(EntityType<? extends HeroEntity> type, Level level) {
         super(type, level);
     }
@@ -104,6 +180,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         builder.define(DATA_MOOD, (byte) 0);
         builder.define(DATA_LOCO, (byte) 0);
         builder.define(DATA_POSE, (byte) 0);
+        builder.define(DATA_DORMANT, false);
     }
 
     // ------------------------------------------------------------------ identity
@@ -112,14 +189,30 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return entityData.get(DATA_HERO);
     }
 
-    /** The registry entry it is drawn and sized with (the fallback for an unknown, dormant hero). */
+    /**
+     * The registry entry it is drawn and sized with: its own, or the neutral fallback for a dormant or unknown hero
+     * (the synced flag decides on a client, which may not know the server's definitions).
+     */
     public HeroEntry entry() {
-        return HeroRegistry.getOrFallback(heroId());
+        return entityData.get(DATA_DORMANT) ? HeroRegistry.fallback() : HeroRegistry.getOrFallback(heroId());
     }
 
-    /** Whether the registry knows its id (a hero whose id it does not know is dormant: plain soldier, fallback look). */
+    /**
+     * Whether it has no valid definition (HEROES_V2 3.4): a plain soldier with the neutral look and a {@code (dormant)}
+     * tag. The server works it out from the registry; a client reads the synced flag.
+     */
     public boolean dormant() {
-        return HeroRegistry.get(heroId()) == null;
+        if (level().isClientSide) {
+            return entityData.get(DATA_DORMANT);
+        }
+        HeroEntry e = HeroRegistry.get(heroId());
+        return e == null || e.dormant();
+    }
+
+    /** Its checked definition (server), or null when it is dormant. */
+    public HeroDef definition() {
+        HeroEntry e = HeroRegistry.get(heroId());
+        return e == null ? null : e.def();
     }
 
     /**
@@ -128,6 +221,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
      */
     public void setHeroId(String id) {
         entityData.set(DATA_HERO, id == null ? "" : id);
+        if (!level().isClientSide) {
+            entityData.set(DATA_DORMANT, dormant());
+        }
         AttributeInstance scale = getAttribute(Attributes.SCALE);
         if (scale != null) {
             scale.setBaseValue(entry().visual().scale());
@@ -138,9 +234,348 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     @Override
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
-        if (DATA_HERO.equals(key)) {
+        if (DATA_HERO.equals(key) || DATA_DORMANT.equals(key)) {
             refreshDimensions();
         }
+    }
+
+    // ------------------------------------------------------------------ the definition (A1b)
+
+    /**
+     * Takes its definition as the registry has it now (spawn, load, {@code /reload}, {@code /fc hero reload}): the
+     * dormant flag, its numbers with the health share kept, its role, name and title, and its kit when the kit changed
+     * ({@code equipKit} true: always, as at a spawn). A dormant hero keeps what it holds and its last role, and fights
+     * as a plain soldier (20 health, nothing added).
+     */
+    public void applyDefinition(boolean equipKit) {
+        if (level().isClientSide) {
+            return;
+        }
+        HeroEntry e = HeroRegistry.get(heroId());
+        boolean dormant = e == null || e.dormant();
+        entityData.set(DATA_DORMANT, dormant);
+        AttributeInstance scale = getAttribute(Attributes.SCALE);
+        if (scale != null) {
+            scale.setBaseValue(entry().visual().scale());
+        }
+        if (!dormant && !preview) {
+            NpcRole role = e.role();
+            if (role != getRole()) {
+                role(role); // (releases a workplace of the old role; also re-applies the numbers)
+            }
+            if (!e.name().equals(npcName())) {
+                setNpcName(e.name());
+            }
+        }
+        HeroDef d = e == null ? null : e.def(); // (null for a dormant hero and for a preview fixture)
+        bareHandedKit = d != null && HeroLoadout.bareHanded(d, e.style());
+        shieldKit = d != null && HeroLoadout.hasShield(d, e.style());
+        applyNumbers();
+        String sig = d == null ? "" : HeroLoadout.signature(HeroLoadout.kit(d, e.style()), HeroLoadout.needsArrow(d));
+        if (equipKit || d != null && !sig.equals(kitSignature)) {
+            equipKit();
+        }
+        refreshDimensions();
+        refreshName();
+    }
+
+    /** The stats of its definition at its level (or a plain soldier's when dormant), keeping its share of health. */
+    private void applyNumbers() {
+        if (level().isClientSide || heroId().isEmpty()) {
+            return;
+        }
+        HeroDef d = dormant() ? null : definition();
+        HeroLoadout.Numbers n = d == null ? HeroLoadout.PLAIN
+                : HeroLoadout.numbers(d, npcLevel(), false, FCConfig.BOSS_HEALTH_SCALE.get());
+        float oldMax = getMaxHealth(), health = getHealth();
+        AttributeInstance max = getAttribute(Attributes.MAX_HEALTH);
+        if (max != null) {
+            max.setBaseValue(n.baseHealth());
+        }
+        modifier(Attributes.MAX_HEALTH, BOSS_HEALTH, n.bossModifier(), AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+        modifier(Attributes.ATTACK_DAMAGE, HERO_ATTACK, n.attackBonus(), AttributeModifier.Operation.ADD_VALUE);
+        modifier(Attributes.ARMOR, HERO_ARMOR, n.armorBonus(), AttributeModifier.Operation.ADD_VALUE);
+        modifier(Attributes.MOVEMENT_SPEED, HERO_SPEED, n.speedModifier(), AttributeModifier.Operation.ADD_MULTIPLIED_BASE);
+        modifier(Attributes.KNOCKBACK_RESISTANCE, HERO_KNOCKBACK, n.knockbackResistance(), AttributeModifier.Operation.ADD_VALUE);
+        float newMax = getMaxHealth();
+        if (Math.abs(newMax - oldMax) > 1e-4 && oldMax > 0 && isAlive()) {
+            setHealth((float) com.factionclash.logic.hero.BossRules.keepShare(health, oldMax, newMax));
+        }
+    }
+
+    private void modifier(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attr, ResourceLocation id,
+                          double amount, AttributeModifier.Operation op) {
+        AttributeInstance inst = getAttribute(attr);
+        if (inst == null) {
+            return;
+        }
+        inst.removeModifier(id);
+        if (amount != 0) {
+            inst.addTransientModifier(new AttributeModifier(id, amount, op));
+        }
+    }
+
+    /** Affixes and the definition's numbers together: a level-up (growth) and a role change re-apply both. */
+    @Override
+    public void reapplyAffixes() {
+        super.reapplyAffixes();
+        applyNumbers();
+    }
+
+    /**
+     * Puts on its kit: every bound item it wears or carries is taken away, then the definition's kit goes into the
+     * slots storehouse gear does not fill (a dormant hero: its role's basic weapon, as a plain soldier). Bow and
+     * crossbow heroes get the never-used-up arrow.
+     */
+    public void equipKit() {
+        if (level().isClientSide) {
+            return;
+        }
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (slot.getType() != EquipmentSlot.Type.ANIMAL_ARMOR && HeroKit.isKit(getItemBySlot(slot))) {
+                setItemSlot(slot, ItemStack.EMPTY);
+            }
+        }
+        for (int i = 0; i < inventory().getContainerSize(); i++) {
+            if (HeroKit.isKit(inventory().getItem(i))) {
+                inventory().setItem(i, ItemStack.EMPTY);
+            }
+        }
+        if (HeroKit.isKit(ammo())) {
+            setAmmo(ItemStack.EMPTY);
+        }
+        HeroEntry e = HeroRegistry.get(heroId());
+        HeroDef d = e == null ? null : e.def();
+        if (d == null) {
+            kitSignature = "";
+            ItemStack w = HeroKit.weapon(getRole(), heroId());
+            if (!w.isEmpty() && getMainHandItem().isEmpty()) {
+                setItemSlot(EquipmentSlot.MAINHAND, w);
+            }
+            if (getRole().ranged && ammo().isEmpty()) {
+                setAmmo(HeroKit.mark(new ItemStack(net.minecraft.world.item.Items.ARROW), heroId()));
+            }
+            return;
+        }
+        List<HeroDef.GearItem> kit = HeroLoadout.kit(d, e.style());
+        for (HeroDef.GearItem g : kit) {
+            EquipmentSlot slot = HeroKit.slot(g.slot());
+            if (getItemBySlot(slot).isEmpty()) {
+                ItemStack stack = HeroKit.item(g, heroId(), registryAccess());
+                if (!stack.isEmpty()) {
+                    setItemSlot(slot, stack);
+                }
+            }
+        }
+        if (HeroLoadout.needsArrow(d) && ammo().isEmpty()) {
+            setAmmo(HeroKit.mark(new ItemStack(net.minecraft.world.item.Items.ARROW), heroId()));
+        }
+        kitSignature = HeroLoadout.signature(kit, HeroLoadout.needsArrow(d));
+    }
+
+    /** A fists-style hero (or a thrown one) fights with its bare hands: its kit holds nothing in the main hand. */
+    @Override
+    public boolean fightsBareHanded() {
+        return bareHandedKit && !entityData.get(DATA_DORMANT);
+    }
+
+    /**
+     * Its weapon is its kit's: a bare-handed hero needs none, and one holding its bound kit weapon (a mace, a sword)
+     * needs no trip to the storehouse for its role's tool.
+     */
+    @Override
+    public boolean needsRoleTool() {
+        return !fightsBareHanded() && !HeroKit.isKit(getMainHandItem());
+    }
+
+    /** A better storehouse weapon of the same kind replaces its kit weapon (v1 7); a bare-handed hero takes none. */
+    @Override
+    public boolean takesStoreWeapons() {
+        return !fightsBareHanded() && (getMainHandItem().isEmpty() || getRole().tool.matches(getMainHandItem()));
+    }
+
+    /** Only a hero whose kit has a shield takes one from the storehouse (a katana hero fights without). */
+    @Override
+    public boolean takesShield() {
+        return entityData.get(DATA_DORMANT) ? super.takesShield() : shieldKit;
+    }
+
+    // ------------------------------------------------------------------ energy (v1 14)
+
+    public int energy() {
+        return energy;
+    }
+
+    public void setEnergy(int e) {
+        int v = Math.max(0, Math.min(HeroRules.ENERGY_MAX, e));
+        if (v != energy) {
+            int shownBefore = energy;
+            energy = v;
+            if (inFight && FCConfig.HERO_SHOW_ENERGY.get() && shownBefore != v) {
+                refreshName();
+            }
+        }
+    }
+
+    /** Adds energy for an event worth {@code base} (x the ultimate's {@code charge_rate}). */
+    private void gainEnergy(double base) {
+        HeroDef d = dormant() ? null : definition();
+        int rate = d != null && d.v2().ultimate() != null ? d.v2().ultimate().ability().chargeRate() : 100;
+        setEnergy(HeroRules.addEnergy(energy, HeroRules.energyGain(base, rate, 0)));
+    }
+
+    // ------------------------------------------------------------------ name tag (v1 25.8)
+
+    /** {@code ★ Name · title} in the hero's colour, {@code [Fighting 80%]} while it fights, {@code (dormant)}. */
+    @Override
+    public void refreshName() {
+        if (heroId().isEmpty()) {
+            super.refreshName();
+            return;
+        }
+        HeroEntry e = level().isClientSide ? null : HeroRegistry.get(heroId());
+        HeroDef d = e == null ? null : e.def();
+        boolean dormant = !level().isClientSide && (e == null || e.dormant());
+        MutableComponent tag = Component.literal(HeroSpeech.tagName(npcName(), dormant || e == null ? "" : e.title())).withStyle(colour(d));
+        if (preview) {
+            tag.append(Component.literal(" (preview)").withStyle(ChatFormatting.GRAY));
+        } else if (dormant) {
+            tag.append(Component.literal(" " + HeroSpeech.DORMANT).withStyle(ChatFormatting.DARK_GRAY));
+        }
+        if (inFight && !preview) {
+            tag.append(Component.literal(" " + HeroSpeech.fightTag(energy, FCConfig.HERO_SHOW_ENERGY.get())).withStyle(ChatFormatting.GRAY));
+        }
+        setCustomName(tag);
+    }
+
+    /** The hero's colour (its file's {@code color}), or its faction's. */
+    private net.minecraft.network.chat.Style colour(HeroDef d) {
+        net.minecraft.network.chat.Style s = net.minecraft.network.chat.Style.EMPTY;
+        return d != null && d.color() != HeroDef.NO_COLOR ? s.withColor(TextColor.fromRgb(d.color())) : s.withColor(getFaction().color);
+    }
+
+    // ------------------------------------------------------------------ lines (v1 23, HEROES_V2 12.15)
+
+    /** The last line it said (with its placeholders filled), for the GameTests and {@code /fc hero info}. */
+    public String lastLine() {
+        return lastLine;
+    }
+
+    public HeroSpeech.Clock clock() {
+        return clock;
+    }
+
+    /**
+     * Says a line of {@code event} if the rate limit and the event's chance allow and a line exists (its own, or a
+     * generic one): in chat to the event's audience ({@code heroes.dialogue}: nearby players within
+     * {@code dialogueRadius}, its faction, or the one player it answers) as {@code <★ Name> line}, and in a speech bubble
+     * above its head for 3 s while its face talks. {@code values} fills the placeholders ({@code name} and
+     * {@code faction} are its own). Returns whether it spoke.
+     */
+    public boolean say(LineEvent event, Map<String, String> values, ServerPlayer listener) {
+        if (!(level() instanceof ServerLevel sl) || preview || !isAlive() && event != LineEvent.FALLEN) {
+            return false;
+        }
+        String mode = FCConfig.HERO_DIALOGUE.get();
+        if ("off".equals(mode)) {
+            return false;
+        }
+        long now = sl.getGameTime();
+        if (!clock.allows(event, now, FCConfig.HERO_DIALOGUE_COOLDOWN_SECONDS.get()) || !HeroRules.lineRoll(event, random.nextDouble() * 100)) {
+            return false;
+        }
+        String line = HeroSpeech.pick(dormant() ? null : definition(), event, FCConfig.HERO_DEFAULT_LINES.get(), random.nextDouble());
+        if (line == null) {
+            return false;
+        }
+        Map<String, String> v = new HashMap<>(values);
+        v.putIfAbsent("name", npcName());
+        v.putIfAbsent("faction", getFaction().displayName);
+        String text = HeroSpeech.fill(line, v);
+        clock.said(event, now);
+        lastLine = text;
+        Component chat = Component.literal(HeroSpeech.chatLine(npcName(), text)).withStyle(colour(dormant() ? null : definition()));
+        HeroSpeech.Audience who = HeroSpeech.audience(event);
+        CampaignData data = CampaignData.get(sl.getServer());
+        double r = FCConfig.HERO_DIALOGUE_RADIUS.get();
+        for (ServerPlayer p : sl.getServer().getPlayerList().getPlayers()) {
+            boolean member = data.players.get(p.getUUID()) == getFaction();
+            boolean hears = switch (who) {
+                case PLAYER -> p == listener;
+                case FACTION -> member;
+                case NEARBY -> "faction".equals(mode) ? member : p.level() == level() && p.distanceToSqr(this) <= r * r;
+            };
+            if (hears) {
+                p.sendSystemMessage(chat);
+            }
+        }
+        FactionClash.LOGGER.info("[Heroes] {} says ({}): {}", heroId(), event.id(), text);
+        if (FCConfig.HERO_SPEECH_BUBBLES.get()) {
+            showBubble(sl, text);
+        }
+        talkUntil = tickCount + HeroSpeech.BUBBLE_TICKS;
+        setTalking(true);
+        return true;
+    }
+
+    public boolean say(LineEvent event) {
+        return say(event, Map.of(), null);
+    }
+
+    /** The speech bubble: a vanilla text display above the name tag, following the hero, gone after 3 s. */
+    private void showBubble(ServerLevel sl, String text) {
+        removeBubble();
+        net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag();
+        t.putString("id", "minecraft:text_display");
+        t.putString("text", Component.Serializer.toJson(Component.literal(text), registryAccess()));
+        t.putString("billboard", "center");
+        t.putString("alignment", "center");
+        t.putBoolean("shadow", true);
+        t.putInt("teleport_duration", 1);
+        t.putInt("line_width", 160);
+        net.minecraft.nbt.ListTag tags = new net.minecraft.nbt.ListTag();
+        tags.add(net.minecraft.nbt.StringTag.valueOf(BUBBLE_TAG));
+        t.put("Tags", tags);
+        Entity made = EntityType.loadEntityRecursive(t, sl, x -> x);
+        if (made instanceof Display.TextDisplay d) {
+            d.moveTo(getX(), bubbleY(), getZ(), 0F, 0F);
+            if (sl.addFreshEntity(d)) {
+                bubble = d;
+                bubbleUntil = tickCount + HeroSpeech.BUBBLE_TICKS;
+            }
+        }
+    }
+
+    private double bubbleY() {
+        return getY() + getBbHeight() + 0.75;
+    }
+
+    /** The speech bubble it shows now (null: none). */
+    public Display.TextDisplay bubble() {
+        return bubble != null && bubble.isAlive() ? bubble : null;
+    }
+
+    private void removeBubble() {
+        if (bubble != null) {
+            bubble.discard();
+            bubble = null;
+        }
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        removeBubble();
+        super.remove(reason);
+    }
+
+    /** A faction player's right click: its {@code greeting} (5 s apart), then the NPC sheet as for any NPC. */
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (hand == InteractionHand.MAIN_HAND && !level().isClientSide && !preview && player instanceof ServerPlayer sp
+                && CombatRules.isMember(sp, getFaction())) {
+            say(LineEvent.GREETING, Map.of("player", sp.getName().getString()), sp);
+        }
+        return super.mobInteract(player, hand);
     }
 
     /** Every hero looks for enemies, whatever its duty (v1 25.6). */
@@ -310,8 +745,174 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
-        if (!level().isClientSide && isAlive()) {
+        if (level().isClientSide) {
+            return;
+        }
+        if (bubble != null) {
+            if (!isAlive() || tickCount >= bubbleUntil || !bubble.isAlive()) {
+                removeBubble();
+            } else {
+                bubble.moveTo(getX(), bubbleY(), getZ(), 0F, 0F);
+            }
+        }
+        if (talkUntil >= 0 && tickCount >= talkUntil) {
+            talkUntil = -1;
+            setTalking(false);
+        }
+        if (isAlive()) {
             updateFlags();
+            if (!preview) {
+                fightTick();
+            }
+        }
+    }
+
+    /**
+     * The fight as its lines and counters see it: a fight starts when it takes a target after 10 s without one
+     * ({@code fight_start}, counted by who the enemy is), and is won when it has had no target for 5 s and no hostile is
+     * within 16 blocks ({@code victory}); the name tag shows the fight. {@code idle} at its base with a faction player
+     * near, every 10 s at most (its clock allows one per 15 minutes).
+     */
+    private void fightTick() {
+        LivingEntity t = getTarget();
+        boolean fighting = t != null && t.isAlive();
+        if (fighting) {
+            if (!inFight) {
+                boolean fresh = tickCount - lastTargetTick > FIGHT_GAP;
+                inFight = true;
+                refreshName();
+                if (fresh) {
+                    countFight(t);
+                    say(LineEvent.FIGHT_START, Map.of("enemy", nameOf(t)), null);
+                }
+            }
+            lastTargetTick = tickCount;
+        } else if (inFight && tickCount - lastTargetTick >= VICTORY_AFTER) {
+            inFight = false;
+            refreshName();
+            if (level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(VICTORY_RADIUS),
+                    e -> e != this && e.isAlive() && isHostileTo(e)).isEmpty()) {
+                say(LineEvent.VICTORY);
+            }
+        }
+        if (tickCount % 200 == 37 && !inFight && level() instanceof ServerLevel sl) {
+            var b = base();
+            if (b != null && b.contains(blockPosition(), 0)) {
+                for (ServerPlayer p : sl.players()) {
+                    if (p.distanceToSqr(this) <= IDLE_RADIUS * IDLE_RADIUS && CombatRules.isMember(p, getFaction())) {
+                        say(LineEvent.IDLE, Map.of("player", p.getName().getString()), null);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isHostileTo(LivingEntity e) {
+        if (e instanceof FactionNpc n) {
+            return com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), n.getFaction());
+        }
+        if (e instanceof ServerPlayer p) {
+            return CombatRules.isEnemyPlayer(this, p);
+        }
+        return e instanceof Monster m && CombatRules.isHostileMonster(m);
+    }
+
+    /**
+     * The name a line uses for someone ({@code {enemy}}, {@code {ally}}): a faction NPC's or hero's own name (not its
+     * whole name tag), a player's, or a creature's ("Zombie").
+     */
+    public static String nameOf(Entity e) {
+        if (e == null) {
+            return "";
+        }
+        return e instanceof FactionNpc n && n.npcName() != null && !n.npcName().isEmpty() ? n.npcName() : e.getName().getString();
+    }
+
+    /** Who a fight is against, for {@code sim.py}: a player, a hero, soldiers (faction NPCs) or monsters. */
+    public static String enemyKind(LivingEntity t) {
+        return t instanceof Player ? "player" : t instanceof HeroEntity ? "hero" : t instanceof FactionNpc ? "soldiers" : "monsters";
+    }
+
+    private void countFight(LivingEntity t) {
+        HeroState s = campaignRecord();
+        if (s != null) {
+            HeroState.count(s.fights, enemyKind(t));
+            CampaignData.get(getServer()).setDirty();
+        }
+    }
+
+    /** The campaign's record of this hero when this entity is the one it records (not a stale copy or a preview). */
+    public HeroState campaignRecord() {
+        if (!(level() instanceof ServerLevel sl) || preview) {
+            return null;
+        }
+        HeroState s = CampaignData.get(sl.getServer()).heroes.get(heroId());
+        return s != null && getUUID().equals(s.uuid) ? s : null;
+    }
+
+    /** Whether it is in a fight as its lines and name tag see it. */
+    public boolean inFight() {
+        return inFight;
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        float before = getHealth();
+        boolean r = super.hurt(source, amount);
+        float lost = before - getHealth();
+        if (r && lost > 0 && !level().isClientSide && !preview) {
+            gainEnergy(HeroRules.energyFromDamage(lost));
+            float share = getHealth() / Math.max(1F, getMaxHealth());
+            if (isAlive() && lowHealthArmed && share < LOW_HEALTH) {
+                lowHealthArmed = false;
+                say(LineEvent.LOW_HEALTH);
+            }
+        }
+        return r;
+    }
+
+    @Override
+    public void heal(float amount) {
+        super.heal(amount);
+        if (!lowHealthArmed && getHealth() / Math.max(1F, getMaxHealth()) >= LOW_HEALTH_REARM) {
+            lowHealthArmed = true;
+        }
+    }
+
+    /** A landed basic attack fills energy (v1 14: 5, x its ultimate's charge rate). */
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        boolean hit = super.doHurtTarget(target);
+        if (hit && !level().isClientSide && !preview) {
+            gainEnergy(HeroRules.ENERGY_BASIC_HIT);
+        }
+        return hit;
+    }
+
+    /** Its kill: energy (10), the {@code kill} line (30%), the campaign's count. */
+    @Override
+    public boolean killedEntity(ServerLevel level, LivingEntity victim) {
+        boolean r = super.killedEntity(level, victim);
+        if (!preview) {
+            gainEnergy(HeroRules.ENERGY_KILL);
+            HeroState s = campaignRecord();
+            if (s != null) {
+                s.kills++;
+                CampaignData.get(level.getServer()).setDirty();
+            }
+            say(LineEvent.KILL, Map.of("enemy", nameOf(victim)), null);
+        }
+        return r;
+    }
+
+    /** A level gained: the numbers grow (re-applied with the affixes) and it says {@code level_up}. */
+    @Override
+    public void awardXp(int amount) {
+        int before = npcLevel();
+        super.awardXp(amount);
+        if (npcLevel() > before) {
+            say(LineEvent.LEVEL_UP, Map.of("level", Integer.toString(npcLevel())), null);
         }
     }
 
@@ -366,15 +967,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return !preview && super.canBeSeenAsEnemy();
     }
 
-    @Override
-    public void refreshName() {
-        if (preview) {
-            setCustomName(net.minecraft.network.chat.Component.literal(npcName()).withStyle(getFaction().color)
-                    .append(net.minecraft.network.chat.Component.literal(" (preview)").withStyle(net.minecraft.ChatFormatting.GRAY)));
-            return;
-        }
-        super.refreshName();
-    }
+
 
     // ------------------------------------------------------------------ client
 
@@ -426,6 +1019,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
                 inventory().setItem(i, ItemStack.EMPTY);
             }
         }
+        if (HeroKit.isKit(ammo())) {
+            setAmmo(ItemStack.EMPTY);
+        }
         super.dropCustomDeathLoot(level, source, recentlyHit);
     }
 
@@ -433,7 +1029,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     public void die(DamageSource source) {
         super.die(source);
         if (level() instanceof ServerLevel sl && isDeadOrDying()) {
-            HeroManager.onDeath(sl.getServer(), this);
+            HeroManager.onDeath(sl.getServer(), this, source);
         }
     }
 
@@ -469,20 +1065,34 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (forcedPose() > 0) {
             h.putInt("pose", forcedPose());
         }
+        h.putInt("energy", energy);
+        h.putString("kit", kitSignature);
         tag.put("FcHero", h);
     }
 
+    /**
+     * Loads the hero: vanilla reads its health before its boss maximum is back (the modifiers are not saved), so the
+     * saved health is read here first and set again once the definition has given the maximum (3.3: "the boss maximum is
+     * re-applied before it is read").
+     */
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
+        float savedHealth = tag.contains("Health", 99) ? tag.getFloat("Health") : -1F;
         super.readAdditionalSaveData(tag);
         CompoundTag h = tag.getCompound("FcHero");
-        setHeroId(h.getString("id"));
         preview = h.getBoolean("preview");
+        energy = Math.max(0, Math.min(HeroRules.ENERGY_MAX, h.getInt("energy")));
+        kitSignature = h.getString("kit");
+        setHeroId(h.getString("id"));
         forcedMood = h.contains("mood") ? h.getInt("mood") : -1;
         forcedWeapon = h.contains("weapon") ? h.getInt("weapon") : -1;
         setForcedPose(h.getInt("pose"));
-        if (preview) {
-            refreshName();
+        if (!level().isClientSide) {
+            applyDefinition(false);
+            if (savedHealth >= 0) {
+                setHealth(savedHealth);
+            }
         }
+        refreshName();
     }
 }

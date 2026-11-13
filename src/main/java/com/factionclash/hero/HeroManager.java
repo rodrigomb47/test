@@ -9,7 +9,10 @@ import com.factionclash.campaign.NpcRecord;
 import com.factionclash.campaign.Recruitment;
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
+import com.factionclash.logic.hero.HeroDef;
+import com.factionclash.logic.hero.HeroDef.LineEvent;
 import com.factionclash.logic.hero.HeroRevival;
+import com.factionclash.logic.hero.HeroRules;
 import com.factionclash.npc.NpcRole;
 import com.factionclash.registry.ModEntities;
 import com.factionclash.util.Messages;
@@ -19,15 +22,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Heroes in the campaign (HEROES_V2 3.4, v1 25): giving a hero to a faction, releasing it, its death and its return
- * after {@code heroes.reviveSeconds}, and the rule that a hero id has one living entity. Its state lives in
+ * after {@code heroes.reviveSeconds} (or its own revival block, shortened by the {@code revival_rite} talent, never
+ * under {@code heroes.minReviveSeconds}), and the rule that a hero id has one living entity. Its state lives in
  * {@link CampaignData#heroes}; the hero itself is an ordinary roster member (its {@link NpcRecord} carries the hero
  * id), so it counts as one soldier of its role for the director's needs, garrison and war council.
  */
@@ -64,6 +66,9 @@ public final class HeroManager {
         if (entry.previewOnly()) {
             return Result.failed(null, entry.name() + " is a preview fixture: it can be lined up and posed, never given to a faction.");
         }
+        if (entry.dormant()) {
+            return Result.failed(null, entry.name() + " has no valid definition (/fc hero check " + id + " says why), so it cannot join a faction.");
+        }
         CampaignData data = CampaignData.get(server);
         if (base == null) {
             List<BaseState> bases = faction == null ? List.of() : data.livingBasesOf(faction);
@@ -83,6 +88,7 @@ public final class HeroManager {
         HeroEntity hero = spawn(server.overworld(), data, s, entry, faction, base, at == null ? spawnPoint(base) : at);
         Messages.toFaction(server, faction, Component.literal(entry.name() + " joins the " + faction.displayName + "!")
                 .withStyle(ChatFormatting.GOLD));
+        hero.say(LineEvent.SUMMONED);
         return Result.done(hero, entry.name() + " joins the " + faction.displayName + " at " + base.name + " ("
                 + hero.blockPosition().toShortString() + ")");
     }
@@ -156,23 +162,49 @@ public final class HeroManager {
     }
 
     /**
-     * A fallen hero comes back at its home base's spawn point (or the faction's first standing base), at full health,
-     * with its kit, level and traits: a respawn like a player's at a bed, never a teleport of a living NPC. A faction
-     * with no standing base loses the hero (it is released).
+     * A fallen hero comes back at full health, with its kit, level and traits: a respawn like a player's at a bed,
+     * never a teleport of a living NPC (HEROES_V2 3.4). Where: its home base's spawn point (or the faction's first
+     * standing base); a hero whose own {@code revival} block says {@code where_it_fell} rises where it fell, and
+     * {@code nearest_base} at the faction's standing base nearest to that place. It says its {@code revived} line (its
+     * revival block's own first). A faction with no standing base loses the hero (it is released).
      */
     private static HeroEntity returnHome(MinecraftServer server, CampaignData data, HeroState s) {
-        BaseState base = data.base(s.baseId);
-        if (base == null || base.destroyed || base.faction != s.owner) {
+        BaseState home = data.base(s.baseId);
+        if (home == null || home.destroyed || home.faction != s.owner) {
             List<BaseState> bases = data.livingBasesOf(s.owner);
-            base = bases.isEmpty() ? null : bases.get(0);
+            home = bases.isEmpty() ? null : bases.get(0);
         }
         HeroEntry entry = HeroRegistry.getOrFallback(s.id);
-        if (base == null) {
+        if (home == null) {
             release(server, s, "has no standing base to return to and leaves");
             return null;
         }
-        HeroEntity h = spawn(server.overworld(), data, s, entry, s.owner, base, spawnPoint(base));
-        Messages.toFaction(server, s.owner, Component.literal(h.npcName() + " returns to " + base.name + ".").withStyle(ChatFormatting.GOLD));
+        HeroDef.Revival own = entry.def() == null ? null : entry.def().v2().revival();
+        BlockPos at = spawnPoint(home);
+        BaseState base = home;
+        if (own != null && s.fellAt != null) {
+            if (own.where() == HeroDef.RiseWhere.WHERE_IT_FELL) {
+                at = s.fellAt;
+            } else if (own.where() == HeroDef.RiseWhere.NEAREST_BASE) {
+                BlockPos fell = s.fellAt;
+                base = data.livingBasesOf(s.owner).stream()
+                        .min(java.util.Comparator.comparingDouble(b -> b.center.distSqr(fell))).orElse(home);
+                at = spawnPoint(base);
+            }
+        }
+        HeroEntity h = spawn(server.overworld(), data, s, entry, s.owner, home, at);
+        s.revivals++;
+        data.setDirty();
+        Messages.toFaction(server, s.owner, Component.literal(h.npcName() + " returns" + (at.equals(s.fellAt) ? " where it fell"
+                : " to " + base.name) + ".").withStyle(ChatFormatting.GOLD));
+        server.overworld().sendParticles(net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING, h.getX(), h.getY() + 1, h.getZ(),
+                40, 0.4, 0.8, 0.4, 0.3);
+        if (own != null && own.line() != null && !own.line().isBlank()) {
+            Messages.toFaction(server, s.owner, Component.literal(com.factionclash.logic.hero.HeroSpeech.chatLine(h.npcName(), own.line())));
+            h.clock().said(LineEvent.REVIVED, server.overworld().getGameTime());
+        } else {
+            h.say(LineEvent.REVIVED);
+        }
         return h;
     }
 
@@ -198,19 +230,15 @@ public final class HeroManager {
         }
         h.setHeroId(s.id);
         h.faction(faction);
-        NpcRole role = entry.role();
+        // its role: its definition's; a dormant hero keeps the one it last had
+        NpcRole role = entry.dormant() && s.role != null && NpcRole.byId(s.role) != null ? NpcRole.byId(s.role) : entry.role();
         h.role(role);
         h.setBaseId(base.id);
-        h.setNpcName(entry.name());
+        h.setNpcName(entry.dormant() ? nameOf(s.id) : entry.name());
         h.restoreProgress(s.level, s.xp, s.affixes);
-        ItemStack weapon = HeroKit.weapon(role, s.id);
-        if (!weapon.isEmpty()) {
-            h.equip(weapon);
-        }
-        if (role.ranged) {
-            h.setAmmo(new ItemStack(Items.ARROW));
-        }
+        h.applyDefinition(true); // numbers with boss health, role, name and the kit of its file
         h.setHealth(h.getMaxHealth());
+        s.role = h.getRole().id;
         h.moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, level.random.nextFloat() * 360F, 0F);
         s.owner = faction;
         s.baseId = base.id;
@@ -235,14 +263,52 @@ public final class HeroManager {
 
     // ------------------------------------------------------------------ death, uniqueness, the timer
 
-    /** The hero fell: it returns after {@code heroes.reviveSeconds}; its kit vanished with it (HeroEntity). */
-    public static void onDeath(MinecraftServer server, HeroEntity h) {
+    /**
+     * The hero fell: its {@code fallen} line, and it returns after its revival delay ({@link #reviveSeconds}); its kit
+     * vanished with it (HeroEntity). The killer's faction hears of it too (v1 25.4).
+     */
+    public static void onDeath(MinecraftServer server, HeroEntity h, net.minecraft.world.damagesource.DamageSource source) {
         CampaignData data = CampaignData.get(server);
         HeroState s = data.heroes.get(h.heroId());
         if (s == null || !s.alive || !h.getUUID().equals(s.uuid)) {
             return;
         }
+        Entity killer = source == null ? null : source.getEntity();
+        h.say(LineEvent.FALLEN, killer == null ? java.util.Map.of() : java.util.Map.of("enemy", HeroEntity.nameOf(killer)), null);
+        s.fellAt = h.blockPosition();
         fallen(server, data, s, h, "has fallen at " + h.blockPosition().getX() + ", " + h.blockPosition().getZ());
+        com.factionclash.faction.FactionType theirs = com.factionclash.combat.CombatRules.factionOf(killer);
+        if (theirs != null && theirs != s.owner) {
+            Messages.toFaction(server, theirs, Component.literal(h.npcName() + " of the " + s.owner.displayName + " has fallen to "
+                    + HeroEntity.nameOf(killer) + ".").withStyle(ChatFormatting.GOLD));
+        }
+    }
+
+    /**
+     * Seconds from a death to the return (HEROES_V2 3.4): {@code heroes.reviveSeconds} (600), or the hero's own
+     * {@code revival} block's seconds, shortened by the best {@code revival_rite} talent among the heroes its faction
+     * has, never under {@code heroes.minReviveSeconds} (30). A dormant hero has no abilities: the plain 600.
+     */
+    public static int reviveSeconds(CampaignData data, HeroState s) {
+        HeroDef d = HeroRegistry.definition(s.id);
+        int own = d != null && d.v2().revival() != null ? d.v2().revival().seconds() : 0;
+        return HeroRules.reviveDelaySeconds(FCConfig.HERO_REVIVE_SECONDS.get(), own, riteTier(data, s.owner),
+                FCConfig.HERO_MIN_REVIVE_SECONDS.get());
+    }
+
+    /** The faction's {@code revival_rite} tier: the best of its heroes that have the talent, by each one's level (7.2). */
+    public static int riteTier(CampaignData data, com.factionclash.faction.FactionType faction) {
+        if (faction == null) {
+            return 0;
+        }
+        List<Integer> levels = new ArrayList<>();
+        for (HeroState o : data.heroes.values()) {
+            HeroDef d = o.owner == faction ? HeroRegistry.definition(o.id) : null;
+            if (d != null && d.v2().talents().stream().anyMatch(t -> t.id() == HeroDef.TalentId.REVIVAL_RITE)) {
+                levels.add(o.level);
+            }
+        }
+        return HeroRules.riteTier(levels);
     }
 
     private static void fallen(MinecraftServer server, CampaignData data, HeroState s, HeroEntity h, String what) {
@@ -252,20 +318,43 @@ public final class HeroManager {
         long now = server.overworld().getGameTime();
         s.alive = false;
         s.deaths++;
-        s.reviveAt = HeroRevival.reviveAt(now, FCConfig.HERO_REVIVE_SECONDS.get());
+        s.reviveAt = HeroRevival.reviveAt(now, reviveSeconds(data, s));
         data.setDirty();
         if (s.owner != null) {
+            HeroDef d = HeroRegistry.definition(s.id);
+            boolean night = d != null && d.v2().revival() != null && d.v2().revival().at() == HeroDef.RiseAt.NIGHT;
             Messages.toFaction(server, s.owner, Component.literal(nameOf(s.id) + " " + what + " and returns in "
-                    + HeroRevival.countdown(s.reviveAt - now) + ".").withStyle(ChatFormatting.RED));
+                    + HeroRevival.countdown(s.reviveAt - now) + (night ? ", at the first nightfall after" : "") + ".")
+                    .withStyle(ChatFormatting.RED));
         }
     }
 
-    /** Level, experience and traits outlive the entity. */
+    /** Level, experience and traits outlive the entity; its role and health are kept for a dormant return and the war councils. */
     private static void snapshot(HeroState s, HeroEntity h) {
         s.level = h.npcLevel();
         s.xp = h.xp();
         s.affixes.clear();
         s.affixes.putAll(h.affixes());
+        s.role = h.getRole().id;
+        s.health = Math.max(0, h.getHealth());
+        s.maxHealth = h.getMaxHealth();
+    }
+
+    /**
+     * Every loaded hero takes its definition as the registry has it now ({@code /reload}, {@code /fc hero reload}): a
+     * changed file applies at once (v1 2.3), a broken or removed one leaves the hero dormant.
+     */
+    public static int refreshAll(MinecraftServer server) {
+        int n = 0;
+        for (ServerLevel level : server.getAllLevels()) {
+            for (HeroEntity h : level.getEntities(ModEntities.HERO.get(), e -> true)) {
+                if (!h.isPreview()) {
+                    h.applyDefinition(false);
+                    n++;
+                }
+            }
+        }
+        return n;
     }
 
     /**
@@ -347,15 +436,20 @@ public final class HeroManager {
                 NpcRecord r = s.uuid == null ? null : data.faction(s.owner).roster.get(s.uuid);
                 Entity e = s.uuid == null ? null : server.overworld().getEntity(s.uuid);
                 if (e instanceof HeroEntity h && h.isAlive()) {
-                    if (h.npcLevel() != s.level || h.xp() != s.xp) {
+                    if (h.npcLevel() != s.level || h.xp() != s.xp || Math.abs(h.getHealth() - s.health) >= 1
+                            || Math.abs(h.getMaxHealth() - s.maxHealth) >= 0.01) {
                         snapshot(s, h);
                         data.setDirty();
                     }
                 } else if (r != null && !r.alive) {
                     fallen(server, data, s, null, "is missing and presumed lost");
                 }
-            } else if (HeroRevival.due(now, s.reviveAt)) {
-                returnHome(server, data, s);
+            } else {
+                HeroDef d = HeroRegistry.definition(s.id);
+                boolean night = d != null && d.v2().revival() != null && d.v2().revival().at() == HeroDef.RiseAt.NIGHT;
+                if (HeroRules.revivalDue(now, s.reviveAt, night, server.overworld().getDayTime())) {
+                    returnHome(server, data, s);
+                }
             }
         }
     }
@@ -386,10 +480,7 @@ public final class HeroManager {
         h.role(entry.role());
         h.setNpcName(entry.name());
         h.makePreview();
-        ItemStack weapon = HeroKit.weapon(entry.role(), id);
-        if (!weapon.isEmpty()) {
-            h.equip(weapon);
-        }
+        h.applyDefinition(true);
         h.moveTo(at.x, at.y, at.z, yaw, 0F);
         h.setYHeadRot(yaw);
         h.setYBodyRot(yaw);

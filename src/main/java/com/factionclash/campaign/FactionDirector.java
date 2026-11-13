@@ -40,6 +40,11 @@ public final class FactionDirector {
     private static final int REPAIR_SCAN_BUDGET = 384;
     /** Last recruitment decision per base, for the station's information panel. */
     public static final Map<Integer, String> LAST_RECRUIT_NOTE = new HashMap<>();
+    /**
+     * The last war council of each faction that found a target (HEROES_V2 8.1, SLICE_PLAN 6.4): both sides' counted
+     * power, the heroes' share, the decision and whether the heroes decided it. Read by {@code /fc admin dump}.
+     */
+    public static final Map<FactionType, String> LAST_COUNCIL = new HashMap<>();
     private static final Map<UUID, Long> MISSING_SINCE = new HashMap<>();
 
     private FactionDirector() {
@@ -601,14 +606,15 @@ public final class FactionDirector {
         // homeDefenders at home) - small parties against a full garrison only feed an endless war of attrition
         int keep = Math.max(FCConfig.HOME_DEFENDERS.get(), (soldiers.size() + 2) / 3);
         int party = Math.max(FCConfig.RAID_PARTY_SIZE.get(), soldiers.size() - keep);
-        if (!soldiers.isEmpty()) {
-            // how well armed the garrison is, as the war councils of other factions will judge it
-            f.soldierPower = (float) soldiers.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
-        }
         // a hero counts as one soldier of its role for the garrison and the party size, but the soldier sort never
         // picks it: it joins a raid only through its own rules (HEROES_V2 3.2: a leader going with the raid, its
         // behaviour), which come with the leaders
         List<FactionNpc> draftable = soldiers.stream().filter(n -> !(n instanceof com.factionclash.hero.HeroEntity)).toList();
+        if (!draftable.isEmpty()) {
+            // how well armed the garrison is, as the war councils of other factions will judge it: ordinary soldiers
+            // only (HEROES_V2 8.1), a home hero's war power is added on top of them, so one hero does not inflate eight
+            f.soldierPower = (float) draftable.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
+        }
         party = Math.min(party, draftable.size());
         if (soldiers.size() < FCConfig.HOME_DEFENDERS.get() + party || party < FCConfig.RAID_PARTY_SIZE.get()) {
             return;
@@ -628,12 +634,15 @@ public final class FactionDirector {
             }
             for (BaseState b : data.bases.values()) {
                 if (b.faction == r.subject && !b.destroyed && b.center.distSqr(r.pos) < 32 * 32) {
-                    int defence = defenders(data, b);
+                    int heads = defenders(data, b);
+                    // in soldier units: heads, plus the home heroes' war power as so many soldiers of that garrison
+                    double unit = b.isSettlement() ? Math.max(0.1, data.faction(b.faction).soldierPower) : 1.0;
+                    double defence = defencePower(level, data, b) / unit;
                     double score = defence * 1000.0 + Math.sqrt(b.center.distSqr(home.center));
                     if (score < best) {
                         best = score;
                         target = b;
-                        targetDefence = defence;
+                        targetDefence = heads;
                     }
                 }
             }
@@ -643,8 +652,12 @@ public final class FactionDirector {
         }
         List<FactionNpc> picks = new ArrayList<>(draftable);
         picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
-        double partyPower = picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
-        double defencePower = targetDefence * (target.isSettlement() ? data.faction(target.faction).soldierPower : 1.0);
+        double partySoldiers = picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
+        double partyHeroes = 0; // heroes go only by their own rules (leaders, behaviour.raids), which come with L4
+        double partyPower = com.factionclash.logic.hero.HeroRules.countedPower(partySoldiers, partyHeroes);
+        double defenceSoldiers = targetDefence * (target.isSettlement() ? data.faction(target.faction).soldierPower : 1.0);
+        double defenceHeroes = heroDefence(level, data, target);
+        double defencePower = com.factionclash.logic.hero.HeroRules.countedPower(defenceSoldiers, defenceHeroes);
         boolean counter = !intervalOver && partyPower * 2 >= defencePower * 3;
         // a pact offensive: allies already marching on the same base count toward the strength needed
         double alliedPower = 0;
@@ -657,7 +670,17 @@ public final class FactionDirector {
             }
         }
         boolean joint = alliedPower > 0 && (partyPower + alliedPower) * 3 >= defencePower * 2;
-        if (!joint && !counter && (!intervalOver || partyPower * 3 < defencePower * 2)) {
+        boolean go = !(!joint && !counter && (!intervalOver || partyPower * 3 < defencePower * 2));
+        // the same council with the heroes counted out: did their presence (or absence) decide it? (SLICE_PLAN 6.4)
+        boolean goWithout = !intervalOver && partySoldiers * 2 >= defenceSoldiers * 3
+                || alliedPower > 0 && (partySoldiers + alliedPower) * 3 >= defenceSoldiers * 2
+                || intervalOver && partySoldiers * 3 >= defenceSoldiers * 2;
+        LAST_COUNCIL.put(f.type, String.format(java.util.Locale.ROOT,
+                "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f), %s%s",
+                t / 24000.0, target.faction.id, target.id, target.isSettlement() ? "settlement" : "lair", partyPower, partyHeroes,
+                defencePower, defenceSoldiers, defenceHeroes, go ? "attack" : "wait",
+                go == goWithout ? "" : go ? " (the heroes decided it)" : " (the defending heroes held it off)"));
+        if (!go) {
             return; // not yet, or not strong enough for that garrison
         }
         f.raiders.clear();
@@ -691,19 +714,73 @@ public final class FactionDirector {
         return 1.0 + Math.min(20, n.getArmorValue()) / 20.0 + Math.max(0, tier) / 4.0;
     }
 
-    /** Fighting strength at a base: its living soldiers at home (a lair: its monsters). */
+    /**
+     * Fighting strength at a base by heads: its living ordinary soldiers at home (a lair: its monsters); heroes count by
+     * their war power ({@link #heroDefence}), or as one head each with {@code war.heroPowerPercent} 0.
+     */
     private static int defenders(CampaignData data, BaseState b) {
         if (!b.isSettlement()) {
             return b.lairMobs.size();
         }
         FactionState f = data.faction(b.faction);
+        boolean heroHeads = FCConfig.HERO_POWER_PERCENT.get() == 0; // war.heroPowerPercent 0: a hero is one soldier by heads
         int n = 0;
         for (NpcRecord r : f.roster.values()) {
-            if (r.alive && r.baseId == b.id && r.role.combatant && !f.raiders.contains(r.uuid)) {
+            if (r.alive && r.baseId == b.id && r.role.combatant && (heroHeads || !r.isHero()) && !f.raiders.contains(r.uuid)) {
                 n++;
             }
         }
         return n;
+    }
+
+    /**
+     * A base's defence power in the director's units (HEROES_V2 8.1): its soldiers at home times the faction's
+     * {@code soldierPower}, plus the war power of each hero whose home it is (alive, at home, not raiding; half under
+     * half health), the heroes counted at most 1.5 times the soldiers (the soldier backbone).
+     */
+    public static double defencePower(ServerLevel level, CampaignData data, BaseState b) {
+        if (!b.isSettlement()) {
+            return b.lairMobs.size();
+        }
+        double soldiers = defenders(data, b) * data.faction(b.faction).soldierPower;
+        return com.factionclash.logic.hero.HeroRules.countedPower(soldiers, heroDefence(level, data, b));
+    }
+
+    /** The summed war power of the heroes defending a base (before the backbone cap). */
+    public static double heroDefence(ServerLevel level, CampaignData data, BaseState b) {
+        if (!b.isSettlement()) {
+            return 0;
+        }
+        FactionState f = data.faction(b.faction);
+        double sum = 0;
+        for (HeroState s : data.heroes.values()) {
+            if (s.owner != b.faction || !s.alive || s.baseId != b.id || s.uuid == null || f.raiders.contains(s.uuid)) {
+                continue;
+            }
+            sum += heroWarPower(level, s, true);
+        }
+        return sum;
+    }
+
+    /**
+     * A hero's war power (HEROES_V2 8.1, {@code HeroRules.heroPower}) from its real maximum health and level: its loaded
+     * entity's, else what the campaign last saw of it (or its definition's numbers). With {@code defence} it counts half
+     * while under half health. {@code war.heroPowerPercent} scales it; 0 leaves only its head.
+     */
+    public static double heroWarPower(ServerLevel level, HeroState s, boolean defence) {
+        double max = s.maxHealth, health = s.health;
+        int lv = s.level;
+        if (level != null && s.uuid != null && level.getEntity(s.uuid) instanceof com.factionclash.hero.HeroEntity h && h.isAlive()) {
+            max = h.getMaxHealth();
+            health = h.getHealth();
+            lv = h.npcLevel();
+        } else if (max <= 0) {
+            com.factionclash.logic.hero.HeroDef d = com.factionclash.hero.HeroRegistry.definition(s.id);
+            max = d == null ? 20 : com.factionclash.logic.hero.HeroLoadout.numbers(d, lv, false, FCConfig.BOSS_HEALTH_SCALE.get()).maxHealth();
+            health = max;
+        }
+        double p = com.factionclash.logic.hero.HeroRules.heroPower(max, lv, FCConfig.HERO_POWER_PERCENT.get());
+        return defence ? com.factionclash.logic.hero.HeroRules.defencePower(p, max > 0 ? health / max : 1) : p;
     }
 
     // ------------------------------------------------------------------ Hollow lairs

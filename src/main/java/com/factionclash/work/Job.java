@@ -72,7 +72,7 @@ public abstract class Job {
             return false;
         }
         NpcRole role = npc.getRole();
-        if (role.tool == ToolKind.NONE || role.tool.matches(npc.tool()) || usesOtherTool()) {
+        if (role.tool == ToolKind.NONE || role.tool.matches(npc.tool()) || usesOtherTool() || !npc.needsRoleTool()) {
             // it has its tool, however it came (a job's own visit to the storehouse, a spare): the time without one
             // starts afresh the next time it breaks
             toolMissingSince = -1;
@@ -567,7 +567,7 @@ public abstract class Job {
         lastEquipCheck = now();
         NpcRole role = npc.getRole();
         BaseState b = base();
-        if (role.tool != ToolKind.NONE) {
+        if (role.tool != ToolKind.NONE && npc.takesStoreWeapons()) {
             // better material first; at the same material, the enchanted one
             int cur = role.tool.matches(npc.tool()) ? gearScore(npc.tool(), ToolKind.tierOf(npc.tool())) : -1;
             ItemStack best = FactionStorage.findBest(level(), b, role.tool::matches, s -> gearScore(s, ToolKind.tierOf(s)));
@@ -590,7 +590,7 @@ public abstract class Job {
                 }
             }
         }
-        if (role == NpcRole.SWORDSMAN && (!npc.hasShield() || gearScore(npc.getOffhandItem(), 1) < 100)) {
+        if (role == NpcRole.SWORDSMAN && npc.takesShield() && (!npc.hasShield() || gearScore(npc.getOffhandItem(), 1) < 100)) {
             // a swordsman fights sword and board: a shield in the off hand (a fresh one when it is nearly broken)
             ItemStack shield = FactionStorage.findBest(level(), b, s -> s.getItem() instanceof net.minecraft.world.item.ShieldItem, s -> gearScore(s, 1));
             if (!shield.isEmpty() && gearScore(shield, 1) >= 100) {

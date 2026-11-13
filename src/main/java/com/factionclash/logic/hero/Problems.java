@@ -71,7 +71,9 @@ public final class Problems {
         LEADER_NAME_TAKEN, BANNER_MOJANG, LEADER_SHORT, REALM_ONE, RELATION_UNKNOWN, RELATION_SELF,
         SIGNATURE_SHARED, MOBILITY_UNKNOWN, MOBILITY_ADJUSTED, MOBILITY_CARRIER, FLYERS_SHARE,
         // the dive form (MOBILITY_AND_WORK 7.3, 8.3)
-        DIVE_RULE;
+        DIVE_RULE,
+        // the game's set of heroes (A1b, HeroAssembly): built-in definitions only, and operators' overrides
+        NOT_BUILTIN, OVERRIDE_NO_HERO, OVERRIDE_UNREADABLE, OVERRIDE_FIXED;
 
         public String id() {
             return name().toLowerCase(Locale.ROOT);

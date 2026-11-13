@@ -143,10 +143,46 @@
 	# Default: 30000
 	# Range: 1200 ~ 480000
 	lairRaidIntervalTicks = 30000
+	#How much a hero weighs in the war councils' odds, in percent of its war power (PROPOSED: 100;
+	#a level-10 epic leader is worth about five iron soldiers). 0 counts a hero as one soldier by heads, as before.
+	# Default: 100
+	# Range: 0 ~ 200
+	heroPowerPercent = 100
 
 #Heroes (in development: only the test model ships yet; an operator gives one with /fc admin hero give)
 [heroes]
 	#A hero that falls returns at its home base this many seconds later (PROPOSED: 600, ten minutes).
+	#A hero's own revival ability and the revival_rite talent can change that, never under minReviveSeconds.
 	# Default: 600
 	# Range: 30 ~ 3600
 	reviveSeconds = 600
+	#No ability brings a fallen hero back sooner than this (PROPOSED: 30), so it never rises in the fight
+	#that killed it.
+	# Default: 30
+	# Range: 30 ~ 3600
+	minReviveSeconds = 30
+	#Who hears heroes' lines: local (players within dialogueRadius; faction news to the faction), faction
+	#(only the hero's own faction) or off.
+	dialogue = "local"
+	#Blocks within which players hear a hero's local lines.
+	# Default: 32
+	# Range: 8 ~ 128
+	dialogueRadius = 32
+	#At most one line per hero this often (summoned, fallen, revived, ultimate and greetings ignore it).
+	# Default: 20
+	# Range: 5 ~ 300
+	dialogueCooldownSeconds = 20
+	#Short generic lines for the events a hero's own file has no line for.
+	defaultLines = true
+	#Show a hero's line above its head for 3 seconds as well as in chat.
+	speechBubbles = true
+	#Show a fighting hero's energy on its name tag: [Fighting 80%].
+	showEnergy = true
+
+#Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)
+[boss]
+	#Multiplies every hero's boss health, in percent (PROPOSED: 100). A hero's health is its v1 health x its
+	#health_scale (rarity: common 250, rare 300, epic 350, legendary 400) x its role factor, whoever and however many it fights.
+	# Default: 100
+	# Range: 25 ~ 300
+	healthScale = 100

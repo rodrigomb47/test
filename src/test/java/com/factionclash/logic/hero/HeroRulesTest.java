@@ -248,6 +248,28 @@ class HeroRulesTest {
     // ------------------------------------------------------------------ revival (HEROES_V2 3.4)
 
     @Test
+    void theConfiguredFloorRaisesTheRevivalButNeverBelowThirtySeconds() {
+        assertEquals(30, HeroRules.reviveDelaySeconds(600, 30, 3, 10), "a floor under 30 s reads as 30");
+        assertEquals(30, HeroRules.reviveDelaySeconds(600, 30, 3, 0));
+        assertEquals(60, HeroRules.reviveDelaySeconds(600, 30, 3, 60), "heroes.minReviveSeconds 60");
+        assertEquals(72, HeroRules.reviveDelaySeconds(600, 120, 3, 60), "above the floor: untouched");
+        assertEquals(900, HeroRules.reviveDelaySeconds(600, 0, 0, 900), "a floor above the delay wins");
+        assertEquals(HeroRules.reviveDelaySeconds(600, 120, 2), HeroRules.reviveDelaySeconds(600, 120, 2, 30),
+                "the three-argument form is the 30 s floor");
+    }
+
+    @Test
+    void theFactionsRiteTierIsItsBestHeroesNotTheSum() {
+        assertEquals(0, HeroRules.riteTier(List.of()), "no hero with revival_rite");
+        assertEquals(1, HeroRules.riteTier(List.of(0)), "a level-0 NPC level reads as level 1: tier I");
+        assertEquals(1, HeroRules.riteTier(List.of(1, 9)));
+        assertEquals(2, HeroRules.riteTier(List.of(10, 3)), "II from level 10");
+        assertEquals(3, HeroRules.riteTier(List.of(5, 20, 12)), "III from level 20, the best counts");
+        assertEquals(3, HeroRules.riteTier(List.of(20, 20, 20)), "never more than III");
+        assertEquals(480, HeroRules.reviveDelaySeconds(600, 0, HeroRules.riteTier(List.of(4)), 30));
+    }
+
+    @Test
     void everyHeroReturnsAfterTenMinutesUnlessADeathAbilitySaysOtherwise() {
         assertEquals(600, HeroRules.REVIVE_SECONDS, "the owner's ten minutes");
         assertEquals(600, HeroRules.reviveDelaySeconds(600, 0, 0), "leaders included: no other timer");

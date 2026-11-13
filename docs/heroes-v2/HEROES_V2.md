@@ -2717,7 +2717,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G6c | Parts library, details: accessories, markings, weapons (23 parts), patterns and emblem stamps | G6a | M | `lint` clean; every slice weapon in each hand pose of its style. Done 2026-11-13: 24 parts (10 accessories, 3 markings, 11 weapons for the ten slice weapon looks), the painter's patterns, overlays, emblem stamps and phase glow, weapon hands, grips, sheaths, an off-hand from a phase and the staff-broom's mount point; the hand poses of the six slice styles solved for all six bases and every slice weapon checked in each (`grips.py`); `herogen lint` clean on the 94 parts and the eight sample outfits; sheets in `docs/heroes-v2/previews/parts/`; 291 Python tests |
 | G7 | `herogen check` (14.2, distinctness NOTEs included), `HeroAssetsTest`, `verifyHeroAssets` | G1, G2, G3, F2 | M | tests pass on the slice assets; a deliberately broken marker fails |
 | A1a | The entity and its visual side, needing no kit format: type and registration (3.1), what it inherits (3.2) with the director's hero rule, synced fields of 10.1 (`DATA_HERO`, `DATA_ACTION`, `DATA_STATE`, `DATA_MOOD`, `DATA_LOCO`) with the talking flag, size from `visual.json` (3.6, clamped to 1.98), `FcHero` saving (the hero id now, the rest later), `HeroState` in `CampaignData` (id, owner faction, base, UUID, alive, `reviveAt`, level) as far as spawning, saving and reloading need it, `HeroRegistry` reading the visual side (`visual.json` and the geo, animation and texture ids; resources + config overlay, `registerTransient` for fixtures), one living entity per id, basic attacks as a plain soldier of its role, `/fc hero list/info`, `/fc admin hero give/release/revive` (`give` spawns it for a faction) | A0 | M | static GameTests and `heroNotDraftedIntoRaidByDefault`; a hero spawns, fights with basic attacks, saves and reloads. Done 2026-11-12: `hero/` (`HeroEntity`, `HeroRegistry`, `HeroVisual`, `HeroEntry`, `HeroManager`, `HeroKit`, `HeroEvents`), `campaign/HeroState` (campaign format 3), `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`), `command/HeroCommands`, a bind-pose `client/hero/HeroRenderer` and `HeroModel`; 191 unit tests (17 new) and 145 GameTests (8 new) green; on a dedicated server the test rig was given to Ember, killed a husk, kept its UUID over a restart, fell, was revived and released; the Xvfb client draws it with a 1.82-block hitbox (`docs/screenshots/hero_test_rig_a1a.png`). Reviewed 2026-11-12: a dead copy no longer revives the record, `/fc hero info` shows where a hero is only to its faction and operators, `give` from another dimension fixed; uniqueness now also tested on the chunk-load path ("Review of A0-A2" below) |
-| A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file |
+| A1b | The kit-backed parts: `HeroReader` v2 moves, dialogue lines from the definition and speech bubbles, name tags, `/fc hero check/reload`, `sim.py` per-hero lines (6.4 of SLICE_PLAN.md) | F1, F2, A1a | M | a hero's moves and lines come from its definition; `check` reports a broken file. Done 2026-11-13: `HeroRegistry` reads the format-2 definitions (`hero/HeroDefinitions`, a reload listener on `data/factionclash/heroes`; built-in heroes only; operators' overrides merged by `logic/hero/HeroOverride` with each problem naming its own file and line; `logic/hero/HeroAssembly`), a broken or removed definition leaves its hero dormant (neutral model, plain soldier, `(dormant)`); the entity takes its definition (`logic/hero/HeroLoadout`: stats with growth, boss health at all times and the same against anyone, role, kit with no weapon for a fists hero), the name tag with `[Fighting N%]`, lines with v1's rate limit, audiences and speech bubbles (`logic/hero/HeroSpeech`), the revival block and the `revival_rite` talent on the 10-minute rule with the 30 s floor, `/fc hero check` and `/fc hero reload`, the test rig's minimal format-2 definition, the war council counting heroes by war power, `sim.py`'s hero and council lines; 829 unit tests (36 new) and 159 GameTests (10 new); the moves themselves run from A3/A5 ("A1b as built" below) |
 | A2 | Client: `HeroModel` with the fallback chain, `HeroRenderer`, the three controllers, `HeroFace` (UV frames, blink, moods, talk, on `FaceRules`), glow and item layers, the sash tint, LOD, culling box, `_fallback` model, `/fc admin hero lineup/preview/pose` | A1a, G1, G3 | L | screenshots of the test rig playing G3's idle, walk and swing (the swing's marker logged at its tick), blink, every mood, a tinted sash. Done 2026-11-12: `client/hero/` (`HeroModel`, `HeroRenderer`, `HeroFace`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals`), `hero/HeroAnimator` (the three controllers), `hero/HeroLook`, `hero/HeroTimingFiles`, pure `logic/hero/` (`FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`); 230 unit tests (39 new) and 149 GameTests (4 new); in the Xvfb viewer the test rig idles, walks, swings (`hit` logged at animation tick 10.4-10.7 for the file's 10), blinks, shows all 12 moods, talks, tints its sash per faction, holds a pickaxe and mines, shows its phase-2 halo and glowing eyes, and drops its `fine_` bones beyond 20 blocks; the six style fixtures stand beside it (`docs/screenshots/hero_a2_*`). Reviewed 2026-11-12: the per-frame allocations of the render path removed, the walk/run flicker at an NPC's travel pace fixed ("Review of A0-A2" below); checkpoint 1 stands |
 | A3 | Ability core (v1 §32 phase 4): `HeroCombat`, forms, effects, `HeroStatus`, `HeroDamage`, elements, zones, projectiles, energy, cooldowns | A1 | L | v1 GameTests of the ability core |
 | A4 | Control, passives, states, summons, leap and dash, the loop guard (v1 §32 phase 5) | A3 | L | v1 GameTests of phase 5 |
@@ -3273,6 +3273,93 @@ and the row above (all pure, in `logic/hero/`, none read by the game yet; A10-A1
   `broom_hops` (his `broom_dive` is C3's proposal); hover, deep swimming and lava walking are milestone 2's (A13), and
   their numbers are in the tables but not exercised by a fixture.
 
+A1b as built (2026-11-13), where it goes beyond or differs from 3.2-3.4, 12.1, 12.15, 8.1 and the row above:
+- **The definitions.** `hero/HeroDefinitions` reads every `data/factionclash/heroes/*.json` of the server's packs when
+  the server loads its data (`/reload` too) and hands them to `HeroRegistry`. The design names
+  `SimpleJsonResourceReloadListener`; this is its sibling `SimplePreparableReloadListener` on the same folder (the same
+  `FileToIdConverter`, so a datapack replaces a file the same way) reading the text, because Gson's tree has lost the
+  lines every problem names and refuses a file with a comment before the checker could say why. Only the mod's own
+  heroes load (the owner's answer of 2026-11-12): a definition whose id the mod does not ship is NOT LOADED
+  (`not_builtin`), files of another namespace are skipped. Then `config/factionclash/heroes/<id>.json` overrides are
+  merged (`logic/hero/HeroOverride`: each top-level field replaces the built-in's whole field, `id`, `art`,
+  `animations` and `format` stay the built-in's with a NOTE, an unreadable override is PART LEFT OUT and the built-in
+  loads as it is), and every problem in a field the override wrote names the override file and its own line
+  (`HeroReader.Source` carries the merged tree and which file each member came from). `logic/hero/HeroAssembly` puts it
+  together with a test's fixtures and checks all of it as built-in heroes; `config/factionclash/heroes/_report.txt` is
+  rewritten after every load. `/fc hero reload` reads the packs, the overrides and the visual files again, applies the
+  result to every loaded hero at once and prints the summary with every NOT LOADED and PART LEFT OUT line; `/reload`
+  does the same through the listener. `/fc hero check <id|all>` reads and checks them now, applies nothing, and prints
+  the problems and the hero's sheet (role, boss health at levels 1, its own and 30 with its war power, kit, moves, the
+  end of its fights, revival, talents, lines).
+- **Entries.** A hero is listed when it has a visual file or a loaded definition; `HeroEntry.def` is its checked
+  definition, null for a dormant one. A definition with no art of its own is drawn with `_fallback` and its fists style;
+  preview fixtures need none.
+- **Dormant** (3.4): no valid definition (removed, broken, an override that breaks it). The entity keeps its UUID,
+  faction, saved state, last role (`HeroState.role`, also for a dormant return) and kit; it has a plain soldier's
+  numbers (20 health, nothing added, the share kept), the neutral model and size, `(dormant)` on its tag, the generic
+  lines only, and it cannot be given. A synced `DATA_DORMANT` flag tells clients (a client of a dedicated server knows no
+  definitions) which model to draw. A good definition brings it back at once. v1's "last known good" copy is not kept,
+  as 3.4 says.
+- **Numbers** (`logic/hero/HeroLoadout`): `MAX_HEALTH` base = the v1 health with growth, the one boss modifier
+  `factionclash:boss_health`, and `hero_attack`, `hero_armor`, `hero_speed`, `hero_knockback` modifiers, re-applied at a
+  spawn, a load, a level-up and a reload with the share of health kept; vanilla reads a saved hero's health before its
+  maximum is back, so the saved value is read first and set again. Nothing reads who engages the hero. Leading is
+  false until L4 (+50); `boss.healthScale` (25-300%) is a new config key, `[boss]`.
+- **Role and kit.** The role from the basic attack, the main-hand item and the style (`HeroLoadout.roleId`: a mace is an
+  axe fighter's weapon, as Benika's club). The kit is the file's `gear` as bound vanilla items with names and
+  enchantments. The fists rule: the reader now marks the stone sword it adds to a melee kit with no weapon
+  (`GearItem.added`), and a fists-style hero leaves it out and fights bare-handed (an authored weapon such as Natsuho's
+  iron "Claw Gauntlets" stays). Three hooks on `FactionNpc` keep a hero's weapon its own: `needsRoleTool` (no trip to
+  the storehouse while it holds its kit weapon or fights bare-handed), `takesStoreWeapons` (only a better weapon of its
+  role's kind; a mace or bare hands, none) and `takesShield` (only a kit with a shield). Thrown heroes fight
+  bare-handed until A3's `HeroThrowGoal`. A reload re-equips a living hero only when its kit changed.
+- **Name tag and energy.** `★ Name · title` in the hero's colour (or its faction's), `[Fighting N%]` while it has a
+  target (`heroes.showEnergy`), `(dormant)`, `(preview)`. Energy is v1 14's minimal part for the tag: landed melee
+  basic hits, kills, damage taken (ranged hits and the ultimate come with A3); saved, 0 after a revival.
+- **Lines** (`logic/hero/HeroSpeech`): its own line or a short generic one (`heroes.defaultLines`; each uses only its
+  event's placeholders), v1's rate limit (`Clock`), the audiences (nearby within `heroes.dialogueRadius`, the
+  faction, the one player greeted; `heroes.dialogue` `local`, `faction`, `off`), chat as `<★ Name> line` and a vanilla
+  text display 0.75 above the head for 3 s while the face's talking flag is on; a bubble saved by a stopping server is
+  dropped when its chunk loads. Wired now: `summoned`, `greeting` (a faction player's right click), `idle`,
+  `fight_start`, `kill`, `low_health`, `victory`, `ally_fallen`, `level_up`, `fallen` (with `{enemy}`) and `revived`
+  (the revival block's own line first). The others come with their systems (moves, phases, enrage, escape and last
+  stand: A3-A6, A12; founding and leader news: L4).
+- **Revival.** `HeroManager.reviveSeconds`: the hero's own `revival.seconds` or `heroes.reviveSeconds`, shortened by
+  the faction's best `revival_rite` tier (any hero it owns, alive or fallen, the fallen one included, at the tier of
+  its own level: 7.2's "strongest copy counts"), never under `heroes.minReviveSeconds` (30, config range 30-3600, so it
+  can only be raised). `where_it_fell` rises at `HeroState.fellAt`, `nearest_base` at the faction's standing base
+  nearest to it, `at: night` waits for nightfall. Totem particles; the killer's faction hears of the fall.
+- **War council** (8.1, ahead of L3): `soldierPower` over ordinary soldiers; `defencePower` = soldiers at home x
+  `soldierPower` + the home heroes' war power (alive, at home, not raiding; half under half health; from the loaded
+  entity or the record's last health and maximum), with the backbone cap; the target score in soldier units; the
+  party's power through `countedPower` (no hero goes on a raid until L4); `war.heroPowerPercent` (100; 0 counts a hero as
+  one head, as before). `FactionDirector.LAST_COUNCIL` keeps each faction's last council with both sides' power and
+  whether the heroes decided it. With no hero anywhere every decision is today's (`LeaderBiasesTest` still finds the
+  same expressions in the source).
+- **`sim.py`** (SLICE_PLAN 6.4): a `council` line per faction and a `hero` line per hero: owner, alive or returns in,
+  level, war power, fights by who the enemy was (player, soldiers, hero, monsters), kills, deaths, revivals, casts per
+  move, phase reached, staggers, escapes, last stands (the last five stay 0 until A3-A6 count them), health, energy,
+  role, what it holds, status, `DORMANT`. `/fc admin dump` has a `heroes` array and each faction's `council`.
+- **The test rig's definition**, `data/factionclash/heroes/test_rig.json`, is written by hand (herogen's kit step does
+  not write server files yet): a common striker with an iron "Test Blade", stoic (it fights to the death), never a
+  leader, a few lines. `checkHeroes` passes with nothing to report. Test fixtures registered with a visual file only
+  get a minimal format-2 definition for their style (`HeroRegistry.fixtureDefinition`).
+- **Tests**: `HeroOverrideTest` (9), `HeroAssemblyTest` (7), `HeroLoadoutTest` (8), `HeroSpeechTest` (6), two in
+  `HeroRulesTest` and four message cases (829 unit tests in all); the GameTests `heroTakesItsDefinition`,
+  `fistsHeroHoldsNothingAndFightsBareHanded`, `heroHealthIsTheSameForAPlayerOrAnNpc`, `heroIsDormantWithoutAValidDefinition`,
+  `reloadAppliesAChangedDefinitionAtOnce`, `heroCheckReportsABrokenFile`, `revivalBlockShortensTheReturn`,
+  `revivalRiteShortensWithTheThirtySecondFloor`, `warCouncilCountsHeroPower` and `savedSpeechBubbleIsDropped` (159 in
+  all). Sixteen sabotage checks (eleven in the game, five in the pure rules), each caught; one (a mace's role) was
+  missed at first and caught after a test was added for it.
+- **Left open**: the moves themselves (A3/A5; the sheet lists them), the thrown basic attack (A3), the boss mechanics
+  (A6), the duty's job (heroes still work as guards of their combat role until L5m), leading and raids (L4), ranged
+  hits' energy, the station screen's hero sheet, and a `council` line from a campaign long enough for a war council to
+  find a target.
+- **Checked on a dedicated server** (a fresh world, two in-game days; HANDOFF section 5): the definitions load from
+  the jar, `check`, `reload` with an override, a datapack's broken `test_rig.json` making the hero dormant on `/reload`
+  and its removal bringing it back, its fall and return, its fights and lines over two days, and a restart. Found there
+  and fixed: `/reload` kept the overrides of the last load; it now reads the config folder again.
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -3426,6 +3513,9 @@ both (14.5).
   art follow-up below
   is decided. `FaceRules`' first rule ("dead or defeated: eyes closed") reads only "dead"; an escaping hero's face is
   its mood byte.
+- Done in A1b (15.2 "A1b as built"): `soldierPower` over ordinary soldiers, the defence power with the home heroes'
+  war power and the backbone cap, the target score in soldier units, `war.heroPowerPercent`, the council line for
+  `sim.py`; the party's heroes, the escape's away time and the leader rules wait for L4/A12.
 - `FactionDirector` (L3): `soldierPower` averages ordinary soldiers only; the party's power adds the heroes that go;
   `defenders` becomes a defence power (soldiers at home x `soldierPower` + the home heroes' war power, half under
   half health, none while away or dead) and the target score uses it in soldier units; the soldier-backbone cap on

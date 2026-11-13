@@ -389,6 +389,55 @@ public final class FCCommands {
         return 1;
     }
 
+    /**
+     * The heroes for {@code sim.py}'s hero lines (SLICE_PLAN 6.4): who each serves, alive or when it returns, level, its
+     * war power, fights by who the enemy was, kills, deaths, revivals, casts per move, phases reached, staggers,
+     * escapes, last stands (the last four stay 0 until the boss systems count them), dormant, and the loaded entity's
+     * health, energy and status.
+     */
+    static JsonArray heroSnapshot(ServerLevel level, CampaignData data) {
+        JsonArray out = new JsonArray();
+        long now = level.getGameTime();
+        for (com.factionclash.campaign.HeroState s : data.heroes.values()) {
+            JsonObject o = new JsonObject();
+            o.addProperty("id", s.id);
+            com.factionclash.hero.HeroEntry e = com.factionclash.hero.HeroRegistry.get(s.id);
+            o.addProperty("name", e != null ? e.name() : s.id);
+            o.addProperty("owner", s.owner == null ? null : s.owner.id);
+            o.addProperty("base", s.baseId);
+            o.addProperty("alive", s.alive);
+            o.addProperty("returnsIn", s.alive || s.reviveAt <= 0 ? 0 : Math.max(0, (s.reviveAt - now) / 20));
+            o.addProperty("level", s.level);
+            o.addProperty("dormant", e == null || e.dormant());
+            o.addProperty("warPower", Math.round(com.factionclash.campaign.FactionDirector.heroWarPower(level, s, false) * 10) / 10.0);
+            o.addProperty("kills", s.kills);
+            o.addProperty("deaths", s.deaths);
+            o.addProperty("revivals", s.revivals);
+            o.addProperty("staggers", s.staggers);
+            o.addProperty("escapes", s.escapes);
+            o.addProperty("lastStands", s.lastStands);
+            o.addProperty("phaseReached", s.phaseReached);
+            JsonObject fights = new JsonObject();
+            s.fights.forEach(fights::addProperty);
+            o.add("fights", fights);
+            JsonObject casts = new JsonObject();
+            s.casts.forEach(casts::addProperty);
+            o.add("casts", casts);
+            if (s.alive && s.uuid != null && level.getEntity(s.uuid) instanceof com.factionclash.hero.HeroEntity h) {
+                o.addProperty("health", Math.round(h.getHealth() * 10) / 10.0);
+                o.addProperty("maxHealth", Math.round(h.getMaxHealth() * 10) / 10.0);
+                o.addProperty("energy", h.energy());
+                o.addProperty("role", h.getRole().id);
+                o.addProperty("holding", h.getMainHandItem().isEmpty() ? "nothing" : net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .getKey(h.getMainHandItem().getItem()).getPath());
+                o.addProperty("status", h.status());
+                o.addProperty("pos", h.blockPosition().toShortString());
+            }
+            out.add(o);
+        }
+        return out;
+    }
+
     public static JsonObject snapshot(ServerLevel level) {
         CampaignData data = CampaignData.get(level.getServer());
         JsonObject root = new JsonObject();
@@ -552,9 +601,12 @@ public final class FCCommands {
                 roster.add(ro);
             }
             o.add("roster", roster);
+            String council = com.factionclash.campaign.FactionDirector.LAST_COUNCIL.get(f.type);
+            o.addProperty("council", council == null ? "" : council);
             factions.add(o);
         }
         root.add("factions", factions);
+        root.add("heroes", heroSnapshot(level, data));
         JsonArray npcs = new JsonArray();
         for (Entity e : level.getAllEntities()) {
             if (e instanceof FactionNpc n) {

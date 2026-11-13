@@ -97,8 +97,36 @@ public final class HeroReader {
         }
     }
 
-    /** A file: its path (relative, used for messages and the alphabetical order) and its text. */
-    public record Source(String path, String text) {
+    /**
+     * A file: its path (relative, used for messages and the alphabetical order) and its text. An operator's override
+     * merged over a built-in hero ({@link HeroOverride}) comes as a ready {@code tree} instead, whose top-level members
+     * came from two files: {@code memberFiles} names the file of each member the override replaced, so a problem in
+     * one of them names the override file and its own line (the others name {@code path}).
+     */
+    public record Source(String path, String text, Obj tree, Map<String, String> memberFiles) {
+        public Source {
+            memberFiles = memberFiles == null ? Map.of() : Map.copyOf(memberFiles);
+        }
+
+        public Source(String path, String text) {
+            this(path, text, null, Map.of());
+        }
+
+        /** The file a problem at {@code machinePath} belongs to: the override's for a member it replaced. */
+        public String fileOf(String machinePath) {
+            if (memberFiles.isEmpty() || machinePath == null || machinePath.isEmpty()) {
+                return path;
+            }
+            int end = machinePath.length();
+            for (int i = 0; i < machinePath.length(); i++) {
+                char c = machinePath.charAt(i);
+                if (c == '.' || c == '[') {
+                    end = i;
+                    break;
+                }
+            }
+            return memberFiles.getOrDefault(machinePath.substring(0, end), path);
+        }
     }
 
     /** The heroes that loaded (by id, sorted), the file each came from, the ids or files that did not, and every problem. */
@@ -135,7 +163,18 @@ public final class HeroReader {
         List<Read> reads = new ArrayList<>();
         List<String> notLoaded = new ArrayList<>();
         for (Source s : sorted) {
-            readFile(s, opt, problems, reads, notLoaded);
+            if (s.memberFiles().isEmpty()) {
+                readFile(s, opt, problems, reads, notLoaded);
+                continue;
+            }
+            // an override merged over a built-in: each problem names the file its member came from
+            Problems own = new Problems();
+            readFile(s, opt, own, reads, notLoaded);
+            for (Problem p : own.all()) {
+                String file = s.fileOf(p.machinePath());
+                problems.add(file.equals(p.file()) ? p : new Problem(p.severity(), p.code(), p.hero(), file, p.line(),
+                        p.column(), p.path(), p.machinePath(), p.message(), p.part()));
+            }
         }
         Map<String, Read> loaded = new LinkedHashMap<>();
         for (Read r : reads) {
@@ -237,7 +276,7 @@ public final class HeroReader {
     private static void readFile(Source s, Options opt, Problems problems, List<Read> reads, List<String> notLoaded) {
         String file = s.path;
         String fileId = idFromFileName(file);
-        HeroJson.Result res = HeroJson.parse(s.text);
+        HeroJson.Result res = s.tree != null ? new HeroJson.Result(s.tree, List.of(), null) : HeroJson.parse(s.text);
         for (HeroJson.Issue n : res.notes()) {
             problems.add(new Problem(Severity.NOTE, "json." + n.code().name().toLowerCase(Locale.ROOT), null, file,
                     n.line(), n.col(), "", "", n.message(), null));
@@ -1216,7 +1255,7 @@ public final class HeroReader {
                             + (style == Style.MELEE ? " melee weapon" : " " + item) + " for the " + style.id()
                             + " style; \"" + item + "\" was added", null);
                 }
-                out.add(new GearItem(item, null, Map.of(), GearSlot.MAINHAND));
+                out.add(new GearItem(item, null, Map.of(), GearSlot.MAINHAND, true));
             }
             // at most 6 enchantment levels in the kit: lower from the last
             int total = 0;
@@ -1244,7 +1283,7 @@ public final class HeroReader {
                             m.put(e.getKey(), e.getValue());
                         }
                     }
-                    out.set(i, new GearItem(g.item(), g.name(), Collections.unmodifiableMap(m), g.slot()));
+                    out.set(i, new GearItem(g.item(), g.name(), Collections.unmodifiableMap(m), g.slot(), g.added()));
                 }
             }
             return List.copyOf(out);

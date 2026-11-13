@@ -73,9 +73,9 @@ commits, language and testing are in `/CLAUDE.md`.
 | `config/` | `FCConfig` (NeoForge common config; sections campaign, movement, survival, achievements, workplaces, recruitment, war). |
 | `info/`, `net/`, `client/` | Station/info screen text (`BaseInfo`), map payload (`MapPayload` marker kinds: … VILLAGE 7, PILLAGER_OUTPOST 8, WOODLAND_MANSION 9, STALE flag 16), client screens (`MapScreen`, `InfoScreen`). |
 | `gametest/` | `FCGameTests` (all GameTests), `GameTestBases` (register an isolated test base, clean-up). |
-| `hero/` (Heroes v2, `docs/heroes-v2/HEROES_V2.md`) | `HeroEntity` (a `FactionNpc` subclass and GeckoLib `GeoEntity`: hero id and the synced fields `DATA_HERO/ACTION/STATE/MOOD/LOCO`, hitbox from the model, kit never dropped, `FcHero` NBT), `HeroRegistry` (every `assets/factionclash/heroes/*.visual.json` read from the mod file, config overrides in `config/factionclash/heroes/`, `registerTransient` fixtures for GameTests), `HeroVisual`/`HeroEntry` (what a hero looks like and where its files are), `HeroManager` (give, release, death and revival after `heroes.reviveSeconds`, one living entity per id, preview copies), `HeroKit`, `HeroEvents`, `HeroLook` (the visual file's bone groups, face table, blink, phases, move names, chains), `HeroAnimator` (the three GeckoLib controllers, common code), `HeroTimingFiles` (the server timing files through a hero's chain). Preview fixtures: `config/factionclash/hero_fixtures/*.visual.json` on a server. Campaign record: `campaign/HeroState` in `CampaignData.heroes` (format 3); a hero's roster `NpcRecord` has `heroId`. Pure rules in `logic/hero/` (`HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`, `FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`, `FormScale`; and the hero file format, not yet read by the game: `HeroJson`, `HeroCatalogue`, `HeroDef`, `HeroReader`, `Problems`, `HeroBalance`, `HeroRules`, section 5 "The hero file format"; format 2: `HeroReader2`, `EscapeRules`, `HeroSchemaGen`, `HeroCheckMain` for `./gradlew checkHeroes`, section 5 "Hero format 2"; the boss fight, also not yet read by the game: `BossRules`, `MoveSelector`, `Sense`, `Conditions`, `Decals` and `EscapeRules`' runtime half, section 5 "The boss rules"; mobility and work mastery, also not yet read by the game:
+| `hero/` (Heroes v2, `docs/heroes-v2/HEROES_V2.md`) | `HeroEntity` (a `FactionNpc` subclass and GeckoLib `GeoEntity`: hero id and the synced fields `DATA_HERO/ACTION/STATE/MOOD/LOCO`, hitbox from the model, kit never dropped, `FcHero` NBT), `HeroRegistry` (every `assets/factionclash/heroes/*.visual.json` read from the mod file, and since A1b the server definitions `data/factionclash/heroes/*.json` read by `HeroDefinitions`, a reload listener, with the operators' overrides from `config/factionclash/heroes/<id>.json` merged and the whole checked; `registerTransient` fixtures for GameTests with a minimal definition; a hero without a valid definition is dormant), `HeroVisual`/`HeroEntry` (what a hero looks like, where its files are, its checked definition `def`), `HeroManager` (give, release, death and revival after `heroes.reviveSeconds`, the hero's own revival block and the `revival_rite` talent, never under `heroes.minReviveSeconds`; one living entity per id, preview copies, `refreshAll` after a reload), `HeroKit` (the definition's gear as bound items), `HeroEvents`, `HeroLook` (the visual file's bone groups, face table, blink, phases, move names, chains), `HeroAnimator` (the three GeckoLib controllers, common code), `HeroTimingFiles` (the server timing files through a hero's chain). Preview fixtures: `config/factionclash/hero_fixtures/*.visual.json` on a server. Campaign record: `campaign/HeroState` in `CampaignData.heroes` (format 3); a hero's roster `NpcRecord` has `heroId`. Pure rules in `logic/hero/` (`HeroAssembly`, `HeroOverride`, `HeroLoadout`, `HeroSpeech`: what the game makes of a definition, A1b, section 5 "The game reads the hero definitions"; `HeroSize`, `HeroActions`, `HeroIdentity`, `HeroRevival`, `FaceRules`, `BlinkSchedule`, `FaceClock`, `HeroLod`, `HeroClips`, `Sway`, `MoodRules`, `HeroTimings`, `JsonTree`, `FormScale`; and the hero file format, not yet read by the game: `HeroJson`, `HeroCatalogue`, `HeroDef`, `HeroReader`, `Problems`, `HeroBalance`, `HeroRules`, section 5 "The hero file format"; format 2: `HeroReader2`, `EscapeRules`, `HeroSchemaGen`, `HeroCheckMain` for `./gradlew checkHeroes`, section 5 "Hero format 2"; the boss fight, also not yet read by the game: `BossRules`, `MoveSelector`, `Sense`, `Conditions`, `Decals` and `EscapeRules`' runtime half, section 5 "The boss rules"; mobility and work mastery, also not yet read by the game:
 `MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`, section 5 "Mobility and work
-mastery"); commands in `command/HeroCommands` (`/fc hero list\|info`, `/fc admin hero give\|release\|revive\|preview\|lineup\|pose`); GameTests in `gametest/HeroGameTests` and `HeroLookGameTests`. How to see a hero in game: section 4, "Seeing a hero in game". |
+mastery"); commands in `command/HeroCommands` (`/fc hero list\|info\|check\|reload`, `/fc admin hero give\|release\|revive\|preview\|lineup\|pose`); GameTests in `gametest/HeroGameTests`, `HeroLookGameTests` and `HeroDefinitionGameTests`. How to see a hero in game: section 4, "Seeing a hero in game". |
 | `logic/leader/` (Heroes v2 F4, not yet read by the game) | `Personality` (`t_eff`, the 20-point rule, noise, compatibility), `Temperaments` (Appendix A, affinity, the rules' flags), `LeaderBiases` (every director knob of `HEROES_V2.md` 5.5; neutral equals today's constants), `LeaderDraft`, `FactionNameGen`, `Palette` (Lab, delta-E, nearest dye, chat and bar colours), `BannerDesign`, `BaseStyles` (Appendix B), `Talents` (7.2's tier numbers). Section 5, "The leader rules". |
 | `client/hero/` | `HeroModel` (files and the animation chain with missing files dropped, `_fallback` for a missing model; after the animation pass: head look, face, flinch, ears, chain sway, bone visibility, LOD), `HeroRenderer` (face-frame UV shift, sash tint, layers, `-Dfactionclash.heroRenderStats`), `HeroFace`, `HeroClientState`, `HeroGlowLayer`, `HeroItemLayer`, `ClientHeroVisuals` (a resource pack's hero visual files become preview fixtures on the client). HEROES_V2 15.2 "A2 as built". |
 | `tools/` (repo root) | `sim.py` (drive a server over RCON, print campaign summaries), `rcon.py`, `days.sh`, `setup_server.sh`, `gen_assets.py`. |
@@ -119,7 +119,10 @@ python3 tools/rcon.py "stop"
 - **Seeing a hero in game** (Heroes v2; only the art pipeline's `test_rig` ships so far). With the server up and a
   campaign started (`fc start 256`): `python3 tools/rcon.py "fc admin hero give test_rig ember_legion"` puts the
   campaign's hero at Ember's spawn point (from RCON; a player operator gets it beside them, `[pos]` anywhere in the
-  overworld); `fc hero info test_rig` prints where it is (operators and its own faction only). Join with the Xvfb
+  overworld); `fc hero info test_rig` prints where it is (operators and its own faction only) and its sheet; `fc hero check test_rig` checks
+  its definition (`data/factionclash/heroes/test_rig.json`) now and `fc hero reload` applies a changed one, or an
+  override in the server's `config/factionclash/heroes/test_rig.json` (for example `{"title": "the Campaign Model"}`), to
+  the hero at once. Its lines go to the server log as `[Heroes] test_rig says (event): ...`. Join with the Xvfb
   viewer as above, `op Viewer`, `gamemode spectator Viewer`, `tp Viewer <x> <y+1> <z-4> 0 10` to stand in front of it.
   For screenshots: `execute as Viewer at Viewer run fc admin hero lineup` stands display copies of every hero (and of
   the preview fixtures) 4 blocks in front of the viewer, facing it; `fc admin hero pose test_rig base walk` walks it in
@@ -316,6 +319,40 @@ python3 tools/rcon.py "stop"
   `dive` form is in the catalogue and the validator (`dive_rule`), and `checkHeroes` prints each hero's mobility at
   levels 1, 10 and 20. F5's decisions are in `docs/heroes-v2/notes/kit-gaps.md`, "F5 decisions". **793 unit tests,
   149 GameTests** (76 unit tests new; ten sabotage checks, each caught; F5 changes no game code).
+
+- **The game reads the hero definitions** (Heroes v2 task A1b, 2026-11-13; `HEROES_V2.md` 15.2 "A1b as built"). The
+  server reads `data/factionclash/heroes/*.json` with a reload listener (`hero/HeroDefinitions`; `/reload` reads them
+  again; only the mod's own heroes load), merges an operator's override from `config/factionclash/heroes/<id>.json`
+  (its top-level fields replace the built-in's; `logic/hero/HeroOverride`, each problem naming the override file and
+  line) and checks everything (`logic/hero/HeroAssembly`); `config/factionclash/heroes/_report.txt` is rewritten after
+  every load. `/fc hero check <id|all>` checks without applying and prints the hero's sheet; `/fc hero reload` applies
+  at once to the heroes in the world. A hero whose definition breaks or goes is **dormant** (plain soldier, neutral
+  model, `(dormant)`; a synced flag tells clients) until a good one comes back. The entity takes its definition
+  (`logic/hero/HeroLoadout`): stats with growth, **boss health at all times** (the test rig: 84 at level 1; nothing reads
+  who engages it), role, kit (a fists hero holds no weapon and never fetches one), the name tag `★ Name · title
+  [Fighting N%]`, lines in chat and a 3 s speech bubble with v1's rate limit (`logic/hero/HeroSpeech`), its own revival
+  block and the faction's `revival_rite` tier on the 10-minute rule, never under `heroes.minReviveSeconds` (30). The war
+  council counts ordinary soldiers by heads and heroes by war power (`war.heroPowerPercent`), and `sim.py` prints a
+  `council` line per faction and a `hero` line per hero. The test rig's definition
+  (`data/factionclash/heroes/test_rig.json`) is hand-written. New config: `[heroes]` `minReviveSeconds`, `dialogue`,
+  `dialogueRadius`, `dialogueCooldownSeconds`, `defaultLines`, `speechBubbles`, `showEnergy`; `[boss] healthScale`;
+  `[war] heroPowerPercent` (`docs/factionclash-common.toml` regenerated). **829 unit tests, 159 GameTests** (36 and 10
+  new; sixteen sabotage checks, each caught). GameTest runs: one run lost `soldiersHoldOutOfReachOfAPlayerTheyCannotReach`
+  and another `soldiersDoNotKeepBreakingABlockThePlayerPutsBack` (known flakes, `docs/design/notes/combat-unreachable.md`;
+  A1b changes nothing an ordinary NPC does), and one sabotage run `secondMinerHelpsInAMineAtTheCap` (not seen before:
+  watch it); a run with a fresh config and the final run on the final code passed all 159. Checked on a dedicated
+  server from `tools/setup_server.sh` (fresh world, `fc start 256`, this build's jar): the definitions load from the
+  jar (`Heroes: 1 loaded (test_rig); definitions: 1 loaded`); `fc admin hero give test_rig ember_legion` says its
+  summoned line; `fc hero check test_rig` prints its sheet (84 health at level 1, war power 7.1); an override
+  `{"title": "the Campaign Model", "stats": {"health": 30}}` applies with `fc hero reload` (90 health, the title on its
+  tag); a datapack replacing `test_rig.json` with a broken file makes it dormant on `/reload` (20 health, `(dormant)`,
+  the check naming the datapack's file and line) and removing the datapack brings it back; `/kill` gives its fallen
+  line and "returns in 10:00", `revive` its revived line; over two in-game days (`tools/days.sh`, 5.5-6.7 ms per tick)
+  it fought a Hollow raid on its base and enemy NPCs (`sim.py`: `fights[monsters=1,soldiers=3] kills=2 energy=51`,
+  `fight_start` and `victory` lines in the log; no war council had a target yet, so no `council` line); after a
+  restart it came back with its UUID and its saved health clamped to the definition's 84. Found there and fixed:
+  `/reload` kept the overrides of the last load (one removed from the config folder stayed applied until
+  `/fc hero reload`); it now reads them again. The download jar was not rebuilt (heroes are not playable yet).
 
 ## 6. Known open items and ideas (none blocking)
 

@@ -113,6 +113,21 @@ def summary(d):
                 print(f"      pen: {b['pen']}")
         else:
             print(line + f" mobs={b['lairMobs']}/{b['lairCap']}")
+    for f in d["factions"]:
+        if f.get("council"):
+            print(f"  council {f['faction']:15s} {f['council']}")
+    for h in d.get("heroes", []):
+        life = "alive" if h["alive"] else (f"returns in {h['returnsIn'] // 60}:{h['returnsIn'] % 60:02d}" if h["returnsIn"] else "fallen")
+        fights = ",".join(f"{k}={v}" for k, v in sorted(h.get("fights", {}).items())) or "-"
+        casts = ",".join(f"{k}={v}" for k, v in sorted(h.get("casts", {}).items())) or "-"
+        line = (f"  hero {h['id']:20s} {str(h['owner']):15s} {life:16s} L{h['level']:<2d} war={h['warPower']:.1f}"
+                f" fights[{fights}] kills={h['kills']} deaths={h['deaths']} revivals={h['revivals']}"
+                f" casts[{casts}] phase={h['phaseReached']} staggers={h['staggers']} escapes={h['escapes']} laststands={h['lastStands']}")
+        if "health" in h:
+            line += f" hp={h['health']:.0f}/{h['maxHealth']:.0f} energy={h['energy']} {h['role']} holding={h['holding']} [{h['status'][:40]}]"
+        if h.get("dormant"):
+            line += " DORMANT"
+        print(line)
     st = Counter()
     for n in d["npcs"]:
         st[(n["faction"][:6], n["role"], re.sub(r"[-\d,() ]+%?", " ", n["status"])[:55].strip())] += 1
