@@ -161,6 +161,8 @@ BOSS FIGHT
   rest of the fight. No stagger during her intro, a phase change or her ultimate's wind-up.
 - Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
   (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  A fight opens with the phase 1 wait too, so no move reaches you sooner than that wait plus its
+  wind-up (at least 1.9 s after the fight starts, or after the intro).
   During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
   degrees from where she faces). In a string of moves only the last one plays its full recovery, so
   the punish window comes at the end of the string.
@@ -297,7 +299,8 @@ WORK AND TALENTS
   base (inside the walls or within 16 blocks) and not on a raid; at tier III they use the tier IV
   numbers. Her personal touch: she heals the most hurt ally within 16 blocks by hand (an NPC, a hero
   or a member player alike) [4 / 6 / 8 health every 20 s; a 2 s channel that damage breaks], and her
-  purifying also cleanses member players near her [once every 60 / 45 / 30 s].
+  purifying also lifts Slowness, Weakness and Mining Fatigue from allies within 8 blocks of her,
+  NPCs, heroes and member players alike [once every 60 / 45 / 30 s].
 - Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where she is,
   inside the walls or within 16 blocks, not on a raid; the strongest copy at a base counts, never
   the sum; the realm talent, marked *, also works at every other base of her faction at tier I while

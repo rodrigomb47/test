@@ -3,6 +3,15 @@
 Status: final design for ROADMAP phase 4. Nothing here is implemented yet. Numbers marked PROPOSED go to BALANCE.md
 when built. The format, the catalogue and every example in this document are generic and original.
 
+> Read with `docs/heroes-v2/HEROES_V2.md` (format 2, which this format feeds). The owner's decision of 2026-11-12 that
+> a hero treats players and NPCs the same changes how a format-1 file reads, for every hero: a `stun` (13.4) stops a
+> player too instead of giving Slowness IV; a `taunt` (13.4) holds every receiver, players included;
+> `blindness` and `darkness` (B.1) also act on NPCs; `protects: players` (8) reads as `allies`, and the `target_is`
+> kinds `player` and `npc` (11) read as `person` (both ADJUSTED). War power replaces 25.7's soldier formula
+> and "a hero at home counts as 2" (v2 8.1), and every hero is a boss in every fight (v2 section 6). A hero never
+> yields or withdraws: `retreat_below` (8) no longer starts `WithdrawGoal` but sets where a hero of the escaping kind
+> breaks off for good (v2 6.13). The v2 table of these readings is in its 6.15.
+
 This document merges two design studies: the "expressive" catalogue (elements, multi-target delivery, lasting
 zones, marks, an empowered state, passives that join an ally's attack, summons, non-combat perks) wherever it can be
 validated and implemented, and the "robust" study's rules (few required fields, one unit per kind of number, safe defaults,

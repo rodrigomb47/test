@@ -1172,16 +1172,16 @@ counts, never the sum. Each also has a personal effect (I / II / III):
 | `drill` | 4 XP per hour | dawn sparring: 2 / 3 / 4 soldiers gain 10 / 15 / 20 combat XP (non-lethal, stops at half health) |
 | `festival_host` | +30 morale | its festivals last 25 / 40 / 50% longer (milestone 2) |
 | `steward` | - | at the base it stewards, its talents run at their full tier instead of tier I |
-| `mend` | 12% every 10 s | heals the most hurt NPC within 16 blocks by hand: 4 / 6 / 8 health every 20 s (a 2 s channel broken by damage) |
+| `mend` | 12% every 10 s | heals the most hurt ally within 16 blocks by hand (an NPC, a hero or a member player alike, `HEROES_V2.md` 6.15): 4 / 6 / 8 health every 20 s (a 2 s channel broken by damage) |
 | `triage` | 10 health | carries 2 / 3 / 4 meals of its own for triage |
 | `revival_rite` | 50% sooner | revived allies rise with 4 / 6 / 8 absorption hearts for 2 minutes |
-| `purifier` | every 5 s | also cleanses member players near it once every 60 / 45 / 30 s |
+| `purifier` | every 5 s | also lifts Slowness, Weakness and Mining Fatigue from allies within 8 blocks of it (NPCs, heroes and member players alike) once every 60 / 45 / 30 s (the first draft's extra cleanse was for member players only, whom the talent itself now covers: `HEROES_V2.md` 6.15) |
 | `lookout` | 56 blocks | from 6+ blocks up (a tower, or flying) its sight alarm reaches 16 blocks farther |
 | `envoy` | +0.4 | pacts it carries in person: +0.1 / 0.15 / 0.2 acceptance (milestone 2) |
 | `intimidation` | x1.6 | raiders who see it on the walls fall back 10 / 15 / 20% sooner |
 | `warden_of_walls` | +32 blocks, x3 | repairs breaches itself (real blocks from storage) at 1.5x builder speed |
 | `tactician` | 25% | raid parties it joins gather at cover and keep formation |
-| `war_drummer` | +12% | its drum (a real sound) gives defenders within 24 blocks +5 / 8 / 10% speed during a defence |
+| `war_drummer` | +12% | its drum (a real sound) gives defenders within 24 blocks (soldiers, heroes and member players alike) +5 / 8 / 10% speed during a defence |
 
 ## 12. How it plugs into the jobs
 
@@ -1392,8 +1392,9 @@ it. Proposed kit changes are marked for the authoring tasks C1-C4.
 - **Mobility**: runner II: step 1.0 from level 1, travel +9% at level 1 to +15% at 20; swimmer I: swim x1.3 to x1.5,
   water movement efficiency 0.2 to 0.33, oxygen bonus 1.2 to 2 (the waterfall purification rite; 15.9).
 - **At work**: Presence: `mend` and `purifier` count a tier higher while she is home; personal: she heals the most
-  hurt NPC within 16 blocks by hand (4 / 6 / 8 every 20 s, a channel broken by damage) and also cleanses member
-  players. She runs the shrine steps to any alarm (alarm reach +8 / 12 / 16).
+  hurt ally within 16 blocks by hand, an NPC, a hero or a member player alike (4 / 6 / 8 every 20 s, a channel broken
+  by damage), and lifts Slowness, Weakness and Mining Fatigue from allies within 8 blocks (once every 60 / 45 /
+  30 s). She runs the shrine steps to any alarm (alarm reach +8 / 12 / 16).
 - **In a fight**: travel bonuses off; she keeps her zoning and fights in water unslowed.
 - **When a fight is lost**: away from home she escapes under 15% of her health (she never wanted the fight), on
   foot, across water where she can (runner II and swimmer I are on while escaping). At her own base she never leaves
@@ -1751,6 +1752,11 @@ it with this list.
    an escape fights to the death; a hero running from its own home goes to another base or into the wild. Which kind
    a hero is belongs to its personality (`HEROES_V2.md` 6.13, 12.11), so 8.3 has no field for it. Sections 0, 5.2,
    7.6, 7.7, 8.3, 8.5, 15.1-15.9, 17, 18.1, 19.
+
+The equal-treatment review (`HEROES_V2.md` 6.16) then made the personal effects of 11.2 equal: `mend`'s heal by
+hand reaches any ally, not only an NPC; `purifier`'s, which was an extra cleanse for member players only, now lifts
+Slowness, Weakness and Mining Fatigue from every ally near the hero; `war_drummer`'s drum names soldiers, heroes and
+member players. Sections 11.2, 15.4.
 
 ## 20. Critique (design review, 2026-11-12)
 

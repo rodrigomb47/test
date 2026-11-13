@@ -172,6 +172,8 @@ BOSS FIGHT
   ultimate's wind-up.
 - Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
   (x0.7 when enraged), with basic attacks in between; at least 1 s always passes between two moves.
+  A fight opens with the phase 1 wait too, so no move reaches you sooner than that wait plus its
+  wind-up (at least 1.9 s after the fight starts, or after the intro).
   During any recovery she takes 15% more damage, and 15% more again from behind (more than 120
   degrees from where she faces). In a string of moves only the last one plays its full recovery, so
   the punish window comes at the end of the string.

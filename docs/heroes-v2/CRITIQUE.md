@@ -5,6 +5,9 @@ Scope: `HEROES_V2.md`, `ROSTER_PLAN.md`, `SLICE_PLAN.md` and `roster/`. I checke
 was not changed. The three research reports were read but not edited; where they differ from the design (48 bones, a
 blocked host, 0.02 px face planes, about 64 GameTests), the design wins, as it says.
 
+(History. Since the owner's decisions of 2026-11-12 and 2026-11-13 there is no "boss mode", no attack tokens and no
+yield: `HEROES_V2.md` section 6 and its review in 6.16 hold where this pass says otherwise.)
+
 ## Verdict
 
 The design is sound and close to implementable. These parts hold up:

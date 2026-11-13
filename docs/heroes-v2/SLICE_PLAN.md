@@ -139,7 +139,8 @@ Reactions: blocking -> `scratch_dash` round the shield (50%); drawing a bow -> `
 give a tsundere's last stand, but a cat bolts). She leaves it late, under 8% of her health (`retreat_below` 22.5),
 and goes over walls and roofs: two air jumps, wall kicks, no fall damage. Not from her own harbour: at her home base
 she fights to the death (`stands_for: home`, the default at loyalty 70; she would never admit it is for the
-workers). Cornered, or caught again within 10 minutes of an escape, she fights to the death too.
+workers). Cornered, she fights back and runs again as soon as a way opens; caught again within 10 minutes of an
+escape, she fights to the death.
 
 **Personality.** Tsundere; traits a 65, h 65, m 60, c 45, g 55, s 40, l 70, v 45. Likes cod, salmon, string; dislikes
 pufferfish, water buckets. Quirk: "pretends not to listen, then remembers every word."
@@ -673,8 +674,11 @@ shake, crow peck.
     (`homeStandHeroFleesAfieldNotAtHome`). Nothing kneels and no killing blow is cancelled.
 14. Fairness, the same for every target: a hero's hits stay within the slot caps against a player as against an NPC
     (`BossRulesTest.equalForPlayerAndNpc`); three heroes may press one target at once, an NPC soldier or a player
-    (`threeHeroesPressOneTarget`); a stun stops a player as it stops an NPC (`stunStopsPlayerLikeNpc`); knockback toward
-    lava or a drop is reduced for every receiver (`grabHoldsAndThrowsSafely`).
+    (`threeHeroesPressOneTarget`), and none of them lands a move before its own opening gap plus wind-up (design
+    §6.3); a stun stops a player as it stops an NPC and cannot be chained by a second hero (`stunStopsPlayerLikeNpc`);
+    blows from several attackers on one hero all land in full, one hurt cooldown per attacker (design §6.2,
+    `hitCapHoldsForNpcAndPlayerHits`); knockback toward lava or a drop is reduced for every receiver
+    (`grabHoldsAndThrowsSafely`).
 15. `BossRulesTest.referenceDuel` computes each slice hero's boss health at level 10 against a reference player (iron
     sword, 1.6 swings per second, 50% of swings landing, vanilla armour reduction, weak points that an iron sword
     triggers): between 20 and 60 s of landed hitting for one player, as a leader and as a non-leader (a fight lasts two
