@@ -7,8 +7,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -129,7 +127,7 @@ public class HeroDecoy extends PathfinderMob {
         popped = true;
         if (level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.POOF, getX(), getY(0.5), getZ(), 12, 0.3, 0.5, 0.3, 0.02);
-            sl.playSound(null, getX(), getY(), getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.HOSTILE, 0.6F, 1.6F);
+            com.factionclash.hero.HeroSounds.cue(this, com.factionclash.logic.hero.SoundIndex.DECOY_POP);
         }
         HeroEntity o = owner;
         discard();
@@ -164,5 +162,10 @@ public class HeroDecoy extends PathfinderMob {
     @Override
     public boolean canBeLeashed() {
         return false;
+    }
+
+    /** A decoy leaves no footsteps (HEROES_V2 6.11, SOUND.md 1.5): the tell an attentive listener can use. */
+    @Override
+    protected void playStepSound(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
     }
 }

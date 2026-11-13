@@ -16,7 +16,8 @@
       "shadow_clones": {"class": "heavy", "windup": "hand_seal", "release": "clones"},
       "log_swap": {"class": "light", "release": "log_swap"},
       "shadow_dash": {"class": "heavy", "windup": "hand_seal", "release": "dash_slice", "impact": "blade_hit", "end": "kneel"},
-      "nightfall": {"class": "ultimate", "windup": "nightfall_windup", "release": "nightfall_strike", "impact": "blade_hit"}
+      "nightfall": {"class": "ultimate", "windup": "nightfall_windup", "release": "nightfall_strike", "impact": "blade_hit"},
+      "night_strikes": {"class": "light", "release": "blade_swish", "impact": "blade_hit"}
     },
     "phases": {"2": "hand_seal", "3": "mask_pull"},
     "passives": {"unseen": "smoke_puff"},

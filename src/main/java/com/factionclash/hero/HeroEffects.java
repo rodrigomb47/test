@@ -70,6 +70,7 @@ public final class HeroEffects {
     public static void apply(HeroUse use, List<Effect> effects, int listIndex, List<LivingEntity> formReceivers,
                              Entity direct) {
         HeroEntity hero = use.hero;
+        LivingEntity struck = null;
         for (int i = 0; i < effects.size(); i++) {
             Effect e = effects.get(i);
             if (!EffectRouting.EFFECTS.contains(e.type())) {
@@ -104,7 +105,13 @@ public final class HeroEffects {
                     continue;
                 }
                 one(use, e, listIndex, i, r, enemy, direct);
+                if (enemy && struck == null) {
+                    struck = r;
+                }
             }
+        }
+        if (struck != null) {
+            HeroSounds.impact(use, struck); // S2: the move's impact where it landed, whoever it struck (6.15)
         }
     }
 

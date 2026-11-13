@@ -4,9 +4,6 @@ import com.factionclash.FactionClash;
 import com.factionclash.logic.hero.HeroActions;
 import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.npc.ToolKind;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -338,12 +335,14 @@ public final class HeroAnimator {
     // ------------------------------------------------------------------ events
 
     /** Sound keyframes play at the hero, on this client only (HEROES_V2 4.8 "Client-only effects"). */
+    /**
+     * A sound keyframe (an {@code sfx:} marker or a key's {@code sound}, SOUND.md 5): the hero plays it here on this
+     * client with the index's pitch and volume and its companions ({@link HeroLocalSounds}); a bare id is a vanilla one.
+     */
     private void onSound(SoundKeyframeEvent<HeroEntity> e) {
-        ResourceLocation id = ResourceLocation.tryParse(e.getKeyframeData().getSound());
-        SoundEvent sound = id == null ? null : BuiltInRegistries.SOUND_EVENT.get(id);
-        if (sound != null && hero.level().isClientSide) {
-            hero.level().playLocalSound(hero.getX(), hero.getY(), hero.getZ(), sound, hero.getSoundSource(), 0.8F,
-                    0.95F + hero.getRandom().nextFloat() * 0.1F, false);
+        String id = e.getKeyframeData().getSound();
+        if (hero.level().isClientSide && id != null) {
+            HeroLocalSounds.keyframe(hero, id.indexOf(':') < 0 ? "minecraft:" + id.trim() : id);
         }
     }
 

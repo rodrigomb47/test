@@ -42,8 +42,10 @@ BUDGET_KB = {"cue": 320, "hero": 256, "total": 2400}
 
 REQUIRED_CUES = ["telegraph.light", "telegraph.heavy", "telegraph.area", "telegraph.ultimate",
                  "telegraph.unblockable", "telegraph.dive", "parry", "counter", "poise.crack", "poise.break", "stagger",
-                 "phase", "shockwave", "enrage", "intro", "yield", "spared", "takeoff", "landing", "glide",
-                 "decoy_pop", "weak_point", "channel_break"]
+                 "phase", "shockwave", "enrage", "intro", "fled", "fallen", "last_stand", "revived", "takeoff",
+                 "landing", "glide", "decoy_pop", "weak_point", "channel_break"]
+# beats that no longer exist (no hero yields or is spared, HEROES_V2 6.13 and 15.6): a cue map naming them is an error
+RETIRED_CUES = ("yield", "spared")
 MOVE_SLOTS = ("windup", "release", "impact", "loop", "end", "broken")
 MOVE_CLASSES = ("light", "heavy", "area", "ultimate")
 # slots the server plays at their moment (SOUND.md section 7): the sound must be `plays: server`, or nobody else
@@ -157,6 +159,9 @@ def check_catalogue(cat, rep):
             for k in REQUIRED_CUES:
                 if k not in flat:
                     rep.error("cue", "the shared cue map has no %s" % k)
+            for k in RETIRED_CUES:
+                if k in flat or k in st.sounds:
+                    rep.error("cue", "%s is a retired beat (no hero yields or is spared): fled, fallen and revived replace it" % k)
             for k, v in flat.items():
                 if cat.lookup(v, "cue") is None:
                     rep.error("cue", "cue %s names a missing sound %r" % (k, v))

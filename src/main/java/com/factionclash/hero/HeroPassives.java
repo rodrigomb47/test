@@ -91,6 +91,7 @@ final class HeroPassives {
         try {
             apply(i, p, enemy, ally);
             firings++;
+            HeroSounds.passiveFired(hero, p.name());
         } finally {
             b.done(i);
         }

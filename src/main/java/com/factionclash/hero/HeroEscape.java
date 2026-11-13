@@ -193,6 +193,7 @@ public final class HeroEscape {
         lastStands++;
         LivingEntity t = hero.getTarget();
         hero.say(LineEvent.LAST_STAND, t == null ? Map.of() : Map.of("enemy", HeroEntity.nameOf(t)), null);
+        HeroSounds.lastStand(hero); // SOUND.md 7: a short accent at the hero, under the line
         combat.boss().holdMood(HeroActions.moodCode("determined"), BEAT_FACE_TICKS);
         combat.trigger(PassiveBook.Event.of(Trigger.ON_LAST_STAND), t, null);
         HeroState rec = hero.campaignRecord();

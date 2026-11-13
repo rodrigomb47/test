@@ -22,6 +22,12 @@ public final class ClientSetup {
         event.registerEntityRenderer(ModEntities.HERO_DECOY.get(), com.factionclash.client.hero.HeroDecoyRenderer::new);
     }
 
+    /** Heroes' looping sounds (a channel's loop, the glide's wind) need the client's sound manager (S2). */
+    @SubscribeEvent
+    public static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+        com.factionclash.hero.HeroLocalSounds.setLoops(com.factionclash.client.hero.HeroLoopSounds::tick);
+    }
+
     /** Hero visual files a resource pack adds (preview fixtures for screenshots, HEROES_V2 15.2 A2). */
     @SubscribeEvent
     public static void onReloadListeners(RegisterClientReloadListenersEvent event) {

@@ -28,6 +28,7 @@ public final class FactionClash {
         ModItems.TABS.register(modBus);
         ModEntities.ENTITIES.register(modBus);
         com.factionclash.hero.HeroAttachments.ATTACHMENTS.register(modBus);
+        com.factionclash.hero.HeroSounds.register(modBus); // every event of the hero sound index (S2)
         container.registerConfig(ModConfig.Type.COMMON, FCConfig.SPEC);
         modBus.addListener(FactionClash::onAttributes);
         modBus.addListener(FactionClash::onTickets);

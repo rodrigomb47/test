@@ -104,6 +104,7 @@ final class HeroStates {
                 hero.speak(LineEvent.SKILL, st.line());
             }
             HeroEffects.particles(hero.level(), hero, particle(st), 12);
+            HeroSounds.stateEntered(hero, n);
         }
         return true;
     }

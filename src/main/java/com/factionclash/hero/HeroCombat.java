@@ -31,16 +31,15 @@ import com.factionclash.logic.hero.MoveTiming;
 import com.factionclash.logic.hero.MoveTiming.Interrupt;
 import com.factionclash.logic.hero.PassiveBook;
 import com.factionclash.logic.hero.Sense;
+import com.factionclash.logic.hero.SoundIndex;
 import com.factionclash.logic.hero.UseLedger;
 import com.factionclash.logic.leader.Temperaments;
 import com.factionclash.registry.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -490,12 +489,9 @@ public final class HeroCombat {
             hero.say(LineEvent.SKILL, Map.of("ability", a.name()), null);
         }
         if (a.look() != null && a.look().sound() != null) {
-            String sid = a.look().sound();
-            ResourceLocation rl = ResourceLocation.tryParse(sid);
-            if (rl != null) {
-                BuiltInRegistries.SOUND_EVENT.getOptional(rl).ifPresent(s ->
-                        hero.level().playSound(null, hero.getX(), hero.getY(), hero.getZ(), s, SoundSource.HOSTILE, 1F, 1F));
-            }
+            // v1's look.sound (a bare id is a vanilla one), through the hero sound player (heroes.soundVolume)
+            String sid = a.look().sound().trim();
+            HeroSounds.playAt(hero, sid.indexOf(':') < 0 ? "minecraft:" + sid : sid);
         }
         if (p.source() == MoveSelector.Source.REACTION && p.reaction() != null) {
             boss.reacted(p.reaction(), m); // 6.8: the log line SLICE_PLAN 6.5 counts
@@ -657,9 +653,14 @@ public final class HeroCombat {
         if (p == null || !hero.isAlive()) {
             return false;
         }
+        double before = p.value();
         if (p.add(amount, now(), protectedFromStagger())) {
+            staggerFromPoise = true;
             stagger();
             return true;
+        }
+        if (SoundIndex.poiseCracks(before, p.value(), p.max())) {
+            HeroSounds.cue(hero, SoundIndex.POISE_CRACK); // once per cycle: the bar empties at a stagger or a new fight
         }
         return false;
     }
@@ -680,13 +681,21 @@ public final class HeroCombat {
         hero.getNavigation().stop();
         hero.setDeltaMovement(hero.getDeltaMovement().multiply(0, 1, 0));
         HeroEffects.particles(hero.level(), hero, ParticleTypes.CRIT, 10);
-        if (hero.level() instanceof ServerLevel sl) {
-            sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.SHIELD_BREAK, SoundSource.HOSTILE, 0.9F, 0.8F);
+        if (staggerFromPoise) {
+            // SOUND.md 7: the bar breaks, then the dizzy stars
+            HeroSounds.cue(hero, SoundIndex.POISE_BREAK);
+            HeroSounds.cueAfter(hero, SoundIndex.STAGGER, SoundIndex.STAGGER_AFTER_BREAK);
+        } else {
+            HeroSounds.cue(hero, SoundIndex.STAGGER);
         }
+        staggerFromPoise = false;
         boss.staggered();
         hero.say(LineEvent.STAGGER);
         trigger(PassiveBook.Event.of(Trigger.ON_STAGGER), hero.getTarget(), null);
     }
+
+    /** S2: the stagger about to play came from a full poise bar (its break sounds first). */
+    private boolean staggerFromPoise;
 
     /** Whether it is staggered now (no move starts). */
     public boolean staggered() {
@@ -832,8 +841,8 @@ public final class HeroCombat {
         var result = s.book().barrierHit(now(), focusAlive());
         if (hero.level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.END_ROD, hero.getX(), hero.getY(0.6), hero.getZ(), 4, 0.4, 0.5, 0.4, 0.05);
-            sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), result == com.factionclash.logic.hero.StatusBook.BarrierHit.BROKE
-                    ? SoundEvents.GLASS_BREAK : SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE, 0.8F, 1.2F);
+            HeroSounds.cue(hero, result == com.factionclash.logic.hero.StatusBook.BarrierHit.BROKE
+                    ? SoundIndex.BARRIER_BREAK : SoundIndex.BARRIER_HIT);
         }
         return true;
     }
@@ -993,6 +1002,7 @@ public final class HeroCombat {
         if (d == null || target == null) {
             return;
         }
+        HeroSounds.basicImpact(hero, target, basicHits); // S2: moves.basic.impact, cycling per hit
         basicHits++;
         List<LivingEntity> to = List.of(target);
         HeroDef.BasicAttack b = d.basicAttack();
@@ -1260,6 +1270,9 @@ public final class HeroCombat {
         LivingEntity grabbed;
         /** Its wind-up's ground decal (A6a; -1: none drawn). */
         int decal = -1;
+        /** S2: the class cue its wind-up plays (a full id; null: none) and the run tick it starts on. */
+        String cueId;
+        int cueAt = -1;
 
         Run(Move move, MoveSelector.Source source, Timing timing, HeroUse use, LivingEntity target) {
             this.move = move;
@@ -1307,6 +1320,9 @@ public final class HeroCombat {
             if (plan.windup() > 0) {
                 // 6.4: the ground decal grows over the whole wind-up, for the players near (presentation only)
                 decal = telegraphs.show(move, plan.windup(), target, aim);
+                // S2 (SOUND.md 7): the class cue starts so that its hit_at lands on the release
+                cueId = HeroSounds.telegraphCue(move);
+                cueAt = cueId == null ? -1 : HeroSounds.cueDelay(cueId, plan.windup());
             }
             // the hero's tick steps it from this tick on
         }
@@ -1368,6 +1384,12 @@ public final class HeroCombat {
                 if (t % 5 == 0) {
                     tell();
                 }
+                if (t == 0) {
+                    HeroSounds.windup(hero, move); // SOUND.md 7: the move's own wind-up sound at its start
+                }
+                if (t == cueAt) {
+                    HeroSounds.playAt(hero, cueId); // the class cue, timed by its hit_at
+                }
             } else if (stage == MoveStage.ACTIVE && target != null && target.isAlive() && motion != M_SWEEP) {
                 hero.getLookControl().setLookAt(target, 30F, 30F);
             }
@@ -1378,6 +1400,7 @@ public final class HeroCombat {
                     lastRelease = now();
                     unpose();
                     clearDecal();
+                    HeroSounds.release(hero, move); // a plays: server release (the ultimates', a few others)
                 }
                 if (target != null && target.isAlive()) {
                     aim = target.position();
@@ -1469,6 +1492,7 @@ public final class HeroCombat {
             recoveryEnd = t + MoveTiming.CHANNEL_BREAK_RECOVERY;
             hero.playAction(HeroActions.actionCode("interrupt"), 1.0, 0);
             actionSequence = -1;
+            HeroSounds.channelBroken(hero, move);
         }
 
         /**
@@ -1493,6 +1517,7 @@ public final class HeroCombat {
                 use.landed = true;
                 HeroEffects.particles(hero.level(), a, HeroEffects.particle(move.ability().look(), element(), color()), 10);
             }
+            HeroSounds.cue(hero, SoundIndex.COUNTER);
             trigger(PassiveBook.Event.of(Trigger.ON_COUNTER), a, null);
             hero.say(LineEvent.COUNTER, Map.of("enemy", a.getName().getString()), null);
             t = Math.max(t, plan.windup());
@@ -1832,6 +1857,9 @@ public final class HeroCombat {
             }
             if (leftGround && hero.onGround() || motionTicks >= LEAP_TIMEOUT) {
                 motion = M_NONE;
+                if (leftGround && hero.onGround()) {
+                    HeroSounds.cue(hero, SoundIndex.LANDING); // a heavy landing (SOUND.md 7)
+                }
                 Ability a = move.ability();
                 use.area(hero.position(), a.radius());
                 HeroEffects.particleRing(hero.level(), hero.position(), a.radius(), HeroEffects.particle(a.look(), element(), color()));
@@ -1848,8 +1876,7 @@ public final class HeroCombat {
                 if (charge && wall) {
                     wallHit = true;
                     HeroEffects.particles(hero.level(), hero, ParticleTypes.CRIT, 12);
-                    hero.level().playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.SHIELD_BLOCK,
-                            SoundSource.HOSTILE, 1F, 0.6F);
+                    HeroSounds.cue(hero, SoundIndex.CHARGE_WALL);
                     if (move.extra().wallStun()) {
                         poiseDamage(BossRules.WALL_POISE); // 6.9: a charge ending against a wall
                     }

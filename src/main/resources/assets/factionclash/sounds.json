@@ -699,6 +699,24 @@
     ],
     "subtitle": "subtitles.factionclash.hero.cue.enrage"
   },
+  "hero.cue.fallen": {
+    "sounds": [
+      {
+        "attenuation_distance": 32,
+        "name": "factionclash:hero/cue/fallen"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.fallen"
+  },
+  "hero.cue.fled": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/fled"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.fled"
+  },
   "hero.cue.glide": {
     "sounds": [
       {
@@ -728,6 +746,15 @@
       }
     ],
     "subtitle": "subtitles.factionclash.hero.cue.landing.heavy"
+  },
+  "hero.cue.last_stand": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/last_stand"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.last_stand"
   },
   "hero.cue.parry": {
     "sounds": [
@@ -769,6 +796,15 @@
     ],
     "subtitle": "subtitles.factionclash.hero.cue.poise.crack"
   },
+  "hero.cue.revived": {
+    "sounds": [
+      {
+        "attenuation_distance": 24,
+        "name": "factionclash:hero/cue/revived"
+      }
+    ],
+    "subtitle": "subtitles.factionclash.hero.cue.revived"
+  },
   "hero.cue.shockwave": {
     "sounds": [
       {
@@ -788,15 +824,6 @@
       }
     ],
     "subtitle": "subtitles.factionclash.hero.cue.shockwave"
-  },
-  "hero.cue.spared": {
-    "sounds": [
-      {
-        "attenuation_distance": 24,
-        "name": "factionclash:hero/cue/spared"
-      }
-    ],
-    "subtitle": "subtitles.factionclash.hero.cue.spared"
   },
   "hero.cue.stagger.dizzy": {
     "sounds": [
@@ -905,15 +932,6 @@
       }
     ],
     "subtitle": "subtitles.factionclash.hero.cue.weak_point"
-  },
-  "hero.cue.yield": {
-    "sounds": [
-      {
-        "attenuation_distance": 24,
-        "name": "factionclash:hero/cue/yield"
-      }
-    ],
-    "subtitle": "subtitles.factionclash.hero.cue.yield"
   },
   "hero.hinae_shirasuzu.charm": {
     "sounds": [

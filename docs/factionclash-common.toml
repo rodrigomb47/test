@@ -209,6 +209,16 @@
 	# Default: 600
 	# Range: 120 ~ 1800
 	escapeCooldownSeconds = 600
+	#Multiplies the volume of every hero sound and cue (SOUND.md; 0 silences them). At most 1: a louder
+	#play would only be clamped by the game and carry farther.
+	# Default: 1.0
+	# Range: 0.0 ~ 1.0
+	soundVolume = 1.0
+	#Heroes speak their lines in voice blips (each hero's own voice, or a note block for a hero without one).
+	voiceBlips = true
+	#Play the shared wind-up cue of a hero's move class (light, heavy, area, ultimate, unblockable), timed
+	#to end on the hit. false leaves only the hero's own wind-up sounds (presentation only).
+	telegraphCues = true
 
 #Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)
 [boss]

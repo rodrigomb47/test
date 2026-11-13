@@ -55,12 +55,14 @@ public final class HeroEvents {
             HeroManager.tick(event.getServer());
         }
         HeroBossBars.tick(event.getServer()); // the boss bars and intro titles of fighting heroes (A6b)
+        HeroSounds.tick(event.getServer()); // the companions that are due (S2)
     }
 
     /** No boss bar outlives its server (a singleplayer world closed and another opened). */
     @SubscribeEvent
     public void onServerStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
         HeroBossBars.serverStopped();
+        HeroSounds.serverStopped();
     }
 
     /** {@code ally_fallen}: heroes within 24 blocks of a member of their side who died (an NPC, a hero or a player). */

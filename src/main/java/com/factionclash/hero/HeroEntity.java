@@ -113,6 +113,18 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     /** No valid definition: a plain soldier drawn with the neutral model (HEROES_V2 3.4); set by the server. */
     private static final EntityDataAccessor<Boolean> DATA_DORMANT = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.BOOLEAN);
 
+    /**
+     * The line it says now, for its voice blips on the client (S2, SOUND.md 6): {@code <n>\n<text>}, a counter so a line
+     * said twice speaks twice; set with the talking flag. Not in the design's 10.1 list: the speech bubble is a separate
+     * text display the client cannot tie to its hero.
+     */
+    private static final EntityDataAccessor<String> DATA_LINE = SynchedEntityData.defineId(HeroEntity.class, EntityDataSerializers.STRING);
+    /** Longest line the voice reads (the bubble's 3 s run out long before). */
+    private static final int LINE_MAX = 200;
+    private int lineCount;
+    /** The client's sound state of this hero (S2; null on a server). */
+    HeroLocalSounds.State localSounds;
+
     /** The attribute modifiers a definition sets (fixed ids, so a reload or level-up never stacks them). */
     public static final ResourceLocation BOSS_HEALTH = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "boss_health"),
             HERO_ATTACK = ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "hero_attack"),
@@ -266,6 +278,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         builder.define(DATA_LOCO, (byte) 0);
         builder.define(DATA_POSE, (byte) 0);
         builder.define(DATA_DORMANT, false);
+        builder.define(DATA_LINE, "");
     }
 
     // ------------------------------------------------------------------ identity
@@ -635,6 +648,12 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (v != energy) {
             int shownBefore = energy;
             energy = v;
+            if (shownBefore < HeroRules.ENERGY_MAX && v >= HeroRules.ENERGY_MAX && !level().isClientSide && !preview && isAlive()) {
+                HeroDef d = definition();
+                if (d != null && d.v2() != null && d.v2().ultimate() != null) {
+                    HeroSounds.cue(this, com.factionclash.logic.hero.SoundIndex.ULTIMATE_READY); // the bar's lightning, quiet
+                }
+            }
             if (inFight && FCConfig.HERO_SHOW_ENERGY.get() && shownBefore != v) {
                 refreshName();
             }
@@ -785,7 +804,13 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             showBubble(sl, text);
         }
         talkUntil = tickCount + HeroSpeech.BUBBLE_TICKS;
+        entityData.set(DATA_LINE, (++lineCount & 0xFFFF) + "\n" + (text.length() > LINE_MAX ? text.substring(0, LINE_MAX) : text));
         setTalking(true);
+    }
+
+    /** The line its voice speaks ({@code <n>\n<text>}; "" before its first): S2's {@code HeroVoice} on the client. */
+    public String spokenLine() {
+        return entityData.get(DATA_LINE);
     }
 
     public boolean say(LineEvent event) {
@@ -1026,6 +1051,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     public void tick() {
         super.tick();
         if (level().isClientSide) {
+            HeroLocalSounds.clientTick(this); // S2: animation companions, voice blips, loops
             return;
         }
         if (bubble != null) {
@@ -1445,6 +1471,60 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             HeroRewards.onDeath(sl, this); // XP orbs and the crest to the winning side, where it died
             HeroManager.onDeath(sl.getServer(), this, source);
         }
+    }
+
+    // ------------------------------------------------------------------ its own sounds (S2, SOUND.md 7)
+
+    /**
+     * A step: the block's vanilla step at {@code steps.volume} of its sound map (and {@code heroes.soundVolume}), plus
+     * {@code steps.with} (the heavy heroes' thud). A hero with no map steps as vanilla does.
+     */
+    @Override
+    protected void playStepSound(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        if (level().isClientSide) {
+            return;
+        }
+        net.minecraft.world.level.block.SoundType t = state.getSoundType(level(), pos, this);
+        float v = t.getVolume() * 0.15F * HeroSounds.stepVolume(this);
+        if (v > 0) {
+            playSound(t.getStepSound(), v, t.getPitch());
+        }
+        HeroSounds.stepWith(this);
+    }
+
+    /** {@code voice.hurt} of its sound map, else a player's hurt (its v1 voice's {@code hurt_pitch} pitches it). */
+    @Override
+    protected net.minecraft.sounds.SoundEvent getHurtSound(DamageSource source) {
+        return voiceEvent(false);
+    }
+
+    @Override
+    protected net.minecraft.sounds.SoundEvent getDeathSound() {
+        return voiceEvent(true);
+    }
+
+    private net.minecraft.sounds.SoundEvent voiceEvent(boolean death) {
+        com.factionclash.logic.hero.SoundIndex.Pitched p = HeroSounds.voiceSound(this, death);
+        net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> h = p == null ? null : HeroSounds.holder(p.event());
+        if (h != null) {
+            return h.value();
+        }
+        return death ? net.minecraft.sounds.SoundEvents.PLAYER_DEATH : net.minecraft.sounds.SoundEvents.PLAYER_HURT;
+    }
+
+    /** The voice's hurt (or, dying, death) pitch with vanilla's small random spread. */
+    @Override
+    public float getVoicePitch() {
+        com.factionclash.logic.hero.SoundIndex.Pitched p = HeroSounds.voiceSound(this, isDeadOrDying());
+        double base;
+        if (p != null) {
+            base = p.pitch();
+        } else {
+            HeroDef d = level().isClientSide ? null : definition();
+            HeroDef.Voice v = d == null || d.v2() == null ? null : d.v2().voice();
+            base = v != null && v.hurtPitch() > 0 ? v.hurtPitch() : 1.0;
+        }
+        return (float) (base * ((getRandom().nextFloat() - getRandom().nextFloat()) * 0.2F + 1.0F));
     }
 
     // ------------------------------------------------------------------ GeckoLib

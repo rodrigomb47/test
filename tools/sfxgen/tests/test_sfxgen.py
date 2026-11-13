@@ -409,6 +409,26 @@ class CatalogueTest(unittest.TestCase):
         with open(SOUNDS_JSON, encoding="utf-8") as f:
             self.assertEqual(f.read(), want)
 
+    def test_end_of_fight_beats_and_no_yield(self):
+        """No hero yields or is spared (HEROES_V2 6.13, SOUND.md 16): the cue map has the bar's fled and fallen, the
+        last stand and the revival, and a map or a sound that still names a yield is refused."""
+        cues = dict(check._flatten(self.cat.sets["cue"].data["cues"]))
+        for k in ("fled", "fallen", "last_stand", "revived"):
+            self.assertIn(k, cues)
+            self.assertIsNotNone(self.cat.lookup(cues[k], "cue"), k)
+        self.assertNotIn("yield", cues)
+        self.assertNotIn("spared", cues)
+        old = tiny_set()
+        old["cues"] = {"yield": "ping"}
+        rep = check.Report()
+        check.check_catalogue(recipe.Catalogue([recipe.SoundSet("cue.sfx.json", old)]), rep)
+        self.assertTrue(any("retired beat" in e for e in rep.errors), rep.errors)
+        self.assertTrue(any("has no fallen" in e for e in rep.errors), rep.errors)
+        old = tiny_set({"spared": {"kind": "chime", "subtitle": "Spared", "alias": [{"sound": "ping"}]}})
+        rep = check.Report()
+        check.check_catalogue(recipe.Catalogue([recipe.SoundSet("cue.sfx.json", old)]), rep)
+        self.assertTrue(any("retired beat" in e for e in rep.errors), rep.errors)
+
     def test_every_slice_hero_has_a_set(self):
         heroes = ["natsuho_komezaki", "yugen_kagaribi", "benika_akagane", "hinae_shirasuzu", "kagenori_tsurumine",
                   "tobimaru_usugumo", "ilsabet_frostmere", "ambrose_nettlewick"]

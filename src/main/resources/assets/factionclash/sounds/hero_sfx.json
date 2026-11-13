@@ -10,17 +10,20 @@
     "decoy_pop": "factionclash:hero.cue.decoy.pop",
     "downed": "factionclash:hero.cue.downed",
     "enrage": "factionclash:hero.cue.enrage",
+    "fallen": "factionclash:hero.cue.fallen",
+    "fled": "factionclash:hero.cue.fled",
     "glide": "factionclash:hero.cue.glide",
     "intro": "factionclash:hero.cue.intro",
     "landing": "factionclash:hero.cue.landing.heavy",
+    "last_stand": "factionclash:hero.cue.last_stand",
     "parry": "factionclash:hero.cue.parry",
     "phase": "factionclash:hero.cue.phase",
     "poise": {
       "break": "factionclash:hero.cue.poise.break",
       "crack": "factionclash:hero.cue.poise.crack"
     },
+    "revived": "factionclash:hero.cue.revived",
     "shockwave": "factionclash:hero.cue.shockwave",
-    "spared": "factionclash:hero.cue.spared",
     "stagger": "factionclash:hero.cue.stagger.dizzy",
     "step_heavy": "factionclash:hero.cue.step.heavy",
     "super_armor": "factionclash:hero.cue.super_armor",
@@ -34,8 +37,7 @@
       "unblockable": "factionclash:hero.cue.telegraph.unblockable"
     },
     "ultimate_ready": "factionclash:hero.cue.ultimate.ready",
-    "weak_point": "factionclash:hero.cue.weak_point",
-    "yield": "factionclash:hero.cue.yield"
+    "weak_point": "factionclash:hero.cue.weak_point"
   },
   "events": {
     "factionclash:hero.ambrose_nettlewick.brew_burst": {
@@ -1498,6 +1500,44 @@
         1.0
       ]
     },
+    "factionclash:hero.cue.fallen": {
+      "category": "hostile",
+      "kind": "sting",
+      "length": 2.559,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 32,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.fallen",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.fled": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 2.846,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.fled",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
     "factionclash:hero.cue.glide": {
       "category": "hostile",
       "kind": "loop",
@@ -1551,6 +1591,25 @@
       "source": "generated",
       "subtitle": "subtitles.factionclash.hero.cue.landing.heavy",
       "variants": 2,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
+    "factionclash:hero.cue.last_stand": {
+      "category": "hostile",
+      "kind": "sting",
+      "length": 1.052,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.last_stand",
+      "variants": 1,
       "volume": [
         1.0,
         1.0
@@ -1632,6 +1691,25 @@
         1.0
       ]
     },
+    "factionclash:hero.cue.revived": {
+      "category": "hostile",
+      "kind": "chime",
+      "length": 2.235,
+      "pitch": [
+        1.0,
+        1.0
+      ],
+      "plays": "server",
+      "range": 24,
+      "set": "cue",
+      "source": "generated",
+      "subtitle": "subtitles.factionclash.hero.cue.revived",
+      "variants": 1,
+      "volume": [
+        1.0,
+        1.0
+      ]
+    },
     "factionclash:hero.cue.shockwave": {
       "category": "hostile",
       "kind": "heavy",
@@ -1671,25 +1749,6 @@
       "set": "cue",
       "source": "generated",
       "subtitle": "subtitles.factionclash.hero.cue.shockwave",
-      "variants": 1,
-      "volume": [
-        1.0,
-        1.0
-      ]
-    },
-    "factionclash:hero.cue.spared": {
-      "category": "hostile",
-      "kind": "chime",
-      "length": 2.198,
-      "pitch": [
-        1.0,
-        1.0
-      ],
-      "plays": "server",
-      "range": 24,
-      "set": "cue",
-      "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.cue.spared",
       "variants": 1,
       "volume": [
         1.0,
@@ -1902,25 +1961,6 @@
       "set": "cue",
       "source": "generated",
       "subtitle": "subtitles.factionclash.hero.cue.weak_point",
-      "variants": 1,
-      "volume": [
-        1.0,
-        1.0
-      ]
-    },
-    "factionclash:hero.cue.yield": {
-      "category": "hostile",
-      "kind": "chime",
-      "length": 2.767,
-      "pitch": [
-        1.0,
-        1.0
-      ],
-      "plays": "server",
-      "range": 24,
-      "set": "cue",
-      "source": "generated",
-      "subtitle": "subtitles.factionclash.hero.cue.yield",
       "variants": 1,
       "volume": [
         1.0,
@@ -4842,7 +4882,7 @@
       },
       "passives": {
         "field_notes": "factionclash:hero.ambrose_nettlewick.scribble",
-        "hex_full": "factionclash:hero.ambrose_nettlewick.hex_full"
+        "hex_complete": "factionclash:hero.ambrose_nettlewick.hex_full"
       },
       "phases": {
         "2": "factionclash:hero.ambrose_nettlewick.bristles",
@@ -4890,6 +4930,10 @@
           "class": "light",
           "impact": "factionclash:hero.benika_akagane.club_hit",
           "release": "factionclash:hero.benika_akagane.club_swing"
+        },
+        "crash_waves": {
+          "class": "area",
+          "impact": "factionclash:hero.benika_akagane.fire_wave"
         },
         "gourd_swig": {
           "class": "light",
@@ -5375,6 +5419,11 @@
         "log_swap": {
           "class": "light",
           "release": "factionclash:hero.tobimaru_usugumo.log_swap"
+        },
+        "night_strikes": {
+          "class": "light",
+          "impact": "factionclash:hero.tobimaru_usugumo.blade_hit",
+          "release": "factionclash:hero.tobimaru_usugumo.blade_swish"
         },
         "nightfall": {
           "class": "ultimate",

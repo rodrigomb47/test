@@ -1010,6 +1010,28 @@ and MOBILITY_AND_WORK 7.7 are marked; the others are PROPOSED.
   counts): XP orbs **7 x level**, at most **100**; the crest once per hero per winning side per in-game day; its non-kit
   gear as any NPC's. An escape drops nothing.
 
+## Hero sounds (config `heroes`; `HeroSounds`, `HeroLocalSounds`, `HeroLoopSounds`, `SoundIndex`, `VoiceLine`) — S2
+Presentation only: no number here changes a fight, and every cue plays whoever causes it (HEROES_V2 6.15). Values of
+`SOUND.md` sections 6-8 are marked; the others are PROPOSED. Loudness and ranges per sound are in the index
+(`assets/factionclash/sounds/hero_sfx.json`, written by `tools/sfxgen`).
+* Config `[heroes]`: `soundVolume` (**1.0**, 0.0-1.0) multiplies every hero sound and cue, its steps and its voice;
+  `voiceBlips` (**true**); `telegraphCues` (**true**; false keeps the hero's own wind-up sounds).
+* The class cue (SOUND.md 7): starts `max(0, wind-up - round(hit_at x 20))` ticks into the wind-up; `hit_at` heavy
+  **0.78 s**, area **1.0 s**, ultimate **1.5 s**, dive **0.85 s**; light and unblockable at the start. A 1.3 s heavy
+  wind-up: the cue at tick **10**.
+* Companions: at most **2** deep, each after its own delay (**0-10** ticks).
+* Notifications: the players who see the hero's bar (**32** blocks, at most **3** bars); with `boss.bossBars` off, the
+  players within **32** blocks.
+* Poise crack: once per bar when it passes **75%** without breaking. A full bar: `poise.break`, then the dizzy stars
+  **6** ticks later.
+* Steps: vanilla's block step (**0.15** x the block's own volume) x the map's `steps.volume` (Natsuho **0.6**, Benika
+  **1.2**, Tobimaru **0.4**...) x `soundVolume`.
+* The voice (SOUND.md 6): one syllable every `rate` ticks (**2-3** in the slice), **1-4** syllables a word (vowel groups;
+  a digit is one), **1** tick between words, a pause of **2** syllables at `, . ! ? ; :`, a random step of the hero's
+  melody with its jitter (**0.04** in the slice), the question's last syllable **x1.12**, nothing after **3 s** (the
+  bubble). The note-block fallback: the hero's v1 voice (instrument, pitch, rate; **harp**, **1.0**, **3** when none) at
+  volume **0.5** with the melody **0 0 +2 +4 -3**.
+
 ## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no
 modifiers, 18 slots, 1 + Diligence).

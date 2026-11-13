@@ -460,6 +460,7 @@ public final class HeroBoss {
         HeroDef.Move m = combat.runningMove();
         if (m != null && BossRules.parry(true, blocker.getTicksUsingItem(), m.cls())) {
             parried = true;
+            HeroSounds.parry(blocker); // SOUND.md 7: at the one who parried, a player or an NPC alike
         }
     }
 
@@ -591,10 +592,7 @@ public final class HeroBoss {
         }
         double share = hero.getHealth() / Math.max(1F, hero.getMaxHealth());
         combat.trigger(new PassiveBook.Event(Trigger.ON_PHASE, null, share, null, p, false), hero.getTarget(), null);
-        if (hero.level() instanceof ServerLevel sl) {
-            sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE,
-                    0.6F, 1.4F);
-        }
+        HeroSounds.phase(hero); // cues.phase as a notification, the shockwave and the super armour at the hero
     }
 
     /**
@@ -970,6 +968,7 @@ public final class HeroBoss {
             hero.say(LineEvent.ENRAGE);
         }
         holdMood(HeroActions.moodCode("angry"), 60);
+        HeroSounds.enraged(hero);
         combat.trigger(PassiveBook.Event.of(Trigger.ON_ENRAGE), hero.getTarget(), null);
         if (hero.level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.ANGRY_VILLAGER, hero.getX(), hero.getY() + hero.getBbHeight(), hero.getZ(), 4, 0.4, 0.2, 0.4, 0);
@@ -1031,9 +1030,13 @@ public final class HeroBoss {
         }
         HeroStatus.of(hero).book().stat("weak", "douse." + HeroDef.Stat.DAMAGE_DEALT.id(), HeroDef.Stat.DAMAGE_DEALT,
                 (int) Math.round(fx.dealtPercent()), fx.ticks() / 20.0, 1, now);
+        boolean own = HeroSounds.weakPoint(hero, kind == BossRules.Douse.SNOWBALL ? WeakPoint.SNOWBALL : WeakPoint.WATER);
         if (hero.level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.SPLASH, hero.getX(), hero.getY(0.6), hero.getZ(), 12, 0.3, 0.4, 0.3, 0.1);
-            sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.HOSTILE, 0.7F, 1.2F);
+            if (!own) {
+                // no sound of its own for it: the vanilla hiss of water on fire tells it
+                sl.playSound(null, hero.getX(), hero.getY(), hero.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.HOSTILE, 0.7F, 1.2F);
+            }
         }
         return true;
     }
@@ -1058,6 +1061,7 @@ public final class HeroBoss {
         lastBellAt = now;
         if (HeroStatus.stun(hero, BossRules.BELL_STUN_TICKS / 20.0)) {
             bells++;
+            HeroSounds.weakPoint(hero, WeakPoint.BELL);
             return true;
         }
         return false;
@@ -1076,6 +1080,7 @@ public final class HeroBoss {
         lights++;
         HeroStatus.of(hero).book().stat("weak", "light." + HeroDef.Stat.DAMAGE_DEALT.id(), HeroDef.Stat.DAMAGE_DEALT,
                 (int) -Math.round(BossRules.LIGHT_WEAKEN_PERCENT), BossRules.LIGHT_WEAKEN_TICKS / 20.0, 1, now());
+        HeroSounds.weakPoint(hero, WeakPoint.LIGHT);
         if (hero.level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.SMOKE, hero.getX(), hero.getY(0.7), hero.getZ(), 8, 0.3, 0.4, 0.3, 0.02);
         }
@@ -1094,6 +1099,7 @@ public final class HeroBoss {
         boolean falling = attacker.fallDistance > 0 && !attacker.onGround();
         if (BossRules.critAboveStaggers(weak(d), true, falling, attacker.getY(), hero.getEyeY())) {
             staggerPending = true;
+            HeroSounds.weakPoint(hero, WeakPoint.CRIT_ABOVE);
             return true;
         }
         return false;
@@ -1104,6 +1110,7 @@ public final class HeroBoss {
         if (weakTo(WeakPoint.CHARGE_WALL)) {
             staggerPending = true;
             wallStagger = true;
+            HeroSounds.weakPoint(hero, WeakPoint.CHARGE_WALL);
         }
     }
 

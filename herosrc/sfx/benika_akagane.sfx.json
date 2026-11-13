@@ -15,7 +15,8 @@
       "gourd_swig": {"class": "light", "release": "gourd_swig"},
       "grab_throw": {"class": "heavy", "windup": "grab", "release": "throw_whoosh"},
       "meteor_club": {"class": "heavy", "windup": "slam_rise", "release": "meteor_leap", "impact": "meteor_impact"},
-      "iron_mountain_crash": {"class": "ultimate", "windup": "crash_windup", "release": "meteor_leap", "impact": "crash_impact"}
+      "iron_mountain_crash": {"class": "ultimate", "windup": "crash_windup", "release": "meteor_leap", "impact": "crash_impact"},
+      "crash_waves": {"class": "area", "impact": "fire_wave"}
     },
     "states": {"rage": "roar"},
     "phases": {"2": "horn_flare", "3": "steam"},

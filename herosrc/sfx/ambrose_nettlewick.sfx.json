@@ -18,7 +18,7 @@
       "grand_experiment": {"class": "ultimate", "windup": "experiment_windup", "release": "brew_burst", "impact": "brew_drop"}
     },
     "phases": {"2": "bristles", "3": "phase3_glow"},
-    "passives": {"field_notes": "scribble", "hex_full": "hex_full"},
+    "passives": {"field_notes": "scribble", "hex_complete": "hex_full"},
     "mobility": {"takeoff": "broom_takeoff"},
     "intro": "intro",
     "quirks": {"personal.1": "scribble", "personal.2": "vial_shake", "personal.3": "crow_peck"},

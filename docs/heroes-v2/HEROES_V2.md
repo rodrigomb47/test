@@ -2794,7 +2794,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases. Done 2026-11-13: the 27 animations of MOBILITY_AND_WORK 4.1 for milestone 1 in `_core` (11 base loops, 14 base one-shots that end on the loop that follows them, `move.ride_cast` and `move.air_dive` as actions) and the three wing loops of the secondary controller, every clip passing `herogen check` on all six bases; full turns that unwind (`primitives.spin`: the flip, the roll, the cat twist), the riding rule on the rig's new `mount` bone (`quality.check_mount`), the `mounts/broom` carrier part and `visual.json` `carrier`, hero variants (`animations.variants`) with the slice's four: Natsuho's cat twist, Yugen's fox lope, Kagenori's crane leap, Ambrose's broom ridden side-saddle on his staff; GIFs and sheets on a chibi and an adult in `docs/heroes-v2/previews/anim/locomotion/` (`notes/artgen.md`, "G10"); 331 Python tests |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
 | S1 | Sound design and generator: `SOUND.md`, `tools/sfxgen` (synthesiser, recipes, build, check, previews, tests), the shared cue set and the eight slice heroes' sounds (generated or vanilla by id), sounds.json and the index | - | M | done and reviewed 2026-11-12: 240 events (197 generated in 298 Ogg files, 2.08 MB; 41 vanilla references, 2 aliases), `sfxgen check` clean, 32 Python tests (each rule's test fails when the rule is broken); previews in `docs/heroes-v2/previews/sound/` |
-| S2 | Sound engine: register the events from the index (fixed ranges), subtitles, `HeroSounds` (server cues by the slot rule, telegraph cues timed by `hit_at`, companions, notifications), the GeckoLib sound keyframe handler, `HeroVoice` blips with the note-block fallback, looping sounds, steps, hurt and death, `[heroes]` sound config (`SOUND.md` sections 7 and 15) | S1, A2, A5, A6 | M | wind-up cue GameTests (a 1.3 s heavy wind-up: its own sound at tick 0, the class cue at tick 10); every hero map slot resolves to a registered event; the owner's listening pass on the real client |
+| S2 | Sound engine: register the events from the index (fixed ranges), subtitles, `HeroSounds` (server cues by the slot rule, telegraph cues timed by `hit_at`, companions, notifications), the GeckoLib sound keyframe handler, `HeroVoice` blips with the note-block fallback, looping sounds, steps, hurt and death, `[heroes]` sound config (`SOUND.md` sections 7 and 15) | S1, A2, A5, A6 | M | wind-up cue GameTests (a 1.3 s heavy wind-up: its own sound at tick 0, the class cue at tick 10); every hero map slot resolves to a registered event; the owner's listening pass on the real client. Done 2026-11-13: the follow-ups of `SOUND.md` 16 in `tools/sfxgen` and `herosrc/sfx` (`cues.yield` renamed `cues.fled`, `cues.spared` reused as `cues.revived` for a hero's return, the new `cues.fallen` sting and `cues.last_stand` accent, `check` refusing a yield or spare cue; 242 events in 302 Ogg files, `sfxgen check` clean, 33 Python tests); the 242 events registered at their fixed ranges from the index read in the mod constructor (`hero/HeroSounds`, `logic/hero/SoundIndex`) and their 232 subtitles in `en_us.json`; the server plays by the slot rule (a move's own wind-up sound on its first tick and the class cue timed by `hit_at` on the run's clock, a `plays: server` release, impacts cycling per shot, a broken channel, states, passives, weak points, the parry at whoever parried, counter, poise crack and break, the stagger's stars, phase, enrage, the intro with its title, `fled`, `fallen`, the last stand, ultimate ready, a wall, decoys, barriers, a leap's landing, the revival, steps with `steps.with`, hurt and death) with companions and notifications to the players who see the bar, whoever causes a cue; the client plays sound keyframes with the index's pitch and volume and their companions, voice blips from the synced line (`logic/hero/VoiceLine`) with the note-block fallback, and loops (`hero/HeroLocalSounds`, `client/hero/HeroLoopSounds`); config `heroes.soundVolume`, `voiceBlips`, `telegraphCues`; 975 unit tests (18 new) and 245 GameTests (4 new, `HeroSoundGameTests`: the 1.3 s heavy wind-up's sound at tick 0 and its cue at tick 10 against an NPC soldier and a mock player alike, every hero map slot registered, an NPC's parry the same cue as a player's, the stagger and `fallen` alike from soldiers and mock players) ("S2 as built" below); the owner's listening pass on the real client is still to come |
 | V1 | Remaining GameTests of 14.5 (fixture heroes included), full suites green | A1-A7, A10-A12, L1-L5, L5m, C1-C4 | M | every existing GameTest plus the about 87 new ones and the 39 of `MOBILITY_AND_WORK.md` 17.2 pass |
 | V2 | Screenshot session for the owner (SLICE_PLAN.md section 7) and render measurements | A2, C1-C4 | M | the gallery exists; numbers recorded |
 | V3 | Campaign runs A and B (8 days each), C (3 + 3 days), the 2-day baseline, the old-world load, tick time (SLICE_PLAN.md 6.4) | all | L | SLICE_PLAN.md section 6 criteria met |
@@ -3949,6 +3949,59 @@ row above:
   star's). Not yet seen on a real client (the bar, the title) or in a campaign on a dedicated server (only the test rig
   ships).
 
+S2 as built (2026-11-13), where it goes beyond or differs from `SOUND.md` sections 7 and 15 and the row above (`SOUND.md`
+15 "S2 as built" has the details):
+- **Content first** (`SOUND.md` 16, the yield's chimes): `cues.yield` is `cues.fled` ("Hero flees", recipe unchanged),
+  `cues.spared` is `cues.revived` ("Hero returns", played at the hero when it comes back from its revival), and two cues
+  are new: `cues.fallen` (a sting: a low temple toll over a soft taiko, -13, 32 blocks) and `cues.last_stand` (two taiko
+  heartbeats under a short low brass swell, -18, 24 blocks, under the line). `sfxgen check` refuses a cue named `yield`
+  or `spared`. A new unit test lining the slice fixtures up with their sound maps found three map gaps, fixed in
+  `herosrc/sfx`: Ambrose's passive key (`hex_complete`) and sounds for Benika's `crash_waves` and Tobimaru's
+  `night_strikes`.
+- **Registration and lookup**: `hero/HeroSounds` reads the index from the mod file in the mod constructor and registers
+  every event with `SoundEvent.createFixedRangeEvent` at the index's range (the GameTest checks the ranges); ids are
+  looked up once and cached (ours and vanilla alike). A fixture can carry its own map (`HeroSounds.registerTransient`).
+- **The wind-up's sounds run on the run's own clock**: the move's `windup` on its first step and the class cue (from the
+  definition's class; grabs `.unblockable`, the `dive` `.dive`) on step `max(0, windup - round(hit_at x 20))`, so a
+  stopped wind-up plays no cue for a hit that will not come; no wind-up, no cue. `heroes.telegraphCues = false` keeps the
+  hero's own sound.
+- **Impacts**: once per effect list of a move that reached an enemy (a hit, a projectile, a zone pulse, a rain impact, a
+  wave's ring), at the first enemy struck, cycling per impact of the use; the basic attack's at each landed basic hit.
+- **Notifications** go to the players who see the hero's boss bar (with `boss.bossBars` off, to the players within 32
+  blocks); a beat that is also positional (enrage, `fled`, `fallen`) is not played again at the hero to those who heard
+  it in the head. The intro cue goes with the intro title. Nothing reads whether the hero's enemy is a player.
+- **Placeholders gone**: the stagger's shield break (now `poise.break` and, 6 ticks later, the dizzy stars; a weak
+  point's stagger plays the stars alone), the transition's sonic boom (`phase` as a notification, `shockwave` and
+  `super_armor` at the hero), the barrier's glass and shield, the wall's shield block and the decoy's fizz. The poise
+  crack sounds once per cycle when the bar passes 75% without breaking.
+- **The entity**: steps at `steps.volume` with `steps.with` and, while invisible, `quirks.invisible_step`; decoys leave
+  no steps; hurt and death from `voice.hurt`/`voice.death` (the player's sounds at the v1 `hurt_pitch` without a map);
+  `cues.ultimate_ready` when its energy fills and it has an ultimate.
+- **The client** (common code it alone calls, `hero/HeroLocalSounds`, so a dedicated server loads no client class):
+  GeckoLib sound keyframes on the three controllers with the index's pitch and volume and their companions; the voice
+  from a new synced string `DATA_LINE` (a counter and the line, set with the talking flag: the speech bubble is a
+  separate text display) through `logic/hero/VoiceLine`, with the note-block fallback from the definition's v1 voice;
+  `client/hero/HeroLoopSounds` (installed at client setup) loops a move's `loop` while its action code lasts and
+  `cues.glide` while `DATA_LOCO` says glide.
+- **Tests**: `SoundIndexTest` (13: the committed index, every hero map slot and cue resolving to an event of the index
+  or a vanilla id, no yield or spare, every subtitle in `en_us.json` and none stale, the slice fixtures' moves with their
+  class, states, passives and weak points lining up with their maps, the cue delay, the class cue, impacts cycling,
+  passive keys, the crack line, the code's move, a test's map) and `VoiceLineTest` (5); `HeroSoundGameTests` (4):
+  `heavyWindupPlaysItsSoundThenTheClassCue` (tick 0 and tick 10 of a 26-tick wind-up, the hit at 26, the server release
+  and the impact at the one struck, against an NPC soldier and a mock player; a light cue at the start; the cues off),
+  `everyHeroMapSlotResolvesToARegisteredEvent`, `npcParryPlaysTheSameCueAsAPlayers`,
+  `staggerAndFallenSoundAlikeForNpcAndPlayer`. 975 unit tests, 245 GameTests. Sabotage checks, each caught: seven in the
+  pure rules (the cue delay, impacts not cycling, the passive key, the question's rise, the punctuation pause, a missing
+  subtitle, the crack every time) and eight in the game over three runs (no cue delay, a parry cue only for players,
+  no poise break, variable-range registration, the cue config ignored, `fled` for a death, impacts only on players, no
+  notifications).
+- **Left open**: the owner's listening pass on the real client (V2): levels, the voice rates, the cues in a crowded
+  fight; the client side (keyframes, voice, loops) has no automated test (GameTests run a server). Take-off and downed
+  wait for the mobility engine (A10-A12); `release`, `end`, phase, intro and quirk keyframes for C1-C4's markers; the
+  cue preview MP3 still has the old names (the previews folder is the art workflow's). Not yet in a campaign on a
+  dedicated server (only the test rig ships, and it has no sounds of its own: it plays the class cues, the player's
+  hurt and death and its note-block voice).
+
 ### 15.3 Milestone 2: systems breadth
 
 | ID | Task | Depends | Size |
@@ -4140,7 +4193,8 @@ both (14.5).
 - Sounds (`SOUND.md` 16): `cues.yield` (the chime "Hero yields") is reused as the bar's **fled** sting (proposed id
   `cues.fled`, subtitle "Hero flees"); `cues.spared` ("Hero is spared") is retired, or reused as the chime of a
   hero's return at its revival; a **fallen** sting for the bar's other end state and a **last stand** accent are
-  new, generated or vanilla by id.
+  new, generated or vanilla by id. Done in S2 (15.2 "S2 as built"): `cues.fled`, `cues.revived` (the old spared, at a
+  revival), the generated `cues.fallen` and `cues.last_stand`.
 - Lines (C1-C4): each slice hero's `yield` and `spared` lines are replaced by an `escape` line, a `last_stand` line
   or both, and a `fallen` line (SLICE_PLAN.md section 3).
 

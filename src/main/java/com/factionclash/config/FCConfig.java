@@ -61,6 +61,9 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_ESCAPE;
     public static final ModConfigSpec.IntValue HERO_ESCAPE_AWAY_SECONDS;
     public static final ModConfigSpec.IntValue HERO_ESCAPE_COOLDOWN_SECONDS;
+    public static final ModConfigSpec.DoubleValue HERO_SOUND_VOLUME;
+    public static final ModConfigSpec.BooleanValue HERO_VOICE_BLIPS;
+    public static final ModConfigSpec.BooleanValue HERO_TELEGRAPH_CUES;
     public static final ModConfigSpec.IntValue HERO_POWER_PERCENT;
 
     static {
@@ -206,6 +209,14 @@ public final class FCConfig {
         HERO_ESCAPE_COOLDOWN_SECONDS = b.comment("At most one escape per hero in this many seconds (PROPOSED: 600); caught again inside",
                         "that time, it fights to the death.")
                 .defineInRange("escapeCooldownSeconds", 600, 120, 1800);
+        HERO_SOUND_VOLUME = b.comment("Multiplies the volume of every hero sound and cue (SOUND.md; 0 silences them). At most 1: a louder",
+                        "play would only be clamped by the game and carry farther.")
+                .defineInRange("soundVolume", 1.0, 0.0, 1.0);
+        HERO_VOICE_BLIPS = b.comment("Heroes speak their lines in voice blips (each hero's own voice, or a note block for a hero without one).")
+                .define("voiceBlips", true);
+        HERO_TELEGRAPH_CUES = b.comment("Play the shared wind-up cue of a hero's move class (light, heavy, area, ultimate, unblockable), timed",
+                        "to end on the hit. false leaves only the hero's own wind-up sounds (presentation only).")
+                .define("telegraphCues", true);
         b.pop();
 
         b.comment("Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)").push("boss");

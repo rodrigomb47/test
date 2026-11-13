@@ -5,9 +5,14 @@ the engine side (task S2) has to do. Companion of `HEROES_V2.md` (sections 4.1, 
 `SLICE_PLAN.md` section 3 and `MOBILITY_AND_WORK.md` sections 2.2 and 7.3.
 
 Status, 2026-11-12: S1 done and reviewed (this document, the generator, the shared cues and the eight slice heroes'
-sounds, the previews). Nothing plays yet: S2 (Java) registers the events and plays them. The generated `.ogg` files,
-`sounds.json` and the index are in `src/main/resources/assets/factionclash/`; the client loads `sounds.json` already,
-and an event nobody registers or plays does nothing.
+sounds, the previews). The generated `.ogg` files, `sounds.json` and the index are in
+`src/main/resources/assets/factionclash/`.
+
+Status, 2026-11-13: S2 done (section 15, "S2 as built"): the game registers every event of the index, merges the
+subtitles, and plays the sounds by the slot rule of section 7, whoever a hero fights. The yield's two chimes were
+resolved as section 16 proposed: `cues.yield` is `cues.fled`, `cues.spared` is `cues.revived` (a hero's return), and
+two new cues, `cues.fallen` and `cues.last_stand`, were made. The slice heroes' sounds play only for fixtures in
+GameTests until C1-C4 ship the heroes; the owner's listening pass on the real client is still to come.
 
 Changed on 2026-11-13 for the owner's decisions on heroes (`HEROES_V2.md` section 6): a hero fights the same against
 players and NPCs, any number of heroes may press one target, and no hero yields (it escapes or fights to the death).
@@ -383,8 +388,9 @@ play at the start. A heavy move with a 1.3 s wind-up thus hears its 0.78 s swell
 | Boss intro (its first fight against people in an in-game day, whoever they are) | `cues.intro` (notification, with the title, to each player within 32 blocks once that day); the hero's `intro` from its `intro` animation | server + client keyframe |
 | Ultimate becomes ready (the boss bar's lightning) | `cues.ultimate_ready` | server, at the hero, quiet |
 | A weak point triggers | `cues.weak_point` + the hero's `weak_points.<kind>` | server |
-| The end of a fight: the bar's `fled` or `fallen` (HEROES_V2 6.13) | `fled`: today's `cues.yield` chime (proposed new id `cues.fled`, section 16); `fallen`: a new sting, to be made; until then the hero's `voice.death` alone | server: notification to the players who saw the bar, and at the hero |
-| A last stand (a hero that will not or cannot leave drops under its threshold, once per fight) | a new short accent, to be made (section 16); until it exists the `last_stand` line carries the moment alone | server, at the hero |
+| The end of a fight: the bar's `fled` or `fallen` (HEROES_V2 6.13) | `cues.fled` (the old yield's soft falling chime) or `cues.fallen` (a short low temple toll over a soft taiko); a death also plays the hero's `voice.death` | server: notification to the players who saw the bar, and at the hero for everyone else in range |
+| A last stand (a hero that will not or cannot leave drops under its threshold, once per fight) | `cues.last_stand` (two taiko heartbeats under a short low brass swell, under the `last_stand` line) | server, at the hero |
+| A hero returns at its revival | `cues.revived` (the old spare's warm rising chime) | server, at the hero |
 | A charge hits a wall | `cues.charge_wall` | server |
 | A decoy pops; a barrier takes a hit, breaks | `cues.decoy_pop`; `cues.barrier.hit`, `.break` | server |
 | States, passives | `states.<name>`, `passives.<name>` | server, when the state starts or the passive triggers |
@@ -445,9 +451,8 @@ Errors fail; notes advise. Audio rules run on the SHIPPED files (decoded by ffmp
   missing phase sound, and (once `herosrc/heroes/<id>.hero.json` exists) moves of the hero file without sounds.
 - Voices: each hero's reference line (section 6) within 1.5 dB of its `voice.line_loudness`.
 - Cue map: all of telegraph light, heavy, area, ultimate, unblockable, dive, parry, counter, poise crack and break,
-  stagger, phase, shockwave, enrage, intro, yield, spared, take-off, landing, glide, decoy pop, weak point, channel
-  break. (Since 2026-11-13 the `yield` slot means the bar's `fled` sting and `spared` has no moment; the map keeps
-  both names until the sound work renames or retires them, section 16.)
+  stagger, phase, shockwave, enrage, intro, fled, fallen, last stand, revived, take-off, landing, glide, decoy pop, weak
+  point, channel break. A map or a sound still named `yield` or `spared` is an error (no hero yields or is spared).
 - Files: every expected file exists and nothing stale; sounds.json and the index are current; mono; 44.1 or
   22.05 kHz; length within the kind's limit (loops exactly `length`); the first and last sample under -45 dBFS; a
   fade-in and a fade-out (the content's first 0.5 ms and last 1 ms well under its peak); no clicks inside (a burst of
@@ -473,10 +478,11 @@ nothing else):
 | `stats` | events, files and kilobytes per set |
 | `vanilla-ids` | rewrite `vanilla_sound_ids.txt` from the game artifacts |
 
-Tests: `python3 -m unittest discover tools/sfxgen/tests` (32: byte-identical builds twice and in another process,
+Tests: `python3 -m unittest discover tools/sfxgen/tests` (33: byte-identical builds twice and in another process,
 the click, edge, clipping, DC, loudness and small-speaker rules catching broken sounds, the true-peak limiter, the
 format, variants, loops, honest ranges, shared subtitle keys, `hit_at`, sounds.json and the index, the server-slot
-and spoken-line rules, bare marker ids, and the committed catalogue passing its rules). Each rule's test was checked
+and spoken-line rules, bare marker ids, the committed catalogue passing its rules, and the end of a fight's cues
+with no yield). Each rule's test was checked
 by breaking the rule: the test fails.
 
 **Determinism.** The same recipes, NumPy and ffmpeg/libvorbis give byte-identical files (ffmpeg's `+bitexact` fixes
@@ -492,7 +498,7 @@ Code: `dsp.py` (parameters, envelopes, oscillators, noise, filters, effects, lim
 
 Each Vorbis file carries about 3.4 KB of codebook headers whatever its length (a 70 ms blip is 3.6 KB), so the file
 count matters more than the seconds. The slice as built: 298 Ogg files, 2.08 MB (cue set 302 KB, heroes 179-248 KB
-each).
+each). Since S2: 302 files, 2.09 MB (the cue set 318 KB with `fallen` and `last_stand`).
 Budgets in `check` (errors): the cue set 320 KB, a slice hero 256 KB, the slice 2.4 MB.
 
 For the 200-hero roster that rate would be about 45 MB, so batch heroes follow a different rule:
@@ -521,7 +527,7 @@ Every event has an English subtitle text in its recipe. Events with the same tex
 catalogue order (`subtitles.factionclash.<that event>`): the game's subtitle overlay merges only equal components,
 and a translatable component compares by key, so a sound and a companion that say the same thing (`shockwave` and
 `shockwave.low`, `vanish` and `vanish_sparkle`) show one line. sounds.json and the index carry the shared key; the
-slice has 230 keys for 240 events. S2 merges the output of `sfxgen subtitles` (one line per key) into `en_us.json`.
+slice has 232 keys for 242 events. S2 merges the output of `sfxgen subtitles` (one line per key) into `en_us.json`.
 
 ## 14. Licence
 
@@ -587,6 +593,59 @@ entry multiplies the target's volume and pitch, takes the target's attenuation d
 own weight; the client attenuates over `max(volume, 1) x attenuation_distance` and clamps the final volume to 1 after
 the category slider; the subtitle overlay merges lines whose components are equal (same key).
 
+### S2 as built (2026-11-13)
+
+Where it goes beyond or differs from the steps above (also `HEROES_V2.md` 15.2, "S2 as built"):
+
+- **Code.** `logic/hero/SoundIndex` (pure: the index read with `JsonTree`, the cue map flattened to keys such as
+  `telegraph.heavy` and `poise.break`, the hero maps, the class cue of a move, `cueDelay`, impacts cycling, the passive
+  key, the poise crack line, the move an action code names) and `logic/hero/VoiceLine` (pure: a line's syllables);
+  `hero/HeroSounds` (registration, the server player with its companion queue and notifications, every server hook,
+  a recorder and per-fixture maps for GameTests), `hero/HeroLocalSounds` (common code that only the client calls: the
+  GeckoLib sound keyframes, their companions, the voice) and `client/hero/HeroLoopSounds` (the looping sounds).
+- **Registration** reads the index from the mod file in the mod constructor (242 events, fixed ranges). The `en_us`
+  subtitles are the output of `sfxgen subtitles`, merged after the file's other keys; a unit test fails on a missing
+  or stale key.
+- **The class cue** plays on the run's own clock: the move's `windup` sound on the wind-up's first step (tick 0), the
+  class cue on step `max(0, windup - round(hit_at x 20))`, so a stopped wind-up (stun, stagger, knock-back, escape, a
+  lost target) never plays a cue for a hit that will not come. A move with no wind-up plays neither. The class comes
+  from the hero's definition (the map's `class` agrees; a unit test checks the slice).
+- **Impacts** play once per effect list that reached an enemy (a melee or combo hit, each projectile, each zone pulse,
+  each rain impact, each ring of a wave that reaches someone), at the first enemy struck; a list cycles per impact of
+  the use. The basic attack's `moves.basic.impact` plays at each landed basic hit (melee, thrown or arrow), cycling.
+- **Notifications** go to the players who see the hero's boss bar; with `boss.bossBars` off, to the players within
+  32 blocks. A beat that is both a notification and positional (enrage, fled, fallen) is sent positionally only to the
+  players in range who did not get it in the head. The intro cue goes with the intro title.
+- **Placeholders replaced**: the stagger's shield break (now `poise.break` and the dizzy stars 6 ticks later for a full
+  bar, the stars alone for a weak point's stagger), the transition's sonic boom (`phase`, `shockwave`, `super_armor`),
+  the barrier's glass and shield (`barrier.hit`, `.break`), the wall's shield block (`charge_wall`), the decoy's
+  fizz (`decoy_pop`). A douse keeps vanilla's fire hiss only for a hero whose map has no sound for it.
+- **Steps**: the vanilla step of the block under it at `steps.volume` x `heroes.soundVolume`, `steps.with` beside;
+  an invisible hero's steps also play its `quirks.invisible_step` (Tobimaru's smoke puffs, server side, since steps are
+  the server's). A decoy plays no steps at all. Hurt and death: `voice.hurt`/`voice.death` and their pitch; a hero
+  with no map uses the player's hurt and death at its v1 voice's `hurt_pitch`.
+- **The voice** (`HeroLocalSounds`, client): the line a hero says is synced with it (`HeroEntity` `DATA_LINE`, a
+  counter and the text, so a line said twice speaks twice); while the talking flag is set, `VoiceLine` gives one
+  syllable per `rate` ticks (vowel groups, 1-4 a word; each digit one), a word gap of 1 tick, a pause of 2 syllables at
+  `, . ! ? ; :`, the melody's random step and the jitter, the question's last syllable x1.12, nothing after the
+  bubble's 3 s. A hero with no generated voice speaks in note-block blips from its definition's v1 `voice` (instrument,
+  pitch, rate) at volume 0.5 and the melody 0 0 +2 +4 -3; a client that does not know the definition (a remote client
+  of a dedicated server) uses the map's `fallback_blip`, else the harp.
+- **Loops** (`HeroLoopSounds`): a move's `loop` starts when the hero's action code turns into that move's code (the
+  visual move list for `move.<slot>`, the map's ultimate for the ultimate codes) and stops when the code or its sequence
+  changes; `cues.glide` while `DATA_LOCO` says glide (nothing sets glide before A10-A12).
+- **Content changes** (the follow-ups of section 16): `cues.yield` renamed `cues.fled` ("Hero flees"); `cues.spared`
+  reused as `cues.revived` ("Hero returns", at a hero's revival); new `cues.fallen` (a sting at -13, 32 blocks: a
+  temple toll on C3 with a fifth above, a soft taiko and a sub tone, 2.6 s) and `cues.last_stand` (a sting at -18,
+  24 blocks: two taiko heartbeats and a short rising low brass swell, 1.05 s); `check` refuses a cue map or a sound
+  named `yield` or `spared`. Map fixes found by the new unit test that lines the slice fixtures up with their maps:
+  Ambrose's passive key `hex_full` is now `hex_complete` (his passive is "Hex Complete"; the sound is unchanged),
+  and Benika's `crash_waves` (area: `fire_wave` on impact) and Tobimaru's `night_strikes` (light: `blade_swish`,
+  `blade_hit`), the two follow-ups of their ultimates, now have sounds.
+- **Not yet**: `mobility.takeoff`, `cues.takeoff` and `cues.downed` wait for the mobility engine (A10-A12; a leap's
+  landing already plays `cues.landing`); `release`, `end`, phase, intro and quirk keyframes wait for C1-C4's animation
+  markers (the handler plays whatever a clip names); the owner's listening pass (V2).
+
 ## 16. Open items
 
 - **Jar budget for the roster** (section 11): a larger jar or fewer sounds per batch hero; the owner decides when
@@ -597,10 +656,7 @@ the category slider; the subtitle overlay merges lines whose components are equa
   Natsuho's `frenzy_rise`, Ilsabet's voice.
 - The kit set and the style libraries' own swing sounds come with batch 1 and G8.
 - C1-C4 put the `release`, `end`, phase, intro and quirk sounds into the animation recipes as markers (section 5).
-- **The yield's chimes** (the owner's decision of 2026-11-13: no hero yields; `HEROES_V2.md` 6.13 and 15.6). For the
-  sound work, not done here: `cues.yield` ("Hero yields", the soft falling three-note chime) is reused as the boss bar's
-  **fled** sting, renamed `cues.fled` with the subtitle "Hero flees" (its recipe and file can stay as they are);
-  `cues.spared` ("Hero is spared", the warm rising chime) has no moment left and is retired, or reused as the chime of a
-  hero's return at its revival. Two cues are new: a **fallen** sting for the bar's other end state (a short low toll, at
-  the sting loudness of section 8) and a **last stand** accent (short, at the hero, under the line). `check`'s cue map
-  and the S2 hooks follow whatever the sound work decides.
+- **The yield's chimes**: done in S2 (2026-11-13; "S2 as built" above): `cues.fled`, `cues.revived` (the old spared),
+  the new `cues.fallen` and `cues.last_stand`. The cue preview (`docs/heroes-v2/previews/sound/cue.mp3` and its sheet)
+  still has the old names and lacks the two new cues: rebuild it with `sfxgen preview cue` when the art workflow is not
+  writing the previews folder.

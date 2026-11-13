@@ -222,6 +222,7 @@ public final class HeroBossBars {
         p.connection.send(new ClientboundSetTitlesAnimationPacket(10, 40, 10));
         p.connection.send(new ClientboundSetSubtitleTextPacket(sub.withStyle(net.minecraft.ChatFormatting.GRAY)));
         p.connection.send(new ClientboundSetTitleTextPacket(Component.literal(h.npcName()).withStyle(style(h, d))));
+        HeroSounds.introTitle(p); // cues.intro with the title (SOUND.md 7)
         titlesSent++;
     }
 
@@ -233,6 +234,10 @@ public final class HeroBossBars {
      */
     public static void end(HeroEntity h, boolean fled) {
         Bar b = BARS.get(h.getUUID());
+        // S2: fled's falling chime or fallen's toll, in the heads of those who saw the bar (with the bars off, the
+        // players within its 32 blocks) and at the hero for the rest
+        HeroSounds.endOfFight(h, fled, !FCConfig.BOSS_BARS.get() ? HeroSounds.audience(h)
+                : b == null || b.ending() ? List.of() : List.copyOf(b.event.getPlayers()));
         if (b == null || b.ending()) {
             return;
         }

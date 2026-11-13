@@ -199,6 +199,7 @@ public final class HeroManager {
                 : " to " + base.name) + ".").withStyle(ChatFormatting.GOLD));
         server.overworld().sendParticles(net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING, h.getX(), h.getY() + 1, h.getZ(),
                 40, 0.4, 0.8, 0.4, 0.3);
+        HeroSounds.cue(h, com.factionclash.logic.hero.SoundIndex.REVIVED); // the old spare's warm chime, now the return's
         if (own != null && own.line() != null && !own.line().isBlank()) {
             Messages.toFaction(server, s.owner, Component.literal(com.factionclash.logic.hero.HeroSpeech.chatLine(h.npcName(), own.line())));
             h.clock().said(LineEvent.REVIVED, server.overworld().getGameTime());
