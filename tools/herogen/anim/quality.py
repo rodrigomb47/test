@@ -36,7 +36,7 @@ import math
 
 from anim import skeleton as S
 from anim.clip import FORM_SPAN, TICK, layered, on_tick
-from anim.recipes import FACE_BONE
+from anim.recipes import FACE_BONE, REST
 from anim.writer import TRANSITION_TICKS
 from face import CHEEK_FRAMES, EYE_FRAMES, MOUTH_FRAMES
 from rig import BASE_IDS, load_rig
@@ -180,7 +180,7 @@ def check_settle(clip, target):
         # a base one-shot with settle_to (G10: a jump, a landing) ends on the loop the base controller queues next
     out = []
     for bc, tr in sorted(clip.tracks.items()):
-        goal = target.tracks[bc].sample(0.0) if target is not None and bc in target.tracks else (0.0, 0.0, 0.0)
+        goal = target.tracks[bc].sample(0.0) if target is not None and bc in target.tracks else REST[bc[1]]
         end = tr.keys[-1]
         if abs(end.t - clip.length) > 1e-6:
             out.append("%s: %s.%s has no key at the end" % (clip.name, bc[0], bc[1]))
@@ -208,7 +208,7 @@ def check_start(clip, target):
         return tr.sample(0.0)
 
     def goal(bc):
-        return first(target.tracks[bc]) if bc in target.tracks else (0.0, 0.0, 0.0)
+        return first(target.tracks[bc]) if bc in target.tracks else REST[bc[1]]
 
     def off(bc, tr):
         g = goal(bc)

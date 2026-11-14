@@ -12,15 +12,25 @@ controller's queue blends for 4), with HeroFace's frames, face_ctrl keys and bli
   phases.png        each phase look from the front and the back (3/4), and the last one at night (the glow layer)
   move_<id>.gif     one per move of its kit, played over combat.idle as the server sends it; `ultimate.gif` plays the
                     ultimate and, at its hit, the state it enters (the state's own clip, as HeroStates starts it)
-  string.gif        the basic string (attack.1 > attack.2 > attack.3) and the kit's followup chains, each code sent as
+  string.gif        the basic attack (attack.ranged twice for a thrown or shot one), the basic string (attack.1 >
+                    attack.2 > attack.3) and the kit's followup chains, each code sent as
                     the last ends
   moments.gif       intro, the phase transitions, taunt, victory and the clips that have no action code yet (last
                     stand, escape), each over the base it plays on
   idles.gif         personal.1-3 over move.idle
-  locomotion.gif    walk, run and the acrobat's set with its own overrides (Natsuho: a cat's twist on move.air_jump)
+  locomotion.gif    walk, run and the set its mobility traits use, with its own overrides (Natsuho, an acrobat: a
+                    cat's twist on move.air_jump; Hinae, a runner and swimmer: the run, the swim and a plain jump)
   sheet.png         every clip of its own file, 7 frames each from the action's start
 `herogen hero-previews <id> [--check]` writes (or checks) them. The captions fit any hero (the pronoun from its base);
 the lines that name what a hero's phase looks, escape and variants show are in OWN_CAPTIONS.
+
+A clip is drawn in the phase it belongs to: a move from the first phase of its kit, phase.N in phase N, the last stand
+in the last phase, and any clip that keys a pN_ bone (Hinae's ring of talismans) from phase N, so what it moves
+shows. The secondary controller's `sec.loop` (C1: Hinae's ring orbits her) plays under every film and sheet frame, as
+HeroAnimator plays it whenever the chain has one.
+
+`herogen hero-previews --lineup [--check]` writes lineup.png in the folder above: every hero with a source in
+herosrc/heroes (the fallback aside) side by side in its own body at its own scale, the test rig among them for size.
 """
 import os
 
@@ -52,6 +62,12 @@ OWN_CAPTIONS = {
         "escape": "escape, the cat bolts (no code yet), over the run",
         "air_jump": "air_jump (her cat twist)",
     },
+    "hinae_shirasuzu": {
+        "phases": "the phase looks (2: a ring of seven talismans; 3: glowing eyes, golden streamers)",
+        "phase.2": "phase.2 (the ring of talismans unfolds)",
+        "phase.3": "phase.3 (her eyes and the streamers light up)",
+        "escape": "escape, an apologetic bow (no code yet), over the run",
+    },
 }
 
 
@@ -70,6 +86,39 @@ def captions(a):
 
 def out_dir(hero_id):
     return os.path.join(OUT_ROOT, hero_id)
+
+
+def secondary(a, pose, t):
+    """The secondary controller's `sec.loop` laid over a pose at wall time t (it plays all the time, keying only its
+    own bones, after the base and action controllers: HeroAnimator). The pose itself when the chain has none."""
+    clip = a.chain.get("sec.loop")
+    if clip is None:
+        return pose
+    out = {b: dict(cs) for b, cs in pose.items()}
+    for b, cs in clip.sample(t % clip.length, a.form_var()).items():
+        out.setdefault(b, {}).update(cs)
+    return out
+
+
+def phase_of_clip(a, name):
+    """The phase a clip is drawn in: a move's first kit phase, phase.N's N, the last stand's last phase, and at least
+    the phase of any pN_ bone it keys (so a ring that shows from phase 2 is seen when a clip moves it)."""
+    hero = a.hero or {}
+    phase = 1
+    if name.startswith("move."):
+        for m in hero.get("moves", []) or []:
+            if "move." + m["id"] == name:
+                phase = min(m.get("phases", [1]) or [1])
+    elif name.startswith("phase.") and name[6:].isdigit():
+        phase = int(name[6:])
+    elif name == "last_stand":
+        phase = max([1] + [int(p["phase"]) for p in a.visual.get("phases", [])])
+    clip = a.chain.get(name)
+    keyed = {b for b, _ in clip.tracks} if clip is not None else set()
+    for b, n in a.visual["bones"].get("phase", {}).items():
+        if b in keyed:
+            phase = max(phase, int(n))
+    return phase
 
 
 def assets(hero_id):
@@ -182,7 +231,7 @@ def film(a, shots, fps=FPS, scale=SCALE):
     for v in views:
         bs = []
         for shot, pb, dur in plans:
-            poses = [pb.pose(t) for t in gif.ticks(0.0, dur, 5)]
+            poses = [secondary(a, pb.pose(t), t) for t in gif.ticks(0.0, dur, 5)]
             bs.append(a.bounds([v], poses, phase=shot.phase, drawn=shot.drawn))
         b = (min(x[0] for x in bs), max(x[1] for x in bs), min(x[2] for x in bs), max(x[3] for x in bs))
         bounds.append((b[0] - 1.0, b[1] + 1.0, min(b[2], -1.0), b[3] + 1.0))
@@ -192,7 +241,7 @@ def film(a, shots, fps=FPS, scale=SCALE):
     for shot, pb, dur in plans:
         sim = a.face_sim("calm", 0)
         for t in gif.ticks(0.0, dur, fps):
-            pose = pb.pose(t)
+            pose = secondary(a, pb.pose(t), t)
             face = sim.frames(t, pose, blink_ok=pb.action_phase(t) is None)
             cells = [to_image(a.render(v, pose, face=face, phase=shot.phase, drawn=shot.drawn, bounds=b, pad=2))
                      for v, b in zip(views, bounds)]
@@ -223,16 +272,37 @@ def film(a, shots, fps=FPS, scale=SCALE):
     return out
 
 
+def mobility_traits(a):
+    mob = (a.hero or {}).get("mobility") or {}
+    return [(mob.get(k) or {}).get("trait") for k in ("primary", "secondary") if mob.get(k)]
+
+
+def loco_segments(a):
+    """The locomotion a hero's mobility traits use (MOBILITY_AND_WORK 1, 4.1): an acrobat's jumps, wall kicks and
+    mantle; otherwise the walk and run, a plain jump and the ladder climb, and the swim for a swimmer."""
+    from anim.loco_preview import Segment
+    traits = mobility_traits(a)
+    if "acrobat" in traits:
+        return [Segment("walk > run", [("move.walk", 1.0), ("move.run", 1.2)]),
+                Segment("crouch_jump (the tell) > leap > %s > leap > land_roll" % captions(a)["air_jump"],
+                        [("move.crouch_jump", None), ("move.leap", 0.35), ("move.air_jump", None),
+                         ("move.leap", 0.4), ("move.land_roll", None)]),
+                Segment("wall_kick > leap > land", [("move.wall_kick", None), ("move.leap", 0.4),
+                                                    ("move.land", None)]),
+                Segment("climb > climb_idle (clinging) > mantle", [("move.climb", 1.0), ("move.climb_idle", 1.0),
+                                                                    ("move.mantle", None)])]
+    segs = [Segment("walk > run%s" % (" (a runner)" if "runner" in traits else ""),
+                    [("move.walk", 1.0), ("move.run", 1.6)]),
+            Segment("jump > leap > land", [("move.jump", None), ("move.leap", 0.35), ("move.land", None)])]
+    if "swimmer" in traits:
+        segs.append(Segment("swim (a swimmer)", [("move.swim", 2.4)]))
+    segs.append(Segment("climb (a ladder)", [("move.climb", 1.0)]))
+    return segs
+
+
 def loco_film(a, fps=FPS, scale=SCALE):
     """The hero's locomotion through the base controller's queue (anim/loco_preview), from two views."""
-    from anim.loco_preview import Segment
-    segs = [Segment("walk > run", [("move.walk", 1.0), ("move.run", 1.2)]),
-            Segment("crouch_jump (the tell) > leap > %s > leap > land_roll" % captions(a)["air_jump"],
-                    [("move.crouch_jump", None), ("move.leap", 0.35), ("move.air_jump", None), ("move.leap", 0.4),
-                     ("move.land_roll", None)]),
-            Segment("wall_kick > leap > land", [("move.wall_kick", None), ("move.leap", 0.4), ("move.land", None)]),
-            Segment("climb > climb_idle (clinging) > mantle", [("move.climb", 1.0), ("move.climb_idle", 1.0),
-                                                                ("move.mantle", None)])]
+    segs = loco_segments(a)
     views = [raster.View(y, p, scale) for y, p, _ in YAWS]
     plans = []
     for seg in segs:
@@ -240,7 +310,7 @@ def loco_film(a, fps=FPS, scale=SCALE):
         plans.append((seg, pb, dur))
     bounds = []
     for v in views:
-        bs = [a.bounds([v], [pb.pose(t) for t in gif.ticks(0.0, dur, 5)]) for _, pb, dur in plans]
+        bs = [a.bounds([v], [secondary(a, pb.pose(t), t) for t in gif.ticks(0.0, dur, 5)]) for _, pb, dur in plans]
         b = (min(x[0] for x in bs), max(x[1] for x in bs), min(x[2] for x in bs), max(x[3] for x in bs))
         bounds.append((b[0] - 1.0, b[1] + 1.0, min(b[2], -1.0), b[3] + 1.0))
     small, tiny = font(13), font(11)
@@ -249,7 +319,7 @@ def loco_film(a, fps=FPS, scale=SCALE):
     for seg, pb, dur in plans:
         sim = a.face_sim("calm", 0)
         for t in gif.ticks(0.0, dur, fps):
-            pose = pb.pose(t)
+            pose = secondary(a, pb.pose(t), t)
             face = sim.frames(t, pose, blink_ok=True)
             cells = [to_image(a.render(v, pose, face=face, bounds=b, pad=2)) for v, b in zip(views, bounds)]
             evs = gif._event_lines(pb.events(t - 1.0 / fps + 1e-6, t + 1e-6))
@@ -281,8 +351,16 @@ def loco_film(a, fps=FPS, scale=SCALE):
 
 def own_clips(a):
     """The clips of the hero's own file (variants included), in its order."""
+    return [c.name for c in own_built(a).clips]
+
+
+def own_built(a):
+    """The hero's own animation file as the generator built it (its clips keep their meta: kind, the base an action
+    plays over; the clips read back from the written file do not)."""
     from anim import library as animlib
-    return [c.name for c in animlib.hero(a.hero).clips]
+    if getattr(a, "_own_built", None) is None:
+        a._own_built = animlib.hero(a.hero)
+    return a._own_built
 
 
 def sheet(a, path, per_clip=7, scale=2):
@@ -291,24 +369,32 @@ def sheet(a, path, per_clip=7, scale=2):
     rows = []
     for name in own_clips(a):
         clip = a.chain.get(name)
-        kind = clip.meta.get("kind", "base")
-        if kind == "base":
+        meta = own_built(a).by_name[name].meta
+        kind = meta.get("kind", "base")
+        phase = phase_of_clip(a, name)
+        if name.startswith("sec."):
+            # a secondary loop plays over whatever the base shows: here the combat stance
+            pb = SequencePlayback(a.chain, "combat.idle", [], a.form_var())
+            times = [clip.length * i / per_clip for i in range(per_clip)]
+            drawn = True
+        elif kind == "base":
             pb = SequencePlayback(a.chain, name, [], a.form_var())
             times = [clip.length * i / per_clip for i in range(per_clip)]
             drawn = False
         else:
-            base = clip.meta.get("over") or "combat.idle"
+            base = meta.get("over") or "combat.idle"
             pb = SequencePlayback(a.chain, base, [(name, 0.0)], a.form_var())
             span = ACTION_BLEND + clip.length
             times = [span * i / (per_clip - 1) for i in range(per_clip)]
             drawn = base == "combat.idle"
-        poses = [pb.pose(t) for t in times]
-        b = a.bounds([v], poses, drawn=drawn)
+        poses = [secondary(a, pb.pose(t), t) for t in times]
+        b = a.bounds([v], poses, drawn=drawn, phase=phase)
         b = (b[0] - 1, b[1] + 1, min(b[2], -1.0), b[3] + 1)
         sim = a.face_sim("calm", 0)
-        cells = [(t, to_image(a.render(v, p, face=sim.frames(t, p, blink_ok=False), drawn=drawn, bounds=b, pad=2)))
+        cells = [(t, to_image(a.render(v, p, face=sim.frames(t, p, blink_ok=False), drawn=drawn, bounds=b, pad=2,
+                                       phase=phase)))
                  for t, p in zip(times, poses)]
-        rows.append((name, cells))
+        rows.append((name if phase == 1 else "%s (phase %d)" % (name, phase), cells))
     cw = max(c.width for _, cells in rows for _, c in cells)
     ch = max(c.height for _, cells in rows for _, c in cells)
     W = 16 + per_clip * (cw + 10)
@@ -343,7 +429,7 @@ def gif_shots(a):
         name = "move." + mid
         if a.chain.get(name) is not None:
             out["move_%s.gif" % mid] = [Shot("move.%s (move slot %d)" % (mid, moves.index(mid)), [name],
-                                             phase=phase_of[mid])]
+                                             phase=phase_of_clip(a, name))]
     if a.chain.get("ultimate") is not None:
         ult = a.chain.get("ultimate")
         acts, at = ["ultimate"], {}
@@ -355,15 +441,24 @@ def gif_shots(a):
                     acts.append("state." + st)
                     at["state." + st] = LEAD + ACTION_BLEND + hits[0]
                 break
-        out["ultimate.gif"] = [Shot("ultimate > %s at its hit" % " > ".join(acts[1:]) if len(acts) > 1 else
-                                    "ultimate", acts, at=at)]
+        ph = phase_of_clip(a, "ultimate")
+        label = "ultimate > %s at its hit" % " > ".join(acts[1:]) if len(acts) > 1 else "ultimate"
+        out["ultimate.gif"] = [Shot(label if ph == 1 else "%s (phase %d)" % (label, ph), acts, at=at, phase=ph)]
     chain = ["attack.1", "attack.2", "attack.3"]
-    shots = [Shot("the basic string: attack.1 > attack.2 > attack.3", chain)]
+    shots = []
+    basic = (hero.get("basic_attack") or {}).get("style", "melee")
+    if basic != "melee" and a.chain.get("attack.ranged") is not None:
+        # a thrown or shot basic attack plays attack.ranged (code 4); the string is the style's melee
+        shots.append(Shot("the basic attack (%s): attack.ranged > attack.ranged" % basic,
+                          ["attack.ranged", "attack.ranged"]))
+    shots.append(Shot("the basic string: attack.1 > attack.2 > attack.3", chain))
     for m in hero.get("moves", []) or []:
         for f in m.get("followups", []) or []:
             if f.get("move") != m["id"] and a.chain.get("move." + f["move"]) is not None:
                 shots.append(Shot("move.%s > move.%s (its followup, %d%%)" % (m["id"], f["move"], f.get("chance", 100)),
-                                  ["move." + m["id"], "move." + f["move"]], phase=phase_of.get(m["id"], 1)))
+                                  ["move." + m["id"], "move." + f["move"]],
+                                  phase=max(phase_of_clip(a, "move." + m["id"]),
+                                            phase_of_clip(a, "move." + f["move"]))))
     out["string.gif"] = shots
     moments = []
     cap = captions(a)
@@ -381,6 +476,111 @@ def gif_shots(a):
     out["idles.gif"] = [Shot("%s (a rare idle)" % n, [n], base="move.idle", drawn=False)
                         for n in ("personal.1", "personal.2", "personal.3") if n in own_clips(a)]
     return out
+
+
+# ------------------------------------------------------------------ the lineup of the heroes with a source
+
+LINEUP_SCALE = 8
+FIXTURES_LAST = ("test_rig",)
+
+
+def lineup_ids():
+    """Every hero with a source in herosrc/heroes but the fallback: the roster heroes by name, then the test rig (the
+    pipeline fixture, there for size)."""
+    import build
+    ids = [h for h in build.hero_ids() if not h.startswith("_")]
+    return sorted(h for h in ids if h not in FIXTURES_LAST) + [h for h in FIXTURES_LAST if h in ids]
+
+
+def lineup(path, ids=None, scale=LINEUP_SCALE):
+    """The heroes side by side on grass, each in its own body at its own scale (art.scale: one model pixel is
+    scale x art.scale screen pixels), feet on one line: the idle stance from the 3/4 front, and below it the combat
+    stance with the weapon drawn from the front, in the first phase and the last."""
+    from render.sheet import backdrop, ground_col, ground_row, height_blocks, shadow
+    rows = [("idle stance, 3/4 front", -24.0, 10.0, False, False), ("weapon drawn, front", 0.0, 6.0, True, False),
+            ("weapon drawn, last phase", 0.0, 6.0, True, True)]
+    heroes = []
+    for hid in ids or lineup_ids():
+        a = HeroAssets.build(hid)
+        heroes.append(a)
+    cells = []          # per row: [(image, feet row, feet column)]
+    for label, yaw, pitch, drawn, last in rows:
+        out = []
+        for a in heroes:
+            k = scale * float(a.visual.get("scale", 1.0))
+            v = raster.View(yaw, pitch, k)
+            pose = a.stance(drawn)
+            phase = max([1] + [int(p["phase"]) for p in a.visual.get("phases", [])]) if last else 1
+            pose = secondary(a, pose, 0.0)
+            b = a.bounds([v], (pose,), phase=phase, drawn=drawn)
+            b = (b[0] - 1, b[1] + 1, min(b[2], -1.0), b[3] + 1)
+            face = (10, 0, 0) if last and any(p.get("eyes_glow") for p in a.visual.get("phases", [])) else \
+                a.mood("calm")
+            im = to_image(a.render(v, pose, face=face, phase=phase, drawn=drawn, bounds=b, pad=2))
+            out.append((im, ground_row(v, b, 2), ground_col(v, b, 2)))
+        cells.append(out)
+    f16, f13 = font(16), font(13)
+    measure = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+
+    def label_of(a):
+        v = a.visual
+        name = (a.hero or {}).get("name", a.id)
+        return name, "%s %s, %d%%: %.2f blocks" % (v["base"], v["build"], round(v.get("scale", 1.0) * 100),
+                                                 height_blocks(a))
+    gap = 30
+    slots = []
+    for i, a in enumerate(heroes):
+        n, d = label_of(a)
+        slots.append(max(max(cells[r][i][0].width for r in range(len(rows))),
+                         int(measure.textlength(n, font=f16)) + 12, int(measure.textlength(d, font=f13)) + 12))
+    title = "The heroes with a source, each in its own body at its own scale (the one-body rule, HEROES_V2 3.6), " \
+        "beside the test rig"
+    W = max(sum(slots) + gap * (len(heroes) + 1) + 150, int(measure.textlength(title, font=font(18))) + 40)
+    heights = [max(im.height for im, _, _ in row) for row in cells]
+    top = 46
+    H = top + sum(h + 60 for h in heights) + 10
+    sheet = backdrop(W, H, 30)
+    d = ImageDraw.Draw(sheet)
+    d.text((16, 12), title, fill=(250, 250, 250, 255), font=font(18), stroke_width=2, stroke_fill=(40, 60, 90, 255))
+    y = top
+    for (label, _, _, _, _), row, h in zip(rows, cells, heights):
+        d.text((12, y + h // 2), label, fill=(250, 250, 250, 255), font=f13, stroke_width=2,
+               stroke_fill=(30, 50, 26, 255))
+        feet_y = y + max(fr for _, fr, _ in row)
+        x = gap + 140
+        for (im, fr, fc), slot, a in zip(row, slots, heroes):
+            ix = x + (slot - im.width) // 2
+            sw = int(7.0 * scale * 2.2)
+            sh = max(10, sw // 3)
+            sheet.alpha_composite(shadow((sw, sh)), (ix + fc - sw // 2 - 8, feet_y - sh // 2 - 8))
+            sheet.alpha_composite(im, (ix, feet_y - fr))
+            if row is cells[0]:
+                n, dsc = label_of(a)
+                d.text((x + slot // 2, feet_y + 12), n, fill=(250, 250, 250, 255), font=f16, anchor="ma",
+                       stroke_width=2, stroke_fill=(30, 50, 26, 255))
+                d.text((x + slot // 2, feet_y + 32), dsc, fill=(250, 250, 250, 255), font=f13, anchor="ma",
+                       stroke_width=2, stroke_fill=(30, 50, 26, 255))
+            x += slot + gap
+        y += h + 60
+    save(sheet, path)
+    return path
+
+
+def lineup_path():
+    return os.path.join(OUT_ROOT, "lineup.png")
+
+
+def check_lineup(path=None):
+    import tempfile
+    path = path or lineup_path()
+    with tempfile.TemporaryDirectory() as tmp:
+        fresh = lineup(os.path.join(tmp, "lineup.png"))
+        with open(fresh, "rb") as f:
+            new = f.read()
+    if not os.path.exists(path):
+        return ["lineup.png: missing"]
+    with open(path, "rb") as f:
+        return [] if f.read() == new else ["lineup.png: differs from a fresh render"]
 
 
 def write_all(hero_id, out=None, gifs=True):

@@ -76,6 +76,7 @@ ARM_GLOBS = ("arm_*", "forearm_*", "hand_*")
 DEFAULT_EASE = "easeInOutSine"
 SETTLE_BLEND = 0.15
 FACE_BONE = "face_ctrl"
+REST = {"rotation": (0.0, 0.0, 0.0), "position": (0.0, 0.0, 0.0), "scale": (1.0, 1.0, 1.0)}   # a channel at rest
 
 
 def _loop_mode(v):
@@ -219,7 +220,9 @@ def _add_chans(base, extra, globs=None):
     out = {b: dict(cs) for b, cs in base.items() if rel(b)}
     for b, cs in extra.items():
         for ch, v in cs.items():
-            if rel(b) and not ch.startswith(P.K_PREFIX):
+            if rel(b) and ch == "scale":
+                out.setdefault(b, {})[ch] = v          # a scale is a size, not an offset: the key's own (C1)
+            elif rel(b) and not ch.startswith(P.K_PREFIX):
                 have = out.setdefault(b, {}).get(ch, (0.0, 0.0, 0.0))
                 out[b][ch] = tuple(have[c] + v[c] for c in range(3))
                 kk = P.K_PREFIX + ch
@@ -405,7 +408,7 @@ class Expander:
                                                w, field.split("_")[0], extra, later[0]))
                 for bc in animated:
                     cs = chans.get(bc[0], {})
-                    v = cs.get(bc[1], zero)
+                    v = cs.get(bc[1], REST[bc[1]])
                     kv = cs.get(P.K_PREFIX + bc[1], zero)
                     tr = clip.track(*bc)
                     p = prev.get(bc, v)
@@ -582,7 +585,7 @@ class Expander:
         easing out any difference over the last 0.15 s."""
         L = clip.length
         for bc, tr in sorted(clip.tracks.items()):
-            goal = target.tracks[bc].sample(0.0) if target is not None and bc in target.tracks else (0.0, 0.0, 0.0)
+            goal = target.tracks[bc].sample(0.0) if target is not None and bc in target.tracks else REST[bc[1]]
             goal_k = target.tracks[bc].sample_k(0.0) if target is not None and bc in target.tracks else (0.0,) * 3
             end = tr.sample(L)
             end_k = tr.sample_k(L)

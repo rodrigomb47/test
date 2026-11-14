@@ -2862,4 +2862,177 @@ case moved with the rule (above). Sabotage: with the pounce's `hit` one tick lat
 
   C1 did not touch them: the libraries and the sample outfit they are drawn from build as before. They should be
   re-rendered with a style fixture in her place when next touched.
-- Hinae Shirasuzu, the other half of C1.
+- Hinae Shirasuzu, the other half of C1 (done: the next section).
+
+---
+
+## C1: Hinae Shirasuzu (2026-11-14)
+
+HEROES_V2.md 15.2 row C1, Hinae's half (Natsuho's is the section above). This adds her source file, her art, her
+signature animations, the talisman ring's orbit loop (G6c's open item) and a lineup of the heroes with a source. Her kit
+is the slice fixture's (`src/test/resources/heroes/slice/hinae_shirasuzu.json`, copied field for field; her server
+definition belongs to the engine side). She has one body for good (the owner's rule of 2026-11-13, HEROES_V2 3.6):
+**adult, female, standard build, drawn at 96%** (SLICE_PLAN 3.4). Every preview shows her only in that body. No hit
+tick, marker or timing file of an existing clip changed: the shared libraries build byte for byte as before, and her
+animation and timing files are new.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/hinae_shirasuzu.hero.json` | the source: the kit, `art` (body, palette, parts, face, wand and talisman fan, phase looks) and `animations` (style `focus`, blink `normal`, 56 poses of her own, 18 signatures) |
+| generated | `geo/hero`, `textures/entity/hero` (texture and glow mask), `heroes/*.visual.json`, `animations/hero/hinae_shirasuzu.animation.json`, `data/factionclash/hero_timings/hinae_shirasuzu.json` |
+| `anim/poses.py` | a pose's `scale` {bone: [sx, sy, sz]} (inherited, mirrored, above 0) |
+| `anim/recipes.py`, `anim/quality.py` | `REST`: a channel's value at rest, so a key that leaves a scaled bone out keys it at 1 and the settle and start rules' goal for a scale is 1 (it was 0 for every channel) |
+| `parts.py` | the weapon entry's `phase_glow` {phase, cubes, slot}: glowing shells round named pieces of the prop, from a phase on |
+| `render/hero_previews.py`, `cli.py` | the secondary controller's `sec.loop` under every film and sheet frame, each clip drawn in its phase, the locomotion by mobility traits, a thrown basic attack in `string.gif`, the sheet's actions over their base (below), and `hero-previews --lineup [--check]` |
+| `tests/test_hinae.py` | 18 tests (below) |
+
+### Her look
+
+The white bell shrine maiden, as the sample outfit of G6b and G6c drew her: a hime cut tied low with white paper
+(`hair/hime_long`), a white kimono top with plain sleeves (`outfit_top/kimono_top`), a pleated red hakama
+(`outfit_bottom/hakama`, drop 1.75), split-toe socks and clogs (`legwear/geta`), the faction sash with its bow, three
+talisman strips at the belt, the purification wand in her right hand (thrust through the sash at the left hip when
+carried) and the fan of talismans in her left. Palette SLICE_PLAN 3.4's (white, red, gold, cream, a pale gold glow;
+`leather` for the clogs). Face: `round` eyes with a flick, lashes 2, `worried` brows, the `soft` mouth and a soft blush.
+Two overrides fit a sweet-natured hero: her `angry` is a worried pout (angry eyes, the frown mouth, no bared teeth) and
+her `smug` a closed-eye smile.
+
+- **Phase 2** (60%): seven glowing talismans orbit her (`accessories/talisman_ring`, worn with `"phase": 2`: its bone
+  is `p2_talisman_ring`, hidden before phase 2).
+- **Phase 3** (25%): her eyes glow gold (frame 10 in the glow colour) and the wand's paper streamers turn to glowing
+  gold (`weapon.phase_glow`, below).
+
+**Why the streamers glow through shells, not the phase texture.** A `glow: "phase"` region lights up in the `_p2`
+texture, and `HeroModel.getTextureResource` uses that texture whenever the phase is 2 or more (it reads
+`visual.json`'s texture flag, not each phase's `texture` entry). So a glow that must wait for phase 3 needs its own
+pieces: `phase_glow` {phase 3, cubes `shide_*`, slot `glow`} gives each streamer fold a shell SHELL (0.05) px larger
+every way on a `p3_` bone, painted in the glow colour and written to the glow mask, in the hand and on the carried
+copy. The phase look's bone rule hides them before phase 3, and Hinae needs no `_p2` texture at all. 16 cubes, 213 in
+all (budget 300), 107 beyond the fine distance (130).
+
+### The ring's orbit: `sec.loop`
+
+`HeroAnimator` already plays `sec.loop` on the secondary controller whenever the hero's chain has one (6-tick blend,
+paused beyond 32 blocks and in death). Hinae's own file has it: the ring turns once round her every 6 s
+(`primitives.spin`, linear, the whole turn unwound by a pre/post key at the loop's end) and wobbles 5 degrees on two
+axes a quarter cycle apart, like a floating ring. It keys only `p2_talisman_ring`'s rotation, so her moves may still
+scale and lift the ring through its other channels (GeckoLib overrides per bone and channel): phase 2 unfolds it from
+her chest, Seven Talismans draws it in tight and flings it out into the barrier, the ultimate widens it and flares it
+at the hit. Before phase 2 the bone is hidden and the loop turns nothing visible.
+
+**Generator addition: pose `scale`.** A pose may carry `scale` {bone: [sx, sy, sz]}; the recipe expander keys a bone a
+pose leaves out at its rest value (`recipes.REST`: 1 for a scale, 0 for rotations and positions; it used 0 for every
+channel, which would have collapsed a scaled bone to nothing between keys), and the settle and start rules take a
+scale's goal as 1 (`quality.check_settle`, `check_start`). A key with `over` takes the key's scale as it is (a size,
+not an offset). GeckoLib scales a bone about its pivot; the ring's pivot is its centre, so it grows from her chest.
+
+### Signature animations
+
+Her own file has the 18 signatures. The focus library and the core cover the rest (her basic attack, a thrown
+talisman, is the focus library's `attack.ranged`). Each move's clip has the kit's frames to the tick, with one `hit` at
+the release and a `cast` on the active part's last tick (the volley, the zone, the nova, the barrier and the sweep each
+release once):
+
+| Clip | Length | Class | Server frames (ticks) | What happens |
+|---|---|---|---|---|
+| `move.talisman_fan` | 1.1 s | light | 10 / 6 / 8 | the hips and chest wind round to her right, the fan cocked across the right shoulder; the left arm sweeps out flat at chest height (`hit` 10, the throw sound) and on out to her left (`cast` 15) |
+| `move.sealing_circle` | 1.8 s | area | 20 / 2 / 16 | the wand raised high at her right, its bells rung with the eyes closed (the tell), a last lift, then brought down sharply to point at the ground under the target (`hit` 20, `cast` 21) |
+| `move.purify` | 1.0 s | light | 12 / 2 / 8 | the wand upright before her face in a short prayer, one wide cleansing sweep out to her right (`hit` 12, the purify sound), a smaller sweep back |
+| `move.exorcise` | 1.8 s | area | 20 / 2 / 16 | down on bent knees (feet planted), the hands drawn together round the upright wand and trembling with gathered light, then up with both arms flung wide (`hit` 20) |
+| `move.seven_talismans` | 1.7 s | heavy | 16 / 4 / 16 | the wand before her face and the fan raised high while the ring draws in tight and rises (scale 0.55), both arms swept wide as it flies out past its size (`hit` 16) and settles (`cast` 19) |
+| `move.purifying_dance` | 4.4 s | area | 20 / 40 / 30 | the kagura's opening turned to her right, ringing (the tell); the beam's edge at her right (`hit` 20, the dance sound), one slow sweep through the front with the knees dipping to her left (`cast` 59); then the kneeling prayer, her weak point: a step that sets her feet, down on the right knee, two claps (the end sound), a bow, up and a step back into her stance |
+| `ultimate` | 3.3 s | ultimate | 32 / 6 / 30 | the wand at the chest in both hands with the head bowed, raised slowly overhead while the left arm opens palm up and the bells ring in a slow circle (the ring widens and rises), swept down in a wide arc to the front-right (`hit` 32: the rite blooms, the ring flares), `cast` 37, a small bow |
+| `phase.2`, `phase.3` | 1.1, 1.1 s | - | - | inside the 1.2 s transitions: the pleading look as the ring unfolds from her chest; the bowed head coming up with glowing eyes, the wand swept up |
+| `intro`, `victory`, `taunt` | 1.5, 2.0, 1.4 s | - | - | a polite bow, then the wand offered with an apologetic look; relief, a small bow toward the defeated and a hum; the fan waved gently "please, go home" |
+| `last_stand`, `escape` | 1.6, 0.6 s | - | - | the wand swept across to bar the way, then held upright in both hands; a quick apologetic bow over the run |
+| `personal.1-3` | 2.4, 2.6, 2.8 s | - | - | the bell shake (the left hand jingles the bells of the wand in her sash, which shakes on its bone, `weapon_back`), tidying up (sweeping the dust off her sleeves, smoothing the hakama, a hum), the prayer (palms together, two claps, a small bow) |
+| `sec.loop` | 6.0 s | - | - | the ring's orbit (above) |
+
+- **Markers**: the client sounds of SOUND.md 4.7 are markers in the clips their slot names: the releases of Talisman
+  Fan, Purify and the dance, the dance's `end` (the claps), both phases, the intro and the three quirks (and the `hum`
+  emote in the victory and the tidying). Wind-ups, impacts and the rite's release are the server's: no marker. The
+  rite's bell loop follows the action code (`HeroLoopSounds`).
+- **No `ultimate.loop`**: the rite's channel is its wind-up and active part (the server breaks it there,
+  `MoveTiming.stops`), and the server ends the run after the kit's frames, so a `.loop` would show only for the tick
+  the run ends, and it would require an `ultimate.end` the engine never sends.
+- **Faces**: every clip but the orbit keys `face_ctrl`.
+- **Rules**: every own clip passes the quality rules on all six bases, and the wand and the fan stay clear of her body
+  on every tick (`grips.animation_problems`). The arm poses were solved on her own skeleton for grip points and prop
+  directions (some in the chest's or an arm's frame: the hands together before a bowed chest, a hand brushing a
+  sleeve), with the props' clearance, a minimum elbow bend where an overshoot follows (the seal's strike) and wrists
+  inside G6c's limits. The dance's kneel uses the core's `kneel.r` chain: a dance step first sets the left foot on the
+  relaxed stance's spot, and on the way up a step brings it back to the focus stance's, so no foot ever slides
+  (`steps`, the slide rule).
+
+### Previews (`docs/heroes-v2/previews/heroes/hinae_shirasuzu/` and `heroes/lineup.png`)
+
+Her set, as Natsuho's, with a README: `turnaround.png`, `faces.png`, `phases.png`, `sheet.png`, a GIF per move,
+`ultimate.gif`, `string.gif`, `moments.gif`, `idles.gif` and `locomotion.gif`. The preview code gained:
+
+- the secondary controller: `sec.loop` laid over every film and sheet frame (`secondary`), so the ring orbits;
+- each clip in its phase (`phase_of_clip`): a move from its kit's first phase, `phase.N` in N, the last stand in the
+  last phase, and any clip keying a `pN_` bone from N (her ultimate in phase 2, so the ring shows it);
+- the locomotion by mobility traits (`loco_segments`): an acrobat's set as before (Natsuho), otherwise walk and run, a
+  jump and the ladder climb, and the swim for a swimmer (Hinae);
+- a thrown or shot basic attack (`attack.ranged`, twice) before the style's string in `string.gif`;
+- the sheet's actions now play over their base with the weapon drawn and the blend: it read the kind and the base from
+  the clips parsed back from the written file, which carry no meta, so every clip was sampled alone as a base loop
+  (Natsuho's sheet is re-rendered; her GIFs are unchanged);
+- `hero-previews --lineup [--check]`: every hero with a source (the fallback aside) on grass in its own body at its
+  own scale, with the test rig: the idle stance from the 3/4 front, the weapon drawn, and the last phase.
+
+### Checks run
+
+`herogen check hinae_shirasuzu` (all of 14.2) OK; `build --check --all` OK (the libraries, `_fallback`, Natsuho and
+the test rig build byte for byte as committed); `lint` of her nine parts (hime_long, kimono_top, hakama, geta,
+sash_bow, talisman_strips, talisman_ring, purification_wand, talisman_fan) on every base: 182 builds, 0 problems;
+`hero-previews hinae_shirasuzu --check`, `hero-previews natsuho_komezaki --check` and `hero-previews --lineup --check`
+OK; the Python suite, 413 tests, OK.
+
+### Tests (395 -> 413: `tests/test_hinae.py`, 18)
+
+- Her one body: adult, standard, 96, and no phase changes it; the kit is the fixture's.
+- Every move's and the ultimate's `frame_ticks` equal the kit's with one `hit` at the wind-up's end, and
+  `assets.check_frames` passes on the written chain.
+- Her own clips pass every rule on every base, at most 24, no `ultimate.loop`; the props stay clear on every second
+  tick.
+- Every sound id is in her catalogue, every client slot has its marker and no server slot is a marker.
+- `face_ctrl` in every clip but the orbit.
+- The orbit keys only the ring's rotation, turns one way at a steady rate and closes; phase 2 starts the ring small
+  and opens it past its size; the moves scale the ring, never turn it, and end it at 1.
+- The streamer shells: 16, glowing, on `p3_` bones that show from phase 3, SHELL larger, no `_p2` texture;
+  `phase_glow` refuses a glob that matches nothing and a phase other than 2 or 3, and puts shells on `p2_` bones.
+- Pose `scale` is parsed, inherited and mirrored and refuses 0; a key that leaves a scaled bone out keys it at 1, and
+  the settle rule passes an action that ends at 1 and fails one that ends at half size.
+- The preview rules: each clip's phase, her locomotion (a swim, no wall kick), the ring's orbit at 1.5 s, and the
+  lineup (both slice heroes, the test rig last, no fallback).
+
+### Decisions
+
+1. **Her kit is the fixture's verbatim** (as Natsuho's).
+2. **The orbit is `sec.loop` on the secondary controller**, the controller `HeroAnimator` already runs, keying only
+   the ring's rotation; her moves move the ring through its scale and position. No new bone or part change.
+3. **Pose scale with a rest value per channel** rather than a scale-only key type: the expander's "a key keys every
+   bone any key mentions" rule then holds for scale too.
+4. **Phase-3 streamers as shells** (above): the engine's phase texture cannot wait for phase 3.
+5. **No `ultimate.loop`** (above).
+6. **Her idle quirks use what she carries**: the bells hang on the wand in her sash, so the bell shake jingles them
+   there (the drawn wand is the server's weapon flag, which an idle does not change).
+
+### Open items
+
+- **Engine side**: her definition in `data/factionclash/heroes/` (the fixture's fields); action codes for `last_stand`
+  and `escape` (6.13); confirm in game that the ring orbits (`sec.loop`) and that a move's scale keys and the orbit's
+  rotation combine on the ring as GeckoLib's per-channel override says.
+- **The ring at the phase change**: the ring's bone shows from the moment the phase becomes 2, and `phase.2` starts
+  with it folded small, so for the action's 2-tick blend it shrinks from full size before it unfolds. If that flash
+  shows in game, the engine can set the phase bit a tick after it sends `phase.2`.
+- **Library previews that still show her look on a second body** (drawn from the `hinae` sample outfit, not her
+  source; not touched here): the focus style set (`previews/anim/styles/focus*`, on a chibi_f) and the sample-outfit
+  sheet `previews/parts/outfits.png` (all six bases). `weapons_poses.png` draws her outfit on adult_f, her own body.
+- The turnaround's second caption line (the stats) runs past the right edge for both slice heroes; it is the shared
+  `sheet.turnaround` layout, and widening it there would re-render every committed turnaround, so it is left.
+- Not run here (Gradle is off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
+  `verifyHeroAssets`), GameTests, the in-game and campaign checks, and the jar.

@@ -449,6 +449,16 @@ def cmd_hero_previews(args):
     """A hero's own preview set (C1-C4): docs/heroes-v2/previews/heroes/<id>/, in its own body only."""
     from render import hero_previews
     bad = 0
+    if args.lineup:
+        if args.check:
+            problems = hero_previews.check_lineup()
+            for p in problems:
+                print("DIFF lineup: %s" % p)
+            if not problems:
+                print("OK   %s: the committed lineup matches a fresh render" % hero_previews.lineup_path())
+            bad += len(problems)
+        else:
+            print("lineup.png: %s" % hero_previews.lineup(hero_previews.lineup_path()))
     for hid in args.ids:
         out = args.out or hero_previews.out_dir(hid)
         if args.check:
@@ -582,7 +592,9 @@ def main(argv=None):
 
     hp = sub.add_parser("hero-previews", help="a hero's own preview set in docs/heroes-v2/previews/heroes/<id>/ "
                                               "(turnaround, faces, phases, a GIF per move, string, locomotion)")
-    hp.add_argument("ids", nargs="+")
+    hp.add_argument("ids", nargs="*")
+    hp.add_argument("--lineup", action="store_true", help="the lineup of every hero with a source beside the test "
+                                                          "rig (docs/heroes-v2/previews/heroes/lineup.png)")
     hp.add_argument("--out", default=None)
     hp.add_argument("--no-gif", action="store_true")
     hp.add_argument("--check", action="store_true", help="render in a temporary folder and fail if a committed "

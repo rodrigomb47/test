@@ -30,7 +30,8 @@ Paint op fields (paint over existing cubes, usually the base body, or the part's
 Generators (style pass 2, gen.py): `strands` (rows of rotated strands, panels, frills), `chains` (bones along a
   polyline with a box per segment: big tails) and `groups` (cubes sharing one rotation and pivot).
 Weapon parts (category weapons) are authored in grip space (grip centre at 0,0,0, blade along -z, as a held item at
-  rest) with cube roles hilt or blade, a scabbard cube list and a tip point; see apply_weapon.
+  rest) with cube roles hilt or blade, a scabbard cube list and a tip point; see apply_weapon. A hero's weapon entry
+  may light pieces from a phase on (`phase_glow`, C1: glowing shells on pN_ bones; _phase_glow).
 """
 import fnmatch
 import os
@@ -785,6 +786,7 @@ def _place_weapon(model, w, index, side, prefix=""):
         hand_bone = model.nested_bone(prefix, hand_bone, where).name
     pv_r = (-abs(pv[0]), pv[1], pv[2])             # the right hand's grip; the left copy is its mirror
     p_hand = P_REVERSE if grip == "reverse" else IDENT
+    shells = _phase_glow(w, part, where)
     for n, spec in enumerate(cubes):
         role = spec.get("role", "hilt")
         if role not in ("hilt", "blade", "worn"):
@@ -797,6 +799,10 @@ def _place_weapon(model, w, index, side, prefix=""):
                  side, p_hand)
         if glow and role == "blade":
             c.glow = glow
+        if shells and _shell_wanted(shells, spec):
+            o2, s2, spec2 = _shell(shells, o, s, spec)
+            _add(model, ctx, spec2, n, hand_bone, _placed(o2, s2, rot, q, p_hand, pv_r),
+                 "%s:%s#%dglow" % (hand_bone, tag, n), side, p_hand)
     tip = ctx.ev(part.get("tip", [0, 0, 0]))
     tip = tuple(float(v) for v in np.array(p_hand, dtype=float) @ np.array(tip, dtype=float))
     loc = model.use_bone("vfx_tip_" + side)
@@ -848,7 +854,53 @@ def _place_weapon(model, w, index, side, prefix=""):
             rot, q = _spec_rot(ctx, spec)
             placed = _placed(o, s, rot, q, perm, mount, rs, mount if rs is not None else None)
             _add(model, ctx, spec, n, tb, placed, "%s:%s:%s#%d" % (tb, side, tag, n), side, perm)
+            if shells and _shell_wanted(shells, spec):
+                o2, s2, spec2 = _shell(shells, o, s, spec)
+                placed = _placed(o2, s2, rot, q, perm, mount, rs, mount if rs is not None else None)
+                _add(model, ctx, spec2, n, tb, placed, "%s:%s:%s#%dglow" % (tb, side, tag, n), side, perm)
     return filled
+
+
+SHELL = 0.05        # px a phase-glow shell stands out round the piece it lights (the face planes' 0.05 px rule)
+
+
+def _phase_glow(w, part, where):
+    """A weapon entry's `phase_glow` {phase: 2 or 3, cubes: [globs on the part's cube names], slot}: those pieces
+    light up from that phase (C1: Hinae's paper streamers glow in her phase 3). Each gets a glowing shell SHELL px
+    round it on a pN_ bone (hidden before the phase by the phase look, HEROES_V2 4.3), painted in `slot` (default
+    the piece's own), in the hand and on the carried copy. A shell rather than a phase texture: the phase texture
+    (`_p2`) shows from phase 2 on, so a phase-3 glow needs its own pieces. None without the field."""
+    pg = w.get("phase_glow")
+    if not pg:
+        return None
+    for k in pg:
+        if k not in ("phase", "cubes", "slot"):
+            raise HerogenError("%s: phase_glow field %r is unknown (phase, cubes, slot)" % (where, k))
+    if pg.get("phase") not in (2, 3):
+        raise HerogenError("%s: phase_glow.phase must be 2 or 3" % where)
+    globs = list(pg.get("cubes") or [])
+    names = [c.get("name", "") for c in part.get("cubes", [])]
+    for g in globs:
+        if not any(fnmatch.fnmatchcase(n, g) for n in names):
+            raise HerogenError("%s: phase_glow cube glob %r matches no cube of %s" % (where, g, part["id"]))
+    if not globs:
+        raise HerogenError("%s: phase_glow needs cubes" % where)
+    return {"phase": int(pg["phase"]), "cubes": globs, "slot": pg.get("slot")}
+
+
+def _shell_wanted(shells, spec):
+    return any(fnmatch.fnmatchcase(spec.get("name", ""), g) for g in shells["cubes"])
+
+
+def _shell(shells, o, s, spec):
+    """The glowing shell of a weapon piece: its grip-space box SHELL px larger every way, from the phase on."""
+    o2 = [float(a) - SHELL for a in o]
+    s2 = [float(b) + 2 * SHELL for b in s]
+    spec2 = {k: v for k, v in spec.items() if k not in ("stamp", "pattern", "trim", "tip", "name")}
+    spec2.update(phase=shells["phase"], glow=True, outline=False)
+    if shells["slot"]:
+        spec2["slot"] = shells["slot"]
+    return o2, s2, spec2
 
 
 def _place_mount(model, w, index):

@@ -1,0 +1,235 @@
+{
+  "animations": {
+    "escape": {
+      "events": [],
+      "kind": "action",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 14,
+      "transition_ticks": 2
+    },
+    "intro": {
+      "events": [{"t": 1.05, "tick": 21, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.intro"}],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "last_stand": {
+      "events": [],
+      "kind": "action",
+      "length": 1.6,
+      "loop": "once",
+      "ticks": 32,
+      "total_ticks": 34,
+      "transition_ticks": 2
+    },
+    "move.exorcise": {
+      "class": "area",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "exorcise"},
+        {"t": 1.05, "tick": 21, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 16, "windup": 20},
+      "frames": {"active": 0.1, "recovery": 0.8, "windup": 1},
+      "hits": [1, 1.05],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "move.purify": {
+      "class": "light",
+      "events": [
+        {"t": 0.6, "tick": 12, "type": "hit"},
+        {"t": 0.6, "tick": 12, "type": "vfx", "value": "purify"},
+        {"t": 0.6, "tick": 12, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.purify"},
+        {"t": 0.65, "tick": 13, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 8, "windup": 12},
+      "frames": {"active": 0.1, "recovery": 0.4, "windup": 0.6},
+      "hits": [0.6, 0.65],
+      "kind": "action",
+      "length": 1,
+      "loop": "once",
+      "ticks": 20,
+      "total_ticks": 22,
+      "transition_ticks": 2
+    },
+    "move.purifying_dance": {
+      "class": "area",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "dance_beam"},
+        {"t": 1, "tick": 20, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.dance_sweep"},
+        {"t": 2.95, "tick": 59, "type": "cast"},
+        {"t": 3.7, "tick": 74, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.pray_clap"}
+      ],
+      "frame_ticks": {"active": 40, "recovery": 30, "windup": 20},
+      "frames": {"active": 2, "recovery": 1.5, "windup": 1},
+      "hits": [1, 2.95],
+      "kind": "action",
+      "length": 4.4,
+      "loop": "once",
+      "ticks": 88,
+      "total_ticks": 90,
+      "transition_ticks": 2
+    },
+    "move.sealing_circle": {
+      "class": "area",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "seal"},
+        {"t": 1.05, "tick": 21, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 16, "windup": 20},
+      "frames": {"active": 0.1, "recovery": 0.8, "windup": 1},
+      "hits": [1, 1.05],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "move.seven_talismans": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.8, "tick": 16, "type": "hit"},
+        {"t": 0.8, "tick": 16, "type": "vfx", "value": "barrier"},
+        {"t": 0.95, "tick": 19, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 4, "recovery": 16, "windup": 16},
+      "frames": {"active": 0.2, "recovery": 0.8, "windup": 0.8},
+      "hits": [0.8, 0.95],
+      "kind": "action",
+      "length": 1.7,
+      "loop": "once",
+      "ticks": 34,
+      "total_ticks": 36,
+      "transition_ticks": 2
+    },
+    "move.talisman_fan": {
+      "class": "light",
+      "events": [
+        {"t": 0.5, "tick": 10, "type": "hit"},
+        {"t": 0.5, "tick": 10, "type": "vfx", "value": "talismans"},
+        {"t": 0.5, "tick": 10, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.talisman_throw"},
+        {"t": 0.75, "tick": 15, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 6, "recovery": 8, "windup": 10},
+      "frames": {"active": 0.3, "recovery": 0.4, "windup": 0.5},
+      "hits": [0.5, 0.75],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "personal.1": {
+      "events": [{"t": 0.65, "tick": 13, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.kagura"}],
+      "kind": "action",
+      "length": 2.4,
+      "loop": "once",
+      "ticks": 48,
+      "total_ticks": 50,
+      "transition_ticks": 2
+    },
+    "personal.2": {
+      "events": [
+        {"t": 0.5, "tick": 10, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.sweep_broom"},
+        {"t": 1.05, "tick": 21, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.sweep_broom"},
+        {"t": 2.2, "tick": 44, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.hum"}
+      ],
+      "kind": "action",
+      "length": 2.6,
+      "loop": "once",
+      "ticks": 52,
+      "total_ticks": 54,
+      "transition_ticks": 2
+    },
+    "personal.3": {
+      "events": [{"t": 1.5, "tick": 30, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.pray_clap"}],
+      "kind": "action",
+      "length": 2.8,
+      "loop": "once",
+      "ticks": 56,
+      "total_ticks": 58,
+      "transition_ticks": 2
+    },
+    "phase.2": {
+      "events": [{"t": 0.2, "tick": 4, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.talismans_unfold"}],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "phase.3": {
+      "events": [{"t": 0.6, "tick": 12, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.radiant_glow"}],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "sec.loop": {
+      "events": [],
+      "kind": "base",
+      "length": 6,
+      "loop": "loop",
+      "ticks": 120,
+      "total_ticks": 124,
+      "transition_ticks": 4
+    },
+    "taunt": {
+      "events": [],
+      "kind": "action",
+      "length": 1.4,
+      "loop": "once",
+      "ticks": 28,
+      "total_ticks": 30,
+      "transition_ticks": 2
+    },
+    "ultimate": {
+      "class": "ultimate",
+      "events": [
+        {"t": 1.6, "tick": 32, "type": "hit"},
+        {"t": 1.6, "tick": 32, "type": "vfx", "value": "rite"},
+        {"t": 1.85, "tick": 37, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 6, "recovery": 30, "windup": 32},
+      "frames": {"active": 0.3, "recovery": 1.5, "windup": 1.6},
+      "hits": [1.6, 1.85],
+      "kind": "action",
+      "length": 3.3,
+      "loop": "once",
+      "ticks": 66,
+      "total_ticks": 68,
+      "transition_ticks": 2
+    },
+    "victory": {
+      "events": [{"t": 1.7, "tick": 34, "type": "sfx", "value": "factionclash:hero.hinae_shirasuzu.hum"}],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    }
+  },
+  "file": "hinae_shirasuzu",
+  "format": 2,
+  "generator": "herogen 1",
+  "source_sha256": "d74dbdda30239de6a2b380a963dfb4f31289edf98e60f9aaa11a8fd9ff02e9f2",
+  "tick": 0.05
+}

@@ -3,6 +3,9 @@
 A pose file is {"poses": {name: pose}}; a pose is
   bones     {bone: [rx, ry, rz]}   file degrees, added to the bone's rest rotation
   position  {bone: [x, y, z]}      file pixels (usually only `root`)
+  scale     {bone: [sx, sy, sz]}   (C1) the bone's scale (1 is its size; GeckoLib scales about the pivot): a part
+            bone that grows or shrinks, such as Hinae's ring of talismans unfolding from her chest; mirrored with the
+            bones (same values), inherited
   extends   another pose's name; its bones are inherited and this pose's own entries override them
   mirror    true: every right-side entry without a left counterpart gets one, mirrored (rx, -ry, -rz; x -> -x),
             and the other way round
@@ -34,10 +37,11 @@ K_PREFIX = "k:"             # chans[bone]["k:position"]: the FORM_VAR coefficien
 
 
 class Pose:
-    def __init__(self, name, rotation=None, position=None, fixes=(), knees=0.0, floor=None, form=None):
+    def __init__(self, name, rotation=None, position=None, fixes=(), knees=0.0, floor=None, form=None, scale=None):
         self.name = name
         self.rotation = dict(rotation or {})
         self.position = dict(position or {})
+        self.scale = dict(scale or {})
         self.fixes = tuple(fixes)
         self.knees = float(knees)
         self.floor = list(floor) if floor else None
@@ -50,6 +54,8 @@ class Pose:
             out.setdefault(b, {})["rotation"] = tuple(v)
         for b, v in self.position.items():
             out.setdefault(b, {})["position"] = tuple(v)
+        for b, v in self.scale.items():
+            out.setdefault(b, {})["scale"] = tuple(v)
         for b, k in self.form.items():
             out.setdefault(b, {}).setdefault("rotation", (0.0, 0.0, 0.0))
             out[b][K_PREFIX + "rotation"] = tuple(k)
@@ -82,15 +88,20 @@ def _vec3(v, where):
 def parse(name, spec, lookup, where="pose"):
     """A Pose from its spec; `lookup(name)` resolves `extends`."""
     for k in spec:
-        if k not in ("bones", "position", "extends", "mirror", "knees", "fix", "floor", "form", "_comment"):
+        if k not in ("bones", "position", "scale", "extends", "mirror", "knees", "fix", "floor", "form", "_comment"):
             raise HerogenError("%s %s: unknown field %r" % (where, name, k))
     rot = {b: _vec3(v, "%s %s.bones.%s" % (where, name, b)) for b, v in (spec.get("bones") or {}).items()}
     pos = {b: _vec3(v, "%s %s.position.%s" % (where, name, b)) for b, v in (spec.get("position") or {}).items()}
     form = {b: _vec3(v, "%s %s.form.%s" % (where, name, b)) for b, v in (spec.get("form") or {}).items()}
+    scale = {b: _vec3(v, "%s %s.scale.%s" % (where, name, b)) for b, v in (spec.get("scale") or {}).items()}
+    for b, v in scale.items():
+        if min(v) <= 0:
+            raise HerogenError("%s %s.scale.%s: a scale must be above 0, got %r" % (where, name, b, list(v)))
     if spec.get("mirror"):
         rot = _mirrored(rot, mirror_rotation)
         pos = _mirrored(pos, mirror_position)
         form = _mirrored(form, mirror_rotation)
+        scale = _mirrored(scale, tuple)
     fixes = list(spec.get("fix", []))
     for f in fixes:
         if f not in FIXES:
@@ -102,6 +113,7 @@ def parse(name, spec, lookup, where="pose"):
         rot = dict(base.rotation, **rot)
         pos = dict(base.position, **pos)
         form = dict(base.form, **form)
+        scale = dict(base.scale, **scale)
         inherited = [f for f in base.fixes if not (f == "ground" and "floor" in fixes)
                      and not (f == "floor" and "ground" in fixes)]     # a pose's own placement fix wins
         fixes = inherited + [f for f in fixes if f not in inherited]
@@ -109,7 +121,7 @@ def parse(name, spec, lookup, where="pose"):
         floor = floor if floor is not None else base.floor
     if "floor" in fixes and "ground" in fixes:
         raise HerogenError("%s %s: fix ground and floor exclude each other" % (where, name))
-    return Pose(name, rot, pos, fixes, knees, floor, form)
+    return Pose(name, rot, pos, fixes, knees, floor, form, scale)
 
 
 class Library:
