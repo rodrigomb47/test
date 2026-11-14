@@ -7,7 +7,8 @@ films and sheets). `check --style` also checks the style fixtures in
 herosrc/style (built in memory, never written). G6a/b add the coplanar-face rule to `check` and `lint` (the parts
 library on every base and the sample outfits, lint.py). G10 adds `anim-previews --locomotion` (the mobility set's
 films and sheets). G7 makes `check` cover all of 14.2: the file-level rules of assets.py on what the mod ships (the
-ones the Java HeroAssetsTest mirrors), `--slice`, and the distinctness NOTEs of distinct.py."""
+ones the Java HeroAssetsTest mirrors), `--slice`, and the distinctness NOTEs of distinct.py. C1 adds `hero-previews
+<id>` (a hero's own set in its one body, render/hero_previews.py)."""
 import argparse
 import json
 import os
@@ -444,6 +445,25 @@ def cmd_parts_previews(args):
     return 0
 
 
+def cmd_hero_previews(args):
+    """A hero's own preview set (C1-C4): docs/heroes-v2/previews/heroes/<id>/, in its own body only."""
+    from render import hero_previews
+    bad = 0
+    for hid in args.ids:
+        out = args.out or hero_previews.out_dir(hid)
+        if args.check:
+            problems = hero_previews.check(hid, out, gifs=not args.no_gif)
+            for p in problems:
+                print("DIFF %s: %s" % (hid, p))
+            if not problems:
+                print("OK   %s: the committed previews match a fresh render" % out)
+            bad += len(problems)
+            continue
+        for k, p in sorted(hero_previews.write_all(hid, out, gifs=not args.no_gif).items()):
+            print("%s: %s" % (k, p))
+    return 1 if bad else 0
+
+
 def cmd_stats(args):
     for hid in _ids(args):
         files, b = build.build_files(hid)
@@ -559,6 +579,15 @@ def main(argv=None):
     pp.add_argument("--check", action="store_true", help="render in a temporary folder and fail if a committed "
                                                          "sheet differs (stale)")
     pp.set_defaults(fn=cmd_parts_previews)
+
+    hp = sub.add_parser("hero-previews", help="a hero's own preview set in docs/heroes-v2/previews/heroes/<id>/ "
+                                              "(turnaround, faces, phases, a GIF per move, string, locomotion)")
+    hp.add_argument("ids", nargs="+")
+    hp.add_argument("--out", default=None)
+    hp.add_argument("--no-gif", action="store_true")
+    hp.add_argument("--check", action="store_true", help="render in a temporary folder and fail if a committed "
+                                                         "preview differs")
+    hp.set_defaults(fn=cmd_hero_previews)
     s = sub.add_parser("stats", help="budgets per hero")
     s.add_argument("ids", nargs="*")
     s.add_argument("--style", action="store_true", help="include the style fixtures")

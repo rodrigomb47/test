@@ -4,9 +4,12 @@ Per clip:
   keys        every channel has a key at 0 and none after the end; values are finite; easings are GeckoLib names
   loop        a loop's channels end where they start (first key = last key)
   markers     on whole ticks, before the clip's last tick (GeckoLib never fires an event on the frame a clip ends)
-  class       the first hit or cast comes at least the class's minimum wind-up after the start, and the recovery after
-              the last one is at least the class's minimum (6.4: light 0.4 / 0.3, heavy 0.8 / 0.8, area 1.0 / 0.8,
-              ultimate 1.5 / 1.5)
+  class       the first hit or cast comes at least the class's minimum wind-up after the action's start, and the
+              recovery after the last one is at least the class's minimum (6.4: light 0.4 / 0.3, heavy 0.8 / 0.8, area
+              1.0 / 0.8, ultimate 1.5 / 1.5). C1: the wind-up counts from the action's start, the controller's blend
+              included, as the server's frames and the kit validator count it (writer.frames_of, HEROES_V2 4.8); it
+              counted clip time before, 2 ticks stricter than the kit, so a kit at the class minimum (Natsuho's pounce,
+              0.8 s) could not be matched within one tick
   face        face_ctrl values are whole frame numbers in range (eyes 0-12, mouth 0-8, cheeks 0-4), and every change
               is a jump (pre/post), never a slide through other frames
   joints      the rig's joint limits (elbow and knee flex one way 0-150, head yaw 80 and pitch 60, neck yaw 60 and
@@ -102,9 +105,11 @@ def check_markers(clip):
             out.append("%s: class %r is unknown" % (clip.name, cls))
         else:
             wmin, rmin = CLASS_MIN[cls]
-            if hits[0] < wmin - 1e-9:
-                out.append("%s: the first hit at %.2f s is shorter than the %s wind-up minimum %.2f s" % (
-                    clip.name, hits[0], cls, wmin))
+            blend = TRANSITION_TICKS[clip.meta.get("kind", "base")] * TICK
+            if hits[0] + blend < wmin - 1e-9:
+                out.append("%s: the first hit at %.2f s (%.2f s from the action's start, the blend included) is "
+                           "shorter than the %s wind-up minimum %.2f s" % (clip.name, hits[0], hits[0] + blend, cls,
+                                                                         wmin))
             rec = clip.length - hits[-1] - TICK
             if rec < rmin - 1e-9:
                 out.append("%s: the recovery %.2f s after the last hit is shorter than the %s minimum %.2f s" % (

@@ -2707,3 +2707,159 @@ style sources of before the polish, the shield test fails on every base (11-18 p
 - The club string's hits and the guard on a chibi_m (2.6-2.9 px off the handle, above).
 - In game (A2, CP2): the slam's form-scaled fold depends on `v.fc_dhip`, which HeroModel sets; worth a look on an adult
   hero that the hips fold and the club meets the ground.
+
+---
+
+## C1: Natsuho Komezaki (2026-11-14)
+
+HEROES_V2.md 15.2 row C1, Natsuho's half (Hinae Shirasuzu, the row's other hero, is still open). This adds her source
+file, her art and her signature animations. Her kit is the slice fixture's
+(`src/test/resources/heroes/slice/natsuho_komezaki.json`, copied field for field: the server definition in
+`data/factionclash/heroes/` belongs to the engine side). She has one body for good (the owner's rule of 2026-11-13,
+HEROES_V2 3.6): **adult, female, slim, drawn at 92%** (SLICE_PLAN 3.1). Every preview shows her only in that body.
+No hit tick, marker or timing file of an existing clip changed: the shared libraries build byte for byte as before,
+and her animation and timing files are new.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/natsuho_komezaki.hero.json` | the source: the kit, `art` (body, palette, parts, face, claw gauntlets, phase looks) and `animations` (style `fists`, blink `normal`, the G10 variant `cat_twist`, 95 poses of her own, 18 signatures) |
+| `herosrc/parts/tails/cat_puff.json` | new part: the phase-2 puffed fur over her tail (below) |
+| generated | `geo/hero`, `textures/entity/hero` (texture and glow mask), `heroes/*.visual.json`, `animations/hero/natsuho_komezaki.animation.json`, `data/factionclash/hero_timings/natsuho_komezaki.json` |
+| `tools/herogen/render/hero_previews.py`, `cli.py hero-previews <ids> [--check]` | a hero's own preview set in `docs/heroes-v2/previews/heroes/<id>/`, drawn in the hero's one body only. The captions are generic (the pronoun comes from the base); `OWN_CAPTIONS` holds a hero's own lines (what its phase looks, escape and variants show) |
+| `gen.py` (chain `reuse`), `lint.py` and `parts.py` (`requires`) | the generator additions the puffed tail needed |
+| `anim/quality.py`, `anim/timing.py` | the class wind-up minimum counts from the action's start (below) |
+| `tests/test_natsuho.py` | 12 tests (below) |
+
+### Her look
+
+She is the harbour cat: a cream bob with an orange accent and cream tufted cat ears, a long cat tail and calico
+patches. She wears an open jacket over shorts, a belt and an obi sash, tabi boots and a choker with a bell, and a paw
+crest on her back (her emblem). Her palette is the outfit's: orange `#E0823A`, cream `#F4EFE6`, charcoal, a red
+trim, plus a gold glow `#FFB23E`. Her claw gauntlets are worn on both hands (`weapons/claw_gauntlet`, `pair`,
+`worn`). Her face has amber cat eyes with slit pupils, flicked lashes, thin arched brows, a cat mouth with a left
+fang, a soft blush and whisker paint. One face override fits her tsundere manner: her `happy` is a blushing scowl
+(eyes `angry`, mouth `frown`, cheeks `blush`), so she never quite looks pleased.
+
+- **Phase 2** (60%): her tail fur puffs up (`tails/cat_puff`, shown from phase 2).
+- **Phase 3** (25%): her eyes glow.
+
+**The puffed tail** is a chain that `reuse`s the bones of the tail an earlier part built. It has no points of its
+own: it takes `tails/cat_long`'s points, so it fits whatever size that tail chose. It declares no bone. Worn with
+`"phase": 2`, its boxes nest in `p2_tail_1..5` children of the tail's own bones, so it follows every key and every
+spring of the tail. Each segment is a fat box with two boxes rolled about it (`fine_`) and a tapered tip of fur
+tufts. A reuse without the earlier chain, or with points or copies of its own, is an error. A part's new
+`requires` field names the parts it is worn over: `lint`, the geometry check and the parts sheets build
+`tails/cat_puff` over `tails/cat_long`, and the static rule checks that each required part exists.
+
+### Signature animations
+
+Her own file has the 18 signatures and the `cat_twist` variant's `move.air_jump` (G10). The fists library and the
+core cover the rest. Each move's clip has the kit's frames to the tick:
+
+| Clip | Length | Class | Server frames (ticks) | What happens |
+|---|---|---|---|---|
+| `move.claw_string` | 1.2 s | light | 9 / 10 / 7, hits 9, 13, 18 | right claw raked down, left raked back, both claws down together (the bleeding finisher); upper body and hips |
+| `move.pounce` | 1.9 s | heavy | 16 / 4 / 20 | the crouch on her own foot spots, the hip wiggle, the spring (`hit` 16), the landing with both claws driven down (`cast` 19), the paw lick with her eyes shut (her recovery weak point) |
+| `move.hiss` | 1.8 s | area | 20 / 2 / 16 | the jolt back, the bristle (back arched, ears flat, the tail straight up and trembling: the tell), the blast (`hit` 20, `cast` 21) |
+| `move.scratch_dash` | 1.75 s | heavy | 16 / 5 / 16 | the side-on sprinter's crouch with the claw trailing, the burst (`hit` 16), the rake mid-dash, the brake on deep knees (`cast` 20) |
+| `move.cat_reflex` | 1.8 s | heavy | 20 / 2 / 16 | the counter stance held (the stance is the wind-up, 6.4), the riposte at its end (`hit` 20, `cast` 21), the hop back |
+| `move.zoomies` | 2.8 s | heavy | 18 / 16 / 24 | the crazed crouch, the launch (`hit` 18), a frantic sprint in place to the skid (`cast` 33), a dizzy sway, then arms crossed and head turned away |
+| `ultimate` | 3.1 s | ultimate | 30 / 4 / 30 | the play bow and the arched stretch, the yowl (`hit` 30, `cast` 33), down into the hunter's crouch |
+| `state.frenzy` | 1.6 s | - | - | starts at the ultimate's hit (the state begins there): a full-body shake of the fur, the hunter's crouch with the tail lashing |
+| `phase.2`, `phase.3` | 0.9, 1.1 s | - | - | inside the 1.0 s and 1.2 s transitions: the flustered jolt as the fur puffs out ("F-fine!"); the bowed head coming up with glowing eyes |
+| `intro` | 1.5 s | - | - | arms folded and head turned away, a glance back, the guard (the server holds the intro as long as the clip) |
+| `victory`, `taunt` | 2.0, 1.5 s | - | - | the purr she will deny, the smug peek and the "shoo"; the bored yawn and the "come on" curl of the claw |
+| `last_stand`, `escape` | 1.6, 0.6 s | - | - | the claws struck together, then flung out ("This is MY harbour"); the startled jolt and look back, then the run (upper body over `move.run`) |
+| `personal.1-3` | 2.4, 1.4, 2.6 s | - | - | the paw lick, the ear flick and head shake (the bell), the stretch and yawn |
+
+- **Markers**: a move releases on a `hit`. Where the kit's active part is longer than its hits, a `cast` marks the
+  active part's last tick: the server's active part runs from the first `hit` or `cast` to the last (4.8). That is
+  how a one-hit leap, dash or charge gets the kit's active ticks.
+- **Sounds** (SOUND.md 4.7, 5): only the client kinds are markers: each move's `release`, the pounce's `end`
+  (the paw lick), the phases, the intro, the taunt's and the victory's emotes, and the quirks of `personal.1-3`.
+  Wind-ups, impacts, the ultimate's sting and the frenzy are played by the server, so they have no marker.
+- **Faces**: every move, the ultimate, the state, the phases and the end-of-fight moments key `face_ctrl`.
+- **Rules**: every own clip passes the quality rules on all six bases. Her claws stay clear of her body on every tick
+  (`grips.animation_problems`). Every leg pose was solved on her stance's four sole corners (planted feet). The arm
+  poses were solved with a small Nelder-Mead arm solver on her own skeleton, against hand-point and claw-direction
+  targets and the claw clearance, with waypoints where an arm crosses in front of her (crossed arms, wind-ups past
+  the thighs). The neck stays within its 40-degree pitch.
+- **Not yet in the engine**: `last_stand` and `escape` have no action code in `HeroActions` (6.13). They are ready
+  for the engine side and are named in 15.2's C1 row.
+
+### The class wind-up minimum counts from the action's start
+
+The quality rule compared the first `hit`'s clip time with the class minimum. The server's frames, and the kit
+validator, count from the action's start, the controller's 2-tick blend included (`writer.frames_of`, 4.8). So the
+rule was 2 ticks stricter than the kit, and a kit at the class minimum could not be matched within one tick
+(Natsuho's pounce and scratch dash: 0.8 s heavy wind-ups). The rule now adds the blend, and the timing NOTE uses the
+written `frames.windup`. No library clip's result changed. `test_anim` now checks both sides of the line: a `hit` at
+0.25 s on a light clip fails, and 0.30 s passes.
+
+### Previews (`docs/heroes-v2/previews/heroes/natsuho_komezaki/`)
+
+All are drawn in her one body. `hero-previews natsuho_komezaki --check` re-renders the set and compares it byte for
+byte.
+
+- `turnaround.png`
+- `faces.png`: the 12 moods, the blink half and closed, the two talk frames, at 3/4
+- `phases.png`: phases 1-3
+- `sheet.png`: every own clip as a filmstrip
+- a GIF per signature move (`move_*.gif`)
+- `ultimate.gif`, with `state.frenzy` from the hit
+- `string.gif`: `attack.1-3` and the follow-up chains
+- `moments.gif`: intro, the two phases, taunt, victory, last stand, escape
+- `idles.gif`: `personal.1-3`
+- `locomotion.gif`: walk and run, the crouch jump into the leap, the air jump, the land roll, the wall kick, climb
+  and mantle
+
+### Tests (383 -> 395: `tests/test_natsuho.py`, 12)
+
+- Her one body: adult, slim, 92, and no phase changes it.
+- The kit is the fixture's.
+- Every move's and the ultimate's `frame_ticks` equal the kit's, with the claw string's hits at 9, 13 and 18, and
+  `assets.check_frames` passes on the written chain.
+- Her own clips pass every rule on every base.
+- The claws stay clear on every second tick.
+- Every sound id is in her catalogue, and every slot named above has its marker.
+- `face_ctrl` keys are present where the moment needs a face.
+- The puffed tail's bones are children of the tail's bones and show from phase 2.
+- Chain `reuse` takes the earlier chain's points, and fails without it.
+- `lint` wears the required part, and the static rule is clean.
+- The preview captions are generic for any other hero, and her own lines apply only to her.
+
+`test_style`'s every-part-on-every-base test now wears a part over the parts it `requires`. `test_anim`'s wind-up
+case moved with the rule (above). Sabotage: with the pounce's `hit` one tick late, the frames test fails
+(16 / 4 / 20 against 17 / 3 / 20).
+
+### Decisions
+
+1. **Her kit is the fixture's verbatim**: the art pipeline does not change a kit. The engine side copies the same
+   fields into her definition.
+2. **`hit` then `cast` for a one-release move** (above), not a second `hit`. A second `hit` would deal damage twice:
+   the markers replace the form's hits when the counts match.
+3. **The puffed tail is a phase part over the real tail** (`reuse`), not a second tail. It cannot drift from the tail
+   it covers, and before phase 2 its bones are simply hidden.
+4. **The wind-up rule follows the server's frames** (above).
+5. **The previews are a hero's own set** in `previews/heroes/<id>/`. The library previews (the style and locomotion
+   sets) stay as they are.
+
+### Open items
+
+- **Engine side**: action codes for `last_stand` and `escape` (6.13), and her definition in `data/factionclash/heroes/`
+  (the fixture's fields).
+- **The counter's riposte**: the clip shows the riposte at the stance's end, as the kit's frames do. When she is
+  struck during the stance, the server answers at once. Playing the riposte at that moment needs the engine to jump
+  the clip, or a separate riposte action.
+- **Library previews that still show her look on a second body** were made before the one-body rule, from the
+  `natsuho` sample outfit in `herosrc/style/outfits.json`, not from her source:
+  - the fists style set (`previews/anim/styles/fists*`, on a chibi_f and an adult_f)
+  - `previews/anim/locomotion/hero_natsuho.*` (on a teen_f and a chibi_f)
+  - the sample-outfit sheet `previews/parts/outfits.png` (all six bases) and `previews/parts/weapons_poses.png` (the
+    sample outfit's own base, `teen_f`)
+
+  C1 did not touch them: the libraries and the sample outfit they are drawn from build as before. They should be
+  re-rendered with a style fixture in her place when next touched.
+- Hinae Shirasuzu, the other half of C1.

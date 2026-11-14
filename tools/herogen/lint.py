@@ -11,7 +11,8 @@ For every part (or the ids and globs given):
 - on the slim and large builds, and at the minimum and maximum of each param on the smallest and the largest base:
   assembly, packing and the geometry checks (widths and params must not break a part);
 - once: every `conflicts` glob names an existing part, every mirrored cube (`<name>:l`) is the exact mirror of its
-  right-hand cube, and the part declares what it `occupies` (weapons excepted).
+  right-hand cube, and the part declares what it `occupies` (weapons excepted); C1: every part a part `requires`
+  exists, and a part with `requires` is built over those parts everywhere (tails/cat_puff over tails/cat_long).
 Then every sample outfit (herosrc/style/outfits.json: the slice heroes' looks, combinations a single part never
 shows, such as a sash over a hakama band) on all six bases, with the same checks as a part.
 
@@ -80,6 +81,23 @@ def part_ids(patterns=None):
     return ids
 
 
+def required_entries(pid, sheet=False):
+    """C1: the art.parts entries of the parts `pid` is worn over (its `requires`: tails/cat_puff puffs up the fur of
+    tails/cat_long), in the colours the part itself gets, so lint and the sheets build it as a hero wears it."""
+    cat = pid.split("/")[0]
+    out = []
+    for req in load_part(pid).get("requires", []) if not pid.startswith("weapons/") else []:
+        e = {"part": req}
+        if not sheet:
+            e.update(SLOT_MAP)
+        elif cat in SHEET_SLOTS:
+            e.update(SHEET_SLOTS[cat])
+        else:
+            e.update(SLOT_MAP)
+        out.append(e)
+    return out
+
+
 def lint_hero(pid, base_id, params=None, sheet=False):
     """A mannequin on `base_id` wearing part `pid` (an in-memory hero). `sheet` dresses it for the parts sheets
     (natural colours) instead of the lint colours (every slot distinct, so a coplanar face cannot hide)."""
@@ -114,6 +132,7 @@ def lint_hero(pid, base_id, params=None, sheet=False):
     if pid.startswith("hair/"):
         parts[0] = dict(entry, color="hair", detail="hair_accent", alt="primary" if sheet else "secondary")
     elif not pid.startswith("weapons/"):
+        parts.extend(required_entries(pid, sheet))
         parts.append(entry)
     safe = pid.replace("/", "_")
     anims = {"blink": "normal"}
@@ -202,7 +221,10 @@ def geometry_check(pid, base_id, build_name="standard", params=None):
         else:
             entry = {"part": pid, "params": dict(LINT_PARAMS.get(pid, {}), **(params or {})), "emblem": EMBLEM}
             entry.update(SLOT_MAP)
-            apply_part(m, entry, 0)
+            reqs = required_entries(pid)
+            for i, r in enumerate(reqs):
+                apply_part(m, r, i)
+            apply_part(m, entry, len(reqs))
         pack(m)
     except HerogenError as e:
         return [str(e)]
@@ -219,6 +241,9 @@ def static_check(pid, all_ids):
             out.append("conflicts %r matches no part" % g)
     if not part.get("occupies") and part.get("category") != "weapons":
         out.append("declares no occupies tags (two parts on one slot could not be refused)")
+    for r in part.get("requires", []):
+        if r not in all_ids:
+            out.append("requires %r, which is not a part" % r)
     m = Model("lint", "adult_m")
     try:
         if pid.startswith("weapons/"):
@@ -228,7 +253,10 @@ def static_check(pid, all_ids):
             if pid in LINT_PARAMS:
                 entry["params"] = dict(LINT_PARAMS[pid])
             entry.update(SLOT_MAP)
-            apply_part(m, entry, 0)
+            reqs = required_entries(pid) if all(r in all_ids for r in part.get("requires", [])) else []
+            for i, r in enumerate(reqs):
+                apply_part(m, r, i)
+            apply_part(m, entry, len(reqs))
     except HerogenError as e:
         return out + [str(e)]
     by_name = {c.name: c for c in m.cubes}

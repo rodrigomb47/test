@@ -1,0 +1,3209 @@
+{
+  "_comment": "Natsuho Komezaki, the harbour cat (SLICE_PLAN 3.1, kit sheet docs/heroes-v2/kits/natsuho_komezaki.txt). The kit fields are the slice fixture's (src/test/resources/heroes/slice/natsuho_komezaki.json); art and animations are source only (HEROES_V2 12.5, 12.6). One body for good (the owner's rule of 2026-11-13, HEROES_V2 3.6): an adult of ordinary size, slim, drawn at 92%.",
+  "format": 2,
+  "id": "natsuho_komezaki",
+  "name": "Natsuho Komezaki",
+  "title": "the Harbour Cat",
+  "description": "A prickly dock brawler who insists she only fights for fish.",
+  "gender": "female",
+  "archetype": "cat",
+  "rarity": "epic",
+  "element": "physical",
+  "gear": [{"item": "iron_sword", "name": "Claw Gauntlets"}],
+  "behaviour": {"combat_role": "striker", "duel_style": "rushdown", "duty": "fisherman"},
+  "basic_attack": {
+    "style": "melee",
+    "combo": 3,
+    "on_hit": [{"type": "dot", "amount": 1, "seconds": 3, "max_stacks": 2, "chance": 30}]
+  },
+  "moves": [
+    {
+      "id": "claw_string",
+      "name": "Claw String",
+      "form": "combo",
+      "class": "light",
+      "band": ["close"],
+      "phases": [1, 2, 3],
+      "weight": 6,
+      "cooldown": 10,
+      "frames": {"windup": 0.45, "active": 0.5, "recovery": 0.35},
+      "strikes": [
+        {"effects": [{"type": "damage", "amount": {"attack_percent": 45}}]},
+        {"effects": [{"type": "damage", "amount": {"attack_percent": 45}}]},
+        {
+          "effects": [
+            {"type": "damage", "amount": {"attack_percent": 70}},
+            {"type": "dot", "amount": 1, "seconds": 4, "max_stacks": 2}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pounce",
+      "name": "Pounce",
+      "form": "leap",
+      "class": "heavy",
+      "band": ["mid"],
+      "range": 8,
+      "radius": 1.5,
+      "cooldown": 10,
+      "frames": {"windup": 0.8, "active": 0.2, "recovery": 1.0},
+      "effects": [{"type": "damage", "amount": {"attack_percent": 110}}, {"type": "knockback", "strength": 1}]
+    },
+    {
+      "id": "hiss",
+      "name": "Hiss",
+      "form": "cone",
+      "class": "area",
+      "band": ["close"],
+      "range": 4,
+      "angle": 90,
+      "cooldown": 9,
+      "frames": {"windup": 1.0, "active": 0.1, "recovery": 0.8},
+      "effects": [
+        {"type": "effect", "id": "weakness", "level": 1, "seconds": 4},
+        {"type": "knockback", "strength": 2}
+      ],
+      "look": {"sound": "minecraft:entity.cat.hiss"}
+    },
+    {
+      "id": "scratch_dash",
+      "name": "Scratch Dash",
+      "form": "dash",
+      "class": "heavy",
+      "band": ["mid"],
+      "range": 6,
+      "cooldown": 8,
+      "frames": {"windup": 0.8, "active": 0.25, "recovery": 0.8},
+      "effects": [
+        {"type": "damage", "amount": {"attack_percent": 80}},
+        {"type": "dot", "amount": 1, "seconds": 4, "max_stacks": 2}
+      ],
+      "followups": [{"move": "claw_string", "chance": 60}]
+    },
+    {
+      "id": "cat_reflex",
+      "name": "Cat Reflex",
+      "form": "counter",
+      "class": "heavy",
+      "band": ["close"],
+      "phases": [2, 3],
+      "stance": 1.0,
+      "absorb": 70,
+      "cooldown": 10,
+      "frames": {"windup": 1.0, "active": 0.1, "recovery": 0.8},
+      "effects": [
+        {"type": "damage", "amount": {"attack_percent": 60}},
+        {"type": "damage", "amount": {"attack_percent": 60}},
+        {"type": "move_self", "direction": "back", "distance": 3}
+      ]
+    },
+    {
+      "id": "zoomies",
+      "name": "Zoomies",
+      "form": "charge",
+      "class": "heavy",
+      "band": ["mid", "far"],
+      "phases": [3],
+      "range": 14,
+      "speed": 180,
+      "wall_stun": true,
+      "repeatable": true,
+      "cooldown": 10,
+      "frames": {"windup": 0.9, "active": 0.8, "recovery": 1.2},
+      "effects": [{"type": "damage", "amount": {"attack_percent": 90}}, {"type": "knockback", "strength": 2}],
+      "followups": [{"move": "zoomies", "chance": 50}]
+    }
+  ],
+  "ultimate": {
+    "id": "midnight_frenzy",
+    "name": "Midnight Frenzy",
+    "form": "self",
+    "class": "ultimate",
+    "frames": {"windup": 1.5, "active": 0.2, "recovery": 1.5},
+    "effects": [{"type": "empower", "seconds": 8, "state": "frenzy"}],
+    "followups": [{"move": "pounce", "chance": 100}],
+    "line": "Midnight's mine. Try and keep up!"
+  },
+  "states": [
+    {
+      "name": "frenzy",
+      "stats": [{"stat": "attack_speed", "percent": 25}, {"stat": "speed", "percent": 20}],
+      "on_hit": [{"type": "dot", "amount": 0.5, "seconds": 2}],
+      "face": "angry"
+    }
+  ],
+  "passives": [
+    {
+      "name": "Nine Lives",
+      "trigger": "on_low_health",
+      "trigger_value": 30,
+      "once_per_fight": true,
+      "cooldown": 6,
+      "effects": [
+        {"type": "shield", "amount": 4},
+        {"type": "effect", "id": "speed", "level": 2, "seconds": 6},
+        {"type": "move_self", "direction": "back", "distance": 6}
+      ]
+    },
+    {
+      "name": "Cat Crit",
+      "trigger": "on_crit",
+      "form": "self",
+      "cooldown": 3,
+      "effects": [{"type": "stat", "stat": "speed", "percent": 15, "seconds": 3}]
+    }
+  ],
+  "boss": {
+    "health_scale": 350,
+    "poise": 80,
+    "weak_points": [{"point": "water", "hint": "Don't you DARE get me wet!"}, "recovery"],
+    "phases": [
+      {"at": 100},
+      {
+        "at": 60,
+        "transition": {
+          "seconds": 1.0,
+          "line": "F-fine! I'll take you seriously, but only this once!",
+          "face": "flustered"
+        }
+      },
+      {"at": 25, "transition": {"seconds": 1.2, "line": "Nobody... corners... a cat!"}}
+    ],
+    "reactions": [
+      {"when": "target_blocking", "move": "scratch_dash", "chance": 50, "cooldown": 8},
+      {"when": "target_drawing_bow", "move": "pounce", "chance": 60, "cooldown": 8},
+      {"when": "target_eating", "move": "pounce", "chance": 70, "cooldown": 10}
+    ],
+    "intro": {"line": "Huh? You're in my harbour. ...Fine. I'll show you out myself."}
+  },
+  "personality": {
+    "temperament": "tsundere",
+    "traits": {
+      "aggression": 65,
+      "honour": 65,
+      "ambition": 60,
+      "caution": 45,
+      "greed": 55,
+      "sociability": 40,
+      "loyalty": 70,
+      "volatility": 45
+    },
+    "when_losing": "escape",
+    "likes": ["cod", "salmon", "string"],
+    "dislikes": ["pufferfish", "water_bucket"],
+    "quirks": ["pretends not to listen, then remembers every word"]
+  },
+  "leader": {
+    "title": "Boss of the Harbour",
+    "faction_names": ["Bellwhisker Harbour", "The Calico Wharf League"],
+    "short_name": "Bellwhisker",
+    "motto": "Nobody asked for your help.",
+    "colors": {"primary": "#E0823A", "secondary": "#F4EFE6", "accent": "#2A2526"},
+    "banner": {
+      "base": "orange",
+      "patterns": [{"pattern": "triangles_top", "color": "black"}, {"pattern": "circle", "color": "white"}]
+    },
+    "base_style": "tide_port",
+    "culture": "east",
+    "economy_focus": ["food", "scouting"]
+  },
+  "talents": [{"id": "angler_lord", "realm": true}, "lookout"],
+  "voice": {"blip": "xylophone", "pitch": 1.35, "rate": 2},
+  "lines": {
+    "founding": ["This harbour's mine now. Don't get the wrong idea, I'm not doing it for you."],
+    "greeting": ["{player}? I wasn't waiting for you. ...Did you bring fish?"],
+    "kill": ["Hmph. Too slow."],
+    "escape": ["I-I'm not running away! I just... have fish to catch. Don't follow me!"],
+    "last_stand": ["This is MY harbour. I'm not going anywhere. ...It's not for them, got it?!"],
+    "fallen": ["Tch... keep my spot warm."]
+  },
+  "mobility": {"primary": {"trait": "acrobat", "tier": 3}, "secondary": {"trait": "climber", "tier": 1}},
+  "art": {
+    "base": "female",
+    "form": "adult",
+    "build": "slim",
+    "scale": 92,
+    "palette": {
+      "skin": "#F5D9C4",
+      "hair": "#EDE6DA",
+      "hair_accent": "#E0823A",
+      "eyes": "#E2A33B",
+      "primary": "#E0823A",
+      "secondary": "#F4EFE6",
+      "accent": "#3A3436",
+      "trim": "#C8323C",
+      "metal": "#C9CED6",
+      "leather": "#2A2526",
+      "glow": "#FFB23E"
+    },
+    "base_layer": {"base_top": "secondary", "base_bottom": "accent", "shoes": "leather"},
+    "parts": [
+      {"part": "hair/bob", "color": "hair", "params": {"tufts": 1, "ahoge": 1, "length": 7}},
+      {
+        "part": "ears/cat_tufted",
+        "color": "leather",
+        "alt": "blush",
+        "detail": "secondary",
+        "left": {"color": "primary"}
+      },
+      {"part": "tails/cat_long", "color": "hair", "alt": "hair_accent"},
+      {"part": "tails/cat_puff", "phase": 2, "color": "hair", "alt": "hair_accent"},
+      {
+        "part": "outfit_top/jacket_open",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim",
+        "params": {"hem": 0.5}
+      },
+      {"part": "outfit_bottom/shorts", "color": "accent", "trim": "accent"},
+      {"part": "accessories/belt", "color": "leather", "trim": "metal"},
+      {"part": "accessories/sash_obi"},
+      {"part": "legwear/tabi_boots", "color": "leather", "alt": "secondary", "trim": "metal", "params": {"socks": 1}},
+      {"part": "accessories/choker_bell", "color": "trim", "alt": "eyes", "detail": "leather"},
+      {"part": "markings/calico", "alt": "hair_accent", "detail": "leather"},
+      {"part": "markings/crest", "emblem": "paw", "color": "secondary", "params": {"back": 1}}
+    ],
+    "face": {
+      "eyes": "cat",
+      "pupil": "slit",
+      "lashes": 2,
+      "flick": "up",
+      "brows": "thin_arched",
+      "mouth": "cat",
+      "fang": "left",
+      "blush": "soft",
+      "marks": [{"type": "face_paint", "style": "whiskers", "color": "leather"}],
+      "overrides": {"happy": {"eyes": "angry", "mouth": "frown", "cheeks": "blush"}}
+    },
+    "weapon": {
+      "prop": "weapons/claw_gauntlet",
+      "hand": "pair",
+      "sheathed": "worn",
+      "color": "metal",
+      "alt": "leather",
+      "trim": "trim"
+    },
+    "phases": [
+      {"phase": 2, "show": ["p2_tail_1", "p2_tail_2", "p2_tail_3", "p2_tail_4", "p2_tail_5"]},
+      {"phase": 3, "eyes_glow": true}
+    ]
+  },
+  "animations": {
+    "style": "fists",
+    "blink": "normal",
+    "variants": ["cat_twist"],
+    "poses": {
+      "natsuho.pounce_low": {
+        "_comment": "Pounce wind-up: the cat's crouch on the stance's own foot spots (knees solved so no foot moves), the torso pitched far forward with the head up and the eyes on the target, both claws down in front of the feet like front paws, ears pricked forward, the tail low.",
+        "bones": {
+          "body": [30, 6, 0],
+          "waist": [4, 0, 0],
+          "chest": [8, 2, 0],
+          "neck": [-32, -8, 0],
+          "leg_r": [-29.4, 0.0, 5.0],
+          "shin_r": [76, 0, 0],
+          "foot_r": [-46.5, -2.7, -4.4],
+          "leg_l": [-46.6, 0.0, -3.7],
+          "shin_l": [76, 0, 0],
+          "foot_l": [-29.3, 1.6, 3.4],
+          "arm_r": [-61.3, 15.2, -38.1],
+          "forearm_r": [-1.0, 1.4, -0.0],
+          "hand_r": [42.1, -49.7, -0.5],
+          "arm_l": [-61.0, -6.7, 5.4],
+          "forearm_l": [-1.0, -49.2, 0.8],
+          "hand_l": [43.6, 58.1, 0.1],
+          "ear_r": [8, 0, -4],
+          "ear_l": [8, 0, 4],
+          "tail_1": [-8, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.pounce_load": {
+        "_comment": "Pounce, the last instant before the spring: lower still on the same foot spots, the hips gathered, still as a stone.",
+        "bones": {
+          "body": [36, 4, 0],
+          "waist": [4, 0, 0],
+          "chest": [8, 2, 0],
+          "neck": [-36, -6, 0],
+          "leg_r": [-35.1, 0.0, 5.5],
+          "shin_r": [90, 0, 0],
+          "foot_r": [-54.7, -3.8, -4.3],
+          "leg_l": [-54.3, 0.0, -4.2],
+          "shin_l": [90, 0, 0],
+          "foot_l": [-35.6, 2.2, 3.6],
+          "arm_r": [-61.6, 12.0, -31.2],
+          "forearm_r": [-1.0, 6.5, -0.1],
+          "hand_r": [44.4, -46.0, -0.4],
+          "arm_l": [-71.0, 20.2, -48.7],
+          "forearm_l": [-1.0, -80.0, 0.8],
+          "hand_l": [46.7, 30.2, 0.5],
+          "ear_r": [8, 0, -4],
+          "ear_l": [8, 0, 4],
+          "tail_1": [-14, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.pounce_launch": {
+        "_comment": "Pounce take-off (the release): the legs driving straight, toes pointed, the body thrown forward along the arms, both claws reaching ahead at the target.",
+        "bones": {
+          "leg_r": [8, 0, 3],
+          "shin_r": [4, 0, 0],
+          "foot_r": [34, 0, 0],
+          "leg_l": [-4, 0, -3],
+          "shin_l": [6, 0, 0],
+          "foot_l": [30, 0, 0],
+          "body": [40, 0, 0],
+          "waist": [2, 0, 0],
+          "chest": [4, 0, 0],
+          "neck": [-36, 0, 0],
+          "arm_r": [-140, 0, 16],
+          "forearm_r": [-8, 0, 0],
+          "hand_r": [0, 0, 0],
+          "arm_l": [-146, 0, -16],
+          "forearm_l": [-8, 0, 0],
+          "hand_l": [0, 0, 0],
+          "ear_r": [-22, 0, 8],
+          "ear_l": [-22, 0, -8],
+          "tail_1": [20, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.pounce_air": {
+        "_comment": "Pounce in the air: stretched out over the target, the knees drawn up under her, both claws spread ahead and a little apart, the tail streaming behind.",
+        "bones": {
+          "leg_r": [-58, 0, 6],
+          "shin_r": [96, 0, 0],
+          "foot_r": [20, 0, 0],
+          "leg_l": [-44, 0, -6],
+          "shin_l": [104, 0, 0],
+          "foot_l": [24, 0, 0],
+          "body": [26, 0, 0],
+          "waist": [2, 0, 0],
+          "chest": [2, 0, 0],
+          "neck": [-26, 0, 0],
+          "arm_r": [-112, 0, 24],
+          "forearm_r": [-26, 0, 0],
+          "hand_r": [-6, 0, 4],
+          "arm_l": [-118, 0, -24],
+          "forearm_l": [-26, 0, 0],
+          "hand_l": [-6, 0, -4],
+          "ear_r": [-26, 0, 10],
+          "ear_l": [-26, 0, -10],
+          "tail_1": [34, 0, 0]
+        },
+        "position": {"root": [0, 3, 0]}
+      },
+      "natsuho.pounce_land": {
+        "_comment": "Pounce landing (the active part's end): down on her prey on the stance's foot spots, knees deep, both claws driven into the ground before her feet, the head low and the eyes up.",
+        "bones": {
+          "body": [50, 6, 0],
+          "waist": [6, 0, 0],
+          "chest": [12, 2, 0],
+          "neck": [-40, -8, 0],
+          "leg_r": [-42.9, 0.0, 7.0],
+          "shin_r": [112, 0, 0],
+          "foot_r": [-68.8, -6.1, -3.8],
+          "leg_l": [-67.2, 0.0, -5.3],
+          "shin_l": [112, 0, 0],
+          "foot_l": [-44.6, 3.5, 4.0],
+          "arm_r": [-78.7, 11.6, -68.5],
+          "forearm_r": [-1.0, -65.6, 0.9],
+          "hand_r": [58.2, -3.8, -0.2],
+          "arm_l": [-75.7, -0.3, -20.3],
+          "forearm_l": [-1.0, -77.4, 1.0],
+          "hand_l": [59.9, 55.4, -0.1],
+          "ear_r": [-16, 0, 6],
+          "ear_l": [-16, 0, -6],
+          "tail_1": [26, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.lick": {
+        "_comment": "Pounce recovery, the paw lick (her recovery weak point): half up from the crouch, the right fist raised just before her mouth with the claws turned out and away from her face, the head bent to it, the left hand loose, ears relaxed.",
+        "bones": {
+          "body": [10, 8, 0],
+          "waist": [2, 0, 0],
+          "chest": [4, 10, 0],
+          "neck": [10, -6, -12],
+          "leg_r": [-9.9, 0.0, 4.1],
+          "shin_r": [32, 0, 0],
+          "foot_r": [-22.1, -0.3, -4.3],
+          "leg_l": [-24.0, 0.0, -3.0],
+          "shin_l": [32, 0, 0],
+          "foot_l": [-8.0, 0.1, 3.0],
+          "arm_r": [-40.4, -40.0, -34.2],
+          "forearm_r": [-110.5, -2.3, -1.0],
+          "hand_r": [75.0, -33.6, 35.0],
+          "arm_l": [-18, 0, -12],
+          "forearm_l": [-62, 0, 0],
+          "hand_l": [6, 0, 0],
+          "ear_r": [-6, 0, 2],
+          "ear_l": [-6, 0, -2],
+          "tail_1": [10, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.pounce_rise_1": {
+        "_comment": "Pounce recovery: on the way up from the landing to the paw lick, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [40.0, 6.5, 0.0],
+          "neck": [-27.5, -7.5, -3.0],
+          "waist": [5.0, 0.0, 0.0],
+          "chest": [10.0, 4.0, 0.0],
+          "leg_r": [-35.8, 0.0, 5.7],
+          "shin_r": [92.0, 0, 0],
+          "foot_r": [-56.0, -3.9, -4.3],
+          "leg_l": [-55.4, 0.0, -4.2],
+          "shin_l": [92.0, 0, 0],
+          "foot_l": [-36.5, 2.3, 3.6],
+          "ear_l": [-13.5, 0.0, -5.0],
+          "ear_r": [-13.5, 0.0, 5.0],
+          "forearm_r": [-28.4, -49.8, 0.4],
+          "hand_l": [46.4, 41.5, -0.1],
+          "arm_r": [-69.1, -1.3, -59.9],
+          "forearm_l": [-16.2, -58.0, 0.8],
+          "arm_l": [-61.3, -0.2, -18.2],
+          "hand_r": [62.4, -11.2, 8.6],
+          "tail_1": [22.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.pounce_rise_2": {
+        "_comment": "Pounce recovery: on the way up from the landing to the paw lick, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [30.0, 7.0, 0.0],
+          "neck": [-15.0, -7.0, -6.0],
+          "waist": [4.0, 0.0, 0.0],
+          "chest": [8.0, 6.0, 0.0],
+          "leg_r": [-27.7, 0.0, 4.8],
+          "shin_r": [72.0, 0, 0],
+          "foot_r": [-44.1, -2.4, -4.4],
+          "leg_l": [-44.5, 0.0, -3.6],
+          "shin_l": [72.0, 0, 0],
+          "foot_l": [-27.4, 1.4, 3.4],
+          "ear_l": [-11.0, 0.0, -4.0],
+          "ear_r": [-11.0, 0.0, 4.0],
+          "forearm_r": [-55.8, -34.0, -0.1],
+          "hand_l": [33.0, 27.7, -0.1],
+          "arm_r": [-59.5, -14.2, -51.4],
+          "forearm_l": [-31.5, -38.7, 0.5],
+          "arm_l": [-46.9, -0.1, -16.1],
+          "hand_r": [66.6, -18.7, 17.4],
+          "tail_1": [18.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.pounce_rise_3": {
+        "_comment": "Pounce recovery: on the way up from the landing to the paw lick, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [20.0, 7.5, 0.0],
+          "neck": [-2.5, -6.5, -9.0],
+          "waist": [3.0, 0.0, 0.0],
+          "chest": [6.0, 8.0, 0.0],
+          "leg_r": [-19.0, 0.0, 4.3],
+          "shin_r": [52.0, 0, 0],
+          "foot_r": [-32.9, -1.2, -4.4],
+          "leg_l": [-34.1, 0.0, -3.2],
+          "shin_l": [52.0, 0, 0],
+          "foot_l": [-17.9, 0.7, 3.2],
+          "ear_l": [-8.5, 0.0, -3.0],
+          "ear_r": [-8.5, 0.0, 3.0],
+          "forearm_r": [-83.1, -18.1, -0.5],
+          "hand_l": [19.5, 13.8, -0.0],
+          "arm_r": [-50.0, -27.1, -42.8],
+          "forearm_l": [-46.8, -19.4, 0.2],
+          "arm_l": [-32.4, -0.1, -14.1],
+          "hand_r": [70.8, -26.1, 26.2],
+          "tail_1": [14.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.guard": {
+        "_comment": "The fists stance as a plain pose (her guard), for in-betweens that start from it.",
+        "bones": {
+          "leg_r": [-8.0, 0.0, 4.0],
+          "leg_l": [-22.0, 0.0, -3.0],
+          "body": [6.0, 12.0, 0.0],
+          "chest": [3.0, 8.0, 0.0],
+          "neck": [-6.0, -20.0, 0.0],
+          "arm_r": [-30.2, -13.1, 5.3],
+          "forearm_r": [-97.3, -10.5, 0.0],
+          "hand_r": [-5.0, 4.7, 11.6],
+          "arm_l": [-42.4, -5.3, -3.5],
+          "forearm_l": [-98.2, -3.0, 0.0],
+          "hand_l": [6.6, 4.9, -15.4],
+          "shin_r": [28.0, 0.0, 0.0],
+          "foot_r": [-20.0, 0.0, -4.0],
+          "shin_l": [28.0, 0.0, 0.0],
+          "foot_l": [-6.0, 0.0, 3.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cs_wind1": {
+        "_comment": "Claw String, first swipe's wind-up: the right claw raised high and out at the right side, the chest coiled away (the string's own rake_wind), the left still on guard.",
+        "bones": {
+          "body": [6, 12, 0],
+          "waist": [-1, 8, 0],
+          "chest": [-4, 24, 2],
+          "neck": [0, -32, 0],
+          "arm_r": [-77.2, 10.3, 5.6],
+          "forearm_r": [-86.9, 2.8, 0.0],
+          "hand_r": [-10.4, 0.8, 13.6],
+          "arm_l": [-42.4, -5.3, -3.5],
+          "forearm_l": [-98.2, -3.0, 0.0],
+          "hand_l": [6.6, 4.9, -15.4],
+          "ear_r": [-6, 0, 2],
+          "ear_l": [-6, 0, -2],
+          "tail_1": [14, 0, 0]
+        }
+      },
+      "natsuho.cs_hit1": {
+        "_comment": "Claw String, first swipe (hit 1): the right claw rakes down and across the front, the hips and chest driving into it.",
+        "bones": {
+          "body": [10, -6, 0],
+          "waist": [2, -8, 0],
+          "chest": [6, -24, 0],
+          "neck": [-12, 30, 0],
+          "arm_r": [-29.3, 4.1, 10.7],
+          "forearm_r": [-91.4, 1.9, 0.0],
+          "hand_r": [22.2, 23.3, -5.5],
+          "arm_l": [-42.4, -5.3, -3.5],
+          "forearm_l": [-98.2, -3.0, 0.0],
+          "hand_l": [6.6, 4.9, -15.4],
+          "tail_1": [6, 0, 18]
+        }
+      },
+      "natsuho.cs_wind2": {
+        "_comment": "Claw String, second swipe's wind-up: the left claw flung up and out at the left side, the chest coiled the other way, the right claw back on guard.",
+        "bones": {
+          "body": [6, 4, 0],
+          "waist": [-1, -10, 0],
+          "chest": [-4, -22, -2],
+          "neck": [0, 28, 0],
+          "arm_r": [-30.2, -13.1, 5.3],
+          "forearm_r": [-97.3, -10.5, 0.0],
+          "hand_r": [-5.0, 4.7, 11.6],
+          "arm_l": [-77.2, -10.3, -5.6],
+          "forearm_l": [-86.9, -2.8, -0.0],
+          "hand_l": [-10.4, -0.8, -13.6],
+          "ear_r": [-6, 0, 2],
+          "ear_l": [-6, 0, -2],
+          "tail_1": [10, 0, -18]
+        }
+      },
+      "natsuho.cs_hit2": {
+        "_comment": "Claw String, second swipe (hit 2): the left claw rakes down and across to the right, the hips turned into it.",
+        "bones": {
+          "body": [10, 22, 0],
+          "waist": [2, 10, 0],
+          "chest": [6, 20, 0],
+          "neck": [-12, -40, 0],
+          "arm_r": [-30.2, -13.1, 5.3],
+          "forearm_r": [-97.3, -10.5, 0.0],
+          "hand_r": [-5.0, 4.7, 11.6],
+          "arm_l": [-29.3, -4.1, -10.7],
+          "forearm_l": [-91.4, -1.9, -0.0],
+          "hand_l": [22.2, -23.3, 5.5],
+          "tail_1": [6, 0, -18]
+        }
+      },
+      "natsuho.cs_wind3": {
+        "_comment": "Claw String, the finisher's wind-up: both claws flung up beside the head, the back arched and the chest open, ears back, the tail up: everything thrown into the last rake.",
+        "bones": {
+          "body": [0, 10, 0],
+          "waist": [-2, 0, 0],
+          "chest": [-10, -4, 0],
+          "neck": [4, -6, 0],
+          "arm_r": [-136.1, -36.1, -53.0],
+          "forearm_r": [-1.0, 71.7, -1.0],
+          "hand_r": [75.0, 57.9, -29.6],
+          "arm_l": [-166.2, 24.9, 31.2],
+          "forearm_l": [-1.0, -18.1, 1.0],
+          "hand_l": [75.0, 60.0, -31.4],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [30, 0, 0]
+        }
+      },
+      "natsuho.cs_hit3": {
+        "_comment": "Claw String, the finisher (hit 3): both claws raked down together in front of her, the hips and chest pitched into it.",
+        "bones": {
+          "body": [14, 6, 0],
+          "waist": [4, 0, 0],
+          "chest": [10, 0, 0],
+          "neck": [-22, -6, 0],
+          "arm_r": [-59.2, -8.9, -14.4],
+          "forearm_r": [-1.0, -56.7, 1.0],
+          "hand_r": [75.1, -60.0, 22.0],
+          "arm_l": [-60.4, 12.3, -14.5],
+          "forearm_l": [-1.0, 47.6, -1.0],
+          "hand_l": [75.0, 60.0, -24.2],
+          "ear_r": [-14, 0, 6],
+          "ear_l": [-14, 0, -6],
+          "tail_1": [18, 0, 0]
+        }
+      },
+      "natsuho.cs_follow": {
+        "_comment": "Claw String, the finisher's follow-through: both claws carried on down past the hips.",
+        "bones": {
+          "body": [16, 6, 0],
+          "waist": [4, 0, 0],
+          "chest": [12, 0, 0],
+          "neck": [-24, -6, 0],
+          "arm_r": [-52.9, 31.9, -44.7],
+          "forearm_r": [-1.0, -80.0, 1.0],
+          "hand_r": [75.0, -60.0, 12.2],
+          "arm_l": [-57.0, 35.7, -40.9],
+          "forearm_l": [-1.0, -39.2, 1.0],
+          "hand_l": [75.0, 59.8, -8.8],
+          "tail_1": [12, 0, 0]
+        }
+      },
+      "natsuho.hiss_startle": {
+        "_comment": "Hiss, the start: a startled jolt back, the chest up, both claws up and out, the ears flattening, the tail shooting up.",
+        "bones": {
+          "body": [-4, 8, 0],
+          "waist": [-2, 0, 0],
+          "chest": [-10, 4, 0],
+          "neck": [-4, -12, 0],
+          "leg_r": [-11.7, 0.0, 4.1],
+          "shin_r": [36, 0, 0],
+          "foot_r": [-24.2, -0.4, -4.3],
+          "leg_l": [-26.0, 0.0, -3.1],
+          "shin_l": [36, 0, 0],
+          "foot_l": [-10.0, 0.2, 3.1],
+          "arm_r": [-23.5, 18.5, -31.8],
+          "forearm_r": [-96.9, 6.2, -0.3],
+          "hand_r": [71.2, -28.0, -8.4],
+          "arm_l": [-10.4, -34.9, -1.7],
+          "forearm_l": [-106.9, 9.5, -0.3],
+          "hand_l": [74.8, 29.2, -29.0],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [44, 0, 0],
+          "tail_2": [10, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.hiss_arch": {
+        "_comment": "Hiss wind-up, the bristle: the back arched and the shoulders hunched, the head pushed low and forward, both claws spread out wide at her sides, knees bent, ears flat back, the tail straight up (the tell: a full second).",
+        "bones": {
+          "body": [14, 6, 0],
+          "waist": [6, 0, 0],
+          "chest": [18, 2, 0],
+          "neck": [-34, -8, 0],
+          "leg_r": [-24.3, 0.0, 4.6],
+          "shin_r": [64, 0, 0],
+          "foot_r": [-39.6, -1.9, -4.4],
+          "leg_l": [-40.3, 0.0, -3.5],
+          "shin_l": [64, 0, 0],
+          "foot_l": [-23.7, 1.1, 3.3],
+          "arm_r": [-35.6, 55.8, -24.0],
+          "forearm_r": [-111.5, -16.5, 0.6],
+          "hand_r": [75.0, 60.0, -20.6],
+          "arm_l": [-15.7, -20.7, -4.1],
+          "forearm_l": [-107.8, -40.4, 1.0],
+          "hand_l": [75.0, -60.0, 19.6],
+          "ear_r": [-34, 0, 16],
+          "ear_l": [-34, 0, -16],
+          "tail_1": [54, 0, 0],
+          "tail_2": [16, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.hiss_draw": {
+        "_comment": "Hiss, the breath in: the head drawn back and up a little before the blast.",
+        "bones": {
+          "body": [10, 6, 0],
+          "waist": [4, 0, 0],
+          "chest": [10, 2, 0],
+          "neck": [-30, -8, 0],
+          "leg_r": [-24.3, 0.0, 4.6],
+          "shin_r": [64, 0, 0],
+          "foot_r": [-39.6, -1.9, -4.4],
+          "leg_l": [-40.3, 0.0, -3.5],
+          "shin_l": [64, 0, 0],
+          "foot_l": [-23.7, 1.1, 3.3],
+          "arm_r": [-17.2, 14.8, 1.1],
+          "forearm_r": [-105.6, 29.3, 1.0],
+          "hand_r": [75.0, 60.0, -24.4],
+          "arm_l": [-13.0, 10.1, -9.9],
+          "forearm_l": [-104.1, -50.2, -1.0],
+          "hand_l": [75.0, 60.0, -22.7],
+          "ear_r": [-36, 0, 18],
+          "ear_l": [-36, 0, -18],
+          "tail_1": [56, 0, 0],
+          "tail_2": [16, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.hiss_blast": {
+        "_comment": "Hiss (the release): the head and chest thrust forward with the mouth wide open, both claws thrust ahead and spread.",
+        "bones": {
+          "body": [18, 6, 0],
+          "waist": [6, 0, 0],
+          "chest": [22, 2, 0],
+          "neck": [-34, -8, 0],
+          "leg_r": [-24.3, 0.0, 4.6],
+          "shin_r": [64, 0, 0],
+          "foot_r": [-39.6, -1.9, -4.4],
+          "leg_l": [-40.3, 0.0, -3.5],
+          "shin_l": [64, 0, 0],
+          "foot_l": [-23.7, 1.1, 3.3],
+          "arm_r": [-55.4, 3.3, -1.6],
+          "forearm_r": [-92.0, -2.2, -1.0],
+          "hand_r": [75.1, -60.1, 24.9],
+          "arm_l": [-51.9, -20.4, -5.8],
+          "forearm_l": [-86.6, -31.6, -1.0],
+          "hand_l": [75.1, -60.1, 24.9],
+          "ear_r": [-36, 0, 18],
+          "ear_l": [-36, 0, -18],
+          "tail_1": [56, 0, 0],
+          "tail_2": [18, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.hiss_down_1": {
+        "_comment": "Hiss recovery: settling out of the bristle, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [15.3, 6.7, 0.0],
+          "neck": [-19.3, -7.3, -4.0],
+          "waist": [4.7, 0.0, 0.0],
+          "chest": [16.0, 4.7, 0.0],
+          "leg_r": [-19.5, 0.0, 4.4],
+          "shin_r": [53.3, 0, 0],
+          "foot_r": [-33.7, -1.3, -4.4],
+          "leg_l": [-34.7, 0.0, -3.3],
+          "shin_l": [53.3, 0, 0],
+          "foot_l": [-18.5, 0.7, 3.2],
+          "ear_l": [-26.0, 0.0, -12.7],
+          "ear_r": [-26.0, 0.0, 12.7],
+          "forearm_r": [-98.2, -2.2, -1.0],
+          "hand_l": [52.1, -40.1, 16.6],
+          "arm_r": [-50.4, -11.1, -12.5],
+          "forearm_l": [-78.4, -21.1, -0.7],
+          "tail_2": [12.0, 0.0, 0.0],
+          "arm_l": [-40.6, -13.6, -7.9],
+          "hand_r": [75.1, -51.3, 28.3],
+          "tail_1": [40.7, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.hiss_down_2": {
+        "_comment": "Hiss recovery: settling out of the bristle, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [12.7, 7.3, 0.0],
+          "neck": [-4.7, -6.7, -8.0],
+          "waist": [3.3, 0.0, 0.0],
+          "chest": [10.0, 7.3, 0.0],
+          "leg_r": [-14.8, 0.0, 4.2],
+          "shin_r": [42.7, 0, 0],
+          "foot_r": [-27.9, -0.8, -4.3],
+          "leg_l": [-29.4, 0.0, -3.1],
+          "shin_l": [42.7, 0, 0],
+          "foot_l": [-13.3, 0.4, 3.1],
+          "ear_l": [-16.0, 0.0, -7.3],
+          "ear_r": [-16.0, 0.0, 7.3],
+          "forearm_r": [-104.3, -2.3, -1.0],
+          "hand_l": [29.0, -20.0, 8.3],
+          "arm_r": [-45.4, -25.6, -23.3],
+          "forearm_l": [-70.2, -10.5, -0.3],
+          "tail_2": [6.0, 0.0, 0.0],
+          "arm_l": [-29.3, -6.8, -9.9],
+          "hand_r": [75.0, -42.4, 31.6],
+          "tail_1": [25.3, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_crouch": {
+        "_comment": "Scratch Dash wind-up: a sprinter's low crouch on her foot spots, turned side-on, the right claw trailing low behind her hip (scraping), the left guarding before the chest, the eyes on the target, ears back.",
+        "bones": {
+          "body": [30, 18, 0],
+          "waist": [4, 4, 0],
+          "chest": [8, 4, 0],
+          "neck": [-34, -26, 0],
+          "leg_r": [-26.8, 0.0, 4.8],
+          "shin_r": [70, 0, 0],
+          "foot_r": [-43.0, -2.3, -4.4],
+          "leg_l": [-43.4, 0.0, -3.6],
+          "shin_l": [70, 0, 0],
+          "foot_l": [-26.5, 1.3, 3.3],
+          "arm_r": [-29.8, -60.3, 37.9],
+          "forearm_r": [-1.0, -80.0, 0.4],
+          "hand_r": [75.0, -60.0, -19.9],
+          "arm_l": [20.0, -11.8, -9.6],
+          "forearm_l": [-135.2, 0.9, -0.9],
+          "hand_l": [54.3, 11.4, -32.3],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [-6, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_coil": {
+        "_comment": "Scratch Dash, coiled: lower and tighter, the trailing claw near the ground.",
+        "bones": {
+          "body": [36, 20, 0],
+          "waist": [4, 4, 0],
+          "chest": [10, 4, 0],
+          "neck": [-38, -28, 0],
+          "leg_r": [-32.7, 0.0, 5.3],
+          "shin_r": [84, 0, 0],
+          "foot_r": [-51.1, -3.3, -4.4],
+          "leg_l": [-51.0, 0.0, -4.0],
+          "shin_l": [84, 0, 0],
+          "foot_l": [-33.0, 1.9, 3.5],
+          "arm_r": [-71.7, -69.3, 84.1],
+          "forearm_r": [-1.0, -79.7, -0.3],
+          "hand_r": [66.8, -60.0, -6.2],
+          "arm_l": [8.2, 5.5, 44.4],
+          "forearm_l": [-138.2, -44.3, -1.0],
+          "hand_l": [17.5, 39.3, -27.2],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [-10, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_burst": {
+        "_comment": "Scratch Dash (the release): bursting forward low, the left leg striding ahead and the right driving behind, the right claw swinging forward and up from the ground in a scratch, the left arm thrown back.",
+        "bones": {
+          "leg_r": [34, 0, 4],
+          "shin_r": [40, 0, 0],
+          "foot_r": [30, 0, 0],
+          "leg_l": [-62, 0, -4],
+          "shin_l": [70, 0, 0],
+          "foot_l": [-6, 0, 0],
+          "body": [36, -4, 0],
+          "waist": [4, -6, 0],
+          "chest": [8, -10, 0],
+          "neck": [-38, 18, 0],
+          "arm_r": [-64, 4, 18],
+          "forearm_r": [-30, 0, 0],
+          "hand_r": [-10, 0, 10],
+          "arm_l": [36, 0, -16],
+          "forearm_l": [-40, 0, 0],
+          "hand_l": [0, 0, 0],
+          "ear_r": [-30, 0, 14],
+          "ear_l": [-30, 0, -14],
+          "tail_1": [10, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_swipe": {
+        "_comment": "Scratch Dash, mid-dash: the right claw raked across the front to the left at chest height, the body turned into it, the legs in the other stride.",
+        "bones": {
+          "leg_r": [-50, 0, 4],
+          "shin_r": [60, 0, 0],
+          "foot_r": [0, 0, 0],
+          "leg_l": [30, 0, -4],
+          "shin_l": [44, 0, 0],
+          "foot_l": [30, 0, 0],
+          "body": [30, -14, 0],
+          "waist": [4, -10, 0],
+          "chest": [6, -20, 0],
+          "neck": [-30, 38, 0],
+          "arm_r": [-86, 8, 6],
+          "forearm_r": [-40, 0, 0],
+          "hand_r": [16, 20, -4],
+          "arm_l": [24, 0, -20],
+          "forearm_l": [-50, 0, 0],
+          "hand_l": [0, 0, 0],
+          "ear_r": [-30, 0, 14],
+          "ear_l": [-30, 0, -14],
+          "tail_1": [16, 0, -20]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_brake": {
+        "_comment": "Scratch Dash, the brake (the end of the active part): down on her foot spots, leaning back with the knees deep, the right claw carried through low on the left, the left arm out for balance.",
+        "bones": {
+          "body": [-6, -6, 0],
+          "waist": [0, -6, 0],
+          "chest": [4, -10, 0],
+          "neck": [-4, 20, 0],
+          "leg_r": [-29.4, 0.0, 5.0],
+          "shin_r": [76, 0, 0],
+          "foot_r": [-46.5, -2.7, -4.4],
+          "leg_l": [-46.6, 0.0, -3.7],
+          "shin_l": [76, 0, 0],
+          "foot_l": [-29.3, 1.6, 3.4],
+          "arm_r": [-52.5, 31.5, -47.4],
+          "forearm_r": [-1.0, -21.2, 0.4],
+          "hand_r": [66.2, -58.5, -0.8],
+          "arm_l": [-12.4, 4.2, -13.9],
+          "forearm_l": [-83.6, -30.4, 0.4],
+          "hand_l": [75.0, -60.0, 20.4],
+          "ear_r": [-14, 0, 6],
+          "ear_l": [-14, 0, -6],
+          "tail_1": [-24, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_way": {
+        "_comment": "Scratch Dash: on the way into the crouch, the right claw swung out wide and back past the hip (clear of the thigh).",
+        "bones": {
+          "body": [16.8, 14.7, 0.0],
+          "neck": [-18.6, -22.7, 0.0],
+          "waist": [1.8, 1.8, 0.0],
+          "chest": [5.2, 6.2, 0.0],
+          "leg_r": [-17.2, 0.0, 4.3],
+          "shin_r": [48, 0, 0],
+          "foot_r": [-30.8, -1.0, -4.4],
+          "leg_l": [-32.0, 0.0, -3.2],
+          "shin_l": [48, 0, 0],
+          "foot_l": [-15.9, 0.6, 3.2],
+          "ear_l": [-11.7, 0.0, -5.4],
+          "ear_r": [-11.7, 0.0, 5.4],
+          "forearm_r": [-40, 0, 0],
+          "hand_l": [28.1, 7.8, -23.0],
+          "arm_r": [18, 0, 48],
+          "forearm_l": [-114.8, -1.2, -0.4],
+          "arm_l": [-14.3, -8.2, -6.2],
+          "hand_r": [0, 0, 10],
+          "tail_1": [-2.7, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_up_1": {
+        "_comment": "Scratch Dash recovery: rising out of the brake, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [-0.7, -1.3, 0.0],
+          "neck": [0.7, 11.3, -4.0],
+          "waist": [0.7, -4.0, 0.0],
+          "chest": [4.0, -3.3, 0.0],
+          "leg_r": [-23.1, 0.0, 4.5],
+          "shin_r": [61.3, 0, 0],
+          "foot_r": [-38.1, -1.7, -4.4],
+          "leg_l": [-38.9, 0.0, -3.4],
+          "shin_l": [61.3, 0, 0],
+          "foot_l": [-22.4, 1.0, 3.3],
+          "ear_l": [-11.3, 0.0, -4.7],
+          "ear_r": [-11.3, 0.0, 4.7],
+          "forearm_r": [-37.5, -14.9, -0.1],
+          "hand_l": [52.0, -40.0, 13.6],
+          "arm_r": [-48.5, 7.7, -43.0],
+          "forearm_l": [-76.4, -20.3, 0.3],
+          "arm_l": [-14.3, 2.8, -13.3],
+          "hand_r": [69.1, -50.2, 11.1],
+          "tail_1": [-12.7, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.sd_up_2": {
+        "_comment": "Scratch Dash recovery: rising out of the brake, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [4.7, 3.3, 0.0],
+          "neck": [5.3, 2.7, -8.0],
+          "waist": [1.3, -2.0, 0.0],
+          "chest": [4.0, 3.3, 0.0],
+          "leg_r": [-16.6, 0.0, 4.3],
+          "shin_r": [46.7, 0, 0],
+          "foot_r": [-30.0, -0.9, -4.4],
+          "leg_l": [-31.4, 0.0, -3.2],
+          "shin_l": [46.7, 0, 0],
+          "foot_l": [-15.3, 0.5, 3.1],
+          "ear_l": [-8.7, 0.0, -3.3],
+          "ear_r": [-8.7, 0.0, 3.3],
+          "forearm_r": [-74.0, -8.6, -0.5],
+          "hand_l": [29.0, -20.0, 6.8],
+          "arm_r": [-44.4, -16.2, -38.6],
+          "forearm_l": [-69.2, -10.1, 0.1],
+          "arm_l": [-16.1, 1.4, -12.6],
+          "hand_r": [72.1, -41.9, 23.1],
+          "tail_1": [-1.3, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cr_set": {
+        "_comment": "Cat Reflex, the counter stance (the whole wind-up): low and coiled with the weight back, side-on, the left claw up before her face like a raised paw, the right cocked back at the hip, the eyes narrowed, the tail lashing.",
+        "bones": {
+          "body": [8, -8, 0],
+          "waist": [2, -6, 0],
+          "chest": [6, -12, 0],
+          "neck": [-12, 28, 0],
+          "leg_r": [-23.4, 0.0, 4.6],
+          "shin_r": [62, 0, 0],
+          "foot_r": [-38.5, -1.8, -4.4],
+          "leg_l": [-39.2, 0.0, -3.4],
+          "shin_l": [62, 0, 0],
+          "foot_l": [-22.7, 1.0, 3.3],
+          "arm_r": [49.3, -11.9, 33.3],
+          "forearm_r": [-67.3, -30.1, 0.2],
+          "hand_r": [-22.0, 59.8, -30.4],
+          "arm_l": [-54.9, 19.9, -26.4],
+          "forearm_l": [-90.7, 4.3, 0.9],
+          "hand_l": [74.9, -60.0, -11.8],
+          "ear_r": [4, 0, -2],
+          "ear_l": [4, 0, 2],
+          "tail_1": [10, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cr_tense": {
+        "_comment": "Cat Reflex, the end of the stance: a hair lower, every muscle set.",
+        "bones": {
+          "body": [10, -8, 0],
+          "waist": [2, -6, 0],
+          "chest": [8, -12, 0],
+          "neck": [-14, 28, 0],
+          "leg_r": [-26.8, 0.0, 4.8],
+          "shin_r": [70, 0, 0],
+          "foot_r": [-43.0, -2.3, -4.4],
+          "leg_l": [-43.4, 0.0, -3.6],
+          "shin_l": [70, 0, 0],
+          "foot_l": [-26.5, 1.3, 3.3],
+          "arm_r": [55.4, -14.8, 4.9],
+          "forearm_r": [-63.5, 9.0, 0.7],
+          "hand_r": [2.8, 43.4, -6.5],
+          "arm_l": [-51.2, 17.6, -18.5],
+          "forearm_l": [-96.6, 8.5, 1.0],
+          "hand_l": [74.6, -59.9, -7.7],
+          "ear_r": [-10, 0, 4],
+          "ear_l": [-10, 0, -4],
+          "tail_1": [14, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cr_swipe1": {
+        "_comment": "Cat Reflex, the riposte's first swipe (the release): the right claw whipped across the front from the hip, the chest turned into it.",
+        "bones": {
+          "body": [12, -14, 0],
+          "waist": [2, -10, 0],
+          "chest": [8, -22, 0],
+          "neck": [-16, 42, 0],
+          "leg_r": [-23.4, 0.0, 4.6],
+          "shin_r": [62, 0, 0],
+          "foot_r": [-38.5, -1.8, -4.4],
+          "leg_l": [-39.2, 0.0, -3.4],
+          "shin_l": [62, 0, 0],
+          "foot_l": [-22.7, 1.0, 3.3],
+          "arm_r": [-23.5, -2.8, 21.9],
+          "forearm_r": [-89.8, 0.1, 1.0],
+          "hand_r": [75.1, -60.1, 23.1],
+          "arm_l": [-23.9, 17.0, -15.9],
+          "forearm_l": [-121.5, 18.1, 1.0],
+          "hand_l": [75.0, -40.4, -5.8],
+          "ear_r": [-20, 0, 8],
+          "ear_l": [-20, 0, -8],
+          "tail_1": [16, 0, 12]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cr_swipe2": {
+        "_comment": "Cat Reflex, the riposte's second swipe: the left claw raked back across the other way.",
+        "bones": {
+          "body": [12, 10, 0],
+          "waist": [2, 6, 0],
+          "chest": [8, 14, 0],
+          "neck": [-16, -28, 0],
+          "leg_r": [-23.4, 0.0, 4.6],
+          "shin_r": [62, 0, 0],
+          "foot_r": [-38.5, -1.8, -4.4],
+          "leg_l": [-39.2, 0.0, -3.4],
+          "shin_l": [62, 0, 0],
+          "foot_l": [-22.7, 1.0, 3.3],
+          "arm_r": [6.3, -25.5, 25.6],
+          "forearm_r": [-118.3, 6.8, -0.7],
+          "hand_r": [26.1, 52.5, -34.4],
+          "arm_l": [-41.1, 12.8, -27.6],
+          "forearm_l": [-71.5, 6.8, 1.0],
+          "hand_l": [75.1, 60.1, -25.7],
+          "ear_r": [-20, 0, 8],
+          "ear_l": [-20, 0, -8],
+          "tail_1": [16, 0, -12]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cr_hop": {
+        "_comment": "Cat Reflex, the hop back (3 blocks, the server moves her): in the air with the knees tucked, both claws forward on guard, the tail out behind for balance.",
+        "bones": {
+          "leg_r": [-40, 0, 6],
+          "shin_r": [86, 0, 0],
+          "foot_r": [24, 0, 0],
+          "leg_l": [-56, 0, -6],
+          "shin_l": [90, 0, 0],
+          "foot_l": [24, 0, 0],
+          "body": [-6, 4, 0],
+          "waist": [0, 0, 0],
+          "chest": [-2, 0, 0],
+          "neck": [4, -4, 0],
+          "arm_r": [-62, -10, 14],
+          "forearm_r": [-80, 0, 0],
+          "hand_r": [0, 0, 10],
+          "arm_l": [-68, 10, -14],
+          "forearm_l": [-80, 0, 0],
+          "hand_l": [0, 0, -10],
+          "ear_r": [-26, 0, 10],
+          "ear_l": [-26, 0, -10],
+          "tail_1": [30, 0, 0]
+        },
+        "position": {"root": [0, 3.5, 0]}
+      },
+      "natsuho.cr_land": {
+        "_comment": "Cat Reflex, landed from the hop: on her foot spots with the knees soaking it up, back on guard.",
+        "bones": {
+          "body": [16, 12, 0],
+          "waist": [2, 0, 0],
+          "chest": [6, 8, 0],
+          "neck": [-18, -20, 0],
+          "leg_r": [-26.8, 0.0, 4.8],
+          "shin_r": [70, 0, 0],
+          "foot_r": [-43.0, -2.3, -4.4],
+          "leg_l": [-43.4, 0.0, -3.6],
+          "shin_l": [70, 0, 0],
+          "foot_l": [-26.5, 1.3, 3.3],
+          "arm_r": [-30.2, -13.1, 5.3],
+          "forearm_r": [-97.3, -10.5, 0.0],
+          "hand_r": [-5.0, 4.7, 11.6],
+          "arm_l": [-42.4, -5.3, -3.5],
+          "forearm_l": [-98.2, -3.0, 0.0],
+          "hand_l": [6.6, 4.9, -15.4],
+          "ear_r": [-8, 0, 4],
+          "ear_l": [-8, 0, -4],
+          "tail_1": [20, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cr_way": {
+        "_comment": "Cat Reflex: on the way into the stance, the right claw swung out wide past the hip (clear of the thigh).",
+        "bones": {
+          "body": [6.9, 3.0, 0.0],
+          "neck": [-8.7, 1.6, 0.0],
+          "waist": [0.9, -2.7, 0.0],
+          "chest": [4.3, -1.0, 0.0],
+          "leg_r": [-15.3, 0.0, 4.2],
+          "shin_r": [44, 0, 0],
+          "foot_r": [-28.6, -0.8, -4.4],
+          "leg_l": [-30.0, 0.0, -3.1],
+          "shin_l": [44, 0, 0],
+          "foot_l": [-14.0, 0.5, 3.1],
+          "ear_l": [1.8, 0.0, 0.9],
+          "ear_r": [1.8, 0.0, -0.9],
+          "forearm_r": [-50, 0, 0],
+          "hand_l": [37.3, -24.3, -13.8],
+          "arm_r": [10, 0, 46],
+          "forearm_l": [-94.8, 0.3, 0.4],
+          "arm_l": [-48.0, 6.0, -13.8],
+          "hand_r": [0, 0, 10],
+          "tail_1": [4.5, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.cr_down_1": {
+        "_comment": "Cat Reflex: settling deeper into the stance.",
+        "bones": {
+          "body": [9.0, -8.0, 0.0],
+          "neck": [-13.0, 28.0, 0.0],
+          "waist": [2.0, -6.0, 0.0],
+          "chest": [7.0, -12.0, 0.0],
+          "leg_r": [-25.1, 0.0, 4.7],
+          "shin_r": [66.0, 0, 0],
+          "foot_r": [-40.7, -2.0, -4.4],
+          "leg_l": [-41.3, 0.0, -3.5],
+          "shin_l": [66.0, 0, 0],
+          "foot_l": [-24.6, 1.2, 3.3],
+          "ear_l": [-3.0, 0.0, -1.0],
+          "ear_r": [-3.0, 0.0, 1.0],
+          "forearm_r": [-65.4, -10.6, 0.5],
+          "hand_l": [74.8, -60.0, -9.8],
+          "arm_r": [52.4, -13.3, 19.1],
+          "forearm_l": [-93.7, 6.4, 0.9],
+          "arm_l": [-53.0, 18.8, -22.4],
+          "hand_r": [-9.6, 51.6, -18.4],
+          "tail_1": [12.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.in_cross": {
+        "_comment": "Arms crossed over the chest, the claws pointing up past the shoulders, the chin up and the head turned away (the intro's and the victory's 'hmph').",
+        "bones": {
+          "body": [4, 12, 0],
+          "waist": [-2, 4, 0],
+          "chest": [-6, 8, 0],
+          "neck": [-8, 32, 0],
+          "arm_r": [-28.3, -38.2, -34.5],
+          "forearm_r": [-37.6, 0.9, 0.9],
+          "hand_r": [25.6, -45.4, 13.4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [-12, 0, 4],
+          "ear_l": [-12, 0, -4],
+          "tail_1": [24, 0, 14]
+        }
+      },
+      "natsuho.zm_crouch": {
+        "_comment": "Zoomies wind-up: a sprinter's crouch on her foot spots, hands down near the ground like a cat's front paws, the hips up and wiggling, the eyes wide and crazed, the ears flat back.",
+        "bones": {
+          "body": [44, 4, 0],
+          "waist": [4, 0, 0],
+          "chest": [10, 0, 0],
+          "neck": [-40, -4, 0],
+          "leg_r": [-34.3, 0.0, 5.5],
+          "shin_r": [88, 0, 0],
+          "foot_r": [-53.5, -3.6, -4.3],
+          "leg_l": [-53.2, 0.0, -4.1],
+          "shin_l": [88, 0, 0],
+          "foot_l": [-34.7, 2.1, 3.5],
+          "arm_r": [-57.2, -1.3, -7.2],
+          "forearm_r": [-25.6, 1.2, 1.0],
+          "hand_r": [62.4, -4.5, -4.5],
+          "arm_l": [-69.6, 1.2, 0.8],
+          "forearm_l": [-3.0, 21.1, 0.9],
+          "hand_l": [56.2, 10.3, -28.9],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [34, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_load": {
+        "_comment": "Zoomies, the instant before the launch: lower, the hips gathered.",
+        "bones": {
+          "body": [48, 4, 0],
+          "waist": [4, 0, 0],
+          "chest": [10, 0, 0],
+          "neck": [-40, -4, 0],
+          "leg_r": [-38.1, 0.0, 6.0],
+          "shin_r": [98, 0, 0],
+          "foot_r": [-59.7, -4.5, -4.2],
+          "leg_l": [-58.8, 0.0, -4.5],
+          "shin_l": [98, 0, 0],
+          "foot_l": [-39.1, 2.6, 3.7],
+          "arm_r": [-52.4, -23.1, 2.2],
+          "forearm_r": [-45.7, 42.4, -0.5],
+          "hand_r": [63.9, -47.3, -0.9],
+          "arm_l": [-61.6, 22.9, -40.1],
+          "forearm_l": [-34.8, -26.3, 0.9],
+          "hand_l": [62.9, 29.1, -34.5],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [30, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_a": {
+        "_comment": "Zoomies, the frantic sprint in place (the server runs her 14 blocks): the right knee high, the left leg driving back, the arms pumping hard, the body pitched forward.",
+        "bones": {
+          "leg_r": [-72, 0, 4],
+          "shin_r": [84, 0, 0],
+          "foot_r": [12, 0, 0],
+          "leg_l": [34, 0, -4],
+          "shin_l": [56, 0, 0],
+          "foot_l": [30, 0, 0],
+          "body": [30, -6, 0],
+          "waist": [2, -4, 0],
+          "chest": [4, -8, 0],
+          "neck": [-30, 18, 0],
+          "arm_r": [44, 0, 12],
+          "forearm_r": [-86, 0, 0],
+          "hand_r": [0, 0, 6],
+          "arm_l": [-66, 0, -14],
+          "forearm_l": [-96, 0, 0],
+          "hand_l": [0, 0, -6],
+          "ear_r": [-34, 0, 16],
+          "ear_l": [-34, 0, -16],
+          "tail_1": [24, 0, -10]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_b": {
+        "_comment": "Zoomies, the other stride.",
+        "bones": {
+          "leg_l": [-72, 0, -4],
+          "shin_l": [84, 0, 0],
+          "foot_l": [12, 0, 0],
+          "leg_r": [34, 0, 4],
+          "shin_r": [56, 0, 0],
+          "foot_r": [30, 0, 0],
+          "body": [30, 6, 0],
+          "waist": [2, 4, 0],
+          "chest": [4, 8, 0],
+          "neck": [-30, -18, 0],
+          "arm_l": [44, 0, -12],
+          "forearm_l": [-86, 0, 0],
+          "hand_l": [0, 0, -6],
+          "arm_r": [-66, 0, 14],
+          "forearm_r": [-96, 0, 0],
+          "hand_r": [0, 0, 6],
+          "ear_l": [-34, 0, -16],
+          "ear_r": [-34, 0, 16],
+          "tail_1": [24, 0, 10]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_skid": {
+        "_comment": "Zoomies, the stop (the end of the active part): skidding to a halt on her foot spots, leaning back on deep knees with both arms flung forward and out for balance.",
+        "bones": {
+          "body": [-10, -2, 0],
+          "waist": [-2, 0, 0],
+          "chest": [-6, 0, 0],
+          "neck": [8, 2, 0],
+          "leg_r": [-28.5, 0.0, 4.9],
+          "shin_r": [74, 0, 0],
+          "foot_r": [-45.3, -2.5, -4.4],
+          "leg_l": [-45.6, 0.0, -3.7],
+          "shin_l": [74, 0, 0],
+          "foot_l": [-28.4, 1.5, 3.4],
+          "arm_r": [-70, 0, 40],
+          "forearm_r": [-16, 0, 0],
+          "hand_r": [0, 0, 0],
+          "arm_l": [-70, 0, -40],
+          "forearm_l": [-16, 0, 0],
+          "hand_l": [0, 0, 0],
+          "ear_r": [-8, 0, 4],
+          "ear_l": [-8, 0, -4],
+          "tail_1": [-20, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_dizzy": {
+        "_comment": "Zoomies, after the stop: up and swaying, the arms loose, the head wobbling: where was she going?",
+        "bones": {
+          "body": [4, 6, 4],
+          "waist": [0, 0, 0],
+          "chest": [0, 4, -4],
+          "neck": [4, -6, 8],
+          "leg_r": [-10.8, 0.0, 4.1],
+          "shin_r": [34, 0, 0],
+          "foot_r": [-23.2, -0.3, -4.3],
+          "leg_l": [-25.0, 0.0, -3.0],
+          "shin_l": [34, 0, 0],
+          "foot_l": [-9.0, 0.2, 3.1],
+          "arm_r": [-6, 0, 14],
+          "forearm_r": [-30, 0, 0],
+          "hand_r": [0, 0, 0],
+          "arm_l": [-6, 0, -14],
+          "forearm_l": [-30, 0, 0],
+          "hand_l": [0, 0, 0],
+          "ear_r": [-14, 0, 10],
+          "ear_l": [6, 0, -4],
+          "tail_1": [6, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_hmph": {
+        "_comment": "Zoomies, the very end: arms crossed and the head turned away (that did not happen).",
+        "bones": {
+          "neck": [-8.0, 32.0, 0.0],
+          "waist": [-2.0, 4.0, 0.0],
+          "chest": [-6.0, 8.0, 0.0],
+          "body": [4.0, 12.0, 0.0],
+          "leg_r": [-10.8, 0.0, 4.1],
+          "shin_r": [34, 0, 0],
+          "foot_r": [-23.2, -0.3, -4.3],
+          "leg_l": [-25.0, 0.0, -3.0],
+          "shin_l": [34, 0, 0],
+          "foot_l": [-9.0, 0.2, 3.1],
+          "forearm_r": [-37.6, 0.9, 0.9],
+          "hand_l": [75.0, -59.1, -15.5],
+          "arm_r": [-28.3, -38.2, -34.5],
+          "ear_l": [-12.0, 0.0, -4.0],
+          "ear_r": [-12.0, 0.0, 4.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "hand_r": [25.6, -45.4, 13.4],
+          "tail_1": [24.0, 0.0, 14.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_open": {
+        "_comment": "Zoomies: the arms opened out wide on the way into the fold (the claws clear of the forearms).",
+        "bones": {
+          "body": [4.0, 9.0, 2.0],
+          "neck": [-2.0, 13.0, 4.0],
+          "waist": [-1.0, 2.0, 0.0],
+          "chest": [-3.0, 6.0, -2.0],
+          "leg_r": [-10.8, 0.0, 4.1],
+          "shin_r": [34, 0, 0],
+          "foot_r": [-23.2, -0.3, -4.3],
+          "leg_l": [-25.0, 0.0, -3.0],
+          "shin_l": [34, 0, 0],
+          "foot_l": [-9.0, 0.2, 3.1],
+          "ear_l": [-3.0, 0.0, -4.0],
+          "ear_r": [-13.0, 0.0, 7.0],
+          "forearm_r": [-84, 0, 0],
+          "hand_l": [0, 0, -4],
+          "arm_r": [-42, 0, 30],
+          "forearm_l": [-84, 0, 0],
+          "arm_l": [-42, 0, -30],
+          "hand_r": [0, 0, 4],
+          "tail_1": [15.0, 0.0, 7.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_half": {
+        "_comment": "Zoomies, folding the arms: the left already across, the right open.",
+        "bones": {
+          "neck": [-8.0, 32.0, 0.0],
+          "waist": [-2.0, 4.0, 0.0],
+          "chest": [-6.0, 8.0, 0.0],
+          "body": [4.0, 12.0, 0.0],
+          "leg_r": [-10.8, 0.0, 4.1],
+          "shin_r": [34, 0, 0],
+          "foot_r": [-23.2, -0.3, -4.3],
+          "leg_l": [-25.0, 0.0, -3.0],
+          "shin_l": [34, 0, 0],
+          "foot_l": [-9.0, 0.2, 3.1],
+          "forearm_r": [-84, 0, 0],
+          "hand_l": [75.0, -59.1, -15.5],
+          "arm_r": [-42, 0, 30],
+          "ear_l": [-12.0, 0.0, -4.0],
+          "ear_r": [-12.0, 0.0, 4.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "hand_r": [0, 0, 4],
+          "tail_1": [24.0, 0.0, 14.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_up_1": {
+        "_comment": "Zoomies recovery: rising out of the skid, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [-5.3, 0.7, 1.3],
+          "neck": [6.7, -0.7, 2.7],
+          "waist": [-1.3, 0.0, 0.0],
+          "chest": [-4.0, 1.3, -1.3],
+          "leg_r": [-22.8, 0.0, 4.5],
+          "shin_r": [60.7, 0, 0],
+          "foot_r": [-37.8, -1.7, -4.4],
+          "leg_l": [-38.6, 0.0, -3.4],
+          "shin_l": [60.7, 0, 0],
+          "foot_l": [-22.1, 1.0, 3.2],
+          "ear_l": [-3.3, 0.0, -4.0],
+          "ear_r": [-10.0, 0.0, 6.0],
+          "forearm_r": [-20.7, 0.0, 0.0],
+          "hand_l": [0.0, 0.0, 0.0],
+          "arm_r": [-48.7, 0.0, 31.3],
+          "forearm_l": [-20.7, 0.0, 0.0],
+          "arm_l": [-48.7, 0.0, -31.3],
+          "hand_r": [0.0, 0.0, 0.0],
+          "tail_1": [-11.3, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_up_2": {
+        "_comment": "Zoomies recovery: rising out of the skid, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [-0.7, 3.3, 2.7],
+          "neck": [5.3, -3.3, 5.3],
+          "waist": [-0.7, 0.0, 0.0],
+          "chest": [-2.0, 2.7, -2.7],
+          "leg_r": [-16.9, 0.0, 4.3],
+          "shin_r": [47.3, 0, 0],
+          "foot_r": [-30.4, -1.0, -4.4],
+          "leg_l": [-31.7, 0.0, -3.2],
+          "shin_l": [47.3, 0, 0],
+          "foot_l": [-15.6, 0.6, 3.1],
+          "ear_l": [1.3, 0.0, -4.0],
+          "ear_r": [-12.0, 0.0, 8.0],
+          "forearm_r": [-25.3, 0.0, 0.0],
+          "hand_l": [0.0, 0.0, 0.0],
+          "arm_r": [-27.3, 0.0, 22.7],
+          "forearm_l": [-25.3, 0.0, 0.0],
+          "arm_l": [-27.3, 0.0, -22.7],
+          "hand_r": [0.0, 0.0, 0.0],
+          "tail_1": [-2.7, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_in_1": {
+        "_comment": "Zoomies wind-up: dropping into the crouch, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [18.7, 9.3, 0.0],
+          "neck": [-17.3, -14.7, 0.0],
+          "waist": [1.3, 0.0, 0.0],
+          "chest": [5.3, 5.3, 0.0],
+          "leg_r": [-17.2, 0.0, 4.3],
+          "shin_r": [48.0, 0, 0],
+          "foot_r": [-30.8, -1.0, -4.4],
+          "leg_l": [-32.0, 0.0, -3.2],
+          "shin_l": [48.0, 0, 0],
+          "foot_l": [-15.9, 0.6, 3.2],
+          "ear_l": [-8.7, 0.0, -4.0],
+          "ear_r": [-8.7, 0.0, 4.0],
+          "forearm_r": [-73.4, -6.6, 0.3],
+          "hand_l": [23.1, 6.7, -19.9],
+          "arm_r": [-39.2, -9.2, 1.1],
+          "forearm_l": [-66.5, 5.0, 0.3],
+          "arm_l": [-51.5, -3.1, -2.1],
+          "hand_r": [17.5, 1.6, 6.2],
+          "tail_1": [11.3, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_in_2": {
+        "_comment": "Zoomies wind-up: dropping into the crouch, the knees solved so the feet stay on their spots.",
+        "bones": {
+          "body": [31.3, 6.7, 0.0],
+          "neck": [-28.7, -9.3, 0.0],
+          "waist": [2.7, 0.0, 0.0],
+          "chest": [7.7, 2.7, 0.0],
+          "leg_r": [-26.0, 0.0, 4.7],
+          "shin_r": [68.0, 0, 0],
+          "foot_r": [-41.9, -2.1, -4.4],
+          "leg_l": [-42.4, 0.0, -3.5],
+          "shin_l": [68.0, 0, 0],
+          "foot_l": [-25.6, 1.2, 3.3],
+          "ear_l": [-17.3, 0.0, -8.0],
+          "ear_r": [-17.3, 0.0, 8.0],
+          "forearm_r": [-49.5, -2.7, 0.7],
+          "hand_l": [39.7, 8.5, -24.4],
+          "arm_r": [-48.2, -5.2, -3.0],
+          "forearm_l": [-34.7, 13.1, 0.6],
+          "arm_l": [-60.5, -1.0, -0.6],
+          "hand_r": [39.9, -1.4, 0.9],
+          "tail_1": [22.7, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.zm_out_1": {
+        "_comment": "Zoomies, back to the guard from the 'hmph': the crossed arms opened out wide first (the claws clear of the forearms), the knees solved on the foot spots.",
+        "bones": {
+          "neck": [-7.0, 6.0, 0.0],
+          "waist": [-1.0, 2.0, 0.0],
+          "chest": [-1.5, 8.0, 0.0],
+          "body": [5.0, 12.0, 0.0],
+          "leg_r": [-9.4, 0.0, 4.1],
+          "shin_r": [31, 0, 0],
+          "foot_r": [-21.6, -0.2, -4.3],
+          "leg_l": [-23.5, 0.0, -3.0],
+          "shin_l": [31, 0, 0],
+          "foot_l": [-7.5, 0.1, 3.0],
+          "forearm_r": [-84, 0, 0],
+          "hand_l": [0, 0, -4],
+          "arm_r": [-42, 0, 30],
+          "ear_l": [-6.0, 0.0, -2.0],
+          "ear_r": [-6.0, 0.0, 2.0],
+          "forearm_l": [-84, 0, 0],
+          "arm_l": [-42, 0, -30],
+          "hand_r": [0, 0, 4],
+          "tail_1": [12.0, 0.0, 7.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_bow": {
+        "_comment": "Midnight Frenzy, the long stretch: a cat's play bow, the hips back and high on nearly straight legs, the chest down and both arms reaching far forward and low, the tail up, the eyes shut.",
+        "bones": {
+          "body": [54, 4, 0],
+          "waist": [6, 0, 0],
+          "chest": [10, 0, 0],
+          "neck": [-36, -4, 0],
+          "leg_r": [-10.8, 0.0, 4.1],
+          "shin_r": [34, 0, 0],
+          "foot_r": [-23.2, -0.3, -4.3],
+          "leg_l": [-25.0, 0.0, -3.0],
+          "shin_l": [34, 0, 0],
+          "foot_l": [-9.0, 0.2, 3.1],
+          "arm_r": [-74.4, -8.4, -23.0],
+          "forearm_r": [-46.8, -11.6, -0.8],
+          "hand_r": [69.8, -17.0, -0.5],
+          "arm_l": [-89.3, 10.8, -32.1],
+          "forearm_l": [-43.9, -54.2, 0.9],
+          "hand_l": [65.4, 39.4, -4.5],
+          "ear_r": [-10, 0, 6],
+          "ear_l": [-10, 0, -6],
+          "tail_1": [52, 0, 0],
+          "tail_2": [12, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_bow2": {
+        "_comment": "Midnight Frenzy, the stretch at its fullest: lower and longer, the claws reaching further.",
+        "bones": {
+          "body": [60, 4, 0],
+          "waist": [6, 0, 0],
+          "chest": [10, 0, 0],
+          "neck": [-38, -4, 0],
+          "leg_r": [-11.7, 0.0, 4.1],
+          "shin_r": [36, 0, 0],
+          "foot_r": [-24.2, -0.4, -4.3],
+          "leg_l": [-26.0, 0.0, -3.1],
+          "shin_l": [36, 0, 0],
+          "foot_l": [-10.0, 0.2, 3.1],
+          "arm_r": [-88.2, -20.7, -71.7],
+          "forearm_r": [-1.0, -42.5, -0.5],
+          "hand_r": [51.9, -26.8, 0.1],
+          "arm_l": [-106.4, -13.7, -31.4],
+          "forearm_l": [-1.0, -26.4, 0.5],
+          "hand_l": [53.0, -10.7, -0.3],
+          "ear_r": [-12, 0, 6],
+          "ear_l": [-12, 0, -6],
+          "tail_1": [58, 0, 0],
+          "tail_2": [14, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_rise": {
+        "_comment": "Midnight Frenzy: up out of the bow into the other stretch, the back arched and both arms swept up and wide.",
+        "bones": {
+          "body": [-6, 4, 0],
+          "waist": [-2, 0, 0],
+          "chest": [-12, 0, 0],
+          "neck": [-14, -4, 0],
+          "leg_r": [-10.8, 0.0, 4.1],
+          "shin_r": [34, 0, 0],
+          "foot_r": [-23.2, -0.3, -4.3],
+          "leg_l": [-25.0, 0.0, -3.0],
+          "shin_l": [34, 0, 0],
+          "foot_l": [-9.0, 0.2, 3.1],
+          "arm_r": [-14, 0, 146],
+          "forearm_r": [-18, 0, 0],
+          "hand_r": [0, 0, -8],
+          "arm_l": [-14, 0, -146],
+          "forearm_l": [-18, 0, 0],
+          "hand_l": [0, 0, 8],
+          "ear_r": [2, 0, -2],
+          "ear_l": [2, 0, 2],
+          "tail_1": [40, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_inhale": {
+        "_comment": "Midnight Frenzy, the breath: the chest swelling, the head tipping back, the arms coming down wide with the claws spread.",
+        "bones": {
+          "body": [-4, 4, 0],
+          "waist": [-2, 0, 0],
+          "chest": [-16, 0, 0],
+          "neck": [-26, -4, 0],
+          "leg_r": [-14.4, 0.0, 4.2],
+          "shin_r": [42, 0, 0],
+          "foot_r": [-27.5, -0.7, -4.3],
+          "leg_l": [-29.0, 0.0, -3.1],
+          "shin_l": [42, 0, 0],
+          "foot_l": [-13.0, 0.4, 3.1],
+          "arm_r": [-14, 0, 72],
+          "forearm_r": [-34, 0, 0],
+          "hand_r": [0, 0, -10],
+          "arm_l": [-14, 0, -72],
+          "forearm_l": [-34, 0, 0],
+          "hand_l": [0, 0, 10],
+          "ear_r": [-20, 0, 10],
+          "ear_l": [-20, 0, -10],
+          "tail_1": [50, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_yowl": {
+        "_comment": "Midnight Frenzy (the release): the yowl, the head thrown back and the mouth wide, the arms flung down and out with every claw spread, the ears flat, the tail straight up.",
+        "bones": {
+          "body": [-2, 4, 0],
+          "waist": [-2, 0, 0],
+          "chest": [-18, 0, 0],
+          "neck": [-36, -4, 0],
+          "leg_r": [-16.3, 0.0, 4.2],
+          "shin_r": [46, 0, 0],
+          "foot_r": [-29.6, -0.9, -4.4],
+          "leg_l": [-31.0, 0.0, -3.2],
+          "shin_l": [46, 0, 0],
+          "foot_l": [-15.0, 0.5, 3.1],
+          "arm_r": [10, 0, 52],
+          "forearm_r": [-26, 0, 0],
+          "hand_r": [-10, 0, -14],
+          "arm_l": [10, 0, -52],
+          "forearm_l": [-26, 0, 0],
+          "hand_l": [-10, 0, 14],
+          "ear_r": [-36, 0, 18],
+          "ear_l": [-36, 0, -18],
+          "tail_1": [64, 0, 0],
+          "tail_2": [18, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.fr_crouch": {
+        "_comment": "Frenzy: the hunter's crouch on her foot spots, low with the claws spread wide and low at her sides, the head up and the fangs bared, the tail up and lashing.",
+        "bones": {
+          "body": [30, 8, 0],
+          "waist": [4, 0, 0],
+          "chest": [8, 2, 0],
+          "neck": [-32, -10, 0],
+          "leg_r": [-32.7, 0.0, 5.3],
+          "shin_r": [84, 0, 0],
+          "foot_r": [-51.1, -3.3, -4.4],
+          "leg_l": [-51.0, 0.0, -4.0],
+          "shin_l": [84, 0, 0],
+          "foot_l": [-33.0, 1.9, 3.5],
+          "arm_r": [-35.2, 27.4, -18.1],
+          "forearm_r": [-51.2, 9.5, -0.6],
+          "hand_r": [50.2, -3.5, -25.7],
+          "arm_l": [-21.0, -19.3, -10.0],
+          "forearm_l": [-44.9, -15.0, 0.5],
+          "hand_l": [43.5, -14.2, -3.1],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [46, 0, 0],
+          "tail_2": [10, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_in_1": {
+        "_comment": "Midnight Frenzy: down into the play bow, the knees solved on the foot spots.",
+        "bones": {
+          "body": [30.0, 8.0, 0.0],
+          "neck": [-21.0, -12.0, 0.0],
+          "waist": [3.0, 0.0, 0.0],
+          "chest": [6.5, 4.0, 0.0],
+          "leg_r": [-9.4, 0.0, 4.1],
+          "shin_r": [31.0, 0, 0],
+          "foot_r": [-21.6, -0.2, -4.3],
+          "leg_l": [-23.5, 0.0, -3.0],
+          "shin_l": [31.0, 0, 0],
+          "foot_l": [-7.5, 0.1, 3.0],
+          "ear_l": [-5.0, 0.0, -3.0],
+          "ear_r": [-5.0, 0.0, 3.0],
+          "forearm_r": [-72.0, -11.1, -0.4],
+          "hand_l": [36.0, 22.1, -9.9],
+          "arm_r": [-52.3, -10.8, -8.8],
+          "forearm_l": [-71.0, -28.6, 0.5],
+          "tail_2": [6.0, 0.0, 0.0],
+          "arm_l": [-65.8, 2.8, -17.8],
+          "hand_r": [32.4, -6.2, 5.5],
+          "tail_1": [26.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_down_1": {
+        "_comment": "Midnight Frenzy: dropping from the yowl into the hunter's crouch, the knees solved on the foot spots.",
+        "bones": {
+          "body": [8.7, 5.3, 0.0],
+          "neck": [-34.7, -6.0, 0.0],
+          "waist": [0.0, 0.0, 0.0],
+          "chest": [-9.3, 0.7, 0.0],
+          "leg_r": [-21.9, 0.0, 4.5],
+          "shin_r": [58.7, 0, 0],
+          "foot_r": [-36.6, -1.6, -4.4],
+          "leg_l": [-37.5, 0.0, -3.4],
+          "shin_l": [58.7, 0, 0],
+          "foot_l": [-21.1, 0.9, 3.2],
+          "ear_l": [-32.7, 0.0, -16.0],
+          "ear_r": [-32.7, 0.0, 16.0],
+          "forearm_r": [-34.4, 3.2, -0.2],
+          "hand_l": [7.8, -4.7, 8.3],
+          "arm_r": [-5.1, 9.1, 28.6],
+          "forearm_l": [-32.3, -5.0, 0.2],
+          "tail_2": [15.3, 0.0, 0.0],
+          "arm_l": [-0.3, -6.4, -38.0],
+          "hand_r": [10.1, -1.2, -17.9],
+          "tail_1": [58.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ul_down_2": {
+        "_comment": "Midnight Frenzy: dropping from the yowl into the hunter's crouch, the knees solved on the foot spots.",
+        "bones": {
+          "body": [19.3, 6.7, 0.0],
+          "neck": [-33.3, -8.0, 0.0],
+          "waist": [2.0, 0.0, 0.0],
+          "chest": [-0.7, 1.3, 0.0],
+          "leg_r": [-27.4, 0.0, 4.8],
+          "shin_r": [71.3, 0, 0],
+          "foot_r": [-43.8, -2.4, -4.4],
+          "leg_l": [-44.1, 0.0, -3.6],
+          "shin_l": [71.3, 0, 0],
+          "foot_l": [-27.1, 1.4, 3.4],
+          "ear_l": [-29.3, 0.0, -14.0],
+          "ear_r": [-29.3, 0.0, 14.0],
+          "forearm_r": [-42.8, 6.3, -0.4],
+          "hand_l": [25.7, -9.5, 2.6],
+          "arm_r": [-20.1, 18.3, 5.3],
+          "forearm_l": [-38.6, -10.0, 0.3],
+          "tail_2": [12.7, 0.0, 0.0],
+          "arm_l": [-10.7, -12.9, -24.0],
+          "hand_r": [30.1, -2.3, -21.8],
+          "tail_1": [52.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.fr_up_1": {
+        "_comment": "Frenzy: up from the hunter's crouch into the guard, the knees solved on the foot spots.",
+        "bones": {
+          "neck": [-23.3, -13.3, 0.0],
+          "waist": [2.7, 0.0, 0.0],
+          "chest": [6.3, 4.0, 0.0],
+          "body": [22.0, 9.3, 0.0],
+          "leg_r": [-24.8, 0.0, 4.7],
+          "shin_r": [65.3, 0, 0],
+          "foot_r": [-40.4, -2.0, -4.4],
+          "leg_l": [-41.0, 0.0, -3.5],
+          "shin_l": [65.3, 0, 0],
+          "foot_l": [-24.3, 1.1, 3.3],
+          "forearm_r": [-66.6, 2.8, -0.4],
+          "hand_l": [31.2, -7.8, -7.2],
+          "arm_r": [-33.5, 13.9, -10.3],
+          "ear_l": [-17.3, 0.0, -8.0],
+          "ear_r": [-17.3, 0.0, 8.0],
+          "forearm_l": [-62.7, -11.0, 0.3],
+          "tail_2": [6.7, 0.0, 0.0],
+          "arm_l": [-28.1, -14.6, -7.8],
+          "hand_r": [31.8, -0.8, -13.3],
+          "tail_1": [30.7, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.fr_up_2": {
+        "_comment": "Frenzy: up from the hunter's crouch into the guard, the knees solved on the foot spots.",
+        "bones": {
+          "neck": [-14.7, -16.7, 0.0],
+          "waist": [1.3, 0.0, 0.0],
+          "chest": [4.7, 6.0, 0.0],
+          "body": [14.0, 10.7, 0.0],
+          "leg_r": [-16.6, 0.0, 4.3],
+          "shin_r": [46.7, 0, 0],
+          "foot_r": [-30.0, -0.9, -4.4],
+          "leg_l": [-31.4, 0.0, -3.2],
+          "shin_l": [46.7, 0, 0],
+          "foot_l": [-15.3, 0.5, 3.1],
+          "forearm_r": [-81.9, -3.8, -0.2],
+          "hand_l": [18.9, -1.5, -11.3],
+          "arm_r": [-31.9, 0.4, -2.5],
+          "ear_l": [-8.7, 0.0, -4.0],
+          "ear_r": [-8.7, 0.0, 4.0],
+          "forearm_l": [-80.4, -7.0, 0.2],
+          "tail_2": [3.3, 0.0, 0.0],
+          "arm_l": [-35.3, -10.0, -5.7],
+          "hand_r": [13.4, 2.0, -0.8],
+          "tail_1": [15.3, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.p2_jolt": {
+        "_comment": "Phase 2, the jolt: a flustered start, the shoulders up, both claws up before her face, the ears and the tail straight up (the fur puffs out now).",
+        "bones": {
+          "body": [0, 10, 0],
+          "waist": [-2, 0, 0],
+          "chest": [-8, 6, 0],
+          "neck": [-8, -16, 0],
+          "arm_r": [-46.0, 5.8, -12.7],
+          "forearm_r": [-71.8, -24.7, 1.0],
+          "hand_r": [61.0, 17.3, 1.7],
+          "arm_l": [-38.4, 8.6, 7.5],
+          "forearm_l": [-87.4, -26.0, 0.2],
+          "hand_l": [36.1, 60.0, -34.4],
+          "ear_r": [12, 0, -4],
+          "ear_l": [12, 0, 4],
+          "tail_1": [64, 0, 0],
+          "tail_2": [20, 0, 0]
+        }
+      },
+      "natsuho.p2_point": {
+        "_comment": "Phase 2, 'F-fine!': the right claw thrust out pointing at the enemy, the left fist planted on the hip, the chin up.",
+        "bones": {
+          "body": [2, 4, 0],
+          "waist": [0, 0, 0],
+          "chest": [-2, -6, 0],
+          "neck": [-10, 2, 0],
+          "arm_r": [-88.4, -1.5, -26.5],
+          "forearm_r": [-1.0, 24.2, -1.0],
+          "hand_r": [75.0, -60.0, 6.4],
+          "arm_l": [16, 0, -34],
+          "forearm_l": [-96, 0, 0],
+          "hand_l": [0, 0, 16],
+          "ear_r": [-6, 0, 4],
+          "ear_l": [-6, 0, -4],
+          "tail_1": [44, 0, 0]
+        }
+      },
+      "natsuho.p3_low": {
+        "_comment": "Phase 3, the gathering: the head bowed low, the shoulders slumped, both claws hanging low and spread, the knees bent on her foot spots, the eyes shut.",
+        "bones": {
+          "body": [14, 8, 0],
+          "waist": [4, 0, 0],
+          "chest": [14, 2, 0],
+          "neck": [26, -8, 0],
+          "leg_r": [-20.7, 0.0, 4.4],
+          "shin_r": [56, 0, 0],
+          "foot_r": [-35.1, -1.4, -4.4],
+          "leg_l": [-36.1, 0.0, -3.3],
+          "shin_l": [56, 0, 0],
+          "foot_l": [-19.8, 0.8, 3.2],
+          "arm_r": [-52.6, 22.5, -13.8],
+          "forearm_r": [-1.0, 63.7, -1.0],
+          "hand_r": [75.0, -60.0, 5.7],
+          "arm_l": [-48.8, -39.6, 11.5],
+          "forearm_l": [-1.0, 6.8, -0.1],
+          "hand_l": [73.6, -56.3, 14.1],
+          "ear_r": [-30, 0, 14],
+          "ear_l": [-30, 0, -14],
+          "tail_1": [16, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.p3_rise": {
+        "_comment": "Phase 3, 'Nobody... corners... a cat!': the head coming up with the eyes narrowed and glowing, the claws flexed out wide at her hips, the chest out.",
+        "bones": {
+          "body": [8, 8, 0],
+          "waist": [2, 0, 0],
+          "chest": [0, 2, 0],
+          "neck": [-18, -8, 0],
+          "leg_r": [-19.0, 0.0, 4.3],
+          "shin_r": [52, 0, 0],
+          "foot_r": [-32.9, -1.2, -4.4],
+          "leg_l": [-34.1, 0.0, -3.2],
+          "shin_l": [52, 0, 0],
+          "foot_l": [-17.9, 0.7, 3.2],
+          "arm_r": [-23.1, 37.0, 14.6],
+          "forearm_r": [-34.9, -51.9, 0.7],
+          "hand_r": [61.2, 59.9, 7.6],
+          "arm_l": [-17.7, -12.4, -13.0],
+          "forearm_l": [-27.5, -22.3, -0.6],
+          "hand_l": [52.8, 28.8, -35.0],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [40, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.p3_in_1": {
+        "_comment": "Phase 3: sinking into the gathering, the knees solved on the foot spots.",
+        "bones": {
+          "body": [10.0, 10.0, 0.0],
+          "neck": [10.0, -14.0, 0.0],
+          "waist": [2.0, 0.0, 0.0],
+          "chest": [8.5, 5.0, 0.0],
+          "leg_r": [-14.4, 0.0, 4.2],
+          "shin_r": [42.0, 0, 0],
+          "foot_r": [-27.5, -0.7, -4.3],
+          "leg_l": [-29.0, 0.0, -3.1],
+          "shin_l": [42.0, 0, 0],
+          "foot_l": [-13.0, 0.4, 3.1],
+          "ear_l": [-15.0, 0.0, -7.0],
+          "ear_r": [-15.0, 0.0, 7.0],
+          "forearm_r": [-49.1, 26.6, -0.5],
+          "hand_l": [40.1, -25.7, -0.7],
+          "arm_r": [-41.4, 4.7, -4.2],
+          "forearm_l": [-49.6, 1.9, -0.1],
+          "arm_l": [-45.6, -22.4, 4.0],
+          "hand_r": [35.0, -27.6, 8.7],
+          "tail_1": [8.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.p3_out_1": {
+        "_comment": "Phase 3: back up into the guard, the knees solved on the foot spots.",
+        "bones": {
+          "neck": [-12.0, -14.0, 0.0],
+          "waist": [1.0, 0.0, 0.0],
+          "chest": [1.5, 5.0, 0.0],
+          "body": [7.0, 10.0, 0.0],
+          "leg_r": [-13.5, 0.0, 4.2],
+          "shin_r": [40.0, 0, 0],
+          "foot_r": [-26.4, -0.6, -4.3],
+          "leg_l": [-28.0, 0.0, -3.1],
+          "shin_l": [40.0, 0, 0],
+          "foot_l": [-12.0, 0.3, 3.1],
+          "forearm_r": [-66.1, -31.2, 0.3],
+          "hand_l": [29.7, 16.9, -25.2],
+          "arm_r": [-26.6, 11.9, 9.9],
+          "ear_l": [-13.0, 0.0, -6.0],
+          "ear_r": [-13.0, 0.0, 6.0],
+          "forearm_l": [-62.9, -12.7, -0.3],
+          "arm_l": [-30.1, -8.8, -8.2],
+          "hand_r": [28.1, 32.3, 9.6],
+          "tail_1": [20.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.in_glance": {
+        "_comment": "Intro, the glance back: still with the arms crossed, the head turned back to the enemy over the shoulder.",
+        "bones": {
+          "body": [4, 12, 0],
+          "waist": [-2, 4, 0],
+          "chest": [-6, 8, 0],
+          "neck": [-8, -14, 0],
+          "arm_r": [-28.3, -38.2, -34.5],
+          "forearm_r": [-37.6, 0.9, 0.9],
+          "hand_r": [25.6, -45.4, 13.4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [2, 0, -2],
+          "ear_l": [2, 0, 2],
+          "tail_1": [24, 0, -14]
+        }
+      },
+      "natsuho.in_open": {
+        "_comment": "Arms opening out wide on the way into the fold (the claws clear of the forearms).",
+        "bones": {
+          "neck": [-7.2, 11.2, 0.0],
+          "waist": [-1.2, 2.4, 0.0],
+          "chest": [-2.4, 8.0, 0.0],
+          "body": [4.8, 12.0, 0.0],
+          "foot_l": [-2.4, 0.0, 1.2],
+          "leg_r": [-3.2, 0.0, 1.6],
+          "shin_l": [11.2, 0.0, 0.0],
+          "shin_r": [11.2, 0.0, 0.0],
+          "leg_l": [-8.8, 0.0, -1.2],
+          "foot_r": [-8.0, 0.0, -1.6],
+          "forearm_r": [-84, 0, 0],
+          "hand_l": [0, 0, -4],
+          "arm_r": [-42, 0, 30],
+          "ear_l": [-7.2, 0.0, -2.4],
+          "ear_r": [-7.2, 0.0, 2.4],
+          "forearm_l": [-84, 0, 0],
+          "arm_l": [-42, 0, -30],
+          "hand_r": [0, 0, 4],
+          "tail_1": [14.4, 0.0, 8.4]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.uncross": {
+        "_comment": "Arms opening out of the cross toward the guard (the claws clear of the forearms).",
+        "bones": {
+          "neck": [-7.0, 6.0, 0.0],
+          "waist": [-1.0, 2.0, 0.0],
+          "chest": [-1.5, 8.0, 0.0],
+          "body": [5.0, 12.0, 0.0],
+          "foot_l": [-3.0, 0.0, 1.5],
+          "leg_r": [-4.0, 0.0, 2.0],
+          "shin_l": [14.0, 0.0, 0.0],
+          "shin_r": [14.0, 0.0, 0.0],
+          "leg_l": [-11.0, 0.0, -1.5],
+          "foot_r": [-10.0, 0.0, -2.0],
+          "forearm_r": [-84, 0, 0],
+          "hand_l": [0, 0, -4],
+          "arm_r": [-42, 0, 30],
+          "ear_l": [-6.0, 0.0, -2.0],
+          "ear_r": [-6.0, 0.0, 2.0],
+          "forearm_l": [-84, 0, 0],
+          "arm_l": [-42, 0, -30],
+          "hand_r": [0, 0, 4],
+          "tail_1": [12.0, 0.0, 7.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.in_half": {
+        "_comment": "Folding the arms: the left already across, the right still open.",
+        "bones": {
+          "body": [4, 12, 0],
+          "waist": [-2, 4, 0],
+          "chest": [-6, 8, 0],
+          "neck": [-8, 32, 0],
+          "arm_r": [-42, 0, 30],
+          "forearm_r": [-84, 0, 0],
+          "hand_r": [0, 0, 4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [-12, 0, 4],
+          "ear_l": [-12, 0, -4],
+          "tail_1": [24, 0, 14]
+        }
+      },
+      "natsuho.glance_half": {
+        "_comment": "Unfolding the arms: the right opened out first, the left still across.",
+        "bones": {
+          "body": [4, 12, 0],
+          "waist": [-2, 4, 0],
+          "chest": [-6, 8, 0],
+          "neck": [-8, -14, 0],
+          "arm_r": [-42, 0, 30],
+          "forearm_r": [-84, 0, 0],
+          "hand_r": [0, 0, 4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [2, 0, -2],
+          "ear_l": [2, 0, 2],
+          "tail_1": [24, 0, -14]
+        }
+      },
+      "natsuho.vi_turn": {
+        "_comment": "Victory: turned half away with the arms folded, the chin up and the eyes shut, the tail curled up high: 'Hmph. Too slow.'",
+        "bones": {
+          "body": [4, 22, 0],
+          "waist": [-2, 14, 0],
+          "chest": [-6, 16, 0],
+          "neck": [-12, 8, 0],
+          "arm_r": [-28.3, -38.2, -34.5],
+          "forearm_r": [-37.6, 0.9, 0.9],
+          "hand_r": [25.6, -45.4, 13.4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [4, 0, -2],
+          "ear_l": [4, 0, 2],
+          "tail_1": [52, 0, 0],
+          "tail_2": [20, 0, 0]
+        }
+      },
+      "natsuho.vi_peek": {
+        "_comment": "Victory, the peek: a look back over the left shoulder with a smug fang grin.",
+        "bones": {
+          "body": [4, 22, 0],
+          "waist": [-2, 14, 0],
+          "chest": [-6, 16, 0],
+          "neck": [-10, -42, 0],
+          "arm_r": [-28.3, -38.2, -34.5],
+          "forearm_r": [-37.6, 0.9, 0.9],
+          "hand_r": [25.6, -45.4, 13.4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [6, 0, -2],
+          "ear_l": [6, 0, 2],
+          "tail_1": [52, 0, -16],
+          "tail_2": [20, 0, 0]
+        }
+      },
+      "natsuho.vi_shoo": {
+        "_comment": "Victory, 'shoo': the right claw flicked out low toward the beaten enemy, the left hand on the hip, still looking back.",
+        "bones": {
+          "body": [4, 18, 0],
+          "waist": [-2, 10, 0],
+          "chest": [-6, 10, 0],
+          "neck": [-10, -36, 0],
+          "arm_r": [-39.5, -22.0, -30.8],
+          "forearm_r": [-1.0, -77.2, 0.0],
+          "hand_r": [68.5, -59.0, -1.0],
+          "arm_l": [16, 0, -34],
+          "forearm_l": [-96, 0, 0],
+          "hand_l": [0, 0, 16],
+          "ear_r": [4, 0, -2],
+          "ear_l": [4, 0, 2],
+          "tail_1": [46, 0, -10]
+        }
+      },
+      "natsuho.vi_in": {
+        "_comment": "Victory: the arms opening out wide on the way into the fold.",
+        "bones": {
+          "neck": [-9.6, -3.2, 0.0],
+          "waist": [-1.2, 8.4, 0.0],
+          "chest": [-2.4, 12.8, 0.0],
+          "body": [4.8, 18.0, 0.0],
+          "foot_l": [-2.4, 0.0, 1.2],
+          "leg_r": [-3.2, 0.0, 1.6],
+          "shin_l": [11.2, 0.0, 0.0],
+          "shin_r": [11.2, 0.0, 0.0],
+          "leg_l": [-8.8, 0.0, -1.2],
+          "foot_r": [-8.0, 0.0, -1.6],
+          "forearm_r": [-84, 0, 0],
+          "hand_l": [0, 0, -4],
+          "arm_r": [-42, 0, 30],
+          "ear_l": [2.4, 0.0, 1.2],
+          "ear_r": [2.4, 0.0, -1.2],
+          "forearm_l": [-84, 0, 0],
+          "tail_2": [12.0, 0.0, 0.0],
+          "arm_l": [-42, 0, -30],
+          "hand_r": [0, 0, 4],
+          "tail_1": [31.2, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.vi_out": {
+        "_comment": "Victory: the arms opening out of the fold before the 'shoo'.",
+        "bones": {
+          "neck": [-10.0, -39.0, 0.0],
+          "waist": [-2.0, 12.0, 0.0],
+          "chest": [-6.0, 13.0, 0.0],
+          "body": [4.0, 20.0, 0.0],
+          "forearm_r": [-84, 0, 0],
+          "hand_l": [0, 0, -4],
+          "arm_r": [-42, 0, 30],
+          "ear_l": [5.0, 0.0, 2.0],
+          "ear_r": [5.0, 0.0, -2.0],
+          "forearm_l": [-84, 0, 0],
+          "tail_2": [10.0, 0.0, 0.0],
+          "arm_l": [-42, 0, -30],
+          "hand_r": [0, 0, 4],
+          "tail_1": [49.0, 0.0, -13.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.vi_half": {
+        "_comment": "Victory, folding the arms: the left already across, the right still open.",
+        "bones": {
+          "body": [4, 22, 0],
+          "waist": [-2, 14, 0],
+          "chest": [-6, 16, 0],
+          "neck": [-12, 8, 0],
+          "arm_r": [-42, 0, 30],
+          "forearm_r": [-84, 0, 0],
+          "hand_r": [0, 0, 4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [4, 0, -2],
+          "ear_l": [4, 0, 2],
+          "tail_1": [52, 0, 0],
+          "tail_2": [20, 0, 0]
+        }
+      },
+      "natsuho.peek_half": {
+        "_comment": "Victory, unfolding the arms: the right opened out first.",
+        "bones": {
+          "body": [4, 22, 0],
+          "waist": [-2, 14, 0],
+          "chest": [-6, 16, 0],
+          "neck": [-10, -42, 0],
+          "arm_r": [-42, 0, 30],
+          "forearm_r": [-84, 0, 0],
+          "hand_r": [0, 0, 4],
+          "arm_l": [-33.1, -0.7, -24.0],
+          "forearm_l": [-76.8, 47.0, -0.6],
+          "hand_l": [75.0, -59.1, -15.5],
+          "ear_r": [6, 0, -2],
+          "ear_l": [6, 0, 2],
+          "tail_1": [52, 0, -16],
+          "tail_2": [20, 0, 0]
+        }
+      },
+      "natsuho.ta_yawn": {
+        "_comment": "Taunt, the yawn: bored, the right fist before her open mouth, the left on her hip, the eyes shut.",
+        "bones": {
+          "body": [2, 10, 0],
+          "waist": [0, 0, 0],
+          "chest": [-6, 8, 0],
+          "neck": [-16, -14, 0],
+          "arm_r": [-16.4, -22.8, -57.7],
+          "forearm_r": [-115.3, -20.3, -1.0],
+          "hand_r": [75.0, 60.0, 12.0],
+          "arm_l": [16, 0, -34],
+          "forearm_l": [-96, 0, 0],
+          "hand_l": [0, 0, 16],
+          "ear_r": [-4, 0, 2],
+          "ear_l": [-4, 0, -2],
+          "tail_1": [14, 0, 0]
+        }
+      },
+      "natsuho.ta_beckon": {
+        "_comment": "Taunt, the beckon: the right claw held out palm up to the enemy, curling, a smug fang grin.",
+        "bones": {
+          "body": [4, 10, 0],
+          "waist": [0, 0, 0],
+          "chest": [0, 4, 0],
+          "neck": [-8, -12, 4],
+          "arm_r": [-71.1, -10.1, -19.2],
+          "forearm_r": [-1.0, 35.3, -0.2],
+          "hand_r": [51.3, -52.9, -0.8],
+          "arm_l": [16, 0, -34],
+          "forearm_l": [-96, 0, 0],
+          "hand_l": [0, 0, 16],
+          "ear_r": [6, 0, -2],
+          "ear_l": [6, 0, 2],
+          "tail_1": [30, 0, -10]
+        }
+      },
+      "natsuho.ls_clash": {
+        "_comment": "The last stand: the feet planted wider in spirit (deeper on her spots), both claws struck together crossed before her chest.",
+        "bones": {
+          "body": [10, 10, 0],
+          "waist": [2, 0, 0],
+          "chest": [4, 4, 0],
+          "neck": [-12, -14, 0],
+          "leg_r": [-19.0, 0.0, 4.3],
+          "shin_r": [52, 0, 0],
+          "foot_r": [-32.9, -1.2, -4.4],
+          "leg_l": [-34.1, 0.0, -3.2],
+          "shin_l": [52, 0, 0],
+          "foot_l": [-17.9, 0.7, 3.2],
+          "arm_r": [-39.1, -18.0, 2.2],
+          "forearm_r": [-82.2, -24.2, 0.7],
+          "hand_r": [44.3, -14.7, 18.3],
+          "arm_l": [-31.8, 6.3, -30.7],
+          "forearm_l": [-100.8, 5.7, -1.0],
+          "hand_l": [57.9, 8.8, -35.0],
+          "ear_r": [-12, 0, 6],
+          "ear_l": [-12, 0, -6],
+          "tail_1": [36, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ls_spread": {
+        "_comment": "The last stand, 'This is MY harbour': the claws flung out wide and low, the chest out and the chin up.",
+        "bones": {
+          "body": [4, 10, 0],
+          "waist": [0, 0, 0],
+          "chest": [-8, 4, 0],
+          "neck": [-14, -14, 0],
+          "leg_r": [-19.0, 0.0, 4.3],
+          "shin_r": [52, 0, 0],
+          "foot_r": [-32.9, -1.2, -4.4],
+          "leg_l": [-34.1, 0.0, -3.2],
+          "shin_l": [52, 0, 0],
+          "foot_l": [-17.9, 0.7, 3.2],
+          "arm_r": [-8, 0, 50],
+          "forearm_r": [-24, 0, 0],
+          "hand_r": [0, 0, -12],
+          "arm_l": [-8, 0, -50],
+          "forearm_l": [-24, 0, 0],
+          "hand_l": [0, 0, 12],
+          "ear_r": [-26, 0, 12],
+          "ear_l": [-26, 0, -12],
+          "tail_1": [50, 0, 0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ls_in_1": {
+        "_comment": "The last stand: sinking into it, the knees solved on the foot spots.",
+        "bones": {
+          "body": [8.0, 11.0, 0.0],
+          "neck": [-9.0, -17.0, 0.0],
+          "waist": [1.0, 0.0, 0.0],
+          "chest": [3.5, 6.0, 0.0],
+          "leg_r": [-13.5, 0.0, 4.2],
+          "shin_r": [40.0, 0, 0],
+          "foot_r": [-26.4, -0.6, -4.3],
+          "leg_l": [-28.0, 0.0, -3.1],
+          "shin_l": [40.0, 0, 0],
+          "foot_l": [-12.0, 0.3, 3.1],
+          "ear_l": [-6.0, 0.0, -3.0],
+          "ear_r": [-6.0, 0.0, 3.0],
+          "forearm_r": [-89.8, -17.4, 0.3],
+          "hand_l": [32.2, 6.8, -25.2],
+          "arm_r": [-34.6, -15.6, 3.8],
+          "forearm_l": [-99.5, 1.4, -0.5],
+          "arm_l": [-37.1, 0.5, -17.1],
+          "hand_r": [19.6, -5.0, 14.9],
+          "tail_1": [18.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.ls_out_1": {
+        "_comment": "The last stand: back up into the guard, the knees solved on the foot spots.",
+        "bones": {
+          "neck": [-10.0, -17.0, 0.0],
+          "waist": [0.0, 0.0, 0.0],
+          "chest": [-2.5, 6.0, 0.0],
+          "body": [5.0, 11.0, 0.0],
+          "leg_r": [-13.5, 0.0, 4.2],
+          "shin_r": [40.0, 0, 0],
+          "foot_r": [-26.4, -0.6, -4.3],
+          "leg_l": [-28.0, 0.0, -3.1],
+          "shin_l": [40.0, 0, 0],
+          "foot_l": [-12.0, 0.3, 3.1],
+          "forearm_r": [-60.6, -5.2, 0.0],
+          "hand_l": [3.3, 2.5, -1.7],
+          "arm_r": [-19.1, -6.5, 27.6],
+          "ear_l": [-13.0, 0.0, -6.0],
+          "ear_r": [-13.0, 0.0, 6.0],
+          "forearm_l": [-61.1, -1.5, 0.0],
+          "arm_l": [-25.2, -2.6, -26.8],
+          "hand_r": [-2.5, 2.4, -0.2],
+          "tail_1": [25.0, 0.0, 0.0]
+        },
+        "fix": ["floor"],
+        "floor": ["foot_*"]
+      },
+      "natsuho.esc_jolt": {
+        "_comment": "The escape's start, the cat bolts: the shoulders up, the arms pulled in tight, a look back over the right shoulder, the ears flat, the tail bristling up.",
+        "bones": {
+          "waist": [0, 0, 0],
+          "chest": [-6, 0, 0],
+          "neck": [-4, 52, 0],
+          "arm_r": [-30, 0, 8],
+          "forearm_r": [-110, 0, 0],
+          "hand_r": [0, 0, 0],
+          "arm_l": [-10, 0, -8],
+          "forearm_l": [-100, 0, 0],
+          "hand_l": [0, 0, 0],
+          "ear_r": [-36, 0, 18],
+          "ear_l": [-36, 0, -18],
+          "tail_1": [56, 0, 0]
+        }
+      },
+      "natsuho.esc_go": {
+        "_comment": "The escape's start: facing the way out, the arms pumping into the run, the ears still flat.",
+        "bones": {
+          "waist": [0, 0, 0],
+          "chest": [4, 0, 0],
+          "neck": [-8, 0, 0],
+          "arm_r": [30, 0, 8],
+          "forearm_r": [-80, 0, 0],
+          "hand_r": [0, 0, 0],
+          "arm_l": [-40, 0, -8],
+          "forearm_l": [-80, 0, 0],
+          "hand_l": [0, 0, 0],
+          "ear_r": [-30, 0, 14],
+          "ear_l": [-30, 0, -14],
+          "tail_1": [30, 0, 0]
+        }
+      },
+      "natsuho.pl_lick": {
+        "_comment": "Paw lick (an idle): the right fist raised to her mouth, the head bent to it, the eyes shut.",
+        "bones": {
+          "waist": [0, 0, 0],
+          "chest": [2, 4, 0],
+          "neck": [10, -6, -10],
+          "arm_r": [-40.4, -40.0, -34.2],
+          "forearm_r": [-110.5, -2.3, -1.0],
+          "hand_r": [75.0, -33.6, 35.0],
+          "arm_l": [0, 0, -8],
+          "forearm_l": [-10, 0, 0],
+          "hand_l": [0, 0, 2],
+          "ear_r": [-6, 0, 2],
+          "ear_l": [-6, 0, -2],
+          "tail_1": [8, 0, 0]
+        }
+      },
+      "natsuho.pl_wipe": {
+        "_comment": "Paw lick, the wipe: the right fist drawn over the right ear, the head tipped into it, the ear flattened under it.",
+        "bones": {
+          "body": [0, 0, 0],
+          "waist": [0, 0, 0],
+          "chest": [2, 2, 0],
+          "neck": [6, -8, -16],
+          "arm_r": [-110.3, 13.8, 14.1],
+          "forearm_r": [-97.7, 35.5, 1.0],
+          "hand_r": [53.9, -60.0, 35.0],
+          "arm_l": [0, 0, -8],
+          "forearm_l": [-10, 0, 0],
+          "hand_l": [0, 0, 2],
+          "ear_r": [-30, 0, 10],
+          "ear_l": [-4, 0, -2],
+          "tail_1": [8, 0, 0]
+        }
+      },
+      "natsuho.st_up": {
+        "_comment": "Stretch and yawn: both arms stretched straight up overhead, the back arched, the head tipped back, the eyes shut and the mouth wide.",
+        "extends": "stretch.up",
+        "bones": {"neck": [-18, 0, 0], "ear_r": [-14, 0, 8], "ear_l": [-14, 0, -8], "tail_1": [30, 0, 0]}
+      },
+      "natsuho.st_down": {
+        "_comment": "Stretch and yawn, done: the arms dropping loose to her sides, the shoulders low, content.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "chest": [4, 0, 0],
+          "neck": [6, 0, 4],
+          "arm_r": [0, 0, 14],
+          "forearm_r": [-6, 0, 0],
+          "arm_l": [0, 0, -14],
+          "forearm_l": [-6, 0, 0],
+          "ear_r": [-4, 0, 2],
+          "ear_l": [-4, 0, -2]
+        }
+      }
+    },
+    "signatures": {
+      "move.pounce": {
+        "description": "Pounce (move slot 1, leap, heavy: 0.8 / 0.2 / 1.0 s): the cat's crouch on her own foot spots (0.14 s), the hip wiggle with the tail swishing (0.16-0.56 s), still for the last instant (0.64 s), the spring at 0.70 s (hit: the server's release, tick 16), stretched out in the air, the landing on her prey with both claws driven down at 0.85 s (cast: the end of the active part, tick 19), the paw lick with her eyes shut (her recovery weak point, 1.1-1.5 s), back on guard by 1.9 s. In place: the server moves her.",
+        "length": 1.9,
+        "class": "heavy",
+        "planted": false,
+        "steps": true,
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.05, "face": "focused"},
+          {"t": 0.14, "pose": "natsuho.pounce_low", "ease": "easeOutCubic"},
+          {"t": 0.55, "pose": "natsuho.pounce_low"},
+          {"t": 0.64, "pose": "natsuho.pounce_load", "ease": "easeInOutSine"},
+          {"t": 0.68, "pose": "natsuho.pounce_load"},
+          {
+            "t": 0.7,
+            "pose": "natsuho.pounce_launch",
+            "root": [0, 1.2, 0],
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:jump_dust",
+            "sound": "factionclash:hero.natsuho_komezaki.pounce_leap",
+            "face": {"eyes": 6, "mouth": 7}
+          },
+          {"t": 0.78, "pose": "natsuho.pounce_air", "ease": "easeOutSine"},
+          {
+            "t": 0.85,
+            "pose": "natsuho.pounce_land",
+            "ease": "easeInQuad",
+            "marker": "cast;vfx:ground_dust",
+            "face": {"eyes": 4, "mouth": 7}
+          },
+          {"t": 0.98, "pose": "natsuho.pounce_land"},
+          {"t": 1.02, "pose": "natsuho.pounce_rise_1", "ease": "linear"},
+          {"t": 1.06, "pose": "natsuho.pounce_rise_2", "ease": "linear"},
+          {"t": 1.1, "pose": "natsuho.pounce_rise_3", "ease": "linear"},
+          {"t": 1.14, "pose": "natsuho.lick", "face": {"eyes": 2, "mouth": 2, "cheeks": 1}},
+          {"t": 1.2, "sound": "factionclash:hero.natsuho_komezaki.paw_lick"},
+          {"t": 1.48, "pose": "natsuho.lick"},
+          {"t": 1.56, "face": "smug"},
+          {"t": 1.72, "face": "none"},
+          {"t": 1.9, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"body": [0, 7, 3], "tail_1": [0, 0, 18]},
+              "period": 0.2,
+              "window": [0.16, 0.22, 0.5, 0.56]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"neck": [4, 0, 0], "hand_r": [-14, 0, 0]},
+              "period": 0.18,
+              "shape": "pulse",
+              "window": [1.14, 1.18, 1.44, 1.48]
+            }
+          }
+        ]
+      },
+      "move.claw_string": {
+        "description": "Claw String (move slot 0, combo of three, light: 0.45 / 0.5 / 0.35 s): the right claw raised high (0.24 s), raked down across the front (hit 1 at 0.35 s, tick 9), the left flung up the other way and raked back across (hit 2 at 0.55 s, tick 13), both claws up beside the head with the back arched and raked down together with a shout (hit 3, the bleeding finisher, at 0.80 s, tick 18), the follow-through past the hips and back on guard by 1.2 s. The hips and upper body only: the legs stay the base controller's.",
+        "length": 1.2,
+        "class": "light",
+        "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_1"],
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.05, "face": "focused"},
+          {"t": 0.24, "pose": "natsuho.cs_wind1", "ease": "easeOutQuad"},
+          {"t": 0.3, "pose": "natsuho.cs_wind1"},
+          {
+            "t": 0.35,
+            "pose": "natsuho.cs_hit1",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:claw_marks",
+            "sound": "factionclash:hero.natsuho_komezaki.claw",
+            "face": {"eyes": 4, "mouth": 7}
+          },
+          {"t": 0.44, "pose": "natsuho.cs_wind2", "ease": "easeOutQuad"},
+          {"t": 0.5, "pose": "natsuho.cs_wind2"},
+          {
+            "t": 0.55,
+            "pose": "natsuho.cs_hit2",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:claw_marks",
+            "sound": "factionclash:hero.natsuho_komezaki.claw"
+          },
+          {"t": 0.66, "pose": "natsuho.cs_wind3", "ease": "easeOutCubic", "face": {"eyes": 4, "mouth": 3}},
+          {"t": 0.74, "pose": "natsuho.cs_wind3"},
+          {
+            "t": 0.8,
+            "pose": "natsuho.cs_hit3",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:claw_marks",
+            "sound": "factionclash:hero.natsuho_komezaki.claw"
+          },
+          {"t": 0.92, "pose": "natsuho.cs_follow", "ease": "easeOutQuad", "face": {"eyes": 4, "mouth": 7}},
+          {"t": 1.02, "face": "none"},
+          {"t": 1.2, "pose": "@stance"}
+        ]
+      },
+      "move.hiss": {
+        "description": "Hiss (move slot 2, cone 4 / 90 degrees, area: 1.0 / 0.1 / 0.8 s): a startled jolt back (0.12 s), the bristle: back arched, head low, claws spread wide, ears flat, the tail straight up and trembling (0.35-0.82 s, the tell), the breath in (0.84 s), the blast at 0.90 s (hit, tick 20: the head thrust forward, the mouth wide, a hiss of air) to 0.95 s (cast: the end of the active part, tick 21), the tremble dying away and back on guard by 1.8 s.",
+        "length": 1.8,
+        "class": "area",
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.04, "face": {"eyes": 6, "mouth": 4}},
+          {"t": 0.12, "pose": "natsuho.hiss_startle", "ease": "easeOutCubic"},
+          {"t": 0.32, "pose": "natsuho.hiss_arch", "ease": "easeInOutSine", "face": {"eyes": 4, "mouth": 7}},
+          {"t": 0.78, "pose": "natsuho.hiss_arch"},
+          {"t": 0.86, "pose": "natsuho.hiss_draw", "ease": "easeInOutSine"},
+          {
+            "t": 0.9,
+            "pose": "natsuho.hiss_blast",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:hiss",
+            "sound": "factionclash:hero.natsuho_komezaki.hiss_burst",
+            "face": {"eyes": 4, "mouth": 3}
+          },
+          {"t": 0.95, "marker": "cast"},
+          {"t": 1.12, "pose": "natsuho.hiss_blast"},
+          {"t": 1.22, "pose": "natsuho.hiss_down_1", "ease": "linear"},
+          {"t": 1.32, "pose": "natsuho.hiss_down_2", "ease": "linear"},
+          {"t": 1.42, "pose": "natsuho.lick", "face": {"eyes": 9, "mouth": 7}},
+          {"t": 1.6, "face": "none"},
+          {"t": 1.8, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"chest": [1.2, 1.5, 1.2], "arm_r": [2, 0, 2], "arm_l": [2, 0, -2], "tail_1": [0, 0, 6]},
+              "period": 0.1,
+              "window": [0.34, 0.42, 0.82, 0.86]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"chest": [1.5, 2, 1.5], "neck": [1.5, 0, 1.5]},
+              "period": 0.1,
+              "window": [0.95, 1.0, 1.15, 1.35]
+            }
+          }
+        ]
+      },
+      "move.scratch_dash": {
+        "description": "Scratch Dash (move slot 3, dash 6, heavy: 0.8 / 0.25 / 0.8 s): the sprinter's crouch side-on with the right claw trailing low behind (0.25 s), coiled tighter (0.62 s), the burst at 0.70 s (hit: the server's release, tick 16) with the claw swinging up from the ground, the rake across the front mid-dash (0.80 s), the brake leaning back on deep knees at 0.90 s (cast: the end of the active part, tick 21), up and back on guard by 1.75 s. In place: the server moves her.",
+        "length": 1.75,
+        "class": "heavy",
+        "planted": false,
+        "steps": true,
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.05, "face": "focused"},
+          {"t": 0.12, "pose": "natsuho.sd_way", "ease": "easeOutQuad"},
+          {"t": 0.25, "pose": "natsuho.sd_crouch", "ease": "easeInOutSine"},
+          {"t": 0.55, "pose": "natsuho.sd_crouch"},
+          {"t": 0.64, "pose": "natsuho.sd_coil", "ease": "easeInOutSine"},
+          {"t": 0.68, "pose": "natsuho.sd_coil"},
+          {
+            "t": 0.7,
+            "pose": "natsuho.sd_burst",
+            "root": [0, 4.0, 0],
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:jump_dust",
+            "sound": "factionclash:hero.natsuho_komezaki.dash",
+            "face": {"eyes": 4, "mouth": 7}
+          },
+          {
+            "t": 0.8,
+            "pose": "natsuho.sd_swipe",
+            "root": [0, 4.0, 0],
+            "ease": "easeInOutSine",
+            "marker": "vfx:claw_marks"
+          },
+          {"t": 0.85, "pose": "natsuho.sd_swipe", "root": [0, 2.0, 0]},
+          {
+            "t": 0.9,
+            "pose": "natsuho.sd_brake",
+            "ease": "easeOutQuad",
+            "marker": "cast;vfx:skid_dust",
+            "face": {"eyes": 4, "mouth": 4}
+          },
+          {"t": 1.02, "pose": "natsuho.sd_brake"},
+          {"t": 1.1333, "pose": "natsuho.sd_up_1", "ease": "linear"},
+          {"t": 1.2467, "pose": "natsuho.sd_up_2", "ease": "linear"},
+          {"t": 1.36, "pose": "natsuho.lick", "face": "smug"},
+          {"t": 1.55, "face": "none"},
+          {"t": 1.75, "pose": "@stance"}
+        ]
+      },
+      "move.cat_reflex": {
+        "description": "Cat Reflex (move slot 4, counter, heavy: 1.0 / 0.1 / 0.8 s; phases 2-3): she settles into the counter stance (0.25 s: low, side-on, a raised paw before her face, the other claw cocked at the hip, eyes narrowed, the tail lashing) and holds it, tensing at the end (the stance is the wind-up), the riposte at 0.90 s (hit, tick 20: the right claw whipped across, sfx) and the left back across at 0.97 s (cast at 0.95 s ends the active part, tick 21), the hop back (1.08-1.3 s, the server moves her 3 blocks) and back on guard by 1.8 s. When she is struck during the stance the server answers at once; the clip shows the answer at the stance's end.",
+        "length": 1.8,
+        "class": "heavy",
+        "planted": false,
+        "steps": true,
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.05, "face": "focused"},
+          {"t": 0.12, "pose": "natsuho.cr_way", "ease": "easeOutQuad"},
+          {"t": 0.25, "pose": "natsuho.cr_set", "ease": "easeInOutSine"},
+          {"t": 0.6, "pose": "natsuho.cr_set"},
+          {"t": 0.72, "pose": "natsuho.cr_down_1", "ease": "linear"},
+          {"t": 0.84, "pose": "natsuho.cr_tense", "face": {"eyes": 4, "mouth": 0}},
+          {
+            "t": 0.9,
+            "pose": "natsuho.cr_swipe1",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:claw_marks",
+            "sound": "factionclash:hero.natsuho_komezaki.claw",
+            "face": {"eyes": 4, "mouth": 7}
+          },
+          {"t": 0.95, "marker": "cast"},
+          {"t": 1.0, "pose": "natsuho.cr_swipe2", "ease": "easeInOutSine", "marker": "vfx:claw_marks"},
+          {"t": 1.16, "pose": "natsuho.cr_hop", "ease": "easeOutQuad", "face": "smug"},
+          {"t": 1.3, "pose": "natsuho.cr_land", "ease": "easeInQuad"},
+          {"t": 1.5, "face": "none"},
+          {"t": 1.8, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {"bones": {"tail_1": [0, 0, 14]}, "period": 0.4, "window": [0.25, 0.32, 0.78, 0.86]}
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"chest": [1.2, 0, 0]},
+              "period": 0.3,
+              "shape": "pulse",
+              "window": [0.25, 0.3, 0.6, 0.66]
+            }
+          }
+        ]
+      },
+      "move.zoomies": {
+        "description": "Zoomies (move slot 5, charge 14 at 180%, heavy: 0.9 / 0.8 / 1.2 s; phase 3): down into a sprinter's crouch with the hips wiggling and the eyes wide and crazed (0.2-0.68 s), gathered (0.75 s), the launch at 0.80 s (hit: the server's release, tick 18) and a frantic in-place sprint (the server runs her) to the skid at 1.55 s (cast: the end of the active part, tick 33), a dizzy sway with a sweat drop, a flustered look, arms crossed and the head turned away ('that did not happen'), back on guard by 2.8 s.",
+        "length": 2.8,
+        "class": "heavy",
+        "planted": false,
+        "steps": true,
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.04, "face": {"eyes": 6, "mouth": 7}},
+          {"t": 0.0667, "pose": "natsuho.zm_in_1", "ease": "linear"},
+          {"t": 0.1333, "pose": "natsuho.zm_in_2", "ease": "linear"},
+          {"t": 0.2, "pose": "natsuho.zm_crouch"},
+          {"t": 0.68, "pose": "natsuho.zm_crouch"},
+          {"t": 0.75, "pose": "natsuho.zm_load", "ease": "easeInOutSine"},
+          {
+            "t": 0.8,
+            "pose": "natsuho.zm_a",
+            "root": [0, 4.0, 0],
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:jump_dust",
+            "sound": "factionclash:hero.natsuho_komezaki.dash",
+            "face": {"eyes": 6, "mouth": 3}
+          },
+          {"t": 0.95, "pose": "natsuho.zm_b", "root": [0, 4.0, 0]},
+          {"t": 1.1, "pose": "natsuho.zm_a", "root": [0, 4.0, 0]},
+          {"t": 1.25, "pose": "natsuho.zm_b", "root": [0, 4.0, 0]},
+          {"t": 1.4, "pose": "natsuho.zm_a", "root": [0, 4.0, 0]},
+          {"t": 1.5, "pose": "natsuho.zm_b", "root": [0, 4.0, 0]},
+          {
+            "t": 1.55,
+            "pose": "natsuho.zm_skid",
+            "ease": "easeOutQuad",
+            "marker": "cast;vfx:skid_dust",
+            "face": {"eyes": 6, "mouth": 4}
+          },
+          {"t": 1.72, "pose": "natsuho.zm_skid"},
+          {"t": 1.8067, "pose": "natsuho.zm_up_1", "ease": "linear"},
+          {"t": 1.8933, "pose": "natsuho.zm_up_2", "ease": "linear"},
+          {"t": 1.98, "pose": "natsuho.zm_dizzy", "face": {"eyes": 6, "mouth": 5, "cheeks": 2}},
+          {"t": 2.25, "pose": "natsuho.zm_dizzy", "face": {"eyes": 6, "mouth": 5, "cheeks": 1}},
+          {"t": 2.32, "pose": "natsuho.zm_open", "ease": "easeInOutSine"},
+          {"t": 2.39, "pose": "natsuho.zm_half", "ease": "easeInOutSine"},
+          {
+            "t": 2.46,
+            "pose": "natsuho.zm_hmph",
+            "ease": "easeInOutSine",
+            "face": {"eyes": 2, "mouth": 5, "cheeks": 1}
+          },
+          {"t": 2.7, "pose": "natsuho.zm_out_1", "ease": "linear"},
+          {"t": 2.6, "pose": "natsuho.zm_hmph"},
+          {"t": 2.65, "pose": "natsuho.zm_half"},
+          {"t": 2.7, "face": "none"},
+          {"t": 2.8, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"body": [0, 8, 4], "tail_1": [0, 0, 22]},
+              "period": 0.18,
+              "window": [0.22, 0.28, 0.62, 0.68]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"neck": [6, 0, 10]},
+              "period": 0.5,
+              "shape": "circle",
+              "window": [1.85, 1.95, 2.25, 2.4]
+            }
+          }
+        ]
+      },
+      "ultimate": {
+        "description": "Midnight Frenzy (the ultimate, self, class ultimate: 1.5 / 0.2 / 1.5 s): a cat's long stretch: the play bow with the eyes shut and the claws reaching far ahead (0.35-0.8 s), up into the other stretch with the back arched and the arms swept up (1.05 s), the breath with the head tipping back (1.3 s), the yowl at 1.40 s (hit, tick 30: the head thrown back, the mouth wide, every claw spread; the server plays the sting) held to 1.55 s (cast, tick 33), then down into the hunter's crouch with a feral grin and back on guard by 3.1 s. The frenzy state's own clip (state.frenzy) starts at the hit and normally takes over from there.",
+        "length": 3.1,
+        "class": "ultimate",
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.08, "face": {"eyes": 2, "mouth": 6}},
+          {"t": 0.175, "pose": "natsuho.ul_in_1", "ease": "easeInOutSine"},
+          {"t": 0.35, "pose": "natsuho.ul_bow"},
+          {"t": 0.8, "pose": "natsuho.ul_bow2", "ease": "easeInOutSine"},
+          {"t": 1.05, "pose": "natsuho.ul_rise", "ease": "easeInOutSine", "face": {"eyes": 3, "mouth": 6}},
+          {"t": 1.3, "pose": "natsuho.ul_inhale", "ease": "easeInOutSine", "face": {"eyes": 6, "mouth": 3}},
+          {
+            "t": 1.4,
+            "pose": "natsuho.ul_yowl",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:roar",
+            "face": {"eyes": 4, "mouth": 3}
+          },
+          {"t": 1.55, "pose": "natsuho.ul_yowl", "marker": "cast"},
+          {"t": 1.62, "pose": "natsuho.ul_yowl"},
+          {"t": 1.78, "pose": "natsuho.ul_down_1", "ease": "linear"},
+          {"t": 1.94, "pose": "natsuho.ul_down_2", "ease": "linear"},
+          {"t": 2.1, "pose": "natsuho.fr_crouch", "face": {"eyes": 4, "mouth": 7}},
+          {"t": 2.45, "pose": "natsuho.fr_crouch"},
+          {"t": 2.6667, "pose": "natsuho.fr_up_1", "ease": "linear"},
+          {"t": 2.8833, "pose": "natsuho.fr_up_2", "ease": "linear"},
+          {"t": 2.85, "face": "none"},
+          {"t": 3.1, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"arm_r": [-3, 0, 0], "arm_l": [-3, 0, 0], "chest": [1, 0, 0]},
+              "period": 0.45,
+              "window": [0.4, 0.5, 0.75, 0.85]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"chest": [1.5, 1.5, 1.5], "neck": [2, 0, 2]},
+              "period": 0.1,
+              "window": [1.4, 1.42, 1.58, 1.66]
+            }
+          }
+        ]
+      },
+      "state.frenzy": {
+        "description": "Frenzy begins (state slot 1, played as the ultimate's hit enters the state): from the yowl a full-body shake of the fur (0.1-0.4 s), down into the hunter's crouch with the claws spread low, the fangs bared and the tail lashing (0.6-1.1 s), up on guard by 1.6 s, as the ultimate's own recovery would have ended.",
+        "length": 1.6,
+        "keys": [
+          {"t": 0, "pose": "natsuho.ul_yowl", "marker": "vfx:frenzy", "face": {"eyes": 4, "mouth": 7}},
+          {"t": 0.1833, "pose": "natsuho.ul_down_1", "ease": "linear"},
+          {"t": 0.3667, "pose": "natsuho.ul_down_2", "ease": "linear"},
+          {"t": 0.55, "pose": "natsuho.fr_crouch"},
+          {"t": 1.0, "pose": "natsuho.fr_crouch"},
+          {"t": 1.2, "pose": "natsuho.fr_up_1", "ease": "linear"},
+          {"t": 1.4, "pose": "natsuho.fr_up_2", "ease": "linear"},
+          {"t": 1.4, "face": "none"},
+          {"t": 1.6, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"chest": [0, 3, 4], "neck": [0, 4, 6], "body": [0, 2, 2]},
+              "period": 0.12,
+              "window": [0.04, 0.1, 0.36, 0.44]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {"bones": {"tail_1": [0, 0, 18]}, "period": 0.36, "window": [0.55, 0.6, 1.0, 1.1]}
+          }
+        ]
+      },
+      "phase.2": {
+        "description": "Phase 2 (60%; the 1.0 s transition): a flustered jolt with the claws up before her face, the ears and the tail straight up as the fur puffs out (0.1 s), then the right claw thrust out at the enemy with the other fist on her hip ('F-fine! I'll take you seriously, but only this once!'), blushing, back on guard by 0.9 s (the clip and its blend end with the transition). Upper body.",
+        "length": 0.9,
+        "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"],
+        "keys": [
+          {"t": 0, "pose": "@stance", "face": {"eyes": 6, "mouth": 5, "cheeks": 1}},
+          {
+            "t": 0.1,
+            "pose": "natsuho.p2_jolt",
+            "ease": "easeOutCubic",
+            "sound": "factionclash:hero.natsuho_komezaki.phase2"
+          },
+          {
+            "t": 0.3,
+            "pose": "natsuho.p2_point",
+            "ease": "easeInOutSine",
+            "face": {"eyes": 4, "mouth": 3, "cheeks": 1}
+          },
+          {"t": 0.6, "pose": "natsuho.p2_point"},
+          {"t": 0.7, "face": "none"},
+          {"t": 0.9, "pose": "@stance"}
+        ]
+      },
+      "phase.3": {
+        "description": "Phase 3 (25%; the 1.2 s transition): she sinks with the head bowed and the eyes shut (0.3 s), a tremble, then the head comes up with the eyes narrowed and glowing and a fang grin, the claws flexed out wide ('Nobody... corners... a cat!', 0.75 s), back on guard by 1.1 s.",
+        "length": 1.1,
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.15, "pose": "natsuho.p3_in_1", "ease": "easeInOutSine"},
+          {"t": 0.3, "pose": "natsuho.p3_low", "face": {"eyes": 2, "mouth": 0}},
+          {"t": 0.55, "pose": "natsuho.p3_low", "face": {"eyes": 8, "mouth": 0}},
+          {
+            "t": 0.75,
+            "pose": "natsuho.p3_rise",
+            "ease": "easeOutCubic",
+            "face": {"eyes": 10, "mouth": 7},
+            "sound": "factionclash:hero.natsuho_komezaki.phase3"
+          },
+          {"t": 0.9, "pose": "natsuho.p3_rise"},
+          {"t": 1.0, "pose": "natsuho.p3_out_1", "ease": "linear"},
+          {"t": 1.1, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"chest": [1, 1, 1], "arm_r": [1.5, 0, 0], "arm_l": [1.5, 0, 0]},
+              "period": 0.1,
+              "window": [0.3, 0.34, 0.52, 0.58]
+            }
+          }
+        ]
+      },
+      "intro": {
+        "description": "Her intro (code 16; the server holds the intro as long as this clip, 1.0-1.5 s): the arms folded and the head turned away with the eyes shut and a frown ('Huh? You're in my harbour.', 0.25 s), a glance back over the shoulder (0.8 s), a determined look ('...Fine. I'll show you out myself.') and the arms opening out into the guard by 1.5 s. Upper body.",
+        "length": 1.5,
+        "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"],
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.1, "sound": "factionclash:hero.natsuho_komezaki.intro"},
+          {"t": 0.1, "pose": "natsuho.in_open", "ease": "easeOutQuad"},
+          {"t": 0.18, "pose": "natsuho.in_half", "ease": "easeInOutSine"},
+          {"t": 0.26, "pose": "natsuho.in_cross", "ease": "easeInOutSine", "face": {"eyes": 2, "mouth": 5}},
+          {"t": 0.62, "pose": "natsuho.in_cross"},
+          {"t": 0.8, "pose": "natsuho.in_glance", "ease": "easeInOutSine", "face": {"eyes": 9, "mouth": 5}},
+          {"t": 1.05, "pose": "natsuho.in_glance", "face": "determined"},
+          {"t": 1.15, "pose": "natsuho.glance_half", "ease": "easeInOutSine"},
+          {"t": 1.25, "pose": "natsuho.uncross", "ease": "easeInOutSine"},
+          {"t": 1.35, "face": "none"},
+          {"t": 1.5, "pose": "@stance"}
+        ]
+      },
+      "victory": {
+        "description": "Her victory (code 20), 2.0 s: turned half away with the arms folded, the chin up and the eyes shut, the tail curled high (a purr she will deny, 0.35 s), a peek back over the shoulder with a smug fang grin and a 'hmph' (0.95 s), a flick of the claw ('shoo'), back on guard by 2.0 s. Upper body.",
+        "length": 2.0,
+        "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"],
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.12, "pose": "natsuho.vi_in", "ease": "easeOutQuad"},
+          {"t": 0.22, "pose": "natsuho.vi_half", "ease": "easeInOutSine"},
+          {"t": 0.3, "pose": "natsuho.vi_turn", "ease": "easeInOutSine", "face": {"eyes": 2, "mouth": 6}},
+          {"t": 0.35, "sound": "factionclash:hero.natsuho_komezaki.purr"},
+          {"t": 0.75, "pose": "natsuho.vi_turn"},
+          {
+            "t": 0.95,
+            "pose": "natsuho.vi_peek",
+            "ease": "easeInOutSine",
+            "face": {"eyes": 9, "mouth": 7, "cheeks": 1}
+          },
+          {"t": 1.0, "sound": "factionclash:hero.natsuho_komezaki.hmph"},
+          {"t": 1.15, "pose": "natsuho.vi_peek"},
+          {"t": 1.2, "pose": "natsuho.peek_half", "ease": "easeInOutSine"},
+          {"t": 1.27, "pose": "natsuho.vi_out", "ease": "easeInOutSine"},
+          {"t": 1.35, "pose": "natsuho.vi_shoo", "ease": "easeOutQuad"},
+          {"t": 1.6, "pose": "natsuho.vi_shoo", "face": "none"},
+          {"t": 2.0, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"hand_r": [-26, 0, 0], "forearm_r": [-10, 0, 0]},
+              "period": 0.16,
+              "shape": "pulse",
+              "window": [1.36, 1.4, 1.58, 1.62]
+            }
+          }
+        ]
+      },
+      "taunt": {
+        "description": "Her taunt (code 14), 1.5 s: a bored yawn behind her fist with the other hand on her hip (0.25 s), then the claw held out and curled twice ('come on') with a smug fang grin and a 'hmph', back on guard by 1.5 s. Upper body.",
+        "length": 1.5,
+        "bones": ["body", "waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_*"],
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.25, "pose": "natsuho.ta_yawn", "ease": "easeOutCubic", "face": {"eyes": 2, "mouth": 3}},
+          {"t": 0.3, "sound": "factionclash:hero.natsuho_komezaki.yawn"},
+          {"t": 0.55, "pose": "natsuho.ta_yawn"},
+          {"t": 0.75, "pose": "natsuho.ta_beckon", "ease": "easeInOutSine", "face": {"eyes": 9, "mouth": 7}},
+          {"t": 0.8, "sound": "factionclash:hero.natsuho_komezaki.hmph"},
+          {"t": 1.18, "pose": "natsuho.ta_beckon"},
+          {"t": 1.3, "face": "none"},
+          {"t": 1.5, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"forearm_r": [-24, 0, 0], "hand_r": [-30, 0, 0]},
+              "period": 0.2,
+              "shape": "pulse",
+              "window": [0.8, 0.84, 1.14, 1.18]
+            }
+          }
+        ]
+      },
+      "last_stand": {
+        "description": "Her last stand (no action code yet: for the engine side to play at the last-stand beat, HEROES_V2 6.13), 1.6 s: down on her spots with the claws struck together before her chest (0.22 s), then flung out wide with the chin up and a shout ('This is MY harbour. I'm not going anywhere.'), a determined face, back on guard by 1.6 s.",
+        "length": 1.6,
+        "keys": [
+          {"t": 0, "pose": "@stance", "face": "determined"},
+          {"t": 0.1, "pose": "natsuho.ls_in_1", "ease": "linear"},
+          {"t": 0.2, "pose": "natsuho.ls_clash", "ease": "easeOutQuad", "marker": "vfx:claw_marks"},
+          {"t": 0.4, "pose": "natsuho.ls_clash"},
+          {"t": 0.6, "pose": "natsuho.ls_spread", "ease": "easeOutCubic", "face": {"eyes": 4, "mouth": 3}},
+          {"t": 1.1, "pose": "natsuho.ls_spread", "face": "determined"},
+          {"t": 1.35, "pose": "natsuho.ls_out_1", "ease": "linear"},
+          {"t": 1.45, "face": "none"},
+          {"t": 1.6, "pose": "@stance"}
+        ]
+      },
+      "escape": {
+        "description": "The cat bolts (no action code yet: for the engine side to play as an escape starts, HEROES_V2 6.13), 0.6 s over the run: a startled jolt with the shoulders up, the arms pulled in, a look back over the shoulder and a sweat drop (0.12 s), then facing the way out with the arms pumping into the run (0.35 s) ('I-I'm not running away!'). The upper body only, over and back into move.run; the run's own follow-through keeps the ears and the tail (no bake of its own: a bake over a moving gait would start off the run's).",
+        "length": 0.6,
+        "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*"],
+        "plays_over": "move.run",
+        "settle_to": "move.run",
+        "planted": false,
+        "secondary": false,
+        "keys": [
+          {"t": 0, "pose": "@stance", "face": {"eyes": 6, "mouth": 5, "cheeks": 2}},
+          {"t": 0.12, "pose": "natsuho.esc_jolt", "ease": "easeOutCubic"},
+          {"t": 0.22, "pose": "natsuho.esc_jolt"},
+          {"t": 0.36, "pose": "natsuho.esc_go", "ease": "easeInOutSine", "face": {"eyes": 4, "mouth": 5, "cheeks": 2}},
+          {"t": 0.5, "face": "none"},
+          {"t": 0.6, "pose": "@stance"}
+        ]
+      },
+      "personal.1": {
+        "description": "Paw lick (personal.1, a rare idle), 2.4 s over move.idle: the right fist raised to her mouth and licked three times with the eyes shut, a wipe over the right ear, one more lick, and the hand back down. Upper body; the claws are away.",
+        "length": 2.4,
+        "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_1"],
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.35, "pose": "natsuho.pl_lick", "ease": "easeInOutSine", "face": {"eyes": 2, "mouth": 2}},
+          {"t": 0.45, "sound": "factionclash:hero.natsuho_komezaki.paw_lick"},
+          {"t": 1.0, "pose": "natsuho.pl_lick"},
+          {"t": 1.25, "pose": "natsuho.pl_wipe", "ease": "easeInOutSine"},
+          {"t": 1.45, "pose": "natsuho.pl_wipe"},
+          {"t": 1.65, "pose": "natsuho.pl_lick", "ease": "easeInOutSine"},
+          {"t": 1.9, "pose": "natsuho.pl_lick", "face": {"eyes": 9, "mouth": 6}},
+          {"t": 2.15, "face": "none"},
+          {"t": 2.4, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"neck": [5, 0, 0], "hand_r": [-14, 0, 0]},
+              "period": 0.2,
+              "shape": "pulse",
+              "window": [0.38, 0.42, 0.98, 1.02]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"forearm_r": [-8, 0, 0]},
+              "period": 0.2,
+              "shape": "pulse",
+              "window": [1.26, 1.28, 1.44, 1.46]
+            }
+          }
+        ]
+      },
+      "personal.2": {
+        "description": "Ear flick and head shake (personal.2, a rare idle), 1.4 s over move.idle: the left ear flicks, then a quick cat's shake of the head with the eyes shut (the choker's bell jingles), a little 'hmph'. Neck, ears and tail only.",
+        "length": 1.4,
+        "bones": ["neck", "chest", "ear_*", "tail_1"],
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.3, "face": {"eyes": 2, "mouth": 0}},
+          {"t": 0.45, "sound": "factionclash:hero.natsuho_komezaki.bell"},
+          {"t": 0.95, "face": {"eyes": 9, "mouth": 6}},
+          {"t": 1.2, "face": "none"},
+          {"t": 1.4, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "flinch",
+            "params": {"t": 0.08, "bones": {"ear_l": [-30, 0, -14]}, "rise": 0.05, "decay": 0.1}
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"neck": [0, 9, 16], "chest": [0, 2, 3]},
+              "period": 0.14,
+              "window": [0.34, 0.4, 0.78, 0.9]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"ear_r": [-10, 0, 8], "ear_l": [-10, 0, -8]},
+              "period": 0.14,
+              "phase": 0.25,
+              "window": [0.34, 0.4, 0.78, 0.9]
+            }
+          }
+        ]
+      },
+      "personal.3": {
+        "description": "Stretch and yawn (personal.3, a rare idle), 2.6 s over move.idle: both arms stretched up overhead with a wide yawn and the eyes shut (0.5-1.3 s, a shiver at the top), the arms dropping loose, a sleepy content look. Upper body.",
+        "length": 2.6,
+        "bones": ["waist", "chest", "neck", "arm_*", "forearm_*", "hand_*", "ear_*", "tail_1"],
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "keys": [
+          {"t": 0, "pose": "@stance"},
+          {"t": 0.5, "pose": "natsuho.st_up", "ease": "easeInOutSine", "face": {"eyes": 2, "mouth": 3}},
+          {"t": 0.55, "sound": "factionclash:hero.natsuho_komezaki.yawn"},
+          {"t": 1.3, "pose": "natsuho.st_up"},
+          {"t": 1.7, "pose": "natsuho.st_down", "ease": "easeInOutSine", "face": {"eyes": 1, "mouth": 6}},
+          {"t": 2.2, "pose": "natsuho.st_down", "face": "none"},
+          {"t": 2.6, "pose": "@stance"}
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {"arm_r": [0, 0, 2], "arm_l": [0, 0, -2], "chest": [1, 0, 0]},
+              "period": 0.1,
+              "window": [1.0, 1.05, 1.25, 1.3]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

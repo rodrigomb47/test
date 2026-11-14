@@ -284,8 +284,12 @@ class TimingTest(unittest.TestCase):
         self.assertTrue(quality.check_timing(moved, tim))
         self.assertTrue(any("wind-up" in m or "markers" in m for m in quality.check_timing(moved, tim)))
         early = library.style("katana").by_name["attack.1"].copy()
-        early.events = [Event(0.3, "instruction", "hit")]
+        early.events = [Event(0.25, "instruction", "hit")]       # 0.35 s from the action's start: under 0.4
         self.assertTrue(any("wind-up minimum" in m for m in quality.check_markers(early)))
+        # C1: the wind-up counts from the action's start, the 2-tick blend included, as the server's frames do
+        at_min = library.style("katana").by_name["attack.1"].copy()
+        at_min.events = [Event(0.3, "instruction", "hit")]
+        self.assertFalse(any("wind-up minimum" in m for m in quality.check_markers(at_min)))
         ex = recipes.Expander(library.pose_library(), library.reference_skeleton())
         with self.assertRaises(HerogenError):
             ex.expand("x", {"length": 1.0, "secondary": False, "keys": [{"t": 0.42, "marker": "hit"}]})

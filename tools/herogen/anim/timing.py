@@ -41,9 +41,10 @@ def _entry(hero, move, anim, cls, notes):
     if fr is None:
         notes.append("%s: %s (%s) has no hit or cast marker" % (hid, anim, where))
     else:
-        # the minimums count the clip's own anticipation, not the controller's blend into it (as quality.py)
+        # the minimums count from the action's start, the controller's blend included, as the server's frames do
+        # (quality.check_markers; C1)
         wmin, rmin = CLASS_MIN[cls]
-        windup = clip.hits()[0]
+        windup = fr["windup"]
         if windup < wmin - 1e-9 or fr["recovery"] < rmin - 1e-9:
             notes.append("%s: %s wind-up %.2f s / recovery %.2f s below the %s minimums %.2f / %.2f" % (
                 hid, anim, windup, fr["recovery"], cls, wmin, rmin))

@@ -1,0 +1,262 @@
+{
+  "animations": {
+    "escape": {
+      "events": [],
+      "kind": "action",
+      "length": 0.6,
+      "loop": "once",
+      "ticks": 12,
+      "total_ticks": 14,
+      "transition_ticks": 2
+    },
+    "intro": {
+      "events": [{"t": 0.2, "tick": 4, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.intro"}],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "last_stand": {
+      "events": [{"t": 0.3, "tick": 6, "type": "vfx", "value": "claw_marks"}],
+      "kind": "action",
+      "length": 1.6,
+      "loop": "once",
+      "ticks": 32,
+      "total_ticks": 34,
+      "transition_ticks": 2
+    },
+    "move.air_jump": {
+      "events": [
+        {"t": 0.2, "tick": 4, "type": "vfx", "value": "air_ring"},
+        {"t": 0.2, "tick": 4, "type": "sfx", "value": "minecraft:entity.breeze.jump"}
+      ],
+      "kind": "base",
+      "length": 0.35,
+      "loop": "once",
+      "ticks": 7,
+      "total_ticks": 11,
+      "transition_ticks": 4
+    },
+    "move.cat_reflex": {
+      "class": "heavy",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "claw_marks"},
+        {"t": 1, "tick": 20, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.claw"},
+        {"t": 1.05, "tick": 21, "type": "cast"},
+        {"t": 1.1, "tick": 22, "type": "vfx", "value": "claw_marks"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 16, "windup": 20},
+      "frames": {"active": 0.1, "recovery": 0.8, "windup": 1},
+      "hits": [1, 1.05],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "move.claw_string": {
+      "class": "light",
+      "events": [
+        {"t": 0.45, "tick": 9, "type": "hit"},
+        {"t": 0.45, "tick": 9, "type": "vfx", "value": "claw_marks"},
+        {"t": 0.45, "tick": 9, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.claw"},
+        {"t": 0.65, "tick": 13, "type": "hit"},
+        {"t": 0.65, "tick": 13, "type": "vfx", "value": "claw_marks"},
+        {"t": 0.65, "tick": 13, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.claw"},
+        {"t": 0.9, "tick": 18, "type": "hit"},
+        {"t": 0.9, "tick": 18, "type": "vfx", "value": "claw_marks"},
+        {"t": 0.9, "tick": 18, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.claw"}
+      ],
+      "frame_ticks": {"active": 10, "recovery": 7, "windup": 9},
+      "frames": {"active": 0.5, "recovery": 0.35, "windup": 0.45},
+      "hits": [0.45, 0.65, 0.9],
+      "kind": "action",
+      "length": 1.2,
+      "loop": "once",
+      "ticks": 24,
+      "total_ticks": 26,
+      "transition_ticks": 2
+    },
+    "move.hiss": {
+      "class": "area",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "hiss"},
+        {"t": 1, "tick": 20, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.hiss_burst"},
+        {"t": 1.05, "tick": 21, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 16, "windup": 20},
+      "frames": {"active": 0.1, "recovery": 0.8, "windup": 1},
+      "hits": [1, 1.05],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "move.pounce": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.8, "tick": 16, "type": "hit"},
+        {"t": 0.8, "tick": 16, "type": "vfx", "value": "jump_dust"},
+        {"t": 0.8, "tick": 16, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.pounce_leap"},
+        {"t": 0.95, "tick": 19, "type": "cast"},
+        {"t": 0.95, "tick": 19, "type": "vfx", "value": "ground_dust"},
+        {"t": 1.3, "tick": 26, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.paw_lick"}
+      ],
+      "frame_ticks": {"active": 4, "recovery": 20, "windup": 16},
+      "frames": {"active": 0.2, "recovery": 1, "windup": 0.8},
+      "hits": [0.8, 0.95],
+      "kind": "action",
+      "length": 1.9,
+      "loop": "once",
+      "ticks": 38,
+      "total_ticks": 40,
+      "transition_ticks": 2
+    },
+    "move.scratch_dash": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.8, "tick": 16, "type": "hit"},
+        {"t": 0.8, "tick": 16, "type": "vfx", "value": "jump_dust"},
+        {"t": 0.8, "tick": 16, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.dash"},
+        {"t": 0.9, "tick": 18, "type": "vfx", "value": "claw_marks"},
+        {"t": 1, "tick": 20, "type": "cast"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "skid_dust"}
+      ],
+      "frame_ticks": {"active": 5, "recovery": 16, "windup": 16},
+      "frames": {"active": 0.25, "recovery": 0.8, "windup": 0.8},
+      "hits": [0.8, 1],
+      "kind": "action",
+      "length": 1.75,
+      "loop": "once",
+      "ticks": 35,
+      "total_ticks": 37,
+      "transition_ticks": 2
+    },
+    "move.zoomies": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.9, "tick": 18, "type": "hit"},
+        {"t": 0.9, "tick": 18, "type": "vfx", "value": "jump_dust"},
+        {"t": 0.9, "tick": 18, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.dash"},
+        {"t": 1.65, "tick": 33, "type": "cast"},
+        {"t": 1.65, "tick": 33, "type": "vfx", "value": "skid_dust"}
+      ],
+      "frame_ticks": {"active": 16, "recovery": 24, "windup": 18},
+      "frames": {"active": 0.8, "recovery": 1.2, "windup": 0.9},
+      "hits": [0.9, 1.65],
+      "kind": "action",
+      "length": 2.8,
+      "loop": "once",
+      "ticks": 56,
+      "total_ticks": 58,
+      "transition_ticks": 2
+    },
+    "personal.1": {
+      "events": [{"t": 0.55, "tick": 11, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.paw_lick"}],
+      "kind": "action",
+      "length": 2.4,
+      "loop": "once",
+      "ticks": 48,
+      "total_ticks": 50,
+      "transition_ticks": 2
+    },
+    "personal.2": {
+      "events": [{"t": 0.55, "tick": 11, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.bell"}],
+      "kind": "action",
+      "length": 1.4,
+      "loop": "once",
+      "ticks": 28,
+      "total_ticks": 30,
+      "transition_ticks": 2
+    },
+    "personal.3": {
+      "events": [{"t": 0.65, "tick": 13, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.yawn"}],
+      "kind": "action",
+      "length": 2.6,
+      "loop": "once",
+      "ticks": 52,
+      "total_ticks": 54,
+      "transition_ticks": 2
+    },
+    "phase.2": {
+      "events": [{"t": 0.2, "tick": 4, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.phase2"}],
+      "kind": "action",
+      "length": 0.9,
+      "loop": "once",
+      "ticks": 18,
+      "total_ticks": 20,
+      "transition_ticks": 2
+    },
+    "phase.3": {
+      "events": [{"t": 0.85, "tick": 17, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.phase3"}],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "state.frenzy": {
+      "events": [{"t": 0.1, "tick": 2, "type": "vfx", "value": "frenzy"}],
+      "kind": "action",
+      "length": 1.6,
+      "loop": "once",
+      "ticks": 32,
+      "total_ticks": 34,
+      "transition_ticks": 2
+    },
+    "taunt": {
+      "events": [
+        {"t": 0.4, "tick": 8, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.yawn"},
+        {"t": 0.9, "tick": 18, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.hmph"}
+      ],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "ultimate": {
+      "class": "ultimate",
+      "events": [
+        {"t": 1.5, "tick": 30, "type": "hit"},
+        {"t": 1.5, "tick": 30, "type": "vfx", "value": "roar"},
+        {"t": 1.65, "tick": 33, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 4, "recovery": 30, "windup": 30},
+      "frames": {"active": 0.2, "recovery": 1.5, "windup": 1.5},
+      "hits": [1.5, 1.65],
+      "kind": "action",
+      "length": 3.1,
+      "loop": "once",
+      "ticks": 62,
+      "total_ticks": 64,
+      "transition_ticks": 2
+    },
+    "victory": {
+      "events": [
+        {"t": 0.45, "tick": 9, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.purr"},
+        {"t": 1.1, "tick": 22, "type": "sfx", "value": "factionclash:hero.natsuho_komezaki.hmph"}
+      ],
+      "kind": "action",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 42,
+      "transition_ticks": 2
+    }
+  },
+  "file": "natsuho_komezaki",
+  "format": 2,
+  "generator": "herogen 1",
+  "source_sha256": "3050a2c5876ed93fba56c6754fde5682ae1b6bf52f5a1f60da2518f291b13fc5",
+  "tick": 0.05
+}

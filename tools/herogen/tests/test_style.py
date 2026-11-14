@@ -40,8 +40,8 @@ def checked(model):
 
 class LibraryTest(unittest.TestCase):
     def test_every_part_on_every_base(self):
-        """herogen lint in miniature: each part alone on each base assembles, packs and passes the geometry checks
-        (budgets, UVs, the clear face), and its cubes stay above the ground."""
+        """herogen lint in miniature: each part alone (over the parts it requires) on each base assembles, packs and
+        passes the geometry checks (budgets, UVs, the clear face), and its cubes stay above the ground."""
         for pid in library():
             for bid in BASE_IDS:
                 with self.subTest(part=pid, base=bid):
@@ -50,8 +50,12 @@ class LibraryTest(unittest.TestCase):
                         # G6c: carried as the part says (its hand, sheath, grip and mount)
                         apply_weapon(m, lint.weapon_entry(pid))
                     else:
+                        # C1: a part is worn over the parts it `requires` (tails/cat_puff over tails/cat_long)
+                        reqs = lint.required_entries(pid)
+                        for i, r in enumerate(reqs):
+                            apply_part(m, r, i)
                         apply_part(m, {"part": pid, "color": "primary", "trim": "trim", "alt": "secondary",
-                                       "detail": "accent"}, 0)
+                                       "detail": "accent"}, len(reqs))
                     pack(m)
                     self.assertEqual(checked(m), [])
                     for c in m.cubes:

@@ -30,6 +30,9 @@ hand would make 250-cube heroes unmaintainable, so a part can carry generators n
   "copy_scale" build a fan of several chains (G6a: a fox's three to nine tails).
   - "bones" [names], "parent", "points" (one more than bones), "sections" [[w, d]] per segment, "overlap" (each box
     reaches this far past both ends of its segment), "slots" (cycled), material, fine_extra (extra boxes on fine_).
+  - "reuse" (C1): a chain over the bones of a chain an earlier part built (the tail a phase part's fur puffs up),
+    with no "points" of its own: it takes that chain's points, declares no bone and puts its boxes on those bones
+    (pN_ children with a phase prefix, so they follow every key of the chain).
 `groups` (a list): {"rotation", "pivot", "cubes": [...]}: plain cubes that share one rotation about one pivot (an
   ear's stacked slabs tilted as one piece).
 Every generator may carry "when": <expression>; it is skipped when that is 0 (an optional ahoge).
@@ -230,7 +233,19 @@ def chains(ctx, declare, add_cube):
         if not _wanted(ctx, ch):
             continue
         names = ch["bones"]
-        pts0 = [np.array(ctx.at(p), dtype=float) for p in ch["points"]]
+        if ch.get("reuse"):
+            # C1: a chain laid over the bones of a chain an earlier part built (a phase part's fur over the tail it
+            # puffs up): its points are that chain's, so it fits whatever size that part chose; no bone is
+            # declared, and with a phase prefix the boxes nest in pN_ children that follow every key of the chain
+            pts0 = (getattr(ctx.model, "chain_points", None) or {}).get(tuple(names))
+            if pts0 is None or any(n not in ctx.model.bones for n in names):
+                raise HerogenError("%s: chain %d reuses %s, which no earlier part built as a chain" % (
+                    ctx.where, ci, ", ".join(names)))
+            if ch.get("copies", 1) != 1 or "points" in ch:
+                raise HerogenError("%s: chain %d reuses a chain: no points or copies of its own" % (ctx.where, ci))
+            pts0 = [p.copy() for p in pts0]
+        else:
+            pts0 = [np.array(ctx.at(p), dtype=float) for p in ch["points"]]
         if len(pts0) != len(names) + 1:
             raise HerogenError("%s: chain %d needs one more point than bones" % (ctx.where, ci))
         n_copies = int(round(float(ctx.ev(ch.get("copies", 1)))))
@@ -266,8 +281,13 @@ def _one_chain(ctx, ch, ci, names, pts, sections, scale, suffix, declare, add_cu
     overlap = float(ctx.ev(ch.get("overlap", 0.5)))
     slots = ch.get("slots", "main")
     parent = ch.get("parent", "body")
-    for i, name in enumerate(names):
-        declare(name, parent if i == 0 else names[i - 1], tuple(pts[i]))
+    if not ch.get("reuse"):
+        for i, name in enumerate(names):
+            declare(name, parent if i == 0 else names[i - 1], tuple(pts[i]))
+        # C1: kept, so a later part can lay a chain over the same bones (`reuse`)
+        if not hasattr(ctx.model, "chain_points"):
+            ctx.model.chain_points = {}
+        ctx.model.chain_points[tuple(names)] = [np.array(p, dtype=float) for p in pts]
     extra = ch.get("extra", [])
     prev = None
     for i, name in enumerate(names):

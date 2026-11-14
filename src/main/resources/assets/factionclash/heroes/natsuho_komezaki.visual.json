@@ -1,0 +1,130 @@
+{
+  "animation_chain": ["natsuho_komezaki", "_style_fists", "_core"],
+  "base": "adult_f",
+  "bones": {
+    "fine": [
+      "fine_bangs",
+      "fine_body",
+      "fine_chest",
+      "fine_ear_l",
+      "fine_ear_r",
+      "fine_foot_l",
+      "fine_foot_r",
+      "fine_hair_l",
+      "fine_hair_r",
+      "fine_hair_top",
+      "fine_p2_tail_1",
+      "fine_p2_tail_2",
+      "fine_p2_tail_3",
+      "fine_p2_tail_4",
+      "fine_sash",
+      "fine_shin_l",
+      "fine_shin_r",
+      "fine_waist",
+      "fine_weapon_l",
+      "fine_weapon_r"
+    ],
+    "items": ["item_r", "item_l"],
+    "locators": ["item_l", "item_r", "vfx_chest", "vfx_feet", "vfx_head", "vfx_tip_l", "vfx_tip_r"],
+    "phase": {"p2_tail_1": 2, "p2_tail_2": 2, "p2_tail_3": 2, "p2_tail_4": 2, "p2_tail_5": 2},
+    "tint": ["fine_sash", "sash"],
+    "weapon_drawn": ["weapon_r", "weapon_l"],
+    "weapon_sheathed": []
+  },
+  "build": "slim",
+  "face": {
+    "asymmetric": false,
+    "blink": {
+      "double_chance": 0.15,
+      "interval": [2.5, 6],
+      "over_eyes": [0, 4, 5, 8, 9],
+      "profile": "normal",
+      "ticks": [1, 2, 1]
+    },
+    "cheek_frames": ["none", "blush", "sweat", "tears"],
+    "eye_frames": [
+      "open",
+      "half",
+      "closed",
+      "happy",
+      "angry",
+      "sad",
+      "surprised",
+      "pain",
+      "focused",
+      "smug",
+      "glowing",
+      "sleeping"
+    ],
+    "mood_order": [
+      "calm",
+      "happy",
+      "angry",
+      "focused",
+      "hurt",
+      "tired",
+      "sad",
+      "smug",
+      "surprised",
+      "asleep",
+      "flustered",
+      "determined"
+    ],
+    "moods": {
+      "angry": {"cheeks": 0, "eyes": 4, "mouth": 4},
+      "asleep": {"cheeks": 0, "eyes": 11, "mouth": 0},
+      "calm": {"cheeks": 0, "eyes": 0, "mouth": 0},
+      "determined": {"cheeks": 0, "eyes": 4, "mouth": 0},
+      "flustered": {"cheeks": 1, "eyes": 6, "mouth": 5},
+      "focused": {"cheeks": 0, "eyes": 8, "mouth": 0},
+      "happy": {"cheeks": 1, "eyes": 4, "mouth": 5},
+      "hurt": {"cheeks": 0, "eyes": 7, "mouth": 4},
+      "sad": {"cheeks": 0, "eyes": 5, "mouth": 5},
+      "smug": {"cheeks": 0, "eyes": 9, "mouth": 7},
+      "surprised": {"cheeks": 0, "eyes": 6, "mouth": 2},
+      "tired": {"cheeks": 2, "eyes": 1, "mouth": 0}
+    },
+    "mouth_frames": ["neutral", "smile", "talk_a", "talk_b", "grit", "frown", "cat", "fang_grin"],
+    "overrides": {"happy": {"cheeks": "blush", "eyes": "angry", "mouth": "frown"}},
+    "regions": {
+      "cheeks": {"columns": 4, "frames": 4, "h": 2, "u": 64, "v": 33, "w": 16},
+      "eyes": {"columns": 4, "frames": 12, "h": 10, "u": 64, "v": 0, "w": 20},
+      "mouth": {"columns": 8, "frames": 8, "h": 3, "u": 64, "v": 30, "w": 8}
+    }
+  },
+  "form": "adult",
+  "format": 1,
+  "generator": "herogen 1",
+  "head_y": 42,
+  "height_px": 52,
+  "id": "natsuho_komezaki",
+  "moves": ["claw_string", "pounce", "hiss", "scratch_dash", "cat_reflex", "zoomies"],
+  "phases": [
+    {
+      "eyes_glow": false,
+      "hide": [],
+      "phase": 2,
+      "show": ["p2_tail_1", "p2_tail_2", "p2_tail_3", "p2_tail_4", "p2_tail_5"],
+      "texture": "base"
+    },
+    {"eyes_glow": true, "hide": [], "phase": 3, "show": [], "texture": "base"}
+  ],
+  "render_scale": 0.56,
+  "rig": "hero_rig_v3",
+  "scale": 0.92,
+  "secondary": [
+    {"chain": ["ear_r", "ear_l"], "damping": 0.6, "part": "ears/cat_tufted", "stiffness": 0.6},
+    {
+      "chain": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"],
+      "damping": 0.55,
+      "part": "tails/cat_long",
+      "stiffness": 0.3
+    }
+  ],
+  "source_sha256": "32112abcf8ed7b2aebe4e0784aa3e1b7d969754a77e49c5ac0e01d1eaccbcc54",
+  "states": ["frenzy"],
+  "style": "fists",
+  "texture": {"glow_outside_face": false, "glowmask": true, "height": 128, "p2": false, "width": 256},
+  "voice": {"blip": "xylophone", "pitch": 1.35, "rate": 2},
+  "weapon": {"hand": "pair", "sheathed": "worn"}
+}

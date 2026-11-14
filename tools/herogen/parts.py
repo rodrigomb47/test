@@ -4,7 +4,8 @@ body. A hero's art.parts entry picks a part and maps its logical colour slots to
 Part file fields:
   id, category, params {name: {min, max, default}}, vars {name: expression} (G6c: named values over the params and
   the base dims), slots {main|trim|alt|detail: default palette slot},
-  occupies [...], conflicts [glob...], bones [{name, parent, pivot}], cubes [...], paint [...],
+  occupies [...], conflicts [glob...], requires [part ids] (C1: the parts it is worn over, for lint and the
+  sheets: tails/cat_puff over tails/cat_long), bones [{name, parent, pivot}], cubes [...], paint [...],
   locators {bone: [x, y, z]}, secondary {chain: [...], stiffness, damping},
   offset [x, y, z] (added to every cube origin and pivot, bone pivot, locator and paint range: hair, ears and hats
   are authored head-local with offset [0, "head_y", 0], so y 0 is the chin, the face is at z -5 and the head spans
