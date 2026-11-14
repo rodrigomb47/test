@@ -142,3 +142,63 @@ tasks.register('heroSchema', JavaExec) {
     mainClass = 'com.factionclash.logic.hero.HeroSchemaGen'
     args 'docs/heroes-v2/hero2.schema.json'
 }
+
+// HEROES_V2 14.2 (G7): ./gradlew verifyHeroAssets runs the Java asset checks (HeroAssetsTest, the mirror of herogen's
+// file-level rules, and BuiltinHeroesTest) and, where python3 with NumPy and Pillow is installed, `herogen build
+// --check --all` (the committed files are what the sources build) and `herogen check --all` (14.2 in full, with the
+// rules that need the generator or the renderer). Not part of `check`: the two Java tests already run in `test`, and
+// herogen takes a few minutes; without Python the Java half still runs and says so.
+static boolean herogenAvailable(File dir) {
+    try {
+        Process p = new ProcessBuilder('python3', '-c', 'import numpy, PIL').directory(dir).redirectErrorStream(true).start()
+        p.inputStream.readAllBytes()
+        return p.waitFor() == 0
+    } catch (IOException ignored) {
+        return false
+    }
+}
+
+var heroAssetTests = tasks.register('heroAssetTests', Test) {
+    group = 'verification'
+    description = 'Runs HeroAssetsTest and BuiltinHeroesTest (the Java half of verifyHeroAssets).'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching 'com.factionclash.logic.hero.HeroAssetsTest'
+        includeTestsMatching 'com.factionclash.logic.hero.BuiltinHeroesTest'
+    }
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat = 'full'
+    }
+    outputs.upToDateWhen { false }
+}
+var herogenBuildCheck = tasks.register('herogenBuildCheck', Exec) {
+    group = 'verification'
+    description = 'herogen build --check --all: the committed hero files are what their sources build (needs Python).'
+    onlyIf('python3 with NumPy and Pillow is installed') { herogenAvailable(projectDir) }
+    workingDir projectDir
+    commandLine 'python3', 'tools/herogen/herogen.py', 'build', '--check', '--all'
+}
+var herogenCheck = tasks.register('herogenCheck', Exec) {
+    group = 'verification'
+    description = 'herogen check --all: every rule of HEROES_V2 14.2 on every hero (needs Python).'
+    onlyIf('python3 with NumPy and Pillow is installed') { herogenAvailable(projectDir) }
+    mustRunAfter herogenBuildCheck
+    workingDir projectDir
+    commandLine 'python3', 'tools/herogen/herogen.py', 'check', '--all'
+}
+tasks.register('verifyHeroAssets') {
+    group = 'verification'
+    description = 'The hero asset checks: HeroAssetsTest and BuiltinHeroesTest, then herogen build --check and check.'
+    dependsOn heroAssetTests, herogenBuildCheck, herogenCheck
+    doLast {
+        if (!herogenAvailable(projectDir)) {
+            logger.lifecycle('verifyHeroAssets: python3 with NumPy and Pillow not found; the Java checks ran, herogen\'s'
+                    + ' were skipped')
+        } else {
+            logger.lifecycle('verifyHeroAssets: the Java checks and herogen build --check and check --all passed')
+        }
+    }
+}
