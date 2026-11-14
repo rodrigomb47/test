@@ -220,6 +220,38 @@
 	#to end on the hit. false leaves only the hero's own wind-up sounds (presentation only).
 	telegraphCues = true
 
+	#Heroes' superhuman movement (MOBILITY_AND_WORK 1-2 and 8.5): higher jumps, air jumps, wall kicks, climbing, gliding
+	#and flight with stamina, every feature from level 1 and the numbers growing to full at fullPowerLevel. Heroes only:
+	#workers and soldiers move as before. The same in every fight, against a player or an NPC.
+	[heroes.mobility]
+		#false: heroes move exactly like workers (no jump, step or fall bonus, no climbing, gliding or flight).
+		enabled = true
+		#false: flyers glide (from heights) instead of flying.
+		flight = true
+		#A hero's mobility numbers (jump height, gaps, climb height, stamina, speeds) at level 1, in percent
+		#of its ceiling (PROPOSED: 60). 100 gives the full ceiling from the start.
+		# Default: 60
+		# Range: 30 ~ 100
+		levelPowerAtOne = 60
+		#The hero level at which its mobility numbers reach 100% of its ceiling (PROPOSED: 20).
+		# Default: 20
+		# Range: 10 ~ 30
+		fullPowerLevel = 20
+		#Out of a fight (and escaping) a flyer stays at most this many blocks above the ground under it
+		#(PROPOSED: 24).
+		# Default: 24
+		# Range: 8 ~ 48
+		travelAltitude = 24
+		#In any fight, against anyone, a flyer stays in the air at most this many seconds per take-off
+		#(PROPOSED: 8), and at least 6 s on the ground between (4 in phase 3).
+		# Default: 8
+		# Range: 4 ~ 10
+		bossAirSeconds = 8
+		#Scales every flyer's flight stamina, in percent (PROPOSED: 100).
+		# Default: 100
+		# Range: 50 ~ 200
+		staminaPercent = 100
+
 #Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)
 [boss]
 	#Multiplies every hero's boss health, in percent (PROPOSED: 100). A hero's health is its v1 health x its

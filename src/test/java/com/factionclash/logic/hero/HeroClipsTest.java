@@ -54,8 +54,25 @@ class HeroClipsTest {
     void locomotionModesComeFirstWhenTheMobilityEngineSetsThem() {
         int fly = HeroActions.LOCO_MODES.indexOf("fly");
         HeroClips.Motion flying = new HeroClips.Motion(0.4, 0, false, false, false, false, false, false, fly);
-        assertEquals("move.fly", HeroClips.baseCandidates(flying).get(0));
+        assertEquals(List.of("move.fly_fast", "move.fly"), HeroClips.baseCandidates(flying).subList(0, 2), "fast: fly_fast first");
+        HeroClips.Motion slow = new HeroClips.Motion(0.1, 0, false, false, false, false, false, false, fly);
+        assertEquals("move.fly", HeroClips.baseCandidates(slow).get(0));
+        assertTrue(HeroClips.baseKey(flying) != HeroClips.baseKey(slow), "fast and slow flight resolve apart");
         assertEquals("move.run", HeroClips.first(HeroClips.baseCandidates(flying), RIG), "no fly clip yet: the ground rules");
+        // G10's names (task A10): cling, charge run, sprint and ride, and the climb down
+        assertEquals("move.climb_idle", HeroClips.baseCandidates(new HeroClips.Motion(0, 0, false, false, false, false, false, false,
+                HeroActions.LOCO_MODES.indexOf("cling"))).get(0));
+        assertEquals("move.charge_run", HeroClips.baseCandidates(new HeroClips.Motion(0.3, 0, true, false, false, false, false, false,
+                HeroActions.LOCO_MODES.indexOf("charge_run"))).get(0));
+        assertEquals("move.sprint", HeroClips.baseCandidates(new HeroClips.Motion(0.3, 0, true, false, false, false, false, false,
+                HeroActions.LOCO_MODES.indexOf("sprint"))).get(0));
+        assertEquals("move.ride", HeroClips.baseCandidates(new HeroClips.Motion(0.3, 0, false, false, false, false, false, false,
+                HeroActions.LOCO_MODES.indexOf("ride"))).get(0));
+        assertEquals("move.leap", HeroClips.baseCandidates(new HeroClips.Motion(0.3, 0.2, false, false, false, false, false, false,
+                HeroActions.LOCO_MODES.indexOf("airborne"))).get(0));
+        HeroClips.Motion down = new HeroClips.Motion(0, -0.15, false, false, false, false, false, false,
+                HeroActions.LOCO_MODES.indexOf("climb"));
+        assertEquals(List.of("move.climb_down", "move.climb"), HeroClips.baseCandidates(down).subList(0, 2));
         int climb = HeroActions.LOCO_MODES.indexOf("climb");
         assertEquals("move.climb", HeroClips.baseCandidates(new HeroClips.Motion(0, 0, false, false, false, false, false, false, climb)).get(0));
         assertEquals("move.idle", HeroClips.baseCandidates(new HeroClips.Motion(0, 0, true, false, false, false, false, false, 15)).get(0),

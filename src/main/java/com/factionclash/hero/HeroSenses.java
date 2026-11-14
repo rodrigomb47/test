@@ -92,7 +92,8 @@ public final class HeroSenses {
         ts.drawingBow = using.getItem() instanceof BowItem || using.getItem() instanceof CrossbowItem;
         ts.eating = using.has(DataComponents.FOOD) || t instanceof FactionNpc n && n.isEatingMeal();
         ts.airborne = !t.onGround() && !t.isInWater() && !t.onClimbable() && !t.isPassenger();
-        ts.flying = t.isFallFlying();
+        // MOBILITY_AND_WORK 7.5: anyone in the air on wings, a player's elytra or an airborne hero (task A10)
+        ts.flying = t.isFallFlying() || t instanceof HeroEntity th && (th.movement().flying() || th.movement().gliding());
         ts.inWater = t.isInWater();
         ts.behind = forEffect ? behind(t, hero) : behind(hero, t);
         ts.heightAbove = t.getY() - hero.getY();
@@ -153,6 +154,7 @@ public final class HeroSenses {
         s.shielded = hero.getAbsorptionAmount() > 0;
         s.airborne = !hero.onGround() && !hero.isInWater() && !hero.onClimbable() && !hero.isPassenger();
         s.climbing = hero.onClimbable();
+        s.flying = hero.movement().flying(); // the self_flying condition (task A10)
         HeroStatus st = HeroStatus.peek(hero);
         if (st != null && !st.book().isEmpty()) {
             s.marks.putAll(st.book().marks(now));

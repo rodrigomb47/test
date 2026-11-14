@@ -243,6 +243,25 @@ public final class HeroBoss {
         }
     }
 
+    /**
+     * The feet height of the highest engaged enemy standing on a block (NaN: none), whoever it is: the fight's altitude
+     * ceiling counts from it (MOBILITY_AND_WORK 2.3, task A10), so an enemy on a pillar is always in a flyer's reach.
+     */
+    public double highestEngagedFeet() {
+        double top = Double.NaN;
+        LivingEntity t = hero.getTarget();
+        if (t != null && t.onGround() && engagedNow(t.getId())) {
+            top = t.getY();
+        }
+        for (int i = 0; i < engagement.remembered(); i++) {
+            Entity e = hero.level().getEntity(engagement.id(i));
+            if (e instanceof LivingEntity l && l.onGround() && engagedNow(l.getId()) && !(l.getY() <= top)) {
+                top = l.getY();
+            }
+        }
+        return top;
+    }
+
     /** The UUIDs of the enemies engaged now (whom an escape flees). */
     List<java.util.UUID> engagedEnemies() {
         List<java.util.UUID> out = new java.util.ArrayList<>();
@@ -308,9 +327,11 @@ public final class HeroBoss {
         }
         Entity attacker = src.getEntity();
         boolean hasAttacker = attacker != null && attacker != hero;
+        // MOBILITY_AND_WORK 2.4 (task A10): a downed hero's fall counts as one hit for the cap, whoever downed it
+        boolean downedFall = src.is(DamageTypeTags.IS_FALL) && hero.movement().downedFall();
         BossRules.Window w = new BossRules.Window(combat.staggered(), combat.stage() == MoveStage.RECOVERY, behind(src),
-                armoured(), false, tier(src));
-        BossRules.Landed l = BossRules.land(amount, hasAttacker, hero.getMaxHealth(), d.v2().boss().maxHitShare(), w,
+                armoured(), hero.movement().downed(), tier(src));
+        BossRules.Landed l = BossRules.land(amount, hasAttacker || downedFall, hero.getMaxHealth(), d.v2().boss().maxHitShare(), w,
                 weak(d), weaponKind(src));
         lastLanded = l;
         if (hasAttacker && !HeroDamage.isDot(src)) {
@@ -483,7 +504,7 @@ public final class HeroBoss {
 
     /** Whether it is held still now: a stagger's kneel, a phase transition, its intro or a flinch. */
     public boolean held() {
-        return combat.staggered() || transitioning() || introducing() || now() < flinchUntil;
+        return combat.staggered() || transitioning() || introducing() || now() < flinchUntil || hero.movement().holdsStill();
     }
 
     /** Super armour of the boss layer: a transition or the intro (half damage, no stagger, 6.7, 6.13). */

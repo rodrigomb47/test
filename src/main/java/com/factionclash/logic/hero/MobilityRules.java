@@ -630,6 +630,16 @@ public final class MobilityRules {
             return value;
         }
 
+        /**
+         * Sets the stamina (a load from disk, a level-up that changes the maximum, an operator or a test): clamped to
+         * 0-max; at 0 the hero is exhausted, and {@code exhausted} keeps it so until it is back at 50%.
+         */
+        public void set(double v, boolean exhausted) {
+            value = Math.max(0, Math.min(max, v));
+            this.exhausted = exhausted && value + EPS < RESTED_SHARE * max || value <= EPS && max > 0;
+            groundSeconds = 0;
+        }
+
         public double max() {
             return max;
         }

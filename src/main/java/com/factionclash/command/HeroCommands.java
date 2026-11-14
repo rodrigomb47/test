@@ -236,6 +236,20 @@ public final class HeroCommands {
                                 .executes(c -> poise(c, DoubleArgumentType.getDouble(c, "amount"))))))
                 .then(Commands.literal("escape").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
                         .executes(HeroCommands::escape)))
+                .then(Commands.literal("mobility").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
+                        .executes(c -> mobility(c, "info", null, null, -1))
+                        .then(Commands.argument("action", StringArgumentType.word())
+                                .suggests((c, b) -> SharedSuggestionProvider.suggest(MOBILITY_ACTIONS, b))
+                                .executes(c -> mobility(c, StringArgumentType.getString(c, "action"), null, null, -1)))
+                        .then(Commands.literal("leap").then(Commands.argument("pos", BlockPosArgument.blockPos())
+                                .executes(c -> mobility(c, "leap", BlockPosArgument.getLoadedBlockPos(c, "pos"), null, -1))))
+                        .then(Commands.literal("fly").then(Commands.argument("pos", BlockPosArgument.blockPos())
+                                .executes(c -> mobility(c, "fly", BlockPosArgument.getLoadedBlockPos(c, "pos"), null, -1))))
+                        .then(Commands.literal("climb").then(Commands.argument("face", StringArgumentType.word())
+                                .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("north", "south", "east", "west"), b))
+                                .executes(c -> mobility(c, "climb", null, StringArgumentType.getString(c, "face"), -1))))
+                        .then(Commands.literal("stamina").then(Commands.argument("percent", DoubleArgumentType.doubleArg(0, 100))
+                                .executes(c -> mobility(c, "stamina", null, null, DoubleArgumentType.getDouble(c, "percent")))))))
                 .then(Commands.literal("target-state").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
                         .then(Commands.argument("state", StringArgumentType.word())
                                 .suggests((c, b) -> SharedSuggestionProvider.suggest(List.of("blocking", "bow", "eating", "clear"), b))
@@ -606,6 +620,61 @@ public final class HeroCommands {
             return 0;
         }
         c.getSource().sendSuccess(() -> Component.literal(h.npcName() + " escapes."), true);
+        return 1;
+    }
+
+    /** The actions of {@code /fc admin hero mobility <id> <action>} with no argument. */
+    private static final List<String> MOBILITY_ACTIONS = List.of("info", "jump", "airjump", "wallkick", "mantle", "glide",
+            "gust", "takeoff", "hover", "land", "cling", "climbdown", "letgo", "down");
+
+    /**
+     * {@code mobility <id> [action]} (task A10, for live checks until A11 and A12 drive it): its mobility now ({@code info}),
+     * or an action of its movement engine (a jump, a leap to a block, an air jump, a wall kick, the mantle, a climb up a
+     * face, cling, climb down, let go, a glide, a gust, take-off, a flight to a block, hover, land, a downing, its stamina).
+     */
+    private static int mobility(CommandContext<CommandSourceStack> c, String action, BlockPos pos, String face, double percent) {
+        HeroEntity h = live(c);
+        if (h == null) {
+            return 0;
+        }
+        var m = h.movement();
+        String no = switch (action.toLowerCase(Locale.ROOT)) {
+            case "info" -> null;
+            case "jump" -> m.jump();
+            case "airjump" -> m.airJump();
+            case "wallkick" -> m.wallKick();
+            case "mantle" -> m.mantle();
+            case "glide" -> m.glide(null);
+            case "gust" -> m.gust();
+            case "takeoff" -> m.takeOff();
+            case "hover" -> m.hover();
+            case "land" -> m.land();
+            case "cling" -> m.cling();
+            case "climbdown" -> m.climbDown();
+            case "letgo" -> {
+                m.letGo();
+                yield null;
+            }
+            case "down" -> m.down(com.factionclash.hero.HeroMovement.Cause.OPERATOR) ? null : "it is downed already";
+            case "leap" -> m.leapTo(pos);
+            case "fly" -> m.flyTo(net.minecraft.world.phys.Vec3.atBottomCenterOf(pos));
+            case "climb" -> {
+                net.minecraft.core.Direction d = net.minecraft.core.Direction.byName(face == null ? "" : face.toLowerCase(Locale.ROOT));
+                yield m.climb(d);
+            }
+            case "stamina" -> {
+                m.setStaminaShare(percent / 100.0);
+                yield null;
+            }
+            default -> "unknown action; one of " + String.join(", ", MOBILITY_ACTIONS) + ", leap <pos>, fly <pos>, climb <face>, stamina <percent>";
+        };
+        if (no != null) {
+            c.getSource().sendFailure(Component.literal(h.npcName() + ": " + no));
+            return 0;
+        }
+        String now = m.describe();
+        c.getSource().sendSuccess(() -> Component.literal(h.npcName() + " (level " + h.npcLevel() + ", power "
+                + Math.round(m.profile().power() * 100) + "%): " + now), true);
         return 1;
     }
 

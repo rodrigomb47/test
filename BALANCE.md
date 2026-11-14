@@ -1047,7 +1047,7 @@ Presentation only: no number here changes a fight, and every cue plays whoever c
   whole entity, **0.008-0.013 ms** of it in the fight runtime (HEROES_V2 11's budget for a hero's own cost: 0.05 ms).
   The test fails above **1.0 ms** and **0.25 ms**.
 
-## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules, not yet read by the game
+## Hero mobility and work mastery (`MobilityRules`, `LeapSolver`, `FlightPlanner`, `HeroLinks`, `WallEntry`, `WorkMastery`) — pure rules (the mobility engine reads `MobilityRules` and `LeapSolver` since A10)
 All PROPOSED (`docs/heroes-v2/MOBILITY_AND_WORK.md`); ordinary NPCs keep every number of today (no links, no
 modifiers, 18 slots, 1 + Diligence).
 * Power by level: `p(L) = 0.6 + 0.4 x (min(L, 20) - 1) / 19` (`mobility.levelPowerAtOne` **60**, 30-100;
@@ -1085,6 +1085,30 @@ modifiers, 18 slots, 1 + Diligence).
   MOBILITY_AND_WORK 11.1 and 11.2 (`WorkMastery`).
 * The dive (format 2's ninth new form): range 4-12 (8), radius 1-3 (2), heavy, a landing decal, weight as a leap + 1,
   at least **1.0 s** of recovery on the ground.
+
+## Hero mobility engine (config `heroes.mobility`; `HeroMovement`, `MovementRules`) — A10
+All PROPOSED unless MOBILITY_AND_WORK gives the number; heroes only (workers and soldiers keep every vanilla value).
+* Config `[heroes.mobility]`: `enabled` (**true**), `flight` (**true**), `levelPowerAtOne` (**60**, 30-100),
+  `fullPowerLevel` (**20**, 10-30), `travelAltitude` (**24**, 8-48), `bossAirSeconds` (**8**, 4-10), `staminaPercent`
+  (**100**, 50-200). A config change reaches a hero within **5 s** (100 ticks).
+* Tells: a leap's crouch **0.3 s** (6 ticks), the take-off **0.6 s** and the landing **0.4 s** (their clips' lengths in the
+  hero's timing files); downed **2 s** lying, no take-off for **12 s**.
+* Leaps: `LeapSolver`'s impulse over the real blocks (a block's collision height), the take-off tick airborne (drag
+  **0.91**); a heavy landing without the roll slows to **50%** for **10** ticks; a fall of **2** blocks plays a landing,
+  of **4** a heavy one.
+* Air jumps and wall kicks: an air jump's height (`p` x **1.25**); a wall kick pushes **0.4** away, never off the same
+  face twice in a row. The mantle: a ledge within **1** block of its hands (80% of its height).
+* Climbing: a push of **0.12** into the face; vanilla's ladder **2.35 b/s** up, **3** down; let go on any hit or a
+  knock-back of **0.5**; grip again after **10** ticks.
+* Gliding: opened by itself falling faster than **0.2** a tick over a drop of **4+** blocks; the forward speed blended
+  **35%** a tick; ended by any projectile (no new glide before landing) or water.
+* Flight: steering blended **35%** a tick toward cruise speed and climb rate (Slowness I halves the climb); descends at
+  most **3 b/s** (or its climb rate), a landing at **4 b/s**; slows within **0.35 x** the distance, on its point within
+  **0.3**; a backpack more than half full counts as loaded.
+* Air poise (5.3): arrow and hero projectile **20**, bolt **30**, Multishot side bolt **15**, trident **40**, wind charge
+  **35**, snowball and egg **10**, fishing hook **15**, a blow from at most **3** blocks below **25**, a falling blow **40**;
+  only in the hero's own airtime. A downing: horizontal speed x**0.2**, +**30** poise, its fall one capped hit.
+* Bursts: on **8** straight level path nodes with nobody within **2** blocks ahead; **3 s**; checked every **5** ticks.
 
 ## Historical values (before the worker redesign)
 These numbers belonged to the old fixed workplaces. New bases no longer have them; they matter only for campaigns

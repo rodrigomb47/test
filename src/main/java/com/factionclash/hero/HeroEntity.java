@@ -195,8 +195,23 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         super(type, level);
     }
 
+    /**
+     * A faction NPC's attributes plus {@code generic.flying_speed}, which flight reads and {@code LivingEntity} does not
+     * have (MOBILITY_AND_WORK 1.2; task A10).
+     */
     public static AttributeSupplier.Builder createAttributes() {
-        return FactionNpc.createAttributes();
+        return FactionNpc.createAttributes().add(Attributes.FLYING_SPEED, 0.4);
+    }
+
+    /** Its superhuman movement (task A10, MOBILITY_AND_WORK 1-2): made on first use. */
+    private HeroMovement movement;
+
+    /** Its mobility engine: attribute modifiers, jumps, leaps, climbing, gliding, flight, air poise, {@code DATA_LOCO}. */
+    public HeroMovement movement() {
+        if (movement == null) {
+            movement = new HeroMovement(this);
+        }
+        return movement;
     }
 
     /**
@@ -401,6 +416,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (Math.abs(newMax - oldMax) > 1e-4 && oldMax > 0 && isAlive()) {
             setHealth((float) com.factionclash.logic.hero.BossRules.keepShare(health, oldMax, newMax));
         }
+        movement().refresh(); // its mobility follows its definition and level (MOBILITY_AND_WORK 1.1)
     }
 
     private void modifier(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attr, ResourceLocation id,
@@ -1289,6 +1305,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         boolean server = !level().isClientSide && !preview;
         if (server && isAlive()) {
             combat().boss().struckBy(source); // an attacker is engaged for 15 s (6.1), even when its blow is blocked
+            movement().struck(source); // a climber lets go, a low flyer's air poise (MOBILITY_AND_WORK 1.8, 5.3)
             if (combat().barrierBlocks(source)) {
                 return false; // its barrier (6.6, task A5) blocks all damage until it has taken its hits
             }
@@ -1541,6 +1558,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (combat != null) {
             combat.reset();
         }
+        if (movement != null && !level().isClientSide) {
+            movement.reset();
+        }
         if (!level().isClientSide) {
             HeroSummons.dismissAll(this);
         }
@@ -1607,6 +1627,97 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return (float) (base * ((getRandom().nextFloat() - getRandom().nextFloat()) * 0.2F + 1.0F));
     }
 
+    // ------------------------------------------------------------------ its mobility in vanilla's movement (task A10)
+
+    /**
+     * Its mobility engine runs first in its tick ({@link HeroMovement#tick}): it sets this tick's velocity, then vanilla's
+     * AI and travel move it.
+     */
+    @Override
+    public void aiStep() {
+        if (!level().isClientSide && !preview && isAlive()) {
+            movement().tick();
+        }
+        super.aiStep();
+    }
+
+    /**
+     * While a mobility action owns its movement (a leap, a climb, a glide, flight, a downing) its own input is zeroed:
+     * mobs get no air control, and vanilla moves it by the velocity the engine set, with vanilla's drag and gravity.
+     */
+    @Override
+    public void travel(net.minecraft.world.phys.Vec3 input) {
+        if (movement != null && !level().isClientSide && movement.controls()) {
+            super.travel(net.minecraft.world.phys.Vec3.ZERO);
+        } else {
+            super.travel(input);
+        }
+    }
+
+    /** Vanilla's jump (its navigation's), held while an action owns its movement; a jump-bonus hero plays its jump. */
+    @Override
+    public void jumpFromGround() {
+        if (movement != null && !level().isClientSide && movement.holdsVanillaJump()) {
+            return;
+        }
+        super.jumpFromGround();
+        if (movement != null && !level().isClientSide) {
+            movement.onVanillaJump();
+        }
+    }
+
+    /**
+     * A climber on a wall is on a climbable (vanilla's {@code Spider} pattern, MOBILITY_AND_WORK 1.8): vanilla's own
+     * ladder physics move it, 2.35 blocks a second up, at most 3 down; only in the climb state, never for touching a wall.
+     */
+    @Override
+    public boolean onClimbable() {
+        if (movement != null && !level().isClientSide && movement.onWall()) {
+            return true;
+        }
+        return super.onClimbable();
+    }
+
+    /** Cobwebs and berry bushes never slow a charger II-III, powder snow never slows snowstride (1.5, 1.13). */
+    @Override
+    public void makeStuckInBlock(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.phys.Vec3 speed) {
+        if (movement != null && !level().isClientSide && movement.ignoresStuck(state)) {
+            return;
+        }
+        super.makeStuckInBlock(state, speed);
+    }
+
+    /** {@code snowstride} never freezes (1.13). */
+    @Override
+    public boolean canFreeze() {
+        return !(movement != null && !level().isClientSide && movement.neverFreezes()) && super.canFreeze();
+    }
+
+    /** {@code ember_stride} is fire- and lava-proof (1.13). */
+    @Override
+    public boolean fireImmune() {
+        return super.fireImmune() || movement != null && !level().isClientSide && movement.fireproof();
+    }
+
+    /** A knock-back of 0.5 or more knocks a climber off its wall (1.8), whoever dealt it. */
+    @Override
+    public void knockback(double strength, double x, double z) {
+        if (movement != null && !level().isClientSide) {
+            movement.knocked(strength);
+        }
+        super.knockback(strength, x, z);
+    }
+
+    /** The jump factor of the block it stands on (honey 0.5): a leap needs a full one (3.3). */
+    public float blockJumpFactor() {
+        return getBlockJumpFactor();
+    }
+
+    /** The speed factor of the block it stands on (soul sand 0.4): a leap needs a full one (3.3). */
+    public float blockSpeedFactor() {
+        return getBlockSpeedFactor();
+    }
+
     // ------------------------------------------------------------------ GeckoLib
 
     /** The base, action and secondary controllers (HEROES_V2 4.4; {@link HeroAnimator}). */
@@ -1645,6 +1756,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (combat != null) {
             combat.save(h);
         }
+        if (movement != null && !level().isClientSide) {
+            movement.save(h);
+        }
         tag.put("FcHero", h);
     }
 
@@ -1663,12 +1777,16 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         dayTicks = Math.max(0, Math.min(DAY_TICKS - 1, h.getInt("dayTicks")));
         kitSignature = h.getString("kit");
         combat().load(h);
+        if (!level().isClientSide) {
+            movement().load(h);
+        }
         setHeroId(h.getString("id"));
         forcedMood = h.contains("mood") ? h.getInt("mood") : -1;
         forcedWeapon = h.contains("weapon") ? h.getInt("weapon") : -1;
         setForcedPose(h.getInt("pose"));
         if (!level().isClientSide) {
             applyDefinition(false);
+            movement().afterDefinition();
             if (savedHealth >= 0) {
                 setHealth(savedHealth);
             }

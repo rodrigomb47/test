@@ -501,3 +501,25 @@ Seen with Natsuho's and Hinae's kits on the test rig on a dedicated server with 
   A thrown hero's own file should give no melee weapon (C content), or the rule should read the hero's bare attack.
 - **Natsuho's `water` weak point on fisherman duty.** She wades in to fish and flinches (at most once in 20 s; out of a
   fight it costs only the flinch). In character for a cat; C1 may prefer a fishing stand on the bank.
+
+## A10 decisions on the mobility engine (2026-11-14)
+
+A10 (`HeroMovement`, `MovementRules`, `HEROES_V2.md` 15.2 "A10 as built") decided the points MOBILITY_AND_WORK leaves open:
+
+- **The leap's take-off tick is airborne** (vanilla's travel would drag it by the block's friction, 0.546 on stone):
+  the solver's arc is then the real one from any block, ice included, and a GameTest measures it.
+- **Air poise counts the hero's own airtime only** (flight, a glide, its leap, jump, air jump or wall kick, the
+  mantle): a hero lifted by a blow's knock-back or falling off a ledge is not "in the air" for 2.4. A stagger in the air
+  is a downing only then, too.
+- **Wall kicks do not spend air jumps**, but never kick off the same face twice in a row: a chimney is climbed, one wall
+  is not.
+- **`DATA_LOCO`'s one-shots**: each mode and kind names one clip (`HeroClips.oneShotClip`), and the one-shot keeps its
+  naming mode for its length, so a wall kick is `cling` + special, the mantle `climb` + special, the landing roll
+  `ground` + special and the heavy landing `airborne` + end.
+- **A glider opens its glide by itself** when it falls with 4 blocks or more under it (1.9's launch height), a flyer
+  too; this is the one mobility action that runs in a campaign before A11 and A12 drive the rest.
+- **The fight's air budget and ceiling are on from A10** for any flight in a fight, against any engaged enemy, so no
+  flight escapes them before A12's aerial windows.
+- **A heavy landing without the roll slows** to half speed for 0.5 s (1.6's "landing roll: no landing slowdown" needed a
+  slowdown to spare).
+- **The Multishot side bolt** is the bolt that cannot be picked up (vanilla gives the side bolts creative-only pickup).

@@ -1147,6 +1147,19 @@ public final class BossRules {
         public boolean mayTakeOff(long now) {
             return now - downedAt >= NO_TAKEOFF_TICKS;
         }
+
+        /** The game time of its last downing (long ago when it was never downed). */
+        public long downedAt() {
+            return downedAt;
+        }
+
+        /** Restores a saved bar (task A10: the entity's {@code FcHero.mobility}): its value and its last downing. */
+        public void restore(double value, long downedAt, long now) {
+            this.value = Math.max(0, Math.min(AIR_POISE_MAX, value));
+            this.downedAt = downedAt;
+            this.lastHit = now;
+            this.lastTick = now;
+        }
     }
 
     // ================================================================== the fight's air and reach (MOBILITY_AND_WORK 2.3, 5.1)

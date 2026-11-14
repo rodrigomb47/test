@@ -683,13 +683,21 @@ public final class HeroCombat {
      */
     public void stagger() {
         pending = null;
-        staggerUntil = now() + BossRules.STAGGER_TICKS;
+        // MOBILITY_AND_WORK 7.6 (task A10): a stagger in the air is a downing (it falls and lies 2 s, 2.4), not a kneel
+        boolean inAir = hero.movement().airborneForPoise();
+        if (!inAir) {
+            staggerUntil = now() + BossRules.STAGGER_TICKS;
+        }
         if (run != null) {
             interrupt(Interrupt.STAGGER);
         }
-        hero.playAction(HeroActions.actionCode("stagger"), 1.0, 0);
-        hero.getNavigation().stop();
-        hero.setDeltaMovement(hero.getDeltaMovement().multiply(0, 1, 0));
+        if (inAir) {
+            hero.movement().down(HeroMovement.Cause.STAGGER);
+        } else {
+            hero.playAction(HeroActions.actionCode("stagger"), 1.0, 0);
+            hero.getNavigation().stop();
+            hero.setDeltaMovement(hero.getDeltaMovement().multiply(0, 1, 0));
+        }
         HeroEffects.particles(hero.level(), hero, ParticleTypes.CRIT, 10);
         if (staggerFromPoise) {
             // SOUND.md 7: the bar breaks, then the dizzy stars
@@ -719,6 +727,18 @@ public final class HeroCombat {
     public boolean protectedFromStagger() {
         return boss.armoured() || run != null && (run.move.superArmor()
                 || MoveSelector.isUltimate(run.move) && run.stage() == MoveStage.WINDUP);
+    }
+
+    /**
+     * It was downed in the air (MOBILITY_AND_WORK 2.4, task A10): a pick waiting to start is dropped and the running
+     * move is cut as a stun cuts it; its own leap's no-fall-damage ends (the downed fall hurts as any fall).
+     */
+    void downed() {
+        pending = null;
+        ownHopUntil = -1;
+        if (run != null) {
+            interrupt(Interrupt.STUN);
+        }
     }
 
     /**

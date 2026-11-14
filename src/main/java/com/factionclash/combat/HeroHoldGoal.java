@@ -22,7 +22,8 @@ public class HeroHoldGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        return !hero.level().isClientSide && hero.combat().boss().held();
+        // also while its mobility owns its movement (a leap, a climb, a glide, flight, a downing: task A10)
+        return !hero.level().isClientSide && (hero.combat().boss().held() || hero.movement().controls());
     }
 
     @Override

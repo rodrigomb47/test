@@ -33,6 +33,11 @@ public final class HeroAnimator {
     public interface Library {
         boolean has(HeroEntity hero, String animation);
 
+        /** Whether the hero's model has this bone (the wings controller plays only for a winged model). */
+        default boolean hasBone(HeroEntity hero, String bone) {
+            return false;
+        }
+
         /**
          * An object that changes whenever {@link #has} may answer differently for this hero (its resolved animation
          * chain: another chain, or the same names after a resource reload); compared by identity.
@@ -83,6 +88,17 @@ public final class HeroAnimator {
     private int lastSwingTime;
     private int swingTick = Integer.MIN_VALUE;
 
+    // locomotion one-shots (DATA_LOCO, MOBILITY_AND_WORK 4.2; task A10)
+    /** The one-shot key playing now, the one seen when the client started tracking (not played), whether it saw any. */
+    private int locoShotKey = -1;
+    private int locoSkippedKey = -1;
+    private boolean locoSeen;
+
+    // wings (MOBILITY_AND_WORK 4.3)
+    private String wingClip;
+    private RawAnimation wingRaw;
+    private double wingSpeed = 1.0;
+
     // secondary
     private boolean secondaryPaused;
     private static final RawAnimation SECONDARY = RawAnimation.begin().thenLoop("sec.loop");
@@ -109,7 +125,14 @@ public final class HeroAnimator {
         });
         secondary.setParticleKeyframeHandler(e -> {
         });
-        controllers.add(base, action, secondary);
+        // a winged hero's wing loops (MOBILITY_AND_WORK 4.3, task A10): folded, beating or spread by DATA_LOCO's mode
+        AnimationController<HeroEntity> wings = new AnimationController<>(hero, "wings", HeroClips.SECONDARY_TRANSITION, this::wings);
+        wings.setSoundKeyframeHandler(this::onSound);
+        wings.setCustomInstructionKeyframeHandler(e -> {
+        });
+        wings.setParticleKeyframeHandler(e -> {
+        });
+        controllers.add(base, action, secondary, wings);
     }
 
     /** Pauses the secondary controller (the renderer's level of detail: beyond 32 blocks). */
@@ -150,9 +173,14 @@ public final class HeroAnimator {
         } else {
             boolean sitting = hero.isPassenger() || hero.getPose() == Pose.SITTING;
             double paced = HeroClips.paceSpeed(pace.shown(), groundSpeed); // the clip choice by pace, the playback by speed
+            int loco = hero.loco();
             motion = new HeroClips.Motion(paced, verticalSpeed, hero.onGround(), hero.isInWater(), hero.isCrouching(),
-                    hero.isSleeping(), sitting, hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN), HeroActions.locoMode(hero.loco()));
+                    hero.isSleeping(), sitting, hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN), HeroActions.locoMode(loco));
             key = HeroClips.baseKey(motion);
+            PlayState shot = locoOneShot(state, loco);
+            if (shot != null) {
+                return shot;
+            }
         }
         // the candidates (and the chain lookups behind them) only when the motion's class or the chain changes, not
         // every frame
@@ -182,6 +210,54 @@ public final class HeroAnimator {
         } else if (HeroClips.speedChanged(basePlayback, playback)) {
             basePlayback = playback;
             c.setAnimationSpeed(playback);
+        }
+        return state.setAndContinue(baseRaw);
+    }
+
+    /**
+     * A locomotion one-shot of {@code DATA_LOCO} (a jump, a landing, an air jump, a take-off, the downing...): while its
+     * bits are set it plays once on the base controller over the loop it settles into ({@link HeroClips#oneShotSettle}),
+     * restarted by a new sequence toggle (two air jumps in a row both play); a client that starts tracking during one
+     * does not play it. Null when none plays (the motion's clip then plays as before).
+     */
+    private PlayState locoOneShot(AnimationState<HeroEntity> state, int loco) {
+        int kind = HeroActions.locoOneShot(loco);
+        boolean first = !locoSeen;
+        locoSeen = true;
+        if (kind == HeroActions.LOCO_ONE_SHOT_NONE) {
+            locoSkippedKey = -1;
+            return null;
+        }
+        int mode = HeroActions.locoMode(loco);
+        int key = HeroClips.oneShotKey(mode, kind, HeroActions.locoToggle(loco));
+        if (first) {
+            locoSkippedKey = key;
+        }
+        if (key == locoSkippedKey) {
+            return null;
+        }
+        String clip = HeroClips.oneShotClip(mode, kind);
+        if (clip == null || !has(clip)) {
+            return null;
+        }
+        AnimationController<HeroEntity> c = state.getController();
+        if (key != locoShotKey || key != baseKey) {
+            String settle = HeroClips.oneShotSettle(mode, kind);
+            RawAnimation raw = RawAnimation.begin().thenPlay(clip);
+            if (settle != null && has(settle)) {
+                raw = raw.thenLoop(settle);
+            }
+            if (LOG_MARKERS) {
+                FactionClash.LOGGER.info("[Heroes] {} base one-shot {} (client tick {})", hero.heroId(), clip, hero.tickCount);
+            }
+            c.forceAnimationReset();
+            c.setAnimationSpeed(1.0);
+            baseRaw = raw;
+            baseClip = clip;
+            basePlayback = 1.0;
+            baseKey = key;
+            baseChoice = null;
+            locoShotKey = key;
         }
         return state.setAndContinue(baseRaw);
     }
@@ -330,6 +406,28 @@ public final class HeroAnimator {
             return PlayState.STOP;
         }
         return state.setAndContinue(SECONDARY);
+    }
+
+    /** The wing loop of a winged model by {@code DATA_LOCO}'s mode ({@link HeroClips#wingLoop}); paused with the secondary. */
+    private PlayState wings(AnimationState<HeroEntity> state) {
+        if (secondaryPaused || hero.isDeadOrDying() || !library.hasBone(hero, "wing_l")) {
+            return PlayState.STOP;
+        }
+        int loco = hero.loco();
+        String loop = HeroClips.wingLoop(HeroActions.locoMode(loco));
+        if (!has(loop)) {
+            return PlayState.STOP;
+        }
+        if (!loop.equals(wingClip)) {
+            wingClip = loop;
+            wingRaw = RawAnimation.begin().thenLoop(loop);
+        }
+        double speed = HeroClips.wingSpeed(loop, HeroActions.locoTired(loco));
+        if (speed != wingSpeed) {
+            wingSpeed = speed;
+            state.getController().setAnimationSpeed(speed);
+        }
+        return state.setAndContinue(wingRaw);
     }
 
     // ------------------------------------------------------------------ events

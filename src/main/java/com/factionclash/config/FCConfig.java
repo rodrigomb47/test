@@ -65,6 +65,13 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_VOICE_BLIPS;
     public static final ModConfigSpec.BooleanValue HERO_TELEGRAPH_CUES;
     public static final ModConfigSpec.IntValue HERO_POWER_PERCENT;
+    public static final ModConfigSpec.BooleanValue MOBILITY_ENABLED;
+    public static final ModConfigSpec.BooleanValue MOBILITY_FLIGHT;
+    public static final ModConfigSpec.IntValue MOBILITY_POWER_AT_ONE;
+    public static final ModConfigSpec.IntValue MOBILITY_FULL_POWER_LEVEL;
+    public static final ModConfigSpec.IntValue MOBILITY_TRAVEL_ALTITUDE;
+    public static final ModConfigSpec.IntValue MOBILITY_BOSS_AIR_SECONDS;
+    public static final ModConfigSpec.IntValue MOBILITY_STAMINA_PERCENT;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -217,6 +224,27 @@ public final class FCConfig {
         HERO_TELEGRAPH_CUES = b.comment("Play the shared wind-up cue of a hero's move class (light, heavy, area, ultimate, unblockable), timed",
                         "to end on the hit. false leaves only the hero's own wind-up sounds (presentation only).")
                 .define("telegraphCues", true);
+        b.comment("Heroes' superhuman movement (MOBILITY_AND_WORK 1-2 and 8.5): higher jumps, air jumps, wall kicks, climbing, gliding",
+                "and flight with stamina, every feature from level 1 and the numbers growing to full at fullPowerLevel. Heroes only:",
+                "workers and soldiers move as before. The same in every fight, against a player or an NPC.").push("mobility");
+        MOBILITY_ENABLED = b.comment("false: heroes move exactly like workers (no jump, step or fall bonus, no climbing, gliding or flight).")
+                .define("enabled", true);
+        MOBILITY_FLIGHT = b.comment("false: flyers glide (from heights) instead of flying.")
+                .define("flight", true);
+        MOBILITY_POWER_AT_ONE = b.comment("A hero's mobility numbers (jump height, gaps, climb height, stamina, speeds) at level 1, in percent",
+                        "of its ceiling (PROPOSED: 60). 100 gives the full ceiling from the start.")
+                .defineInRange("levelPowerAtOne", 60, 30, 100);
+        MOBILITY_FULL_POWER_LEVEL = b.comment("The hero level at which its mobility numbers reach 100% of its ceiling (PROPOSED: 20).")
+                .defineInRange("fullPowerLevel", 20, 10, 30);
+        MOBILITY_TRAVEL_ALTITUDE = b.comment("Out of a fight (and escaping) a flyer stays at most this many blocks above the ground under it",
+                        "(PROPOSED: 24).")
+                .defineInRange("travelAltitude", 24, 8, 48);
+        MOBILITY_BOSS_AIR_SECONDS = b.comment("In any fight, against anyone, a flyer stays in the air at most this many seconds per take-off",
+                        "(PROPOSED: 8), and at least 6 s on the ground between (4 in phase 3).")
+                .defineInRange("bossAirSeconds", 8, 4, 10);
+        MOBILITY_STAMINA_PERCENT = b.comment("Scales every flyer's flight stamina, in percent (PROPOSED: 100).")
+                .defineInRange("staminaPercent", 100, 50, 200);
+        b.pop();
         b.pop();
 
         b.comment("Heroes as bosses: one mode against anyone, player or NPC (HEROES_V2 6)").push("boss");

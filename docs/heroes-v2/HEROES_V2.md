@@ -2804,7 +2804,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | C3 | Slice heroes: Kagenori Tsurumine and Ambrose Nettlewick | C1 | M | same |
 | C4 | Slice heroes: Ilsabet Frostmere and Tobimaru Usugumo | C1 | M | same |
 | F5 | Mobility and work-mastery pure logic: `MobilityRules` (ceilings and level power), `LeapSolver`, `FlightPlanner`, link rules, `WallEntry`, `EscapeRules`, `WorkMastery`; the `mobility` block and the `dive` form in the catalogue and validator (`MOBILITY_AND_WORK.md` 18.1) | F1, F2 | M | `MobilityRulesTest`, `LeapSolverTest`, `FlightPlannerTest`, `HeroLinksTest`, `WorkMasteryTest`, `WallEntryTest`, `EscapeRulesTest`. Done 2026-11-13 ("F5 as built" below); reviewed 2026-11-13 ("Review of F1-F5 and A1b" below) |
-| A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2 |
+| A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2. Done 2026-11-14 ("A10 as built" below): `hero/HeroMovement` (one per hero, ticked before vanilla's AI and travel) applies `MobilityRules`' level-scaled modifiers (jump strength, step height, safe fall and fall damage, travel speed, movement and water efficiency, swimming, a charger's knock-back while travelling; every feature from level 1, the numbers growing with `p(L)` to full at level 20) and runs the physical actions on vanilla's own physics: jumps, a leap solved over the real blocks behind its 0.3 s crouch tell, air jumps, wall kicks, the mantle, climbing and clinging (vanilla's ladder physics), gliding (opened by itself over a drop of 4 blocks), flight with stamina (the 0.6 s take-off tell, the landing, the descent at 25%, the glide down when it is empty), the runner's sprint and the charger's charge while travelling, air poise and the downing (a stagger in the air is a downing); `DATA_LOCO` plays G10's clips (one-shots over their loops on the base controller), the wing loops on a new `wings` controller and the mount bone only while riding; `cues.takeoff` with the hero's own take-off, `cues.landing`, `cues.downed`; the fight's air budget and ceiling counted from engaged enemies of any kind; `[heroes.mobility]` config; `/fc admin hero mobility`; 1022 unit tests (13 new, `MovementRulesTest`) and 278 GameTests (16 new, `HeroMobilityGameTests` in a 32 x 24 x 32 `mobility_field`: a leap's apex, length and ticks are `LeapSolver`'s within 0.03 blocks and a tick, `mobilityScalesWithLevel`, a climber knocked off by an NPC soldier's and a mock player's blows alike, air poise from an NPC archer's and a mock player's arrows and blows alike, the air budget and ceiling the same against both) |
 | A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, walls as terrain for heroes, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration (mobility first, no 10 s wait) | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day |
 | A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape (`HeroEscapeGoal`, `EscapeRules`: 6.13; there is no yield to refuse), the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases. Done 2026-11-13: the 27 animations of MOBILITY_AND_WORK 4.1 for milestone 1 in `_core` (11 base loops, 14 base one-shots that end on the loop that follows them, `move.ride_cast` and `move.air_dive` as actions) and the three wing loops of the secondary controller, every clip passing `herogen check` on all six bases; full turns that unwind (`primitives.spin`: the flip, the roll, the cat twist), the riding rule on the rig's new `mount` bone (`quality.check_mount`), the `mounts/broom` carrier part and `visual.json` `carrier`, hero variants (`animations.variants`) with the slice's four: Natsuho's cat twist, Yugen's fox lope, Kagenori's crane leap, Ambrose's broom ridden side-saddle on his staff; GIFs and sheets on a chibi and an adult in `docs/heroes-v2/previews/anim/locomotion/` (`notes/artgen.md`, "G10"); 331 Python tests. Art review 2026-11-13: capes, tails, ponytails and coat tails trail in flight (recipe `wind`, `secondary.Wind`, on the glide, flight, take-off, landing, leap and ride clips and the broom and crane variants; an action takes its base's wind); only `_core` chain-bone keys change |
@@ -4275,6 +4275,119 @@ G7 Java side as built (2026-11-13), where it goes beyond or differs from 14.2, 1
   takes about three minutes. While this was built, the art workflow's Natsuho source was in progress without its
   built files, and `herogen build --check` reported them missing, as it should; the Java half passed.
 - **1009 unit tests** (32 new) and 262 GameTests (no game code changed).
+
+A10 as built (2026-11-14), where it goes beyond or differs from `MOBILITY_AND_WORK.md` 1-2, 3.1, 3.3, 3.4, 4.2-4.3,
+5.3, 16 and the row above:
+
+- **Where it runs.** `hero/HeroMovement` (server, one per hero, `HeroEntity.movement()`) is ticked at the start of
+  `HeroEntity.aiStep`, before vanilla's AI and travel: it sets the tick's velocity and vanilla moves the hero, with
+  vanilla's drag, gravity and collisions. While an action owns the movement (a tell, a leap, a jump, a climb, a cling, a
+  glide, the take-off, flight, a landing, a downing) `HeroEntity.travel` gets a zero input (mobs have no air control),
+  `jumpFromGround` is held and `combat/HeroHoldGoal` holds MOVE, LOOK and JUMP, so no job, chase or basic attack moves
+  it; the tells, the landing and a downing are also `HeroBoss.held()`, so no move starts in them. `onClimbable` is true in
+  the climb states only (the `Spider` pattern), `makeStuckInBlock` skips cobwebs and berry bushes for a charger II-III and
+  powder snow for snowstride, `canFreeze` is false for snowstride and `fireImmune` true for ember stride. The pure part is
+  the new `logic/hero/MovementRules` (air poise by counter, what downs at once, the glide's and the flight's velocity for
+  a tick, the landing a hero plays, the wall-kick rule, the bursts' clock, the `DATA_LOCO` bookkeeping) and `HeroClips`
+  (G10's clip names, the one-shots, the loops they settle into, the wing loops).
+- **The modifiers** are `MobilityRules.modifiers` (named `factionclash:mobility_<trait>`), applied again when the profile
+  changes (a definition applied, a level gained, `restoreProgress`, a config change seen within 5 s) and when the hero
+  starts or stops travelling (a navigation path with no target and no fight, or an escape) or passes walking pace. A
+  dormant hero, a preview and `mobility.enabled = false` have none. **Every format-2 hero has mobility**: one whose file
+  has no `mobility` block gets its archetype's default at tier 1 (F2's reader), so the test rig (samurai: leaper I) now
+  jumps 1.84 blocks, falls 4.8 safely and can be knocked out of its own jumps; format-1 heroes have none.
+- **A leap is the solver's arc.** The impulse is the one `LeapSolver` finds over the real blocks along the leap (each
+  block's collision height), within the hero's limits (its jump height; its widest gap, or any horizontal speed for a
+  jump-up to the next cell), from where it actually stands after the 0.3 s crouch, which holds it still facing the
+  landing. The take-off tick counts as airborne (`setOnGround(false)` with the impulse, as A3's leap form already did), so
+  vanilla's travel drags it by 0.91 as the solver does, whatever block it leaves (ice included): measured,
+  Kagenori's 5-block leap at level 20 lands on its cell with the solver's apex and length within 0.03 blocks and its
+  ticks within one, and without the airborne take-off tick it fell 1.7 blocks short into the ditch. At the apex the
+  rest of the arc is simulated again and an acrobat spends an air jump to correct a miss (3.3). A leaper II+ or an
+  acrobat rolls (`move.land_roll`); anyone else lands heavily and is slowed to half speed for 0.5 s (PROPOSED).
+- **Air jumps, wall kicks, the mantle.** An air jump sets the vertical speed of its air-jump height (0.75 blocks at
+  level 1, 1.25 at 20), its ceiling's count per airtime; a wall kick needs a wall face the hero touches, kicks 0.4 away
+  at an air jump's height and never off the same face twice in a row (so a 1x1 chimney is climbed by alternating kicks
+  and a single wall is not); they do not spend the air jumps. The mantle lifts the hero onto a ledge within 1 block of
+  its hands with a short push and a forward step.
+- **Climbing.** The hero presses 0.12 into the face and vanilla's ladder physics lift it (measured 0.1176 blocks a
+  tick, 2.35 b/s); it steps over the top, mantles at III, and clings (no gravity, no push) where its climb height ends with
+  the wall still there. Any hurt with an attacker or a projectile, and any knock-back of 0.5 or more, makes it let go
+  (10 ticks before it grips again), whoever caused it.
+- **Gliding.** The fall is clamped to the sink rate, the forward speed kept (a blend of 35% a tick from the motion before
+  vanilla's drag, so a push still moves it), the fall distance reset; past its time it sinks at 6 b/s. A glider or flyer
+  opens its glide by itself when it falls faster than 0.2 a tick with 4 blocks or more under it (not after a downing,
+  and not again before landing once a projectile ended a glide).
+- **Flight.** Take-off: the refusals of `MobilityRules.takeOffRefusal` (4 blocks of free column over its footprint),
+  the 0.6 s tell held still (the clip's length from the hero's timing files) with `cues.takeoff` and its own
+  `mobility.takeoff`, a push to 1.5 blocks, then powered flight with no gravity, steered toward a point at its cruise
+  speed and climb rate (Slowness I halves the climb) or hovering, rising over what it runs into. Stamina drains by
+  `MobilityRules.drain` (hovering 2.0, cruising on a trip 0.5, powered 1.0; x1.5 in a fight, x1.5 with a backpack more
+  than half full) and comes back on the ground after 1 s. Under 25% it lands (except while escaping); empty, it glides
+  down exhausted, pants on the ground (`move.winded`) and cannot take off until 50%. Out of a fight in a thunderstorm it
+  lands. **The fight's rules are already on**, counted from engaged enemies of any kind: the ceiling (6 above the ground
+  or the highest engaged enemy standing on a block, `HeroBoss.highestEngagedFeet`), the air budget per take-off (8 s,
+  `mobility.bossAirSeconds`, and the authored `max_air`) and the ground time before the next take-off. A landing descends
+  at 4 b/s and plays `move.fly_land` (0.4 s held) with `cues.landing`; the fall distance is reset all the way, so
+  farmland is never trampled. A mount carrier (broom, cloud, sword, crane) flies in the `ride` mode.
+- **Air poise and the downing** (`BossRules.AirPoise`): counted only in the hero's own airtime (flight, a glide, its own
+  leap, jump, air jump or wall kick, the mantle), not when a blow's knock-back lifts it or it falls off a ledge (found by
+  the escape GameTest: a player's blows every 11 ticks landed while the last one's lift still held a leaper up, and four
+  of them "shot down" a hero standing on the ground). The counters of 5.3 add their air poise in
+  `HeroBossEvents.onProjectileImpact` (an arrow and a hero's own projectile 20, a bolt 30, a Multishot side bolt 15 (one
+  that cannot be picked up), a trident 40, a wind charge 35, a snowball or an egg 10, a fishing hook 15) and in
+  `HeroEntity.hurt` (a melee blow from at most 3 blocks below 25, a falling one 40, the vanilla critical rule for a player
+  and an NPC alike); any projectile ends a glide; a stun, a freeze, Slowness II and lightning down it at once. Downed: the
+  flight, glide, leap or climb ends, the horizontal speed is cut to a fifth, `cues.downed`, the running move is cut as a
+  stun cuts it, +30 poise (ignored while its poise bar is in a stagger), the fall's damage over its safe fall counts as
+  one hit for the per-hit cap, then 2 s lying (`move.downed`, held, +20% taken: `BossRules.Window.downed`) and no
+  take-off for 12 s. **A stagger in the air is a downing**: no kneel, no +25% (7.6).
+- **`DATA_LOCO`** (`MovementRules.Loco`): each mode and one-shot kind names one clip, and a one-shot keeps the mode that
+  names it for its length, so a client that misses its first tick still plays the right clip; 4.2's "which one follows
+  from the mode and bit 6" is decided so: ground start/end/special = crouch jump, land, land roll; airborne = jump,
+  heavy landing, air jump; glide = glide start, land, gust; fly, hover and ride = take-off, fly land; climb special =
+  mantle; cling special = wall kick; charge run and sprint end = skid; downed start = downed. The bits clear when the
+  one-shot has played. A vanilla jump of a hero with a jump bonus plays `move.jump`; a fall of 2 blocks lands, of 4
+  lands heavily. The client (`HeroAnimator`) plays a one-shot over the loop it settles into, restarts it on a new toggle
+  and skips the one it sees when it starts tracking; `HeroClips.LOCO_CLIPS` takes G10's names (`move.climb_idle`,
+  `move.charge_run`, `move.sprint`, `move.ride`, `move.leap` in the air on a jump; `move.climb_down` and `move.fly_fast` by
+  speed). A fourth controller, `wings`, plays `sec.wings_fold`, `sec.wings_flap` (slower when tired) or `sec.wings_glide`
+  for a model with a `wing_l` bone; `HeroModel` shows `visual.json` `bones.mount` only in the fly, hover, glide and ride
+  modes and hides the weapon's drawn and sheathed copies meanwhile when `carrier.part` is `weapon` (Ambrose).
+- **Bursts.** The runner III sprint and the charger II-III charge (`MobilityRules.burst`, `MovementRules.BurstClock`)
+  start while travelling on 8 straight, level path nodes with nobody within 2 blocks ahead, add their speed for 3 s
+  (`factionclash:mobility_burst`) and stop at once when the hero stops travelling (a fight, a target); the charge ends
+  in a skid.
+- **Saving** (`FcHero.mobility`): stamina, exhaustion, air poise and a downing in the last 12 s; a flight comes back as
+  a hover where it was, a cling as a cling on its face; the air budget starts afresh.
+- **Operators** (for live checks until A11 and A12 drive it): `/fc admin hero mobility <id>` prints its state, power and
+  stamina; `jump`, `airjump`, `wallkick`, `mantle`, `glide`, `gust`, `takeoff`, `hover`, `land`, `cling`, `climbdown`,
+  `letgo`, `down`, `leap <pos>`, `fly <pos>`, `climb <face>`, `stamina <percent>`.
+- **Config** `[heroes.mobility]`: `enabled`, `flight`, `levelPowerAtOne`, `fullPowerLevel`, `travelAltitude`,
+  `bossAirSeconds`, `staminaPercent` (8.5; `docs/factionclash-common.toml` regenerated).
+- **Tests.** `MovementRulesTest` (13: 5.3's table and five arrows, the low flyer, what downs at once, the glide's clamp,
+  the flight's velocity and ceiling, the drain by activity, landings, wall kicks and air jumps, the burst clock, the loco
+  one-shots and their toggle, the mount modes, every one-shot's clip, length and loop, the wing loops), `HeroClipsTest`
+  (G10's names). `HeroMobilityGameTests` (16, a new 32 x 24 x 32 `mobility_field` template): `leapMatchesLeapSolver`,
+  `mobilityScalesWithLevel` (Natsuho and Kagenori at levels 1, 10 and 20 against 15.9; both air jumps reaching 2.9 blocks
+  and the roll at level 1), `kagenoriCraneLeapAndBenikasHeavyLanding`, `acrobatAirJumpNoFallDamage` (and a soldier hurt by
+  the same drop), `tobimaruWallKicksUpAChimney`, `climberScalesWallAndIsKnockedOff` (the ladder rate; an NPC soldier's
+  blow, a mock player's and a knock-back alike), `yugenSprintsWhileTravellingNotInAFight` (off against an NPC soldier and a
+  mock player alike), `chargerIgnoresCobweb`, `swimmerCeilingOneSwimsFasterAndSnowstrideNeverFreezes`,
+  `ambroseBroomFlightStaminaAndLanding`, `flyerShotDownByArrows` (an NPC archer's and a mock player's arrows, 20 each;
+  downed, +20% lying, no take-off), `meleeOnALowFlyerAddsAirPoise` (25 from a soldier and a player, 40 falling; none on a
+  hero lifted by a blow), `flyerDownedByStaggerFallsAndIsDowned`, `gliderDescendsCliffUnhurt`,
+  `flyerAirBudgetAndCeilingCountNpcAndPlayerAlike` (the same tick and the same height against both) and the static
+  `workersMoveUnchanged`. Sabotage: 14 breaks in the game (the airborne take-off tick, arrows' air poise, the climber's
+  let-go, cobwebs, the glide's opening, travel bonuses in a fight, the budget against a player only, the stagger in the
+  air, snowstride's freeze, the landing at 25%, the level power, a player's blow's air poise, the leap's tell) and 5 in
+  the pure rules, each caught.
+- **Left open**: A11 (links and their follower, climb links, flight navigation with `FlightPlanner`'s cruise layer, the
+  forward probe and the stuck watch, the 5x5 chunk ticket, `getMaxFallDistance` at the safe fall, nothing drives the
+  actions in a campaign yet but a glider's glide), A12 (aerial windows, the dive, the reach clock, strikes from a link,
+  archers first, escape mobility); milestone 2's hover, swimmer II-III and lava walking. The client side (one-shots,
+  wings, the mount) has no automated test and is not yet seen in the viewer; no campaign run (only the test rig ships,
+  and it only jumps higher now).
 
 ### 15.3 Milestone 2: systems breadth
 

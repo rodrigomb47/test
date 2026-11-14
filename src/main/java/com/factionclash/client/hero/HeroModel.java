@@ -47,8 +47,9 @@ import java.util.function.DoubleSupplier;
  * the procedural touches: chains trailing a turn ({@link Sway}, from {@code visual.json} {@code secondary}), a small
  * hit flinch (none under super armour), ears flattened while hurt or angry; and bone visibility, set on every frame
  * because GeckoLib shares a model's bones between instances: {@code fine_} bones by distance, phase bones and phase
- * looks, the weapon in hand or sheathed, the cheeks with the face freeze; locators track their position within 24
- * blocks.
+ * looks, the weapon in hand or sheathed, the cheeks with the face freeze, the carrier on the {@code mount} bone only
+ * while the hero flies, glides or rides (G10; a staff-broom's hand and back copies hide meanwhile); locators track their
+ * position within 24 blocks.
  */
 public class HeroModel extends GeoModel<HeroEntity> {
     private static final ResourceLocation FALLBACK_MODEL = rl("geo/hero/" + HeroIdentity.FALLBACK + ".geo.json");
@@ -83,7 +84,26 @@ public class HeroModel extends GeoModel<HeroEntity> {
             public Object version(HeroEntity hero) {
                 return chain(hero);
             }
+
+            @Override
+            public boolean hasBone(HeroEntity hero, String bone) {
+                return HeroModel.this.hasBone(hero, bone);
+            }
         });
+    }
+
+    /** Which bones each baked model has, asked by the wings controller every frame (cached per model and name). */
+    private static final Map<BakedGeoModel, Map<String, Boolean>> BONES = new IdentityHashMap<>();
+
+    /** Whether the hero's baked model (its own or the neutral one) has this bone. */
+    boolean hasBone(HeroEntity hero, String bone) {
+        BakedGeoModel model = GeckoLibCache.getBakedModels().get(getModelResource(hero));
+        if (model == null) {
+            return false;
+        }
+        synchronized (BONES) {
+            return BONES.computeIfAbsent(model, m -> new HashMap<>()).computeIfAbsent(bone, b -> model.getBone(b).isPresent());
+        }
     }
 
     /** Forgets every resolved chain (a resource reload). */
@@ -332,10 +352,12 @@ public class HeroModel extends GeoModel<HeroEntity> {
      */
     private void visibility(HeroEntity hero, HeroClientState s, HeroLook look, int phase) {
         boolean drawn = hero.stateFlag(HeroActions.STATE_WEAPON_DRAWN);
-        int key = phase & 7 | (s.lod.fine() ? 8 : 0) | (s.lod.face() ? 16 : 0) | (drawn ? 32 : 0);
+        // MOBILITY_AND_WORK 4.3 (task A10): the carrier on the mount bone only while it flies, glides or rides
+        boolean riding = com.factionclash.logic.hero.MovementRules.showsMount(HeroActions.locoMode(hero.loco()));
+        int key = phase & 7 | (s.lod.fine() ? 8 : 0) | (s.lod.face() ? 16 : 0) | (drawn ? 32 : 0) | (riding ? 64 : 0);
         BakedGeoModel model = GeckoLibCache.getBakedModels().get(getModelResource(hero));
         if (key != s.visKey || model != s.visModel || s.visNames == null) {
-            Map<String, Boolean> visible = plan(s, look, phase, drawn);
+            Map<String, Boolean> visible = plan(s, look, phase, drawn, riding);
             s.visNames = visible.keySet().toArray(new String[0]);
             s.visShown = new boolean[s.visNames.length];
             for (int i = 0; i < s.visNames.length; i++) {
@@ -365,7 +387,7 @@ public class HeroModel extends GeoModel<HeroEntity> {
      * hides its own lists, the later phase winning; {@code fine_} bones by distance; the weapon's drawn and sheathed
      * bones by the weapon flag; the cheeks with the face.
      */
-    private Map<String, Boolean> plan(HeroClientState s, HeroLook look, int phase, boolean drawn) {
+    private Map<String, Boolean> plan(HeroClientState s, HeroLook look, int phase, boolean drawn, boolean riding) {
         Map<String, Boolean> byPhase = new HashMap<>();
         for (Map.Entry<String, Integer> e : look.phaseBones().entrySet()) {
             int p = e.getValue();
@@ -395,11 +417,15 @@ public class HeroModel extends GeoModel<HeroEntity> {
                 }
             }
         }
+        boolean weaponIsMount = riding && look.carrierWeapon();
         for (String b : look.weaponDrawn()) {
-            visible.merge(b, drawn, Boolean::logicalAnd);
+            visible.merge(b, drawn && !weaponIsMount, Boolean::logicalAnd);
         }
         for (String b : look.weaponSheathed()) {
-            visible.merge(b, !drawn, Boolean::logicalAnd);
+            visible.merge(b, !drawn && !weaponIsMount, Boolean::logicalAnd);
+        }
+        for (String b : look.mount()) {
+            visible.merge(b, riding, Boolean::logicalAnd);
         }
         visible.merge("cheeks", s.lod.face(), Boolean::logicalAnd);
         return visible;

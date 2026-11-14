@@ -310,6 +310,12 @@ public final class HeroStatus {
         return s != null && !s.book.isEmpty() && s.book.stunned(e.level().getGameTime());
     }
 
+    /** Whether the entity is frozen by a hero's freeze now (task A10: it downs an airborne hero, MOBILITY_AND_WORK 2.4). */
+    public static boolean frozen(LivingEntity e) {
+        HeroStatus s = peek(e);
+        return s != null && !s.book.isEmpty() && s.book.frozen(e.level().getGameTime()) && e.canFreeze();
+    }
+
     /**
      * Stuns {@code r} for {@code seconds}, the same for every receiver (HEROES_V2 6.15): false, and nothing changes,
      * when it is a vanilla boss or an earlier stun's immunity still holds (6.14: it belongs to the receiver, whoever

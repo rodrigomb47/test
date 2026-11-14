@@ -401,6 +401,18 @@ public final class HeroSounds {
         }
     }
 
+    /**
+     * A take-off (SOUND.md 7, task A10): {@code cues.takeoff} and the hero's own {@code mobility.takeoff} (Ambrose's
+     * broom), at the hero, at the start of its 0.6 s tell.
+     */
+    public static void takeoff(HeroEntity h) {
+        cue(h, SoundIndex.TAKEOFF);
+        SoundIndex.HeroMap map = map(h.heroId());
+        if (map != null) {
+            own(h, map.mobility().get("takeoff"));
+        }
+    }
+
     /** A shared cue at where {@code at} is now, {@code ticks} later (the stagger's stars after the bar's break). */
     static void cueAfter(Entity at, String key, int ticks) {
         String id = index().cue(key);

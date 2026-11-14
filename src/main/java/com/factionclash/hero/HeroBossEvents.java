@@ -94,6 +94,10 @@ public final class HeroBossEvents {
             return;
         }
         Entity p = event.getProjectile();
+        if (event.getRayTraceResult() instanceof EntityHitResult struck && struck.getEntity() instanceof HeroEntity airborne) {
+            // MOBILITY_AND_WORK 2.4 and 5.3 (task A10): its air poise by the projectile's kind, whoever shot it
+            airborne.movement().projectileHit(p);
+        }
         if (p instanceof Snowball && event.getRayTraceResult() instanceof EntityHitResult hit && hit.getEntity() instanceof HeroEntity h) {
             h.combat().boss().douse(BossRules.Douse.SNOWBALL);
         } else if (p instanceof ThrownPotion potion) {
@@ -103,6 +107,14 @@ public final class HeroBossEvents {
                     h.combat().boss().douse(BossRules.Douse.WATER);
                 }
             }
+        }
+    }
+
+    /** Lightning struck a hero: an airborne one is downed at once (MOBILITY_AND_WORK 2.4; task A10), whoever called it. */
+    @SubscribeEvent
+    public void onLightning(net.neoforged.neoforge.event.entity.EntityStruckByLightningEvent event) {
+        if (!event.isCanceled() && event.getEntity() instanceof HeroEntity h && !h.level().isClientSide()) {
+            h.movement().lightning();
         }
     }
 

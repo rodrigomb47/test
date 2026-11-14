@@ -18,12 +18,15 @@ import java.util.Map;
  * {@code notes/artgen.md}): the bone groups the renderer treats specially (tint, {@code fine_}, phase, weapon drawn and
  * sheathed, item locators, effect locators), the face (frame regions, the resolved mood table and its overrides, the
  * blink profile and the eyes a blink may close), the phase looks, the move and state names behind the {@code move.N}
- * and {@code state.N} action codes, the chains the parts declare for the procedural sway, and whether the glow mask
- * glows anywhere but the glowing-eye frame. Missing parts fall back to the rig's defaults.
+ * and {@code state.N} action codes, the chains the parts declare for the procedural sway, whether the glow mask
+ * glows anywhere but the glowing-eye frame, and the carrier's {@code mount} bones (G10, MOBILITY_AND_WORK 4.3: shown only
+ * while the hero flies, glides or rides; {@code carrierWeapon} when its weapon is the mount, so the weapon's hand and
+ * back copies hide meanwhile). Missing parts fall back to the rig's defaults.
  */
 public record HeroLook(List<String> fine, List<String> tint, List<String> weaponDrawn, List<String> weaponSheathed,
                        List<String> items, List<String> locators, Map<String, Integer> phaseBones, List<Phase> phases,
-                       Face face, List<String> moves, List<String> states, List<Chain> chains, boolean glowOutsideFace) {
+                       Face face, List<String> moves, List<String> states, List<Chain> chains, boolean glowOutsideFace,
+                       List<String> mount, boolean carrierWeapon) {
 
     /** A phase look: from {@code phase} on, these bones show or hide, the texture may switch and the eyes may glow. */
     public record Phase(int phase, List<String> show, List<String> hide, String texture, boolean eyesGlow) {
@@ -43,7 +46,7 @@ public record HeroLook(List<String> fine, List<String> tint, List<String> weapon
     /** What a hero without a readable look has: the rig's sash bones, the default face. */
     public static final HeroLook DEFAULT = new HeroLook(List.of(), List.of("sash", "fine_sash"), List.of(), List.of(),
             List.of("item_r", "item_l"), List.of("vfx_chest", "vfx_feet", "vfx_head", "vfx_tip_l", "vfx_tip_r"), Map.of(),
-            List.of(), Face.DEFAULT, List.of(), List.of(), List.of(), true);
+            List.of(), Face.DEFAULT, List.of(), List.of(), List.of(), true, List.of(), false);
 
     /** Reads the look from a visual file; what is missing or broken comes from {@link #DEFAULT} and is noted. */
     public static HeroLook parse(JsonObject o, List<String> problems) {
@@ -82,7 +85,8 @@ public record HeroLook(List<String> fine, List<String> tint, List<String> weapon
                 strings(bones, "weapon_drawn"), strings(bones, "weapon_sheathed"),
                 bones.has("items") ? strings(bones, "items") : DEFAULT.items, strings(bones, "locators"), Map.copyOf(phaseBones),
                 List.copyOf(phases), face(obj(o, "face"), problems), names(o, "moves"), names(o, "states"), List.copyOf(chains),
-                !tex.has("glow_outside_face") || bool(tex, "glow_outside_face"));
+                !tex.has("glow_outside_face") || bool(tex, "glow_outside_face"), strings(bones, "mount"),
+                "weapon".equals(obj(o, "carrier").get("part") instanceof JsonElement e && e.isJsonPrimitive() ? e.getAsString() : ""));
     }
 
     private static Face face(JsonObject f, List<String> problems) {

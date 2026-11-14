@@ -633,7 +633,7 @@ Where it goes beyond or differs from the steps above (also `HEROES_V2.md` 15.2, 
   of a dedicated server) uses the map's `fallback_blip`, else the harp.
 - **Loops** (`HeroLoopSounds`): a move's `loop` starts when the hero's action code turns into that move's code (the
   visual move list for `move.<slot>`, the map's ultimate for the ultimate codes) and stops when the code or its sequence
-  changes; `cues.glide` while `DATA_LOCO` says glide (nothing sets glide before A10-A12).
+  changes; `cues.glide` while `DATA_LOCO` says glide (set by A10's glide since 2026-11-14).
 - **Content changes** (the follow-ups of section 16): `cues.yield` renamed `cues.fled` ("Hero flees"); `cues.spared`
   reused as `cues.revived` ("Hero returns", at a hero's revival); new `cues.fallen` (a sting at -13, 32 blocks: a
   temple toll on C3 with a fifth above, a soft taiko and a sub tone, 2.6 s) and `cues.last_stand` (a sting at -18,
@@ -642,8 +642,9 @@ Where it goes beyond or differs from the steps above (also `HEROES_V2.md` 15.2, 
   Ambrose's passive key `hex_full` is now `hex_complete` (his passive is "Hex Complete"; the sound is unchanged),
   and Benika's `crash_waves` (area: `fire_wave` on impact) and Tobimaru's `night_strikes` (light: `blade_swish`,
   `blade_hit`), the two follow-ups of their ultimates, now have sounds.
-- **Not yet**: `mobility.takeoff`, `cues.takeoff` and `cues.downed` wait for the mobility engine (A10-A12; a leap's
-  landing already plays `cues.landing`); `release`, `end`, phase, intro and quirk keyframes wait for C1-C4's animation
+- **Not yet**: nothing of the mobility cues (A10, 2026-11-14: `HeroMovement`'s take-off plays `cues.takeoff` with the
+  hero's `mobility.takeoff` at the start of its 0.6 s tell, a leap's and a flight's landing `cues.landing`, a downing
+  `cues.downed`); `release`, `end`, phase, intro and quirk keyframes wait for C1-C4's animation
   markers (the handler plays whatever a clip names); the owner's listening pass (V2).
 
 ## 16. Open items
