@@ -1,12 +1,13 @@
 The Ender Dragon - "Empress of the End"
 Female | ender dragon | vanguard | arcane | proud noble | legendary | boss hero
-Status: designed, not in the game yet (kit version 3, 2026-11-18, after your answers: she has no
-personal name; she turns back into her token if her faction falls; her wings and tail can now
-throw you off a cliff, into lava or off an End island, see TERRAIN AND BLOCKS; her Spirecore can
-now be upgraded. Version 2, 2026-11-18, after review). She is one of the two boss heroes: not among
-the 200, never a faction leader, and she joins a faction only through her token (see "HOW SHE
-JOINS A FACTION"). She fights the same against players and NPCs and never yields. All numbers are
-first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 5.
+Status: designed, not in the game yet (kit version 4, 2026-11-18, after a second review: how far her
+pushes throw you and what helps against them. Version 3, the same day, after your answers: she has
+no personal name; she turns back into her token if her faction falls; her wings and tail can now
+throw you off a cliff, into lava or off an End island, see TERRAIN AND BLOCKS; her Spirecore can now
+be upgraded. Version 2, 2026-11-18, after review). She is one of the two boss heroes: not among the
+200, never a faction leader, and she joins a faction only through her token (see "HOW SHE JOINS A
+FACTION"). She fights the same against players and NPCs and never yields. All numbers are first
+values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 5.
 ====================================================================================================
 
 WHO SHE IS
@@ -357,7 +358,12 @@ cliff or to lava", and nobody needs to be "civil" in battle.)
 - Her pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
   the void. They are Wing Gust (knockback 3, her strongest), Void Dive (2), Crescent Tail (2), the
   Fall of the Outer Isles (3 and up 1), her phase change's shockwave, and the burst of a crystal you
-  break (2). Soldiers and other heroes get exactly the same. Her own side is never pushed.
+  break (2). Each point of knockback throws you about 2 blocks on flat ground: Wing Gust about 6.
+  Soldiers and other heroes get exactly the same. Her own side is never pushed.
+- A raised shield stops a move's damage, not its push (as in vanilla, where a blocked blow still
+  knocks you back). What helps: leaving the ground mark during the wind-up, fighting her more than
+  6 blocks from a rim, knockback resistance (netherite armour cuts a push by 40%), a water bucket
+  for a fall, Fire Resistance for lava, and an ender pearl to get back from a ledge.
 - She does it on purpose, as the vanilla dragon's wings throw players off its island. When you
   stand near lava, a drop or an island's rim she walks round to your far side before Wing Gust or
   her tail, and her dives land on your far side so the push sends you over. The walk round you and

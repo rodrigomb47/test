@@ -753,7 +753,8 @@ rule it proposes.
    `on_land` (a landing after `value` blocks of flight or glide, from `HeroMovement`); form `ally_lowest`; effect
    `ward_effect` (refused on Slowness and Glowing, the counters); conditions `target_bleeds` (with the data tag
    `#factionclash:bloodless`), `engaged_has` (reusing `target_is`' `hero` and `boss` kinds over the engaged set) and
-   `in_daylight`. v1's `target_is` is already a condition (v1 conditions table), so Toll for the Dead needs nothing.
+   `in_daylight`. v1's `target_is` is already a condition (v1 conditions table), so Graveside Peal (Toll for the Dead
+   before the review renamed it) needs nothing.
 4. **Growth counters** (`ARTIFACTS.md` 7.8), each counted only for a living hero wearing the artifact in a slot, and
    written to the item's `artifact_work` component when a step is reached or a fight ends: `blood` (damage it really
    dealt, after the per-hit cap and armour, to a target that `target_bleeds`), `ore` (`BlockWork`'s break of a
@@ -837,12 +838,13 @@ item names the rule it proposes.
 9. **A signature that grows or upgrades** (`ARTIFACTS.md` 16.4 and 16.5, revised with this file): a signature may carry
    a `growth` block (7.8's rules, at most three steps, since it is never upgraded) or an `upgrade` block whose `tech` is
    `artifice_2` for both levels, never both. An upgrade multiplies the base lines only; the bond's lines and kit mods
-   stay; honing at III hones the passive in use (the bond's or the base's). A kit mod never changes a move's
-   `explosive`. Hollow Star: `growth` `withering`, base 60, steps ability power +6, drain +2, health +5. Spirecore:
-   `upgrade` `minecraft:end_crystal` 1 / 2. Both files move to artifact format 2. The war value is 0.12 + 0.015 a step
-   or + 0.02 an upgrade level.
+   stay; tuning at III (the review's name; it was "honing") tunes the passive in use (the bond's or the base's). A kit
+   mod never changes a move's `explosive`. Hollow Star: `growth` `withering`, base 60, steps ability power +6, drain +2,
+   health +5. Spirecore: `upgrade` `minecraft:end_crystal` 1 / 2. Both files move to artifact format 2. The war value is
+   0.12 + 0.015 a step or + 0.02 an upgrade level.
 10. **The counter `withering`** (new, beside 7.8's eight): each point of damage the Wither effect deals to an enemy when
-    its wearer gave that effect (its basic attacks, moves, passives and the brand; never its adds' or summons'). Vanilla
+    its wearer gave that effect (its basic attacks, moves, passives and the brand, so the Wither's Three Heads while the
+    side heads float at her side; never its adds' or summons', so not the familiars once unbound in phase 3). Vanilla
     does not keep who gave a mob effect, so `EffectRouting` (or `HeroStatus`) records the giver per receiver when a hero
     applies Wither, cleared when the effect ends; the count reads it on each Wither damage tick (`DamageTypes.WITHER`).
 11. **A signature's standing lent mark**: worn by another hero of its own hero's faction, a signature counts as lent by
@@ -854,3 +856,52 @@ item names the rule it proposes.
 14. **The kit sheets** are at kit version 3 by hand. When herogen writes the two boss sheets (B7), its template needs
     the TERRAIN AND BLOCKS section (blasts with power and what they break, the box break-out, pushes, fall and fire
     immunity) and the signature's growth or upgrade table.
+
+## Review of the three revisions (2026-11-18, `ARTIFACTS.md` 21.2, `BOSS_HEROES.md` 12.2, `docs/design/breaching.md` 15, `HEROES_V2.md` 6.19)
+
+An adversarial review of the artifacts, battle and boss heroes revisions against the owner's answers of request 11
+and the engine's code. What the Java side must now do differently, each with the rule it sets:
+
+1. **Shields do not stop pushes** (`HEROES_V2.md` 6.17). Today's `HeroEffects` runs a move's `knockback` as its own
+   effect after the damage, whether or not a raised shield blocked it, and vanilla's `LivingEntity.hurt` knocks a
+   blocker back too. 6.17 now says so; nothing changes in T1. A test in T1's set: `shieldStopsDamageNotPush` (an NPC
+   soldier and a mock player with raised shields are pushed the same distance and take no damage).
+2. **How far a push carries**: knockback strength 1 is vanilla's 0.4 (`FormGeometry.KNOCKBACK_PER_STRENGTH`), about
+   2.1 blocks on flat ground (vanilla's 0.546 ground and 0.91 air friction, 11 ticks aloft); the old hazard look-ahead
+   used 2.5 a point. `EdgeSafety` (T3, X5) looks 6 blocks out while a hero is among the pushers, 4 otherwise
+   (`docs/design/breaching.md` 8.1); `EdgePlay` keeps its 8.
+3. **`tuned`, not `honed`**: the artifact format key for the improvement at upgrade III is `tuned` (`ARTIFACTS.md`
+   9.8, 16.1, 16.5; Lost Ark's gear upgrade is "honing"). No artifact file exists yet, so no synonym is kept. Test
+   `tunedNeverTouchesFrames`.
+4. **Passive renames** (data only): Assayer's Eye, Lamplit Eyes, Graveside Peal and Open Vein (were Keen Eye, Night
+   Eyes, Toll for the Dead and Bloodied). No id changes, so the icons and `herogen check` are untouched.
+5. **An artifact pushes at most knockback 3** (`ARTIFACTS.md` 4.4, 16.5): `ArtifactReader` lowers a stronger
+   `knockback`, `pull` or throw on a passive or active to 3 (ADJUSTED). Ram Strike is knockback 3. Test
+   `artifactPushAtMostThree`.
+6. **The choice AI's noise is daily** (`ARTIFACTS.md` 10.3, 10.4): `ArtifactChoice` draws a hero's noise per artifact
+   once per in-game day (seeded by hero, artifact and day), holds the hysteresis at 3% or more, and allows one swap per
+   hero per day unless a slot opened or a new artifact, offer, upgrade or growth step reached it. Tests
+   `noiseDrawnOncePerDay`, `hysteresisNeverUnderThreePercent`, `swapAtMostOncePerDayWithoutNews`.
+7. **A player's Ask names its recipient** (`ARTIFACTS.md` 10.10): the hero sheet's Ask button opens a pick of the
+   faction's heroes and "for me"; for a hero it is that hero's ask (10.4) with +0.1 x the player's `rel` on the
+   generosity; "for me" gives only what the hero does not want and what that player lent. Tests
+   `playerAskForAHeroWeighedAsThatHerosAsk`, `playerAskForSelfGivesOnlyUnwantedOrLent`.
+8. **`on_marked` reads the mark, not the decal** (`ARTIFACTS.md` 5.3): the trigger fires from `Decals`' geometry of a
+   move whose wind-up starts, never from `HeroTelegraphs`' decal entities, which exist only while a player is near.
+   GameTest `readTheTellFiresWithNoPlayerNear`.
+9. **The box break-out's repairs** (`BOSS_HEROES.md` 4.5): a mob's own block break fires no NeoForge event, so B3 adds
+   the planned blocks of an enemy base that the Wither's body withers to that base's `pendingRepairs` itself, as
+   `FCEvents.onExplosion` does for explosions.
+10. **The vanilla dragon's NPC damage** (`BOSS_HEROES.md` 6.6): `EnderDragon.hurt(part, ...)` drops damage that is not a
+    player's or tagged before any event fires, so the tagged type rides on the source: melee builds `faction_strike` in
+    `FactionNpc.doHurtTarget` (and a hero's blow) when the target is the dragon or a part; arrows go through
+    `ProjectileImpactEvent` (cancel, re-deal with `faction_arrow`, remove the arrow). No mixin.
+11. **`mobGriefing` and NPC TNT** (`docs/design/breaching.md` 10, 14): the game rule gates mob explosions (a hero's
+    explosive move, `Level.explode` with interaction `MOB`, vanilla's own check) and the Wither's box break-out, never a
+    breacher's hand-placed TNT (interaction `TNT`, which vanilla does not gate either). `war.explosives` stops planned
+    breaches. GameTest `breachWorksWithMobGriefingOff`.
+12. **Heroes take TNT at the muster** (`docs/design/breaching.md` 5): a hero whose raid goal is "open the way" and who
+    has no explosive move takes `war.tntPerBreacher` TNT and a flint and steel when the base's stock allows (X3).
+    GameTest `heroBreacherTakesTntAtMuster`.
+13. **ROADMAP phase 6 knows about Artifice**: the tech-tree row now names the Artifice line `ARTIFACTS.md` 9.5 asks for,
+    so its design pass prices it.

@@ -5,9 +5,9 @@ a world, a chest appears on the ground where it fell, holding that boss's hero t
 brings the token inside one of the faction's bases makes the hero join that faction. Until then the token can be
 fought over, dropped and stolen.
 
-Status: design, 2026-11-18, reviewed the same day (section 12) and revised the same day to the owner's answers (the
-note below; sections 11 and 12.1). Nothing here is implemented. Numbers marked PROPOSED go to BALANCE.md when they are
-built.
+Status: design, 2026-11-18, reviewed the same day (section 12), revised the same day to the owner's answers (the
+note below; sections 11 and 12.1) and the revision reviewed again the same day (12.2). Nothing here is implemented.
+Numbers marked PROPOSED go to BALANCE.md when they are built.
 Companions: `HEROES_V2.md` (section 8.2 points here, section 15.8 holds the tasks of section 10 below; 6.14, 6.17 and
 6.18 are the fight's fairness, terrain and explosive rules), `ARTIFACTS.md` (the signature tier and bond format of 7.5
 and 16.4, slots by level and fixed strength of 3 and 4.2, each hero's own choice of 10, growth of 7.8, upgrades of
@@ -787,14 +787,16 @@ move's own effects do that, under every cap):
   Unbound Heads, Skullfall). Once a wind-up starts the blast is real wherever the move lands.
 
 **Withering body: the trap break-out** (vanilla's `destroyBlocksTick`, kept for the trap it answers). In a fight, when
-she is **walled in** (every cell beside her hitbox blocked and no path to any engaged enemy for 1 s: the classic box
-for a Wither), the blocks from her feet up to the cell above her head and one block out on each side (a box 3 wide, 4
-high and 3 deep round her body; never below her feet, as vanilla's starts at the feet, so she never digs the floor
-away) wither at once and drop as if mined, with vanilla's `entity.wither.break_block`. Never a `#wither_immune` block,
-never a planned block of her own side or a pact ally; only with `mobGriefing` on (vanilla's own check); at most once a
-second. Vanilla does it 1 s after every hurt; she does it only when boxed. On every hurt it would erase every wall and
-doorway she fights beside, a breach nobody aims and nobody sees coming (6.14's tells, 6.18's decals), and the doorway
-and tunnel answers of `HEROES_V2.md` 6.16 and of her own sheet would be gone.
+she is **walled in** (every cell beside her hitbox blocked and no path to any engaged enemy for 1 s: the classic box for
+a Wither), the blocks from her feet up to the cell above her head and one block out on each side (a box 3 wide, 4 high
+and 3 deep round her body; never below her feet, as vanilla's starts at the feet, so she never digs the floor away)
+wither at once and drop as if mined, with vanilla's `entity.wither.break_block`. Never a `#wither_immune` block, never a
+planned block of her own side or a pact ally; only with `mobGriefing` on (vanilla's own check); at most once a second.
+Planned blocks of an enemy base that it withers go into that base's repair queue at once, as an explosion's do
+(`FCEvents.onExplosion` queues those; no event fires for a mob's own block break, so B3 calls the queue directly).
+Vanilla does it 1 s after every hurt; she does it only when boxed. On every hurt it would erase every wall and doorway
+she fights beside, a breach nobody aims and nobody sees coming (6.14's tells, 6.18's decals), and the doorway and tunnel
+answers of `HEROES_V2.md` 6.16 and of her own sheet would be gone.
 
 **Withering hands** (her `BlockWork`, as before): the break speed and harvest level of an unenchanted **diamond
 pickaxe** for every block a pickaxe, axe or shovel suits, with that tool's vanilla drops and no wear; never a
@@ -813,9 +815,11 @@ hand like any breacher (`docs/design/breaching.md` 5). The defenders answer as t
 breacher: an airborne hero is already their second target; rebuild the hole after the alarm), and she never blasts
 within 16 blocks of a base of her own side (`war.tntHomeMargin`, as breachers).
 
-**Switches**: the game rule `mobGriefing` false keeps every block whole (her moves still hurt and push; walled in she
-digs out with her hands; she plans no blast breach), and so does `heroes.explosiveBlocks` false for her moves;
-`war.explosives` false stops planned breaches, hers included (`docs/design/breaching.md` 10).
+**Switches**: the game rule `mobGriefing` false keeps every block whole against her blasts and her body, as it does
+against the vanilla Wither's (her moves still hurt and push; walled in she digs out with her hands; she plans no blast
+breach), and so does `heroes.explosiveBlocks` false for her moves; TNT she carries is a player's TNT, which that game
+rule does not touch, as for every breacher; `war.explosives` false stops planned breaches, hers and TNT's included
+(`docs/design/breaching.md` 10).
 
 **Her pushes** (`HEROES_V2.md` 6.17): Withering Pulse (knockback 2), Ruin Skull (1), Soul Dash (2; a charge: its line
 runs through the target toward the edge and she stops short of it), Birth Blast (3 up 1) and her phase shockwave land
@@ -1041,9 +1045,10 @@ stronger" in the Wither's own terms (the vanilla Wither feeds: it regenerates, a
   healing ceiling (10% of her maximum per 30 s). A kit mod never changes a move's blast (16.4 there).
 - **Growth: the star brightens** (`ARTIFACTS.md` 7.8's rules, the same as the eight growing artifacts'):
   - *What counts* (`withering`): each point of damage the Wither effect deals to an enemy when that Wither came from
-    its wearer (its basic attacks, moves and passives, the brand included; never its adds' or summons', so the
-    familiars' shots do not feed it), only while a living hero wears it in a slot; nothing asks whether the enemy is a
-    player. Vanilla's Wither I deals 1 point every 2 s, Wither II every second.
+    its wearer (its basic attacks, moves and passives, the brand included; never its adds' or summons'), only while a
+    living hero wears it in a slot; nothing asks whether the enemy is a player. On her that means the side heads'
+    shots count while they float at her side (Three Heads, Three Hungers is her passive), and stop counting once she
+    sends them out as adds in phase 3. Vanilla's Wither I deals 1 point every 2 s, Wither II every second.
   - *Steps* at 60, 180 and 360 points, each adding one point, in order: ability power +6%, drain +2%, health +5%. Full,
     it is 8 points: ability power +18%, drain +4%, blight resistance +10%, health +10% (on her, with the bond: drain at
     the 6% cap, health +15%). Three steps is its cap: two plus its upgrade level, which stays I.
@@ -1564,10 +1569,10 @@ nees tech level to be built and/or upgraded").
 |---|---|---|---|---|
 | I (as she brings it) | +10%, +6%, +8%, +10% | Spire Mend: shield 4 | - | - |
 | II | +13%, +8%, +10%, +13% | the same | 4 lapis lazuli, 1 diamond, 1 end crystal; 10 levels; 120 s | Artifice 2 |
-| III | +15%, +9%, +12%, +15% | honed: its shield 4.8 (Spire Mend has no cooldown, so its Amounts grow a fifth) | 4 lapis lazuli, 1 netherite scrap, 2 end crystals; 15 levels; 180 s | Artifice 2 |
+| III | +15%, +9%, +12%, +15% | tuned: its shield 4.8 (Spire Mend has no cooldown, so its Amounts grow a fifth) | 4 lapis lazuli, 1 netherite scrap, 2 end crystals; 15 levels; 180 s | Artifice 2 |
 
   An upgrade multiplies the base lines only, rounded half up and within the build caps; the bond's lines and kit mods
-  are hers and stay as they are, and honing at III hones whichever passive is in use (her Heart of the Spires' shield
+  are hers and stay as they are, and tuning at III tunes whichever passive is in use (her Heart of the Spires' shield
   is 4.8 too; the cooldown cut and the Regeneration are not Amounts and stay). The end crystal is vanilla's (7 glass, an
   eye of ender and a ghast tear: a faction gets one after its Nether expeditions). Until ROADMAP phase 6 adds the
   Artifice research (`heroes.artifacts.techGate` research, the default) it stays at I; `techGate = open` lets an
@@ -1714,7 +1719,12 @@ ever come from a player. The fix belongs to the boss-raid row of ROADMAP phase 3
 check, section 10): a mod damage type `factionclash:faction_strike` (and `faction_arrow`) tagged into
 `#always_hurts_ender_dragons`, used for every faction NPC's and hero's hit on an `EnderDragon` or an
 `EnderDragonPart`, so the vanilla rules then treat a soldier like a player (its other rules stay: a quarter + 1 on the
-body, arrows set alight while it sits). The vanilla dragon also picks only players as targets in its phases; whether
+body, arrows set alight while it sits). No mixin: `EnderDragon.hurt(part, source, amount)` drops other damage before
+any event fires, so the source itself must carry the tag. Melee: `FactionNpc.doHurtTarget` (and a hero's blow) builds
+the `faction_strike` source when its target is the dragon or one of its parts. Arrows: NeoForge's
+`ProjectileImpactEvent` on a faction NPC's or hero's arrow that hits the dragon or a part cancels the impact and deals
+the arrow's damage again with `faction_arrow`, then removes the arrow as a hit arrow is removed (a cancelled impact
+alone would let it fly on). The vanilla dragon also picks only players as targets in its phases; whether
 it should attack NPC raiders too is that row's design.
 
 ---
@@ -1736,7 +1746,7 @@ The model and reference rates are `HEROES_V2.md` 6.2, 6.16 and 8.1's (iron gear,
 | 9. One faction holding both | Two legendary heroes' war power (about 24 at level 10 bare, about 27 in their signatures) under the soldier backbone cap (at most 1.5 times its soldiers' power); both return to tokens only with its last base. Rivals rate it 25% more attractive when they could end it. | A strong faction, not an unbeatable one. Measured in 9.3. |
 | 10. The Wither's blasts against a base (revision) | Raiding, Ruin Skull bites one to three blocks out of whatever it hits every 14 s at most; two or three open a 1-wide, 2-high gap in a 1-thick wall of anything but bedrock-class blocks, about 30 s at the breach spot, where one TNT opens about 3 x 3 in stone bricks in 4 s but never obsidian. Birth Blast craters about 3 blocks of dirt or 1-2 of stone round her, inside its disc, once or twice a fight; Stray Skulls six small bites in the rebirth. The defenders' repair scan rebuilds planned blocks after the alarm. | A slow breacher who opens what TNT cannot; most of her damage to a base is a few craters in the yard. Equal for a player's house. The campaigns count blocks broken per raid (9.3). |
 | 11. The Wither defending her own base (revision) | Inside her own walls the pick scores her three explosive moves 0 (6.18): no Ruin Skull, no Stray Skulls, no Birth Blast. She keeps her basic skulls, Skull Volley, Withering Pulse, Rose Bloom, Soul Dash, Grave Grasp, Unbound Heads, Skullfall, her armour, rebirth and passives; her answers to eating and to crowds (Ruin Skull) fall back to her ordinary pick. Her damage over a fight drops by about a sixth; her health, armour and rebirth are unchanged. | Weaker at home than abroad, the price of not blowing up her own walls, as a player would not. Acceptable: her home strength is `intimidation` and her durability. |
-| 12. The Ender Dragon at an edge (revision) | Wing Gust throws everyone within 5 blocks about 3 blocks, at full strength: beside a cliff, lava or an End island's rim it is lethal, and she walks round her target to aim it (the walk is the tell, at most 3 s). An iron soldier with the edge sense (`docs/design/breaching.md` 8) keeps the drop off its back while she is near; a player keeps away from edges or carries a water bucket; a flyer or glider hero shrugs off drops. On the vanilla island her own end crystals are not there (hers are her adds), and a spire never stands over the void. | The vanilla dragon's own lesson, now true: fight her away from the rim. Kills there are hers ("was doomed to fall by"). No change to her numbers. |
+| 12. The Ender Dragon at an edge (revision) | Wing Gust throws everyone within 5 blocks about 6 blocks on flat ground (knockback 3: vanilla's knockback of 1.2, about 2 blocks a point; a vanguard's 30 or netherite armour's 40 knockback resistance cuts it to about 4), at full strength: beside a cliff, lava or an End island's rim it is lethal, and she walks round her target to aim it (the walk is the tell, at most 3 s). An iron soldier with the edge sense (`docs/design/breaching.md` 8) keeps the drop off its back while she is near; a player keeps away from edges or carries a water bucket; a flyer or glider hero shrugs off drops. On the vanilla island her own end crystals are not there (hers are her adds), and a spire never stands over the void. | The vanilla dragon's own lesson, now true: fight her away from the rim. Kills there are hers ("was doomed to fall by"). No change to her numbers. |
 | 13. Their signatures grown or upgraded, on themselves (revision) | The Wither in a full Hollow Star at level 10: 194 health, ability power +18%, drain at the 6% cap, blight damage +6%. The dragon in Spirecore III: 198 health (the 20% cap), ability power +15%, energy gain +12%, recharge +5%. Each is about 3-5% more effective health and damage than at step 0 or upgrade I. | Small steps by design: their bonds already gave them most of it, and the caps bind. As meant. |
 
 ---
@@ -1875,7 +1885,7 @@ signatures' growth, upgrade and choice.
 |---|---|---|---|---|
 | B1 | Format additions of section 8 in the reader, catalogue, balance and schema (`HeroCatalogue`, `HeroReaderV2`, `HeroBalanceV2`, the JSON Schema, `checkHeroes`), the revision's included (`explosive.resistance_cap`, `break_out`, `work.tool`, a signature's `growth` or `upgrade` in `ArtifactReader`); both kits as test fixtures | F2, F3, F5, R1, T2 | M | `BossKitsTest`; the fixtures load clean; every new piece has a reader message for its misuse |
 | B2 | Tokens and the first-kill chest: the two items with the `boss_token` component, `ChestSpot`, the chest and its column, the return and hollow copies (a same-instance copy hollow after the first use), the consumption rule, the calling, unbinding into the token when her faction falls (the owner's answer; no free-hero switch), the hooks of 3.14 (loss detection, the ender chest's return), `CampaignData.bossHeroes`, commands, config | A1b, R2 | M | `ChestSpotTest`, `BossTokenRulesTest`, the token GameTests of 9.2 |
-| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger` (never stacking), `focus_add`, `smite`, `blast`, the crystal and familiar adds (spire and its placement, cage, beam with its per-fight cap, shatter at full strength and breaking nothing, orbit), `perch` (a block up at most), circling, a hovering flyer, the rebirth object (no re-arm after it), a rain round the hero, `immune_effects`, `shot_random`, the killer of `on_add_died`; from the revision: the blue skull's `resistance_cap` in T2's blast calculator, the Wither's box break-out (`break_out: box`, vanilla's rule when walled in), her hands as a `work.tool`, her blue skulls on the breach spot (with `docs/design/breaching.md` X3: up to three casts), a dive's landing aimed away from an edge, no block smashing in the dragon's flight | A5, A6, A8, A10-A12, T1, T2 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, `WitherBlocksTest`, the fight and terrain GameTests of 9.2; every "NPC and mock player" test gives the same numbers |
+| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger` (never stacking), `focus_add`, `smite`, `blast`, the crystal and familiar adds (spire and its placement, cage, beam with its per-fight cap, shatter at full strength and breaking nothing, orbit), `perch` (a block up at most), circling, a hovering flyer, the rebirth object (no re-arm after it), a rain round the hero, `immune_effects`, `shot_random`, the killer of `on_add_died`; from the revision: the blue skull's `resistance_cap` in T2's blast calculator, the Wither's box break-out (`break_out: box`, vanilla's rule when walled in), her hands as a `work.tool`, her blue skulls on the breach spot (with `docs/design/breaching.md` X3: up to three casts), an enemy's planned blocks her box break-out withers queued for repair, a dive's landing aimed away from an edge, no block smashing in the dragon's flight | A5, A6, A8, A10-A12, T1, T2 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, `WitherBlocksTest`, the fight and terrain GameTests of 9.2; every "NPC and mock player" test gives the same numbers |
 | B4 | The AI: token knowledge (the two reports), the council's weighing, expeditions, interceptions, escorts, the raid-target bonus, `CrystalTargetGoal` (shared with the vanilla End raid), archers and heroes against projectile immunity with the ranged soldiers' sidearm (6.3), the signature's hold on its heroine with R4 (the standing lent mark, the ask back, her focus on an enemy hero wearing it), `sim.py` lines (blocks her blasts break per raid, Hollow Star's growth); check phase 3's dragon-damage fix (6.6) | B2, B3, L3, R4, ROADMAP phase 1's knowledge rule | L | `TokenKnowledgeTest`, `SignatureChoiceTest`, the AI GameTests of 9.2, the first campaign of 9.3 |
 | B5 | Art: the NEW parts of 4.2 and 5.2 (with G8's planned `wings/dragon`, `horns/swept_dragon`, `tails/scaled`, `back/cape_torn`, `outfit_bottom/long_skirt`, `markings/scales`), the add models (`end_crystal` over vanilla's model, `end_spire`, `crystal_cage`, `skull_familiar`), the calling's and the revival's displays, about 24 own clips each, the token icons, previews for the owner | G8, G10b, A8, A9 | L | `herogen check` and `lint` clean; both heroes' previews and the add sheet sent to the owner |
 | B6 | Sound: `the_wither.sfx.json`, `the_ender_dragon.sfx.json` and the add sounds of 4.11 and 5.11; the new slots (`rebirth`, `calling`, `linger`, `mobility.break`, `mobility.wings`) | S1, S2 | M | `sfxgen check` clean; previews for the owner |
@@ -1891,8 +1901,9 @@ signatures' growth, upgrade and choice.
 The first design asked three questions here; the owner answered them on 2026-11-18 (`HANDOFF.md` section 2, request
 11), with two questions of `ARTIFACTS.md`. Each answer, and where it went:
 
-1. **Personal names** ("Ossia, the Wither"; "Velmyra, the Ender Dragon"?). Answer: "no personal names". They are
-   "The Wither" and "The Ender Dragon", with their titles, everywhere (2.3); the proposals are withdrawn.
+1. **Personal names** (the first design proposed one for each). Answer: "no personal names". They are "The Wither"
+   and "The Ender Dragon", with their titles, everywhere (2.3); the proposals are withdrawn, and the review of the
+   revision (12.2) took the two withdrawn names out of this file too, so no later task picks them up.
 2. **When her faction falls**: back to her token, or a free hero who wanders? Answer: "token". She turns back into
    her token where she stands, keeping her level (3.8); the config switch for the other path is gone (3.13).
 3. **The Wither's breach** (a 2x3 opening by hand, the one hero allowed to break a faction's walls). Answer: "its ok
@@ -2011,3 +2022,38 @@ knowledge rule for far deaths. The questions were cut to the three of section 11
   signature icons keep their pulse, so the art being drawn stays valid.
 - **Engine fit**: the new pieces are section 8's items 17-21 and kit-gaps' "Boss heroes revision"; the tasks are in 10
   and `HEROES_V2.md` 15.8 (B3 now after T1 and T2).
+
+### 12.2 Review of the revision (2026-11-18)
+
+An adversarial pass over the revision, both kit sheets and the battle rules they use (`HEROES_V2.md` 6.17-6.18,
+`docs/design/breaching.md`, `ARTIFACTS.md`'s signatures), against the owner's answers of request 11, the earlier owner
+decisions and the engine's numbers (`HeroEffects.knockback`: strength 1 is vanilla's knockback of 0.4; read in the
+code, with vanilla's `WitherSkull`, `LivingEntity.hurt` and `CombatTracker` in the 1.21.1 sources).
+**The owner's answers hold**: no personal name is left (the two withdrawn proposals are gone from 11.1 too); the token
+on a faction's fall; her blasts are explosions by nature under 6.18's limits, and nobody is "civil" (her blue skulls go
+through obsidian, the dragon's wings throw anyone off a rim); the signatures are fixed-strength and grow or upgrade by
+their own design. **Earlier decisions hold**: one combat mode (every rule reads "an enemy"), no yield (both last
+stands), the 10-minute revival (egg and soul sand are only its look), one adult body each, player-like NPCs (the
+sidearm, pillaring to crystals), vanilla left whole (the dragon fix only tags the mod's own damage). **Fixed**:
+- *Push distances*: case 12 said Wing Gust throws about 3 blocks. Knockback 3 is vanilla's knockback of 1.2, about 6
+  blocks on flat ground (about 4 with a vanguard's or netherite's knockback resistance): the sheets now give the
+  distance, and the ordinary NPCs' edge sense (`docs/design/breaching.md` 8.1) now watches as far as a hero can push.
+- *Hollow Star's count*: "the familiars' shots do not feed it" contradicted "its passives count", since Three Heads is
+  her passive while the side heads float beside her. They count there, and not once they are adds in phase 3 (4.13).
+- *An enemy's walls*: her box break-out may wither an enemy base's planned blocks (never her own side's), but no
+  NeoForge event fires for a mob's own block break, so they would never have been rebuilt. B3 queues them for repair as
+  explosions' are (4.5).
+- *The dragon-damage fix* (6.6) needed a hook: vanilla's `EnderDragon.hurt(part, ...)` drops other damage before any
+  event, so the faction's melee source and, through `ProjectileImpactEvent`, its arrows carry the tagged damage type
+  themselves. No mixin.
+- *Switches*: `mobGriefing` gates her blasts and her body as vanilla gates the vanilla Wither's; TNT she carries is a
+  player's TNT, which that rule never gated (the battle rules' review settled this for every breacher, 4.5).
+- *Originality*: Spirecore's improvement at III is "tuned", not "honed" (Lost Ark's upgrade system is "honing";
+  `ARTIFACTS.md` 21.2).
+**Balance, re-checked**: her war power (10.4 / 13.4 / 14.0, the dragon 10.1 / 13.3 / 13.7) is 8.1's formula exactly;
+Birth Blast's reach at power 4 is at most 1.3 x 4 / 0.75 = 6.9 blocks along air, inside its 7-block disc; one Ruin
+Skull bites one block deep at power 1 with the 0.8 cap (0.33 off the ray per sampled block against at most 1.3), rarely
+two; Stray Skulls' six power-1 blasts are 6.18's limit. A player beside a cliff is still safe with play: the walk round
+(up to 3 s) and every wind-up and disc come first, a raised shield does not stop a push (vanilla's blocked blow still
+knocks back) but stepping out of the disc, keeping a few blocks from the edge, knockback resistance, a water bucket and
+Fire Resistance all do. No new owner question.

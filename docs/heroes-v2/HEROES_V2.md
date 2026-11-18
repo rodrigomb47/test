@@ -1403,8 +1403,12 @@ that never went toward lava (A5) and the softened phase shockwave (A6a); 15.9 T1
 
 - **Full strength, for every receiver.** Knockback, a knock-up, a dash's or a charge's push, a wave, a grab's throw,
   a pull, a tether's pull, a phase shockwave and a passive's push land at full strength wherever they send an enemy:
-  lava, fire, the void, off a cliff, into deep water. Knockback resistance, shields and armour work as vanilla's (a
-  blocked light move lands no push). The same against a player, an NPC, a hero and a monster.
+  lava, fire, the void, off a cliff, into deep water. Knockback resistance shortens every push as vanilla's does; a
+  raised shield stops a blocked move's damage but not its push, as in vanilla, where a blocked blow still knocks the
+  blocker back (today's `HeroEffects` runs a move's knockback as its own effect, after the damage, whether or not a
+  shield took the damage); armour does not change a push. How far: knockback strength 1 is vanilla's knockback of 0.4
+  (v1 13.4), about 2 blocks on flat ground, so knockback 3 throws about 6 blocks (about 4 with a vanguard's 30 or full
+  netherite's 40 knockback resistance). The same against a player, an NPC, a hero and a monster.
 - **Edges** (`logic/hero/EdgePlay`, pure), sampled with the arena (6.12) every 2 s round each engaged enemy, in 16
   directions out to 8 blocks:
   - **lethal** (value 1): lava; the void (no floor down to the world's bottom); a drop whose vanilla fall damage would
@@ -1528,6 +1532,21 @@ breach walls") opens it for moves that are explosions by nature. Numbers PROPOSE
   civility").
 - **Heroes and TNT** are a separate thing: any hero may carry TNT and breach a wall by hand exactly as an ordinary NPC
   does, at the same speed and by the same rules (`docs/design/breaching.md` 5).
+
+### 6.19 Review of 6.17 and 6.18 (2026-11-18)
+
+An adversarial pass over 6.17, 6.18, `docs/design/breaching.md` and their users (`ARTIFACTS.md`, `BOSS_HEROES.md`, the
+kit sheets), against the owner's answers of request 11, the decisions above and the engine's real code. **Held**: pushes
+land at full strength on anyone and are aimed at edges, with the same tells; nothing pushes the hero's own side or takes
+its own body into a hazard; blasts are terrain only, so every damage cap stands; equal treatment holds (no rule reads
+whether anyone is a player). **Fixed**: 6.17 said a blocked light move lands no push, which neither vanilla (a blocked
+blow still knocks back) nor today's `HeroEffects` (knockback is its own effect, after the damage) does; it now says a
+shield stops the damage, not the push. 6.17 now gives the distance a push carries (knockback 1 is vanilla's 0.4, about 2
+blocks on flat ground), which the ordinary NPCs' edge sense had underrated (3 blocks against a hero's 6;
+`docs/design/breaching.md` 8.1 and 15). The game rule `mobGriefing` gates a hero's explosive moves (a mob explosion, as
+vanilla gates it) but not a breacher's hand-placed TNT, which is a player's TNT (`docs/design/breaching.md` 10). A
+player beside a cliff still has answers: the wind-up, the mark and the walk round come first, and distance, knockback
+resistance, a water bucket and Fire Resistance work for a player and a soldier alike. No new owner question.
 
 ---
 
@@ -1658,7 +1677,7 @@ grow by their own design and that some need a tech level. The design is in `ARTI
   upgraded with research, one way each).
 - **Tinkering** (the owner's remark): the artificer (an ordinary NPC that grows out of the blacksmith), a hero at the
   artificer duty (the new `tinkerer` talent) or a player raises an artifact to upgrade level II or III at the
-  Artificer's Bench (its lines x1.25 and x1.5 under the caps, its passive honed at III) for real materials, levels and
+  Artificer's Bench (its lines x1.25 and x1.5 under the caps, its passive tuned at III) for real materials, levels and
   time; an upgrade never fails, and an artifact never levels with its wearer.
 - **Growth by design** (the owner's remark): eight growing artifacts get stronger from what their wearer does (blood
   drawn, ore mined, nights on watch, distance flown, undead laid to rest, worthy foes outlasted, fights survived at the
@@ -5081,7 +5100,7 @@ clip, `artifact.give` (`ARTIFACTS.md` 19).
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
-| R1 | Format and pure rules: `ArtifactDef`, `ArtifactReader` (the v1 messages, artifact formats 1 and 2), the catalogue additions (the build stats; triggers `on_move_hit`, `on_control`, `on_death`, `on_marked`, `on_land`; forms `jump`, `ally_lowest`; effects `adapt`, `revival_cut`, `ward_effect`; conditions `self_carries`, `target_bleeds`, `engaged_has`, `in_daylight`), `ArtifactRules` (the sum at fixed strength, slots by level, upgrades and honing, growth steps and caps, build caps, healing ceiling, recharge bound, war rating, the tech gate), the bond's validation, schema and `checkHeroes` | F2, F3, F4 | M | the reader and rules unit tests of `ARTIFACTS.md` 18.1; the 61 data files load clean |
+| R1 | Format and pure rules: `ArtifactDef`, `ArtifactReader` (the v1 messages, artifact formats 1 and 2), the catalogue additions (the build stats; triggers `on_move_hit`, `on_control`, `on_death`, `on_marked`, `on_land`; forms `jump`, `ally_lowest`; effects `adapt`, `revival_cut`, `ward_effect`; conditions `self_carries`, `target_bleeds`, `engaged_has`, `in_daylight`), `ArtifactRules` (the sum at fixed strength, slots by level, upgrades and tuning, growth steps and caps, build caps, healing ceiling, recharge bound, war rating, the tech gate), the bond's validation, schema and `checkHeroes` | F2, F3, F4 | M | the reader and rules unit tests of `ARTIFACTS.md` 18.1; the 61 data files load clean |
 | R2 | Items, blocks and the world: `ModArtifacts` (61 items and the Sigil), `ArtifactItem` (fire-, blast- and cactus-proof, never despawning, the growth icon property), the `artifact_state` and `artifact_work` components, tooltips, recipes (crafting, smithing that starts again at upgrade I, the anvil wake, the `factionclash:bench` recipe type), the Artificer's Bench (block, block entity and menu: begin, cost, time, tending, the research check), loot modifiers and the Hollow lair roll, the signature registry with faded copies and re-forming | R1, A1 | L | the item halves of `blacksmithCraftsSmithsAndWakes` and `heroDropsArtifactsAtDeath`; `playerUpgradesAtBenchSameCost`, `benchLocksTechSteps`, `signatureFadedCopyAndReform` |
 | R3 | The hero side: slots by level and saving, the hero sheet's slot view with the Offer slot and Ask buttons (no pins), attuning, the build stats in damage, cooldowns, control and stamina, the move runner reading attack speed without the artifact layer, passives with families (`on_control` only from moves and basic attacks), actives through the move runner, the eight growth counters, the bond's kit mods and one wearer per signature instance, the healing ceiling, death drops, boss bar pips, the hero sheet, the war rating in `HeroRules.heroPower` | R1, R2, A4, A5, A6, A10 | L | the hero GameTests of `ARTIFACTS.md` 18.2; every "NPC soldier and mock player" test gives the same numbers for both |
 | R4 | `ArtifactChoice` and `ArtifactWorkshop` (pure; they replace the first design's `ArtifactPlanner`): profiles and feed rates, worth and want, personality, temperament and relationships, each hero's choices (use, swap, pass on, ask, refuse), contested claims, lent artifacts, the leader's wishes weighed by compliance, the signature's hold on its own hero, heroes' wishes and the workshop's order and gates | R1, F4 | M | `ArtifactChoiceTest`, `ArtifactWorkshopTest` |
@@ -5102,11 +5121,11 @@ break-out and the dragon's edge aim; B1, B4 and B7 take the signatures' growth, 
 |---|---|---|---|---|
 | B1 | Format additions (`BOSS_HEROES.md` 8, kit-gaps "Boss heroes" and "Boss heroes revision") in the catalogue, reader, balance and schema: with the revision `explosive.resistance_cap`, `break_out`, `work.tool` and a signature's `growth` or `upgrade`; both kits as test fixtures | F2, F3, F5, R1, T2 | M | `BossKitsTest`; the fixtures load clean; every new piece has a reader message for its misuse |
 | B2 | Tokens and the first-kill chest: the two token items, `ChestSpot`, the chest and its particle column, return and hollow copies (a same-instance copy hollow after the first use), the consumption rule, the calling, unbinding into the token when her faction falls (the owner's answer), the event hooks of `BOSS_HEROES.md` 3.14 (loss detection, the ender chest's return), `CampaignData.bossHeroes`, commands and config | A1b, R2 | M | `ChestSpotTest`, `BossTokenRulesTest`, the token GameTests of `BOSS_HEROES.md` 9.2 |
-| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger` (never stacking), `focus_add`, `smite`, `blast`, the crystal and familiar adds (the beams' per-fight cap, spires never in a narrow way, a full-strength shatter that breaks nothing), `perch` (a block up at most), circling, a hovering flyer, the rebirth object (no re-arm after it), a rain round the hero, `immune_effects`; from the revision the blue skull's `resistance_cap` in T2's blast, the Wither's box break-out, her hands as a `work.tool`, her blue skulls on the breach spot, a dive's landing aimed away from an edge, no smashing in the dragon's flight | A5, A6, A8, A10-A12, T1, T2 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, `WitherBlocksTest`, the fight and terrain GameTests of 9.2 there; every "NPC and mock player" test gives the same numbers |
+| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger` (never stacking), `focus_add`, `smite`, `blast`, the crystal and familiar adds (the beams' per-fight cap, spires never in a narrow way, a full-strength shatter that breaks nothing), `perch` (a block up at most), circling, a hovering flyer, the rebirth object (no re-arm after it), a rain round the hero, `immune_effects`; from the revision the blue skull's `resistance_cap` in T2's blast, the Wither's box break-out (an enemy's planned blocks it withers queued for repair), her hands as a `work.tool`, her blue skulls on the breach spot, a dive's landing aimed away from an edge, no smashing in the dragon's flight | A5, A6, A8, A10-A12, T1, T2 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, `WitherBlocksTest`, the fight and terrain GameTests of 9.2 there; every "NPC and mock player" test gives the same numbers |
 | B4 | The AI: token knowledge, the council's weighing, expeditions, interceptions, escorts, `CrystalTargetGoal` (shared with the vanilla End raid), ranged NPCs (with their new sidearm) and heroes against projectile immunity, the signature's hold on its heroine with R4 (lent to her when an ally holds it, her focus on an enemy wearing it), `sim.py`; check ROADMAP phase 3's fix so faction NPCs can hurt the vanilla dragon (`BOSS_HEROES.md` 6.6) | B2, B3, L3, R4, ROADMAP phase 1's knowledge rule | L | `TokenKnowledgeTest`, `SignatureChoiceTest`, the AI GameTests, the first campaign of 9.3 there |
 | B5 | Art: the new parts of `BOSS_HEROES.md` 4.2 and 5.2 (with G8's planned dragon wings, swept horns, scaled tail, torn cape, long skirt and scales), the add models (crystal over vanilla's model, spire, cage, skull familiar), the calling and revival displays, own clips, the token icons, previews for the owner | G8, G10b, A8, A9 | L | `herogen check` and `lint` clean; previews sent to the owner. **Token icons done 2026-11-18** (`notes/artgen.md`, "R6 and B5"): `wither_token.png` (a charcoal disc, three bone skulls with soul-blue sockets) and `ender_dragon_token.png` (a black egg-shaped crystal flecked with purple), with the signatures `hollow_star.png` and `spirecore.png`, each with a slow four-frame pulse (a `.png.mcmeta`); no hollow-token texture, as 3.4 asks only for a grey name. The token items' models and glint remain for B2 |
 | B6 | Sound: the two sound sets and the add sounds, the new slots (`rebirth`, `calling`, `linger`, `mobility.break`, `mobility.wings`) | S1, S2 | M | `sfxgen check` clean; previews for the owner |
-| B7 | Content: the two hero source files and the `hollow_star` (growing) and `spirecore` (upgradable) artifact files; the kit sheets regenerated from them (kit version 3 by hand until then) | B1, B5, R1 | M | `herogen check` and `checkHeroes` clean; 14.4's gates 1-3 |
+| B7 | Content: the two hero source files and the `hollow_star` (growing) and `spirecore` (upgradable) artifact files; the kit sheets regenerated from them (kit version 4 by hand until then) | B1, B5, R1 | M | `herogen check` and `checkHeroes` clean; 14.4's gates 1-3 |
 | B8 | Verification and release: the GameTests and campaigns of `BOSS_HEROES.md` 9, README "Boss heroes", BALANCE rows, the config file, jar and SHA-256 | all of B1-B7 | M | the release checklist (`HANDOFF.md` section 7) |
 
 ### 15.9 Battle without civility (owner, 2026-11-18; 6.17, 6.18 and `docs/design/breaching.md`)

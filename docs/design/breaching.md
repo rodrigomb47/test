@@ -4,9 +4,9 @@ How faction NPCs use explosives in war, how they defend against them, and how or
 where anyone may be knocked into lava or off a cliff. Heroes follow the same world rules; their own parts (moves that
 push into lava, moves that are explosions) are in `docs/heroes-v2/HEROES_V2.md` 6.17 and 6.18.
 
-Status: design, 2026-11-18. Nothing here is implemented. It designs ROADMAP phase 2's "TNT expert" row and the
-ordinary-NPC side of the owner's battle answers. Numbers marked PROPOSED go to BALANCE.md when they are built; the
-work breakdown is section 12, the proposed further tactics section 13.
+Status: design, 2026-11-18, reviewed the same day (section 15). Nothing here is implemented. It designs ROADMAP
+phase 2's "TNT expert" row and the ordinary-NPC side of the owner's battle answers. Numbers marked PROPOSED go to
+BALANCE.md when they are built; the work breakdown is section 12, the proposed further tactics section 13.
 
 ---
 
@@ -21,7 +21,7 @@ The spec's TNT expert (spec §4 and §15; ROADMAP's row: "Crafts TNT (gunpowder 
 breach walls during raids; never near its own base") becomes the craftsman and specialist of a wider rule: **anyone
 who carries explosives may use them to breach**.
 
-Decisions (PROPOSED; the owner confirms or corrects them, section 14):
+Decisions (PROPOSED; the owner may still correct them, section 14):
 
 1. **TNT is the explosive of war.** It is the one vanilla explosive that a player crafts from common things
    (gunpowder and sand), carries, places and lights anywhere. Section 2 says what else is in and out, and why.
@@ -46,8 +46,9 @@ Decisions (PROPOSED; the owner confirms or corrects them, section 14):
 9. **A death by terrain is the pusher's kill.** A fall, lava, fire or the void within 15 s of an enemy's push or blow
    counts as that enemy's kill, with vanilla's wording ("was doomed to fall by", "tried to swim in lava to escape").
    The rule is shared with heroes (`HEROES_V2.md` 6.17).
-10. **Operators can turn it off**: `war.explosives` (on by default) and the game rule `mobGriefing` (section 10).
-    The owner wants no civility, so it is on.
+10. **Operators can turn it off** with `war.explosives` (on by default). The game rule `mobGriefing` keeps gating only
+    what vanilla gates, mob explosions (a hero's explosive moves), not the TNT a breacher places, which is a player's
+    TNT (section 10). The owner wants no civility, so it is on.
 
 **Improvements added on our own** (the owner welcomes them; each is said here so it can be refused):
 - the defenders' water answer and the archers' priority on a TNT carrier;
@@ -142,7 +143,9 @@ charge). At the muster the war council names at most 2 breachers per party (`war
 1. the TNT expert(s) of the raiding base;
 2. a hero of the party whose raid goal is "open the way" (`MOBILITY_AND_WORK.md` 5.2) and who carries TNT: a hero
    is a faction NPC and breaches exactly as one, at the same speed, by the same rules (placing within reach, lighting
-   by hand, standing clear);
+   by hand, standing clear). A hero with that goal and no explosive move of its own takes `war.tntPerBreacher` TNT and
+   a flint and steel at the muster when the base's stock allows, as a swordsman would, so "any hero" can really
+   breach;
 3. a swordsman the council hands TNT to when the party has no TNT expert: it takes `war.tntPerBreacher` (2) TNT and a
    flint and steel from the storehouse at the muster, as guards take building blocks today.
 
@@ -261,9 +264,12 @@ already. Ordinary NPCs answer as a careful player does. None of this is new move
 
 ### 8.1 The edge sense (`logic/combat/EdgeSafety`, pure)
 
-- A **lethal edge** is a cell beside a standing cell, within 3 blocks of it, that holds lava, fire, a magma block or a
-  campfire, opens on the void, or drops more than 4 blocks (vanilla's mobs take fall damage after 3; 4 keeps steps and
-  ledges usable).
+- A **lethal edge** is a cell that holds lava, fire, a magma block or a campfire, opens on the void, or drops more
+  than 4 blocks (vanilla's mobs take fall damage after 3; 4 keeps steps and ledges usable), within the reach of the
+  pushes near: 6 blocks of a standing cell while a hero is among the pushers (a hero's knockback 3, the strongest,
+  throws about 6 blocks on flat ground: vanilla's knockback of 0.4 a point, `HEROES_V2.md` 6.17), else 4 blocks (a
+  Knockback II sword, a Punch bow, a ravager's roar or a wind charge). The review of 2026-11-18 widened it from a flat
+  3 blocks, which a hero's push outranged twice over.
 - A **pusher** is an enemy within 8 blocks that can push: any hero; any NPC or player holding a weapon with Knockback
   or a bow with Punch; ravagers, hoglins, zoglins, iron golems and breezes; anyone holding wind charges.
 - While fighting with a pusher near, an NPC (soldier, guard, worker, TNT expert) prefers cells with no lethal edge
@@ -335,9 +341,12 @@ moment a player would; it takes the bucket out of the backpack as a player switc
 
 - **`war.explosives`** (true): false stops all planned breaching (no TNT expert is hired, no breacher is named, no
   hero blasts a wall). TNT already lit goes off as vanilla's.
-- **The game rule `mobGriefing`**: false also stops planned breaching (NeoForge's per-entity mob-griefing check is
-  asked for the breacher), as it stops heroes' explosive moves (the Wither's blue skulls among them). Players' own
-  TNT is untouched (vanilla never gates TNT by it). An operator who wants NPCs to leave blocks alone sets it, as for creepers.
+- **The game rule `mobGriefing`** gates what vanilla gates and nothing more: mob explosions, so a hero's explosive
+  moves (the Wither's blue skulls among them, `HEROES_V2.md` 6.18) and the Wither's box break-out. A breacher's TNT is
+  a player's TNT, placed and lit by hand, which vanilla never gates by that rule; an NPC's hand-breaking (`Reach`)
+  ignores it today too, and a player's TNT keeps working with it off, so an NPC's must as well (equal treatment,
+  player-like). `war.explosives` false is the switch that stops planned breaching. (The first draft asked the owner
+  whether `mobGriefing` should also stop NPC TNT; the review settled it this way, section 15.)
 - **Other keys** (PROPOSED, `[war]`): `tntExpertPopulation` 16, `tntStock` 6, `sandReserve` 16, `tntPerBreacher` 2,
   `breachersPerRaid` 2, `tntClear` 8, `tntHomeMargin` 16, `guardWaterBuckets` true, `waterLanding` true.
 - **Knowledge** (player-like): a faction knows its own TNT stock; rivals do not, unless a scout sees a breacher on the
@@ -355,8 +364,9 @@ moment a player would; it takes the bucket out of the backpack as a player switc
   in or within 16 blocks of an own-side base; stone bricks give an opening, obsidian never; the inside path to the
   heart decides between two otherwise equal spots.
 - `TntSupplyTest`: what the TNT expert does next for a given storehouse (dig sand, knap flint, craft, hunt).
-- `EdgeSafetyTest`: lethal edges (lava, fire, magma, the void, a drop of 5) found and a drop of 3 not; the path cost
-  only with a pusher near; the strike side.
+- `EdgeSafetyTest`: lethal edges (lava, fire, magma, the void, a drop of 5) found and a drop of 3 not; with a hero
+  among the pushers an edge 6 blocks behind counts, with only a Knockback sword near one 5 blocks behind does not; the
+  path cost only with a pusher near; the strike side.
 - `KillCreditTest` (with `HEROES_V2.md` 6.17): the 15 s window, a push with no damage credited, the newest pusher
   wins, the vanilla message key for each terrain death.
 
@@ -380,6 +390,10 @@ moment a player would; it takes the bucket out of the backpack as a player switc
 - `npcClimbsOutOfLava`: a soldier set in a lava pool is out within 3 s and drinks its Fire Resistance potion.
 - `waterLandingBreaksAFall`: a soldier with a water bucket dropped from 12 blocks lands unhurt and has its bucket
   back with water.
+- `breachWorksWithMobGriefingOff`: with `mobGriefing` false a breacher's TNT still opens the wall, as a mock
+  player's does; with `war.explosives` false no breacher is named.
+- `heroBreacherTakesTntAtMuster`: a hero whose raid goal is "open the way" and who has no explosive move takes 2 TNT
+  and a flint and steel at the muster from a stocked storehouse.
 - `pushedIntoLavaIsThePushersKill`: an NPC soldier and a mock player each knocked into lava by an NPC with a
   Knockback II sword die as its kill, with vanilla's lava message naming it (the hero version is in `HEROES_V2.md`
   14.5).
@@ -446,12 +460,60 @@ proposal for the owner to pick from; none is planned work until the owner choose
 
 ---
 
-## 14. Open questions for the owner
+## 14. Questions for the owner (settled by the review)
 
-Each has the recommended answer.
+No question needs the owner now. The first draft asked two; the review (section 15) settled both with the reasons
+below, and the owner may still overturn either:
 
-1. **A TNT expert role, or any soldier making TNT?** *Recommended: the role.* One specialist per base keeps the
-   gunpowder economy readable (one NPC hunts, digs and crafts) and gives raids a visible target to shoot; any soldier
-   may still carry and use the TNT it makes.
-2. **`mobGriefing` false also stops NPC TNT.** Vanilla never gates TNT by it, but it is the switch players use to keep
-   mobs from breaking blocks. *Recommended: yes*, with `war.explosives` as the separate switch.
+1. **A TNT expert role, or any soldier making TNT?** *Settled: the role.* The spec itself names a TNT expert (spec §4
+   and §15, ROADMAP phase 2), and the owner's "any hero or npc that usrs explosives" is kept by section 5: any carrier
+   may breach, a hero included. One specialist per base keeps the gunpowder economy readable (one NPC hunts, digs and
+   crafts) and gives raids a visible target to shoot.
+2. **Should `mobGriefing` false also stop NPC TNT?** *Settled: no.* The draft recommended yes. But a breacher's TNT is
+   a player's TNT, placed and lit by hand; vanilla never gates TNT by that rule, a player's TNT keeps working with it
+   off, and the mod's NPCs already break blocks by hand regardless of it (`Reach`). Gating only the NPC's TNT would
+   treat a player and an NPC differently in a fight. `war.explosives` is the switch (section 10); `mobGriefing` still
+   gates mob explosions, so a hero's explosive moves (`HEROES_V2.md` 6.18).
+
+The further tactics of section 13 are proposals, not questions: none is planned until the owner picks one, and none
+is needed for the TNT expert.
+
+---
+
+## 15. Review (2026-11-18)
+
+An adversarial pass over this file and the heroes' half of the battle rules (`HEROES_V2.md` 6.17 and 6.18), against
+the owner's answer 5 and the lethal-terrain remark, the earlier owner decisions and the engine's and vanilla's real
+numbers (`HeroEffects.knockback`, `FormGeometry.KNOCKBACK_PER_STRENGTH` 0.4, `FCEvents.onExplosion`, `Reach.mayBreak`;
+vanilla's `LivingEntity.hurt`, `CombatTracker`, `Mob.canBeLeashed`, `WitherSkull` and the explosion ray rule in the
+1.21.1 sources). **The owner's answers hold**: any carrier breaches, nobody is civil (raiders blow walls, defenders
+kill carriers, heroes aim at edges), and vanilla's TNT, blast and drop rules are untouched. **Earlier decisions hold**:
+equal treatment (a player's and an NPC's TNT are the same TNT, a mock player is a test subject beside every NPC),
+player-like NPCs (real gunpowder, sand, flint, a 4.5-block reach, a hand-lit 4 s fuse, a water bucket used as a player
+uses it), vanilla stays whole. **Fixed**:
+- *The edge sense was too short*: it looked for lethal edges within 3 blocks, but a hero's knockback 3 throws about 6
+  blocks on flat ground (knockback strength 1 is vanilla's 0.4; stepping vanilla's ground and air friction tick by
+  tick gives about 2.1 blocks a point, and the engine's own look-ahead assumes 2.5), so soldiers 4-6 blocks from a cliff
+  would have died while "safe". It now watches 6 blocks while a hero is near, 4 otherwise (8.1, `EdgeSafetyTest`).
+- *`mobGriefing` and NPC TNT*: the draft gated NPC TNT by it, which no vanilla rule does and which would treat a
+  player's TNT and an NPC's differently; settled the other way, with `war.explosives` the switch (10, 14).
+- *"Any hero" could not really breach*: only TNT experts and swordsmen were handed TNT, so a hero breached only with TNT
+  it happened to carry. A hero with the "open the way" goal and no explosive move now takes TNT at the muster (5).
+- The two owner questions of 14 are settled, with reasons; section 13 stays a list of proposals.
+
+**Balance, re-checked**: *raids are not made too easy*. Soldiers already open fence gates and doors (README, "Combat
+behaviour"), so a breach mostly changes the route and splits the defence; it is planned only when a gate is closed to
+NPCs, a raid failed at the gate, the heart is far from every gate, or a bold leader carries 2 TNT; one charge opens
+about 3 x 3 in stone bricks (vanilla's ray rule: a power-4 blast at the face has at most 5.2 - 0.63 left, enough for any
+block of resistance under about 15) and nothing in obsidian; 2 breachers with 2 charges each is the most a raid brings.
+Breaches are not priced into the attack odds; 11.3's campaigns count the raids a breach decided before that changes.
+*The defenders' answers are real*: archers take a visible TNT carrier first within 32 blocks, two swordsmen are sent at
+it, a guard's water bucket on a lit charge leaves the blast breaking nothing (vanilla: water absorbs it), and planned
+blocks are queued for repair the moment an explosion breaks them (today's `ExplosionEvent.Detonate` hook). *Lethal
+terrain stays beatable*: every hero push waits for its wind-up and ground mark, and for the walk round (up to 3 s) when
+aimed; a raised shield stops the damage of a blocked blow but not its push, in vanilla too, so the answers are distance
+from the edge, stepping out of the mark, knockback resistance, a water bucket and Fire Resistance, the same for a
+player and a soldier. **Engine fit**: X1-X6 and `HEROES_V2.md` T1-T4 cover every piece, with their tests in 11; kill
+credit needs no mixin (`CombatTracker.recordDamage` for a push of 0, `setLastHurtByMob` refreshed each second, and
+vanilla's own fall and `.player` death keys, which name the pusher when the fall is over 5 blocks or the last attacker
+is fresh). No new owner question.

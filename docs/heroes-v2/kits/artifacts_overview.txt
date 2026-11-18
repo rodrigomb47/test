@@ -1,10 +1,11 @@
 Faction Clash - artifacts
 Items only heroes can wear | 61 artifacts in five tiers | crafted, upgraded, grown, looted, stolen
-Status: designed, not in the game yet (kit version 3, 2026-11-18: rewritten to your answers;
+Status: designed, not in the game yet (kit version 4, 2026-11-18: reviewed again, see CHANGED
+AFTER THE SECOND REVIEW at the end; version 3, the same day, rewritten to your answers;
 docs/heroes-v2/ARTIFACTS.md). All numbers are first values, tuned after play.
 ====================================================================================================
 
-WHAT CHANGED IN THIS VERSION (your answers of 2026-11-18)
+WHAT CHANGED IN VERSION 3 (your answers of 2026-11-18)
 - Slots: a hero has one artifact slot at level 1 and gets one more every five levels, five from
   level 20.
 - Strength: an artifact gives the same numbers on every hero, at every level. It does not grow
@@ -67,7 +68,8 @@ FIXED STRENGTH
   a level-30 hero alike. (The first version gave 60% at level 1 and full power at level 20; that
   is gone.)
 - A "+10% attack" line is a tenth of that hero's own attack, so a stronger hero gets more out of
-  it, as with a Strength potion. The artifact itself never changes.
+  it, as a Speed potion speeds a fast runner and a slow one by the same share. The artifact itself
+  never changes.
 - Only two things make an artifact stronger, and both stay on the item wherever it goes: its
   upgrade level (TINKERING below) and, for the eight growing artifacts, its growth.
 
@@ -109,7 +111,8 @@ moves stay; a stun is never longer and never chains; no hit from a hero goes ove
 ceiling; nothing saves a hero from a killing blow; no artifact lets a hero fly, teleport or break
 blocks, and none is an explosive. An artifact's attack speed speeds basic swings and shots only.
 An artifact that pushes (Updraft, Ram Strike) follows the same rules as any hero's push, so, as
-you allowed, it may send someone off a cliff or into lava.
+you allowed, it may send someone off a cliff or into lava. No artifact pushes farther than the
+Ender Dragon's Wing Gust (knockback 3, about 6 blocks on flat ground).
 
 HOW TO GET THEM
 Crafting, the player-like way. The faction's blacksmith does it in its workshop, from real
@@ -162,7 +165,7 @@ TINKERING: UPGRADES
   materials in, press Begin, it takes the materials and the experience levels, then works by
   itself for a minute or three. A tinkerer standing at it makes it faster.
 - What: upgrade level II makes every number on the artifact a quarter larger, level III half
-  larger (still under the ceilings), and at III its special power is sharpened: a fifth shorter
+  larger (still under the ceilings), and at III its special power is tuned: a fifth shorter
   cooldown, or a fifth stronger where it has none. A growing artifact is not made stronger by an
   upgrade; instead it can grow one step further.
 - Components are never upgraded (they are built into bigger artifacts). Of the two signatures,
@@ -222,7 +225,8 @@ HOW HEROES CHOOSE
     use       it takes the artifact it likes best for an empty slot, from its backpack or the
               storehouse;
     swap      it replaces one it wears when another is clearly better (fickle heroes swap more,
-              careful ones less);
+              careful ones less; at most once a day unless something new reaches it, so no
+              artifact goes back and forth);
     give      it gives an artifact to another hero who needs it much more, if it is generous
               enough (sociable heroes give, greedy ones keep);
     ask       it asks another hero for an artifact it needs much more (bold, greedy or sociable
@@ -253,12 +257,14 @@ YOU AND YOUR FACTION'S HEROES
 - Offer: sneak-use an artifact on one of your faction's heroes (or use the Offer slot on its
   sheet), out of a fight and close by. The hero decides at once: it wears it (and hands you what
   it took off), keeps it, or gives it back with a line.
-- Ask: the Ask button beside an artifact the hero holds. It gives you what it does not need; for
-  anything else it weighs its opinion of you. What you lent it, an honourable hero always gives
-  back.
+- Ask: the Ask button beside an artifact the hero holds, saying whom it is for. For another hero,
+  the hero weighs it exactly as if that hero had asked (who needs it more, how generous it is),
+  and your good standing helps a little. For yourself, it gives you only what it does not need.
+  What you lent it, an honourable hero always gives back. So you cannot strip a hero of what it
+  wants: the heroes decide, as you asked.
 - The storehouse: you can put artifacts in it for the heroes, and take from it like any chest.
 - No more pins: nothing you put on a hero is locked there. To move an artifact from one hero to
-  another, ask the first and offer it to the second.
+  another, ask the first for the second and offer it to the second.
 - These are the same rules a hero uses with another hero; only the screen is yours.
 
 WHEN A HERO DIES
@@ -301,10 +307,10 @@ IN A WAR
 A hero's war power (what the war councils count) grows by its artifact rating: about 3% for each
 component it wears, 7% for each advanced, 9% for each greater, 10% for each rare find and 12% for a
 signature (16.5% for a grown Hollow Star, 16% for Spirecore III), 2% more per upgrade level, and 4%
-to 11.5% for a growing one by its steps; at most +40%
-in all (it was +30% with three slots). Rival factions know a hero's artifacts only from what their
-scouts saw (the tiers, never the upgrades or growth). Everything else stays: heroes still count
-for at most 1.5 times their side's soldiers, half while badly hurt, nothing while dead or away.
+to 11.5% for a growing one by its steps; at most +40% in all (it was +30% with three slots). Rival
+factions know a hero's artifacts only from what their scouts saw (the tiers, never the upgrades or
+growth). Everything else stays: heroes still count for at most 1.5 times their side's soldiers, half
+while badly hurt, nothing while dead or away.
 
 HOW STRONG, WORKED THROUGH (on paper, to be measured in campaigns)
 - A level-1 common marksman holds off about 3.25 iron soldiers bare, about 3.55 with its one slot
@@ -411,14 +417,15 @@ anvil with 2 lapis and the levels shown. "Upgrade" is its own material for level
       Fair Wind: when it breaks off to escape, Speed I for 6 s.
     PROSPECTOR'S LOUPE - Knapped Flint + a spyglass; upgrade: spyglasses 1 / 2
       work speed +15%, stamina +10%
-      Keen Eye: at its job its tool counts one Fortune level higher on ores, crops and leaves, or
-      one Luck of the Sea level higher when fishing (never above level III, never with Silk Touch).
+      Assayer's Eye: at its job its tool counts one Fortune level higher on ores, crops and
+      leaves, or one Luck of the Sea level higher when fishing (never above level III, never with
+      Silk Touch).
 
   GROWING (8) - smithing table with a Sigil, woken with 5 levels; they start small and grow
     BLOODGLASS AMPOULE - Spider-Eye Vial + a block of redstone; upgrade: redstone blocks 1 / 2
       starts at attack +5%, drain +2%; full: attack +15%, drain +6%, health +5%
       grows with blood drawn from living foes (300 for its first step, 4,500 for its fifth)
-      Bloodied: an enemy its hit leaves under half health bleeds 1 a second for 3 s (not the
+      Open Vein: an enemy its hit leaves under half health bleeds 1 a second for 3 s (not the
       undead, golems or slimes; once every 6 s per enemy).
     VEINSEEKER GEODE - Amethyst Tuner + a block of raw iron; upgrade: raw iron blocks 1 / 2
       starts at work speed +5%, poise +10%; full: work +15%, poise +10%, armour +2, health +5%
@@ -427,7 +434,7 @@ anvil with 2 lapis and the levels shown. "Upgrade" is its own material for level
     VIGIL LANTERN - Clockwork Pin + a soul lantern; upgrade: soul lanterns 1 / 2
       starts at resolve +10%, health +5%; full: health +15%, resolve +20%, all resistances +8%
       grows with nights spent awake on watch (1 for its first step, 15 for its fifth)
-      Night Eyes: Darkness never takes hold of it and Blindness lasts half as long.
+      Lamplit Eyes: Darkness never takes hold of it and Blindness lasts half as long.
     SKYROAD PENNANT - Fletched Charm + a phantom membrane; upgrade: membranes 2 / 4
       starts at stamina +10%, speed +3%; full: stamina +20%, speed +6%, knockback resistance
       +10, resolve +10%, poise +10%
@@ -437,7 +444,7 @@ anvil with 2 lapis and the levels shown. "Upgrade" is its own material for level
       starts at heal power +8%, all resistances +4%; full: heal power +16%, all resistances +8%,
       health +10%, recharge +5%
       grows with undead laid to rest (12 for its first step, 180 for its fifth)
-      Toll for the Dead: its hits on the undead deal 2 more damage (once a second).
+      Graveside Peal: its hits on the undead deal 2 more damage (once a second).
     RIVAL'S CORD - Knapped Flint + a lead; upgrade: leads 1 / 2
       starts at attack +5%, poise +10%; full: attack +15%, critical damage +20%, poise +10%,
       resolve +10%
@@ -506,7 +513,8 @@ anvil with 2 lapis and the levels shown. "Upgrade" is its own material for level
     PISTON BRACER - Ironhide Girdle + 2 pistons, a redstone block, a diamond; 10 levels
       attack +10%, armour +1, knockback resistance +10, health +5%
       Ram Strike (used like a move): a piston-driven shove knocks enemies on a 4-block line in
-      front back 4 blocks. Warning: 0.8 s with a strip on the ground. Every 20 s at most.
+      front about 6 blocks back (knockback 3). Warning: 0.8 s with a strip on the ground. Every
+      20 s at most.
     DAYLIGHT COIL - Mender's Brazier + 2 daylight detectors, a redstone block, a diamond
       health +10%, energy gain +16%, heal power +8%
       Sun-Fed: in daylight under the open sky, every 10 s in a fight it gains 4 energy and heals 2.
@@ -620,3 +628,15 @@ the enemy a move hits; Stoked Heat replaces "every third hit"; and Snag tethers 
 armour. Artifact attack speed now speeds basic attacks only, so no move ever gets a shorter
 warning. The same care went into the new artifacts: none of them loses growth at death, turns
 into another item when full, or can fail an upgrade, as some well-known game items do.
+
+CHANGED AFTER THE SECOND REVIEW (2026-11-18, kit version 4)
+- Asking for an artifact now says whom it is for, and the hero weighs it as that hero's own ask. A
+  generous hero no longer hands anything it wears to whoever asks: the heroes decide.
+- A hero changes its mind about an artifact at most once a day unless something new reaches it, so
+  nothing goes back and forth between two heroes.
+- Ram Strike pushes with knockback 3 (it was 4): no artifact pushes farther than the strongest
+  hero push, now that a push can kill.
+- Renamed so that nothing sounds like another game's term: the level III improvement is now
+  "tuned" (it was "honed"), Keen Eye is Assayer's Eye, Night Eyes is Lamplit Eyes, Toll for the
+  Dead is Graveside Peal, and Bloodied is Open Vein. What they do is unchanged.
+- Read the Tell works the same when no player is near (it reads the move, not the drawn mark).

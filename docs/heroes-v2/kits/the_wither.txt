@@ -1,12 +1,14 @@
 The Wither - "Queen of Three Skulls"
 Female | wither | marksman | blight | tyrant | legendary | boss hero
-Status: designed, not in the game yet (kit version 3, 2026-11-18, after your answers: she has no
-personal name; she turns back into her token if her faction falls; her blue skulls and Birth Blast
-now blow holes in blocks, and her pushes can throw you into lava or off a cliff, see TERRAIN AND
-BLOCKS; her Hollow Star now grows. Version 2, 2026-11-18, after review). She is one of the two boss
-heroes: not among the 200, never a faction leader, and she joins a faction only through her token
-(see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never yields.
-All numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 4.
+Status: designed, not in the game yet (kit version 4, 2026-11-18, after a second review: how far her
+pushes throw you, what counts for her Hollow Star, and her walls and switches made clear. Version 3,
+the same day, after your answers: she has no personal name; she turns back into her token if her
+faction falls; her blue skulls and Birth Blast now blow holes in blocks, and her pushes can throw
+you into lava or off a cliff, see TERRAIN AND BLOCKS; her Hollow Star now grows. Version 2,
+2026-11-18, after review). She is one of the two boss heroes: not among the 200, never a faction
+leader, and she joins a faction only through her token (see "HOW SHE JOINS A FACTION"). She fights
+the same against players and NPCs and never yields. All numbers are first values, tuned after play.
+Design: docs/heroes-v2/BOSS_HEROES.md section 4.
 ====================================================================================================
 
 WHO SHE IS
@@ -375,11 +377,19 @@ as everyone, with the vanilla Wither's own rules as the guide.)
   far from the gate. Obsidian does not stop her. The defenders shoot her and rebuild the hole
   later. She may also carry TNT and use it like any breacher.
 - With the game rule mobGriefing off, she breaks no blocks with her blasts or her body (her moves
-  still hurt and push), and she digs out of a box with her hands.
+  still hurt and push), and she digs out of a box with her hands. TNT she carries still works, as
+  yours does: that rule never stopped TNT.
+- If she withers the walls of an enemy base while boxed in, that base rebuilds them after the
+  fight, as it rebuilds a hole blown by TNT.
 - Her pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
   the void. They are Withering Pulse (knockback 2), Ruin Skull (1), Soul Dash (2), Birth Blast
-  (3 and up 1) and her phase change's shockwave. Soldiers and other heroes get exactly the same.
-  Her own side is never pushed.
+  (3 and up 1) and her phase change's shockwave. Each point of knockback throws you about 2 blocks
+  on flat ground: Birth Blast about 6. Soldiers and other heroes get exactly the same. Her own side
+  is never pushed.
+- A raised shield stops a move's damage, not its push (as in vanilla, where a blocked blow still
+  knocks you back). What helps: stepping out of the ground mark in time, a few blocks between you
+  and the edge, knockback resistance (netherite armour cuts a push by 40%), a water bucket for a
+  fall and Fire Resistance for lava.
 - She does it on purpose: when you stand near lava or a drop she drifts round to your far side
   first. That drift is the tell: step away from the edge.
 - Her own body never goes into a hazard: Soul Dash stops at the edge it sends you over.
@@ -457,7 +467,8 @@ she dies, for anyone to take. Only one exists; if it is destroyed it comes back 
   resistance does nothing on her: hers is already at the most a hero can have.)
 - It grows (your idea of an artifact that feeds on blood, the Wither's way). The dark star
   brightens with the withering its wearer deals: every point of damage that the wearer's own
-  Wither effect does to an enemy counts (not her side heads' shots). At 60, 180 and 360 points it
+  Wither effect does to an enemy counts. Her side heads' shots count while they float at her side;
+  once she sends them out as adds in phase 3, theirs do not. At 60, 180 and 360 points it
   gains ability power +6%, then drain +2%, then health +5%. Full, it gives ability power +18%,
   drain +4%, blight resistance +10% and health +10%. She fills it in five to eight big fights;
   another hero takes much longer. It keeps its growth if she dies, if it is stolen or handed
