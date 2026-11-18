@@ -120,7 +120,7 @@ public final class HeroNodeEvaluator extends NpcPathNavigation.GateEvaluator {
         return best;
     }
 
-    private static boolean onRaid(HeroEntity hero) {
+    static boolean onRaid(HeroEntity hero) {
         if (hero.getServer() == null || hero.getFaction() == null) {
             return false;
         }

@@ -3098,7 +3098,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | F5 | Mobility and work-mastery pure logic: `MobilityRules` (ceilings and level power), `LeapSolver`, `FlightPlanner`, link rules, `WallEntry`, `EscapeRules`, `WorkMastery`; the `mobility` block and the `dive` form in the catalogue and validator (`MOBILITY_AND_WORK.md` 18.1) | F1, F2 | M | `MobilityRulesTest`, `LeapSolverTest`, `FlightPlannerTest`, `HeroLinksTest`, `WorkMasteryTest`, `WallEntryTest`, `EscapeRulesTest`. Done 2026-11-13 ("F5 as built" below); reviewed 2026-11-13 ("Review of F1-F5 and A1b" below) |
 | A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2. Done 2026-11-14 ("A10 as built" below): `hero/HeroMovement` (one per hero, ticked before vanilla's AI and travel) applies `MobilityRules`' level-scaled modifiers (jump strength, step height, safe fall and fall damage, travel speed, movement and water efficiency, swimming, a charger's knock-back while travelling; every feature from level 1, the numbers growing with `p(L)` to full at level 20) and runs the physical actions on vanilla's own physics: jumps, a leap solved over the real blocks behind its 0.3 s crouch tell, air jumps, wall kicks, the mantle, climbing and clinging (vanilla's ladder physics), gliding (opened by itself over a drop of 4 blocks), flight with stamina (the 0.6 s take-off tell, the landing, the descent at 25%, the glide down when it is empty), the runner's sprint and the charger's charge while travelling, air poise and the downing (a stagger in the air is a downing); `DATA_LOCO` plays G10's clips (one-shots over their loops on the base controller), the wing loops on a new `wings` controller and the mount bone only while riding; `cues.takeoff` with the hero's own take-off, `cues.landing`, `cues.downed`; the fight's air budget and ceiling counted from engaged enemies of any kind; `[heroes.mobility]` config; `/fc admin hero mobility`; 1022 unit tests (13 new, `MovementRulesTest`) and 278 GameTests (16 new, `HeroMobilityGameTests` in a 32 x 24 x 32 `mobility_field`: a leap's apex, length and ticks are `LeapSolver`'s within 0.03 blocks and a tick, `mobilityScalesWithLevel`, a climber knocked off by an NPC soldier's and a mock player's blows alike, air poise from an NPC archer's and a mock player's arrows and blows alike, the air budget and ceiling the same against both) |
 | A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, walls as terrain for heroes, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration (mobility first, no 10 s wait) | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day. Done 2026-11-14 ("A11 as built" below): a hero's path search (`hero/HeroNodeEvaluator`) adds `HeroLinks`' jump-ups, gap leaps (over a ditch 2 deep too), drops to its safe fall, climbs up a face and down one (new), chimneys and glides where a worker's step fails, never onto leaves, with the links' costs and a x3 berth round hostile bases on a trip; `hero/HeroGroundNavigation` walks to each link's start and lets `HeroMovement` take it on vanilla's physics (the new jump-up with its air jumps, the solver's leap, the climb, the new climb down and chimney, the glide off the edge), a failed link dead for 10 minutes; `hero/HeroTravel` flies a trip's waypoint when `FlightPlanner.mode` says so (no ground route, a 1.5x detour, or a long trip it flies faster), on the cruise layer over loaded, ticking terrain only, with the forward probe, a legal landing near the destination, the 5x5 chunk ticket, and the ground fallback (at the edge of loaded terrain after 3 s of hovering, stuck in the air after a 10-tick head bump or 2 s without progress, a fight, low stamina), its failures counted with the ground's; walls are terrain for heroes, soldiers and workers unchanged; a failing ground trip asks for a flight first, `DigOut` only when no link helps; `Pursuit`'s paths have the links, so a hero reaches an enemy on a ledge at once; 1025 unit tests (3 new) and 295 GameTests (17 new, `HeroNavigationGameTests`); four campaign days with the test rig in Tobimaru's and Ambrose's kits: no stuck recovery for the hero against the workers' mean of 1.2-4.9, and none of a flyer's 20 flights on the last day stuck (a building's 4-high ceiling had ended 8 of 21 before the take-off needed the sky) |
-| A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape (`HeroEscapeGoal`, `EscapeRules`: 6.13; there is no yield to refuse), the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
+| A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape (`HeroEscapeGoal`, `EscapeRules`: 6.13; there is no yield to refuse), the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests. Done 2026-11-18 ("A12 as built" below): `logic/hero/FightMobility` (pure: the aerial phases and the take-off weight, the air moves of a window, touch-and-go or landing after a dive, the dive's marker and velocity, the reach clock's answer, the reach flight and the strike from a link, the archers' priority) and `hero/HeroFightMobility` (one per hero, ticked after the boss layer): aerial windows chosen like a move, at most 3 light shots and any dives or rains per take-off, chains of up to 3 dives with 0.5 s touch-downs, the 8 s air budget and the fight's ceiling over the highest engaged enemy, the `dive` form (a straight line at 0.9 blocks a tick to the marker drawn at its wind-up, an apex jump from the ground), reach flights and the strike from a link onto a 1x1 pillar, the 4 s fight-reach clock (a flyer lands, a walker comes back), a landing for a phase transition and for a drawn bow; `hero/HeroRaid` (the way in over the walls by `WallEntry` only with a way out, one goal inside: open the way, hunt a hero, clear the archers, the storehouse, else the heart; home after) with `combat/HeroRaidGoal`; the defenders' response (`combat/AirborneHeroTargetGoal`: archers first at a hero in the air; the alarm 16 up, an approach seen within 24 blocks, the home hero joining; soldiers hold under an airborne hero); escape with the hero's whole mobility (`hero/HeroEscapeMovement` through `HeroEscapeGoal`'s Movement hook: links, climbs, glides, flight from where it is) and the lost raid's escape; each rule the same against an NPC and a player; 1034 unit tests (9 new, `FightMobilityTest`) and 311 GameTests (16 new: `HeroFightMobilityGameTests`, `HeroRaidGameTests`) |
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases. Done 2026-11-13: the 27 animations of MOBILITY_AND_WORK 4.1 for milestone 1 in `_core` (11 base loops, 14 base one-shots that end on the loop that follows them, `move.ride_cast` and `move.air_dive` as actions) and the three wing loops of the secondary controller, every clip passing `herogen check` on all six bases; full turns that unwind (`primitives.spin`: the flip, the roll, the cat twist), the riding rule on the rig's new `mount` bone (`quality.check_mount`), the `mounts/broom` carrier part and `visual.json` `carrier`, hero variants (`animations.variants`) with the slice's four: Natsuho's cat twist, Yugen's fox lope, Kagenori's crane leap, Ambrose's broom ridden side-saddle on his staff; GIFs and sheets on a chibi and an adult in `docs/heroes-v2/previews/anim/locomotion/` (`notes/artgen.md`, "G10"); 331 Python tests. Art review 2026-11-13: capes, tails, ponytails and coat tails trail in flight (recipe `wind`, `secondary.Wind`, on the glide, flight, take-off, landing, leap and ride clips and the broom and crane variants; an action takes its base's wind); only `_core` chain-bone keys change |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
 | S1 | Sound design and generator: `SOUND.md`, `tools/sfxgen` (synthesiser, recipes, build, check, previews, tests), the shared cue set and the eight slice heroes' sounds (generated or vanilla by id), sounds.json and the index | - | M | done and reviewed 2026-11-12: 240 events (197 generated in 298 Ogg files, 2.08 MB; 41 vanilla references, 2 aliases), `sfxgen check` clean, 32 Python tests (each rule's test fails when the rule is broken); previews in `docs/heroes-v2/previews/sound/` |
@@ -4780,6 +4780,98 @@ A11 as built (2026-11-14), where it goes beyond or differs from `MOBILITY_AND_WO
   windows, the fight-reach clock and soldiers holding under an airborne hero; a raid's way in over the walls
   (`WallEntry`) is A12's `HeroRaid`; swimmer II-III's amphibious navigation and hover (A13). The client side of A10
   still has not been seen in the viewer.
+
+A12 as built (2026-11-18), where it goes beyond or differs from `MOBILITY_AND_WORK.md` 3.7, 5.1, 5.2, 7.4-7.7 and the
+row above:
+
+- **The fight's situation.** `HeroMovement.situation()` is now TRAVEL, RAID (a hero in its faction's `f.raiders` while
+  the raid runs, `HeroNodeEvaluator.onRaid`), FIGHT or ESCAPE; the ceiling is 6 above the ground or the highest engaged
+  enemy's feet in a fight, 10 above the ground on a raid, the travel altitude otherwise. The air budget is A10's (8 s a
+  take-off in a fight, 10 s on a raid's approach, 6 s on the ground between take-offs, 4 s in phase 3, at most 40% of 30
+  s), counted from engaged enemies of any kind.
+- **Aerial windows** (7.4). In an aerial phase a flyer's take-off is offered to its move selector every move check as
+  one more candidate, weighted by its `aerial.weight` (4 when unset) against the summed scores of its eligible moves
+  (`MoveSelector.chooseTakeOff`: the gap and the global cooldown hold). In the air only light shots, volleys, bolts and
+  barrages (3 a take-off, `Sense.airLights`), dives and rains are eligible; it hovers 4 above and 4 off its target,
+  still while a move runs. After a dive it touches down for 10 ticks and rises again with no tell while its window
+  allows another dive (at most its `dives`, up to 3), it has air time and stamina left; the last dive gets the full
+  recovery. A phase transition due in the air lands it first; a drawn bow (an NPC archer's or a player's alike) lands it
+  60% of the time, at most once in 8 s, unless the kit authors a `target_drawing_bow` reaction.
+- **The `dive` form.** Its marker is fixed at the wind-up's start (the decal is drawn there, within the move's range
+  +1); from the ground the hero jumps so it is at its apex when the wind-up ends. It flies a straight line at 0.9 blocks
+  a tick (40 ticks at most), hits everyone in the radius where it lands, and lands on its feet (`HeroMovement.dive`,
+  state DIVE: airborne for poise, the budget and the client). A dive onto lava, fire or a drop past its safe fall lands
+  where it is instead. A dive that cannot start leaps onto the marker.
+- **Reach flights and the strike from a link** (3.7). Outside its aerial phases a flyer takes off only for a target no
+  walk or link reaches (checked every second): it flies beside it, 1.6 off and 0.4 over its feet, or lands on a
+  standable cell beside it. From a cling, a jump's apex or the air its basic attack lands only when no standable cell
+  lies within melee reach of the target (a 1x1 pillar top), at most once a second; never a move.
+- **The fight-reach clock** (5.1.6, `BossRules.ReachClock`). 4 s with no engaged enemy able to reach it (in the air:
+  more than 3 above every engaged enemy's standing height; on the ground: no walk to it, a search every second cached by
+  position, cleared at once when an enemy stands in melee reach) and it lands, or, on the ground, it walks back to the
+  nearest engaged enemy for 5 s (`combat/HeroComeBackGoal`); held during a wind-up. The same for players and NPCs.
+- **Escape with mobility** (7.7). `HeroEscapeGoal`'s Movement hook is `hero/HeroEscapeMovement`: a flyer takes off at
+  once (`HeroTravel.escapeTakeOff`, the travel ceiling, no fight budget) or flies on from where it is
+  (`HeroTravel.adoptFlight`; the hold goal leaves an escaping flyer to it); on foot, a waypoint 16 blocks toward the
+  refuge, straight first and then turned up to 1.5 rad, accepted when its path (links included) gets there or 2 blocks
+  closer; progress means half a block a second. Nothing teleports. Phase transitions wait while it escapes (Natsuho's
+  phase 3 held her for the soldiers as she broke off). A beaten-back raid starts the escape of every hero in the party
+  (`HeroManager.raidLost`, `HeroEscape.lostRaid`). No path is searched from the air (vanilla makes none there): a hop or
+  a blow's knock-back is waited out, and its way stays as it was; it does not search again every second while its
+  navigation walks to a link's start.
+- **Found by the wall escape test and fixed** (it failed about one run in five: Natsuho was cut down at the foot of the
+  wall or in her first 2 blocks of climbing, where a soldier's blow lets a climber go, 1.8): (1) her Nine Lives
+  (`on_low_health`, `move_self` back 6) fires on the very blow that starts her escape, which has already cleared her
+  target, so "back" was behind whatever way she faced and threw her 6 blocks toward the soldiers about half the time; a
+  hop with no move aim and no target is now measured from the one whose blow set it off this tick (`HeroCombat.hop`);
+  (2) when a fresh path's next step was a link's landing (a hero standing at a wall's foot), vanilla's follower aimed
+  one tick at the landing 5 blocks up and the move control jumped at the wall, again at every new path: the follower now
+  takes the link's start as its aim in that same tick (`HeroGroundNavigation`); (3) the escape searched up to 8 paths a
+  tick while a hop kept it in the air. Before, 9 of 44 copies of the test (12- and 4-block head starts, random facings)
+  were caught; with all three, 16 copies (both head starts, eight facings) all got over.
+- **Soldiers under a hero in the air** (3.8). The chase's path to the ground under an airborne enemy hero "reaches", so
+  the soldier ran round under it; that path now counts as out of reach (`NpcMeleeAttackGoal`), and a hero more than 5
+  above it (the planning height; the fight's ceiling is 6) is still waited for (`Pursuit.unreachable`): it holds, calls
+  the archers and goes in when the hero lands.
+- **Raids over walls** (5.2). `hero/HeroRaid` (ticked by `combat/HeroRaidGoal`, priority 4, while it is not fighting):
+  RALLY, APPROACH, ENTRY, GOAL, HEART, HOME. At 24 blocks it reads the wall the hero faces (a face column 3 or more from
+  any gate, its foot, top, outside and inside heights) and the gate (wooden, a button or lever inside, breakable, shut),
+  and `WallEntry.choose` picks the way: a flyer over (`HeroTravel.raidTakeOff`, the raid ceiling), a climb or a jump-up
+  of the face it chose, else the gate with the soldiers; never over without a way out. Inside, `WallEntry.goal` picks
+  one goal (open the way: a button, lever or wooden door pressed every 10 ticks; hunt a hero; clear the archers; the
+  storehouse; else the heart, 400 ticks of blows) and `WallEntry.end` ends it; when the raid ends it goes home and
+  leaves `f.raiders`. Heroes still join raids only by the operator (`/fc admin hero raid <id>`) or a test: the draft is
+  L4's.
+- **The defenders** (5.2). `combat/AirborneHeroTargetGoal` on every ranged non-hero NPC: an enemy hero in the air within
+  24 blocks and in sight first, then one inside its base's walls, kept 3 s; a ranged soldier's weakest-target focus no
+  longer trades an airborne hero for one on the ground. The alarm box reaches 16 up; an enemy hero outside it seen by
+  one of the 4 nearest base NPCs within 24 blocks is an intruder; every free home hero of the base joins the
+  interception of an enemy hero. `Pursuit` holds (out of reach, calling archers) under an airborne hero and goes in when
+  it lands.
+- **Tests.** `FightMobilityTest` (9) and `AbilityRuntimeTest` (the dive form runs). GameTests: the clock brings down a
+  flyer out of reach (and the soldier under it holds), a dive lands on its decal and recovers, a hop back from a blow
+  goes away from it (an NPC's blow and a player's), a hero out of reach comes back (from an NPC and from a player), a
+  melee flyer and Tobimaru reach a pillar top at once and strike from the air and from the wall (a player and an NPC
+  archer), Natsuho escapes over a wall the soldiers must go round (from an NPC and from a player), Ambrose flies off
+  (both), an airborne hero escapes from the air and a last-stand one dies there, a flyer raids over a wall and opens an
+  iron door's button, a climber scales a hostile wall and the alarm sees him, a hero goes over only with a way out,
+  archers turn to an airborne hero and down him, guards and the home hero intercept, the alarm sees a flyer over the
+  wall and on its approach. A developer's filter runs a few GameTests:
+  `JAVA_TOOL_OPTIONS=-Dfactionclash.gametestFilter=word,word ./gradlew runGameTestServer` (`gametest/GameTestFilter`).
+  Sabotage: 13 breaks, each caught by its test: the reach clock, the home hero joining, the phase wait during an escape,
+  the gate opened from inside, the hold goal taking an escaping flyer, the archers' focus, the soldier's hold under an
+  airborne hero, the touch-and-go, the hop's aim, the link follower's aim, the planning height, the strike from a cling,
+  and the chase's "out of reach" under an airborne hero (its start and its repath together: each alone is covered by the
+  other).
+- **Two test flakes found in the last full runs, both in the measuring.** The mock player skips `ServerPlayer.tick`, so
+  it never counts its hurt cooldown down: once the flyer had struck it, Tobimaru's lighter blow from the wall could
+  never land (4 of 12 copies). The pillar test counts the cooldown down as a player does, and now also asserts the blow
+  from the wall (with the cling's strike sabotaged it had passed: the climber struck from the top instead). Ambrose's
+  escape counted a soldier's blow during his take-off tell, on the ground beside it, as a blow in the air (8 of 12
+  copies); a blow now counts only on the tick it lands up there. 24 copies of each then passed.
+- **Left open**: a flyer's scouting circle on a raid and a scouting hero on its duty round (5.2 "Scouting ahead"),
+  shutting a gate an intruder opened, breaking a breakable gate, the soldiers' muster with a hero (the draft is L4's);
+  the campaign check on a dedicated server.
 
 ### 15.3 Milestone 2: systems breadth
 

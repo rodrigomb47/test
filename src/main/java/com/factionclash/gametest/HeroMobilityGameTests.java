@@ -1127,9 +1127,10 @@ public final class HeroMobilityGameTests {
 
     /**
      * {@code flyerAirBudgetAndCeilingCountNpcAndPlayerAlike}: two copies of Ambrose, one fighting an NPC soldier and one a
-     * mock player, take off together and fly for a point 15 blocks up: both stay at most 6 blocks above the ground (the
-     * fight's ceiling, from the highest engaged enemy standing on a block), both must land 8 s after their take-off
-     * (the air budget per take-off), on the same tick, and neither may take off again before 6 s on the ground.
+     * mock player, take off together and fly for a point 2.5 blocks up (within their enemies' reach, so the reach clock
+     * of A12 never runs): both must land 8 s after their take-off (the air budget per take-off), on the same tick, and
+     * neither may take off again before 6 s on the ground. (The ceiling and the reach clock, which lands a flyer that
+     * keeps above every enemy's reach after 4 s, are {@code HeroFightMobilityGameTests}'.)
      */
     @GameTest(template = FIELD, timeoutTicks = 320, batch = "hero_mob_budget")
     public static void flyerAirBudgetAndCeilingCountNpcAndPlayerAlike(GameTestHelper h) {
@@ -1151,8 +1152,9 @@ public final class HeroMobilityGameTests {
                 t.assertTrue(a.movement().takeOff() == null && b.movement().takeOff() == null, "no take-offs");
             }));
             h.runAtTickTime(24, t.guard(() -> {
-                t.assertTrue(a.movement().flyTo(a.position().add(20, 15, 0)) == null, "A flies");
-                t.assertTrue(b.movement().flyTo(b.position().add(20, 15, 0)) == null, "B flies");
+                // 2.5 above the floor: within reach of both enemies, who stand on it
+                t.assertTrue(a.movement().flyTo(new net.minecraft.world.phys.Vec3(a.getX() + 20, floor + 2.5, a.getZ())) == null, "A flies");
+                t.assertTrue(b.movement().flyTo(new net.minecraft.world.phys.Vec3(b.getX() + 20, floor + 2.5, b.getZ())) == null, "B flies");
             }));
             t.onEachTick(() -> {
                 if (h.getTick() < 6) {
@@ -1175,8 +1177,8 @@ public final class HeroMobilityGameTests {
                     t.assertTrue(landed[0] >= 6 + 12 + 158 && landed[0] <= 6 + 12 + 166, "landed at tick " + landed[0]
                             + " (8 s after the take-off push)");
                     near(t, top[0], top[1], 1e-6, "the two heights");
-                    t.assertTrue(top[0] - floor <= BossRules.FIGHT_CEILING + 0.2, "it rose " + (top[0] - floor) + " blocks in a fight");
-                    t.assertTrue(top[0] - floor >= BossRules.FIGHT_CEILING - 0.6, "it rose only " + (top[0] - floor) + " blocks");
+                    t.assertTrue(top[0] - floor <= BossRules.REACH_ABOVE + 0.2, "it rose " + (top[0] - floor) + " blocks: out of reach");
+                    t.assertTrue(a.combat().air().clockFires == 0 && b.combat().air().clockFires == 0, "the reach clock fired");
                     a.movement().setStaminaShare(1); // (its stamina is not what is checked here)
                     b.movement().setStaminaShare(1);
                     String no = a.movement().takeOffRefusal(), no2 = b.movement().takeOffRefusal();

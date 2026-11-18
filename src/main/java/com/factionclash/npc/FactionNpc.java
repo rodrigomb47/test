@@ -170,6 +170,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
 
+        // A12 (MOBILITY_AND_WORK 5.2): an archer or a crossbowman takes an airborne enemy hero first
+        this.targetSelector.addGoal(0, new com.factionclash.combat.AirborneHeroTargetGoal(this));
         this.targetSelector.addGoal(1, new FactionHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
                 e -> isGuardDuty() && CombatRules.isHostileMonster(e) && !pursuit.ignores(e) && senses(e)));
@@ -263,6 +265,15 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     public BlockPos leashCentre() {
         BaseState b = base();
         return b == null ? null : b.center;
+    }
+
+    /**
+     * Whether its basic-attack goals wait now (task A12): a hero whose fight mobility holds it in the air (an aerial
+     * window, a reach flight, a dive) strikes only through that (MOBILITY_AND_WORK 5.1.5: melee on the ground). Never
+     * for soldiers and workers.
+     */
+    public boolean holdsBasicAttack() {
+        return false;
     }
 
     /** A skirmisher steps back after each melee hit until its next swing is ready (v1 5.2); soldiers never do. */

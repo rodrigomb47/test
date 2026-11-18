@@ -556,6 +556,27 @@ MOBILITY_AND_WORK 3 leaves open:
 - **The scaffold pillar stays** for a hero woodcutter: its climbing (or hovering) variant is the job's own work loop and
   goes with L5m's mobility at work (12.4).
 
+## A12 decisions on fight mobility, raids and escape (2026-11-18)
+
+A12 (`HeroFightMobility`, `HeroRaid`, `HeroEscapeMovement`, `HEROES_V2.md` 15.2 "A12 as built") decided the points
+MOBILITY_AND_WORK 3.7, 5.1, 5.2 and 7.4-7.7 leave open:
+
+- **The take-off's weight.** An `aerial` block with no weight weighs 4 against the summed scores of the moves the
+  selector could start; a kit that wants more or less time in the air sets it.
+- **Phase transitions wait during an escape.** A hero that broke off kneeling through its next phase's transition was
+  caught every time; a transition still due plays once the escape is over.
+- **A drawn bow lands a flyer 60% of the time** (once in 8 s) unless the kit authors a `target_drawing_bow` reaction,
+  which then decides.
+- **An escaping hero in the air flies on** under the travel ceiling with no fight budget (7.6); its downing and air
+  poise still hold, so archers can still bring it down.
+- **A hop "back" with nothing to hop back from.** `move_self` back or forward is measured from the running move's aim,
+  else the target, else (new) the one whose blow set the passive off this tick: Natsuho's Nine Lives fires on the blow
+  that starts her escape, after the escape has cleared her target.
+- **Heroes join raids only by hand** (`/fc admin hero raid <id>`, tests) until L4's draft; `HeroRaid` runs whatever
+  put the hero in `f.raiders`.
+- **Not built**: the flyer's scouting circle (5.2 "Scouting ahead"), shutting a gate an intruder opened, breaking a
+  breakable gate.
+
 ## Boss heroes: format gaps (2026-11-18, `BOSS_HEROES.md`)
 
 The two boss heroes (the Wither and the Ender Dragon) need these format and engine pieces. Each names the rule it

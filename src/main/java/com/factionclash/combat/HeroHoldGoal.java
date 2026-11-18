@@ -24,8 +24,12 @@ public class HeroHoldGoal extends Goal {
     public boolean canUse() {
         // also while its mobility owns its movement (a leap, a climb, a glide, flight, a downing: task A10), unless its
         // own navigation started the action (a link it follows, a travel flight: task A11), which then waits for it
+        // and not while its fight mobility owns it (an aerial window, a reach flight, a dive: task A12): its moves start
+        // in the air then, and its basic-attack goals wait on their own hook; nor while it escapes in the air (7.6): the
+        // escape goal takes the flight over from there (A12)
         return !hero.level().isClientSide && (hero.combat().boss().held()
-                || hero.movement().controls() && !hero.movement().navOwned());
+                || hero.movement().controls() && !hero.movement().navOwned() && !hero.combat().air().ownsMovement()
+                && !(hero.movement().flying() && hero.combat().boss().escape().running()));
     }
 
     @Override

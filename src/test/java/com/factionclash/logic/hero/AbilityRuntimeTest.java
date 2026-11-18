@@ -142,7 +142,8 @@ class AbilityRuntimeTest {
                 + "[{\"type\": \"spawn_add\", \"add\": \"wisp\", \"count\": 1}]")), "a spirit add is milestone 2's (A8)");
         assertTrue(EffectRouting.runs(MovePlanTest.move("mirror", "self", "\"class\": \"heavy\", \"effects\": "
                 + "[{\"type\": \"spawn_add\", \"add\": \"decoy\", \"count\": 2}]")), "a decoy runs since A5");
-        assertFalse(EffectRouting.FORMS.contains(HeroDef.Form.DIVE), "the dive is A12's");
+        assertTrue(EffectRouting.FORMS.contains(HeroDef.Form.DIVE), "the dive runs since A12");
+        assertEquals(java.util.EnumSet.allOf(HeroDef.Form.class), EffectRouting.FORMS, "every form runs since A12");
         HeroDef natsuho = SliceFixtures.load("natsuho_komezaki");
         List<String> runs = new ArrayList<>();
         for (Move m : natsuho.v2().allMoves()) {

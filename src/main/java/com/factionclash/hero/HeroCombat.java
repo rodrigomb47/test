@@ -148,6 +148,8 @@ public final class HeroCombat {
     final HeroBoss boss;
     /** A6a: the ground decals of its wind-ups, drawn by the players near. */
     final HeroTelegraphs telegraphs;
+    /** A12: its mobility in a fight (aerial windows, the dive, reach flights, the strike from a link, the reach clock). */
+    final HeroFightMobility air;
 
     HeroCombat(HeroEntity hero) {
         this.hero = hero;
@@ -155,6 +157,12 @@ public final class HeroCombat {
         this.passives = new HeroPassives(hero);
         this.boss = new HeroBoss(hero, this);
         this.telegraphs = new HeroTelegraphs(hero);
+        this.air = new HeroFightMobility(hero, this);
+    }
+
+    /** Its mobility in a fight (task A12). */
+    public HeroFightMobility air() {
+        return air;
     }
 
     /** Its boss controller (task A6a). */
@@ -288,6 +296,7 @@ public final class HeroCombat {
         states.tick();
         passives.tick(fighting);
         boss.tick();
+        air.tick();
         telegraphs.tick();
         if (!zones.isEmpty()) {
             zones.removeIf(Entity::isRemoved);
@@ -371,6 +380,10 @@ public final class HeroCombat {
             return false;
         }
         HeroSenses.fill(hero, t, sense, hero.energy(), hero.tickCount - hero.lastTargetTick());
+        // MOBILITY_AND_WORK 7.4 (task A12): an aerial window's take-off is chosen like a move
+        if (air.tryAerialTakeOff(s, sense)) {
+            return false;
+        }
         pending = s.check(now, sense);
         return pending != null;
     }
@@ -471,6 +484,7 @@ public final class HeroCombat {
         lastCode = timing.code();
         lastSpeed = timing.speed();
         lastPlan = timing.plan();
+        air.moveStarted(m); // a light move or a dive in the air counts in its aerial window (A12)
         if (ultimate) {
             hero.setEnergy(0); // the ultimate uses all of it (v1 14)
         } else {
@@ -620,6 +634,7 @@ public final class HeroCombat {
         states.exit();
         passives.reset();
         boss.reset();
+        air.reset();
         telegraphs.clearAll();
     }
 
@@ -1079,10 +1094,18 @@ public final class HeroCombat {
         }
     }
 
-    /** {@code move_self}: a physical hop of the hero's own, away from, toward or up (v1 13.4); no fall damage from it. */
+    /**
+     * {@code move_self}: a physical hop of the hero's own, away from, toward or up (v1 13.4); no fall damage from it.
+     * Back and forward are measured against its move's aim, else its target, else the one whose blow set it off this
+     * tick (an {@code on_hurt} or {@code on_low_health} passive: a blow that also started an escape has cleared the
+     * target, and "back" is still away from that blow, never just behind the way it happens to face).
+     */
     public void hop(Direction d, double distance) {
         FormGeometry.Impulse i = FormGeometry.hop(d, distance);
-        Vec3 aim = run != null ? run.aim : hero.getTarget() != null ? hero.getTarget().position() : null;
+        LivingEntity hurtBy = hero.getLastHurtByMob();
+        Vec3 aim = run != null ? run.aim : hero.getTarget() != null ? hero.getTarget().position()
+                : hurtBy != null && hurtBy.isAlive() && hero.getLastHurtByMobTimestamp() == hero.tickCount ? hurtBy.position()
+                : null;
         Vec3 f = aim == null ? HeroForms.facing(hero, hero.position()) : HeroForms.facing(hero, aim);
         double sign = d == Direction.FORWARD ? 1 : d == Direction.BACK ? -1 : 0;
         takeOff(f.x * i.horizontal() * sign, i.vertical(), f.z * i.horizontal() * sign);
@@ -1264,7 +1287,7 @@ public final class HeroCombat {
 
     // ------------------------------------------------------------------ one running move
 
-    private static final int M_NONE = 0, M_LEAP = 1, M_DASH = 2, M_CHARGE = 3, M_SWEEP = 4, M_GRAB = 5;
+    private static final int M_NONE = 0, M_LEAP = 1, M_DASH = 2, M_CHARGE = 3, M_SWEEP = 4, M_GRAB = 5, M_DIVE = 6;
 
     /** A move from its start to the end of its recovery. */
     final class Run {
@@ -1316,6 +1339,11 @@ public final class HeroCombat {
         /** S2: the class cue its wind-up plays (a full id; null: none) and the run tick it starts on. */
         String cueId;
         int cueAt = -1;
+        /** A12: a dive's marker (fixed where its decal is drawn) and the tick its apex jump starts (-1: none). */
+        Vec3 diveMarker;
+        int diveJumpAt = -1;
+        /** A12: a touch-and-go between dives replaces the recovery: the run ends here (-1: the plan's). */
+        int touchDownEnd = -1;
 
         Run(Move move, MoveSelector.Source source, Timing timing, HeroUse use, LivingEntity target) {
             this.move = move;
@@ -1336,6 +1364,9 @@ public final class HeroCombat {
         }
 
         int recoveryEnd() {
+            if (touchDownEnd >= 0) {
+                return touchDownEnd;
+            }
             return Math.max(plan.recoveryEnd(), recoveryEnd);
         }
 
@@ -1359,6 +1390,20 @@ public final class HeroCombat {
             }
             if (hero.level() instanceof ServerLevel sl) {
                 HeroEffects.particles(sl, hero, HeroEffects.particle(move.ability().look(), element(), color()), 8);
+            }
+            if (move.form() == Form.DIVE) {
+                // 7.3 (A12): the dive lands on the marker its decal shows, fixed as the wind-up starts; from the
+                // ground (an apex dive) it jumps so that its apex comes as the wind-up ends
+                Ability a = move.ability();
+                double range = a.range() > 0 ? a.range() : 8;
+                double[] mk = com.factionclash.logic.hero.FightMobility.diveMarker(hero.getX(), hero.getY(), hero.getZ(),
+                        aim.x, aim.y, aim.z, range + 1);
+                diveMarker = new Vec3(mk[0], mk[1], mk[2]);
+                aim = diveMarker;
+                if (hero.onGround()) {
+                    double v = hero.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH);
+                    diveJumpAt = Math.max(0, plan.windup() - com.factionclash.logic.hero.FightMobility.apexTicks(v));
+                }
             }
             if (plan.windup() > 0) {
                 // 6.4: the ground decal grows over the whole wind-up, for the players near (presentation only)
@@ -1420,10 +1465,15 @@ public final class HeroCombat {
                     return;
                 }
                 if (target != null && target.isAlive()) {
-                    aim = target.position();
+                    if (move.form() != Form.DIVE) {
+                        aim = target.position();
+                    }
                     hero.getLookControl().setLookAt(target, 30F, 30F);
                 }
                 hero.getNavigation().stop();
+                if (t == diveJumpAt) {
+                    hero.movement().jump(); // an apex dive's jump (7.3): its apex comes as the wind-up ends
+                }
                 if (t % 5 == 0) {
                     tell();
                 }
@@ -1445,7 +1495,7 @@ public final class HeroCombat {
                     clearDecal();
                     HeroSounds.release(hero, move); // a plays: server release (the ultimates', a few others)
                 }
-                if (target != null && target.isAlive()) {
+                if (target != null && target.isAlive() && move.form() != Form.DIVE) {
                     aim = target.position();
                 }
                 release(hit);
@@ -1589,7 +1639,7 @@ public final class HeroCombat {
                 case NOVA -> HeroEffects.particleRing(level, hero.position(), Math.max(1, a.radius()), ParticleTypes.SMOKE);
                 case ZONE -> HeroEffects.particleRing(level, a.zoneAt() == HeroDef.ZoneAt.TARGET ? aim : hero.position(),
                         Math.max(1, a.radius()), ParticleTypes.SMOKE);
-                case LEAP -> HeroEffects.particleRing(level, aim, Math.max(1, a.radius()), ParticleTypes.SMOKE);
+                case LEAP, DIVE -> HeroEffects.particleRing(level, aim, Math.max(1, a.radius()), ParticleTypes.SMOKE);
                 case WAVE -> HeroEffects.particleRing(level, hero.position(), Math.max(1, a.radius()), ParticleTypes.SMOKE);
                 case RAIN -> HeroEffects.particleRing(level, aim, Math.max(1, a.radius()), ParticleTypes.SMOKE);
                 case CHARGE -> {
@@ -1671,9 +1721,7 @@ public final class HeroCombat {
                     // the stance ended with no blow to answer: nothing lands, its recovery is the punish window
                 }
                 case BARRAGE -> barrageShot(a, hit);
-                default -> {
-                    // dive (A12) is never picked (EffectRouting.FORMS)
-                }
+                case DIVE -> dive(a);
             }
             if (a.look() != null && a.look().lightning() && MoveSelector.isUltimate(move) && hero.level() instanceof ServerLevel sl) {
                 LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(sl);
@@ -1891,6 +1939,69 @@ public final class HeroCombat {
             startMotion(M_GRAB, BossRules.GRAB_HOLD_TICKS + 1);
         }
 
+        /**
+         * A {@code dive} (MOBILITY_AND_WORK 7.3, task A12): from the air (a flight, a glide, its apex jump) the hero is
+         * pushed along a straight line to its marker; never into lava, fire, powder snow, the void or beside a drop deeper
+         * than its safe fall (5.1.13: then it lands where it is and nothing lands). Already on the ground (its jump came
+         * down early) it leaps onto the marker instead.
+         */
+        void dive(Ability a) {
+            HeroMovement mv = hero.movement();
+            if (diveHazard(diveMarker)) {
+                noFollowup = true;
+                if (mv.flying()) {
+                    mv.land();
+                }
+                return;
+            }
+            if (mv.dive(diveMarker) != null) {
+                aim = diveMarker;
+                leap(a);
+                return;
+            }
+            startMotion(M_DIVE, com.factionclash.logic.hero.FightMobility.DIVE_TIMEOUT + 4);
+        }
+
+        /** Lava, fire, powder snow or no floor within its safe fall under the marker (5.1.13). */
+        boolean diveHazard(Vec3 at) {
+            Level level = hero.level();
+            BlockPos p = BlockPos.containing(at.x, at.y + 0.2, at.z);
+            int safe = Math.max(3, hero.getMaxFallDistance());
+            for (int i = 0; i <= safe + 1; i++) {
+                BlockPos q = p.below(i);
+                var st = level.getBlockState(q);
+                if (st.is(net.minecraft.tags.BlockTags.FIRE) || st.is(net.minecraft.world.level.block.Blocks.POWDER_SNOW)
+                        || level.getFluidState(q).is(FluidTags.LAVA)) {
+                    return true;
+                }
+                if (!st.getCollisionShape(level, q).isEmpty()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        void diveTick() {
+            HeroMovement mv = hero.movement();
+            boolean impact = mv.takeDiveImpact();
+            if (!impact && mv.diving() && motionTicks < motionLimit) {
+                return;
+            }
+            motion = M_NONE;
+            Ability a = move.ability();
+            double r = Math.max(1, a.radius() > 0 ? a.radius() : 2);
+            HeroSounds.cue(hero, SoundIndex.LANDING);
+            use.area(hero.position(), r);
+            HeroEffects.particleRing(hero.level(), hero.position(), r, HeroEffects.particle(a.look(), element(), color()));
+            HeroEffects.apply(use, a.effects(), 0, HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), r), hero);
+            // a touch-and-go (0.5 s) while the window has dives left, else the full recovery after the last dive (7.3)
+            int td = air.diveLanded();
+            if (td > 0) {
+                noFollowup = true;
+                touchDownEnd = Math.max(t, plan.activeEnd()) + td;
+            }
+        }
+
         void startMotion(int kind, int limit) {
             motion = kind;
             motionTicks = 0;
@@ -1905,6 +2016,7 @@ public final class HeroCombat {
                 case M_CHARGE -> pushTick(true);
                 case M_SWEEP -> sweepTick();
                 case M_GRAB -> grabTick();
+                case M_DIVE -> diveTick();
                 default -> motion = M_NONE;
             }
         }

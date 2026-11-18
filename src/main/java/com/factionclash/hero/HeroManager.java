@@ -462,6 +462,21 @@ public final class HeroManager {
      * target stood, each living hero of the defending faction at that base earns {@code XP_DEFENCE} (30). The same for
      * every hero, whoever the raiders and defenders were.
      */
+    /**
+     * A raid fell back (beaten back by the fall-back share; MOBILITY_AND_WORK 7.7, task A12): every hero of its party
+     * still alive takes the lost-raid trigger: an escaping hero in or near the target or fighting escapes home with any
+     * mobility, the others go home with the party. Returns how many escaped.
+     */
+    public static int raidLost(ServerLevel level, FactionState raiders, BaseState target) {
+        int n = 0;
+        for (java.util.UUID u : List.copyOf(raiders.raiders)) {
+            if (level.getEntity(u) instanceof HeroEntity h && h.isAlive() && h.combat().boss().escape().lostRaid(target)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
     public static void raidEnded(ServerLevel level, FactionState raiders, BaseState target, boolean won) {
         if (won) {
             for (java.util.UUID u : raiders.raiders) {

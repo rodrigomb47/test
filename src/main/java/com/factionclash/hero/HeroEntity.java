@@ -225,9 +225,15 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         this.goalSelector.addGoal(0, new com.factionclash.combat.HeroHoldGoal(this));
         // an escaping hero runs from a fight it lost (6.13, task A6b); a stagger's hold still stops it where it is
         escapeGoal = new com.factionclash.combat.HeroEscapeGoal(this);
+        // A12: it escapes with its whole mobility (links, climbs, glides, flight), not only on foot
+        escapeGoal.movement(new HeroEscapeMovement());
         this.goalSelector.addGoal(1, escapeGoal);
+        // A12: a fighting hero comes back toward its enemies after 4 s where none of them can reach it (5.1.15)
+        this.goalSelector.addGoal(2, new com.factionclash.combat.HeroComeBackGoal(this));
         this.goalSelector.addGoal(2, new com.factionclash.combat.HeroAbilityGoal(this));
         this.goalSelector.addGoal(3, new com.factionclash.combat.HeroThrowGoal(this));
+        // A12: on a raid, its way over the walls and its goal inside (5.2), above its job
+        this.goalSelector.addGoal(4, new com.factionclash.combat.HeroRaidGoal(this));
         // its own target choice (focus, protects, aggression radius; no attack tokens) replaces the soldiers' nearest
         this.targetSelector.removeAllGoals(g -> g instanceof net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal);
         this.targetSelector.addGoal(2, new com.factionclash.combat.HeroTargetGoal(this));
@@ -235,6 +241,28 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     /** Its escape goal (task A6b; set while the goals are registered, so no initialiser may overwrite it). */
     private com.factionclash.combat.HeroEscapeGoal escapeGoal;
+
+    /** Its raid layer (task A12): made on first use. */
+    private HeroRaid raid;
+
+    /** Its raid layer: the way in over the walls, the goal inside (MOBILITY_AND_WORK 5.2). */
+    public HeroRaid raid() {
+        if (raid == null) {
+            raid = new HeroRaid(this);
+        }
+        return raid;
+    }
+
+    /** One tick of its raid layer (from its raid goal). */
+    public void raidTick() {
+        raid().tick();
+    }
+
+    /** Its basic attacks wait while its fight mobility holds it in the air (task A12, 5.1.5). */
+    @Override
+    public boolean holdsBasicAttack() {
+        return !level().isClientSide && !preview && combat().air().holdsBasicAttack();
+    }
 
     /** The goal that runs it from a lost fight (A12 gives it the hero's own mobility). */
     public com.factionclash.combat.HeroEscapeGoal escapeGoal() {
@@ -1560,6 +1588,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         }
         if (movement != null && !level().isClientSide) {
             movement.reset();
+        }
+        if (raid != null) {
+            raid.reset();
         }
         if (!level().isClientSide) {
             HeroSummons.dismissAll(this);

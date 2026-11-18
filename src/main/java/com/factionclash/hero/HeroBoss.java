@@ -730,8 +730,10 @@ public final class HeroBoss {
             if (transition != null && ph.ends(now)) {
                 endTransition(d);
             }
+            // (not while it escapes: its fight is over, and a transition's hold would keep it where its pursuers are;
+            // A12's escape GameTest found Natsuho held for her phase 3 as she broke off. It plays once it is safe.)
             if (transition == null && ph.due() && !combat.running() && !combat.staggered() && !HeroStatus.stunned(hero)
-                    && !introducing()) {
+                    && !introducing() && !escape.running()) {
                 beginTransition(ph, d);
             }
             if (!fight.active() && hero.tickCount % 20 == 0) {

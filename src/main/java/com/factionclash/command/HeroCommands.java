@@ -236,6 +236,8 @@ public final class HeroCommands {
                                 .executes(c -> poise(c, DoubleArgumentType.getDouble(c, "amount"))))))
                 .then(Commands.literal("escape").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
                         .executes(HeroCommands::escape)))
+                .then(Commands.literal("raid").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
+                        .executes(HeroCommands::raid)))
                 .then(Commands.literal("mobility").then(Commands.argument("id", StringArgumentType.word()).suggests(HEROES)
                         .executes(c -> mobility(c, "info", null, null, -1))
                         .then(Commands.argument("action", StringArgumentType.word())
@@ -625,7 +627,7 @@ public final class HeroCommands {
 
     /** The actions of {@code /fc admin hero mobility <id> <action>} with no argument. */
     private static final List<String> MOBILITY_ACTIONS = List.of("info", "jump", "airjump", "wallkick", "mantle", "glide",
-            "gust", "takeoff", "hover", "land", "cling", "climbdown", "letgo", "down");
+            "gust", "takeoff", "aerial", "hover", "land", "cling", "climbdown", "letgo", "down");
 
     /**
      * {@code mobility <id> [action]} (task A10, for live checks until A11 and A12 drive it): its mobility now ({@code info}),
@@ -647,6 +649,7 @@ public final class HeroCommands {
             case "glide" -> m.glide(null);
             case "gust" -> m.gust();
             case "takeoff" -> m.takeOff();
+            case "aerial" -> h.combat().air().aerialTakeOff();
             case "hover" -> m.hover();
             case "land" -> m.land();
             case "cling" -> m.cling();
@@ -672,9 +675,33 @@ public final class HeroCommands {
             c.getSource().sendFailure(Component.literal(h.npcName() + ": " + no));
             return 0;
         }
-        String now = m.describe();
+        String now = m.describe() + "; " + h.combat().air().describe() + "; " + h.raid().describe();
         c.getSource().sendSuccess(() -> Component.literal(h.npcName() + " (level " + h.npcLevel() + ", power "
                 + Math.round(m.profile().power() * 100) + "%): " + now), true);
+        return 1;
+    }
+
+    /**
+     * {@code raid <id>} (task A12): the hero joins its faction's raid under way (heroes are not drafted by the director
+     * until L4), so its raid layer runs: the way in over the walls, its goal inside.
+     */
+    private static int raid(CommandContext<CommandSourceStack> c) {
+        HeroEntity h = live(c);
+        if (h == null) {
+            return 0;
+        }
+        var data = com.factionclash.campaign.CampaignData.get(c.getSource().getServer());
+        var f = h.getFaction() == null ? null : data.factions.get(h.getFaction());
+        if (f == null || f.raidTarget < 0) {
+            c.getSource().sendFailure(Component.literal(h.npcName() + ": its faction has no raid under way"));
+            return 0;
+        }
+        if (!f.raiders.contains(h.getUUID())) {
+            f.raiders.add(h.getUUID());
+            f.raidParty++;
+            data.setDirty();
+        }
+        c.getSource().sendSuccess(() -> Component.literal(h.npcName() + " joins the raid on base " + f.raidTarget), true);
         return 1;
     }
 

@@ -286,6 +286,34 @@ public final class MoveSelector {
         return pending == null ? null : pending.r;
     }
 
+    // ------------------------------------------------------------------ the take-off of an aerial window (A12)
+
+    /**
+     * MOBILITY_AND_WORK 7.4 (task A12): a flyer's take-off into an aerial window is chosen like a move, by its weight
+     * against the summed score of the moves eligible now, once the gap and the global cooldown are over and no reaction
+     * waits. When it is chosen the global cooldown starts as for a move. The caller has checked the phase, the stamina,
+     * the headroom and the ground time.
+     */
+    public boolean chooseTakeOff(long now, Sense s, double weight) {
+        if (weight <= 0 || s.stunned || s.silenced || s.escaping || pending != null) {
+            return false;
+        }
+        if (now < gapEndsAt || now - lastStartAt < GLOBAL_COOLDOWN_TICKS) {
+            return false;
+        }
+        double total = 0;
+        for (Move m : kit.allMoves()) {
+            if (eligible(m, now, s)) {
+                total += score(m, s);
+            }
+        }
+        if (!FightMobility.takeOffChosen(weight, total, rng.nextDouble())) {
+            return false;
+        }
+        lastStartAt = now;
+        return true;
+    }
+
     // ------------------------------------------------------------------ followups (6.3)
 
     /**
@@ -511,8 +539,9 @@ public final class MoveSelector {
         if (s.climbing) {
             return false;
         }
-        if (s.airborne && !(f == Form.SHOT || f == Form.VOLLEY || f == Form.BOLT || f == Form.BARRAGE
-                || f == Form.RAIN || f == Form.DIVE)) {
+        // MOBILITY_AND_WORK 5.1.5 (task A12): in the air only light ranged moves, at most 3 a take-off, and the wind-up
+        // of a telegraphed dive or rain
+        if (s.airborne && !FightMobility.airMoveAllowed(f, m.cls(), s.airLights)) {
             return false;
         }
         // a dive from the air starts only in the air; one from the apex starts with its jump (MOBILITY_AND_WORK 7.3)

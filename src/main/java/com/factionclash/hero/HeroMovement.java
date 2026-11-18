@@ -3,6 +3,7 @@ package com.factionclash.hero;
 import com.factionclash.FactionClash;
 import com.factionclash.config.FCConfig;
 import com.factionclash.logic.hero.BossRules;
+import com.factionclash.logic.hero.FightMobility;
 import com.factionclash.logic.hero.HeroActions;
 import com.factionclash.logic.hero.HeroClips;
 import com.factionclash.logic.hero.HeroDef;
@@ -108,7 +109,9 @@ public final class HeroMovement {
         /** a chimney link (A11): the crouch, a jump, then wall kicks from side to side up the shaft and out at its top */
         CHIMNEY,
         /** a climb-down link (A11): backing over the edge of a ledge onto the face below it */
-        DESCEND
+        DESCEND,
+        /** a {@code dive} (A12, 7.3): pushed along a straight line to its marker, stopped by blocks */
+        DIVE
     }
 
     /** What downed it (the log and the tests). */
@@ -394,7 +397,7 @@ public final class HeroMovement {
      */
     public boolean airborneForPoise() {
         return switch (state) {
-            case RISE, FLY, LAND, GLIDE, LEAP, JUMP, MANTLE -> true;
+            case RISE, FLY, LAND, GLIDE, LEAP, JUMP, MANTLE, DIVE -> true;
             case JUMP_UP, CHIMNEY -> stateTicks >= TELL_TICKS;
             case NONE -> ownAirtime && profile.airborne() && !hero.onGround() && !hero.isInWater() && !hero.onClimbable()
                     && !hero.isPassenger();
@@ -472,7 +475,11 @@ public final class HeroMovement {
         if (boss.escape().running()) {
             return MobilityRules.Situation.ESCAPE;
         }
-        return boss.fighting() ? MobilityRules.Situation.FIGHT : MobilityRules.Situation.TRAVEL;
+        if (boss.fighting()) {
+            return MobilityRules.Situation.FIGHT;
+        }
+        // a raid's approach and wall crossing, before anyone engages it (A12: 5.1.4's 10 s, 2.3's 10 blocks)
+        return HeroNodeEvaluator.onRaid(hero) ? MobilityRules.Situation.RAID : MobilityRules.Situation.TRAVEL;
     }
 
     private void setState(State s) {
@@ -536,6 +543,7 @@ public final class HeroMovement {
             case JUMP_UP -> jumpUpTick(ground);
             case CHIMNEY -> chimneyTick(ground);
             case DESCEND -> descendTick(ground);
+            case DIVE -> diveTick(ground);
         }
         staminaTick(now);
         if (profile.any()) {
@@ -562,7 +570,7 @@ public final class HeroMovement {
     /** The mode {@code DATA_LOCO} shows now (a one-shot shows its own until it has played). */
     private int shownMode() {
         boolean rider = (state == State.TAKEOFF || state == State.RISE || state == State.FLY || state == State.LAND
-                || state == State.LANDING) && rides();
+                || state == State.LANDING || state == State.DIVE) && rides();
         return switch (state) {
             case NONE -> {
                 if (profile.flies() && MovementRules.winded(stamina.exhausted(), hero.onGround(), horizontalSpeed())) {
@@ -580,6 +588,7 @@ public final class HeroMovement {
             case CLING -> MovementRules.CLING;
             case GLIDE -> MovementRules.GLIDE;
             case TAKEOFF, RISE, LAND, LANDING -> rider ? MovementRules.RIDE : MovementRules.FLY;
+            case DIVE -> rider ? MovementRules.RIDE : profile.flies() ? MovementRules.FLY : MovementRules.AIRBORNE;
             case FLY -> rider ? MovementRules.RIDE : hovering ? MovementRules.FLY_HOVER : MovementRules.FLY;
             case DOWNED -> MovementRules.DOWNED;
         };
@@ -1445,6 +1454,16 @@ public final class HeroMovement {
 
     // ------------------------------------------------------------------ flight (2.1-2.3)
 
+    /**
+     * Whether it could take off once it stands still somewhere open (A12: a raid's choice of its way in): it flies, its
+     * stamina is at its threshold and it is not exhausted, and it was not downed in the last 12 s. Headroom, the ground
+     * time and the weather are checked at the take-off itself.
+     */
+    public boolean mayTakeOffSoon() {
+        return profile.flies() && !stamina.exhausted() && stamina.share() + 1e-9 >= profile.takeOffShare()
+                && airPoise.mayTakeOff(now());
+    }
+
     /** Why it may not take off now (null: it may), by {@link MobilityRules#takeOffRefusal} and its downing. */
     public String takeOffRefusal() {
         if (state != State.NONE) {
@@ -1603,6 +1622,9 @@ public final class HeroMovement {
             double enemy = hero.combat().boss().highestEngagedFeet();
             return Math.max(groundYCache, Double.isNaN(enemy) ? groundYCache : enemy) + BossRules.FIGHT_CEILING;
         }
+        if (s == MobilityRules.Situation.RAID) {
+            return groundYCache + MobilityRules.RAID_CEILING;
+        }
         return groundYCache + MobilityRules.travelAltitude(FCConfig.MOBILITY_TRAVEL_ALTITUDE.get());
     }
 
@@ -1660,6 +1682,90 @@ public final class HeroMovement {
         return Double.POSITIVE_INFINITY;
     }
 
+    // ------------------------------------------------------------------ the dive and the touch-and-go (A12, 7.3, 7.4)
+
+    private Vec3 diveMarker;
+    private boolean diveImpact;
+    private final double[] diveV = new double[3];
+
+    /**
+     * A {@code dive} (7.3): from the air (a flight, a glide, its own jump's apex), pushed along a straight line to
+     * {@code marker} at {@link FightMobility#DIVE_SPEED}, stopped by blocks, with no fall damage; it ends on the ground,
+     * against a block, at the marker or after 2 s. Returns null, or why not (not in the air).
+     */
+    public String dive(Vec3 marker) {
+        if (hero.onGround() || hero.isInWater() || state == State.DOWNED_FALL || state == State.DOWNED
+                || state == State.TAKEOFF || state == State.LANDING) {
+            return "not in the air";
+        }
+        if (flying()) {
+            stopPowered();
+        }
+        hero.setNoGravity(true);
+        diveMarker = marker;
+        diveImpact = false;
+        inAir = true;
+        ownAirtime = true;
+        navOwned = false;
+        setState(State.DIVE);
+        return null;
+    }
+
+    private void diveTick(boolean ground) {
+        hero.resetFallDistance();
+        Vec3 pos = hero.position();
+        double dx = diveMarker.x - pos.x, dy = diveMarker.y - pos.y, dz = diveMarker.z - pos.z;
+        boolean there = dx * dx + dy * dy + dz * dz <= FightMobility.DIVE_ARRIVED * FightMobility.DIVE_ARRIVED;
+        boolean blocked = stateTicks > 1 && (hero.horizontalCollision || hero.verticalCollision);
+        if (ground && stateTicks > 1 || there || blocked || hero.isInWater() || stateTicks > FightMobility.DIVE_TIMEOUT) {
+            hero.setNoGravity(false);
+            hero.setDeltaMovement(0, Math.min(0, hero.getDeltaMovement().y), 0);
+            diveImpact = true;
+            setState(State.NONE);
+            if (ground || hero.onGround()) {
+                landed(true, 0);
+            }
+            return;
+        }
+        FightMobility.diveVelocity(dx, dy, dz, diveV);
+        hero.setDeltaMovement(diveV[0], diveV[1], diveV[2]);
+        hero.hasImpulse = true;
+        face(diveV[0], diveV[2]);
+    }
+
+    /** Whether a dive came down since the last ask (the move runner's impact; cleared by asking). */
+    public boolean takeDiveImpact() {
+        boolean i = diveImpact;
+        diveImpact = false;
+        return i;
+    }
+
+    /** Whether it dives now. */
+    public boolean diving() {
+        return state == State.DIVE;
+    }
+
+    /**
+     * The touch-and-go between two dives of one aerial window (7.4): after its 0.5 s on the ground, one push up into
+     * powered flight with no take-off tell (the window's take-off was the tell). Returns null, or why not.
+     */
+    public String relift() {
+        if (state != State.NONE || !profile.flies() || !hero.onGround() || hero.isInWater()) {
+            return "not standing on the ground";
+        }
+        if (stamina.exhausted() || !airPoise.mayTakeOff(now()) || headroom() < MobilityRules.TAKE_OFF_HEADROOM) {
+            return "cannot take off";
+        }
+        flyTarget = null;
+        hovering = true;
+        hero.setDeltaMovement(0, LeapSolver.strengthFor(MobilityRules.TAKE_OFF_PUSH), 0);
+        hero.setOnGround(false);
+        hero.hasImpulse = true;
+        inAir = true;
+        setState(State.RISE);
+        return null;
+    }
+
     // ------------------------------------------------------------------ stamina and the air budget (2.1, 5.1.4)
 
     private void staminaTick(long now) {
@@ -1683,7 +1789,7 @@ public final class HeroMovement {
             if (airBudget == null) {
                 airBudget = new MobilityRules.AirBudget();
             }
-            airBudget.tick(now, powered || state == State.GLIDE);
+            airBudget.tick(now, powered || state == State.GLIDE || state == State.DIVE);
         }
     }
 
@@ -1927,7 +2033,7 @@ public final class HeroMovement {
 
     /** Death, a revival or a release: every action ends and the hero stands under gravity again. */
     public void reset() {
-        if (hero.isNoGravity() && (flying() || clinging())) {
+        if (hero.isNoGravity() && (flying() || clinging() || state == State.DIVE)) {
             hero.setNoGravity(false);
         }
         setState(State.NONE);

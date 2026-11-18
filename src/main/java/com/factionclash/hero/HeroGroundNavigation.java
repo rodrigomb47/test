@@ -222,6 +222,27 @@ public final class HeroGroundNavigation extends NpcPathNavigation {
         }
         approach = 0;
         super.tick();
+        // vanilla's follower may have just stepped onto a link's landing (the first node is its own cell): it aimed the
+        // move control at the landing, which jumps at a wall it cannot jump; the link's start is the aim from this tick
+        if (!isDone()) {
+            int i = path.getNextNodeIndex();
+            HeroLinks.Link l = linkAt(path, i);
+            if (l != null && l.kind() != HeroLinks.Kind.DROP) {
+                follow(hero, mv, l, i);
+            }
+        }
+    }
+
+    /** Whether a link is running or the path's next step is one (a caller that re-paths waits for it). */
+    public boolean atLink() {
+        if (running != null) {
+            return true;
+        }
+        if (isDone()) {
+            return false;
+        }
+        HeroLinks.Link l = linkAt(path, path.getNextNodeIndex());
+        return l != null && l.kind() != HeroLinks.Kind.DROP;
     }
 
     @Override

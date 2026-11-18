@@ -37,6 +37,9 @@ public class NpcRangedAttackGoal extends Goal {
 
     /** Focus fire: the visible enemy in range closest to falling (fewest health points) gets the next arrows. */
     private LivingEntity focus(LivingEntity current, double range) {
+        if (Pursuit.airborneHero(current)) {
+            return current; // archers first at an enemy hero in the air (A12): not traded for a weaker one on the ground
+        }
         LivingEntity best = current;
         float bestHp = current.getHealth();
         for (LivingEntity e : npc.level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(range))) {
@@ -68,7 +71,7 @@ public class NpcRangedAttackGoal extends Goal {
     @Override
     public boolean canUse() {
         LivingEntity t = npc.getTarget();
-        return armed() && t != null && t.isAlive();
+        return armed() && t != null && t.isAlive() && !npc.holdsBasicAttack();
     }
 
     @Override

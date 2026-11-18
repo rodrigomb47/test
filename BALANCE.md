@@ -1138,6 +1138,26 @@ All PROPOSED; heroes only (a worker's and a soldier's navigation, path search, d
   that trip for **200** ticks (`REFLIGHT_TICKS`), a stuck leg dead for **10 minutes**.
 * Chunk ticket: **5x5** (radius 2) while a travel flight is under way, refreshed every **10** ticks; **3x3** otherwise.
 
+## Hero fight mobility (`FightMobility`, `HeroFightMobility`, `HeroRaid`, `AirborneHeroTargetGoal`) — A12
+All PROPOSED; the same against players and NPCs.
+* Aerial windows: the take-off weighs **4** against the summed scores of the eligible moves when the kit's `aerial`
+  block sets no weight; at most **3** light ranged moves a take-off (dives and rains any time); hovers **4** above and
+  **4** off its target. Touch-and-go after a dive **10** ticks (0.5 s); a dive is the last when its window has no
+  dive, air time or stamina left: then the full recovery, at least **20** ticks. A landing for a drawn bow **60%** of
+  the time, at most once in **8 s** (160 ticks).
+* The dive: **0.9** blocks a tick, at most **40** ticks, arrived within **0.6**; its marker within the move's range
+  **+1**.
+* Reach flights: checked every **20** ticks; beside the target **1.6** off and **0.4** over its feet. The strike from a
+  link: at most once in **20** ticks, within the hero's melee reach (3.5) of the target.
+* The fight-reach clock: **4 s** (80 ticks, `BossRules.REACH_LIMIT_TICKS`); "out of reach in the air" is more than
+  **3** above every engaged enemy's standing height; on the ground a walk search every **20** ticks; a walker comes back
+  for **5 s** (100 ticks) to within **3** blocks.
+* Raids: the raid ceiling **10** above the ground; the face column at least **3** blocks from a gate; up to **400**
+  ticks to reach the foot of the face; the heart **400** ticks of blows; an opening pressed every **10** ticks.
+* Defenders: an archer looks for an airborne enemy hero every **10** ticks within **24** blocks and keeps it at least
+  **3 s** (60 ticks); the alarm box reaches **16** up (12 before); an enemy hero seen within **24** blocks by one of the
+  **4** nearest base NPCs is an intruder.
+
 ## Historical values (before the worker redesign)
 These numbers belonged to the old fixed workplaces. New bases no longer have them; they matter only for campaigns
 saved by an earlier version, which load and convert (`CampaignData.FORMAT` 2; each record converts itself in

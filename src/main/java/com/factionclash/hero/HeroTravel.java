@@ -183,6 +183,60 @@ public final class HeroTravel implements TravelHelper {
         return covers(mv.profile(), mv, Math.min(horizontal(target), FlightPlanner.WAYPOINT)) && takeOff(target);
     }
 
+    /**
+     * An escape's flight (MOBILITY_AND_WORK 7.7, task A12): an escaping flyer takes off toward its refuge (or the wild)
+     * whenever it may, in any weather, with no air budget and the travel ceiling: only its stamina limits it (it does not
+     * land at 25%; empty, it glides down). It needs the take-off's headroom and the sky over it, as a trip's does. Its
+     * {@code travel: false} does not hold it on foot: an escaping hero uses any mobility it has. Returns whether it took
+     * off.
+     */
+    public boolean escapeTakeOff(BlockPos target) {
+        if (flight != null || hero.level().isClientSide || !hero.combat().boss().escape().running()) {
+            return false;
+        }
+        HeroMovement mv = hero.movement();
+        if (!mv.profile().flies() || deadLeg(target) || mv.takeOffRefusal() != null || !underOpenSky()) {
+            return false;
+        }
+        return takeOff(target);
+    }
+
+    /**
+     * A raid's flight over the walls (MOBILITY_AND_WORK 5.2, task A12): the way in {@code WallEntry} chose, out of a
+     * fight, at the raid's ceiling (10 above the ground, a wall top counting as ground) and its air budget (10 s per
+     * take-off, 6 s on the ground between), with the take-off's headroom and the sky over it. Returns whether it took off.
+     */
+    public boolean raidTakeOff(BlockPos target) {
+        if (flight != null || hero.level().isClientSide || hero.combat().boss().fighting()) {
+            return false;
+        }
+        HeroMovement mv = hero.movement();
+        if (!mv.profile().flies() || deadLeg(target) || mv.takeOffRefusal() != null || !underOpenSky()) {
+            return false;
+        }
+        return takeOff(target);
+    }
+
+    /**
+     * An escape that starts in the air (7.6: it does not land first): the flight it is in becomes its escape's flight
+     * toward {@code target}. Returns whether it is one now.
+     */
+    public boolean adoptFlight(BlockPos target) {
+        HeroMovement mv = hero.movement();
+        if (flight != null) {
+            return true;
+        }
+        if (hero.level().isClientSide || !mv.flying()) {
+            return false;
+        }
+        mv.navOwned(true);
+        flight = new Flight(target);
+        flights++;
+        lastEnd = null;
+        ChunkLoading.updateTraveler(hero);
+        return true;
+    }
+
     /** Whether a travel flight may start now: a flyer that travels by air, out of a fight, its leg not dead, rested. */
     private boolean mayTakeOff(BlockPos target) {
         if (flight != null || hero.level().isClientSide || now() < noFlightUntil) {

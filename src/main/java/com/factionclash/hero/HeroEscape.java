@@ -187,6 +187,27 @@ public final class HeroEscape {
         }
     }
 
+    /**
+     * Its raid fell back (MOBILITY_AND_WORK 7.7, task A12: beaten back by the fall-back share, or its leader fell or
+     * escaped): an escaping hero in or near the target (its walls box plus 16) or fighting escapes home with any
+     * mobility; elsewhere, inside its window or of the last-stand kind it finishes the fight it is in and goes home with
+     * the party (its raid layer ends). Returns whether it escaped.
+     */
+    public boolean lostRaid(BaseState target) {
+        HeroDef d = combat.def();
+        HeroDef.EndOfFight e = d == null || d.v2() == null ? null : d.v2().end();
+        if (escape != null || e == null || !hero.isAlive()) {
+            return false;
+        }
+        boolean near = target != null && !target.destroyed
+                && target.contains(hero.blockPosition(), (int) EscapeRules.NEAR_TARGET_MARGIN);
+        boolean fighting = combat.boss().fighting();
+        if (EscapeRules.lostRaid(e, near, fighting, context()) == EscapeRules.Outcome.ESCAPE) {
+            return start(EscapeRules.Trigger.LOST_RAID, false);
+        }
+        return false;
+    }
+
     /** The last-stand beat (6.13): its line, a determined face, {@code on_last_stand}, once a fight. No number changes. */
     private void lastStand() {
         beatDone = true;

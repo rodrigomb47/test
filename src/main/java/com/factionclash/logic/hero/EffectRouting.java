@@ -75,13 +75,13 @@ public final class EffectRouting {
 
     /**
      * The forms the engine runs: v1's fourteen and the combo (task A3) and format 2's other seven (task A5:
-     * {@code charge}, {@code wave}, {@code rain}, {@code sweep}, {@code grab}, {@code counter}, {@code barrage}).
-     * TODO(A12): {@code dive} (MOBILITY_AND_WORK 7.3) needs the airborne runtime; until then a dive move is never picked,
-     * answered or followed, so a hero with one fights on the ground with the rest of its kit.
+     * {@code charge}, {@code wave}, {@code rain}, {@code sweep}, {@code grab}, {@code counter}, {@code barrage}) and,
+     * since task A12, the {@code dive} (MOBILITY_AND_WORK 7.3, with the airborne runtime of the aerial windows): all of
+     * them.
      */
     public static final Set<Form> FORMS = EnumSet.of(Form.MELEE, Form.SHOT, Form.VOLLEY, Form.BOLT, Form.CHAIN,
             Form.CONE, Form.LINE, Form.NOVA, Form.ZONE, Form.LEAP, Form.DASH, Form.SELF, Form.ALLY, Form.ALLIES,
-            Form.COMBO, Form.CHARGE, Form.WAVE, Form.RAIN, Form.SWEEP, Form.GRAB, Form.COUNTER, Form.BARRAGE);
+            Form.COMBO, Form.CHARGE, Form.WAVE, Form.RAIN, Form.SWEEP, Form.GRAB, Form.COUNTER, Form.BARRAGE, Form.DIVE);
 
     /**
      * The effects the engine runs: A3's (HERO_FORMAT.md 32 phase 4), A4's control and the rest of v1 ({@code stun},

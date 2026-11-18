@@ -307,7 +307,9 @@ public final class Pursuit {
         Node end = partial == null ? null : partial.getEndNode();
         exit = end == null ? npc.blockPosition() : end.asBlockPos();
         pathReach = partial != null && partial.canReach();
-        if (horizontal(npc, t) > PLAN_RANGE || Math.abs(t.getY() - npc.getY()) > PLAN_HEIGHT) {
+        // (an enemy hero in the air above the planning height is still waited for: under the fight's ceiling of 6 it is
+        // more than 5 over the soldier, and chasing round under it is the one thing that cannot reach it)
+        if (horizontal(npc, t) > PLAN_RANGE || Math.abs(t.getY() - npc.getY()) > PLAN_HEIGHT && !airborneHero(t)) {
             return;
         }
         decide(t);
@@ -408,6 +410,13 @@ public final class Pursuit {
             return;
         }
         decideOnLanding = false;
+        if (airborneHero(t)) {
+            // MOBILITY_AND_WORK 3.8 (task A12): an enemy hero in the air (airborne, gliding, flying) is waited for, not
+            // planned toward: no pillar toward something that moves in the air; it waits out of reach, calls the
+            // archers, and goes in when it lands
+            hold(t);
+            return;
+        }
         if (!supported(t)) {
             mode = Mode.CHASE; // a target in the air (a flying monster, a fall): chased as always, nothing built toward it
             return;
@@ -440,6 +449,12 @@ public final class Pursuit {
             return;
         }
         hold(t);
+    }
+
+    /** An enemy hero in the air now, by its synced {@code DATA_LOCO} mode (airborne, glide, fly, hover, ride). */
+    static boolean airborneHero(LivingEntity t) {
+        return t instanceof com.factionclash.hero.HeroEntity h && com.factionclash.logic.hero.FightMobility.holdUnder(true,
+                com.factionclash.logic.hero.HeroActions.locoMode(h.loco()));
     }
 
     /** Path steps it has left to walk (0 with no path). */
@@ -773,7 +788,7 @@ public final class Pursuit {
                 return;
             }
             Path p = pathTo(t);
-            boolean reach = p != null && p.canReach();
+            boolean reach = p != null && p.canReach() && !airborneHero(t);
             pathReach = reach;
             if (reach && !futile(t, true)) {
                 mode = Mode.CHASE; // a way in: go

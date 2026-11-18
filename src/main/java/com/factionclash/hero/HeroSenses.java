@@ -155,6 +155,10 @@ public final class HeroSenses {
         s.airborne = !hero.onGround() && !hero.isInWater() && !hero.onClimbable() && !hero.isPassenger();
         s.climbing = hero.onClimbable();
         s.flying = hero.movement().flying(); // the self_flying condition (task A10)
+        // A12: self_stamina_below reads its flight stamina; the air's light moves counted per take-off (5.1.5)
+        var st0 = hero.movement().stamina();
+        s.staminaShare = st0.max() > 0 ? st0.share() : 1;
+        s.airLights = hero.combat().air().window().lights();
         HeroStatus st = HeroStatus.peek(hero);
         if (st != null && !st.book().isEmpty()) {
             s.marks.putAll(st.book().marks(now));

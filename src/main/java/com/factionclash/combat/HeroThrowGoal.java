@@ -39,7 +39,7 @@ public class HeroThrowGoal extends Goal {
     @Override
     public boolean canUse() {
         LivingEntity t = hero.getTarget();
-        return t != null && t.isAlive() && def() != null && !hero.combat().running();
+        return t != null && t.isAlive() && def() != null && !hero.combat().running() && !hero.holdsBasicAttack();
     }
 
     @Override

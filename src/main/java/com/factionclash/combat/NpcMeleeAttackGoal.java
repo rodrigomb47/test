@@ -80,7 +80,7 @@ public class NpcMeleeAttackGoal extends Goal {
     }
 
     private boolean blocked() {
-        return ranged() || !npc.fightsInMelee() || npc.jobIgnoresCombat()
+        return ranged() || !npc.fightsInMelee() || npc.jobIgnoresCombat() || npc.holdsBasicAttack()
                 || !npc.fightsLikeSoldier() && npc.getHealth() < npc.getMaxHealth() * 0.5F;
     }
 
@@ -131,7 +131,7 @@ public class NpcMeleeAttackGoal extends Goal {
         npc.pursuit().bind(t, false);
         if (path != null) {
             npc.getNavigation().moveTo(path, SPEED);
-            if (!path.canReach() || npc.pursuit().futile(t, true)) {
+            if (!path.canReach() || Pursuit.airborneHero(t) || npc.pursuit().futile(t, true)) {
                 npc.pursuit().unreachable(t, path);
             } else {
                 npc.pursuit().reachable();
@@ -259,8 +259,9 @@ public class NpcMeleeAttackGoal extends Goal {
         }
         Path p = npc.pursuit().pathTo(t);
         repath = adjustedTickDelay(repath);
-        // a path that reaches a spot of the target's it found it cannot get at (a 1x1 hole) counts as none
-        if (p != null && (!p.canReach() || npc.pursuit().futile(t, true))) {
+        // a path that reaches a spot of the target's it found it cannot get at (a 1x1 hole) counts as none, and so does
+        // one to the ground under an enemy hero in the air (A12, MOBILITY_AND_WORK 3.8: it waits for it to land)
+        if (p != null && (!p.canReach() || Pursuit.airborneHero(t) || npc.pursuit().futile(t, true))) {
             repath += 15; // out of reach: searching again every few ticks would find the same
             Pursuit pursuit = npc.pursuit();
             pursuit.unreachable(t, p);

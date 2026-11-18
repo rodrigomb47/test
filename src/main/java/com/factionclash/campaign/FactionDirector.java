@@ -426,7 +426,10 @@ public final class FactionDirector {
      */
     public static int defenceAlarm(ServerLevel level, BaseState b) {
         BlockPos heart = b.point(BaseState.HEART);
-        AABB walls = new AABB(b.center).inflate(com.factionclash.structure.BaseLayout.HALF + 4, 12, com.factionclash.structure.BaseLayout.HALF + 4);
+        // MOBILITY_AND_WORK 5.2 (task A12): 16 blocks up (12 before), so a flyer at the raid ceiling over the wall counts
+        int up = com.factionclash.logic.hero.FightMobility.ALARM_UP;
+        AABB walls = new AABB(b.center).inflate(com.factionclash.structure.BaseLayout.HALF + 4, 12, com.factionclash.structure.BaseLayout.HALF + 4)
+                .setMaxY(b.center.getY() + 1 + up);
         List<net.minecraft.world.entity.LivingEntity> intruders = level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, walls,
                 e -> e.isAlive() && ((e instanceof FactionNpc n && Diplomacy.hostile(level.getServer(), n.getFaction(), b.faction))
                         // a monster only in the yard or close to it, not in a cave under the base (live check: a creeper
@@ -436,6 +439,9 @@ public final class FactionDirector {
                         || (e instanceof net.minecraft.server.level.ServerPlayer p && !p.isCreative() && !p.isSpectator()
                         && CampaignData.get(level.getServer()).players.get(p.getUUID()) != null
                         && Diplomacy.hostile(level.getServer(), CampaignData.get(level.getServer()).players.get(p.getUUID()), b.faction))));
+        // A12: an enemy hero seen on its approach by a base NPC within 24 blocks (a line of sight) raises the alarm before
+        // it reaches the box; only an approach out of sight reaches the wall unannounced
+        approaching(level, b, walls, intruders);
         if (intruders.isEmpty()) {
             return 0;
         }
@@ -460,8 +466,42 @@ public final class FactionDirector {
                 }
                 want--;
             }
+            if (intruder instanceof com.factionclash.hero.HeroEntity) {
+                // A12 (5.2): the home hero (any hero of the base that is home) joins the interception of an enemy hero
+                for (FactionNpc g : guards) {
+                    if (g instanceof com.factionclash.hero.HeroEntity hh && hh.baseId() == b.id && hh.getTarget() != intruder
+                            && (hh.getTarget() == null || !hh.getTarget().isAlive())
+                            && !hh.pursuit().ignores(intruder) && hh.senses(intruder)
+                            && !hh.combat().boss().escape().running()) {
+                        hh.setTarget(intruder);
+                        assigned++;
+                    }
+                }
+            }
         }
         return assigned;
+    }
+
+    /**
+     * Enemy heroes outside the alarm box but within 24 blocks of one of the base's NPCs that sees them (MOBILITY_AND_WORK
+     * 5.2, task A12): added to the intruders. At most a few line-of-sight tests a sweep: only heroes are looked for.
+     */
+    static void approaching(ServerLevel level, BaseState b, AABB walls, List<net.minecraft.world.entity.LivingEntity> intruders) {
+        double r = com.factionclash.logic.hero.FightMobility.APPROACH_SIGHT;
+        List<com.factionclash.hero.HeroEntity> near = level.getEntitiesOfClass(com.factionclash.hero.HeroEntity.class,
+                walls.inflate(r, 8, r), h -> h.isAlive() && !h.isPreview() && !walls.contains(h.position())
+                        && Diplomacy.hostile(level.getServer(), h.getFaction(), b.faction));
+        for (com.factionclash.hero.HeroEntity h : near) {
+            List<FactionNpc> lookouts = level.getEntitiesOfClass(FactionNpc.class, h.getBoundingBox().inflate(r),
+                    n -> n.isAlive() && n.getFaction() == b.faction && n.baseId() == b.id && !n.isDisplayOnly());
+            lookouts.sort(Comparator.comparingDouble(n -> n.distanceToSqr(h)));
+            for (int i = 0; i < Math.min(4, lookouts.size()); i++) {
+                if (lookouts.get(i).getSensing().hasLineOfSight(h)) {
+                    intruders.add(h);
+                    break;
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------------ construction
@@ -579,6 +619,8 @@ public final class FactionDirector {
                 // more than half the party is down: the survivors fall back rather than die one by one
                 Messages.toFaction(level.getServer(), f.type, Component.literal("The raid on " + target.faction.displayName
                         + " is beaten back - " + f.raiders.size() + " of " + f.raidParty + " soldiers retreat home"));
+                // MOBILITY_AND_WORK 7.7 (A12): its heroes in or near the target escape home, the others walk with the party
+                com.factionclash.hero.HeroManager.raidLost(level, f, target);
                 f.raiders.clear();
             }
             if (f.raiders.isEmpty() || t - f.raidStartedAt > 72000) {
