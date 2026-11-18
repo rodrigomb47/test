@@ -158,18 +158,28 @@ def turnaround(a, path, scale=7, pitch=PITCH, tint=SASH_TINT, title=None):
     row1_h = max(im.height for _, im in cells)
     row2_h = max(im.height for _, im in extra)
     W = max(row1_w, row2_w, 900) + 32
-    H = 70 + row1_h + 30 + row2_h + 40
+    # the stats caption on one line, or (C1 gate 2: it ran past the right edge for the slice heroes) wrapped at its
+    # last "; " that fits, the views moved down a line; a caption that fits draws exactly as before
+    caption = stats_line(a) + "; idle stance; vanilla entity light, the hero faces south and the camera goes round it"
+    lines = [caption]
+    if measure.textlength(caption, font=f13) > W - 32:
+        cut = [i for i in range(len(caption)) if caption.startswith("; ", i)
+               and measure.textlength(caption[:i + 1], font=f13) <= W - 32]
+        if cut:
+            lines = [caption[:cut[-1] + 1], caption[cut[-1] + 2:]]
+    dy = 16 * (len(lines) - 1)
+    H = 70 + dy + row1_h + 30 + row2_h + 40
     sheet = Image.new("RGBA", (W, H), BG)
     d = ImageDraw.Draw(sheet)
     d.text((16, 10), title or "%s: turnaround" % a.name, fill=INK, font=f18)
-    d.text((16, 34), stats_line(a) + "; idle stance; vanilla entity light, the hero faces south and the camera goes "
-                                     "round it", fill=DIM, font=f13)
-    x, y = 16, 62
+    for k, line in enumerate(lines):
+        d.text((16, 34 + 16 * k), line, fill=DIM, font=f13)
+    x, y = 16, 62 + dy
     for label, im in cells:
         d.text((x + im.width // 2, y), label, fill=DIM, font=f13, anchor="ma")
         sheet.alpha_composite(im, (x, y + 18 + row1_h - im.height))
         x += im.width + gap
-    x, y = 16, 62 + 18 + row1_h + 16
+    x, y = 16, 62 + dy + 18 + row1_h + 16
     for i, (label, im) in enumerate(extra):
         lw = int(d.textlength(label, font=f13))
         x += max(0, (lw - im.width) // 2)                  # room for a label wider than its image

@@ -16,9 +16,11 @@ Per group a GIF at 20 fps (one frame a tick) and a contact sheet:
   ground       sprint > skid, charge_run > skid, the generic dive (move.air_dive over move.leap)
   ride         take-off > ride > ride_cast > ride > fly_land on a mounts/broom carrier
 on a chibi and an adult (Tansy, chibi_f, and Maren, adult_f: a tail, twin tails, sleeves and a skirt; a ponytail, a
-cape, armour and greaves), and one GIF per slice hero's variant (MOBILITY_AND_WORK 15) on its own base and on a chibi:
-hero_natsuho (the cat twist), hero_yugen (the fox lope), hero_kagenori (the crane leap), hero_ambrose (the broom,
-side-saddle, on his staff). `herogen anim-previews --locomotion [--groups ...] [--check]` writes or checks them.
+cape, armour and greaves), and one GIF per slice hero's variant (MOBILITY_AND_WORK 15) in that hero's one body only
+(the owner's one-body rule, HEROES_V2 3.6: the adult for all eight): hero_natsuho (the cat twist, from her own source,
+herosrc/heroes/natsuho_komezaki.hero.json), hero_yugen (the fox lope), hero_kagenori (the crane leap), hero_ambrose (the
+broom, side-saddle, on his staff), the last three from their sample outfits (herosrc/style/outfits.json) until their
+sources exist. `herogen anim-previews --locomotion [--groups ...] [--check]` writes or checks them.
 """
 import copy
 import os
@@ -216,18 +218,20 @@ GROUPS = {
     "ground": "Runner and charger: sprint > skid, charge_run > skid; the generic dive (move.air_dive)",
     "ride": "Riding a carrier (a mounts/broom on the mount bone): takeoff > ride > ride_cast > fly_land",
 }
+# group: (hero, bases, title, segments): a hero source (bases None: its own body) or a sample outfit on the bases
+# given, which are the slice hero's one body (SLICE_PLAN 3: adult for all eight)
 HERO_GIFS = {
-    "hero_natsuho": ("natsuho", ["teen_f", "chibi_f"], "Natsuho's cat twist (move.air_jump, variant cat_twist)",
+    "hero_natsuho": ("natsuho_komezaki", None, "Natsuho's cat twist (move.air_jump, variant cat_twist)",
                      [Segment("jump > leap > air_jump (cat twist) > leap > land_roll",
                               [("move.jump", None), ("move.leap", 0.3), ("move.air_jump", None), ("move.leap", 0.4),
                                ("move.land_roll", None)])]),
-    "hero_yugen": ("yugen", ["adult_m", "chibi_m"], "Yugen's fox lope (move.sprint, variant fox_lope)",
+    "hero_yugen": ("yugen", ["adult_m"], "Yugen's fox lope (move.sprint, variant fox_lope)",
                    [Segment("run (core) > sprint (the fox lope) > skid", [("move.run", 1.2), ("move.sprint", 2.4),
                                                                           ("move.skid", None)])]),
-    "hero_kagenori": ("kagenori", ["adult_m", "chibi_m"], "Kagenori's crane leap (move.leap, variant crane_leap)",
+    "hero_kagenori": ("kagenori", ["adult_m"], "Kagenori's crane leap (move.leap, variant crane_leap)",
                       [Segment("crouch_jump > leap (the crane) > land_heavy",
                                [("move.crouch_jump", None), ("move.leap", 2.4), ("move.land_heavy", None)])]),
-    "hero_ambrose": ("ambrose", ["adult_m", "chibi_m"], "Ambrose on his staff-broom (variant broom: side-saddle)",
+    "hero_ambrose": ("ambrose", ["adult_m"], "Ambrose on his staff-broom (variant broom: side-saddle)",
                      [Segment("takeoff > ride > ride_cast (a vial) > ride > fly_land",
                               [("move.takeoff", None), ("move.ride", 2.8), ("move.fly_land", None)],
                               actions=[("move.ride_cast", 1, 0.8)], riding=True)]),
@@ -241,6 +245,15 @@ def _hero(hero_id, parts):
         hero["id"] = hero_id + "_" + "_".join(p["part"].split("/")[1] for p in parts)
         hero["art"].setdefault("parts", []).extend(copy.deepcopy(parts))
     return hero
+
+
+def _gif_bodies(entry):
+    """A hero GIF's bodies for the README: the source's own body, or the sample outfit's bases."""
+    import build
+    hero_id, bases = entry[0], entry[1]
+    if bases is None:
+        return "%s, its own source in its one body" % build.base_id_of(build.load_hero(hero_id))[0]
+    return ", ".join(bases) + ", the sample outfit in the hero's one body"
 
 
 def _outfit(oid, base):
@@ -383,7 +396,8 @@ def write_all(out=OUT_DIR, groups=None, gifs=True):
             heroes, segs, title = group_heroes(group, cache), segments(group), GROUPS[group]
         else:
             oid, bases, title, segs = HERO_GIFS[group]
-            heroes = [_assets(cache, _outfit(oid, b)) for b in bases]
+            heroes = ([_assets(cache, _hero(oid, None))] if bases is None
+                      else [_assets(cache, _outfit(oid, b)) for b in bases])
         p = os.path.join(out, "%s.png" % group)
         _sheet(title, segs, heroes).convert("RGB").save(p, format="PNG", optimize=True)
         paths[group + ".png"] = p
@@ -395,7 +409,7 @@ def write_all(out=OUT_DIR, groups=None, gifs=True):
         f.write("Mobility set previews (G10), written by `python3 tools/herogen/herogen.py anim-previews "
                 "--locomotion`.\n\n"
                 + "\n".join("%s.gif / %s.png: %s" % (g, g, GROUPS[g]) for g in GROUPS) + "\n"
-                + "\n".join("%s.gif / %s.png: %s (%s)" % (g, g, v[2], ", ".join(v[1])) for g, v in HERO_GIFS.items())
+                + "\n".join("%s.gif / %s.png: %s (%s)" % (g, g, v[2], _gif_bodies(v)) for g, v in HERO_GIFS.items())
                 + "\n\nCore groups on %s (chibi_f) and %s (adult_f); flight adds feathered wings, ride a mounts/broom "
                   "(preview variants built in memory). One-shots and loops play as the base controller's queue "
                   "(4-tick blends), actions over it (2 ticks), wing loops on the secondary controller (6 ticks).\n"

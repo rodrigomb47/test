@@ -1,10 +1,10 @@
 {
-  "_comment": "Sample outfits (G6b): the slice heroes' looks (SLICE_PLAN.md section 3) dressed from the parts library, for `herogen lint` (each on all six bases: combinations a single part never shows, such as a sash over a hakama band) and the parts sheet docs/heroes-v2/previews/parts/outfits.png. They are not hero files: the C1-C4 tasks write the heroes (kits, animations, phases); G6c added each hero's weapon (in the hand pose of its style, `animations.style`), small accessories, markings and emblem stamps. `base` is the base the sheet shows the back view on.",
+  "_comment": "Sample outfits (G6b): the slice heroes' looks (SLICE_PLAN.md section 3) dressed from the parts library, for `herogen lint` (each on all six bases: combinations a single part never shows, such as a sash over a hakama band) and the parts sheet docs/heroes-v2/previews/parts/outfits.png. They are not hero files: the C1-C4 tasks write the heroes (kits, animations, phases); G6c added each hero's weapon (in the hand pose of its style, `animations.style`), small accessories, markings and emblem stamps. `base` is the hero's one body (HEROES_V2 3.6, the owner's one-body rule: adult for all eight), the only body the sheets show the outfit on (outfits.png, weapons_poses.png); `lint` still builds every outfit on all six bases.",
   "outfits": [
     {
       "id": "natsuho",
       "name": "Natsuho Komezaki (cat)",
-      "base": "teen_f",
+      "base": "adult_f",
       "note": "bob with tufts and an ahoge, odd\ntufted ears, cat tail, hooded\njacket, shorts, thigh socks\nand split-toe boots",
       "art": {
         "palette": {

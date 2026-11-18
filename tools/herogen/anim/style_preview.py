@@ -1,9 +1,12 @@
 """Previews of the style libraries (task G5): docs/heroes-v2/previews/anim/styles/.
 
-Each slice style is shown on two bases, a chibi and an adult, worn by the sample outfit (herosrc/style/outfits.json)
-whose weapon uses it, so the props are the slice's own: Natsuho's claws (fists), Hinae's wand and talismans and
-Yugen's fan (focus), Benika's club (hammer), Kagenori's sword (katana), Tobimaru's reversed blade and kunai
-(twin_blades), Ilsabet's sword and shield (sword_shield), Ambrose's staff (staff). Per style:
+Each slice style is shown on two bodies, a chibi and an adult, worn by two of the unnamed style fixtures
+(herosrc/style/style_*.hero.json), each in its own body, armed with the slice weapon of the style (the weapon entry of
+the sample outfit in herosrc/style/outfits.json that uses it), so the props are the slice's own: the claw gauntlets
+(fists), the purification wand and talisman fan, and the folding fan (focus), the iron club (hammer), the katana
+(katana), the reversed short blade and kunai (twin_blades), the longsword and kite shield (sword_shield), the cauldron
+staff (staff). No named hero is drawn here: the owner's one-body rule (HEROES_V2 3.6, 2026-11-13) shows a hero only in
+its own body, and a slice hero's own previews are in previews/heroes/<id>/ (C1-C4). Per style:
 
   <style>_string.gif   the basic string attack.1 -> attack.2 -> attack.3 back to back over combat.idle, as the server
                        sends it (each code when the last one ends), weapon drawn
@@ -37,24 +40,57 @@ YAW, PITCH, SCALE, FPS = -40.0, 10.0, 3, 20
 LEAD, TAIL = 0.3, 0.3
 BASE_BLEND = TRANSITION_TICKS["base"] * TICK
 
-# style: [(sample outfit, base)]: the chibi first, then the adult
+# style: [(style fixture, the sample outfit whose weapon it carries)]: the chibi first, then the adult, each fixture in
+# its own body (Tansy chibi_f, Tobin chibi_m, Maren adult_f, Garrick adult_m)
 HEROES = {
-    "fists": [("natsuho", "chibi_f"), ("natsuho", "adult_f")],
-    "focus": [("hinae", "chibi_f"), ("yugen", "adult_m")],
-    "hammer": [("benika", "chibi_f"), ("benika", "adult_f")],
-    "katana": [("kagenori", "chibi_m"), ("kagenori", "adult_m")],
-    "twin_blades": [("tobimaru", "chibi_m"), ("tobimaru", "adult_m")],
-    "sword_shield": [("ilsabet", "chibi_f"), ("ilsabet", "adult_f")],
-    "staff": [("ambrose", "chibi_m"), ("ambrose", "adult_m")],
+    "fists": [("style_tansy", "natsuho"), ("style_maren", "natsuho")],
+    "focus": [("style_tansy", "hinae"), ("style_garrick", "yugen")],
+    "hammer": [("style_tansy", "benika"), ("style_maren", "benika")],
+    "katana": [("style_tobin", "kagenori"), ("style_garrick", "kagenori")],
+    "twin_blades": [("style_tobin", "tobimaru"), ("style_garrick", "tobimaru")],
+    "sword_shield": [("style_tansy", "ilsabet"), ("style_maren", "ilsabet")],
+    "staff": [("style_tobin", "ambrose"), ("style_garrick", "ambrose")],
 }
+# fixture parts an armed fixture leaves off: the claws are worn over bare hands (Maren's gauntlets would share their
+# faces, the coplanar rule)
+LEAVE_OFF = {("style_maren", "natsuho"): ("armour/gauntlets",)}
 STRING = ("attack.1", "attack.2", "attack.3")
 WORK_PROPS = {"work.chop": "axe", "work.mine": "pickaxe"}
 
 
-def outfit_hero(oid, base):
+def armed_fixture(fixture_id, oid):
+    """A style fixture (its own body, palette, face and parts) armed with the weapon of sample outfit `oid` and the
+    style that weapon uses; the parts LEAVE_OFF names are left off."""
+    import build
     import lint
     outfit = [o for o in lint.load_outfits() if o["id"] == oid][0]
-    return lint.outfit_hero(outfit, base)
+    hero = copy.deepcopy(build.load_hero(fixture_id))
+    style = outfit["animations"]["style"]
+    hero["id"] = "%s_%s" % (fixture_id, style)
+    off = LEAVE_OFF.get((fixture_id, oid), ())
+    hero["art"]["parts"] = [p for p in hero["art"].get("parts", []) if p.get("part") not in off]
+    hero["art"]["weapon"] = copy.deepcopy(outfit["art"]["weapon"])
+    hero.setdefault("animations", {})["style"] = style
+    return hero
+
+
+def base_of(hero):
+    import build
+    return build.base_id_of(hero)[0]
+
+
+def props_of(oid):
+    """The prop names of a sample outfit's weapon ("claw_gauntlet", "purification_wand and talisman_fan")."""
+    import lint
+    w = [o for o in lint.load_outfits() if o["id"] == oid][0]["art"]["weapon"]
+    names = [w["prop"].split("/")[-1]] + ([w["offhand"]["prop"].split("/")[-1]] if w.get("offhand") else [])
+    return " and ".join(dict.fromkeys(names))
+
+
+def cast_line(fixture_id, oid):
+    import build
+    hero = build.load_hero(fixture_id)
+    return "%s (%s) with the %s" % (hero.get("name", fixture_id), base_of(hero), props_of(oid))
 
 
 def prop_variant(hero, prop):
@@ -171,14 +207,15 @@ def set_segments(style):
     return out
 
 
-def _assets(cache, oid, base, prop=None):
-    key = (oid, base, prop)
+def _assets(cache, fixture_id, oid, prop=None):
+    key = (fixture_id, oid, prop)
     if key not in cache:
-        hero = outfit_hero(oid, base)
+        hero = armed_fixture(fixture_id, oid)
+        base = base_of(hero)
         if prop:
             hero = prop_variant(hero, prop)
         a = HeroAssets.build(hero)
-        a.name = "%s, %s" % (hero["name"].split(" ")[0], base)
+        a.name = "%s, %s" % (hero.get("name", fixture_id).split(" ")[0], base)
         cache[key] = a
     return cache[key]
 
@@ -187,8 +224,8 @@ def _plans(style, segs, cache):
     plans = []
     for seg in segs:
         row, dur = [], 0.0
-        for oid, base in HEROES[style]:
-            a = _assets(cache, oid, base, seg.prop)
+        for fixture_id, oid in HEROES[style]:
+            a = _assets(cache, fixture_id, oid, seg.prop)
             pb, d = seg.build(a)
             dur = max(dur, d)
             row.append((a, pb))
@@ -307,7 +344,7 @@ def sheet(style, cache=None, per_clip=7, scale=2):
     H = 40 + len(rows) * (ch + 40)
     out = Image.new("RGBA", (W, H), BG)
     d = ImageDraw.Draw(out)
-    names = " and ".join("%s (%s)" % (o, b) for o, b in HEROES[style])
+    names = " and ".join(cast_line(f, o) for f, o in HEROES[style])
     d.text((10, 8), "_style_%s: every clip the style defines, %s; times from the action's start, the 2-tick blend "
                     "first" % (style, names), fill=INK, font=f13)
     y = 36
@@ -320,6 +357,23 @@ def sheet(style, cache=None, per_clip=7, scale=2):
             x += cw + 10
         y += ch + 40
     return out
+
+
+def write_readme(out=OUT_DIR):
+    """The folder's README.txt (what each file shows and the cast)."""
+    path = os.path.join(out, "README.txt")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("Style library previews (G5), written by `python3 tools/herogen/herogen.py anim-previews "
+                "--styles`.\n\n<style>_string.gif: attack.1 > attack.2 > attack.3 back to back over "
+                "combat.idle.\n<style>_set.gif: draw (from the idle), guard > .loop > guard.hit > .loop, dodge, "
+                "attack.ranged, taunt, intro, victory, sheathe, combat.run, work strokes.\n<style>.png: every clip "
+                "the style defines.\n\nCast: the unnamed style fixtures of herosrc/style, each in its own body, armed "
+                "with the slice weapon of the style (the weapon of the sample outfit in herosrc/style/outfits.json "
+                "that uses it). A named hero appears only in its own body (HEROES_V2 3.6): the slice heroes' own "
+                "previews are in previews/heroes/<id>/.\n"
+                + "\n".join("%s: %s" % (s, ", ".join(cast_line(f, o) for f, o in h))
+                             for s, h in HEROES.items()) + "\n")
+    return path
 
 
 def write_all(out=OUT_DIR, styles=None, gifs=True):
@@ -337,15 +391,7 @@ def write_all(out=OUT_DIR, styles=None, gifs=True):
                 gif.write_gif(film(style, segs, cache), p, fps=FPS)
                 paths["%s_%s.gif" % (style, kind)] = p
     if styles is None:
-        with open(os.path.join(out, "README.txt"), "w", encoding="utf-8") as f:
-            f.write("Style library previews (G5), written by `python3 tools/herogen/herogen.py anim-previews "
-                    "--styles`.\n\n<style>_string.gif: attack.1 > attack.2 > attack.3 back to back over "
-                    "combat.idle.\n<style>_set.gif: draw (from the idle), guard > .loop > guard.hit > .loop, dodge, "
-                    "attack.ranged, taunt, intro, victory, sheathe, combat.run, work strokes.\n<style>.png: every clip "
-                    "the style defines.\n\nHeroes (sample outfits of herosrc/style/outfits.json with their slice "
-                    "weapons):\n" + "\n".join("%s: %s" % (s, ", ".join("%s on %s" % hb for hb in h))
-                                              for s, h in HEROES.items()) + "\n")
-        paths["README.txt"] = os.path.join(out, "README.txt")
+        paths["README.txt"] = write_readme(out)
     return paths
 
 

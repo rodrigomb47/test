@@ -296,13 +296,23 @@ class GeneratorRulesTest(unittest.TestCase):
             self.assertAlmostEqual(low, 0.0, delta=0.1, msg=base)
 
     def test_the_previews_show_every_slice_style_with_its_weapon(self):
+        """The style sheets' cast (the owner's one-body rule, HEROES_V2 3.6): unnamed style fixtures in their own
+        bodies, a chibi then an adult, each armed with the slice weapon of the style; never a slice hero's outfit."""
         from anim import style_preview
         self.assertEqual(sorted(style_preview.HEROES), sorted(SLICE_STYLES))
+        slice_ids = {o["id"] for o in lint.load_outfits()}
         for style, rows in style_preview.HEROES.items():
-            self.assertEqual([b.split("_")[0] for _, b in rows], ["chibi", "adult"], style)
-            for oid, base in rows:
-                hero = lint.outfit_hero(outfit(oid), base)
+            heroes = [style_preview.armed_fixture(f, o) for f, o in rows]
+            self.assertEqual([style_preview.base_of(h).split("_")[0] for h in heroes], ["chibi", "adult"], style)
+            for (fixture_id, oid), hero in zip(rows, heroes):
+                self.assertTrue(fixture_id.startswith("style_"), fixture_id)
+                self.assertNotIn(fixture_id.split("_", 1)[1], slice_ids)
+                self.assertEqual(style_preview.base_of(hero), style_preview.base_of(build.load_hero(fixture_id)))
                 self.assertEqual(grips.style_of_weapon(hero)[0], style)
+                self.assertEqual(hero["art"]["weapon"], outfit(oid)["art"]["weapon"])
+                own = [p["part"] for p in build.load_hero(fixture_id)["art"]["parts"]]
+                worn = [p["part"] for p in hero["art"]["parts"]]
+                self.assertEqual(worn, [p for p in own if p not in style_preview.LEAVE_OFF.get((fixture_id, oid), ())])
 
 
 if __name__ == "__main__":

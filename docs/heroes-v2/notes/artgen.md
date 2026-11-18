@@ -3036,3 +3036,133 @@ OK; the Python suite, 413 tests, OK.
   `sheet.turnaround` layout, and widening it there would re-render every committed turnaround, so it is left.
 - Not run here (Gradle is off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`), GameTests, the in-game and campaign checks, and the jar.
+
+---
+
+## C1 review gate 2: Natsuho and Hinae (2026-11-18)
+
+HEROES_V2.md 14.4 gate 2 for C1, by a separate art director. A usage-limit pause stopped the first reviewer while it
+was fixing its findings; this run read its uncommitted diff and notes, checked each of its fixes, finished the
+checklist and the preview cast, rebuilt both heroes and ran every check. Each finding was confirmed with a number or a
+render before it was fixed. The look, the style and the kits are unchanged; no hit tick moved.
+
+### The checklist
+
+| Item | Verdict |
+|---|---|
+| Distinctness NOTEs (14.2) | none: `herogen check` compares heroes of one archetype, and the cat and the shrine maiden are alone in theirs. Measured anyway against each other and the six other slice looks (their sample outfits on their adult bodies), front and side at 4x: silhouette IoU 0.57-0.82 (the highest, 0.82, Hinae and Kagenori: long hair over a hakama), all under 0.90. Two largest colour regions: Natsuho charcoal and orange, Hinae red and near-black. Hinae and Benika (oni, C2) share them within delta-E 11.6 and 6.2, below the NOTE's 15, but different archetypes give no NOTE: C2's gate should put Benika beside Hinae (her horn, mane, open coat and large build should carry it) |
+| Silhouette | distinct: Natsuho's tall odd-coloured ears, ahoge, bob and long tail over a short jacket and long legs; Hinae's blunt hime cut, the long low tail of hair and the hakama's trapezoid |
+| Greyscale | both read in three clear values: Natsuho's orange jacket mid-grey between the cream top and socks (light) and the charcoal shorts and boots; Hinae's white top, dark red hakama, black hair |
+| Face frames | blink (half, closed), talk A and B, angry, hurt, and the moods at 3/4: right. Natsuho's `happy` is the blushing scowl and Hinae's `angry` the worried pout, both by design (SLICE_PLAN 3.1, 3.4) |
+| Clipping | `attack.1-3`, `attack.ranged` and every signature move looked at frame by frame at 5x from the 3/4 front and the right side: no limb or prop through the jacket, the sleeves, the hakama or the tail; the props' clearance rule (`grips.animation_problems`) passes on every second tick |
+| Weapon | the claws on both hands in every clip; the wand in the right hand and the fan in the left, the wand at the obi when sheathed |
+| Phase looks | visible: Natsuho's puffed tail (now calico, fix 4 below) and glowing eyes; Hinae's ring of seven talismans, gold eyes and gold streamers |
+| One body | each hero's own previews and the lineup show her only in her adult body. The library previews did not (fix 6) |
+| Existing characters | Natsuho: a calico cat girl with a bell choker, claw gauntlets, an orange open jacket and odd-coloured ears; generic catgirl marks, no famous design shares the combination. Hinae: long straight black hair tied low with white paper over a white kimono top and red hakama is the traditional shrine maiden's dress, which a well-known anime shrine maiden also wears. Her own marks keep her apart: the blunt hime cut with jaw-length side locks, red eyes and a soft blushing face, the red bow at the collar, the bell wand and the talisman fan (no bow and arrows), the orbiting talisman ring. Verdict: she reads as the genre, not as that character. Listed for the owner's screenshot review and for ROSTER_PLAN 8's concept search (step 2, still due); if more distance is wanted, the cheapest change is a small bell ornament in her hair (her "White Bell" title) |
+| Moves as the kit sheet | yes. Claw string: right rake, left rake, both claws down. Pounce: crouch and hip wiggle, spring, claws down, paw lick. Hiss: jolt, bristle, blast (fixed: fix 1). Scratch dash: side-on crouch, burst, rake, braking skid. Cat reflex: the stance held, riposte, hop back. Zoomies: crazed crouch, launch, sprint, skid, dizzy sway, arms crossed. Ultimate: play bow, stretch, yowl, hunter's crouch. Talisman fan: wind to the right, flat sweep out to the left. Sealing circle: wand raised, bells rung, struck down. Purify: prayer and sweep. Exorcise: knees bent round the trembling wand, arms flung wide. Seven talismans: ring drawn in and flung out. Purifying dance: the sweep, then the kneeling prayer. Ultimate: wand raised, swept down, bow |
+| Hit ticks | `herogen check` (the frames rule on the written chain) passes for both. Natsuho's timing file changed only its `source_sha256` (the hiss's tail keys); Hinae's did not change |
+
+### Found and fixed
+
+1. **Natsuho's hiss: the tail curled back over instead of standing up.** The kit sheet's tell is "ears flat, tail
+   puffed", and her own clip description says "the tail straight up and trembling", but the six hiss poses keyed only
+   `tail_1` (25-56 degrees) and `tail_2` (6-18): segments 3-5 kept their rest curve and bent back over at 42-107
+   degrees from vertical, a relaxed curl. Now the bristle poses (`hiss_startle`, `hiss_arch`, `hiss_draw`,
+   `hiss_blast`) key all five segments, `tail_1` 89.5-100 and the rest counter-bent (-23/-24, -58, -29, -39.5), and
+   the two recovery poses scale that back by two thirds and one third: every segment stays within 29 degrees of
+   straight up from 0.4 s to 0.9 s. Only `move.hiss`'s tail keys changed; its markers, frames and length did not.
+2. **Hinae: a dark streak on her fringe.** Two of `hair/hime_long`'s sixteen crown strands, the two over the front
+   centre (lengths 4.75 and 5 from the repeating list), reached down past the fringe's top, and their dark tips showed
+   between the fringe strands as an arrow-shaped mark on her forehead: 153 px of crown strand inside the fringe's
+   outline in the front view at 8x. They are now 3.5 long (the list is spelled out for all sixteen): 0 px.
+3. **Natsuho's tufts stuck out like antennae.** `hair/bob`'s tufts (Natsuho's two) were 2.25 wide, 3.5 long and flared
+   72 degrees, so from the front two grey spikes stood out level with her eyes. Now 2 wide, 2.75 long, flared 40, and
+   0.4 px nearer the head: short flicks at the hem. No style fixture wears the tufts.
+4. **Natsuho's puffed tail had no calico.** `markings/calico` painted `tails/*`, and phase 2's puffed fur is
+   `tails/cat_puff`'s cubes on `p2_tail_*` bones (`p2_tails/*` in the glob's terms), so her phase-2 tail turned plain
+   cream. The marking now paints `p?_tails/*` too: the fur carries the patches of the tail it covers.
+5. **The turnaround's stats caption ran past the right edge** for both heroes (C1's open item), and, as
+   `render-previews --check` showed, for the style fixtures Rowan and Wren too. `sheet.turnaround` now wraps it at its
+   last "; " that fits and moves the views down a line; a caption that fits draws exactly as before (every other
+   turnaround of the G2 set and the style set is byte for byte the same). `render/turnaround_style_rowan.png` and
+   `turnaround_style_wren.png` are re-rendered.
+6. **Library previews showed named slice heroes on bodies they do not have** (the owner's one-body rule, HEROES_V2
+   3.6). Re-rendered with a cast that keeps the rule:
+   - **Style sheets** (`previews/anim/styles/`, all seven sets): the unnamed style fixtures in their own bodies, Tansy
+     (chibi_f) or Tobin (chibi_m) and Maren (adult_f) or Garrick (adult_m), each armed with the slice weapon of the
+     style (the weapon entry of the sample outfit that uses it, `style_preview.armed_fixture`). Maren leaves her
+     gauntlets off under the claws (`LEAVE_OFF`: they share the claw gauntlet's faces, 26 px in the guard). Every pair
+     passes `lint`'s full check (builds, the coplanar rule, the hand poses).
+   - **Locomotion hero GIFs** (`previews/anim/locomotion/hero_*`): each in one body. Natsuho's cat twist now plays
+     on her own source in her adult body (it showed the sample outfit on a teen and a chibi); Yugen, Kagenori and
+     Ambrose show their sample outfits on adult_m only (their chibi copies are gone) until their sources exist.
+   - **Sample outfits sheet** (`previews/parts/outfits.png`): each outfit on its hero's one body only, from five
+     sides (it showed every outfit on all six bases); `lint` still builds and checks every outfit on all six. The
+     adult figures now reach the top of each row, so the label column is wider for this sheet (`_grid`'s new
+     `label_w`, 215) and the notes no longer run into the first figure.
+     `herosrc/style/outfits.json`: Natsuho's sample outfit's `base` is now adult_f (it was teen_f), so
+     `weapons_poses.png` draws her row on her own body too.
+
+   No library preview shows a named hero on a second body any more: the core, locomotion-group, style-pass, G2 and G3
+   sets were already drawn with the fixtures and the test rig, and the parts sheets with the lint mannequin. One
+   difference remains on purpose: the sample outfits are drawn at the standard build, while Natsuho, Yugen, Tobimaru
+   and Ambrose are slim and Benika large. They are lint fixtures of the outfit parts, not the heroes, and the heroes'
+   own previews (C1-C4) draw them in their real builds.
+
+### Previews
+
+Rebuilt: Natsuho's and Hinae's sets (`previews/heroes/<id>/`, every file: the tail, the fringe, the tufts and the
+caption change most images) and `previews/heroes/lineup.png`; the seven style sets and their README; the four
+locomotion hero GIFs and sheets and the locomotion README; `previews/parts/outfits.png`, `weapons_poses.png` and
+`head_hair.png` (the hime cut's crown); the G2 set's Rowan and Wren turnarounds (the caption). Looked at: both turnarounds, face strips and phase sheets, every move, string
+and ultimate as 14-frame strips at 4-5x from two sides, both sheets, the lineup, a style sheet and string, the new
+outfits sheet and the hero locomotion GIFs.
+
+### Tests (413 -> 421: `tests/test_gate2.py`, 8)
+
+- The hiss's tail: every segment within 35 degrees of straight up from 0.4 s to 0.9 s (sabotage: the committed C1
+  poses give 42-107 degrees).
+- The puffed tail wears the calico: 10-90% of its texels differ from the same hero built without the marking
+  (sabotage: the old glob gives 0%).
+- The bob's tufts are at most 3 px long and within 3 px of the side of the head (the old 3.5 fails).
+- No crown strand of the hime cut shows inside the fringe's outline from the front at 8x (the old lengths: 153 px).
+- The previews' cast: every sample outfit's `base` is an adult; the outfits sheet has no per-base columns; each
+  locomotion hero GIF is a source in its own body or the sample outfit on its one body; the style sheets' cast is
+  style fixtures in their own bodies. `test_styles`' cast test now checks the fixtures, their weapons and the parts
+  left off.
+
+### Checks run
+
+The Python suite (421 tests, OK); `herogen check --all --style` (OK, the test rig's usual NOTE only) and `check
+natsuho_komezaki hinae_shirasuzu` (OK, no distinctness NOTE); `build --all --check` (every hero and library fresh);
+`lint hair/bob hair/hime_long markings/calico tails/cat_puff` with the eight outfits (108 builds and checks, 0
+problems); `render-previews --check` after re-rendering the two wrapped turnarounds; the style set (`previews`)
+rendered again and byte for byte the committed one; `anim-previews --core --check`, `--styles --check` and
+`--locomotion --check`; `parts-previews --check`; `hero-previews natsuho_komezaki hinae_shirasuzu --check` and
+`hero-previews --lineup --check`.
+
+### Decisions
+
+1. **Fixtures, not adult-only slice heroes, in the style sheets.** HEROES_V2 3.6 asks library sheets that prove one
+   file fits every body to use the unnamed fixtures; the chibi row is the point of those sheets. The props stay the
+   slice's own, because the style's hand poses were solved for them.
+2. **Each fixture in its own body.** The fixtures are unnamed and could wear any body, but drawing each in the form it
+   was designed for keeps the sheets honest about what a chibi and an adult look like.
+3. **No bell ornament for Hinae in this gate**: her look is SLICE_PLAN 3.4's, the call is the owner's (gate 4), and
+   the recommendation is recorded above.
+4. **The old C1 sections' open items stay as written**; this section closes the preview-cast and caption items.
+
+### Open items
+
+- **Engine side (unchanged)**: both definitions in `data/factionclash/heroes/`, the `last_stand` and `escape` action
+  codes, then the in-game gate 3 (screenshots: lineup front and back, a wind-up with its decal, a phase transition, a
+  face close-up) and the campaign smoke of gate 5. `verifyHeroAssets` and `BuiltinHeroesTest` should run on the
+  rebuilt files before the next jar.
+- **C2**: put Benika beside Hinae in the lineup (their two largest colour regions are within delta-E 11.6 and 6.2).
+- **The owner's review (gate 4)**: Hinae's distance from the genre's best-known shrine maiden (above), and
+  ROSTER_PLAN 8's name and concept searches for both.
+- **Housekeeping**: two mistyped background commands in this run (a shell variable set inside a backgrounded
+  subshell) wrote stray files to the filesystem root: `/loco.log`, `/hpn.log`, `/hph.log`, `/sp.log`,
+  `/locochk.log` (one-line logs) and `/stylecheck/` (a scratch copy of the 20 style-set PNGs, identical to the
+  committed ones). The sandbox's safety check would not let the run remove anything at the root, so they need
+  removing by hand (`rm -r /stylecheck /loco.log /hpn.log /hph.log /sp.log /locochk.log`). None is in the repository.

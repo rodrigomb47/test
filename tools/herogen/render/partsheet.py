@@ -77,15 +77,14 @@ def _cells(hero_for, cols, scale, head, band=None):
     return out
 
 
-def _grid(title, rows, path, note=None):
-    """rows: [(row label, sub label, [(column label, image)])] -> one sheet."""
+def _grid(title, rows, path, note=None, label_w=190):
+    """rows: [(row label, sub label, [(column label, image)])] -> one sheet. `label_w`: the label column's width."""
     f16, f13, f12 = font(16), font(13), font(12)
     ncol = max(len(r[2]) for r in rows)
     col_w = [0] * ncol
     for _, _, cells in rows:
         for i, (_, img) in enumerate(cells):
             col_w[i] = max(col_w[i], img.width)
-    label_w = 190
     row_h = [max(img.height for _, img in cells) + 8 for _, _, cells in rows]
     head_h = 58 + 15 * (note.count("\n") if note else 0)
     W = label_w + sum(col_w) + 10 * ncol + 12
@@ -165,12 +164,19 @@ def _part_row(job):
     return (pid, note, cells)
 
 
+OUTFIT_VIEWS = (("front left", FRONT), ("front", 0.0), ("right", 90.0), ("back", 180.0), ("left", -90.0))
+
+
 def _outfit_row(job):
+    """A sample outfit in the slice hero's one body only (its `base`; the owner's one-body rule, HEROES_V2 3.6), from
+    five sides. `herogen lint` still builds and checks every outfit on all six bases; the sheet shows no named hero
+    on a body it does not have."""
     o, scale = job
     own = o.get("base", "adult_f")
-    cols = [(b.replace("_", " "), b, FRONT) for b in BASE_ORDER] + [("back (%s)" % own.replace("_", " "), own, 180.0)]
+    cols = [(label, own, yaw) for label, yaw in OUTFIT_VIEWS]
     cells = _cells(lambda b: lint.outfit_hero(o, b), cols, scale, 0)
-    return (o.get("name", o["id"]), o.get("note", ""), cells)
+    note = o.get("note", "") + "\n(%s)" % own.replace("_", " ")
+    return (o.get("name", o["id"]), note, cells)
 
 
 # ------------------------------------------------------------------ G6c: weapons, hand poses, patterns, emblems
@@ -416,10 +422,7 @@ def part_rows(pids, head, scale, workers=1):
 
 
 def outfit_rows(outfits, scale, workers=1):
-    rows = _map(_outfit_row, [(o, scale) for o in outfits], workers)
-    for r in rows:                       # the back view's column label names each outfit's own base
-        r[2][-1] = ("back (own base)", r[2][-1][1])
-    return rows
+    return _map(_outfit_row, [(o, scale) for o in outfits], workers)
 
 
 def write_all(out=OUT_DIR, only=None, workers=None):
@@ -471,11 +474,12 @@ def write_all(out=OUT_DIR, only=None, workers=None):
     if not only or "outfits.png" in only:
         outfits = lint.load_outfits()
         rows = outfit_rows(outfits, 3, workers)
-        paths["outfits.png"] = _grid("Sample outfits (the slice heroes' looks, herosrc/style/outfits.json) on the six "
-                                     "bases", rows, os.path.join(out, "outfits.png"),
-                                     "front left on each base, then the back on the outfit's own base (the slice "
-                                     "plan's form for the hero)\nweapons sheathed; accessories, markings and "
-                                     "emblems of G6c")
+        paths["outfits.png"] = _grid("Sample outfits (herosrc/style/outfits.json), each in the hero's one body",
+                                     rows, os.path.join(out, "outfits.png"),
+                                     "from five sides on the hero's one body (HEROES_V2 3.6: adult for all eight)\n"
+                                     "`herogen lint` still checks every outfit on all six bases; weapons sheathed\n"
+                                     "Natsuho's and Hinae's final looks are in previews/heroes/<id>/",
+                                     label_w=215)
     return paths
 
 

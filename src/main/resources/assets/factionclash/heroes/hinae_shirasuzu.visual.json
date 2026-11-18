@@ -105,7 +105,7 @@
     {"chain": ["tail_hair_1", "tail_hair_2"], "damping": 0.6, "part": "hair/hime_long", "stiffness": 0.4},
     {"chain": ["sleeve_r", "sleeve_l"], "damping": 0.7, "part": "outfit_top/kimono_top", "stiffness": 0.5}
   ],
-  "source_sha256": "becf7b382377f1932701d2e6fd81e7569ff8054fd5d313e262fe3bb80eb81e20",
+  "source_sha256": "93f0f2f738f6b7333127a40d2a8bde346e21a7a449e6d2399b8cf98e4b461b58",
   "states": [],
   "style": "focus",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": false, "width": 256},

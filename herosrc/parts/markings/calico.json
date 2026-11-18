@@ -1,5 +1,5 @@
 {
-  "_comment": "Calico patches (G6c; Natsuho's): soft blobs of two colours (alt and detail) painted over the hair (`hair`) and the tail (`tail`) as an overlay, so every strand keeps its own shading. The blobs come from a smooth noise (the `patches` pattern): over the hair by direction from the head's centre, so one blob covers every layer of strands it lies over (a plain 3D noise speckles the mass, the inner ring against the outer one), along the tail in space. `seed` picks another arrangement.",
+  "_comment": "Calico patches (G6c; Natsuho's): soft blobs of two colours (alt and detail) painted over the hair (`hair`) and the tail (`tail`) as an overlay, so every strand keeps its own shading. The blobs come from a smooth noise (the `patches` pattern): over the hair by direction from the head's centre, so one blob covers every layer of strands it lies over (a plain 3D noise speckles the mass, the inner ring against the outer one), along the tail in space, a phase part's fur over the tail (`p2_tails/*`: Natsuho's puffed tail) included. `seed` picks another arrangement.",
   "id": "markings/calico",
   "category": "markings",
   "slots": {"alt": "hair_accent", "detail": "leather"},
@@ -27,7 +27,7 @@
       "when": "hair"
     },
     {
-      "cubes": ["tails/*"],
+      "cubes": ["tails/*", "p?_tails/*"],
       "optional": true,
       "overlay": true,
       "pattern": {"type": "patches", "size": 4, "seed": "seed", "high": 0.58, "low": 0.36, "slots": ["alt", "detail"]},

@@ -1,5 +1,5 @@
 {
-  "_comment": "Long straight hair tied low (G6a, a hime cut): a blunt straight fringe, straight side locks cut level at the jaw (the hime cut's sidelocks), the back gathered low at the nape by a paper tie with two folded paper strips, and a long straight tail cut blunt. Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px; the cap, dome and base slabs are the far silhouette, the strands are on fine_ bones.",
+  "_comment": "Long straight hair tied low (G6a, a hime cut): a blunt straight fringe, straight side locks cut level at the jaw (the hime cut's sidelocks), the back gathered low at the nape by a paper tie with two folded paper strips, and a long straight tail cut blunt. The two crown strands over the front are shorter (3.5), so their tips stay behind the straight fringe (longer, their dark tips showed between its strands). Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px; the cap, dome and base slabs are the far silhouette, the strands are on fine_ bones.",
   "id": "hair/hime_long",
   "category": "hair",
   "slots": {
@@ -126,7 +126,7 @@
       "count": 16,
       "width": 3,
       "depth": 1,
-      "length": [4.75, 5, 4.5],
+      "length": [4.75, 5, 4.5, 4.75, 5, 4.5, 4.75, 3.5, 3.5, 4.75, 5, 4.5, 4.75, 5, 4.5, 4.75],
       "flare": 40,
       "jitter": 0.25,
       "tone": [0, 1, 0, 0, -1]
