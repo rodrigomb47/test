@@ -1627,6 +1627,46 @@ real fighting), so a hero does not hold a gate against a party by itself.
    `sim.py` prints each hero's war power and, per raid, the two sides' counted power and whether a hero's presence
    or absence decided the odds; the slice campaigns compare raids won with and without a hero (SLICE_PLAN.md 6.4).
 
+### 8.2 Boss heroes: the Wither and the Ender Dragon (owner, 2026-11-18)
+
+The owner asked for two more heroes, the Wither and the Ender Dragon, with female appearances drawn from the vanilla
+bosses, complex boss kits based on the bosses themselves, and a unique artifact each that cannot be crafted. The first
+time each vanilla boss is defeated, a chest appears where it fell, holding its hero token; a faction member who brings
+the token inside one of the faction's bases makes the hero join, and the token drops when its carrier dies. The design
+is in `BOSS_HEROES.md` (owner-facing sheets: `kits/the_wither.txt`, `kits/the_ender_dragon.txt`); in short
+(PROPOSED):
+
+- **Two legendary heroes outside the 200**: "The Wither" (Queen of Three Skulls) and "The Ender Dragon" (Empress of
+  the End). They are left out of the roster's counts and gender split, never drafted as leaders, never leaders, never
+  wanderers, one of each per world; otherwise heroes like any other (sections 3-8: one combat mode, no yield, the
+  10-minute revival, three artifact slots), joining at level 1.
+- **The first-kill chest and the token**: the first death of a vanilla Wither (any dimension) or of the Ender Dragon,
+  whoever killed it, places a chest on solid ground below the death point (beside the exit portal for the dragon,
+  never over the void) with the token. The token is unique, glows, never despawns, survives fire, lava, explosions
+  and cactus, and returns to the chest 2 minutes after it is lost. It is used **at once** when a member of a faction
+  (a player, an NPC or a hero of it) holds it inside one of the faction's standing bases, or when it lies inside a
+  base for 5 s; a 10 s "calling" shows the hero forming at the station. Every carrier drops it at death, even with
+  `keepInventory`. Factions learn of tokens only through witnesses and scouts, and send expeditions, interceptions and
+  escorts; a player's own faction does the same. A boss hero whose faction loses its last base turns back into her
+  token.
+- **The Wither** (marksman, blight, tyrant): a hovering flyer with two skull familiars as her side heads; black and
+  blue skulls and the Wither effect; regeneration; wither armour from 50% (arrows glance off, she fights close); her
+  familiars unbound in phase 3; a rebirth at 30% (vanilla's spawn charge starts at a third); the Birth Blast ultimate.
+  Her moves never touch blocks; her hands break blocks at a diamond pickaxe's speed at her duty, to break out when
+  walled in and to breach an enemy wall on a raid, never her own side's.
+- **The Ender Dragon** (vanguard, arcane, proud noble): circles, spits ender fireballs, breathes lingering dragon's
+  breath, buffets, dives, and perches (arrows glance off her while she sits). End crystals on obsidian spires are her
+  central mechanic: the nearest in sight heals her through a beam, any hit breaks an open one, caged ones need
+  climbing, and breaking the one beaming her hurts and staggers her. Soldiers and heroes read crystals and break them
+  (`CrystalTargetGoal`, shared with ROADMAP phase 3's End raid).
+- **Both fight to the death**, as the vanilla bosses do; their signature artifacts, **Hollow Star** and **Spirecore**
+  (`ARTIFACTS.md` 7.5 and 16.4), drop where they die.
+- **New format pieces** (projectile-immune states, the lingering cloud, crystal and familiar adds, focus adds, the
+  `smite` and `blast` weak points, a rebirth with its own content, perching, circling, a flyer that hovers):
+  `BOSS_HEROES.md` section 8 and `notes/kit-gaps.md`.
+
+Tasks B1-B8: section 15.8.
+
 ---
 
 ## 9. Saving and migration
@@ -4730,6 +4770,23 @@ R5 needs the leadership hooks (L3) and the work API (L5m). The two signature art
 | R5 | Faction AI: the planner in the director, the workshop's smithing table (shared with ROADMAP phase 3's netherite row), the blacksmith's artifact orders and wakes with the faction's experience, equipping at bases, hauler deliveries, loot priority, recovery trips, raid looting, chat lines, the station section, `sim.py` lines | R3, R4, L3, L5m | L | the remaining GameTests of `ARTIFACTS.md` 18.2; its campaign check (18.3) |
 | R6 | Art and sound: `herogen icons` and the 51 icons (a contact sheet for the owner), the core clips `artifact.attune`, `artifact.raise`, `artifact.cast`, the `artifact` sound set | G1, G4, S1, R1 | M | icons pass `herogen check`; the sheet is sent to the owner; `sfxgen check` clean |
 | R7 | Docs and release: README "Artifacts", BALANCE rows, the config file, an "ARTIFACTS" section in every kit sheet, the overview regenerated from the data, jar and SHA-256 | R5, R6 | S | the release checklist (`HANDOFF.md` section 7) |
+
+### 15.8 Boss heroes (owner, 2026-11-18; `BOSS_HEROES.md`)
+
+The design of section 8.2. B1-B3 can start once milestone 1's engine (A3-A6, A10-A12) is in, beside milestone 2 (they
+need A8's adds and R1-R3's artifact rules for the signatures); B4 needs the leadership hooks (L3) and ROADMAP phase
+1's knowledge rule. The same rows, with more detail, are `BOSS_HEROES.md` section 10.
+
+| ID | Task | Depends | Size | Done when |
+|---|---|---|---|---|
+| B1 | Format additions (`BOSS_HEROES.md` 8, kit-gaps "Boss heroes") in the catalogue, reader, balance and schema; both kits as test fixtures | F2, F3, F5, R1 | M | `BossKitsTest`; the fixtures load clean; every new piece has a reader message for its misuse |
+| B2 | Tokens and the first-kill chest: the two token items, `ChestSpot`, the chest and its particle column, return and hollow copies, the consumption rule, the calling, unbinding, `CampaignData.bossHeroes`, commands and config | A1b, R2 | M | `ChestSpotTest`, `BossTokenRulesTest`, the token GameTests of `BOSS_HEROES.md` 9.2 |
+| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger`, `focus_add`, `smite`, `blast`, the crystal and familiar adds, `perch`, circling, a hovering flyer, the rebirth object, `immune_effects`, withering hands and the breach | A5, A6, A8, A10-A12 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, the fight GameTests of 9.2 there; every "NPC and mock player" test gives the same numbers |
+| B4 | The AI: token knowledge, the council's weighing, expeditions, interceptions, escorts, `CrystalTargetGoal` (shared with the vanilla End raid), ranged NPCs and heroes against projectile immunity, `sim.py`; check ROADMAP phase 3's fix so faction NPCs can hurt the vanilla dragon (`BOSS_HEROES.md` 6.6) | B2, B3, L3, ROADMAP phase 1's knowledge rule | L | `TokenKnowledgeTest`, the AI GameTests, the first campaign of 9.3 there |
+| B5 | Art: the new parts of `BOSS_HEROES.md` 4.2 and 5.2 (with G8's planned dragon wings, swept horns, scaled tail, torn cape, long skirt and scales), the add models (crystal over vanilla's model, spire, cage, skull familiar), the calling and revival displays, own clips, the token icons, previews for the owner | G8, G10b, A8, A9 | L | `herogen check` and `lint` clean; previews sent to the owner |
+| B6 | Sound: the two sound sets and the add sounds, the new slots (`rebirth`, `calling`, `linger`, `mobility.break`, `mobility.wings`) | S1, S2 | M | `sfxgen check` clean; previews for the owner |
+| B7 | Content: the two hero source files and the `hollow_star` and `spirecore` artifact files; the kit sheets regenerated from them | B1, B5, R1 | M | `herogen check` and `checkHeroes` clean; 14.4's gates 1-3 |
+| B8 | Verification and release: the GameTests and campaigns of `BOSS_HEROES.md` 9, README "Boss heroes", BALANCE rows, the config file, jar and SHA-256 | all of B1-B7 | M | the release checklist (`HANDOFF.md` section 7) |
 
 ---
 

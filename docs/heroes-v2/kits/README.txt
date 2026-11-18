@@ -39,6 +39,10 @@ OTHER SHEETS
   artifacts_overview.txt    Artifacts: items only heroes can wake, how factions make, wear, lose and
                             steal them, and the 50 of the catalogue (design of 2026-11-18)
 
+THE BOSS HEROES (outside the 200; design of 2026-11-18, docs/heroes-v2/BOSS_HEROES.md)
+  the_wither.txt            The Wither, Queen of Three Skulls (marksman, blight)
+  the_ender_dragon.txt      The Ender Dragon, Empress of the End (vanguard, arcane)
+
 HOW TO READ A SHEET
 - Numbers in [brackets] are the exact design values; the plain words around them say what you see in
   the game.

@@ -1,0 +1,457 @@
+The Wither - "Queen of Three Skulls"
+Female | wither | marksman | blight | tyrant | legendary | boss hero
+Status: designed, not in the game yet (kit version 1, 2026-11-18). She is one of the two boss
+heroes: not among the 200, never a faction leader, and she joins a faction only through her token
+(see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never yields. All
+numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 4.
+====================================================================================================
+
+WHO SHE IS
+The Wither is a weapon that learned to want things. She was built, not born: soul sand, three
+skulls and a will forced into one body, and she woke into the world in an explosion. She is a cold,
+proud queen flanked by two floating skulls, her side heads: one sneers, one hungers, and both obey
+her. She fights like the vanilla boss: in the air she rains black skulls on everything at once;
+at half health she grows an armour that turns arrows and comes down to tear at you; nearly beaten,
+she sets her heads loose; and when you finally kill her, she summons herself again at a third of
+her strength. Bound to the faction that carried her token, she mines for them with hands that
+wither stone, draws the withering out of her own people, and makes rivals think twice.
+
+LOOK
+- Body: female, adult (her one body for good), slim, drawn a little tall [scale 104%: 1.89 blocks].
+  Her feet never touch the ground: she floats a hand's breadth up, and her gown's hem trails into
+  black smoke and soul-blue sparks.
+- Hair: very long straight charcoal hair [#2A282D], the lowest strands ash grey [#8E8A93], fraying
+  at the tips like smoke.
+- Outfit (modest): a high-collared charcoal bodice whose bone-white stays look like a ribcage, long
+  fitted sleeves, a floor-length smoky gown, a tattered charcoal cape lined in soul blue and split
+  down the back to show a ridge of seven bone vertebrae, bone bracers with short spines.
+- Head: a low crown of three charcoal-bone prongs, the middle one set with a soul-blue gem.
+- Her two side heads: two floating wither skulls, charcoal with bone-white teeth and glowing
+  soul-blue eye sockets, one on each side of her head at eye height, bobbing and turning with her.
+- Weapon: a slender black sceptre topped by a wither rose with a blue glow at its heart.
+- Colours: bone-pale skin [#E3DFDA], glowing soul-blue eyes [#9FE8FF], primary wither charcoal
+  [#232127], secondary bone [#E6E0D2], accent soul fire [#3CC6E8], trim ash [#5E5A63], glow
+  [#7FE2FF].
+- Face: sharp, upturned eyes with glowing irises and no pupils, a dark shadow under each eye like a
+  skull's sockets, thin arched brows, a small mouth. She blinks slowly and rarely [blink calm]. Her
+  "happy" is a thin half-lidded smile; when angry her eyes blaze brighter.
+- Idle quirks: her skulls bicker (they turn and snap at each other), she turns a wither rose in her
+  fingers, she drifts in a slow half-turn with her arms folded.
+- Phase looks: in phase 2 her rib stays, crown gem and hem glow soul blue and a faint blue shimmer
+  hangs on her outline (the wither armour). In phase 3 the skulls are gone from her side (they are
+  out hunting) and her hair's ash tips burn with soul fire. Reborn, her gown and cape lining blaze
+  blue-white, the colour of the vanilla Wither's spawn charge.
+
+COMBAT
+How to read this: every move has a wind-up (the tell: your warning), an active part (when it can hit
+you) and a recovery (your chance to punish). Frames are in seconds: wind-up / active / recovery.
+Damage is in plain health points (2 points = 1 heart). Ranges are in blocks: close is up to 4, mid
+4 to 10, far 10 to 24. Every heavy, area and ultimate move draws a ground mark that grows over its
+whole wind-up and goes at the hit: her accent colour for normal moves, red for the ultimate. Light
+moves show only the animation. No wind-up gets shorter than its class minimum, even in phase 3 or
+enraged. Each move's damage is capped the same whoever it hits [16 for a move, 30 for the ultimate,
+at the level-1 reference]: there is no extra damage to players and no protection from a one-hit
+kill; the wind-up is the warning everyone gets. Any number of heroes may gang up on one target, and
+any number of enemies on her.
+Her fighting: focus style (the sceptre; skulls are her projectiles); duel style zoner in phase 1,
+close and nasty from phase 2. She keeps about 10 blocks away in phase 1 [keep_distance 10, the
+marksman default] and about 2 from phase 2 [the wither armour sets 2]; she goes for the weakest
+enemy first (the marksman focus). Her element is blight (the Wither effect's own); she resists
+blight strongly [+60], fire somewhat [+30], and takes 20% more from radiant damage. She can never
+be given the Wither effect. Her moves never break, place or burn a block.
+
+  Basic attack
+    A black wither skull thrown from her open hand: it flies straight out to 16 blocks, 4 blight
+    damage every 1.5 s, and one hit in four also gives the Wither effect [Wither I, 3 s]. She also
+    throws them from the air.
+
+  Abilities
+    SKULL VOLLEY (skull_volley) - boss phases 1, 2, 3 and the rebirth
+      What it does: three black skulls in a fan; each that hits you deals blight damage and
+      withers you. She can cast it in the air.
+      The tell: a quick lift of the sceptre while her crown gem flares (a light move: the
+      animation only).
+      Counter: step sideways out of the fan or put a block between you; a shield blocks it.
+      Numbers: [light, mid and far; volley of 3, 10 degrees apart, range 18; 4 blight + Wither I
+      3 s each; frames 0.5 / 0.3 / 0.4; cooldown 6 s]
+
+    RUIN SKULL (ruin_skull) - boss phases 1, 2, 3 and the rebirth
+      What it does: the dangerous blue skull. It flies slowly and bursts where it lands, hurting,
+      withering and pushing everyone within 3 blocks. It never breaks blocks. Her answer when you
+      eat (60%) and when three or more enemies crowd her (40%).
+      The tell: a blue skull gathers between her palms for 1 s with a rising glassy hum; a strip
+      on the ground shows its line.
+      Counter: it is slow: sidestep it, and do not stand in a group.
+      Numbers: [heavy, mid and far; shot at 60% of a shot's speed, range 20, burst radius 3; 10
+      blight + Wither II 4 s + knockback 1; frames 1.0 / 0.2 / 0.8; cooldown 14 s]
+
+    WITHERING PULSE (withering_pulse) - boss phases 1, 2, 3 and the rebirth
+      What it does: a wave of withering around her that hurts and pushes you away. Her answer to
+      anyone who comes close (70%).
+      The tell: she draws a breath and a disc grows under her for 1 s.
+      Counter: step out of its 4 blocks during the wind-up.
+      Numbers: [area, close; nova, radius 4; 4 blight + Wither I 3 s + knockback 2; frames 1.0 /
+      0.1 / 0.8; cooldown 10 s]
+
+    WITHER ROSE BLOOM (rose_bloom) - boss phases 1, 2, 3 and the rebirth
+      What it does: a patch of black petals blooms where you stand and withers whoever stays in
+      it for 4 s. Shields do not stop it; in phase 1 it is one of her answers to a raised shield
+      (40%).
+      The tell: she points the sceptre and a disc of petals grows under you for 1 s.
+      Counter: walk out of it.
+      Numbers: [area, mid; zone at the target, radius 3, 4 s, a pulse every 1 s; each pulse 2
+      blight + Wither I 2 s; frames 1.0 / 4.0 / 0.8; cooldown 16 s]
+
+    SOUL DASH (soul_dash) - boss phases 2, 3 and the rebirth
+      What it does: she hurls herself in a straight line 12 blocks long, hitting everyone on the
+      way. If she ends against a wall she staggers. Her answer to a far target (50%).
+      The tell: she leans back, her skulls shriek, and a strip grows along her line for 0.9 s.
+      Counter: step off the line; better, stand in front of a wall so she slams into it.
+      Numbers: [heavy, mid and far; charge 12 at 180% speed, wall stun; 9 blight + knockback 2;
+      frames 0.9 / 0.6 / 1.0; cooldown 12 s]
+
+    GRAVE GRASP (grave_grasp) - boss phases 2, 3 and the rebirth
+      What it does: three rakes of her withering hands; the last one withers you. It breaks a
+      raised shield for 5 s, so from phase 2 it is her answer to blocking (50%).
+      The tell: a quick string (a light move: the animation only).
+      Counter: back off out of her reach, or trade blows: her recovery is short but real.
+      Numbers: [light, close; combo of 3; 3, 3 and 5 blight, the third + Wither I 3 s; breaks the
+      guard; frames 0.45 / 0.6 / 0.4; cooldown 8 s]
+
+    UNBOUND HEADS (unbound_heads) - boss phase 3 and the rebirth
+      What it does: her two skulls leave her side and hunt on their own for 30 s, each after a
+      different enemy (phase 3 starts by sending them; this move sends them again and re-forms a
+      killed one).
+      The tell: she tears the skulls from her side for 0.8 s, with a sound.
+      Counter: kill them. Each has a tenth of her health and no armour (arrows work), and each one
+      you kill breaks her crown: she takes 15% more damage for 6 s and loses poise.
+      Numbers: [heavy, any range; summons 2 skull familiars for 30 s; each floats 3 blocks from its
+      enemy, at most 3 blocks above the ground, and spits a black skull every 2.5 s (3 blight +
+      Wither I 2 s); health 10% of hers each; frames 0.8 / 0.2 / 0.8; cooldown 35 s]
+
+    STRAY SKULLS (stray_skulls) - the rebirth only
+      What it does: half-awake, her heads spit blue skulls at random all around her for 2.5 s,
+      like the vanilla Wither's idle heads.
+      The tell: her eyes roll back and her crown sparks for 1 s; a disc marks each impact.
+      Counter: watch the discs and step between them, or stand more than 7 blocks away.
+      Numbers: [area, any range; rain of 8 around herself, radius 7, 2.5 s, each impact 0.9 s
+      after its disc appears; 6 blight + Wither I 3 s per impact; frames 1.0 / 2.5 / 1.0; cooldown
+      18 s]
+
+  Ultimates (both there from level 1; they share one energy bar)
+    BIRTH BLAST (birth_blast)
+      What it does: the Wither's spawn, all over again. She rises, turns the blue-white of the
+      vanilla spawn charge and charges for 3 s, healing as she does; then she bursts and
+      everything within 7 blocks is blasted, withered and thrown back. It never breaks blocks.
+      The tell: the full ultimate tell: a 1.6 s wind-up with a red disc of radius 7, her line
+      ("Eleven heartbeats. Count them with me."), a wide sound, and the screen darkens for 2 s for
+      the players near the fight; then the 3 s charge, eleven quickening heartbeats. She cannot be
+      staggered during the wind-up.
+      Counter: get more than 7 blocks away before the burst (you have 4.6 s), or break the charge:
+      deal 15% of her maximum health while she charges (two hits or more: one hit is capped at
+      12%) and the burst never comes, and she is open for 2 s.
+      Numbers: [ultimate; frames 1.6 / 3.0 charge + 0.2 / 1.8; heals 14 over the charge; nova
+      radius 7: 24 blight + Wither II 5 s + knockback 3 up 1, softened near lava or a drop;
+      channelled, breaks after 15% of her max health]
+
+    SKULLFALL (skullfall)
+      What it does: ten skulls rain on a circle around you for 3 s. She can call it from the air.
+      The tell: the full ultimate tell ("Look up. All of you."), a red disc for each skull.
+      Counter: read the discs and keep moving; leave the 6-block circle.
+      Numbers: [ultimate, mid and far; rain of 10, radius 6 around the target, 3 s, each impact
+      0.9 s after its disc; 4 blight + Wither I 3 s per impact; frames 1.6 / 3.0 / 1.5]
+
+    Her ultimate energy and charge rate are set when she is built; the two ultimates are at least
+    30 s apart.
+
+  Passives
+    THREE HEADS, THREE HUNGERS (three_hungers): while her skulls are at her side, every 3 s in a
+    fight each skull spits a black skull at a different enemy within 20 blocks that it can see,
+    not her own target when there is another (the vanilla Wither's side heads) [3 blight + Wither
+    I 2 s each]. In a crowd, everyone near her is being shot at.
+    UNDYING HUNGER (undying_hunger): in a fight she heals 1% of her maximum health every 5 s, and
+    4 every time she kills something (the vanilla Wither regenerates and feeds on its kills).
+    WITHERED BLOOD: the Wither effect never touches her. Everything else does: Slowness II still
+    brings her down out of the air.
+
+  The wither armour (phase 2 on, and the rebirth)
+    Arrows, crossbow bolts, thrown tridents, wind charges and physical hero projectiles do nothing
+    to her: they glance off with a blue spark, whoever shot them (you or an NPC archer). Magic
+    projectiles, splash potions, melee and everything else hit as usual. While armoured she does
+    not take to the air (only to reach someone on a pillar, and then arrows still knock her down),
+    she closes to about 2 blocks, and she throws fewer volleys. It is the vanilla Wither's armour
+    at half health: fight her close.
+
+BOSS FIGHT
+- One mode, against anyone: she is a boss in every fight, whether she fights you, NPC soldiers,
+  another hero or monsters, with the same health, poise, phases, moves, reactions, weak points and
+  enrage. A fight runs from the first enemy engaged with her until 10 s after the last one leaves.
+  Her first fight against people each in-game day opens with her intro, and each player within 32
+  blocks gets a title (her name, title and faction) once that day. Players within 32 blocks see her
+  boss bar whenever she fights anyone: a star, "The Wither · Queen of Three Skulls", four phase
+  pips (three phases and her rebirth, shown from the start), a lightning mark when an ultimate is
+  ready, and a square for each artifact she wears. Her bar is meant to be purple, the vanilla
+  Wither's.
+- Health: her base health 28 x4.0 (the legendary scale; she never leads, so no leader bonus) x1.3
+  for a marksman [health scale 400], always: it never changes with who or how many fight her.
+  Level 1 / 10 / 20: 146 / 169 / 195, and her rebirth adds 30% more: 44 / 51 / 59. At level 10 a
+  player with an iron sword needs about 37 s of landed hits before the rebirth and about 11 s after
+  it (1.6 swings a second, half of them landing), plus what she heals: longer than any of the first
+  eight heroes, as a legendary should be. Attackers add up: six iron soldiers who all reach her need
+  about 7 s of blows, 10 s with the rebirth. No single hit, from anyone, takes more than 12% of her
+  health [max_hit_share 12]; the excess becomes poise damage. Damage with no attacker (lava, fire,
+  drowning) is not capped.
+- Poise: 90. Every hit fills her poise bar, whoever lands it [damage x weapon: sword 1.0, axe 1.6,
+  mace 2.0 plus its fall bonus, trident 1.2, arrow 0.6, crossbow bolt 0.8; arrows add nothing while
+  she is armoured], and a parry (a shield raised in the last 6 ticks before a heavy move lands)
+  adds 25. The bar drains 15 per second after 3 s without poise damage. Full poise staggers her:
+  2.5 s dizzy, taking 25% more damage; then the bar resets and its maximum grows 20%. No stagger
+  during her intro, a phase change, her rebirth or her ultimate's wind-up.
+- Pace: between moves she waits 1.5-2.5 s in phase 1, 1.0-2.0 s in phase 2 and 0.6-1.5 s in phase 3
+  and the rebirth (x0.7 when enraged), with basic attacks in between; at least 1 s always passes
+  between two moves. A fight opens with the phase 1 wait too, so no move reaches you sooner than
+  that wait plus its wind-up. During any recovery she takes 15% more damage, and 15% more again from
+  behind. In a string of moves only the last one plays its full recovery.
+- Phases:
+    Phase 1, from 100%: Skull Volley, Ruin Skull, Withering Pulse, Wither Rose Bloom; she takes to
+      the air (below) and her skulls shoot at everyone.
+    Phase 2, from 50%: the wither armour (arrows glance off; she comes down and fights close), Soul
+      Dash, Grave Grasp. "Half of me is still more than all of you. Your arrows are nothing now."
+    Phase 3, from 20%: her skulls are torn loose and hunt on their own (Unbound Heads); she moves
+      15% faster and claws more. "Go, my heads. Feed."
+    The rebirth: the first time in a fight that a blow would kill her, she does not die: she sinks
+      into a T of soul sand and three skulls, glows blue-white, and stands again with 30% of her
+      health, her skulls back at her side, adding Stray Skulls. "You think the Wither dies once? I
+      was built to be summoned." Once per fight; the next killing blow is final.
+  Each phase change takes 1.2 to 2 s: she takes 50% less damage and cannot be staggered (a glint
+  shows it; she is never invulnerable), a shockwave pushes everyone within 4 blocks back (no
+  damage; softened near lava or a drop), she says the line, her look changes, and the bar marks
+  the pip.
+- In the air (phase 1 only): she rises at most 6 blocks over the ground or the highest enemy
+  standing on a block, stays at most 8 s, then lands for at least 6 s; she spends at most 40% of
+  any 30 s in the air and at most 4 s at a time out of everyone's melee reach. Up there she throws
+  skulls and volleys (at most three volleys a flight) and may call Skullfall. Arrows bring her down:
+  five arrows, from you or an NPC archer, fill her air poise and she falls, lies 2 s taking 20% more
+  damage, and cannot take off for 12 s. On the ground she still floats about a block up, within
+  reach of a sword.
+- Weak points:
+  - Smite: a weapon with the Smite enchantment hurts her as it hurts undead monsters [+2.5 per
+    level], whoever wields it (an NPC soldier whose sword the faction's enchanter gave Smite
+    counts the same). "Holy steel? How quaint. ...How it stings."
+  - Channel: Birth Blast's charge breaks after 15% of her maximum health in damage and leaves her
+    open for 2 s.
+  - Charge into a wall: a Soul Dash that ends against a wall staggers her. "Walls... I hate walls."
+  - Broken crown: each of her skulls you kill in phase 3 gives her 30 poise and makes her take 15%
+    more damage for 6 s. "Careful with them. They are the only ones who listen."
+  - Radiant damage hurts her 20% more.
+- How she reads you (each answer replaces her next pick; she reads an NPC the same way: a soldier
+  raising its shield, an archer drawing, a soldier eating draw the same answers at the same
+  chances):
+  - You come close -> Withering Pulse (70%, at most every 10 s).
+  - You raise a shield -> Wither Rose Bloom (phase 1, 40%) or Grave Grasp (from phase 2, 50%).
+  - You draw a bow -> Skull Volley (phase 1, 50%; later her armour answers bows).
+  - You eat -> Ruin Skull (60%).
+  - You are above her or in the air -> Skull Volley (60%).
+  - Three or more enemies engage her -> Ruin Skull (40%).
+  - You are far away -> Soul Dash (from phase 2, 50%).
+- Enrage: after 180 s of fighting, whoever she fights: +15% damage, shorter waits (x0.7), poise
+  maximum x1.25, a red bar, an angry face and line ("Enough. Wither, all of you, wither!"). All
+  her damage bonuses together never exceed +25%. She also enrages at once when a hero of her side
+  dies within 24 blocks of her.
+- Intro: she rises from a crouch in the air, arms folded; her skulls snap to her sides and her eyes
+  ignite. "Who summoned me this time? ...You? Then kneel, and wither."
+- Ganging up: there are no turns. Any number of heroes may press the same enemy at once, and any
+  number of enemies may press her; nothing grows or shrinks with the crowd on either side.
+- When she is losing: she fights to the death [aggression 80 + honour 45 - caution 35 = 90, well
+  over 65; her file also says last_stand outright, so tuning her traits can never make her run]:
+  the vanilla Wither never flees. At 10% of her health [a third of her retreat_below 34, kept 10
+  under her last phase] she has her last-stand beat once per fight: "Run? The Wither does not run.
+  The Wither ends things." Then her rebirth, then the end. At zero health after the rebirth she
+  dies like anyone: nothing stops a killing blow, and the bar shows "fallen" for 3 s. "Soul
+  sand... remembers. I will be summoned again."
+- Rewards: only when she dies, to whoever killed her (the side of the last player, NPC or hero
+  that hurt her in her last 15 s): XP orbs (7 x her level, at most 100), her non-kit gear, a hero
+  crest trophy (one per hero per winning side per in-game day), and every artifact she wears drops
+  where she fell, her Hollow Star included (it never despawns and survives fire and explosions).
+  Soldiers of a winning faction pick it all up and carry it home.
+- Revival: 10 minutes after her death, whoever killed her, at her home base: over the last 10 s a
+  T of soul sand and three skulls assembles beside the reporting station (only a picture: no
+  blocks, no damage) and she bursts out of it. She has no death ability of her own; a hero of her
+  faction with the revival_rite talent would bring her back sooner, never under 30 s.
+
+HOW TO BEAT HER
+1. Phase 1 is the vanilla Wither in the air: shoot her down. Five arrows down her for 12 s, and on
+   the ground she floats within reach of a sword. Spread out: her two skulls shoot at whoever she
+   is not shooting.
+2. From 50% your arrows are useless: bring a sword, an axe or a mace, ideally with Smite, and fight
+   her close. A tunnel or a low ceiling suits you: she will not take to the air again anyway.
+3. Never stand within 7 blocks when Birth Blast fires. You get 4.6 s of warning: run, or break the
+   charge with two big hits (15% of her health) and enjoy 2 s of free hits.
+4. Do not hide behind a shield: Wither Rose Bloom ignores it and Grave Grasp breaks it.
+5. Stand with a wall at your back when she lines up a Soul Dash: if she slams into it, she staggers.
+6. In phase 3, kill her skulls (a tenth of her health each, no armour): each one breaks her crown
+   for 6 s.
+7. She is not dead when she dies. Save something for the rebirth, and keep 7 blocks away when the
+   blue skulls start raining.
+8. Milk will not help you against her blood, but it cures the Wither effect she puts on you.
+
+MOVEMENT
+Mobility traits: flyer (ceiling III) and, uniquely, hover (ceiling II) on the ground. She has every
+feature from level 1; the numbers grow from 60% at level 1 (79% at level 10) to 100% at level 20.
+Mobility never changes a move's damage, range or timing, and she never teleports (the stuck rescue
+every NPC has is the one exception).
+- She always floats: about a block above the ground or water, never trampling farmland, drifting
+  over small gaps, always within reach of a sword. (Flyers cannot hover today: her design asks the
+  format to allow it for her.)
+- Take-off: 0.6 s (the tell: her gown lifts and smoke pours from the hem). Landing 0.4 s.
+- Numbers, level 1 / 10 / 20:
+    Stamina (seconds of powered flight)     36          / 47.4        / 60
+    Cruise speed (blocks per second)        6.5         / 7.2         / 8.0
+    Climb rate (blocks per second)          2.4         / 3.2         / 4.0
+    Glide: sink, forward (b/s)              3.3, 7.7    / 2.5, 8.8    / 2.0, 10.0
+    Glide time (s), gusts                   12, 2       / 15.8, 2     / 20, 2
+    Take-off needs (stamina)                33%         / 25%         / 20%
+    Stamina back on the ground (per s)      1.8         / 2.4         / 3.0
+    Hover height (blocks), gap, step        0.6, 2, 1.3 / 0.8, 2, 1.4 / 1.0, 3, 1.5
+- Out of fights: she flies the long legs of her trips and to her mine; in a thunderstorm she
+  floats on foot.
+- In fights (the same against a player and an NPC): only phase 1 has flights (above); from phase 2
+  only a reach flight up to someone on a pillar or a wall. If you stand where she cannot float to
+  you, she flies up to you, and if she is walled in she breaks straight out (below).
+- Raids: as a non-leader she joins her base's raids like a soldier [raids: joins]. She scouts the
+  target first by circling it, crosses the wall from the air when she has a way out, and inside she
+  breaches the wall for her soldiers when they are held outside, otherwise she shoots the
+  defenders' archers. Defending, she patrols over her walls.
+- She does not escape (she fights to the death).
+
+WHAT SHE BREAKS, AND WHAT SHE NEVER DOES
+- Her moves never place, break or burn a block: skulls, bursts, the dash and Birth Blast hurt and
+  push only living things. A Wither defending her own base never cracks its walls.
+- Withering hands: her bare hands break blocks as fast as an unenchanted diamond pickaxe (with
+  the drops that tool gives, and no wear). Never bedrock, barriers, portal frames or reinforced
+  deepslate (the vanilla Wither cannot break them either). She uses them:
+  - at work (she is a miner);
+  - when walled in during a fight: she breaks straight out at once (the old trick of boxing a
+    Wither in does not hold her);
+  - to reach someone she cannot get to, after 10 s, as every hero does;
+  - on a raid, when her soldiers are stuck outside: she breaks a 2-wide, 3-high hole in the enemy
+    wall beside the gate (about 2-4 s through stone bricks, much longer through obsidian), once
+    per raid. She is the only hero who breaks a faction's walls. The defenders rebuild it later.
+- Never her own side's blocks: nothing of her own faction's or an ally's buildings, and nothing
+  inside her own bases except her mine. With the game rule mobGriefing off she makes no breach.
+
+WORK AND TALENTS
+- Duty: miner (when she is not fighting). She mines with her withering hands (she presses a palm to
+  the stone and it greys and crumbles) and answers every alarm.
+- Proficiency (tier I at levels 1-9, II at 10-19, III from 20): work speed +15 / 25 / 35%, backpack
+  21 / 24 / 27 slots (a worker has 18), reach +0.5 / 1 / 1.5 blocks, work hunger -10 / 15 / 20%,
+  work XP +10 / 20 / 30%; no tool wear at all (she uses no tool). Each level she gains rolls a
+  miner's affix, as for any NPC.
+- Talents (tiers I / II / III at levels 1, 10 and 20; a talent works at the base where she is, not
+  on a raid; the strongest copy at a base counts, never the sum):
+  - surveyor (her specialty): mine sites searched +8 / 16 / 24 blocks farther, the diamond layer one
+    level sooner; when she mines herself, Fortune +1 / +2 / +3 on the ores and vein following one
+    block wider.
+  - purifier: allies at her base (NPCs, heroes and member players alike) lose poison, wither and
+    hunger effects every 30 / 20 / 10 s: the queen of withering draws it out of her own people. At
+    home it counts one tier higher, and she also lifts Slowness, Weakness and Mining Fatigue from
+    allies within 8 blocks of her once every 60 / 45 / 30 s.
+  - intimidation (a later milestone): rival war councils see her base's defence x1.15 / 1.3 / 1.45,
+    and raiders who see her on the walls fall back 10 / 15 / 20% sooner.
+
+HOW SHE JOINS A FACTION: THE TOKEN
+- The first time a vanilla Wither dies in your world (since the mod was added), in any dimension
+  and whoever kills it, a chest named "The Wither's Remains" appears on solid ground below where it
+  died (never on the Nether roof, never in lava, never over the void). Inside lies the Wither Hero
+  Token. Later Withers give no chest.
+- The token glows, never despawns, and shrugs off fire, lava, explosions and cactus. If it falls
+  into the void, sits in lava for 30 s, or is destroyed, a new one appears in the chest 2 minutes
+  later. There is only ever one; any copy is a "Hollow Wither Token" that does nothing. It cannot
+  go into an ender chest, a shulker box or a bundle, and a player in creative mode cannot hold it.
+- Bring it inside the walls of one of your faction's bases (you, or any NPC or hero of your
+  faction, carrying it) and it is used at once: in a 10 s show at the reporting station a T of soul
+  sand and three skulls glows blue and bursts, harmlessly, and she steps out and joins your
+  faction at level 1, wearing her Hollow Star. A token that simply lies inside a base for 5 s
+  joins that base's faction.
+- Whoever carries it drops it when they die, even with keepInventory on, so it can be stolen on
+  the way home. Carriers trail soul particles; any NPC that sees a carrier recognises it, and
+  enemies go for the carrier first.
+- The NPC factions want it too: a faction learns of the chest only if its people saw the Wither die
+  or its scouts see the chest's column of soul fire (from 64 blocks); then its council may send an
+  expedition, intercept a carrier its scouts saw, and escort its own carrier home. Your own
+  faction's NPCs do the same for you.
+- If her faction ever loses its last base, she turns back into her token where she stands (or
+  where its last heart fell, if she was dead), keeping her level, for the conquerors to take.
+
+NOT A LEADER
+She is never drafted as a faction leader and never founds a faction: she serves the faction that
+carried her token. She does not count against the number of heroes a faction may have, and one
+faction may hold both boss heroes.
+
+HER ARTIFACT: HOLLOW STAR
+A nether star burnt black with a soul-blue light inside, worn as a brooch at her collar (you can see
+it on her). It cannot be crafted: it comes with her the first time she joins, and it drops where
+she dies, for anyone to take. Only one exists; if it is destroyed it comes back to her.
+- On any hero: ability power +12%, drain +2%, blight resistance +10%, health +5% (60% of that at
+  level 1, all of it at 20), and Withering Brand: the first hit of each of its moves withers the
+  enemy (Wither I, 3 s), and an enemy it withered that dies within 3 s heals it 3.
+- On the Wither herself (her bond): also blight damage +6%, health +5%, drain +2%; her brand is
+  Wither II and a withered enemy that dies heals her 4 and gives her 10 energy (Third Hunger);
+  Skull Volley throws 4 skulls instead of 3, and Ruin Skull's burst is 4 blocks wide.
+
+PERSONALITY AND VOICE
+- Temperament: tyrant. Traits: aggression 80, honour 45, ambition 90, caution 35, greed 65,
+  sociability 20, loyalty 55, volatility 45. Next to a typical tyrant she keeps her word better
+  (honour 45 against 30: the bargain of whoever carried her token) and is more loyal (55 against
+  40: she is bound).
+- In a fight: bold (aggression 65 or more), so her attacking moves weigh a little more [x1.18;
+  zoning and defensive x0.91]. She goes for the weakest enemy, and she chases a hero that runs from
+  her (honour under 60).
+- Likes: soul sand, wither roses, bones. Dislikes: milk buckets ("A cure. How insulting."), golden
+  apples. (Gifts come in a later milestone.)
+- Quirks: "her two skulls bicker in whispers; she never says which one is right"; "counts the
+  wither roses that bloom where her enemies fell."
+- Rival: the Ender Dragon.
+- Voice: a low, breathy voice with two faint echoes under it, a fifth below and an octave above
+  (her skulls) [generated; fallback blip bass, pitch 0.85, rate 3 ticks per syllable].
+- Lines:
+    Joining:     "Who carries my token carries my debt. Very well, {faction}. Point me at
+                 something."
+    Greeting:    "{player}. You may speak. Briefly."
+    Idle:        "The left one wants to wither the chickens. The right one agrees. I am undecided."
+    Work:        "Stone is only slow decay. I hurry it along."
+    Night:       "Night. Finally, a colour that suits me."
+    Small talk:  "Do not stand so close. Things near me tend to... wilt."
+    Intro:       "Who summoned me this time? ...You? Then kneel, and wither."
+    Ultimate:    "Eleven heartbeats. Count them with me." / "Look up. All of you."
+    Phase 2:     "Half of me is still more than all of you. Your arrows are nothing now."
+    Phase 3:     "Go, my heads. Feed."
+    Rebirth:     "You think the Wither dies once? I was built to be summoned."
+    Enrage:      "Enough. Wither, all of you, wither!"
+    Stagger:     "Walls... I hate walls."
+    Kill:        "Withered."
+    Last stand:  "Run? The Wither does not run. The Wither ends things."
+    Fallen:      "Soul sand... remembers. I will be summoned again."
+    Revived:     "Soul sand, three skulls, one will. I am back."
+    Raid:        "Their walls will be stone dust by noon."
+    Her base attacked: "Someone is knocking at my queendom. Let us answer."
+    Back to her token: "No walls, no banner, no bargain. I return to my skulls."
+  About fifty lines in all (BOSS_HEROES.md 4.10); moments without one of her own use the tyrant's
+  fallback lines.
+
+ANIMATIONS
+Her own, on top of the shared library: one for each move (Skull Volley, Ruin Skull, Withering
+Pulse, Wither Rose Bloom, Soul Dash, Grave Grasp, Unbound Heads, Stray Skulls); Birth Blast with a
+loop for its charge; Skullfall; phase 2 (the blue shell flares across her ribs); phase 3 (she tears
+the skulls from her side); the rebirth (kneeling into soul sand and rising); intro; victory (she
+turns her back and the skulls cackle); taunt (a slow beckoning finger); last stand; three idles
+(the skulls bicker, the rose, the floating half-turn); mining with her palm; and her floating idle,
+walk and run (she never walks: she glides). Her skulls move in every clip.
+
+SOUNDS
+Mostly the vanilla Wither's own, by id, with generated sounds where vanilla has none (design: the
+sound map of BOSS_HEROES.md 4.11): her skulls fly with entity.wither.shoot, her hurt and death are
+the Wither's own (pitched up), her idle sigh is entity.wither.ambient, her skulls chatter with the
+wither skeleton's voice, Birth Blast ends in entity.wither.spawn, and breaking out of a box plays
+entity.wither.break_block. Generated: her three-voiced speech, the blue skull's hum, the heartbeat
+charge, the armour's rise and the calling. To be made with her sound set and sent for approval.

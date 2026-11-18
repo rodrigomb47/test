@@ -555,3 +555,75 @@ MOBILITY_AND_WORK 3 leaves open:
   into it: the probe looks from its feet up to the height it climbs to, as far as it flies before the next probe.
 - **The scaffold pillar stays** for a hero woodcutter: its climbing (or hovering) variant is the job's own work loop and
   goes with L5m's mobility at work (12.4).
+
+## Boss heroes: format gaps (2026-11-18, `BOSS_HEROES.md`)
+
+The two boss heroes (the Wither and the Ender Dragon) need these format and engine pieces. Each names the rule it
+proposes; B1 (format) and B3 (engine) of `HEROES_V2.md` 15.8 decide and build them, and their test fixtures use them.
+
+1. **A flyer that hovers.** `MOBILITY_AND_WORK.md` 1.14 refuses `hover` beside a `flyer`. The Wither floats on the
+   ground and flies. Proposed: `secondary: hover` (tier 1-2) is allowed on a flyer; on the ground the hover rules hold
+   (its height, no trampling, the gap drift, always within melee reach), in the air the flyer's. Today it would be
+   ADJUSTED away.
+2. **Projectile looks and a slow shot.** v1 appendix B.6 lacks `wither_skull`, `wither_skull_blue` and
+   `dragon_fireball`; they can be drawn by vanilla's own `WitherSkullRenderer` (both textures) and
+   `DragonFireballRenderer`, so they need no A9 model. A `shot` gets an optional `speed` (40-100% of a shot's speed,
+   default 100): the blue skull flies at 60%, as vanilla's slower dangerous skull.
+3. **Thrown basic attacks from the air.** `MOBILITY_AND_WORK.md` 5.1.5 allows light ranged moves (at most 3 per
+   take-off) and the wind-up of a `dive` or a `rain` in the air, and is silent on basic attacks. The Wither's turret
+   phase throws her basic skulls from the air. Proposed: a thrown basic attack may fire in an aerial window at its own
+   rate, not counted among the 3 light ranged moves; a melee basic attack still may not (3.7's pillar case aside).
+   For A12 to confirm.
+4. **State fields `projectile_immune` and `keep_distance`** (`HEROES_V2.md` 12.9). `projectile_immune: true`: arrows,
+   crossbow bolts, thrown tridents, wind charges and physical-element hero projectiles deal no damage and no ground
+   poise to the hero, whoever shot them (they glance off; vanilla's perched dragon sets arrows alight); air poise still
+   counts; element projectiles, potions and melee are unaffected. Validator rule: a hero takes no aerial window while
+   such a state is on (so no hero is projectile-immune and out of melee reach at once). `keep_distance` 0-12 replaces
+   the behaviour's while the state lasts (the armoured Wither closes to 2, as the powered vanilla Wither descends).
+5. **The effect `linger`**: `{ radius 2-4, seconds 2-8, interval 1, at: impact | target | self | front, effects }`
+   leaves a lingering cloud where the move lands (the dragon's breath, drawn like vanilla's area effect cloud with the
+   `dragon_breath` particle). It counts against v1's 2 zones per hero (the oldest ends), its pulses stay under 1.5 x
+   the move's slot cap per receiver, and two new state stats `linger_radius` (+0-2) and `linger_seconds` (+0-4) let a
+   state widen it (the dragon's `heart_of_the_end`).
+6. **Two add kinds** for A8's catalogue (`HEROES_V2.md` 6.11):
+   - `end_crystal`, behaviour `beam_heal`: each second the nearest of the owner's crystals within `range` (24) with a
+     clear line from its core to the owner heals `percent` (0.75) of the owner's maximum health; a `spire` (height by
+     phase, solid like a shulker, not a block), `caged_every` (2, from phase 2) with `cage_hits` (3) and a cage that
+     stops projectiles, an open crystal broken by any hit (snowballs too), a `shatter` burst (radius 3, effects on the
+     owner's enemies), `max_alive` by phase (2, then 3), `per_fight` (8), `lifetime` (60), and placement: 6-14 blocks
+     from the owner, at least 4 apart, its foot reachable by an ordinary person, never over the void, lava or water;
+   - `skull_familiar`, behaviour orbiter and turret: each picks a different engaged enemy, floats 3 blocks from it and
+     at most 3 above the ground, fires its projectile every `interval` (2.5 s) with its effects, health
+     `owner_max_health_percent` (10), returns to its owner after its lifetime.
+   And: a phase's `adds` (12.10) are spawned by its transition.
+7. **Three weak points** for 6.9's table: `focus_add` `{ add, only: any | beaming, damage_percent 0-8, poise 0-60,
+   damage_taken 0-25, seconds 2-10 }` (an add of that kind dies to anyone: the damage counts as a hit from its killer,
+   under the per-hit cap); `smite` (an attacker's Smite enchantment adds its vanilla 2.5 per level, as against
+   `#sensitive_to_smite`); `blast` (damage in `#is_explosion` +25% under the cap, and twice the poise).
+8. **A rebirth with its own content.** 12.10's `rebirth` is a boolean. Proposed: `rebirth: { at 20-40 (30), moves,
+   states, adds, transition }`, still legendary only, its pip on the bar from the start; an action code `rebirth`
+   (appendix D's reserved range) for its animation; the line event `rebirth`.
+9. **The `perch` form**: a self move `{ range 6-16 (12), seconds 4-10 (8), state, break_percent 5-25 (15),
+   end_followup, radius }`. The perch is the highest standable cell within range of the target whose top is at most 3
+   blocks above ground an ordinary person can stand on (F5's "who can reach whom"), with 2 blocks of headroom, never
+   lava, fire, farmland or powder snow; else the ground beside the hero's nearest add. Class heavy at least; the state
+   ends after `seconds` or `break_percent` of the hero's maximum health, then `end_followup` plays when an enemy is
+   within `radius`. Perched time is ground time for the air budget.
+10. **`mobility.aerial.pattern`**: `hold` (today) or `circle` with `radius` 8-14: the hero orbits its target 4-6 blocks
+    up between moves; while one of its `beam_heal` adds stands it keeps within that add's range and sight.
+11. **`immune_effects`**: a list of vanilla mob effects that never apply to the hero (the Wither: `wither`). NOTE for
+    any entry that removes a counter (`slowness`, which downs flyers; `glowing`, a tell): refused.
+12. **Passive pieces**: the form `shot_random` (a projectile at a random engaged enemy in `range` and sight, preferring
+    one that is not the hero's target: the Wither's side heads); `on_add_died` names the add's killer as
+    `trigger_enemy`; a mark with `focus: true` makes the marked enemy the hero's preferred target while it lasts (the
+    dragon's Wrath of the Spires).
+13. **`boss.bar_color`**: one of the seven boss-bar colours, replacing the nearest-colour rule (presentation; the
+    Wither's purple and the dragon's pink, as vanilla's).
+14. **Boss-hero identity**: an archetype group E (`wither`, `ender_dragon`) outside `ROSTER_PLAN.md`'s counts and
+    `check_roster.py`; `leader: { "eligible": false }` with no other leader fields (the reader asks a built-in for a
+    full leader block today); `recruit.condition: token`; the line event `unbound`; the sound slots `rebirth`,
+    `calling`, `linger`, `mobility.break` and `mobility.wings`; a hero's `work` override of `BlockWork`'s tool (the
+    Wither's hands count as a diamond pickaxe) and a raid goal `breach` allowed only to a hero whose file names it.
+15. **Not a format gap, an engine prerequisite** for ROADMAP phase 3: vanilla's `EnderDragon.hurt` ignores damage
+    whose source is not a player or an explosion, so faction NPCs cannot hurt the vanilla dragon today
+    (`BOSS_HEROES.md` 6.6).

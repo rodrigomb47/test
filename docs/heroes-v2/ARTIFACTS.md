@@ -467,7 +467,11 @@ and only their element's heroes profit from the damage line (the planner gives t
 The Wither hero's and the Ender Dragon hero's own artifacts (`BOSS_HEROES.md`, which chooses their ids, names, lines,
 passives and bonds). They use the signature tier (6) and the bond format (16.4): base lines and a passive any hero may
 use, a bond only for the hero they belong to ("best suited for them"), one instance per world, re-formed if destroyed,
-dropped like any artifact when the hero dies (the owner's "they are also dropped if they die").
+dropped like any artifact when the hero dies (the owner's "they are also dropped if they die"). Designed in
+`BOSS_HEROES.md` 4.13 and 5.13: **Hollow Star** (`hollow_star`, the Wither's: ability power, drain, blight
+resistance and health, with Withering Brand) and **Spirecore** (`spirecore`, the Ender Dragon's: health, ability
+power, energy and stamina, with Spire Mend); each bond adds three points of lines, a stronger passive in the same
+family and two changes to her own moves.
 
 ### 7.6 The build tree
 
