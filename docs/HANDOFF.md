@@ -99,6 +99,17 @@ commits, language and testing are in `/CLAUDE.md`.
     dropped if they die. Make theit kit with the same you ve been doing with the other bosses, unique and complex and
     base it on the boss itself". Recorded in `docs/ROADMAP.md` (Phase 4 milestones); design in
     `docs/heroes-v2/ARTIFACTS.md` and `docs/heroes-v2/BOSS_HEROES.md`.
+11. **Answers on artifacts and the boss heroes; breaching; lethal terrain** (owner, 2026-11-18), to the questions of
+    `ARTIFACTS.md` 20 and `BOSS_HEROES.md` 11: "1 Heroes may have more slots as they level up but artifact strenght
+    doesnt change 2 heroes decide if they want to use, replace, or leave for someone else the artifact 3 no personal
+    names 4 token 5 its ok for any hero or npc that usrs explosives to breach walls, theres no need for anyone to be
+    "civil" in battle, so they may use the resources they have to full advantage"; then "for artifacts, some npcs or
+    hero with can tinker with artefacts may upgrade the artifact, but the artifacts doesnt level up with the hero,
+    though an artifact may become stronger of its in the artifact design, like an artifact that needs blood to get
+    stronger for example"; "some artifacts may nees tech level to be built and/or upgraded"; and "its fine for heroes
+    abilities to push someone of a cliff or to lava". Recorded in `docs/ROADMAP.md` (Phase 4 owner decisions, the
+    artifacts milestone row, Phase 2 "TNT expert"); the design revision follows in `ARTIFACTS.md` and
+    `BOSS_HEROES.md`.
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
