@@ -76,9 +76,17 @@ public class NpcPathNavigation extends GroundPathNavigation {
         return nodeEvaluator instanceof GateEvaluator g && g.gates;
     }
 
-    /** Vanilla walking, with closed fence gates as wooden doors while {@link #gates} is set. */
-    static final class GateEvaluator extends WalkNodeEvaluator {
+    /**
+     * Vanilla walking, with closed fence gates as wooden doors while {@link #gates} is set. A hero's evaluator adds its
+     * links on top ({@code hero/HeroNodeEvaluator}, task A11); a worker's is exactly this.
+     */
+    public static class GateEvaluator extends WalkNodeEvaluator {
         boolean gates;
+
+        /** Whether closed fence gates count as doors in the search that starts now. */
+        public void gates(boolean on) {
+            gates = on;
+        }
         private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
         @Override

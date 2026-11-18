@@ -432,6 +432,20 @@ public final class FCCommands {
                         .getKey(h.getMainHandItem().getItem()).getPath());
                 o.addProperty("status", h.status());
                 o.addProperty("pos", h.blockPosition().toShortString());
+                // its navigation (A11): links taken by kind and failed, flights and how they ended, stuck recoveries
+                if (h.getNavigation() instanceof com.factionclash.hero.HeroGroundNavigation nav) {
+                    JsonObject links = new JsonObject();
+                    nav.taken.forEach((k, v) -> links.addProperty(k.name().toLowerCase(java.util.Locale.ROOT), v));
+                    o.add("links", links);
+                    o.addProperty("linksFailed", nav.linksFailed);
+                }
+                com.factionclash.hero.HeroTravel tr = h.travel();
+                o.addProperty("flights", tr.flights);
+                o.addProperty("flightsLanded", tr.landed);
+                o.addProperty("flightsStuck", tr.stuckEnds);
+                o.addProperty("flightsAtEdge", tr.edgeEnds);
+                o.addProperty("downs", h.movement().downs());
+                o.addProperty("recoveries", h.navigator().recoveries);
             }
             out.add(o);
         }
@@ -632,6 +646,7 @@ public final class FCCommands {
                 o.addProperty("ammo", n.ammo().isEmpty() ? "" : n.ammo().getHoverName().getString());
                 o.addProperty("items", com.factionclash.work.Inv.totalItems(n.inventory()));
                 o.addProperty("recoveries", n.navigator().recoveries);
+                o.addProperty("hero", n instanceof com.factionclash.hero.HeroEntity);
                 BlockPos dest = n.navigator().target();
                 o.addProperty("dest", dest == null ? "" : dest.toShortString());
                 o.addProperty("surface", n.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,

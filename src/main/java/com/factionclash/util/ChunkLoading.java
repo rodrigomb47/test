@@ -19,7 +19,7 @@ import java.util.UUID;
 
 /**
  * Bounded background simulation (spec 20): base areas keep ticking chunk tickets, and NPCs travelling away from
- * home carry a ticking 3x3 chunk ticket with them. Nothing else is force-loaded, so the map is not kept loaded as a
+ * home carry a ticking 3x3 chunk ticket with them (a hero in flight a 5x5 one, MOBILITY_AND_WORK 3.5). Nothing else is force-loaded, so the map is not kept loaded as a
  * whole.
  */
 public final class ChunkLoading {
@@ -45,6 +45,8 @@ public final class ChunkLoading {
             });
 
     private static final Map<UUID, Long> TRAVELLER_CHUNK = new HashMap<>();
+    /** The radius of each traveller's area when it is not 1 (a hero in flight: 2, a 5x5 area). */
+    private static final Map<UUID, Integer> TRAVELLER_RADIUS = new HashMap<>();
 
     private ChunkLoading() {
     }
@@ -84,46 +86,66 @@ public final class ChunkLoading {
             return;
         }
         long chunk = ChunkPos.asLong(mob.blockPosition());
-        Long prev = TRAVELLER_CHUNK.get(mob.getUUID());
+        UUID id = mob.getUUID();
+        Long prev = TRAVELLER_CHUNK.get(id);
+        int prevRadius = TRAVELLER_RADIUS.getOrDefault(id, 1);
+        int radius = mob instanceof FactionNpc npc ? Math.max(1, npc.travelTicketRadius()) : 1;
         if (!away || !enabled()) {
             if (prev != null) {
-                setArea(level, mob.getUUID(), prev, false);
-                TRAVELLER_CHUNK.remove(mob.getUUID());
+                setArea(level, id, prev, prevRadius, false);
+                TRAVELLER_CHUNK.remove(id);
+                TRAVELLER_RADIUS.remove(id);
             }
             return;
         }
-        if (prev != null && prev == chunk) {
+        if (prev != null && prev == chunk && prevRadius == radius) {
             return;
         }
-        setArea(level, mob.getUUID(), chunk, true);
+        setArea(level, id, chunk, radius, true);
         if (prev != null) {
             // release the old area after the new one is held, keeping overlap loaded
             ChunkPos o = new ChunkPos(prev), n = new ChunkPos(chunk);
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -prevRadius; dx <= prevRadius; dx++) {
+                for (int dz = -prevRadius; dz <= prevRadius; dz++) {
                     int x = o.x + dx, z = o.z + dz;
-                    if (Math.abs(x - n.x) > 1 || Math.abs(z - n.z) > 1) {
-                        CONTROLLER.forceChunk(level, mob.getUUID(), x, z, false, true);
+                    if (Math.abs(x - n.x) > radius || Math.abs(z - n.z) > radius) {
+                        CONTROLLER.forceChunk(level, id, x, z, false, true);
                     }
                 }
             }
         }
-        TRAVELLER_CHUNK.put(mob.getUUID(), chunk);
+        TRAVELLER_CHUNK.put(id, chunk);
+        if (radius == 1) {
+            TRAVELLER_RADIUS.remove(id);
+        } else {
+            TRAVELLER_RADIUS.put(id, radius);
+        }
+    }
+
+    /** The chunk radius of a traveller's ticking area now (0: it holds none; tests). */
+    public static int travellerRadius(UUID id) {
+        return TRAVELLER_CHUNK.containsKey(id) ? TRAVELLER_RADIUS.getOrDefault(id, 1) : 0;
     }
 
     public static void releaseTraveler(Mob mob) {
         if (mob.level() instanceof ServerLevel level) {
             Long prev = TRAVELLER_CHUNK.remove(mob.getUUID());
+            int r = TRAVELLER_RADIUS.getOrDefault(mob.getUUID(), 1);
+            TRAVELLER_RADIUS.remove(mob.getUUID());
             if (prev != null) {
-                setArea(level, mob.getUUID(), prev, false);
+                setArea(level, mob.getUUID(), prev, r, false);
             }
         }
     }
 
     private static void setArea(ServerLevel level, UUID owner, long chunk, boolean add) {
+        setArea(level, owner, chunk, 1, add);
+    }
+
+    private static void setArea(ServerLevel level, UUID owner, long chunk, int radius, boolean add) {
         ChunkPos c = new ChunkPos(chunk);
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
                 // ticking: the NPC (and what it works on) must actually be updated, not just kept in memory
                 CONTROLLER.forceChunk(level, owner, c.x + dx, c.z + dz, add, true);
             }

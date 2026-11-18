@@ -102,7 +102,13 @@ public final class HeroMovement {
         /** shot down: falling with no control */
         DOWNED_FALL,
         /** shot down: lying 2 s */
-        DOWNED
+        DOWNED,
+        /** a jump-up link (A11): the crouch, a straight jump with its air jumps, then over the ledge's edge */
+        JUMP_UP,
+        /** a chimney link (A11): the crouch, a jump, then wall kicks from side to side up the shaft and out at its top */
+        CHIMNEY,
+        /** a climb-down link (A11): backing over the edge of a ledge onto the face below it */
+        DESCEND
     }
 
     /** What downed it (the log and the tests). */
@@ -186,6 +192,9 @@ public final class HeroMovement {
 
     // climbing
     private Direction climbFace;
+    /** The column of the face it climbs (it steps onto it at the top), and the ticks it has been stepping in. */
+    private BlockPos climbColumn;
+    private int settleTicks;
     private double climbStartY;
     private boolean climbLeftGround;
     private long gripAfter;
@@ -205,6 +214,15 @@ public final class HeroMovement {
     private boolean loaded;
     private int downs;
     private long landedAt = Long.MIN_VALUE / 4;
+
+    // the navigation's links (A11): a jump-up's ledge, a chimney's exit, a climb down
+    private Direction linkFace;
+    private double linkTop;
+    private BlockPos linkColumn;
+    private BlockPos linkExit;
+    private boolean descending;
+    /** The action was started by the hero's navigation (a link or a travel flight): the hold goal leaves it be. */
+    private boolean navOwned;
 
     // bursts and landings
     private final MovementRules.BurstClock burst = new MovementRules.BurstClock();
@@ -336,7 +354,8 @@ public final class HeroMovement {
 
     /** Whether it is held still on the ground (a tell, a landing, downed): no move starts. */
     public boolean holdsStill() {
-        return state == State.TELL || state == State.TAKEOFF || state == State.LANDING || state == State.DOWNED;
+        return state == State.TELL || state == State.TAKEOFF || state == State.LANDING || state == State.DOWNED
+                || (state == State.JUMP_UP || state == State.CHIMNEY) && stateTicks < TELL_TICKS;
     }
 
     /** Climbing, clinging or climbing down: vanilla's ladder physics move it ({@link HeroEntity#onClimbable}). */
@@ -376,6 +395,7 @@ public final class HeroMovement {
     public boolean airborneForPoise() {
         return switch (state) {
             case RISE, FLY, LAND, GLIDE, LEAP, JUMP, MANTLE -> true;
+            case JUMP_UP, CHIMNEY -> stateTicks >= TELL_TICKS;
             case NONE -> ownAirtime && profile.airborne() && !hero.onGround() && !hero.isInWater() && !hero.onClimbable()
                     && !hero.isPassenger();
             default -> false;
@@ -458,6 +478,24 @@ public final class HeroMovement {
     private void setState(State s) {
         state = s;
         stateTicks = 0;
+        if (s == State.NONE) {
+            navOwned = false;
+            descending = false;
+        }
+    }
+
+    /**
+     * Whether the running action was started by the hero's own navigation (a link it follows, a travel flight, task
+     * A11): its walking and its job go on around it (the navigation waits for the action), so the hold goal does not
+     * hold it. An action of a fight or an operator is not.
+     */
+    public boolean navOwned() {
+        return navOwned && state != State.NONE;
+    }
+
+    /** Marks the running action as the navigation's (or not). */
+    public void navOwned(boolean owned) {
+        navOwned = owned && state != State.NONE;
     }
 
     // ------------------------------------------------------------------ the tick (server, before vanilla's travel)
@@ -495,6 +533,9 @@ public final class HeroMovement {
             case LANDING -> landingTick();
             case DOWNED_FALL -> downedFallTick(ground);
             case DOWNED -> downedTick();
+            case JUMP_UP -> jumpUpTick(ground);
+            case CHIMNEY -> chimneyTick(ground);
+            case DESCEND -> descendTick(ground);
         }
         staminaTick(now);
         if (profile.any()) {
@@ -532,8 +573,9 @@ public final class HeroMovement {
                 }
                 yield ownAirtime && !hero.onGround() ? MovementRules.AIRBORNE : MovementRules.GROUND;
             }
-            case TELL, DOWNED_FALL -> MovementRules.GROUND;
+            case TELL, DOWNED_FALL, DESCEND -> MovementRules.GROUND;
             case LEAP, JUMP -> MovementRules.AIRBORNE;
+            case JUMP_UP, CHIMNEY -> stateTicks < TELL_TICKS ? MovementRules.GROUND : MovementRules.AIRBORNE;
             case CLIMB, CLIMB_DOWN, MANTLE -> MovementRules.CLIMB;
             case CLING -> MovementRules.CLING;
             case GLIDE -> MovementRules.GLIDE;
@@ -980,8 +1022,10 @@ public final class HeroMovement {
         climbFace = face;
         if (!onWall()) {
             climbStartY = hero.getY();
+            climbColumn = front;
         }
         climbLeftGround = !hero.onGround();
+        settleTicks = 0;
         setState(State.CLIMB);
         return null;
     }
@@ -1004,6 +1048,7 @@ public final class HeroMovement {
         }
         hero.setNoGravity(false);
         setState(State.CLIMB_DOWN);
+        descending = false;
         return null;
     }
 
@@ -1028,7 +1073,11 @@ public final class HeroMovement {
             climbLeftGround = true;
         }
         if (ground && climbLeftGround && hero.getY() > climbStartY + 0.5) {
-            setState(State.NONE); // over the edge, on top
+            // over the edge, on top: it steps in until it stands well on the top, not on its very edge (A11)
+            if (settle(climbColumn, climbFace)) {
+                return;
+            }
+            setState(State.NONE);
             inAir = false;
             return;
         }
@@ -1066,14 +1115,244 @@ public final class HeroMovement {
         if (ground) {
             setState(State.NONE);
             inAir = false;
-        } else if (!touchingFace() || stateTicks > ACTION_TIMEOUT * 2) {
+        } else if (descending && !touchingFace() && nearFace(DESCEND_REACH) && stateTicks <= ACTION_TIMEOUT * 2) {
+            // a climb down from a ledge: it keeps to the face it backed onto (a nudge, never into it: pressing into a
+            // climbable face makes vanilla lift it)
+            hero.setDeltaMovement(climbFace.getStepX() * DESCEND_NUDGE, v.y, climbFace.getStepZ() * DESCEND_NUDGE);
+        } else if (!touchingFace() && !(descending && nearFace(DESCEND_REACH)) || stateTicks > ACTION_TIMEOUT * 2) {
             letGo();
         }
+    }
+
+    /** How far from the face a hero climbing down from a ledge may be and still hold it, and its nudge toward it. */
+    static final double DESCEND_REACH = 0.45, DESCEND_NUDGE = 0.03;
+
+    private boolean nearFace(double reach) {
+        AABB box = hero.getBoundingBox().deflate(0, 0.05, 0);
+        return !hero.level().noCollision(hero, box.move(climbFace.getStepX() * reach, 0, climbFace.getStepZ() * reach));
     }
 
     private boolean touchingFace() {
         AABB box = hero.getBoundingBox().deflate(0, 0.05, 0);
         return !hero.level().noCollision(hero, box.move(climbFace.getStepX() * 0.1, 0, climbFace.getStepZ() * 0.1));
+    }
+
+    // ------------------------------------------------------------------ the navigation's links (task A11, 3.2-3.4)
+
+    /**
+     * A jump-up link (3.2): onto the ledge in front ({@code face}) whose top is at {@code topY}. The 0.3 s crouch (the
+     * tell, held still facing the ledge), then a straight jump with its jump strength while it presses toward the ledge;
+     * at the top of each rise under the ledge's top it spends an air jump (an acrobat's), and once its feet are over the
+     * top it steps over the edge. Returns null when it starts, or why not.
+     */
+    public String jumpUp(Direction face, double topY) {
+        if (state != State.NONE || !hero.onGround() || hero.isInWater()) {
+            return "not standing on the ground";
+        }
+        if (face == null || face.getAxis().isVertical()) {
+            return "a ledge is north, south, east or west";
+        }
+        if (topY - hero.getY() > profile.reachUp() + 1e-6) {
+            return "the ledge is higher than its jumps reach";
+        }
+        linkFace = face;
+        linkTop = topY;
+        linkColumn = hero.blockPosition().relative(face);
+        settleTicks = 0;
+        face(face.getStepX(), face.getStepZ());
+        setState(State.JUMP_UP);
+        oneShot(MovementRules.GROUND, HeroActions.LOCO_ONE_SHOT_START);
+        return null;
+    }
+
+    private void jumpUpTick(boolean ground) {
+        if (stateTicks < TELL_TICKS) {
+            Vec3 v = hero.getDeltaMovement();
+            hero.setDeltaMovement(0, Math.min(0, v.y), 0);
+            face(linkFace.getStepX(), linkFace.getStepZ());
+            return;
+        }
+        if (stateTicks == TELL_TICKS) {
+            String no = LeapSolver.refusal(takeOffState(), false);
+            if (no != null) {
+                lastLeap = new LeapResult(null, false, false, 0, 0, 0, 0, no);
+                setState(State.NONE);
+                return;
+            }
+            impulse(LeapSolver.attributeFor(profile.jumpHeight()) * hero.blockJumpFactor(), linkFace, EDGE_PUSH);
+            oneShot(MovementRules.AIRBORNE, HeroActions.LOCO_ONE_SHOT_START);
+            return;
+        }
+        peakY = Math.max(peakY, hero.getY());
+        Vec3 v = hero.getDeltaMovement();
+        hero.setDeltaMovement(linkFace.getStepX() * EDGE_PUSH, v.y, linkFace.getStepZ() * EDGE_PUSH);
+        if (hero.getY() < linkTop - 0.05 && v.y <= 0 && !ground) {
+            spendAirJump();
+        }
+        if (ground && stateTicks > TELL_TICKS + 1) {
+            if (hero.getY() >= linkTop - 0.05 && settle(linkColumn, linkFace)) {
+                return; // on the ledge: a step in from its edge
+            }
+            setState(State.NONE);
+            landed(false, peakY - hero.getY());
+        } else if (hero.isInWater() || stateTicks > ACTION_TIMEOUT) {
+            setState(State.NONE);
+        }
+    }
+
+    /** How far the hero's centre is inside {@code column} along {@code d} (from the column's near side). */
+    private double depthInto(BlockPos column, Direction d) {
+        return switch (d) {
+            case EAST -> hero.getX() - column.getX();
+            case WEST -> column.getX() + 1 - hero.getX();
+            case SOUTH -> hero.getZ() - column.getZ();
+            case NORTH -> column.getZ() + 1 - hero.getZ();
+            default -> 1;
+        };
+    }
+
+    /**
+     * After a climb or a jump-up that ended on the very edge of the top: a short step in (at most 10 ticks) until its
+     * centre is 0.3 inside the column it climbed onto, so it stands on the cell its link was for. True while it steps.
+     */
+    private boolean settle(BlockPos column, Direction d) {
+        if (column == null || d == null || settleTicks >= 10) {
+            return false;
+        }
+        double in = depthInto(column, d);
+        if (in >= 0.3) {
+            return false;
+        }
+        settleTicks++;
+        double push = Math.min(0.1, 0.35 - in);
+        Vec3 v = hero.getDeltaMovement();
+        hero.setDeltaMovement(d.getStepX() * push, v.y, d.getStepZ() * push);
+        return true;
+    }
+
+    /** An impulse that leaves the ground this tick (airborne at once, as the solver's arcs are). */
+    private void impulse(double vertical, Direction toward, double push) {
+        hero.setDeltaMovement(toward == null ? 0 : toward.getStepX() * push, vertical,
+                toward == null ? 0 : toward.getStepZ() * push);
+        hero.setOnGround(false);
+        hero.hasImpulse = true;
+        ownAirtime = true;
+        inAir = true;
+        peakY = hero.getY();
+    }
+
+    /** An air jump inside a link (its ceiling's count per airtime); false when none is left. */
+    private boolean spendAirJump() {
+        if (!profile.has(Feature.AIR_JUMP)
+                || !MovementRules.airJumpLeft(airJumpsUsed, profile.count(MobilityRules.Count.AIR_JUMPS))) {
+            return false;
+        }
+        Vec3 v = hero.getDeltaMovement();
+        hero.setDeltaMovement(v.x, LeapSolver.strengthFor(profile.airJumpHeight()), v.z);
+        hero.hasImpulse = true;
+        airJumpsUsed++;
+        oneShot(MovementRules.AIRBORNE, HeroActions.LOCO_ONE_SHOT_SPECIAL);
+        return true;
+    }
+
+    /**
+     * A chimney link (3.2, acrobats II-III): up the 1-2 wide shaft it stands in to the standable cell {@code exit}
+     * beside its top. The 0.3 s crouch, a jump, then at the top of each rise a wall kick off a side of the shaft (never
+     * the same face twice in a row) or, with none, an air jump; once its feet are over the exit's floor it steps out.
+     * Returns null when it starts, or why not.
+     */
+    public String chimney(BlockPos exit) {
+        if (!profile.has(Feature.CHIMNEY)) {
+            return "it climbs no chimneys";
+        }
+        if (state != State.NONE || !hero.onGround() || hero.isInWater()) {
+            return "not standing on the ground";
+        }
+        linkExit = exit.immutable();
+        setState(State.CHIMNEY);
+        oneShot(MovementRules.GROUND, HeroActions.LOCO_ONE_SHOT_START);
+        return null;
+    }
+
+    private void chimneyTick(boolean ground) {
+        if (stateTicks < TELL_TICKS) {
+            Vec3 v = hero.getDeltaMovement();
+            hero.setDeltaMovement(0, Math.min(0, v.y), 0);
+            return;
+        }
+        if (stateTicks == TELL_TICKS) {
+            String no = LeapSolver.refusal(takeOffState(), false);
+            if (no != null) {
+                setState(State.NONE);
+                return;
+            }
+            impulse(LeapSolver.attributeFor(profile.jumpHeight()) * hero.blockJumpFactor(), null, 0);
+            oneShot(MovementRules.AIRBORNE, HeroActions.LOCO_ONE_SHOT_START);
+            return;
+        }
+        peakY = Math.max(peakY, hero.getY());
+        Vec3 v = hero.getDeltaMovement();
+        if (hero.getY() >= linkExit.getY() - 0.05) {
+            double dx = linkExit.getX() + 0.5 - hero.getX(), dz = linkExit.getZ() + 0.5 - hero.getZ();
+            double len = Math.max(1e-3, Math.sqrt(dx * dx + dz * dz));
+            hero.setDeltaMovement(dx / len * EDGE_PUSH, v.y, dz / len * EDGE_PUSH);
+            face(dx, dz);
+        } else if (v.y <= 0.05 && !ground) {
+            if (wallKick() != null) {
+                spendAirJump();
+            }
+        }
+        if (ground && stateTicks > TELL_TICKS + 1) {
+            setState(State.NONE);
+            landed(false, peakY - hero.getY());
+        } else if (hero.isInWater() || stateTicks > ACTION_TIMEOUT) {
+            setState(State.NONE);
+        }
+    }
+
+    /**
+     * A climb-down link (A11): from the ledge it stands on, it backs over the edge toward {@code over} and climbs down
+     * the face below the edge at vanilla's ladder rate (at most 3 b/s), to the ground at its foot. Returns null when it
+     * starts, or why not.
+     */
+    public String descend(Direction over) {
+        if (!profile.has(Feature.CLIMB)) {
+            return "it does not climb";
+        }
+        if (now() < gripAfter) {
+            return "it cannot grip again yet";
+        }
+        if (state != State.NONE || !hero.onGround()) {
+            return "not standing on the ground";
+        }
+        if (over == null || over.getAxis().isVertical()) {
+            return "an edge is north, south, east or west";
+        }
+        linkFace = over;
+        climbFace = over.getOpposite();
+        climbStartY = hero.getY();
+        setState(State.DESCEND);
+        return null;
+    }
+
+    private void descendTick(boolean ground) {
+        Vec3 v = hero.getDeltaMovement();
+        face(climbFace.getStepX(), climbFace.getStepZ());
+        if (ground && hero.getY() > climbStartY - 0.5) {
+            // still on the ledge: it backs over the edge
+            hero.setDeltaMovement(linkFace.getStepX() * CLIMB_PUSH, v.y, linkFace.getStepZ() * CLIMB_PUSH);
+            if (stateTicks > 40) {
+                setState(State.NONE); // it could not get over the edge
+            }
+            return;
+        }
+        // over the edge: it grips the face below it and climbs down
+        hero.setDeltaMovement(0, Math.max(v.y, -0.15), 0);
+        boolean owned = navOwned;
+        setState(State.CLIMB_DOWN);
+        descending = true;
+        navOwned = owned;
+        hero.resetFallDistance();
     }
 
     // ------------------------------------------------------------------ gliding (1.9)
@@ -1613,6 +1892,7 @@ public final class HeroMovement {
         Vec3 v = hero.getDeltaMovement();
         hero.setDeltaMovement(v.x * BossRules.DOWNED_SPEED_FACTOR, Math.min(0, v.y), v.z * BossRules.DOWNED_SPEED_FACTOR);
         setState(State.DOWNED_FALL);
+        navOwned = false; // a downing is no link or trip of its navigation: the hold goal holds it
         loco.cut();
         inAir = true;
         peakY = hero.getY();

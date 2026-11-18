@@ -182,6 +182,25 @@ class HeroLinksTest {
         assertTrue(of(HeroLinks.links(roofed, O, LEAPER_III, Situation.TRAVEL), Kind.GAP).isEmpty());
     }
 
+    /**
+     * A11: a ditch 2 or more deep is a gap too, although a worker's neighbour "works" (it drops in, and no ordinary
+     * person climbs out); a 1-deep trench is walked (no link), and the ditch's own drop stays a worker's neighbour.
+     */
+    @Test
+    void aDitchTwoDeepIsLeaptThoughAWorkerCouldDropIntoIt() {
+        G ditch = new G((x, z) -> x >= 1 && x <= 4 ? -2 : 0);
+        assertTrue(HeroLinks.vanillaNeighbour(ditch, O, 1, 0), "a worker drops into it");
+        assertEquals(2, HeroLinks.vanillaDrop(ditch, O, 0, 1, 0), 1e-9);
+        Link l = one(HeroLinks.links(ditch, O, KAGENORI_13, Situation.TRAVEL), Kind.GAP);
+        assertEquals(new Pos(5, 0, 0), l.to());
+        assertFalse(l.risky(), "2 deep is within any safe fall");
+        assertEquals(1, of(HeroLinks.links(ditch, O, KAGENORI_13, Situation.FIGHT), Kind.GAP).size(), "fine in a fight");
+        G trench = new G((x, z) -> x >= 1 && x <= 4 ? -1 : 0);
+        assertTrue(HeroLinks.links(trench, O, KAGENORI_13, Situation.TRAVEL).isEmpty(), "a 1-deep trench is walked");
+        assertEquals(0, HeroLinks.vanillaDrop(G.flat(), O, 0, 1, 0), 1e-9);
+        assertTrue(HeroLinks.links(ditch, O, MobilityRules.NONE, Situation.TRAVEL).isEmpty(), "workers: none");
+    }
+
     @Test
     void riskyGapsNeedAWideLandingAndNoLeapLandsNextToADeepDrop() {
         // a one-cell landing with the void beyond: never, not even escaping (1.6, 5.1.13)
@@ -267,6 +286,47 @@ class HeroLinksTest {
         lip.set(-1, 5, 0, Cell.SOLID);
         assertTrue(of(HeroLinks.links(lip, O, p(MobilityTrait.CLIMBER, 3, 1), Situation.TRAVEL), Kind.CLIMB).isEmpty(),
                 "no room to climb round it");
+    }
+
+    /**
+     * A11: a climber that cannot simply drop down a face climbs down it: a 6-high wall top for a climber I at level 20
+     * (climbs 6, falls 3 safely), with every face cell solid and the column open; a drop link where its safe fall is
+     * enough, nothing where the face is deeper than its climb, has a hole, or the column is blocked; a no-fall-damage
+     * hero drops instead.
+     */
+    @Test
+    void climbDownLinksGoDownAFaceTooDeepToDrop() {
+        Profile climberI20 = p(MobilityTrait.CLIMBER, 1, 20);
+        assertEquals(6, climberI20.climbHeight());
+        // the hero stands on top of a wall 6 high (its feet at 0, the wall's blocks under it); the ground is at -6
+        G wall = new G((x, z) -> x <= 0 ? 0 : -6);
+        Link d = one(HeroLinks.links(wall, O, climberI20, Situation.TRAVEL), Kind.CLIMB_DOWN);
+        assertEquals(new Pos(1, -6, 0), d.to());
+        assertEquals(9, d.cost(), 1e-9, "1.5 a block, as a climb");
+        assertTrue(of(HeroLinks.links(wall, O, climberI20, Situation.TRAVEL), Kind.DROP).isEmpty(), "3 safe: no drop");
+        for (Situation s : Situation.values()) {
+            assertEquals(1, of(HeroLinks.links(wall, O, climberI20, s), Kind.CLIMB_DOWN).size(), s.name());
+        }
+        // deeper than its climb, a hole in the face, a blocked column: none
+        G deep = new G((x, z) -> x <= 0 ? 0 : -7);
+        assertTrue(of(HeroLinks.links(deep, O, climberI20, Situation.TRAVEL), Kind.CLIMB_DOWN).isEmpty());
+        G holed = new G((x, z) -> x <= 0 ? 0 : -6).set(0, -3, 0, Cell.AIR);
+        assertTrue(of(HeroLinks.links(holed, O, climberI20, Situation.TRAVEL), Kind.CLIMB_DOWN).isEmpty());
+        G blocked = new G((x, z) -> x <= 0 ? 0 : -6).set(1, -2, 0, Cell.SOLID);
+        assertTrue(of(HeroLinks.links(blocked, O, climberI20, Situation.TRAVEL), Kind.CLIMB_DOWN).isEmpty());
+        // a hero whose safe fall covers the drop drops (no climb down), one with no fall damage too
+        Profile tobimaru20 = p(MobilityTrait.ACROBAT, 3, MobilityTrait.CLIMBER, 2, 20);
+        assertTrue(of(HeroLinks.links(wall, O, tobimaru20, Situation.TRAVEL), Kind.CLIMB_DOWN).isEmpty());
+        assertEquals(1, of(HeroLinks.links(wall, O, tobimaru20, Situation.TRAVEL), Kind.DROP).size());
+        // and no climbing down for a hero that does not climb
+        assertTrue(of(HeroLinks.links(wall, O, LEAPER_III, Situation.TRAVEL), Kind.CLIMB_DOWN).isEmpty());
+        // over a base wall: up one side and down the other, the same links whoever owns the wall
+        G base = G.flat().fill(1, 0, -3, 1, 5, 3, Cell.SOLID);
+        Link up = one(HeroLinks.links(base, O, climberI20, Situation.RAID), Kind.CLIMB);
+        assertEquals(new Pos(1, 6, 0), up.to());
+        Link down = one(HeroLinks.links(base, up.to(), climberI20, Situation.RAID).stream()
+                .filter(l -> l.to().x() == 2).toList(), Kind.CLIMB_DOWN);
+        assertEquals(new Pos(2, 0, 0), down.to());
     }
 
     @Test

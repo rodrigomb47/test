@@ -98,6 +98,57 @@ class LeapSolverTest {
         assertNotNull(table.lookup(9, 0, ANY), "outside the table it is solved");
     }
 
+    /**
+     * A11 (3.9): the link search's leap is the level-ground answer kept in a cache and flown once over the real slice;
+     * it is always exactly the solver's over that slice: on level ground, from a fence, with a branch over the gap (the
+     * cached arc hits it, so the solver runs and finds a flatter or no leap) and with blocks under the gap that change
+     * nothing.
+     */
+    @Test
+    void theLinkSearchsCachedLeapIsAlwaysTheSolversOverTheRealSlice() {
+        java.util.Random r = new java.util.Random(11);
+        int compared = 0, differentFromLevel = 0;
+        for (int i = 0; i < 400; i++) {
+            int gap = 2 + r.nextInt(6);
+            double startY = r.nextBoolean() ? 0 : 0.5;
+            double targetY = r.nextInt(3) - 1 + (r.nextInt(4) == 0 ? 0.5 : 0);
+            int branchColumn = 1 + r.nextInt(gap), branchY = 1 + r.nextInt(4);
+            boolean branch = r.nextBoolean(), floor = r.nextBoolean();
+            LeapSolver.Slice level = LeapSolver.levels(gap + 1, startY, targetY);
+            LeapSolver.Slice real = (c, k) -> {
+                if (branch && c == branchColumn && k == branchY) {
+                    return 1;
+                }
+                if (floor && c > 0 && c <= gap && k == -6) {
+                    return 1;
+                }
+                return level.height(c, k);
+            };
+            Limits lim = new Limits(LeapSolver.attributeFor(1.8 + r.nextInt(3) * 0.7), LeapSolver.MAX_HORIZONTAL);
+            Leap a = LeapSolver.solveLink(startY, gap + 1, targetY, lim, real);
+            Leap b = LeapSolver.solve(0, startY, gap + 1, targetY, lim, real);
+            if (a == null || b == null) {
+                assertEquals(b, a, "gap " + gap + " from " + startY + " to " + targetY + " branch " + branch);
+                continue;
+            }
+            compared++;
+            assertEquals(b.vertical(), a.vertical(), 1e-9);
+            assertEquals(b.horizontal(), a.horizontal(), 1e-9);
+            assertEquals(b.ticks(), a.ticks());
+            Leap onLevel = LeapSolver.solve(0, startY, gap + 1, targetY, lim, level);
+            if (onLevel != null && Math.abs(onLevel.speed() - a.speed()) > 1e-9) {
+                differentFromLevel++;
+            }
+        }
+        assertTrue(compared > 100, "compared " + compared);
+        assertTrue(differentFromLevel > 0, "a branch in the arc made the solver run over the real slice");
+        // and the level-ground slice is the same ground as flat() for whole heights
+        for (int gap = 2; gap <= 6; gap++) {
+            assertEquals(LeapSolver.solveGap(gap, 0, ANY, LeapSolver.flat(gap, 0, 10)),
+                    LeapSolver.solveLink(0, gap + 1, 0, ANY, LeapSolver.flat(gap, 0, 10)));
+        }
+    }
+
     @Test
     void impossibleLinksAreRefused() {
         // too wide for the limits

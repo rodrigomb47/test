@@ -341,6 +341,66 @@ public final class LeapSolver {
         return solve(0, 0, gap + 1, rise, lim, s);
     }
 
+    // ------------------------------------------------------------------ the link search's leap (3.9, task A11)
+
+    /** No leap on level ground: kept in the cache as an answer of its own. */
+    private static final Leap NO_LEAP = new Leap(0, 0, 0, 0, 0);
+    /** The cache holds at most this many level-ground answers (it is cleared beyond: a few heroes need a few dozen). */
+    static final int LINK_CACHE_MAX = 4096;
+    private record LinkKey(int columns, long startY, long targetY, long maxVertical, long maxHorizontal) {
+    }
+    private static final java.util.concurrent.ConcurrentHashMap<LinkKey, Leap> LINK_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Level ground at two heights: the start cell and everything behind it with its top at {@code startY}, the
+     * landing cell ({@code columns} on) and everything beyond it with its top at {@code targetY}, and nothing between
+     * but a floor far below. Fractional tops are slabs or fences (a fence top is 0.5 over its cell).
+     */
+    static Slice levels(int columns, double startY, double targetY) {
+        return (c, k) -> {
+            if (c > 0 && c < columns) {
+                return k == -48 ? 1 : 0;
+            }
+            double top = c <= 0 ? startY : targetY;
+            int kt = (int) Math.ceil(top - EPS) - 1;
+            if (k > kt || k < -48) {
+                return 0;
+            }
+            return k == kt ? top - kt : 1;
+        };
+    }
+
+    /**
+     * The leap a link search asks for (MOBILITY_AND_WORK 3.9: "a lookup at path time"): the lowest-speed leap from the
+     * start cell's centre ({@code startY} its feet) to the centre of the cell {@code targetX} on ({@code targetY} its
+     * feet) over level ground at those two heights is solved once and kept (keyed by the columns, both heights and the
+     * limits), then flown once over the real slice. When it lands there too it is the answer: nothing in the real slice
+     * can make a slower leap land, since a block the level ground lacks only stops arcs. Otherwise the solver runs over
+     * the real slice (an overhang over the gap, a branch in the arc). No leap on level ground means none at all.
+     */
+    public static Leap solveLink(double startY, int targetX, double targetY, Limits lim, Slice s) {
+        LinkKey key = new LinkKey(targetX, Math.round(startY * 1024), Math.round(targetY * 1024),
+                Math.round(lim.maxVertical() * 1e6), Math.round(lim.maxHorizontal() * 1e6));
+        Leap flat = LINK_CACHE.get(key);
+        if (flat == null) {
+            Leap l = solve(0, startY, targetX, targetY, lim, levels(targetX, startY, targetY));
+            flat = l == null ? NO_LEAP : l;
+            if (LINK_CACHE.size() >= LINK_CACHE_MAX) {
+                LINK_CACHE.clear();
+            }
+            LINK_CACHE.put(key, flat);
+        }
+        if (flat == NO_LEAP) {
+            return null;
+        }
+        Arc a = simulate(0, startY, flat.horizontal(), flat.vertical(), s, Math.min(startY, targetY) - 64);
+        if (onTarget(a, targetX, targetY)) {
+            return new Leap(flat.vertical(), flat.horizontal(), a.ticks(), a.apex() - startY, a.x());
+        }
+        return solve(0, startY, targetX, targetY, lim, s);
+    }
+
     /**
      * MOBILITY_AND_WORK 3.3, in the air: an acrobat whose arc no longer lands spends its air jump (vertical speed set
      * to {@code airJump}) with a new horizontal speed within the limit; the horizontal speed that lands closest to the

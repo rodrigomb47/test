@@ -319,7 +319,8 @@ public final class Pursuit {
      * target's is one it does not walk up to again.
      */
     public void watchStuck(LivingEntity t, boolean struckOrCanStrike) {
-        if (mode != Mode.CHASE || struckOrCanStrike || horizontal(npc, t) > 3.0) {
+        // a hero taking a link of its path toward the target (a climb, a jump-up, a leap: task A11) is getting there
+        if (mode != Mode.CHASE || struckOrCanStrike || horizontal(npc, t) > 3.0 || npc.travelBusy()) {
             closeNoHit = 0;
             return;
         }

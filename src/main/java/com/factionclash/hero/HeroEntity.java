@@ -1636,9 +1636,68 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     @Override
     public void aiStep() {
         if (!level().isClientSide && !preview && isAlive()) {
+            travel().tick();
             movement().tick();
         }
         super.aiStep();
+    }
+
+    // ------------------------------------------------------------------ its navigation (task A11, MOBILITY_AND_WORK 3)
+
+    /**
+     * Its ground navigation with its links ({@link HeroGroundNavigation}: jump-ups, gap leaps, drops, climbs up and down,
+     * chimneys and glides, taken physically by its mobility engine). A hero with no mobility searches as a worker does.
+     * (Runs in the constructor: the navigation reads the hero's fields only later.)
+     */
+    @Override
+    protected net.minecraft.world.entity.ai.navigation.PathNavigation createNavigation(net.minecraft.world.level.Level level) {
+        return new HeroGroundNavigation(this, level);
+    }
+
+    /** Its flights and the trip's wait for its links (made on first use). */
+    private HeroTravel travel;
+
+    /** What it adds to its trips: the wait for its links, a flyer's flights and their ground fallback. */
+    public HeroTravel travel() {
+        if (travel == null) {
+            travel = new HeroTravel(this);
+        }
+        return travel;
+    }
+
+    @Override
+    public boolean travelBusy() {
+        return movement != null && !level().isClientSide && movement.controls() && movement.navOwned();
+    }
+
+    @Override
+    public com.factionclash.npc.TravelHelper travelHelper() {
+        return preview || level().isClientSide ? null : travel();
+    }
+
+    /** A 5x5 traveller ticket while it flies (MOBILITY_AND_WORK 3.5), else the 3x3 every NPC carries. */
+    @Override
+    public int travelTicketRadius() {
+        return travel != null && travel.flying() ? com.factionclash.logic.hero.FlightPlanner.TICKET_RADIUS_FLYING
+                : super.travelTicketRadius();
+    }
+
+    /** The deepest drop its links and vanilla's drop search offer: never past its safe fall (3.2, 5.1.13), at most 24. */
+    public static final int MAX_DROP = 24;
+
+    /**
+     * Vanilla's path search drops down to this (3.2: the hero's safe fall distance; a hero with no fall damage at most
+     * {@link #MAX_DROP}); a hero without mobility as any mob.
+     */
+    @Override
+    public int getMaxFallDistance() {
+        com.factionclash.logic.hero.MobilityRules.Profile p = movement == null || level().isClientSide
+                ? com.factionclash.logic.hero.MobilityRules.NONE : movement.profile();
+        if (!p.any()) {
+            return super.getMaxFallDistance();
+        }
+        double s = p.safeFall();
+        return Double.isInfinite(s) ? MAX_DROP : Math.max(3, Math.min(MAX_DROP, (int) Math.floor(s + 1e-6)));
     }
 
     /**

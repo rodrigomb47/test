@@ -22,8 +22,10 @@ public class HeroHoldGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        // also while its mobility owns its movement (a leap, a climb, a glide, flight, a downing: task A10)
-        return !hero.level().isClientSide && (hero.combat().boss().held() || hero.movement().controls());
+        // also while its mobility owns its movement (a leap, a climb, a glide, flight, a downing: task A10), unless its
+        // own navigation started the action (a link it follows, a travel flight: task A11), which then waits for it
+        return !hero.level().isClientSide && (hero.combat().boss().held()
+                || hero.movement().controls() && !hero.movement().navOwned());
     }
 
     @Override

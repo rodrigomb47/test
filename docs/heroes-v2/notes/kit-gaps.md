@@ -523,3 +523,35 @@ A10 (`HeroMovement`, `MovementRules`, `HEROES_V2.md` 15.2 "A10 as built") decide
 - **A heavy landing without the roll slows** to half speed for 0.5 s (1.6's "landing roll: no landing slowdown" needed a
   slowdown to spare).
 - **The Multishot side bolt** is the bolt that cannot be picked up (vanilla gives the side bolts creative-only pickup).
+
+## A11 decisions on navigation (2026-11-14)
+
+A11 (`HeroNodeEvaluator`, `HeroGroundNavigation`, `HeroTravel`, `HEROES_V2.md` 15.2 "A11 as built") decided the points
+MOBILITY_AND_WORK 3 leaves open:
+
+- **A ditch 2 or more deep is a gap.** 3.2 offers links only where a worker's step fails; a worker can drop into a 2-deep
+  ditch but nobody climbs out, so a leaper walked round ditches it could leap. Gap links are now offered over them too
+  (`HeroLinks.DITCH_DEPTH`).
+- **A climb down** joins 3.2's links: from a ledge over a face deeper than 3 and than the hero's safe fall, within its
+  climb height. Without it a climber I could climb a 6-high wall and not get down the other side.
+- **Jump-ups are a straight jump, not a solved arc.** A leap into the next cell 1.5 blocks up runs into the ledge's face
+  for every horizontal speed the solver allows, so a jump-up is the crouch, a jump with the hero's jump strength
+  pressing toward the ledge, an air jump at each apex under its top, and a step over the edge.
+- **A link's action is the navigation's**: the hold goal leaves it be, so the hero's job and fight go on while it leaps
+  or climbs, and the trip and the pursuit wait for it instead of counting it as stuck. A downing is never the
+  navigation's.
+- **A failed link is not dead when a blow or a downing ended it** (3.3 says a failed link is dead for 10 minutes; a hit
+  is not the link's fault).
+- **Flights for trips only, out of a fight**: the mode of 3.5 with one PROPOSED floor (a leg under 8 blocks that has a
+  ground route is walked). A fight's flights (reach flights, aerial windows) are A12's.
+- **"Loaded" is "its entities tick"**: the planner reads a column only when its chunk is loaded and an entity there
+  would be ticked, so a flyer never flies into terrain where it would freeze.
+- **The forward probe looks toward the point it flies to**, not along its speed (a wall stops it, and its speed is then
+  nothing).
+- **A trip's take-off needs the sky over the hero**, not only 3.5's 4 blocks of headroom: in the campaign a flyer took
+  off inside a building whose ceiling was exactly 4 blocks up and ended 8 of 21 flights stuck under it. Under a roof or a
+  canopy it walks out first. A fight's and an escape's take-offs (A12) are not decided here.
+- **Climbing, it rises in place under an overhang ahead** (an eave, a canopy's edge) instead of climbing on the slant
+  into it: the probe looks from its feet up to the height it climbs to, as far as it flies before the next probe.
+- **The scaffold pillar stays** for a hero woodcutter: its climbing (or hovering) variant is the job's own work loop and
+  goes with L5m's mobility at work (12.4).

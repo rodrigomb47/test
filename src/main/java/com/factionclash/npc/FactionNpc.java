@@ -591,6 +591,35 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return CampaignData.get(level().getServer()).base(baseId);
     }
 
+    /**
+     * What a hero adds to its trips (its links and its flight, task A11); null for every worker and soldier, whose trips
+     * run exactly as before.
+     */
+    public TravelHelper travelHelper() {
+        return null;
+    }
+
+    /**
+     * Whether its own mobility owns its movement now (a hero's link or travel flight: the trip waits for it, and nothing
+     * counts it as stuck meanwhile); always false for workers and soldiers.
+     */
+    public boolean travelBusy() {
+        return false;
+    }
+
+    /** Ticks since it was last hurt (the risky-gap rule of a hero's links counts 5 s, MOBILITY_AND_WORK 3.3). */
+    public long ticksSinceHurt() {
+        return lastHurtTime <= 0 ? Long.MAX_VALUE : tickCount - lastHurtTime; // never hurt: not "in the last 5 s"
+    }
+
+    /**
+     * The chunk radius of its traveller ticket away from home ({@code ChunkLoading}): 1 (3x3) for everyone, 2 (5x5)
+     * for a hero in flight (MOBILITY_AND_WORK 3.5).
+     */
+    public int travelTicketRadius() {
+        return 1;
+    }
+
     public NpcNavigator navigator() {
         return navigator;
     }

@@ -128,6 +128,14 @@ def summary(d):
         if h.get("dormant"):
             line += " DORMANT"
         print(line)
+        if "recoveries" in h:
+            # its navigation (A11): links taken and failed, flights and how they ended, stuck recoveries against workers'
+            links = ",".join(f"{k}={v}" for k, v in sorted(h.get("links", {}).items())) or "-"
+            workers = [n for n in d["npcs"] if not n.get("hero") and n["role"] not in ("swordsman", "archer", "crossbowman", "axe_fighter")]
+            rate = sum(n["recoveries"] for n in workers) / len(workers) if workers else 0
+            print(f"      moves links[{links}] failed={h.get('linksFailed', 0)} flights={h['flights']} landed={h['flightsLanded']}"
+                  f" stuck={h['flightsStuck']} edge={h['flightsAtEdge']} downs={h['downs']}"
+                  f" recoveries={h['recoveries']} (workers' mean {rate:.2f})")
     st = Counter()
     for n in d["npcs"]:
         st[(n["faction"][:6], n["role"], re.sub(r"[-\d,() ]+%?", " ", n["status"])[:55].strip())] += 1

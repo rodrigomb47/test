@@ -153,6 +153,14 @@ public final class NpcNavigator {
             bestDist = Double.MAX_VALUE;
             sinceBest = 0;
         }
+        // a hero's link or flight under way, or its flight's arrival (task A11; workers have no helper)
+        TravelHelper helper = npc.travelHelper();
+        if (helper != null) {
+            Result r = helper.travel(this, target, this.reach, speed);
+            if (r != null) {
+                return r;
+            }
+        }
         if (within(npc, target, this.reach)) {
             npc.getNavigation().stop();
             stallTicks = 0;
@@ -162,6 +170,11 @@ public final class NpcNavigator {
             return Result.ARRIVED;
         }
         if (failures >= MAX_FAILURES) {
+            if (helper != null && helper.rescue(this, target)) {
+                failures = 0; // the ground failed: a flight takes the trip on (MOBILITY_AND_WORK 3.5)
+                failAnchor = null;
+                return Result.MOVING;
+            }
             return Result.FAILED;
         }
         if (stallAnchor == null || !npc.blockPosition().closerThan(stallAnchor, 3)) {
@@ -171,6 +184,9 @@ public final class NpcNavigator {
             // swinging between destinations at a boundary (stairs / tunnel, gate / yard): every leg looks fine, but
             // the NPC gets nowhere. Treat it as a dead end so the job digs or reroutes.
             stallTicks = 0;
+            if (helper != null && helper.rescue(this, target)) {
+                return Result.MOVING;
+            }
             fail(MAX_FAILURES);
             lastProblem = "going back and forth";
             return Result.FAILED;
@@ -313,6 +329,13 @@ public final class NpcNavigator {
                 }
             }
         }
+        // a flyer may take this leg in the air (MOBILITY_AND_WORK 3.5: the mode is chosen per waypoint)
+        TravelHelper helper = npc.travelHelper();
+        if (helper != null && helper.chooseFlight(this, detour != null ? detour : goal, path, target)) {
+            deadEndPath = false;
+            repathTimer = 20;
+            return;
+        }
         deadEndPath = false;
         if (path == null && !npc.onGround() && !npc.isInLiquid()) {
             // vanilla plans no path in mid-air (each step down a staircase is a small drop): not a failure, look
@@ -400,6 +423,20 @@ public final class NpcNavigator {
             failAnchor = npc.blockPosition();
         }
         failures += n;
+    }
+
+    /**
+     * A hero's flight that ended without getting there (stuck in the air, the edge of loaded terrain): it counts as a
+     * failed try of the trip, so flying and walking cannot alternate forever (MOBILITY_AND_WORK 3.5).
+     */
+    public void otherWayFailed(String problem) {
+        fail(1);
+        lastProblem = problem;
+    }
+
+    /** The reach of the trip under way. */
+    public double reach() {
+        return reach;
     }
 
     /**

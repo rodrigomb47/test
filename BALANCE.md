@@ -1110,6 +1110,34 @@ All PROPOSED unless MOBILITY_AND_WORK gives the number; heroes only (workers and
   only in the hero's own airtime. A downing: horizontal speed x**0.2**, +**30** poise, its fall one capped hit.
 * Bursts: on **8** straight level path nodes with nobody within **2** blocks ahead; **3 s**; checked every **5** ticks.
 
+## Hero navigation (`HeroNodeEvaluator`, `HeroGroundNavigation`, `HeroTravel`; links of `HeroLinks`) — A11
+All PROPOSED; heroes only (a worker's and a soldier's navigation, path search, drops and chunk ticket are unchanged).
+* Links: only where a worker's neighbour fails (a hole, a wall, a fluid), and a gap over a ditch **2** or more deep
+  (`HeroLinks.DITCH_DEPTH`; a worker drops in and cannot climb out); at most **8** a node; never onto leaves or a block
+  that hurts. Costs (MOBILITY_AND_WORK 3.2): jump-up **2 + rise**, gap **1 + width / 2**, drop **1 + drop / 4**, climb
+  up or down **1.5** a block, chimney **2** a block, glide **1** per 2 blocks; x**3** inside a hostile base's walls box
+  + **16** on a trip or an escape. A climb down only where the drop is deeper than **3** and its safe fall, within its
+  climb height.
+* Drops: vanilla's drop search goes down to its safe fall (`getMaxFallDistance`), at most **24** (`HeroEntity.MAX_DROP`;
+  no fall damage) and never under **3**.
+* Following: it stands within **0.25** of the start cell's centre (**0.4** at a glide's edge) before a link, gets there
+  within **60** ticks (`APPROACH_TICKS`) or the link fails; a failed link is left out for **10 minutes** (12000 ticks,
+  `DEAD_TICKS`; not when a blow or a downing ended it). A jump-up and a chimney start with the **0.3 s** crouch; after a
+  climb or a jump-up it steps at most **10** ticks in until it stands **0.3** inside the top.
+* The leap a search asks for: the level-ground answer kept per (columns, heights, limits), at most **4096** kept, flown
+  once over the real blocks; the solver runs over them only when that arc does not land.
+* Flight for a trip: chosen per waypoint by `FlightPlanner.mode` (no ground route or **1.5x** the line, or over **40**
+  blocks and faster), never for a leg under **8** blocks with a ground route (`HeroTravel.MIN_FLIGHT`), with the stamina
+  over **25%** to cover the leg at cruise, the sky over its footprint (no block over its head in its columns: a roof or
+  a canopy makes it walk out first); out of a fight only. In the air: points reached within **2** blocks, a corner of
+  the route round a hostile base within **3**; the forward probe every **4** ticks, **4** blocks ahead toward the point,
+  climbs to **1** over what it finds; climbing more than **0.5**, it rises in place while anything stands in the way
+  ahead up to that height, as far as it flies in **4** ticks and **1** block more (`HeroTravel.RISE_FIRST`); the landing
+  chosen within **16** blocks of the destination, in rings out to **8**, at most **4** above or below it; a trip that
+  stops calling for **20** ticks lands. After a flight that ended stuck or at the edge of loaded terrain: no flight for
+  that trip for **200** ticks (`REFLIGHT_TICKS`), a stuck leg dead for **10 minutes**.
+* Chunk ticket: **5x5** (radius 2) while a travel flight is under way, refreshed every **10** ticks; **3x3** otherwise.
+
 ## Historical values (before the worker redesign)
 These numbers belonged to the old fixed workplaces. New bases no longer have them; they matter only for campaigns
 saved by an earlier version, which load and convert (`CampaignData.FORMAT` 2; each record converts itself in

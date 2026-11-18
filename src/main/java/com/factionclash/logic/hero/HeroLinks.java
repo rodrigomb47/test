@@ -16,8 +16,8 @@ import java.util.Set;
  * A hero's ground links on a pure grid model (MOBILITY_AND_WORK 3.2-3.4, 3.7, 5.1): the extra neighbours
  * {@code HeroNodeEvaluator} (A11) offers where the vanilla neighbour fails (a hole, a wall, a fluid), at most 8 per
  * node: <b>jump-up</b> onto a ledge 1.5-3 blocks higher, <b>gap</b> leaps the {@link LeapSolver} finds, <b>drops</b>
- * down to the safe fall distance, <b>climbs</b> up a wall face, <b>chimneys</b> up a 1-2 wide shaft and <b>glides</b>
- * down from an edge. Their sizes come from the hero's {@link Profile} at its level; every link is checked against the
+ * down to the safe fall distance, <b>climbs</b> up a wall face and down one (A11), <b>chimneys</b> up a 1-2 wide shaft
+ * and <b>glides</b> down from an edge. Their sizes come from the hero's {@link Profile} at its level; every link is checked against the
  * hazard rules before it is offered (5.1.13); a risky gap (lava, fire, the void or a drop deeper than the safe fall
  * under the arc) is refused in a fight and needs a wide landing out of one or while escaping (3.3). The walls of any
  * base are terrain like any other (3.7): nothing here knows whose blocks they are; only the travel cost gives hostile
@@ -41,6 +41,11 @@ public final class HeroLinks {
     /** Gap links start at 2 blocks; a gap landing is at most 1 block higher (and at most 1 lower). */
     public static final int GAP_MIN = 2;
     public static final double GAP_LANDING_RISE = 1;
+    /**
+     * A ditch at least this deep (A11): a worker drops into it (its neighbour "works") but no ordinary person climbs out,
+     * so a leaper's gap link is offered over it as over a hole.
+     */
+    public static final double DITCH_DEPTH = 2;
     /** Climb links start at 2 blocks (a 1-block rise is a step). */
     public static final int CLIMB_MIN = 2;
     /** A chimney is at least 3 blocks high; the search stops at this height (PROPOSED: wall kicks have no limit). */
@@ -166,9 +171,19 @@ public final class HeroLinks {
                 && standable(g, new Pos(qx, (int) Math.floor(f.top() + EPS), qz));
     }
 
+    /** The depth of a worker's neighbour when it is a drop (0: level ground or a step up). */
+    static double vanillaDrop(Grid g, Pos p, double sp, int dx, int dz) {
+        int qx = p.x() + dx, qz = p.z() + dz;
+        if (standIn(g, qx, qz, sp - 0.5, sp + VANILLA_RISE) != null) {
+            return 0;
+        }
+        Floor f = floor(g, qx, p.y(), qz);
+        return f.isVoid() ? Double.POSITIVE_INFINITY : Math.max(0, f.depthBelow(sp));
+    }
+
     // ================================================================== links
 
-    public enum Kind { JUMP_UP, GAP, DROP, CLIMB, CHIMNEY, GLIDE }
+    public enum Kind { JUMP_UP, GAP, DROP, CLIMB, CLIMB_DOWN, CHIMNEY, GLIDE }
 
     /**
      * One link: its kind, the cells it joins, its path cost, the leap of a gap link (null otherwise), and whether its
@@ -202,12 +217,16 @@ public final class HeroLinks {
         }
         for (int[] d : DIRS) {
             if (vanillaNeighbour(g, p, d[0], d[1])) {
+                if (vanillaDrop(g, p, sp, d[0], d[1]) >= DITCH_DEPTH - EPS) {
+                    add(out, gap(g, p, sp, d[0], d[1], m, s)); // a ditch: dropping in is no way across it
+                }
                 continue;
             }
             add(out, jumpUp(g, p, sp, d[0], d[1], m));
             add(out, gap(g, p, sp, d[0], d[1], m, s));
             add(out, drop(g, p, sp, d[0], d[1], m));
             add(out, climb(g, p, sp, d[0], d[1], m));
+            add(out, climbDown(g, p, sp, d[0], d[1], m));
             add(out, glide(g, p, sp, d[0], d[1], m));
         }
         add(out, chimney(g, p, sp, m));
@@ -291,7 +310,7 @@ public final class HeroLinks {
                     return null;
                 }
                 double ty = standY(g, t);
-                LeapSolver.Leap leap = LeapSolver.solve(0, sp - p.y(), n, ty - p.y(),
+                LeapSolver.Leap leap = LeapSolver.solveLink(sp - p.y(), n, ty - p.y(),
                         LeapSolver.Limits.forGap(width, m.jumpHeight()), slice(g, p, dx, dz));
                 if (leap == null) {
                     return null;
@@ -368,6 +387,40 @@ public final class HeroLinks {
             return null;
         }
         return new Link(Kind.CLIMB, p, t, 1.5 * (ty - sp), null, false);
+    }
+
+    /**
+     * A climb down (task A11, the other half of 3.4's climb): from a standable cell on top of a face, over the edge in
+     * front and down that face (the blocks under its own feet) to the standable cell at its foot, when the drop is
+     * deeper than the hero may simply drop (a worker's 3 blocks and its own safe fall: a drop link covers the rest) and
+     * within its current climb height. The column it climbs down in must be open from the foot to its head on top, and
+     * every face cell solid. So a climber whose climb took it onto a wall top gets down the other side, a hostile base's
+     * wall like any wall (3.7).
+     */
+    static Link climbDown(Grid g, Pos p, double sp, int dx, int dz, Profile m) {
+        int max = m.climbHeight();
+        if (max < CLIMB_MIN || at(g, p.x(), p.y() - 1, p.z()) != Cell.SOLID) {
+            return null;
+        }
+        int qx = p.x() + dx, qz = p.z() + dz;
+        Floor f = floor(g, qx, p.y() + 1, qz);
+        if (!f.cell().holds()) {
+            return null;
+        }
+        double depth = f.depthBelow(sp);
+        if (depth <= Math.max(VANILLA_DROP, m.safeFall()) + EPS || depth > max + EPS) {
+            return null;
+        }
+        Pos t = new Pos(qx, (int) Math.floor(f.top() + EPS), qz);
+        if (!standable(g, t) || !open(g, qx, t.y(), p.y() + 1, qz)) {
+            return null;
+        }
+        for (int y = p.y() - 1; y >= t.y(); y--) {
+            if (!at(g, p.x(), y, p.z()).holds()) {
+                return null; // a hole in the face: nothing to hold on to
+            }
+        }
+        return new Link(Kind.CLIMB_DOWN, p, t, 1.5 * depth, null, false);
     }
 
     /**

@@ -2835,7 +2835,7 @@ format and pure logic, G art generator, L leadership, C content, V verification.
 | C4 | Slice heroes: Ilsabet Frostmere and Tobimaru Usugumo | C1 | M | same |
 | F5 | Mobility and work-mastery pure logic: `MobilityRules` (ceilings and level power), `LeapSolver`, `FlightPlanner`, link rules, `WallEntry`, `EscapeRules`, `WorkMastery`; the `mobility` block and the `dive` form in the catalogue and validator (`MOBILITY_AND_WORK.md` 18.1) | F1, F2 | M | `MobilityRulesTest`, `LeapSolverTest`, `FlightPlannerTest`, `HeroLinksTest`, `WorkMasteryTest`, `WallEntryTest`, `EscapeRulesTest`. Done 2026-11-13 ("F5 as built" below); reviewed 2026-11-13 ("Review of F1-F5 and A1b" below) |
 | A10 | Mobility engine: level-scaled attribute modifiers, `HeroMovement` (jumps, air jumps, wall kicks, climbing, gliding, flight with stamina, take-off and landing, air poise and downing), `DATA_LOCO` | A1, F5 | L | the ground and air GameTests of `MOBILITY_AND_WORK.md` 17.2. Done 2026-11-14 ("A10 as built" below): `hero/HeroMovement` (one per hero, ticked before vanilla's AI and travel) applies `MobilityRules`' level-scaled modifiers (jump strength, step height, safe fall and fall damage, travel speed, movement and water efficiency, swimming, a charger's knock-back while travelling; every feature from level 1, the numbers growing with `p(L)` to full at level 20) and runs the physical actions on vanilla's own physics: jumps, a leap solved over the real blocks behind its 0.3 s crouch tell, air jumps, wall kicks, the mantle, climbing and clinging (vanilla's ladder physics), gliding (opened by itself over a drop of 4 blocks), flight with stamina (the 0.6 s take-off tell, the landing, the descent at 25%, the glide down when it is empty), the runner's sprint and the charger's charge while travelling, air poise and the downing (a stagger in the air is a downing); `DATA_LOCO` plays G10's clips (one-shots over their loops on the base controller), the wing loops on a new `wings` controller and the mount bone only while riding; `cues.takeoff` with the hero's own take-off, `cues.landing`, `cues.downed`; the fight's air budget and ceiling counted from engaged enemies of any kind; `[heroes.mobility]` config; `/fc admin hero mobility`; 1022 unit tests (13 new, `MovementRulesTest`) and 278 GameTests (16 new, `HeroMobilityGameTests` in a 32 x 24 x 32 `mobility_field`: a leap's apex, length and ticks are `LeapSolver`'s within 0.03 blocks and a tick, `mobilityScalesWithLevel`, a climber knocked off by an NPC soldier's and a mock player's blows alike, air poise from an NPC archer's and a mock player's arrows and blows alike, the air budget and ceiling the same against both) |
-| A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, walls as terrain for heroes, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration (mobility first, no 10 s wait) | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day |
+| A11 | Mobility navigation: node-evaluator links and their follower, climb links, flight mode with the cruise planner and ground fallback, walls as terrain for heroes, `NpcNavigator`/`DigOut`/`Scaffold`/`Reach` integration (mobility first, no 10 s wait) | A10 | L | link and flight GameTests; no more stuck recoveries than workers in a campaign day. Done 2026-11-14 ("A11 as built" below): a hero's path search (`hero/HeroNodeEvaluator`) adds `HeroLinks`' jump-ups, gap leaps (over a ditch 2 deep too), drops to its safe fall, climbs up a face and down one (new), chimneys and glides where a worker's step fails, never onto leaves, with the links' costs and a x3 berth round hostile bases on a trip; `hero/HeroGroundNavigation` walks to each link's start and lets `HeroMovement` take it on vanilla's physics (the new jump-up with its air jumps, the solver's leap, the climb, the new climb down and chimney, the glide off the edge), a failed link dead for 10 minutes; `hero/HeroTravel` flies a trip's waypoint when `FlightPlanner.mode` says so (no ground route, a 1.5x detour, or a long trip it flies faster), on the cruise layer over loaded, ticking terrain only, with the forward probe, a legal landing near the destination, the 5x5 chunk ticket, and the ground fallback (at the edge of loaded terrain after 3 s of hovering, stuck in the air after a 10-tick head bump or 2 s without progress, a fight, low stamina), its failures counted with the ground's; walls are terrain for heroes, soldiers and workers unchanged; a failing ground trip asks for a flight first, `DigOut` only when no link helps; `Pursuit`'s paths have the links, so a hero reaches an enemy on a ledge at once; 1025 unit tests (3 new) and 295 GameTests (17 new, `HeroNavigationGameTests`); four campaign days with the test rig in Tobimaru's and Ambrose's kits: no stuck recovery for the hero against the workers' mean of 1.2-4.9, and none of a flyer's 20 flights on the last day stuck (a building's 4-high ceiling had ended 8 of 21 before the take-off needed the sky) |
 | A12 | Mobility in combat: the `dive` form, aerial windows and the air budget, new conditions and reactions, arena samples, raids and scouting over walls with the defenders' response, escape (`HeroEscapeGoal`, `EscapeRules`: 6.13; there is no yield to refuse), the fairness rules | A6, A10, A11 | M | the boss mobility, wall and escape GameTests |
 | G10 | Locomotion animation set in the core library, wing loops, the `mount` locator and the broom (Ambrose's staff-broom) | G4, G6a | M | each passes `check`; GIFs reviewed on two bases. Done 2026-11-13: the 27 animations of MOBILITY_AND_WORK 4.1 for milestone 1 in `_core` (11 base loops, 14 base one-shots that end on the loop that follows them, `move.ride_cast` and `move.air_dive` as actions) and the three wing loops of the secondary controller, every clip passing `herogen check` on all six bases; full turns that unwind (`primitives.spin`: the flip, the roll, the cat twist), the riding rule on the rig's new `mount` bone (`quality.check_mount`), the `mounts/broom` carrier part and `visual.json` `carrier`, hero variants (`animations.variants`) with the slice's four: Natsuho's cat twist, Yugen's fox lope, Kagenori's crane leap, Ambrose's broom ridden side-saddle on his staff; GIFs and sheets on a chibi and an adult in `docs/heroes-v2/previews/anim/locomotion/` (`notes/artgen.md`, "G10"); 331 Python tests. Art review 2026-11-13: capes, tails, ponytails and coat tails trail in flight (recipe `wind`, `secondary.Wind`, on the glide, flight, take-off, landing, leap and ride clips and the broom and crane variants; an action takes its base's wind); only `_core` chain-bone keys change |
 | L5m | Work mastery: the `FactionNpc` work API, proficiency, Presence, the specialties of the 15 milestone-1 talents and `aura`, virtual enchantment levels, furnace progress, `sim.py` output lines | A1, L5, F5 | M | the work-mastery GameTests; workers' numbers unchanged |
@@ -4418,6 +4418,106 @@ A10 as built (2026-11-14), where it goes beyond or differs from `MOBILITY_AND_WO
   archers first, escape mobility); milestone 2's hover, swimmer II-III and lava walking. The client side (one-shots,
   wings, the mount) has no automated test and is not yet seen in the viewer; no campaign run (only the test rig ships,
   and it only jumps higher now).
+
+A11 as built (2026-11-14), where it goes beyond or differs from `MOBILITY_AND_WORK.md` 3.1-3.9, 5.1.13 and the row above:
+
+- **The path search** (`hero/HeroNodeEvaluator`, the faction NPCs' gate-aware evaluator with links on top). For each
+  node vanilla's neighbours come first; then `HeroLinks.links` adds the hero's links where a worker's neighbour fails,
+  at most 8, over a `WorldGrid` that reads loaded chunks only (an unloaded one is solid, nothing is loaded or generated)
+  and each block once per search. A link never lands on leaves or a block that hurts, nor on a node walking already
+  reaches; a dead link is left out. Vanilla's `Path` keeps plain nodes, so the links are kept by their two nodes and the
+  path's own are copied beside it by node index (`HeroGroundNavigation.linkAt`). The search's step cost is the link's
+  own cost (3.2) and x3 inside a hostile base's walls box plus 16 on a trip or an escape (3.7: a berth, not a ban; on a
+  raid or in a fight none). The situation of the risky-gap rule is worked out per search, the same for a player, an NPC
+  and a monster: escaping; in a fight (a target, an engaged enemy, a hostile within 16 blocks, hurt in the last 5 s); on
+  a raid; else a trip. `getMaxFallDistance` is the hero's safe fall (at least 3, at most 24 for no fall damage), so
+  vanilla's own drop search offers its drops.
+- **Two link rules decided here** (`HeroLinks`, pure, tested). A gap is offered over a ditch 2 or more deep although a
+  worker's neighbour "works" there (it can drop in but no ordinary person climbs out): the leaper leaps it instead of
+  going round (3.2 offered links only where the worker's neighbour fails, so a 2-deep ditch was walked round). And a
+  **climb down** (`Kind.CLIMB_DOWN`, new): from a ledge over a face deeper than 3 and than its safe fall, within its
+  climb height, every face cell solid and the column open; without it a climber I that climbed a 6-high wall could not
+  get down its far side. `LeapSolver.solveLink` gives the gap link its leap (3.9's "lookup at path time"): the
+  level-ground answer kept per columns, heights and limits, flown once over the real slice, the solver run over the real
+  slice only when that arc does not land; a unit test holds it equal to the full solve on 400 random slices.
+- **Following** (`hero/HeroGroundNavigation`). When the path's next node is a link's landing the hero walks to its start
+  cell's centre (within 0.25; 60 ticks at most), stops, and `HeroMovement` takes it: a jump-up is the new `jumpUp` (the
+  crouch, a straight jump with its jump strength pressing toward the ledge, an air jump at each apex under its top, a
+  step in once on it), a gap is A10's solved leap, a climb is A10's climb (which now steps in from the edge of the top),
+  a climb down is the new `descend` (it backs over the edge and grips the face below, kept to it by a small nudge, at
+  vanilla's 3 b/s), a chimney is the new `chimney` (wall kicks from side to side, an air jump when no wall is left, out
+  at the top), a glide is walked off the edge and opened as it leaves the ground; a drop is walked. The action is the
+  navigation's (`HeroMovement.navOwned`): the hold goal leaves it be, so the hero's job and fight go on around it, and
+  `NpcNavigator` and `Pursuit` wait for it (`FactionNpc.travelBusy`) instead of counting it as stuck. On the landing
+  cell (or standing on it with its centre just over the edge) the path goes on; otherwise the link is dead for 10
+  minutes (not when a blow or a downing ended it) and the path is searched again without it.
+- **Flight for a trip** (`hero/HeroTravel`, `NpcNavigator`'s new `TravelHelper`, null for workers and soldiers). After
+  `NpcNavigator` searched a waypoint's ground path, a flyer out of a fight asks `FlightPlanner.mode`: no ground route, a
+  1.5x detour, or a trip over 40 blocks it flies faster, with the stamina over 25% for the leg, a legal landing, 4
+  blocks of headroom and the sky over its footprint, no thunderstorm, not exhausted (and never for a leg under 8 blocks
+  that has a ground route, PROPOSED). The sky is a rule of A11's: in the first campaign day with a flyer, 8 of its 21
+  flights took off inside a building whose ceiling was exactly the 4 blocks of 3.5 over the floor, rose into it and
+  ended stuck; under a roof or a canopy it now walks out first and the trip's next path search may fly from there. In
+  the air it follows `FlightPlanner.route` (round hostile bases' berth on a trip) by legs of one 24-block waypoint at
+  the cruise layer, planned over terrain that is loaded and whose entities tick (`surface`), with the forward probe
+  every 4 ticks toward the point it flies to (it climbs over what is ahead, or turns along the next point under its
+  ceiling); while it climbs, the probe also looks over the way ahead from its feet up to the height it climbs to, as far
+  as it flies before the next probe, and anything there (an eave, a canopy's edge) makes it rise in place first, so a
+  slanting climb never wedges its head under an overhang. Within 16 blocks of the destination it picks a legal landing
+  (the destination's column, else the nearest open, standable cell in rings out to 8, never water, lava, fire, powder
+  snow, farmland, leaves or a block that hurts) and comes down on it; the ground navigation walks the rest. It carries a
+  5x5 chunk ticket while it flies (`ChunkLoading` takes a radius per traveller). **The ground fallback**: at the edge of
+  loaded terrain it hovers, plans again every 10 ticks and lands after 3 s (a creep of less than a station does not
+  restart the wait); a head bump while it climbs for 10 ticks or under a block of progress in 2 s (toward the point in
+  the air) ends the flight, the leg dead for 10 minutes; a fight, its stamina at 25% (A10), a downing or a trip that
+  stops calling for 20 ticks lands it. A flight that ended without getting there counts as a failure of the trip
+  (`NpcNavigator.otherWayFailed`) and no flight for that trip follows for 200 ticks, so flying and walking cannot
+  alternate forever. A ground trip about to fail (no path, going back and forth) asks for a flight first.
+- **Walls, DigOut, Scaffold, Reach.** Walls are terrain: a hero's links climb, leap or drop over any base's wall,
+  hostile or not, and a flyer flies over; soldiers and workers keep `NpcPathNavigation` and its evaluator (the static
+  GameTest checks their classes, ticket and drops). `DigOut` (pillaring, bridging, the staircase) runs only when the
+  search with links and a flight found no way. `Pursuit` searches with the hero's navigation, so a hero whose links
+  reach a target on a ledge, a wall or across a gap chases it at once (CHASE), with no planning and no wait; its stuck
+  watch waits while a link runs. **Not built here**: the woodcutter's scaffold pillar is unchanged for a hero (a climber
+  clinging to the trunk or a flyer hovering at the crown needs its own variant of the pillar's work loop, which goes
+  with the job-by-job mobility of 12.4 and L5m; no slice hero is a woodcutter); the strike from a link (3.7), reach
+  flights and soldiers holding under an airborne hero are A12's with the rest of 5.1.
+- **Tests.** Unit (3 new): `HeroLinksTest.climbDownLinksGoDownAFaceTooDeepToDrop`,
+  `aDitchTwoDeepIsLeaptThoughAWorkerCouldDropIntoIt`,
+  `LeapSolverTest.theLinkSearchsCachedLeapIsAlwaysTheSolversOverTheRealSlice`. `HeroNavigationGameTests` (17, in the
+  `mobility_field`): `leaperCrossesAGapAWalkerGoesRound` (Kagenori at level 10 leaps a 4-wide ditch, a worker walks
+  round it, he arrives first), `leaperAndAcrobatJumpUpATwoBlockLedge` (Kagenori at 20, an acrobat III at level 1 with
+  its air jumps), `climberScalesASixHighWallAndClimbsDown` (a climber I at 20, unhurt),
+  `heroCrossesAWallASoldierGoesThroughTheGateway` (Tobimaru over a 5-high yard wall, a soldier through the gateway and
+  never on a wall), `leaperLeapsALavaChannelOutOfAFight` and `leaperWalksRoundALavaChannelWith{AnNpc,APlayer}FoeNear`
+  (the risky-gap rule, an NPC soldier and a mock player alike), `flyerCrossesARavineAndLands`,
+  `flightFallsBackToTheGroundAtTheLoadedEdge` (a test seam, `HeroTravel.unloadedForTests`, marks the far half of the
+  field unloaded: a GameTest's own chunks all tick and its barrier walls stand where unloaded terrain would begin),
+  `flyerUnderACanopyWalksOutBeforeItFlies` (a leaf roof 4 over him: no take-off under it, no head bump),
+  `flyerBesideACanopyRisesClearOfItsEdge` (a leaf strip right beside the take-off: he rises in place over its edge),
+  `flightRoofedOverEndsStuckAndWalks` (a stone roof put over him once he flies: the head bump ends the flight, he lands
+  unhurt and the trip ends on foot), `flyerWalksInATunnel`, `heroesAreNeverStuckWhereAWorkerIsNot` (Tobimaru, Kagenori,
+  Ambrose and a worker over a course of a step, a fence, a ditch with a bridge, a tree and a step down: no hero with
+  more stuck recoveries than the worker), `heroReaches{AnNpc,APlayer}OnALedgeAtOnce` (a jump-up and a blow within 4 s,
+  no plan; 60 and 61 ticks measured) and the static `workersNavigateUnchanged`. Flight tests need `skyAccess = true` (a
+  test field's barrier roof is the heightmap's top otherwise). Sabotage: 16 breaks (no climb down, no fight for the
+  risky-gap rule, no edge landing, no ditch gap, a worker's 5x5 ticket, no stuck watch, no jump-up, no climb links,
+  never a flight and no rescue, no safe-fall drops, a take-off under a roof, no rise in place), each caught by its test.
+- **The campaign days** (`tools/days.sh` and `sim.py` on a dedicated server, the test rig in a slice hero's kit with
+  scout duty through its override; the `moves` line `sim.py` now prints under each living hero). Day 1 in Tobimaru's
+  kit: 11 links taken (6 climbs, 5 gap leaps), none failed, no stuck recovery, the workers 58 over 48 NPCs; 4.77
+  ms/tick. Day 2 in Ambrose's (a flyer II): 21 flights, 8 ended at their landing and 8 stuck in the air, every one
+  inside the same building, whose ceiling was exactly the 4 blocks of headroom a take-off needs: it rose into it and the
+  head bump ended the flight. Hence the sky rule and the rise in place above (and their three GameTests). Day 3 with the
+  fix (Ambrose fell to a Grove champion twice and was down most of the day): 3 flights, none stuck. Day 4: 20 flights, 9
+  ended at their landing, none stuck and none at the edge of loaded terrain (the rest came down before choosing a
+  landing: low stamina, a fight or the errand ending, which the counters do not split), 2 glides off ledges, no link
+  failed, **no stuck recovery for the hero against the workers' mean of 4.93** (4.42 on day 2); 5.80-6.92 ms/tick with
+  57-71 NPCs.
+- **Left open**: the scaffold pillar for climbers and flyers (above); A12's strike from a link, reach flights, aerial
+  windows, the fight-reach clock and soldiers holding under an airborne hero; a raid's way in over the walls
+  (`WallEntry`) is A12's `HeroRaid`; swimmer II-III's amphibious navigation and hover (A13). The client side of A10
+  still has not been seen in the viewer.
 
 ### 15.3 Milestone 2: systems breadth
 
