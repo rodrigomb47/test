@@ -86,6 +86,19 @@ commits, language and testing are in `/CLAUDE.md`.
    automatically know about it, but if someone whos is meant to return base doesnt return after a set amount of time
    then the faction should assume that they died and replace them". Recorded in `docs/ROADMAP.md` (Phase 4 owner
    decisions; Phase 1 row "Deaths far from home are not known at once").
+10. **Artifacts and the Wither and Ender Dragon heroes** (owner, 2026-11-18): "artifacts, these are items that are only
+    effective to heroes, artifacts are named items and each can enhance something, think of somethint like the items
+    from league of legends for example, normal npcs can have these artifacts in their inventory and transport them
+    around but it has no effect on them. If a hero dies, their artofifacts are dropped"; "2 more specific heroes, the
+    wither and the ender dragon. When the vanilla whither and enderdragon are defeated for the first time a chest will
+    spawn at the ground respective to their death location, inside the chest will have a wither or enderdragon hero
+    token (based on who was defeated) and if anyone from the faction bring the token inside a base it will consume it
+    and the hero will join the faction, this token may be dropped on death so anothet faction can steal it before they
+    can be used and use it for themselves. The whither and the ender dragon has female appearances based on the boss
+    design and they come with an unique artifact that cant be crafted and are best suited for them, but they are also
+    dropped if they die. Make theit kit with the same you ve been doing with the other bosses, unique and complex and
+    base it on the boss itself". Recorded in `docs/ROADMAP.md` (Phase 4 milestones); design in
+    `docs/heroes-v2/ARTIFACTS.md` and `docs/heroes-v2/BOSS_HEROES.md`.
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
