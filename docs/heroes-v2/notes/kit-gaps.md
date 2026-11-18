@@ -568,7 +568,9 @@ proposes; B1 (format) and B3 (engine) of `HEROES_V2.md` 15.8 decide and build th
 2. **Projectile looks and a slow shot.** v1 appendix B.6 lacks `wither_skull`, `wither_skull_blue` and
    `dragon_fireball`; they can be drawn by vanilla's own `WitherSkullRenderer` (both textures) and
    `DragonFireballRenderer`, so they need no A9 model. A `shot` gets an optional `speed` (40-100% of a shot's speed,
-   default 100): the blue skull flies at 60%, as vanilla's slower dangerous skull.
+   default 100): the blue skull flies at 60%, as vanilla's slower dangerous skull. A `rain` gets an optional
+   `centre: self` (default: the target), so the Wither's Stray Skulls rain at random around herself; its per-receiver
+   cap stays 1.5 x the slot's (review: 8 impacts of 3).
 3. **Thrown basic attacks from the air.** `MOBILITY_AND_WORK.md` 5.1.5 allows light ranged moves (at most 3 per
    take-off) and the wind-up of a `dive` or a `rain` in the air, and is silent on basic attacks. The Wither's turret
    phase throws her basic skulls from the air. Proposed: a thrown basic attack may fire in an aerial window at its own
@@ -584,14 +586,21 @@ proposes; B1 (format) and B3 (engine) of `HEROES_V2.md` 15.8 decide and build th
    leaves a lingering cloud where the move lands (the dragon's breath, drawn like vanilla's area effect cloud with the
    `dragon_breath` particle). It counts against v1's 2 zones per hero (the oldest ends), its pulses stay under 1.5 x
    the move's slot cap per receiver, and two new state stats `linger_radius` (+0-2) and `linger_seconds` (+0-4) let a
-   state widen it (the dragon's `heart_of_the_end`).
+   state widen it (the dragon's `heart_of_the_end`). The clouds of one use never stack on a receiver: standing where
+   two touch counts as one cloud (review).
 6. **Two add kinds** for A8's catalogue (`HEROES_V2.md` 6.11):
    - `end_crystal`, behaviour `beam_heal`: each second the nearest of the owner's crystals within `range` (24) with a
      clear line from its core to the owner heals `percent` (0.75) of the owner's maximum health; a `spire` (height by
      phase, solid like a shulker, not a block), `caged_every` (2, from phase 2) with `cage_hits` (3) and a cage that
      stops projectiles, an open crystal broken by any hit (snowballs too), a `shatter` burst (radius 3, effects on the
      owner's enemies), `max_alive` by phase (2, then 3), `per_fight` (8), `lifetime` (60), and placement: 6-14 blocks
-     from the owner, at least 4 apart, its foot reachable by an ordinary person, never over the void, lava or water;
+     from the owner, at least 4 apart, its foot reachable by an ordinary person, never over the void, lava or water,
+     and never where its spire would close a way narrower than 3 blocks (a gate, a door, a corridor, a 1-wide
+     bridge); a spire crumbles with its crystal. From the review: `per_fight_percent` (35), all beams together heal
+     at most that share of the owner's maximum in one fight, then its crystals dim and no more are raised; and the
+     crystals are the one exception to 6.11's "never more than 3 blocks above the ground" for adds, since they never
+     move and anyone can pillar beside the spire (phase 1's spire is 1 block, so an NPC's swing, which reaches no
+     higher than its own height, reaches the crystal);
    - `skull_familiar`, behaviour orbiter and turret: each picks a different engaged enemy, floats 3 blocks from it and
      at most 3 above the ground, fires its projectile every `interval` (2.5 s) with its effects, health
      `owner_max_health_percent` (10), returns to its owner after its lifetime.
@@ -602,13 +611,16 @@ proposes; B1 (format) and B3 (engine) of `HEROES_V2.md` 15.8 decide and build th
    `#sensitive_to_smite`); `blast` (damage in `#is_explosion` +25% under the cap, and twice the poise).
 8. **A rebirth with its own content.** 12.10's `rebirth` is a boolean. Proposed: `rebirth: { at 20-40 (30), moves,
    states, adds, transition }`, still legendary only, its pip on the bar from the start; an action code `rebirth`
-   (appendix D's reserved range) for its animation; the line event `rebirth`.
+   (appendix D's reserved range) for its animation; the line event `rebirth`. After a rebirth no earlier phase
+   re-arms: 6.10's re-arm would replay any phase whose threshold lies 10% or more under the rebirth's `at` (review).
 9. **The `perch` form**: a self move `{ range 6-16 (12), seconds 4-10 (8), state, break_percent 5-25 (15),
-   end_followup, radius }`. The perch is the highest standable cell within range of the target whose top is at most 3
-   blocks above ground an ordinary person can stand on (F5's "who can reach whom"), with 2 blocks of headroom, never
-   lava, fire, farmland or powder snow; else the ground beside the hero's nearest add. Class heavy at least; the state
-   ends after `seconds` or `break_percent` of the hero's maximum health, then `end_followup` plays when an enemy is
-   within `radius`. Perched time is ground time for the air budget.
+   end_followup, radius }`. The perch is the highest standable cell within range of the target whose top is at most 1
+   block above ground an engaged enemy stands on or can walk to beside it, with 2 blocks of headroom, never lava,
+   fire, farmland or powder snow; else the ground beside the hero's nearest add. (The review lowered it from 3: an
+   NPC's melee box reaches no higher than its own height, so a higher perch put a hero that arrows cannot hurt out of
+   every soldier's reach.) Class heavy at least; the state ends after `seconds` or `break_percent` of the hero's
+   maximum health, then `end_followup` plays when an enemy is within `radius`. Perched time is ground time for the air
+   budget.
 10. **`mobility.aerial.pattern`**: `hold` (today) or `circle` with `radius` 8-14: the hero orbits its target 4-6 blocks
     up between moves; while one of its `beam_heal` adds stands it keeps within that add's range and sight.
 11. **`immune_effects`**: a list of vanilla mob effects that never apply to the hero (the Wither: `wither`). NOTE for
@@ -627,3 +639,11 @@ proposes; B1 (format) and B3 (engine) of `HEROES_V2.md` 15.8 decide and build th
 15. **Not a format gap, an engine prerequisite** for ROADMAP phase 3: vanilla's `EnderDragon.hurt` ignores damage
     whose source is not a player or an explosion, so faction NPCs cannot hurt the vanilla dragon today
     (`BOSS_HEROES.md` 6.6).
+16. **Not a format gap, an ordinary-NPC rule** for B4 and ROADMAP phase 3 (review): archers and crossbowmen carry a
+    sword as a sidearm (the best the faction's stores give, a stone sword at worst) and draw it, as a player switches
+    hotbar slots, when every enemy they could shoot is projectile-immune (the armoured Wither, a perched dragon, the
+    vanilla Wither under half health). Today they never fight in melee, so an archers-only side could not hurt the
+    armoured Wither at all (`BOSS_HEROES.md` 6.3).
+17. **Move weights by state or situation** need no new field (review): `prefer_when` (x2) with the conditions
+    `phase`, `self_state` and `adds_alive` writes them all (the Wither's volley in phase 1, Grave Grasp while unbound,
+    the dragon's breath, roar and ultimate while perched, her crystal and perch while none stands).

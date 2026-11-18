@@ -1,9 +1,10 @@
 The Wither - "Queen of Three Skulls"
 Female | wither | marksman | blight | tyrant | legendary | boss hero
-Status: designed, not in the game yet (kit version 1, 2026-11-18). She is one of the two boss
-heroes: not among the 200, never a faction leader, and she joins a faction only through her token
-(see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never yields. All
-numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 4.
+Status: designed, not in the game yet (kit version 2, 2026-11-18, after review). She is one of the
+two boss heroes: not among the 200, never a faction leader, and she joins a faction only through
+her token (see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never
+yields. All numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md
+section 4.
 ====================================================================================================
 
 WHO SHE IS
@@ -135,7 +136,7 @@ be given the Wither effect. Her moves never break, place or burn a block.
       The tell: her eyes roll back and her crown sparks for 1 s; a disc marks each impact.
       Counter: watch the discs and step between them, or stand more than 7 blocks away.
       Numbers: [area, any range; rain of 8 around herself, radius 7, 2.5 s, each impact 0.9 s
-      after its disc appears; 6 blight + Wither I 3 s per impact; frames 1.0 / 2.5 / 1.0; cooldown
+      after its disc appears; 3 blight + Wither I 3 s per impact; frames 1.0 / 2.5 / 1.0; cooldown
       18 s]
 
   Ultimates (both there from level 1; they share one energy bar)
@@ -180,7 +181,8 @@ be given the Wither effect. Her moves never break, place or burn a block.
     projectiles, splash potions, melee and everything else hit as usual. While armoured she does
     not take to the air (only to reach someone on a pillar, and then arrows still knock her down),
     she closes to about 2 blocks, and she throws fewer volleys. It is the vanilla Wither's armour
-    at half health: fight her close.
+    at half health: fight her close. NPC archers with nothing else to shoot draw the sword they
+    carry and do the same, so even a party of archers can finish her.
 
 BOSS FIGHT
 - One mode, against anyone: she is a boss in every fight, whether she fights you, NPC soldiers,
@@ -222,7 +224,8 @@ BOSS FIGHT
     The rebirth: the first time in a fight that a blow would kill her, she does not die: she sinks
       into a T of soul sand and three skulls, glows blue-white, and stands again with 30% of her
       health, her skulls back at her side, adding Stray Skulls. "You think the Wither dies once? I
-      was built to be summoned." Once per fight; the next killing blow is final.
+      was built to be summoned." Once per fight; the next killing blow is final. Phase 3 does not
+      start again: she sends her skulls out with Unbound Heads.
   Each phase change takes 1.2 to 2 s: she takes 50% less damage and cannot be staggered (a glint
   shows it; she is never invulnerable), a shockwave pushes everyone within 4 blocks back (no
   damage; softened near lava or a drop), she says the line, her look changes, and the bar marks
@@ -284,7 +287,8 @@ HOW TO BEAT HER
    the ground she floats within reach of a sword. Spread out: her two skulls shoot at whoever she
    is not shooting.
 2. From 50% your arrows are useless: bring a sword, an axe or a mace, ideally with Smite, and fight
-   her close. A tunnel or a low ceiling suits you: she will not take to the air again anyway.
+   her close. A tunnel or a low ceiling suits you: she will not take to the air again anyway. (Your
+   NPC archers switch to their swords too.)
 3. Never stand within 7 blocks when Birth Blast fires. You get 4.6 s of warning: run, or break the
    charge with two big hits (15% of her health) and enjoy 2 s of free hits.
 4. Do not hide behind a shield: Wither Rose Bloom ignores it and Grave Grasp breaks it.
@@ -366,8 +370,10 @@ HOW SHE JOINS A FACTION: THE TOKEN
   Token. Later Withers give no chest.
 - The token glows, never despawns, and shrugs off fire, lava, explosions and cactus. If it falls
   into the void, sits in lava for 30 s, or is destroyed, a new one appears in the chest 2 minutes
-  later. There is only ever one; any copy is a "Hollow Wither Token" that does nothing. It cannot
-  go into an ender chest, a shulker box or a bundle, and a player in creative mode cannot hold it.
+  later. There is only ever one; any copy is a "Hollow Wither Token" that does nothing, and a
+  copied token stops working the moment the real one is used. It cannot go into a shulker box or a
+  bundle, an ender chest hands it back when you close it, and a player in creative mode cannot
+  hold it.
 - Bring it inside the walls of one of your faction's bases (you, or any NPC or hero of your
   faction, carrying it) and it is used at once: in a 10 s show at the reporting station a T of soul
   sand and three skulls glows blue and bursts, harmlessly, and she steps out and joins your
@@ -398,6 +404,8 @@ she dies, for anyone to take. Only one exists; if it is destroyed it comes back 
 - On the Wither herself (her bond): also blight damage +6%, health +5%, drain +2%; her brand is
   Wither II and a withered enemy that dies heals her 4 and gives her 10 energy (Third Hunger);
   Skull Volley throws 4 skulls instead of 3, and Ruin Skull's burst is 4 blocks wide.
+- It stays with her: her faction never gives it to another hero while she is in it. All its
+  healing counts under the artifact healing ceiling (10% of her health in any 30 s).
 
 PERSONALITY AND VOICE
 - Temperament: tyrant. Traits: aggression 80, honour 45, ambition 90, caution 35, greed 65,

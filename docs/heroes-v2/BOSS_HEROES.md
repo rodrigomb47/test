@@ -5,7 +5,8 @@ a world, a chest appears on the ground where it fell, holding that boss's hero t
 brings the token inside one of the faction's bases makes the hero join that faction. Until then the token can be
 fought over, dropped and stolen.
 
-Status: design, 2026-11-18. Nothing here is implemented. Numbers marked PROPOSED go to BALANCE.md when they are built.
+Status: design, 2026-11-18, reviewed the same day (section 12). Nothing here is implemented. Numbers marked PROPOSED go
+to BALANCE.md when they are built.
 Companions: `HEROES_V2.md` (section 8.2 points here, section 15.8 holds the tasks of section 10 below),
 `ARTIFACTS.md` (the signature tier and bond format of 7.5 and 16.4, the death drops of 11), `MOBILITY_AND_WORK.md`
 (flight and its fairness rules), `SLICE_PLAN.md` section 3 (how a hero is specified; sections 4 and 5 below follow
@@ -96,7 +97,10 @@ Decisions (PROPOSED; the owner confirms or corrects them, section 11):
 - NPC damage that hurts the vanilla dragon (6.6): vanilla ignores any damage to the Ender Dragon that does not come
   from a player or an explosion, which would make ROADMAP phase 3's End raids impossible for NPCs; the fix is noted
   here because the first-kill chest depends on who can kill the dragon;
-- the familiars and crystals as visible adds anyone can kill; the two heroes as rivals (`relationships`).
+- the familiars and crystals as visible adds anyone can kill; the two heroes as rivals (`relationships`);
+- from the review (section 12): archers and crossbowmen carry a sword as a sidearm and draw it against a target their
+  arrows cannot hurt (6.3), so an archers-only side can still beat the armoured Wither, and so can ROADMAP phase 3's
+  raid on the vanilla Wither.
 
 ---
 
@@ -130,10 +134,10 @@ Decisions (PROPOSED; the owner confirms or corrects them, section 11):
 | Dragon fireball | on impact a cloud of radius 3 growing to 7 over 30 s, Instant Damage II, `entity.dragon_fireball.explode` | the fireball leaves a **lingering cloud** (the new `linger` effect) |
 | Perching | lands on the fountain; sitting phases: flaming, scanning, roar (40 ticks, growl); **arrows and wind charges do nothing while it sits** (they are set alight); takes off after 25% of its health in damage while sitting | **Perch**: she lands on high ground her enemies can reach; while perched arrows glance off her and melee hurts more; she takes off after 8 s or 15% of her health |
 | Dragon's breath | a cloud of radius 5 for 10 s with Instant Damage, from the perch | **Dragon Breath** (a cone that leaves a cloud), **Breath of the End** (the ultimate sweep) |
-| Wing knockback | wings push everything near by 4 and hurt 5 (not while sitting) | **Wing Buffet** (hazard-aware, so nobody is thrown into the void by it) |
+| Wing knockback | wings push everything near by 4 and hurt 5 (not while sitting) | **Wing Gust** (hazard-aware, so nobody is thrown into the void by it) |
 | Head and body | the head and neck hurt 10 on contact; damage to body parts is cut to a quarter + 1 | **Void Dive**; a single hero hitbox, no parts (the per-hit cap already plays that role) |
 | Charge | charges a player | **Void Dive** (a `dive`, with its landing mark) |
-| End crystals | 10 on obsidian pillars 76-103 blocks high, 42 blocks out; the 2nd and 3rd shortest pillars are caged in iron bars; the nearest crystal within 32 blocks heals the dragon 1 health every 10 ticks; any damage breaks a crystal (snowballs too) with a power-6 explosion; breaking the crystal that is healing it hurts the dragon 10 | **Raise Crystal**: crystals on spires; only the nearest in line of sight heals her (0.75% of her maximum per second); any hit breaks an open one; caged ones stop projectiles and need climbing; breaking the one healing her hurts her 6% and adds 40 poise; a small shatter burst instead of the explosion |
+| End crystals | 10 on obsidian pillars 76-103 blocks high, 42 blocks out; the 2nd and 3rd shortest pillars are caged in iron bars; the nearest crystal within 32 blocks heals the dragon 1 health every 10 ticks; any damage breaks a crystal (snowballs too) with a power-6 explosion; breaking the crystal that is healing it hurts the dragon 10 | **Raise Crystal**: crystals on spires; only the nearest in line of sight heals her (0.75% of her maximum per second, at most 35% in a fight); any hit breaks an open one; caged ones stop projectiles and need climbing; breaking the one healing her hurts her 6% and adds 40 poise; a small shatter burst instead of the explosion |
 | Who can hurt it | only damage from a player, or a damage type in `#always_hurts_ender_dragons` (explosions) | the hero takes damage from anyone (one mode); the vanilla dragon gets a fix for NPC raids (6.6) |
 | Death | 200 ticks rising with light beams, 12,000 XP the first time (500 later), the exit portal, the dragon egg on the first kill, the global death sound | her **death** plays a short beam burst (presentation); a **dragon egg** marks her 10-minute return at her base (flavour, not a death ability) |
 | Sounds | `entity.ender_dragon.growl`, `.flap`, `.shoot`, `.ambient`, `.hurt`, `.death`, `entity.dragon_fireball.explode`; **no end crystal sound exists** (crystals use the generic explosion) | used by id; the crystal's hum, beam and shatter are generated (5.11) |
@@ -266,14 +270,19 @@ talent.
   the Wither joins it." / "There is one in the world. It drops when its carrier dies." They reuse v1's token ideas
   (25.3: a named token, the `summoned` line, the hero walking out of the station) with this file's rules of use.
 - **Component** `factionclash:boss_token`: `{ hero, instance }` (a UUID). `CampaignData.bossHeroes[hero].tokenInstance`
-  names the one real token; a copy with another instance (a duplicated world, an item duplication, `/give`, a
-  creative copy) is a **hollow token**: grey name "Hollow Wither Token", no effect, never deleted.
+  names the one real token; a copy with another instance (a duplicated world, `/give`, an old copy after a return) is
+  a **hollow token**: grey name "Hollow Wither Token", no effect, never deleted. A token is real only while its
+  instance matches **and** its hero's state is `chest` or `loose`, so a copy with the same instance (a creative clone,
+  an item duplication) is real only until the first use: that use binds her, and every other copy is hollow from then
+  on. A token is never used twice.
 - **On the ground**: never despawns (`setUnlimitedLifetime`); fire-proof (it floats up out of lava as netherite does);
   refuses damage from explosions, fire, lava, cactus and lightning; drawn with the glowing outline so players can find
   it; a small particle puff every second (soul for the Wither, portal for the dragon).
-- **Never hidden from the world**: it refuses ender chests, shulker boxes and bundles (`canFitInsideContainerItems`
-  false, and the ender chest's slots refuse it), so a carrier can never put it where no one could take it. Every other
-  container is allowed, and can be raided.
+- **Never hidden from the world**: it refuses ender chests, shulker boxes and bundles, so a carrier can never put it
+  where no one could take it. `canFitInsideContainerItems` false keeps it out of shulker boxes and bundles (vanilla
+  checks it in both). Vanilla's ender chest has no slot hook, so when a player closes an ender chest the mod moves a
+  token found in it back to the player's inventory, or to their feet when it is full, with the line "The token will
+  not stay hidden." Every other container is allowed, and can be raided.
 - **Never held in creative or spectator mode**: it drops at once at such a player's feet (that player is never an
   enemy, so no one could ever take it back).
 - **Icons** (16x16, vanilla style, by `herogen icons`): a charcoal disc with three small skulls and soul-blue eye
@@ -286,6 +295,11 @@ talent.
 - **Return**: after `bossHeroes.tokenReturnSeconds` (120, PROPOSED) a new instance lies in a chest at the chest spot
   (a new chest when the old one is gone; the spot is searched again by 3.2 if something now fills it). An old copy
   found later is hollow. The state is `returning` meanwhile (2.2).
+- **How the world notices a loss** (3.14): an item entity holding the real token leaves the world with its stack
+  still in it, for any removal reason but `UNLOADED_TO_CHUNK` or `CHANGED_DIMENSION` (the void, `/kill`, a despawn by
+  another mod; a pickup empties the stack first, so it is not a loss); it has lain 30 s in lava; or a command that
+  names its last known holder (`/clear`, `/kill`, `/item`) left that holder without it at the end of the tick. Anything
+  else an operator settles with `/fc admin bosshero restore <hero>`.
 - **Not lost**: a token in an unloaded chunk, in a chest, in a player's inventory while the world is closed. (In a
   multiplayer world a carrier who leaves drops it at their feet; single player is the goal, but this keeps the token
   in the world.)
@@ -366,14 +380,15 @@ A faction knows about a token only through its own people (the ROADMAP phase 1 k
   sighting of the chest without its column reports it empty.
 - **Carriers**: an NPC that sees a carrier within 24 blocks reports `TOKEN_CARRIER` (who, which faction, position,
   heading, when); such a report is stale after 2 in-game hours.
-- **Its own carriers**: a faction knows when one of its NPCs carries a token, and when a member player does while
-  within 64 blocks of any of its NPCs or bases.
+- **Its own carriers**: a member carrying a token, an NPC or a player alike, is known to the faction while it is
+  within 64 blocks of one of the faction's bases or of another of its NPCs (an expedition's escort knows its own
+  carrier); farther off, the faction learns of it as of anything else, from those who come home.
 - No global message reaches NPC factions, and players get only what they witness (3.3, 3.11).
 
 ### 3.10 The AI: going after a token
 
 - **Weighing** (the war council, `FactionDirector`, with the report): a known token's value is the boss hero's war power
-  at her current level (`HEROES_V2.md` 8.1; at level 1 about 9.3 for the Wither and 8.7 for the dragon) times
+  at her current level (`HEROES_V2.md` 8.1; at level 1 about 9.3 for the Wither and 9.0 for the dragon) times
   `bossHeroes.prizeWeight` (2.0: a permanent unique hero is worth more than a raid's loot); the risk is the distance
   (per 100 blocks), the known enemy power near the spot or around the carrier, and what the faction can spare without
   breaking its garrison's `keep`. Personality: ambition and greed raise the value (up to +30% each), caution raises the
@@ -398,7 +413,10 @@ A faction knows about a token only through its own people (the ROADMAP phase 1 k
 - `sim.py` prints each token's state per day, expeditions, interceptions, carriers and who holds which hero.
 
 Until ROADMAP phase 3's boss raids exist, NPC factions do not kill the bosses themselves; the chests then come from the
-player's kills, and the factions still race for them.
+player's kills, and the factions still race for them. Until phase 3 also gives NPC parties Nether and End travel, an
+expedition goes only to an Overworld chest: a chest in the Nether or the End (the dragon's always is) is for whoever
+can get there, the player first, and the factions contest that token once it is carried into the Overworld, where
+their people can see its trail.
 
 ### 3.11 Chat, the kill feed and presentation
 
@@ -426,6 +444,8 @@ player's kills, and the factions still race for them.
 - **The hero's file is removed** (an operator): a bound hero goes dormant as any hero (v1 25.5); a token whose hero has
   no definition says so in its tooltip and cannot be used until the file is back.
 - **`heroes.enabled = false` with a bound boss hero**: as any hero; the token rules pause.
+- **A save and reload during the calling**: she is bound from the moment the token was used (3.6), so after the
+  reload the calling is skipped and she stands at the station.
 - **A pact**: a member of one faction holding a token inside a pact ally's base does not use it (it is not its own
   base); a token put down there lies inside the ally's base and joins the ally after 5 s. (Allies may bargain over a
   token in milestone 2's diplomacy.)
@@ -452,6 +472,22 @@ reset <...>` (back to `dormant`).
 
 Saving: `CampaignData.bossHeroes[hero]`: `state`, `chestPos` (dimension and position), `tokenInstance`, `returnAt`,
 `ownerFaction`, the kept hero state while it is a token. The token's component carries its instance.
+
+### 3.14 Hooks (vanilla and NeoForge events; no mixin)
+
+| Rule | Hook |
+|---|---|
+| The Wither's first defeat | `LivingDeathEvent` on a `WitherBoss`; its damage source tells `/kill` (`generic_kill`) apart |
+| The dragon's first defeat | `LivingDeathEvent` on the `EnderDragon` notes the killer and the damage source; the chest is placed when that entity leaves the level with the removal reason `KILLED` at the end of its 200-tick death (`EntityLeaveLevelEvent`), the tick vanilla forms the exit portal |
+| The chest | `ChestSpot` (pure) picks the cell; `level.setBlock` places a chest facing the death point, its `ChestBlockEntity` named and holding the token in its middle slot |
+| Never despawning, glowing | `EntityJoinLevelEvent` on any `ItemEntity` holding a token (or an artifact, `ARTIFACTS.md` 11): `setUnlimitedLifetime`, `setGlowingTag(true)` |
+| Fire, lava, blasts, cactus, lightning | the item's fire-resistant component and its `canBeHurtBy` refusing every other damage type; the 30 s lava count in its `onEntityItemUpdate` |
+| Shulker boxes and bundles; the ender chest | `canFitInsideContainerItems` false; `PlayerContainerEvent.Close` on a menu over the player's ender chest |
+| A creative or spectator holder; the carrier's trail | the item's `inventoryTick` for players, the backpack tick for NPCs and heroes, every 10 ticks |
+| Dropped at death, `keepInventory` too | `LivingDeathEvent`, before the inventory is handled: the token leaves it as an item entity at the death spot |
+| A carrier who logs out (multiplayer only) | `PlayerLoggedOutEvent`: dropped at their feet |
+| Consumed inside a base | the holder's tick and the item entity's `onEntityItemUpdate` test the walls box; a token in a container is found by the base's once-a-second scan of the containers inside its walls box |
+| A loss by command | `CommandEvent` for `clear`, `kill` or `item` naming the last known holder, checked at the end of the tick |
 
 ---
 
@@ -528,14 +564,14 @@ for 3 s. It also fires from the air in her aerial windows (a thrown basic attack
 
 | Move | Form | Class | Band | Frames | Effects | P |
 |---|---|---|---|---|---|---|
-| `skull_volley` | volley 3, range 18 (10 degrees apart), projectile `wither_skull` | light | mid, far | 0.5 (she raises the sceptre, the crown gem flares) / 0.3 / 0.4 | 4 blight + Wither I 3 s each; cooldown 6 s, weight 6; usable in the air (at most 3 light ranged per take-off) | 1-3, R |
+| `skull_volley` | volley 3, range 18 (10 degrees apart), projectile `wither_skull` | light | mid, far | 0.5 (she raises the sceptre, the crown gem flares) / 0.3 / 0.4 | 4 blight + Wither I 3 s each; cooldown 6 s, weight 3, doubled in phase 1 (`prefer_when` `phase` 1); usable in the air (at most 3 light ranged per take-off) | 1-3, R |
 | `ruin_skull` | shot, range 20, slow (60% of a shot's speed), projectile `wither_skull_blue`, burst radius 3 on impact | heavy | mid, far | 1.0 (a blue skull gathers between her palms, a rising glassy hum; a strip shows its line) / 0.2 / 0.8 | 10 blight + Wither II 4 s + knockback 1 to each enemy in the burst; never breaks blocks; cooldown 14 s, weight 4 | 1-3, R |
 | `withering_pulse` | nova radius 4 | area | close | 1.0 (she draws a breath; a disc grows under her) / 0.1 / 0.8 | 4 blight + Wither I 3 s + knockback 2; cooldown 10 s, weight 3, prefers a close target | 1-3, R |
 | `rose_bloom` | zone at the target, radius 3, 4 s, a pulse every 1 s (the zone's delay is inside its wind-up) | area | mid | 1.0 (she points the sceptre; a disc of black petals grows) / 4.0 / 0.8 | each pulse 2 blight + Wither I 2 s; cooldown 16 s, weight 4; ignores shields (zones do) | 1-3, R |
 | `soul_dash` | charge 12, speed 180%, `wall_stun` | heavy | mid, far | 0.9 (she leans back, the familiars scream, a strip grows) / 0.6 / 1.0 | 9 blight + knockback 2 along the path; a wall at the end staggers her (weak point); cooldown 12 s, weight 5 | 2-3, R |
 | `grave_grasp` | combo 3 (her withering hands), `breaks_guard` | light | close | 0.45 / 0.6 / 0.4 | strikes of 3, 3 and 5 blight, the third with Wither I 3 s; a raised shield is disabled 5 s; cooldown 8 s, weight 6 | 2-3, R |
 | `unbound_heads` | self, `spawn_add` `skull_familiar` x2 (30 s) | heavy | any | 0.8 (she tears the familiars from her side) / 0.2 / 0.8 | re-forms killed familiars and sends both out again (the phase 3 transition sends them the first time); cooldown 35 s, weight 5 | 3, R |
-| `stray_skulls` | rain 8 around herself, radius 7, 2.5 s, impact delay 0.9 | area | any | 1.0 (her eyes roll back, the crown sparks; one disc per impact) / 2.5 / 1.0 | 6 blight + Wither I 3 s per impact (blue skulls landing at random, as an idle vanilla head's); cooldown 18 s, weight 5 | R |
+| `stray_skulls` | rain 8 around herself, radius 7, 2.5 s, impact delay 0.9 | area | any | 1.0 (her eyes roll back, the crown sparks; one disc per impact) / 2.5 / 1.0 | 3 blight + Wither I 3 s per impact, so all eight on one receiver stay at a rain's cap (1.5 x the skill cap: 24); blue skulls landing at random around her, as an idle vanilla head's (a rain centred on herself, kit-gaps 2); cooldown 18 s, weight 5 | R |
 
 "R" is the rebirth's final phase (4.4). Cooldowns and weights are first values, raised to their floors if under.
 
@@ -559,7 +595,8 @@ Both share the energy bar (100) and the minimum gap between ultimates (30 s, PRO
 - **Three Heads, Three Hungers** (`three_hungers`): while the familiars are at her side, every 3 s in a fight each
   familiar fires a black skull at a random engaged enemy within 20 blocks in its sight, a different one from her target
   when there is one (vanilla's side heads): 3 blight + Wither I 2 s. Two parts, one per familiar. Format: trigger
-  `every` 3, the new passive form `shot_random` (kit-gaps). Idle while the familiars are unbound.
+  `every` 3, the new passive form `shot_random` (kit-gaps), `if` `adds_alive` 0: idle while the familiars are out as
+  adds.
 - **Undying Hunger** (`undying_hunger`): every 5 s in a fight she heals 1% of her maximum health (vanilla's
   regeneration), and each kill heals her 4 (vanilla's skull kill heals 5). Both within the passive heal cap (4).
 - **Withered Blood**: immune to the Wither effect (the new `immune_effects: ["wither"]`), blight resistance 60. Every
@@ -572,9 +609,10 @@ Both share the energy bar (100) and the minimum gap between ultimates (30 s, PRO
   spark), from anyone; element projectiles, splash potions, melee and everything else hit as usual. Arrows still add
   **air** poise if she is airborne (a bounce still knocks a flyer), so a reach flight can still be shot down. While in
   it she takes no aerial windows, her `keep_distance` is 2 (she comes down to fight, as the powered vanilla Wither
-  stops rising over its target), and her `skull_volley` weight halves. Format: the state fields `projectile_immune`
-  and `keep_distance` (kit-gaps). Line on entering: phase 2's.
-- **`unbound`** (phase 3 while the familiars are out): speed +15%, `grave_grasp` weight +3, `three_hungers` idle.
+  stops rising over its target), and her `skull_volley` has lost phase 1's preference (half as likely). Format: the
+  state fields `projectile_immune` and `keep_distance` (kit-gaps). Line on entering: phase 2's.
+- **`unbound`** (phase 3 while the familiars are out): speed +15%, `grave_grasp` preferred (x2: `prefer_when`
+  `self_state` `unbound`), `three_hungers` idle.
 
 **The skull familiar add** (`skull_familiar`, a `HeroAdd` of `HEROES_V2.md` 6.11, milestone 2's add system): the same
 skull as her accessory part with a longer smoke trail. Each picks a different engaged enemy (her target last), floats
@@ -597,7 +635,8 @@ crown** weak point (4.4). No loot, no XP; they count in the add limits (4 alive 
   and about 11 s more after it, plus what Undying Hunger heals (about 0.34 a second): a longer fight than any slice
   hero (24-39 s), as the first legendary should be, still under her 180 s enrage once her wind-ups are dodged. Six
   iron soldiers who all reach her need about 7 s of landed blows between them, 10 s with the rebirth (but see her
-  armour: from phase 2 archers cannot help, and in phase 1 she is in the air).
+  armour: from phase 2 arrows glance off and NPC archers draw their sidearms, 6.3; in phase 1 she is in the air part
+  of the time, and arrows bring her down).
 - **Poise**: 90 (the marksman's 70 raised: she fights in melee from phase 2). Max hit share 12%.
 - **Phases**:
 
@@ -610,6 +649,9 @@ crown** weak point (4.4). No loot, no XP; they count in the add limits (4 alive 
 
   The bar shows four pips from the start (three phases and the rebirth, `◆◇◇◆`), so the rebirth is never a
   surprise (`HEROES_V2.md` 6.7). Format: `boss.rebirth` as an object with its own `at`, moves and transition (kit-gaps).
+  After the rebirth no earlier phase re-arms: 6.10's re-arm (health 10% above a phase's threshold) would otherwise
+  replay phase 3 at 20%, since she re-forms at 30%. R is final; her familiars, back at her side, go out again only by
+  `unbound_heads`.
 - **Reactions** (each answer replaces her next pick; the same against a player and an NPC):
 
 | When | Answer | Chance, cooldown | Phases |
@@ -865,6 +907,8 @@ instance per world: a copy is a faded copy, and a destroyed one re-forms with he
   Hunger instead of Withering Brand (the same family), four skulls in Skull Volley and a 4-block Ruin Skull burst.
   Healing from it counts under the artifact healing ceiling (10% of her maximum per 30 s).
 - War rating 0.12 x attunement (`ARTIFACTS.md` 13).
+- **It stays with her**: on its own hero a signature is held by its bond, so her faction's planner never gives it to
+  another hero while she is in the faction (`ARTIFACTS.md` 10.4); it changes hands at her death or her unbinding.
 
 ### 4.14 The hero file (abridged sketch)
 
@@ -975,24 +1019,26 @@ only; every third hit adds 3 arcane (`every_nth_hit` 3).
 | Move | Form | Class | Band | Frames | Effects | P |
 |---|---|---|---|---|---|---|
 | `ender_fireball` | shot, range 20, projectile `dragon_fireball`, splash radius 2 | light | mid, far | 0.5 (she draws her head back, purple light in her throat) / 0.2 / 0.4 | 4 arcane + `linger`: a cloud of radius 2.5 at the impact for 5 s, 2 arcane each second inside; cooldown 5 s, weight 6; usable in the air (at most 3 light ranged per take-off) | 1-3 |
-| `dragon_breath` | cone 6, 70 degrees | area | close, mid | 1.0 (she rears; her throat glows magenta; a fan of ribs grows) / 0.8 / 1.0 | 6 arcane (arcane passes armour and shields) + `linger` at the cone's end: radius 3 for 6 s, 2 arcane each second; cooldown 12 s, weight 5, doubled while perched | 1-3 |
-| `wing_buffet` | nova radius 5 | area | close | 1.0 (her wings rise high; a disc) / 0.2 / 0.8 | 4 physical + knockback 3 (hazard-aware: never off a ledge, into lava or the void); cooldown 10 s, weight 3, prefers a close target | 1-3 |
+| `dragon_breath` | cone 6, 70 degrees | area | close, mid | 1.0 (she rears; her throat glows magenta; a fan of ribs grows) / 0.8 / 1.0 | 6 arcane (arcane passes armour and shields) + `linger` at the cone's end: radius 3 for 6 s, 2 arcane each second; cooldown 12 s, weight 5, doubled while perched (`prefer_when` `self_state` `perched`) | 1-3 |
+| `wing_gust` | nova radius 5 | area | close | 1.0 (her wings rise high; a disc) / 0.2 / 0.8 | 4 physical + knockback 3 (hazard-aware: never off a ledge, into lava or the void); cooldown 10 s, weight 3, prefers a close target | 1-3 |
 | `void_dive` | dive from the air, range 12, radius 2.5; touch-and-go strings of up to 3 in one window | heavy | mid, far | 1.0 (she folds her wings in the air; the landing disc grows) / 0.4 / 1.2 (on the ground) | 10 physical + knockback 2; cooldown 10 s, weight 5 | 1-3 |
-| `raise_crystal` | self, `spawn_add` `end_crystal` 1 (5.5) | heavy | any | 1.2 (she lifts a claw; a pillar of purple light climbs where the spire will rise, a disc at its foot) / 0.3 / 0.8 | a crystal on its spire (caged every second one from phase 2); cooldown 20 s, weight 5, doubled when none of hers stands | 1-3 |
-| `perch` | self, the new `perch` form: lands on high ground (5.6) and enters `perched` | heavy | any | 0.8 (the swoop; a landing disc on the perch) / 0.2 / 0.8 | the `perched` state for up to 8 s; cooldown 18 s, weight 4, doubled when none of her crystals stands (vanilla lands more often with fewer crystals) | 1-3 |
-| `void_roar` | nova radius 8 | area | close, mid | 1.0 (she throws her head back; a wide ring) / 0.5 / 1.0 | Slowness I 3 s + silence 1.5 s (it stops heroes and casting NPCs; others have no moves to stop); cooldown 20 s, weight 3, doubled while perched | 2-3 |
-| `tail_sweep` | sweep 5, 180 degrees, 1 s (she turns first: the half-circle where her target is) | area | close | 1.0 (the tail coils; ribs across the arc) / 1.0 / 0.8 | 6 physical + knockback 2; cooldown 9 s, weight 3 | 3 |
+| `raise_crystal` | self, `spawn_add` `end_crystal` 1 (5.5) | heavy | any | 1.2 (she lifts a claw; a pillar of purple light climbs where the spire will rise, a disc at its foot) / 0.3 / 0.8 | a crystal on its spire (caged every second one from phase 2); cooldown 20 s, weight 5, doubled when none of hers stands (`prefer_when` `adds_alive` 0); none once her beams have healed all they may in the fight (5.5) | 1-3 |
+| `perch` | self, the new `perch` form: lands on high ground (5.6) and enters `perched` | heavy | any | 0.8 (the swoop; a landing disc on the perch) / 0.2 / 0.8 | the `perched` state for up to 8 s; cooldown 18 s, weight 4, doubled when none of her crystals stands (`prefer_when` `adds_alive` 0; vanilla lands more often with fewer crystals) | 1-3 |
+| `void_roar` | nova radius 8 | area | close, mid | 1.0 (she throws her head back; a wide ring) / 0.5 / 1.0 | Slowness I 3 s + silence 1.5 s (it stops heroes and casting NPCs; others have no moves to stop); cooldown 20 s, weight 3, doubled while perched (`prefer_when` `self_state` `perched`) | 2-3 |
+| `crescent_tail` | sweep 5, 180 degrees, 1 s (she turns first: the half-circle where her target is) | area | close | 1.0 (the tail coils; ribs across the arc) / 1.0 / 0.8 | 6 physical + knockback 2; cooldown 9 s, weight 3 | 3 |
 | `end_gravity` | nova radius 7 | area | close, mid | 1.0 (a shulker-like hum, purple motes rising from the ground; a disc) / 0.2 / 0.8 | 3 arcane + Levitation I 3 s (never renewed before the receiver lands, so it lifts about 2.5 blocks and nobody falls far); followup `ender_fireball` 70%; cooldown 22 s, weight 4 | 3 |
 
-**Ultimate `breath_of_the_end`** ("Breath of the End"; class ultimate; 1.6 / 2.5 / 1.5): she rears up (the selector
-doubles it while she is perched), a red fan of ribs 10 blocks long across 120 degrees grows with her line, a wide
-sound and the darkened screen; then she sweeps a torrent of breath across the arc for 2.5 s: 6 arcane each time it
-passes over someone, and three clouds of radius 3 settle along the arc for 8 s (2 arcane each second inside). Line:
+**Ultimate `breath_of_the_end`** ("Breath of the End"; class ultimate; 1.6 / 2.5 / 1.5): she rears up (`prefer_when`
+`self_state` `perched`: twice as likely while she is perched), a red fan of ribs 10 blocks long across 120 degrees
+grows with her line, a wide sound and the darkened screen; then she sweeps a torrent of breath across the arc for
+2.5 s: 6 arcane each time it passes over someone, and three clouds of radius 3 settle along the arc, 7 blocks apart,
+for 8 s (2 arcane each second inside; the clouds of one use never stack on a receiver, kit-gaps 5). Line:
 "Breathe it in. This is what the End tastes like."
 
 **Awakened ultimate `outer_isles_fall`** ("Fall of the Outer Isles"; class ultimate; 1.8 / 0.4 / 1.6): only in an
 aerial window. She climbs through the wind-up while a red landing disc of radius 4 grows on her target, then dives:
-22 arcane, knockback 3 up 1 (hazard-aware) and a cloud of radius 4 for 6 s where she lands. Line: "From the outer
+22 arcane, knockback 3 up 1 (hazard-aware) and a cloud of radius 4 for 6 s where she lands (2 arcane each second
+inside). Line: "From the outer
 isles, I fall!" The two share the energy bar and a 30 s minimum gap.
 
 **Passives**
@@ -1006,40 +1052,44 @@ isles, I fall!" The two share the energy bar and a 30 s minimum gap.
 **States**
 
 - **`perched`** (5.6): arrows, crossbow bolts, thrown tridents, wind charges and physical hero projectiles glance off
-  her and are set alight (vanilla's sitting dragon), from anyone; melee damage on her +15% (her head is low); her
-  breath, roar and buffet weigh double; no take-off until it ends; it ends after 8 s, or once she has taken 15% of her
-  maximum health since landing, and she takes off with a `wing_buffet` if an enemy is within 5 blocks.
+  her and are set alight (vanilla's sitting dragon), from anyone; every hit that still lands on her does +15% (her
+  head is low: blades, spells, explosions; the state's `damage_taken` +15); her breath and roar are preferred (x2);
+  no take-off until it ends; it ends after 8 s, or once she has taken 15% of her maximum health since landing, and
+  she takes off with a `wing_gust` if an enemy is within 5 blocks.
 - **`heart_of_the_end`** (phase 3): her clouds are 1 block wider and last 2 s longer; speed +10%.
 
 ### 5.4 The boss block
 
-- **Health** (always, against anyone): `stats.health` 32, growth `tough`, health scale 400 (the legendary default),
-  the vanguard factor 1.0:
+- **Health** (always, against anyone): `stats.health` 34 (the vanguard preset: level for level she has a legendary
+  vanguard's health, with her crystals on top), growth `tough`, health scale 400 (the legendary default), the
+  vanguard factor 1.0:
 
 | Level | 1 | 10 | 20 |
 |---|---|---|---|
-| Max health | 128 | 157 | 189 |
-| A crystal's beam (per second) | 0.96 | 1.18 | 1.42 |
+| Max health | 136 | 165 | 197 |
+| A crystal's beam (per second) | 1.02 | 1.24 | 1.48 |
+| All beams in one fight, at most (35%) | 48 | 58 | 69 |
 
-  At level 10 a player with an iron sword needs about 34 s of landed hits while no crystal of hers stands, about 46 s
-  if one beams her the whole time: break the crystals or the fight lasts a third longer. Six iron soldiers who reach
-  her need about 7 s of landed blows between them (while she is on the ground; in the air only arrows reach her).
+  At level 10 a player with an iron sword needs about 36 s of landed hits while no crystal of hers stands, and at most
+  about 48 s if her crystals beam her all they may (35% of her maximum in one fight, 5.5): break the crystals or the
+  fight lasts up to a third longer. Six iron soldiers who reach her need about 7 s of landed blows between them (while
+  she is on the ground or perched; in the air only arrows reach her).
 - **Poise**: 140 (the vanguard's). Max hit share 12%.
 - **Phases**:
 
 | Phase | At | What it adds | Transition |
 |---|---|---|---|
-| 1 | 100% | `ender_fireball`, `dragon_breath`, `wing_buffet`, `void_dive`, `raise_crystal` (open crystals, at most 2), `perch`; aerial windows with circling | - |
+| 1 | 100% | `ender_fireball`, `dragon_breath`, `wing_gust`, `void_dive`, `raise_crystal` (open crystals, at most 2), `perch`; aerial windows with circling | - |
 | 2 | 60% | **the spires rise**: crystals on tall spires, every second one caged, at most 3 standing; `void_roar` | 1.5 s: she lands, wings spread, and roars. "Rise, spires! Let them climb if they dare." |
-| 3 | 25% | `tail_sweep`, `end_gravity`, the `heart_of_the_end` state | 1.5 s: her eyes and spines ignite. "Then taste the breath of the End itself." |
+| 3 | 25% | `crescent_tail`, `end_gravity`, the `heart_of_the_end` state | 1.5 s: her eyes and spines ignite. "Then taste the breath of the End itself." |
 
 - **Reactions** (the same against a player and an NPC):
 
 | When | Answer | Chance, cooldown | Phases |
 |---|---|---|---|
 | the target draws a bow while she is airborne | `void_dive` (land or dive, the flyers' default) | 60%, 8 s | all |
-| a close target | `wing_buffet` | 60%, 10 s | all |
-| the target is behind her | `tail_sweep` | 70%, 9 s | 3 |
+| a close target | `wing_gust` | 60%, 10 s | all |
+| the target is behind her | `crescent_tail` | 70%, 9 s | 3 |
 | the target raises a shield | `dragon_breath` (arcane passes shields) | 50%, 10 s | all |
 | the target eats | `ender_fireball` | 60%, 10 s | all |
 | no crystal of hers stands | `raise_crystal` | 70%, 15 s | all |
@@ -1073,10 +1123,14 @@ isles, I fall!" The two share the energy bar and a 30 s minimum gap.
 - **Where**: within 6-14 blocks of her, on the highest ground there whose foot an ordinary person can reach (F5's
   "who can reach whom"), with room for the spire plus 2 blocks of air; never on lava, water, fire, powder snow or a
   column over the void; at least 4 blocks from another crystal. Inside an enemy base is allowed (she raises spires on
-  your walls).
-- **Height**: phase 1 a spire of 2-3 blocks, the crystal 3-4 blocks up: a sword reaches it from the ground or from
-  one block up, an arrow always. Phases 2-3 a spire of 4-6 blocks, the crystal 5-7 up: a shot, or a pillar of 2-4
-  blocks beside the spire, or a hero's leap, climb or flight.
+  your walls), but never where a spire would close a way narrower than 3 blocks (a gate, a door, a corridor, a
+  1-wide bridge), so a spire never shuts anyone in or out. A spire crumbles when its crystal breaks or fades.
+- **Height**: phase 1 a spire of 1 block, the crystal 1 to 3 blocks up: a sword reaches it from the ground, a
+  soldier's included (an NPC's swing reaches no higher than its own height, about 2 blocks), and an arrow always.
+  Phases 2-3 a spire of 4-6 blocks, the crystal 5-7 up: a shot, or a pillar of 2-4 blocks beside the spire (a soldier
+  needs a block or two more than a player), or a hero's leap, climb or flight. These crystals are the one exception to
+  `HEROES_V2.md` 6.11's "never more than 3 blocks above the ground" for adds: they never move, and anyone can pillar
+  up beside their spire (kit-gaps 6).
 - **How many**: at most 2 standing in phase 1 and 3 in phases 2-3; at most 8 raised in one fight; each stands 60 s
   (the add limit) and then fades; `raise_crystal` every 20 s at most.
 - **Breaking one**: an open crystal breaks to any hit at all, melee or projectile, a snowball or an egg included (as
@@ -1087,7 +1141,11 @@ isles, I fall!" The two share the energy bar and a 30 s minimum gap.
   core to her body beams her, and she heals 0.75% of her maximum health (one crystal at a time, as vanilla's nearest
   crystal). A purple beam is drawn (vanilla's crystal beam). A block or a solid entity in the line cuts it: building a
   wall between them is fair counterplay. The beam heals her only, never her allies or anyone else. It counts as an
-  authored heal (6.2: no regeneration in a fight, authored heals apply).
+  authored heal (6.2: no regeneration in a fight, authored heals apply). **All her beams together heal her at most 35%
+  of her maximum health in one fight** (`per_fight_percent`, PROPOSED: the "up to a third longer" a fight is meant to
+  last when her crystals are ignored). Once that is spent, her standing crystals dim (no beam, no beam snap; they still
+  shatter when broken) and she raises no more in that fight, so the crystals never make her immortal, whoever fights
+  her.
 - **Beam snap**: breaking the crystal that is beaming her is her weak point (5.4).
 - **Shatter**: any crystal that breaks bursts in purple glass: her enemies within 3 blocks take 4 arcane and knockback
   2 (hazard-aware), the price of breaking one by hand. No block damage. (The vanilla power-6 explosion would kill most
@@ -1110,8 +1168,10 @@ isles, I fall!" The two share the energy bar and a 30 s minimum gap.
   to 3 touch-and-go), or winds up `outer_isles_fall`. While one of her crystals stands she keeps her orbit inside its
   beam's 24 blocks and sight when she can.
 - **Perching** (the new `perch` form, kit-gaps): the perch is the highest standable cell within 12 blocks of her
-  target that her engaged enemies can reach or strike (its top at most 3 blocks above ground an ordinary person can
-  stand on: a wall top, a roof, a rock, a low tower), with 2 blocks of headroom and room for her folded wings, never on
+  target that her engaged enemies can reach or strike (its top at most 1 block above ground an engaged enemy stands on
+  or can walk to beside it: a step, a low wall, a rock, a stair top; so a sword reaches her there, a soldier's
+  included, since an NPC's swing reaches no higher than its own height), with 2 blocks of headroom and room for her
+  folded wings, never on
   lava, fire, farmland or powder snow; with none, the ground beside her nearest crystal. She flies or walks there and
   lands (the move's 0.8 s wind-up is the swoop onto a landing disc). Perched time is ground time for the air budget,
   and the reach rule holds (a perch is always within her enemies' reach).
@@ -1122,8 +1182,9 @@ isles, I fall!" The two share the energy bar and a 30 s minimum gap.
   base at rest, and walks in a thunderstorm.
 - **Raids**: a vanguard leads (`raids: leads`, by its own behaviour, never drafted by the soldier sort). She scouts the
   target first by circling it 8-24 blocks out, crosses the wall at the raid ceiling when she has a way out, and her
-  goal inside is to hunt the defending hero (`heroes_first`, a proud noble) or the heart with her party; she perches on
-  the highest tower in reach and breathes on the yard. Defending, she meets airborne intruders over her walls.
+  goal inside is to hunt the defending hero (`heroes_first`, a proud noble) or the heart with her party; out of a
+  fight she rests on the highest tower in reach, and in one she perches a block above the defenders, by the fight's
+  rule, and breathes on the yard. Defending, she meets airborne intruders over her walls.
 - **Terrain**: none of her moves place or break blocks; she breaks blocks only as every hero does (the dig after
   10 s of `HEROES_V2.md` 6.12, to reach a target), with her claws counting as an iron pickaxe (no special speed). The
   vanilla dragon's block smashing stays vanilla's.
@@ -1213,7 +1274,7 @@ are nowhere), though another `revival_rite` hero of her faction's would.
 | Ender Fireball | release `entity.ender_dragon.shoot` pitch 1.2; impact `entity.dragon_fireball.explode` | `moves.ender_fireball` |
 | A lingering cloud | generated `breath_cloud` (a quiet hissing loop while it lasts) | new `linger` slot (client loop) |
 | Dragon Breath | wind-up `entity.ender_dragon.growl` pitch 1.3 volume 0.6 with generated `breath_inhale`; release generated `breath_roar`; impact generated `breath_sizzle` (quiet) | `moves.dragon_breath` |
-| Wing Buffet | wind-up `entity.ender_dragon.flap` pitch 0.9 with generated `wing_rise`; impact `entity.wind_charge.wind_burst` pitch 0.8 | `moves.wing_buffet` |
+| Wing Gust | wind-up `entity.ender_dragon.flap` pitch 0.9 with generated `wing_rise`; impact `entity.wind_charge.wind_burst` pitch 0.8 | `moves.wing_gust` |
 | Void Dive | wind-up generated `dive_scream` with `cues.telegraph.dive`; impact `entity.generic.explode` pitch 1.4 volume 0.4 with `cues.landing` | `moves.void_dive` |
 | Raise Crystal | wind-up generated `crystal_call` with `block.end_portal_frame.fill`; release `block.beacon.activate` pitch 1.6 | `moves.raise_crystal` |
 | A crystal standing; its beam | generated `crystal_hum` (a loop at the crystal); generated `crystal_beam` (a loop while it beams) | add sounds (new) |
@@ -1221,7 +1282,7 @@ are nowhere), though another `revival_rite` hero of her faction's would.
 | A crystal shatters; beam snap | `block.glass.break` pitch 0.8 with `entity.generic.explode` pitch 1.5 volume 0.5 and generated `crystal_shatter`; the snap adds `block.respawn_anchor.deplete` pitch 1.2 | add sounds, `weak_points.focus_add` |
 | Perch | `entity.ender_dragon.flap` pitch 0.8 with `cues.landing`; arrows glancing off: `item.shield.block` pitch 1.4 volume 0.5 | `moves.perch`, `states.perched` |
 | Void Roar | wind-up `entity.ender_dragon.growl` pitch 0.9 with generated `roar_swell` | `moves.void_roar` |
-| Tail Sweep | release `entity.player.attack.sweep` pitch 0.7; impact `entity.player.attack.knockback` | `moves.tail_sweep` |
+| Crescent Tail | release `entity.player.attack.sweep` pitch 0.7; impact `entity.player.attack.knockback` | `moves.crescent_tail` |
 | End Gravity | wind-up `entity.shulker.shoot` pitch 0.8 with generated `gravity_hum`; impact `entity.shulker_bullet.hit` | `moves.end_gravity` |
 | Breath of the End | wind-up `entity.ender_dragon.growl` pitch 0.8 with generated `ultimate_inhale` (wide); loop generated `great_breath`; release `entity.ender_dragon.shoot` pitch 0.7 | `moves.breath_of_the_end` |
 | Fall of the Outer Isles | wind-up generated `skyfall_rise`; release `entity.ender_dragon.growl`; impact `entity.generic.explode` with `entity.dragon_fireball.explode` | `moves.outer_isles_fall` |
@@ -1235,9 +1296,9 @@ are nowhere), though another `revival_rite` hero of her faction's would.
 
 ### 5.12 Own animations
 
-`move.ender_fireball` (ground and air versions by `DATA_LOCO`), `move.dragon_breath`, `move.wing_buffet`,
+`move.ender_fireball` (ground and air versions by `DATA_LOCO`), `move.dragon_breath`, `move.wing_gust`,
 `move.void_dive`, `move.raise_crystal`, `move.perch` (the swoop and landing) and `state.perched` (head low, wings
-half open), `move.void_roar`, `move.tail_sweep`, `move.end_gravity`, `ultimate` (+ `ultimate.loop`, the sweep),
+half open), `move.void_roar`, `move.crescent_tail`, `move.end_gravity`, `ultimate` (+ `ultimate.loop`, the sweep),
 `ultimate.awakened`, `phase.2`, `phase.3`, `intro`, `victory` (a slow wing stretch), `taunt` (a beckoning claw),
 `last_stand`, `personal.1` (preens a wing), `personal.2` (curls her tail), `personal.3` (gazes at the sky), and
 overrides of the core flight clips: a heavier take-off push, a banking circle glide (`move.circle`, new) and a
@@ -1267,7 +1328,7 @@ crafted; it comes with her the first time she joins a faction and drops where sh
     "bond": {
       "stats": { "health": 5, "recharge": 5, "ability_power": 6 },                       // +3 points, her own only
       "passive": { "name": "Heart of the Spires", "unique": "spire",
-        "description": "Spire Mend, and Raise Crystal's running cooldown is cut by 10 s (never under half of it)." ,
+        "description": "Spire Mend, and her running move cooldowns are cut by 10 s (never under half), so her next crystal comes sooner.",
         "parts": [ { "trigger": "on_low_health", "trigger_value": 40, "once_per_fight": true, "form": "self",
                      "effects": [ { "type": "shield", "amount": 4, "seconds": 8 },
                                   { "type": "effect", "id": "regeneration", "level": 1, "seconds": 6 },
@@ -1286,7 +1347,8 @@ crafted; it comes with her the first time she joins a faction and drops where sh
   best on durable flyers and ultimate-led kits.
 - **The Ender Dragon herself**: all of that plus health +5%, recharge +5%, ability power +6% (within the build caps),
   Heart of the Spires, crystals every 16 s and wider fireball splashes. Its heals count under the artifact healing
-  ceiling (10% of her maximum per 30 s).
+  ceiling (10% of her maximum per 30 s); a faster Raise Crystal does not raise her beams' per-fight cap (5.5).
+- **It stays with her**, as Hollow Star does (4.13).
 
 ### 5.14 The hero file (abridged sketch)
 
@@ -1295,7 +1357,7 @@ crafted; it comes with her the first time she joins a faction and drops where sh
   "format": 2, "id": "the_ender_dragon", "name": "The Ender Dragon", "title": "Empress of the End",
   "gender": "female", "archetype": "ender_dragon", "hybrid": "west_dragon", "rarity": "legendary", "element": "arcane",
   "resistances": { "arcane": 40, "fire": 40 },
-  "stats": { "health": 32 },
+  "stats": { "health": 34 },
   "behaviour": { "combat_role": "vanguard", "duel_style": "summoner", "duty": "guard", "raids": "leads" },
   "basic_attack": { "style": "melee", "combo": 3,
                     "every_nth_hit": { "n": 3, "effects": [ { "type": "damage", "amount": 3, "element": "arcane" } ] } },
@@ -1308,7 +1370,7 @@ crafted; it comes with her the first time she joins a faction and drops where sh
     "health_scale": 400, "poise": 140,
     "adds": [ { "id": "end_crystal", "count": 1 } ],                                      // NEW add kind (beam_heal)
     "phases": [ { "at": 100 }, { "at": 60, "moves": ["void_roar"] },
-                { "at": 25, "moves": ["tail_sweep", "end_gravity"], "states": ["heart_of_the_end"] } ],
+                { "at": 25, "moves": ["crescent_tail", "end_gravity"], "states": ["heart_of_the_end"] } ],
     "weak_points": [ { "kind": "focus_add", "add": "end_crystal", "only": "beaming",          // NEW
                        "damage_percent": 6, "poise": 40 }, "blast", "recovery" ],             // blast NEW
     "enrage": { "after": 180, "triggers": ["heart_attacked"] }, "bar_color": "pink"
@@ -1366,15 +1428,20 @@ becomes one goal that serves both her crystals and vanilla's (ROADMAP phase 3's 
 ### 6.3 Projectile immunity (the Wither's armour, the perched dragon)
 
 - **Ranged NPCs** do not waste shots on a target whose state is projectile-immune: they take another enemy in range
-  (her familiars and crystals first, then soldiers), draw a melee sidearm if they carry one, or hold ready and shoot
-  again when the state ends (the perch's 8 s).
+  (her familiars and crystals first, then soldiers); with none, they draw their **sidearm** and fight in melee as a
+  swordsman does until the state ends or another target appears. Archers and crossbowmen carry no sidearm today, so
+  this design adds one (an ordinary-NPC rule and player-like: a player switches to a sword): every ranged soldier
+  keeps a sword in its backpack, the best the faction's stores give (the blacksmith's weapon orders, a stone sword at
+  worst), and swaps to it as a player switches hotbar slots. Without it an archers-only side could never hurt the
+  armoured Wither from 50% down; ROADMAP phase 3's raid on the vanilla Wither, arrow-proof below half health, needs it
+  too.
 - **Heroes**: the move selector scores 0 a move whose damage is only physical projectiles (a physical `shot`,
   `volley` or `barrage`) against a projectile-immune target, as it does a move with no valid target; element
   projectiles fire as usual.
 - **Players** hear and see the glance (a shield-block ping and a blue or purple spark) and the kit sheets say it.
 - **Never unreachable**: neither hero is projectile-immune and out of melee reach at once. The Wither in armour fights
   close and takes no aerial windows (a reach flight still takes air poise from arrows); the perched dragon's perch is
-  always within her enemies' reach.
+  always within her enemies' reach, a soldier's swing included (a block up at most, 5.6).
 
 ### 6.4 The fairness rules of `HEROES_V2.md` 6.14, checked
 
@@ -1384,7 +1451,7 @@ becomes one goal that serves both her crystals and vanilla's (ROADMAP phase 3's 
 | 2. Control the same for everyone, stuns heavy and capped | no stun: the Wither effect and knockbacks only | no stun; Slowness I, silence 1.5 s (heroes), Levitation I 3 s that never stacks into fall damage |
 | 3. Caps both ways | the 12% cap per hit on her, the slot caps on her moves, Birth Blast 24 at the 30 cap | the same; beam snap 6% sits under the cap; the crystal heal is an authored heal |
 | 4. No limit on gangs; hurt cooldown per attacker | unchanged | unchanged |
-| 5. Hazard-aware knockback | Withering Pulse, Ruin Skull, Soul Dash, Birth Blast | Wing Buffet (never into the void), Tail Sweep, both ultimates |
+| 5. Hazard-aware knockback | Withering Pulse, Ruin Skull, Soul Dash, Birth Blast | Wing Gust (never into the void), Crescent Tail, both ultimates |
 | 6. Creative and spectator players never enemies | and never carriers (3.4) | same |
 | 7. Mobility counterplay | air windows in phase 1 only, the air budget, hover within melee reach | air budget, reach clock, perch within reach, air poise (five arrows down her) |
 | Base safety | moves never touch blocks; her hands never break her side's blocks (4.5) | moves never touch blocks; crystals and spires are entities |
@@ -1417,14 +1484,14 @@ The model and reference rates are `HEROES_V2.md` 6.2, 6.16 and 8.1's (iron gear,
 | Case | On paper | Verdict |
 |---|---|---|
 | 1. A player in iron against the Wither | 169 health and a 51-health rebirth: about 37 s + 11 s of landed iron-sword hits, a duel of 100-150 s with her wind-ups dodged, under her 180 s enrage. Birth Blast at the cap (24 blight, about 21 through iron armour, plus Wither II for 5 s) kills an iron-armoured player from full health, after a 1.6 s wind-up and a 3 s breakable channel with a radius-7 red disc: 4.6 s of warning, the longest of any ultimate. | Hard, legendary, readable. No change. |
-| 2. The Wither against six iron soldiers and two archers | Phase 1 in the air (8 s windows): the archers down her in about 4 s of each window (air poise), the swordsmen reach her on the ground (she floats within reach); her familiars hit two extra soldiers. From phase 2 the archers are useless against her and turn to the familiars and the soldiers' targets; six swords land about 22 a second: about 7 s of blows, 10 s with the rebirth. She takes three or four soldiers with her. | Like an epic leader in an NPC war (8.1), with a sharper archer-proof middle. Her war power (12.0 at level 10, 13.1 with Hollow Star) does not count the rebirth: the campaigns check whether she decides raids. |
-| 3. A base defended by archers only, against the Wither | from 50% nothing they shoot hurts her | Fair: the director's ranged share (0.40 neutral, at most about 0.5) always keeps swordsmen; a player brings a sword. No change. |
-| 4. A player in iron against the Ender Dragon | 157 health; about 34 s of landed hits with no crystal standing, about 46 s if one beams her all along. Open crystals break to one arrow; a caged one (phase 2) costs about 6 s (2-4 blocks of pillar, 3 cage hits, one more), and she raises one every 20 s at most: a player who keeps ahead of them spends about a quarter of the fight on crystals. | The fight is about the crystals, as asked. No change. |
-| 5. Can the crystals out-heal anyone? | One beam at a time: 0.75% a second (1.18 at level 10) against a lone iron-sword player's 4.6 landed a second, or six soldiers' 22. A player who cannot reach her (she must come back within 4 s) and ignores the crystals still wins slowly; the enrage at 180 s ends a stall. | Never a stalemate. No change. |
-| 6. The Ender Dragon in an NPC raid | Five iron soldiers and two archers: the archers break open crystals first (the beaming one first) and down her when she circles; the swordsmen hit her when she perches (+15% melee) and climb to caged crystals. | Like a vanguard leader with a heal the soldiers learn to stop. No change. |
+| 2. The Wither against six iron soldiers and two archers | Phase 1 in the air (8 s windows): the archers down her in about 4 s of each window (air poise), the swordsmen reach her on the ground (she floats within reach); her familiars hit two extra soldiers. From phase 2 arrows glance off her: the archers shoot her familiars or draw their sidearms (6.3); six swords land about 22 a second: about 7 s of blows, 10 s with the rebirth. She takes three or four soldiers with her. | Like an epic leader in an NPC war (8.1), with a sharper archer-proof middle. Her war power (12.0 at level 10, 13.1 with Hollow Star) does not count the rebirth: the campaigns check whether she decides raids. |
+| 3. Archers only against the Wither (a base's defenders, or a party) | From 50% her armour turns every arrow. The archers draw their sidearms (6.3) and fight her close as swordsmen with poorer swords (stone deals about a sixth less than iron); her broken crown and Smite count for them as for anyone. | Fixed by the review: before it, an archers-only side could not hurt her from 50% down at all. The director's ranged share (0.40 neutral, at most about 0.5) keeps swordsmen in any case; a player switches to a sword. |
+| 4. A player in iron against the Ender Dragon | 165 health; about 36 s of landed hits with no crystal standing, at most about 48 s however long her crystals beam her (35% of her maximum per fight). Open crystals break to one arrow; a caged one (phase 2) costs about 6 s (2-4 blocks of pillar, 3 cage hits, one more), and she raises one every 20 s at most: a player who keeps ahead of them spends about a quarter of the fight on crystals. | The fight is about the crystals, as asked. No change. |
+| 5. Can the crystals out-heal anyone? | One beam at a time: 0.75% a second (1.24 at level 10) against a lone iron-sword player's 4.6 landed a second, or six soldiers' 22, and all beams together at most 35% of her maximum in one fight (58 at level 10); then she raises no more. A player who ignores the crystals and can hit her only on the ground still wins; the enrage at 180 s ends a stall. | Fixed by the review: before the cap, a weak attacker who ignored the crystals could be out-healed for as long as she kept raising them (8 crystals of 60 s). Never a stalemate. |
+| 6. The Ender Dragon in an NPC raid | Five iron soldiers and two archers: the archers break open crystals first (the beaming one first) and down her when she circles; the swordsmen hit her when she perches (+15%, a block up at most) and climb to caged crystals. | Like a vanguard leader with a heal the soldiers learn to stop. No change. |
 | 7. Their signature artifacts on other heroes | Five points and a major passive, as a greater artifact; no bond. War rating 0.12 x attunement, as every signature. | In line with `ARTIFACTS.md` 14. |
 | 8. The token race | An expedition (3-5 soldiers and a hero) against an interception party is a small raid: the raid maths of 8.1 apply, the soldier backbone included. A factionless player carrier is hunted by every faction that sees the trail. | As meant: the token is worth a fight. |
-| 9. One faction holding both | Two legendary heroes' war power (about 25 at level 10) under the soldier backbone cap (at most 1.5 times its soldiers' power); both return to tokens only with its last base. Rivals rate it 25% more attractive when they could end it. | A strong faction, not an unbeatable one. Measured in 9.3. |
+| 9. One faction holding both | Two legendary heroes' war power (about 24 at level 10) under the soldier backbone cap (at most 1.5 times its soldiers' power); both return to tokens only with its last base. Rivals rate it 25% more attractive when they could end it. | A strong faction, not an unbeatable one. Measured in 9.3. |
 
 ---
 
@@ -1437,12 +1504,14 @@ Each is a precise entry in `notes/kit-gaps.md`, section "Boss heroes (2026-11-18
    `speed` (the blue skull flies at 60%).
 3. A thrown basic attack from the air in an aerial window (5.1.5 is silent on basic attacks).
 4. State fields `projectile_immune` and `keep_distance`.
-5. The effect `linger` (a lingering cloud left where a move lands).
-6. Add kinds `end_crystal` (behaviour `beam_heal`, spire, cage, shatter) and `skull_familiar` (orbiter and turret);
-   phase `adds` that are sent out at the transition.
+5. The effect `linger` (a lingering cloud left where a move lands); the clouds of one use never stack on a receiver.
+6. Add kinds `end_crystal` (behaviour `beam_heal` with its per-fight cap, spire, cage, shatter, a spire never in a way
+   narrower than 3 blocks, the crystals' exception to 6.11's 3-block height) and `skull_familiar` (orbiter and
+   turret); phase `adds` that are sent out at the transition.
 7. Weak points `focus_add`, `smite`, `blast`.
-8. `boss.rebirth` as an object (its own moves and transition) and an action code `rebirth`.
-9. The `perch` form.
+8. `boss.rebirth` as an object (its own moves and transition) and an action code `rebirth`; no earlier phase re-arms
+   after it.
+9. The `perch` form, its top at most 1 block above an engaged enemy's ground.
 10. `mobility.aerial.pattern: circle` with a radius.
 11. `immune_effects`.
 12. The passive form `shot_random`; `on_add_died` naming its killer as the trigger's enemy; a focus rule for a marked
@@ -1450,6 +1519,12 @@ Each is a precise entry in `notes/kit-gaps.md`, section "Boss heroes (2026-11-18
 13. `boss.bar_color`.
 14. The archetype group E (`wither`, `ender_dragon`), `leader.eligible: false` with no other leader fields,
     `recruit.condition: token`, and the line events `rebirth` and `unbound`.
+15. A `rain` centred on the hero (`centre: self`), for Stray Skulls.
+16. Not a format piece: ranged soldiers carry a sidearm (6.3), an ordinary-NPC rule for B4 and ROADMAP phase 3.
+
+Move weights that change with a state or a situation (the Wither's volley in phase 1, Grave Grasp while unbound, the
+dragon's breath, roar and ultimate while perched, her crystal and perch when none stands) are written with the
+existing `prefer_when` (x2) and the conditions `phase`, `self_state` and `adds_alive`: no new field.
 
 ---
 
@@ -1462,12 +1537,16 @@ Each is a precise entry in `notes/kit-gaps.md`, section "Boss heroes (2026-11-18
   portal rim skipped, a ledge refused), a custom End without the island.
 - `BossTokenRulesTest`: the state machine of 2.2; consumed by a member holding it inside a standing base, not by a
   non-member, not in a pact ally's base for the holder (it lies there and joins that base's faction after 5 s); a lying
-  token after 5 s; a fallen heart stops it; hollow copies; the return timer; lava for 30 s; unbinding keeps the level;
-  creative holders drop it.
+  token after 5 s; a fallen heart stops it; hollow copies, a same-instance copy hollow after the first use; the return
+  timer; lava for 30 s; unbinding keeps the level; creative holders drop it.
 - `CrystalRulesTest`: only the nearest crystal in sight beams; the 24-block range; the heal rate; 2 / 3 / 8 caps;
-  placement within reach and never over the void; cage hits; the snap only for the beaming crystal.
+  placement within reach and never over the void or in a way narrower than 3 blocks; cage hits; the snap only for the
+  beaming crystal; the per-fight cap of 35% and no crystal after it; the spire gone with its crystal.
+- `PerchSpotTest`: the highest cell within 12 blocks whose top is at most 1 block above an engaged enemy's ground,
+  with headroom, never lava, fire, farmland or powder snow; else beside her nearest crystal.
 - `BossKitsTest`: both kits load clean as fixtures with the new pieces; every frame at or above its class; the
-  rebirth object; the add limits; no stun in either kit; a projectile-immune state never with an aerial window.
+  rebirth object with no re-arm after it; the add limits; Stray Skulls at the rain cap; no stun in either kit; a
+  projectile-immune state never with an aerial window.
 - `ProjectileImmunityRulesTest`: which sources glance off; element projectiles hit; air poise still counts.
 - `TokenKnowledgeTest`: witnesses (48 blocks, sight), the chest landmark at 64, a carrier at 24, staleness after 2
   in-game hours.
@@ -1478,8 +1557,10 @@ Each is a precise entry in `notes/kit-gaps.md`, section "Boss heroes (2026-11-18
 `witherFirstKillPlacesChestWithToken` (and a second Wither places none), `chestSpotSkipsLava`,
 `tokenConsumedByMemberInsideBase` (an NPC soldier, then a mock player of the faction), `tokenNotConsumedByNonMember`,
 `tokenLyingInsideBaseJoinsAfterFiveSeconds`, `tokenDropsAtCarrierDeathEvenWithKeepInventory` (NPC and mock player),
-`tokenSurvivesFireExplosionCactusAndReturnsFromVoid`, `tokenRefusesEnderChestShulkerAndBundle`,
+`tokenSurvivesFireExplosionCactusAndReturnsFromVoid`, `tokenRefusesEnderChestShulkerAndBundle` (the ender chest
+gives it back when closed),
 `bossHeroCallingAndSignatureInFirstSlot`, `bossHeroUnbindsWhenFactionFalls`, `witherArmourSameForNpcArcherAndPlayer`,
+`archersDrawSidearmsAgainstArmouredWither`, `perchedDragonInSoldierReach`,
 `witherNeverBreaksOwnBlocksButBreachesEnemyWall`, `witherBreaksOutWhenWalledIn`, `familiarDeathOpensBrokenCrown`,
 `witherRebirthOncePerFight`, `crystalHealsOnlyNearestInSight`, `crystalBreaksToSnowballCageStopsArrows`,
 `soldiersShootOpenCrystalsFirst`, `soldierPillarsToCagedCrystal`, `perchedDragonDeflectsArrowsTakesMoreMelee`,
@@ -1509,9 +1590,9 @@ R1-R3's artifact rules for the signatures); B4 needs the leadership hooks (L3) a
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
 | B1 | Format additions of section 8 in the reader, catalogue, balance and schema (`HeroCatalogue`, `HeroReaderV2`, `HeroBalanceV2`, the JSON Schema, `checkHeroes`); both kits as test fixtures | F2, F3, F5, R1 | M | `BossKitsTest`; the fixtures load clean; every new piece has a reader message for its misuse |
-| B2 | Tokens and the first-kill chest: the two items with the `boss_token` component, `ChestSpot`, the chest and its column, the return and hollow copies, the consumption rule, the calling, unbinding, `CampaignData.bossHeroes`, commands, config | A1b, R2 | M | `ChestSpotTest`, `BossTokenRulesTest`, the token GameTests of 9.2 |
-| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger`, `focus_add`, `smite`, `blast`, the crystal and familiar adds (spire, cage, beam, shatter, orbit), `perch`, circling, a hovering flyer, the rebirth object, `immune_effects`, `shot_random`, the killer of `on_add_died`, withering hands and the breach | A5, A6, A8, A10-A12 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, the fight GameTests of 9.2; every "NPC and mock player" test gives the same numbers |
-| B4 | The AI: token knowledge (the two reports), the council's weighing, expeditions, interceptions, escorts, the raid-target bonus, `CrystalTargetGoal` (shared with the vanilla End raid), archers and heroes against projectile immunity, `sim.py` lines; check phase 3's dragon-damage fix (6.6) | B2, B3, L3, ROADMAP phase 1's knowledge rule | L | `TokenKnowledgeTest`, the AI GameTests of 9.2, the first campaign of 9.3 |
+| B2 | Tokens and the first-kill chest: the two items with the `boss_token` component, `ChestSpot`, the chest and its column, the return and hollow copies (a same-instance copy hollow after the first use), the consumption rule, the calling, unbinding, the hooks of 3.14 (loss detection, the ender chest's return), `CampaignData.bossHeroes`, commands, config | A1b, R2 | M | `ChestSpotTest`, `BossTokenRulesTest`, the token GameTests of 9.2 |
+| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger` (never stacking), `focus_add`, `smite`, `blast`, the crystal and familiar adds (spire and its placement, cage, beam with its per-fight cap, shatter, orbit), `perch` (a block up at most), circling, a hovering flyer, the rebirth object (no re-arm after it), a rain round the hero, `immune_effects`, `shot_random`, the killer of `on_add_died`, withering hands and the breach | A5, A6, A8, A10-A12 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, the fight GameTests of 9.2; every "NPC and mock player" test gives the same numbers |
+| B4 | The AI: token knowledge (the two reports), the council's weighing, expeditions, interceptions, escorts, the raid-target bonus, `CrystalTargetGoal` (shared with the vanilla End raid), archers and heroes against projectile immunity with the ranged soldiers' sidearm (6.3), `sim.py` lines; check phase 3's dragon-damage fix (6.6) | B2, B3, L3, ROADMAP phase 1's knowledge rule | L | `TokenKnowledgeTest`, the AI GameTests of 9.2, the first campaign of 9.3 |
 | B5 | Art: the NEW parts of 4.2 and 5.2 (with G8's planned `wings/dragon`, `horns/swept_dragon`, `tails/scaled`, `back/cape_torn`, `outfit_bottom/long_skirt`, `markings/scales`), the add models (`end_crystal` over vanilla's model, `end_spire`, `crystal_cage`, `skull_familiar`), the calling's and the revival's displays, about 24 own clips each, the token icons, previews for the owner | G8, G10b, A8, A9 | L | `herogen check` and `lint` clean; both heroes' previews and the add sheet sent to the owner |
 | B6 | Sound: `the_wither.sfx.json`, `the_ender_dragon.sfx.json` and the add sounds of 4.11 and 5.11; the new slots (`rebirth`, `calling`, `linger`, `mobility.break`, `mobility.wings`) | S1, S2 | M | `sfxgen check` clean; previews for the owner |
 | B7 | Content: the two hero source files (kits, lines, art, signatures), `hollow_star.json` and `spirecore.json`, the kit sheets regenerated from them | B1, B5, R1 | M | `herogen check` and `checkHeroes` clean; 14.4's gates 1-3 |
@@ -1521,15 +1602,72 @@ R1-R3's artifact rules for the signatures); B4 needs the leadership hooks (L3) a
 
 ## 11. Open questions for the owner
 
+Kept to the three that only the owner can settle after the review (section 12); each has the recommended answer.
+
 1. **Personal names.** Their names are "The Wither" and "The Ender Dragon". Do you want personal names too, kept
-   beside the boss name ("Ossia, the Wither"; "Velmyra, the Ender Dragon", working proposals that would still pass a
-   name search)? Default: no personal name.
-2. **Using a token.** It is used at once when a member holds it inside one of the faction's bases (the hero then forms
-   in a 10 s show at the station). Would you rather have a ritual at the station that an enemy could interrupt?
-3. **When her faction falls** she turns back into her token where she stands, keeping her level, so whoever conquers
-   that faction can take her. Good, or should she become a free hero who wanders?
-4. **The Wither's breach.** On a raid she may break a 2x3 opening in an enemy wall at a diamond pickaxe's speed (no
-   other hero breaks walls; her moves never break blocks). Keep it, or should she use the gate like the others?
-5. **Both fight to the death**, as the vanilla bosses do, so killing them is how their artifacts change hands. Agreed?
-6. **Only the first kill** gives a chest. Later Withers and respawned dragons give no new chest (and later milestone 3
-   may give an ordinary random hero token from them, as v1 planned). Agreed?
+   beside the boss name ("Ossia, the Wither"; "Velmyra, the Ender Dragon", working proposals that would still need a
+   name search)? *Recommended: no personal name.* The boss names say at once who they are, and every display, the
+   kill feed included, reads better with them.
+2. **When her faction falls** she turns back into her token where she stands, keeping her level, so whoever conquers
+   that faction can take her. Or should she become a free hero who wanders? *Recommended: the token.* It keeps "one
+   of each per world, won with a token" true for the whole campaign and makes her a prize of war, as the token is a
+   prize of the race.
+3. **The Wither's breach.** On a raid she may break a 2x3 opening in an enemy wall at a diamond pickaxe's speed, once
+   per raid (her moves never break blocks, and nothing of her own side's). Keep it, or should she use the gate like
+   other heroes? *Recommended: keep it.* It is the vanilla Wither's block breaking turned into one readable act at a
+   player's pace; the defenders rebuild it, and the game rule `mobGriefing` false turns it off.
+
+Settled by the review, because the owner's own words or rules decide them (say if you disagree):
+
+- **The token is used at once** inside one of the faction's bases, with a 10 s calling that is only a show: the
+  owner's "if anyone from the faction bring the token inside a base it will consume it".
+- **Both fight to the death**: no hero yields and each ends a fight by its own nature; theirs is a last stand (nerve
+  90), as the vanilla bosses never flee.
+- **Only the first kill gives a chest**: the owner's "defeated for the first time". Later kills may still give
+  milestone 3's random hero token (v1 25.3).
+
+---
+
+## 12. Review (2026-11-18)
+
+An adversarial pass over sections 0-11 and the two kit sheets, against the owner's decisions (`HEROES_V2.md` section
+6, ROADMAP phase 4, request 10 of `HANDOFF.md` section 2), the engine's numbers (6.2-6.14, 8.1, v1 16.1) and the
+format's real pieces. **Originality**: both heroes are original anime renditions of Minecraft's own bosses, the
+intended reference; every mark of their looks comes from the vanilla models (the three heads and their soul-blue
+light, the spine and ribs, the black-and-purple dragon with end-stone spines and crystals), not from a fan design,
+and the clearance search of `ROSTER_PLAN.md` section 8 still runs on both looks before B5 and on any personal name.
+Two dragon moves carried the names and effects of World of Warcraft's classic dragon-boss abilities (a wing
+knock-back called Wing Buffet, and Tail Sweep), words a roster dragon (row 45) also uses: they are now **Wing Gust**
+and **Crescent Tail**. **Balance**: the dragon's base health was 32, under the vanguard preset of 34 with no reason
+given, so a roster legendary vanguard had more health level for level and a player killed her faster than Benika
+while no crystal stood; it is now 34 (136 / 165 / 197). With the dragon's crystals and the Wither's rebirth, level for
+level they are now the most durable heroes: about 220 effective health each at level 10, against 185 for the
+strongest roster hero (a legendary vanguard leader). Fights stay sensible: a player in iron needs about 52 s of landed
+hits on the Wither (her rebirth and regeneration included) and 36-48 s on the dragon, two to three times that in a
+duel, under the 180 s enrage; six iron soldiers need 7-10 s of landed blows. The crystals could heal her 0.75% a
+second for as long as she kept raising them (8 a fight, 60 s each); all beams now heal at most 35% of her maximum in
+one fight, then she raises no more, and open crystals still break to any hit (an arrow, a snowball, an egg) and caged
+ones to three blows after a climb, so they cannot make her immortal. Two places let a hero be safe from arrows and
+out of a soldier's reach at once: an NPC's melee reaches only about 2 blocks up (vanilla's attack box is not raised),
+so a perch 3 blocks up and phase-1 crystals 3-4 blocks up were in reach of a player's sword only. The perch is now at
+most a block above an enemy's ground, and phase-1 crystals stand on a 1-block spire. The armoured Wither could not be
+hurt at all by an archers-only side (no NPC archer carries a melee weapon today): ranged soldiers now carry a sword as
+a sidearm and draw it (6.3), which ROADMAP phase 3's raid on the vanilla Wither needs too. Stray Skulls (8 impacts of
+6) was twice a rain's cap per receiver and is now 8 of 3. The rebirth at 30% would have re-armed phase 3 (20% + 10%);
+no phase re-arms after a rebirth now. **Engine fit**: every frame is at or above its class minimum (checked move by
+move); move-weight changes are written with `prefer_when`; the clouds of one use never stack on a receiver; Heart of
+the Spires now says what v1's `cooldown_cut` does (every running cooldown, never under half); a spire never closes a
+gate or a corridor and crumbles with its crystal; the new pieces are in section 8, `notes/kit-gaps.md` and the B rows.
+**Tokens**: the rules now name their hooks (3.14), all vanilla and NeoForge events with no mixin; vanilla's ender
+chest has no slot hook, so a closed ender chest hands the token back. A creative clone of the real token carried the
+same instance and could have been used twice; a token is now real only while her state is `chest` or `loose`. A
+faction knew its NPC carriers anywhere but its player carriers only within 64 blocks; both are now known the same way.
+The other edge cases hold: two players (one real token; the first use wins), shulker boxes and bundles (refused),
+other dimensions (a token is used only in an Overworld base, and NPC expeditions reach only Overworld chests until
+ROADMAP phase 3), a save during the calling, a fallen faction (3.8), creative and operator players (never holders;
+operators use the commands). **The owner's rules** hold: one combat mode and no rule that reads whether anyone is a
+player; no attack tokens; no yield (both stand by their nature, nerve 90, and the files pin it); the 10-minute revival
+(the egg and the soul-sand T are only its look); every ability from level 1; one adult body each; ordinary NPCs stay
+player-like (a sidearm is a player's habit); vanilla stays whole (the chest is placed beside it; the egg and the
+nether star still drop); ROADMAP phase 3's boss raids (with the dragon-damage fix of 6.6); the hero kill feed; the
+knowledge rule for far deaths. The questions were cut to the three of section 11.

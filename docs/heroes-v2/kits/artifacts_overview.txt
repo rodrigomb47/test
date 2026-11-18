@@ -1,7 +1,7 @@
 Faction Clash - artifacts
 Items only heroes can wake | 50 artifacts in five tiers | crafted, looted, stolen
-Status: designed, not in the game yet (design of 2026-11-18, docs/heroes-v2/ARTIFACTS.md). All
-numbers are first values, tuned after play.
+Status: designed, not in the game yet (design of 2026-11-18, reviewed the same day,
+docs/heroes-v2/ARTIFACTS.md). All numbers are first values, tuned after play.
 ====================================================================================================
 
 WHAT ARTIFACTS ARE
@@ -20,8 +20,8 @@ blaze rods, echo shards, shulker shells, the archetypes and the eight elements.
        +12% fire damage
        +6% ability power
        +10% fire resistance
-      Banked Embers (primed): after a move, the next basic hit within
-      6 s deals 2 fire damage and sets the target alight for 3 s.
+      Banked Embers (primed): an enemy its moves hit smoulders for 6 s;
+      its next basic hit on it deals 2 fire and sets it alight for 3 s.
       Wakes only for a hero in an artifact slot: 60% of its power at
       hero level 1, full at level 20.
       Built from: Lapis Lens + Block of Coal
@@ -56,7 +56,7 @@ SLOTS AND HOW STRONG THEY GET
   more than 12% of its health; no wind-up, ground mark or warning gets shorter; the waits between
   moves stay; a stun is never longer and never chains; no hit from a hero goes over the 40-point
   ceiling; nothing saves a hero from a killing blow; no artifact lets a hero fly, teleport or break
-  blocks.
+  blocks. An artifact's attack speed speeds a hero's basic swings and shots only, never its moves.
 
 WHAT AN ARTIFACT CAN GIVE
   Health                   more maximum health (the boss health too)
@@ -64,7 +64,7 @@ WHAT AN ARTIFACT CAN GIVE
   Ability power            stronger moves, heals and shields
   Armour                   plain armour points; best against many small hits
   Recharge                 shorter cooldowns on the hero's moves (never shorter wind-ups)
-  Attack speed             faster swings and shots
+  Attack speed             faster basic swings and shots (never faster moves)
   Speed                    faster on foot, in fights too
   Energy gain              the ultimate fills sooner
   Poise                    harder to stagger
@@ -113,7 +113,8 @@ Signature artifacts: the Wither hero and the Ender Dragon hero each come with on
 (designed with those two heroes, docs/heroes-v2/BOSS_HEROES.md). Any hero can wear one for its
 basic power; only its own hero gets its full bond (extra bonuses, a stronger power and changes to
 two of her own moves). Only one of each exists in a world, and if one is destroyed (thrown into the
-void) it comes back to its hero when she next returns.
+void) it comes back to its hero when she next returns. While she is in the faction, her own
+signature stays on her: the faction never gives it to another hero.
 
 Villagers never buy or sell artifacts. Later, when factions make treaties, an artifact can be part
 of a tribute or a peace offer.
@@ -211,8 +212,8 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
   The eight element foci (only a hero of that element gets the damage bonus):
     KILN HEART (fire) - Lapis Lens + a block of coal
       fire damage +12%, ability power +6%, fire resistance +10%
-      Banked Embers: after a move, the next basic hit within 6 s deals 2 fire damage and sets the
-      target alight for 3 s (once every 4 s).
+      Banked Embers: an enemy its moves hit smoulders for 6 s; its next basic hit on that enemy
+      deals 2 fire damage and sets it alight for 3 s (once every 4 s).
     RIMEGLASS PRISM (frost) - Lapis Lens + packed ice
       frost damage +12%, ability power +6%, frost resistance +10%
       Hoarfrost: every third basic hit on the same enemy within 5 s slows it (Slowness I, 2 s).
@@ -227,9 +228,9 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
     BONE-ASH URN (blight) - Lapis Lens + a bone block
       blight damage +12%, ability power +6%, blight resistance +10%
       Withering Touch: enemies its moves hit heal 25% less for 5 s.
-    FARSIGHT PEARL (arcane) - Lapis Lens + an ender pearl
+    STARLESS PEARL (arcane) - Lapis Lens + an ender pearl
       arcane damage +12%, recharge +5%, arcane resistance +10%
-      Quickened Mind: each move it uses takes 1 s off its other cooldowns (once every 6 s).
+      Racing Thoughts: each move it uses takes 1 s off its other cooldowns (once every 6 s).
     DAYBREAK BROOCH (radiant) - Lapis Lens + a block of gold
       radiant damage +12%, heal power +8%, radiant resistance +10%
       Morning Grace: when an ally within 12 blocks drops under 35% health, the hero heals it 3
@@ -238,16 +239,16 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
       physical damage +12%, attack +5%, physical resistance +10%
       Honed: its jump-critical hits deal 2 more damage and add 10 poise to a hero they hit.
   The others:
-    RAVENOUS TORC - Spider-Eye Vial + Knapped Flint
+    MARROW TORC - Spider-Eye Vial + Knapped Flint
       drain +4%, attack +5%, health +5%
       Gorge: each enemy it kills heals it 4 (once every 5 s).
     QUICKSTEP ANKLET - Copper Coil + Fletched Charm
       attack speed +10%, speed +6%
-      Rising Tempo: each basic hit gives +4% attack speed for 3 s, up to three stacks.
+      Gathering Pace: each basic hit gives +4% attack speed for 3 s, up to three stacks.
     RUNEBOUND SIGNET - Lapis Lens + Knapped Flint
       ability power +6%, attack +5%, recharge +5%, health +5%
-      Primed Strike: after a move, its next basic hit within 6 s deals 5 extra damage of its
-      element (once every 3 s). Does not stack with Banked Embers.
+      Rune-Struck: an enemy its moves hit carries a rune for 6 s; its next basic hit on that enemy
+      deals 5 extra damage of its element (once every 3 s). Does not stack with Banked Embers.
     IRONHIDE GIRDLE - Hale Locket + Riveted Buckle
       health +10%, armour +2
       Braced Hide: the first time in a fight it drops under half health, a 4-point shield for
@@ -263,7 +264,7 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
       poise +20%, resolve +20%
       Settled Weight: after each stagger its poise grows 30% instead of 20% for the rest of the
       fight.
-    MENDER'S CENSER - Glistering Charm + Hale Locket
+    MENDER'S BRAZIER - Glistering Charm + Hale Locket
       heal power +16%, health +10%
       Soothing Smoke: every 10 s in a fight it and its allies within 6 blocks heal 2.
     SHEPHERD'S LANTERN - Clockwork Pin + Amethyst Tuner
@@ -271,10 +272,11 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
       Kindred Light: when one of its summons or adds dies, it gains 8 ultimate energy.
     SNAREWIRE SPOOL - Clockwork Pin + a tripwire hook
       recharge +10%, ability power +6%, resolve +10%
-      Snag: enemies it stuns, freezes, slows, tethers or silences lose 15% armour for 4 s.
+      Snag: an enemy it stuns, freezes, slows or silences is also tethered to it for 3 s: it is
+      pulled back if it goes more than 8 blocks away (once every 6 s).
     WIND-KITE TASSEL - Fletched Charm + paper
       stamina +20%, speed +6%
-      Tailwind: when it breaks off to escape, Speed I for 6 s.
+      Fair Wind: when it breaks off to escape, Speed I for 6 s.
     PROSPECTOR'S LOUPE - Knapped Flint + a spyglass
       work speed +15%, stamina +10%
       Keen Eye: at its job its tool counts one Fortune level higher on ores, crops and leaves, or
@@ -295,13 +297,13 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
       Rising Echo: each move it uses adds 3% damage for 10 s, up to four stacks.
     BLAZE-ROD BRACER - Quickstep Anklet + a blaze rod
       attack speed +10%, attack +5%, element damage +6%, speed +3%
-      Third Shot: every third basic hit on the same enemy within 4 s deals 4 extra damage of its
-      element.
-    LIFEBOUND CHIME - Mender's Censer + a totem of undying
+      Stoked Heat: each basic hit stokes it (up to 4 heat, lost after 4 s without a hit); at 4
+      heat the first hit of its next move deals 4 extra damage of its element.
+    LIFEBOUND CHIME - Mender's Brazier + a totem of undying
       heal power +16%, health +10%, recharge +5%
       Mercy Toll: when an ally within 12 blocks drops under 20% health, the hero shields it for 4
       (once every 30 s). A shield, not a saved life.
-    GHAST-TEAR TORC - Ravenous Torc + a ghast tear
+    GHAST-TEAR TORC - Marrow Torc + a ghast tear
       drain +4%, health +10%, attack +5%
       Second Hunger: under 40% health its drain is 4% higher.
     SLIMEBOUND SPOOL - Snarewire Spool + a slime block
@@ -349,23 +351,33 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
       the faction's other bases at tier II.
 
   SIGNATURE (2) - the Wither hero's and the Ender Dragon hero's own (BOSS_HEROES.md)
+    HOLLOW STAR - comes with the Wither
+      ability power +12%, drain +2%, blight resistance +10%, health +5%
+      Withering Brand: the first hit of each of its moves withers the enemy (Wither I, 3 s); an
+      enemy it withered that dies within 3 s heals it 3. On the Wither herself: more, and two of
+      her moves grow (her sheet, the_wither.txt).
+    SPIRECORE - comes with the Ender Dragon
+      health +10%, ability power +6%, energy gain +8%, stamina +10%
+      Spire Mend: once per fight, when it drops under 40% health, a 4-point shield for 8 s and
+      Regeneration I for 6 s. On the Ender Dragon herself: more, and two of her moves grow (her
+      sheet, the_ender_dragon.txt).
 
   How they build (the arrows are the smithing steps):
-    Knapped Flint -> Ironbound Whetstone -> Breeze-Cut Talon; -> Ravenous Torc -> Ghast-Tear Torc;
+    Knapped Flint -> Ironbound Whetstone -> Breeze-Cut Talon; -> Marrow Torc -> Ghast-Tear Torc;
                      -> Runebound Signet -> Deepecho Signet; -> Prospector's Loupe
     Lapis Lens    -> the seven other element foci; -> Runebound Signet
     Copper Coil + Fletched Charm -> Quickstep Anklet -> Blaze-Rod Bracer
     Fletched Charm -> Wind-Kite Tassel -> Gale-Rider's Cord
     Hale Locket   -> Ironhide Girdle -> Blackforge Girdle; -> Hearthwool Shawl -> Shulker-Shell
-                     Ward; -> Mender's Censer -> Lifebound Chime
+                     Ward; -> Mender's Brazier -> Lifebound Chime
     Riveted Buckle -> Ironhide Girdle; -> Cactus-Spine Mantle
     Deepslate Ballast -> Anchor Chain
     Clockwork Pin -> Shepherd's Lantern -> Tidewell Conch; -> Snarewire Spool -> Slimebound Spool
 
   What the slice heroes would tend to wear:
     Benika Akagane      Kiln Heart, Blackforge Girdle, Ghast-Tear Torc
-    Natsuho Komezaki    Breeze-Cut Talon, Quickstep Anklet, Ravenous Torc
-    Yugen Kagaribi      Farsight Pearl, Blaze-Rod Bracer, Fangspeaker Charm (if found)
+    Natsuho Komezaki    Breeze-Cut Talon, Quickstep Anklet, Marrow Torc
+    Yugen Kagaribi      Starless Pearl, Blaze-Rod Bracer, Fangspeaker Charm (if found)
     Hinae Shirasuzu     Daybreak Brooch, Lifebound Chime, Hale Locket
     Ambrose Nettlewick  Bog Phial, Slimebound Spool, Wind-Kite Tassel (he flies)
 
@@ -377,12 +389,21 @@ WHAT IS NEW BEYOND YOUR REQUEST (say no to any of it)
 - Waking at the anvil, which spends the faction's real experience.
 - Heroes' personalities in what they like to wear, and a line when they put on something rare.
 
-QUESTIONS FOR YOU
+QUESTIONS FOR YOU (with what we recommend)
 1. Three slots for every hero, with power growing by level instead of more slots: good, or would
-   you rather have more slots (four to six) with smaller artifacts?
-2. Waking at the anvil costs experience levels: keep it, or let artifacts come off the smithing
-   table ready?
-3. Artifacts show on the boss bar and the hero sheet, not on the hero's body. Do you want a small
-   visible charm on the heroes too?
-4. As a member you can put artifacts on your faction's heroes and take them off again, and the AI
-   leaves what you put there. Is that the control you want?
+   you rather have more slots (four to six) with smaller artifacts? We recommend three: a fourth
+   slot would mostly run into the ceilings above, and the boss bar stays easy to read.
+2. As a member you can put artifacts on your faction's heroes and take them off again, and the AI
+   leaves what you put there. Is that the control you want? We recommend keeping it: it is your
+   only direct say over your faction's heroes, and it changes nothing for the NPC factions.
+Decided unless you say otherwise: waking at the anvil stays (say no and artifacts come off the
+smithing table ready), and artifacts are not drawn on the heroes' bodies, except the two signature
+artifacts on their own heroes.
+
+CHANGED AFTER REVIEW (2026-11-18)
+So that no name or power copies another game: Ravenous Torc is now Marrow Torc, Mender's Censer is
+Mender's Brazier, Farsight Pearl is Starless Pearl; the powers Quickened Mind, Rising Tempo and
+Tailwind are Racing Thoughts, Gathering Pace and Fair Wind; Banked Embers and Rune-Struck now mark
+the enemy a move hits; Stoked Heat replaces "every third hit"; and Snag tethers instead of cutting
+armour. Artifact attack speed now speeds basic attacks only, so no move ever gets a shorter
+warning.

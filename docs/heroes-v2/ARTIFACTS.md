@@ -2,7 +2,8 @@
 
 Named items that only work for heroes, built up from vanilla materials or found in the world's dangerous places.
 
-Status: design, 2026-11-18. Nothing here is implemented. Numbers marked PROPOSED go to BALANCE.md when they are built.
+Status: design, 2026-11-18, reviewed the same day (section 21). Nothing here is implemented. Numbers marked PROPOSED go
+to BALANCE.md when they are built.
 Companions: `HEROES_V2.md` (the hero design; section 7.5 points here and section 15.7 holds the tasks of section 19
 below), `BOSS_HEROES.md` (the Wither and Ender Dragon heroes, whose two signature artifacts use the format of 16.4),
 `MOBILITY_AND_WORK.md` (stamina and work lines), `SOUND.md` (the sound set of 12.6) and
@@ -135,8 +136,8 @@ Advanced artifact · fire
  +12% fire damage
  +6% ability power
  +10% fire resistance
-Banked Embers (primed): after a move, the next basic hit within
-6 s deals 2 fire damage and sets the target alight for 3 s.
+Banked Embers (primed): an enemy its moves hit smoulders for 6 s;
+its next basic hit on it deals 2 fire and sets it alight for 3 s.
 Wakes only for a hero in an artifact slot: 60% of its power at
 hero level 1, full at level 20.
 Built from: Lapis Lens + Block of Coal
@@ -218,7 +219,7 @@ after attunement), PROPOSED.
 | Ability power (`ability_power`) | +6% | +20% | added to the ability-power multiplier of every Amount (damage, damage over time, heal, shield): v1 6.3, 4.3 below |
 | Armour (`armor`) | +1 | +4 | `ARMOR`, added. Strong against many small hits (soldiers' swords), weak against a hero's big ones; hence a small cap |
 | Recharge (`recharge`) | +5% | +20% | the hero's move and artifact-active cooldowns x (1 - recharge). Not the phase gap, the opening gap, the global cooldown, wind-ups, recoveries, or the 20-60 s gap between ultimates (4.4) |
-| Attack speed (`attack_speed`) | +5% | +15% | `ATTACK_SPEED` x (1 + p). A5's runner reads the attribute for move frames too, held to the class minimums of 6.4, as for the Haste potion |
+| Attack speed (`attack_speed`) | +5% | +15% | `ATTACK_SPEED` x (1 + p), for **basic attacks only**: the move runner (A5) reads the hero's attack speed without the artifact modifier and without artifact passives' attack-speed stacks, so no move's wind-up or recovery gets shorter from an artifact (4.4; Haste and the hero's own stat still count as before) |
 | Speed (`speed`) | +3% | +8% | `MOVEMENT_SPEED` x (1 + p), in and out of fights (not a mobility travel bonus) |
 | Energy gain (`energy`) | +8% | +25% | v1's `energy_gain` stat on every energy gain |
 | Poise (`poise`) | +10% | +25% | the boss poise maximum (6.9) x (1 + p) |
@@ -228,7 +229,7 @@ after attunement), PROPOSED.
 | Drain (`drain`) | +2% | +6% | heals the hero by that share of the damage it really deals (basic hits, moves, passives), as v1's `drain` field does for one effect; under the healing ceiling of 4.5 |
 | Heal power (`heal_power`) | +8% | +20% | heals and shields the hero gives, to allies and itself |
 | Resolve (`resolve`) | +10% | +25% | stun, freeze, slowness, tether and silence on the hero last that much shorter (never under 0.5 s); its immunity after a stun stays twice the full length (6.14 rule 2) |
-| Knockback resistance (`knockback_resistance`) | +10 points | +20 points | `KNOCKBACK_RESISTANCE` + 0.1 per point |
+| Knockback resistance (`knockback_resistance`) | +10 points | +20 points | `KNOCKBACK_RESISTANCE` + 0.01 per point of the line (+10 is +0.1), v1's whole-percent stat |
 | Stamina (`stamina`) | +10% | +25% | flight stamina, the longest glide and the stamina regained (`MOBILITY_AND_WORK.md` 2.1, 1.3); the fight's air budget (5.1.4) does not change |
 | Work speed (`work`) | +5% | +15% | `workSpeed()` at its duty (`MOBILITY_AND_WORK.md` 12.1), inside the 2.0x work cap (13 there) |
 | Critical damage (`crit_damage`) | +10% | +25% | v1's `crit_damage` stat (jump critical hits) |
@@ -274,7 +275,7 @@ then on a hero target: the per-hit cap, 12% of its (artifact-raised) maximum, th
 ```
 
 So the artifact layer can raise how often a hero reaches the ceilings, never the ceilings themselves. A temporary
-damage bonus that an artifact passive grants (Rising Tempo's attack speed is not one; Rising Echo's +3% stacks are)
+damage bonus that an artifact passive grants (Gathering Pace's attack speed is not one; Rising Echo's +3% stacks are)
 falls in the **fight bucket** with the hero's own passives, states and enrage, under the +25% that 6.10 already sets.
 
 ### 4.4 What artifacts never touch
@@ -287,6 +288,8 @@ boss rules"):
 - the hurt cooldown per attacker, the per-hit `heroes.maxHit`, the 2% `target_max_health` rule against heroes;
 - wind-up and recovery minimums of every class (6.4), the opening gap, the phase gaps, the 1 s global cooldown, the
   ultimate's 20-60 s minimum gap and its energy of 100;
+- a move's frames at all: artifact attack speed speeds basic attacks only (4.1), so no wind-up, recovery or
+  telegraph of a move gets shorter because of an artifact, even above its class minimum;
 - the stun caps (2 s per skill, 3 per ultimate, 1 per passive) and the receiver's immunity window;
 - poise decay, the stagger's length and its +25% damage taken (Settled Weight changes only the poise growth after a
   stagger, 7.2);
@@ -352,8 +355,8 @@ New:
 | Piece | Kind | What it does | Used by |
 |---|---|---|---|
 | The build stats (`recharge`, `drain`, `heal_power`, `resolve`, `element_damage`, `resist_all`, `stamina`, `work`, the artifact `ability_power` and `poise`) | stats | 4.1; read by `HeroDamage`, `HeroCombat` cooldowns, `HeroStatus` control timers, `HeroMovement` stamina, the work API | all |
-| `on_move_hit` | trigger | one of its moves (not a basic attack, not a passive) lands its first damage on an enemy; once per move use | Arc Jump, Withering Touch |
-| `on_control` | trigger | it applies a stun, freeze, slowness, tether or silence to an enemy | Snag |
+| `on_move_hit` | trigger | one of its moves (not a basic attack, not a passive) lands its first damage on an enemy; once per move use | Arc Jump, Withering Touch, Banked Embers, Rune-Struck, Stoked Heat, Withering Brand |
+| `on_control` | trigger | one of its moves or basic attacks applies a stun, freeze, slowness or silence to an enemy; never control from a passive (the loop guard of 5.1), and a tether does not count, so Snag cannot feed itself | Snag |
 | `on_death` | trigger | the wearer dies; only `revival_cut` may follow | Returning Bloom |
 | `jump` | passive form | the nearest other enemy within `radius` of the event's enemy | Arc Jump |
 | `adapt` | effect | +`percent` resistance, for `seconds`, to the element of the hit that set it off (non-physical; at most two elements at once) | Weathered |
@@ -415,25 +418,25 @@ and only their element's heroes profit from the damage line (the planner gives t
 
 | Artifact (id) | Recipe (S: base + addition) | Stats | Passive | Suits |
 |---|---|---|---|---|
-| Kiln Heart (`kiln_heart`) | Lapis Lens + Block of Coal | fire damage +12%, ability power +6%, fire resistance +10% | **Banked Embers** (family `primed`): after it uses a move, its next basic hit within 6 s deals 2 fire and ignites 3 s (once per 4 s). `on_skill` self mark `banked` 6 s; `on_hit` if `self_has_mark` `banked`: `damage` 2 fire, `ignite` 3, `clear_marks` self | fire; melee |
+| Kiln Heart (`kiln_heart`) | Lapis Lens + Block of Coal | fire damage +12%, ability power +6%, fire resistance +10% | **Banked Embers** (family `primed`): an enemy its moves hit smoulders for 6 s; its next basic hit on that enemy deals 2 fire and sets it alight for 3 s (once per 4 s). `on_move_hit`, `trigger_enemy`: `mark` `ember` 6 s; `on_hit` if `target_has_mark` `ember`: `damage` 2 fire, `ignite` 3, `clear_marks` `ember` | fire; melee |
 | Rimeglass Prism (`rimeglass_prism`) | Lapis Lens + Packed Ice | frost damage +12%, ability power +6%, frost resistance +10% | **Hoarfrost**: every third basic hit on the same enemy within 5 s slows it (Slowness I, 2 s; Slowness I does not down a flyer). `on_hit` mark `rime` (max 3, 5 s); `on_mark_full`: `effect` slowness I 2 s, `clear_marks` | frost |
 | Stormrod Spindle (`stormrod_spindle`) | Lapis Lens + Lightning Rod | shock damage +12%, attack speed +5%, shock resistance +10% | **Arc Jump**: when one of its moves hits, a spark jumps to the nearest other enemy within 5 blocks for 3 shock (once per 6 s). `on_move_hit`, form `jump` radius 5: `damage` 3 shock | shock |
 | Bog Phial (`bog_phial`) | Lapis Lens + Fermented Spider Eye | venom damage +12%, ability power +6%, venom resistance +10% | **Seeping Venom**: a quarter of its basic hits poison: 1 venom a second for 4 s, up to 2 stacks (undead are immune, vanilla). `on_hit` 25%: `dot` 1/s 4 s, `max_stacks` 2 (cooldown 2 s) | venom |
 | Bone-Ash Urn (`bone_ash_urn`) | Lapis Lens + Bone Block | blight damage +12%, ability power +6%, blight resistance +10% | **Withering Touch**: enemies its moves hit heal 25% less for 5 s. `on_move_hit`, `trigger_enemy`: `stat` `healing_received` -25 5 s (cooldown 2 s) | blight; anti-support |
-| Farsight Pearl (`farsight_pearl`) | Lapis Lens + Ender Pearl | arcane damage +12%, recharge +5%, arcane resistance +10% | **Quickened Mind**: each move it uses takes 1 s off its other cooldowns (once per 6 s; v1's `cooldown_cut` never takes a cooldown under half). `on_skill`: `cooldown_cut` 1 | arcane; move-heavy kits |
+| Starless Pearl (`starless_pearl`) | Lapis Lens + Ender Pearl | arcane damage +12%, recharge +5%, arcane resistance +10% | **Racing Thoughts**: each move it uses takes 1 s off its other cooldowns (once per 6 s; v1's `cooldown_cut` never takes a cooldown under half). `on_skill`: `cooldown_cut` 1 | arcane; move-heavy kits |
 | Daybreak Brooch (`daybreak_brooch`) | Lapis Lens + Block of Gold | radiant damage +12%, heal power +8%, radiant resistance +10% | **Morning Grace**: when an ally within 12 blocks drops under 35% health, it heals that ally 3 (once per 20 s; a member player is an ally like any other). `on_ally_low_health` 35, `trigger_ally`: `heal` 3 | radiant; support |
 | Ironbound Whetstone (`ironbound_whetstone`) | Knapped Flint + Block of Iron | physical damage +12%, attack +5%, physical resistance +10% | **Honed**: its jump critical hits deal 2 more and add 10 poise to a hero they hit (once per 2 s). `on_crit`, `trigger_enemy`: `damage` 2 physical, `poise` 10 | physical; melee |
-| Ravenous Torc (`ravenous_torc`) | Spider-Eye Vial + Knapped Flint | drain +4%, attack +5%, health +5% | **Gorge**: each enemy it kills heals it 4 (once per 5 s; under the healing ceiling). `on_kill`, `self`: `heal` 4 | striker, vanguard; glutton |
-| Quickstep Anklet (`quickstep_anklet`) | Copper Coil + Fletched Charm | attack speed +10%, speed +6% | **Rising Tempo**: each basic hit gives +4% attack speed for 3 s, up to 3 stacks. `on_hit`, `self`: `stat` `attack_speed` +4 3 s, `max_stacks` 3 | skirmisher, marksman |
-| Runebound Signet (`runebound_signet`) | Lapis Lens + Knapped Flint | ability power +6%, attack +5%, recharge +5%, health +5% | **Primed Strike** (family `primed`): after it uses a move, its next basic hit within 6 s deals 5 extra damage of its element (once per 3 s). `on_skill` self mark `primed` 6 s; `on_hit` if `self_has_mark` `primed`: `damage` 5, `clear_marks` self | striker, skirmisher; any element |
+| Marrow Torc (`marrow_torc`) | Spider-Eye Vial + Knapped Flint | drain +4%, attack +5%, health +5% | **Gorge**: each enemy it kills heals it 4 (once per 5 s; under the healing ceiling). `on_kill`, `self`: `heal` 4 | striker, vanguard; glutton |
+| Quickstep Anklet (`quickstep_anklet`) | Copper Coil + Fletched Charm | attack speed +10%, speed +6% | **Gathering Pace**: each basic hit gives +4% attack speed for 3 s, up to 3 stacks (basic attacks only, 4.1). `on_hit`, `self`: `stat` `attack_speed` +4 3 s, `max_stacks` 3 | skirmisher, marksman |
+| Runebound Signet (`runebound_signet`) | Lapis Lens + Knapped Flint | ability power +6%, attack +5%, recharge +5%, health +5% | **Rune-Struck** (family `primed`): an enemy its moves hit carries a rune for 6 s; its next basic hit on that enemy deals 5 extra damage of its element and spends the rune (once per 3 s). `on_move_hit`, `trigger_enemy`: `mark` `rune` 6 s; `on_hit` if `target_has_mark` `rune`: `damage` 5, `clear_marks` `rune` | striker, skirmisher; any element |
 | Ironhide Girdle (`ironhide_girdle`) | Hale Locket + Riveted Buckle | health +10%, armour +2 | **Braced Hide** (family `last_ditch`): the first time in a fight it drops under half health: a 4-point shield for 10 s and +30% knockback resistance for 8 s. `on_low_health` 50, `once_per_fight`: `shield` 4, `stat` `knockback_resistance` +30 8 s | vanguard; cautious heroes |
 | Cactus-Spine Mantle (`cactus_spine_mantle`) | Riveted Buckle + Cactus | armour +2, health +5%, all resistances +4% | **Prickle**: when hurt, enemies within 3 blocks take 2 physical (once per 1.5 s). `on_hurt`, form `nova` radius 3: `damage` 2 physical | vanguard against swarms |
 | Hearthwool Shawl (`hearthwool_shawl`) | Tuff Ward + Hale Locket | all resistances +8%, health +10% | **Weathered**: when an element other than physical hurts it, it resists that element 15% more for 8 s (two elements at most). `on_hurt`, `self`: `adapt` 15 8 s (cooldown 2 s) | anyone facing casters |
 | Anchor Chain (`anchor_chain`) | Deepslate Ballast + Chain | poise +20%, resolve +20% | **Settled Weight**: after each stagger its poise maximum grows 30% instead of 20% for the rest of the fight (hook `stagger_growth`) | vanguard, grappler |
-| Mender's Censer (`menders_censer`) | Glistering Charm + Hale Locket | heal power +16%, health +10% | **Soothing Smoke**: every 10 s in a fight, it and allies within 6 blocks heal 2. `every` 10, form `allies` radius 6: `heal` 2 | support |
+| Mender's Brazier (`menders_brazier`) | Glistering Charm + Hale Locket | heal power +16%, health +10% | **Soothing Smoke**: every 10 s in a fight, it and allies within 6 blocks heal 2. `every` 10, form `allies` radius 6: `heal` 2 | support |
 | Shepherd's Lantern (`shepherds_lantern`) | Clockwork Pin + Amethyst Tuner | recharge +10%, energy gain +16% | **Kindred Light**: when one of its summons or adds dies, it gains 8 energy (once per 4 s). `on_add_died`, `self`: `energy` 8 | summoner |
-| Snarewire Spool (`snarewire_spool`) | Clockwork Pin + Tripwire Hook | recharge +10%, ability power +6%, resolve +10% | **Snag**: enemies it stuns, freezes, slows, tethers or silences lose 15% armour for 4 s (once per 4 s). `on_control`, `trigger_enemy`: `stat` `armor` -15 4 s | controller |
-| Wind-Kite Tassel (`wind_kite_tassel`) | Fletched Charm + Paper | stamina +20%, speed +6% | **Tailwind**: when it breaks off to escape, Speed I for 6 s. `on_escape`, `self`: `effect` speed I 6 s | flyers, gliders; escaping kind |
+| Snarewire Spool (`snarewire_spool`) | Clockwork Pin + Tripwire Hook | recharge +10%, ability power +6%, resolve +10% | **Snag**: an enemy it stuns, freezes, slows or silences is also snagged: tethered to it for 3 s and pulled back if it goes more than 8 blocks away (once per 6 s). `on_control`, `trigger_enemy`: `tether` 3 s, `max` 8 | controller |
+| Wind-Kite Tassel (`wind_kite_tassel`) | Fletched Charm + Paper | stamina +20%, speed +6% | **Fair Wind**: when it breaks off to escape, Speed I for 6 s. `on_escape`, `self`: `effect` speed I 6 s | flyers, gliders; escaping kind |
 | Prospector's Loupe (`prospectors_loupe`) | Knapped Flint + Spyglass | work speed +15%, stamina +10% | **Keen Eye**: at its duty its tool counts one virtual level higher for the loot: Fortune on ores, crops and leaves, Luck of the Sea when fishing (the rules and caps of `MOBILITY_AND_WORK.md` 12.2 and 13: at most level III with the tool's own and its specialty, never on Silk Touch, never with an extra roll on the same drop) | miners, woodcutters, farmers, fishers; greed |
 
 ### 7.3 Greater (10, smithing table, woken with 10 levels)
@@ -443,9 +446,9 @@ and only their element's heroes profit from the damage line (the planner gives t
 | Breeze-Cut Talon (`breeze_cut_talon`) | Ironbound Whetstone + Breeze Rod | attack +10%, attack speed +5%, critical damage +10%, speed +3% | P **Gale Finish** (family `finisher`): its basic hits on an enemy under 30% health deal 10% of the health it is missing (at most 8, the passive cap; once per 2 s). `on_hit` if `target_health_below` 30: `damage` `target_missing_health_percent` 10 | striker, skirmisher |
 | Blackforge Girdle (`blackforge_girdle`) | Ironhide Girdle + Netherite Scrap | health +15%, armour +2 | A **Downpull**: it slams the ground and drags enemies within 5 blocks toward it, taunting them for 2 s (class area: 1.0 s wind-up, a ring, the area cue; recovery 0.8 s; cooldown 40 s; used when 2 or more enemies are near). Form `nova` 5: `pull` 2, `taunt` 2 | vanguard |
 | Deepecho Signet (`deepecho_signet`) | Runebound Signet + Echo Shard | ability power +12%, recharge +10%, health +5% | P **Rising Echo**: each move it uses adds +3% damage for 10 s, up to 4 stacks (the fight bucket's +25% holds). `on_skill`, `self`: `stat` `damage_dealt` +3 10 s, `max_stacks` 4 | controller, marksman, support with damage moves |
-| Blaze-Rod Bracer (`blaze_rod_bracer`) | Quickstep Anklet + Blaze Rod | attack speed +10%, attack +5%, element damage +6%, speed +3% | P **Third Shot**: every third basic hit on the same enemy within 4 s deals 4 extra damage of its element. `on_hit` mark `kindle` (max 3, 4 s); `on_mark_full`: `damage` 4, `clear_marks` | marksman, skirmisher |
-| Lifebound Chime (`lifebound_chime`) | Mender's Censer + Totem of Undying | heal power +16%, health +10%, recharge +5% | P **Mercy Toll**: when an ally within 12 blocks drops under 20% health, it shields that ally for 4 for 10 s (once per 30 s; a shield, never a saved life). `on_ally_low_health` 20, `trigger_ally`: `shield` 4 | support |
-| Ghast-Tear Torc (`ghast_tear_torc`) | Ravenous Torc + Ghast Tear | drain +4%, health +10%, attack +5% | P **Second Hunger**: under 40% health its drain is 4% higher (the drain cap and the healing ceiling hold). `always` if `self_health_below` 40: `stat` `drain` +4 | striker, vanguard |
+| Blaze-Rod Bracer (`blaze_rod_bracer`) | Quickstep Anklet + Blaze Rod | attack speed +10%, attack +5%, element damage +6%, speed +3% | P **Stoked Heat**: each basic hit stokes it (up to 4 heat, all lost after 4 s without a hit); at 4 heat the first hit of its next move deals 4 extra damage of its element and spends the heat. `on_hit` self `mark` `heat` (max 4, 4 s); `on_move_hit` if `self_has_mark` `heat` 4: `damage` 4, `clear_marks` self | marksman, skirmisher |
+| Lifebound Chime (`lifebound_chime`) | Mender's Brazier + Totem of Undying | heal power +16%, health +10%, recharge +5% | P **Mercy Toll**: when an ally within 12 blocks drops under 20% health, it shields that ally for 4 for 10 s (once per 30 s; a shield, never a saved life). `on_ally_low_health` 20, `trigger_ally`: `shield` 4 | support |
+| Ghast-Tear Torc (`ghast_tear_torc`) | Marrow Torc + Ghast Tear | drain +4%, health +10%, attack +5% | P **Second Hunger**: under 40% health its drain is 4% higher (the drain cap and the healing ceiling hold). `always` if `self_health_below` 40: `stat` `drain` +4 | striker, vanguard |
 | Slimebound Spool (`slimebound_spool`) | Snarewire Spool + Slime Block | recharge +10%, ability power +6%, resolve +10%, health +5% | A **Gluefall**: a disc of slime of radius 3 at its target; after a 1.0 s wind-up (a growing disc), it pulses three times over 2 s: Slowness II 2 s each pulse (Slowness II downs a flyer, `MOBILITY_AND_WORK.md` 2.4; class area, cooldown 45 s, used when 2 or more enemies are near). Form `zone` radius 3, duration 2, interval 1 | controller; anti-air |
 | Gale-Rider's Cord (`gale_riders_cord`) | Wind-Kite Tassel + Wind Charge | stamina +20%, speed +6%, knockback resistance +10 | A **Updraft**: a burst of wind knocks enemies within 3 blocks back and lifts it 4 blocks (no fall damage from it; class area: 1.0 s wind-up with a ring; cooldown 30 s; used when an enemy is within 3 blocks). Form `nova` 3: `knockback` 2; `move_self` up 4 | skirmisher, marksman, flyers |
 | Shulker-Shell Ward (`shulker_shell_ward`) | Hearthwool Shawl + Shulker Shell | all resistances +8%, health +10%, resolve +10% | P **Shell Up** (family `last_ditch`): the first time in a fight it drops under 40%, it ignores the next 3 hits within 5 s. `on_low_health` 40, `once_per_fight`: `barrier` 3 hits, 5 s | vanguard; cautious heroes |
@@ -471,13 +474,14 @@ dropped like any artifact when the hero dies (the owner's "they are also dropped
 `BOSS_HEROES.md` 4.13 and 5.13: **Hollow Star** (`hollow_star`, the Wither's: ability power, drain, blight
 resistance and health, with Withering Brand) and **Spirecore** (`spirecore`, the Ender Dragon's: health, ability
 power, energy and stamina, with Spire Mend); each bond adds three points of lines, a stronger passive in the same
-family and two changes to her own moves.
+family and two changes to her own moves. On its own hero a signature is held by its bond: the planner never moves it
+to another hero of the faction (10.4), so the owner's "best suited for them" holds until she dies.
 
 ### 7.6 The build tree
 
 ```
 Knapped Flint ──┬─ Ironbound Whetstone (+ iron block) ── Breeze-Cut Talon (+ breeze rod)
-                ├─ Ravenous Torc (+ Spider-Eye Vial) ─── Ghast-Tear Torc (+ ghast tear)
+                ├─ Marrow Torc (+ Spider-Eye Vial) ───── Ghast-Tear Torc (+ ghast tear)
                 ├─ Runebound Signet (+ Lapis Lens) ───── Deepecho Signet (+ echo shard)
                 └─ Prospector's Loupe (+ spyglass)
 Lapis Lens ────┬─ the seven element foci (+ coal block, packed ice, lightning rod, fermented spider eye,
@@ -488,7 +492,7 @@ Fletched Charm ┬─ Quickstep Anklet
                └─ Wind-Kite Tassel (+ paper) ──────── Gale-Rider's Cord (+ wind charge)
 Hale Locket ───┬─ Ironhide Girdle (+ Riveted Buckle) ─ Blackforge Girdle (+ netherite scrap)
                ├─ Hearthwool Shawl (+ Tuff Ward) ───── Shulker-Shell Ward (+ shulker shell)
-               └─ Mender's Censer (+ Glistering Charm) ─ Lifebound Chime (+ totem of undying)
+               └─ Mender's Brazier (+ Glistering Charm) ─ Lifebound Chime (+ totem of undying)
 Riveted Buckle ┬─ Ironhide Girdle
                └─ Cactus-Spine Mantle (+ cactus)
 Deepslate Ballast ── Anchor Chain (+ chain)
@@ -505,9 +509,9 @@ narrower picks beside the greater artifacts.
 | Hero | Build | What it does |
 |---|---|---|
 | Benika Akagane (vanguard, fire, battle maniac) | Kiln Heart, Ironhide Girdle -> Blackforge Girdle, Ghast-Tear Torc | burns, drags enemies in, lives longer in the middle of them |
-| Natsuho Komezaki (striker, physical, tsundere) | Ironbound Whetstone -> Breeze-Cut Talon, Quickstep Anklet, Ravenous Torc | fast claws that finish the weakened |
-| Yugen Kagaribi (marksman, arcane, schemer) | Farsight Pearl, Blaze-Rod Bracer, Fangspeaker Charm (if found) | shorter cooldowns, a third-shot burst, a fang line to zone |
-| Hinae Shirasuzu (support, radiant, sweet-natured) | Daybreak Brooch, Mender's Censer -> Lifebound Chime, Hale Locket | heals and saves allies |
+| Natsuho Komezaki (striker, physical, tsundere) | Ironbound Whetstone -> Breeze-Cut Talon, Quickstep Anklet, Marrow Torc | fast claws that finish the weakened |
+| Yugen Kagaribi (marksman, arcane, schemer) | Starless Pearl, Blaze-Rod Bracer, Fangspeaker Charm (if found) | shorter cooldowns, a stoked move after a run of shots, a fang line to zone |
+| Hinae Shirasuzu (support, radiant, sweet-natured) | Daybreak Brooch, Mender's Brazier -> Lifebound Chime, Hale Locket | heals and saves allies |
 | Ambrose Nettlewick (controller, venom, eccentric genius) | Bog Phial, Snarewire Spool -> Slimebound Spool, Wind-Kite Tassel (he flies) | slows, armour cuts, longer flights |
 
 ---
@@ -517,11 +521,12 @@ narrower picks beside the greater artifacts.
 1. **One of each artifact per hero.** A second copy of an id is refused by the slot ("already worn"); a hero's backpack
    may hold any number.
 2. **Families do not stack.** Passives with the same `unique` family fire only from the stronger artifact (the higher
-   tier, then the higher budget, then the first slot): `primed` (Banked Embers, Primed Strike), `last_ditch` (Braced
+   tier, then the higher budget, then the first slot): `primed` (Banked Embers, Rune-Struck), `last_ditch` (Braced
    Hide, Shell Up), `finisher` (Gale Finish; reserved for later finishers). The weaker artifact keeps its stat lines.
 3. **Stat lines add up** across different artifacts, then attunement, then the build cap (4.3).
-4. **Marks are global ids** (v1 19): the catalogue's marks (`banked`, `primed`, `rime`, `kindle`) are artifact marks no
-   hero kit uses, checked by the validator, so an artifact never feeds a hero's own mark finisher by accident.
+4. **Marks are global ids** (v1 19): the catalogue's marks (`ember`, `rune`, `rime`, `heat`, and the signatures'
+   `hollow_brand`) are artifact marks no hero kit uses, checked by the validator, so an artifact never feeds a hero's
+   own mark finisher by accident.
 5. **Talents and specialties**: Steward's Seal raises tiers, it does not add a second copy of a talent; the base still
    counts the strongest copy of each talent (7.2 there). Prospector's Loupe is a virtual level under the work caps.
 6. **Revival**: Returning Bloom, `revival_rite` and a hero's own `revival` multiply; the result is never under 30 s.
@@ -689,9 +694,12 @@ the same raw traits):
 
 Assignment runs in rounds, MOBA-like: in policy order each hero takes the best available artifact for one of its slots
 (scored with its current build), one per hero per round, until slots are full or nothing scores above 0.5 point. A
-pinned artifact (3) is never moved. The plan is made at dawn and when something changes (an artifact stored or lost, a
-hero revived, returned from an escape or five levels higher, a scout report naming an enemy hero's element), at most
-once every 2 minutes per faction (PROPOSED).
+pinned artifact (3) is never moved, and neither is a signature on its own hero (its bond holds it, 7.5): a hoarding
+leader cannot take the Wither's Hollow Star from her. A signature that comes back to the store goes to its own hero
+first while she is in the faction. Two copies of a signature with the same instance (a duplicated item) are never
+both worn: attuning the second fails and marks that copy faded (15.1). The plan is made at dawn and when something
+changes (an artifact stored or lost, a hero revived, returned from an escape or five levels higher, a scout report
+naming an enemy hero's element), at most once every 2 minutes per faction (PROPOSED).
 
 ### 10.5 What to craft
 
@@ -751,9 +759,10 @@ travelling there may take it instead. Haulers carry artifacts as any goods: no e
   vanish and return (they are never artifacts: the validator refuses an artifact in `gear`). This holds for every
   death, whoever or whatever killed it, and for leaders. An **escape** is not a death: an escaping hero keeps
   everything.
-- **The drops never despawn** (`ItemEntity.setUnlimitedLifetime`, saved by vanilla). They do not burn, survive lava
-  (they float up out of it, as netherite does), explosions and cactus. The void and commands (`/kill`, `/clear`)
-  destroy them; a destroyed artifact is gone for good, except a signature (15.1).
+- **The drops never despawn** (`ItemEntity.setUnlimitedLifetime`, saved by vanilla; set in `EntityJoinLevelEvent` on
+  every item entity that carries an artifact, however it got there: a death, a toss, a broken chest, a hopper). They
+  do not burn, survive lava (they float up out of it, as netherite does), explosions and cactus. The void and
+  commands (`/kill`, `/clear`) destroy them; a destroyed artifact is gone for good, except a signature (15.1).
 - **Findable**: a dropped artifact gives off a small particle in its tier's colour every 2 s for players within 32
   blocks (presentation only; NPCs find items by their own pickup scan, 10.8).
 - **Who gets them**: whoever picks them up: the side that holds the ground (10.8), a player, a passing hero of any
@@ -808,7 +817,7 @@ A new sound set `herosrc/sfx/artifact.sfx.json` with events `factionclash:artifa
 | Attune (equip) | `block.amethyst_block.chime`, pitched by tier (component 0.8 to signature 1.4) |
 | Wake at the anvil | `block.anvil.use` with `block.enchantment_table.use` |
 | An artifact drops at a death | generated `artifact.scatter` (a short falling chime, quiet) |
-| Passive procs | the artifact's own: Banked Embers `item.firecharge.use`, Hoarfrost `entity.player.hurt_freeze`, Arc Jump generated `artifact.arc`, Withering Touch `entity.wither.shoot` (quiet), Quickened Mind and Rising Echo `block.amethyst_block.chime`, Morning Grace `block.beacon.power_select`, Honed `entity.player.attack.crit`, Primed Strike `entity.player.attack.strong`, Braced Hide `item.armor.equip_netherite`, Prickle `enchant.thorns.hit`, Kindred Light `block.respawn_anchor.charge`, Tailwind `entity.wind_charge.wind_burst`, Gale Finish `entity.player.attack.sweep`, Mercy Toll `item.totem.use` (quiet), Shell Up `entity.shulker.close`, Swell `block.conduit.activate`, Deep Quiet `block.sculk_shrieker.shriek` (quiet), Fatigue Gaze `entity.elder_guardian.curse`, Returning Bloom `item.chorus_fruit.teleport` at the revival |
+| Passive procs | the artifact's own: Banked Embers `item.firecharge.use`, Hoarfrost `entity.player.hurt_freeze`, Arc Jump generated `artifact.arc`, Withering Touch `entity.wither.shoot` (quiet), Racing Thoughts and Rising Echo `block.amethyst_block.chime`, Morning Grace `block.beacon.power_select`, Honed `entity.player.attack.crit`, Rune-Struck `entity.player.attack.strong`, Braced Hide `item.armor.equip_netherite`, Prickle `enchant.thorns.hit`, Kindred Light `block.respawn_anchor.charge`, Snag `block.tripwire.attach`, Fair Wind `entity.wind_charge.wind_burst`, Stoked Heat `entity.blaze.shoot` (quiet), Gale Finish `entity.player.attack.sweep`, Mercy Toll `item.totem.use` (quiet), Shell Up `entity.shulker.close`, Swell `block.conduit.activate`, Deep Quiet `block.sculk_shrieker.shriek` (quiet), Fatigue Gaze `entity.elder_guardian.curse`, Returning Bloom `item.chorus_fruit.teleport` at the revival |
 | Actives (wind-up cue from the class, as every move) | Downpull `item.mace.smash_ground`; Gluefall `block.slime_block.place` and `entity.slime.squish`; Updraft `entity.wind_charge.wind_burst`; Fang Line `entity.evoker.prepare_attack` then `entity.evoker_fangs.attack` |
 
 ### 12.7 Animations
@@ -859,13 +868,13 @@ its health, D what it deals a soldier per second, h an iron soldier's 36 points 
 
 | Case | On paper | Verdict |
 |---|---|---|
-| 1. A level-1 common marksman (78 health, D about 9) against iron soldiers: bare, then in three greater artifacts (Blaze-Rod Bracer, Breeze-Cut Talon, Ghast-Tear Torc) | Bare it holds about 3.3 soldiers. Built, at 60% attunement: attack +12% (5 + 10 + 5, x0.6), attack speed +9%, health +6%, drain 2.4%; with Third Shot and Gale Finish its D is about 1.4 times, so it holds about 3.25 x sqrt(1.06 x 1.4) = 4.0. The council counts 7.9 against 6.8 (+16%; the estimate says +22%). | It holds four soldiers instead of three: artifacts make a weak hero stand, not win a war. As meant. |
+| 1. A level-1 common marksman (78 health, D about 9) against iron soldiers: bare, then in three greater artifacts (Blaze-Rod Bracer, Breeze-Cut Talon, Ghast-Tear Torc) | Bare it holds about 3.3 soldiers. Built, at 60% attunement: attack +12% (5 + 10 + 5, x0.6), attack speed +9%, health +6%, drain 2.4%; with Stoked Heat and Gale Finish its D is about 1.4 times, so it holds about 3.25 x sqrt(1.06 x 1.4) = 4.0. The council counts 7.9 against 6.8 (+16%; the estimate says +22%). | It holds four soldiers instead of three: artifacts make a weak hero stand, not win a war. As meant. |
 | 2. The same marksman against a player | Bare: about 17 s of a player's landed iron-sword hits; built: 18 s, and its own hits are about 1.4 times as strong. Its moves are under the same slot caps and wind-ups. | A harder fight, not a different one. As meant. |
 | 3. Benika as a level-20 leader (197 health), fully built for durability (Blackforge Girdle, Shulker-Shell Ward, Ghast-Tear Torc), against soldiers | Health 15 + 10 + 10 = 35%, capped at +20%: 236. Armour 5.3 + 2 = 7.3 cuts an iron sword's 6 by 17% instead of 9%, and all resistances +8% (physical included) by 8% more: soldiers deal about 0.84 times as much. Drain 4% of her 15.75 a second is 0.63 (the ceiling would allow 0.79). n = sqrt(2 x 236 x 15.75 / (36 x 3.1)) = about 8.2 against 6.7 bare (+23%, a little more with drain and Shell Up's three ignored hits); the council counts 19.4 against 15.3 (+27%). Six iron soldiers who all reach her now need about 13 s of landed blows instead of 9. | The strongest single case in the catalogue, and still beaten by six soldiers; the soldier backbone and the 10-minute revival are unchanged. As meant. |
 | 4. That built Benika against a player in iron | About 65 s of landed iron-sword hits instead of 45 (+44%: 20% more health and about 16% less per hit, with no worn armour on her); a duel of two to three times that is about 130-195 s, under her 240 s leader enrage. Her damage is unchanged (a durability build). In diamond with Sharpness the hitting time is about a third shorter. | The endgame boss. Long, readable, beatable: the 12% per-hit cap (of a larger maximum), poise, weak points and every telegraph are unchanged. Hard; no change. |
 | 5. A level-20 striker fully built for damage (Breeze-Cut Talon, Deepecho Signet, Blaze-Rod Bracer) against a player | Basic hits about 1.3 times (attack +15%, attack speed +15%, critical damage +10%). A skill at the 16 cap: ability power 1 + 0.19 (growth) + 0.12 = 1.31: 21 instead of 19, about 17 health through iron armour instead of 15. The ultimate at the 30 cap: 39 instead of 36, under `heroes.maxHit` 40: through plain diamond about 23 instead of 20, so a player at full health in plain diamond dies to the built hero and survives the bare one by a hair (a mystic hero at level 20 already reaches the 40 ceiling without artifacts); through diamond with Protection IV about 8 instead of 7. | Artifacts add about a sixth to a hit that already had the ceiling within reach; the ceiling, the 1.5 s ultimate wind-up, its line, sound, red mark and darkening are the same, and this build has no drain. Acceptable. |
 | 6. A level-1 hero in three greater artifacts against a bare level-20 hero of the same kind | Epic vanguard: 119 x 1.12 = 133 health against 172; its moves at growth 0 and +7% artifact ability power against +9.5% growth; attack +6% against the level-20's +0.57 attack. | The level-20 hero wins about three times in four; artifacts close about a third of the gap. Levels stay the main progression. As meant. |
-| 7. Hero against hero, equal levels (Benika in Kiln Heart, Ironhide Girdle, Ravenous Torc at level 10 against a bare Kagenori) | Her fire damage +9.5%, health +11.9%, armour +1.6, drain 3.2% (all x0.79); the duel still runs 45-90 s (the 12% per-hit cap and the 2% `target_max_health` rule are unchanged). | She wins about 60-65% instead of about half; both built, it is even again and about a tenth longer. MOBA-like: builds matter, they do not decide. As meant. |
+| 7. Hero against hero, equal levels (Benika in Kiln Heart, Ironhide Girdle, Marrow Torc at level 10 against a bare Kagenori) | Her fire damage +9.5%, health +11.9%, armour +1.6, drain 3.2% (all x0.79); the duel still runs 45-90 s (the 12% per-hit cap and the 2% `target_max_health` rule are unchanged). | She wins about 60-65% instead of about half; both built, it is even again and about a tenth longer. MOBA-like: builds matter, they do not decide. As meant. |
 | 8. Drain against a swarm | A level-20 hero with drain at the 6% cap dealing 15 a second would heal 0.9 a second; the ceiling (10% of 236 per 30 s) holds it to 0.79, against the 18-22 a second six soldiers deal. | The ceiling binds where it should (swarms) and rarely against a lone player. As meant. |
 | 9. Artifacts in NPC wars over a campaign | A faction makes about one smithing step and one wake a day per base once its blacksmith is idle; three advanced artifacts per hero take about a week, greater ones wait for Nether, trial-chamber, mansion and End materials. | Builds grow over a campaign, roughly with hero levels. `sim.py` checks the rate (18.3). |
 
@@ -878,8 +887,11 @@ its health, D what it deals a soldier per second, h an iron soldier's 36 points 
 - Two copies of a craftable artifact or a rare find may exist in a world (two ancient cities); one hero wears at most one
   of each (8). Families keep two similar passives from stacking.
 - **A signature exists once per world.** `CampaignData.signatures` keeps each signature's current `instance` UUID. A
-  copy with another instance (a duplicated world, an item duplication, a creative copy) is a **faded copy**: grey name,
-  "a faded copy", no lines, no passive, no bond; it stays an item and is never deleted.
+  copy with another instance (a duplicated world, an old copy after a re-forming) is a **faded copy**: grey name,
+  "a faded copy", no lines, no passive, no bond; it stays an item and is never deleted. A copy with the **same**
+  instance (a creative clone, an item duplication) cannot be told apart by its data, so the slot decides: only one
+  hero at a time wears an instance (`CampaignData.signatures` records the wearer); attuning a second copy fails and
+  writes `faded: true` into that copy's component.
 - **A destroyed signature re-forms** (void, `/kill`, a despawn by another mod): the world notes it lost, and a new
   instance appears in its hero's first free slot at her next revival, or at the next dawn if she is alive (with no free
   slot, in her backpack). An old instance found later is then a faded copy. `BOSS_HEROES.md` may also make the hero's
@@ -920,7 +932,7 @@ its health, D what it deals a soldier per second, h an iron soldier's 36 points 
 - **Fang Line or Gluefall in a 3-block tunnel**: the arena rules of 6.12 apply as to any move.
 - **Updraft under a low ceiling**: skipped under a ceiling of 3 blocks or less, as leaps are (6.12); under a roof lower
   than its lift it stops at the roof (walls and roofs stop `move_self`, v1 13.4).
-- **An escaping hero**: no actives, its passives keep firing (Tailwind fires on `on_escape`), it keeps everything.
+- **An escaping hero**: no actives, its passives keep firing (Fair Wind fires on `on_escape`), it keeps everything.
 
 ---
 
@@ -940,14 +952,14 @@ its health, D what it deals a soldier per second, h an iron soldier's 36 points 
   "passive": {                            // optional; components have none
     "name": "Banked Embers",
     "unique": "primed",                   // optional family (section 8)
-    "description": "After a move, the next basic hit within 6 s deals 2 fire damage and ignites 3 s.",
+    "description": "An enemy its moves hit smoulders for 6 s; its next basic hit on it deals 2 fire and ignites it 3 s.",
     "parts": [                            // 1-2 v1/format-2 passive entries sharing the name
-      { "trigger": "on_skill", "form": "self",
-        "effects": [ { "type": "mark", "mark": "banked", "to": "self", "seconds": 6 } ] },
+      { "trigger": "on_move_hit", "form": "trigger_enemy",
+        "effects": [ { "type": "mark", "mark": "ember", "seconds": 6 } ] },
       { "trigger": "on_hit", "cooldown": 4, "form": "trigger_enemy",
-        "if": { "condition": "self_has_mark", "mark": "banked" },
+        "if": { "condition": "target_has_mark", "mark": "ember" },
         "effects": [ { "type": "damage", "amount": 2, "element": "fire" }, { "type": "ignite", "seconds": 3 },
-                     { "type": "clear_marks", "mark": "banked", "to": "self" } ] }
+                     { "type": "clear_marks", "mark": "ember" } ] }
     ]
   },
   "active": null,                         // or a move (HEROES_V2 12.7) with "anim": "artifact.raise" | "artifact.cast"
@@ -1050,7 +1062,7 @@ Example: `kiln_heart.json, line 6: stats: 7 points; an advanced artifact has 4. 
 |---|---|---|
 | Entity `FcHero.artifacts` | the slots: item stacks (with their components) and the pinning player's UUID | empty slots |
 | `CampaignData.signatures` | per signature id: the current instance UUID, `lost` and `reformAt` | a fresh instance at its hero's next revival |
-| Item stack component `factionclash:artifact_state` | `dormant`, `instance` | awake, no instance |
+| Item stack component `factionclash:artifact_state` | `dormant`, `instance`, `faded` | awake, no instance, not faded |
 
 ### 17.3 Networking and performance
 
@@ -1069,12 +1081,15 @@ Example: `kiln_heart.json, line 6: stats: 7 points; an advanced artifact has 4. 
 `ArtifactReaderTest` (one case per message, the 50 shipped files load clean, 1,000 seeded damaged files load within
 every budget and cap), `ArtifactRulesTest` (`buildSumsAttunesAndCaps`, `attunementIsTheMobilityCurve`,
 `healthLineMultipliesBossHealth`, `rechargeNeverUnderEightyPercentOfFloor`, `resolveFloorsAtHalfSecond`,
-`healingCeilingHolds`, `familiesDoNotStack`, `secondCopyRefused`, `warRatingAndCap`, `warPowerUsesHealthWithoutArtifacts`),
+`healingCeilingHolds`, `familiesDoNotStack`, `secondCopyRefused`, `warRatingAndCap`,
+`warPowerUsesHealthWithoutArtifacts`, `attackSpeedLeavesMoveFramesAlone`, `onControlNeverFromPassivesOrTethers`,
+`sameInstanceSignatureWornOnce`),
 `ArtifactPlannerTest` (`neutralLeaderSharesByNeed`, `greedyLeaderHoards`, `ambitiousLeaderChampions`,
 `elementFocusOnlyForItsElement`, `scoutedElementRaisesResistance`, `noArtifactOrdersWhileSmithHasGearOrders`,
-`reservesAreKept`, `hysteresisStopsSwapping`, `pinnedNeverMoved`, `perfectionistFinishesBuild`,
-`dormantHeroArtifactsReassigned`), `BondValidationTest` (a kit mod keeps the move inside its caps and class), and a
-test that no method of the artifact logic takes "is a player" as an input (`HEROES_V2.md` 15.6).
+`reservesAreKept`, `hysteresisStopsSwapping`, `pinnedNeverMoved`, `signatureStaysWithItsHero`,
+`perfectionistFinishesBuild`, `dormantHeroArtifactsReassigned`), `BondValidationTest` (a kit mod keeps the move
+inside its caps and class), and a test that no method of the artifact logic takes "is a player" as an input
+(`HEROES_V2.md` 15.6).
 
 ### 18.2 GameTests (each job-running test its own `batch`; spawns at known relative positions; test bases through `GameTestBases.register`, cleaned up)
 
@@ -1116,8 +1131,8 @@ R1-R4 can start once milestone 1's combat engine (A3-A6) is in, beside milestone
 |---|---|---|---|---|
 | R1 | Format and pure rules: `ArtifactDef`, `ArtifactReader` (16.5, the v1 messages), the catalogue additions of 5.3 (build stats, `on_move_hit`, `on_control`, `on_death`, `jump`, `adapt`, `revival_cut`, `self_carries`), `ArtifactRules` (sum, attunement, caps, healing ceiling, recharge bound, war rating), the bond's validation, schema and `checkHeroes` | F2, F3, F4 | M | the unit tests of 18.1 for the reader and rules; the 50 data files load clean |
 | R2 | Items and the world: `ModArtifacts` (50 items and the Sigil), `ArtifactItem` (fire-, blast- and cactus-proof, never despawning, glint particle), `artifact_state` component, tooltips and lang, the recipes (crafting, smithing, the anvil wake), the loot modifiers and the Hollow lair roll, the signature registry with faded copies and re-forming | R1, A1 | M | `blacksmithCraftsSmithsAndWakes` (its recipe half), `heroDropsArtifactsAtDeath` (its item half), `signatureFadedCopyAndReform` |
-| R3 | The hero side: slots, saving and the slot screen with pins, attuning, the build stats in `HeroDamage`, `HeroCombat` cooldowns, `HeroStatus` control and `HeroMovement` stamina, passives through `HeroPassives` with families, actives through the move runner, the bond's kit mods, the healing ceiling, death drops, the boss bar pips, the hero sheet, the war rating in `HeroRules.heroPower` and the councils | R1, R2, A4, A5, A6, A10 | L | the GameTests of 18.2 on the hero; every "NPC and mock player" test gives the same numbers for both |
-| R4 | `ArtifactPlanner` (pure): profiles, scoring, personality, distribution, goal builds and orders, hysteresis | R1, F4 | M | `ArtifactPlannerTest` |
+| R3 | The hero side: slots, saving and the slot screen with pins, attuning, the build stats in `HeroDamage`, `HeroCombat` cooldowns, `HeroStatus` control and `HeroMovement` stamina, the move runner reading attack speed without the artifact layer (4.1), passives through `HeroPassives` with families (`on_control` only from moves and basic attacks), actives through the move runner, the bond's kit mods and one wearer per signature instance, the healing ceiling, death drops, the boss bar pips, the hero sheet, the war rating in `HeroRules.heroPower` and the councils | R1, R2, A4, A5, A6, A10 | L | the GameTests of 18.2 on the hero; every "NPC and mock player" test gives the same numbers for both |
+| R4 | `ArtifactPlanner` (pure): profiles, scoring, personality, distribution, goal builds and orders, hysteresis, pins and the bond's hold on a signature | R1, F4 | M | `ArtifactPlannerTest` |
 | R5 | Faction AI: the planner in the director, the smithing table in the workshop (shared with ROADMAP phase 3's netherite row), the blacksmith's artifact orders and wakes with the faction's experience, equip and swap at bases, hauler deliveries, loot priority, recovery trips, raid looting, chat lines, the station section, `sim.py` lines | R3, R4, L3, L5m | L | the remaining GameTests of 18.2; the campaign check of 18.3 |
 | R6 | Art and sound: `herogen icons` with the shape library and the 51 icons (contact sheet for the owner), the three core clips (`artifact.attune`, `.raise`, `.cast`), the `artifact` sound set (`SOUND.md` additions) | G1, G4, S1, R1 | M | icons pass `herogen check`; the sheet is sent to the owner; `sfxgen check` clean |
 | R7 | Docs and release: README "Artifacts", BALANCE rows, `docs/factionclash-common.toml`, the "ARTIFACTS" section in every kit sheet, the overview regenerated from the data, jar and SHA-256 | R5, R6 | S | the release checklist (`HANDOFF.md` section 7) |
@@ -1126,11 +1141,61 @@ R1-R4 can start once milestone 1's combat engine (A3-A6) is in, beside milestone
 
 ## 20. Open questions for the owner
 
-1. **Three slots for every hero** (no more for rarer heroes or leaders; power grows with level instead). Would you
-   rather have more slots with smaller artifacts (four to six, MOBA-like), or fewer?
-2. **Waking at the anvil.** Advanced and greater artifacts cost experience levels to wake, as enchanting does. Keep it,
-   or let them come off the smithing table ready?
-3. **On the model.** Artifacts show on the boss bar (coloured squares) and the hero sheet, not on the hero's body
-   (except, perhaps, the two signature artifacts). Do you want a small visible charm on heroes too?
-4. **Players and their faction's heroes.** A member player can put artifacts on its faction's heroes (the AI then keeps
-   them there) and take them off again. Is that the control you want, or should the faction AI always decide?
+Kept to the two that only the owner can settle after the review (section 21); each has the recommended answer.
+
+1. **Three slots for every hero** (no more for rarer heroes or leaders; an artifact's lines grow with the hero's level
+   instead). Would you rather have more slots with smaller artifacts (four to six, closer to a MOBA)?
+   *Recommended: three.* A level-1 hero still gains from its build, a fourth slot would mostly overflow the build caps
+   of 4.1, and the boss bar stays readable; `heroes.artifacts.slots` (0-5) can try more without a new design.
+2. **Players and their faction's heroes.** A member player can put artifacts on its faction's heroes from the hero
+   sheet (out of a fight, within 4 blocks) and take them off again; what the player puts in stays until the player
+   takes it out or the hero dies. Is that the control you want, or should the faction AI always decide?
+   *Recommended: keep it.* It is the only direct say a player has over the faction's heroes, and it changes nothing
+   for NPC factions.
+
+Settled by the review with a recommendation the owner may still overturn:
+
+- **Waking at the anvil** stays. It is listed among the improvements of section 0: say no, and advanced and greater
+  artifacts come off the smithing table awake.
+- **Not drawn on the body.** Artifacts show on the boss bar and the hero sheet; only a signature draws its own part, on
+  its own hero (12.7). A charm on every hero would add parts and cubes to 200 models for little reading value.
+
+---
+
+## 21. Review (2026-11-18)
+
+An adversarial pass over this file, `kits/artifacts_overview.txt` and the signature half of `BOSS_HEROES.md`, against
+the owner's decisions (`HEROES_V2.md` section 6, ROADMAP phase 4), the engine's numbers (6.2, 6.4, 8.1, v1 16.1) and
+the format's real pieces. **Originality**: every name and effect was checked against the item, rune and ability
+names of League of Legends, Dota 2 and other well-known games. Changed: Ravenous Torc to **Marrow Torc** (League's
+Ravenous Hydra is a lifesteal item with the same adjective), Mender's Censer to **Mender's Brazier** (League's Ardent
+Censer is a heal-and-shield-power support censer), Farsight Pearl to **Starless Pearl** (League's Farsight Alteration
+trinket), Quickened Mind to **Racing Thoughts** (Dota 2's Quickening Charm, a cooldown item), Rising Tempo to
+**Gathering Pace** (League's Lethal Tempo grants the same stacking attack speed) and Tailwind to **Fair Wind** (a
+speed move of that name in Pokémon). Three effects were too close and were redesigned: "every third hit deals bonus
+damage" (League's Kraken Slayer) became **Stoked Heat** (basic hits stoke the next move); "after a move, the next
+basic hit deals bonus damage", in a family that does not stack, was League's Spellblade (Sheen and its upgrades), so
+Banked Embers and Primed Strike (now **Rune-Struck**) mark the enemy a move hits and a basic hit on that enemy cashes
+the mark; and Snag's "controlling an enemy cuts its armour" (close to League's Abyssal Mask) now tethers the enemy
+instead. The other names are Minecraft materials and places in plain English; "Prospector's" is the mod's own affix
+word and "ability power" v1's own stat. The clearance search of `ROSTER_PLAN.md` section 8 still runs on the final
+names (R7). **Balance**: the extreme durability build, a legendary vanguard leader at level 30 (257 health) in
+Blackforge Girdle, Shulker-Shell Ward and Ghast-Tear Torc, has 308 health and takes iron soldiers' blows at about
+0.63 of their force instead of 0.86, so 8.1's estimate puts her at about 11.5 iron soldiers instead of 9: beaten by a
+dozen soldiers or a few heroes, never unkillable, and a player in iron needs about 106 s of landed hits instead of 65
+(about 49 s in netherite with Sharpness V), under the 12% per-hit cap and every telegraph. The soldier backbone of 8.1
+caps what that changes in a council. The healing ceiling holds every self-heal an artifact gives, signatures included
+(Third Hunger, Spire Mend's Regeneration); a hero's own passives stay under their own caps. One rule contradicted the
+promise that no wind-up gets shorter: 4.1 let artifact attack speed shorten move frames down to the class minimum
+through A5's attribute read. Artifact attack speed now speeds basic attacks only (4.1, 4.4). Recharge may still take
+a cooldown to 80% of its v1 floor (15.4); the global cooldown, the opening and phase gaps and the ultimate's gap are
+untouched. The nine cases of section 14 stand (Stoked Heat deals what Third Shot did, on a move instead of every
+third shot). **Engine fit**: every passive and active uses v1 and format-2 pieces or those of 5.3; `on_control` now
+fires only for control from moves and basic attacks and never for a tether, so Snag cannot feed itself; the
+knockback line's unit is stated. **Signatures**: a same-instance duplicate (a creative clone) could have been worn by
+two heroes at once, and a hoarding leader could have taken the Wither's Hollow Star from her; now one hero wears an
+instance at a time, and a signature on its own hero is held by its bond (7.5, 10.4, 15.1). **The owner's rules** hold:
+only a hero in a slot benefits and players and NPCs carry alike; nothing reads whether anyone is a player beyond the
+slot screen and presentation; three slots from level 1 with lines growing to level 20; no lethal-blow cancel and the
+30 s revival floor (Returning Bloom); the tech tree gates only these mod items; a faction is told what dropped only
+when it knows of the death, and the kill feed is unchanged. The questions were cut to the two of section 20.

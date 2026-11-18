@@ -1,9 +1,10 @@
 The Ender Dragon - "Empress of the End"
 Female | ender dragon | vanguard | arcane | proud noble | legendary | boss hero
-Status: designed, not in the game yet (kit version 1, 2026-11-18). She is one of the two boss
-heroes: not among the 200, never a faction leader, and she joins a faction only through her token
-(see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never yields. All
-numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 5.
+Status: designed, not in the game yet (kit version 2, 2026-11-18, after review). She is one of the
+two boss heroes: not among the 200, never a faction leader, and she joins a faction only through
+her token (see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never
+yields. All numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md
+section 5.
 ====================================================================================================
 
 WHO SHE IS
@@ -84,7 +85,7 @@ break, place or burn a block.
       Numbers: [area, close and mid; cone 6, 70 degrees; 6 arcane, then a cloud of radius 3 for 6 s
       at the cone's end, 2 arcane each second; frames 1.0 / 0.8 / 1.0; cooldown 12 s]
 
-    WING BUFFET (wing_buffet) - boss phases 1, 2, 3
+    WING GUST (wing_gust) - boss phases 1, 2, 3
       What it does: her wings beat down and throw everyone around her away. Her answer to anyone
       who comes close (60%). Like every push in this mod it is softened near lava, a drop or the
       void: it will not throw you off a cliff.
@@ -112,12 +113,13 @@ break, place or burn a block.
       Numbers: [heavy, any range; one crystal within 6-14 blocks of her; cooldown 20 s]
 
     PERCH (perch) - boss phases 1, 2, 3
-      What it does: she swoops onto the highest spot near you that you can reach (a wall top, a
-      roof, a rock) and sits there for up to 8 s, head low, breathing and roaring. Arrows, bolts,
-      tridents and wind charges glance off her and catch fire, as off the vanilla dragon sitting on
-      its fountain, but your blades hurt her 15% more. She perches more often when none of her
-      crystals stands. She takes off after 8 s, or once she has taken 15% of her health, with a
-      Wing Buffet if anyone is within 5 blocks.
+      What it does: she swoops onto high ground beside you, at most a block up (a step, a low wall,
+      a rock), so any sword reaches her there, a soldier's too, and sits for up to 8 s, head low,
+      breathing and roaring. Arrows, bolts, tridents and wind charges glance off her and catch fire,
+      as off the vanilla dragon sitting on its fountain, but everything that still hits her (blades,
+      spells, explosions) does 15% more. She perches more often when none of her crystals stands.
+      She takes off after 8 s, or once she has taken 15% of her health, with a Wing Gust if anyone
+      is within 5 blocks.
       The tell: the swoop, and a landing disc on the perch for 0.8 s.
       Counter: put the bow away and close in with a blade; leave before she takes off.
       Numbers: [heavy, any range; perched up to 8 s; cooldown 18 s]
@@ -131,7 +133,7 @@ break, place or burn a block.
       Numbers: [area, close and mid; nova, radius 8; Slowness I 3 s + silence 1.5 s; frames 1.0 /
       0.5 / 1.0; cooldown 20 s]
 
-    TAIL SWEEP (tail_sweep) - boss phase 3
+    CRESCENT TAIL (crescent_tail) - boss phase 3
       What it does: she turns and her tail sweeps the half-circle where you are. Her answer to
       someone behind her (70%).
       The tell: her tail coils and marks fan out across the half-circle for 1 s.
@@ -157,7 +159,8 @@ break, place or burn a block.
       during the wind-up.
       Counter: get behind her or more than 10 blocks away, then keep out of the clouds.
       Numbers: [ultimate; frames 1.6 / 2.5 / 1.5; sweep 10, 120 degrees, 2.5 s: 6 arcane each time
-      it passes over you; three clouds of radius 3 for 8 s, 2 arcane each second]
+      it passes over you; three clouds of radius 3, 7 blocks apart, for 8 s, 2 arcane each second
+      (standing where two touch still hurts like one)]
 
     FALL OF THE OUTER ISLES (outer_isles_fall)
       What it does: from the air she climbs high and falls on you like a meteor, leaving a cloud.
@@ -165,7 +168,7 @@ break, place or burn a block.
       radius 4 that grows for 1.8 s as she climbs.
       Counter: leave the disc; hit her during her 1.6 s recovery on the ground.
       Numbers: [ultimate, only in a flight; frames 1.8 / 0.4 / 1.6; dive, landing radius 4: 22
-      arcane + knockback 3 up 1; a cloud of radius 4 for 6 s]
+      arcane + knockback 3 up 1; a cloud of radius 4 for 6 s, 2 arcane each second]
 
     Her ultimate energy and charge rate are set when she is built; the two are at least 30 s apart.
 
@@ -180,10 +183,13 @@ THE CRYSTALS
   dragon. The spire is solid (you cannot walk through it) but it is not a block (you cannot mine it
   or build against it).
 - Where: within 6-14 blocks of her, on the highest ground there whose foot you can walk to (she
-  will raise them on your walls), never over lava, water or the void, at least 4 blocks apart.
-- How high: in phase 1 the crystal sits 3-4 blocks up (a sword reaches it from the ground or from
-  one block up; an arrow always does). From phase 2 the spires are 4-6 blocks tall, the crystal 5-7
-  up: shoot it, pillar up 2-4 blocks beside the spire, or leap, climb or fly there.
+  will raise them on your walls), never over lava, water or the void, at least 4 blocks apart, and
+  never in a gateway, a door or a corridor narrower than 3 blocks (a spire never shuts you in or
+  out). A spire crumbles when its crystal breaks or fades.
+- How high: in phase 1 the crystal sits on a 1-block spire, 1 to 3 blocks up: any sword reaches it
+  from the ground, a soldier's too, and an arrow always does. From phase 2 the spires are 4-6
+  blocks tall, the crystal 5-7 up: shoot it, pillar up 2-4 blocks beside the spire, or leap, climb
+  or fly there.
 - Caged: from phase 2 every second crystal is caged in iron bars. The cage stops every projectile
   and breaks after 3 hits by hand; then the crystal breaks to one more.
 - How many: at most 2 standing in phase 1 and 3 later; at most 8 in one fight; each fades after
@@ -195,13 +201,16 @@ THE CRYSTALS
 - The beam: every second, the nearest of her crystals within 24 blocks with a clear line to her
   heals her 0.75% of her maximum health (one crystal at a time, as vanilla's nearest crystal), and
   you can see the purple beam. A block or a solid body in the line cuts it: building a wall between
-  them is fair play. It heals only her.
+  them is fair play. It heals only her, and never more than 35% of her health in one fight: after
+  that her crystals go dark and she raises no more, so they can slow a fight, never make her
+  unkillable.
 - Beam snap: breaking the crystal that is beaming her at that moment hurts her 6% of her maximum
   health and fills 40 of her poise (vanilla's crystal hurts the dragon 10). "Every spire is my
   heartbeat."
 - NPCs know all this: soldiers' archers shoot the open crystals first (the beaming one first), and
   swordsmen hit the ones they can reach and pillar up to the caged ones as a player would; heroes
-  reach them with their jumps, climbs and wings. Nothing here depends on whether the breaker is a
+  reach them with their jumps, climbs and wings. While she is perched, archers with nothing else to
+  shoot draw the sword they carry and join in. Nothing here depends on whether the breaker is a
   player.
 
 BOSS FIGHT
@@ -213,12 +222,13 @@ BOSS FIGHT
   boss bar whenever she fights anyone: a star, "The Ender Dragon · Empress of the End", three phase
   pips, a lightning mark when an ultimate is ready, and a square for each artifact she wears. Her
   bar is meant to be pink, the vanilla dragon's.
-- Health: her base health 32 x4.0 (the legendary scale; she never leads, so no leader bonus) x1.0
+- Health: her base health 34 x4.0 (the legendary scale; she never leads, so no leader bonus) x1.0
   for a vanguard [health scale 400], always: it never changes with who or how many fight her.
-  Level 1 / 10 / 20: 128 / 157 / 189. At level 10 a player with an iron sword needs about 34 s of
-  landed hits while none of her crystals stands, about 46 s if one beams her all along (1.18 health
-  a second at level 10): break them or the fight lasts a third longer. Attackers add up: six iron
-  soldiers who reach her need about 7 s of blows (while she is on the ground). No single hit, from
+  Level 1 / 10 / 20: 136 / 165 / 197. At level 10 a player with an iron sword needs about 36 s of
+  landed hits while none of her crystals stands, and at most about 48 s however long they beam her
+  (1.24 health a second at level 10, at most 35% of her health in a fight): break them or the fight
+  lasts up to a third longer. Attackers add up: six iron soldiers who reach her need about 7 s of
+  blows (while she is on the ground or perched). No single hit, from
   anyone, takes more than 12% of her health [max_hit_share 12]; the excess becomes poise damage.
   Damage with no attacker (lava, fire, drowning) is not capped.
 - Poise: 140 (the vanguard's). Every hit fills her poise bar, whoever lands it [damage x weapon:
@@ -239,12 +249,12 @@ BOSS FIGHT
   from you or an NPC archer, or Slowness II, and she falls, lies 2 s taking 20% more damage, and
   cannot take off for 12 s.
 - Phases:
-    Phase 1, from 100%: Ender Fireball, Dragon Breath, Wing Buffet, Void Dive, Raise Crystal (open
+    Phase 1, from 100%: Ender Fireball, Dragon Breath, Wing Gust, Void Dive, Raise Crystal (open
       crystals, at most 2), Perch.
     Phase 2, from 60%: the spires rise (taller spires, every second crystal caged, up to 3), Void
       Roar. "Rise, spires! Let them climb if they dare."
-    Phase 3, from 25%: Tail Sweep, End Gravity; her clouds grow a block wider and last 2 s longer,
-      and she moves 10% faster. "Then taste the breath of the End itself."
+    Phase 3, from 25%: Crescent Tail, End Gravity; her clouds grow a block wider and last 2 s
+      longer, and she moves 10% faster. "Then taste the breath of the End itself."
   Each phase change takes 1.5 s, on the ground: she takes 50% less damage and cannot be staggered
   (a glint shows it; she is never invulnerable), a shockwave pushes everyone within 4 blocks back
   (no damage; softened near lava or a drop), she says the line, her look changes, and the bar marks
@@ -259,8 +269,8 @@ BOSS FIGHT
   - She has no elemental weakness.
 - How she reads you (each answer replaces her next pick; she reads an NPC the same way):
   - You draw a bow while she is in the air -> Void Dive (60%, at most every 8 s).
-  - You come close -> Wing Buffet (60%).
-  - You are behind her -> Tail Sweep (phase 3, 70%).
+  - You come close -> Wing Gust (60%).
+  - You are behind her -> Crescent Tail (phase 3, 70%).
   - You raise a shield -> Dragon Breath (50%: arcane passes shields).
   - You eat -> Ender Fireball (60%).
   - None of her crystals stands -> Raise Crystal (70%, at most every 15 s).
@@ -295,13 +305,13 @@ HOW TO BEAT HER
 2. From phase 2 the caged ones need hands: pillar up beside the spire (2-4 blocks), three hits on
    the cage, one on the crystal, and step back from the burst.
 3. Shoot her down when she circles: five arrows put her on the ground for 12 s.
-4. When she perches, put the bow away (arrows glance off) and get your blade on her: she takes 15%
-   more from melee there, and she leaves after 15% of her health.
+4. When she perches, put the bow away (arrows glance off) and get your blade on her: she perches
+   at most a block up, takes 15% more from every hit there, and leaves after 15% of her health.
 5. Stay out of the clouds, and out of the fan when she rears: arcane goes through shields and
    armour.
 6. Hit her after every dive: she is open for 1.2 s, doubly so.
 7. Explosions hurt her more. Yes, beds too.
-8. Do not fear the edge: her wing buffet will not throw you into the void.
+8. Do not fear the edge: her Wing Gust will not throw you into the void.
 
 MOVEMENT
 Mobility trait: flyer (ceiling III), on her own dragon wings. She has every feature from level 1;
@@ -325,8 +335,8 @@ exception).
   NPC. If you tower up a pillar she flies up to you.
 - Raids: a vanguard, she leads her base's raids by her own choice [raids: leads] (never drafted like
   a soldier). She circles the target first to scout it, flies over the wall when she has a way out,
-  hunts the defending hero inside (or goes for the heart with her party), and perches on the
-  tallest tower in reach to breathe on the yard. Defending, she meets airborne intruders over her
+  hunts the defending hero inside (or goes for the heart with her party), and in the yard perches
+  a block above the defenders to breathe on them. Defending, she meets airborne intruders over her
   walls.
 - Terrain: her moves never touch blocks; to reach someone she cannot get to she digs at a player's
   pace after 10 s, as every hero does.
@@ -354,7 +364,8 @@ HOW SHE JOINS A FACTION: THE TOKEN
 - The token glows, never despawns, and shrugs off fire, lava, explosions and cactus. If it falls
   into the void, sits in lava for 30 s, or is destroyed, a new one appears in the chest 2 minutes
   later. There is only ever one; any copy is a "Hollow Ender Dragon Token" that does nothing. It
-  cannot go into an ender chest, a shulker box or a bundle, and a creative player cannot hold it.
+  cannot go into a shulker box or a bundle, an ender chest hands it back when you close it, and a
+  creative player cannot hold it. A copied token stops working the moment the real one is used.
 - Bring it home through the portal and inside the walls of one of your faction's bases (you, or any
   NPC or hero of your faction, carrying it): it is used at once. In a 10 s show at the reporting
   station a dragon egg settles, purple beams pour into it, it cracks, and she unfolds her wings and
@@ -382,8 +393,10 @@ back to her.
   level 1, all of it at 20), and Spire Mend: once per fight, when it drops under 40% health, a
   shield of 4 for 8 s and Regeneration I for 6 s.
 - On the Ender Dragon herself (her bond): also health +5%, recharge +5%, ability power +6%; Heart of
-  the Spires (Spire Mend that also readies her next crystal 10 s sooner); Raise Crystal every 16 s
-  instead of 20; Ender Fireball's splash 3 blocks wide instead of 2.
+  the Spires (Spire Mend that also cuts her running cooldowns by 10 s, never under half, so her
+  next crystal comes sooner); Raise Crystal every 16 s instead of 20; Ender Fireball's splash 3
+  blocks wide instead of 2. A faster Raise Crystal does not let her crystals heal past their 35%.
+- It stays with her: her faction never gives it to another hero while she is in it.
 
 PERSONALITY AND VOICE
 - Temperament: proud noble. Traits: aggression 60, honour 75, ambition 85, caution 45, greed 70,
@@ -426,11 +439,11 @@ PERSONALITY AND VOICE
 
 ANIMATIONS
 Her own, on top of the shared library: one for each move (Ender Fireball on the ground and in the
-air, Dragon Breath, Wing Buffet, Void Dive, Raise Crystal, Perch and her perched pose, Void Roar,
-Tail Sweep, End Gravity); Breath of the End with its sweep loop; Fall of the Outer Isles; phase 2;
-phase 3; intro; victory (a slow wing stretch); taunt (a beckoning claw); last stand; three idles
-(preening, tail curl, gazing at the sky); a heavier take-off, a banking circle glide and a landing
-with flared wings. Her wings fold, beat and glide on the shared wing loops.
+air, Dragon Breath, Wing Gust, Void Dive, Raise Crystal, Perch and her perched pose, Void Roar,
+Crescent Tail, End Gravity); Breath of the End with its sweep loop; Fall of the Outer Isles;
+phase 2; phase 3; intro; victory (a slow wing stretch); taunt (a beckoning claw); last stand;
+three idles (preening, tail curl, gazing at the sky); a heavier take-off, a banking circle glide
+and a landing with flared wings. Her wings fold, beat and glide on the shared wing loops.
 
 SOUNDS
 Mostly the vanilla dragon's own, by id, with generated sounds where vanilla has none (design: the
