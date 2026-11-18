@@ -1,8 +1,22 @@
 Faction Clash - artifacts
-Items only heroes can wake | 50 artifacts in five tiers | crafted, looted, stolen
-Status: designed, not in the game yet (design of 2026-11-18, reviewed the same day,
+Items only heroes can wear | 61 artifacts in five tiers | crafted, upgraded, grown, looted, stolen
+Status: designed, not in the game yet (kit version 3, 2026-11-18: rewritten to your answers;
 docs/heroes-v2/ARTIFACTS.md). All numbers are first values, tuned after play.
 ====================================================================================================
+
+WHAT CHANGED IN THIS VERSION (your answers of 2026-11-18)
+- Slots: a hero has one artifact slot at level 1 and gets one more every five levels, five from
+  level 20.
+- Strength: an artifact gives the same numbers on every hero, at every level. It does not grow
+  with its hero.
+- Choice: each hero decides for itself to wear an artifact, swap it in, or leave it for someone
+  else (give it away, ask for one, refuse one). The leader only asks; nobody is ordered.
+- Tinkering: a new worker, the artificer, grows out of the blacksmith. With heroes who have the
+  new tinkerer talent, it upgrades artifacts at a new block, the Artificer's Bench.
+- Growth: eight new artifacts grow stronger from what their hero does (blood, ore, nights, ...).
+- Research: a few upgrades and three new artifacts need the faction's research. Research comes
+  with the faction labs later, so these stay locked until then. Nothing vanilla is ever locked.
+- You: you can offer an artifact to a hero or ask for one. The hero decides. Pins are gone.
 
 WHAT ARTIFACTS ARE
 Your idea, in our own words: artifacts are named items that make a hero stronger at something,
@@ -12,51 +26,59 @@ blaze rods, echo shards, shulker shells, the archetypes and the eight elements.
 - Each artifact is a normal item with its own name and a 16x16 icon in the vanilla style. Its name
   is coloured by tier: yellow for components, aqua for advanced, purple for greater and rare finds,
   gold for the two signature artifacts. Rare finds and signatures shimmer like enchanted items.
+- An upgraded artifact shows its level after its name, like an enchantment: Kiln Heart II.
 - Hovering over one shows what it gives, its special power, what it is made from and a line of
   lore, for example:
 
-      Kiln Heart
+      Kiln Heart II
       Advanced artifact · fire
-       +12% fire damage
-       +6% ability power
-       +10% fire resistance
+       +15% fire damage
+       +8% ability power
+       +13% fire resistance
       Banked Embers (primed): an enemy its moves hit smoulders for 6 s;
       its next basic hit on it deals 2 fire and sets it alight for 3 s.
-      Wakes only for a hero in an artifact slot: 60% of its power at
-      hero level 1, full at level 20.
+      Works only for a hero wearing it in an artifact slot.
+      Next: upgrade III at an Artificer's Bench (needs Artifice 1).
       Built from: Lapis Lens + Block of Coal
       "Banked coals that never quite go out."
 
 WHO GETS THEIR POWER
-- Only a hero, and only from its three artifact slots.
+- Only a hero, and only from its artifact slots.
 - Anyone else can carry them with no effect at all: you, a soldier, a hauler, a trader, a chest, a
   hopper, even a hero's own backpack. You cannot wear one, and neither can an ordinary NPC: players
   and NPCs are treated exactly the same, as everywhere in the hero design.
-- What an artifact's power does to others is the same for everyone: a slow, an armour cut or a heal
-  works on a player exactly as on an NPC soldier (and an ally heal reaches you too if you are a
-  member of the hero's faction).
+- What an artifact's power does to others is the same for everyone: a slow, a heal or a push works
+  on a player exactly as on an NPC soldier (and an ally heal reaches you too if you are a member of
+  the hero's faction).
 
-SLOTS AND HOW STRONG THEY GET
-- Every hero has three slots, from level 1, whatever its rarity or whether it leads. Any artifact
-  fits any slot. A hero cannot wear two copies of the same artifact.
-- Like the heroes' own abilities, an artifact is complete from level 1 but grows in power: its
-  numbers are at 60% on a level-1 hero, 79% at level 10 and full from level 20 [the same curve as
-  hero mobility]. Its special power is there in full from level 1 and grows with the hero's ability
-  power, like the hero's own passives.
-- Each kind of bonus has a ceiling for the whole build, so three artifacts can never pile one
-  bonus sky-high [health +20%, attack +15%, ability power +20%, armour +4, shorter cooldowns 20%,
-  attack speed +15%, speed +8%, energy gain +25%, poise +25%, element damage +20%, one element's
-  resistance +25%, all resistances +10%, drain 6%, heal power +20%, resolve 25%, knockback
-  resistance +20, stamina +25%, work speed +15%, critical damage +25%]. The hero sheet marks a
-  bonus that has reached its ceiling.
-- What a full build is worth: three components make a hero about a tenth stronger, three advanced
-  artifacts about a fifth, three greater ones about a quarter (at level 20; about 60% of that at
-  level 1).
-- What artifacts never change: the boss rules that keep a hero fight fair. No hit on a hero takes
-  more than 12% of its health; no wind-up, ground mark or warning gets shorter; the waits between
-  moves stay; a stun is never longer and never chains; no hit from a hero goes over the 40-point
-  ceiling; nothing saves a hero from a killing blow; no artifact lets a hero fly, teleport or break
-  blocks. An artifact's attack speed speeds a hero's basic swings and shots only, never its moves.
+SLOTS: ONE MORE EVERY FIVE LEVELS
+    Hero level    1-4   5-9   10-14   15-19   20-30
+    Slots          1     2      3       4       5
+- Any artifact fits any slot. A hero cannot wear two copies of the same artifact.
+- Not more for rarer heroes, leaders or talents: rarity and leading already give more health.
+- Five, not six: five strong artifacts already reach most of the ceilings below.
+- A new slot opens at the level-up; the hero fills it the next time it chooses.
+- The Wither and the Ender Dragon join at level 1, so their own artifact fills their one slot.
+
+FIXED STRENGTH
+- An artifact's numbers are its own. Kiln Heart II gives +15% fire damage on a level-1 hero and on
+  a level-30 hero alike. (The first version gave 60% at level 1 and full power at level 20; that
+  is gone.)
+- A "+10% attack" line is a tenth of that hero's own attack, so a stronger hero gets more out of
+  it, as with a Strength potion. The artifact itself never changes.
+- Only two things make an artifact stronger, and both stay on the item wherever it goes: its
+  upgrade level (TINKERING below) and, for the eight growing artifacts, its growth.
+
+CEILINGS
+Each kind of bonus has a ceiling for the whole build, so artifacts can never pile one bonus
+sky-high [health +20%, attack +15%, ability power +20%, armour +4, shorter cooldowns 20%, attack
+speed +15%, speed +8%, energy gain +25%, poise +25%, element damage +20%, one element's
+resistance +25%, all resistances +10%, drain 6%, heal power +20%, resolve 25%, knockback
+resistance +20, stamina +25%, work speed +15%, critical damage +25%]. The hero sheet marks a
+bonus that has reached its ceiling. With five slots the ceilings matter more: a fifth artifact
+mostly adds its power and the bonuses the others lack.
+In a fight, everything artifacts heal their own hero is held to 10% of its health in any 30 s, so
+a hero cut down by a crowd of soldiers cannot out-heal them.
 
 WHAT AN ARTIFACT CAN GIVE
   Health                   more maximum health (the boss health too)
@@ -77,32 +99,37 @@ WHAT AN ARTIFACT CAN GIVE
   Stamina                  longer flights and glides (not more air time in a fight)
   Work speed               faster at its job at home
   Critical damage          harder jump-critical hits
-In a fight, everything artifacts heal their own hero is held to 10% of its health in any 30 s, so
-a hero cut down by a crowd of soldiers cannot out-heal them.
+
+WHAT ARTIFACTS NEVER CHANGE
+The boss rules that keep a hero fight fair, whatever the upgrades or growth. No hit on a hero takes
+more than 12% of its health; no wind-up, ground mark or warning gets shorter; the waits between
+moves stay; a stun is never longer and never chains; no hit from a hero goes over the 40-point
+ceiling; nothing saves a hero from a killing blow; no artifact lets a hero fly, teleport or break
+blocks, and none is an explosive. An artifact's attack speed speeds basic swings and shots only.
+An artifact that pushes (Updraft, Ram Strike) follows the same rules as any hero's push, so, as
+you allowed, it may send someone off a cliff or into lava.
 
 HOW TO GET THEM
-Crafting, the player-like way. The faction's blacksmith does all of it in its workshop, from real
-materials, and you can do every step yourself with the vanilla screens:
+Crafting, the player-like way. The faction's blacksmith does it in its workshop, from real
+materials, until the faction has an artificer, who then takes it over. You can do every step
+yourself with the vanilla screens:
   1. Components at a crafting table (flint, gold, lapis, copper, iron, tuff, deepslate, amethyst,
      feathers, a spider eye, a glistering melon slice...).
   2. An Artificer's Sigil at a crafting table: a gold ingot, 4 lapis lazuli and 4 redstone make 2.
   3. Finished artifacts at a smithing table: the Sigil as the template, a component or an artifact
-     as the base, and a second component or a material as the addition. The workshop gets a
-     smithing table for this (the same one netherite will need later).
+     as the base, and a second component or a material as the addition.
   4. Waking at an anvil: what comes off the smithing table is dormant and does nothing until it is
      woken with 2 lapis lazuli and experience levels (5 for advanced, 10 for greater). The faction
-     pays with the experience its people really gathered, as it already does for enchanting and
-     repairs, and the anvil wears out as vanilla's does.
+     pays with the experience its people really gathered, and the anvil wears out as vanilla's does.
 The blacksmith only works on artifacts when its own orders are done (tools, weapons, armour and
-repairs come first), keeps some gold and lapis back, and makes at most one finished artifact and
-one waking a day at each base. The forgemaster talent makes waking cheaper.
+repairs come first), keeps some gold, lapis and diamonds back, and makes at most one finished
+artifact or waking a day at each base. The forgemaster talent makes waking cheaper.
 
-Materials follow the world. Components and advanced artifacts come from today's economy (mines,
-farms, animals, night kills, traders who buy ender pearls from clerics and packed ice from
-wandering traders). Greater artifacts each need something from farther away: a breeze rod or a wind
-charge (trial chambers), netherite scrap, a blaze rod or a ghast tear (the Nether), an echo shard
-(an ancient city), a totem of undying (a woodland mansion), a shulker shell (the End), a slime
-block, a nautilus shell (fishermen catch them). So builds grow as a faction explores.
+Materials follow the world. Components, advanced and most growing artifacts come from today's
+economy. Greater artifacts each need something from farther away: a breeze rod or a wind charge
+(trial chambers), netherite scrap, a blaze rod or a ghast tear (the Nether), an echo shard (an
+ancient city), a totem of undying (a woodland mansion), a shulker shell (the End), a slime block,
+a nautilus shell (fishermen catch them). So builds grow as a faction explores.
 
 Rare finds cannot be made. They lie in vanilla chests and bosses: an ancient city (Hushstone), a
 bastion (Bastion Hoard-Ring), an end city (Chorus-Bloom Pendant), a woodland mansion or an evoker
@@ -113,87 +140,185 @@ Signature artifacts: the Wither hero and the Ender Dragon hero each come with on
 (designed with those two heroes, docs/heroes-v2/BOSS_HEROES.md). Any hero can wear one for its
 basic power; only its own hero gets its full bond (extra bonuses, a stronger power and changes to
 two of her own moves). Only one of each exists in a world, and if one is destroyed (thrown into the
-void) it comes back to its hero when she next returns. While she is in the faction, her own
-signature stays on her: the faction never gives it to another hero.
+void) it comes back to its hero when she next returns. A signature is never upgraded and never
+grows. Its own hero never gives it up: she keeps it until she dies or leaves.
 
 Villagers never buy or sell artifacts. Later, when factions make treaties, an artifact can be part
 of a tribute or a peace offer.
 
+TINKERING: UPGRADES
+"Some npcs or hero with can tinker with artefacts may upgrade the artifact."
+- Who: the artificer, a new worker. It grows out of the blacksmith: once the base has its bench
+  and its blacksmith reaches level 5, that blacksmith becomes the artificer and a new blacksmith
+  is hired. A hero whose job is artificer (heroes with the new tinkerer talent) does the same work,
+  better. You can use any bench yourself, for the same price.
+- Where: the Artificer's Bench, a new block for the workshop (iron, a lapis block, amethyst, a
+  smithing table and polished deepslate). It works like a brewing stand: put the artifact and the
+  materials in, press Begin, it takes the materials and the experience levels, then works by
+  itself for a minute or three. A tinkerer standing at it makes it faster.
+- What: upgrade level II makes every number on the artifact a quarter larger, level III half
+  larger (still under the ceilings), and at III its special power is sharpened: a fifth shorter
+  cooldown, or a fifth stronger where it has none. A growing artifact is not made stronger by an
+  upgrade; instead it can grow one step further.
+- Components are never upgraded (they are built into bigger artifacts); signatures never.
+- An upgrade never fails and never breaks the item. Its price is the cost:
+    advanced or growing to II    2 lapis + its own material                   5 levels    60 s
+    advanced or growing to III   4 lapis, a diamond + more of its material    8 levels    90 s
+    greater to II                4 lapis, a diamond + its own material       10 levels   120 s
+    greater to III               4 lapis, a netherite scrap + more material  15 levels   180 s
+    rare find to II / III        as greater (needs research)
+  "Its own material" is in the catalogue below (Kiln Heart: blocks of coal, 2 for II, 4 for III).
+- Every level III, and every upgrade of a rare find, needs research (RESEARCH below).
+- Smithing an upgraded artifact into its bigger form starts the new one again at level I; the
+  tooltip warns you, and the factions never do it.
+- The tinkerer talent (I / II / III): upgrades at its base cost 1 / 2 / 3 fewer levels and less
+  time; at the bench itself it works 25 / 40 / 55% faster and sometimes saves a material.
+
+GROWING ARTIFACTS
+"An artifact may become stronger of its in the artifact design, like an artifact that needs blood
+to get stronger."
+- Eight artifacts grow from what their hero does while wearing them. Carried in a backpack or a
+  chest they count nothing.
+- Each grows in steps. The first step comes quickly; the fifth takes fifteen times as long.
+- A new one starts as weak as a component (with a small special power). Each step adds a bonus.
+  It can grow three steps at upgrade I, four at II and five at III. Full, it is as strong as a
+  greater artifact of the same upgrade level.
+- Its growth is kept for good: when its hero dies, when it is stolen, traded or given away, the
+  next hero starts from where it was. It never shrinks. Only destroying the item loses it.
+- No hero goes looking for fights or mines just to feed one: it grows from what the hero does
+  anyway. Blood from you is the same as blood from a soldier.
+    BLOODGLASS AMPOULE   grows with the blood its hero draws from living foes (not undead)
+    VEINSEEKER GEODE     grows with every ore block its hero mines
+    VIGIL LANTERN        grows with every night its hero spends awake on watch
+    SKYROAD PENNANT      grows with every block its hero flies or glides
+    GRAVEWARD BELL       grows with every undead its hero lays to rest
+    RIVAL'S CORD         grows with every enemy hero or boss its hero outlasts
+    SCARBARK AMULET      grows with every fight its hero lives through at the edge of death
+    HEARTHROOT SEED      grows with every crop, sapling and animal pair its hero tends
+  (Their numbers are in the catalogue below.)
+
+RESEARCH (TECH LEVELS)
+"Some artifacts may nees tech level to be built and/or upgraded."
+- When the faction labs come (the roadmap's technology phase), factions research a line called
+  Artifice. Artifice 1 opens upgrade level III. Artifice 2 opens the three engineered artifacts
+  and the upgrades of rare finds.
+- Everything else here needs no research, ever: components, the Sigil, advanced, growing and
+  greater artifacts, waking, upgrade level II, the bench, the artificer and the talent. Nothing
+  vanilla is ever locked.
+- Research is checked only at the bench, against the faction of whoever uses it: you use your
+  faction's research.
+- Until the labs exist, the researched steps stay locked (the bench shows them greyed). A server
+  setting can open them for anyone who wants them sooner.
+
+HOW HEROES CHOOSE
+"Heroes decide if they want to use, replace, or leave for someone else the artifact."
+- Each hero chooses for itself, at a base and out of a fight (never in the middle of one):
+    use       it takes the artifact it likes best for an empty slot, from its backpack or the
+              storehouse;
+    swap      it replaces one it wears when another is clearly better (fickle heroes swap more,
+              careful ones less);
+    give      it gives an artifact to another hero who needs it much more, if it is generous
+              enough (sociable heroes give, greedy ones keep);
+    ask       it asks another hero for an artifact it needs much more (bold, greedy or sociable
+              heroes ask; a lone wolf never does);
+    refuse    it hands back an offer it does not want.
+- What a hero likes comes from its kit, role and element (a healer wants heal power, a flyer
+  stamina, a fire hero the fire focus), what its scouts saw of the enemy (the right resistance),
+  and its personality: a cautious hero likes health and armour, an aggressive one damage, a
+  sociable one powers that help allies, a greedy one gold and work artifacts, an ambitious one
+  the rarest and the upgraded, and a patient one is happy to grow an artifact.
+- Temperaments add their touch: a tsundere refuses your first gift and takes the second ("I-it's
+  not like I wanted it!"), a proud noble turns up her nose at components, a perfectionist upgrades
+  what she wears before trying anything new, a glutton loves the torcs and the Bloodglass Ampoule,
+  a melancholic never gives away what a fallen friend wore, an honourable hero always gives back
+  what it was lent.
+- Friends and rivals count: heroes give more readily to friends and never to a sworn enemy.
+- When two heroes want the same artifact from the store, each decides whether to insist or give
+  way; if both insist, the one who asked first gets it, and the other asks the workshop for one.
+- The leader only wishes. A greedy leader (or a tyrant) wishes "the best to me", an ambitious one
+  "the best to our strongest", a fair-minded one "to whoever has least". Each hero weighs the
+  wish by its loyalty and honour against its own greed and ambition: a loyal, honest hero mostly
+  follows it, a greedy schemer mostly does not. Nobody is forced.
+- The workshop makes what the heroes wish for (each keeps up to two wishes: an artifact or an
+  upgrade). There the leader does decide the order, because the workers are ordinary NPCs.
+- Haulers carry artifacts between bases; the hero who gets one still decides.
+
+YOU AND YOUR FACTION'S HEROES
+- Offer: sneak-use an artifact on one of your faction's heroes (or use the Offer slot on its
+  sheet), out of a fight and close by. The hero decides at once: it wears it (and hands you what
+  it took off), keeps it, or gives it back with a line.
+- Ask: the Ask button beside an artifact the hero holds. It gives you what it does not need; for
+  anything else it weighs its opinion of you. What you lent it, an honourable hero always gives
+  back.
+- The storehouse: you can put artifacts in it for the heroes, and take from it like any chest.
+- No more pins: nothing you put on a hero is locked there. To move an artifact from one hero to
+  another, ask the first and offer it to the second.
+- These are the same rules a hero uses with another hero; only the screen is yours.
+
 WHEN A HERO DIES
 - Everything it wears drops where it died, like a player's inventory, with its backpack. Its kit
   weapon still vanishes and comes back with it, as before. A hero that escapes keeps everything.
+- The drops keep their upgrade level and growth.
 - The drops never despawn. Fire, lava (they float out of it), explosions and cactus do not destroy
   them; only the void and commands do. A small coloured sparkle shows where they lie.
 - Whoever gets there first takes them: the side that holds the ground picks them up before any
   other loot, a passing hero, you, or even a zombie (which drops it again when killed). Soldiers
-  carry them home to their storehouse.
-- So a faction can recover its fallen hero's artifacts, and an enemy can steal them and put them on
-  its own heroes. When a faction knows where its hero fell, it may send the revived hero, or two
-  soldiers, to fetch them, unless the place is next to an enemy base.
-- The hero comes back 10 minutes later as always, with empty slots, and puts on whatever its
-  faction has in store.
-- Raiders who loot a storehouse take artifacts first, and a greedy hero on a raid goes for the
-  storehouse while the base still stands.
-
-HOW FACTIONS USE THEM
-- Each faction plans its heroes' builds from what it knows: each hero's moves, role and element,
-  the elements of enemy heroes its scouts have seen (it then values that resistance), and
-  personality. A cautious hero likes health, armour and last-ditch powers; an aggressive one likes
-  damage; a sociable one likes powers that help allies; a greedy one likes work artifacts and gold;
-  an ambitious one likes the rarest things. A glutton likes the torcs that heal on a kill, a
-  merchant the Hoard-Ring, a perfectionist finishes one build before starting another.
-- The leader decides who gets the best: a greedy leader (or a tyrant) keeps them for itself, an
-  ambitious one gives them to its strongest hero, and a fair-minded one shares them out to whoever
-  has least.
-- Heroes put artifacts on and swap them only at a base and never in a fight. Putting one on takes
-  2 s (the hero holds it to its chest; a hit interrupts it). In the field a hero may only fill an
-  empty slot with something it picked up. Haulers carry artifacts between bases.
-- You and your faction's heroes: as a member you can open a hero's slots from its sheet (out of a
-  fight, standing next to it), put artifacts in and take them out. What you put in stays: the
-  faction AI never swaps it, until you take it out or the hero dies.
+  carry them home to their storehouse; a hero wears what it wants and stores the rest.
+- So a faction can recover its fallen hero's artifacts, and an enemy can steal them and wear them.
+  When a faction knows where its hero fell, it may send the revived hero, or two soldiers, to
+  fetch them, unless the place is next to an enemy base.
+- The hero comes back 10 minutes later as always, with empty slots, and claims from its store.
+- Raiders who loot a storehouse take artifacts first (and break a bench with one in it), and a
+  greedy hero on a raid goes for the storehouse while the base still stands.
 
 WHAT YOU SEE
 - Boss bar: after the phase pips, one small square per artifact in its tier's colour, so you can
   tell at a glance how well equipped a hero is.
-    ★ Benika Akagane · Warlord of the Crimson Anvil  ◆◆◇ ⚡ ■■■
-- Hero sheet: each artifact with its numbers at that hero's level, its power and cooldown, who
-  pinned it, the build's totals, and what is in its backpack.
-- Reporting station: each hero's artifacts, the faction's stock, and what the blacksmith is making.
-- Chat (your faction): who now wears what, what was woken, and what lies where a hero fell. Heroes
-  may say a line when they put on something rare.
+    ★ Benika Akagane · Warlord of the Crimson Anvil  ◆◆◇ ⚡ ■■■■■
+- Hero sheet: each artifact with its level and numbers, its power and cooldown, a growth bar for
+  a growing one, who lent it, the locked slots and the level that opens each, the build's
+  totals, what is in its backpack, and what it wishes for.
+- Reporting station: each hero's artifacts, the faction's stock, who asked whom for what, and what
+  the blacksmith or the artificer is making ("upgrading Blackforge Girdle to II for Benika").
+- Chat (your faction): who now wears what, who gave or refused what, what was woken or upgraded,
+  when an artifact grows a step, and what lies where a hero fell. Heroes say a line when they put
+  on something rare, accept a gift, refuse one or ask for one.
 - Sounds: a chime by tier when a hero puts one on, the anvil and enchanting table when one wakes,
-  and a vanilla sound for each power (a fire charge, frost, a thorns prick, a totem, a shulker
-  closing, evoker fangs...).
-- Each hero's kit sheet will get an ARTIFACTS section: what its faction would build for it at
-  levels 1, 10 and 20, and why.
+  the smithing table and a soft amethyst hum at the bench, a sound of its own when an artifact
+  grows, and a vanilla sound for each power (a fire charge, frost, a thorns prick, a totem, a
+  shulker closing, evoker fangs, a piston...).
+- Each hero's kit sheet will get an ARTIFACTS section: what it would choose for itself at levels
+  1, 10 and 20 (one, three and five slots), and why.
 - Artifacts are not drawn on the heroes' bodies (the two signature artifacts may be).
 
 IN A WAR
 A hero's war power (what the war councils count) grows by its artifact rating: about 3% for each
 component it wears, 7% for each advanced, 9% for each greater, 10% for each rare find and 12% for a
-signature, times its level's attunement, at most +30% in all. Rival factions know a hero's
-artifacts only from what their scouts saw. Everything else stays: heroes still count for at most 1.5
-times their side's soldiers, half while badly hurt, nothing while dead or away.
+signature, 2% more per upgrade level, and 4% to 11.5% for a growing one by its steps; at most +40%
+in all (it was +30% with three slots). Rival factions know a hero's artifacts only from what their
+scouts saw (the tiers, never the upgrades or growth). Everything else stays: heroes still count
+for at most 1.5 times their side's soldiers, half while badly hurt, nothing while dead or away.
 
 HOW STRONG, WORKED THROUGH (on paper, to be measured in campaigns)
-- A level-1 common marksman holds off about three iron soldiers bare, about four in three greater
-  artifacts. Artifacts make a weak hero stand; they do not win a war.
-- Benika at level 20 as a leader, built to last (Blackforge Girdle, Shulker-Shell Ward, Ghast-Tear
-  Torc): 236 health instead of 197, soldiers' blows about a sixth weaker. Six iron soldiers need
-  about 13 s of landed blows instead of 9: still beaten by six. Against you in iron, about 65 s of
-  landed hits instead of 45: the endgame boss, but every warning and weakness is unchanged.
-- A level-20 striker built for damage hits about 30% harder with its swings and about a sixth
-  harder with its moves; its ultimate stays under the 40-point ceiling, so diamond with Protection
-  IV still takes about 8 from it.
-- A level-1 hero in three greater artifacts still loses to a bare level-20 hero about three times
-  in four: levels stay the main way heroes grow.
-- Two heroes of the same level: the built one wins about 60-65% of duels; both built, it is even
-  again.
+- A level-1 common marksman holds off about 3.25 iron soldiers bare, about 3.55 with its one slot
+  filled. A small, honest boost: artifacts matter more as slots open.
+- Benika at level 20 as a leader, five slots built to last: 236 health instead of 197, soldiers'
+  blows about a quarter weaker. Six iron soldiers need about 15 s of landed blows instead of 9:
+  she beats six, about nine break even, a dozen or another hero beat her. Against you in iron,
+  about 73 s of landed hits instead of 45: the endgame boss, but every warning and weakness stays.
+- The strongest burst: a level-20 striker in five damage artifacts reaches the 40-point ceiling
+  more often, never above it; diamond with Protection IV still takes about 9 from its best hit.
+- A level-1 hero with one artifact against a level-20 hero with five loses about 19 times in 20:
+  levels, and the slots they open, are the main way heroes grow.
+- Two heroes of level 10: the built one wins about 70% of duels; both built, it is even again.
+- A growing artifact: a raiding hero fills the Bloodglass Ampoule's first three steps in about
+  three raids; a guard fills the Vigil Lantern's three steps in six nights.
 
 THE CATALOGUE
-Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and the levels shown.
+Numbers are the artifact's own at upgrade level I, the same on every hero. "Woken" means at an
+anvil with 2 lapis and the levels shown. "Upgrade" is its own material for level II / level III.
 
-  COMPONENTS (12) - crafting table, no special power
+  COMPONENTS (12) - crafting table, no special power, never upgraded
     Knapped Flint            3 flint, an iron ingot, string             attack +10%
     Hale Locket              a golden carrot, 3 gold nuggets, string    health +10%
     Lapis Lens               4 lapis lazuli, a glass pane               ability power +12%
@@ -210,142 +335,198 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
 
   ADVANCED (20) - smithing table with a Sigil, woken with 5 levels
   The eight element foci (only a hero of that element gets the damage bonus):
-    KILN HEART (fire) - Lapis Lens + a block of coal
+    KILN HEART (fire) - Lapis Lens + a block of coal; upgrade: coal blocks 2 / 4
       fire damage +12%, ability power +6%, fire resistance +10%
       Banked Embers: an enemy its moves hit smoulders for 6 s; its next basic hit on that enemy
       deals 2 fire damage and sets it alight for 3 s (once every 4 s).
-    RIMEGLASS PRISM (frost) - Lapis Lens + packed ice
+    RIMEGLASS PRISM (frost) - Lapis Lens + packed ice; upgrade: packed ice 4 / 8
       frost damage +12%, ability power +6%, frost resistance +10%
       Hoarfrost: every third basic hit on the same enemy within 5 s slows it (Slowness I, 2 s).
-    STORMROD SPINDLE (shock) - Lapis Lens + a lightning rod
+    STORMROD SPINDLE (shock) - Lapis Lens + a lightning rod; upgrade: lightning rods 2 / 4
       shock damage +12%, attack speed +5%, shock resistance +10%
       Arc Jump: when one of its moves hits, a spark jumps to the nearest other enemy within 5
       blocks for 3 shock damage (once every 6 s).
-    BOG PHIAL (venom) - Lapis Lens + a fermented spider eye
+    BOG PHIAL (venom) - Lapis Lens + a fermented spider eye; upgrade: fermented eyes 2 / 4
       venom damage +12%, ability power +6%, venom resistance +10%
       Seeping Venom: a quarter of its basic hits poison the target, 1 damage a second for 4 s, up
       to two stacks (the undead are immune, as in vanilla).
-    BONE-ASH URN (blight) - Lapis Lens + a bone block
+    BONE-ASH URN (blight) - Lapis Lens + a bone block; upgrade: bone blocks 2 / 4
       blight damage +12%, ability power +6%, blight resistance +10%
       Withering Touch: enemies its moves hit heal 25% less for 5 s.
-    STARLESS PEARL (arcane) - Lapis Lens + an ender pearl
+    STARLESS PEARL (arcane) - Lapis Lens + an ender pearl; upgrade: ender pearls 2 / 4
       arcane damage +12%, recharge +5%, arcane resistance +10%
       Racing Thoughts: each move it uses takes 1 s off its other cooldowns (once every 6 s).
-    DAYBREAK BROOCH (radiant) - Lapis Lens + a block of gold
+    DAYBREAK BROOCH (radiant) - Lapis Lens + a block of gold; upgrade: gold ingots 4 / 8
       radiant damage +12%, heal power +8%, radiant resistance +10%
       Morning Grace: when an ally within 12 blocks drops under 35% health, the hero heals it 3
       (once every 20 s).
-    IRONBOUND WHETSTONE (physical) - Knapped Flint + a block of iron
+    IRONBOUND WHETSTONE (physical) - Knapped Flint + a block of iron; upgrade: iron blocks 1 / 2
       physical damage +12%, attack +5%, physical resistance +10%
       Honed: its jump-critical hits deal 2 more damage and add 10 poise to a hero they hit.
   The others:
-    MARROW TORC - Spider-Eye Vial + Knapped Flint
+    MARROW TORC - Spider-Eye Vial + Knapped Flint; upgrade: spider eyes 4 / 8
       drain +4%, attack +5%, health +5%
       Gorge: each enemy it kills heals it 4 (once every 5 s).
-    QUICKSTEP ANKLET - Copper Coil + Fletched Charm
+    QUICKSTEP ANKLET - Copper Coil + Fletched Charm; upgrade: copper ingots 4 / 8
       attack speed +10%, speed +6%
       Gathering Pace: each basic hit gives +4% attack speed for 3 s, up to three stacks.
-    RUNEBOUND SIGNET - Lapis Lens + Knapped Flint
+    RUNEBOUND SIGNET - Lapis Lens + Knapped Flint; upgrade: flint 4 / 8
       ability power +6%, attack +5%, recharge +5%, health +5%
       Rune-Struck: an enemy its moves hit carries a rune for 6 s; its next basic hit on that enemy
       deals 5 extra damage of its element (once every 3 s). Does not stack with Banked Embers.
-    IRONHIDE GIRDLE - Hale Locket + Riveted Buckle
+    IRONHIDE GIRDLE - Hale Locket + Riveted Buckle; upgrade: leather 4 / 8
       health +10%, armour +2
       Braced Hide: the first time in a fight it drops under half health, a 4-point shield for
       10 s and +30% knockback resistance for 8 s.
-    CACTUS-SPINE MANTLE - Riveted Buckle + a cactus
+    CACTUS-SPINE MANTLE - Riveted Buckle + a cactus; upgrade: cactus 4 / 8
       armour +2, health +5%, all resistances +4%
       Prickle: when it is hurt, enemies within 3 blocks take 2 damage (once every 1.5 s).
-    HEARTHWOOL SHAWL - Tuff Ward + Hale Locket
+    HEARTHWOOL SHAWL - Tuff Ward + Hale Locket; upgrade: wool 4 / 8
       all resistances +8%, health +10%
       Weathered: when an element other than physical hurts it, it resists that element 15% more
       for 8 s.
-    ANCHOR CHAIN - Deepslate Ballast + a chain
+    ANCHOR CHAIN - Deepslate Ballast + a chain; upgrade: chains 2 / 4
       poise +20%, resolve +20%
       Settled Weight: after each stagger its poise grows 30% instead of 20% for the rest of the
       fight.
-    MENDER'S BRAZIER - Glistering Charm + Hale Locket
+    MENDER'S BRAZIER - Glistering Charm + Hale Locket; upgrade: glistering melon 2 / 4
       heal power +16%, health +10%
       Soothing Smoke: every 10 s in a fight it and its allies within 6 blocks heal 2.
-    SHEPHERD'S LANTERN - Clockwork Pin + Amethyst Tuner
+    SHEPHERD'S LANTERN - Clockwork Pin + Amethyst Tuner; upgrade: amethyst shards 4 / 8
       recharge +10%, energy gain +16%
       Kindred Light: when one of its summons or adds dies, it gains 8 ultimate energy.
-    SNAREWIRE SPOOL - Clockwork Pin + a tripwire hook
+    SNAREWIRE SPOOL - Clockwork Pin + a tripwire hook; upgrade: tripwire hooks 2 / 4
       recharge +10%, ability power +6%, resolve +10%
       Snag: an enemy it stuns, freezes, slows or silences is also tethered to it for 3 s: it is
       pulled back if it goes more than 8 blocks away (once every 6 s).
-    WIND-KITE TASSEL - Fletched Charm + paper
+    WIND-KITE TASSEL - Fletched Charm + paper; upgrade: paper 4 / 8
       stamina +20%, speed +6%
       Fair Wind: when it breaks off to escape, Speed I for 6 s.
-    PROSPECTOR'S LOUPE - Knapped Flint + a spyglass
+    PROSPECTOR'S LOUPE - Knapped Flint + a spyglass; upgrade: spyglasses 1 / 2
       work speed +15%, stamina +10%
       Keen Eye: at its job its tool counts one Fortune level higher on ores, crops and leaves, or
       one Luck of the Sea level higher when fishing (never above level III, never with Silk Touch).
 
+  GROWING (8) - smithing table with a Sigil, woken with 5 levels; they start small and grow
+    BLOODGLASS AMPOULE - Spider-Eye Vial + a block of redstone; upgrade: redstone blocks 1 / 2
+      starts at attack +5%, drain +2%; full: attack +15%, drain +6%, health +5%
+      grows with blood drawn from living foes (300 for its first step, 4,500 for its fifth)
+      Bloodied: an enemy its hit leaves under half health bleeds 1 a second for 3 s (not the
+      undead, golems or slimes; once every 6 s per enemy).
+    VEINSEEKER GEODE - Amethyst Tuner + a block of raw iron; upgrade: raw iron blocks 1 / 2
+      starts at work speed +5%, poise +10%; full: work +15%, poise +10%, armour +2, health +5%
+      grows with ore blocks mined (48 for its first step, 720 for its fifth)
+      Geode Hum: at its job it follows ore veins one block wider.
+    VIGIL LANTERN - Clockwork Pin + a soul lantern; upgrade: soul lanterns 1 / 2
+      starts at resolve +10%, health +5%; full: health +15%, resolve +20%, all resistances +8%
+      grows with nights spent awake on watch (1 for its first step, 15 for its fifth)
+      Night Eyes: Darkness never takes hold of it and Blindness lasts half as long.
+    SKYROAD PENNANT - Fletched Charm + a phantom membrane; upgrade: membranes 2 / 4
+      starts at stamina +10%, speed +3%; full: stamina +20%, speed +6%, knockback resistance
+      +10, resolve +10%, poise +10%
+      grows with blocks flown or glided (1,500 for its first step, 22,500 for its fifth)
+      Road Memory: after a flight of 20 blocks or more, Speed I for 4 s when it lands.
+    GRAVEWARD BELL - Glistering Charm + a bell; upgrade: gold ingots 4 / 8
+      starts at heal power +8%, all resistances +4%; full: heal power +16%, all resistances +8%,
+      health +10%, recharge +5%
+      grows with undead laid to rest (12 for its first step, 180 for its fifth)
+      Toll for the Dead: its hits on the undead deal 2 more damage (once a second).
+    RIVAL'S CORD - Knapped Flint + a lead; upgrade: leads 1 / 2
+      starts at attack +5%, poise +10%; full: attack +15%, critical damage +20%, poise +10%,
+      resolve +10%
+      grows with every enemy hero or boss it outlasts in a fight (1 for its first step, 15 for
+      its fifth)
+      Measured: when a fight with an enemy hero or a boss starts, +20% poise for 20 s.
+    SCARBARK AMULET - Riveted Buckle + a dark oak log; upgrade: dark oak logs 4 / 8
+      starts at armour +1, health +5%; full: armour +3, all resistances +4%, health +10%,
+      knockback resistance +10
+      grows with every fight it lives through after falling under a third of its health (an
+      escape counts; 1 for its first step, 15 for its fifth)
+      Old Wounds: under a third of its health, +2 armour.
+    HEARTHROOT SEED - Hale Locket + a moss block; upgrade: moss blocks 2 / 4
+      starts at work speed +5%, health +5%; full: work +15%, health +10%, heal power +16%
+      grows with crops harvested, saplings planted and animals bred (64 for its first step, 960
+      for its fifth)
+      Shared Harvest: every 15 s in a fight, the most hurt ally within 6 blocks (or itself)
+      heals 2.
+
   GREATER (10) - smithing table with a Sigil, woken with 10 levels
-    BREEZE-CUT TALON - Ironbound Whetstone + a breeze rod
+    BREEZE-CUT TALON - Ironbound Whetstone + a breeze rod; upgrade: breeze rods 1 / 2
       attack +10%, attack speed +5%, critical damage +10%, speed +3%
       Gale Finish: its basic hits on an enemy under 30% health deal 10% of the health that enemy
       is missing (at most 8, once every 2 s).
-    BLACKFORGE GIRDLE - Ironhide Girdle + netherite scrap
+    BLACKFORGE GIRDLE - Ironhide Girdle + netherite scrap; upgrade: iron blocks 2 / 4
       health +15%, armour +2
       Downpull (used by the hero like a move): it slams the ground and drags enemies within 5
       blocks toward it, taunting them for 2 s. Warning: 1 s with a ring on the ground. Every
       40 s at most.
-    DEEPECHO SIGNET - Runebound Signet + an echo shard
+    DEEPECHO SIGNET - Runebound Signet + an echo shard; upgrade: echo shards 1 / 2
       ability power +12%, recharge +10%, health +5%
       Rising Echo: each move it uses adds 3% damage for 10 s, up to four stacks.
-    BLAZE-ROD BRACER - Quickstep Anklet + a blaze rod
+    BLAZE-ROD BRACER - Quickstep Anklet + a blaze rod; upgrade: blaze rods 2 / 4
       attack speed +10%, attack +5%, element damage +6%, speed +3%
       Stoked Heat: each basic hit stokes it (up to 4 heat, lost after 4 s without a hit); at 4
       heat the first hit of its next move deals 4 extra damage of its element.
-    LIFEBOUND CHIME - Mender's Brazier + a totem of undying
+    LIFEBOUND CHIME - Mender's Brazier + a totem of undying; upgrade: golden apples 1 / 2
       heal power +16%, health +10%, recharge +5%
       Mercy Toll: when an ally within 12 blocks drops under 20% health, the hero shields it for 4
       (once every 30 s). A shield, not a saved life.
-    GHAST-TEAR TORC - Marrow Torc + a ghast tear
+    GHAST-TEAR TORC - Marrow Torc + a ghast tear; upgrade: ghast tears 1 / 2
       drain +4%, health +10%, attack +5%
       Second Hunger: under 40% health its drain is 4% higher.
-    SLIMEBOUND SPOOL - Snarewire Spool + a slime block
+    SLIMEBOUND SPOOL - Snarewire Spool + a slime block; upgrade: slime blocks 1 / 2
       recharge +10%, ability power +6%, resolve +10%, health +5%
       Gluefall (used like a move): a pool of slime 6 blocks across at its target; after a 1 s
       warning (a growing disc) it slows everyone in it three times over 2 s (Slowness II, which
       also brings a flying hero down). Every 45 s at most.
-    GALE-RIDER'S CORD - Wind-Kite Tassel + a wind charge
+    GALE-RIDER'S CORD - Wind-Kite Tassel + a wind charge; upgrade: wind charges 4 / 8
       stamina +20%, speed +6%, knockback resistance +10
       Updraft (used like a move): a burst of wind knocks enemies within 3 blocks back and lifts
       the hero 4 blocks. Warning: 1 s with a ring. Every 30 s at most.
-    SHULKER-SHELL WARD - Hearthwool Shawl + a shulker shell
+    SHULKER-SHELL WARD - Hearthwool Shawl + a shulker shell; upgrade: shulker shells 1 / 2
       all resistances +8%, health +10%, resolve +10%
       Shell Up: the first time in a fight it drops under 40% health, it ignores the next 3 hits
       within 5 s. Does not stack with Braced Hide.
-    TIDEWELL CONCH - Shepherd's Lantern + a nautilus shell
+    TIDEWELL CONCH - Shepherd's Lantern + a nautilus shell; upgrade: nautilus shells 1 / 2
       energy gain +16%, recharge +5%, ability power +6%, health +5%
       Swell: every 15 s in a fight it gains 5 ultimate energy.
 
-  RARE FINDS (6) - found only, never made
-    HUSHSTONE - ancient city chests
+  ENGINEERED (3) - built at the Artificer's Bench, only with Artifice 2 research (later)
+    OBSERVER LENS - Starless Pearl + 2 observers, a redstone block, a diamond; 10 levels
+      ability power +12%, recharge +10%, resolve +10%
+      Read the Tell: when an enemy's move starts its warning with a ground mark over the hero, the
+      hero takes 20% less damage from that move (once every 8 s). Everyone still sees the mark.
+    PISTON BRACER - Ironhide Girdle + 2 pistons, a redstone block, a diamond; 10 levels
+      attack +10%, armour +1, knockback resistance +10, health +5%
+      Ram Strike (used like a move): a piston-driven shove knocks enemies on a 4-block line in
+      front back 4 blocks. Warning: 0.8 s with a strip on the ground. Every 20 s at most.
+    DAYLIGHT COIL - Mender's Brazier + 2 daylight detectors, a redstone block, a diamond
+      health +10%, energy gain +16%, heal power +8%
+      Sun-Fed: in daylight under the open sky, every 10 s in a fight it gains 4 energy and heals 2.
+
+  RARE FINDS (6) - found only, never made; upgrades only with Artifice 2 research (later)
+    HUSHSTONE - ancient city chests; upgrade: echo shards 2 / 4
       ability power +12%, recharge +10%, resolve +10%
       Deep Quiet: when it uses its ultimate, enemies within 8 blocks cannot start moves for 1.5 s
       (this stops heroes; players and soldiers have no moves to stop).
-    BASTION HOARD-RING - bastion chests
+    BASTION HOARD-RING - bastion chests; upgrade: gold blocks 1 / 2
       health +10%, attack +10%, armour +1
       Hoard-Pride: while the hero carries 16 or more gold ingots in its backpack, it deals 8% more
       damage and takes 8% less. The gold is real, and drops if it dies.
-    CHORUS-BLOOM PENDANT - end city chests
+    CHORUS-BLOOM PENDANT - end city chests; upgrade: chorus flowers 2 / 4
       health +10%, all resistances +8%, stamina +10%
       Returning Bloom: if the hero dies wearing it, it returns 30% sooner (never under 30 s). The
       pendant drops with everything else.
-    FANGSPEAKER CHARM - woodland mansion chests, evokers
+    FANGSPEAKER CHARM - woodland mansion chests, evokers; upgrade: emeralds 8 / 16
       ability power +12%, health +10%, recharge +5%
       Fang Line (used like a move): a line of fangs bursts from the ground toward its target, 10
       blocks long, 6 damage to each enemy on it. Warning: 0.8 s with a strip on the ground and the
       evoker's sound. Every 25 s at most.
-    ELDERSCALE LENS - elder guardians
+    ELDERSCALE LENS - elder guardians; upgrade: wet sponges 1 / 2
       ability power +6%, all resistances +8%, energy gain +16%
       Fatigue Gaze: when a fight starts, enemies within 8 blocks get Mining Fatigue I for 8 s
       (slower attacks, for players and soldiers alike).
-    STEWARD'S SEAL - pillager outposts
+    STEWARD'S SEAL - pillager outposts; upgrade: books 4 / 8
       health +10%, work speed +10%, recharge +5%
       Office: the hero's talents count one tier higher (at most III), and its realm talent works at
       the faction's other bases at tier II.
@@ -364,46 +545,67 @@ Numbers are at full power (level 20). "Woken" means at an anvil with 2 lapis and
 
   How they build (the arrows are the smithing steps):
     Knapped Flint -> Ironbound Whetstone -> Breeze-Cut Talon; -> Marrow Torc -> Ghast-Tear Torc;
-                     -> Runebound Signet -> Deepecho Signet; -> Prospector's Loupe
+                     -> Runebound Signet -> Deepecho Signet; -> Prospector's Loupe; -> Rival's Cord
     Lapis Lens    -> the seven other element foci; -> Runebound Signet
     Copper Coil + Fletched Charm -> Quickstep Anklet -> Blaze-Rod Bracer
-    Fletched Charm -> Wind-Kite Tassel -> Gale-Rider's Cord
+    Fletched Charm -> Wind-Kite Tassel -> Gale-Rider's Cord; -> Skyroad Pennant
     Hale Locket   -> Ironhide Girdle -> Blackforge Girdle; -> Hearthwool Shawl -> Shulker-Shell
-                     Ward; -> Mender's Brazier -> Lifebound Chime
-    Riveted Buckle -> Ironhide Girdle; -> Cactus-Spine Mantle
+                     Ward; -> Mender's Brazier -> Lifebound Chime; -> Hearthroot Seed
+    Riveted Buckle -> Ironhide Girdle; -> Cactus-Spine Mantle; -> Scarbark Amulet
     Deepslate Ballast -> Anchor Chain
-    Clockwork Pin -> Shepherd's Lantern -> Tidewell Conch; -> Snarewire Spool -> Slimebound Spool
+    Clockwork Pin -> Shepherd's Lantern -> Tidewell Conch; -> Snarewire Spool -> Slimebound Spool;
+                     -> Vigil Lantern
+    Spider-Eye Vial -> Bloodglass Ampoule     Amethyst Tuner -> Veinseeker Geode
+    Glistering Charm -> Graveward Bell
+    At the bench (research): Starless Pearl -> Observer Lens; Ironhide Girdle -> Piston Bracer;
+                             Mender's Brazier -> Daylight Coil
 
-  What the slice heroes would tend to wear:
-    Benika Akagane      Kiln Heart, Blackforge Girdle, Ghast-Tear Torc
-    Natsuho Komezaki    Breeze-Cut Talon, Quickstep Anklet, Marrow Torc
-    Yugen Kagaribi      Starless Pearl, Blaze-Rod Bracer, Fangspeaker Charm (if found)
-    Hinae Shirasuzu     Daybreak Brooch, Lifebound Chime, Hale Locket
-    Ambrose Nettlewick  Bog Phial, Slimebound Spool, Wind-Kite Tassel (he flies)
+  What the slice heroes would choose for themselves (one, three and five slots):
+    Benika Akagane      1: Kiln Heart
+                        10: Kiln Heart, Blackforge Girdle, Bloodglass Ampoule
+                        20: those, Ghast-Tear Torc, Rival's Cord
+    Natsuho Komezaki    1: Ironbound Whetstone
+                        10: Breeze-Cut Talon, Quickstep Anklet, Marrow Torc
+                        20: those, Bloodglass Ampoule, Runebound Signet
+    Yugen Kagaribi      1: Starless Pearl
+                        10: Starless Pearl, Blaze-Rod Bracer, Bastion Hoard-Ring (if found)
+                        20: those, Deepecho Signet, Fangspeaker Charm (if found)
+    Hinae Shirasuzu     1: Daybreak Brooch
+                        10: Daybreak Brooch, Lifebound Chime, Graveward Bell
+                        20: those, Vigil Lantern, Shulker-Shell Ward
+    Ambrose Nettlewick  1: Bog Phial
+                        10: Bog Phial, Slimebound Spool, Skyroad Pennant (he flies)
+                        20: those, Deepecho Signet, Hushstone (if found)
 
 WHAT IS NEW BEYOND YOUR REQUEST (say no to any of it)
-- Work and leadership artifacts (Prospector's Loupe, Steward's Seal), so artifacts matter in peace
-  too.
+- Work and leadership artifacts (Prospector's Loupe, Steward's Seal, Veinseeker Geode, Hearthroot
+  Seed, Vigil Lantern), so artifacts matter in peace too.
 - A death-related artifact, the Chorus-Bloom Pendant (its hero returns 30% sooner; never under
   30 s, as you allowed for death-related abilities).
 - Waking at the anvil, which spends the faction's real experience.
-- Heroes' personalities in what they like to wear, and a line when they put on something rare.
+- The artificer, the Artificer's Bench and the tinkerer talent (you asked for tinkerers; the
+  details are ours).
+- Three engineered artifacts, so the future research has artifacts of its own to unlock.
+- Heroes' personalities in what they like to wear, give and ask for, and lines when they do.
 
-QUESTIONS FOR YOU (with what we recommend)
-1. Three slots for every hero, with power growing by level instead of more slots: good, or would
-   you rather have more slots (four to six) with smaller artifacts? We recommend three: a fourth
-   slot would mostly run into the ceilings above, and the boss bar stays easy to read.
-2. As a member you can put artifacts on your faction's heroes and take them off again, and the AI
-   leaves what you put there. Is that the control you want? We recommend keeping it: it is your
-   only direct say over your faction's heroes, and it changes nothing for the NPC factions.
-Decided unless you say otherwise: waking at the anvil stays (say no and artifacts come off the
-smithing table ready), and artifacts are not drawn on the heroes' bodies, except the two signature
-artifacts on their own heroes.
+YOUR ANSWERS AND WHAT IS STILL OPEN
+Your five answers of 2026-11-18 are in: slots grow with levels and strength is fixed; heroes
+choose their own artifacts; the boss heroes have no personal names; a boss hero whose faction
+falls turns back into her token; anyone with explosives may breach walls (no artifact is an
+explosive). Nothing here needs another answer now. Decided unless you say otherwise:
+- five slots from level 20, one more every five levels (a server setting can change the levels);
+- upgrades never fail;
+- a growing artifact never loses its growth, even when its hero dies or it is stolen;
+- the researched steps stay locked until the faction labs exist (a server setting can open them);
+- the artificer grows out of the blacksmith, and the bench is the one new block;
+- waking at the anvil stays, and artifacts are not drawn on the heroes' bodies, except the two
+  signature artifacts on their own heroes.
 
-CHANGED AFTER REVIEW (2026-11-18)
+CHANGED AFTER REVIEW (2026-11-18, before your answers)
 So that no name or power copies another game: Ravenous Torc is now Marrow Torc, Mender's Censer is
 Mender's Brazier, Farsight Pearl is Starless Pearl; the powers Quickened Mind, Rising Tempo and
 Tailwind are Racing Thoughts, Gathering Pace and Fair Wind; Banked Embers and Rune-Struck now mark
 the enemy a move hits; Stoked Heat replaces "every third hit"; and Snag tethers instead of cutting
 armour. Artifact attack speed now speeds basic attacks only, so no move ever gets a shorter
-warning.
+warning. The same care went into the new artifacts: none of them loses growth at death, turns
+into another item when full, or can fail an upgrade, as some well-known game items do.

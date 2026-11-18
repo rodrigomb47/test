@@ -41,8 +41,9 @@ THE EIGHT HEROES
   ambrose_nettlewick.txt    Ambrose Nettlewick, the cauldron warlock (controller, venom)
 
 OTHER SHEETS
-  artifacts_overview.txt    Artifacts: items only heroes can wake, how factions make, wear, lose and
-                            steal them, and the 50 of the catalogue (design of 2026-11-18)
+  artifacts_overview.txt    Artifacts: items only heroes can wear, slots that open as a hero levels,
+                            how each hero chooses, how tinkerers upgrade them, the ones that grow,
+                            and the 61 of the catalogue (kit version 3, 2026-11-18)
 
 THE BOSS HEROES (outside the 200; design of 2026-11-18, docs/heroes-v2/BOSS_HEROES.md)
   the_wither.txt            The Wither, Queen of Three Skulls (marksman, blight)

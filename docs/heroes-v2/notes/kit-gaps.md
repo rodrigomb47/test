@@ -714,3 +714,62 @@ what the Java side must change, test by test, and what other documents' owners s
 12. **For `ROSTER_PLAN.md` content batches**: row 163's "powder shots leave fuse kegs that burst (no block damage)" was
     written under decision 11; with 6.18 the kegs may be `explosive` (power 1-2) when its batch is authored, and row
     167's flask grenades likewise. A sapper or bomber archetype, if one is added, is the natural user.
+
+## Artifacts revision: format and engine gaps (2026-11-18, `ARTIFACTS.md`)
+
+The owner's answers of 2026-11-18 (slots by level and fixed strength, each hero's own choice, tinkering, growth, tech
+levels) revised `ARTIFACTS.md`. These are the pieces R1-R5 (`HEROES_V2.md` 15.7) must add or decide; each names the
+rule it proposes.
+
+1. **Slots by level**: `heroes.artifacts.slotLevels` (`1,5,10,15,20`) replaces `slots`, `attunementAtOne` and
+   `fullPowerLevel` (read and ignored with a log line). A slot that closes (a level lowered by command, the config)
+   empties into the backpack, else at the hero's feet (`ARTIFACTS.md` 3, 15.3).
+2. **Fixed strength** needs one flag in the damage path: an Amount from an artifact's passive or active is multiplied
+   by the artifact ability power and `heroes.artifacts.powerPercent` only, never by the hero's growth ability power or
+   `heroes.powerScale` (`ARTIFACTS.md` 4.3). `HeroDamage` and `HeroPassives` must know the Amount's source.
+3. **New format pieces** (`ARTIFACTS.md` 5.3): triggers `on_marked` (an enemy's move starts its wind-up with a ground
+   mark covering the wearer: from `HeroTelegraphs`' decal geometry, server side, the same for every caster) and
+   `on_land` (a landing after `value` blocks of flight or glide, from `HeroMovement`); form `ally_lowest`; effect
+   `ward_effect` (refused on Slowness and Glowing, the counters); conditions `target_bleeds` (with the data tag
+   `#factionclash:bloodless`), `engaged_has` (reusing `target_is`' `hero` and `boss` kinds over the engaged set) and
+   `in_daylight`. v1's `target_is` is already a condition (v1 conditions table), so Toll for the Dead needs nothing.
+4. **Growth counters** (`ARTIFACTS.md` 7.8), each counted only for a living hero wearing the artifact in a slot, and
+   written to the item's `artifact_work` component when a step is reached or a fight ends: `blood` (damage it really
+   dealt, after the per-hit cap and armour, to a target that `target_bleeds`), `ore` (`BlockWork`'s break of a
+   `#c:ores` block with a tool that harvests it), `nights` (at dawn: worn since dusk, not in a bed, alive), `flight`
+   (`HeroMovement`'s horizontal distance while `DATA_LOCO` is flying or gliding), `undead` (a death of an
+   `#minecraft:undead` entity whose killing blow or last hit within 3 s was the wearer's), `worthy_foes` and `scars`
+   (from `HeroBoss`' end of a fight: an engaged enemy hero or vanilla boss died or escaped while the wearer lived; the
+   wearer fell under a third and lived, an escape counting), `tending` (the farmer's harvest and replant, a woodcutter's
+   sapling, an animal carer's bred pair, by the hero at its duty). Sparring and agreed bouts (`HEROES_V2.md` 7.4) count
+   nothing.
+5. **Smithing resets upgrades and growth**: vanilla's `SmithingTransformRecipe` copies the base's components to the
+   result and then applies the result's patch, so each artifact recipe's result must carry `artifact_work`
+   `{ "upgrade": 1, "growth": 0 }` explicitly (`ARTIFACTS.md` 9.8, 16.2).
+6. **The Artificer's Bench** (`ARTIFACTS.md` 9.7): a block, block entity and menu (one artifact slot, three material
+   slots, Begin), the recipe type `factionclash:bench` generated from the artifact files and the tier table, progress
+   that runs by itself and moves faster while a tinkerer tends it (as `FurnaceWork`'s tending), the research check of
+   the user's faction (none until ROADMAP phase 6; `heroes.artifacts.techGate`), and a new workshop point in
+   `BaseState`.
+7. **The artificer** (`ARTIFACTS.md` 9.6): `NpcRole.ARTIFICER` and `ArtificerJob`; the director turns the base's
+   blacksmith of level 5 or more into it once the bench stands (a role change that keeps level, XP and affixes, and
+   re-opens the blacksmith need), else hires one after 3 in-game days; one per base with a bench. For heroes: the duty
+   `artificer`, and the talent `tinkerer` (`TALENT_DUTY` maps it to that duty) added to `HEROES_V2.md` 7.2's table,
+   `MOBILITY_AND_WORK.md` 11.1's specialties and `logic/leader/Talents` (R5, R7).
+8. **The choice AI** (`ARTIFACTS.md` 10): `ArtifactChoice` reads the authored `relationships` (`HEROES_V2.md` 12.16)
+   before milestone 3 (they are already validated) and a player's standing from milestone 2 (0 until then). The
+   station's ledger (claims, asks, wishes, the workshop's order) is a new `FactionState` record. The first design's
+   pins and `ArtifactPlanner` are gone.
+9. **Line events** `artifact_gift`, `artifact_refuse` and `artifact_ask` join `artifact` in `HEROES_V2.md` 12.15's list,
+   with temperament fallback lines (`ARTIFACTS.md` 12.5, 16.6).
+10. **Item 11 of "Battle without civility" above is answered**: no artifact has an explosive active (`ARTIFACTS.md`
+    16.5 refuses 6.18's `explosive` on an artifact); an artifact's push (Updraft, Downpull's pull, the new Ram Strike)
+    lands at full strength and is aimed at edges like any move's (6.17); the `knockback_resistance` role weights were
+    raised by 0.2 in `ARTIFACTS.md` 10.2.
+11. **For `BOSS_HEROES.md`'s revision** (its owner decides; not edited here): 4.13 and 5.13 say "(all x its
+    attunement)" and the war rating "0.12 x attunement": with fixed strength the base lines and the bond are the same
+    at every level, and the rating is a flat 0.12 (`ARTIFACTS.md` 4.2, 13). She joins at level 1, so her one slot holds
+    her signature until level 5 (`ARTIFACTS.md` 3). "It stays with her" now holds by her own choice (`ARTIFACTS.md`
+    10.4: her want for her own signature is unbounded, no leader's wish moves it), not by the planner. Signatures are
+    never upgraded and never grow (16.4 refuses `upgrade`, `growth` and `tech` on them); their files may stay format
+    1. The two boss kit sheets' "60% of that at level 1, all of it at 20" lines go.

@@ -1632,27 +1632,45 @@ a chef cooks the player's raw food). All as in `research-systems.md` section 5.4
 
 The owner asked for artifacts: named items that only work for heroes, each enhancing something, in the spirit of a
 MOBA's item builds; ordinary NPCs (and players) may carry and haul them with no effect, and a hero drops its artifacts
-when it dies. The design is in `ARTIFACTS.md` (owner-facing overview: `kits/artifacts_overview.txt`); in short
-(PROPOSED):
+when it dies. Answering the design's questions the same day, the owner set that slots grow with levels while an
+artifact's strength never changes, that each hero decides for itself, that tinkerers may upgrade artifacts, that some
+grow by their own design and that some need a tech level. The design is in `ARTIFACTS.md` (owner-facing overview:
+`kits/artifacts_overview.txt`, kit version 3); in short (PROPOSED):
 
-- **Three artifact slots per hero from level 1**, whatever its rarity; an artifact's stat lines grow with the wearer's
-  level as mobility does (60% at level 1, full at level 20), and each of the 19 stat lines (health, attack, ability
-  power, armour, recharge, attack speed, speed, energy, poise, element damage and resistances, drain, heal power,
-  resolve, stamina, work...) has a cap for the whole build. A passive or an active per artifact is built from format
-  2's triggers and effects under the passive and skill caps (a few new pieces: `ARTIFACTS.md` 5.3).
+- **Slots open with levels** (the owner's answer of 2026-11-18): one at level 1 and one more every five levels, five
+  from level 20, whatever the hero's rarity or role. **Fixed strength**: an artifact's numbers are its own, the same on
+  every hero at every level; only its upgrade level and, for a growing artifact, its growth change them. Each of the
+  19 stat lines (health, attack, ability power, armour, recharge, attack speed, speed, energy, poise, element damage
+  and resistances, drain, heal power, resolve, stamina, work...) has a cap for the whole build. A passive or an active
+  per artifact is built from format 2's triggers and effects under the passive and skill caps (a few new pieces:
+  `ARTIFACTS.md` 5.3).
 - **Nothing an artifact does changes section 6**: the 12% per-hit cap, telegraph minimums and gaps, the hurt cooldown
-  per attacker, stun limits, `heroes.maxHit`, and no code path cancels lethal damage. Only a hero wearing one benefits,
-  so players and ordinary NPCs are treated alike.
-- **Fifty artifacts**: 12 components (crafting table), 20 advanced and 10 greater (smithing table with an Artificer's
-  Sigil, then woken at an anvil with the faction's experience), all made by the blacksmith from vanilla materials; 6
+  per attacker, stun limits, `heroes.maxHit`, and no code path cancels lethal damage; no upgrade or growth changes
+  that. Only a hero wearing one benefits, so players and ordinary NPCs are treated alike. An artifact's push follows
+  6.17 like any move's; no artifact is an explosive.
+- **Sixty-one artifacts**: 12 components (crafting table), 28 advanced (8 of them growing) and 10 greater (smithing
+  table with an Artificer's Sigil, then woken at an anvil with the faction's experience), made by the blacksmith and
+  then the artificer from vanilla materials; 3 engineered artifacts built at the Artificer's Bench with research; 6
   rare finds from vanilla structures and bosses; and the two signature artifacts of the Wither and Ender Dragon heroes
-  (`BOSS_HEROES.md`, in the bond format of `ARTIFACTS.md` 16.4).
+  (`BOSS_HEROES.md`, in the bond format of `ARTIFACTS.md` 16.4; never upgraded, never growing).
+- **Tinkering** (the owner's remark): the artificer (an ordinary NPC that grows out of the blacksmith), a hero at the
+  artificer duty (the new `tinkerer` talent) or a player raises an artifact to upgrade level II or III at the
+  Artificer's Bench (its lines x1.25 and x1.5 under the caps, its passive honed at III) for real materials, levels and
+  time; an upgrade never fails, and an artifact never levels with its wearer.
+- **Growth by design** (the owner's remark): eight growing artifacts get stronger from what their wearer does (blood
+  drawn, ore mined, nights on watch, distance flown, undead laid to rest, worthy foes outlasted, fights survived at the
+  edge, living things tended), keep their growth through drops and theft, and when full match a greater artifact of
+  their upgrade level.
+- **Research** (the owner's remark): ROADMAP phase 6's Artifice line gates upgrade level III, the upgrades of rare finds
+  and the three engineered artifacts; until phase 6 exists they stay locked; nothing vanilla is gated.
 - **Death drops**: everything a hero wears drops where it dies (never despawning, fire- and blast-proof); the side that
   holds the ground loots it first, so factions recover or steal artifacts. An escape keeps them.
-- **The faction AI** (`ArtifactPlanner`) plans builds from kit, role, element, scouted enemies and personality; the
-  leader's greed, ambition and sociability decide who gets the best; heroes equip and swap only at a base out of a
-  fight.
-- **War power** (8.1) x (1 + artifact rating), the rating at most 0.30; the boss bar shows one tier-coloured pip per
+- **Each hero decides** (`ArtifactChoice`; the owner's answer of 2026-11-18): it uses an artifact, swaps it in, or
+  leaves it for someone else (gives it away, asks for one, refuses one), by its kit, role, element, scouted enemies,
+  personality, temperament and relationships; the leader's wishes are requests each hero weighs, not orders; the
+  workshop makes what the heroes wish for, in the leader's order; heroes equip and swap only at a base out of a fight.
+  A member player offers and asks like a hero; the first design's pins are gone.
+- **War power** (8.1) x (1 + artifact rating), the rating at most 0.40; the boss bar shows one tier-coloured pip per
   artifact and the hero sheet the details.
 
 Tasks R1-R7: section 15.7.
@@ -1800,7 +1818,7 @@ is in `BOSS_HEROES.md` (owner-facing sheets: `kits/the_wither.txt`, `kits/the_en
 - **Two legendary heroes outside the 200**: "The Wither" (Queen of Three Skulls) and "The Ender Dragon" (Empress of
   the End). They are left out of the roster's counts and gender split, never drafted as leaders, never leaders, never
   wanderers, one of each per world; otherwise heroes like any other (sections 3-8: one combat mode, no yield, the
-  10-minute revival, three artifact slots), joining at level 1.
+  10-minute revival, artifact slots that open with levels), joining at level 1.
 - **The first-kill chest and the token**: the first death of a vanilla Wither (any dimension) or of the Ender Dragon,
   whoever killed it, places a chest on solid ground below the death point (beside the exit portal for the dragon,
   never over the void) with the token. The token is unique, glows, never despawns, survives fire, lava, explosions
@@ -4954,17 +4972,21 @@ both (14.5).
 
 The design of section 7.5. R1-R4 can start once the combat engine of milestone 1 (A3-A6) is in, beside milestone 2;
 R5 needs the leadership hooks (L3) and the work API (L5m). The two signature artifacts are content of
-`BOSS_HEROES.md`'s tasks on top of R1-R3. The same rows, with more detail, are `ARTIFACTS.md` section 19.
+`BOSS_HEROES.md`'s tasks on top of R1-R3. The same rows, with more detail, are `ARTIFACTS.md` section 19. Revised on
+2026-11-18 to the owner's answers: slots by level and fixed strength (R1, R3), each hero's own choice in place of the
+planner (R4, R5), the Artificer's Bench, upgrades, growing and engineered artifacts and the tech gate (R1, R2, R5). R6
+also takes the 11 new artifacts' icons (the growing ones with four fill states), the bench's texture and a fourth core
+clip, `artifact.give` (`ARTIFACTS.md` 19).
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
-| R1 | Format and pure rules: `ArtifactDef`, `ArtifactReader` (the v1 messages), the catalogue additions (the build stats, triggers `on_move_hit`, `on_control`, `on_death`, the passive form `jump`, effects `adapt` and `revival_cut`, condition `self_carries`), `ArtifactRules` (sum, attunement, build caps, healing ceiling, recharge bound, war rating), the bond's validation, schema and `checkHeroes` | F2, F3, F4 | M | the reader and rules unit tests of `ARTIFACTS.md` 18.1; the 50 data files load clean |
-| R2 | Items and the world: `ModArtifacts` (50 items and the Sigil), `ArtifactItem` (fire-, blast- and cactus-proof, never despawning), the `artifact_state` component, tooltips, recipes (crafting, smithing, the anvil wake), loot modifiers and the Hollow lair roll, the signature registry with faded copies and re-forming | R1, A1 | M | the item halves of `blacksmithCraftsSmithsAndWakes` and `heroDropsArtifactsAtDeath`; `signatureFadedCopyAndReform` |
-| R3 | The hero side: slots, saving, the slot screen with pins, attuning, the build stats in damage, cooldowns, control and stamina, the move runner reading attack speed without the artifact layer, passives with families (`on_control` only from moves and basic attacks), actives through the move runner, the bond's kit mods and one wearer per signature instance, the healing ceiling, death drops, boss bar pips, the hero sheet, the war rating in `HeroRules.heroPower` | R1, R2, A4, A5, A6, A10 | L | the hero GameTests of `ARTIFACTS.md` 18.2; every "NPC soldier and mock player" test gives the same numbers for both |
-| R4 | `ArtifactPlanner` (pure): hero profiles, scoring, personality, the leader's distribution, goal builds and craft orders, hysteresis, pins and the bond's hold on a signature | R1, F4 | M | `ArtifactPlannerTest` |
-| R5 | Faction AI: the planner in the director, the workshop's smithing table (shared with ROADMAP phase 3's netherite row), the blacksmith's artifact orders and wakes with the faction's experience, equipping at bases, hauler deliveries, loot priority, recovery trips, raid looting, chat lines, the station section, `sim.py` lines | R3, R4, L3, L5m | L | the remaining GameTests of `ARTIFACTS.md` 18.2; its campaign check (18.3) |
+| R1 | Format and pure rules: `ArtifactDef`, `ArtifactReader` (the v1 messages, artifact formats 1 and 2), the catalogue additions (the build stats; triggers `on_move_hit`, `on_control`, `on_death`, `on_marked`, `on_land`; forms `jump`, `ally_lowest`; effects `adapt`, `revival_cut`, `ward_effect`; conditions `self_carries`, `target_bleeds`, `engaged_has`, `in_daylight`), `ArtifactRules` (the sum at fixed strength, slots by level, upgrades and honing, growth steps and caps, build caps, healing ceiling, recharge bound, war rating, the tech gate), the bond's validation, schema and `checkHeroes` | F2, F3, F4 | M | the reader and rules unit tests of `ARTIFACTS.md` 18.1; the 61 data files load clean |
+| R2 | Items, blocks and the world: `ModArtifacts` (61 items and the Sigil), `ArtifactItem` (fire-, blast- and cactus-proof, never despawning, the growth icon property), the `artifact_state` and `artifact_work` components, tooltips, recipes (crafting, smithing that starts again at upgrade I, the anvil wake, the `factionclash:bench` recipe type), the Artificer's Bench (block, block entity and menu: begin, cost, time, tending, the research check), loot modifiers and the Hollow lair roll, the signature registry with faded copies and re-forming | R1, A1 | L | the item halves of `blacksmithCraftsSmithsAndWakes` and `heroDropsArtifactsAtDeath`; `playerUpgradesAtBenchSameCost`, `benchLocksTechSteps`, `signatureFadedCopyAndReform` |
+| R3 | The hero side: slots by level and saving, the hero sheet's slot view with the Offer slot and Ask buttons (no pins), attuning, the build stats in damage, cooldowns, control and stamina, the move runner reading attack speed without the artifact layer, passives with families (`on_control` only from moves and basic attacks), actives through the move runner, the eight growth counters, the bond's kit mods and one wearer per signature instance, the healing ceiling, death drops, boss bar pips, the hero sheet, the war rating in `HeroRules.heroPower` | R1, R2, A4, A5, A6, A10 | L | the hero GameTests of `ARTIFACTS.md` 18.2; every "NPC soldier and mock player" test gives the same numbers for both |
+| R4 | `ArtifactChoice` and `ArtifactWorkshop` (pure; they replace the first design's `ArtifactPlanner`): profiles and feed rates, worth and want, personality, temperament and relationships, each hero's choices (use, swap, pass on, ask, refuse), contested claims, lent artifacts, the leader's wishes weighed by compliance, the signature's hold on its own hero, heroes' wishes and the workshop's order and gates | R1, F4 | M | `ArtifactChoiceTest`, `ArtifactWorkshopTest` |
+| R5 | Faction AI and the artificer: heroes' choices in the game (choice moments, the storehouse path, hand-overs face to face, asks through the station's ledger), the workshop's smithing table (shared with ROADMAP phase 3's netherite row) and bench, the artificer growing out of the blacksmith and its `ArtificerJob` (the artifact chain, upgrades, engineered builds, tending), the `artificer` duty and `tinkerer` talent, the blacksmith's artifact orders and wakes with the faction's experience, hauler deliveries, loot priority, recovery trips, raid looting, chat lines and line events, the station's ledger, `sim.py` lines | R3, R4, L3, L5m | L | the remaining GameTests of `ARTIFACTS.md` 18.2; its campaign check (18.3) |
 | R6 | Art and sound: `herogen icons` and the 51 icons (a contact sheet for the owner), the core clips `artifact.attune`, `artifact.raise`, `artifact.cast`, the `artifact` sound set | G1, G4, S1, R1 | M | icons pass `herogen check`; the sheet is sent to the owner; `sfxgen check` clean |
-| R7 | Docs and release: README "Artifacts", BALANCE rows, the config file, an "ARTIFACTS" section in every kit sheet, the overview regenerated from the data, jar and SHA-256 | R5, R6 | S | the release checklist (`HANDOFF.md` section 7) |
+| R7 | Docs and release: README "Artifacts", BALANCE rows, the config file, an "ARTIFACTS" section in every kit sheet (levels 1, 10 and 20), the overview regenerated from the data, the `tinkerer` talent in 7.2 and `MOBILITY_AND_WORK.md` 11.1, jar and SHA-256 | R5, R6 | S | the release checklist (`HANDOFF.md` section 7) |
 
 ### 15.8 Boss heroes (owner, 2026-11-18; `BOSS_HEROES.md`)
 
