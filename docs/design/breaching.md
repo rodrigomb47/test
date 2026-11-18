@@ -322,7 +322,11 @@ moment a player would; it takes the bucket out of the backpack as a player switc
   (`HEROES_V2.md` 6.18). On a raid with soldiers held outside, a hero with such a move may blast the breach spot of
   6.2 instead of placing TNT (the one use of a move on a wall, and only in that goal). None of the eight slice heroes
   has one.
-- **The Wither's breach** with her hands (`BOSS_HEROES.md` 4.5) stays as designed there; the owner's answer keeps it.
+- **The Wither** breaches by the rule above, with no exception of her own (`docs/heroes-v2/BOSS_HEROES.md` 4.5,
+  revised 2026-11-18): her blue skulls (Ruin Skull) are an explosive move of power 1 that keeps the vanilla blue
+  skull's rule (every block but the wither-immune ones counts as no stronger than 0.8), so to the planner of 6.2 every
+  wall is breakable by her but bedrock-class blocks, obsidian included; she casts it at the spot up to three times
+  (one skull bites less than one TNT), then joins the assault. Her hands no longer breach.
 - **Pushes into lava and off cliffs**: `HEROES_V2.md` 6.17; ordinary NPCs defend as section 8 says.
 
 ---
@@ -332,8 +336,8 @@ moment a player would; it takes the bucket out of the backpack as a player switc
 - **`war.explosives`** (true): false stops all planned breaching (no TNT expert is hired, no breacher is named, no
   hero blasts a wall). TNT already lit goes off as vanilla's.
 - **The game rule `mobGriefing`**: false also stops planned breaching (NeoForge's per-entity mob-griefing check is
-  asked for the breacher), as it stops the Wither's breach and heroes' explosive moves. Players' own TNT is untouched
-  (vanilla never gates TNT by it). An operator who wants NPCs to leave blocks alone sets it, as for creepers.
+  asked for the breacher), as it stops heroes' explosive moves (the Wither's blue skulls among them). Players' own
+  TNT is untouched (vanilla never gates TNT by it). An operator who wants NPCs to leave blocks alone sets it, as for creepers.
 - **Other keys** (PROPOSED, `[war]`): `tntExpertPopulation` 16, `tntStock` 6, `sandReserve` 16, `tntPerBreacher` 2,
   `breachersPerRaid` 2, `tntClear` 8, `tntHomeMargin` 16, `guardWaterBuckets` true, `waterLanding` true.
 - **Knowledge** (player-like): a faction knows its own TNT stock; rivals do not, unless a scout sees a breacher on the

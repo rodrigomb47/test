@@ -1521,9 +1521,11 @@ breach walls") opens it for moves that are explosions by nature. Numbers PROPOSE
   Club and Iron Mountain Crash are a club's impacts, which break no blocks as vanilla's mace does not; Ambrose's vials
   shatter like splash potions; Tobimaru's smoke bomb is smoke; Kagenori's Heaven Split is a harmless flash; Yugen's
   foxfire is cold flame. A test-only fixture hero, `fixture_bomber`, carries the engine's tests (14.5). The first
-  content users would be the boss heroes, if `BOSS_HEROES.md`'s revision gives the Wither's skulls and Birth Blast
-  their vanilla blasts, and roster rows that are explosives by nature when their batch is authored (row 163's fuse
-  kegs, row 167's flask grenades: `notes/kit-gaps.md`, "Battle without civility").
+  content users are the Wither's blue skulls (Ruin Skull and Stray Skulls, power 1 with the vanilla blue skull's
+  `resistance_cap`) and her Birth Blast (power 4, the ceiling; vanilla's spawn charge is 7), while her black skulls
+  stay blast-free (`BOSS_HEROES.md` 4.5, revised 2026-11-18); later, roster rows that are explosives by nature when
+  their batch is authored (row 163's fuse kegs, row 167's flask grenades: `notes/kit-gaps.md`, "Battle without
+  civility").
 - **Heroes and TNT** are a separate thing: any hero may carry TNT and breach a wall by hand exactly as an ordinary NPC
   does, at the same speed and by the same rules (`docs/design/breaching.md` 5).
 
@@ -1652,7 +1654,8 @@ grow by their own design and that some need a tech level. The design is in `ARTI
   table with an Artificer's Sigil, then woken at an anvil with the faction's experience), made by the blacksmith and
   then the artificer from vanilla materials; 3 engineered artifacts built at the Artificer's Bench with research; 6
   rare finds from vanilla structures and bosses; and the two signature artifacts of the Wither and Ender Dragon heroes
-  (`BOSS_HEROES.md`, in the bond format of `ARTIFACTS.md` 16.4; never upgraded, never growing).
+  (`BOSS_HEROES.md`, in the bond format of `ARTIFACTS.md` 16.4; Hollow Star grows by its own design, Spirecore is
+  upgraded with research, one way each).
 - **Tinkering** (the owner's remark): the artificer (an ordinary NPC that grows out of the blacksmith), a hero at the
   artificer duty (the new `tinkerer` talent) or a player raises an artifact to upgrade level II or III at the
   Artificer's Bench (its lines x1.25 and x1.5 under the caps, its passive honed at III) for real materials, levels and
@@ -1831,15 +1834,21 @@ is in `BOSS_HEROES.md` (owner-facing sheets: `kits/the_wither.txt`, `kits/the_en
 - **The Wither** (marksman, blight, tyrant): a hovering flyer with two skull familiars as her side heads; black and
   blue skulls and the Wither effect; regeneration; wither armour from 50% (arrows glance off, she fights close); her
   familiars unbound in phase 3; a rebirth at 30% (vanilla's spawn charge starts at a third); the Birth Blast ultimate.
-  Her moves never touch blocks; her hands break blocks at a diamond pickaxe's speed at her duty, to break out when
-  walled in and to breach an enemy wall on a raid, never her own side's.
+  Revised with the owner's answers of 2026-11-18: her blue skulls and Birth Blast are explosions by nature and break
+  blocks (6.18; the blue skulls by vanilla's own rule, through obsidian; Birth Blast at power 4), her black skulls
+  break nothing, walled in her body withers the blocks round it as the vanilla Wither's does, and she breaches like
+  anyone with explosives, never near her own side; her hands mine at a diamond pickaxe's speed.
 - **The Ender Dragon** (vanguard, arcane, proud noble): circles, spits ender fireballs, breathes lingering dragon's
   breath, buffets, dives, and perches (arrows glance off her while she sits). End crystals on obsidian spires are her
   central mechanic: the nearest in sight heals her through a beam, any hit breaks an open one, caged ones need
   climbing, and breaking the one beaming her hurts and staggers her. Soldiers and heroes read crystals and break them
-  (`CrystalTargetGoal`, shared with ROADMAP phase 3's End raid).
+  (`CrystalTargetGoal`, shared with ROADMAP phase 3's End raid). Her wings, tail and dives push at full strength and
+  she aims them at cliffs, lava and an End island's rim (6.17); no move of hers breaks blocks and she does not smash
+  blocks in flight.
 - **Both fight to the death**, as the vanilla bosses do; their signature artifacts, **Hollow Star** and **Spirecore**
-  (`ARTIFACTS.md` 7.5 and 16.4), drop where they die.
+  (`ARTIFACTS.md` 7.5 and 16.4), drop where they die. Fixed strength; one slot at level 1, which the signature fills;
+  each heroine keeps hers by her own choice; Hollow Star grows with the withering its wearer deals, Spirecore takes a
+  tinkerer's upgrades with research. No personal names (the owner's answer).
 - **New format pieces** (projectile-immune states, the lingering cloud, crystal and familiar adds, focus adds, the
   `smite` and `blast` weak points, a rebirth with its own content, perching, circling, a flyer that hovers):
   `BOSS_HEROES.md` section 8 and `notes/kit-gaps.md`.
@@ -4991,18 +5000,21 @@ clip, `artifact.give` (`ARTIFACTS.md` 19).
 ### 15.8 Boss heroes (owner, 2026-11-18; `BOSS_HEROES.md`)
 
 The design of section 8.2. B1-B3 can start once milestone 1's engine (A3-A6, A10-A12) is in, beside milestone 2 (they
-need A8's adds and R1-R3's artifact rules for the signatures); B4 needs the leadership hooks (L3) and ROADMAP phase
-1's knowledge rule. The same rows, with more detail, are `BOSS_HEROES.md` section 10.
+need A8's adds and R1-R3's artifact rules for the signatures); B3 also needs T1 and T2 of 15.9; B4 needs the
+leadership hooks (L3), R4 and ROADMAP phase 1's knowledge rule. The same rows, with more detail, are `BOSS_HEROES.md`
+section 10. Revised on 2026-11-18 to the owner's answers (no personal names, back to the token, explosives and
+lethal terrain, the artifact revision): the Wither's breach by hand is gone from B3, which takes her blasts, her box
+break-out and the dragon's edge aim; B1, B4 and B7 take the signatures' growth, upgrade and choice.
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
-| B1 | Format additions (`BOSS_HEROES.md` 8, kit-gaps "Boss heroes") in the catalogue, reader, balance and schema; both kits as test fixtures | F2, F3, F5, R1 | M | `BossKitsTest`; the fixtures load clean; every new piece has a reader message for its misuse |
-| B2 | Tokens and the first-kill chest: the two token items, `ChestSpot`, the chest and its particle column, return and hollow copies (a same-instance copy hollow after the first use), the consumption rule, the calling, unbinding, the event hooks of `BOSS_HEROES.md` 3.14 (loss detection, the ender chest's return), `CampaignData.bossHeroes`, commands and config | A1b, R2 | M | `ChestSpotTest`, `BossTokenRulesTest`, the token GameTests of `BOSS_HEROES.md` 9.2 |
-| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger` (never stacking), `focus_add`, `smite`, `blast`, the crystal and familiar adds (the beams' per-fight cap, spires never in a narrow way), `perch` (a block up at most), circling, a hovering flyer, the rebirth object (no re-arm after it), a rain round the hero, `immune_effects`, withering hands and the breach | A5, A6, A8, A10-A12 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, the fight GameTests of 9.2 there; every "NPC and mock player" test gives the same numbers |
-| B4 | The AI: token knowledge, the council's weighing, expeditions, interceptions, escorts, `CrystalTargetGoal` (shared with the vanilla End raid), ranged NPCs (with their new sidearm) and heroes against projectile immunity, `sim.py`; check ROADMAP phase 3's fix so faction NPCs can hurt the vanilla dragon (`BOSS_HEROES.md` 6.6) | B2, B3, L3, ROADMAP phase 1's knowledge rule | L | `TokenKnowledgeTest`, the AI GameTests, the first campaign of 9.3 there |
+| B1 | Format additions (`BOSS_HEROES.md` 8, kit-gaps "Boss heroes" and "Boss heroes revision") in the catalogue, reader, balance and schema: with the revision `explosive.resistance_cap`, `break_out`, `work.tool` and a signature's `growth` or `upgrade`; both kits as test fixtures | F2, F3, F5, R1, T2 | M | `BossKitsTest`; the fixtures load clean; every new piece has a reader message for its misuse |
+| B2 | Tokens and the first-kill chest: the two token items, `ChestSpot`, the chest and its particle column, return and hollow copies (a same-instance copy hollow after the first use), the consumption rule, the calling, unbinding into the token when her faction falls (the owner's answer), the event hooks of `BOSS_HEROES.md` 3.14 (loss detection, the ender chest's return), `CampaignData.bossHeroes`, commands and config | A1b, R2 | M | `ChestSpotTest`, `BossTokenRulesTest`, the token GameTests of `BOSS_HEROES.md` 9.2 |
+| B3 | Engine pieces: projectile-immune states, `keep_distance` in a state, `linger` (never stacking), `focus_add`, `smite`, `blast`, the crystal and familiar adds (the beams' per-fight cap, spires never in a narrow way, a full-strength shatter that breaks nothing), `perch` (a block up at most), circling, a hovering flyer, the rebirth object (no re-arm after it), a rain round the hero, `immune_effects`; from the revision the blue skull's `resistance_cap` in T2's blast, the Wither's box break-out, her hands as a `work.tool`, her blue skulls on the breach spot, a dive's landing aimed away from an edge, no smashing in the dragon's flight | A5, A6, A8, A10-A12, T1, T2 | L | `CrystalRulesTest`, `ProjectileImmunityRulesTest`, `WitherBlocksTest`, the fight and terrain GameTests of 9.2 there; every "NPC and mock player" test gives the same numbers |
+| B4 | The AI: token knowledge, the council's weighing, expeditions, interceptions, escorts, `CrystalTargetGoal` (shared with the vanilla End raid), ranged NPCs (with their new sidearm) and heroes against projectile immunity, the signature's hold on its heroine with R4 (lent to her when an ally holds it, her focus on an enemy wearing it), `sim.py`; check ROADMAP phase 3's fix so faction NPCs can hurt the vanilla dragon (`BOSS_HEROES.md` 6.6) | B2, B3, L3, R4, ROADMAP phase 1's knowledge rule | L | `TokenKnowledgeTest`, `SignatureChoiceTest`, the AI GameTests, the first campaign of 9.3 there |
 | B5 | Art: the new parts of `BOSS_HEROES.md` 4.2 and 5.2 (with G8's planned dragon wings, swept horns, scaled tail, torn cape, long skirt and scales), the add models (crystal over vanilla's model, spire, cage, skull familiar), the calling and revival displays, own clips, the token icons, previews for the owner | G8, G10b, A8, A9 | L | `herogen check` and `lint` clean; previews sent to the owner |
 | B6 | Sound: the two sound sets and the add sounds, the new slots (`rebirth`, `calling`, `linger`, `mobility.break`, `mobility.wings`) | S1, S2 | M | `sfxgen check` clean; previews for the owner |
-| B7 | Content: the two hero source files and the `hollow_star` and `spirecore` artifact files; the kit sheets regenerated from them | B1, B5, R1 | M | `herogen check` and `checkHeroes` clean; 14.4's gates 1-3 |
+| B7 | Content: the two hero source files and the `hollow_star` (growing) and `spirecore` (upgradable) artifact files; the kit sheets regenerated from them (kit version 3 by hand until then) | B1, B5, R1 | M | `herogen check` and `checkHeroes` clean; 14.4's gates 1-3 |
 | B8 | Verification and release: the GameTests and campaigns of `BOSS_HEROES.md` 9, README "Boss heroes", BALANCE rows, the config file, jar and SHA-256 | all of B1-B7 | M | the release checklist (`HANDOFF.md` section 7) |
 
 ### 15.9 Battle without civility (owner, 2026-11-18; 6.17, 6.18 and `docs/design/breaching.md`)

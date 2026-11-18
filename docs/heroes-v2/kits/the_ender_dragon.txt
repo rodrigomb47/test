@@ -1,10 +1,12 @@
 The Ender Dragon - "Empress of the End"
 Female | ender dragon | vanguard | arcane | proud noble | legendary | boss hero
-Status: designed, not in the game yet (kit version 2, 2026-11-18, after review). She is one of the
-two boss heroes: not among the 200, never a faction leader, and she joins a faction only through
-her token (see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never
-yields. All numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md
-section 5.
+Status: designed, not in the game yet (kit version 3, 2026-11-18, after your answers: she has no
+personal name; she turns back into her token if her faction falls; her wings and tail can now
+throw you off a cliff, into lava or off an End island, see TERRAIN AND BLOCKS; her Spirecore can
+now be upgraded. Version 2, 2026-11-18, after review). She is one of the two boss heroes: not among
+the 200, never a faction leader, and she joins a faction only through her token (see "HOW SHE
+JOINS A FACTION"). She fights the same against players and NPCs and never yields. All numbers are
+first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 5.
 ====================================================================================================
 
 WHO SHE IS
@@ -57,7 +59,7 @@ Her fighting: fists style (her claws); duel style summoner (she fights through h
 them, or dive her). She fights in the front line [keep_distance 0, the vanguard default] and goes
 for enemy heroes first (a proud temperament). Her element is arcane: it passes through armour and
 shields. She resists arcane [+40] and fire [+40] (the vanilla dragon is fire-proof). Her moves never
-break, place or burn a block.
+break, place or burn a block, but her pushes can throw you to your death (see TERRAIN AND BLOCKS).
 
   Basic attack
     A claw string on the ground: rake, rake, a two-handed slash; every third hit adds 3 arcane.
@@ -86,13 +88,14 @@ break, place or burn a block.
       at the cone's end, 2 arcane each second; frames 1.0 / 0.8 / 1.0; cooldown 12 s]
 
     WING GUST (wing_gust) - boss phases 1, 2, 3
-      What it does: her wings beat down and throw everyone around her away. Her answer to anyone
-      who comes close (60%). Like every push in this mod it is softened near lava, a drop or the
-      void: it will not throw you off a cliff.
+      What it does: her wings beat down and throw everyone around her about 3 blocks away, at full
+      strength: off a cliff, into lava, or off an End island into the void. Near an edge she walks
+      round you first so the edge is behind you. Her answer to anyone who comes close (60%).
       The tell: her wings rise high and a disc grows under her for 1 s.
-      Counter: step out of its 5 blocks, or take the push with a block behind you.
-      Numbers: [area, close; nova, radius 5; 4 physical + knockback 3; frames 1.0 / 0.2 / 0.8;
-      cooldown 10 s]
+      Counter: step out of its 5 blocks, keep your back away from edges, or take the push with a
+      block behind you.
+      Numbers: [area, close; nova, radius 5; 4 physical + knockback 3 at full strength; frames 1.0
+      / 0.2 / 0.8; cooldown 10 s]
 
     VOID DIVE (void_dive) - boss phases 1, 2, 3
       What it does: from the air she dives onto a marked spot, and may touch down and dive again
@@ -101,7 +104,8 @@ break, place or burn a block.
       Counter: leave the disc. After a dive she shakes her head on the ground for 1.2 s: hit her
       then (her recovery is a weak point).
       Numbers: [heavy, mid and far; dive from the air, range 12, landing radius 2.5; 10 physical +
-      knockback 2; frames 1.0 / 0.4 / 1.2; cooldown 10 s]
+      knockback 2 at full strength (near an edge she lands on your far side to push you over it);
+      frames 1.0 / 0.4 / 1.2; cooldown 10 s]
 
     RAISE CRYSTAL (raise_crystal) - boss phases 1, 2, 3 (her central mechanic: see THE CRYSTALS)
       What it does: an obsidian spire rises with an end crystal on top. The crystal heals her
@@ -138,14 +142,15 @@ break, place or burn a block.
       someone behind her (70%).
       The tell: her tail coils and marks fan out across the half-circle for 1 s.
       Counter: jump back out of its 5 blocks, or get to the side she is not sweeping.
-      Numbers: [area, close; sweep 5, 180 degrees, 1 s; 6 physical + knockback 2; frames 1.0 / 1.0
-      / 0.8; cooldown 9 s]
+      Numbers: [area, close; sweep 5, 180 degrees, 1 s; 6 physical + knockback 2 at full strength;
+      frames 1.0 / 1.0 / 0.8; cooldown 9 s]
 
     END GRAVITY (end_gravity) - boss phase 3
       What it does: like a shulker's bullets, it lifts everyone around her into the air for 3 s
       (about 2.5 blocks: nobody falls far), and she often spits a fireball at the lifted (70%).
       The tell: a hum, purple motes rising from the ground, a disc growing for 1 s.
-      Counter: step out of its 7 blocks; once lifted, you can still shoot back.
+      Counter: step out of its 7 blocks; once lifted, you can still shoot back. It is not a push:
+      the lift alone never drops you far.
       Numbers: [area, close and mid; nova, radius 7; 3 arcane + Levitation I 3 s (never renewed
       before you land); frames 1.0 / 0.2 / 0.8; cooldown 22 s]
 
@@ -168,7 +173,8 @@ break, place or burn a block.
       radius 4 that grows for 1.8 s as she climbs.
       Counter: leave the disc; hit her during her 1.6 s recovery on the ground.
       Numbers: [ultimate, only in a flight; frames 1.8 / 0.4 / 1.6; dive, landing radius 4: 22
-      arcane + knockback 3 up 1; a cloud of radius 4 for 6 s, 2 arcane each second]
+      arcane + knockback 3 up 1 at full strength; a cloud of radius 4 for 6 s, 2 arcane each
+      second]
 
     Her ultimate energy and charge rate are set when she is built; the two are at least 30 s apart.
 
@@ -196,8 +202,9 @@ THE CRYSTALS
   60 s.
 - Breaking one: an open crystal breaks to any hit at all, even a snowball or an egg (as vanilla's).
   Anyone fighting her can break them: you, a soldier, a hero, even a monster; her own side cannot.
-  It bursts in purple glass: everyone of her enemies within 3 blocks takes 4 arcane and a small
-  push (step back after you break it by hand).
+  It bursts in purple glass: everyone of her enemies within 3 blocks takes 4 arcane and a push of
+  2 at full strength (step back after you break it by hand: on a pillar, the push can throw you
+  off it). The burst breaks no block.
 - The beam: every second, the nearest of her crystals within 24 blocks with a clear line to her
   heals her 0.75% of her maximum health (one crystal at a time, as vanilla's nearest crystal), and
   you can see the purple beam. A block or a solid body in the line cuts it: building a wall between
@@ -256,14 +263,15 @@ BOSS FIGHT
     Phase 3, from 25%: Crescent Tail, End Gravity; her clouds grow a block wider and last 2 s
       longer, and she moves 10% faster. "Then taste the breath of the End itself."
   Each phase change takes 1.5 s, on the ground: she takes 50% less damage and cannot be staggered
-  (a glint shows it; she is never invulnerable), a shockwave pushes everyone within 4 blocks back
-  (no damage; softened near lava or a drop), she says the line, her look changes, and the bar marks
-  the pip.
+  (a glint shows it; she is never invulnerable), a shockwave pushes her enemies within 4 blocks
+  back at full strength (no damage; her own side is not pushed), she says the line, her look
+  changes, and the bar marks the pip.
 - Weak points:
   - Beam snap: break the crystal that is beaming her (above).
   - Explosions: blasts from anyone (TNT, a creeper, a vanilla end crystal, a bed or a respawn
     anchor that explodes, firework stars) hurt her 25% more and fill her poise twice as fast,
-    because players blow the vanilla dragon up with beds. "You brought a BED?"
+    because players blow the vanilla dragon up with beds. "You brought a BED?" (Another hero's
+    blasts, the Wither's included, do not count: they only break blocks.)
   - Recovery: after a dive and after her breath she shakes her head; the punish bonus doubles
     [+30% during her recovery, +45% from behind].
   - She has no elemental weakness.
@@ -311,7 +319,9 @@ HOW TO BEAT HER
    armour.
 6. Hit her after every dive: she is open for 1.2 s, doubly so.
 7. Explosions hurt her more. Yes, beds too.
-8. Do not fear the edge: her Wing Gust will not throw you into the void.
+8. Fear the edge. Her Wing Gust, her tail and her dives throw you at full strength, and she walks
+   round you to throw you off a cliff, into lava, or off the island into the void. Fight her in
+   the middle of the ground, or carry a water bucket for the fall.
 
 MOVEMENT
 Mobility trait: flyer (ceiling III), on her own dragon wings. She has every feature from level 1;
@@ -338,9 +348,34 @@ exception).
   hunts the defending hero inside (or goes for the heart with her party), and in the yard perches
   a block above the defenders to breathe on them. Defending, she meets airborne intruders over her
   walls.
-- Terrain: her moves never touch blocks; to reach someone she cannot get to she digs at a player's
-  pace after 10 s, as every hero does.
+- Terrain: see TERRAIN AND BLOCKS.
 - She does not escape (she fights to the death).
+
+TERRAIN AND BLOCKS
+(Kit version 3. Your answers of 2026-11-18: "its fine for heroes abilities to push someone of a
+cliff or to lava", and nobody needs to be "civil" in battle.)
+- Her pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
+  the void. They are Wing Gust (knockback 3, her strongest), Void Dive (2), Crescent Tail (2), the
+  Fall of the Outer Isles (3 and up 1), her phase change's shockwave, and the burst of a crystal you
+  break (2). Soldiers and other heroes get exactly the same. Her own side is never pushed.
+- She does it on purpose, as the vanilla dragon's wings throw players off its island. When you
+  stand near lava, a drop or an island's rim she walks round to your far side before Wing Gust or
+  her tail, and her dives land on your far side so the push sends you over. The walk round you and
+  the landing disc are the tells: step away from the edge.
+- Her own body never goes into a hazard: she never lands in lava, fire or the void.
+- A death there is her kill, in vanilla's words: "... was doomed to fall by The Ender Dragon",
+  "... didn't want to live in the same world as The Ender Dragon" (the void). In lava your dropped
+  items burn.
+- Against her: she flies, so a drop does not hurt her, but lava and fire do, in full [fire
+  resistance 40]; she is hard to push [knockback resistance 30, the vanguard's].
+- Blocks: none of her moves is an explosion, and none breaks a block (her fireballs and breath
+  leave clouds, as vanilla's do; her dives break nothing). A crystal's burst breaks no block
+  either.
+- She does not smash through blocks. The vanilla dragon removes every block it flies through
+  (except obsidian, end stone, iron bars and the like); she flies round them, as a two-block hero
+  can, so your walls, pillars and bridges stay whole. To reach someone she cannot get to, she digs
+  at a player's pace after 10 s, as every hero does (her claws count as an iron pickaxe). On a raid
+  she opens the gate from inside, or uses TNT if she carries it, like anyone.
 
 WORK AND TALENTS
 - Duty: guard (when she is not fighting). She patrols from the air and perches on the base's highest
@@ -377,7 +412,9 @@ HOW SHE JOINS A FACTION: THE TOKEN
   pale beam shows from 64 blocks), send expeditions, intercept carriers they saw, and escort their
   own; your faction's NPCs do the same for you.
 - If her faction ever loses its last base, she folds into an egg and turns back into her token
-  where she stands (or where its last heart fell, if she was dead), keeping her level.
+  where she stands (or where its last heart fell, if she was dead), keeping her level. (Your answer
+  of 2026-11-18: "token".) Her artifacts drop beside it. She has no personal name: she is The Ender
+  Dragon, Empress of the End.
 
 NOT A LEADER
 She is never drafted as a faction leader and never founds a faction: she graces the faction that
@@ -388,15 +425,32 @@ HER ARTIFACT: SPIRECORE
 A palm-sized end crystal caged in obsidian and iron bars, worn on a chain at her collarbone (you can
 see it on her); it turns slowly and hums. It cannot be crafted: it comes with her the first time she
 joins, and it drops where she dies, for anyone to take. Only one exists; if it is destroyed it comes
-back to her.
-- On any hero: health +10%, ability power +6%, energy gain +8%, flight stamina +10% (60% of that at
-  level 1, all of it at 20), and Spire Mend: once per fight, when it drops under 40% health, a
-  shield of 4 for 8 s and Regeneration I for 6 s.
+back to her, as new.
+- Slots: she joins at level 1, when a hero has one artifact slot. Spirecore fills it. She gets a
+  second slot at level 5, and one more every five levels after that (five from level 20).
+- Fixed strength: it gives the same numbers on every hero, at every level.
+- On any hero: health +10%, ability power +6%, energy gain +8%, flight stamina +10%, and Spire Mend:
+  once per fight, when it drops under 40% health, a shield of 4 for 8 s and Regeneration I for 6 s.
 - On the Ender Dragon herself (her bond): also health +5%, recharge +5%, ability power +6%; Heart of
   the Spires (Spire Mend that also cuts her running cooldowns by 10 s, never under half, so her
   next crystal comes sooner); Raise Crystal every 16 s instead of 20; Ender Fireball's splash 3
   blocks wide instead of 2. A faster Raise Crystal does not let her crystals heal past their 35%.
-- It stays with her: her faction never gives it to another hero while she is in it.
+- It can be upgraded (your idea of tinkerers, and of artifacts that need research). It is a built
+  thing, a crystal in a cage, so an artificer can re-cage it at the Artificer's Bench, like a rare
+  find, once the faction has the Artifice 2 research (so not before the faction labs exist):
+    upgrade II    4 lapis, a diamond and an end crystal; 10 levels; 2 minutes
+    upgrade III   4 lapis, a netherite scrap and 2 end crystals; 15 levels; 3 minutes
+  At III it gives health +15%, ability power +9%, energy gain +12%, stamina +15%, and Spire Mend's
+  shield is 4.8. Her bond stays the same. The upgrade stays on it whoever holds it.
+- It never grows: a crystal stays what it is.
+- Her choice: nothing forces it on her. She chooses it, and always keeps it: it is worth far more
+  to her than to anyone (only she gets the bond). She never swaps it out or gives it away; she
+  takes it off only to have it upgraded.
+  - If a hero of her own faction picks it up after she dies, it counts as lent by her. When she
+    hatches again she asks for it. An honourable hero gives it back at once; a greedy one may keep
+    it for a while, and she keeps asking.
+  - If an enemy hero wears it, she knows it when she sees it: that hero becomes her first target
+    in any fight.
 
 PERSONALITY AND VOICE
 - Temperament: proud noble. Traits: aggression 60, honour 75, ambition 85, caution 45, greed 70,
@@ -434,6 +488,8 @@ PERSONALITY AND VOICE
     Raid:        "Show me their tallest tower. I will sit on it."
     Her base attacked: "They come to MY nest?"
     Back to her token: "Your kingdom is ash. I will wait in my egg for a worthier hand."
+    Asking for her crystal back: "That is my heart's spire. Return it, and I shall forget you
+                 touched it."
   About fifty lines in all (BOSS_HEROES.md 5.10); moments without one of her own use the proud
   noble's fallback lines.
 

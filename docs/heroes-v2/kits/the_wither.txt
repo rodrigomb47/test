@@ -1,10 +1,12 @@
 The Wither - "Queen of Three Skulls"
 Female | wither | marksman | blight | tyrant | legendary | boss hero
-Status: designed, not in the game yet (kit version 2, 2026-11-18, after review). She is one of the
-two boss heroes: not among the 200, never a faction leader, and she joins a faction only through
-her token (see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never
-yields. All numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md
-section 4.
+Status: designed, not in the game yet (kit version 3, 2026-11-18, after your answers: she has no
+personal name; she turns back into her token if her faction falls; her blue skulls and Birth Blast
+now blow holes in blocks, and her pushes can throw you into lava or off a cliff, see TERRAIN AND
+BLOCKS; her Hollow Star now grows. Version 2, 2026-11-18, after review). She is one of the two boss
+heroes: not among the 200, never a faction leader, and she joins a faction only through her token
+(see "HOW SHE JOINS A FACTION"). She fights the same against players and NPCs and never yields.
+All numbers are first values, tuned after play. Design: docs/heroes-v2/BOSS_HEROES.md section 4.
 ====================================================================================================
 
 WHO SHE IS
@@ -59,7 +61,8 @@ close and nasty from phase 2. She keeps about 10 blocks away in phase 1 [keep_di
 marksman default] and about 2 from phase 2 [the wither armour sets 2]; she goes for the weakest
 enemy first (the marksman focus). Her element is blight (the Wither effect's own); she resists
 blight strongly [+60], fire somewhat [+30], and takes 20% more from radiant damage. She can never
-be given the Wither effect. Her moves never break, place or burn a block.
+be given the Wither effect. Three of her moves blow holes in blocks (Ruin Skull, Stray Skulls,
+Birth Blast: see TERRAIN AND BLOCKS); the rest never break, place or burn a block.
 
   Basic attack
     A black wither skull thrown from her open hand: it flies straight out to 16 blocks, 4 blight
@@ -78,13 +81,15 @@ be given the Wither effect. Her moves never break, place or burn a block.
 
     RUIN SKULL (ruin_skull) - boss phases 1, 2, 3 and the rebirth
       What it does: the dangerous blue skull. It flies slowly and bursts where it lands, hurting,
-      withering and pushing everyone within 3 blocks. It never breaks blocks. Her answer when you
-      eat (60%) and when three or more enemies crowd her (40%).
+      withering and pushing everyone within 3 blocks. Like the vanilla blue skull it also bites a
+      small hole in whatever it hits, even obsidian. Her answer when you eat (60%) and when three
+      or more enemies crowd her (40%).
       The tell: a blue skull gathers between her palms for 1 s with a rising glassy hum; a strip
-      on the ground shows its line.
-      Counter: it is slow: sidestep it, and do not stand in a group.
+      on the ground shows its line and ends in a small disc.
+      Counter: it is slow: sidestep it, and do not stand in a group or on a thin floor.
       Numbers: [heavy, mid and far; shot at 60% of a shot's speed, range 20, burst radius 3; 10
-      blight + Wither II 4 s + knockback 1; frames 1.0 / 0.2 / 0.8; cooldown 14 s]
+      blight + Wither II 4 s + knockback 1 at full strength; explosive power 1 with the blue skull's
+      rule; frames 1.0 / 0.2 / 0.8; cooldown 14 s]
 
     WITHERING PULSE (withering_pulse) - boss phases 1, 2, 3 and the rebirth
       What it does: a wave of withering around her that hurts and pushes you away. Her answer to
@@ -131,19 +136,20 @@ be given the Wither effect. Her moves never break, place or burn a block.
       Wither I 2 s); health 10% of hers each; frames 0.8 / 0.2 / 0.8; cooldown 35 s]
 
     STRAY SKULLS (stray_skulls) - the rebirth only
-      What it does: half-awake, her heads spit blue skulls at random all around her for 2.5 s,
-      like the vanilla Wither's idle heads.
+      What it does: half-awake, her heads spit six blue skulls at random all around her for 2.5 s,
+      like the vanilla Wither's idle heads. Each one bites a small hole where it lands.
       The tell: her eyes roll back and her crown sparks for 1 s; a disc marks each impact.
       Counter: watch the discs and step between them, or stand more than 7 blocks away.
-      Numbers: [area, any range; rain of 8 around herself, radius 7, 2.5 s, each impact 0.9 s
-      after its disc appears; 3 blight + Wither I 3 s per impact; frames 1.0 / 2.5 / 1.0; cooldown
-      18 s]
+      Numbers: [area, any range; rain of 6 around herself, radius 7, 2.5 s, each impact 0.9 s
+      after its disc appears; 4 blight + Wither I 3 s per impact; explosive power 1 each, with the
+      blue skull's rule; frames 1.0 / 2.5 / 1.0; cooldown 18 s]
 
   Ultimates (both there from level 1; they share one energy bar)
     BIRTH BLAST (birth_blast)
       What it does: the Wither's spawn, all over again. She rises, turns the blue-white of the
       vanilla spawn charge and charges for 3 s, healing as she does; then she bursts and
-      everything within 7 blocks is blasted, withered and thrown back. It never breaks blocks.
+      everything within 7 blocks is blasted, withered and thrown back. The burst also blows a
+      crater in the ground round her, as TNT would, inside the red disc.
       The tell: the full ultimate tell: a 1.6 s wind-up with a red disc of radius 7, her line
       ("Eleven heartbeats. Count them with me."), a wide sound, and the screen darkens for 2 s for
       the players near the fight; then the 3 s charge, eleven quickening heartbeats. She cannot be
@@ -152,11 +158,13 @@ be given the Wither effect. Her moves never break, place or burn a block.
       deal 15% of her maximum health while she charges (two hits or more: one hit is capped at
       12%) and the burst never comes, and she is open for 2 s.
       Numbers: [ultimate; frames 1.6 / 3.0 charge + 0.2 / 1.8; heals 14 over the charge; nova
-      radius 7: 24 blight + Wither II 5 s + knockback 3 up 1, softened near lava or a drop;
-      channelled, breaks after 15% of her max health]
+      radius 7: 24 blight + Wither II 5 s + knockback 3 up 1 at full strength; explosive power 4
+      at her body (TNT's; a broken charge blasts nothing); channelled, breaks after 15% of her max
+      health]
 
     SKULLFALL (skullfall)
-      What it does: ten skulls rain on a circle around you for 3 s. She can call it from the air.
+      What it does: ten black skulls rain on a circle around you for 3 s. They break no blocks, so
+      this is the ultimate she uses at home. She can call it from the air.
       The tell: the full ultimate tell ("Look up. All of you."), a red disc for each skull.
       Counter: read the discs and keep moving; leave the 6-block circle.
       Numbers: [ultimate, mid and far; rain of 10, radius 6 around the target, 3 s, each impact
@@ -227,9 +235,9 @@ BOSS FIGHT
       was built to be summoned." Once per fight; the next killing blow is final. Phase 3 does not
       start again: she sends her skulls out with Unbound Heads.
   Each phase change takes 1.2 to 2 s: she takes 50% less damage and cannot be staggered (a glint
-  shows it; she is never invulnerable), a shockwave pushes everyone within 4 blocks back (no
-  damage; softened near lava or a drop), she says the line, her look changes, and the bar marks
-  the pip.
+  shows it; she is never invulnerable), a shockwave pushes her enemies within 4 blocks back at
+  full strength (no damage; her own side is not pushed), she says the line, her look changes, and
+  the bar marks the pip.
 - In the air (phase 1 only): she rises at most 6 blocks over the ground or the highest enemy
   standing on a block, stays at most 8 s, then lands for at least 6 s; she spends at most 40% of
   any 30 s in the air and at most 4 s at a time out of everyone's melee reach. Up there she throws
@@ -256,6 +264,7 @@ BOSS FIGHT
   - You eat -> Ruin Skull (60%).
   - You are above her or in the air -> Skull Volley (60%).
   - Three or more enemies engage her -> Ruin Skull (40%).
+  (Inside her own walls she never uses Ruin Skull; she picks another move instead.)
   - You are far away -> Soul Dash (from phase 2, 50%).
 - Enrage: after 180 s of fighting, whoever she fights: +15% damage, shorter waits (x0.7), poise
   maximum x1.25, a red bar, an angry face and line ("Enough. Wither, all of you, wither!"). All
@@ -298,6 +307,10 @@ HOW TO BEAT HER
 7. She is not dead when she dies. Save something for the rebirth, and keep 7 blocks away when the
    blue skulls start raining.
 8. Milk will not help you against her blood, but it cures the Wither effect she puts on you.
+9. Do not fight her beside lava or a cliff: her pushes land at full strength, and she walks round
+   you to aim them there.
+10. A box will not hold her and obsidian will not stop her blue skulls. Only bedrock-like blocks
+    do. Fight her away from what you want to keep.
 
 MOVEMENT
 Mobility traits: flyer (ceiling III) and, uniquely, hover (ceiling II) on the ground. She has every
@@ -323,26 +336,58 @@ every NPC has is the one exception).
   only a reach flight up to someone on a pillar or a wall. If you stand where she cannot float to
   you, she flies up to you, and if she is walled in she breaks straight out (below).
 - Raids: as a non-leader she joins her base's raids like a soldier [raids: joins]. She scouts the
-  target first by circling it, crosses the wall from the air when she has a way out, and inside she
-  breaches the wall for her soldiers when they are held outside, otherwise she shoots the
-  defenders' archers. Defending, she patrols over her walls.
+  target first by circling it and crosses the wall from the air when she has a way out. When her
+  soldiers are stuck outside she opens the gate from inside, or blasts a hole in the wall with her
+  blue skulls (see TERRAIN AND BLOCKS); otherwise she shoots the defenders' archers. Defending, she
+  patrols over her walls.
 - She does not escape (she fights to the death).
 
-WHAT SHE BREAKS, AND WHAT SHE NEVER DOES
-- Her moves never place, break or burn a block: skulls, bursts, the dash and Birth Blast hurt and
-  push only living things. A Wither defending her own base never cracks its walls.
-- Withering hands: her bare hands break blocks as fast as an unenchanted diamond pickaxe (with
-  the drops that tool gives, and no wear). Never bedrock, barriers, portal frames or reinforced
-  deepslate (the vanilla Wither cannot break them either). She uses them:
-  - at work (she is a miner);
-  - when walled in during a fight: she breaks straight out at once (the old trick of boxing a
-    Wither in does not hold her);
-  - to reach someone she cannot get to, after 10 s, as every hero does;
-  - on a raid, when her soldiers are stuck outside: she breaks a 2-wide, 3-high hole in the enemy
-    wall beside the gate (about 2-4 s through stone bricks, much longer through obsidian), once
-    per raid. She is the only hero who breaks a faction's walls. The defenders rebuild it later.
-- Never her own side's blocks: nothing of her own faction's or an ally's buildings, and nothing
-  inside her own bases except her mine. With the game rule mobGriefing off she makes no breach.
+TERRAIN AND BLOCKS
+(Kit version 3. Your answers of 2026-11-18: "its ok for any hero or npc that usrs explosives to
+breach walls", nobody needs to be "civil" in battle, and "its fine for heroes abilities to push
+someone of a cliff or to lava". Her breach is no longer a special rule: she follows the same rules
+as everyone, with the vanilla Wither's own rules as the guide.)
+- Her blasts. Three of her moves are explosions by nature, as the vanilla boss's are. The blast
+  breaks blocks only; it hurts and pushes nobody (the move's own damage and push do that).
+  - Ruin Skull: a blue skull. Like vanilla's, it bites one to three blocks out of whatever it hits,
+    stone and obsidian alike. Only bedrock-like blocks stop it (bedrock, barriers, end portal
+    frames, reinforced deepslate). Two or three of them open a gap in a wall one block thick.
+    [explosive power 1; every block but the wither-immune ones counts as no stronger than 0.8]
+  - Stray Skulls (her rebirth only): six blue skulls, six small holes at random near her.
+  - Birth Blast: a crater as big as TNT's round her (about 3 blocks deep in dirt, 1 or 2 in stone;
+    never obsidian). It stays inside the red disc. [explosive power 4, not the vanilla 7, so the
+    crater never reaches past the warning]
+  - Her black skulls break nothing: her basic skull, Skull Volley, her side heads' shots and
+    Skullfall. (Vanilla's black skulls chip dirt and glass; hers do not, because they come
+    without a ground mark.)
+- Never her own side. She never uses a blast that would reach her own faction's or an ally's
+  buildings, or anything inside her own walls. So at home she fights without Ruin Skull, Stray
+  Skulls and Birth Blast, and calls Skullfall instead.
+- No box holds her. If you wall her in during a fight (no way out for 1 s), the blocks round her
+  body wither away at once, as with the vanilla Wither, never bedrock-like blocks and never her
+  own side's. (The vanilla Wither does this every time it is hurt; she does it only when boxed.)
+- Withering hands: her bare hands break blocks as fast as an unenchanted diamond pickaxe (with the
+  drops that tool gives, and no wear). She uses them at work (she is a miner), to reach someone she
+  cannot get to after 10 s as every hero does, and to clear blocks a player put in a gateway. They
+  never break a faction's walls.
+- On a raid, when her soldiers are stuck outside: she opens the gate from inside, or blasts a hole
+  in the wall with her blue skulls at the spot the raid planned (up to three skulls, about 30 s),
+  far from the gate. Obsidian does not stop her. The defenders shoot her and rebuild the hole
+  later. She may also carry TNT and use it like any breacher.
+- With the game rule mobGriefing off, she breaks no blocks with her blasts or her body (her moves
+  still hurt and push), and she digs out of a box with her hands.
+- Her pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
+  the void. They are Withering Pulse (knockback 2), Ruin Skull (1), Soul Dash (2), Birth Blast
+  (3 and up 1) and her phase change's shockwave. Soldiers and other heroes get exactly the same.
+  Her own side is never pushed.
+- She does it on purpose: when you stand near lava or a drop she drifts round to your far side
+  first. That drift is the tell: step away from the edge.
+- Her own body never goes into a hazard: Soul Dash stops at the edge it sends you over.
+- A death there is her kill, in vanilla's words: "... was doomed to fall by The Wither". In lava
+  your dropped items burn.
+- Against her: she flies, so a drop does not hurt her, but lava and fire do, in full [fire
+  resistance 30]; she is easy to push [knockback resistance 0]. Her Hollow Star floats up out of
+  lava.
 
 WORK AND TALENTS
 - Duty: miner (when she is not fighting). She mines with her withering hands (she presses a palm to
@@ -387,7 +432,9 @@ HOW SHE JOINS A FACTION: THE TOKEN
   expedition, intercept a carrier its scouts saw, and escort its own carrier home. Your own
   faction's NPCs do the same for you.
 - If her faction ever loses its last base, she turns back into her token where she stands (or
-  where its last heart fell, if she was dead), keeping her level, for the conquerors to take.
+  where its last heart fell, if she was dead), keeping her level, for the conquerors to take. (Your
+  answer of 2026-11-18: "token".) Her artifacts drop beside it. She has no personal name: she is
+  The Wither, Queen of Three Skulls.
 
 NOT A LEADER
 She is never drafted as a faction leader and never founds a faction: she serves the faction that
@@ -397,15 +444,33 @@ faction may hold both boss heroes.
 HER ARTIFACT: HOLLOW STAR
 A nether star burnt black with a soul-blue light inside, worn as a brooch at her collar (you can see
 it on her). It cannot be crafted: it comes with her the first time she joins, and it drops where
-she dies, for anyone to take. Only one exists; if it is destroyed it comes back to her.
-- On any hero: ability power +12%, drain +2%, blight resistance +10%, health +5% (60% of that at
-  level 1, all of it at 20), and Withering Brand: the first hit of each of its moves withers the
-  enemy (Wither I, 3 s), and an enemy it withered that dies within 3 s heals it 3.
+she dies, for anyone to take. Only one exists; if it is destroyed it comes back to her, as new.
+- Slots: she joins at level 1, when a hero has one artifact slot. Hollow Star fills it. She gets a
+  second slot at level 5, and one more every five levels after that (five from level 20).
+- Fixed strength: it gives the same numbers on every hero, at every level.
+- On any hero: ability power +12%, drain +2%, blight resistance +10%, health +5%, and Withering
+  Brand: the first hit of each of its moves withers the enemy (Wither I, 3 s), and an enemy it
+  withered that dies within 3 s heals it 3.
 - On the Wither herself (her bond): also blight damage +6%, health +5%, drain +2%; her brand is
   Wither II and a withered enemy that dies heals her 4 and gives her 10 energy (Third Hunger);
-  Skull Volley throws 4 skulls instead of 3, and Ruin Skull's burst is 4 blocks wide.
-- It stays with her: her faction never gives it to another hero while she is in it. All its
-  healing counts under the artifact healing ceiling (10% of her health in any 30 s).
+  Skull Volley throws 4 skulls instead of 3, and Ruin Skull's burst is 4 blocks wide. (Its blight
+  resistance does nothing on her: hers is already at the most a hero can have.)
+- It grows (your idea of an artifact that feeds on blood, the Wither's way). The dark star
+  brightens with the withering its wearer deals: every point of damage that the wearer's own
+  Wither effect does to an enemy counts (not her side heads' shots). At 60, 180 and 360 points it
+  gains ability power +6%, then drain +2%, then health +5%. Full, it gives ability power +18%,
+  drain +4%, blight resistance +10% and health +10%. She fills it in five to eight big fights;
+  another hero takes much longer. It keeps its growth if she dies, if it is stolen or handed
+  over. The tooltip shows how far it has grown; the brooch and the icon do not change.
+- It is never upgraded: no tinkerer can work it. Growing is its way to get stronger.
+- Her choice: nothing forces it on her. She chooses it, and always keeps it: it is worth far more
+  to her than to anyone (only she gets the bond). She never swaps it out or gives it away.
+  - If a hero of her own faction picks it up after she dies, it counts as lent by her. When she
+    comes back she asks for it. An honourable hero gives it back at once; a greedy one may keep it
+    for a while, and she keeps asking.
+  - If an enemy hero wears it, she knows her own heart when she sees it: that hero becomes her
+    first target in any fight.
+- All its healing counts under the artifact healing ceiling (10% of her health in any 30 s).
 
 PERSONALITY AND VOICE
 - Temperament: tyrant. Traits: aggression 80, honour 45, ambition 90, caution 35, greed 65,
@@ -444,6 +509,7 @@ PERSONALITY AND VOICE
     Raid:        "Their walls will be stone dust by noon."
     Her base attacked: "Someone is knocking at my queendom. Let us answer."
     Back to her token: "No walls, no banner, no bargain. I return to my skulls."
+    Asking for her star back: "That star is mine. You were only keeping it warm."
   About fifty lines in all (BOSS_HEROES.md 4.10); moments without one of her own use the tyrant's
   fallback lines.
 
@@ -461,5 +527,6 @@ Mostly the vanilla Wither's own, by id, with generated sounds where vanilla has 
 sound map of BOSS_HEROES.md 4.11): her skulls fly with entity.wither.shoot, her hurt and death are
 the Wither's own (pitched up), her idle sigh is entity.wither.ambient, her skulls chatter with the
 wither skeleton's voice, Birth Blast ends in entity.wither.spawn, and breaking out of a box plays
-entity.wither.break_block. Generated: her three-voiced speech, the blue skull's hum, the heartbeat
-charge, the armour's rise and the calling. To be made with her sound set and sent for approval.
+entity.wither.break_block. Her blasts make vanilla's own explosion sound. Generated: her
+three-voiced speech, the blue skull's hum, the heartbeat charge, the armour's rise and the calling.
+To be made with her sound set and sent for approval.

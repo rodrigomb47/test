@@ -17,6 +17,8 @@ WHAT CHANGED IN THIS VERSION (your answers of 2026-11-18)
 - Research: a few upgrades and three new artifacts need the faction's research. Research comes
   with the faction labs later, so these stay locked until then. Nothing vanilla is ever locked.
 - You: you can offer an artifact to a hero or ask for one. The hero decides. Pins are gone.
+- The two signature artifacts (with the boss heroes' revision, the same day): the Wither's Hollow
+  Star grows, and the Ender Dragon's Spirecore can be upgraded once the faction has the research.
 
 WHAT ARTIFACTS ARE
 Your idea, in our own words: artifacts are named items that make a hero stronger at something,
@@ -140,8 +142,11 @@ Signature artifacts: the Wither hero and the Ender Dragon hero each come with on
 (designed with those two heroes, docs/heroes-v2/BOSS_HEROES.md). Any hero can wear one for its
 basic power; only its own hero gets its full bond (extra bonuses, a stronger power and changes to
 two of her own moves). Only one of each exists in a world, and if one is destroyed (thrown into the
-void) it comes back to its hero when she next returns. A signature is never upgraded and never
-grows. Its own hero never gives it up: she keeps it until she dies or leaves.
+void) it comes back to its hero when she next returns, as new. Each signature gets stronger in one
+way: the Wither's Hollow Star grows as its wearer withers enemies, and is never upgraded; the Ender
+Dragon's Spirecore can be upgraded at the bench (with research, like a rare find), and never grows.
+Its own hero never gives it up: she keeps it until she dies or leaves. If a hero of her faction
+picks it up after her death, it counts as lent by her, and she asks for it back.
 
 Villagers never buy or sell artifacts. Later, when factions make treaties, an artifact can be part
 of a tribute or a peace offer.
@@ -160,13 +165,14 @@ TINKERING: UPGRADES
   larger (still under the ceilings), and at III its special power is sharpened: a fifth shorter
   cooldown, or a fifth stronger where it has none. A growing artifact is not made stronger by an
   upgrade; instead it can grow one step further.
-- Components are never upgraded (they are built into bigger artifacts); signatures never.
+- Components are never upgraded (they are built into bigger artifacts). Of the two signatures,
+  only Spirecore is (as a rare find, with research); Hollow Star grows instead.
 - An upgrade never fails and never breaks the item. Its price is the cost:
     advanced or growing to II    2 lapis + its own material                   5 levels    60 s
     advanced or growing to III   4 lapis, a diamond + more of its material    8 levels    90 s
     greater to II                4 lapis, a diamond + its own material       10 levels   120 s
     greater to III               4 lapis, a netherite scrap + more material  15 levels   180 s
-    rare find to II / III        as greater (needs research)
+    rare find or Spirecore       as greater, Spirecore with end crystals (needs research)
   "Its own material" is in the catalogue below (Kiln Heart: blocks of coal, 2 for II, 4 for III).
 - Every level III, and every upgrade of a rare find, needs research (RESEARCH below).
 - Smithing an upgraded artifact into its bigger form starts the new one again at level I; the
@@ -294,7 +300,8 @@ WHAT YOU SEE
 IN A WAR
 A hero's war power (what the war councils count) grows by its artifact rating: about 3% for each
 component it wears, 7% for each advanced, 9% for each greater, 10% for each rare find and 12% for a
-signature, 2% more per upgrade level, and 4% to 11.5% for a growing one by its steps; at most +40%
+signature (16.5% for a grown Hollow Star, 16% for Spirecore III), 2% more per upgrade level, and 4%
+to 11.5% for a growing one by its steps; at most +40%
 in all (it was +30% with three slots). Rival factions know a hero's artifacts only from what their
 scouts saw (the tiers, never the upgrades or growth). Everything else stays: heroes still count
 for at most 1.5 times their side's soldiers, half while badly hurt, nothing while dead or away.
@@ -537,11 +544,15 @@ anvil with 2 lapis and the levels shown. "Upgrade" is its own material for level
       Withering Brand: the first hit of each of its moves withers the enemy (Wither I, 3 s); an
       enemy it withered that dies within 3 s heals it 3. On the Wither herself: more, and two of
       her moves grow (her sheet, the_wither.txt).
+      Grows: with the Wither damage its wearer deals, at 60 / 180 / 360: ability power +6%, drain
+      +2%, health +5% (8 points when full). Never upgraded.
     SPIRECORE - comes with the Ender Dragon
       health +10%, ability power +6%, energy gain +8%, stamina +10%
       Spire Mend: once per fight, when it drops under 40% health, a 4-point shield for 8 s and
       Regeneration I for 6 s. On the Ender Dragon herself: more, and two of her moves grow (her
       sheet, the_ender_dragon.txt).
+      Upgrade (needs research): end crystal 1 / 2. At III: health +15%, ability power +9%, energy
+      gain +12%, stamina +15%, shield 4.8. Never grows.
 
   How they build (the arrows are the smithing steps):
     Knapped Flint -> Ironbound Whetstone -> Breeze-Cut Talon; -> Marrow Torc -> Ghast-Tear Torc;

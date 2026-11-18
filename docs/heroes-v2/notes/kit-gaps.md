@@ -773,3 +773,63 @@ rule it proposes.
     10.4: her want for her own signature is unbounded, no leader's wish moves it), not by the planner. Signatures are
     never upgraded and never grow (16.4 refuses `upgrade`, `growth` and `tech` on them); their files may stay format
     1. The two boss kit sheets' "60% of that at level 1, all of it at 20" lines go.
+
+## Boss heroes revision: format and engine gaps (2026-11-18, `BOSS_HEROES.md`)
+
+The owner's answers of 2026-11-18 (no personal names, back to the token, explosives may breach, heroes may push anyone
+off a cliff or into lava, and the artifact answers) revised `BOSS_HEROES.md`. Item 10 of "Battle without civility" and
+item 11 of "Artifacts revision" above are answered here. B1, B3, B4 and B7 (`HEROES_V2.md` 15.8) carry the work; each
+item names the rule it proposes.
+
+1. **The Wither's blasts** (`BOSS_HEROES.md` 4.5): Ruin Skull and Stray Skulls are `explosive` power 1, Birth Blast
+   power 4 (6.18's ceiling, not vanilla's 7, so that its crater, about 6.8 blocks, stays inside its 7-block red disc);
+   no cap rises for a legendary. Stray Skulls becomes a rain of 6 impacts of 4 blight (6.18's six blasts per use; still
+   24 a receiver, the rain cap; the review's "8 of 3" is replaced). Her black skulls (basic attack, Skull Volley, Three
+   Heads, the familiars, Skullfall) carry no blast: light moves and basic attacks may not, and Skullfall's ten impacts
+   pass six.
+2. **`explosive.resistance_cap`** (new field, 0.1-1.0): every block but air and `#wither_immune` counts as no stronger
+   than it, vanilla's blue skull rule (`WitherSkull.getBlockExplosionResistance`, which asks NeoForge's
+   `canEntityDestroy`); in T2's `ExplosionDamageCalculator` it is `getBlockExplosionResistance` returning
+   `min(cap, resistance)` for such a block. Allowed only at power 1 on a legendary (PART LEFT OUT otherwise). To check
+   in B3: vanilla reads a fluid cell through the same method, so a water cell counts as 0.8 too.
+3. **`behaviour.break_out: box`** (new): in a fight, walled in (every side cell blocked and no path to an engaged enemy
+   for 1 s), the blocks from the hero's feet up to the cell above its head and one block out on each side are destroyed
+   with drops at once (vanilla `WitherBoss`'s `destroyBlocksTick` box, which starts at the feet), never
+   `#wither_immune`, never a planned block of its own side or a pact ally, only when `EventHooks.canEntityGrief` allows,
+   at most once a second, with level event 1022. With mob griefing off, `HEROES_V2.md` 6.12's dig runs at once instead
+   of after 10 s. A NOTE on a non-legendary.
+4. **`work.tool`** (new): the hands' `BlockWork` tool for a hero with no held tool (`diamond_pickaxe` for the Wither,
+   `iron_pickaxe` for the dragon's claws): break speed, harvest level and vanilla drops of that tool, no wear. This
+   replaces item 14's "work override"; item 14's raid goal `breach` for one named hero is dropped.
+5. **Her blue skulls on the breach spot**: the "open the way" raid goal (`MOBILITY_AND_WORK.md` 5.2, 6.18) lets a hero
+   cast an explosive move at `docs/design/breaching.md` 6.2's spot up to three times (one blue skull bites less than
+   one TNT; breaching's two-charge limit is for TNT); `BreachPlanner`'s "breakable" factor takes the breacher's blast
+   (its power and `resistance_cap`), so obsidian is breakable to her. For X1 and X3.
+6. **Aiming a dive or a leap at an edge**: 6.17 gives the aim of knockbacks, charges, grabs and pulls, not of landings.
+   Proposed for `EdgePlay` (T1): with a lethal edge near the target, a `dive` or `leap` lands on the side of the target
+   away from that edge, still inside its landing disc, so its radial push sends the target over (the dragon's Void
+   Dive and Fall of the Outer Isles).
+7. **No smashing in flight**: the dragon hero never removes blocks she flies through (vanilla
+   `EnderDragon.checkWalls` stays vanilla's). Nothing to build; a GameTest (`dragonFlightBreaksNoBlocks`) guards it.
+8. **The crystal shatter** pushes at full strength (6.17: a passive's push) and breaks no block; it is not an
+   `explosive` (not a move). Item 6's `shatter` keeps its effects; its old "hazard-aware" knockback goes with T1.
+9. **A signature that grows or upgrades** (`ARTIFACTS.md` 16.4 and 16.5, revised with this file): a signature may carry
+   a `growth` block (7.8's rules, at most three steps, since it is never upgraded) or an `upgrade` block whose `tech` is
+   `artifice_2` for both levels, never both. An upgrade multiplies the base lines only; the bond's lines and kit mods
+   stay; honing at III hones the passive in use (the bond's or the base's). A kit mod never changes a move's
+   `explosive`. Hollow Star: `growth` `withering`, base 60, steps ability power +6, drain +2, health +5. Spirecore:
+   `upgrade` `minecraft:end_crystal` 1 / 2. Both files move to artifact format 2. The war value is 0.12 + 0.015 a step
+   or + 0.02 an upgrade level.
+10. **The counter `withering`** (new, beside 7.8's eight): each point of damage the Wither effect deals to an enemy when
+    its wearer gave that effect (its basic attacks, moves, passives and the brand; never its adds' or summons'). Vanilla
+    does not keep who gave a mob effect, so `EffectRouting` (or `HeroStatus`) records the giver per receiver when a hero
+    applies Wither, cleared when the effect ends; the count reads it on each Wither damage tick (`DamageTypes.WITHER`).
+11. **A signature's standing lent mark**: worn by another hero of its own hero's faction, a signature counts as lent by
+    its own hero (`ARTIFACTS.md` 10.4's lent rules: she asks it back at her next choice moment; honour 50 or more
+    returns it at once). For R4 (`ArtifactChoice`).
+12. **Her focus on her own signature**: an enemy hero she sees wearing her signature is her preferred target in a fight
+    (the focus rule for a marked enemy of the "Boss heroes" item 12, fed by the signature registry's wearer). For B4.
+13. **No `unbindOnFall`**: the owner chose the token; the switch is gone from `[heroes.bossHeroes]`.
+14. **The kit sheets** are at kit version 3 by hand. When herogen writes the two boss sheets (B7), its template needs
+    the TERRAIN AND BLOCKS section (blasts with power and what they break, the box break-out, pushes, fall and fire
+    immunity) and the signature's growth or upgrade table.

@@ -48,6 +48,9 @@ OTHER SHEETS
 THE BOSS HEROES (outside the 200; design of 2026-11-18, docs/heroes-v2/BOSS_HEROES.md)
   the_wither.txt            The Wither, Queen of Three Skulls (marksman, blight)
   the_ender_dragon.txt      The Ender Dragon, Empress of the End (vanguard, arcane)
+  Kit version 3 (2026-11-18, your answers): no personal names; back to the token when their faction
+  falls; the Wither's blue skulls and Birth Blast break blocks and both push you into lava or off a
+  cliff (TERRAIN AND BLOCKS); Hollow Star grows and Spirecore can be upgraded.
 
 HOW TO READ A SHEET
 - Numbers in [brackets] are the exact design values; the plain words around them say what you see in

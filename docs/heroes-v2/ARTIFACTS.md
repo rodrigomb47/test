@@ -28,6 +28,9 @@ below), `BOSS_HEROES.md` (the Wither and Ender Dragon heroes, whose two signatur
   engineered artifacts; until phase 6 exists those stay locked, and nothing else waits for it (9.5, 7.9).
 - Every id of the first catalogue is kept (the art workflow's icons use them); 11 ids are new (7.8, 7.9) and get their
   icons later as data. Format, config, tests and tasks follow (16-19).
+- **The signatures** (from `BOSS_HEROES.md`'s revision the same day): each takes one of the two new ways to grow
+  stronger, Hollow Star its growth and Spirecore a tinkerer's upgrades with Artifice 2, and one held by an ally of its
+  hero counts as lent by her (7.5, 10.4, 16.4).
 
 Reading rules: the hero design's own rules hold here unless this file says otherwise. In particular the owner's
 decisions of `HEROES_V2.md` section 6 (one combat mode, equal treatment, no attack tokens, no yield), the 10-minute
@@ -109,8 +112,10 @@ Decisions (PROPOSED unless the owner's words decide them; section 20):
     get an "Artifacts" section (section 12).
 16. **The two signature artifacts** (the Wither's and the Ender Dragon's) use a signature tier with a **bond**: base
     lines anyone may use, plus a bond (extra lines, a stronger passive and up to two changes to her own moves) only for
-    the hero it belongs to. One copy exists per world; if it is destroyed it re-forms with its hero. Signatures are
-    never upgraded and never grow. `BOSS_HEROES.md` designs their content (section 7.5, 16.4).
+    the hero it belongs to. One copy exists per world; if it is destroyed it re-forms with its hero. Each takes one of
+    the two ways an artifact may get stronger, never both: the Wither's Hollow Star grows by its own design and is
+    never upgraded; the Ender Dragon's Spirecore is upgraded at the bench with Artifice 2 research and never grows
+    (`BOSS_HEROES.md`'s revision of 2026-11-18). `BOSS_HEROES.md` designs their content (section 7.5, 16.4).
 
 **Improvements added on our own** (the owner welcomes them; each is said here so it can be refused):
 - work and leadership artifacts, so artifacts matter in peace too (Prospector's Loupe, Steward's Seal, and three of the
@@ -159,7 +164,8 @@ Vanilla item style, so artifacts sit beside vanilla items in an inventory:
   material and a one-pixel highlight; rare finds show the enchantment glint; signatures show the glint and a slow
   4-frame pulse (an `.mcmeta` animation);
 - **growing artifacts** (7.8) have four icon states, chosen by an item property from their growth as a bow's icon is
-  chosen by its pull (empty, a third, two thirds, full of their current cap): a fuller ampoule looks fuller. An upgrade
+  chosen by its pull (empty, a third, two thirds, full of their current cap): a fuller ampoule looks fuller (the
+  growing signature, Hollow Star, keeps its signature pulse instead; its growth shows in the tooltip). An upgrade
   level does not change the icon; the name's numeral says it (1.3);
 - generated, not hand-painted: a small icon generator (`tools/herogen icons`, task R6) builds each icon from a spec
   (`herosrc/artifacts/icons.json`: a shape from a library of about 30 silhouettes, a material ramp, a gem colour, an
@@ -479,7 +485,7 @@ and no growth counter asks whether the foe or the ally was a player.
 | Greater | 5 points | 6.25 | 7.5 | one major passive or an active; honed at III | smithing table: Sigil + an advanced artifact + a rare vanilla material | 10 levels and 2 lapis lazuli |
 | Engineered (greater tier, 7.9) | 5 points | 6.25 | 7.5 | one major passive or an active; honed at III | the Artificer's Bench, with Artifice 2 research | arrives awake |
 | Rare find | 5 points | 6.25 | 7.5 | one major passive or an active; honed at III | found only (9.3) | arrives awake |
-| Signature | 5 points + bond (at most 3 points and 2 kit changes, for its hero only) | never upgraded | | one major passive | comes with its hero | arrives awake |
+| Signature | 5 points + bond (at most 3 points and 2 kit changes, for its hero only) | either grows (Hollow Star: +1 point a step, at most 3 steps, 8 points full) or upgrades (Spirecore: 6.25 at II, with Artifice 2) | 7.5 (Spirecore, Artifice 2) | one major passive; honed at III | comes with its hero | arrives awake |
 
 - **Upgrade levels** (9.8): an upgrade multiplies the artifact's lines by 1.25 at II and 1.5 at III, each rounded half
   up to a whole number and clamped to its build cap (so one artifact never passes a cap on its own); at III its passive
@@ -597,12 +603,17 @@ family and two changes to her own moves.
 
 - **Fixed strength** (4.2): its base lines are the same on any hero at any level (the first design's "x attunement" is
   gone); its bond lines too, on its own hero.
-- **Never upgraded, never growing**: a signature has its bond instead (16.4 refuses `upgrade` and `growth` on one).
+- **One way to grow stronger each** (`BOSS_HEROES.md` 4.13 and 5.13, revised 2026-11-18): Hollow Star grows by its
+  own design, counting the withering its wearer deals (`withering`, by 7.8's rules, three steps at most since it is
+  never upgraded: 8 points full); Spirecore is upgraded at the bench as a rare find is, with Artifice 2 research (9.5,
+  9.8), and never grows. An upgrade multiplies its base lines only; the bond's lines and kit mods stay as they are.
+  16.4 refuses a signature with both, or with an upgrade gated below Artifice 2.
 - **Her one slot at level 1**: she joins at level 1 (`BOSS_HEROES.md`), so her signature fills her only slot until
   level 5 (3).
 - **It stays with her by her own choice** (10.4): the bond makes her want it above anything, so she never swaps it
   out, passes it on or hands it to an ask, and no leader's wish moves it. It changes hands only at her death (it drops)
-  or when she leaves the faction (her token, `BOSS_HEROES.md`).
+  or when she leaves the faction (her token, `BOSS_HEROES.md`). Held by another hero of her faction, it counts as lent
+  by her (10.4).
 
 ### 7.6 The build tree
 
@@ -695,7 +706,8 @@ Thresholds at the base counts above: Bloodglass Ampoule 300 / 900 / 1,800 / 3,00
 / 144 / 288 / 480 / 720 ores; Vigil Lantern, Rival's Cord and Scarbark Amulet 1 / 3 / 6 / 10 / 15; Skyroad Pennant
 1,500 / 4,500 / 9,000 / 15,000 / 22,500 blocks; Graveward Bell 12 / 36 / 72 / 120 / 180 undead; Hearthroot Seed 64 /
 192 / 384 / 640 / 960 (`heroes.artifacts.growthPercent` scales them all). How long each takes in a campaign is in 14,
-case 10.
+case 10. One signature grows by the same rules: the Wither's Hollow Star counts `withering` (the Wither-effect damage
+its wearer gave to enemies, never its adds'; base 60, three steps; `BOSS_HEROES.md` 4.13).
 
 **Originality.** Known stacking items gain on kills or takedowns and lose part at their wearer's death, gain permanent
 health from hits on champions, gain charges from enemies' spells nearby, or turn into another item when full. None of
@@ -828,7 +840,7 @@ pass sets their research costs and times):
 | Research | What it opens | What it needs |
 |---|---|---|
 | Artifice 1 | upgrade level III of advanced, growing and greater artifacts (9.8) | the lab's first tier |
-| Artifice 2 | building the three engineered artifacts (7.9); upgrades II and III of rare finds and of engineered artifacts | Artifice 1 |
+| Artifice 2 | building the three engineered artifacts (7.9); upgrades II and III of rare finds, of engineered artifacts and of the Spirecore signature | Artifice 1 |
 
 - **Never gated**: components, the Sigil, advanced, growing and greater artifacts, the wake, upgrade level II of
   advanced, growing and greater artifacts, a growing artifact's first four steps, the bench, the artificer and the
@@ -905,8 +917,9 @@ A new block (`factionclash:artificers_bench`), the workshop's tinkering station 
 
 ### 9.8 Upgrades: what and how much
 
-- **Upgrade levels**: I (as made), II and III. Components are never upgraded (they are built into advanced artifacts),
-  and signatures never (their bond is their growth). An artifact never levels with its wearer.
+- **Upgrade levels**: I (as made), II and III. Components are never upgraded (they are built into advanced artifacts);
+  of the two signatures only Spirecore is, at a rare find's price and research, its bond untouched (Hollow Star grows
+  instead: `BOSS_HEROES.md` 4.13 and 5.13). An artifact never levels with its wearer.
 - **What an upgrade does** (PROPOSED): its stat lines x1.25 at II and x1.5 at III, each rounded half up to a whole
   number and clamped to its build cap (Kiln Heart: fire damage 12 / 15 / 18%, ability power 6 / 8 / 9%, fire
   resistance 10 / 13 / 15%; Blackforge Girdle's health 15 / 19 / 20%, the cap). At III its passive or active is
@@ -925,8 +938,8 @@ A new block (`factionclash:artificers_bench`), the workshop's tinkering station 
 | advanced or growing, to III | 4 lapis lazuli, 1 diamond | the second count | 8 | 90 s | Artifice 1 |
 | greater, to II | 4 lapis lazuli, 1 diamond | the first count | 10 | 120 s | - |
 | greater, to III | 4 lapis lazuli, 1 netherite scrap | the second count | 15 | 180 s | Artifice 1 |
-| rare find or engineered, to II | 4 lapis lazuli, 1 diamond | the first count | 10 | 120 s | Artifice 2 |
-| rare find or engineered, to III | 4 lapis lazuli, 1 netherite scrap | the second count | 15 | 180 s | Artifice 2 |
+| rare find, engineered or Spirecore, to II | 4 lapis lazuli, 1 diamond | the first count | 10 | 120 s | Artifice 2 |
+| rare find, engineered or Spirecore, to III | 4 lapis lazuli, 1 netherite scrap | the second count | 15 | 180 s | Artifice 2 |
 
 - **A smithing step starts again at I**: an upgraded advanced artifact smithed into its greater one gives a greater
   artifact at upgrade level I (the recipe's result sets `artifact_work` afresh; the tooltip of an upgraded base says
@@ -1085,8 +1098,12 @@ once ("I keep my word"); any other weighs the ask as in 4.
 **Signatures stay with their own hero** (BOSS_HEROES 4.13 and 5.13): on its own hero a signature's bond makes it hers
 above anything (her want for it counts as unbounded), so she never swaps it out, passes it on or gives it to an ask,
 and no leader's wish moves it: a hoarding leader cannot take the Wither's Hollow Star from her. A signature that comes
-back to the store is claimed by its own hero first while she is in the faction. Worn by another hero (after her death
-or by an enemy's theft), it is an artifact like any other. Two copies of one instance are never both worn (15.1).
+back to the store is claimed by its own hero first while she is in the faction. Worn by another hero of her faction
+(it picked it up after her death), it counts as **lent by her** (`BOSS_HEROES.md` 4.13): she asks for it back at her
+next choice moment, a holder with honour 50 or more returns it at once, and any other weighs the ask as in 4, helped by
+the leader's particular wish to return it (10.5). Worn by an enemy hero, it is an artifact like any other, and its own
+hero takes that hero as her preferred target in a fight (`BOSS_HEROES.md` 4.13). Two copies of one instance are never
+both worn (15.1).
 
 **Worked example** (a neutral leader's faction; Appendix A defaults): Hinae (sweet-natured: s 90, g 25, h 75) holds a
 Hale Locket she does not wear that Ilsabet (righteous) wants twice as much: G = 0.5 + 0.24 + 0.2 + 0.08 = 1.02, she
@@ -1305,7 +1322,8 @@ A hero's war power (`HEROES_V2.md` 8.1) gets one factor, now without attunement 
 ```
 rating  = min(warRatingCap, Σ over worn artifacts of its value)
 value   = component 0.03, advanced 0.07, greater and engineered 0.09, rare find 0.10, signature 0.12;
-          + 0.02 per upgrade level above I; a growing artifact 0.04 + 0.015 per growth step (0.115 when full at III)
+          + 0.02 per upgrade level above I; a growing artifact 0.04 + 0.015 per growth step (0.115 when full at III);
+          the growing signature 0.12 + 0.015 per step (0.165 full), the upgraded one 0.12 + 0.02 per level (0.16 at III)
 warRatingCap 0.40 (PROPOSED; it was 0.30 with three slots at 60-100%)
 power   = 2.25 x sqrt(H0 / 20) x (1.5 + L / 30) x (1 + rating) x war.heroPowerPercent / 100
 H0      = the hero's maximum health without the artifact health modifier (so health lines are not counted twice)
@@ -1373,8 +1391,9 @@ winner is the side whose effective health times damage per second is larger. Bui
   writes `faded: true` into that copy's component.
 - **A destroyed signature re-forms** (void, `/kill`, a despawn by another mod): the world notes it lost, and a new
   instance appears in its hero's first free slot at her next revival, or at the next dawn if she is alive (with no free
-  slot, in her backpack). An old instance found later is then a faded copy. `BOSS_HEROES.md` may also make the hero's
-  token give the signature when she first joins.
+  slot, in her backpack), or at her next joining while she is a token. It re-forms as new: no growth, upgrade level I.
+  An old instance found later is then a faded copy. `BOSS_HEROES.md` may also make the hero's token give the signature
+  when she first joins.
 
 ### 15.2 Places and people
 
@@ -1562,9 +1581,13 @@ Rules for the bond: a kit mod names a move of its hero (PART LEFT OUT otherwise)
 the move again against its class minimums, slot caps and cooldown floor (ADJUSTED where over); a kit mod never changes
 a move's class, wind-up, recovery or telegraph, and never adds a stun beyond the cap. Worn by any other hero the
 signature gives its base lines and base passive only. Budget: 5 points and a major passive, plus the bond. Since the
-revision: its numbers are fixed like every artifact's (no attunement, 4.2); it has no `upgrade`, `growth` or `tech`
-(PART LEFT OUT: "a signature grows only through its bond"); and on its own hero its bond is what keeps it with her
-(10.4: her want for it is unbounded).
+revision: its numbers are fixed like every artifact's (no attunement, 4.2); it may have **either** a `growth` block
+(7.8's rules; three steps at most, since it is never upgraded; the counter its design names) **or** an `upgrade` block
+with `tech` `artifice_2` for both levels (9.5, 9.8), never both (`BOSS_HEROES.md`'s revision: Hollow Star grows,
+Spirecore upgrades); an upgrade multiplies its base lines only and hones whichever passive is in use, while the bond's
+lines and kit mods stay; a kit mod never changes a move's `explosive` property (`HEROES_V2.md` 6.18); and on its own
+hero its bond is what keeps it with her (10.4: her want for it is unbounded; held by an ally of hers, it is lent by
+her).
 
 ### 16.5 Validation (`logic/hero/ArtifactReader`, the v1 message format and outcomes)
 
@@ -1572,8 +1595,9 @@ revision: its numbers are fixed like every artifact's (no attunement, 4.2); it h
 - PART LEFT OUT: an unknown stat key; a passive or active that breaks the recipient rules, uses a refused effect
   (anything in 4.4: a lethal cancel, a teleport, block changes, a change to a boss rule) or a trigger it may not use
   (`revival_cut` outside `on_death`, `energy` in `on_ultimate`); a mark id that a hero kit also uses; a bond on a
-  non-signature; `upgrade`, `growth` or `tech` on a signature; `upgrade` on a component; `growth` outside the advanced
-  tier, or with an unknown `counts`; a `honed` that would change a class, a wind-up, a recovery, a telegraph or a stun
+  non-signature; both `upgrade` and `growth` on a signature, or a signature's `upgrade` gated below `artifice_2`;
+  `upgrade` on a component; `growth` outside the advanced tier and the signatures, or with an unknown `counts`; a kit
+  mod that changes a move's `explosive`; a `honed` that would change a class, a wind-up, a recovery, a telegraph or a stun
   length; a `ward_effect` on a counter effect (5.3); the `explosive` property of `HEROES_V2.md` 6.18 on an
   artifact's active (4.4).
 - ADJUSTED: lines over the tier budget scaled down in proportion; a line value rounded to whole numbers; passive and
@@ -1657,10 +1681,11 @@ damaged files load within every budget and cap), `ArtifactRulesTest` (`buildSums
 `healthLineMultipliesBossHealth`, `rechargeNeverUnderEightyPercentOfFloor`, `resolveFloorsAtHalfSecond`,
 `healingCeilingHolds`, `familiesDoNotStack`, `secondCopyRefused`, `warRatingFixedAndCapped`,
 `warPowerUsesHealthWithoutArtifacts`, `attackSpeedLeavesMoveFramesAlone`, `onControlNeverFromPassivesOrTethers`,
-`sameInstanceSignatureWornOnce`, `techGateLockedUntilResearch`, `techGateOpenIgnoresIt`),
+`sameInstanceSignatureWornOnce`, `techGateLockedUntilResearch`, `techGateOpenIgnoresIt`,
+`signatureGrowsOrUpgradesNeverBoth`, `reformedSignatureStartsNew`),
 `ArtifactChoiceTest` (`takesBestForFreeSlot`, `swapNeedsHysteresis`, `perfectionistSwapsLess`, `generousHeroPassesOn`,
 `greedyHeroKeepsSpares`, `loneWolfNeverAsks`, `askAnsweredByGenerosity`, `contestedClaimFirstAskedFirstServed`,
-`leaderWishWeighedByCompliance`, `wishNeverMovesSignature`, `signatureNeverLeavesItsHero`,
+`leaderWishWeighedByCompliance`, `wishNeverMovesSignature`, `signatureNeverLeavesItsHero`, `signatureHeldByAllyIsLent`,
 `honourableHeroReturnsLent`, `tsundereRefusesFirstOffer`, `proudNobleRefusesComponents`, `swornEnemyGiftRefused`,
 `refusalReturnsToGiver`, `growthValuedByFeedAndPatience`, `elementFocusOnlyForItsElement`,
 `scoutedElementRaisesResistance`, `dormantHeroMakesNoChoice`),
