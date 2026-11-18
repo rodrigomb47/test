@@ -3166,3 +3166,273 @@ rendered again and byte for byte the committed one; `anim-previews --core --chec
   `/locochk.log` (one-line logs) and `/stylecheck/` (a scratch copy of the 20 style-set PNGs, identical to the
   committed ones). The sandbox's safety check would not let the run remove anything at the root, so they need
   removing by hand (`rm -r /stylecheck /loco.log /hpn.log /hph.log /sp.log /locochk.log`). None is in the repository.
+
+---
+
+## R6 and B5: artifact and boss token icons (2026-11-18)
+
+R6's icon half (`ARTIFACTS.md` 1.2 and 1.3, the catalogue of section 7 with the reviewed names and the revision's
+growing and engineered artifacts) and B5's token icons (`BOSS_HEROES.md` 3.4). Three runs: a usage-limit pause stopped
+the first after the generator, the shape library and the specs; the second added the command line, the textures, the
+contact sheet, the mock inventory, the tests and the `herogen check` coverage, and was stopped by a container restart
+while its checks ran; the third (this one) read the revised catalogue (`a8143f2`: sixty-one artifacts), gave the
+generator growth states, drew the eleven new artifacts, and ran every check. No hero, part, clip or timing file
+changed; the shared generator gained `palette.ramp_n` only (added, nothing existing changed), so every hero builds byte
+for byte as before.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `tools/herogen/icons.py` | the generator: shapes resolved from grids (optional parts, growth stages), material ramps, the painter, the pulse frames, the catalogue reader and every check |
+| `tools/herogen/render/iconsheet.py` | the owner's contact sheet and the mock inventory |
+| `tools/herogen/palette.py` | `ramp_n`: `ramp`'s hue and chroma rules over seven tones (-3..+3) with a wider step, for the icons' materials |
+| `herosrc/artifacts/shapes.json` | the shape library: 60 silhouettes (16x16 letter grids); each letter a part with a role and a profile, or a growth stage |
+| `herosrc/artifacts/icons.json` | 70 materials (a tone-0 colour, a lightness step, an optional texture) and 64 icon specs |
+| `src/main/resources/assets/factionclash/textures/item/` | 88 textures (64 items, 24 more growth states) and 4 `.png.mcmeta` files (generated; never edit by hand) |
+| `docs/heroes-v2/previews/artifacts/sheet.png`, `inventory.png` | the contact sheet and the mock inventory for the owner |
+| `tools/herogen/tests/test_icons.py` | 19 tests |
+
+Commands: `herogen icons` (build: write the textures), `herogen icons --check` (the rules below and the committed
+textures against a fresh build), `herogen icons sheet [--check]` (the two preview images). `herogen check` without
+hero ids (or with `--all`) runs the icon check after the heroes; with ids it checks only those heroes.
+
+### The file names (what the item side registers)
+
+One texture per item, named by its item id, in `assets/factionclash/textures/item/`:
+
+- the 61 catalogue ids exactly as `ARTIFACTS.md` 7 spells them (`knapped_flint.png` ... `marrow_torc.png`,
+  `menders_brazier.png`, `starless_pearl.png`, `bloodglass_ampoule.png`, `observer_lens.png`, `hollow_star.png`,
+  `spirecore.png`);
+- `artificers_sigil.png` (the smithing template, 1.1);
+- `wither_token.png` and `ender_dragon_token.png` (`BOSS_HEROES.md` 3.4);
+- `<id>.png.mcmeta` beside the four that pulse: `hollow_star`, `spirecore`, `wither_token`, `ender_dragon_token`;
+- for each of the eight growing artifacts (7.8), four textures, its growth states (1.2: empty, a third, two thirds,
+  full of its current cap): `<id>.png` (empty), `<id>_1.png`, `<id>_2.png`, `<id>_3.png`.
+
+R2 and B2 add one model per item, `assets/factionclash/models/item/<id>.json` = `{"parent": "minecraft:item/generated",
+"textures": {"layer0": "factionclash:item/<id>"}}`; a growing artifact's model adds `overrides` on an item property
+(say `factionclash:growth`, 0 to 1, registered with `ItemProperties.register` as the bow's `pull` is) pointing at
+`models/item/<id>_1.json` .. `_3.json` at 0.33, 0.67 and 1.0, each the same generated model with its state's texture.
+The glint is the item's (`enchantment_glint_override` on rare finds, signatures and tokens), never the texture's. An
+upgrade level changes no texture (1.2: the name's numeral says it). Until those items are registered the textures
+are simply unused.
+
+### The look (vanilla item rules, read from the 1.21.1 client textures)
+
+- One object on a transparent 16x16 canvas, alpha 0 or 255, lit from the top left.
+- Every material is one `palette.ramp_n` ramp of seven tones; a material paints at most eight colours (its seven
+  tones and the white of a sparkle), checked per material, per frame and per growth state.
+- Solid parts get their darkest tone as an outline where they meet the empty canvas; cords, rods, glass and liquids
+  have none (vanilla's string, feathers and bottles); a `shadow` outline darkens only the sides away from the light.
+  Inside the outline the top and left edges are a tone lighter and the bottom and right edges a tone darker; domed
+  parts (gems, pearls, bells) shade across their whole area with a one-pixel specular at their brightest point; gems
+  sit a tone darker where they meet their setting and carry a white sparkle.
+- Textures (`speckle` for stone and coal, `grain` for wood, leather and cork, `wound` for the torc's twist) are
+  hashed per icon (the same hash in every growth state, so the grain does not crawl), never random.
+- Gems take the eight element colours of the particle table: physical `#B4ABA0`, fire `#FF7A1A`, frost `#8FD3F7`,
+  shock `#FFDD3C`, venom `#5BAE3C`, blight `#2E2A33`, arcane `#A46BF0`, radiant `#FFF0C4`.
+
+Tiers by material richness (1.2), enforced per spec and per growth state: a component is one material (a cord or a
+fitting may hold it); an advanced artifact adds a setting and a gem in its element's colour (the eight foci wear their
+own element's gem, read from the catalogue's "<element> damage" stat); a greater artifact adds a second precious
+material, which must differ from its body and setting, with a one-pixel white highlight; a rare find carries a gem; a
+signature carries a setting, a precious part and the pulse. The catalogue's "Growing artifacts" are advanced and
+"Engineered artifacts" greater (1.3). The pulse (signatures and tokens): four frames stacked (16x64), the glowing parts
+dim, mid, bright, mid, the silhouette identical in every frame, `{"animation": {"frametime": 10, "interpolate": true}}`:
+a slow 2 s shimmer.
+
+**Growth states.** A shape part may carry a `stage` (1-3): below that state its pixels are drawn as its `else`, from it
+on as the part its `as` names (or as itself; `.` is the empty canvas for either). So one grid holds all four states, a
+spec says `"growth": true`, and the generator writes the four textures. The check wants every state to pass the tier
+rules (a problem in some states only names them), each state to differ from the one before, and exactly the
+catalogue's growing artifacts to have states.
+
+Each icon says what it is made of (the `what` line on the sheet): a flint chip knotted on string, a golden locket with
+a heart on its lid, a lapis lens in a gold rim, a coil of copper wire round a redstone core, an iron buckle on a
+riveted strap, a golden clock hand made into a pin, a tuff disc with a copper boss, a deepslate weight with an iron
+ring, an amethyst tuning fork, three feathers bound with a gold bead, a corked vial with a spider eye, a glistering
+melon wedge in a gold rind; the foci are a coal heart bound in gold (fire), a packed-ice prism (frost), a copper rod
+with a spark (shock), a venom phial (venom), a bone urn (blight), an ender pearl in a gold claw (arcane), a lapis
+sunburst brooch (radiant) and an iron-bound whetstone (physical). Four silhouettes serve an advanced artifact and the
+greater one built on it, the second material on an optional part: `belt` (Ironhide, Blackforge), `signet` (Runebound,
+Deepecho), `spool` (Snarewire, Slimebound), `torc` (Marrow, Ghast-Tear).
+
+The revision's eleven (7.8 and 7.9):
+
+| Artifact | Icon | What grows (empty to full) |
+|---|---|---|
+| Bloodglass Ampoule (`bloodglass_ampoule`) | a teardrop ampoule of red glass, empty inside with glints as vanilla's glass bottle is, stoppered in gold with a pale gem | blood fills it, a third at a time |
+| Veinseeker Geode (`veinseeker_geode`) | a split geode (basalt crust, pale rind, a dark hollow) in a raw-iron cradle | amethyst crystals climb its walls until only a dark heart is left |
+| Vigil Lantern (`vigil_lantern`) | a slim dark-iron soul lantern with a gold ring, cap and foot | its soul-blue flame grows from a spark to a flame with a white core whose light fills the glass |
+| Skyroad Pennant (`skyroad_pennant`) | a sky-blue silk pennant with a light stripe on a spruce staff, a gold finial with a gem | it lengthens from a short flag to a long streamer |
+| Graveward Bell (`graveward_bell`) | a small iron handbell on a spruce handle, a gold collar, a pale gem clapper | gold notches cut round its waist, one per step |
+| Rival's Cord (`rivals_cord`) | a braided red-and-white loop closed by a gold clasp with a gem, a flint chip hanging below | knots tied in it: left, right, top |
+| Scarbark Amulet (`scarbark_amulet`) | a disc of dark oak bark on a leather cord, a fire gem in a dark-iron ring | the disc thickens ring by ring (each old edge stays as a growth ring) and takes pale scars |
+| Hearthroot Seed (`hearthroot_seed`) | a glowing seed (radiant) in a domed copper cage on moss | a sprout grows out through the cage, two leaves, then a leafy shoot |
+| Observer Lens (`observer_lens`, engineered) | an observer's stone face, one eye a starless pearl (arcane) in a diamond rim, iron corners, a redstone dot | |
+| Piston Bracer (`piston_bracer`, engineered) | a piston (planked oak head, iron rod, stone body) strapped on with leather, a gem buckle, two diamond studs, a redstone dot | |
+| Daylight Coil (`daylight_coil`, engineered) | a daylight detector's panel of glass cells round a sun-gem (radiant), gold wire wound round it, a diamond cap, a redstone lead | |
+
+The three engineered ones share a language: a vanilla redstone part's own face, a diamond as their precious material
+(their bench builds use one) and a redstone dot.
+
+The boss items, as `BOSS_HEROES.md` asks:
+
+| Item | Icon |
+|---|---|
+| Hollow Star (`hollow_star`, signature) | a nether star burnt black (vanilla's four-point star, charcoal), a soul-blue light caught in its heart, pinned on a bar of bone; the light pulses. The boss revision (`669357d`) lets it grow (withering), and `ARTIFACTS.md` 1.2 and `BOSS_HEROES.md` 4.13 keep its pulse with no fill states: its growth shows in the tooltip, so its icon is unchanged and has no `growth` |
+| Spirecore (`spirecore`, signature) | an end crystal caged in obsidian and iron bars, hung on a chain; the crystal pulses |
+| Wither Hero Token (`wither_token`) | a charcoal disc with three small bone skulls, their eye sockets soul-blue; the sockets pulse (3.4) |
+| Ender Dragon Hero Token (`ender_dragon_token`) | a black egg-shaped crystal flecked with purple; the flecks pulse (3.4) |
+
+**The hollow copy.** 3.4 gives a hollow token a grey name and no effect; it asks for no look of its own, and 15.1's
+faded signature copy is the same. So there is no hollow texture: the item side can tell a hollow token or a faded
+copy apart by dropping its glint (`enchantment_glint_override: false` on that stack). Should the owner want a grey
+look, it is a `variant_of` spec (below) and a model override, with no code in the generator. (The boss heroes
+revision in progress keeps both token ids.)
+
+### Adding an icon later (data only)
+
+The check reads `ARTIFACTS.md`'s catalogue section by its headings' names, not their numbers: Components, Advanced,
+Greater, Rare finds and Signature, plus Growing (advanced, with growth states) and Engineered (greater). It accepts a
+description after a row's "Name (`id`)". A new row under one of those headings is an error ("no icon: add a spec ...")
+until its icon exists, so the design's next artifacts cannot ship without art; a row under a heading that names none
+of them (a future "Tinkered forms", say) without an icon is one NOTE listing them all, and with an icon is checked by
+id and name only, so a new kind of artifact can land before its art and needs no code either. To add an icon:
+
+1. If no shape fits, add a silhouette to `herosrc/artifacts/shapes.json`: a 16-row grid of 16 letters, a part per
+   letter (`role`: body, setting, precious, gem, glow, fitting, cord, accent or detail; `profile`: dome, bevel, flat
+   or rod; `outline`: true, false or "shadow"). An `optional` part with `else` lets one shape serve a base artifact and
+   the richer one built on it. For a growing artifact, give the pixels that change a `stage` part (`stage`, `else`,
+   `as`); drawing the four states as four grids and turning each pixel that changes once into a stage letter is the
+   quickest way.
+2. Add a spec to `herosrc/artifacts/icons.json` under the item id: `name` (the catalogue's), `tier`, `shape`
+   (optionally `flip`), `parts` (a material per letter; add a material if needed), `gem` (an element) for a gem part,
+   `glow` (an element or `#RRGGBB`) for a glow part, `accent`, `"growth": true` for a growing artifact, `what` (one
+   line: what it is made of).
+3. `herogen icons`, `herogen icons --check`, `herogen icons sheet`, and look at the sheet.
+
+An upgraded artifact (a tinkerer's II or III, 9.8) keeps its icon. A second look of an existing item other than its
+growth states is a spec whose id starts with the item's id and an underscore and names it in `variant_of`; its texture
+is written beside the item's and the item side points a model override at it (a hollow token would be
+`wither_token_hollow`); a variant may not take a growth state's name. The non-catalogue items (the sigil and the two
+tokens) are `icons.EXTRA_ITEMS`, the one list in code: a renamed token would change it.
+
+### Previews (`docs/heroes-v2/previews/artifacts/`)
+
+- `sheet.png`: the 64 items grouped by tier with the tier's name colour (yellow, aqua, light purple, gold; the sigil
+  white, the tokens light purple), the growing and the engineered artifacts in groups of their own; each at 6x with
+  its name in its tier's colour and its `what`, and at 1x and 2x in a vanilla-style slot (drawn, not copied); the
+  pulsing ones show their four frames at 2x, the growing ones their four states at 2x (and full at 6x).
+- `inventory.png`: a mock inventory at GUI scales 1, 2 and 3, six rows of nine slots placing our icons beside vanilla
+  items: flint, gold nugget, lapis lazuli, copper ingot, ender pearl, coal, blaze rod, echo shard, iron ingot, feather,
+  spider eye, glistering melon, nether star, end crystal, the netherite upgrade template, a glass bottle, an amethyst
+  shard, a soul lantern, a phantom membrane, a bell and a lead (the growing ones shown full, the ampoule also empty).
+  The vanilla textures are read at render time, read-only, from the 1.21.1 client jar in the Gradle cache
+  (`~/.gradle/caches/neoformruntime/artifacts/minecraft_1.21.1_client.jar`, or NeoForge's client resources jar);
+  nothing of vanilla is stored in the repository. Without the jar the inventory is skipped with a NOTE and `--check`
+  checks the sheet only.
+
+Looked at, at 1x, 2x and 3x beside the vanilla items and at 6-8x one by one. Changed after looking (second run):
+
+1. **Knapped Flint** read as a pill or a battery (a rounded capsule, domed). It is now a leaf-shaped blade with its
+   ridge down the middle and bevelled faces, the string knotted round its top: beside vanilla's flint it reads as the
+   same stone, knapped.
+2. **Lifebound Chime**'s emerald eyes were one pixel each, too small for the greater tier's highlight, which the
+   painter skips on a part under four pixels: the bell showed no highlight at all. The eyes are 2x2 and domed, like the
+   totem's, and the left one carries the highlight.
+3. The sheet's pulse frames ran past their column (the fourth frame was cut by the next icon); the pulsing icons now
+   show their four frames at 2x in place of the still 2x slot.
+
+Changed after looking (this run, the eleven new ones):
+
+4. **Bloodglass Ampoule** first had a solid pink body: empty, it read as a pink potion. Its inside is now transparent
+   with glints, as vanilla's glass bottle is, so empty reads as empty and the blood as filling it; the blood's surface
+   lost its outline (it drew a black line across the liquid).
+5. **Veinseeker Geode** read as a porthole or a ring: a round crust and a bright white rind. The rind is now a grey
+   lilac, the crust thicker on the shadow side, and the crystals fill the walls bottom up with light facets, leaving a
+   dark heart when full.
+6. **Vigil Lantern**'s flame grew as a pale block. It is now a flame with a white core that, when full, lights the
+   glass round it (a darker blue halo).
+7. **Rival's Cord** was drawn as a one-pixel dotted ring, then as a thin diagonal: neither read as a cord. It is a
+   two-pixel braided loop like vanilla's lead, the knots dark lumps tied into it, the flint chip an arrowhead.
+8. **Daylight Coil**'s sun disappeared among cream cells and its wire read as dots: the cells are pale blue glass (the
+   sun-gem stands out), the wire wound round as rungs.
+9. **Piston Bracer**'s diamond studs were too small for the greater tier's highlight (three pixels in two places); they
+   are two 2x2 studs. **Graveward Bell**'s iron was near white, which hid its pale clapper and gold notches: a darker
+   bell iron. **Hearthroot Seed**'s copper bars were outlined to their darkest tone (one pixel wide, all edge): no
+   outline now.
+
+The rest read at 2x without a label: the gold of the locket, the chime and the clock hand against the copper of the
+coil, the anklet and the loupe; the lapis lens beside lapis lazuli; the starless pearl's claw beside vanilla's ender
+pearl; the hollow star as a burnt nether star; the dragon token as an egg; the empty ampoule beside the glass bottle;
+the vigil lantern beside the soul lantern. At GUI scale 1 the slots are as small as vanilla's and the icons hold their
+silhouettes; the growth states read as more of the same object, not as different items.
+
+### Tests (`tests/test_icons.py`, 19; the suite 421 -> 440)
+
+- The committed icons pass every check and match a fresh build; the build is the same twice in one process and in a
+  process with another hash seed (sabotage: seeding the textures from Python's `hash()` fails it; a changed pixel in a
+  committed texture fails the check).
+- Every catalogue item has an icon under its id with the catalogue's reviewed name and tier (12 components, 28
+  advanced with 8 growing, 13 greater with 3 engineered, 6 rare finds, 2 signatures, the sigil, the two tokens: 64),
+  and exactly the growing ones have their three extra state textures.
+- The textures follow the vanilla item rules: RGBA, 16x16 or 16x64 for the four pulsing ones, binary alpha, the same
+  silhouette in every frame, an `.mcmeta` exactly for the pulsing ones; `check_image` catches a semi-transparent
+  pixel, a 32x32 texture, an `.mcmeta` on a still icon, a missing one, a shifted frame and a fast frame time.
+- At most eight colours a material in every frame and state (sabotage: sparkles that paint a new colour on every
+  pixel).
+- Tiers by richness in every state, the foci's gems, the greater and signature highlight (exactly one white pixel on
+  the precious material); seven sabotaged specs (a component with a setting and a gem, a focus with another element's
+  gem or none, a greater's precious part in its body material, a tier the catalogue does not say, a component
+  re-tiered as advanced, a renamed item, a gem colour that is not an element) each give their error.
+- Growth: the eight growing artifacts write `<id>.png` and `_1`.._3, each state differs from the one before, the
+  committed state textures are those states; stage parts resolve by state (`else` below, `as` from it on, `.` either
+  way, every stage for a spec without growth) and `check_shape` refuses a stage out of 1-3, an `else` or `as` naming a
+  staged or unknown part, and an optional staged part. Six sabotaged sources each give their error: a growing artifact
+  without states, states on a shape without stages, states on an artifact the catalogue does not list as growing, a
+  state that looks like the one before, a gem missing in state 0 only, a variant named like a growth state.
+- A missing icon is an error naming the fix; a `variant_of` spec builds and passes; a variant of an unknown item or a
+  spec for an unknown id fails; an artifact without an icon under a heading that names no tier is a NOTE, under a tier
+  heading (Growing included) an error.
+- The catalogue reader by heading names (a renumbered catalogue, a heading with no tier, a description after the id,
+  Growing as advanced and Engineered as greater with their kinds, the build tree's code block and the next section
+  ignored).
+- The painter's light on a bevelled square and a domed disc; `palette.ramp_n`; `herogen icons --check`.
+- The sheet and the inventory match a fresh render; the inventory rows mix ours and vanilla's and no vanilla texture
+  is in the repository.
+
+Two of the new rules were sabotaged in the code as well (the growing artifact's state requirement turned off; the
+stage parts always drawn full): the growth tests and the committed-icons test fail.
+
+### Checks run
+
+In a clean copy of `HEAD` with only these files (the tree also held the hero agents' unfinished work): the Python
+suite (440 tests, OK: 421 before the icons and the 19 of `test_icons.py`); `herogen icons --check` (OK, 64 items, 88
+textures); `herogen icons sheet --check`; `herogen check --all --style` (heroes as before, then `OK icons`);
+`build --all --check` (test_rig, `_fallback`, Natsuho and Hinae byte for byte); the existing preview checks are
+untouched (no hero, part or clip changed).
+
+### Decisions
+
+1. **The texture is named by the item id** and the spec's key in `icons.json` is that id: no mapping table to drift.
+   Growth states add `_1`, `_2`, `_3`.
+2. **Growth states are stage parts in one grid**, not four shapes: the parts that do not grow cannot drift between
+   states, and a state that changes nothing is an error.
+3. **No hollow token texture** (3.4 asks for a grey name only); `variant_of` makes one a data change if wanted.
+4. **The glint is the item's**, not painted: vanilla draws it over any texture, and a painted one would double it.
+5. **Missing icons are errors in `herogen check`** under the catalogue's known headings, a NOTE under a new one.
+6. **60 shapes, not about 30**: the first run drew one silhouette per object where a shared one would have blurred
+   what it is made of (a phial and a vial, a torc and a ring); four shapes still serve two icons each.
+7. **The Artificer's Bench is a block** (`ARTIFACTS.md` 1.1, 9.7): its textures are block faces for R5, not an item
+   icon, and are not drawn here.
+
+### Open items
+
+- **R2, R3 and B2**: register the items, their `models/item/<id>.json` (above), the growth property and the growing
+  ones' overrides, the rarity colours and the glint; then a screenshot of the icons in a real inventory for the owner.
+- **The owner's review** of `sheet.png` and `inventory.png` (R6's "the sheet is sent to the owner").
+- **R5**: the Artificer's Bench's block textures.
+- R6's other half (the core clips `artifact.attune`, `artifact.raise`, `artifact.cast` and the `artifact` sound set)
+  is not part of this task.

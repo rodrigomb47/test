@@ -238,6 +238,31 @@ def ramp(colour, kind="default"):
     return out
 
 
+def ramp_n(colour, lo=-3, hi=3, step=STEP_L, light_hue=HIGHLIGHT_HUE, dark_hue=SHADOW_HUE, chroma_down=0.12,
+           chroma_up=0.05, l_min=0.08, l_max=0.99):
+    """Tones lo..hi of one colour with `ramp`'s rules (shadows toward blue-violet, 6 degrees and -12% chroma a step;
+    highlights toward yellow, 4 degrees and -5% chroma a step), for the artifact icons (icons.py), whose vanilla-style
+    materials need more tones and wider steps than a hero's five. Index t - lo is tone t; tone 0 is the colour."""
+    base = parse_hex(colour)
+    L, C, h = rgb_to_oklch(base)
+    out = []
+    for t in range(lo, hi + 1):
+        if t == 0:
+            out.append(base)
+            continue
+        Lt = min(l_max, max(l_min, L + step * t))
+        if t < 0:
+            ht = _shift_hue(h, dark_hue, 6.0 * -t)
+            Ct = C * max(0.0, 1.0 - chroma_down * -t)
+            if C < 0.02:
+                ht, Ct = dark_hue, max(Ct, 0.006 * -t)
+        else:
+            ht = _shift_hue(h, light_hue, 4.0 * t)
+            Ct = C * max(0.0, 1.0 - chroma_up * t)
+        out.append(oklch_to_rgb(Lt, Ct, ht))
+    return out
+
+
 def resolve(art_palette, family="female"):
     """Palette slot name -> ramp. Derived slots are filled from authored ones."""
     pal = dict(DEFAULTS)

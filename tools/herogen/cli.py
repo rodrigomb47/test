@@ -8,7 +8,9 @@ herosrc/style (built in memory, never written). G6a/b add the coplanar-face rule
 library on every base and the sample outfits, lint.py). G10 adds `anim-previews --locomotion` (the mobility set's
 films and sheets). G7 makes `check` cover all of 14.2: the file-level rules of assets.py on what the mod ships (the
 ones the Java HeroAssetsTest mirrors), `--slice`, and the distinctness NOTEs of distinct.py. C1 adds `hero-previews
-<id>` (a hero's own set in its one body, render/hero_previews.py)."""
+<id>` (a hero's own set in its one body, render/hero_previews.py). R6 and B5 add `icons [build|sheet] [--check]` (the
+artifact and boss token item textures, icons.py, and their contact sheet, render/iconsheet.py); `check` without ids
+covers the icons too."""
 import argparse
 import json
 import os
@@ -190,7 +192,63 @@ def cmd_check(args):
             looks.append(distinct.Look(hid, archetype, a, b.ramps))
     for n in distinct.notes(looks):
         print("NOTE  distinct: %s" % n)
+    if args.all or not (args.ids or args.slice):
+        bad += _icon_problems()
     return 1 if bad else 0
+
+
+def _icon_problems():
+    """The artifact and token icons (icons.problems): the specs, the catalogue, the colours, the written textures."""
+    import icons
+    errors, notes = icons.problems()
+    for e in errors:
+        print("ERROR icons: %s" % e)
+    for n in notes:
+        print("NOTE  icons: %s" % n)
+    if not errors:
+        specs = icons.load()[2]
+        print("OK    icons (%d items, %d item textures)" % (len(specs), len(icons.texture_owners(specs))))
+    return len(errors)
+
+
+def cmd_icons(args):
+    """R6 and B5 (icons.py): `icons [build]` writes the item textures and their animation files, `--check` runs the
+    icon rules and compares the committed textures with a fresh build; `icons sheet [--check]` writes (or checks) the
+    owner's contact sheet and the mock inventory in docs/heroes-v2/previews/artifacts (render/iconsheet.py)."""
+    import icons
+    import util
+    if args.what == "sheet":
+        from render import iconsheet
+        if args.check:
+            problems, notes = iconsheet.check()
+            for n in notes:
+                print("NOTE " + n)
+            for p in problems:
+                print("DIFF " + p)
+            if not problems:
+                print("OK   %s: the committed sheets match a fresh render" % util.rel(iconsheet.OUT_DIR))
+            return 1 if problems else 0
+        for k, p in sorted(iconsheet.write_all().items()):
+            print("%s: %s" % (k, util.rel(p)))
+        return 0
+    if args.check:
+        return 1 if _icon_problems() else 0
+    shapes, materials, specs = icons.load()
+    errors = [e for k in sorted(specs) for e in icons.check_spec(k, specs[k], shapes, materials)]
+    for e in errors:
+        print("ERROR icons: %s" % e)
+    if errors:
+        return 1
+    files = icons.build_files()
+    icons.write(files)
+    for p in icons.stale_files(files):
+        print("NOTE %s: not made by herogen icons (stale? delete it if it is an old icon)" % util.rel(p))
+    pulsing = sum(1 for s in specs.values() if s["tier"] in icons.PULSING)
+    growing = sum(1 for s in specs.values() if s.get("growth"))
+    print("built %d icons, %d textures (%d pulsing, with their .png.mcmeta; %d growing, with %d states each) in %s"
+          % (len(specs), len(icons.texture_owners(specs)), pulsing, growing, icons.GROWTH_STATES,
+             util.rel(icons.OUT_DIR)))
+    return 0
 
 
 def cmd_previews(args):
@@ -600,6 +658,13 @@ def main(argv=None):
     hp.add_argument("--check", action="store_true", help="render in a temporary folder and fail if a committed "
                                                          "preview differs")
     hp.set_defaults(fn=cmd_hero_previews)
+    ic = sub.add_parser("icons", help="the artifact and boss token icons: build the item textures (herosrc/artifacts), "
+                                      "--check them, or write the owner's contact sheet (`sheet`)")
+    ic.add_argument("what", nargs="?", default="build", choices=("build", "sheet"))
+    ic.add_argument("--check", action="store_true", help="build: the icon rules and the committed textures against a "
+                                                         "fresh build; sheet: render in a temporary folder and fail "
+                                                         "if a committed sheet differs")
+    ic.set_defaults(fn=cmd_icons)
     s = sub.add_parser("stats", help="budgets per hero")
     s.add_argument("ids", nargs="*")
     s.add_argument("--style", action="store_true", help="include the style fixtures")

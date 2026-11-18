@@ -1,0 +1,595 @@
+{
+  "_doc": "Artifact and token icons (tools/herogen/icons.py; ARTIFACTS.md 1.2-1.3, BOSS_HEROES.md 3.4; docs/heroes-v2/notes/artgen.md \"R6\"). materials: the tone-0 colour, the lightness step of palette.ramp_n and an optional texture (speckle, grain). icons: one spec per item id (the texture is textures/item/<id>.png): tier, shape (shapes.json), a material per part letter, the gem's element, the glow colour, the accent, and what it shows.",
+  "format": 1,
+  "icons": {
+    "amethyst_tuner": {
+      "name": "Amethyst Tuner",
+      "parts": {"f": "copper", "m": "amethyst"},
+      "shape": "tuning_fork",
+      "tier": "component",
+      "what": "an amethyst tuning fork on a copper stem"
+    },
+    "anchor_chain": {
+      "name": "Anchor Chain",
+      "gem": "physical",
+      "parts": {"c": "dark_iron", "m": "deepslate", "s": "iron"},
+      "shape": "anchor",
+      "tier": "advanced",
+      "what": "a deepslate anchor with an iron stock and chain"
+    },
+    "artificers_sigil": {
+      "name": "Artificer's Sigil",
+      "accent": "redstone",
+      "parts": {"f": "gold", "m": "lapis_tablet"},
+      "shape": "tablet",
+      "tier": "sigil",
+      "what": "a lapis template tablet in a gold rim, a redstone rune"
+    },
+    "bastion_hoard_ring": {
+      "name": "Bastion Hoard-Ring",
+      "gem": "fire",
+      "parts": {"m": "gold", "s": "blackstone"},
+      "shape": "hoard_ring",
+      "tier": "rare",
+      "what": "a heavy gold ring with a blackstone setting and a fire gem"
+    },
+    "blackforge_girdle": {
+      "name": "Blackforge Girdle",
+      "gem": "fire",
+      "parts": {"m": "leather_dark", "p": "netherite", "s": "gold"},
+      "shape": "belt",
+      "tier": "greater",
+      "what": "a dark girdle riveted with netherite, a gold buckle"
+    },
+    "blaze_rod_bracer": {
+      "name": "Blaze-Rod Bracer",
+      "gem": "fire",
+      "parts": {"m": "leather", "p": "blaze", "s": "gold"},
+      "shape": "bracer",
+      "tier": "greater",
+      "what": "a leather bracer with two blaze rods, a gold buckle"
+    },
+    "bloodglass_ampoule": {
+      "name": "Bloodglass Ampoule",
+      "accent": "blood",
+      "gem": "physical",
+      "growth": true,
+      "parts": {"m": "bloodglass", "s": "gold"},
+      "shape": "ampoule",
+      "tier": "advanced",
+      "what": "a red glass ampoule stoppered in gold; blood fills it as it grows"
+    },
+    "bog_phial": {
+      "name": "Bog Phial",
+      "gem": "venom",
+      "parts": {"f": "cork", "m": "glass", "s": "iron"},
+      "shape": "phial",
+      "tier": "advanced",
+      "what": "a phial of green venom with an iron band"
+    },
+    "bone_ash_urn": {
+      "name": "Bone-Ash Urn",
+      "gem": "blight",
+      "parts": {"m": "bone", "s": "gold"},
+      "shape": "urn",
+      "tier": "advanced",
+      "what": "a bone urn with a gold band and a dark gem"
+    },
+    "breeze_cut_talon": {
+      "name": "Breeze-Cut Talon",
+      "gem": "physical",
+      "parts": {"m": "iron", "p": "breeze", "s": "gold"},
+      "shape": "talon",
+      "tier": "greater",
+      "what": "an iron talon in a gold mount, a breeze rod wound round it"
+    },
+    "cactus_spine_mantle": {
+      "name": "Cactus-Spine Mantle",
+      "gem": "physical",
+      "parts": {"k": "spine", "m": "cactus", "s": "iron"},
+      "shape": "mantle",
+      "tier": "advanced",
+      "what": "a cactus-hide shoulder guard bristling with spines, an iron rim"
+    },
+    "chorus_bloom_pendant": {
+      "name": "Chorus-Bloom Pendant",
+      "gem": "arcane",
+      "parts": {"c": "gold_chain", "m": "chorus", "s": "end_stone"},
+      "shape": "bloom_pendant",
+      "tier": "rare",
+      "what": "a chorus flower pendant on a gold chain"
+    },
+    "clockwork_pin": {
+      "name": "Clockwork Pin",
+      "parts": {"m": "gold"},
+      "shape": "clock_hand",
+      "tier": "component",
+      "what": "a golden clock hand made into a pin"
+    },
+    "copper_coil": {
+      "name": "Copper Coil",
+      "accent": "redstone",
+      "parts": {"m": "copper"},
+      "shape": "coil",
+      "tier": "component",
+      "what": "a coil of copper wire round a redstone core"
+    },
+    "daybreak_brooch": {
+      "name": "Daybreak Brooch",
+      "gem": "radiant",
+      "parts": {"m": "lapis", "s": "gold"},
+      "shape": "sunburst",
+      "tier": "advanced",
+      "what": "a lapis brooch in gold rays, a pale sun-gem at its heart"
+    },
+    "daylight_coil": {
+      "name": "Daylight Coil",
+      "accent": "redstone",
+      "gem": "radiant",
+      "parts": {"c": "gold", "m": "spruce", "p": "diamond", "q": "daylight_cell", "s": "gold"},
+      "shape": "daylight_coil",
+      "tier": "greater",
+      "what": "a daylight detector's glass cells round a sun-gem, gold wire wound round it, a diamond cap"
+    },
+    "deepecho_signet": {
+      "name": "Deepecho Signet",
+      "gem": "arcane",
+      "parts": {"m": "iron", "p": "echo", "s": "gold"},
+      "shape": "signet",
+      "tier": "greater",
+      "what": "a signet ring faced with echo shard, a rune glowing in it"
+    },
+    "deepslate_ballast": {
+      "name": "Deepslate Ballast",
+      "parts": {"m": "deepslate", "r": "iron"},
+      "shape": "weight",
+      "tier": "component",
+      "what": "a deepslate weight with an iron ring"
+    },
+    "elderscale_lens": {
+      "name": "Elderscale Lens",
+      "accent": "sculk",
+      "gem": "radiant",
+      "parts": {"m": "prismarine", "s": "gold"},
+      "shape": "scale_lens",
+      "tier": "rare",
+      "what": "a lens framed in prismarine scales, a pale eye in it"
+    },
+    "ender_dragon_token": {
+      "name": "Ender Dragon Hero Token",
+      "glow": "#C77DFF",
+      "parts": {"m": "end_black"},
+      "shape": "egg_crystal",
+      "tier": "token",
+      "what": "a black egg-shaped crystal flecked with purple"
+    },
+    "fangspeaker_charm": {
+      "name": "Fangspeaker Charm",
+      "gem": "venom",
+      "parts": {"m": "bone", "s": "dark_iron"},
+      "shape": "fang_charm",
+      "tier": "rare",
+      "what": "evoker fangs closing on a dark band with a green gem"
+    },
+    "fletched_charm": {
+      "name": "Fletched Charm",
+      "parts": {"c": "string", "f": "gold", "m": "feather"},
+      "shape": "feather_charm",
+      "tier": "component",
+      "what": "three feathers bound with a gold bead on string"
+    },
+    "gale_riders_cord": {
+      "name": "Gale-Rider's Cord",
+      "gem": "frost",
+      "parts": {"m": "leather", "p": "wind", "s": "gold"},
+      "shape": "wind_orb",
+      "tier": "greater",
+      "what": "a braided cord knotted round a wind charge, a gold clasp"
+    },
+    "ghast_tear_torc": {
+      "name": "Ghast-Tear Torc",
+      "gem": "fire",
+      "parts": {"m": "bone", "p": "ghast_tear", "s": "gold"},
+      "shape": "torc",
+      "tier": "greater",
+      "what": "the bone torc with ghast tears hanging from its terminals"
+    },
+    "glistering_charm": {
+      "name": "Glistering Charm",
+      "parts": {"c": "string", "f": "gold", "m": "melon"},
+      "shape": "melon_charm",
+      "tier": "component",
+      "what": "a glistering melon wedge in a gold rind, on string"
+    },
+    "graveward_bell": {
+      "name": "Graveward Bell",
+      "gem": "radiant",
+      "growth": true,
+      "parts": {"f": "spruce", "m": "bell_iron", "n": "gold", "s": "gold"},
+      "shape": "handbell",
+      "tier": "advanced",
+      "what": "a small iron handbell with a gold collar; a gold notch for each grave it rings"
+    },
+    "hale_locket": {
+      "name": "Hale Locket",
+      "parts": {"c": "gold_chain", "m": "gold"},
+      "shape": "locket",
+      "tier": "component",
+      "what": "a golden locket with a heart on its lid"
+    },
+    "hearthroot_seed": {
+      "name": "Hearthroot Seed",
+      "accent": "leaf",
+      "gem": "radiant",
+      "growth": true,
+      "parts": {"q": "moss", "s": "copper"},
+      "shape": "caged_seed",
+      "tier": "advanced",
+      "what": "a glowing seed in a copper cage on moss; it sprouts as it tends living things"
+    },
+    "hearthwool_shawl": {
+      "name": "Hearthwool Shawl",
+      "gem": "fire",
+      "parts": {"m": "red_wool", "s": "gold"},
+      "shape": "shawl",
+      "tier": "advanced",
+      "what": "a fringed red wool shawl pinned with a gold brooch"
+    },
+    "hollow_star": {
+      "name": "Hollow Star",
+      "glow": "#7FE2FF",
+      "parts": {"p": "charred_star", "s": "wither_bone"},
+      "shape": "star4",
+      "tier": "signature",
+      "what": "a nether star burnt black, a soul-blue light inside, pinned on bone"
+    },
+    "hushstone": {
+      "name": "Hushstone",
+      "gem": "frost",
+      "parts": {"m": "sculk"},
+      "shape": "sculk_stone",
+      "tier": "rare",
+      "what": "a smooth sculk stone veined with pale light"
+    },
+    "ironbound_whetstone": {
+      "name": "Ironbound Whetstone",
+      "gem": "physical",
+      "parts": {"m": "whetstone", "s": "iron"},
+      "shape": "whetstone",
+      "tier": "advanced",
+      "what": "a whetstone bound in iron, a stud on one band"
+    },
+    "ironhide_girdle": {
+      "name": "Ironhide Girdle",
+      "gem": "physical",
+      "parts": {"m": "leather", "s": "iron"},
+      "shape": "belt",
+      "tier": "advanced",
+      "what": "a rolled leather girdle with an iron buckle"
+    },
+    "kiln_heart": {
+      "name": "Kiln Heart",
+      "gem": "fire",
+      "parts": {"m": "coal", "s": "gold"},
+      "shape": "heart_core",
+      "tier": "advanced",
+      "what": "a heart of coal bound in gold, an ember inside"
+    },
+    "knapped_flint": {
+      "name": "Knapped Flint",
+      "parts": {"c": "string", "m": "flint"},
+      "shape": "chip_on_cord",
+      "tier": "component",
+      "what": "a flint chip knotted on string"
+    },
+    "lapis_lens": {
+      "name": "Lapis Lens",
+      "parts": {"l": "lapis", "r": "gold"},
+      "shape": "lens",
+      "tier": "component",
+      "what": "a lapis lens in a gold rim"
+    },
+    "lifebound_chime": {
+      "name": "Lifebound Chime",
+      "gem": "radiant",
+      "parts": {"m": "gold", "p": "emerald", "s": "iron"},
+      "shape": "chime",
+      "tier": "greater",
+      "what": "a gold bell with emerald eyes like a totem's, a pale clapper"
+    },
+    "marrow_torc": {
+      "name": "Marrow Torc",
+      "gem": "fire",
+      "parts": {"m": "bone", "s": "gold"},
+      "shape": "torc",
+      "tier": "advanced",
+      "what": "a twisted bone torc with gold terminals set with red gems"
+    },
+    "menders_brazier": {
+      "name": "Mender's Brazier",
+      "gem": "radiant",
+      "parts": {"m": "dark_iron", "s": "gold"},
+      "shape": "brazier",
+      "tier": "advanced",
+      "what": "an iron brazier on a gold stand, a pale healing fire"
+    },
+    "observer_lens": {
+      "name": "Observer Lens",
+      "accent": "redstone",
+      "gem": "arcane",
+      "parts": {"m": "observer_stone", "p": "diamond", "s": "iron"},
+      "shape": "observer_lens",
+      "tier": "greater",
+      "what": "an observer's stone face, one eye a starless pearl in a diamond rim, a redstone dot"
+    },
+    "piston_bracer": {
+      "name": "Piston Bracer",
+      "accent": "redstone",
+      "gem": "physical",
+      "parts": {"l": "leather", "m": "cobble", "o": "oak", "p": "diamond", "r": "iron", "s": "iron"},
+      "shape": "piston_bracer",
+      "tier": "greater",
+      "what": "a piston strapped on as a bracer: oak head, iron rod, stone body, diamond studs"
+    },
+    "prospectors_loupe": {
+      "name": "Prospector's Loupe",
+      "gem": "physical",
+      "parts": {"m": "copper", "s": "gold"},
+      "shape": "loupe",
+      "tier": "advanced",
+      "what": "a copper loupe with a gold-rimmed lens"
+    },
+    "quickstep_anklet": {
+      "name": "Quickstep Anklet",
+      "gem": "shock",
+      "parts": {"m": "copper", "q": "feather", "s": "gold"},
+      "shape": "anklet",
+      "tier": "advanced",
+      "what": "a copper chain anklet with a feather and a yellow bead"
+    },
+    "rimeglass_prism": {
+      "name": "Rimeglass Prism",
+      "gem": "frost",
+      "parts": {"m": "packed_ice", "s": "gold"},
+      "shape": "prism",
+      "tier": "advanced",
+      "what": "a packed-ice prism in a gold collar"
+    },
+    "rivals_cord": {
+      "name": "Rival's Cord",
+      "accent": "knot_red",
+      "gem": "physical",
+      "growth": true,
+      "parts": {"f": "flint", "r": "red_wool", "s": "gold", "w": "string"},
+      "shape": "knotted_loop",
+      "tier": "advanced",
+      "what": "a braided red-and-white cord with a gold clasp and a flint chip; a knot for each worthy foe"
+    },
+    "riveted_buckle": {
+      "name": "Riveted Buckle",
+      "parts": {"f": "leather", "m": "iron"},
+      "shape": "buckle",
+      "tier": "component",
+      "what": "an iron buckle on a riveted leather strap"
+    },
+    "runebound_signet": {
+      "name": "Runebound Signet",
+      "gem": "arcane",
+      "parts": {"m": "iron", "s": "gold"},
+      "shape": "signet",
+      "tier": "advanced",
+      "what": "an iron signet ring with a rune on its gold face"
+    },
+    "scarbark_amulet": {
+      "name": "Scarbark Amulet",
+      "gem": "fire",
+      "growth": true,
+      "parts": {"c": "leather", "m": "dark_oak", "s": "dark_iron"},
+      "shape": "bark_disc",
+      "tier": "advanced",
+      "what": "a disc of dark oak bark on a leather cord, an iron-ringed gem; it thickens ring by ring, scarred"
+    },
+    "shepherds_lantern": {
+      "name": "Shepherd's Lantern",
+      "gem": "arcane",
+      "parts": {"m": "gold", "s": "iron"},
+      "shape": "lantern",
+      "tier": "advanced",
+      "what": "a gold lantern with a violet light"
+    },
+    "shulker_shell_ward": {
+      "name": "Shulker-Shell Ward",
+      "gem": "arcane",
+      "parts": {"m": "red_wool", "p": "shulker", "s": "gold"},
+      "shape": "shell_ward",
+      "tier": "greater",
+      "what": "a wool ward faced with shulker shell, a gold boss"
+    },
+    "skyroad_pennant": {
+      "name": "Skyroad Pennant",
+      "gem": "frost",
+      "growth": true,
+      "parts": {"f": "spruce", "m": "sky_silk", "s": "gold"},
+      "shape": "pennant",
+      "tier": "advanced",
+      "what": "a sky-blue silk pennant on a spruce staff, a gold finial; it lengthens as it flies"
+    },
+    "slimebound_spool": {
+      "name": "Slimebound Spool",
+      "gem": "venom",
+      "parts": {"c": "string", "m": "spruce", "p": "slime", "s": "iron"},
+      "shape": "spool",
+      "tier": "greater",
+      "what": "a spool wound thick with slime"
+    },
+    "snarewire_spool": {
+      "name": "Snarewire Spool",
+      "gem": "shock",
+      "parts": {"c": "string", "m": "spruce", "s": "iron"},
+      "shape": "spool",
+      "tier": "advanced",
+      "what": "a spool of tripwire on an iron axle"
+    },
+    "spider_eye_vial": {
+      "name": "Spider-Eye Vial",
+      "accent": "spider_eye",
+      "parts": {"f": "cork", "m": "glass"},
+      "shape": "vial",
+      "tier": "component",
+      "what": "a corked glass vial with a spider eye inside"
+    },
+    "spirecore": {
+      "name": "Spirecore",
+      "glow": "#E3A8FF",
+      "parts": {"c": "dark_iron", "m": "obsidian", "p": "end_crystal", "s": "iron"},
+      "shape": "caged_crystal",
+      "tier": "signature",
+      "what": "an end crystal caged in obsidian and iron bars, on a chain"
+    },
+    "starless_pearl": {
+      "name": "Starless Pearl",
+      "gem": "arcane",
+      "parts": {"m": "ender_pearl", "s": "gold"},
+      "shape": "orb_claw",
+      "tier": "advanced",
+      "what": "an ender pearl in a gold claw, a violet light inside"
+    },
+    "stewards_seal": {
+      "name": "Steward's Seal",
+      "gem": "radiant",
+      "parts": {"f": "blue_ribbon", "m": "seal_wax", "s": "gold"},
+      "shape": "wax_seal",
+      "tier": "rare",
+      "what": "a red wax seal on blue ribbons, a gold-set gem pressed into it"
+    },
+    "stormrod_spindle": {
+      "name": "Stormrod Spindle",
+      "gem": "shock",
+      "parts": {"c": "copper", "m": "copper", "s": "iron"},
+      "shape": "spindle",
+      "tier": "advanced",
+      "what": "a copper rod with an iron whorl, a spark at its tip"
+    },
+    "tidewell_conch": {
+      "name": "Tidewell Conch",
+      "gem": "frost",
+      "parts": {"m": "nautilus", "p": "amethyst", "s": "gold"},
+      "shape": "conch",
+      "tier": "greater",
+      "what": "a nautilus conch with a gold mouthpiece and an amethyst spiral"
+    },
+    "tuff_ward": {
+      "name": "Tuff Ward",
+      "parts": {"f": "copper", "m": "tuff", "r": "copper"},
+      "shape": "disc_ward",
+      "tier": "component",
+      "what": "a carved tuff disc with a copper boss and loop"
+    },
+    "veinseeker_geode": {
+      "name": "Veinseeker Geode",
+      "gem": "arcane",
+      "growth": true,
+      "parts": {"c": "basalt", "s": "raw_iron", "w": "calcite"},
+      "shape": "geode",
+      "tier": "advanced",
+      "what": "a split geode in a raw-iron cradle; its crystals grow in as it mines"
+    },
+    "vigil_lantern": {
+      "name": "Vigil Lantern",
+      "gem": "frost",
+      "growth": true,
+      "parts": {"m": "lantern_iron", "r": "gold", "s": "gold"},
+      "shape": "soul_lantern",
+      "tier": "advanced",
+      "what": "a small soul lantern capped in gold; its blue flame grows each night"
+    },
+    "wind_kite_tassel": {
+      "name": "Wind-Kite Tassel",
+      "gem": "frost",
+      "parts": {"c": "string", "m": "paper", "s": "gold"},
+      "shape": "kite",
+      "tier": "advanced",
+      "what": "a paper kite with a gold-bound centre and a tail"
+    },
+    "wither_token": {
+      "name": "Wither Hero Token",
+      "glow": "#7FE2FF",
+      "parts": {"b": "wither_bone", "m": "wither_charcoal"},
+      "shape": "token_disc",
+      "tier": "token",
+      "what": "a charcoal disc with three bone skulls, their sockets soul-blue"
+    }
+  },
+  "materials": {
+    "amethyst": {"colour": "#8D6ACC", "step": 0.09},
+    "basalt": {"colour": "#57555E", "step": 0.08, "texture": "speckle"},
+    "bell_iron": {"colour": "#7D828C", "step": 0.1},
+    "blackstone": {"colour": "#3A3238", "step": 0.07},
+    "blaze": {"colour": "#F6B51F", "step": 0.1},
+    "blood": {"colour": "#A31424", "step": 0.09},
+    "bloodglass": {"colour": "#D7848E", "step": 0.08},
+    "blue_ribbon": {"colour": "#3B5BA8", "step": 0.09},
+    "bone": {"colour": "#E3DDC8", "step": 0.08},
+    "breeze": {"colour": "#A3ABEA", "step": 0.09},
+    "cactus": {"colour": "#5F8F34", "step": 0.08},
+    "calcite": {"colour": "#B9B7C0", "step": 0.07},
+    "charred_star": {"colour": "#3A3640", "step": 0.09},
+    "chorus": {"colour": "#9C6CA6", "step": 0.08},
+    "coal": {"colour": "#2E2C2C", "step": 0.08, "texture": "speckle"},
+    "cobble": {"colour": "#7B7B7B", "step": 0.1, "texture": "speckle"},
+    "copper": {"colour": "#C15A36", "step": 0.09},
+    "cork": {"colour": "#A97B50", "step": 0.08, "texture": "grain"},
+    "dark_iron": {"colour": "#6E7079", "step": 0.1},
+    "dark_oak": {"colour": "#4E3823", "step": 0.08, "texture": "grain"},
+    "daylight_cell": {"colour": "#8FB3DA", "step": 0.08},
+    "deepslate": {"colour": "#53535A", "step": 0.08, "texture": "speckle"},
+    "diamond": {"colour": "#4ADBCB", "step": 0.1},
+    "echo": {"colour": "#0F5A6C", "step": 0.08},
+    "emerald": {"colour": "#17B85A", "step": 0.1},
+    "end_black": {"colour": "#1F1C27", "step": 0.08},
+    "end_crystal": {"colour": "#E7C3F2", "step": 0.07},
+    "end_stone": {"colour": "#DCDCA2", "step": 0.08},
+    "ender_pearl": {"colour": "#145F54", "step": 0.08},
+    "feather": {"colour": "#E2E2E2", "step": 0.09},
+    "flint": {"colour": "#4A494F", "step": 0.11},
+    "ghast_tear": {"colour": "#D2EAEA", "step": 0.07},
+    "glass": {"colour": "#BFE0EC", "step": 0.08},
+    "gold": {"colour": "#E9B115", "step": 0.1},
+    "gold_chain": {"colour": "#DC9613", "step": 0.12},
+    "iron": {"colour": "#B0B0B0", "step": 0.11},
+    "knot_red": {"colour": "#9C2F27", "step": 0.08},
+    "lantern_iron": {"colour": "#4A4D5A", "step": 0.09},
+    "lapis": {"colour": "#345EC3", "step": 0.09},
+    "lapis_tablet": {"colour": "#2F57B5", "step": 0.08},
+    "leaf": {"colour": "#4F9A35", "step": 0.09},
+    "leather": {"colour": "#9E492A", "step": 0.08, "texture": "grain"},
+    "leather_dark": {"colour": "#6E3420", "step": 0.08, "texture": "grain"},
+    "melon": {"colour": "#D23B2C", "step": 0.09},
+    "moss": {"colour": "#5E7F2E", "step": 0.08},
+    "nautilus": {"colour": "#E2CDB4", "step": 0.07},
+    "netherite": {"colour": "#4D4547", "step": 0.08},
+    "oak": {"colour": "#A8834F", "step": 0.08, "texture": "grain"},
+    "observer_stone": {"colour": "#8E8E8E", "step": 0.09, "texture": "speckle"},
+    "obsidian": {"colour": "#2A1F3A", "step": 0.07},
+    "packed_ice": {"colour": "#8DB2F0", "step": 0.08},
+    "paper": {"colour": "#E9E3CF", "step": 0.07},
+    "prismarine": {"colour": "#5E9E8E", "step": 0.08},
+    "raw_iron": {"colour": "#C49A7A", "step": 0.09},
+    "red_wool": {"colour": "#B53A2E", "step": 0.08},
+    "redstone": {"colour": "#D81E1E", "step": 0.1},
+    "sculk": {"colour": "#123A45", "step": 0.07},
+    "seal_wax": {"colour": "#B3262E", "step": 0.09},
+    "shulker": {"colour": "#906A98", "step": 0.08},
+    "sky_silk": {"colour": "#5F92D2", "step": 0.08},
+    "slime": {"colour": "#78C25B", "step": 0.09},
+    "spider_eye": {"colour": "#8E1A2A", "step": 0.1},
+    "spine": {"colour": "#D9D3A6", "step": 0.08},
+    "spruce": {"colour": "#6E4D2E", "step": 0.08, "texture": "grain"},
+    "string": {"colour": "#D8D8D8", "step": 0.12},
+    "tuff": {"colour": "#6F716A", "step": 0.08, "texture": "speckle"},
+    "whetstone": {"colour": "#8C8C88", "step": 0.09, "texture": "speckle"},
+    "wind": {"colour": "#C9CFF2", "step": 0.08},
+    "wither_bone": {"colour": "#E6E0D2", "step": 0.08},
+    "wither_charcoal": {"colour": "#2B2830", "step": 0.08}
+  }
+}
