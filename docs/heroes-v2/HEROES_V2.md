@@ -1467,6 +1467,35 @@ its condition, a one-day escort (non-leaders,
 by bond), commissioned work (a forgemaster repairs the player's gear with the player's materials at the base anvil;
 a chef cooks the player's raw food). All as in `research-systems.md` section 5.4.
 
+### 7.5 Artifacts (owner, 2026-11-18)
+
+The owner asked for artifacts: named items that only work for heroes, each enhancing something, in the spirit of a
+MOBA's item builds; ordinary NPCs (and players) may carry and haul them with no effect, and a hero drops its artifacts
+when it dies. The design is in `ARTIFACTS.md` (owner-facing overview: `kits/artifacts_overview.txt`); in short
+(PROPOSED):
+
+- **Three artifact slots per hero from level 1**, whatever its rarity; an artifact's stat lines grow with the wearer's
+  level as mobility does (60% at level 1, full at level 20), and each of the 19 stat lines (health, attack, ability
+  power, armour, recharge, attack speed, speed, energy, poise, element damage and resistances, drain, heal power,
+  resolve, stamina, work...) has a cap for the whole build. A passive or an active per artifact is built from format
+  2's triggers and effects under the passive and skill caps (a few new pieces: `ARTIFACTS.md` 5.3).
+- **Nothing an artifact does changes section 6**: the 12% per-hit cap, telegraph minimums and gaps, the hurt cooldown
+  per attacker, stun limits, `heroes.maxHit`, and no code path cancels lethal damage. Only a hero wearing one benefits,
+  so players and ordinary NPCs are treated alike.
+- **Fifty artifacts**: 12 components (crafting table), 20 advanced and 10 greater (smithing table with an Artificer's
+  Sigil, then woken at an anvil with the faction's experience), all made by the blacksmith from vanilla materials; 6
+  rare finds from vanilla structures and bosses; and the two signature artifacts of the Wither and Ender Dragon heroes
+  (`BOSS_HEROES.md`, in the bond format of `ARTIFACTS.md` 16.4).
+- **Death drops**: everything a hero wears drops where it dies (never despawning, fire- and blast-proof); the side that
+  holds the ground loots it first, so factions recover or steal artifacts. An escape keeps them.
+- **The faction AI** (`ArtifactPlanner`) plans builds from kit, role, element, scouted enemies and personality; the
+  leader's greed, ambition and sociability decide who gets the best; heroes equip and swap only at a base out of a
+  fight.
+- **War power** (8.1) x (1 + artifact rating), the rating at most 0.30; the boss bar shows one tier-coloured pip per
+  artifact and the hero sheet the details.
+
+Tasks R1-R7: section 15.7.
+
 ---
 
 ## 8. Progression
@@ -4585,6 +4614,22 @@ both (14.5).
   revival), the generated `cues.fallen` and `cues.last_stand`.
 - Lines (C1-C4): each slice hero's `yield` and `spared` lines are replaced by an `escape` line, a `last_stand` line
   or both, and a `fallen` line (SLICE_PLAN.md section 3).
+
+### 15.7 Artifacts (owner, 2026-11-18; `ARTIFACTS.md`)
+
+The design of section 7.5. R1-R4 can start once the combat engine of milestone 1 (A3-A6) is in, beside milestone 2;
+R5 needs the leadership hooks (L3) and the work API (L5m). The two signature artifacts are content of
+`BOSS_HEROES.md`'s tasks on top of R1-R3. The same rows, with more detail, are `ARTIFACTS.md` section 19.
+
+| ID | Task | Depends | Size | Done when |
+|---|---|---|---|---|
+| R1 | Format and pure rules: `ArtifactDef`, `ArtifactReader` (the v1 messages), the catalogue additions (the build stats, triggers `on_move_hit`, `on_control`, `on_death`, the passive form `jump`, effects `adapt` and `revival_cut`, condition `self_carries`), `ArtifactRules` (sum, attunement, build caps, healing ceiling, recharge bound, war rating), the bond's validation, schema and `checkHeroes` | F2, F3, F4 | M | the reader and rules unit tests of `ARTIFACTS.md` 18.1; the 50 data files load clean |
+| R2 | Items and the world: `ModArtifacts` (50 items and the Sigil), `ArtifactItem` (fire-, blast- and cactus-proof, never despawning), the `artifact_state` component, tooltips, recipes (crafting, smithing, the anvil wake), loot modifiers and the Hollow lair roll, the signature registry with faded copies and re-forming | R1, A1 | M | the item halves of `blacksmithCraftsSmithsAndWakes` and `heroDropsArtifactsAtDeath`; `signatureFadedCopyAndReform` |
+| R3 | The hero side: slots, saving, the slot screen with pins, attuning, the build stats in damage, cooldowns, control and stamina, passives with families, actives through the move runner, the bond's kit mods, the healing ceiling, death drops, boss bar pips, the hero sheet, the war rating in `HeroRules.heroPower` | R1, R2, A4, A5, A6, A10 | L | the hero GameTests of `ARTIFACTS.md` 18.2; every "NPC soldier and mock player" test gives the same numbers for both |
+| R4 | `ArtifactPlanner` (pure): hero profiles, scoring, personality, the leader's distribution, goal builds and craft orders, hysteresis | R1, F4 | M | `ArtifactPlannerTest` |
+| R5 | Faction AI: the planner in the director, the workshop's smithing table (shared with ROADMAP phase 3's netherite row), the blacksmith's artifact orders and wakes with the faction's experience, equipping at bases, hauler deliveries, loot priority, recovery trips, raid looting, chat lines, the station section, `sim.py` lines | R3, R4, L3, L5m | L | the remaining GameTests of `ARTIFACTS.md` 18.2; its campaign check (18.3) |
+| R6 | Art and sound: `herogen icons` and the 51 icons (a contact sheet for the owner), the core clips `artifact.attune`, `artifact.raise`, `artifact.cast`, the `artifact` sound set | G1, G4, S1, R1 | M | icons pass `herogen check`; the sheet is sent to the owner; `sfxgen check` clean |
+| R7 | Docs and release: README "Artifacts", BALANCE rows, the config file, an "ARTIFACTS" section in every kit sheet, the overview regenerated from the data, jar and SHA-256 | R5, R6 | S | the release checklist (`HANDOFF.md` section 7) |
 
 ---
 

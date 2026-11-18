@@ -35,6 +35,10 @@ THE EIGHT HEROES
   ilsabet_frostmere.txt     Ilsabet Frostmere, the rime vow knight (vanguard, frost)
   ambrose_nettlewick.txt    Ambrose Nettlewick, the cauldron warlock (controller, venom)
 
+OTHER SHEETS
+  artifacts_overview.txt    Artifacts: items only heroes can wake, how factions make, wear, lose and
+                            steal them, and the 50 of the catalogue (design of 2026-11-18)
+
 HOW TO READ A SHEET
 - Numbers in [brackets] are the exact design values; the plain words around them say what you see in
   the game.
