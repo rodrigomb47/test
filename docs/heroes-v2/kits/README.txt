@@ -12,13 +12,18 @@ in them is invented: where the design leaves something open, the sheet says "set
 or "set when he is built".
 
 STATUS
-Kit version 2, 2026-11-13: the eight heroes of milestone 1 (the vertical slice) are designed, not in
-the game yet. All numbers are first values, tuned after play. Version 2 follows the owner's
-decisions of 2026-11-12 and 2026-11-13: a hero fights the same against players and NPCs (one combat
-mode, with the same health, caps and rules whoever it fights; no extra damage to players and no
-protection from a one-hit kill), any number of heroes may gang up on one target, and no hero yields:
-each sheet's "When ... is losing" says whether that hero escapes or fights to the death, and why.
-Version 1 (2026-11-12) had a player-only boss mode and a yield.
+Kit version 3, 2026-11-18: the eight heroes of milestone 1 (the vertical slice) are designed, not in
+the game yet. All numbers are first values, tuned after play. Version 3 follows the owner's answers
+of 2026-11-18 ("theres no need for anyone to be civil in battle"; "its fine for heroes abilities to
+push someone of a cliff or to lava"): each sheet has a TERRAIN AND BLOCKS section. A hero's pushes
+now land at full strength even into lava or off a cliff, it aims them there on purpose, and a death
+that way is its kill; none of the eight moves is an explosion, so none breaks blocks.
+Version 2 (2026-11-13) followed the owner's decisions of 2026-11-12 and 2026-11-13: a hero fights
+the same against players and NPCs (one combat mode, with the same health, caps and rules whoever it
+fights; no extra damage to players and no protection from a one-hit kill), any number of heroes may
+gang up on one target, and no hero yields: each sheet's "When ... is losing" says whether that hero
+escapes or fights to the death, and why. Version 1 (2026-11-12) had a player-only boss mode and a
+yield.
 
 WHEN THEY CHANGE
 The sheets are regenerated whenever a hero is built or its kit changes, and each new or changed

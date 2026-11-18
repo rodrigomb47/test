@@ -1,8 +1,9 @@
 Ambrose Nettlewick - "The Cauldron Warlock"
 Male | witch | controller | venom | eccentric genius | epic
-Status: designed, not in the game yet (kit version 2, 2026-11-13: he fights the same against players
-and NPCs, and he never yields: see "When he is losing"). All numbers are first values, tuned after
-play.
+Status: designed, not in the game yet (kit version 3, 2026-11-18: his phase changes may knock you
+into lava or off a cliff, and soldiers the same: see TERRAIN AND BLOCKS. Version 2, 2026-11-13:
+he fights the same against players and NPCs, and he never yields: see "When he is losing"). All
+numbers are first values, tuned after play.
 ====================================================================================================
 
 WHO HE IS
@@ -188,9 +189,9 @@ BOSS FIGHT
       "Time for the big one. Please don't interrupt."
   Each phase change takes 0.8 to 2 s (his exact length is set when he is built): he takes 50% less
   damage and cannot be staggered (a glint shows it; he is never invulnerable), a shockwave pushes
-  everyone within 4 blocks back (no damage; softened near lava or a drop), he says the line, his
-  face and look change, and the bar gains a pip. A phase change always happens on the ground: if he
-  is flying, he lands first (0.4 s).
+  every enemy within 4 blocks back (no damage, at full strength even toward lava or a drop; his own
+  side stays put), he says the line, his face and look change, and the bar gains a pip. A phase
+  change always happens on the ground: if he is flying, he lands first (0.4 s).
 - Phase 2 in the air (a proposal in the mobility design for when he is built; not settled yet): in
   phase 2 he may take to the air on his staff-broom. The take-off is the tell: 0.6 s while he mounts
   the staff and the crow caws. He stays up at most 8 s, at most 6 blocks above the ground (or above
@@ -265,6 +266,21 @@ BOSS FIGHT
   base); his kit items vanish at death and return with him. He has no death ability of his own. A
   hero of his faction with the revival_rite talent (milestone 2) would bring him back 20 / 30 / 40%
   sooner, never under 30 s.
+
+TERRAIN AND BLOCKS
+(Kit version 3. The owner's answer of 2026-11-18: "its fine for heroes abilities to push someone
+of a cliff or to lava", and nobody needs to be "civil" in battle.)
+- None of his moves pushes you. Only his phase change's shockwave does: it lands at full strength
+  wherever it sends you, into lava, over a cliff or into the void, the same for soldiers and other
+  heroes. His own side is never pushed. Keep away from edges when his health nears 60% or 25%.
+- His own body never goes into a hazard: Fume Step's hop and Broom Hops never land him in lava or
+  past a deadly drop, and he never lands from a flight on lava or fire.
+- A death there is his kill, in vanilla's words ("... was doomed to fall by Ambrose Nettlewick").
+- Against him: lava hurts him in full, with no 12% cap. Knocked off a cliff he glides down on his
+  broom (a flyer glides like a glider) and lands unhurt. A Knockback sword, a Punch bow or a wind
+  charge pushes him like anyone [knockback resistance 0, the controller's].
+- Blocks: none of his moves is an explosion. His vials shatter like splash potions and break
+  nothing.
 
 HOW TO BEAT HIM
 1. Break the Great Brew. In phase 3, when he stops to brew, hit him hard during the 3 s channel: 15%

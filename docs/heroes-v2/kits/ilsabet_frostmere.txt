@@ -1,8 +1,9 @@
 Ilsabet Frostmere - "The Rime Vow Knight"
 Female | knight | vanguard | frost | righteous | epic
-Status: designed, not in the game yet (kit version 2, 2026-11-13: she fights the same against
-players and NPCs, and she never yields: see "When she is losing"). All numbers are first values,
-tuned after play.
+Status: designed, not in the game yet (kit version 3, 2026-11-18: she may knock you into lava or
+off a cliff on purpose, and soldiers the same: see TERRAIN AND BLOCKS. Version 2, 2026-11-13: she
+fights the same against players and NPCs, and she never yields: see "When she is losing"). All
+numbers are first values, tuned after play.
 ====================================================================================================
 
 WHO SHE IS
@@ -186,8 +187,8 @@ BOSS FIGHT
       "To me, Rime Vow! Hold the line!"
   Each phase change takes 0.8 to 2 s (her exact length is set when she is built): she takes 50% less
   damage and cannot be staggered (a glint shows it; she is never invulnerable), a shockwave pushes
-  everyone within 4 blocks back (no damage; softened near lava or a drop), she says the line, her
-  face and look change, and the bar gains a pip.
+  every enemy within 4 blocks back (no damage, at full strength even toward lava or a drop; her own
+  side stays put), she says the line, her face and look change, and the bar gains a pip.
 - Weak points:
   - Back: the bonus for hitting her from behind (more than 120 degrees from where she faces) doubles
     [during a recovery, +30% more instead of +15%]. From phase 2, Bulwark doubles her back weakness
@@ -230,6 +231,23 @@ BOSS FIGHT
   base); her kit items vanish at death and return with her. She has no death ability of her own. A
   hero of her faction with the revival_rite talent (milestone 2) would bring her back 20 / 30 / 40%
   sooner, never under 30 s.
+
+TERRAIN AND BLOCKS
+(Kit version 3. The owner's answer of 2026-11-18: "its fine for heroes abilities to push someone
+of a cliff or to lava", and nobody needs to be "civil" in battle.)
+- Her pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
+  the void. They are Shield Bash (knockback 2 and a 1 s stun, so you cannot step back), Frost
+  Lance Charge (knockback 2 and a 2 s freeze) and her phase change's shockwave. Soldiers and other
+  heroes get exactly the same. Her own side is never pushed.
+- She does it on purpose. When you stand near lava or a drop she walks round to your far side and
+  bashes or charges you toward it. The walk round you is the tell: step away from the edge. Her
+  honour does not stop her: it only keeps her from striking a hero who runs.
+- Her own body never goes into a hazard: her charge stops at the edge it sends you over.
+- A death there is her kill, in vanilla's words: "... was doomed to fall by Ilsabet Frostmere",
+  "... tried to swim in lava to escape Ilsabet Frostmere". In lava your dropped items burn.
+- Against her: she is hard to push [knockback resistance 30, the vanguard's; +30 in Bulwark], but
+  lava, and a fall past her safe fall, hurt her in full, with no 12% cap.
+- Blocks: none of her moves is an explosion, so she breaks no blocks in a fight.
 
 HOW TO BEAT HER
 1. Wear at least one piece of leather armour. Oath Strike, Frost Lance Charge and her ultimate all

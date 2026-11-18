@@ -30,6 +30,11 @@ fight until die depending of what they want"): escape is what an escaping-kind h
 fight, a last-stand hero never flees, and the "refused yield" trigger is gone (7.7; `HEROES_V2.md` 6.13 decides which
 kind a hero is). Section 19.2 lists what changed.
 
+**Owner answers (2026-11-18) applied here.** No one needs to be "civil" in battle: a hero's pushes, throws and pulls
+may land anyone in lava, fire, the void or off a cliff, on purpose, while its own movement still never takes it into
+a hazard (5.1.13, `HEROES_V2.md` 6.17); and any hero or NPC with explosives may breach walls (5.2's "open the way",
+`docs/design/breaching.md`). Section 19.2, item 4.
+
 ---
 
 ## 0. The request and the decisions
@@ -320,8 +325,8 @@ Section 2.
   (the strider's rule) and lava as a walkable path type. Vanilla's `LiquidBlock` collision holds an entity up only on a
   source block (level 0) with nothing of the same fluid above, so only lava sources are walkable cells; flowing lava
   stays a hazard (the hero is fire-proof there, but sinks). While fighting it never stands on lava or fire for more
-  than 2 s (no enemy can follow, so that counts as unreachable: 5.1.9); escaping, it may cross a lava lake (7.7). The
-  hazard rules (§6.12) still keep everyone's knockback away from lava.
+  than 2 s (no enemy can follow, so that counts as unreachable: 5.1.9); escaping, it may cross a lava lake (7.7). Its
+  enemies get no such care: a lava lake it can walk on is a place to push them into (§6.17).
 
 ### 1.14 Combining traits
 
@@ -708,9 +713,13 @@ would shadow the core animation (§4.5). The validator refuses such an id (NOT L
     bonuses are on.
 11. **Moves are not changed by mobility**: ranges, damage, frames and cooldowns keep the validator's caps (§14.1).
 12. **No carrying** (1.15): grabs only on the ground; the validator refuses a grab in an aerial window.
-13. **Hazards**: no leap, glide, landing or dive into lava, fire, powder snow over a drop, the void or next to a drop
-    deeper than the safe fall distance, escaping included (a fire-proof hero excepted for lava and fire); the
-    knockback it deals stays hazard-aware for every receiver (§6.12).
+13. **Hazards, for its own body only**: no leap, glide, landing or dive of its own into lava, fire, powder snow over a
+    drop, the void or next to a drop deeper than the safe fall distance, escaping included (a fire-proof hero
+    excepted for lava and fire); a dash or a charge stops short of an edge. What it does to its enemies is another
+    matter since the owner's answer of 2026-11-18 ("its fine for heroes abilities to push someone of a cliff or to
+    lava"): its knockback, throws and pulls land at full strength wherever they send an enemy, a player, an NPC or a
+    hero alike, and it may aim them at lava, fire, the void or a cliff on purpose (§6.17; the first draft's
+    hazard-aware knockback is gone). Its own side is never pushed by its moves.
 14. Creative and spectator players never count (as §6.1). Nothing else in this list reads whether an enemy is a
     player.
 15. **Fighting versus escaping** (in every fight; replaces the first draft's "no escape links", rule 5.1.15). While
@@ -782,7 +791,9 @@ ends, so a hero never holds up its raid: on its own end condition, when the raid
    doors the soldiers need no help and the hero takes another goal): it goes to the inside of the gate and opens it as
    a player would (the door itself, a button or a lever; a player's blocking blocks broken at player speed under
    `Reach`'s may-break rule) or attacks the defenders holding it from behind. Done when every living raider is inside
-   the walls box.
+   the walls box. From outside (owner, 2026-11-18: "its ok for any hero or npc that usrs explosives to breach
+   walls"): a hero that carries TNT breaches the wall by hand as any NPC breacher does, and a hero with an explosive
+   move may blast the breach spot instead (`docs/design/breaching.md` 5-6, §6.18).
 2. **Hunt the hero** (`heroes_first` focus temperaments, or a defending hero seen inside): it goes for the home hero or
    the leader. Done when that hero is dead or has escaped, or is not seen inside within 60 s. (No hero yields; a
    raider with honour 60 or more does not chase a home hero that escapes, §5.4.)
@@ -798,7 +809,9 @@ ends, so a hero never holds up its raid: on its own end condition, when the raid
 
 - **Archers first at an airborne hero.** A new target goal for ranged roles (`AirborneHeroTargetGoal`, above
   today's `NearestAttackableTargetGoal`s): an enemy hero in the air (`DATA_LOCO` airborne, glide or fly) within bow
-  range and in sight is taken over any other target, then an intruding hero on the walls or inside, then the rest. It
+  range and in sight is taken over any other target, then an intruding hero on the walls or inside, then the rest.
+  One target comes before it: an enemy carrying TNT in its hand toward the walls, hero or not
+  (`docs/design/breaching.md` 7). It
   keeps the hero as its target for at least 3 s (PROPOSED), so archers do not switch as a flyer lands and takes off.
   Each arrow adds air poise (2.4), so a volley of five downs a flyer.
 - **Interception.** A hostile hero inside the walls or on them is an intruder for today's `defenceAlarm` (every 20
@@ -1734,9 +1747,9 @@ The owner added a fourth point, on escaping: an escaping hero may use any mobili
 while a fighting hero still wants to win and comes back. Section 7.7 defines the minimal rule (triggers, how long it
 stays away, once in 10 minutes, no rewards, the boss bar, morale, the way home), and 5.1.15 the fighting side.
 
-### 19.2 The owner's later decisions (2026-11-12 and 2026-11-13) and what they changed here
+### 19.2 The owner's later decisions (2026-11-12 to 2026-11-18) and what they changed here
 
-Three decisions made after the answers above (`HEROES_V2.md` section 6 has them in full). The text of 19.1 and of
+Four decisions made after the answers above (`HEROES_V2.md` section 6 has them in full). The text of 19.1 and of
 section 20 is left as it was written; where it speaks of "boss mode", "engaged players" or a "refused yield", read
 it with this list.
 
@@ -1758,6 +1771,14 @@ it with this list.
    an escape fights to the death; a hero running from its own home goes to another base or into the wild. Which kind
    a hero is belongs to its personality (`HEROES_V2.md` 6.13, 12.11), so 8.3 has no field for it. Sections 0, 5.2,
    7.6, 7.7, 8.3, 8.5, 15.1-15.9, 17, 18.1, 19.
+
+4. **No civility in battle** (2026-11-18: "its ok for any hero or npc that usrs explosives to breach walls, theres no
+   need for anyone to be "civil" in battle, so they may use the resources they have to full advantage"; "its fine for
+   heroes abilities to push someone of a cliff or to lava"). The hazard rule 5.1.13 now guards only the hero's own
+   body; its pushes land in full wherever they send an enemy and its AI aims them at edges (`HEROES_V2.md` 6.17);
+   1.13's lava lake is a trap for its enemies; 5.2's "open the way" may use TNT or an explosive move, and the
+   defenders' archers take a TNT carrier first (`docs/design/breaching.md`). Ordinary NPCs get no new movement from
+   it, only care near edges and lava (`docs/design/breaching.md` 8). Sections 0, 1.13, 5.1, 5.2.
 
 The equal-treatment review (`HEROES_V2.md` 6.16) then made the personal effects of 11.2 equal: `mend`'s heal by
 hand reaches any ally, not only an NPC; `purifier`'s, which was an extra cleanse for member players only, now lifts

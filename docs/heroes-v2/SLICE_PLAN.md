@@ -94,6 +94,13 @@ Frames below are wind-up / active / recovery in seconds; every value meets its c
 written as a share of attack power (design v1 §6.2) or as health points; the validator's caps and floors apply on top.
 "P" lists the phases a move belongs to.
 
+Battle without civility (the owner's answers of 2026-11-18, design §6.17 and §6.18): every knockback, charge, grab
+and phase shockwave below lands at full strength wherever it sends an enemy, lava, fire, the void or off a cliff
+included, and each hero's AI aims its pushes there when an enemy stands near one; nothing pushes the hero's own side,
+and its own movement still never takes it into a hazard. No move of the eight is an explosion by nature, so none
+breaks a block (§6.18 checks them move by move). Tobimaru and Ambrose have no pushing move of their own: only their
+phase shockwaves push.
+
 ### 3.1 Natsuho Komezaki: the harbour cat (F, cat, striker, physical, tsundere)
 
 **Concept.** A prickly dock brawler who insists she only fights for fish, and who would never admit she watches over
@@ -245,7 +252,7 @@ club on the shoulder. Phase 3: eyes glow, steam particles from the horn.
 | `shoulder_charge` | charge 10, speed 160%, wall stun | heavy | mid | 0.9 / 0.6 / 0.9 | 90% + knockback 3 | 1-3 |
 | `ground_stomp` | wave, radius 8, speed 8, 1 wave | area | close, mid | 1.0 / 1.0 / 0.8 | 6 fire + ignite 2 s (jump the ring) | 1-3 |
 | `gourd_swig` | self | light | any | 1.2 / 0.1 / 0.6 | heal 6 + attack +15% 8 s; prefer own health under 50% (a punish window) | 1-3 |
-| `grab_throw` | grab 2.5, throw 3, up 1 | heavy | close | 0.9 / 1.0 / 1.2 | 8 fire | 2-3 |
+| `grab_throw` | grab 2.5, throw 3, up 1 | heavy | close | 0.9 / 1.0 / 1.2 | 8 fire; thrown toward lava, fire, the void or a deadly drop within the throw's reach, else straight ahead (design §6.17) | 2-3 |
 | `meteor_club` | leap 10, radius 3 | heavy | mid, far | 1.0 / 0.6 / 1.2 | 120% fire; followup `ground_stomp` 100% | 3 |
 
 Ultimate `iron_mountain_crash` (1.8 / 2.0 / 1.6; club raised high: "Hold still, this'll be fun!"): a leap of range 10 (the `leap` maximum),
@@ -678,8 +685,10 @@ shake, crow peck.
     (`threeHeroesPressOneTarget`), and none of them lands a move before its own opening gap plus wind-up (design
     §6.3); a stun stops a player as it stops an NPC and cannot be chained by a second hero (`stunStopsPlayerLikeNpc`);
     blows from several attackers on one hero all land in full, one hurt cooldown per attacker (design §6.2,
-    `hitCapHoldsForNpcAndPlayerHits`); knockback toward lava or a drop is reduced for every receiver
-    (`grabHoldsAndThrowsSafely`).
+    `hitCapHoldsForNpcAndPlayerHits`); terrain is a weapon against every receiver alike (the owner, 2026-11-18): a
+    push toward lava or a drop keeps its full strength, a grab throws toward a lethal edge in reach, and a death
+    there is the pusher's kill (`grabThrowsTowardALethalEdge`, `knockbackFullStrengthIntoLava`,
+    `terrainDeathIsThePushersKill`; design §6.17).
 15. `BossRulesTest.referenceDuel` computes each slice hero's boss health at level 10 against a reference player (iron
     sword, 1.6 swings per second, 50% of swings landing, vanilla armour reduction, weak points that an iron sword
     triggers): between 20 and 60 s of landed hitting for one player, as a leader and as a non-leader (a fight lasts two

@@ -647,3 +647,70 @@ proposes; B1 (format) and B3 (engine) of `HEROES_V2.md` 15.8 decide and build th
 17. **Move weights by state or situation** need no new field (review): `prefer_when` (x2) with the conditions
     `phase`, `self_state` and `adds_alive` writes them all (the Wither's volley in phase 1, Grave Grasp while unbound,
     the dragon's breath, roar and ultimate while perched, her crystal and perch while none stands).
+
+## Battle without civility (2026-11-18, `HEROES_V2.md` 6.17 and 6.18, `docs/design/breaching.md`)
+
+The owner's answers of 2026-11-18 ("its ok for any hero or npc that usrs explosives to breach walls, theres no need
+for anyone to be "civil" in battle"; "its fine for heroes abilities to push someone of a cliff or to lava") reverse
+three decisions already built and add two engine pieces. `HEROES_V2.md` 15.9 (T1-T4) carries the work; this list is
+what the Java side must change, test by test, and what other documents' owners should revisit.
+
+1. **Hazard-aware pushes are gone for enemies** (A3's "Hazard-aware pushes for everyone" above: a push toward lava or
+   a drop of more than 3 cut to a third). `HeroEffects.knockback` no longer calls `hazardAhead` for an enemy; the cut
+   survives only for a push a move gives its own side (none in the slice). `BossRules.safeKnockback`,
+   `HAZARD_KNOCKBACK`, `HAZARD_LOOKAHEAD` and `HAZARD_DROP` stay only for that case; `BossRulesTest
+   .hazardKnockbackAndStunsThatCannotChain` checks the opposite for an enemy (full strength toward lava).
+2. **The grab throws toward lethal edges** (A5's "Grab" above: straight ahead, then 45, 90 and 135 degrees, then
+   behind, the first whose landing held no lava, fire or deep drop; softened to 0.5 when none). `HeroCombat
+   .throwGrabbed` now tries the directions whose landing is a lethal edge first (`HeroEffects.landingHazard` turns
+   from a refusal into the search), nearest first, then straight ahead, never softened. GameTest
+   `grabHoldsAndThrowsSafely` becomes `grabThrowsTowardALethalEdge`.
+3. **The phase shockwave pushes only enemies, unsoftened** (`HeroBoss.shockwave` pushed everyone but the hero, its own
+   adds and display copies, softened near lava). Its own side is left where it stands. GameTest
+   `shockwavePushesOnlyEnemies`.
+4. **A hero's own hop checks hazards** (new): `HeroCombat.hop` (`move_self`: Yugen's vanish, Natsuho's Nine Lives and
+   cat reflex, Ambrose's fume step) is shortened to stop short of lava, fire, the void or a drop past the safe fall, as
+   dashes and leaps already are (`MobilityRules.Rule.HAZARDS`, unchanged: it was always about the hero's own body).
+5. **Aiming at edges** (new, `logic/hero/EdgePlay`, pure): the arena sample (6.12) gains lethal and harmful edges round
+   each engaged enemy with the receiver's immunities; `MoveSelector` multiplies a push move's score by 1 + the edge's
+   value; the spacing goal walks round to the far side (3 s, then 10 s off for that target); a charge's line runs
+   through the target toward the edge; `heroes.edgePlay` (true). Unit test `EdgePlayTest`; GameTest
+   `heroCirclesToPushTowardAnEdge`.
+6. **Kill credit** (new, `logic/hero/KillCredit`, pure, shared with ordinary NPCs): a death by terrain within 15 s of an
+   enemy's push, throw, pull or blow is that enemy's kill; a push with no damage is recorded as a hit of 0 in the
+   receiver's `CombatTracker`; the receiver's last attacker is refreshed every second while it falls, burns or is in
+   lava, the void or water (vanilla forgets after 100 ticks); the hero kill feed uses vanilla's `.player` death keys
+   (`death.fell.assist`, `death.attack.lava.player`, `death.attack.outOfWorld.player` ...). The rewards of 6.13 already
+   counted "a fall" for the last side to hurt the hero; terrain of every kind and zero-damage pushes now count too.
+   Unit test `KillCreditTest`; GameTest `terrainDeathIsThePushersKill`.
+7. **Revival where it fell**: the nearest safe standable cell within 16 blocks, never lava, fire or over the void; at
+   home after a death in the void (3.4, 12.3). GameTest `heroRisesSafeAfterALavaDeath`.
+8. **The `explosive` move property** (new format piece, 12.7 and 6.18): `{ power 1-4, fire }`, a skill at most 2, an
+   ultimate at most 4; only `shot`, `bolt`, `volley`, `barrage`, `nova`, `zone`, `rain`, `leap`, `dive`; at most 6
+   blasts per use with powers adding up to 8 (a rain's, volley's or barrage's at power 1); class raised to `heavy`;
+   `fire` only on a fire move. The blast is `Level.explode` with interaction `MOB` (NeoForge's mob-griefing check) and
+   an `ExplosionDamageCalculator` whose `shouldDamageEntity` is false and `getKnockbackMultiplier` is 0 (checked in the
+   1.21.1 sources: vanilla's explosion skips both for every entity, items included). The pick scores 0 an explosive
+   move whose blast at the target would reach its own side's blocks; `heroes.explosiveBlocks` (true). No slice move
+   has it; the test-only `fixture_bomber` carries the GameTests (`explosiveMoveBreaksBlocksNotPeople`,
+   `explosiveMoveSparesItsOwnBase`).
+9. **The kit sheets** are at kit version 3 by hand (a TERRAIN AND BLOCKS section in each of the eight). When herogen
+   writes the sheets (C1-C4), its template needs that section: the hero's pushing moves with their strengths, its
+   knockback resistance and safe fall or fall immunity, its fire-proofing, and whether any move is `explosive`.
+10. **For `BOSS_HEROES.md`'s revision** (its owner decides; not edited here):
+    - 4.3 and 4.5 say the Wither's moves never break blocks. Vanilla's black and blue skulls and the spawn charge are
+      explosions by nature, so Ruin Skull, Stray Skulls and Birth Blast are candidates for `explosive`. Vanilla's
+      spawn charge is power 7, over 6.18's cap of 4: either Birth Blast takes 4 or the cap rises for a legendary's
+      ultimate (a reader rule to add with B1). Vanilla's blue skull treats every block that is not wither-immune as
+      no stronger than 0.8, so it breaks obsidian; copying that needs a field of its own (`pierce_resistance`).
+    - The owner's answer keeps the Wither's breach with her hands (question 3 of its section 11).
+    - 5.3's Wing Gust "never into the void" and 6.4's rule 5 row ("hazard-aware knockback") now read: full strength,
+      and the End's void is in play, as the vanilla dragon's wings throw players off the island. Her Levitation that
+      "never stacks into fall damage" is a kit choice and may stay.
+    - 6.4's "Base safety" row: an explosive move breaks blocks (6.18), never its own side's on purpose.
+11. **For `ARTIFACTS.md`'s revision**: 4.4's "never placing, breaking or igniting blocks" stays an artifact rule unless
+    that revision wants an explosive active (it would use 6.18's property and limits); artifact passives and actives
+    that push (a pull, an updraft) land at full strength now, and the `knockback_resistance` line is worth more.
+12. **For `ROSTER_PLAN.md` content batches**: row 163's "powder shots leave fuse kegs that burst (no block damage)" was
+    written under decision 11; with 6.18 the kegs may be `explosive` (power 1-2) when its batch is authored, and row
+    167's flask grenades likewise. A sapper or bomber archetype, if one is added, is the natural user.

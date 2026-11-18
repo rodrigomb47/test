@@ -1,8 +1,9 @@
 Natsuho Komezaki - "The Harbour Cat"
 Female | cat | striker | physical | tsundere | epic
-Status: designed, not in the game yet (kit version 2, 2026-11-13: she fights the same against
-players and NPCs, and she never yields: see "When she is losing"). All numbers are first values,
-tuned after play.
+Status: designed, not in the game yet (kit version 3, 2026-11-18: she may knock you into lava or
+off a cliff on purpose, and soldiers the same: see TERRAIN AND BLOCKS. Version 2, 2026-11-13: she
+fights the same against players and NPCs, and she never yields: see "When she is losing"). All
+numbers are first values, tuned after play.
 ====================================================================================================
 
 WHO SHE IS
@@ -169,8 +170,8 @@ BOSS FIGHT
       "Nobody... corners... a cat!"
   Each phase change takes 0.8 to 2 s (her exact length is set when she is built): she takes 50% less
   damage and cannot be staggered (a glint shows it; she is never invulnerable), a shockwave pushes
-  everyone within 4 blocks back (no damage; softened near lava or a drop), she says the line, her
-  face and look change, and the bar gains a pip.
+  every enemy within 4 blocks back (no damage, at full strength even toward lava or a drop; her own
+  side stays put), she says the line, her face and look change, and the bar gains a pip.
 - Weak points:
   - Water: a splash of water makes her flinch for 1 s and deal 10% less damage for 5 s, at most once
     every 20 s. A thrown water bottle that hits her counts, and so does her getting wet (stepping
@@ -222,6 +223,23 @@ BOSS FIGHT
   her home base (a leader: at the capital, or the nearest standing base); her kit items vanish at
   death and return with her. She has no death ability of her own. A hero of her faction with the
   revival_rite talent (milestone 2) would bring her back 20 / 30 / 40% sooner, never under 30 s.
+
+TERRAIN AND BLOCKS
+(Kit version 3. The owner's answer of 2026-11-18: "its fine for heroes abilities to push someone
+of a cliff or to lava", and nobody needs to be "civil" in battle.)
+- Her pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
+  the void. They are Pounce (knockback 1), Hiss (knockback 2), Zoomies (knockback 2) and her phase
+  change's shockwave. Soldiers and other heroes get exactly the same. Her own side is never pushed.
+- She does it on purpose. When you stand near lava or a drop and one of those moves is ready, she
+  walks round to your far side first. That walk is the tell: step away from the edge.
+- Her own body never goes into a hazard: no leap or hop of hers lands in lava or past a deadly
+  drop, and Zoomies stops at the edge it sends you over.
+- A death there is her kill, in vanilla's words: "... was doomed to fall by Natsuho Komezaki",
+  "... tried to swim in lava to escape Natsuho Komezaki". In lava your dropped items burn.
+- Against her: ledges are useless (she takes no fall damage), but lava and fire hurt her in full,
+  with no 12% cap. A Knockback sword, a Punch bow or a wind charge pushes her like anyone, and she
+  is light [knockback resistance 10].
+- Blocks: none of her moves is an explosion, so she breaks no blocks in a fight.
 
 HOW TO BEAT HER
 1. Bring splash water bottles. A splash makes her flinch for 1 s and hit 10% softer for 5 s (once

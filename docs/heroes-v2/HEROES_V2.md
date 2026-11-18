@@ -80,10 +80,15 @@ Decisions (the owner confirms or corrects them; section 17 lists the real open q
 10. **Content ships in order**: a vertical slice of 8 heroes (4 female, 4 male) with every engine piece, then 8
     batches of 24, each gated by checks, a contact sheet, in-game screenshots and a short campaign.
 11. **Player-like rules hold.** No teleporting (decoys are visual and pop; dashes, leaps and charges are physical
-    pushes), abilities never place, break or ignite blocks, kit items are vanilla items bound to the hero, damage goes
-    through vanilla armour, shields and enchantments. (The first draft added "NPC wars never see boss numbers"; with
-    decision 6 they do, and 8.1 prices a hero's war power accordingly.) Superhuman mobility (decision 15) is
-    physical movement too, so it keeps this rule.
+    pushes), abilities never place blocks, kit items are vanilla items bound to the hero, damage goes through vanilla
+    armour, shields and enchantments. (The first draft added "NPC wars never see boss numbers"; with decision 6 they
+    do, and 8.1 prices a hero's war power accordingly.) Superhuman mobility (decision 15) is physical movement too, so
+    it keeps this rule. **Revised with the owner's answer of 2026-11-18** ("theres no need for anyone to be "civil"
+    in battle"): abilities still never break or ignite blocks, except a move that is an explosion by nature (the
+    `explosive` property, 6.18), which breaks blocks as a vanilla explosion of its power does and, for a fire move,
+    may start fires; and a hero's pushes, throws and pulls may land anyone in lava, fire, the void or off a cliff,
+    on purpose (6.17). Breaking at player speed with `BlockWork` (its duty, reaching a target, the Wither's hands) is
+    not an ability and was never under this rule.
 12. **The v1 owner-hero workflow is retired** (open question 2): no hero folder with owner skins, no skin payloads. The
     config folder stays for operators to override a built-in hero's kit or personality; a format-1 file still loads
     and uses a neutral fallback model.
@@ -200,13 +205,17 @@ home hero's war power is added on top, so one hero does not inflate eight soldie
 - **Spawn**: a leader at its capital's reporting station when the base is built (section 5.6); a hero joining by
   `/fc admin hero give` (milestone 1), tokens and recruitment (milestone 3). One living entity per hero id; a duplicate
   joining the level is discarded (v1 §25.1 rule).
-- **Death**: v1 revival (`heroes.reviveSeconds`, 600 s) at the home base's spawn point, whoever killed it. Owner decision
+- **Death**: v1 revival (`heroes.reviveSeconds`, 600 s) at the home base's spawn point, whoever or whatever killed it
+  (a blow, an explosion, a fall, lava or the void: a death by terrain within 15 s of an enemy's push or blow is that
+  enemy's kill, 6.17). Owner decision
   (2026-11-12): every hero, leaders included, comes back 10 minutes after its death; there is no longer a separate
   leader timer (`leaders.reviveMultiplier` is gone). A death-related ability may change that (owner, same day): the
   `revival_rite` talent (7.2) brings the faction's fallen heroes back sooner, and a hero's own `revival` block (12.3)
   sets its own delay and where it rises (a phoenix reborn where it fell, a jiangshi rising again). With both, the
   hero's own delay comes first and the talent shortens it; never under `heroes.minReviveSeconds` (30, PROPOSED), so
-  a hero cannot rise in the middle of the fight that killed it. Kit items vanish and return (v1 §7, §25.4).
+  a hero cannot rise in the middle of the fight that killed it. A hero that rises where it fell rises on the nearest
+  safe standable cell within 16 blocks (never in lava or fire, never over the void), and at home after a death in the
+  void (6.17). Kit items vanish and return (v1 §7, §25.4).
 - **The end of a losing fight** (6.13; the owner, 2026-11-13: no yield). There is no kneeling, no spare-or-finish
   choice and no "spared" state, against players or NPCs. A hero of the escaping kind breaks off at its escape
   threshold and gets away if it can (no rewards; it stays away 5 minutes); a hero of the last-stand kind, and any
@@ -219,7 +228,7 @@ home hero's war power is added on top, so one hero does not inflate eight soldie
 
 | Priority | Goal | Notes |
 |---|---|---|
-| 0 | `FloatGoal`, `StunnedGoal` | v1 |
+| 0 | `FloatGoal`, `StunnedGoal`, `LavaEscapeGoal` | v1; the lava escape is every faction NPC's (`docs/design/breaching.md` 8.2): out of lava at once, by the shortest way, drinking Fire Resistance if it carries one (6.17); not for a fire-proof hero |
 | 1 | `HeroEscapeGoal` | runs while the hero escapes (6.13, `MOBILITY_AND_WORK.md` 7.7): no moves and no basic attacks, any mobility, toward its refuge; cornered for 3 s it lets the goals below fight. Started by `EscapeRules` when an escaping-kind hero drops under its threshold in any fight, or its raid or the base it defends is lost. (The first draft had `HeroYieldGoal` here, a kneeling hero; there is no yield) |
 | 2 | `HeroMoveGoal` | replaces v1's `HeroAbilityGoal`: picks and runs moves in every fight, whoever the enemy (section 6.3); MOVE+LOOK while a move runs |
 | 3 | `NpcMeleeAttackGoal` / `NpcRangedAttackGoal` / `HeroThrowGoal` | basic attacks, leash from aggression (v1 §8), skirmisher step-back, `keep_distance` |
@@ -846,8 +855,9 @@ phases, enrage, moves, reactions, weak points and damage are the same whether it
 another hero or a monster. The first draft's split between "field mode" (NPC wars, v1 numbers) and "boss mode" (on
 while a player was engaged) is gone, and so are the rules that existed only for players: extra damage to players
 (`damage_vs_players`), the protection from a one-hit kill, and health that grew with the number of engaged players.
-The rules that protected players now protect everyone (the per-hit cap, hazard-aware knockback, the v1 slot caps),
-the rules that answered players now answer NPCs as well (reactions, weak points, the fight-reach clock and altitude
+The rules that protected players now protect everyone (the per-hit cap, the v1 slot caps; hazard-aware knockback stood
+here too until the owner's answer of 2026-11-18 removed it for everyone, 6.17), the rules that answered players now
+answer NPCs as well (reactions, weak points, the fight-reach clock and altitude
 ceiling, the end of a fight and its rewards), and v1's rules that treated players differently are made equal (6.15).
 What stays on the players' side is presentation, because only players have screens: the boss bar, the intro title,
 the screen darkening, ground decals (drawn only where a player can see them), sounds and speech. Ordinary NPCs keep
@@ -868,6 +878,17 @@ wants: it **escapes** (with any mobility it has, possibly where nobody can follo
 Which one is decided per hero from its temperament and traits, with an authored override and a few situation rules
 (some never abandon their home or their leader): 6.13. A dead hero comes back after 10 minutes (3.4); an escaped hero
 gives no rewards.
+
+**Owner decision (2026-11-18): no civility in battle.** Answering whether the Wither may breach walls: "its ok for any
+hero or npc that usrs explosives to breach walls, theres no need for anyone to be "civil" in battle, so they may use
+the resources they have to full advantage"; and later the same day: "its fine for heroes abilities to push someone of
+a cliff or to lava". So the first draft's "no cheap deaths, for anyone" is gone: a hero's knockback, throws, pulls,
+charges, waves and shockwaves land at full strength wherever they send their receiver, and its AI aims them at lava,
+fire, the void and cliffs when an enemy stands near one (6.17), against a player, an NPC or a hero alike. A move that
+is an explosion by nature breaks blocks as a vanilla explosion does (6.18). What stays: nothing pushes the hero's own
+side, the hero's own movement still never takes it into a hazard (`MOBILITY_AND_WORK.md` 5.1.13), and every telegraph
+and cap of this section holds. Ordinary NPCs defend themselves as a careful player does, and use TNT to breach walls
+(`docs/design/breaching.md`).
 
 The owner plays single-player only (ROADMAP phase 4), so nothing here is balanced for several players at once: the
 rules are written for "an enemy" and "a side" and simply hold for more than one player, with no extra numbers for it.
@@ -1009,7 +1030,7 @@ pick by weighted random among candidates with score > 0; none -> keep spacing an
 | `wave` | grounded enemies the expanding ring passes | `radius` 6-16 (10), `speed` 6-12 blocks/s (8), `waves` 1-3, `interval` 0.6-1.5 s | radius grows per tick; hits when `onGround` and the front is within 0.75 blocks: **jump to dodge** | damage x 1.5 x waves |
 | `rain` | enemies within 1-2 blocks of each impact | `count` 3-12 (6), `radius` 3-8 (5) around the target, `duration` 1-4 s, impact `delay` 0.75-1.0 s | each impact gets its own decal; zone caps per receiver (1.5 x slot) | damage x 1.5 x count / 3 |
 | `sweep` | enemies a rotating line passes | `range` 4-12 (8), `arc` 60-180 (120), `duration` 1-3 s, `width` 1-2 | a ray each tick from the hero's eyes, stopped by blocks (`level.clip`): leave the arc or break line of sight | damage x 1.5 x arc / 60 |
-| `grab` | the target, if reached | `range` 2-3 (2.5), `throw` 1-4, `up` 0-1 | always `unblockable` and `heavy`; holds 1 s (each tick the target's velocity is set toward the hero's hand, `setDeltaMovement` + `hurtMarked`; never a teleport; the receiver keeps its own actions: a player can still turn and use items, an NPC can still swing), then throws (hazard-aware, 6.12); a miss costs a 1.2 s recovery | damage + throw / 2 + 2 |
+| `grab` | the target, if reached | `range` 2-3 (2.5), `throw` 1-4, `up` 0-1 | always `unblockable` and `heavy`; holds 1 s (each tick the target's velocity is set toward the hero's hand, `setDeltaMovement` + `hurtMarked`; never a teleport; the receiver keeps its own actions: a player can still turn and use items, an NPC can still swing), then throws: toward a lethal edge (lava, fire, the void, a deadly drop) when one lies within the throw's reach, else straight ahead, at full strength either way (6.17); a miss costs a 1.2 s recovery | damage + throw / 2 + 2 |
 | `counter` | the attacker | `stance` 0.8-2 s, `absorb` 50-90% (80), `ranged` false | a `HeroStatus` stance flag read in `onIncomingDamage`; the stance is the move's wind-up for the class minimum and the riposte is instant; the riposte's effects stay within the skill cap; arrows are not countered unless `ranged` | riposte x 0.75 |
 | `barrage` | the target, shot after shot | `count` 3-10 (5), `interval` 0.15-0.6 s, `projectile`, optional `per_shot` effect lists (cycled) | sequential v1 `shot`s re-aimed at fire time | damage x count x 0.75 |
 
@@ -1050,9 +1071,10 @@ any passive. The first draft's `on_yield` is gone with the yield: the reader lea
   unlocked it at level 15; changed with the owner's answer of 2026-11-12, section 8); epic, legendary and every
   leader have 3.
 - **Transition** (0.8-2.0 s): 50% less damage taken and no stagger (super armour, shown by a glint), never
-  invulnerable; a shockwave pushes everyone within 4 blocks back (strength 2, no damage, hazard-aware) to reset
-  spacing; the phase line, a face change and the phase look (`p2_`/`p3_` bones, `_p2.png`, eyes glowing in the last
-  phase); then the new moves, stats or states apply, and the boss bar gains its phase pip (`◆◆◇`).
+  invulnerable; a shockwave pushes every enemy within 4 blocks back (strength 2, no damage, at full strength wherever
+  it sends them, 6.17; the hero's own side is left where it stands) to reset spacing; the phase line, a face change
+  and the phase look (`p2_`/`p3_` bones, `_p2.png`, eyes glowing in the last phase); then the new moves, stats or
+  states apply, and the boss bar gains its phase pip (`◆◆◇`).
 - Validator NOTE when a phase adds no new move, add, state or mechanic ("phase 2 only changes numbers").
 - `rebirth` (legendary only): once per fight, lethal damage instead starts a final phase at 30%; the bar shows it as
   an extra pip from the start, so it is never a surprise.
@@ -1150,9 +1172,12 @@ of this section), so nothing in this section or the next ones depends on whether
 
 - Every 2 s while fighting (6.1) the hero samples its surroundings: ceiling height (3 blocks or less: no `leap`, no
   knock-up moves, thrusts preferred), water and lava along dash and charge paths (those moves are skipped), drops over
-  4 blocks along a path (dashes and charges stop short), open sky (needed by visual lightning and `rain` outdoors).
-- **Hazard-aware knockback** on every receiver (a player, an NPC, a hero): if the landing area 4 blocks away has lava,
-  fire, a drop over 6 or the void, the push is cut to 0.5 strength. No cheap deaths, for anyone.
+  4 blocks along a path (dashes and charges stop short), open sky (needed by visual lightning and `rain` outdoors),
+  and the lethal edges round each engaged enemy (6.17). The first three keep the hero itself out of hazards; the last
+  is for its enemies.
+- **Terrain is a weapon** (owner, 2026-11-18; this replaces the first draft's "hazard-aware knockback", which cut a
+  push toward lava, fire, a drop over 6 or the void to 0.5 strength, "no cheap deaths, for anyone"): every push a
+  hero gives an enemy lands at full strength wherever it sends it, and the hero may aim it there on purpose (6.17).
 - **Unreachable target**: a hero first uses its mobility, at once, to reach an enemy (a player or an NPC archer alike)
   on a pillar, in a pen, on a wall or behind one (climb, leap, glide, flight, a reach flight outside aerial phases; on
   a target that left no cell beside it, a basic attack from the cling, the jump's apex or the air:
@@ -1271,17 +1296,18 @@ of this section), so nothing in this section or the next ones depends on whether
   switch off, so filling its poise staggers it for 2.5 s where it is, and arrows bring a flyer down (air poise,
   `MOBILITY_AND_WORK.md` 2.4). That is how an escape is stopped. Killed on the run, it has died, and the rewards
   below drop.
-- **Rewards** come only with a death, and go to whoever killed it, by the same rule for a player and an NPC side.
-  The winning side is the side of the last person (a player, an NPC or a hero) that hurt it in its last 15 s; a
-  monster's blow or a fall then counts for that side; a member player is on its faction's side, and a player with no
-  faction is a side of one. Where it died: XP orbs (`7 x level`, at most 100), a `hero_crest` trophy item (named; one
-  per hero per winning side per in-game day, a side being a faction or a factionless player) and its non-kit gear
-  (v1). A player picks them up; the NPCs of a winning NPC side collect them as they collect loot and experience orbs
-  after a fight (they pick up orbs like players) and carry them home to their storehouse, where the crest stays as a
-  trophy. Killed with no person involved, it drops
-  its non-kit gear as any NPC does, with no orbs and no crest. An escape gives nothing to anyone. Milestone 3: a
-  chance of a token fragment at a death, dropped and collected the same way (a faction's director can use tokens,
-  v1 §25).
+- **Rewards** come only with a death, and go to whoever killed it, by the same rule for a player and an NPC side. The
+  winning side is the side of the last person (a player, an NPC or a hero) that hurt it in its last 15 s; a monster's
+  blow or terrain (a fall, lava, fire, the void, drowning) then counts for that side, and a push, throw or pull counts
+  as a hurt even when it dealt no damage (6.17); a member player is on its faction's side, and a player with no faction
+  is a side of one. Where it died (in lava the orbs, the crest and ordinary gear burn; in the void they are lost: a kill
+  by terrain may cost its loot, 6.17): XP orbs (`7 x level`, at most 100), a `hero_crest` trophy item (named; one per
+  hero per winning side per in-game day, a side being a faction or a factionless player) and its non-kit gear (v1). A
+  player picks them up; the NPCs of a winning NPC side collect them as they collect loot and experience orbs after a
+  fight (they pick up orbs like players) and carry them home to their storehouse, where the crest stays as a trophy.
+  Killed with no person involved, it drops its non-kit gear as any NPC does, with no orbs and no crest. An escape gives
+  nothing to anyone. Milestone 3: a chance of a token fragment at a death, dropped and collected the same way (a
+  faction's director can use tokens, v1 §25).
 - **Not a yield: duels (milestone 3, open).** Sparring and "beat it in a duel" recruitment (7.4, section 8) used to
   end "at the yield". They need their own non-lethal bout rule instead, agreed before the first blow (for example
   first to a set share of health), which is a different thing from giving up a real fight: open design point 6 of
@@ -1305,7 +1331,10 @@ section); none of them reads whether an entity is a player.
    player" is gone, for players and NPCs alike): rules 1-3 and each hero's own opening gap (6.3) are what a ganged-up
    target has. Crowds count the other way too: a hero keeps one hurt cooldown per attacker (6.2), so every attacker's
    blows land on it in full.
-5. Hazard-aware knockback for every receiver (6.12).
+5. Terrain is the same for every receiver (owner, 2026-11-18; the first draft's hazard-aware knockback is gone): a
+   hero's pushes may land a player, an NPC or a hero in lava, fire, the void or off a cliff, at full strength and on
+   purpose, and every receiver defends itself by the same rules (6.17); nothing a hero does pushes its own side, and
+   its own movement never takes it into a hazard (`MOBILITY_AND_WORK.md` 5.1.13).
 6. Creative and spectator players are never enemies; nothing else depends on an enemy being a player.
 7. Mobility, as counterplay rather than limits on where a hero may go (the owner accepts "unfair" abilities,
    2026-11-12): an air budget per take-off, melee only on the ground or as a telegraphed `dive` (a basic attack may
@@ -1365,6 +1394,138 @@ Balance on paper (level 10, iron gear, the numbers of 6.2 and 8.1; PROPOSED, to 
 | Hero against hero | Benika against Kagenori: about 5-9 a second each way after armour, 20-35 s of landed blows, 45-90 s of fighting with gaps, spacing and staggers. Heals are capped (a skill heal is at most 8 at the level-1 reference, about 1 health a second over a fight) and nobody regenerates in a fight; the soft enrage at 180-240 s and the unreachable rule (30 s, 6.12) end any stall. | Ends in sensible time; no change. |
 | Escape or die: does an escaper ever die? | Yes: (1) burst through its threshold, since one capped hit is 12% (more than a `flee_at` under 12%) and several hero hits can land in one tick; (2) on the run, by a stagger (2.5 s in place, where six soldiers land about 55, more than any escaper has left), by arrows (a runner has only 13-25 health left, and five arrows bring a flyer down), by a dead end, or by a faster enemy hero; (3) in a second lost fight within 10 minutes; (4) where it stands (`stands_for`). Against soldiers alone most escapes succeed: their blows are 3-5% each, so it crosses its threshold with 4-14% left and outruns them. | As meant (the owner's "uncatchable"); an escape costs the fight, 5 minutes away and every reward. Thresholds unchanged. |
 | A last-stand leader on every raid | Benika raids at the floor, every 15 minutes, and dies on most lost raids (her parties fight on to 78% losses): in the worst case she is dead 10 minutes of every 15, but back before her next raid, with no raids launched while she is dead and two or three defenders killed by each death. What could cripple her faction was the vengeance raid, sent at once with no odds check after a party had just been beaten. | **Gap, fixed**: the vengeance raid needs the normal attack odds, with the dead leader counted out (5.6). No threshold changes. |
+
+### 6.17 Terrain is a weapon (owner, 2026-11-18)
+
+"its fine for heroes abilities to push someone of a cliff or to lava". This replaces the first draft's hazard-aware
+knockback ("no cheap deaths, for anyone", 6.12), the cut of a push toward lava or a drop to a third (A3), the throw
+that never went toward lava (A5) and the softened phase shockwave (A6a); 15.9 T1 lists the code. Numbers PROPOSED.
+
+- **Full strength, for every receiver.** Knockback, a knock-up, a dash's or a charge's push, a wave, a grab's throw,
+  a pull, a tether's pull, a phase shockwave and a passive's push land at full strength wherever they send an enemy:
+  lava, fire, the void, off a cliff, into deep water. Knockback resistance, shields and armour work as vanilla's (a
+  blocked light move lands no push). The same against a player, an NPC, a hero and a monster.
+- **Edges** (`logic/hero/EdgePlay`, pure), sampled with the arena (6.12) every 2 s round each engaged enemy, in 16
+  directions out to 8 blocks:
+  - **lethal** (value 1): lava; the void (no floor down to the world's bottom); a drop whose vanilla fall damage would
+    take at least half of the receiver's health left;
+  - **harmful** (value 0.5): fire, a magma block or a campfire; powder snow; cactus or a berry bush; a shorter drop
+    past the receiver's safe fall; water, only against a hero with a `water` weak point (6.9);
+  - **ignored for a receiver that cannot be hurt there**: lava and fire for a fire-proof one (`ember_stride`, an active
+    Fire Resistance, a fire-immune mob); drops for one with no fall damage (Natsuho, Tobimaru, Slow Falling) or that
+    glides (a glider, or a flyer, which glides as a glider of its tier), though the void still counts as harmful.
+- **The AI aims at them, on purpose** (no personality gate: the owner asks for no civility; the posture weights of 6.3
+  still apply):
+  1. *The pick*: a move that pushes (a knockback of 1 or more, a charge, a grab, a pull, a wave) whose push would
+     carry its target to an edge, from a cell the hero can stand on, gets x(1 + the edge's value) on its score: up to
+     x2, the size of a `prefer_when`.
+  2. *The approach*: in NEUTRAL, with such a move ready within 2 s, the hero's spacing walks it round to the far side,
+     so the target stands between the hero and the edge (a standable cell at the move's reach, never a hazard for the
+     hero, reached within 3 s). If it does not get there in 3 s it picks as usual and leaves that edge and that target
+     alone for 10 s, so a fight never turns into circling.
+  3. *The aim, by form*: a knockback or a shockwave pushes away from the hero, so the approach does the aiming; a
+     charge or a dash runs its line through the target toward the edge, and the hero stops short of it (6.5); a grab
+     throws toward the nearest lethal edge within its throw's reach (A5's order of tries, edges first), else straight
+     ahead; a pull is picked when lava, fire or a gap lies between the hero and its target; a wave rolls out from the
+     hero as always.
+  4. *No shorter tells*: wind-ups, decals and sounds are the same next to a cliff as anywhere. The hero walking round
+     to your far side is the tell, and the kit sheets say so.
+- **What stays forbidden.**
+  - *Its own side*: no move pushes, throws or pulls a member of the hero's side or of a pact ally (effects reach
+    enemies only, as before; the phase shockwave now pushes only enemies). A move made to move allies (none in the
+    slice) keeps the old cut toward a hazard.
+  - *Its own body*: no leap, hop, dash, charge, glide, landing or dive of its own into lava, fire, the void or past its
+    safe fall (`MOBILITY_AND_WORK.md` 5.1.13, a fire-proof hero excepted for lava and fire); a dash or a charge stops
+    short of the edge it sends its target over, and a hop of its own (`move_self`: Yugen's vanish, Natsuho's Nine
+    Lives) is shortened to stop short of a hazard (today's hop is not checked: T1).
+  - *No carrying*: knock-ups lift at most 1 block, grabs hold at most 1 s and only on the ground, and no hero grabs in
+    the air (`MOBILITY_AND_WORK.md` 5.1.12): nobody is flown out over the void and dropped.
+  - *No new hazards*: moves never place lava, fire or water (decision 11); only an explosive fire move may start fires
+    (6.18).
+  - Creative and spectator players are never enemies; nothing else reads whether anyone is a player.
+- **How everyone defends**, one rule set for faction NPCs and heroes (`docs/design/breaching.md` 8), players by their
+  own play:
+  - *the edge sense*: with a pusher within 8 blocks, it prefers cells with no lethal edge at its back;
+  - *out of lava at once* (`LavaEscapeGoal`, 3.5), drinking Fire Resistance when it carries one, then into water if
+    any is near;
+  - *the water landing* for one that carries a water bucket;
+  - *a hero's own mobility*: an acrobat's air jump or wall kick corrects a push, a glider, or a flyer (which glides as a
+    glider of its tier), opens its glide over a drop and lands unhurt (`MOBILITY_AND_WORK.md` 1.3), a climber grips the
+    face it falls past once its 0.5 s are over, many heroes have a long safe fall or none at all, and fire-proof
+    heroes ignore lava; knockback resistance (a vanguard's 30, Benika's Rage and Ilsabet's Bulwark +30) shortens every
+    push.
+- **Damage.** Terrain has no attacker, so the per-hit cap does not hold it back (6.2): lava, fire, the void and a fall
+  hurt a hero in full, except the downing fall of `MOBILITY_AND_WORK.md` 2.4, which stays one capped hit. A boss hero
+  survives most falls and climbs out of lava badly hurt; a soldier or a player in iron dies in lava within seconds
+  unless it gets out. That is the boss's durability, not a rule about who is pushed.
+- **Kill credit and the kill feed** (`logic/hero/KillCredit`, pure, shared with ordinary NPCs): a death by terrain (a
+  fall, lava, fire, a magma block, the void, drowning, freezing, suffocation, a cactus or a berry bush) within 15 s of
+  an enemy's push, throw, pull or blow is that enemy's kill, the newest one's, whoever died. A push counts even with
+  no damage: it is recorded in the receiver's combat tracker as a hit of 0 by the pusher. The words are vanilla's
+  own death messages with that killer ("was doomed to fall by", "fell too far and was finished by", "tried to swim in
+  lava to escape", "walked into fire while fighting", "was burned to a crisp while fighting", "walked into the danger
+  zone due to", "didn't want to live in the same world as", "drowned while trying to escape"), in the hero kill feed
+  with faction names (ROADMAP phase 4) and in vanilla's own message for a player. Vanilla keeps an attacker for 5 s,
+  so the receiver's last attacker is refreshed every second while it falls, burns or is in lava, the void or water,
+  up to the 15 s. The kill counts in `HeroState` and for combat XP, and a hero's rewards go to the pusher's side
+  (6.13).
+- **Revival**: a hero killed by terrain returns after its 10 minutes, at home, as from any death (3.4); a
+  `where_it_fell` revival rises on the nearest safe cell within 16 blocks, and at home after a death in the void.
+- **Items and tokens** where anyone dies by terrain: in lava ordinary items, experience orbs and the crest burn, and
+  netherite and other fire-resistant items float up out of it (vanilla); in the void everything is lost; kit items
+  never drop (3.4); artifacts follow their design (`ARTIFACTS.md` 11: they never burn, float up out of lava, and only
+  the void or a command destroys one, a signature then re-forming), and so do hero tokens (`BOSS_HEROES.md` 3.4-3.5:
+  fire-proof; 30 s in lava or a fall into the void makes a token lost, and it comes back to its chest spot 2 minutes
+  later). A kill by lava may cost the killer its loot: that choice is the killer's.
+- **Config**: `heroes.edgePlay` (true): false keeps the full-strength pushes but stops the aiming of the pick and the
+  approach, for an operator who wants a gentler campaign. Nothing in a hero file changes: every push move takes part.
+
+### 6.18 Explosive moves (owner, 2026-11-18)
+
+Decision 11 kept moves from breaking blocks. The owner's answer ("its ok for any hero or npc that usrs explosives to
+breach walls") opens it for moves that are explosions by nature. Numbers PROPOSED.
+
+- **The property**: a move's or an ultimate's `explosive` `{ power, fire }` (12.7). `power` is vanilla's explosion
+  power, 1-4 (a wither skull is 1, a creeper 3, TNT 4): a skill at most 2, an ultimate at most 4. `fire` (false) only
+  on a fire-element move.
+- **Forms**: `shot`, `bolt`, `volley` and `barrage` (at each projectile's impact), `nova` and `zone` (at its burst; a
+  pulsing zone only on its first pulse), `rain` (at each impact), `leap` and `dive` (at the landing). Never a melee,
+  combo, cone, line, sweep, wave, charge, dash, grab, chain, counter or self move. At most 6 blasts per use, their
+  powers adding up to at most 8 (two TNT); a rain's, volley's or barrage's blasts are power 1 (ADJUSTED).
+- **Class**: at least `heavy` (ADJUSTED), so every blast has a 0.8 s wind-up, a ground decal (a disc of the blast's
+  reach at each blast point) and its sound.
+- **What it breaks**: at each blast point, a vanilla explosion of that power (`Level.explode`, interaction `MOB`) with
+  an `ExplosionDamageCalculator` that hurts and pushes no entity (`shouldDamageEntity` false, `getKnockbackMultiplier`
+  0): the move's own effects do all the hurting and pushing, under every cap of this section, and dropped items, end
+  crystals and creepers are untouched by the blast. Blocks break by vanilla's rules: blast resistance decides
+  (bedrock, obsidian, crying obsidian, reinforced deepslate, end portal frames, barriers and anything as strong never
+  break), water and lava absorb a blast, TNT in reach is lit. Drops follow vanilla's `mobExplosionDropDecay` (true by
+  default: each broken block drops with a chance of 1 in the power). With `fire`, vanilla's explosion fire, as a
+  ghast's fireball or a bed starts.
+- **When**: in any fight, wherever it is (a hero's moves run only in fights): a duel in the open, a defence, a raid.
+  On a raid whose soldiers are held outside, a hero with an explosive move may blast the breach spot that
+  `docs/design/breaching.md` 6.2 picks: the one use of a move against a block, in that raid goal only.
+- **Its own side, player-like**: a player does not blow up their own base on purpose, so the pick (6.3) scores 0 an
+  explosive move whose blast at the target's place would reach (about 1.7 x its power in blocks) a block of its own
+  side's planned buildings or anything inside the walls box of a base of its faction or a pact ally. A hero defending
+  its own walls uses its other moves there. Once the wind-up starts, collateral is real: the blast lands where the
+  move lands, on whoever's blocks are there.
+- **Terrain only**: the blast is not damage. The move's damage stays its element's: Blast Protection does not reduce
+  it and it is not `#is_explosion` damage (for the dragon's `blast` weak point, `BOSS_HEROES.md` 5.4).
+- **Switches**: the game rule `mobGriefing` false (NeoForge's per-entity check of the `MOB` interaction) keeps every
+  block whole while the move's effects still land; so does `heroes.explosiveBlocks` false. Both default to breaking:
+  the owner wants no civility.
+- **Equal treatment**: blocks are blocks; a player's house and a faction's hall break alike, and nothing reads whose.
+- **Look and sound**: vanilla's explosion particles and sound by id (`SOUND.md` rules).
+- **The slice has none.** No move of the eight is an explosion by nature, checked move by move: Benika's slams, Meteor
+  Club and Iron Mountain Crash are a club's impacts, which break no blocks as vanilla's mace does not; Ambrose's vials
+  shatter like splash potions; Tobimaru's smoke bomb is smoke; Kagenori's Heaven Split is a harmless flash; Yugen's
+  foxfire is cold flame. A test-only fixture hero, `fixture_bomber`, carries the engine's tests (14.5). The first
+  content users would be the boss heroes, if `BOSS_HEROES.md`'s revision gives the Wither's skulls and Birth Blast
+  their vanilla blasts, and roster rows that are explosives by nature when their batch is authored (row 163's fuse
+  kegs, row 167's flask grenades: `notes/kit-gaps.md`, "Battle without civility").
+- **Heroes and TNT** are a separate thing: any hero may carry TNT and breach a wall by hand exactly as an ordinary NPC
+  does, at the same speed and by the same rules (`docs/design/breaching.md` 5).
 
 ---
 
@@ -1802,7 +1963,7 @@ strict reporting). Added: colours are `"#RRGGBB"`; part ids are `<category>/<nam
 | `voice` | no | by gender and temperament | 12.14 |
 | `lines` | no | temperament banks | 12.15 |
 | `recruit`, `relationships` | no | by temperament / none | 12.16 (read from milestone 1, used from milestone 3) |
-| `revival` | no | none: 10 minutes, at home (3.4) | the hero's own death ability: `seconds` (30-3600, when it rises), `where` (`home`, `where_it_fell`, `nearest_base`), optional `at` (`any`, `night`: it rises at the first nightfall after the delay) and the `revived` line it says; `herogen check` NOTEs a `revival` on a hero whose kit text never mentions death or rebirth. Candidates when their batch is authored: the phoenixes, the jiangshi, the reaper, vampires and other undying archetypes |
+| `revival` | no | none: 10 minutes, at home (3.4) | the hero's own death ability: `seconds` (30-3600, when it rises), `where` (`home`, `where_it_fell` (the nearest safe cell within 16 blocks, never in lava, fire or over the void; at home after a death in the void, 6.17), `nearest_base`), optional `at` (`any`, `night`: it rises at the first nightfall after the delay) and the `revived` line it says; `herogen check` NOTEs a `revival` on a hero whose kit text never mentions death or rebirth. Candidates when their batch is authored: the phoenixes, the jiangshi, the reaper, vampires and other undying archetypes |
 | `mobility` | no | from archetype (tier 1) | primary and secondary trait with tier ceilings, carrier, aerial phases, travel, avoid: `MOBILITY_AND_WORK.md` section 8 |
 | `art` | yes (source) | - | 12.5 (source file only) |
 | `animations` | yes (source) | - | 12.6 (source file only) |
@@ -1869,6 +2030,7 @@ because everything is there from level 1: section 8) plus:
 | `channel` | `{ interrupt }` % 5-30 | none | breakable by that share of max health in damage (weak point `channel`) |
 | `telegraph` | `{ shape, color }` | from form | decal override (`disc`, `strip`, `fan`, `ring`, `landing`, `impacts`, `none` for light moves) |
 | `per_shot` | list of effect lists | none | `barrage` only: each shot cycles to the next list |
+| `explosive` | `{ power 1-4, fire }` | none | the move is an explosion by nature and breaks blocks as a vanilla explosion of that power does (6.18): a skill at most 2, an ultimate at most 4; `fire` (false) only on a fire move; only on `shot`, `bolt`, `volley`, `barrage`, `nova`, `zone`, `rain`, `leap` and `dive`, at most 6 blasts per use with powers adding up to 8 (a rain's, volley's or barrage's at power 1); the class is raised to at least `heavy`; each misuse ADJUSTED or left out with the reason |
 
 ### 12.8 `ultimate`
 
@@ -2663,7 +2825,9 @@ adds these rules (same outcomes and message format as v1 §26):
   move list; followups and reaction moves exist; followup strings at most 4 moves long, and a move may follow itself only
   when it is `repeatable` (the string limit then stops it); `per_shot` only on
   `barrage`; new forms' parameters in range; new effects' recipient classes; cooldown floors with the new weights
-  (6.5);
+  (6.5); `explosive` (6.18) only on its forms, its power within the skill's or the ultimate's range and the blasts
+  of one use within 6 and a total power of 8 (ADJUSTED), a `fire` blast only on a fire move (PART LEFT OUT
+  otherwise), the move raised to at least `heavy` (ADJUSTED);
 - boss: phases from 100 down (the first is read as 100); each later phase adds a move, state, add or mechanic (NOTE otherwise); at least one
   weakness (NOTE); at least one far-band move or a gap closer (NOTE); `rebirth` only for legendary heroes; the removed
   fields of 12.10 (`damage_vs_players`, `defeat`, token and per-player fields) are read and ignored, each with its
@@ -2749,7 +2913,9 @@ Static (`workers_static`): `builtinHeroesLoad`, `heroSyncedFieldsDefaults`, `leg
 Each its own batch: `heroMoveSetsActionAtWindup`, `heroHitLandsAfterWindupFrames`, `heroStunInterruptsWindup`,
 `heroSpeedScalesFrames`, `staggerAtFullPoise`, `phaseTransitionAtThreshold`,
 `telegraphDecalsGrowAndClean`, `comboStrikesTimed`, `chargeWallStagger`, `waveMissesJumpingTarget`,
-`rainImpactsAfterDelay`, `sweepStopsAtBlocks`, `grabHoldsAndThrowsSafely` (never toward lava), `counterAbsorbsMelee`,
+`rainImpactsAfterDelay`, `sweepStopsAtBlocks`, `grabThrowsTowardALethalEdge` (replaces `grabHoldsAndThrowsSafely`,
+which checked the opposite: a grab beside a lava pool throws an NPC soldier and a mock player alike into the lava at
+full strength, and with no edge in reach throws them straight ahead, 6.17), `counterAbsorbsMelee`,
 `barrageReaims`, `barrierBreaksAfterHits`, `decoyPopsAndHasNoShadow`, `guardBreakDisablesShield` (a mock player's
 and an NPC soldier's raised shield, the same seconds), `callGuardsRetargets`, `leaderSpawnsAtStation`,
 `leaderCourtDutyStaysHome`, `leaderRevivesAtCapital`, `leaderBiasesChangeRaidInterval`,
@@ -2804,6 +2970,35 @@ JSON strings inside the GameTest classes, registered for the test's duration wit
 (the `GameTestBases.register` pattern), never shipped as content, and drawn with the `_fallback` model. GameTests:
 `rareHeroAuthoredThirdPhaseAtLevelOne`, `legendaryRebirthStartsFinalPhase`, `bowHeroShootsRealArrows`,
 `summonerHeroSummonsWithinCaps`.
+
+**Battle without civility** (the owner's answers of 2026-11-18, 6.17 and 6.18; tasks T1 and T2 of 15.9; each its own
+batch, on top of the counts below):
+
+- `knockbackFullStrengthIntoLava`: a strength-2 knockback beside a lava pool sends an NPC soldier and a mock player
+  into it, the same distance as on open ground (the old cut to a third is gone).
+- `heroCirclesToPushTowardAnEdge`: a fixture hero with a knockback move walks round a target that stands 2 blocks
+  from a 20-block drop and picks the push (its score doubled); with no edge near it picks as usual; the same for an
+  NPC soldier and a mock player as the target; with `heroes.edgePlay` false it does not circle and the push is still
+  full strength.
+- `terrainDeathIsThePushersKill`: an NPC soldier and a mock player pushed off a 20-block drop die as the hero's kill
+  with vanilla's "was doomed to fall by" message, and pushed into lava with "tried to swim in lava to escape"; a push
+  that dealt no damage counts; a death 16 s after the push does not.
+- `shockwavePushesOnlyEnemies`: a phase transition beside lava pushes an enemy soldier and a mock player in and leaves
+  the hero's own soldier where it stood.
+- `chargeStopsShortOfTheEdgeItsTargetGoesOver`: a charge through a target standing at a cliff's edge sends the target
+  over and stops the hero on the edge (the hero's own hazard rules hold, `MOBILITY_AND_WORK.md` 5.1.13).
+- `heroRisesSafeAfterALavaDeath`: a fixture with `revival.where: where_it_fell` killed in lava rises on the nearest
+  safe cell; killed in the void, at home.
+- `explosiveMoveBreaksBlocksNotPeople`: `fixture_bomber`'s explosive shot at a stone-brick wall opens vanilla's hole,
+  deals only its authored damage to an NPC soldier and a mock player beside it (the same numbers for both), leaves an
+  obsidian block and a dropped item whole and lights a TNT block in reach; with `mobGriefing` false, or
+  `heroes.explosiveBlocks` false, no block breaks and the damage is the same.
+- `explosiveMoveSparesItsOwnBase`: inside its own test base's walls box the fixture never picks its explosive move,
+  outside it does.
+
+The fixture `fixture_bomber` (a test-only marksman with an explosive `shot` of power 2 and an explosive `rain`) joins
+the four fixture heroes above; the ordinary NPCs' side (the edge sense, the lava escape, TNT breaches) is tested in
+`docs/design/breaching.md` 11.2.
 
 These 61 (41 in the two lists above, 12 talent tests, 4 fixture tests and the 4 static ones) come on top of the v1
 ability GameTests (v1 §31.2, about 26, built in A3 and A4): about 87 new GameTests. The mock player is a
@@ -4787,6 +4982,21 @@ need A8's adds and R1-R3's artifact rules for the signatures); B4 needs the lead
 | B6 | Sound: the two sound sets and the add sounds, the new slots (`rebirth`, `calling`, `linger`, `mobility.break`, `mobility.wings`) | S1, S2 | M | `sfxgen check` clean; previews for the owner |
 | B7 | Content: the two hero source files and the `hollow_star` and `spirecore` artifact files; the kit sheets regenerated from them | B1, B5, R1 | M | `herogen check` and `checkHeroes` clean; 14.4's gates 1-3 |
 | B8 | Verification and release: the GameTests and campaigns of `BOSS_HEROES.md` 9, README "Boss heroes", BALANCE rows, the config file, jar and SHA-256 | all of B1-B7 | M | the release checklist (`HANDOFF.md` section 7) |
+
+### 15.9 Battle without civility (owner, 2026-11-18; 6.17, 6.18 and `docs/design/breaching.md`)
+
+The owner's answers on breaching and lethal terrain. T1 and T2 change engine code that is already built (A3's pushes,
+A5's grab throw, A6a's phase shockwave), so they go in right after A12 and before V1, so that the slice's GameTests
+check the new rules; T3 is the ordinary NPCs' half (`docs/design/breaching.md` X5) and lands with T1, so soldiers can
+defend themselves the day heroes start aiming at edges. The TNT expert and explosive breaching by NPCs are ROADMAP
+phase 2's own work (`docs/design/breaching.md` 12, X1-X4 and X6) and need nothing from the heroes.
+
+| ID | Task | Depends | Size | Done when |
+|---|---|---|---|---|
+| T1 | Lethal terrain for heroes' moves (6.17): `HeroEffects.knockback` no longer cuts a push toward lava or a drop (`hazardAhead` goes); `BossRules.safeKnockback` and `HAZARD_*` stay only for a push on an ally; `HeroCombat.throwGrabbed` tries lethal edges first, then straight ahead, at full strength; `HeroBoss.shockwave` pushes only enemies, unsoftened; `HeroCombat.hop` (`move_self`) stops short of a hazard, as dashes do; `logic/hero/EdgePlay` (edges with the receiver's immunities, the pick's factor, the approach, the aim by form) read by `HeroSenses` and `MoveSelector`; `heroes.edgePlay`; `logic/hero/KillCredit` (the 15 s window, a push recorded as a hit of 0, the last-attacker refresh, vanilla's death keys) feeding the kill feed, the rewards of 6.13, `HeroState` kills and combat XP; the safe cell of a `where_it_fell` revival | A5, A6, A12 | M | `EdgePlayTest` and `KillCreditTest` (new); `BossRulesTest.hazardKnockbackAndStunsThatCannotChain` and `MoveSelectorTest` updated (no cut on an enemy's push); the GameTests of 14.5 "Battle without civility", with `grabThrowsTowardALethalEdge` replacing `grabHoldsAndThrowsSafely` |
+| T2 | Explosive moves (6.18): the `explosive` field in the catalogue, reader, balance and schema; the blast in the move runner (interaction `MOB`, a damage calculator that hurts and pushes nobody); the own-side check in the pick; the blast's decal disc; `heroes.explosiveBlocks`; a hero's blast on a raid's breach spot (with `docs/design/breaching.md` X3); the fixture `fixture_bomber` | F2, A5, T1 | M | the reader and balance cases in `HeroReaderV2Test` and `HeroBalanceV2Test`; `explosiveMoveBreaksBlocksNotPeople`, `explosiveMoveSparesItsOwnBase` |
+| T3 | Ordinary NPCs and heroes against lethal terrain (`docs/design/breaching.md` 8 and X5): `EdgeSafety` in paths and spot choice, `LavaEscapeGoal` (3.5), Fire Resistance, the water landing | T1 (`KillCredit`) | M | the terrain GameTests of `docs/design/breaching.md` 11.2 |
+| T4 | Docs and release: README ("Heroes", "Combat behaviour"), BALANCE rows, the config file, the kit sheets regenerated from the hero files (their TERRAIN AND BLOCKS section, kit version 3), jar and SHA-256 | T1-T3 | S | the release checklist (`HANDOFF.md` section 7) |
 
 ---
 

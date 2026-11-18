@@ -1,8 +1,9 @@
 Yugen Kagaribi - "The Lantern Fox"
 Male | fox | marksman | arcane | schemer | epic
-Status: designed, not in the game yet (kit version 2, 2026-11-13: he fights the same against players
-and NPCs, and he never yields: see "When he is losing"). All numbers are first values, tuned after
-play.
+Status: designed, not in the game yet (kit version 3, 2026-11-18: he may knock you into lava or
+off a cliff on purpose, and soldiers the same: see TERRAIN AND BLOCKS. Version 2, 2026-11-13: he
+fights the same against players and NPCs, and he never yields: see "When he is losing"). All
+numbers are first values, tuned after play.
 ====================================================================================================
 
 WHO HE IS
@@ -173,8 +174,8 @@ BOSS FIGHT
       "Enough games. Let the lanterns speak."
   Each phase change takes 0.8 to 2 s (his exact length is set when he is built): he takes 50% less
   damage and cannot be staggered (a glint shows it; he is never invulnerable), a shockwave pushes
-  everyone within 4 blocks back (no damage; softened near lava or a drop), he says the line, his
-  face and look change, and the bar gains a pip.
+  every enemy within 4 blocks back (no damage, at full strength even toward lava or a drop; his own
+  side stays put), he says the line, his face and look change, and the bar gains a pip.
 - Weak points:
   - Iron: +15% damage from iron weapons (an iron sword, axe or other iron tool in your main hand).
     Hint line: "Iron... how crude."
@@ -221,6 +222,22 @@ BOSS FIGHT
   base); his kit items vanish at death and return with him. He has no death ability of his own. A
   hero of his faction with the revival_rite talent (milestone 2) would bring him back 20 / 30 / 40%
   sooner, never under 30 s.
+
+TERRAIN AND BLOCKS
+(Kit version 3. The owner's answer of 2026-11-18: "its fine for heroes abilities to push someone
+of a cliff or to lava", and nobody needs to be "civil" in battle.)
+- His pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
+  the void. They are Fan Cut (knockback 2) and his phase change's shockwave. Soldiers and other
+  heroes get exactly the same. His own side is never pushed.
+- He does it on purpose. When you stand near lava or a drop and Fan Cut is ready, he slips round
+  to your far side first. That walk is the tell: step away from the edge.
+- His own body never goes into a hazard: Vanish's hop back stops short of lava or a deadly drop.
+- A death there is his kill, in vanilla's words: "... was doomed to fall by Yugen Kagaribi",
+  "... tried to swim in lava to escape Yugen Kagaribi". In lava your dropped items burn.
+- Against him: lava, and a fall past his safe fall (4.8 to 6 blocks), hurt him in full, with no
+  12% cap. A Knockback sword, a Punch bow or a wind charge pushes him like anyone [knockback
+  resistance 0, the marksman's].
+- Blocks: none of his moves is an explosion (his foxfire is cold flame), so he breaks no blocks.
 
 HOW TO BEAT HIM
 1. Fight him with iron: an iron sword or axe deals 15% more. An axe or a mace also fills his small

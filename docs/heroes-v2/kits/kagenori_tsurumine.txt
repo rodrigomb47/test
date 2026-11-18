@@ -1,8 +1,9 @@
 Kagenori Tsurumine - "The Still Crane Samurai"
 Male | samurai | striker | shock | stoic | epic
-Status: designed, not in the game yet (kit version 2, 2026-11-13: he fights the same against players
-and NPCs, and he never yields: see "When he is losing"). All numbers are first values, tuned after
-play.
+Status: designed, not in the game yet (kit version 3, 2026-11-18: he may knock you into lava or
+off a cliff on purpose, and soldiers the same: see TERRAIN AND BLOCKS. Version 2, 2026-11-13: he
+fights the same against players and NPCs, and he never yields: see "When he is losing"). All
+numbers are first values, tuned after play.
 ====================================================================================================
 
 WHO HE IS
@@ -195,8 +196,9 @@ BOSS FIGHT
     Phase 3, from 25%: Twin Sky (two swords); adds Falling Crane. The change takes 1.4 s.
       "Forgive me, teacher."
   During a phase change he takes 50% less damage and cannot be staggered (a glint shows it; he is
-  never invulnerable), a shockwave pushes everyone within 4 blocks back (no damage; softened near
-  lava or a drop), he says the line, his look changes and the bar gains a pip. Phase 3 note: the
+  never invulnerable), a shockwave pushes every enemy within 4 blocks back (no damage, at full
+  strength even toward lava or a drop; his own side stays put), he says the line, his look changes
+  and the bar gains a pip. Phase 3 note: the
   design's kit table keeps Still Water and Crane Step in all three phases, but its example file
   leaves both out of the phase 3 list; which is right is set when he is built.
 - Weak points:
@@ -240,6 +242,25 @@ BOSS FIGHT
   base); his kit items vanish at death and return with him. He has no death ability of his own. A
   hero of his faction with the revival_rite talent (milestone 2) would bring him back 20 / 30 / 40%
   sooner, never under 30 s.
+
+TERRAIN AND BLOCKS
+(Kit version 3. The owner's answer of 2026-11-18: "its fine for heroes abilities to push someone
+of a cliff or to lava", and nobody needs to be "civil" in battle.)
+- His pushes land at full strength wherever they send you: into lava or fire, over a cliff, into
+  the void. They are Three Cuts (its last cut, knockback 1), Falling Crane (knockback 2 where he
+  lands) and his phase change's shockwave. Soldiers and other heroes get exactly the same. His own
+  side is never pushed.
+- He does it on purpose. When you stand near lava or a drop he steps round to your far side, or
+  leaps in so that Falling Crane's landing throws you over it. The walk round you is the tell.
+- His own body never goes into a hazard: his leaps never land in lava or past a deadly drop, and
+  Crane Step stops at an edge.
+- A death there is his kill, in vanilla's words: "... was doomed to fall by Kagenori Tsurumine",
+  "... tried to swim in lava to escape Kagenori Tsurumine". In lava your dropped items burn. His
+  honour does not stop him: it only keeps him from chasing a hero who runs.
+- Against him: lava, and a fall past his safe fall (7.2 to 10 blocks), hurt him in full, with no
+  12% cap. A Knockback sword, a Punch bow or a wind charge pushes him like anyone [knockback
+  resistance 10, the striker's].
+- Blocks: none of his moves is an explosion; Heaven Split's lightning is a harmless flash.
 
 HOW TO BEAT HIM
 1. Do not swing into Still Water. When his hand goes to the hilt with a click and sparks, stop

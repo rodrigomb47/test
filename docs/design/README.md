@@ -8,5 +8,9 @@
   `notes/stuck-pits.md`: NPCs trapped in a ravine beside a settlement's wall, a miner pacing at its mine's landing
   and NPCs pacing in a gateway (a 15-day campaign), with causes, fixes, the GameTest and the live results.
 
+- `breaching.md`: a design not built yet (2026-11-18): ROADMAP phase 2's TNT expert, explosive breaching on raids by
+  any NPC or hero that carries TNT, the defenders' answers, and how ordinary NPCs live with lethal terrain (the
+  owner's "no need for anyone to be civil in battle"), with a list of further tactics proposed to the owner.
+
 These are historical working notes. Log files and world copies they mention lived in a temporary folder and are
 gone. Where the notes disagree with the code, README.md or BALANCE.md, those win.
