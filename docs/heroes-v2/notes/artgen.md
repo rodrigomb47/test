@@ -3879,9 +3879,10 @@ The engine plays it under the glide loop while she circles (the aerial pattern's
 chains, the bail and the caps hang from `artifact_spirecore`; the crystal (glowing) and the cage's bars sit on
 `artifact_spirecore_cage`, a child bone at the crystal's centre, which her `sec.loop` turns once round every 6 s (the
 secondary controller plays `sec.loop` whenever the chain has one; a whole turn unwound at the loop's end). `visual.json`
-`bones.artifacts` is `{"spirecore": ["artifact_spirecore", "artifact_spirecore_cage"]}`: R3's hook in `HeroModel`
-hides them unless she wears Spirecore ("drawn only while worn", 5.13). Until then it is drawn always, which is right for
-her (a boss hero comes with her signature in her first slot).
+`bones.artifacts` is `{"spirecore": ["artifact_spirecore"]}` (corrected by the review below: the file lists the part's
+declared artifact bone only; the cage is its child, and GeckoLib's `GeoBone.setHidden` hides a bone's children too):
+R3's hook in `HeroModel` hides it unless she wears Spirecore ("drawn only while worn", 5.13). Until then it is drawn
+always, which is right for her (a boss hero comes with her signature in her first slot).
 
 ### Her clips (no hit ticks)
 
@@ -3890,7 +3891,7 @@ her (a boss hero comes with her signature in her first slot).
 | `sec.loop` | 6.0 s | Spirecore's cage turning (above) |
 | `sec.wings_fold` | 4.0 s | her ground wing loop (above) |
 | `personal.1` | 3.4 s | she preens her left wing: a look over the left shoulder, the wing half opened and swung forward round her, the membrane combed twice with her right claws, shaken out and folded away, pleased with herself |
-| `personal.2` | 3.6 s | she curls her tail round her feet: the tail swings round her right side until its tip rests before her toes, like a cat's round its paws, a content closed-eye smile down at it, then it slides back |
+| `personal.2` | 3.6 s | she curls her tail round her feet: the tail swings round her left side (the B5 review's correction; it said right) until its tip rests before her toes, like a cat's round its paws, a content closed-eye smile down at it, then it slides back |
 | `personal.3` | 3.8 s | she gazes up at the sky: chest lifted, head tipped back (the neck past -25 degrees), the wings easing a little open as if to feel the air, half-closed eyes, a faint smile |
 | `intro` | 1.4 s | 5.4: she lands with her wings spread (the knees give), folds them, then lifts her chin with her head tilted and one claw raised lazily, and settles into her stance |
 | `phase.2` | 1.4 s | wings spread wide, chest arched and head thrown back: the roar, her throat glowing purple |
@@ -4000,3 +4001,124 @@ Wither, and `hero-previews --lineup --check`; the style preview set (`previews`)
 - Not run here (Gradle is off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`; they will see her files, which pass the Python mirror of their rules), GameTests, the in-game
   and campaign checks, and the jar.
+
+---
+
+## B5 review gate 2: the Wither, the Ender Dragon and the icons (2026-11-19)
+
+HEROES_V2.md 14.4 gate 2 for B5's two boss looks and for R6's and B5's icons, by a separate art director, before they go
+to the owner. The looks come before their kits (`"kit": "pending"`), so the checklist's move items (no clipping in
+`attack.1-3`, the weapon in every style animation) apply to the clips that exist: the idles, the locomotion, the
+moments and the style's string in their previews. Each finding was confirmed with a number or a render before it was
+fixed. The approved style is unchanged; no hit tick, marker or timing file of any clip moved (neither hero has one,
+and no library clip changed). Where this section and the two B5 sections above differ, this one holds.
+
+How clipping was measured: for two parts, points sampled inside every cube of the first (a 5 x 5 x 5 grid, 5% in from
+the faces), in the clip's pose at each sampled tick with the secondary and wing loops laid over it, that lie inside a
+cube of the second (5% in from its faces). A count that stays at its rest value is a fixed overlap by design (the
+dragon's tail root through the skirt's back panels, about 40; the short wing roots under her hair, about 150).
+
+### The checklist
+
+| Item | Verdict |
+|---|---|
+| Reads as the vanilla boss, made into a woman (squint test at 1x) | **The Wither**: yes, at 1x and from every side: two dark cubes with glowing blue eyes at head height either side of a pale face (the three heads), a white ribcage on charcoal, bone bracers, soul-blue lining; from behind the spine and the torn cape. **The Ender Dragon**: the horns with purple tips, purple slit eyes, black dress and the tail with its pale crest read; the wings did not (finding 1). After the fix the purple fans show beside her arms from the front, from 3/4 and from behind, and spread they read as the boss's wings |
+| Silhouette (front and side at 4x, `distinct.py`'s frame) | the two bosses 0.62; the Wither against Natsuho, Hinae and the six other slice looks (their sample outfits on their one body) 0.51-0.68; the dragon 0.55-0.77 (the highest, 0.77 and 0.76, Kagenori and Hinae: long hair over a floor-length hakama or skirt). All under the NOTE's 0.90 |
+| Colour regions | both bosses' two largest regions are near-black (the Wither's gown `metal` #34313A and hair #2A282D, the dragon's `primary` #1C1A22 and hair #1B1720): delta-E 11.1 and 8.6, under the NOTE's 15, but they are different archetypes, so `check` gives no NOTE. Their accents carry them apart (bone white and soul blue against purple and end-stone), and so do the silhouettes (0.62). Tobimaru (ninja, navy) is as dark (12.9/9.6 and 13.5/8.3; silhouettes 0.52 and 0.63) |
+| Greyscale | the Wither in three clear values (charcoal, ash grey, bone white with a pale face); the dragon was black on black, the wings invisible (finding 1): her membranes are now a mid grey against the dress. `check` still NOTEs her primary and secondary at 9% (black and the very dark purple of the bodice's scales), by design |
+| Face frames | blink (half, closed), talk A and B, angry (the Wither's glowing frame; the dragon's narrowed slits with the glowing throat), hurt, every mood at 3/4: right. Neither face blushes in any mood, as 4.2 and 5.2 ask |
+| Clipping | **The Wither**: her cape's tatters hung inside the smoke gown's flare on every tick of the idle, the hover and most moments (finding 4); the bracers' lower rims and the boots touch the gown at rest (48 and up to 51 points: an arm against a floor-length gown, legs inside it), left. **The dragon**: the tail curl went through the skirt's side panels (finding 2); the sky gaze pushed her tipped-back hair through the wing arms (finding 3); her wings never enter the skirt or the tail; the claws keep clear of her body (`grips`), but their talons dip into the skirt's side panels at the walk's arm swing (up to 143 points, hands at mid-thigh beside a floor-length skirt), left; the open takeoff below |
+| Weapon | the sceptre in her right hand drawn, at her right hip head down when sheathed; the claws on both hands always (they are her hands) |
+| Phase looks | the Wither's are visible by day (blue-white bone, the glowing hem, no familiars, burning tips, the rebirth). The dragon's phase 2 is light only (veins and horn tips in the phase texture's glow mask, "faint" by 5.2's design) and did not show in `phases.png` by day: it now gets a night cell (finding 6) |
+| Worn signature parts | the Hollow Star brooch at the Wither's collar and the caged Spirecore at the dragon's collarbone, both on their artifact bones; the notes misdescribed `bones.artifacts` (finding 7) |
+| Existing characters | Compared with the canonical bosses (the intended reference) and with the fan "Wither girl" and "Ender Dragon girl" designs of player skins and resource packs, found with two web searches ("Minecraft Wither girl anime character design three skulls"; "Ender Dragon girl anime Minecraft mob girl design horns wings purple"): no official character; fan Wither girls wear a wither-skeleton skull as a mask or hat with gothic outfits, and fan dragon girls share the genre's marks (black scales, purple horns and eyes, wings, a tail) without a defining combination ours repeats. Ours keep their own marks: the Wither's floating skull familiars, bone crown, ribcage bodice, smoke gown, torn split cape and wither-rose sceptre; the dragon's swept horns with glowing tips, scale bodice with a split long skirt, spined end-stone pauldrons, the caged-crystal pendant and the purple under-layer. Verdict: both read as the vanilla bosses, not as another creator's design. ROSTER_PLAN 8's own concept search and its record (`herosrc/clearance/`, not created yet) remain for gate 4 |
+| Modest | high collars, long sleeves, a floor-length gown and a floor-length skirt split only to the knee |
+| Budgets (4.3) | the Wither 286 cubes (127 beyond the fine distance), 88 bones, 256x128; the dragon 234 (115), 98 bones, 256x256 (her texture uses 136 rows: 8 over 256x128). Each own file 18-21 clips of 24 |
+| One body | each hero's previews and the lineup show her only in her adult body; the parts sheets show the parts on the lint mannequin, not on a named hero |
+| Icons | at GUI scales 1, 2 and 3 beside vanilla items every icon holds its silhouette; the tiers differ by richness (one material; a setting and gem; a second precious material with its highlight; the pulse) and name colour; `herogen icons --check` confirms the 61 catalogue names, ids and tiers, the sigil and the tokens. Pairwise, by silhouette overlap and colour: the four shared silhouettes are by design and their second material tells them apart (girdles, signets, spools), except Ghast-Tear Torc against Marrow Torc (finding 5) |
+
+### Found and fixed
+
+1. **The dragon's wings did not read as wings.** The membranes painted the `secondary` slot, #3B2A4F, 9% from her
+   black `primary` in greyscale: from behind the folded wings merged with her hair and dress, from the front nothing
+   showed, and spread they read as black sticks with dark webs. The owner asked for "purple ... membranes". The
+   wings now map `alt` to `hair_accent` (#7A3FB8, the purple of her hair's under-layer) and the veins (`detail`) to
+   `accent` (#C77DFF), lighter lines that still glow only from phase 2. The part is unchanged (its default `alt`
+   stays `secondary`); only her source's slot mapping moved.
+2. **Her tail curled through her skirt** (`personal.2`): `dragon.curl` swung `tail_1` 58 degrees round with its end
+   tilted 6 degrees in, so the first three segments ran inside the side panels: 195 sample points at the hold
+   against 40 at rest. The tail now leaves her back tilted out (`tail_1` x 18), wraps a little further round her left
+   side (`tail_3`-`tail_5` +4 to +8 degrees; the side it always took, which the B5 notes called her right) and the
+   last two segments tip down so the tip still rests before her toes, on the ground: at most 52 points on any tick
+   (the root's 40).
+3. **Her sky gaze put her hair through her wings** (`personal.3`): the head tips back 32 degrees and the long hair
+   swung back through the folded wing arms, 390 points (154 at rest with the roots). `dragon.gaze` now draws the wing
+   arms back 22 degrees and 6 more degrees open as the head goes back ("the wings easing open as if to feel the
+   air"): at most 154 (152 at rest).
+4. **The Wither's tatters hung inside her gown.** `back/cape_torn`'s strips hung straight from inside the cape's
+   lower edge, 2.5 px above the hem down to 3.5 px below it, while the cape tilts back 5 degrees and the gown flares
+   12: 112 points at rest and inside the gown on every tick of the idle, the hover and most moments, showing as blue
+   specks of lining through the gown's back panels. The strips now start on the cape's back face (`chest_d / 2 +
+   3.9`), are shorter (3, 4 and 2.5 px) and tilt back 16-20 degrees, so they end at the hem: 0 at rest, none or a brush (under 50 points) in
+   `personal.1`, `personal.2`, the intro, the last stand, the flight and the glide, and in the idle on 8 ticks of 30
+   (all 30 before). They still touch the gown at the peaks of its billow, in the hover flight and the
+   half-turn (below).
+5. **Ghast-Tear Torc looked like Marrow Torc.** The greater torc's ghast tears were two pixels wide, so the
+   outline took all but the highlight: grey tears (#97A4A8) on the slot's grey, 12 pixels from the advanced torc. The
+   torc shape's tears are now three pixels wide with a `shadow` outline: pale drops lit from the top left (16
+   pixels apart; Marrow Torc, which has no tears, is unchanged). Data only (`herosrc/artifacts/shapes.json`).
+6. **`phases.png` now draws an earlier phase at night** when it comes from the phase texture
+   (`hero_previews.night_phases`): the dragon's phase 2 (veins and horn tips) and the Wither's (the soul-blue
+   armour). Heroes whose phases keep the base texture (Natsuho, Hinae) draw exactly as before.
+7. **Docs**: the dragon's section and HEROES_V2's R3 cell said `bones.artifacts` lists Spirecore's cage bone too;
+   the file lists `artifact_spirecore` only, which is enough: GeckoLib's `GeoBone.setHidden` (4.9.3, read with
+   `javap`) hides a bone's children with it. Corrected in place.
+
+### Left as they are (and why)
+
+- **The dragon's folded wings from the front** show only their purple edges beside her arms: the wrists sit just
+  inside her hair's outline. Raising them above her shoulders would mean re-solving the fold's geometry (and the open
+  pose's angles and the 2.2-block span with it); with the purple membranes she reads as winged from 3/4 and behind,
+  so this is the owner's call at gate 4.
+- **The take-off's first frames**: the wings controller switches to the shared flap loop as the take-off starts,
+  and for about 0.1 s the loop's up-beat turns the still-folded fans so their knuckles and claws sink into her hair
+  (up to 1,998 points at 0.03 s). The engine or the move step can start the flap from the take-off's open pose.
+- **The Wither's tatters** touch the gown's back panels when the gown billows to its peak (the hover idle, the hover
+  flight, the half-turn). A full fix makes the cape's lower bone follow `skirt_b` in her clips; left for the move
+  step, which re-touches her clips anyway.
+- Her claws in the skirt at the walk's arm swing, the bracers and boots against the gown, the tail in the skirt's
+  back panels while the skirt streams in flight (about 145): arms and tails against floor-length skirts, small and
+  brief.
+- The dragon's phase 2 by day: faint by design (5.2); the night cell shows it.
+
+### Previews
+
+Rebuilt: both heroes' sets (`previews/heroes/the_wither/`, `previews/heroes/the_ender_dragon/`, every file), the
+lineup, the parts sheets (the cape's tatters), the icon sheet (`previews/artifacts/sheet.png`; `inventory.png` does not
+show either torc and is unchanged). Looked at: both turnarounds, `wings.png`, the phases, the faces at 3/4, the idles,
+moments and locomotion as frame strips at 4-6x from two or three sides, a 1x squint strip of both, greyscale
+turnarounds, the icon sheet, the inventory at GUI scales 1-3 and the shared-silhouette icon pairs at 12x.
+
+### Tests (479 -> 485: `tests/test_boss_review.py`, 6)
+
+- The dragon's webs paint `hair_accent`, at least 15% from `primary` in greyscale (sabotage: the old `secondary`
+  mapping fails).
+- `personal.2`: the tail at most 70 points inside the skirt on any tick (sabotage: the old curl gives 195).
+- `personal.3`: the wings, roots aside, at most 150 points inside the hair (sabotage: the old gaze gives 302).
+- The Wither's six tatters: none inside the gown at rest, none lower than 1.5 px under the cape's hem (sabotage: the
+  old strands give 112).
+- Ghast-Tear Torc's tears: at least 12 pixels with at least four light ones, and 14 pixels from Marrow Torc
+  (sabotage: the old shape gives 10 pixels).
+- `night_phases`: phase-texture phases and the last get a night cell, base-texture phases only the last.
+
+The sabotages were run by putting the committed (pre-review) sources back in place and running the file: the five
+look tests failed as listed, then the sources were restored.
+
+### Checks run
+
+At the commit (the finished tree): the full suite (485 tests, OK); `check --all --style` (every hero, the style
+fixtures and the icons); `build --all --check` (the libraries, `_fallback`, the test rig, Natsuho and Hinae as
+committed, both bosses fresh); `icons --check` and `icons sheet --check`; `hero-previews --check` for both bosses,
+Natsuho and Hinae, and `--lineup --check`; `parts-previews --check`; `render-previews --check`; `anim-previews --core`,
+`--styles` and `--locomotion --check`; the style preview set (`previews`) re-rendered byte for byte; `lint` (2570
+builds and checks, 0 problems; run again after the review was interrupted, before the commit).

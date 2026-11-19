@@ -1148,7 +1148,7 @@
     },
     "torc": {
       "what": "an open torc of twisted metal, its two terminals capped and set with gems; tears may hang from them",
-      "parts": {"g": {"role": "gem"}, "m": {"profile": "dome", "role": "body", "texture": "wound"}, "p": {"else": ".", "optional": true, "profile": "dome", "role": "precious"}, "s": {"role": "setting"}},
+      "parts": {"g": {"role": "gem"}, "m": {"profile": "dome", "role": "body", "texture": "wound"}, "p": {"else": ".", "optional": true, "outline": "shadow", "profile": "dome", "role": "precious"}, "s": {"role": "setting"}},
       "grid": [
         "................",
         ".....mmmmmm.....",
@@ -1163,8 +1163,8 @@
         ".ssgss....ssgss.",
         ".sgggs....sgggs.",
         "..sss......sss..",
-        "..pp........pp..",
-        "..pp........pp..",
+        "..ppp......ppp..",
+        "..ppp......ppp..",
         "...p........p..."
       ]
     },

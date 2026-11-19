@@ -90,9 +90,9 @@
       {
         "part": "wings/dragon",
         "color": "primary",
-        "alt": "secondary",
+        "alt": "hair_accent",
         "trim": "trim",
-        "detail": "hair_accent"
+        "detail": "accent"
       },
       {
         "part": "tails/scaled",
@@ -908,10 +908,10 @@
         }
       },
       "dragon.curl": {
-        "_comment": "The tail curled round her feet (a cat's tail round its paws): the tail swung round her right side and forward, its tip resting before her toes; she looks down at it with her claws loosely clasped before her.",
+        "_comment": "The tail curled round her feet (a cat's tail round its paws): the tail swung out from the small of her back and round her left side, clear of the skirt, then forward, its tip resting before her toes; she looks down at it with her claws loosely clasped before her.",
         "bones": {
           "tail_1": [
-            -6,
+            18,
             58,
             0
           ],
@@ -922,22 +922,22 @@
           ],
           "tail_3": [
             0,
-            42,
+            46,
             0
           ],
           "tail_4": [
             0,
-            36,
+            44,
             0
           ],
           "tail_5": [
-            0,
-            30,
+            -10,
+            38,
             0
           ],
           "tail_tip_1": [
-            0,
-            24,
+            -5,
+            28,
             0
           ],
           "tail_tip_2": [
@@ -978,7 +978,7 @@
         }
       },
       "dragon.gaze": {
-        "_comment": "Gazing up at the sky: the chest lifted and the head tipped back, the arms hanging easy, the wings a little open as if to feel the air.",
+        "_comment": "Gazing up at the sky: the chest lifted and the head tipped back, the arms hanging easy, the wings a little open and drawn back as if to feel the air (clear of her hair as the head tips back).",
         "bones": {
           "chest": [
             -7,
@@ -1011,9 +1011,9 @@
             0
           ],
           "wing_arm_r": [
+            -22,
             0,
-            0,
-            -10
+            -16
           ],
           "wing_hand_r": [
             0,
@@ -1031,9 +1031,9 @@
             -8
           ],
           "wing_arm_l": [
+            -22,
             0,
-            0,
-            10
+            16
           ],
           "wing_hand_l": [
             0,
@@ -1332,7 +1332,7 @@
         ]
       },
       "personal.2": {
-        "description": "Curling her tail round her feet (personal.2, a rare idle), 3.6 s over move.idle: the long tail swings round her right side and forward until its tip rests before her toes, like a cat's round its paws; she looks down at it with a content closed-eye smile, then lets it slide back out behind her.",
+        "description": "Curling her tail round her feet (personal.2, a rare idle), 3.6 s over move.idle: the long tail swings round her left side and forward until its tip rests before her toes, like a cat's round its paws; she looks down at it with a content closed-eye smile, then lets it slide back out behind her.",
         "length": 3.6,
         "plays_over": "move.idle",
         "settle_to": "move.idle",

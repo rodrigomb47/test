@@ -127,7 +127,7 @@
   "rig": "hero_rig_v3",
   "scale": 1.04,
   "secondary": [{"chain": ["tail_hair_1", "tail_hair_2"], "damping": 0.6, "part": "hair/hime_long", "stiffness": 0.4}],
-  "source_sha256": "5bee937c1d31d3fc82631bee4a72644a9b8c3474a9106c71d89e09840c745271",
+  "source_sha256": "5487d8cadf30f7c7ea75a07125e1e95c2af10c1609db8fe9fa46b395c505c06e",
   "states": [],
   "style": "focus",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": true, "rebirth": true, "width": 256},

@@ -218,6 +218,16 @@ def faces(a, path, scale=13):
     save(sheet, path)
 
 
+def night_phases(visual):
+    """The phases phases.png draws at night: the last phase, as before, and (B5 review) every earlier phase drawn from
+    the phase texture (`_p2`, whose `glow: phase` regions light up only in its glow mask, as the Ender Dragon's
+    phase-2 veins and horn tips do), so a look that is mostly light shows in the sheet. Heroes whose phases keep the
+    base texture get the last phase only."""
+    looks = sorted({1} | {p["phase"] for p in visual.get("phases", [])})
+    return [ph for ph in looks[1:-1] if any(p["phase"] == ph and p.get("texture") == "p2"
+                                            for p in visual.get("phases", []))] + [looks[-1]]
+
+
 def phases(a, path, scale=6):
     """Each phase look from the 3/4 front and the 3/4 back, and the last phase at night with its glow."""
     pose = a.stance()
@@ -240,6 +250,11 @@ def phases(a, path, scale=6):
         cells.append(("the rebirth (phase %d)" % ph, to_image(a.render(v, pose, face=a.mood("calm"), phase=ph,
                                                                          look="rebirth",
                                                                          bounds=(xb[0], xb[1], yb[2], yb[3])))))
+    for ph in night_phases(a.visual)[:-1]:
+        xb = a.bounds([v], (pose,), phase=ph)
+        face = (10, 0, 0) if any(g <= ph for g in glow_phase) else a.mood("calm")
+        cells.append(("phase %d at night" % ph, to_image(a.render(v, pose, face=face, phase=ph, brightness=NIGHT,
+                                                                  bounds=(xb[0], xb[1], yb[2], yb[3])))))
     xb = a.bounds([v], (pose,), phase=max(looks))
     face = (10, 0, 0) if glow_phase else a.mood("calm")
     cells.append(("phase %d at night" % max(looks), to_image(a.render(v, pose, face=face, phase=max(looks),

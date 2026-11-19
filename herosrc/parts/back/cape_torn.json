@@ -1,5 +1,5 @@
 {
-  "_comment": "A torn cape split down the middle (B5, the Wither's; the full library's planned torn cape): two halves hanging from the shoulders on the cape chain (cape_1 to the waist, cape_2 down to the calves) with a gap down the middle that shows the spine, the inner side and the split's edges lined in the alt colour, the hems torn and cut jagged, and a few tattered strips hanging from each half. `drop` scales the lower half, `gap` the split.",
+  "_comment": "A torn cape split down the middle (B5, the Wither's; the full library's planned torn cape): two halves hanging from the shoulders on the cape chain (cape_1 to the waist, cape_2 down to the calves) with a gap down the middle that shows the spine, the inner side and the split's edges lined in the alt colour, the hems torn and cut jagged, and a few short tattered strips on the back of each half's hem, tilted back with it (B5 review: hung from the cape's back face and no lower than its hem, so they ride over the smoke gown's flare rather than through it). `drop` scales the lower half, `gap` the split.",
   "id": "back/cape_torn",
   "category": "back",
   "slots": {
@@ -132,13 +132,13 @@
       "path": "line",
       "from": [
         "-gap - half_w + 0.2",
-        "low_y + 2.5",
-        "chest_d / 2 + 2.0"
+        "low_y + 3.0",
+        "chest_d / 2 + 3.9"
       ],
       "to": [
         "-gap - 0.6",
-        "low_y + 2.5",
-        "chest_d / 2 + 2.0"
+        "low_y + 3.0",
+        "chest_d / 2 + 3.9"
       ],
       "out": [
         0,
@@ -153,14 +153,14 @@
       ],
       "depth": 0.4,
       "length": [
-        4.5,
-        6,
-        3.5
+        3,
+        4,
+        2.5
       ],
       "flare": [
-        6,
-        9,
-        4
+        18,
+        20,
+        16
       ],
       "material": "cloth",
       "slot": "main",
