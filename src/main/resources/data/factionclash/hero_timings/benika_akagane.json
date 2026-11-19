@@ -1,0 +1,256 @@
+{
+  "animations": {
+    "intro": {
+      "events": [
+        {"t": 0.4, "tick": 8, "type": "vfx", "value": "ground_dust"},
+        {"t": 0.8, "tick": 16, "type": "sfx", "value": "factionclash:hero.benika_akagane.intro"}
+      ],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "last_stand": {
+      "events": [],
+      "kind": "action",
+      "length": 1.6,
+      "loop": "once",
+      "ticks": 32,
+      "total_ticks": 34,
+      "transition_ticks": 2
+    },
+    "move.crash_waves": {
+      "class": "area",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "fire_ring"},
+        {"t": 1.6, "tick": 32, "type": "hit"},
+        {"t": 1.6, "tick": 32, "type": "vfx", "value": "fire_ring"},
+        {"t": 2.2, "tick": 44, "type": "hit"},
+        {"t": 2.2, "tick": 44, "type": "vfx", "value": "fire_ring"},
+        {"t": 2.75, "tick": 55, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 36, "recovery": 16, "windup": 20},
+      "frames": {"active": 1.8, "recovery": 0.8, "windup": 1},
+      "hits": [1, 1.6, 2.2, 2.75],
+      "kind": "action",
+      "length": 3.5,
+      "loop": "once",
+      "ticks": 70,
+      "total_ticks": 72,
+      "transition_ticks": 2
+    },
+    "move.gourd_swig": {
+      "class": "light",
+      "events": [
+        {"t": 1.2, "tick": 24, "type": "hit"},
+        {"t": 1.2, "tick": 24, "type": "vfx", "value": "gourd"},
+        {"t": 1.25, "tick": 25, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 2, "recovery": 12, "windup": 24},
+      "frames": {"active": 0.1, "recovery": 0.6, "windup": 1.2},
+      "hits": [1.2, 1.25],
+      "kind": "action",
+      "length": 1.8,
+      "loop": "once",
+      "ticks": 36,
+      "total_ticks": 38,
+      "transition_ticks": 2
+    },
+    "move.grab_throw": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.9, "tick": 18, "type": "hit"},
+        {"t": 0.9, "tick": 18, "type": "vfx", "value": "grab"},
+        {"t": 1.8, "tick": 36, "type": "sfx", "value": "factionclash:hero.benika_akagane.throw_whoosh"},
+        {"t": 1.85, "tick": 37, "type": "cast"},
+        {"t": 1.85, "tick": 37, "type": "vfx", "value": "throw"}
+      ],
+      "frame_ticks": {"active": 20, "recovery": 24, "windup": 18},
+      "frames": {"active": 1, "recovery": 1.2, "windup": 0.9},
+      "hits": [0.9, 1.85],
+      "kind": "action",
+      "length": 3,
+      "loop": "once",
+      "ticks": 60,
+      "total_ticks": 62,
+      "transition_ticks": 2
+    },
+    "move.ground_stomp": {
+      "class": "area",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "fire_ring"},
+        {"t": 1.95, "tick": 39, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 20, "recovery": 16, "windup": 20},
+      "frames": {"active": 1, "recovery": 0.8, "windup": 1},
+      "hits": [1, 1.95],
+      "kind": "action",
+      "length": 2.7,
+      "loop": "once",
+      "ticks": 54,
+      "total_ticks": 56,
+      "transition_ticks": 2
+    },
+    "move.meteor_club": {
+      "class": "heavy",
+      "events": [
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "jump_dust"},
+        {"t": 1, "tick": 20, "type": "sfx", "value": "factionclash:hero.benika_akagane.meteor_leap"},
+        {"t": 1.55, "tick": 31, "type": "cast"},
+        {"t": 1.55, "tick": 31, "type": "vfx", "value": "meteor"}
+      ],
+      "frame_ticks": {"active": 12, "recovery": 24, "windup": 20},
+      "frames": {"active": 0.6, "recovery": 1.2, "windup": 1},
+      "hits": [1, 1.55],
+      "kind": "action",
+      "length": 2.7,
+      "loop": "once",
+      "ticks": 54,
+      "total_ticks": 56,
+      "transition_ticks": 2
+    },
+    "move.overhead_slam": {
+      "class": "area",
+      "events": [
+        {"t": 0.95, "tick": 19, "type": "sfx", "value": "factionclash:hero.benika_akagane.club_swing"},
+        {"t": 1, "tick": 20, "type": "hit"},
+        {"t": 1, "tick": 20, "type": "vfx", "value": "fire_cone"},
+        {"t": 1.1, "tick": 22, "type": "cast"}
+      ],
+      "frame_ticks": {"active": 3, "recovery": 24, "windup": 20},
+      "frames": {"active": 0.15, "recovery": 1.2, "windup": 1},
+      "hits": [1, 1.1],
+      "kind": "action",
+      "length": 2.25,
+      "loop": "once",
+      "ticks": 45,
+      "total_ticks": 47,
+      "transition_ticks": 2
+    },
+    "move.shoulder_charge": {
+      "class": "heavy",
+      "events": [
+        {"t": 0.9, "tick": 18, "type": "hit"},
+        {"t": 0.9, "tick": 18, "type": "vfx", "value": "charge_dust"},
+        {"t": 1.45, "tick": 29, "type": "cast"},
+        {"t": 1.45, "tick": 29, "type": "vfx", "value": "skid_dust"}
+      ],
+      "frame_ticks": {"active": 12, "recovery": 18, "windup": 18},
+      "frames": {"active": 0.6, "recovery": 0.9, "windup": 0.9},
+      "hits": [0.9, 1.45],
+      "kind": "action",
+      "length": 2.3,
+      "loop": "once",
+      "ticks": 46,
+      "total_ticks": 48,
+      "transition_ticks": 2
+    },
+    "personal.1": {
+      "events": [{"t": 0.25, "tick": 5, "type": "sfx", "value": "factionclash:hero.benika_akagane.shoulder_roll"}],
+      "kind": "action",
+      "length": 2.6,
+      "loop": "once",
+      "ticks": 52,
+      "total_ticks": 54,
+      "transition_ticks": 2
+    },
+    "personal.2": {
+      "events": [{"t": 1, "tick": 20, "type": "sfx", "value": "factionclash:hero.benika_akagane.gourd_sip"}],
+      "kind": "action",
+      "length": 3,
+      "loop": "once",
+      "ticks": 60,
+      "total_ticks": 62,
+      "transition_ticks": 2
+    },
+    "personal.3": {
+      "events": [{"t": 0.9, "tick": 18, "type": "sfx", "value": "factionclash:hero.benika_akagane.club_spin"}],
+      "kind": "action",
+      "length": 3.2,
+      "loop": "once",
+      "ticks": 64,
+      "total_ticks": 66,
+      "transition_ticks": 2
+    },
+    "phase.2": {
+      "events": [
+        {"t": 0.3, "tick": 6, "type": "vfx", "value": "horn_flare"},
+        {"t": 0.3, "tick": 6, "type": "sfx", "value": "factionclash:hero.benika_akagane.horn_flare"}
+      ],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "phase.3": {
+      "events": [
+        {"t": 0.4, "tick": 8, "type": "vfx", "value": "horn_steam"},
+        {"t": 0.4, "tick": 8, "type": "sfx", "value": "factionclash:hero.benika_akagane.steam"}
+      ],
+      "kind": "action",
+      "length": 1.1,
+      "loop": "once",
+      "ticks": 22,
+      "total_ticks": 24,
+      "transition_ticks": 2
+    },
+    "state.rage": {
+      "events": [{"t": 0.7, "tick": 14, "type": "vfx", "value": "rage"}],
+      "kind": "action",
+      "length": 1.6,
+      "loop": "once",
+      "ticks": 32,
+      "total_ticks": 34,
+      "transition_ticks": 2
+    },
+    "taunt": {
+      "events": [],
+      "kind": "action",
+      "length": 1.5,
+      "loop": "once",
+      "ticks": 30,
+      "total_ticks": 32,
+      "transition_ticks": 2
+    },
+    "ultimate": {
+      "class": "ultimate",
+      "events": [
+        {"t": 1.8, "tick": 36, "type": "hit"},
+        {"t": 1.8, "tick": 36, "type": "vfx", "value": "jump_dust"},
+        {"t": 1.8, "tick": 36, "type": "sfx", "value": "factionclash:hero.benika_akagane.meteor_leap"},
+        {"t": 3.75, "tick": 75, "type": "cast"},
+        {"t": 3.75, "tick": 75, "type": "vfx", "value": "crash"}
+      ],
+      "frame_ticks": {"active": 40, "recovery": 32, "windup": 36},
+      "frames": {"active": 2, "recovery": 1.6, "windup": 1.8},
+      "hits": [1.8, 3.75],
+      "kind": "action",
+      "length": 5.3,
+      "loop": "once",
+      "ticks": 106,
+      "total_ticks": 108,
+      "transition_ticks": 2
+    },
+    "victory": {
+      "events": [],
+      "kind": "action",
+      "length": 2.2,
+      "loop": "once",
+      "ticks": 44,
+      "total_ticks": 46,
+      "transition_ticks": 2
+    }
+  },
+  "file": "benika_akagane",
+  "format": 2,
+  "generator": "herogen 1",
+  "source_sha256": "f98797bd9e6606b3e020c87badaf2dd51ffa4d6e636f17aa4f5135572cec8d33",
+  "tick": 0.05
+}

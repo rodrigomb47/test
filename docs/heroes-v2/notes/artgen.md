@@ -4286,3 +4286,181 @@ style preview set (`previews`) re-rendered byte for byte; `lint` (2570 builds an
   (Natsuho's `tails/cat_long` hands its whole chain to that sway; the checkpoint 2 captures found her tail in game as
   the previews draw it.)
 - **The skirt in flight** (above).
+
+---
+
+## C2: Benika Akagane (2026-11-19)
+
+HEROES_V2.md 15.2 row C2, Benika's half (Yugen Kagaribi's is still open). This adds her source file, her art, her
+signature animations and the preview pieces she needed. Her kit is the slice fixture's
+(`src/test/resources/heroes/slice/benika_akagane.json`, copied field for field; her server definition belongs to the
+engine side). She has one body for good (the owner's rule, HEROES_V2 3.6): **adult, female, large build, drawn at
+108%** (SLICE_PLAN 3.3), 52 px tall (1.97 blocks). Every preview shows her only in that body. She has no tail. No hit
+tick, marker or timing file of an existing clip changed: the libraries, `_fallback`, Natsuho, Hinae, the test rig,
+the Wither and the Ender Dragon build byte for byte as before, and her animation and timing files are new.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/benika_akagane.hero.json` | the source: the kit, `art` (body, palette, parts, face with three overrides, the iron club, phase looks) and `animations` (style `hammer`, blink `normal`, 55 poses of her own, 18 signatures) |
+| generated | `geo/hero` (61 bones, 217 cubes of the 300 budget, 95 beyond the fine distance), `textures/entity/hero` (256x128 texture, glow mask, `_p2` texture and its glow mask), `heroes/*.visual.json`, `animations/hero/benika_akagane.animation.json`, `data/factionclash/hero_timings/benika_akagane.json` |
+| `render/hero_previews.py` | the locomotion of a charger and a leaper, `state.X` clips drawn in the boss phase that enters them, the state a phase enters chained after its transition, and a followup that never plays alone shown after its parent (below) |
+| `tests/test_benika.py` | 16 tests (below) |
+
+### Her look
+
+The iron club oni, as the sample outfit of G6b and G6c drew her, with five changes. She wears a wild black mane with
+red tips (`hair/wild_mane`, length 20 and volume 1.15, up from 15 and 1: a big build needs a big mane), a single
+curved horn, an open red coat over chest wraps (`outfit_top/open_coat`, length 0.8, down from 1.3, so the coat ends
+above the hakama), a short black hakama (drop 1.0, from 0.85), gauntlets, wrapped feet, the faction sash, a rope belt,
+the gourd at her right hip and red stripes on her forearms. The iron club rides on her back. The palette is SLICE_PLAN
+3.3's, with two changes:
+
+- **`trim` is her own slot now.** The sample painted the horn in `primary` and the stripes in `hair_accent`, and set
+  `trim` to the accent's gold. The horn and the stripes now use `trim` (#B0281F), and the coat, hakama and gauntlet
+  edges use `accent` (the same gold as before). Nothing else uses `trim`, so phase 2 can recolour exactly those two
+  pieces.
+- **`secondary` #211C1C** (was #262121), a little darker, so that `primary` and `secondary` sit more than 15% apart
+  in greyscale (the NOTE `check` gave on the sample's pair).
+
+The face uses `sharp` eyes, lashes 1, no flick, `bold` brows, the `wide` mouth and both fangs. Three overrides suit a
+battle maniac: `happy` (happy eyes), `focused` (focused eyes) and `determined` (angry eyes) all bare the fang grin.
+
+- **Phase 2** (60%): the phase palette sets `trim` to ember #FF6A24, so in the `_p2` texture the horn and the arm
+  stripes flare orange, and the horn's glow region lights them at night. The sample's phase 2 changed nothing by day.
+- **Phase 3** (25%): her eyes glow (frame 10 in the glow colour), and her `phase.3` clip puffs steam from the horn
+  (`vfx:horn_steam`).
+
+Red top over a black hakama keeps her apart from Hinae (white top over a red hakama). The two share their two largest
+colour regions within delta-E 6.2 (black hair against black hair) and 11.6 (her red coat against Hinae's red hakama),
+under the NOTE's 15, but their archetypes differ (oni and shrine), so `check` gives no NOTE. Front and side silhouettes
+at 4x overlap 0.68 with Hinae and 0.56 with Natsuho (the NOTE is at 0.90). The lineup puts her beside Hinae: the
+horn, the mane, the open coat and the large build carry the difference.
+
+### Signature animations
+
+Her own file has the 18 signatures. The hammer library and the core cover the rest: her basic string `attack.1-3`,
+the locomotion, the hurt and the death. Each move's clip has the kit's frames to the tick. The `hit` is on the
+release, and a `cast` marks the active part's last tick. Crash Waves has a `hit` on each of its three rings
+(`waves: 3`, `interval: 0.6`: MovePlan takes the markers as the form's hit ticks when the counts match).
+
+| Clip | Length | Class | Server frames (ticks) | What happens |
+|---|---|---|---|---|
+| `move.overhead_slam` | 2.25 s | area | 20 / 3 / 24 | the knees give and the club dips off the shoulder, then rises for a slow second over her head, tipped back and trembling (the tell); whipped down and driven into the ground (`hit` 20, the fire cone), `cast` 22. The club sticks: two hauls while it stays in the ground (the punish window), pried out, back on her shoulder |
+| `move.shoulder_charge` | 2.3 s | heavy | 18 / 12 / 18 | the left shoulder turned to the target in a deep crouch, a snort with the head bobbing (the tell); the burst (`hit` 18) and a driving run in place while the server carries her, braking on deep knees (`cast` 29); a hop back to her footing and a roll of the shoulder |
+| `move.ground_stomp` | 2.7 s | area | 20 / 20 / 16 | the weight onto the left leg, the right knee hauled high and out like a sumo's (the tell), the foot slammed down on its own spot (`hit` 20, the ring of fire) into a deep squat with the club planted; held while the ring rolls out (`cast` 39), up again |
+| `move.gourd_swig` | 1.8 s | light | 24 / 2 / 12 | the club kept on her shoulder; the left hand takes the gourd from her hip and tips it up, the head back, a long drink with the gulps bobbing her head, lowered with an "Ahh!" (`hit` 24: the heal), `cast` 25, a wipe of the mouth and the gourd hung back. Upper body |
+| `move.grab_throw` | 3.0 s | heavy | 18 / 20 / 24 | crouched, the left hand drawn back open (the tell), the lunge and the grab (`hit` 18), the enemy hoisted overhead and shaken while she laughs, drawn back and hurled down (`cast` 37, the throw sound), the arm following through, a laugh with the fist on her hip |
+| `move.meteor_club` | 2.7 s | heavy | 20 / 12 / 24 | a deep gathering crouch with the club overhead (the tell), the launch (`hit` 20, the leap sound), knees tucked in the air with the club cocked back, the crash club-first into a deep squat (`cast` 31; the ground stomp follows); hauled, pried out, back on her shoulder |
+| `move.crash_waves` | 3.5 s | area | 20 / 36 / 16 | the ultimate's followup. It starts on the ultimate's crash pose: the club wrenched free, hoisted and smashed down three times (`hit` 20, 32 and 44, a ring each), the last blow held while the rings roll out (`cast` 55), up laughing |
+| `ultimate` | 5.3 s | ultimate | 36 / 40 / 32 | Iron Mountain Crash: feet set wide, the club raised as high as she can reach with a shout, tipped back with the whole body drawn like a bow and trembling, a deep crouch and the launch (`hit` 36); up high and arched back (the root lifted 10 px), folding forward as she drops, crashing club-first into a deep squat (`cast` 75; Crash Waves follows from here); stuck in the crater, a laugh, pried out |
+| `state.rage` | 1.6 s | - | - | hunched and shaking, then the arms flung wide and the chest thrown out in a roar, back on guard with the angry face Rage keeps (played as phase 2's transition ends) |
+| `phase.2`, `phase.3` | 1.1, 1.1 s | - | - | inside the 1.2 s transitions: a hand clapped to her brow under the blazing horn, then thrown back laughing ("Now THIS is a fight!"); the wrist dragged across her mouth, then both hands on the club with the glowing eyes up and a wide fang grin |
+| `intro`, `victory`, `taunt` | 1.5, 2.2, 1.5 s | - | - | the club planted head-first and leant on, then back on her shoulder and the left fist squeezed till the knuckles crack; a big laugh with the club on her shoulder, then "Next!" with a pointing hand; the club's head slapped into her open palm twice |
+| `last_stand` | 1.6 s | - | - | bent over panting with a hand on her knee and the club propped, then straight up with a wild grin, the club hoisted high and the fist pumped |
+| `personal.1-3` | 2.6, 3.0, 3.2 s | - | - | the shoulder roll (both shoulders, then the neck cracked each way); a sip from the gourd with a contented sigh and a blush (her sweet tooth: the gourd is not sake); the club spin (taken from her back, twirled once round at her side, rested on her shoulder, slung back) |
+
+- **No `escape`**: she never escapes (SLICE_PLAN 3.3), so the clip would never play. Her chain has none (the hammer
+  library and the core have none either), as the Wither's and the Ender Dragon's have none.
+- **No `ultimate.loop`**: as Hinae's, the engine never sends `ultimate.end`.
+- **Markers**: the client sounds of SOUND.md 4.7 are markers in the clips their slots name: the releases of the slam
+  (`club_swing`), the throw (`throw_whoosh`), the meteor and the ultimate (`meteor_leap`), both phases (`horn_flare`,
+  `steam`), the intro and the three quirks (`shoulder_roll`, `gourd_sip`, `club_spin`). The wind-ups, the impacts and
+  the server's releases (the stomp, the gourd swig) are not markers.
+- **Faces**: every clip keys `face_ctrl`.
+- **Rules**: every own clip passes the quality rules on all six bases (no foot slides, planted feet within 0.5 px,
+  the soles on the ground, the joint limits), and the club stays clear of her body and above the ground on every
+  tick (`grips.animation_problems`). The arm poses were solved on her own skeleton for grip points and the club's
+  direction. The legs of every planted pose were solved in 2-D (the hips' and knees' rotations) so that each sole
+  stays on its spot in the hammer stance. The airborne poses lift the root (`root` in the key) and use the `floor`
+  fix. The club stuck in the ground stays put while she hauls on it: its head moves 0.57 px in the slam and 0.19 px
+  in the meteor.
+- **Out of the crater**: between two keyed poses the arms' angles blend, not the club's path, so the club swung
+  through her waist or her left shin on the way up out of the ground (1.4 to 2.1 px deep, on odd ticks only: a
+  check of every second tick missed it). The climb out of the crash (in the ultimate and at the start of Crash
+  Waves) and each hoist after a ring now pass through two solved waypoints a tick apart (`ben.cw_free`,
+  `ben.cw_free2`, then `ben.cw_lift`), so every tick is a solved pose and the club stays clear.
+- **Props that follow her hand**: the gourd (in the swig and `personal.2`) and the carried club (`weapon_back`, in
+  `personal.3`) are keyed on their own bones every tick (0.05 s), solved so that the prop stays in the hand (within
+  1.2 px for the gourd and 1.0 px for the club) and rests at its place on her hip or back at the clip's ends. The
+  weapon flag stays sheathed, because an idle never changes it. The keys come from a solve in the author's scratch
+  tools; the source holds the keys, and nothing in the generator changed for them.
+
+### Generator additions (`render/hero_previews.py`; every other hero's previews render byte for byte as before)
+
+- **Locomotion by traits**: a charger also shows `move.charge_run > move.skid` (its traversal charge), and a leaper
+  shows `move.crouch_jump > move.leap > move.land_heavy` in place of the plain jump. Benika is both. Hinae's and
+  Natsuho's segments are unchanged.
+- **A state clip's phase**: `phase_of_clip` draws `state.X` in the first boss phase whose `states` lists it (her
+  `state.rage` in phase 2).
+- **A phase's state after its transition**: `moments.gif` plays `phase.N` and then, at the transition's end, the clip
+  of each state that phase enters, as `HeroBoss` starts the state when the transition ends. The ultimate's state is
+  no longer drawn when it is a phase's state.
+- **A followup that never plays alone** (move weight 0, Crash Waves): `ultimate.gif` chains it after the ultimate,
+  starting one tick after the ultimate's last `hit` or `cast`, where the move runner starts a followup; its own
+  `move_crash_waves.gif` is that same chain, since the clip alone would pop from the stance into the crater.
+- Captions for her phase looks (`OWN_CAPTIONS`).
+
+### Previews (`docs/heroes-v2/previews/heroes/benika_akagane/` and `heroes/lineup.png`)
+
+Her set, as Natsuho's and Hinae's, with a README: `turnaround.png`, `faces.png`, `phases.png`, `sheet.png`, a GIF per
+move, `ultimate.gif`, `string.gif`, `moments.gif`, `idles.gif` and `locomotion.gif`. The lineup now has her first
+(alphabetical), beside Hinae, at 108% (1.97 blocks, as tall as the Ender Dragon).
+
+### Tests (496 -> 512: `tests/test_benika.py`, 16)
+
+- Her one body: adult, female, large, 108, and no phase changes it; the kit is the fixture's.
+- Every move's and the ultimate's frames equal the kit's (Crash Waves with its three ring hits 12 ticks apart), and
+  `assets.check_frames` passes on the written chain.
+- Her own clips pass every rule on every base, at most 24, no `ultimate.loop` and no `escape`; the club stays clear of
+  her body on every tick (every second tick, as Hinae's test samples, missed the crater's odd ticks).
+- Every client slot has its marker, no server slot is a marker, and the ultimate's client release is checked too.
+- `face_ctrl` in every clip; her happy, focused and determined faces bare the fang grin.
+- Crash Waves starts on the ultimate's crash pose (within 2 degrees on every bone).
+- Phase 2 flares the horn and the stripes: only those two use `trim`, the `_p2` trim is ember (brighter by more
+  than 120 summed RGB) and the `_p2` glow mask has more lit texels.
+- The gourd stays in her hand from the grab to the release and rests on her hip at the clip's ends; the carried club
+  stays in her hand through the spin (and points up, down, forward and back on the way round), with no weapon markers.
+- The preview rules: her locomotion (a charger and a leaper; Hinae's list unchanged), `state.rage` drawn in phase 2
+  after the transition, Crash Waves shown after the ultimate, and the lineup (her in, the test rig last).
+
+Sabotage: with the preview code as it was before (the charger and leaper branch only, no state or followup
+handling), the locomotion test or the two shot tests fail; restored, they pass.
+
+### Checks run
+
+`herogen check benika_akagane` (all of 14.2, the tail rule included) OK; `build --check --all` OK (the libraries,
+`_fallback`, Natsuho, Hinae, the test rig, the Wither and the Ender Dragon build byte for byte as committed); `lint`
+of her eleven parts (wild_mane, single_curved, open_coat, hakama, gauntlets, foot_wraps, sash_obi, rope_belt, gourd,
+arm_stripes, iron_club) on every base: 246 builds and checks, 0 problems; `sfxgen check` 0 errors; `hero-previews
+benika_akagane --check`, `hero-previews natsuho_komezaki hinae_shirasuzu the_wither the_ender_dragon --check` and
+`hero-previews --lineup --check` OK; the Python suite, 512 tests, OK.
+
+### Decisions
+
+1. **Her kit is the fixture's verbatim** (as Natsuho's and Hinae's).
+2. **The `trim` slot for the horn and the stripes**, so phase 2 shows by day through the phase palette alone, without
+   a new part or glow shells.
+3. **No `escape` clip**: she never escapes.
+4. **Crash Waves starts on the ultimate's crash** and the previews show it only after the ultimate, the only way it
+   plays.
+5. **Dense keys for the props that follow her hand** rather than a new parent-switch feature: GeckoLib cannot reparent
+   a bone mid-clip, and keying the prop's own bone every tick keeps the engine as it is.
+6. **Her idle quirks use what she carries**: the gourd at her hip and the club on her back.
+
+### Open items
+
+- **Engine side**: her definition in `data/factionclash/heroes/` (the fixture's fields); the `last_stand` action code
+  (6.13); the `vfx:horn_steam` puff in `phase.3` and the other `vfx:` markers of her moves; Rage's 105% size (the
+  state's `size`) applied to the model.
+- **The gourd's sway**: `visual.json` hands the gourd to the engine's procedural secondary sway, which adds to the
+  keys in the swig and `personal.2`. If the gourd wobbles off her hand in game, the engine can skip the sway while an
+  action keys the gourd's bone.
+- **Followup films**: `string.gif` shows Meteor Club > Ground Stomp with the stomp after the whole meteor clip (the
+  shared followup film, which Natsuho's previews also use); in game the stomp starts at the end of the meteor's active
+  part. Moving that film to the active end would re-render Natsuho's `string.gif`, so it is left for a deliberate
+  shared change.
+- Not run here (Gradle and Java are off limits in this task, a Java workflow runs beside it): the Java suites
+  (`HeroAssetsTest`, `BuiltinHeroesTest`, `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3
+  and 5), and the jar.

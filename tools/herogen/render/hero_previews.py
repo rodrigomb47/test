@@ -20,7 +20,8 @@ controller's queue blends for 4), with HeroFace's frames, face_ctrl keys and bli
   idles.gif         personal.1-3 over move.idle
   locomotion.gif    walk, run and the set its mobility traits use, with its own overrides (Natsuho, an acrobat: a
                     cat's twist on move.air_jump; Hinae, a runner and swimmer: the run, the swim and a plain jump;
-                    the Wither, a flyer who hovers: her drift, hover and flight set)
+                    the Wither, a flyer who hovers: her drift, hover and flight set; Benika, a charger and leaper:
+                    the charging run and skid, the crouch jump, leap and heavy landing)
   sheet.png         every clip of its own file, 7 frames each from the action's start
   wings.png         (a winged hero only, B5) the wings folded as at rest and under the fold loop, spread on the
                     ground, and in flight: the glide, the top and the bottom of the beat
@@ -72,6 +73,11 @@ OWN_CAPTIONS = {
         "phase.2": "phase.2 (the ring of talismans unfolds)",
         "phase.3": "phase.3 (her eyes and the streamers light up)",
         "escape": "escape, an apologetic bow (no code yet), over the run",
+    },
+    "benika_akagane": {
+        "phases": "the phase looks (2: the horn and the arm stripes flare ember and glow; 3: glowing eyes)",
+        "phase.2": "phase.2 (the horn flares)",
+        "phase.3": "phase.3 (steam from the horn, glowing eyes)",
     },
     "the_wither": {
         "phases": "the phase looks (2: soul-blue stays, gem and hem; 3: no familiars, burning tips, blazing eyes); "
@@ -163,6 +169,12 @@ def phase_of_clip(a, name):
     elif name == "rebirth":
         # B5: a boss hero's rebirth comes before her last phase (the Wither's at 30%, between phases 2 and 3)
         phase = max([1] + [int(p["phase"]) - 1 for p in a.visual.get("phases", [])])
+    elif name.startswith("state."):
+        # C2: a state a boss phase enters (Benika's Rage from phase 2) is drawn in that phase's look
+        for i, p in enumerate(((hero.get("boss") or {}).get("phases") or []), start=1):
+            if name[len("state."):] in (p.get("states") or []):
+                phase = i
+                break
     clip = a.chain.get(name)
     keyed = {b for b, _ in clip.tracks} if clip is not None else set()
     for b, n in a.visual["bones"].get("phase", {}).items():
@@ -360,8 +372,9 @@ def mobility_traits(a):
 
 def loco_segments(a):
     """The locomotion a hero's mobility traits use (MOBILITY_AND_WORK 1, 4.1): an acrobat's jumps, wall kicks and
-    mantle; a flyer's or hover hero's drift, hover and flight set (B5); otherwise the walk and run, a plain jump and
-    the ladder climb, and the swim for a swimmer."""
+    mantle; a flyer's or hover hero's drift, hover and flight set (B5); otherwise the walk and run, a charger's charging
+    run and skid (C2), a leaper's crouch jump, leap and heavy landing (C2) or else a plain jump, the ladder climb, and
+    the swim for a swimmer."""
     from anim.loco_preview import Segment
     traits = mobility_traits(a)
     if "acrobat" in traits:
@@ -401,8 +414,17 @@ def loco_segments(a):
             segs.append(Segment("rest.perch (perched on a high point)", [("rest.perch", 3.0)], wings=_wings_for([])))
         return segs
     segs = [Segment("walk > run%s" % (" (a runner)" if "runner" in traits else ""),
-                    [("move.walk", 1.0), ("move.run", 1.6)]),
-            Segment("jump > leap > land", [("move.jump", None), ("move.leap", 0.35), ("move.land", None)])]
+                    [("move.walk", 1.0), ("move.run", 1.6)])]
+    if "charger" in traits:
+        # C2: a charger's traversal charge and the skid that stops it (MOBILITY_AND_WORK 1.5)
+        segs.append(Segment("charge_run > skid (a charger's traversal charge)",
+                            [("move.charge_run", 1.8), ("move.skid", None)]))
+    if "leaper" in traits:
+        # C2: a leaper's jump: the 0.3 s crouch (the tell), the leap and the heavy landing (MOBILITY_AND_WORK 1.6)
+        segs.append(Segment("crouch_jump (the tell) > leap > land_heavy (a leaper)",
+                            [("move.crouch_jump", None), ("move.leap", 0.5), ("move.land_heavy", None)]))
+    else:
+        segs.append(Segment("jump > leap > land", [("move.jump", None), ("move.leap", 0.35), ("move.land", None)]))
     if "swimmer" in traits:
         segs.append(Segment("swim (a swimmer)", [("move.swim", 2.4)]))
     segs.append(Segment("climb (a ladder)", [("move.climb", 1.0)]))
@@ -588,6 +610,25 @@ def wings_sheet(a, path, scale=5):
 
 # ------------------------------------------------------------------ the set
 
+def phase_states(hero):
+    """C2: the states a boss phase enters (`boss.phases[].states`)."""
+    return {st for p in ((hero.get("boss") or {}).get("phases") or []) for st in (p.get("states") or [])}
+
+
+def followup_only(a, followups):
+    """C2: the ids of the followups that never play alone (their move's weight is 0) and have a clip."""
+    weights = {m["id"]: m.get("weight", 1) for m in (a.hero or {}).get("moves", []) or []}
+    return [f["move"] for f in followups or [] if weights.get(f.get("move")) == 0
+            and a.chain.get("move." + f["move"]) is not None]
+
+
+def active_end(a, name):
+    """C2: the wall time (the action starting at LEAD) its active part ends: one tick after its last hit or cast
+    (file times count from the action's start), when the move runner starts a followup."""
+    hits = a.chain.get(name).hits()
+    return LEAD + (max(hits) if hits else a.chain.get(name).length) + TICK
+
+
 def gif_shots(a):
     """{file name: [Shot]} of the films, from the hero's kit (its source's moves, ultimate, states and followups)."""
     hero = a.hero
@@ -596,15 +637,30 @@ def gif_shots(a):
     for m in hero.get("moves", []) or []:
         phase_of[m["id"]] = min(m.get("phases", [1]) or [1])
     out = {}
+    parents = {}
+    for src, fols in [("ultimate", (hero.get("ultimate") or {}).get("followups"))] + \
+            [("move." + m["id"], m.get("followups")) for m in hero.get("moves", []) or []]:
+        for f in followup_only(a, fols):
+            parents.setdefault(f, src)
     for mid in moves:
         name = "move." + mid
-        if a.chain.get(name) is not None:
-            out["move_%s.gif" % mid] = [Shot("move.%s (move slot %d)" % (mid, moves.index(mid)), [name],
-                                             phase=phase_of_clip(a, name))]
+        if a.chain.get(name) is None:
+            continue
+        if mid in parents and a.chain.get(parents[mid]) is not None:
+            # C2: a move that only ever follows another (weight 0) is shown after it, from the end of its active
+            # part (it starts on that move's last pose: Crash Waves on the crater of Iron Mountain Crash)
+            src = parents[mid]
+            out["move_%s.gif" % mid] = [Shot("%s > move.%s (move slot %d, its followup)" % (src, mid, moves.index(mid)),
+                                             [src, name], at={name: active_end(a, src)},
+                                             phase=max(phase_of_clip(a, src), phase_of_clip(a, name)))]
+            continue
+        out["move_%s.gif" % mid] = [Shot("move.%s (move slot %d)" % (mid, moves.index(mid)), [name],
+                                         phase=phase_of_clip(a, name))]
     if a.chain.get("ultimate") is not None:
         ult = a.chain.get("ultimate")
         acts, at = ["ultimate"], {}
-        states = [s.get("name") for s in hero.get("states", []) or []]
+        # C2: a state a boss phase enters (Benika's Rage) is not the ultimate's
+        states = [s.get("name") for s in hero.get("states", []) or [] if s.get("name") not in phase_states(hero)]
         for st in states:
             if a.chain.get("state." + st) is not None:
                 hits = ult.hits()
@@ -614,6 +670,12 @@ def gif_shots(a):
                 break
         ph = phase_of_clip(a, "ultimate")
         label = "ultimate > %s at its hit" % " > ".join(acts[1:]) if len(acts) > 1 else "ultimate"
+        for f in followup_only(a, (hero.get("ultimate") or {}).get("followups")):
+            # C2: a followup that never plays alone (weight 0: Benika's Crash Waves) follows from the end of the
+            # ultimate's active part, as the move runner starts it
+            acts.append("move." + f)
+            at["move." + f] = active_end(a, "ultimate")
+            label += " > move.%s (its followup, from the end of the active part)" % f
         out["ultimate.gif"] = [Shot(label if ph == 1 else "%s (phase %d)" % (label, ph), acts, at=at, phase=ph)]
     chain = ["attack.1", "attack.2", "attack.3"]
     shots = []
@@ -643,7 +705,21 @@ def gif_shots(a):
             ("last_stand", "last_stand (no code yet)", "combat.idle", True, 3),
             ("escape", cap["escape"], "move.run", False, 3)):
         if a.chain.get(name) is not None and name in own_clips(a):
-            moments.append(Shot(label, [name], base=base, drawn=drawn, phase=phase, look=look_of_clip(a, name)))
+            acts, at = [name], {}
+            if name.startswith("phase."):
+                # C2: the state the boss phase enters plays as its transition ends (Benika's Rage after phase.2)
+                bp = ((hero.get("boss") or {}).get("phases") or [])
+                n = int(name[len("phase."):])
+                if n <= len(bp):
+                    for st in bp[n - 1].get("states") or []:
+                        if a.chain.get("state." + st) is not None:
+                            secs = ((bp[n - 1].get("transition") or {}).get("seconds")) or a.chain.get(name).length
+                            acts.append("state." + st)
+                            at["state." + st] = LEAD + float(secs)
+                            label += " > state.%s (as the transition ends)" % st
+                            break
+            moments.append(Shot(label, acts, base=base, drawn=drawn, phase=phase, look=look_of_clip(a, name),
+                                at=at))
     out["moments.gif"] = moments
     out["idles.gif"] = [Shot("%s (a rare idle)" % n, [n], base="move.idle", drawn=False)
                         for n in ("personal.1", "personal.2", "personal.3") if n in own_clips(a)]
