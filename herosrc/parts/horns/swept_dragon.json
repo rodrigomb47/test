@@ -1,0 +1,193 @@
+{
+  "_comment": "Two horns swept back from the temples (B5, the Ender Dragon's; the full library's swept dragon horns, G8 may reuse them): each a run of five tapering segments on horn_r and horn_l rising out of the hair at the temple, over the side of the head and back past it in a shallow curve, black (main) with the last two segments in the alt colour (her purple tips, the end fine). `glow` 1 lights the tips in the phase look (an overlay: glow from phase 2, as BOSS_HEROES 5.2's phase looks ask; the phase texture stays on in phase 3). Head-local (offset head_y: y 0 is the chin, the head spans x and z -5..5, y 0..10), so they fit every form; the curve was solved offline as segment rotations.",
+  "id": "horns/swept_dragon",
+  "category": "horns",
+  "slots": {
+    "main": "primary",
+    "alt": "accent"
+  },
+  "params": {
+    "glow": {
+      "default": 0,
+      "max": 1,
+      "min": 0
+    }
+  },
+  "occupies": [
+    "horns"
+  ],
+  "offset": [
+    0,
+    "head_y",
+    0
+  ],
+  "cubes": [
+    {
+      "name": "seg0",
+      "bone": "horn_r",
+      "origin": [
+        -5.7,
+        5.045,
+        -4.0
+      ],
+      "size": [
+        2.4,
+        3.255,
+        2.208
+      ],
+      "rotation": [
+        128.05,
+        -40.08,
+        20.15
+      ],
+      "pivot": [
+        -4.5,
+        8.0,
+        -2.8
+      ],
+      "material": "bone",
+      "shade": "flat",
+      "mirror": true,
+      "outline": false,
+      "tone": 0
+    },
+    {
+      "name": "seg1",
+      "bone": "horn_r",
+      "origin": [
+        -6.225,
+        6.952,
+        -2.225
+      ],
+      "size": [
+        2.05,
+        3.348,
+        1.886
+      ],
+      "rotation": [
+        124.83,
+        -21.39,
+        11.27
+      ],
+      "pivot": [
+        -5.2,
+        10.0,
+        -1.2
+      ],
+      "material": "bone",
+      "shade": "flat",
+      "mirror": true,
+      "outline": false,
+      "tone": 0
+    },
+    {
+      "name": "seg2",
+      "bone": "horn_r",
+      "origin": [
+        -6.55,
+        8.705,
+        0.05
+      ],
+      "size": [
+        1.7,
+        3.295,
+        1.564
+      ],
+      "rotation": [
+        115.76,
+        -8.57,
+        5.38
+      ],
+      "pivot": [
+        -5.7,
+        11.7,
+        0.9
+      ],
+      "material": "bone",
+      "shade": "flat",
+      "mirror": true,
+      "outline": false,
+      "tone": 1
+    },
+    {
+      "name": "seg3",
+      "bone": "horn_r",
+      "origin": [
+        -6.625,
+        9.973,
+        2.625
+      ],
+      "size": [
+        1.35,
+        3.227,
+        1.242
+      ],
+      "rotation": [
+        107.63,
+        2.99,
+        -2.18
+      ],
+      "pivot": [
+        -5.95,
+        12.9,
+        3.3
+      ],
+      "material": "bone",
+      "shade": "flat",
+      "mirror": true,
+      "outline": false,
+      "tone": 1,
+      "slot": "alt",
+      "fine": false
+    },
+    {
+      "name": "seg4",
+      "bone": "horn_r",
+      "origin": [
+        -6.35,
+        10.811,
+        5.3
+      ],
+      "size": [
+        1.0,
+        3.189,
+        0.92
+      ],
+      "rotation": [
+        99.16,
+        12.01,
+        -10.24
+      ],
+      "pivot": [
+        -5.85,
+        13.7,
+        5.8
+      ],
+      "material": "bone",
+      "shade": "flat",
+      "mirror": true,
+      "outline": true,
+      "tone": 0,
+      "slot": "alt",
+      "fine": true,
+      "taper": 0.3
+    }
+  ],
+  "paint": [
+    {
+      "cubes": [
+        "#seg3*",
+        "#seg4*"
+      ],
+      "overlay": true,
+      "pattern": {
+        "type": "solid",
+        "slots": [
+          "alt"
+        ]
+      },
+      "glow": "phase",
+      "when": "glow"
+    }
+  ]
+}

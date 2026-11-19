@@ -3717,3 +3717,286 @@ committed, her files fresh), `lint` (268 builds and checks, 0 problems), `render
 - Not run here (Gradle is off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`; they will see her files, which pass the Python mirror of their rules), GameTests, the in-game
   and campaign checks, and the jar.
+
+## B5: the Ender Dragon's look (2026-11-19)
+
+HEROES_V2.md 15.8 row B5, the Ender Dragon's half of the look gate (the Wither's is above): `BOSS_HEROES.md` 5.1, 5.2,
+5.6 (her flight, the circle and the perch), 5.12 (her own animations), 5.13 (Spirecore's worn part) and the LOOK
+section of `kits/the_ender_dragon.txt`. Like the Wither's, it comes before her kit exists as data: the look, the parts,
+the phase looks, the idle quirks, the locomotion and the moments without hit ticks; no move clip is authored (their
+frames come from the B1 kit fixture). She has one body for good (HEROES_V2 3.6): **an adult woman, female, standard
+build, drawn at 108% (1.97 blocks, under the 1.98 cap)**, and every preview shows her only in that body. The vanilla
+Ender Dragon is the reference for what she must read as (black scales, purple eyes and membranes, end-stone spines);
+every shape here is the library's own (generators, rig v3, style pass 2), and nothing is taken from another creator's
+design. No hit tick, marker or timing file of an existing clip changed: Natsuho, Hinae, the Wither, the test rig,
+`_fallback` and the libraries build byte for byte as before, and her files are new. With no definition in
+`data/factionclash/heroes/` she stays dormant in the game until B1/B7 add one.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/the_ender_dragon.hero.json` | the art-only source (`"kit": "pending"`, as the Wither's): `mobility` (flyer III, carrier `wings` on `wings/dragon`), `art` (body, palette, face, 12 parts, the claws, phase looks) and `animations` (style `fists`, blink `calm`, the `dragon_wings` variant, 15 poses, 10 own clips) |
+| `herosrc/anim/variants/dragon_wings.json` | flight on worn dragon wings (G10's variant mechanism): 13 poses and 8 clips, the core flight set opened through the part's bones, plus `move.circle` |
+| `herosrc/parts/`: `wings/dragon`, `horns/swept_dragon`, `tails/scaled`, `markings/scales`, `markings/dorsal_spines`, `outfit_top/scale_bodice`, `outfit_bottom/long_skirt`, `armour/spined_pauldrons`, `weapons/dragon_claws`, `accessories/spirecore_pendant` | the ten new parts of 5.2, built with the library's generators and conventions so G8 can reuse them (5.2 names them as G8's planned dragon wings, swept horns, scaled tail, long skirt and scales) |
+| `herosrc/parts/hair/long_layered.json` | `under` 0..1 (default 0): the inner ring drawn as a long under-layer in the alt slot (`hair_accent`); `under` 0 builds the style exactly as before |
+| generated | `geo/hero`, `textures/entity/hero/the_ender_dragon.png`, `_glowmask`, `_p2`, `_p2_glowmask`, `heroes/the_ender_dragon.visual.json` (no moves), `animations/hero/the_ender_dragon.animation.json`, `data/factionclash/hero_timings/the_ender_dragon.json` |
+| `gen.py` | a chain's `crest`: a spine on the up side of each segment (below) |
+| `paint.py` | the stripes pattern's `gap` (thin lines: the membranes' veins) |
+| `face.py` | the `scales` face paint and `throat_glow` (below) |
+| `build.py` | `LOCOMOTION_BOSS`: `move.circle` is a locomotion name (5.6, kit-gaps "Boss heroes" 10) |
+| `render/hero_previews.py` | the wing loops laid over every preview of a winged hero, a winged flyer's locomotion set, `wings.png`, her captions |
+| `tests/test_ender_dragon.py` | 19 tests (below) |
+
+### Her look
+
+The vanilla Ender Dragon made into a woman, read at once: black scales, purple eyes and membranes, end-stone spines.
+
+- **Hair**: `hair/long_layered` (length 17, locks 11) in near-black `#1B1720` with the new `under` 1: the inner ring
+  of strands falls as a long purple under-layer (`hair_accent` `#7A3FB8`) that shows at the sides and under the outer
+  layer when she turns, swept back from the horns.
+- **Horns**: `horns/swept_dragon`, two horns from the temples, each a run of five tapering segments along a curve (from
+  above the side lock, back along the head and up past the crown), black (`primary`) with the last two segments purple
+  (`accent`); with `glow` 1 the tips are `glow: phase` (lit from phase 2). Head-local, so they fit every form.
+- **Face**: `cat` eyes, `glossy` irises with a `slit` pupil and `iris_glow` (the purple irises glow in every open
+  frame), lashes 3, `bold` brows, the `soft` mouth with `fang: both`, no blush; the new `scales` face paint on both
+  cheekbones (two rows of small dark scales from the edge of the face, deep and faint by turns) and the new
+  `throat_glow` (the inside of every open mouth frame is drawn in the glow colour and lit: her roar and her angry face
+  show a purple throat; a closed mouth shows nothing). Blink `calm`. Overrides: `happy` a closed-eye smile (eyes
+  `happy`, mouth `smile`, no cheeks), `angry` narrowed slits with an open mouth (`talk_b`), `flustered` without a
+  blush (no mood of hers blushes).
+- **Body**: `outfit_top/scale_bodice`, a high-collared black bodice with long sleeves, a scales pattern in the dark
+  purple `secondary`, a collar plate and placket in `accent`, a girdle over the hips;
+  `outfit_bottom/long_skirt`, a floor-length skirt of fourteen panels on the skirt bones, lined in `secondary`, a
+  two-texel `accent` hem, the front panel cut to the knee (the split) with three purple under-panels behind it on
+  `skirt_f`; `legwear/boots` in leather. `armour/spined_pauldrons`: dark plates on the shoulders, each with three pale
+  end-stone spines (`trim`). `markings/scales`: scale paint on the head's sides, forearms and shins (paint only, no
+  cubes). Modest throughout: a high collar, long sleeves, a floor-length skirt (ROSTER_PLAN's rule).
+- **Wings**: `wings/dragon` (below).
+- **Tail**: `tails/scaled`, the rig's five-bone tail chain from the small of the back to the ground and trailing behind,
+  4 x 3.6 px at the root and tapering, a scales pattern in `metal` on every segment, and a short tip chain of two bones
+  on `tail_5` (`tail_tip_1`, `tail_tip_2`, declared for the procedural lag) ending in a point; a crest of pale
+  end-stone spines on top (the new `crest`), one per segment but the tip's point. `s` scales it with the legs.
+- **Dorsal spines**: `markings/dorsal_spines`, a row of seven end-stone spines from the nape down the back to the tail
+  (a peaked cutout each, on fine_ bones); a second copy with `shell` 1 worn in phase 3 (glowing shells 0.12 px
+  larger, on `p3_` bones): the spines ignite.
+- **Weapon**: `weapons/dragon_claws`, a pair worn on her hands (`style` fists, `sheathed: worn`: they are her hands,
+  never sheathed): a black shell over the back of the hand, an obsidian plate, a purple glowing seam (the inner glow),
+  three hooked obsidian talons and a thumb claw.
+- **Spirecore**: `accessories/spirecore_pendant` (below).
+- **Palette** (5.2's colours): skin `#E9DDE6`, skin_shade `#B9A3B8`, hair `#1B1720`, hair_accent `#7A3FB8`, eyes
+  `#D08BFF`, primary `#1C1A22`, secondary `#3B2A4F`, accent `#C77DFF`, trim `#E3E2B4` (end stone), metal `#2A2433`,
+  leather `#2E2632`, glow `#E3A8FF`. `herogen check` NOTEs that primary and secondary differ by 9% in greyscale: by
+  design (black and a very dark purple; the purple reads by hue and the accents carry the contrast).
+- **Budget**: 234 cubes (115 beyond the fine distance, the cap 130), 98 bones, a 256x256 texture (5.2's sheet: the
+  wings and the tail need the room). 5.2 asked for about 270 cubes.
+
+| Part | Cubes | Beyond the fine distance |
+|---|---|---|
+| `hair/long_layered` (under 1) | 84 | 8 |
+| `wings/dragon` | 24 | 20 |
+| the base body | 21 | 21 |
+| `outfit_bottom/long_skirt` | 18 | 18 |
+| `weapons/dragon_claws` (pair) | 14 | 14 |
+| `markings/dorsal_spines` (and its phase-3 shells) | 7 + 7 | 0 |
+| `tails/scaled` | 13 | 7 |
+| `armour/spined_pauldrons` | 12 | 6 |
+| `horns/swept_dragon` | 10 | 8 |
+| `accessories/spirecore_pendant` | 10 | 1 |
+| `legwear/boots` | 8 | 6 |
+| `outfit_top/scale_bodice` | 6 | 6 |
+
+### The wings
+
+`wings/dragon` is a jointed frame in one plane parallel to her back, `depth` px behind it (default 6; a wearer with short
+hair may bring it in to 1.75), on the rig's `wing_r` and `wing_l` (a short leather root on the rig bone bridges the gap): an arm (humerus and forearm in one bone, `wing_arm_r`) from the
+shoulder blade to the wrist, a knuckle with a pale claw at the wrist, three black finger bones (`wing_hand_r` carries the
+first, `wing_f2_r` and `wing_f3_r` the others) and between them the membrane (`secondary`, purple) as half-webs, each a
+triangle from the wrist (`cutout: tri_up`) lying next to its finger, so the fan closes into a narrow fold and opens
+without a gap. Thin veins (stripes with a `gap`, in `hair_accent`) are `glow: phase`: they light up from phase 2. The
+2D design (a wing in its plane, angles from straight down, the open and folded angles of each bone) was solved offline
+in a scratch script and written out as numbers; `k` shrinks the wing with the torso on the smaller forms and `span`
+scales it.
+
+- **Folded at rest.** The part's rest pose is the fold: the arm up and out so the wrist and its claw stand above the
+  shoulder, the fingers and webs hanging down behind and beside the arm to the waist. Any clip that does not key the
+  part's bones shows them folded. A first version lay 1.75 px behind the back, under her long hair, and from behind
+  the wings could not be seen at all; the plane is now 6 px back, over the hair (the hair falls between the back and
+  the folded wings), and from behind they read as two dark fans with purple webs. The last web (`web3`) is narrower
+  than first drawn (26 degrees, not 38) so the two folded fans never meet at the spine (`lint` found 127 px of
+  coplanar faces where they overlapped), and the five webs (0.15 px thick) now sit apart in depth from each other and
+  from every finger's faces: once the wings stood clear of the hair, flush faces near the wrist showed 2-18 px of
+  coplanar faces on the adult, teen and chibi bases.
+- **Opened by their own bones.** A clip opens a wing by turning the part's bones about z (right wing: arm -50, hand
+  +133, f2 -27, f3 -53; mirrored), about 2.2 blocks across at her scale (5.2). The flight clips are a G10 variant,
+  `dragon_wings` (below), so any hero wearing these wings may fly with them.
+- **The wing loops (design A).** The wings controller plays the shared loops on the rig's `wing_r` and `wing_l` by
+  `DATA_LOCO`'s mode (`HeroClips.wingLoop`) and overrides any other controller there. Her clips therefore never key
+  `wing_r`/`wing_l` (only the part's child bones), and the loops never key the part's bones: the two compose (the loop
+  beats or holds the whole wing, her clip opens or folds it). In the air the shared `sec.wings_flap` and
+  `sec.wings_glide` work as they are (the variant turns the open arm +30 about y in the glide and the circle, +16 in
+  powered flight, against their forward sweep, so the open wing lies out from the back). **On the ground** the shared
+  `sec.wings_fold` turns worn wings in toward the spine (`wings.folded`, `wing_r` ry 32), which suits wings that stand
+  out from the back but crossed her already folded fans behind her head (the right wing's inner edge 3.4 px past the
+  spine). She has her own `sec.wings_fold` (her file comes first in the chain, so `HeroAnimator` and the previews play
+  it): the rig bones at the bind angle, a 2-degree breath and a ruffle at 2.6 s (the wrists lifting out and the fans
+  flaring back), keying only `wing_r` and `wing_l` like the shared one. Her ground poses that open the wings had been
+  tuned against the shared loop's turn (the arm turned 28 degrees forward to cancel it); with her own loop they carry
+  the whole turn themselves: spread wings cupped 8 degrees forward, the perch's half-mantled wings 12, the preen's
+  left wing swung 48-52 degrees round her side.
+
+### The flight variant (`herosrc/anim/variants/dragon_wings.json`)
+
+| Clip | Length | What happens |
+|---|---|---|
+| `move.takeoff` | 0.6 s | the tell: a deep crouch with the wings half opening and rising (0.2 s), the push with the wings full open for the stroke (0.3 s, `vfx:takeoff_dust`), the rise into the cruise; settles to `move.fly` |
+| `move.fly` | 1.6 s loop | the cruise lean, the wings open (the flap loop beats them), a slow bob |
+| `move.fly_fast` | 0.8 s loop | streamlined and nearly level, the wings half swept back |
+| `move.fly_hover` | 1.6 s loop | upright, the legs dangling and treading, the wings open, a bob on each stroke |
+| `move.glide` | 2.4 s loop | pitched into the glide, the arms back along her sides, the wings spread wide (the glide loop holds them), a slow roll |
+| `move.gust` | 0.4 s | one strong stroke lifts her nearer upright, the knees tucked (`vfx:gust`), then the glide |
+| `move.fly_land` | 0.4 s | the wings swept wide and forward to brake as the body tips back, touch-down at 0.18 s with the wings folding in, the knees take the weight, up into the stance with the wings folded by 0.4 s |
+| `move.circle` | 2.4 s loop | **new** (5.6: an aerial window's `pattern: circle` round her target, kit-gaps 10): the glide banked into a turn to her left, the inner wing low, her head turned in to watch, the bank breathing deeper and back |
+
+The variant's poses (`dwing.open`, `cruise`, `fast`, `hover`, `glide`, `bank`, `crouch`, `push`, `rise`, `flare`,
+`touch`, `give`, `lift`) extend the core's flight poses and add the part's wing bones. `move.circle` is a locomotion
+name (`build.LOCOMOTION_BOSS`): a hero may override it, no move id may take it, and an art-only source may carry it.
+The engine plays it under the glide loop while she circles (the aerial pattern's hook, open below).
+
+### Phase looks
+
+- **Phase 2**: the veins of the membranes and the horn tips glow (both `glow: phase`, drawn in `_p2.png` and its glow
+  mask; the base texture keeps them dark).
+- **Phase 3**: `eyes_glow` and the dorsal spines ignite (the `shell` copy on `p3_` bones, whose texels are in the glow
+  mask). The breath motes from her mouth are the engine's (5.2: particles at `vfx_head`, the head's centre, open
+  below); the `phase.3` clip marks the puff (`vfx:breath_motes` at 0.8 s).
+- The claws' glowing seams and Spirecore's crystal glow in every phase; her irises glow in every open eye frame
+  (`iris_glow`); her throat glows whenever her mouth is open (`throat_glow`).
+
+### Spirecore's worn part
+
+`accessories/spirecore_pendant` (`"artifact": "spirecore"`): a caged end crystal on a chain at her collarbone. The
+chains, the bail and the caps hang from `artifact_spirecore`; the crystal (glowing) and the cage's bars sit on
+`artifact_spirecore_cage`, a child bone at the crystal's centre, which her `sec.loop` turns once round every 6 s (the
+secondary controller plays `sec.loop` whenever the chain has one; a whole turn unwound at the loop's end). `visual.json`
+`bones.artifacts` is `{"spirecore": ["artifact_spirecore", "artifact_spirecore_cage"]}`: R3's hook in `HeroModel`
+hides them unless she wears Spirecore ("drawn only while worn", 5.13). Until then it is drawn always, which is right for
+her (a boss hero comes with her signature in her first slot).
+
+### Her clips (no hit ticks)
+
+| Clip | Length | What happens |
+|---|---|---|
+| `sec.loop` | 6.0 s | Spirecore's cage turning (above) |
+| `sec.wings_fold` | 4.0 s | her ground wing loop (above) |
+| `personal.1` | 3.4 s | she preens her left wing: a look over the left shoulder, the wing half opened and swung forward round her, the membrane combed twice with her right claws, shaken out and folded away, pleased with herself |
+| `personal.2` | 3.6 s | she curls her tail round her feet: the tail swings round her right side until its tip rests before her toes, like a cat's round its paws, a content closed-eye smile down at it, then it slides back |
+| `personal.3` | 3.8 s | she gazes up at the sky: chest lifted, head tipped back (the neck past -25 degrees), the wings easing a little open as if to feel the air, half-closed eyes, a faint smile |
+| `intro` | 1.4 s | 5.4: she lands with her wings spread (the knees give), folds them, then lifts her chin with her head tilted and one claw raised lazily, and settles into her stance |
+| `phase.2` | 1.4 s | wings spread wide, chest arched and head thrown back: the roar, her throat glowing purple |
+| `phase.3` | 1.4 s | head bowed over her clenched claws with the wings drawn in and trembling, then she looks up with glowing eyes as the wings snap open, a puff of dragon's breath (`vfx:breath_motes`) |
+| `last_stand` | 1.8 s | no action code yet: the right claw raised high, the left flung out, the wings spread wide, chin up, then set in her stance. She fights to the death: no `escape` clip |
+| `rest.perch` | 6.0 s | 5.6's perch (planted): standing tall at the edge, the wings half mantled over her shoulders, breathing slowly, looking out over the land one way and the other, the tail's end swaying. A first deep crouch put the skirt through her thighs and the tail up in the air; she now stands |
+
+`face_ctrl` is keyed in the quirks and the moments. Her own file holds 10 clips and the variant 8 (18 of the 24 the
+own file may hold). The sounds of 5.11 are not markers yet (her sound set, B6, does not exist). Every own clip passes
+the quality rules on all six bases, and her claws stay clear of her body on every second tick
+(`grips.animation_problems`).
+
+### Generator additions (shared code; every other hero builds byte for byte as before)
+
+1. **`crest` on a chain** (`gen.py`, `_crest`): `{"size": [across, out, along share], "slot", "material", "taper",
+   "last"}` puts a box on the side of each segment that faces world up most, on the fine_ copy of the segment's bone
+   with the segment's rotation and pivot, named `<part>#<chain><i>_crest`; the last segment of a chain is left bare
+   unless `last` is true (her rig chain has one on `tail_5`, the tip chain ends bare in its point). A chain without
+   `crest` builds as before.
+2. **The stripes pattern's `gap`** (`paint.py`): one line of `size` texels every `size + gap`; without it the stripes
+   are as wide as their gaps, as before.
+3. **`scales` face paint and `throat_glow`** (`face.py`): above. `throat_glow` defaults to false.
+4. **`move.circle` a locomotion name** (`build.py` `LOCOMOTION_BOSS`).
+5. **`hair/long_layered` `under`**: the original inner group gets `when: 1 - under` and a copy with `when: under` is
+   appended at the end of the strands (so the strands before it keep their jitter seeds), longer and in the alt slot.
+   `under` 0 builds the style exactly as before (`test_hair_under_layer`).
+6. **Previews** (`render/hero_previews.py`): `wings()` lays the wing loop of a clip's mode (`wing_loop_of`: the flap
+   loop for powered flight, the glide loop for the glide and the circle, the fold loop otherwise) over every frame of a
+   winged hero, as the wings controller does in game; the winged flyer's locomotion segments (walk > run, the flight
+   set, glide > gust > glide > circle when she has the circle, the perch when she has it); `wings.png` (folded at rest
+   and under the fold loop, spread on the ground, the glide, the top and bottom of the beat, from five views). A
+   model without `wing_r` is untouched: the Wither's segments and every other hero's previews are as committed.
+
+### Previews (`docs/heroes-v2/previews/heroes/the_ender_dragon/` and `heroes/lineup.png`)
+
+Laid out like the Wither's, with a README: `turnaround.png`, `wings.png`, `faces.png`, `phases.png`, `sheet.png`,
+`string.gif` (the fists string with her talons; her own claw string comes with the kit), `moments.gif`, `idles.gif` and
+`locomotion.gif`. No move GIFs and no `ultimate.gif` (no kit yet). The lineup has her beside the others at her own
+scale (1.97 blocks, the tallest). The parts sheets (`previews/parts/`) show the new parts on the six bases.
+Looked at: the turnaround and wings sheet at 4-7x with and without her hair (which is how the hidden wings were found),
+the faces, the phases, the quirks, the moments and the locomotion frame by frame.
+
+### Tests (460 -> 479: `tests/test_ender_dragon.py`, 19)
+
+Her one body (adult, female, standard, 108, 1.97 blocks, no phase changes it); the budget (at most 300 cubes, 130
+beyond the fine distance, 100 bones, 256x256); the art-only source (no moves or kit clip; `move.circle` allowed and,
+sabotaged out of `LOCOMOTION_BOSS`, refused; a `state.perched` clip refused); her clips pass every rule on every base,
+at most 24, no `escape`; the claws clear of her body; the flight clips open the wings through the part's bones and
+never key `wing_r`/`wing_l`, and only the loops key those; the quirks (the preen reaches the wing, the tail's tip curls
+forward, the gaze lifts the neck past -25 degrees); the wings fold above the hips and behind the back and open 2.05-2.4
+blocks (sabotage: without the hand's turn under 1.6); under her own fold loop the fans stay over her hair, above the
+hips and each on its side of the spine, and every beat of the shared flight loops stays off the ground (sabotage: the
+shared fold loop crosses them past the spine); the glow mask (veins and horn tips only in the phase texture, thin
+lines not whole webs; the claws' seams and the crystal always; the seven phase-3 shells on `p3_` bones); the horns;
+the tail chain, its tip chain and the six crest spines (sabotage: the chain without `crest` has none); the skirt split
+to the knee with three under-panels; the pendant on its artifact bones and the cage's turn; the hair's under-layer
+(`under` 0 identical to no parameter); the face (cat slit glowing irises, both fangs, no mood blushing, the scales on both
+cheeks, the throat lit in mouth frame 3 and dark in frame 0); the stripes' `gap`; the crest on an inline chain; the
+preview rules (the wing loop by mode; the Wither's segments unchanged). Besides the sabotage steps inside the tests,
+four sabotages were run in memory (no file edited) and each failed its test: the crest without `last` (5 spines, not
+6), her ground loop at the shared fold angles (the right fan 3.4 px past the spine), the `flustered` override removed
+(a blush), the wing plane back at 1.75 px (the fans under the hair's back panel).
+`test_details`' slice-column test lets her two markings through by name, as it does the Wither's.
+
+**At the commit** (the finished tree): the full suite (479 tests, OK), `check --all --style` (every hero, the style
+fixtures and the icons), `build --all --check` (the libraries, `_fallback`, the test rig, Natsuho, Hinae and the Wither
+as committed, her files fresh), `lint` (2570 builds and checks, 0 problems), `render-previews --check`,
+`parts-previews --check`, `anim-previews --locomotion --check`, `hero-previews --check` for her, Natsuho, Hinae and the
+Wither, and `hero-previews --lineup --check`; the style preview set (`previews`) re-rendered byte for byte as committed.
+
+### Decisions
+
+1. **Art only, no fake kit**, as the Wither's: `"kit": "pending"`, no move clip; her perch and her circle are a base
+   loop and a locomotion clip (no hit tick), and the kit's perched state (`state.perched`) is refused until the kit
+   exists.
+2. **Wings folded by the part, opened by her clips; the loops on the rig bones** (design A, above): the only way for
+   her clips and the wings controller to compose, since the controller overrides `wing_r`/`wing_l`.
+3. **Her own ground wing loop**: the shared one is right for wings that stand out from the back; hers are folded by the
+   part, so she holds them at the bind angle. A hero that wears `wings/dragon` later needs the same (the part's and the
+   variant's comments say so).
+4. **The wings over the hair**: 6 px behind the back, so a woman with long hair still reads as winged from behind.
+5. **The claws are her hands** (`sheathed: worn`): there is nothing to sheathe, so the sheathed copy is the worn one.
+6. **The palette's dark pair** (the NOTE above) is by design.
+7. **No crouch for the perch**: standing at the edge reads as perched in game (she stands on the highest block), and a
+   crouch pushed the thighs through the skirt.
+
+### Open items
+
+- **The move step** (against the B1 kit fixture, `BOSS_HEROES.md` 5.3 and 5.12): remove `"kit": "pending"`, copy the
+  fixture's kit fields in and author `move.ender_fireball` (on the ground and in the air), `move.dragon_breath`,
+  `move.wing_gust`, `move.void_dive`, `move.raise_crystal`, `move.perch` and `state.perched`, `move.void_roar`,
+  `move.crescent_tail`, `move.end_gravity`, `ultimate` with its `ultimate.loop` for the breath sweep (`MoveTiming.stops`
+  and the `ultimate.end` rule, as Hinae's section explains), `ultimate.awakened`, `victory` (a slow wing stretch) and
+  `taunt` (a beckoning claw), each with the kit's frames to the tick. Her clips key the part's wing bones, never
+  `wing_r`/`wing_l` (design A). Her own file holds 10 clips and the variant's 8 count toward the 24 the own file may
+  hold: the move step will exceed it (about 13 more clips), so either the cap grows for boss heroes (HEROES_V2 4.3 and
+  `quality`'s budget) or some flight clips fall back to the core's.
+- **Engine hooks** (B1/B3/R3/A12): `HeroModel` hiding `bones.artifacts` unless worn (Spirecore, R3); a mode or code
+  that plays `rest.perch` (her perch out of fights) and `move.circle` (the aerial window's circle pattern, kit-gaps 10);
+  an action code for `last_stand`; the phase-3 breath motes (particles from `vfx_head`, the head's centre, while phase
+  3 lasts); the sound markers of 5.11 once B6 writes her sound set; her definition in `data/factionclash/heroes/` (B7).
+- **Gate 3/4**: in-game screenshots (lineup, a phase transition, the flight and the wings controller's loops in game, a
+  face close-up) once she has a definition; ROSTER_PLAN 8's concept search on the look.
+- **Her kit sheet** (`kits/the_ender_dragon.txt`, ANIMATIONS) says her wings "fold, beat and glide on the shared wing
+  loops"; they beat and glide on them, and fold on her own ground loop (above). Left for the sheet's next kit version
+  (the kit sheets are the design's files, not this step's).
+- Not run here (Gradle is off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
+  `verifyHeroAssets`; they will see her files, which pass the Python mirror of their rules), GameTests, the in-game
+  and campaign checks, and the jar.

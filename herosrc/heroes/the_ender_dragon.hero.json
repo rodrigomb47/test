@@ -1,0 +1,1714 @@
+{
+  "_comment": "The Ender Dragon, Empress of the End (BOSS_HEROES.md section 5; owner request of 2026-11-18): the vanilla Ender Dragon made into a woman: black scales, purple eyes and membranes, end-stone spines. ART ONLY for now (the look gate, B5): her body, palette, face, parts, phase looks, her flight on her wings (the dragon_wings variant), her perch, quirks and moments without hit ticks. Her kit (moves, ultimate, passives, states, boss block, lines) comes from the B1 kit fixture the Java side writes; the move clips are authored against it later (`kit: pending`, docs/heroes-v2/notes/artgen.md). One body for good (HEROES_V2 3.6): an adult woman, standard build, drawn at 108% (1.97 blocks).",
+  "format": 2,
+  "id": "the_ender_dragon",
+  "name": "The Ender Dragon",
+  "title": "Empress of the End",
+  "description": "The Empress of the End: regal, vain and curious about the green world. She circles overhead on great black wings, perches on the highest point in reach and raises end crystals that heal her until someone breaks them.",
+  "gender": "female",
+  "archetype": "ender_dragon",
+  "rarity": "legendary",
+  "element": "arcane",
+  "kit": "pending",
+  "moves": [],
+  "mobility": {
+    "primary": {
+      "trait": "flyer",
+      "tier": 3
+    },
+    "carrier": {
+      "kind": "wings",
+      "part": "wings/dragon"
+    }
+  },
+  "art": {
+    "base": "female",
+    "form": "adult",
+    "build": "standard",
+    "scale": 108,
+    "palette": {
+      "skin": "#E9DDE6",
+      "skin_shade": "#B9A3B8",
+      "hair": "#1B1720",
+      "hair_accent": "#7A3FB8",
+      "eyes": "#D08BFF",
+      "primary": "#1C1A22",
+      "secondary": "#3B2A4F",
+      "accent": "#C77DFF",
+      "trim": "#E3E2B4",
+      "metal": "#2A2433",
+      "leather": "#2E2632",
+      "glow": "#E3A8FF"
+    },
+    "base_layer": {
+      "base_top": "primary",
+      "base_bottom": "leather",
+      "shoes": "leather"
+    },
+    "parts": [
+      {
+        "part": "hair/long_layered",
+        "color": "hair",
+        "alt": "hair_accent",
+        "params": {
+          "length": 17,
+          "locks": 11,
+          "under": 1
+        }
+      },
+      {
+        "part": "horns/swept_dragon",
+        "color": "primary",
+        "alt": "accent",
+        "params": {
+          "glow": 1
+        }
+      },
+      {
+        "part": "outfit_top/scale_bodice",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "accent"
+      },
+      {
+        "part": "outfit_bottom/long_skirt",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "accent"
+      },
+      {
+        "part": "armour/spined_pauldrons",
+        "color": "metal",
+        "trim": "accent",
+        "alt": "trim"
+      },
+      {
+        "part": "legwear/boots",
+        "color": "leather",
+        "trim": "metal"
+      },
+      {
+        "part": "wings/dragon",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim",
+        "detail": "hair_accent"
+      },
+      {
+        "part": "tails/scaled",
+        "color": "primary",
+        "alt": "metal",
+        "trim": "trim"
+      },
+      {
+        "part": "markings/dorsal_spines",
+        "color": "trim"
+      },
+      {
+        "part": "markings/dorsal_spines",
+        "color": "trim",
+        "phase": 3,
+        "params": {
+          "shell": 1
+        }
+      },
+      {
+        "part": "markings/scales",
+        "color": "primary",
+        "alt": "secondary"
+      },
+      {
+        "part": "accessories/spirecore_pendant",
+        "color": "metal",
+        "alt": "accent"
+      }
+    ],
+    "face": {
+      "eyes": "cat",
+      "iris_style": "glossy",
+      "pupil": "slit",
+      "iris_glow": true,
+      "lashes": 3,
+      "brows": "bold",
+      "mouth": "soft",
+      "fang": "both",
+      "blush": false,
+      "marks": [
+        {
+          "type": "face_paint",
+          "style": "scales",
+          "color": "primary"
+        }
+      ],
+      "throat_glow": true,
+      "overrides": {
+        "happy": {
+          "eyes": "happy",
+          "mouth": "smile",
+          "cheeks": "none"
+        },
+        "angry": {
+          "eyes": "angry",
+          "mouth": "talk_b"
+        },
+        "flustered": {
+          "cheeks": "none"
+        }
+      }
+    },
+    "weapon": {
+      "prop": "weapons/dragon_claws",
+      "hand": "pair",
+      "sheathed": "worn",
+      "color": "metal",
+      "trim": "primary",
+      "alt": "primary",
+      "detail": "accent"
+    },
+    "phases": [
+      {
+        "phase": 2
+      },
+      {
+        "phase": 3,
+        "eyes_glow": true
+      }
+    ]
+  },
+  "animations": {
+    "style": "fists",
+    "blink": "calm",
+    "variants": [
+      "dragon_wings"
+    ],
+    "poses": {
+      "dragon.spread": {
+        "_comment": "Her wings spread wide on the ground (the part's fold undone), cupped a little forward (8 degrees about y); her own ground wing loop holds the rig's wing bones at the bind angle, so these keys are the whole turn.",
+        "bones": {
+          "wing_arm_r": [
+            0,
+            -8,
+            -52
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            135
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -28
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -55
+          ],
+          "wing_arm_l": [
+            0,
+            8,
+            52
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -135
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            28
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            55
+          ]
+        }
+      },
+      "dragon.in_land": {
+        "_comment": "The intro's landing: knees giving, the arms out and down, the wings spread wide above her.",
+        "bones": {
+          "body": [
+            8,
+            0,
+            0
+          ],
+          "chest": [
+            -2,
+            0,
+            0
+          ],
+          "neck": [
+            -8,
+            0,
+            0
+          ],
+          "arm_r": [
+            -14,
+            0,
+            30
+          ],
+          "forearm_r": [
+            -20,
+            0,
+            0
+          ],
+          "arm_l": [
+            -14,
+            0,
+            -30
+          ],
+          "forearm_l": [
+            -20,
+            0,
+            0
+          ],
+          "wing_arm_r": [
+            0,
+            -8,
+            -52
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            135
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -28
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -55
+          ],
+          "wing_arm_l": [
+            0,
+            8,
+            52
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -135
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            28
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            55
+          ]
+        }
+      },
+      "dragon.in_fold": {
+        "_comment": "Folding them: upright, the wings half closed.",
+        "bones": {
+          "body": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            -3,
+            0,
+            0
+          ],
+          "neck": [
+            -4,
+            0,
+            0
+          ],
+          "arm_r": [
+            -6,
+            0,
+            14
+          ],
+          "forearm_r": [
+            -16,
+            0,
+            0
+          ],
+          "arm_l": [
+            -6,
+            0,
+            -14
+          ],
+          "forearm_l": [
+            -16,
+            0,
+            0
+          ],
+          "wing_arm_r": [
+            0,
+            -4,
+            -30
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            80
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -15
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -30
+          ],
+          "wing_arm_l": [
+            0,
+            4,
+            30
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -80
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            15
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            30
+          ]
+        }
+      },
+      "dragon.in_tilt": {
+        "_comment": "The regal look: chin up and the head tilted, one claw raised lazily before her, the wings folded.",
+        "bones": {
+          "body": [
+            0,
+            -8,
+            0
+          ],
+          "chest": [
+            -5,
+            -6,
+            0
+          ],
+          "neck": [
+            -10,
+            -10,
+            12
+          ],
+          "arm_r": [
+            -50,
+            6,
+            18
+          ],
+          "forearm_r": [
+            -70,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            10
+          ],
+          "arm_l": [
+            4,
+            0,
+            -10
+          ],
+          "forearm_l": [
+            -10,
+            0,
+            0
+          ]
+        }
+      },
+      "dragon.roar": {
+        "_comment": "The roar: chest arched up, head thrown back, the claws spread out low at her sides, the wings spread wide.",
+        "bones": {
+          "body": [
+            -4,
+            0,
+            0
+          ],
+          "waist": [
+            -3,
+            0,
+            0
+          ],
+          "chest": [
+            -10,
+            0,
+            0
+          ],
+          "neck": [
+            -30,
+            0,
+            0
+          ],
+          "arm_r": [
+            10,
+            0,
+            34
+          ],
+          "forearm_r": [
+            -26,
+            0,
+            0
+          ],
+          "hand_r": [
+            -20,
+            0,
+            0
+          ],
+          "arm_l": [
+            10,
+            0,
+            -34
+          ],
+          "forearm_l": [
+            -26,
+            0,
+            0
+          ],
+          "hand_l": [
+            -20,
+            0,
+            0
+          ],
+          "wing_arm_r": [
+            0,
+            -8,
+            -52
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            135
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -28
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -55
+          ],
+          "wing_arm_l": [
+            0,
+            8,
+            52
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -135
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            28
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            55
+          ]
+        }
+      },
+      "dragon.ignite_bow": {
+        "_comment": "Phase 3 gathering: the head bowed, the claws clenched before her chest, the wings drawn half shut and trembling.",
+        "bones": {
+          "body": [
+            10,
+            0,
+            0
+          ],
+          "chest": [
+            8,
+            0,
+            0
+          ],
+          "neck": [
+            24,
+            0,
+            0
+          ],
+          "arm_r": [
+            -34,
+            0,
+            20
+          ],
+          "forearm_r": [
+            -96,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            0
+          ],
+          "arm_l": [
+            -34,
+            0,
+            -20
+          ],
+          "forearm_l": [
+            -96,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            0
+          ],
+          "wing_arm_r": [
+            0,
+            0,
+            -14
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            36
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -6
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -12
+          ],
+          "wing_arm_l": [
+            0,
+            0,
+            14
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -36
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            6
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            12
+          ]
+        }
+      },
+      "dragon.ignite_up": {
+        "_comment": "Phase 3 ignited: the head comes up, the arms flung down and out, the wings snapping open.",
+        "bones": {
+          "body": [
+            -2,
+            0,
+            0
+          ],
+          "chest": [
+            -6,
+            0,
+            0
+          ],
+          "neck": [
+            -14,
+            0,
+            0
+          ],
+          "arm_r": [
+            6,
+            0,
+            40
+          ],
+          "forearm_r": [
+            -18,
+            0,
+            0
+          ],
+          "arm_l": [
+            6,
+            0,
+            -40
+          ],
+          "forearm_l": [
+            -18,
+            0,
+            0
+          ],
+          "wing_arm_r": [
+            0,
+            -8,
+            -52
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            135
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -28
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -55
+          ],
+          "wing_arm_l": [
+            0,
+            8,
+            52
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -135
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            28
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            55
+          ]
+        }
+      },
+      "dragon.defy": {
+        "_comment": "The last stand: the right claw raised forward high, the left flung out, chest up and chin up, the wings spread wide behind her.",
+        "bones": {
+          "body": [
+            -2,
+            6,
+            0
+          ],
+          "chest": [
+            -6,
+            6,
+            0
+          ],
+          "neck": [
+            -12,
+            -8,
+            0
+          ],
+          "arm_r": [
+            -126,
+            10,
+            18
+          ],
+          "forearm_r": [
+            -24,
+            0,
+            0
+          ],
+          "hand_r": [
+            -10,
+            0,
+            0
+          ],
+          "arm_l": [
+            14,
+            0,
+            -52
+          ],
+          "forearm_l": [
+            -14,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            -14
+          ],
+          "wing_arm_r": [
+            0,
+            -8,
+            -52
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            135
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -28
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -55
+          ],
+          "wing_arm_l": [
+            0,
+            8,
+            52
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -135
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            28
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            55
+          ]
+        }
+      },
+      "dragon.preen_reach": {
+        "_comment": "Preening: the head turned over the left shoulder, the left wing half opened and swung forward round her, the right claw reaching across to it.",
+        "bones": {
+          "chest": [
+            2,
+            -14,
+            0
+          ],
+          "neck": [
+            4,
+            -38,
+            -6
+          ],
+          "arm_r": [
+            -46,
+            -30,
+            -14
+          ],
+          "forearm_r": [
+            -74,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -10
+          ],
+          "arm_l": [
+            -8,
+            0,
+            -18
+          ],
+          "forearm_l": [
+            -20,
+            0,
+            0
+          ],
+          "wing_arm_l": [
+            0,
+            48,
+            34
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -70
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            10
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            22
+          ]
+        }
+      },
+      "dragon.preen_comb": {
+        "_comment": "Combing the membrane: the right claw drawn down along the half-open wing, the head bowed to it.",
+        "bones": {
+          "chest": [
+            4,
+            -16,
+            0
+          ],
+          "neck": [
+            14,
+            -40,
+            -8
+          ],
+          "arm_r": [
+            -30,
+            -36,
+            -16
+          ],
+          "forearm_r": [
+            -60,
+            0,
+            0
+          ],
+          "hand_r": [
+            8,
+            0,
+            -10
+          ],
+          "arm_l": [
+            -8,
+            0,
+            -18
+          ],
+          "forearm_l": [
+            -20,
+            0,
+            0
+          ],
+          "wing_arm_l": [
+            0,
+            52,
+            38
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -74
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            12
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            24
+          ]
+        }
+      },
+      "dragon.curl": {
+        "_comment": "The tail curled round her feet (a cat's tail round its paws): the tail swung round her right side and forward, its tip resting before her toes; she looks down at it with her claws loosely clasped before her.",
+        "bones": {
+          "tail_1": [
+            -6,
+            58,
+            0
+          ],
+          "tail_2": [
+            0,
+            44,
+            0
+          ],
+          "tail_3": [
+            0,
+            42,
+            0
+          ],
+          "tail_4": [
+            0,
+            36,
+            0
+          ],
+          "tail_5": [
+            0,
+            30,
+            0
+          ],
+          "tail_tip_1": [
+            0,
+            24,
+            0
+          ],
+          "tail_tip_2": [
+            0,
+            18,
+            0
+          ],
+          "chest": [
+            4,
+            0,
+            0
+          ],
+          "neck": [
+            20,
+            10,
+            4
+          ],
+          "arm_r": [
+            -22,
+            0,
+            -6
+          ],
+          "forearm_r": [
+            -60,
+            0,
+            0
+          ],
+          "arm_l": [
+            -22,
+            0,
+            6
+          ],
+          "forearm_l": [
+            -60,
+            0,
+            0
+          ]
+        }
+      },
+      "dragon.gaze": {
+        "_comment": "Gazing up at the sky: the chest lifted and the head tipped back, the arms hanging easy, the wings a little open as if to feel the air.",
+        "bones": {
+          "chest": [
+            -7,
+            0,
+            0
+          ],
+          "neck": [
+            -32,
+            0,
+            0
+          ],
+          "arm_r": [
+            6,
+            0,
+            10
+          ],
+          "forearm_r": [
+            -8,
+            0,
+            0
+          ],
+          "arm_l": [
+            6,
+            0,
+            -10
+          ],
+          "forearm_l": [
+            -8,
+            0,
+            0
+          ],
+          "wing_arm_r": [
+            0,
+            0,
+            -10
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            26
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -4
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -8
+          ],
+          "wing_arm_l": [
+            0,
+            0,
+            10
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -26
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            4
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            8
+          ]
+        }
+      },
+      "dragon.perch": {
+        "_comment": "Perched on a high point (BOSS_HEROES 5.6: out of fights she rests on the highest point of her base): standing tall at the edge with her chest up and her head turned out over the land, her claws easy at her sides, the wings half mantled over her shoulders, the tail hanging back.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "body": [
+            -2,
+            0,
+            0
+          ],
+          "chest": [
+            -5,
+            0,
+            0
+          ],
+          "neck": [
+            -4,
+            -12,
+            0
+          ],
+          "arm_r": [
+            10,
+            0,
+            14
+          ],
+          "forearm_r": [
+            -24,
+            0,
+            0
+          ],
+          "arm_l": [
+            10,
+            0,
+            -14
+          ],
+          "forearm_l": [
+            -24,
+            0,
+            0
+          ],
+          "wing_arm_r": [
+            0,
+            -12,
+            -26
+          ],
+          "wing_hand_r": [
+            0,
+            0,
+            62
+          ],
+          "wing_f2_r": [
+            0,
+            0,
+            -12
+          ],
+          "wing_f3_r": [
+            0,
+            0,
+            -24
+          ],
+          "wing_arm_l": [
+            0,
+            12,
+            26
+          ],
+          "wing_hand_l": [
+            0,
+            0,
+            -62
+          ],
+          "wing_f2_l": [
+            0,
+            0,
+            12
+          ],
+          "wing_f3_l": [
+            0,
+            0,
+            24
+          ]
+        }
+      },
+      "dragon.wings_rest": {
+        "_comment": "Her ground wing pose for her own sec.wings_fold: the rig's wing bones at the bind angle, so the fans her part folds lie flat over her hair (the shared wings.folded turns worn wings in toward the spine, which would cross hers behind her head).",
+        "bones": {
+          "wing_r": [
+            0,
+            0,
+            0
+          ]
+        },
+        "mirror": true
+      },
+      "dragon.wings_ruffle": {
+        "_comment": "The ruffle of her ground loop: both folded wings lifted out at the wrist and flared back a little, a shake before they settle.",
+        "bones": {
+          "wing_r": [
+            0,
+            6,
+            -7
+          ]
+        },
+        "mirror": true
+      }
+    },
+    "signatures": {
+      "sec.loop": {
+        "description": "Spirecore turning on its chain (the secondary controller, which HeroAnimator plays whenever the chain has sec.loop): the caged crystal of her pendant turns once round every 6 s, a whole turn unwound at the loop's end. It keys only the cage's rotation; the pendant's bones are hidden while she does not wear it (R3).",
+        "length": 6.0,
+        "loop": true,
+        "bones": [
+          "artifact_spirecore_cage"
+        ],
+        "secondary": false,
+        "layers": [
+          {
+            "primitive": "spin",
+            "params": {
+              "bones": {
+                "artifact_spirecore_cage": [
+                  0,
+                  360,
+                  0
+                ]
+              },
+              "ease": "linear"
+            }
+          }
+        ]
+      },
+      "sec.wings_fold": {
+        "description": "Her own ground loop for the wings controller (MOBILITY_AND_WORK 4.3: HeroClips.wingLoop plays sec.wings_fold in every ground mode, and her file comes first in the chain): the shared loop turns worn wings in toward the spine, but hers are folded by the part itself and would cross behind her head, so she holds the rig's wing bones at the bind angle: the folded fans lie flat over her hair, rising and settling with the breath, with a ruffle at 2.6 s (the wrists lifting out and the fans flaring back a little). 4.0 s like the shared loop; keys only wing_r and wing_l, so it plays over any base or action clip and leaves her own clips' wing bones (wing_arm_* and below) alone.",
+        "length": 4.0,
+        "loop": true,
+        "secondary": false,
+        "planted": false,
+        "ground": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "dragon.wings_rest"
+          },
+          {
+            "t": 2.5,
+            "pose": "dragon.wings_rest"
+          },
+          {
+            "t": 2.65,
+            "pose": "dragon.wings_ruffle",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 2.8,
+            "pose": "dragon.wings_rest",
+            "ease": "easeInOutSine",
+            "settle": 0.3
+          },
+          {
+            "t": 4.0,
+            "pose": "dragon.wings_rest"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "wing_r": [
+                  0,
+                  0,
+                  2
+                ],
+                "wing_l": [
+                  0,
+                  0,
+                  -2
+                ]
+              },
+              "period": 2,
+              "shape": "pulse"
+            }
+          }
+        ]
+      },
+      "personal.1": {
+        "description": "Preening a wing (personal.1, a rare idle), 3.4 s over move.idle: she turns her head over her left shoulder, half opens the left wing and swings it forward round her, combs the membrane twice with her right claws, shakes it out and folds it away, pleased with herself.",
+        "length": 3.4,
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "planted": false,
+        "bones": [
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "wing_arm_l",
+          "wing_hand_l",
+          "wing_f2_l",
+          "wing_f3_l"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.6,
+            "pose": "dragon.preen_reach",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 1,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.1,
+            "pose": "dragon.preen_comb",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 2
+            }
+          },
+          {
+            "t": 1.5,
+            "pose": "dragon.preen_reach",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.9,
+            "pose": "dragon.preen_comb",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 2.3,
+            "pose": "dragon.preen_reach",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.7,
+            "pose": "dragon.preen_reach"
+          },
+          {
+            "t": 3.4,
+            "pose": "@stance",
+            "ease": "easeInOutSine",
+            "face": "none"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "wing_hand_l": [
+                  0,
+                  0,
+                  8
+                ],
+                "wing_arm_l": [
+                  0,
+                  0,
+                  5
+                ]
+              },
+              "period": 0.15,
+              "window": [
+                2.3,
+                2.35,
+                2.65,
+                2.7
+              ]
+            }
+          }
+        ]
+      },
+      "personal.2": {
+        "description": "Curling her tail round her feet (personal.2, a rare idle), 3.6 s over move.idle: the long tail swings round her right side and forward until its tip rests before her toes, like a cat's round its paws; she looks down at it with a content closed-eye smile, then lets it slide back out behind her.",
+        "length": 3.6,
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "planted": false,
+        "bones": [
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "tail_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 1.0,
+            "pose": "dragon.curl",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.3,
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.5,
+            "pose": "dragon.curl"
+          },
+          {
+            "t": 2.7,
+            "face": "none"
+          },
+          {
+            "t": 3.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "personal.3": {
+        "description": "Gazing up at the sky (personal.3, a rare idle), 3.8 s over move.idle: she lifts her chest and tips her head back to the sky, her wings easing a little open as if to feel the air, holds it with half-closed eyes and a faint smile, and comes back down.",
+        "length": 3.8,
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "planted": false,
+        "bones": [
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "wing_arm_*",
+          "wing_hand_*",
+          "wing_f2_*",
+          "wing_f3_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 1.0,
+            "pose": "dragon.gaze",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 1,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.8,
+            "pose": "dragon.gaze"
+          },
+          {
+            "t": 3.0,
+            "face": "none"
+          },
+          {
+            "t": 3.8,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "intro": {
+        "description": "Intro (code 16), 1.4 s over combat.idle (BOSS_HEROES 5.4: she lands with her wings spread, folds them, and tilts her head): the knees give under her landing with the wings spread wide above her, she folds them, then lifts her chin with her head tilted and one claw raised lazily (\"You stand on my island.\"), and settles into her stance.",
+        "length": 1.4,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "wing_arm_*",
+          "wing_hand_*",
+          "wing_f2_*",
+          "wing_f3_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "dragon.in_land",
+            "face": "determined"
+          },
+          {
+            "t": 0.35,
+            "pose": "dragon.in_fold",
+            "ease": "easeInOutQuad"
+          },
+          {
+            "t": 0.6,
+            "pose": "dragon.in_tilt",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.05,
+            "pose": "dragon.in_tilt"
+          },
+          {
+            "t": 1.2,
+            "face": "focused"
+          },
+          {
+            "t": 1.4,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "phase.2": {
+        "description": "phase.2 (inside the 1.5 s transition, BOSS_HEROES 5.4): she spreads her wings wide and roars, chest arched and head thrown back, her throat glowing purple (\"Rise, spires!\"); the veins of her wings and the tips of her horns light up in the phase texture.",
+        "length": 1.4,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "wing_arm_*",
+          "wing_hand_*",
+          "wing_f2_*",
+          "wing_f3_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.3,
+            "pose": "dragon.roar",
+            "ease": "easeOutBack",
+            "face": {
+              "eyes": 4,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 0.95,
+            "pose": "dragon.roar"
+          },
+          {
+            "t": 1.1,
+            "face": "focused"
+          },
+          {
+            "t": 1.4,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "phase.3": {
+        "description": "phase.3 (inside the 1.5 s transition): her eyes and spines ignite. She bows her head over her clenched claws with her wings drawn in and trembling, then looks up with glowing eyes as the wings snap open (\"Then taste the breath of the End itself.\"), a puff of dragon's breath at her mouth.",
+        "length": 1.4,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "wing_arm_*",
+          "wing_hand_*",
+          "wing_f2_*",
+          "wing_f3_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.35,
+            "pose": "dragon.ignite_bow",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 2,
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.6,
+            "pose": "dragon.ignite_bow"
+          },
+          {
+            "t": 0.8,
+            "pose": "dragon.ignite_up",
+            "ease": "easeOutBack",
+            "face": {
+              "eyes": 10,
+              "mouth": 3
+            },
+            "marker": "vfx:breath_motes"
+          },
+          {
+            "t": 1.1,
+            "pose": "dragon.ignite_up"
+          },
+          {
+            "t": 1.4,
+            "pose": "@stance",
+            "ease": "easeInOutSine",
+            "face": "none"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "wing_hand_r": [
+                  0,
+                  0,
+                  4
+                ],
+                "wing_hand_l": [
+                  0,
+                  0,
+                  -4
+                ]
+              },
+              "period": 0.1,
+              "window": [
+                0.35,
+                0.4,
+                0.55,
+                0.6
+              ]
+            }
+          }
+        ]
+      },
+      "last_stand": {
+        "description": "The last stand (no action code yet), 1.8 s over combat.idle, drawn in her last phase: she raises her right claw high, flings the left out and spreads her wings wide with her chin up (\"Flee? I am the End. There is nowhere past me to run to.\"), then sets herself in her stance, determined. She fights to the death: there is no escape clip.",
+        "length": 1.8,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "wing_arm_*",
+          "wing_hand_*",
+          "wing_f2_*",
+          "wing_f3_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.4,
+            "pose": "dragon.defy",
+            "ease": "easeOutBack",
+            "face": {
+              "eyes": 10,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 1.1,
+            "pose": "dragon.defy"
+          },
+          {
+            "t": 1.3,
+            "face": "determined"
+          },
+          {
+            "t": 1.8,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "rest.perch": {
+        "description": "Perched (base loop, 6 s; BOSS_HEROES 5.6: out of fights she perches on the highest point of her base, and her quirk counts what is hers): standing tall at the edge with her wings half mantled, breathing slowly, looking out over the land one way and the other, the tail's end swaying. No action code or loco mode plays it yet (the engine's hook); its pose is the one the kit's perched state can start from.",
+        "length": 6.0,
+        "loop": true,
+        "planted": true,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "dragon.perch"
+          },
+          {
+            "t": 6.0,
+            "pose": "dragon.perch"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "breathe",
+            "params": {
+              "period": 3
+            }
+          },
+          {
+            "primitive": "look",
+            "params": {
+              "glances": [
+                [
+                  0.8,
+                  1.3,
+                  2.3,
+                  2.8,
+                  30,
+                  2
+                ],
+                [
+                  3.6,
+                  4.1,
+                  5.0,
+                  5.5,
+                  -18,
+                  4
+                ]
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "tail_4": [
+                  0,
+                  6,
+                  0
+                ],
+                "tail_5": [
+                  0,
+                  8,
+                  0
+                ]
+              },
+              "period": 6.0
+            }
+          }
+        ]
+      }
+    }
+  }
+}

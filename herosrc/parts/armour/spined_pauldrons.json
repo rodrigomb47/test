@@ -1,0 +1,27 @@
+{
+  "_comment": "Spined pauldrons (B5, the Ender Dragon's): obsidian (main) caps and one lame on each shoulder as the library's pauldrons, trimmed in the trim slot, and on each cap three pale spines (alt: end stone) in a row front to back, the middle one tallest, with a peaked outline, on fine_ bones.",
+  "id": "armour/spined_pauldrons",
+  "category": "armour",
+  "slots": {"main": "metal", "trim": "accent", "alt": "trim"},
+  "occupies": ["shoulders"],
+  "groups": [
+    {
+      "rotation": [0, 0, -16],
+      "pivot": ["-shoulder_x", "arm_top", 0],
+      "cubes": [
+        {"name": "cap", "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2 - 1.25", "arm_top - 0.75", "-arm_d / 2 - 1.25"], "size": ["arm_w + 2.5", 1.5, "arm_d + 2.5"], "material": "metal", "mirror": true, "trim": {"slot": "trim", "edge": "bottom", "width": 1}},
+        {"name": "cap_top", "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.5", "arm_top + 0.75", "-arm_d / 2 - 0.75"], "size": ["arm_w + 1.25", 0.6, "arm_d + 1.5"], "material": "metal", "tone": 1, "mirror": true},
+        {"name": "spine_f", "fine": true, "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.2", "arm_top + 1.3", "-arm_d / 2 - 0.55"], "size": [0.95, 2.3, 0.95], "slot": "alt", "material": "bone", "cutout": "peak", "mirror": true},
+        {"name": "spine_m", "fine": true, "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.3", "arm_top + 1.3", -0.55], "size": [1.1, 3.1, 1.1], "slot": "alt", "material": "bone", "cutout": "peak", "mirror": true},
+        {"name": "spine_b", "fine": true, "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.2", "arm_top + 1.3", "arm_d / 2 - 0.4"], "size": [0.95, 2.3, 0.95], "slot": "alt", "material": "bone", "cutout": "peak", "mirror": true}
+      ]
+    },
+    {
+      "rotation": [0, 0, -26],
+      "pivot": ["-shoulder_x - arm_w / 2", "arm_top - 0.75", 0],
+      "cubes": [
+        {"name": "lame1", "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2 - 1.5", "arm_top - 3", "-arm_d / 2 - 1.1"], "size": [1, 2.5, "arm_d + 2.2"], "material": "metal", "mirror": true, "trim": {"slot": "trim", "edge": "bottom", "width": 1}}
+      ]
+    }
+  ]
+}

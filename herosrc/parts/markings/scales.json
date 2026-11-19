@@ -1,0 +1,12 @@
+{
+  "_comment": "Black dragon scales (B5, the Ender Dragon's; the full library's scales): rims of a scales pattern painted over whatever is there (overlays) on the sides of the head along the cheekbone and the jaw (main), on the lower forearms and on the shins' front and sides (alt, so they show on black sleeves and boots). The face's own cheek scales are the face system's `scales` face paint (face.py), drawn on the skin layer so they cross the face planes.",
+  "id": "markings/scales",
+  "category": "markings",
+  "slots": {"main": "primary", "alt": "secondary"},
+  "occupies": ["scales"],
+  "paint": [
+    {"cubes": ["head"], "faces": ["east", "west"], "y": ["head_y + 1.0", "head_y + 4.0"], "z": [-5, -1.5], "overlay": true, "pattern": {"type": "scales", "size": 2, "slots": ["main"]}},
+    {"cubes": ["forearm_*"], "y": ["wrist_y - 0.5", "wrist_y + (elbow_y - wrist_y) * 0.6"], "overlay": true, "pattern": {"type": "scales", "size": 2, "slots": ["alt"]}},
+    {"cubes": ["shin_*"], "y": ["ankle_y + (knee_y - ankle_y) * 0.55", "knee_y + 0.5"], "faces": ["north", "east", "west"], "overlay": true, "pattern": {"type": "scales", "size": 2, "slots": ["alt"]}}
+  ]
+}

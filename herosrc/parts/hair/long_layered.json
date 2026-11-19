@@ -2,11 +2,12 @@
   "_comment": "Long straight hair in layers (style pass 2 hair kit): a cap open at the front and a stepped dome, a crown of strands flared over the top edge so the head reads round, a mid layer around the sides and back, a full zigzag fringe whose tips stop above the lash line, two face-framing locks per side past the chin, long back layers at two depths, and an optional curled ahoge (a two-bone chain). Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px; the cap, dome and base slabs are the far silhouette, the strands are on fine_ bones.",
   "id": "hair/long_layered",
   "category": "hair",
-  "slots": {"main": "hair"},
+  "slots": {"main": "hair", "alt": "hair_accent"},
   "params": {
     "ahoge": {"default": 0, "max": 1, "min": 0},
     "length": {"default": 16, "max": 24, "min": 6},
-    "locks": {"default": 11, "max": 16, "min": 4}
+    "locks": {"default": 11, "max": 16, "min": 4},
+    "under": {"default": 0, "max": 1, "min": 0}
   },
   "occupies": ["hair_top", "hair_back"],
   "paint": [
@@ -100,6 +101,7 @@
     },
     {
       "name": "inner",
+      "when": "1 - under",
       "bone": "hair_top",
       "path": "arc",
       "y": 9.5,
@@ -194,6 +196,24 @@
       "jitter": 0.75,
       "taper": 0.55,
       "tone": [0, -1, 0, -1]
+    },
+    {
+      "_comment": "B5: `under` 1 turns the inner ring into a long under-layer in the alt slot (hair_accent), its tips showing between and below the back layers' (the Ender Dragon's purple under the black); `under` 0 builds the ring exactly as before",
+      "name": "inner",
+      "when": "under",
+      "bone": "hair_top",
+      "path": "arc",
+      "y": 9.5,
+      "radius": [5.45, 5.45],
+      "angles": [60, 300],
+      "count": 10,
+      "width": 2.5,
+      "depth": 0.75,
+      "length": ["max(7.5, length - 0.5)", "max(7.5, length - 2)"],
+      "flare": 5,
+      "taper": 0.45,
+      "slot": "alt",
+      "tone": [0, -1]
     }
   ]
 }

@@ -1,0 +1,49 @@
+{
+  "_comment": "A long scaled tail (B5, the Ender Dragon's; the full library's scaled tail): the rig's five-bone chain from the small of the back, down to the ground and trailing behind, thick at the root (4 x 3.6 px) and tapering, plus a short tip chain of two bones on tail_5 (tail_tip_1, tail_tip_2) that ends in a point; a scales pattern in the alt colour over every segment and a crest of pale spines on top (gen.py `crest`: one swept-back spine per segment in the trim slot, on fine_ bones, all but the tip's point). `s` scales the tail with the legs, so a chibi's stays above the ground. The rig chain is baked by the core's tail spring group; the tip chain is declared for the procedural lag (visual.json secondary).",
+  "id": "tails/scaled",
+  "category": "tails",
+  "slots": {"main": "primary", "alt": "metal", "trim": "trim"},
+  "params": {"size": {"default": 1, "max": 1.2, "min": 0.7}},
+  "occupies": ["tail"],
+  "vars": {"s": "clamp(hip_y / 24.5, 0.55, 1) * size"},
+  "chains": [
+    {
+      "name": "tail",
+      "bones": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"],
+      "parent": "body",
+      "points": [
+        [0, "hip_y + 1.25", "hips_d / 2 - 0.75"],
+        [0, "hip_y - 1.75 * s", "hips_d / 2 + 2.25 * s"],
+        [0, "hip_y - 6 * s", "hips_d / 2 + 5.5 * s"],
+        [0, "max(hip_y - 11 * s, 3.2)", "hips_d / 2 + 9.5 * s"],
+        [0, "max(hip_y - 15.5 * s, 2.3)", "hips_d / 2 + 14.5 * s"],
+        [0, "max(hip_y - 18.5 * s, 1.6)", "hips_d / 2 + 19.5 * s"]
+      ],
+      "sections": [["4 * s", "3.6 * s"], ["3.6 * s", "3.3 * s"], ["3.1 * s", "2.8 * s"], ["2.6 * s", "2.4 * s"], ["2.1 * s", "1.9 * s"]],
+      "overlap": 0.45,
+      "material": "scale",
+      "tone": [0, 0, 0, 0, 0],
+      "crest": {"size": ["0.55 * s", "1.4 * s", 0.55], "slot": "trim", "material": "bone", "taper": 0.15,
+                "last": true}
+    },
+    {
+      "name": "tip",
+      "bones": ["tail_tip_1", "tail_tip_2"],
+      "parent": "tail_5",
+      "points": [
+        [0, "max(hip_y - 18.5 * s, 1.6)", "hips_d / 2 + 19.5 * s"],
+        [0, "max(hip_y - 19.75 * s, 1.35)", "hips_d / 2 + 23.5 * s"],
+        [0, "max(hip_y - 20.25 * s, 1.2)", "hips_d / 2 + 27 * s"]
+      ],
+      "sections": [["1.6 * s", "1.45 * s"], ["1.15 * s", "1.0 * s"]],
+      "overlap": 0.35,
+      "material": "scale",
+      "taper_last": 0.2,
+      "crest": {"size": ["0.45 * s", "1.0 * s", 0.6], "slot": "trim", "material": "bone", "taper": 0.15}
+    }
+  ],
+  "paint": [
+    {"cubes": ["#tail?_0*", "#tip?_0*"], "overlay": true, "pattern": {"type": "scales", "size": 3, "slots": ["alt"]}}
+  ],
+  "secondary": {"chain": ["tail_tip_1", "tail_tip_2"], "damping": 0.6, "stiffness": 0.45}
+}

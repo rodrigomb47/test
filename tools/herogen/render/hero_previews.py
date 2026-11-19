@@ -22,13 +22,17 @@ controller's queue blends for 4), with HeroFace's frames, face_ctrl keys and bli
                     cat's twist on move.air_jump; Hinae, a runner and swimmer: the run, the swim and a plain jump;
                     the Wither, a flyer who hovers: her drift, hover and flight set)
   sheet.png         every clip of its own file, 7 frames each from the action's start
+  wings.png         (a winged hero only, B5) the wings folded as at rest and under the fold loop, spread on the
+                    ground, and in flight: the glide, the top and the bottom of the beat
 `herogen hero-previews <id> [--check]` writes (or checks) them. The captions fit any hero (the pronoun from its base);
 the lines that name what a hero's phase looks, escape and variants show are in OWN_CAPTIONS.
 
 A clip is drawn in the phase it belongs to: a move from the first phase of its kit, phase.N in phase N, the last stand
 in the last phase, and any clip that keys a pN_ bone (Hinae's ring of talismans) from phase N, so what it moves
 shows. The secondary controller's `sec.loop` (C1: Hinae's ring orbits her) plays under every film and sheet frame, as
-HeroAnimator plays it whenever the chain has one.
+HeroAnimator plays it whenever the chain has one. A winged model's wings controller (B5: the Ender Dragon) plays the
+wing loop the clip's mode asks for (folded on the ground, beating in powered flight, spread in a glide) over that,
+keying only wing_r and wing_l (HeroAnimator.wings, HeroClips.wingLoop); a model without wings is drawn as before.
 
 `herogen hero-previews --lineup [--check]` writes lineup.png in the folder above: every hero with a source in
 herosrc/heroes (the fallback aside) side by side in its own body at its own scale, the test rig among them for size.
@@ -76,6 +80,11 @@ OWN_CAPTIONS = {
         "phase.3": "phase.3 (she tears the skulls away)",
         "rebirth": "rebirth (no code yet), blue-white from the soul sand",
     },
+    "the_ender_dragon": {
+        "phases": "the phase looks (2: glowing wing veins and horn tips; 3: glowing eyes and dorsal spines)",
+        "phase.2": "phase.2 (wings spread, the roar)",
+        "phase.3": "phase.3 (her eyes and spines ignite)",
+    },
 }
 
 
@@ -105,6 +114,35 @@ def secondary(a, pose, t):
         return pose
     out = {b: dict(cs) for b, cs in pose.items()}
     for b, cs in clip.sample(t % clip.length, a.form_var()).items():
+        out.setdefault(b, {}).update(cs)
+    return out
+
+
+FLAP = ("move.takeoff", "move.fly", "move.fly_fast", "move.fly_hover", "move.fly_land")
+GLIDE = ("move.glide_start", "move.glide", "move.gust", "move.circle")
+
+
+def wing_loop_of(name):
+    """B5: the wing loop the wings controller plays under a clip (HeroClips.wingLoop by DATA_LOCO's mode): beating in
+    powered flight with its take-off and landing, spread in a glide (and the circle, a banked glide), folded
+    otherwise."""
+    if name in FLAP:
+        return "sec.wings_flap"
+    if name in GLIDE:
+        return "sec.wings_glide"
+    return "sec.wings_fold"
+
+
+def wings(a, pose, t, loop="sec.wings_fold"):
+    """B5: a winged model's wing loop laid over a pose at wall time t (the wings controller runs after the others and
+    keys only wing_r and wing_l). The pose itself for a model without wings or a chain without the loop."""
+    if "wing_r" not in a.geo.bones:
+        return pose
+    clip = a.chain.get(loop)
+    if clip is None:
+        return pose
+    out = {b: dict(cs) for b, cs in pose.items()}
+    for b, cs in clip.sample(t % clip.length if clip.length else 0.0, a.form_var()).items():
         out.setdefault(b, {}).update(cs)
     return out
 
@@ -226,9 +264,11 @@ class Shot:
     """A labelled stretch of a film: actions back to back over a base loop, each started when the one before ends
     (or at an explicit offset), and the phase look and weapon flag to draw it with."""
 
-    def __init__(self, label, actions, base="combat.idle", drawn=True, phase=1, at=None, hold=0.0, look=None):
+    def __init__(self, label, actions, base="combat.idle", drawn=True, phase=1, at=None, hold=0.0, look=None,
+                 wing_loop="sec.wings_fold"):
         self.label, self.actions, self.base, self.drawn, self.phase = label, actions, base, drawn, phase
         self.look = look                # B5: "rebirth" draws the rebirth texture
+        self.wing_loop = wing_loop      # B5: the wings controller's loop (a winged model only)
         self.at = at or {}
         self.hold = hold
 
@@ -256,7 +296,7 @@ def film(a, shots, fps=FPS, scale=SCALE):
     for v in views:
         bs = []
         for shot, pb, dur in plans:
-            poses = [secondary(a, pb.pose(t), t) for t in gif.ticks(0.0, dur, 5)]
+            poses = [wings(a, secondary(a, pb.pose(t), t), t, shot.wing_loop) for t in gif.ticks(0.0, dur, 5)]
             bs.append(a.bounds([v], poses, phase=shot.phase, drawn=shot.drawn))
         b = (min(x[0] for x in bs), max(x[1] for x in bs), min(x[2] for x in bs), max(x[3] for x in bs))
         bounds.append((b[0] - 1.0, b[1] + 1.0, min(b[2], -1.0), b[3] + 1.0))
@@ -266,7 +306,7 @@ def film(a, shots, fps=FPS, scale=SCALE):
     for shot, pb, dur in plans:
         sim = a.face_sim("calm", 0)
         for t in gif.ticks(0.0, dur, fps):
-            pose = secondary(a, pb.pose(t), t)
+            pose = wings(a, secondary(a, pb.pose(t), t), t, shot.wing_loop)
             face = sim.frames(t, pose, blink_ok=pb.action_phase(t) is None)
             cells = [to_image(a.render(v, pose, face=face, phase=shot.phase, drawn=shot.drawn, bounds=b, pad=2,
                                        look=shot.look))
@@ -320,15 +360,30 @@ def loco_segments(a):
                                                                     ("move.mantle", None)])]
     if "flyer" in traits or "hover" in traits:
         # B5: a hero who floats or flies (the Wither): her drift, the hover loops and the flight set, no jumps or
-        # ladder (MOBILITY_AND_WORK 1.10, 1.11)
-        segs = [Segment("walk > run", [("move.walk", 1.6), ("move.run", 1.2)])]
+        # ladder (MOBILITY_AND_WORK 1.10, 1.11); a winged one (the Ender Dragon) with her wing loops, her circle and
+        # her perch when her own file has them
+        from anim.loco_preview import _wings_for
+        winged = "wing_r" in a.geo.bones
+        own = set(own_clips(a))
+        if winged:
+            segs = [Segment("walk > run", [("move.walk", 1.0), ("move.run", 1.2)], wings=_wings_for([]))]
+        else:
+            segs = [Segment("walk > run", [("move.walk", 1.6), ("move.run", 1.2)])]
         if "hover" in traits:
             segs.append(Segment("hover > drift (hover)", [("move.hover", 2.0), ("move.drift", 1.6)]))
         if "flyer" in traits:
-            segs.append(Segment("takeoff (the tell) > fly > fly_fast > fly_hover > fly_land",
-                                [("move.takeoff", None), ("move.fly", 2.0), ("move.fly_fast", 1.0),
-                                 ("move.fly_hover", 1.6), ("move.fly_land", None)]))
-            segs.append(Segment("glide", [("move.glide", 2.4)]))
+            fly = [("move.takeoff", None), ("move.fly", 2.0), ("move.fly_fast", 1.0), ("move.fly_hover", 1.6),
+                   ("move.fly_land", None)]
+            segs.append(Segment("takeoff (the tell) > fly > fly_fast > fly_hover > fly_land", fly,
+                                wings=_wings_for([n for n, _ in fly]) if winged else None))
+            if winged and "move.circle" in own:
+                glide = [("move.glide", 1.2), ("move.gust", None), ("move.glide", 0.6), ("move.circle", 2.4)]
+                segs.append(Segment("glide > gust > glide > circle (banking round her target)", glide,
+                                    wings={"*": "sec.wings_glide"}))
+            else:
+                segs.append(Segment("glide", [("move.glide", 2.4)]))
+        if winged and "rest.perch" in own:
+            segs.append(Segment("rest.perch (perched on a high point)", [("rest.perch", 3.0)], wings=_wings_for([])))
         return segs
     segs = [Segment("walk > run%s" % (" (a runner)" if "runner" in traits else ""),
                     [("move.walk", 1.0), ("move.run", 1.6)]),
@@ -426,7 +481,7 @@ def sheet(a, path, per_clip=7, scale=2):
             span = ACTION_BLEND + clip.length
             times = [span * i / (per_clip - 1) for i in range(per_clip)]
             drawn = base == "combat.idle"
-        poses = [secondary(a, pb.pose(t), t) for t in times]
+        poses = [wings(a, secondary(a, pb.pose(t), t), t, wing_loop_of(name)) for t in times]
         b = a.bounds([v], poses, drawn=drawn, phase=phase)
         b = (b[0] - 1, b[1] + 1, min(b[2], -1.0), b[3] + 1)
         sim = a.face_sim("calm", 0)
@@ -454,6 +509,66 @@ def sheet(a, path, per_clip=7, scale=2):
             x += cw + 10
         y += ch + 40
     out.convert("RGB").save(path, format="PNG", optimize=True)
+
+
+def wings_sheet(a, path, scale=5):
+    """B5: a winged hero's wings: folded as at rest and under the fold loop (as the game shows her on the ground),
+    spread on the ground (the part bones of its glide's first frame on the standing figure, under the fold loop: her
+    intro and phase 2), and in flight (the glide under the glide loop; the top and the bottom of the beat under the
+    flap loop)."""
+    stance = a.stance()
+
+    def with_parts(pose, clip_name, t):
+        clip = a.chain.get(clip_name)
+        out = {b: dict(cs) for b, cs in pose.items()}
+        if clip is None:
+            return out
+        for b, cs in clip.sample(t, a.form_var()).items():
+            if b.startswith("wing_") and b not in ("wing_r", "wing_l"):
+                out.setdefault(b, {}).update(cs)
+        return out
+
+    def clip_pose(name, t):
+        clip = a.chain.get(name)
+        return clip.sample(t, a.form_var()) if clip is not None else stance
+
+    rows = [
+        ("folded, at rest (the bind pose)", stance),
+        ("folded, under the fold loop (on the ground in game)", wings(a, stance, 0.0, "sec.wings_fold")),
+        ("spread on the ground (under the fold loop)", wings(a, with_parts(stance, "move.glide", 0.0), 0.0,
+                                                             "sec.wings_fold")),
+        ("the glide (move.glide, the glide loop)", wings(a, clip_pose("move.glide", 0.0), 0.0, "sec.wings_glide")),
+        ("the beat's top (move.fly, the flap loop at 0 s)", wings(a, clip_pose("move.fly", 0.0), 0.0,
+                                                                  "sec.wings_flap")),
+        ("the beat's bottom (the flap loop at 0.2 s)", wings(a, clip_pose("move.fly", 0.2), 0.2, "sec.wings_flap")),
+    ]
+    views = [("front", raster.View(0.0, 8.0, scale)), ("3/4 front", raster.View(-35.0, 10.0, scale)),
+             ("side", raster.View(90.0, 6.0, scale)), ("back", raster.View(180.0, 10.0, scale)),
+             ("from above", raster.View(180.0, 60.0, scale))]
+    cells = []
+    for label, pose in rows:
+        b = a.bounds([v for _, v in views], (pose,))
+        cells.append((label, [(vl, to_image(a.render(v, pose, face=a.mood("calm"), bounds=(b[0] - 1, b[1] + 1,
+                                                                                          b[2] - 1, b[3] + 1))))
+                              for vl, v in views]))
+    cw = max(im.width for _, row in cells for _, im in row)
+    W = 20 + len(views) * (cw + 12)
+    H = 46 + sum(max(im.height for _, im in row) + 44 for _, row in cells)
+    out = Image.new("RGBA", (W, H), BG)
+    d = ImageDraw.Draw(out)
+    d.text((16, 12), "%s: %s wings folded and open (the wings controller's loops on wing_r and wing_l)"
+           % (a.name, captions(a)["pos"]), fill=INK, font=font(18))
+    y = 46
+    for label, row in cells:
+        h = max(im.height for _, im in row)
+        d.text((12, y), label, fill=INK, font=font(13))
+        x = 12
+        for vl, im in row:
+            out.alpha_composite(im, (x + (cw - im.width) // 2, y + 18 + h - im.height))
+            d.text((x + cw // 2, y + 22 + h), vl, fill=DIM, font=font(11), anchor="ma")
+            x += cw + 12
+        y += h + 44
+    save(out, path)
 
 
 # ------------------------------------------------------------------ the set
@@ -553,7 +668,7 @@ def lineup(path, ids=None, scale=LINEUP_SCALE):
             v = raster.View(yaw, pitch, k)
             pose = a.stance(drawn)
             phase = max([1] + [int(p["phase"]) for p in a.visual.get("phases", [])]) if last else 1
-            pose = secondary(a, pose, 0.0)
+            pose = wings(a, secondary(a, pose, 0.0), 0.0)
             b = a.bounds([v], (pose,), phase=phase, drawn=drawn)
             b = (b[0] - 1, b[1] + 1, min(b[2], -1.0), b[3] + 1)
             face = (10, 0, 0) if last and any(p.get("eyes_glow") for p in a.visual.get("phases", [])) else \
@@ -640,6 +755,10 @@ def write_all(hero_id, out=None, gifs=True):
     p = os.path.join(out, "sheet.png")
     sheet(a, p)
     paths["sheet.png"] = p
+    if "wing_r" in a.geo.bones:
+        p = os.path.join(out, "wings.png")
+        wings_sheet(a, p)
+        paths["wings.png"] = p
     if gifs:
         for name, shots in sorted(gif_shots(a).items()):
             if not shots:

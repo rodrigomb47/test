@@ -327,6 +327,36 @@ def _one_chain(ctx, ch, ci, names, pts, sections, scale, suffix, declare, add_cu
                 spec["cutout"] = ch["cutout_last"]
             add_cube(spec, origin, (ww, L, dd), file_angles(m), tuple(a), name,
                      "%s#%s%d_%d%s" % (ctx.pid, ch.get("name", "c%d_" % ci), i, k, suffix), False)
+        crest = ch.get("crest")
+        if crest and (not last or crest.get("last", False)):
+            _crest(ctx, ch, ci, crest, a, base_m, w, d, ln, name, i, suffix, add_cube)
+
+
+def _crest(ctx, ch, ci, crest, a, m, w, d, ln, bone, i, suffix, add_cube):
+    """B5: a spine standing on a chain segment's top (a dragon's tail): a box in the segment's own frame, on the side
+    of the box that faces up most, `size` [across, out, along as a share of the segment] (expressions), tapered to a
+    point; it turns with the segment's bone like the segment's own box."""
+    up_local = m.T @ np.array([0.0, 1.0, 0.0])
+    # the segment's local frame: y along the chain (pointing back to the start), x across, z the depth; stand on the
+    # side (x or z) whose normal is nearest the world's up
+    axis = 0 if abs(up_local[0]) > abs(up_local[2]) else 2
+    sgn = 1.0 if up_local[axis] >= 0 else -1.0
+    across, out, along = (float(ctx.ev(v)) for v in crest.get("size", [0.6, 1.0, 0.5]))
+    half = (w if axis == 0 else d) / 2.0
+    L = ln * along
+    # the box in segment space before the rotation about the pivot a: the segment box hangs from a along -y
+    lo = half - 0.05 if sgn > 0 else -half + 0.05 - out
+    if axis == 0:
+        origin = (a[0] + lo, a[1] - (ln + L) / 2.0, a[2] - across / 2.0)
+        size = (out, L, across)
+    else:
+        origin = (a[0] - across / 2.0, a[1] - (ln + L) / 2.0, a[2] + lo)
+        size = (across, L, out)
+    spec = {"slot": crest.get("slot", "trim"), "material": crest.get("material", "bone"),
+            "fine": bool(crest.get("fine", True)), "shade": "flat", "tone": int(crest.get("tone", 0)),
+            "taper": crest.get("taper", 0.2), "glow": crest.get("glow", False)}
+    add_cube(spec, origin, size, file_angles(m), tuple(a), bone,
+             "%s#%s%d_crest%s" % (ctx.pid, ch.get("name", "c%d_" % ci), i, suffix), False)
 
 
 def check_matrix(angles):

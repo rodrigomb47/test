@@ -330,6 +330,11 @@ class Painter:
         if kind == "stripes":
             d = pattern.get("dir", "h")
             key = vy if d == "h" else (h if d == "v" else vy + h)
+            if "gap" in pattern:
+                # B5: thin lines `size` texels wide every `size + gap` texels (a membrane's veins); without a gap the
+                # stripes are as wide as the space between them, as before
+                gap = max(1, int(pattern["gap"]))
+                return (alt if key % (n + gap) >= gap else None), 0
             return (alt if (key // n) % 2 == 1 else None), 0
         if kind == "checks":
             return (alt if ((vx // n) + (vy // n) + (vz // n)) % 2 == 1 else None), 0

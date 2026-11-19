@@ -1,0 +1,19 @@
+{
+  "_comment": "Dragon talons (B5, the Ender Dragon's; a pair, style fists): an obsidian shell over each hand to the wrist with a raised plate on its back, a purple glowing seam under the plate (her inner glow, detail slot, glow material), three talons from the fingertips and a thumb claw, pointed (tri_down). Every cube is `worn`: they are her hands, always on, with no sheath and no drawn copy (sheath `worn`). The tip point is the middle talon's.",
+  "id": "weapons/dragon_claws",
+  "category": "weapons",
+  "slots": {"main": "metal", "trim": "primary", "alt": "primary", "detail": "accent"},
+  "hand": "pair",
+  "style": "fists",
+  "sheath": "worn",
+  "tip": ["-arm_w / 2 + 0.4", "hand_bottom - hand_y - 3.6", -0.7],
+  "cubes": [
+    {"name": "shell", "origin": ["-arm_w / 2 - 0.45", "hand_bottom - hand_y - 0.45", "-arm_d / 2 - 0.45"], "size": ["arm_w + 0.9", "wrist_y - hand_bottom + 0.7", "arm_d + 0.9"], "material": "metal", "trim": {"slot": "alt", "edge": "top", "width": 1}, "role": "worn"},
+    {"name": "plate", "origin": ["-arm_w / 2 - 0.85", "hand_bottom - hand_y + 0.35", -1.15], "size": [0.4, "wrist_y - hand_bottom - 0.75", 2.3], "material": "metal", "tone": 1, "role": "worn"},
+    {"name": "glow", "origin": ["-arm_w / 2 - 0.7", "hand_bottom - hand_y + 0.05", -0.75], "size": [0.25, "wrist_y - hand_bottom - 0.15", 1.5], "slot": "detail", "material": "glow", "role": "worn"},
+    {"name": "talon_0", "origin": ["-arm_w / 2 + 0.05", "hand_bottom - hand_y - 2.2", -1.35], "size": [0.55, 2.0, 0.55], "material": "metal", "tone": -1, "role": "worn", "cutout": "tri_down"},
+    {"name": "talon_1", "origin": ["-arm_w / 2 + 0.05", "hand_bottom - hand_y - 2.6", -0.45], "size": [0.6, 2.4, 0.6], "material": "metal", "tone": -1, "role": "worn", "cutout": "tri_down"},
+    {"name": "talon_2", "origin": ["-arm_w / 2 + 0.05", "hand_bottom - hand_y - 2.4", 0.45], "size": [0.55, 2.2, 0.55], "material": "metal", "tone": -1, "role": "worn", "cutout": "tri_down"},
+    {"name": "thumb", "origin": ["arm_w / 2 - 0.3", "hand_bottom - hand_y - 1.6", -1.2], "size": [0.5, 1.6, 0.5], "material": "metal", "tone": -1, "role": "worn", "cutout": "tri_down", "rotation": [0, 0, 18], "pivot": ["arm_w / 2", "hand_bottom - hand_y", -1.0]}
+  ]
+}

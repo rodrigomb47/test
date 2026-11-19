@@ -166,9 +166,9 @@ def _marks(raw):
         if m["type"] == "face_paint":
             m.setdefault("style", "stripes")
             m.setdefault("color", "accent")
-            if m["style"] not in ("stripes", "tear", "dots", "chevron", "whiskers", "sockets"):
-                raise HerogenError("art.face.marks[%d]: face_paint style is stripes, tear, dots, chevron, whiskers "
-                                   "or sockets" % i)
+            if m["style"] not in ("stripes", "tear", "dots", "chevron", "whiskers", "sockets", "scales"):
+                raise HerogenError("art.face.marks[%d]: face_paint style is stripes, tear, dots, chevron, whiskers, "
+                                   "sockets or scales" % i)
         out.append(m)
     return out
 
@@ -179,7 +179,7 @@ def face_spec(art_face, family, palette_hex):
     f = dict(FAMILY_DEFAULTS[family])
     f.update({"iris": palette_hex["eyes"], "iris2": None, "iris_style": "gradient", "spacing": 6, "fang": "none",
               "blush": False, "blush_style": "hatch", "marks": [], "glasses": None, "glasses_color": "metal",
-              "eyepatch": None, "overrides": {}, "iris_glow": False})
+              "eyepatch": None, "overrides": {}, "iris_glow": False, "throat_glow": False})
     shape = art_face.get("eyes", f["eyes"])
     shape = SHAPE_ALIASES.get(shape, shape)
     if shape not in EYE_SHAPES:
@@ -229,6 +229,8 @@ def face_spec(art_face, family, palette_hex):
         raise HerogenError("art.face: glasses and an eye patch together are not drawn")
     if not isinstance(f["iris_glow"], bool):
         raise HerogenError("art.face.iris_glow must be true or false")
+    if not isinstance(f["throat_glow"], bool):
+        raise HerogenError("art.face.throat_glow must be true or false")
     parse_hex(f["iris"])
     if f["iris2"] is not None:
         parse_hex(f["iris2"])
@@ -433,6 +435,15 @@ def skin_layer(spec, col):
                         put(17, fc(x), faint if x in (0, g.W - 1) else deep)
                     for x in range(0, max(1, g.W // 2)):
                         put(18, fc(x), faint)
+                elif style == "scales":
+                    # B5 (the Ender Dragon): a few small scales on the cheekbone at the face's outer edge, beside and
+                    # under the eye's outer corner, down toward the jaw, solid and faint texels staggered
+                    deep, faint = mix(paint, col.skin, 0.3), mix(paint, col.skin, 0.62)
+                    edge = 0 if side == "r" else FACE - 1
+                    step = 1 if side == "r" else -1
+                    for r, k, c in ((15, 0, deep), (16, 0, faint), (17, 0, deep), (17, 1, faint), (18, 1, deep),
+                                    (19, 1, faint)):
+                        put(r, edge + k * step, c)
                 elif style == "whiskers":
                     # G6c: two faint whisker lines from the face's edge on each cheek, under the blush, the inner
                     # end fading into the skin (a cat's face, never a scar)
@@ -1155,7 +1166,14 @@ def paint_face(img, glow, rig, spec, ramps, palette_hex):
         glow[v:v + h, u:u + w] = g
     for k in range(8):
         u, v, w, h = frame_rect(rig, "mouth", k)
-        img[v:v + h, u:u + w] = mouth_frame(spec, col, k, skin)
+        frame = mouth_frame(spec, col, k, skin)
+        if spec.get("throat_glow"):
+            # B5 (the Ender Dragon's purple throat, BOSS_HEROES 5.2): the dark inside of an open mouth (talking,
+            # shouting, gritted teeth) is drawn in the glow colour and lit in the glow mask
+            inside = np.all(frame[:, :, :3] == np.array(col.mouth_dark, dtype=np.uint8), axis=2) & (frame[:, :, 3] > 0)
+            frame[inside] = tuple(col.glow[2]) + (255,)
+            glow[v:v + h, u:u + w][inside] = tuple(col.glow[2]) + (255,)
+        img[v:v + h, u:u + w] = frame
     for k in range(4):
         u, v, w, h = frame_rect(rig, "cheeks", k)
         img[v:v + h, u:u + w] = cheek_frame(spec, col, k)

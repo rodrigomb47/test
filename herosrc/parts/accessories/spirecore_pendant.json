@@ -1,0 +1,28 @@
+{
+  "_comment": "Spirecore's worn part (B5; ARTIFACTS 12.7 and 16.4 `worn_part`, BOSS_HEROES 5.13): a tiny end crystal caged in obsidian and iron bars, hung on a chain at her collarbone, in front of the bodice's collar. On its artifact bone `artifact_spirecore` (drawn on its hero only while she wears it: visual.json `bones.artifacts`, the hook R3 adds) with the cage on a child bone `artifact_spirecore_cage` that her sec.loop turns once round every 6 s. The crystal glows (alt: ender purple); the chains and the bars are fine_.",
+  "id": "accessories/spirecore_pendant",
+  "category": "accessories",
+  "slots": {"main": "metal", "alt": "accent", "trim": "trim"},
+  "occupies": ["pendant"],
+  "artifact": "spirecore",
+  "vars": {
+    "pz": "-chest_d / 2 - bust_d - 0.75",
+    "py": "chest_top - 2.6"
+  },
+  "bones": [
+    {"name": "artifact_spirecore", "parent": "chest", "pivot": [0, "chest_top - 0.2", "-neck_d / 2 - 0.65"]},
+    {"name": "artifact_spirecore_cage", "parent": "artifact_spirecore", "pivot": [0, "py", "pz"]}
+  ],
+  "cubes": [
+    {"name": "chain_r", "bone": "artifact_spirecore", "origin": [-0.85, "py + 0.75", "pz - 0.05"], "size": [0.25, "chest_top - py - 0.95", 0.25], "material": "metal", "slot": "main", "rotation": [0, 0, 22], "pivot": [-0.75, "chest_top - 0.2", "pz + 0.05"], "fine": true},
+    {"name": "chain_l", "bone": "artifact_spirecore", "origin": [0.6, "py + 0.75", "pz - 0.05"], "size": [0.25, "chest_top - py - 0.95", 0.25], "material": "metal", "slot": "main", "rotation": [0, 0, -22], "pivot": [0.75, "chest_top - 0.2", "pz + 0.05"], "fine": true},
+    {"name": "bail", "fine": true, "bone": "artifact_spirecore", "origin": [-0.3, "py + 0.75", "pz - 0.3"], "size": [0.6, 0.45, 0.6], "material": "metal", "slot": "main"},
+    {"name": "crystal", "bone": "artifact_spirecore_cage", "origin": [-0.45, "py - 0.7", "pz - 0.45"], "size": [0.9, 1.3, 0.9], "material": "glow", "slot": "alt"},
+    {"name": "cap_top", "fine": true, "bone": "artifact_spirecore_cage", "origin": [-0.65, "py + 0.6", "pz - 0.65"], "size": [1.3, 0.25, 1.3], "material": "metal", "slot": "main"},
+    {"name": "cap_bottom", "fine": true, "bone": "artifact_spirecore_cage", "origin": [-0.65, "py - 0.95", "pz - 0.65"], "size": [1.3, 0.25, 1.3], "material": "metal", "slot": "main"},
+    {"name": "bar_fr", "bone": "artifact_spirecore_cage", "origin": [-0.65, "py - 0.75", "pz - 0.65"], "size": [0.2, 1.4, 0.2], "material": "metal", "slot": "main", "fine": true},
+    {"name": "bar_fl", "bone": "artifact_spirecore_cage", "origin": [0.45, "py - 0.75", "pz - 0.65"], "size": [0.2, 1.4, 0.2], "material": "metal", "slot": "main", "fine": true},
+    {"name": "bar_br", "bone": "artifact_spirecore_cage", "origin": [-0.65, "py - 0.75", "pz + 0.45"], "size": [0.2, 1.4, 0.2], "material": "metal", "slot": "main", "fine": true},
+    {"name": "bar_bl", "bone": "artifact_spirecore_cage", "origin": [0.45, "py - 0.75", "pz + 0.45"], "size": [0.2, 1.4, 0.2], "material": "metal", "slot": "main", "fine": true}
+  ]
+}

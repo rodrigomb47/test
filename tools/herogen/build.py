@@ -247,12 +247,15 @@ def art_only_problems(hero, anims):
 
 # MOBILITY_AND_WORK 4.1: the locomotion clips G10b adds beside the core's own move.* clips
 LOCOMOTION_LATER = ("move.hover", "move.drift", "move.swim_fast", "move.tread", "move.swim_down", "move.surface_leap")
+# B5 (BOSS_HEROES 5.6 and 5.12, kit-gaps "Boss heroes" 10): the Ender Dragon's banking circle glide, played while an
+# aerial window's `pattern: circle` orbits her target; a locomotion name, so no move id may take "circle"
+LOCOMOTION_BOSS = ("move.circle",)
 
 
 def locomotion_names():
     """Every locomotion clip name (a hero may override them; a move id may not take one, MOBILITY_AND_WORK 4.4):
-    the core library's move.* clips and the ones G10b adds."""
-    return {n for n in animlib.core().by_name if n.startswith("move.")} | set(LOCOMOTION_LATER)
+    the core library's move.* clips, the ones G10b adds and the dragon's circle glide (B5)."""
+    return {n for n in animlib.core().by_name if n.startswith("move.")} | set(LOCOMOTION_LATER) | set(LOCOMOTION_BOSS)
 
 
 def build_files(hero_id, hero=None):

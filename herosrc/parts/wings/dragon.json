@@ -1,0 +1,417 @@
+{
+  "_comment": "Large dragon wings (B5, the Ender Dragon's; the full library's dragon wings, G8 may reuse them): each wing a jointed frame in one plane parallel to the back, `depth` px behind it (default 6, so the folded wings lie over long hair rather than under it; a wearer with short hair may bring them in to 1.75), a short leather root on the rig's wing_r bridging the gap: an arm (humerus and forearm, wing_arm_r on the rig's wing_r) from the shoulder blade to the wrist, a knuckle with a pale claw (trim) at the wrist, three black finger bones (main) on wing_hand_r, wing_f2_r and wing_f3_r, and between them the membrane (alt: purple) as half-webs, each a triangle from the wrist (cutout tri_up) lying next to its finger, so the fan closes into a narrow fold and opens without a gap; thin veins in the detail colour (stripes with a gap) glow in the phase look (from phase 2). At rest the wings are FOLDED: the arm up and out so the wrist and its claw stand above the shoulder, the fingers and webs hanging down behind and beside the arm to the waist; any clip that does not key the part's bones shows them folded. A clip opens them by turning those bones about z (right wing: arm -50, hand +133, f2 -27, f3 -53; mirrored on the left: anim/variants/dragon_wings.json, `dwing.open`), about 2.2 blocks across at her scale, while the shared flight loops (sec.wings_flap, sec.wings_glide, G10) beat or hold the rig's wing_r and wing_l above them: the two never key the same bone. On the ground a wearer plays its own sec.wings_fold holding wing_r and wing_l near the bind angle (the Ender Dragon's): the shared one turns worn wings in toward the spine, which would cross these folded fans behind the head. `span` scales the wing; `k` also shrinks it with the torso on the smaller forms. The 2D design and the fold were solved offline and written as numbers (notes/artgen.md, \"B5: the Ender Dragon's look\").",
+  "id": "wings/dragon",
+  "category": "wings",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim",
+    "detail": "accent"
+  },
+  "params": {
+    "depth": {
+      "default": 6,
+      "max": 6,
+      "min": 1.75
+    },
+    "span": {
+      "default": 1,
+      "max": 1.15,
+      "min": 0.75
+    }
+  },
+  "occupies": [
+    "wings"
+  ],
+  "vars": {
+    "k": "clamp((chest_top - hip_y) / 15, 0.7, 1) * span"
+  },
+  "bones": [
+    {
+      "name": "wing_arm_r",
+      "parent": "wing_r",
+      "pivot": [
+        "-1.6",
+        "chest_top - 1.25",
+        "chest_d / 2 + depth + 0.75"
+      ]
+    },
+    {
+      "name": "wing_hand_r",
+      "parent": "wing_arm_r",
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.4"
+      ]
+    },
+    {
+      "name": "wing_f2_r",
+      "parent": "wing_hand_r",
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.45"
+      ]
+    },
+    {
+      "name": "wing_f3_r",
+      "parent": "wing_hand_r",
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.5"
+      ]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "root",
+      "bone": "wing_r",
+      "origin": [
+        "-2.45",
+        "chest_top - 1.25 - 0.9",
+        "chest_d / 2 - 0.1"
+      ],
+      "size": [
+        1.7,
+        1.8,
+        "depth + 0.6"
+      ],
+      "material": "leather",
+      "mirror": true
+    },
+    {
+      "name": "arm",
+      "bone": "wing_arm_r",
+      "origin": [
+        "-1.6 - 0 * k - 0.75 * k",
+        "chest_top - 1.25 + 0 * k - 9.3 * k",
+        "chest_d / 2 + depth + 0"
+      ],
+      "size": [
+        "1.5 * k",
+        "9.3 * k",
+        "1.5"
+      ],
+      "rotation": [
+        0,
+        0,
+        150.0
+      ],
+      "pivot": [
+        "-1.6 - 0 * k",
+        "chest_top - 1.25 + 0 * k",
+        "chest_d / 2 + depth + 0.75"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "main"
+    },
+    {
+      "name": "knuckle",
+      "bone": "wing_arm_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 0.95 * k",
+        "chest_top - 1.25 + 7.794 * k - 1.6 * k",
+        "chest_d / 2 + depth + -0.2"
+      ],
+      "size": [
+        "1.9 * k",
+        "1.6 * k",
+        "1.9"
+      ],
+      "rotation": [
+        0,
+        0,
+        150.0
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.75"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "fine": true,
+      "slot": "main",
+      "tone": 1
+    },
+    {
+      "name": "claw",
+      "bone": "wing_arm_r",
+      "origin": [
+        "-1.6 - 4.7 * k - 0.35 * k",
+        "chest_top - 1.25 + 8.694 * k - 2.2 * k",
+        "chest_d / 2 + depth + 0.4"
+      ],
+      "size": [
+        "0.7 * k",
+        "2.2 * k",
+        "0.7"
+      ],
+      "rotation": [
+        0,
+        0,
+        168.0
+      ],
+      "pivot": [
+        "-1.6 - 4.7 * k",
+        "chest_top - 1.25 + 8.694 * k",
+        "chest_d / 2 + depth + 0.75"
+      ],
+      "mirror": true,
+      "material": "bone",
+      "slot": "trim",
+      "taper": 0.25,
+      "fine": true
+    },
+    {
+      "name": "finger1",
+      "bone": "wing_hand_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 0.525 * k",
+        "chest_top - 1.25 + 7.794 * k - 19 * k",
+        "chest_d / 2 + depth + 0.55"
+      ],
+      "size": [
+        "1.05 * k",
+        "19 * k",
+        "0.7"
+      ],
+      "rotation": [
+        0,
+        0,
+        12.0
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.9"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "main",
+      "taper": 0.35
+    },
+    {
+      "name": "finger2",
+      "bone": "wing_f2_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 0.465 * k",
+        "chest_top - 1.25 + 7.794 * k - 15.5 * k",
+        "chest_d / 2 + depth + 0.6"
+      ],
+      "size": [
+        "0.93 * k",
+        "15.5 * k",
+        "0.7"
+      ],
+      "rotation": [
+        0,
+        0,
+        2.0
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.95"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "main",
+      "taper": 0.35
+    },
+    {
+      "name": "finger3",
+      "bone": "wing_f3_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 0.405 * k",
+        "chest_top - 1.25 + 7.794 * k - 12 * k",
+        "chest_d / 2 + depth + 0.65"
+      ],
+      "size": [
+        "0.81 * k",
+        "12 * k",
+        "0.7"
+      ],
+      "rotation": [
+        0,
+        0,
+        -8.0
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 1"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "main",
+      "taper": 0.35
+    },
+    {
+      "name": "web1a",
+      "bone": "wing_hand_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 2.322 * k",
+        "chest_top - 1.25 + 7.794 * k - 14.26 * k",
+        "chest_d / 2 + depth + 0.1"
+      ],
+      "size": [
+        "4.645 * k",
+        "14.26 * k",
+        "0.15"
+      ],
+      "rotation": [
+        0,
+        0,
+        2.75
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.175"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "alt",
+      "cutout": "tri_up",
+      "outline": false
+    },
+    {
+      "name": "web1b",
+      "bone": "wing_f2_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 2.322 * k",
+        "chest_top - 1.25 + 7.794 * k - 14.26 * k",
+        "chest_d / 2 + depth + 0.28"
+      ],
+      "size": [
+        "4.645 * k",
+        "14.26 * k",
+        "0.15"
+      ],
+      "rotation": [
+        0,
+        0,
+        11.25
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.355"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "alt",
+      "cutout": "tri_up",
+      "outline": false
+    },
+    {
+      "name": "web2a",
+      "bone": "wing_f2_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 1.711 * k",
+        "chest_top - 1.25 + 7.794 * k - 10.8 * k",
+        "chest_d / 2 + depth + 0.46"
+      ],
+      "size": [
+        "3.421 * k",
+        "10.8 * k",
+        "0.15"
+      ],
+      "rotation": [
+        0,
+        0,
+        -7.0
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.535"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "alt",
+      "cutout": "tri_up",
+      "outline": false
+    },
+    {
+      "name": "web2b",
+      "bone": "wing_f3_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 1.711 * k",
+        "chest_top - 1.25 + 7.794 * k - 10.8 * k",
+        "chest_d / 2 + depth + 0.68"
+      ],
+      "size": [
+        "3.421 * k",
+        "10.8 * k",
+        "0.15"
+      ],
+      "rotation": [
+        0,
+        0,
+        1.0
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.755"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "alt",
+      "cutout": "tri_up",
+      "outline": false
+    },
+    {
+      "name": "web3",
+      "bone": "wing_f3_r",
+      "origin": [
+        "-1.6 - 4.5 * k - 2.355 * k",
+        "chest_top - 1.25 + 7.794 * k - 10.2 * k",
+        "chest_d / 2 + depth + 0.86"
+      ],
+      "size": [
+        "4.71 * k",
+        "10.2 * k",
+        "0.15"
+      ],
+      "rotation": [
+        0,
+        0,
+        -21.0
+      ],
+      "pivot": [
+        "-1.6 - 4.5 * k",
+        "chest_top - 1.25 + 7.794 * k",
+        "chest_d / 2 + depth + 0.935"
+      ],
+      "mirror": true,
+      "material": "leather",
+      "slot": "alt",
+      "cutout": "tri_up",
+      "outline": false
+    }
+  ],
+  "paint": [
+    {
+      "cubes": [
+        "#web*"
+      ],
+      "overlay": true,
+      "pattern": {
+        "type": "stripes",
+        "dir": "v",
+        "size": 1,
+        "gap": 4,
+        "slots": [
+          "detail"
+        ]
+      },
+      "glow": "phase"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "_comment": "A high-collared scale-mail bodice (B5, the Ender Dragon's): the chest, waist and long sleeves in the main colour with a scales pattern (alt) on the body and the upper arms, a standing collar up the neck with a trimmed top, a breastplate of scales over the chest and bust trimmed at its top, a narrow placket down the front, shoulder seams trimmed at the bottom, a girdle at the waist trimmed at its hem, and trimmed cuffs (the forearm's last row). Modest: high collar, long sleeves. Layers: the girdle 0.3 px out (not on the hips' planes), the placket 0.15 px in front of the plate.",
+  "id": "outfit_top/scale_bodice",
+  "category": "outfit_top",
+  "slots": {"main": "primary", "alt": "secondary", "trim": "accent"},
+  "params": {"collar": {"default": 1.75, "max": 2.25, "min": 1}},
+  "occupies": ["torso", "sleeves"],
+  "vars": {"plate_z": "-chest_d / 2 - bust_d - 0.2"},
+  "paint": [
+    {"cubes": ["chest", "bust", "waist", "upper_arm_*", "forearm_*"], "material": "cloth", "slot": "main"},
+    {"cubes": ["chest", "bust", "waist"], "overlay": true, "pattern": {"type": "scales", "size": 3, "slots": ["alt"]}},
+    {"cubes": ["upper_arm_*"], "overlay": true, "pattern": {"type": "scales", "size": 3, "slots": ["alt"]}},
+    {"cubes": ["forearm_*"], "y": [-100, "wrist_y + 0.75"], "material": "cloth", "slot": "trim"}
+  ],
+  "cubes": [
+    {"name": "collar", "bone": "chest", "origin": ["-neck_w / 2 - 0.6", "chest_top - 0.25", "-neck_d / 2 - 0.6"], "size": ["neck_w + 1.2", "min(collar + 0.25, head_y - chest_top - 0.15)", "neck_d + 1.2"], "material": "cloth", "pattern": {"type": "scales", "size": 2, "slots": ["alt"]}, "trim": {"slot": "trim", "edge": "top", "width": 1}},
+    {"name": "plate", "bone": "chest", "origin": ["-bust_w / 2 - 0.35", "chest_y - 0.25", "plate_z"], "size": ["bust_w + 0.7", "chest_top - chest_y - 1.0", "-plate_z - 0.5"], "material": "cloth", "pattern": {"type": "scales", "size": 3, "slots": ["alt"]}, "trim": {"slot": "trim", "edge": "top", "width": 1}},
+    {"name": "placket", "bone": "chest", "origin": [-0.35, "chest_y + 0.25", "plate_z - 0.15"], "size": [0.7, "chest_top - chest_y - 1.75", 0.2], "slot": "trim", "material": "cloth"},
+    {"name": "shoulder", "bone": "arm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.55", "arm_top - 2.25", "-arm_d / 2 - 0.55"], "size": ["arm_w + 1.1", 2.0, "arm_d + 1.1"], "material": "cloth", "mirror": true, "trim": {"slot": "trim", "edge": "bottom", "width": 1}},
+    {"name": "girdle", "bone": "waist", "origin": ["-waist_w / 2 - 0.3", "waist_y - 0.6", "-waist_d / 2 - 0.3"], "size": ["waist_w + 0.6", 1.35, "waist_d + 0.6"], "material": "cloth", "trim": {"slot": "trim", "edge": "bottom", "width": 1}}
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "_comment": "Flight on worn dragon wings (B5, BOSS_HEROES 5.6 and 5.12: the Ender Dragon's overrides of the core flight clips; any hero wearing wings/dragon may use it, G8). wings/dragon is folded at rest (its arm, hand and finger bones' rest pose), so a clip that does not key them shows the wings folded; these clips open them through the part's bones while the secondary controller's shared flight loops (sec.wings_flap, sec.wings_glide) beat or hold the rig's wing_r and wing_l above them, so the two never key the same bone. On the ground the hero's own sec.wings_fold holds wing_r and wing_l near the bind angle (the Ender Dragon's): the shared one turns worn wings in toward the spine, which would cross these folded fans behind the head. The open pose is the part's fold undone: wing_arm_r -50, wing_hand_r +133, wing_f2_r -27, wing_f3_r -53 about z (mirrored on the left). In the glide and the circle the arm also turns +30 about y against the glide loop's 34 degree forward sweep, and in powered flight +16 against the beat's, so the open wing lies out from the back. Her arms stay at her sides (the wings fly, not the arms).",
+  "variant": "dragon_wings",
+  "poses": {
+    "dwing.open": {
+      "_comment": "The wings open (the part's fold undone), nothing else.",
+      "bones": {"wing_arm_r": [0, 0, -50], "wing_hand_r": [0, 0, 133], "wing_f2_r": [0, 0, -27], "wing_f3_r": [0, 0, -53]},
+      "mirror": true
+    },
+    "dwing.cruise": {
+      "_comment": "Powered flight on the wings: the core cruise lean, the arms relaxed back at her sides, the wings open and turned out against the beat's forward sweep.",
+      "extends": "fly.cruise",
+      "bones": {"arm_r": [30, 0, 10], "forearm_r": [-14, 0, 0], "arm_l": [30, 0, -10], "forearm_l": [-14, 0, 0],
+                "wing_arm_r": [0, 16, -50], "wing_hand_r": [0, 0, 133], "wing_f2_r": [0, 0, -27], "wing_f3_r": [0, 0, -53],
+                "wing_arm_l": [0, -16, 50], "wing_hand_l": [0, 0, -133], "wing_f2_l": [0, 0, 27], "wing_f3_l": [0, 0, 53]}
+    },
+    "dwing.fast": {
+      "_comment": "Fast flight: the core streamlined pose with the wings half swept back (the hand folded part way, the fingers drawn together), a dragon stooping.",
+      "extends": "fly.fast",
+      "bones": {"wing_arm_r": [0, 18, -38], "wing_hand_r": [0, 0, 92], "wing_f2_r": [0, 0, -14], "wing_f3_r": [0, 0, -30],
+                "wing_arm_l": [0, -18, 38], "wing_hand_l": [0, 0, -92], "wing_f2_l": [0, 0, 14], "wing_f3_l": [0, 0, 30]}
+    },
+    "dwing.hover": {
+      "_comment": "Hovering on the wings: upright, the legs dangling, the arms a little out and relaxed (the wings do the work).",
+      "extends": "fly.hover",
+      "bones": {"arm_r": [-6, 0, 18], "forearm_r": [-26, 0, 0], "arm_l": [-6, 0, -18], "forearm_l": [-26, 0, 0],
+                "wing_arm_r": [0, 16, -50], "wing_hand_r": [0, 0, 133], "wing_f2_r": [0, 0, -27], "wing_f3_r": [0, 0, -53],
+                "wing_arm_l": [0, -16, 50], "wing_hand_l": [0, 0, -133], "wing_f2_l": [0, 0, 27], "wing_f3_l": [0, 0, 53]}
+    },
+    "dwing.glide": {
+      "_comment": "Gliding on spread wings: the core glide's pitch with the arms swept back along her sides, the wings wide open and turned out against the glide loop's forward sweep.",
+      "extends": "glide.spread",
+      "bones": {"arm_r": [56, 0, 16], "forearm_r": [-8, 0, 0], "hand_r": [0, 0, 6], "arm_l": [56, 0, -16], "forearm_l": [-8, 0, 0], "hand_l": [0, 0, -6],
+                "wing_arm_r": [0, 30, -50], "wing_hand_r": [0, 0, 133], "wing_f2_r": [0, 0, -27], "wing_f3_r": [0, 0, -53],
+                "wing_arm_l": [0, -30, 50], "wing_hand_l": [0, 0, -133], "wing_f2_l": [0, 0, 27], "wing_f3_l": [0, 0, 53]}
+    },
+    "dwing.bank": {
+      "_comment": "Circling: the glide banked 24 degrees into a turn to her left (the inner wing low), the head turned into the turn to watch what she circles.",
+      "extends": "dwing.glide",
+      "bones": {"body": [62, 0, -24], "chest": [-8, -6, -4], "neck": [-34, 22, 6]}
+    },
+    "dwing.crouch": {
+      "_comment": "The heavy take-off's gather: the core crouch, deeper in the arms' pull-back, the wings half open and raised for the first stroke.",
+      "extends": "takeoff.crouch",
+      "bones": {"arm_r": [26, 0, 26], "forearm_r": [-24, 0, 0], "arm_l": [26, 0, -26], "forearm_l": [-24, 0, 0],
+                "wing_arm_r": [0, 10, -34], "wing_hand_r": [0, 0, 90], "wing_f2_r": [0, 0, -18], "wing_f3_r": [0, 0, -36],
+                "wing_arm_l": [0, -10, 34], "wing_hand_l": [0, 0, -90], "wing_f2_l": [0, 0, 18], "wing_f3_l": [0, 0, 36]}
+    },
+    "dwing.push": {
+      "_comment": "The push: legs straight, the wings full open for the stroke that lifts her.",
+      "extends": "takeoff.push",
+      "bones": {"arm_r": [32, 0, 14], "forearm_r": [-10, 0, 0], "arm_l": [32, 0, -14], "forearm_l": [-10, 0, 0],
+                "wing_arm_r": [0, 16, -50], "wing_hand_r": [0, 0, 133], "wing_f2_r": [0, 0, -27], "wing_f3_r": [0, 0, -53],
+                "wing_arm_l": [0, -16, 50], "wing_hand_l": [0, 0, -133], "wing_f2_l": [0, 0, 27], "wing_f3_l": [0, 0, 53]}
+    },
+    "dwing.rise": {
+      "_comment": "Rising after the push: the core rise with the arms at her sides and the wings open.",
+      "extends": "takeoff.rise",
+      "bones": {"arm_r": [20, 0, 16], "forearm_r": [-16, 0, 0], "arm_l": [20, 0, -16], "forearm_l": [-16, 0, 0],
+                "wing_arm_r": [0, 16, -50], "wing_hand_r": [0, 0, 133], "wing_f2_r": [0, 0, -27], "wing_f3_r": [0, 0, -53],
+                "wing_arm_l": [0, -16, 50], "wing_hand_l": [0, 0, -133], "wing_f2_l": [0, 0, 27], "wing_f3_l": [0, 0, 53]}
+    },
+    "dwing.flare": {
+      "_comment": "The landing flare: the core flare with the arms down at her sides and the wings flared wide and swept forward to brake.",
+      "extends": "fly.flare",
+      "bones": {"arm_r": [-20, 0, 26], "forearm_r": [-30, 0, 0], "arm_l": [-20, 0, -26], "forearm_l": [-30, 0, 0],
+                "wing_arm_r": [0, -6, -54], "wing_hand_r": [0, 0, 138], "wing_f2_r": [0, 0, -30], "wing_f3_r": [0, 0, -56],
+                "wing_arm_l": [0, 6, 54], "wing_hand_l": [0, 0, -138], "wing_f2_l": [0, 0, 30], "wing_f3_l": [0, 0, 56]}
+    },
+    "dwing.touch": {
+      "_comment": "Touch-down: the core contact with the wings half folded on the way in.",
+      "extends": "land.contact",
+      "bones": {"arm_r": [-24, 0, 22], "forearm_r": [-24, 0, 0], "arm_l": [-24, 0, -22], "forearm_l": [-24, 0, 0],
+                "wing_arm_r": [0, 0, -30], "wing_hand_r": [0, 0, 70], "wing_f2_r": [0, 0, -12], "wing_f3_r": [0, 0, -26],
+                "wing_arm_l": [0, 0, 30], "wing_hand_l": [0, 0, -70], "wing_f2_l": [0, 0, 12], "wing_f3_l": [0, 0, 26]}
+    },
+    "dwing.give": {
+      "_comment": "The knees take the weight; the wings nearly folded.",
+      "extends": "land.give",
+      "bones": {"wing_arm_r": [0, 0, -8], "wing_hand_r": [0, 0, 16], "wing_f2_r": [0, 0, -3], "wing_f3_r": [0, 0, -6],
+                "wing_arm_l": [0, 0, 8], "wing_hand_l": [0, 0, -16], "wing_f2_l": [0, 0, 3], "wing_f3_l": [0, 0, 6]}
+    },
+    "dwing.lift": {
+      "_comment": "A gust lifts her: the core gust's tucked knees and rising body with the arms at her sides and the wings full open.",
+      "extends": "gust.lift",
+      "bones": {"arm_r": [30, 0, 22], "forearm_r": [-14, 0, 0], "arm_l": [30, 0, -22], "forearm_l": [-14, 0, 0],
+                "wing_arm_r": [0, 24, -54], "wing_hand_r": [0, 0, 136], "wing_f2_r": [0, 0, -28], "wing_f3_r": [0, 0, -55],
+                "wing_arm_l": [0, -24, 54], "wing_hand_l": [0, 0, -136], "wing_f2_l": [0, 0, 28], "wing_f3_l": [0, 0, 55]}
+    }
+  },
+  "animations": {
+    "move.takeoff": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6, "ramp": [0.3, 0.55]},
+      "description": "The heavy take-off on dragon wings, 0.6 s (the tell, MOBILITY_AND_WORK 2.2; BOSS_HEROES 5.6: spread at the take-off with a heavy flap): a deep crouch with the wings half opening and rising (0.2 s), the push with the wings full open for the stroke (0.3 s, dust), the rise into the cruise. The beat itself is the shared flap loop on wing_r and wing_l.",
+      "length": 0.6, "settle_to": "move.fly", "kind": "base", "ground": false, "planted": false,
+      "keys": [
+        {"t": 0, "pose": "land.give", "face": "determined"},
+        {"t": 0.2, "pose": "dwing.crouch", "ease": "easeOutQuad"},
+        {"t": 0.3, "pose": "dwing.push", "ease": "easeInQuad", "marker": "vfx:takeoff_dust"},
+        {"t": 0.45, "pose": "dwing.rise", "ease": "easeOutQuad", "face": "none"},
+        {"t": 0.6, "pose": "dwing.cruise"}
+      ]
+    },
+    "move.fly": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6},
+      "description": "Powered flight on dragon wings, a 1.6 s loop: the cruise lean with the wings open (the shared flap loop beats them), a slow bob, the legs and arms drifting.",
+      "length": 1.6, "loop": true, "ground": false, "planted": false,
+      "keys": [{"t": 0, "pose": "dwing.cruise"}, {"t": 1.6, "pose": "dwing.cruise"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.8, 0]}, "period": 1.6, "channel": "position"}},
+        {"primitive": "oscillate", "params": {"bones": {"leg_r": [5, 0, 0], "leg_l": [-5, 0, 0], "shin_r": [-6, 0, 0], "shin_l": [6, 0, 0], "body": [-2, 0, 0]}, "period": 1.6, "phase": 0.25}}
+      ]
+    },
+    "move.fly_fast": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.85},
+      "description": "Fast flight on dragon wings, a 0.8 s loop: streamlined and nearly level with the wings half swept back, a quick shallow bob.",
+      "length": 0.8, "loop": true, "ground": false, "planted": false,
+      "keys": [{"t": 0, "pose": "dwing.fast", "face": "focused"}, {"t": 0.8, "pose": "dwing.fast"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.4, 0]}, "period": 0.8, "channel": "position"}},
+        {"primitive": "oscillate", "params": {"bones": {"leg_r": [3, 0, 0], "leg_l": [-3, 0, 0], "shin_r": [-4, 0, 0], "shin_l": [4, 0, 0]}, "period": 0.4}}
+      ]
+    },
+    "move.fly_hover": {
+      "description": "Hovering on dragon wings, a 1.6 s loop: upright with the legs dangling and treading, the wings open (the flap loop beats them), a bob on each stroke.",
+      "length": 1.6, "loop": true, "ground": false, "planted": false,
+      "keys": [{"t": 0, "pose": "dwing.hover"}, {"t": 1.6, "pose": "dwing.hover"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"leg_r": [12, 0, 0], "leg_l": [-12, 0, 0], "shin_r": [-10, 0, 0], "shin_l": [10, 0, 0]}, "period": 1.6}},
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 1, 0]}, "period": 0.8, "channel": "position"}}
+      ]
+    },
+    "move.glide": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.75},
+      "description": "Gliding on dragon wings, a 2.4 s loop: pitched into the glide with the arms back along her sides, the wings spread wide (the glide loop holds them), a slow roll one way and the other, a gentle bob.",
+      "length": 2.4, "loop": true, "ground": false, "planted": false,
+      "keys": [{"t": 0, "pose": "dwing.glide"}, {"t": 2.4, "pose": "dwing.glide"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"chest": [0, 4, -5], "neck": [0, -4, 3], "leg_r": [4, 0, 2], "leg_l": [-4, 0, 2]}, "period": 2.4}},
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.5, 0]}, "period": 1.2, "channel": "position"}}
+      ]
+    },
+    "move.gust": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.75},
+      "description": "A gust (or one strong stroke) lifts her in the glide, 0.4 s: the body rises nearer upright with the knees tucked and the wings full open, then settles into move.glide.",
+      "length": 0.4, "settle_to": "move.glide", "kind": "base", "ground": false, "planted": false,
+      "keys": [
+        {"t": 0, "pose": "dwing.glide"},
+        {"t": 0.1, "pose": "dwing.lift", "ease": "easeOutQuad", "marker": "vfx:gust", "face": "focused"},
+        {"t": 0.3, "pose": "dwing.glide", "ease": "easeInOutSine", "face": "none"},
+        {"t": 0.4, "pose": "dwing.glide"}
+      ]
+    },
+    "move.fly_land": {
+      "wind": {"dir": [0, 0, 1], "strength": 0.6, "fade": [0, 0.25]},
+      "description": "Landing from flight with the wings flared, 0.4 s: the wings swept wide and forward to brake as the body tips back, touch-down (0.18 s) with the wings folding in, the knees take the weight (0.26 s), up into the idle stance with the wings folded by 0.4 s.",
+      "length": 0.4, "settle_to": "move.idle", "kind": "base", "ground": false, "planted": false,
+      "keys": [
+        {"t": 0, "pose": "dwing.flare"},
+        {"t": 0.18, "pose": "dwing.touch", "ease": "easeInQuad"},
+        {"t": 0.26, "pose": "dwing.give", "ease": "easeOutQuad"},
+        {"t": 0.4, "pose": "stance.relaxed"}
+      ]
+    },
+    "move.circle": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.75},
+      "description": "Circling (BOSS_HEROES 5.6: an aerial window's circle round her target, kit-gaps 10), a 2.4 s loop: the glide banked into a turn to her left with the inner wing low and her head turned in to watch, the bank breathing a little deeper and back, a slow bob. The glide loop holds the wings (DATA_LOCO's glide mode while she circles).",
+      "length": 2.4, "loop": true, "ground": false, "planted": false,
+      "keys": [{"t": 0, "pose": "dwing.bank"}, {"t": 2.4, "pose": "dwing.bank"}],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"body": [0, 0, -5], "neck": [0, 4, 0], "leg_r": [3, 0, 2], "leg_l": [-3, 0, 2]}, "period": 2.4}},
+        {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.5, 0]}, "period": 1.2, "channel": "position"}}
+      ]
+    }
+  }
+}

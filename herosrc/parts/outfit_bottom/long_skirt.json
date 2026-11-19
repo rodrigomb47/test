@@ -1,0 +1,57 @@
+{
+  "_comment": "A long skirt split to the knee at the front (B5, the Ender Dragon's: black over purple): fourteen hinged panels on the skirt bones (bones_by_angle), flared 9 degrees, alternately shaded and layered, down to the ankles (`drop`), the front centre panel stopping at the knee (`split` 1) so the legs move, each panel lined in the alt colour on its inside, a two-row trimmed hem, a waistband; behind the split three under-panels in the alt colour on skirt_f, a little shorter than the skirt (the purple under the black). Modest: ankle length, the split only below the knee.",
+  "id": "outfit_bottom/long_skirt",
+  "category": "outfit_bottom",
+  "slots": {"main": "primary", "alt": "secondary", "trim": "accent"},
+  "params": {"drop": {"default": 0.92, "max": 0.97, "min": 0.6}, "split": {"default": 1, "max": 1, "min": 0}},
+  "occupies": ["skirt"],
+  "vars": {"full": "(waist_y - 0.25) * drop", "short": "waist_y - knee_y + 0.5", "flen": "full - (full - short) * split"},
+  "paint": [
+    {"cubes": ["hips"], "material": "cloth", "slot": "main"},
+    {"cubes": ["#panel*"], "faces": ["south"], "slot": "alt", "material": "cloth"}
+  ],
+  "cubes": [
+    {"name": "band", "bone": "skirt", "origin": ["-waist_w / 2 - 0.15", "waist_y - 0.5", "-waist_d / 2 - 0.15"], "size": ["waist_w + 0.3", 1.0, "waist_d + 0.3"], "slot": "trim", "material": "cloth"}
+  ],
+  "strands": [
+    {
+      "name": "panel",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y - 0.25",
+      "radius": ["hips_w / 2 + 0.2", "hips_d / 2 + 0.2"],
+      "angles": [-180, 154.286],
+      "count": 14,
+      "width": "(hips_w + hips_d) * 0.27 + 0.55",
+      "depth": 0.6,
+      "length": ["full", "full", "full", "full", "full", "full", "full", "flen", "full", "full", "full", "full", "full", "full"],
+      "flare": 9,
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [0, -1],
+      "layers": [0, 0.3],
+      "bones_by_angle": {"skirt_f": [-45, 45], "skirt_l": [45, 135], "skirt_b": [135, 225], "skirt_r": [-135, -45]},
+      "trim": {"slot": "trim", "edge": "bottom", "width": 2}
+    },
+    {
+      "name": "under",
+      "when": "split",
+      "bone": "skirt_f",
+      "path": "arc",
+      "y": "waist_y - 0.75",
+      "radius": ["hips_w / 2 - 0.05", "hips_d / 2 - 0.05"],
+      "angles": [-24, 24],
+      "count": 3,
+      "width": "(hips_w + hips_d) * 0.22 + 0.4",
+      "depth": 0.3,
+      "length": "full - 1.25",
+      "flare": 7,
+      "material": "cloth",
+      "slot": "alt",
+      "fine": false,
+      "tone": [0, 1, 0],
+      "trim": {"slot": "trim", "edge": "bottom", "width": 1}
+    }
+  ]
+}
