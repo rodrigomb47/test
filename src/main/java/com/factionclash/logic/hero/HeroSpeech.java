@@ -30,6 +30,17 @@ public final class HeroSpeech {
     /** Who hears an event's line (v1 23's table; format 2's events by what they are about). */
     public enum Audience { FACTION, NEARBY, PLAYER }
 
+    /**
+     * Who hears a line said by a hero standing {@code atHome} (inside a home area of its faction) or away: a line for its
+     * faction carries home only from home; away, only those near hear it (a faction knows only what its people saw,
+     * {@code docs/design/missing_npcs.md}; review of 2026-11-19: a hero's dying words reached its whole faction from
+     * wherever it fell).
+     */
+    public static Audience audience(LineEvent e, boolean atHome) {
+        Audience a = audience(e);
+        return a == Audience.FACTION && !atHome ? Audience.NEARBY : a;
+    }
+
     public static Audience audience(LineEvent e) {
         return switch (e) {
             case SUMMONED, RAID_START, BASE_ATTACKED, LEVEL_UP, UNLOCK, FALLEN, REVIVED, FOUNDING, RAID_ANNOUNCE,

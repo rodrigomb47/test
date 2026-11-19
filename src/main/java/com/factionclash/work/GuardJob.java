@@ -208,16 +208,21 @@ public class GuardJob extends Job {
                 return;
             }
             int here = 0;
+            java.util.List<java.util.UUID> gathered = new java.util.ArrayList<>();
             for (java.util.UUID u : f.raiders) {
-                if (level().getEntity(u) instanceof FactionNpc r && r.blockPosition().closerThan(rally, 12)) {
+                if (level().getEntity(u) instanceof FactionNpc r && r.isAlive() && r.blockPosition().closerThan(rally, 12)) {
                     here++;
+                    gathered.add(u);
                 }
             }
             if (here * 10 >= f.raiders.size() * 7 || now() - f.raidStartedAt > 6000) {
                 f.raidMusteredAt = now();
                 data().setDirty();
-                com.factionclash.util.Messages.toFaction(level().getServer(), npc.getFaction(), net.minecraft.network.chat.Component.literal(
-                        "The raid party (" + here + " of " + f.raiders.size() + ") has gathered - assault on " + target.faction.displayName + "!"));
+                // the party at the rally point saw it: its faction hears it when one of them is home (docs/design/missing_npcs.md
+                // 5; review of 2026-11-19: it was said at home at once)
+                com.factionclash.campaign.RollCall.tellOrCarry(level(), data(), npc.getFaction(),
+                        gathered, "The raid party (" + here + " of " + f.raiders.size() + ") has gathered - assault on "
+                        + target.faction.displayName + "!", null);
             } else {
                 status("At the rally point, waiting for the raid party (" + here + "/" + f.raiders.size() + ")", "Raiding");
                 return;

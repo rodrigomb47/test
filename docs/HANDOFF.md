@@ -127,7 +127,7 @@ commits, language and testing are in `/CLAUDE.md`.
 
 | Package | What lives there |
 |---|---|
-| `campaign/` | Saved campaign state and the per-base "brain". `RollCall` (what a faction knows of its members: home area, sightings, trips' expected returns, missing and presumed dead, witnesses and the `News` they carry home, `/fc admin roll`; pure rules `logic/campaign/Whereabouts`; `docs/design/missing_npcs.md`); `NpcRecord` keeps the faction's knowledge (`alive`, `where`) apart from the truth (`dead`, `vanished`), which only the engine reads. `CampaignData` (SavedData, FORMAT 2), `BaseState` (one settlement or lair: centre, points, MIN/MAX work belt, `barrenUntil`, shortages), `FactionState` (reports, explored sectors, raid target, pact), `WorkplaceState` (MINE / TREE_PLOT / FISHERY / FARM / PEN / CAVE records; per-type NBT blocks keyed `mineV`, `woodV`, `fishV`; old saves convert in `load`), `FactionDirector` (needs, recruitment, retraining, war council, `FishingSpots.maintain`), `BaseBuilder` (builds settlements; `ensureWorkplaces`), `CampaignStarter`/`CampaignManager`, `Diplomacy` (pacts), `Logistics`, `Report`, `BaseZones` + `MapBounds` (walls-box zone maths, map clamp). |
+| `campaign/` | Saved campaign state and the per-base "brain". `RollCall` (what a faction knows of its members: home area, sightings, trips' expected returns, missing and presumed dead, witnesses and the `News` they carry home (deaths, lines, a member's own lines such as a level gained away), `/fc admin roll`; pure rules `logic/campaign/Whereabouts`; `docs/design/missing_npcs.md`; the council's wait for its raid's end: `FactionState.raidEndNews`/`lastParty`); `NpcRecord` keeps the faction's knowledge (`alive`, `where`) apart from the truth (`dead`, `vanished`), which only the engine reads. `CampaignData` (SavedData, FORMAT 2), `BaseState` (one settlement or lair: centre, points, MIN/MAX work belt, `barrenUntil`, shortages), `FactionState` (reports, explored sectors, raid target, pact), `WorkplaceState` (MINE / TREE_PLOT / FISHERY / FARM / PEN / CAVE records; per-type NBT blocks keyed `mineV`, `woodV`, `fishV`; old saves convert in `load`), `FactionDirector` (needs, recruitment, retraining, war council, `FishingSpots.maintain`), `BaseBuilder` (builds settlements; `ensureWorkplaces`), `CampaignStarter`/`CampaignManager`, `Diplomacy` (pacts), `Logistics`, `Report`, `BaseZones` + `MapBounds` (walls-box zone maths, map clamp). |
 | `work/` | One `Job` per role (`Jobs.create`). `Job` = shared helpers: `goTo`, `atStorage`, survival errands, `markIdle/markBusy/idleFor`, `beforeErrand`, night rule. Big ones: `MinerJob` (+`MineSites` site search/retire/rest, `WorkSafety.mayDig`), `WoodcutterJob` (+`ForestScan`, which also holds `TreeClaims`; `Scaffold`, the dirt pillar it fells tall trees from), `FishermanJob` (+`FishingSpots`), `ScoutJob` (+`StructureSightings`), `CaveMinerJob`/`CaveWork`, `TraderJob`, `BlacksmithJob`, `BuilderJob`, `HaulerJob`, `CookingJob`/`ChefJob`/`SmelterJob`. `BlockWork` = player-speed breaking (`Breaker`), reach, wear. `Workplaces` = claim/held/release (role-aware holder check). |
 | `logic/` | Pure, unit-tested rules (no Minecraft classes): `SpiralMine` (shaft + branch geometry), `MinePlanner` (which layer next), `MineSiteRules`, `LegacyMine` (old hut-mine maths, migration only), `TreeShape`, `ForestRules`, `FishingWater`, `EscapeRoute`, `StructureRules`, `Zones`, `CaveSurvey`, `NpcHunger`, `Ledger`, `FoodPayment`, `AffixRoller`, `XpLevels`, `StuckRecovery`, `ScoutRules`, `Pads`; `logic/campaign/Whereabouts` (the roll call's states, waits, trip plans, lines). |
 | `npc/` | `FactionNpc` (the entity: inventory, hunger, gear, affixes, role changes release workplaces; hooks a hero overrides (A11 adds `travelHelper`, `travelBusy`, `travelTicketRadius`, `ticksSinceHurt`): `withdrawsToRecover`, `regeneratesNaturally` (a hero heals by its boss reset, not its food bar), `fightsBareHanded`, `needsRoleTool`, `takesStoreWeapons`, `takesShield`, and since A4 `fightsLikeSoldier`, `jobIgnoresCombat`, `rangedFighter`, `meleeLeash`, `kiteDistance`, `skirmishes`, `holdsDistance`, `leashCentre` (where the leash is measured from: a hero caught in a fight far from home uses where it began); `senses` is blindness's 5-block sight), `NpcNavigator` (travel/ARRIVED/MOVING/FAILED, stall and no-progress watchdogs, danger-zone waypoints; a hero's `TravelHelper` runs its links and flights, and is asked before a trip fails), `NpcPathNavigation` (its `GateEvaluator` is what a hero's evaluator extends), `DigOut` (digging/bridging/pillaring out when stuck; `perched` also knows a bare pillar), `NpcRole`, `ToolKind`. |
@@ -857,8 +857,34 @@ python3 tools/rcon.py "stop"
   other full runs, with the art workflow's Python jobs loading the machine (watch the two hero tests). Not yet checked
   in a campaign on a dedicated server (the next live check: `sim.py`'s `roll` line over a few days with raids and
   scouts; watch for foraging workers reported missing while alive, the default trip being half a day).
+- **Review of the roll call** (2026-11-19, `docs/design/missing_npcs.md` 13): an adversarial pass for every path where a
+  faction still learned the truth at once. Fixed, each with a test that fails without it: the war council heard of its
+  raid's end at once (a party wiped out unseen ended on the spot and the next raid could go at once); it now waits
+  while the end's news is not home (`FactionState.raidEndNews`, the party as launched in `lastParty`, saved; absent in
+  older saves), it still counts someone of the party and the raid's bound (launch + 72000) has not passed
+  (`Whereabouts.raidStillOutAtHome`). `farDeathsUnknown` turned off left unknown deaths counted for ever; the roll call
+  now knows them (`Whereabouts.knownUnderOldRule`). A `where_it_fell` hero rising unseen far from home told its faction
+  at once; it now keeps the faction's view and tells its own fall at home (`RollCall.heroRisesAway`, `News.Kind.OWN`).
+  Lines from members away were said at once: a level gained (`RollCall.ownLine`), the raid party's "has gathered"
+  (`GuardJob`, carried like the raid's end), and a hero's faction-audience lines, its dying words included
+  (`HeroSpeech.audience(event, atHome)`: away, only players near hear them). The station said "(dead)" of a
+  presumed-dead worker; it now shows "Away N; missing: ...; presumed dead: ..." and "(missing)" / "(presumed dead)"
+  (`BaseInfo.rollLine`). "Adventure" was made by the death event; now when the death is known (`RollCall.apply`).
+  `KnowledgeIsolationTest` also scans `info` and `achieve` and forbids a roster entry's truth fields outside `NpcRecord`
+  and `RollCall` but for the raid party's two engine lines (marked `// truth:`). Checked sound: workplaces held by the
+  belief, no double replacement, a returner never sharing its replacement's workplace, chunk tickets by the truth, the
+  kill feed unchanged and unread. Tests: 7 GameTests in `MissingNpcGameTests` ("the review of 2026-11-19"), 3
+  `WhereaboutsTest`, 1 `HeroSpeechTest`, 1 `KnowledgeIsolationTest`; nine sabotages, each caught. **1092 unit tests,
+  373 GameTests.** Not checked live yet: a lost raid now keeps the council from raiding for up to three days.
 
 ## 6. Known open items and ideas (none blocking)
+
+- Left open by the review of the roll call (2026-11-19, `docs/design/missing_npcs.md` 13), none about deaths: a cave
+  explorer's survey is written to its workplace at the cave, so miners can use it before the explorer is home; the
+  council judges an enemy base by that enemy's own roster and hero state; the retraining reads a far worker's live job
+  and the blacksmith a far member's gear; `/fc hero info` shows a member player its hero's true place and state; the
+  hero lookout's "spots N enemies" line is said at once wherever the hero stands. A wiped-out raid keeps the council
+  from planning until the raid's bound (three days); the owner may want a shorter bound for raids.
 
 - Left open by the review of the round (2026-11-19, `HEROES_V2.md` 15.9 "Review of the round"): the walk round stands at
   most 4 blocks from its target (`EdgePlay.STAND_MAX`), so a ranged hero with a knockback shot would give up its distance

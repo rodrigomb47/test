@@ -599,14 +599,19 @@ public final class FactionDirector {
         if (f.raidTarget >= 0) {
             // the party's own roll on the spot (docs/design/missing_npcs.md 6): a raider leaves it when its faction no
             // longer counts it, or when it died and a member saw it; a death nobody saw keeps it on the roll
+            for (UUID u : f.raiders) {
+                if (!f.lastParty.contains(u)) {
+                    f.lastParty.add(u); // (a hero that joined the raid on its own rules)
+                }
+            }
             f.raiders.removeIf(u -> {
                 NpcRecord r = f.roster.get(u);
-                return r == null || !r.alive || r.dead && r.witnessed;
+                return r == null || !r.alive || r.dead && r.witnessed; // truth: the party on the spot
             });
             // the raiders still alive: they alone can tell home how the raid went
             List<UUID> survivors = f.raiders.stream().filter(u -> {
                 NpcRecord r = f.roster.get(u);
-                return r != null && !r.gone();
+                return r != null && !r.gone(); // truth: who is left to carry the raid on
             }).toList();
             BaseState target = data.base(f.raidTarget);
             if (!f.raiders.isEmpty() && f.raidParty > 0 && f.raiders.size() * 2 < f.raidParty && target != null && !target.destroyed) {
@@ -618,9 +623,12 @@ public final class FactionDirector {
                 f.raiders.clear();
             }
             if (f.raiders.isEmpty() || survivors.isEmpty() || t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS) {
-                // (no raider left alive: nobody carries the raid on, nor the news of its end)
-                RollCall.tellOrCarry(level, data, f.type, survivors, "Raid on " + (target == null ? "?" : target.faction.displayName)
-                        + " has ended" + (target != null && target.destroyed ? " in victory" : ""), null);
+                // (no raider left alive: nobody carries the raid on, nor the news of its end.) The council at home hears
+                // of the end only when its news comes home, or assumes it once the raid's own bound has passed (review of
+                // 2026-11-19: it heard at once, and could send the next raid after a party nobody lived to report on)
+                f.raidEndNews = RollCall.tellOrCarry(level, data, f.type, survivors, "Raid on "
+                        + (target == null ? "?" : target.faction.displayName) + " has ended"
+                        + (target != null && target.destroyed ? " in victory" : ""), null);
                 // v1 22.1: heroes of a won raid who survived it, and the heroes who held the base it failed against
                 com.factionclash.hero.HeroManager.raidEnded(level, f, target, target != null && target.destroyed);
                 f.raidTarget = -1;
@@ -630,6 +638,17 @@ public final class FactionDirector {
                 data.setDirty();
             }
             return;
+        }
+        if (f.raidEndNews != null) {
+            boolean counted = f.lastParty.stream().anyMatch(u -> {
+                NpcRecord r = f.roster.get(u);
+                return r != null && r.alive;
+            });
+            if (Whereabouts.raidStillOutAtHome(true, counted, t, f.raidStartedAt)) {
+                return; // as far as the council knows, its last raid is still out (docs/design/missing_npcs.md 6)
+            }
+            f.raidEndNews = null; // past the raid's own bound, or nobody of the party counted: the council takes it as over
+            data.setDirty();
         }
         int interval = FCConfig.RAID_INTERVAL_TICKS.get();
         // a counter-attack may go out sooner (a quarter of the interval) - but only into a weakened enemy, below
@@ -764,8 +783,11 @@ public final class FactionDirector {
     private static void launch(ServerLevel level, CampaignData data, FactionState f, BaseState home, BaseState target,
                                List<FactionNpc> party, int targetDefence, String prefix, long t) {
         f.raiders.clear();
+        f.raidEndNews = null; // a new raid: the last one's end is old news
+        f.lastParty.clear();
         for (FactionNpc n : party) {
             f.raiders.add(n.getUUID());
+            f.lastParty.add(n.getUUID());
         }
         f.raidTarget = target.id;
         f.raidParty = party.size();

@@ -65,6 +65,10 @@ public final class BaseInfo {
         StringBuilder sb = new StringBuilder("Population " + total + "/" + b.beds.size() + " beds: ");
         pop.forEach((k, v) -> sb.append(k.displayName).append(" ").append(v).append(", "));
         out.add(sb.toString());
+        String roll = rollLine(f, b);
+        if (roll != null) {
+            out.add(roll);
+        }
         out.add("Food " + Recruitment.storedFoodValue(level, b) + " hunger pts (recruit costs " + FCConfig.RECRUIT_FOOD_VALUE.get() + ")"
                 + "  Storage " + Math.round(FactionStorage.fillRatio(level, b) * 100) + "% full");
         StringBuilder res = new StringBuilder("Stock: ");
@@ -88,7 +92,8 @@ public final class BaseInfo {
         java.util.function.Function<WorkplaceState, String> whoWorks = w -> {
             NpcRecord worker = w.assigned == null ? null : f.roster.get(w.assigned);
             // a holder who died or took up another job no longer works it (the next worker may claim it)
-            return worker == null ? "none" : worker.name + (!worker.alive ? " (dead)"
+            return worker == null ? "none" : worker.name + (!worker.alive ? " (" + lost(worker) + ")"
+                    : worker.where == com.factionclash.logic.campaign.Whereabouts.State.MISSING ? " (missing)"
                     : com.factionclash.work.Workplaces.holderValid(data, w) ? "" : " (now a " + worker.role.displayName.toLowerCase() + ", free)");
         };
         out.addAll(com.factionclash.work.MineSites.describe(data, b, level.getMinBuildHeight(), whoWorks));
@@ -339,5 +344,38 @@ public final class BaseInfo {
         }
         com.factionclash.net.FCNetwork.sendMap(p, new com.factionclash.net.MapPayload(title, colorOf(f),
                 List.of(data.center.getX(), data.center.getZ(), data.radius), markers, new ArrayList<>(fs.explored), body));
+    }
+
+    /**
+     * What the station tells of the base's members not at home, as its faction knows it ({@code docs/design/missing_npcs.md};
+     * review of 2026-11-19): how many are away, who is missing (since which day) and who is presumed dead; null when all
+     * are at home. Never the truth: a member dead far away and unseen is still "away".
+     */
+    public static String rollLine(FactionState f, BaseState b) {
+        int away = 0;
+        List<String> missing = new ArrayList<>(), presumed = new ArrayList<>();
+        for (NpcRecord r : f.roster.values()) {
+            if (r.baseId != b.id) {
+                continue;
+            }
+            switch (r.where) {
+                case AWAY -> away++;
+                case MISSING -> missing.add(com.factionclash.campaign.RollCall.who(r) + " since day "
+                        + com.factionclash.logic.campaign.Whereabouts.day(r.since));
+                case PRESUMED_DEAD -> presumed.add(com.factionclash.campaign.RollCall.who(r));
+                default -> {
+                }
+            }
+        }
+        if (away == 0 && missing.isEmpty() && presumed.isEmpty()) {
+            return null;
+        }
+        return "Away " + away + (missing.isEmpty() ? "" : "; missing: " + String.join(", ", missing))
+                + (presumed.isEmpty() ? "" : "; presumed dead: " + String.join(", ", presumed));
+    }
+
+    /** "dead" for a death the faction knows of, "presumed dead" for one it presumes. */
+    private static String lost(NpcRecord r) {
+        return r.where == com.factionclash.logic.campaign.Whereabouts.State.PRESUMED_DEAD ? "presumed dead" : "dead";
     }
 }

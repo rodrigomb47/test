@@ -882,8 +882,10 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         clock.said(event, now);
         lastLine = text;
         Component chat = Component.literal(HeroSpeech.chatLine(npcName(), text)).withStyle(colour(dormant() ? null : definition()));
-        HeroSpeech.Audience who = HeroSpeech.audience(event);
         CampaignData data = CampaignData.get(sl.getServer());
+        // a line for its faction carries home only from home (docs/design/missing_npcs.md)
+        HeroSpeech.Audience who = HeroSpeech.audience(event, !com.factionclash.campaign.RollCall.farDeathsUnknown()
+                || com.factionclash.campaign.RollCall.inHomeArea(data, getFaction(), level(), blockPosition()));
         double r = FCConfig.HERO_DIALOGUE_RADIUS.get();
         for (ServerPlayer p : sl.getServer().getPlayerList().getPlayers()) {
             boolean member = data.players.get(p.getUUID()) == getFaction();

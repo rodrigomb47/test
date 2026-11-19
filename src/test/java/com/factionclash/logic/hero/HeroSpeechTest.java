@@ -88,6 +88,23 @@ class HeroSpeechTest {
         }
     }
 
+    /**
+     * A line for its faction carries home only from home (docs/design/missing_npcs.md; review of 2026-11-19): said away,
+     * only those near hear it; the other audiences are as they are.
+     */
+    @Test
+    void aFactionLineSaidAwayIsHeardOnlyNearby() {
+        for (LineEvent e : LineEvent.values()) {
+            HeroSpeech.Audience home = HeroSpeech.audience(e, true), away = HeroSpeech.audience(e, false);
+            assertEquals(HeroSpeech.audience(e), home, "at home, every line keeps its audience: " + e);
+            assertEquals(HeroSpeech.audience(e) == HeroSpeech.Audience.FACTION ? HeroSpeech.Audience.NEARBY : HeroSpeech.audience(e), away,
+                    "away: " + e);
+        }
+        assertEquals(HeroSpeech.Audience.NEARBY, HeroSpeech.audience(LineEvent.FALLEN, false), "dying words far away reach no one at home");
+        assertEquals(HeroSpeech.Audience.NEARBY, HeroSpeech.audience(LineEvent.LEVEL_UP, false));
+        assertEquals(HeroSpeech.Audience.PLAYER, HeroSpeech.audience(LineEvent.GREETING, false));
+    }
+
     @Test
     void theChatLineAndTheNameTag() {
         assertEquals("<★ Bram Ostler> Eyes on me!", HeroSpeech.chatLine("Bram Ostler", "Eyes on me!"));

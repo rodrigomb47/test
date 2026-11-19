@@ -162,4 +162,44 @@ class WhereaboutsTest {
         assertEquals("Natsuho Komezaki fell where none of the faction saw it and returns to Ember Hold",
                 Whereabouts.unseenFall("Natsuho Komezaki", "Ember Hold"));
     }
+
+    // ------------------------------------------------------------------ review of 2026-11-19
+
+    /**
+     * {@code farDeathsUnknown} turned off: a death not yet known is known now (it stayed counted for ever); a member
+     * alive, or already known or presumed dead, is left as it is.
+     */
+    @Test
+    void underTheOldRuleEveryDeathStillCountedIsKnown() {
+        assertEquals(new Step(State.KNOWN_DEAD, Event.KILLED), Whereabouts.knownUnderOldRule(true, State.AWAY));
+        assertEquals(new Step(State.KNOWN_DEAD, Event.KILLED), Whereabouts.knownUnderOldRule(true, State.MISSING));
+        assertEquals(new Step(State.KNOWN_DEAD, Event.KILLED), Whereabouts.knownUnderOldRule(true, State.HERE));
+        assertEquals(new Step(State.AWAY, Event.NONE), Whereabouts.knownUnderOldRule(false, State.AWAY), "alive away stays away");
+        assertEquals(new Step(State.MISSING, Event.NONE), Whereabouts.knownUnderOldRule(false, State.MISSING));
+        assertEquals(new Step(State.PRESUMED_DEAD, Event.NONE), Whereabouts.knownUnderOldRule(true, State.PRESUMED_DEAD),
+                "a death presumed is not told again");
+        assertEquals(new Step(State.KNOWN_DEAD, Event.NONE), Whereabouts.knownUnderOldRule(true, State.KNOWN_DEAD));
+    }
+
+    /**
+     * The council at home believes its raid is out until it hears of its end, until it no longer counts anyone of the
+     * party (each raider known or presumed dead), or until the raid's own bound has passed (then it knows the raid is
+     * over, whatever became of the party).
+     */
+    @Test
+    void theCouncilBelievesItsRaidIsOutUntilItHearsOrTheBoundPasses() {
+        long start = 100_000;
+        assertTrue(Whereabouts.raidStillOutAtHome(true, true, start + 1, start), "nobody brought the end home yet");
+        assertTrue(Whereabouts.raidStillOutAtHome(true, true, start + Whereabouts.RAID_LIMIT_TICKS, start), "the bound's last tick");
+        assertFalse(Whereabouts.raidStillOutAtHome(true, true, start + Whereabouts.RAID_LIMIT_TICKS + 1, start), "past the bound it is over");
+        assertFalse(Whereabouts.raidStillOutAtHome(false, true, start + 1, start), "the end was heard");
+        assertFalse(Whereabouts.raidStillOutAtHome(true, false, start + 1, start), "every raider known dead: the party is no more");
+    }
+
+    /** A hero risen unseen far away tells its own fall when it comes home: where, and on which day. */
+    @Test
+    void aHeroTellsItsOwnFall() {
+        assertEquals("Ira fell near 120, -40 on day 3 where none of the faction saw it, and has risen again",
+                Whereabouts.ownFall("Ira", 120, -40, 2 * Whereabouts.TICKS_PER_DAY + 5));
+    }
 }

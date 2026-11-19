@@ -44,7 +44,7 @@ public final class AchievementEvents {
         }
     }
 
-    /** Adventure, Monster Hunter, Monsters Hunted, Sniper Duel, Who's the Pillager Now? - and being killed. */
+    /** Adventure (by a kill), Monster Hunter, Monsters Hunted, Sniper Duel, Who's the Pillager Now?. */
     @SubscribeEvent
     public void onDeath(LivingDeathEvent event) {
         LivingEntity victim = event.getEntity();
@@ -52,9 +52,7 @@ public final class AchievementEvents {
         if (server == null) {
             return;
         }
-        if (victim instanceof FactionNpc dead) {
-            FactionAchievements.criterion(server, dead.getFaction(), "adventure/root", "killed_by_something", dead.npcName());
-        }
+        // (a member's own death makes "Adventure" when its faction learns of it: campaign/RollCall, docs/design/missing_npcs.md)
         if (!(event.getSource().getEntity() instanceof FactionNpc killer)) {
             return;
         }

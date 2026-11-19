@@ -32,6 +32,14 @@ public final class FactionState {
     public int raidParty;
     public long raidRally = Long.MIN_VALUE;
     public long raidMusteredAt;
+    /**
+     * The council's view of its last raid ({@code docs/design/missing_npcs.md} 6): the id of the news of its end that has
+     * not reached home yet (carried by the survivors, or by nobody when none lived), null when the council knows it is
+     * over. While set, and until the raid's own bound has passed, the council believes the raid is still out.
+     */
+    public UUID raidEndNews;
+    /** The last raid's party as launched (the council's own list, kept after the raid ends). */
+    public final List<UUID> lastParty = new ArrayList<>();
     public int basesDestroyed;
     /** Average fighting power of the faction's soldiers at home (1 = bare-handed and unarmoured, up to 3), last seen. */
     public float soldierPower = 1.0F;
@@ -138,6 +146,14 @@ public final class FactionState {
         t.putInt("raidParty", raidParty);
         t.putLong("raidRally", raidRally);
         t.putLong("raidMusteredAt", raidMusteredAt);
+        if (raidEndNews != null) {
+            t.putUUID("raidEndNews", raidEndNews);
+        }
+        ListTag lp = new ListTag();
+        for (UUID u : lastParty) {
+            lp.add(NbtUtils.createUUID(u));
+        }
+        t.put("lastParty", lp);
         t.putInt("basesDestroyed", basesDestroyed);
         t.putFloat("soldierPower", soldierPower);
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
@@ -204,6 +220,10 @@ public final class FactionState {
         f.raidParty = t.getInt("raidParty");
         f.raidRally = t.contains("raidRally") ? t.getLong("raidRally") : Long.MIN_VALUE;
         f.raidMusteredAt = t.getLong("raidMusteredAt");
+        f.raidEndNews = t.hasUUID("raidEndNews") ? t.getUUID("raidEndNews") : null; // absent before the review of 2026-11-19
+        for (Tag u : t.getList("lastParty", Tag.TAG_INT_ARRAY)) {
+            f.lastParty.add(NbtUtils.loadUUID(u));
+        }
         f.basesDestroyed = t.getInt("basesDestroyed");
         f.soldierPower = t.contains("soldierPower") ? t.getFloat("soldierPower") : 1.0F;
         f.xpBank = t.getLong("xpBank");

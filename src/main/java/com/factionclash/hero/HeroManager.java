@@ -198,23 +198,36 @@ public final class HeroManager {
             }
         }
         // its faction learns of a fall nobody of it saw when the hero rises (docs/design/missing_npcs.md 7)
-        boolean unseen = com.factionclash.campaign.RollCall.heroRises(data, s.owner, s.uuid);
+        NpcRecord old = com.factionclash.campaign.RollCall.heroRises(data, s.owner, s.uuid);
+        boolean unseen = com.factionclash.campaign.RollCall.fallUnknown(old);
         HeroEntity h = spawn(server.overworld(), data, s, entry, s.owner, home, at);
         s.revivals++;
         data.setDirty();
-        boolean fell = own != null && own.where() == HeroDef.RiseWhere.WHERE_IT_FELL && s.fellAt != null && !at.equals(spawnPoint(home));
-        String where = fell ? " where it fell" : " to " + base.name;
-        String back = unseen ? h.npcName() + " fell where none of the faction saw it and returns" + where + "."
-                : h.npcName() + " returns" + where + ".";
-        Messages.toFaction(server, s.owner, Component.literal(back).withStyle(ChatFormatting.GOLD));
-        com.factionclash.campaign.RollCall.heard(s.owner, h.getUUID(), unseen
-                ? com.factionclash.logic.campaign.Whereabouts.Event.KILLED_REPORTED : com.factionclash.logic.campaign.Whereabouts.Event.BACK, back);
+        // risen where none of its faction is (where it fell, far from home) from a fall none of it saw: nobody of it
+        // hears of either now; it keeps its faction's view of it and tells its fall itself when it comes home (review of
+        // 2026-11-19: the faction was told at once)
+        boolean heard = !unseen || com.factionclash.campaign.RollCall.inHomeArea(data, s.owner, server.overworld(), h.blockPosition());
+        if (heard) {
+            boolean fell = own != null && own.where() == HeroDef.RiseWhere.WHERE_IT_FELL && s.fellAt != null && !at.equals(spawnPoint(home));
+            String where = fell ? " where it fell" : " to " + base.name;
+            String back = unseen ? h.npcName() + " fell where none of the faction saw it and returns" + where + "."
+                    : h.npcName() + " returns" + where + ".";
+            Messages.toFaction(server, s.owner, Component.literal(back).withStyle(ChatFormatting.GOLD));
+            com.factionclash.campaign.RollCall.heard(s.owner, h.getUUID(), unseen
+                    ? com.factionclash.logic.campaign.Whereabouts.Event.KILLED_REPORTED : com.factionclash.logic.campaign.Whereabouts.Event.BACK, back);
+        } else {
+            com.factionclash.campaign.RollCall.heroRisesAway(data, old, h);
+        }
         server.overworld().sendParticles(net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING, h.getX(), h.getY() + 1, h.getZ(),
                 40, 0.4, 0.8, 0.4, 0.3);
         HeroSounds.cue(h, com.factionclash.logic.hero.SoundIndex.REVIVED); // the old spare's warm chime, now the return's
         if (own != null && own.line() != null && !own.line().isBlank()) {
-            Messages.toFaction(server, s.owner, Component.literal(com.factionclash.logic.hero.HeroSpeech.chatLine(h.npcName(), own.line())));
-            h.clock().said(LineEvent.REVIVED, server.overworld().getGameTime());
+            if (heard) {
+                Messages.toFaction(server, s.owner, Component.literal(com.factionclash.logic.hero.HeroSpeech.chatLine(h.npcName(), own.line())));
+                h.clock().said(LineEvent.REVIVED, server.overworld().getGameTime());
+            } else {
+                h.speak(LineEvent.REVIVED, own.line()); // (away from home: those near hear it)
+            }
         } else {
             h.say(LineEvent.REVIVED);
         }

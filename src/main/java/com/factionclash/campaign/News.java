@@ -5,17 +5,19 @@ import net.minecraft.nbt.CompoundTag;
 import java.util.UUID;
 
 /**
- * News a member carries home ({@code docs/design/missing_npcs.md} 5): a death it saw away from home, or a line only
- * someone there could tell (a raid's end, an enemy hero's fall). Told when the carrier comes home (an NPC: entering a
- * home area; a member player: reporting at a station); the first carrier home tells it and the others' copies go.
+ * News a member carries home ({@code docs/design/missing_npcs.md} 5): a death it saw away from home, a line only
+ * someone there could tell (a raid's end, an enemy hero's fall), or a line about the carrier itself (a level it gained
+ * away, a hero's own fall nobody saw). Told when the carrier comes home (an NPC: entering a home area; a member player:
+ * reporting at a station); the first carrier home tells it and the others' copies go.
  */
 public final class News {
-    public enum Kind { DEATH, LINE }
+    /** DEATH: a member's death it saw; LINE: told as "W brings news: ..."; OWN: about the carrier itself, told as it is. */
+    public enum Kind { DEATH, LINE, OWN }
 
     /** The same id in every carrier's copy: the dead member's UUID, or a fresh one for a line. */
     public final UUID id;
     public final Kind kind;
-    /** A death: "Name (Role)" (a hero: its name); a line: the line. */
+    /** A death: "Name (Role)" (a hero: its name); a line or its own: the line. */
     public final String text;
     public final boolean hero;
     public final int x, z;

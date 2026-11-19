@@ -148,6 +148,25 @@ public final class Whereabouts {
         return witnessesAway > 0 ? Knowing.CARRIED : Knowing.UNSEEN;
     }
 
+    /**
+     * {@code campaign.farDeathsUnknown} turned off while deaths are still unknown (review of 2026-11-19): under the old
+     * rule every death is known at once, so a member that died and is still counted is known dead now. Anything else
+     * stays as it is (a member alive and away or missing comes home as usual).
+     */
+    public static Step knownUnderOldRule(boolean dead, State s) {
+        return dead && s.counted() ? learnsDeath(s, false) : new Step(s, Event.NONE);
+    }
+
+    /**
+     * Whether the council at home still believes its last raid is out ({@code docs/design/missing_npcs.md} 6): its end
+     * was not heard at home yet (the line is carried by the survivors, or nobody lives to carry it), it still counts
+     * someone of the party (not every raider is known or presumed dead), and the raid's own bound has not passed. While
+     * it is out the council plans no new raid.
+     */
+    public static boolean raidStillOutAtHome(boolean endUnheard, boolean raiderCounted, long now, long raidStartedAt) {
+        return endUnheard && raiderCounted && now <= raidStartedAt + RAID_LIMIT_TICKS;
+    }
+
     /** The faction learns of a death, at once or by news; a death already known tells nothing. */
     public static Step learnsDeath(State s, boolean byNews) {
         if (s == State.KNOWN_DEAD) {
@@ -199,5 +218,13 @@ public final class Whereabouts {
     /** A hero whose fall nobody saw, rising at home: how its faction learns of it. */
     public static String unseenFall(String hero, String base) {
         return hero + " fell where none of the faction saw it and returns to " + base;
+    }
+
+    /**
+     * A hero whose fall nobody saw, rising where it fell outside every home area (a {@code where_it_fell} revival): nobody
+     * of its faction is there, so it tells its fall itself when it comes home.
+     */
+    public static String ownFall(String hero, int x, int z, long when) {
+        return hero + " fell near " + x + ", " + z + " on day " + day(when) + " where none of the faction saw it, and has risen again";
     }
 }

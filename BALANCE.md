@@ -683,7 +683,14 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
 * A member whose entity is gone from a loaded place it was last seen in for **2400** ticks (`RollCall.VANISH_TICKS`,
   as before) is lost: inside a home area its faction presumes it dead at once; away, the waits above apply.
 * A raid party drops a raider its faction no longer counts or whose death a member saw; the raid also ends when no
-  raider is left alive (nothing told). Raid end lines are carried home by the raiders alive then.
+  raider is left alive (nothing told). Raid end lines (and the party's "has gathered") are carried home by the raiders
+  alive then. The war council plans **no new raid** while the end of its last raid is unheard at home, it still counts
+  someone of that party, and the raid's own bound (launch + **72000**) has not passed (review of 2026-11-19).
+* Lines about a member itself (a level gained) are said at once inside a home area, else told when it comes home; a
+  hero's lines for its faction are heard by its whole faction only from a home area (away: the players near, as its
+  other lines). A hero risen where it fell outside every home area, from a fall nobody saw, keeps its faction's view
+  (away, the same expected return) and tells its fall on coming home.
+* `farDeathsUnknown` turned off: the next roll call (every 100 ticks) knows the deaths not yet known ("was killed").
 
 ## Levels and affixes (`AffixRoller`, `Affix`)
 * Level n → n+1 costs 40 + 30n XP; max level 30; one affix roll per level; job affixes weighted ×2.

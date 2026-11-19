@@ -346,11 +346,17 @@ Players respawn at their nearest surviving allied base when they have no bed.
   a member not back by then and 2 more minutes is **missing** ("is missing: expected back by day 3"), still counted
   and not replaced, and half a day later **presumed dead** and replaced. One presumed dead who comes home after all
   rejoins with its own gear ("presumed dead, has come back and rejoins"), and its replacement stays. Raid news ("the
-  raid is beaten back", "has ended") comes home with the surviving raiders. Heroes follow the same rule and still
+  raid party has gathered", "the raid is beaten back", "has ended") comes home with the raiders who saw it, and the
+  war council sends no new raid until that news is home, every raider of the party is known or presumed dead, or the
+  raid's own three days have passed. A level a member gains away is announced when it comes home, and a hero's lines
+  for its faction carry home only from home (away, only players near hear them). Heroes follow the same rule and still
   return 10 minutes after a fall: a fall nobody saw is learned when the hero rises at home ("fell where none of the
-  faction saw it"). A member player reports deaths it saw itself by using its faction's reporting station. The kill
-  feed is for players only; no faction learns anything from it. `campaign.farDeathsUnknown` false brings back the old
-  rule (every death known at once); `/fc admin roll` shows who is away, missing or dead, beside the truth.
+  faction saw it"); a hero that rises where it fell, far from home, tells its fall itself when it gets back. The
+  reporting station shows how many are away, who is missing (since which day) and who is presumed dead, and a
+  workplace's worker as "(missing)" or "(presumed dead)". A member player reports deaths it saw itself by using its
+  faction's reporting station. The kill feed is for players only; no faction learns anything from it.
+  `campaign.farDeathsUnknown` false brings back the old rule (every death known at once, and the next roll call knows
+  the deaths not yet known); `/fc admin roll` shows who is away, missing or dead, beside the truth.
 * **Builders** queue houses (with straw bedrolls made from wheat) and storage expansions, carry materials to the
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
@@ -474,9 +480,10 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1087 JUnit tests for the pure rules (the roll call: when an away member is missing and presumed
-  dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, and that no faction
-  code reads the kill feed or kill credit; explosive moves: the field's forms, powers, six blasts and
+* `./gradlew test` — 1092 JUnit tests for the pure rules (the roll call: when an away member is missing and presumed
+  dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, a death still unknown
+  under the old rule, the council's wait for its raid's news, a hero's own fall, a hero's faction lines heard only
+  nearby away from home, and that no faction code reads the kill feed, kill credit or a roster entry's truth; explosive moves: the field's forms, powers, six blasts and
   two TNT, a heavy class and fire only on a fire move, vanilla's ray rule with obsidian kept and water soaking a blast
   up, where a move blasts, the pick never blasting near its own side, the blast's ground disc; terrain as a weapon: the edges round a target as it
   can be hurt by them, the pick's doubling, the walk round to the far side and its 3 s limit, a grab's aim, how far
@@ -535,12 +542,17 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 366 GameTests on a real headless server, including **deaths far from home** (a
+* `./gradlew runGameTestServer` — 373 GameTests on a real headless server, including **deaths far from home** (a
   scout killed far away unseen is not known, goes missing past its expected return, is presumed dead and replaced; a
   death near the base or seen from home is known at once; a witness away carries the news home and tells it; a dead
   witness carries nothing; a member player reports what it saw at the station and loses it if it dies; a raider
   presumed dead walks back in and rejoins with its gear beside its replacement; a hero killed far away is learned of
-  when it rises at home after its unchanged revival time; old roster entries and factions load), **heroes** (checkpoint 2's live check: Hinae heals hurt allies with Purify by her own choice in a fight, and a client logs no hero as dormant before any definitions are read; the review of the
+  when it rises at home after its unchanged revival time; old roster entries and factions load; and from their review:
+  the war council sends no raid after a party nobody lived to report on until the raid's bound, and plans at once when
+  every raider died in sight of home; a death still unknown is known once `farDeathsUnknown` is off; a hero that rises
+  unseen where it fell far away tells nobody until it is home; a level gained away is told on coming home; the raid
+  party's gathering travels home with it; the station tells who is away, missing and presumed dead; "Adventure" is
+  made when a death is known, not when it happens), **heroes** (checkpoint 2's live check: Hinae heals hurt allies with Purify by her own choice in a fight, and a client logs no hero as dormant before any definitions are read; the review of the
   round's terrain work: a stunned soldier neither drinks its Fire Resistance nor pours its water bucket, as a stunned
   player cannot drink, and drinks once the stun is over; a soldier saved between its water landing's pour and its
   touch-down picks its water up again; a hero among five pushers still gives a soldier its 6-block edge sense; a hero

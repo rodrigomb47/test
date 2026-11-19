@@ -746,8 +746,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 affixes.clear();
                 affixes.putAll(next);
             }
-            Messages.toFaction(level().getServer(), getFaction(), Component.literal(npcName + " reached level " + npcLevel
-                    + (a == null ? "" : " and gained " + a.displayName + " (" + a.description + ")")));
+            // its faction hears it at once at home, else when it comes home (docs/design/missing_npcs.md 5)
+            com.factionclash.campaign.RollCall.ownLine(this, npcName + " reached level " + npcLevel
+                    + (a == null ? "" : " and gained " + a.displayName + " (" + a.description + ")"));
         }
         if (r.levelsGained() > 0) {
             reapplyAffixes();

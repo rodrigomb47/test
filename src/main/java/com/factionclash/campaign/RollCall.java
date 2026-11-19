@@ -160,6 +160,13 @@ public final class RollCall {
                 if (s.changed(r.where)) {
                     apply(server, data, b.faction, r, s, t, null, null);
                 }
+            } else if (!far) {
+                // campaign.farDeathsUnknown turned off: the old rule knows every death at once, those not yet known too
+                // (review of 2026-11-19: they stayed counted, holding their workplaces, for ever)
+                Step s = Whereabouts.knownUnderOldRule(r.dead, r.where);
+                if (s.changed(r.where)) {
+                    apply(server, data, b.faction, r, s, t, null, null);
+                }
             }
         }
     }
@@ -309,7 +316,12 @@ public final class RollCall {
                 apply(server, data, faction, r, s, now, carrierName, n);
                 told++;
             } else {
-                say(server, faction, null, Event.NONE, Whereabouts.carried(carrierName, n.text), null);
+                // a line about the carrier itself is told as it is; another line as the carrier's news
+                say(server, faction, n.kind == News.Kind.OWN ? carrier : null, Event.NONE,
+                        n.kind == News.Kind.OWN ? n.text : Whereabouts.carried(carrierName, n.text), null);
+                if (n.id.equals(f.raidEndNews)) {
+                    f.raidEndNews = null; // the council hears that its raid is over (docs/design/missing_npcs.md 6)
+                }
                 told++;
             }
         }
@@ -320,14 +332,15 @@ public final class RollCall {
     /**
      * A line only someone there could tell (a raid's end, an enemy hero's fall): said at once when one of the
      * {@code carriers} (members' UUIDs) is at home, else carried home by each of them. No carrier: never told. With
-     * {@code campaign.farDeathsUnknown} off it is said at once, as before.
+     * {@code campaign.farDeathsUnknown} off it is said at once, as before. Returns null when it was said at once, else the
+     * id of the news (carried, or by nobody: then it is never told), which {@link #tell} matches when it reaches home.
      */
-    public static void tellOrCarry(ServerLevel level, CampaignData data, FactionType faction, Collection<UUID> carriers, String line,
+    public static UUID tellOrCarry(ServerLevel level, CampaignData data, FactionType faction, Collection<UUID> carriers, String line,
                                    ChatFormatting style) {
         MinecraftServer server = level.getServer();
         if (!farDeathsUnknown()) {
             say(server, faction, null, Event.NONE, line, style);
-            return;
+            return null;
         }
         FactionState f = data.faction(faction);
         List<UUID> away = new ArrayList<>();
@@ -340,17 +353,35 @@ public final class RollCall {
             BlockPos at = e != null ? e.blockPosition() : r.lastPos;
             if (inHomeArea(data, faction, level, at)) {
                 say(server, faction, null, Event.NONE, line, style);
-                return;
+                return null;
             }
             away.add(u);
-        }
-        if (away.isEmpty()) {
-            return;
         }
         News n = new News(UUID.randomUUID(), News.Kind.LINE, line, false, 0, 0, level.getGameTime());
         for (UUID u : away) {
             carry(f, u, n);
         }
+        data.setDirty();
+        return n.id;
+    }
+
+    /**
+     * A line about a member itself (a level it gained): said at once when it is inside a home area of its faction (or
+     * with {@code campaign.farDeathsUnknown} off), else it tells it when it comes home (review of 2026-11-19: a member
+     * away, perhaps presumed dead, was heard levelling up at once).
+     */
+    public static void ownLine(FactionNpc m, String line) {
+        if (!(m.level() instanceof ServerLevel level) || m.isDisplayOnly()) {
+            return;
+        }
+        CampaignData data = CampaignData.get(level.getServer());
+        if (!farDeathsUnknown() || inHomeArea(data, m.getFaction(), level, m.blockPosition())) {
+            say(level.getServer(), m.getFaction(), m.getUUID(), Event.NONE, line, null);
+            return;
+        }
+        BlockPos p = m.blockPosition();
+        carry(data.faction(m.getFaction()), m.getUUID(), new News(UUID.randomUUID(), News.Kind.OWN, line, false, p.getX(), p.getZ(),
+                level.getGameTime()));
         data.setDirty();
     }
 
@@ -376,17 +407,46 @@ public final class RollCall {
     // ------------------------------------------------------------------ heroes
 
     /**
-     * A fallen hero rises at home (its revival): if its faction did not know of the fall, this is how it learns. The old
-     * entry's news is moot now. Returns true when nobody of the faction knew.
+     * A fallen hero rises (its revival): the old entry's news is moot now. Returns the old entry (its faction's view of the
+     * hero before it rises), or null.
      */
-    public static boolean heroRises(CampaignData data, FactionType owner, UUID oldUuid) {
+    public static NpcRecord heroRises(CampaignData data, FactionType owner, UUID oldUuid) {
         if (owner == null || oldUuid == null) {
-            return false;
+            return null;
         }
         FactionState f = data.faction(owner);
         NpcRecord old = f.roster.get(oldUuid);
         dropEverywhere(f, oldUuid);
+        return old;
+    }
+
+    /** Whether the faction did not know of the fall its hero rises from (the old entry {@link #heroRises} returned). */
+    public static boolean fallUnknown(NpcRecord old) {
         return old != null && old.where != State.KNOWN_DEAD && farDeathsUnknown();
+    }
+
+    /**
+     * A hero whose fall nobody of its faction saw rises where none of them is (a {@code where_it_fell} revival outside
+     * every home area; review of 2026-11-19): its faction learns nothing now. Its new entry keeps the faction's view of the
+     * old one (away, missing or presumed dead, with the same expected return), and it carries its own fall home, told
+     * when it comes back (the hero knows where and when it fell).
+     */
+    public static void heroRisesAway(CampaignData data, NpcRecord old, FactionNpc risen) {
+        FactionState f = data.faction(risen.getFaction());
+        NpcRecord r = f.roster.get(risen.getUUID());
+        if (r == null || old == null) {
+            return;
+        }
+        r.where = old.where;
+        r.alive = old.where.counted();
+        r.leftAt = old.leftAt;
+        r.expectedBy = old.expectedBy;
+        r.since = old.since;
+        r.seenHomeAt = old.seenHomeAt;
+        BlockPos fell = old.diedPos != null ? old.diedPos : risen.blockPosition();
+        carry(f, risen.getUUID(), new News(UUID.randomUUID(), News.Kind.OWN,
+                Whereabouts.ownFall(risen.npcName(), fell.getX(), fell.getZ(), old.diedAt), true, fell.getX(), fell.getZ(), old.diedAt));
+        data.setDirty();
     }
 
     // ------------------------------------------------------------------ applying and telling
@@ -401,8 +461,14 @@ public final class RollCall {
                       News n) {
         // "missing since": when it went missing (a member lost at home is presumed dead the moment it is missed)
         long missingSince = r.where == State.MISSING ? r.since : now;
+        boolean learnsDeath = s.state() == State.KNOWN_DEAD && r.where != State.KNOWN_DEAD;
         r.where(s.state(), now);
         data.setDirty();
+        if (learnsDeath) {
+            // "Adventure" (killed by something) when the faction learns of a member's death, not at the death itself
+            // (review of 2026-11-19: the death event made it, naming the dead, at once wherever it fell)
+            com.factionclash.achieve.FactionAchievements.criterion(server, faction, "adventure/root", "killed_by_something", r.name);
+        }
         String line = Whereabouts.line(s.event(), who(r), carrier, n == null ? 0 : n.x, n == null ? 0 : n.z, n == null ? now : n.at,
                 r.expectedBy, missingSince, r.isHero());
         if (line == null) {
