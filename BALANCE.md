@@ -1044,10 +1044,12 @@ The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breac
   which the void is harmful. A push counts an edge it lands within **0.5** block of, not one it flies past.
 * The pick: a push move (a knockback of **1** or more, a grab's throw, **2** when it names none, a pull) gets
   x(1 + the edge's value): **x2** at a lethal edge, **x1.5** at a harmful one.
-* The walk round: a push away from the hero ready within **2 s** (40 ticks; the current phase, no ultimate); it stands
+* The walk round: a push away from the hero ready within **2 s** (40 ticks; the current phase, no ultimate) that the
+  pick could start next (its `use_when` and state allow it, not the move just played unless repeatable); it stands
   **2-4** blocks from the target (the move's reach less 0.5) on a cell it stands on unhurt, its line to the target
-  within **11.25** degrees of the edge's direction; given up after **3 s** (60 ticks), that target left alone **10 s**
-  (200 ticks).
+  within **11.25** degrees of the edge's direction, or anywhere its push already lands in an edge as bad; within
+  **1.5** blocks of that cell it steers straight at it (over cells it stands on unhurt); given up after **3 s** (60
+  ticks), that target left alone **10 s** (200 ticks).
 * Its own body: a hop of its own stops **0.5** block short of the first cell that would hurt it; a dash or a charge
   stops at fire or lava within its next tick's step + **0.6** unless fire-proof.
 * A `where_it_fell` revival: the nearest safe cell within **16** blocks (rows 8 under to 4 over), no lava or fire beside
@@ -1056,7 +1058,8 @@ The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breac
   strength.
 * The edge sense (`EdgeSafety`, `EdgeSense`): a lethal edge for an NPC or a hero is lava, fire, a magma block or a lit
   campfire (not for a fire-proof one), the void, or a drop of more than **4**; pushers are enemies within **8** blocks
-  (at most **4**, read every **10** ticks while it has a target); a cell is unsafe with a lethal edge within **6** blocks
+  (at most **4** read, heroes first and then the nearest, read every **10** ticks while it has a target; a hero anywhere
+  among them sets the reach); a cell is unsafe with a lethal edge within **6** blocks
   behind it on the line from a pusher when a hero is among them, else **4** (a wall stops it); a path costs **+4** per
   unsafe cell; an unsafe hold or cover spot is the last choice (**+2500** on its score); an archer tries **4** back-off
   spots for a safe one.
@@ -1064,11 +1067,13 @@ The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breac
   (rows 1 under to 2 over), chosen again every **10** ticks; it keeps heading there **10** ticks after leaving the lava
   until it stands; out and still burning, water within **6** blocks for at most **2 s** (40 ticks).
 * Fire Resistance (`TerrainSurvival`): drunk in lava, or after **3 s** (60 ticks) on fire with no water within **6**
-  blocks; a **1.6 s** (32-tick) drink; the glass bottle back in its pack.
+  blocks; a **1.6 s** (32-tick) drink; the glass bottle back in its pack. Never while stunned (a stunned player uses no
+  item): a drink under way is cut off, the potion kept.
 * The water landing: `war.waterLanding` (**true**); a fall of more than **5** blocks toward a solid floor (looked for
   **64** blocks down), the bucket poured **2-3** blocks above it (sooner when the next tick would carry it past 3) and
   picked up once down (at most **100** ticks later); never over lava, water or the void, in the Nether, with Slow Falling
-  or for a hero that glides or flies.
+  or for a hero that glides or flies, nor while stunned (neither the pour nor the pick-up). The water poured and not yet
+  picked up is saved with the NPC (`FcPoured`), so a save mid-fall leaves no source block behind.
 
 ## Explosive moves (config `heroes.explosiveBlocks`; `logic/hero/Blasts`, `hero/HeroBlasts`, `HeroCatalogue.EXPLOSIVE_*`) — T2, 2026-11-19
 HEROES_V2 6.18, PROPOSED. A blast is terrain only: it hurts and pushes nobody; the move's own effects do the damage.

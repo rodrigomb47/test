@@ -31,6 +31,11 @@ import net.minecraft.world.level.material.Fluids;
  * boils (the Nether), not over the void. The player's well-known trick, with a real bucket at the moment a player
  * would.</li>
  * </ul>
+ *
+ * <p>Neither while it is stunned (review of T3, 2026-11-19): a stunned player cannot start using an item, drink or empty
+ * a bucket ({@code HeroControlEvents}: no use, no place, no right click), so a stunned NPC or hero does neither, and a
+ * drink it had begun is cut off, the potion kept, as a stun lowers a player's held item; the water a landing poured is
+ * picked up once the stun is over. The same seconds for everyone ({@code HeroStatus}).
  */
 public final class TerrainSurvival {
     /** A potion takes this long to drink (a player's 1.6 s). */
@@ -56,8 +61,9 @@ public final class TerrainSurvival {
 
     /** Each server tick of a living NPC or hero. */
     public void tick() {
-        fireResistance();
-        waterLanding();
+        boolean stunned = com.factionclash.hero.HeroStatus.stunned(npc);
+        fireResistance(stunned);
+        waterLanding(stunned);
     }
 
     /** Whether it is drinking a potion now. */
@@ -93,8 +99,12 @@ public final class TerrainSurvival {
         return false;
     }
 
-    private void fireResistance() {
+    private void fireResistance(boolean stunned) {
         burnt = npc.isOnFire() && !npc.isInWaterRainOrBubble() ? burnt + 1 : 0;
+        if (stunned) {
+            drinking = -1; // a stun lowers what it was using: the drink is cut off, the potion kept
+            return;
+        }
         if (drinking > 0) {
             if (--drinking % 4 == 0) {
                 npc.playSound(SoundEvents.GENERIC_DRINK, 0.5F, 0.9F + npc.getRandom().nextFloat() * 0.1F);
@@ -108,8 +118,11 @@ public final class TerrainSurvival {
         if (npc.fireImmune() || npc.hasEffect(MobEffects.FIRE_RESISTANCE)) {
             return;
         }
-        boolean need = npc.isInLava() || burnt >= BURN_TICKS && npc.tickCount % 10 == 0 && !waterNear();
-        if (need && Inv.count(npc.inventory(), TerrainSurvival::fireResistance) > 0) {
+        if (!npc.isInLava() && (burnt < BURN_TICKS || npc.tickCount % 10 != 0)) {
+            return;
+        }
+        // the pack first: the water search (13 x 13 x 4 blocks) only for one that carries the potion
+        if (Inv.count(npc.inventory(), TerrainSurvival::fireResistance) > 0 && (npc.isInLava() || !waterNear())) {
             drinking = DRINK_TICKS;
             npc.setStatus("Drinking Fire Resistance", "Drinking");
         }
@@ -150,10 +163,36 @@ public final class TerrainSurvival {
         return false;
     }
 
+    // ------------------------------------------------------------------ saving
+
+    /**
+     * The water a landing poured and has not picked up yet is saved with the NPC (review of T3, 2026-11-19): saved or
+     * unloaded between the pour and the touch-down (a chunk unload, a server stop, a single-player save), it picks its
+     * water up again once loaded and down, instead of leaving a source block in the world and an empty bucket in its pack.
+     */
+    public void save(net.minecraft.nbt.CompoundTag tag) {
+        if (poured != null) {
+            tag.putLong("FcPoured", poured.asLong());
+        }
+    }
+
+    public void load(net.minecraft.nbt.CompoundTag tag) {
+        poured = tag.contains("FcPoured") ? BlockPos.of(tag.getLong("FcPoured")) : null;
+        pouredFor = 0;
+    }
+
+    /** The water a landing poured and has not picked up yet (null: none). */
+    public BlockPos poured() {
+        return poured;
+    }
+
     // ------------------------------------------------------------------ the water landing (8.4)
 
-    private void waterLanding() {
+    private void waterLanding(boolean stunned) {
         Level level = npc.level();
+        if (stunned) {
+            return; // no bucket while stunned: neither the pour nor the pick-up (it waits for the stun's end)
+        }
         if (poured != null) {
             pouredFor++;
             boolean down = npc.onGround() || npc.isInWater();

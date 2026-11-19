@@ -37,8 +37,41 @@ public final class EdgeSafety {
     public static final double PUSHER_RANGE = 8;
     /** A path's cost for each unsafe cell it crosses (PROPOSED). */
     public static final float PATH_MALUS = 4;
-    /** At most this many pushers are read at once (the nearest). */
+    /** At most this many pushers are read at once (heroes first, then the nearest: {@link #keep}). */
     public static final int MAX_PUSHERS = 4;
+
+    /**
+     * A pusher's rank for {@link #keep} (lower is kept first): a hero before any other pusher, then the nearer
+     * ({@code distanceSq}, squared blocks).
+     */
+    public static double rank(double distanceSq, boolean hero) {
+        return hero ? distanceSq - 1e6 : distanceSq;
+    }
+
+    /**
+     * Keeps the best {@code px.length} pushers read so far in ({@code px}, {@code pz}, {@code ranks}), sorted by rank: the
+     * pusher at ({@code x}, {@code z}) of rank {@code r} goes in its place when it ranks among them, the worst one dropping
+     * out once the arrays are full. Returns the new count. The review of T3 (2026-11-19) found the first four read kept
+     * instead, in whatever order the level lists its entities: among five or more pushers (a fight of heroes and
+     * soldiers), the nearest, a hero among them, could be left out, and with it the 6-block reach.
+     */
+    public static int keep(double[] px, double[] pz, double[] ranks, int n, double x, double z, double r) {
+        int cap = px.length;
+        if (cap == 0 || n >= cap && r >= ranks[cap - 1]) {
+            return Math.min(n, cap);
+        }
+        int i = Math.min(n, cap - 1);
+        while (i > 0 && ranks[i - 1] > r) {
+            px[i] = px[i - 1];
+            pz[i] = pz[i - 1];
+            ranks[i] = ranks[i - 1];
+            i--;
+        }
+        px[i] = x;
+        pz[i] = z;
+        ranks[i] = r;
+        return Math.min(n + 1, cap);
+    }
 
     /** What a pusher is (the game fills the flags from the entity and what it holds; the same for a player and an NPC). */
     public static boolean pusher(boolean hero, int knockbackLevel, int punchLevel, boolean pushingMob, boolean windCharges) {

@@ -336,8 +336,13 @@ public final class HeroManager {
         // the killer: the blow's, or the enemy whose push or blow came within 15 s of a death by terrain (6.17)
         Entity killer = source == null ? null : com.factionclash.combat.KillCredits.killer(h, source);
         h.say(LineEvent.FALLEN, killer == null ? java.util.Map.of() : java.util.Map.of("enemy", HeroEntity.nameOf(killer)), null);
-        s.fellAt = h.blockPosition();
-        fallen(server, data, s, h, "has fallen at " + h.blockPosition().getX() + ", " + h.blockPosition().getZ());
+        // where it fell, for a where_it_fell or nearest_base revival: only in the overworld, where every base and every
+        // revival is (review of T1, 2026-11-19: a hero that died beyond a portal rose at the same coordinates in the
+        // overworld, on whatever stood there); a death in another dimension rises at home
+        boolean overworld = h.level().dimension() == net.minecraft.world.level.Level.OVERWORLD;
+        s.fellAt = overworld ? h.blockPosition() : null;
+        fallen(server, data, s, h, "has fallen at " + h.blockPosition().getX() + ", " + h.blockPosition().getZ()
+                + (overworld ? "" : " in " + h.level().dimension().location().getPath().replace('_', ' ')));
         com.factionclash.faction.FactionType theirs = com.factionclash.combat.CombatRules.factionOf(killer);
         if (theirs != null && theirs != s.owner) {
             Messages.toFaction(server, theirs, Component.literal(h.npcName() + " of the " + s.owner.displayName + " has fallen to "

@@ -660,12 +660,20 @@ public final class MoveSelector {
 
     /**
      * 6.17 2, the approach: the strongest push away from the hero among its moves of the current phase (ultimates aside)
-     * whose charge is back within {@code withinTicks}, or null. Only such a push makes the hero walk round its target.
+     * whose charge is back within {@code withinTicks} and that the pick could start next, or null. Only such a push makes
+     * the hero walk round its target. Not one the pick would refuse whatever the hero's place (review of T1, 2026-11-19:
+     * the walk round holds every move for up to 3 s and then leaves the target alone for 10 s, so it must not walk for a
+     * push it cannot use): one its state does not allow, one whose {@code use_when} does not hold, or the move it just
+     * played when that move is not {@code repeatable} (its novelty is 0, 6.3).
      */
     public EdgePlay.Push readyPush(long now, Sense s, int withinTicks) {
         EdgePlay.Push best = null;
+        String last = recent.peekFirst();
         for (Move m : kit.moves()) {
             if (!runnable.test(m) || !m.phases().contains(s.phase) || isUltimate(m)) {
+                continue;
+            }
+            if (!stateAllows(m, s) || !Conditions.useWhen(m, s) || m.id().equals(last) && !m.repeatable()) {
                 continue;
             }
             EdgePlay.Push p = push(m);

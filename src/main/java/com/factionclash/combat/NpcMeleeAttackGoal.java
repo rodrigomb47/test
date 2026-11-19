@@ -235,9 +235,7 @@ public class NpcMeleeAttackGoal extends Goal {
         if (spot == null) {
             return false;
         }
-        if (npc.getNavigation().isDone() || npc.tickCount % 10 == 0) {
-            npc.getNavigation().moveTo(spot.x, spot.y, spot.z, SPEED);
-        }
+        com.factionclash.hero.HeroEdgePlay.walkTo(npc, spot, SPEED); // to the spot itself, not a block short of it
         return true;
     }
 

@@ -75,9 +75,7 @@ public class HeroThrowGoal extends Goal {
         Vec3 round = hero.edgeApproachSpot();
         if (round != null) {
             // HEROES_V2 6.17's walk round (task T1): to the target's far side, so a push sends it at the edge
-            if (hero.getNavigation().isDone() || hero.tickCount % 10 == 0) {
-                hero.getNavigation().moveTo(round.x, round.y, round.z, 1.2);
-            }
+            com.factionclash.hero.HeroEdgePlay.walkTo(hero, round, 1.2); // to the spot itself, not a block short of it
         } else if (keep > 0 && dist < keep / 2) {
             // an enemy came close: back away to throwing distance, as an archer does
             if (hero.getNavigation().isDone() || hero.tickCount % 20 == 0) {

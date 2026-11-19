@@ -153,12 +153,13 @@ public final class HeroBlasts {
     /**
      * The horizontal distance from {@code (x, z)} to the nearest block of {@code hero}'s own side: anything inside
      * the walls box of a standing base of its faction or of a pact ally, or the box round that base's planned buildings
-     * (6.18). Infinite when none is within {@link #OWN_SIDE_LOOK} or the hero has no faction.
+     * (6.18). Infinite when none is within {@link #OWN_SIDE_LOOK}, the hero has no faction, or it is not in the overworld,
+     * where every base stands.
      */
     public static double ownSideDistance(HeroEntity hero, double x, double z) {
         FactionType f = hero.getFaction();
-        if (f == null || hero.getServer() == null) {
-            return Double.POSITIVE_INFINITY;
+        if (f == null || hero.getServer() == null || hero.level().dimension() != Level.OVERWORLD) {
+            return Double.POSITIVE_INFINITY; // every base stands in the overworld (review of T2: not at its coordinates elsewhere)
         }
         CampaignData data = CampaignData.get(hero.getServer());
         double best = Double.POSITIVE_INFINITY;

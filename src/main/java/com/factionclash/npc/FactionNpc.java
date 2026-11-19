@@ -1334,6 +1334,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         hg.putFloat("saturation", hunger.saturation());
         hg.putFloat("exhaustion", hunger.exhaustion());
         tag.put("FcHunger", hg);
+        terrainSurvival.save(tag);
     }
 
     @Override
@@ -1370,6 +1371,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             CompoundTag hg = tag.getCompound("FcHunger");
             hunger.set(hg.getInt("food"), hg.getFloat("saturation"), hg.getFloat("exhaustion"));
         }
+        terrainSurvival.load(tag);
         reapplyAffixes();
     }
 }

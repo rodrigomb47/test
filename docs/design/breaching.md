@@ -289,9 +289,11 @@ water within 6 blocks if there is any, else goes back to its fight.
 ### 8.3 Fire Resistance
 
 Any NPC that carries a potion of Fire Resistance drinks it when it is in lava, or when it has burnt for 3 s with no
-water within 6 blocks. Soldiers going to the Nether (ROADMAP phase 3: expeditions and fortress raids) take one each
-from the storehouse once the faction brews them (Nether wart and magma cream at a brewing stand, as a player brews;
-the field medic of phase 2 brews them when the faction has the ingredients).
+water within 6 blocks. Not while it is stunned: a stunned player can use no item, so a stunned NPC drinks nothing and a
+drink it had begun is cut off, the potion kept (review of 2026-11-19). Soldiers going to the Nether (ROADMAP phase 3:
+expeditions and fortress raids) take one each from the storehouse once the faction brews them (Nether wart and magma
+cream at a brewing stand, as a player brews; the field medic of phase 2 brews them when the faction has the
+ingredients).
 
 ### 8.4 The water landing
 
@@ -299,7 +301,9 @@ An NPC that carries a water bucket and falls more than 5 blocks over a solid flo
 when it is 2 to 3 blocks above it, lands in the water unhurt, and picks the water up again (`war.waterLanding`, on).
 Not over lava (water poured there sets as stone or obsidian, not a pool), not in the Nether (water evaporates there),
 and not over the void. It is the player's well-known trick, done with a real bucket at the same
-moment a player would; it takes the bucket out of the backpack as a player switches hotbar slots.
+moment a player would; it takes the bucket out of the backpack as a player switches hotbar slots. Not while it is
+stunned (neither the pour nor the pick-up), as for a player; the water it poured is saved with it, so a save between the
+pour and the landing leaves no source block behind (review of 2026-11-19).
 
 ### 8.5 Credit, chat and items
 
@@ -416,7 +420,7 @@ credit, NPCs stuck in lava (must be 0), tick time. `sim.py` prints a breach line
 | X2 | The TNT expert: role, hiring and the `LeaderBiases` knob, sand digging, flint knapping, creeper hunts, crafting at the workshop, the stock, the Steady Hands affix | X1 | M | `tntExpertCraftsTnt`, `tntExpertKnapsFlint` |
 | X3 | The breach on raids: breachers named at the muster, the approach with escorts, place and light, standing clear, the second charge, timing with the assault, the own-side rules, heroes as breachers, `war` config, `sim.py` lines | X1, X2 | L | the breach GameTests of 11.2 |
 | X4 | The defenders: archers' carrier priority, the alarm's carrier hand-off, water buckets for guards and the water answer, the breach memory | X3 | M | `waterStopsABreach`, `archersShootTheCarrierFirst` |
-| X5 | Lethal terrain for ordinary NPCs: the edge sense in paths and spot choice, `LavaEscapeGoal`, Fire Resistance, the water landing, the kill credit refresh and chat (also `HEROES_V2.md` 15.9 T3) | X1 | M | the terrain GameTests of 11.2. **The kill credit refresh done 2026-11-19** (`combat/KillCredits`: a push as a hit of 0, the last attacker refreshed every second while the receiver falls, burns or is in lava, the void or water, up to 15 s, the credit at a death, for every receiver; the faction chat by knowledge waits for ROADMAP phase 1). **The rest done 2026-11-19** with `HEROES_V2.md` T3 (15.9 "T1 and T3 as built"): `logic/combat/EdgeSafety` and `combat/EdgeSense` (the path cost for NPCs and heroes, the hold, cover and back-off spots), `combat/LavaEscapeGoal`, `combat/TerrainSurvival` (Fire Resistance, the water landing, `war.waterLanding`); `npcKeepsTheLavaEdgeAway` (and its twin with a mock player's Knockback sword), `npcClimbsOutOfLava`, `waterLandingBreaksAFall`. Not built: taking potions and buckets from the storehouse (phase 3's brewing) |
+| X5 | Lethal terrain for ordinary NPCs: the edge sense in paths and spot choice, `LavaEscapeGoal`, Fire Resistance, the water landing, the kill credit refresh and chat (also `HEROES_V2.md` 15.9 T3) | X1 | M | the terrain GameTests of 11.2. **The kill credit refresh done 2026-11-19** (`combat/KillCredits`: a push as a hit of 0, the last attacker refreshed every second while the receiver falls, burns or is in lava, the void or water, up to 15 s, the credit at a death, for every receiver; the faction chat by knowledge waits for ROADMAP phase 1). **The rest done 2026-11-19** with `HEROES_V2.md` T3 (15.9 "T1 and T3 as built"): `logic/combat/EdgeSafety` and `combat/EdgeSense` (the path cost for NPCs and heroes, the hold, cover and back-off spots), `combat/LavaEscapeGoal`, `combat/TerrainSurvival` (Fire Resistance, the water landing, `war.waterLanding`); `npcKeepsTheLavaEdgeAway` (and its twin with a mock player's Knockback sword), `npcClimbsOutOfLava`, `waterLandingBreaksAFall`. Not built: taking potions and buckets from the storehouse (phase 3's brewing). **Reviewed 2026-11-19** (`HEROES_V2.md` 15.9 "Review of the round"): no drink or bucket while stunned, the poured water saved, the pushers read heroes first and then the nearest (`EdgeSafety.keep`); `gametest/HeroTerrainReviewGameTests` |
 | X6 | Campaign checks of 11.3, README ("Combat behaviour", the roles table), BALANCE rows, the config file, jar and SHA-256 | X1-X5 | M | the release checklist (`docs/HANDOFF.md` section 7) |
 
 X5 should land with or before `HEROES_V2.md` T1 (heroes' lethal pushes), so soldiers can defend themselves the day

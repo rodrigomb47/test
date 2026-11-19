@@ -402,6 +402,21 @@ public final class EdgePlay {
         return sector(ux, uz) == Math.floorMod(dir, DIRECTIONS);
     }
 
+    /**
+     * Whether the hero stands right for the walk round's spot {@code sp} (review of T1, 2026-11-19): its line to the
+     * target ({@code ux, uz}) is in the spot's sector ({@link #aligned}), or a push of {@code blocks} from where it stands
+     * already lands in an edge as bad as the spot's ({@link Ring#valueWithin} of its own sector, the reading the pick's
+     * factor makes). Before, only the spot's own sector counted: a hero that stopped a block short of its spot (a path
+     * counts a neighbouring block as arrived) in the next sector, from where its push went over the same cliff, kept
+     * walking, never moved, gave up after 3 s and pushed unaimed.
+     */
+    public static boolean standsRight(Ring ring, double ux, double uz, double blocks, Spot sp) {
+        if (sp == null || Math.hypot(ux, uz) < 1e-9) {
+            return false;
+        }
+        return aligned(ux, uz, sp.dir()) || ring != null && ring.valueWithin(sector(ux, uz), blocks) >= sp.value();
+    }
+
     /** What the walk round does at one check. */
     public enum Step { NONE, ALIGNED, WALK, GAVE_UP }
 

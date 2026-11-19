@@ -109,4 +109,35 @@ class EdgeSafetyTest {
         assertTrue(EdgeSafety.pusher(false, 0, 0, false, true), "wind charges");
         assertFalse(EdgeSafety.pusher(false, 0, 0, false, false), "a plain sword");
     }
+
+    /**
+     * Review of T3 (2026-11-19): with more pushers near than are read, the best four are kept, heroes first and then the
+     * nearest, whatever order they are listed in (before, the first four listed were kept, so the nearest pusher or the
+     * hero among six could be left out).
+     */
+    @Test
+    void theNearestPushersAreReadHeroesFirst() {
+        int cap = EdgeSafety.MAX_PUSHERS;
+        double[] px = new double[cap], pz = new double[cap], ranks = new double[cap];
+        int n = 0;
+        // six soldiers listed farthest first, then a hero listed last and farthest of all
+        double[] dist = {7, 6, 5, 4, 3, 2};
+        for (double d : dist) {
+            n = EdgeSafety.keep(px, pz, ranks, n, d, 0, EdgeSafety.rank(d * d, false));
+        }
+        n = EdgeSafety.keep(px, pz, ranks, n, 7.5, 1, EdgeSafety.rank(7.5 * 7.5 + 1, true));
+        assertEquals(cap, n);
+        assertEquals(7.5, px[0], 1e-9, "the hero is kept, first");
+        assertEquals(1, pz[0], 1e-9);
+        assertEquals(2, px[1], 1e-9, "then the nearest");
+        assertEquals(3, px[2], 1e-9);
+        assertEquals(4, px[3], 1e-9, "the four best of seven: the 5, 6 and 7 block soldiers are left out");
+        // fewer than four: all kept, in order
+        double[] qx = new double[cap], qz = new double[cap], qr = new double[cap];
+        int m = EdgeSafety.keep(qx, qz, qr, 0, 5, 0, EdgeSafety.rank(25, false));
+        m = EdgeSafety.keep(qx, qz, qr, m, 1, 0, EdgeSafety.rank(1, false));
+        assertEquals(2, m);
+        assertEquals(1, qx[0], 1e-9);
+        assertEquals(5, qx[1], 1e-9);
+    }
 }

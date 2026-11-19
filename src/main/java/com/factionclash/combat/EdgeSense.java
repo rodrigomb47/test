@@ -36,6 +36,7 @@ public final class EdgeSense {
     private final FactionNpc npc;
     private long readAt = Long.MIN_VALUE / 4;
     private final double[] px = new double[EdgeSafety.MAX_PUSHERS], pz = new double[EdgeSafety.MAX_PUSHERS];
+    private final double[] ranks = new double[EdgeSafety.MAX_PUSHERS];
     private int n;
     private boolean hero, fireproof;
     private final Long2ByteOpenHashMap columns = new Long2ByteOpenHashMap();
@@ -61,9 +62,18 @@ public final class EdgeSense {
         return n > 0 && hero;
     }
 
-    /** The pushers near at the last reading. */
+    /** The pushers near at the last reading whose lines are read (at most {@link EdgeSafety#MAX_PUSHERS}). */
     public int pushers() {
         return n;
+    }
+
+    /** The horizontal position of the {@code i}th pusher read (tests). */
+    public double pusherX(int i) {
+        return px[i];
+    }
+
+    public double pusherZ(int i) {
+        return pz[i];
     }
 
     private void read(long now) {
@@ -77,14 +87,13 @@ public final class EdgeSense {
             return;
         }
         double r = EdgeSafety.PUSHER_RANGE;
+        // every pusher counts for the reach (a hero among them: 6 blocks); the lines are read from the best four, heroes
+        // first, then the nearest (the review of T3: the first four the level listed were kept before)
         for (LivingEntity e : npc.level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(r),
                 e -> e != npc && e.isAlive() && e.distanceToSqr(npc) <= r * r && enemy(e) && pusher(e))) {
-            if (n < px.length) {
-                px[n] = e.getX();
-                pz[n] = e.getZ();
-                hero |= e instanceof HeroEntity;
-                n++;
-            }
+            boolean h = e instanceof HeroEntity;
+            hero |= h;
+            n = EdgeSafety.keep(px, pz, ranks, n, e.getX(), e.getZ(), EdgeSafety.rank(e.distanceToSqr(npc), h));
         }
     }
 

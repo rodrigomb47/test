@@ -71,7 +71,7 @@ public final class HeroEdgePlay {
             for (int tries = 0; tries < 4; tries++) {
                 int mask = skipped;
                 sp = EdgePlay.approach(ring, blocks, p.reach(), -dx, -dz, d -> (mask & (1 << d)) != 0);
-                if (sp == null || EdgePlay.aligned(dx, dz, sp.dir())) {
+                if (sp == null || EdgePlay.standsRight(ring, dx, dz, blocks, sp)) {
                     break;
                 }
                 at = standable(t, sp, p.reach());
@@ -82,7 +82,7 @@ public final class HeroEdgePlay {
                 sp = null;
             }
         }
-        boolean aligned = sp != null && EdgePlay.aligned(dx, dz, sp.dir());
+        boolean aligned = sp != null && at == null;
         boolean wasWalking = walk.walking();
         EdgePlay.Step step = walk.step(now, t.getId(), sp, aligned);
         if (step == EdgePlay.Step.WALK) {
@@ -103,6 +103,51 @@ public final class HeroEdgePlay {
     /** Where the walk round heads now (null: none, or its last check is older than half a second). */
     public Vec3 spot() {
         return spot != null && hero.tickCount - spotAt <= 10 ? spot : null;
+    }
+
+    /** Scratch for {@link #clearLine} (server thread only). */
+    private static final BlockPos.MutableBlockPos LINE_CURSOR = new BlockPos.MutableBlockPos();
+    private static final int[] LINE_DROP = new int[1];
+
+    /** Within this many blocks of its spot the walk round steers straight at it instead of following a path. */
+    public static final double STEER_BLOCKS = 1.5;
+
+    /**
+     * Walks {@code mob} to the walk round's {@code spot} (the fight's spacing calls it each tick while a spot is set): its
+     * path while the spot is farther than {@link #STEER_BLOCKS}, then straight at the spot's centre (review of T1,
+     * 2026-11-19: a path counts a neighbouring block as arrived, and a hero left a block short stood outside the edge's
+     * sector for good). The straight steer only over cells it stands on unhurt; else the path, to the spot's own block.
+     */
+    public static void walkTo(net.minecraft.world.entity.Mob mob, Vec3 spot, double speed) {
+        double dx = spot.x - mob.getX(), dz = spot.z - mob.getZ();
+        if (dx * dx + dz * dz <= STEER_BLOCKS * STEER_BLOCKS && Math.abs(spot.y - mob.getY()) < 0.6
+                && clearLine(mob.level(), mob.getX(), mob.getZ(), spot, TerrainEdges.feetRow(mob))) {
+            mob.getNavigation().stop();
+            mob.getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, speed);
+            return;
+        }
+        if (mob.getNavigation().isDone() || mob.tickCount % 10 == 0) {
+            var path = mob.getNavigation().createPath(BlockPos.containing(spot), 0);
+            if (path != null) {
+                mob.getNavigation().moveTo(path, speed);
+            } else {
+                mob.getNavigation().moveTo(spot.x, spot.y, spot.z, speed);
+            }
+        }
+    }
+
+    /** Every cell on the straight line from (x, z) to {@code spot}, a third of a block apart, a floor it stands on unhurt. */
+    private static boolean clearLine(Level level, double x, double z, Vec3 spot, int row) {
+        BlockPos.MutableBlockPos c = LINE_CURSOR;
+        int[] drop = LINE_DROP;
+        for (int i = 1; i <= 3; i++) {
+            double f = i / 3.0;
+            int cx = (int) Math.floor(x + (spot.x - x) * f), cz = (int) Math.floor(z + (spot.z - z) * f);
+            if (!TerrainEdges.safeStand(level, cx, row, cz, c, drop)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** A move began, or the fight ended: no walk round is under way. */

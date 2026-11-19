@@ -274,7 +274,89 @@ class EdgePlayTest {
                 sel.moveEnded(t, 1, false);
             }
         }
+        long bashAt = t - 5;
+        sel.moveEnded(t, 1, false);
+        // another move between (the pick never plays a move that is not repeatable twice running: theWalkRoundIsOffered...)
+        pick = null;
+        while (pick == null || !pick.move().id().equals("cut")) {
+            pick = sel.check(t, near);
+            t += 5;
+        }
+        sel.moveEnded(t, 1, false);
+        assertTrue(t < bashAt + 8 * 20 - EdgePlay.READY_TICKS, "cut came " + (t - bashAt) + " ticks after bash");
         assertNull(sel.readyPush(t, s, EdgePlay.READY_TICKS), "its 8 s cooldown runs");
-        assertNotNull(sel.readyPush(t + 8 * 20 - EdgePlay.READY_TICKS, s, EdgePlay.READY_TICKS), "ready within 2 s");
+        assertNotNull(sel.readyPush(bashAt + 8 * 20 - EdgePlay.READY_TICKS, s, EdgePlay.READY_TICKS), "ready within 2 s");
+    }
+
+    /**
+     * Review of T1 (2026-11-19): a hero stands right for its walk round's spot when its own push from where it stands
+     * already lands in an edge as bad as the spot's, not only inside the spot's sector. The live failure: the spot east-
+     * southeast of a cliff (sector 2), the hero stopped a block short in sector 3, from where its knockback 3 (6.2 blocks)
+     * still went over the same cliff 6.5 blocks off; it counted as not there, walked nowhere for 3 s and pushed unaimed.
+     */
+    @Test
+    void aHeroStandsRightWhenItsPushAlreadyLandsInTheEdge() {
+        Ring ring = new Ring().edge(2, 3.5, EdgePlay.LETHAL).edge(3, 6.5, EdgePlay.LETHAL);
+        EdgePlay.Spot sp = new EdgePlay.Spot(-2, -2, 2, EdgePlay.LETHAL);
+        double a = Math.toRadians(64.8), ux = Math.cos(a), uz = Math.sin(a);
+        assertEquals(3, EdgePlay.sector(ux, uz));
+        assertFalse(EdgePlay.aligned(ux, uz, 2), "not in the spot's own sector");
+        assertTrue(EdgePlay.standsRight(ring, ux, uz, 6.2, sp), "its push from here goes over the same cliff");
+        assertEquals(2, EdgePlay.pickFactor(new EdgePlay.Push(EdgePlay.PushKind.AWAY, 3, 0, 3.5), ring, ux, uz, 3, 0), EPS,
+                "and the pick doubles it from here");
+        Ring farther = new Ring().edge(2, 3.5, EdgePlay.LETHAL).edge(3, 7.5, EdgePlay.LETHAL);
+        assertFalse(EdgePlay.standsRight(farther, ux, uz, 6.2, sp), "a push that falls short of the edge: walk on");
+        Ring worse = new Ring().edge(2, 3.5, EdgePlay.LETHAL).edge(3, 6.5, EdgePlay.HARMFUL);
+        assertFalse(EdgePlay.standsRight(worse, ux, uz, 6.2, sp), "only a harmful edge from here while the spot's is lethal: walk on");
+        assertTrue(EdgePlay.standsRight(ring, Math.cos(Math.toRadians(45)), Math.sin(Math.toRadians(45)), 6.2, sp), "in the sector");
+        assertFalse(EdgePlay.standsRight(ring, ux, uz, 6.2, null), "no spot");
+    }
+
+    /**
+     * Review of T1 (2026-11-19): the walk round holds every move while it walks and then leaves its target alone for 10 s,
+     * so it is offered only a push the pick could start next: not one whose {@code use_when} fails, and not the move just
+     * played when it is not repeatable (its novelty is 0), even with a second charge ready.
+     */
+    @Test
+    void theWalkRoundIsOfferedOnlyAPushThePickCouldStart() {
+        HeroDef.V2 k = MoveSelectorTest.kit(null,
+                MoveSelectorTest.move("desperate", "melee", "\"weight\": 5, \"use_when\": \"self_health_below\", \"use_value\": 40,"
+                        + " \"effects\": [{\"type\": \"damage\", \"amount\": 2}, {\"type\": \"knockback\", \"strength\": 2}]"));
+        MoveSelector sel = new MoveSelector(k, 50, 50, false, 1);
+        Sense s = MoveSelectorTest.at(2);
+        s.edges = new Ring().edge(EAST, 3, EdgePlay.LETHAL);
+        s.toTargetX = 1;
+        s.healthShare = 1;
+        assertNull(sel.readyPush(0, s, EdgePlay.READY_TICKS), "its use_when fails at full health: no walk round for it");
+        s.healthShare = 0.3;
+        assertNotNull(sel.readyPush(0, s, EdgePlay.READY_TICKS), "under 40%: it may start, so the hero walks round for it");
+
+        HeroDef.V2 k2 = MoveSelectorTest.kit(null,
+                MoveSelectorTest.move("bash", "melee", "\"weight\": 5, \"charges\": 2, \"cooldown\": 8, \"effects\": [{\"type\":"
+                        + " \"damage\", \"amount\": 2}, {\"type\": \"knockback\", \"strength\": 2}]"),
+                MoveSelectorTest.move("cut", "melee", "\"weight\": 5"));
+        MoveSelector sel2 = new MoveSelector(k2, 50, 50, false, 1);
+        sel2.fightStarted(0);
+        Sense near = MoveSelectorTest.at(2);
+        long t = 0;
+        MoveSelector.Pick pick = null;
+        while (pick == null || !pick.move().id().equals("bash")) {
+            pick = sel2.check(t, near);
+            t += 5;
+            if (pick != null) {
+                sel2.moveEnded(t, 1, false);
+            }
+        }
+        assertEquals(1, sel2.charges(k2.move("bash"), t, 0), "its second charge is ready");
+        assertEquals(0, sel2.score(k2.move("bash"), s), EPS, "just played and not repeatable: the pick scores it 0");
+        assertNull(sel2.readyPush(t, s, EdgePlay.READY_TICKS), "so no walk round for it");
+        while (pick == null || !pick.move().id().equals("cut")) {
+            pick = sel2.check(t, near);
+            t += 5;
+            if (pick != null) {
+                sel2.moveEnded(t, 1, false);
+            }
+        }
+        assertNotNull(sel2.readyPush(t, s, EdgePlay.READY_TICKS), "once another move played, its second charge is offered");
     }
 }
