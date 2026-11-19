@@ -134,8 +134,11 @@ seen leaving yet), `alive` stays true, nothing is said. `dead` and `diedAt` are 
   (`FactionState.raidLast`, saved) and carries the raid's end (`RollCall.raidEndCarriers`): told at once when it is
   home, else when it gets there.
 * The **raid party's roll** (`FactionState.raiders`) is the party's own knowledge on the spot: a raider leaves the
-  party when the faction no longer counts it (`alive` false) or when it died and a member saw it (`witnessed`). The raid
-  ends as before, or when every raider is truly gone (no one is left to carry it on; nothing is told at home).
+  party when it died and a member saw it (`witnessed`; every death with `farDeathsUnknown` off). What home believes is
+  not the party's to know: a raider home reports missing or presumes dead stays on the roll (review of the knowledge
+  review, 2026-11-19: home's belief pulled live raiders off the party where they fought). The raid ends as before, when
+  every raider is truly gone (no one is left to carry it on; nothing is told at home), or when the party must turn home
+  to be back by the council's plan (`Whereabouts.raidTurnHomeAt`, `docs/design/knowledge.md` 3).
 * The council's estimate of an *enemy* base reads only what its people saw (knowledge review of 2026-11-19,
   `docs/design/knowledge.md` 1): its scouts' and raiders' looks at the garrison, aged, a prior where nobody looked, and
   the enemy soldiers seen falling at home.

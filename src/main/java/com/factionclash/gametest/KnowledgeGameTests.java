@@ -23,6 +23,7 @@ import com.factionclash.util.Messages;
 import com.factionclash.work.CaveExplorerJob;
 import com.factionclash.work.Job;
 import com.factionclash.work.MinerJob;
+import com.factionclash.work.ScoutJob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -784,6 +785,275 @@ public final class KnowledgeGameTests {
             // the party's losses on the spot are its own: the notice the ally holds does not change with them
             f.raiders.clear();
             t.assertTrue(ally.pactOffensives.get(SIDE) == o, "the ally's notice changed with the party's roll");
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    // ------------------------------------------------------------------ the review of the knowledge review (2026-11-19)
+
+    /** Two more of our soldiers at home, so the council has ten inside the walls' box. */
+    private static final int[][] TEN = {{10, 10}, {11, 10}, {13, 10}, {14, 10}, {10, 14}, {14, 14}, {10, 12}, {14, 12}, {11, 14}, {13, 14}};
+
+    /**
+     * Review finding 1: home expects its raiders back by the raid's plan, so the party on the spot keeps the same plan. It
+     * gives the raid up when it must turn home to be back by it; before, it raided on until the 3-day limit while home
+     * reported its live raiders missing and then presumed them dead (and replaced them).
+     */
+    @GameTest(template = "platform", timeoutTicks = 60, batch = "knowledge_raidturn")
+    public static void aRaidPartyTurnsHomeByItsPlanAndHomeNeverGivesUpALiveRaid(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 60);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 300));
+            Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
+            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            deliver(t, f, seen, now);
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "no raid of three: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            long start = f.raidStartedAt, plan = f.raidPlanTicks;
+            // the party marches out (seen leaving: expected back by the plan) and fights on at the target, alive
+            List<NpcRecord> party = new ArrayList<>();
+            int x = 4;
+            for (java.util.UUID u : List.copyOf(f.raiders)) {
+                goTo(t, (FactionNpc) level.getEntity(u), x, FAR_Z);
+                x += 8;
+                party.add(t.data.record(u));
+            }
+            long grace = FCConfig.MISSING_GRACE_TICKS.get(), presume = FCConfig.PRESUMED_DEAD_TICKS.get();
+            long turn = start + plan - Whereabouts.walkTicks(300);
+            long[] hours = {start + plan / 2, turn - 1, turn + 1, start + plan + grace + 1, start + plan + grace + presume + 1};
+            boolean onBeforeTurn = false, onAfterTurn = true;
+            for (long at : hours) {
+                raids(t, f, at);
+                RollCall.upkeep(level, t.data, t.base, at);
+                for (NpcRecord rec : party) {
+                    t.assertTrue(rec.where == State.HERE || rec.where == State.AWAY || f.raidTarget < 0,
+                            "home gave up a live raider (" + rec.where + ") while its party still raided on the spot, "
+                                    + (at - start) + " ticks after the launch (plan " + plan + ")");
+                }
+                if (at == turn - 1) {
+                    onBeforeTurn = f.raidTarget == enemy.id;
+                }
+                if (at == turn + 1) {
+                    onAfterTurn = f.raidTarget >= 0;
+                }
+            }
+            t.assertTrue(onBeforeTurn, "the party gave its raid up before its plan said");
+            t.assertTrue(!onAfterTurn, "the party raided on past the time it had to turn home to be back by its plan");
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * Review finding 1, its other half: what home believes is not the party's to know. A raider its faction at home has
+     * presumed dead (missing too long) stays on the party's roll while the raid is on; before, home's belief pulled it
+     * off the party where it stood and sent it home.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_raidroll")
+    public static void homesBeliefDoesNotPullARaiderOffItsParty(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 300));
+            Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
+            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            deliver(t, f, seen, now);
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "no raid of three: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            java.util.UUID u = f.raiders.get(0);
+            goTo(t, (FactionNpc) level.getEntity(u), 4, FAR_Z);
+            NpcRecord rec = t.data.record(u);
+            rec.where(State.PRESUMED_DEAD, now + 1); // home's view only: the raider lives and fights on
+            raids(t, f, now + 1);
+            t.assertTrue(f.raidTarget == enemy.id && f.raiders.contains(u),
+                    "home's belief pulled a live raider off its party on the spot (" + f.raiders.size() + " left)");
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * Review finding 2: no base is ever rebuilt, so ruins a faction's people saw stay ruins. A later look that sees the
+     * yard but not the heart's place (from outside the walls, or behind a block) used to replace the fallen report with a
+     * standing one, and the council sent raid after raid to the ruins.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_ruinsstay")
+    public static void ruinsSeenStayRuinsWhenOnlyTheYardIsSeenAgain(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        BlockPos screen = new BlockPos(12, 2, 20);
+        t.onCleanup(() -> h.setBlock(screen, Blocks.AIR));
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(12, 2, 21)));
+            enemy.destroyed = true;
+            enemy.destroyedBy = FactionType.EMBER_LEGION;
+            FactionNpc scout = member(t, 12, 16, NpcRole.SCOUT);
+            Report ruins = BaseWatch.look(level, scout, enemy, now);
+            t.assertTrue(ruins != null && ruins.fallen, "the scout did not see the ruins: " + (ruins == null ? null : ruins.note));
+            deliver(t, f, ruins, now);
+            // later the heart's place is out of view (a block before it), the yard behind still in view
+            h.setBlock(screen, Blocks.STONE);
+            Report yard = BaseWatch.look(level, scout, enemy, now + 1);
+            t.assertTrue(yard != null && !yard.fallen && yard.look != null && yard.look.visible() > 0,
+                    "the second look should see the yard but not the heart's place: " + (yard == null ? null : yard.note));
+            t.assertTrue(ScoutJob.mergeOnTrip(ruins, yard).fallen, "a later look on the same trip forgot the ruins it saw");
+            deliver(t, f, yard, now + 1);
+            t.assertTrue(f.knowledge.stream().anyMatch(r -> r.subject == ENEMY && r.pos.equals(enemy.center) && r.fallen),
+                    "a later look at the yard rebuilt ruins the faction had seen");
+            FactionDirector.LAST_COUNCIL.remove(SIDE);
+            raids(t, f, now + 2);
+            t.assertTrue(f.raidTarget < 0 && FactionDirector.LAST_COUNCIL.get(SIDE) == null,
+                    "the council weighs ruins its scout had seen: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * Review finding 3: enemy soldiers seen falling at our walls lower the estimate while the loss is fresh (a
+     * counter-attack), but a base hires replacements, so a loss counts for less as it ages, as a look does. Before, eight
+     * of nine seen falling three days ago still made the garrison one soldier, and the council struck it.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_lossesfade")
+    public static void soldiersSeenFallingLongAgoAreReplacedInTheEstimate(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
+            Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 9, "9 soldiers seen");
+            seen.look = new Intel.Look(9, 1.0, 2.0, 0, now);
+            deliver(t, f, seen, now);
+            // eight of them fall at our walls, in sight of home
+            for (int i = 0; i < 8; i++) {
+                kill(stranger(t, ENEMY, 10 + i % 5, 13 + i / 5, NpcRole.SWORDSMAN));
+            }
+            Report ours = f.knowledge.stream().filter(r -> r.subject == ENEMY && r.pos.equals(enemy.center)).findFirst().orElseThrow();
+            t.assertTrue(ours.losses == 8, "the soldiers seen falling at our walls: " + ours.losses);
+            raids(t, f, now + 3L * Whereabouts.TICKS_PER_DAY);
+            t.assertTrue(f.raidTarget < 0, "three days after its losses the garrison is still believed one soldier strong: "
+                    + FactionDirector.LAST_COUNCIL.get(SIDE));
+            raids(t, f, now + 1);
+            t.assertTrue(f.raidTarget == enemy.id, "fresh losses should still weaken the estimate: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * Review finding 4: a hero seen at a base counts in the estimate while the sighting is fresh, and less as it ages (a
+     * hero goes raiding, falls, or was only passing through). Before, a hero seen once was counted there for ever at full
+     * strength, and a council never struck that base again.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_heroesfade")
+    public static void aHeroSeenLongAgoCountsForLessAsTheSightingAges(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
+            Report first = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 4, "4 soldiers and a hero seen");
+            first.look = new Intel.Look(4, 1.0, 1.0, 6.0, now);
+            first.heroes = "review_hero=6.0"; // as saved before the sightings kept their time
+            deliver(t, f, first, now);
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget < 0, "a hero seen there just now should hold three soldiers back: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            long later = now + 3L * Whereabouts.TICKS_PER_DAY;
+            Report second = new Report(Report.Kind.ENEMY_BASE, enemy.center, later, ENEMY, 4, "4 soldiers seen");
+            second.look = new Intel.Look(4, 1.0, 1.0, 0, later);
+            deliver(t, f, second, later);
+            raids(t, f, later);
+            t.assertTrue(f.raidTarget == enemy.id, "a hero seen there three days ago still holds the council back: "
+                    + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * Review finding 5: against a garrison none of its people has seen (assumed like its own), the council's rule "attack
+     * with two thirds of the defence" compared a party of every soldier beyond a third with two thirds of the whole
+     * garrison: only 9 and 12 soldiers ever matched it (at exact equality), so ten soldiers waited where nine attacked.
+     * Two thirds is counted in whole soldiers, as the council itself rounds its garrison.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_twothirds")
+    public static void tenSoldiersAttackAGarrisonLikeTheirOwnWhereNineDo(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : TEN) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
+            Report walls = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "its walls seen, nothing of the yard");
+            walls.look = new Intel.Look(0, 0.0, 0, 0, now);
+            deliver(t, f, walls, now);
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 6, "ten soldiers waited against a garrison like their own: "
+                    + FactionDirector.LAST_COUNCIL.get(SIDE));
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();

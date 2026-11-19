@@ -48,16 +48,19 @@ The council's **estimate** (`Intel.estimate`):
 * soldiers = the soldiers seen + the prior times the share of the yard **out of view**;
 * as the look ages it drifts up toward the prior over `Intel.FORGET_TICKS` (48000, two days), never below what was
   seen;
-* minus the soldiers of that settlement the faction **saw fall** since the look (below);
-* their power: the seen soldiers' visible power, the prior's for the rest; the heroes seen count by their war power.
+* minus the soldiers of that settlement the faction **saw fall** since the look (below), each loss counting for less
+  as it ages over the same two days (the base hires replacements; section 11);
+* their power: the seen soldiers' visible power, the prior's for the rest; the heroes seen count by their war power,
+  each sighting for less as it ages over two days (section 11).
 
-The **prior** (what the council assumes where nobody looked): for a settlement, a garrison like its own (its soldiers
-at home and its own `soldierPower`; "assume they are as strong as we are"); for a lair, as grown as the campaign's days
+The **prior** (what the council assumes where nobody looked): for a settlement, a garrison like its own (its ordinary
+soldiers at home, not its heroes, and its own `soldierPower`; "assume they are as strong as we are"); for a lair, as grown as the campaign's days
 allow (`lairBaseCap` plus one a day up to `lairMaxCap`: the rule every faction knows). A report saved before this
 review has no look: the prior.
 
 The decision is unchanged in form (the target with the least defence, then the nearest; attack at two thirds, a
-counter-attack inside the interval only at 3 to 2), but every number is the estimate. A garrison that **marches out
+counter-attack inside the interval only at 3 to 2), but every number is the estimate, and since section 11 two thirds
+is counted in whole soldiers (`Intel.twoThirds`) and the 3 to 2 to the nearest one (`Intel.threeToTwo`). A garrison that **marches out
 unseen is still believed at home**; one a scout saw gone is struck. The launch line says what it rests on: "against
 about 4 defenders, as seen on day 3" or "a garrison none of ours has seen". `LAST_COUNCIL` (in `/fc admin dump`) adds
 the truth for operators (`[truth: …]`).
@@ -87,7 +90,8 @@ victory" for a base someone else razed.
 
 **Now.** `BaseState.destroyedBy` records who broke a heart (truth). A report stays standing until one of the faction's
 people sees the ruins: a scout (or raider) with the heart's place in view reports it **fallen** (`Report.fallen`,
-"… in ruins, its heart gone"), which replaces the standing report. The council never targets a fallen report and may
+"… in ruins, its heart gone"), which replaces the standing report, for good: no base is ever rebuilt, so a later look
+that sees the walls or the yard but not the heart's place does not raise the ruins again (section 11). The council never targets a fallen report and may
 target a base that fell unseen (a raid sent to ruins is the player-like mistake). Raiders and raiding heroes learn the
 fall only when they see the heart's place within 48 blocks (`BaseWatch.seesFall`; `GuardJob`, `HeroRaid`), then loot
 what is left. "Has ended in victory" only when the faction's own people broke the heart; "its settlement was found in
@@ -105,9 +109,11 @@ of day 1.3 held its council until day 4.3).
 assault and the loot (PROPOSED 6000, `RAID_ASSAULT_TICKS`: the heart takes 400 ticks of blows, plus the fight and
 the walk to the storehouse) and the walk home from the target, at the roll call's 10 ticks a block. A 300-block raid is
 planned at about 18000 ticks. Its raiders are expected back by launch + plan; the council waits for the end's news
-until the plan plus `missingGraceTicks`, when its raiders go missing. The 72000 limit stays the party's own end on the
-spot. A raid that truly runs long has its raiders reported missing early, and "is back" when they return, as a late
-scout. A raid launched before this review keeps the old bound (`raidPlanTicks` 0).
+until the plan plus `missingGraceTicks`, when its raiders go missing. The party on the spot keeps the same plan: it
+gives the raid up and turns home at launch + plan - the walk home (`Whereabouts.raidTurnHomeAt`, "its time is up, the
+party turns home"), never after the 72000 limit (section 11; before, it raided on to the limit while home reported its
+live raiders missing, presumed them dead and replaced them). A raid launched before this review keeps the old bound
+(`raidPlanTicks` 0: the limit).
 
 ## 4. A miner's trip is its shift (known leak 6)
 
@@ -185,6 +191,10 @@ member away gets its worn tool replaced when it is home and seen.
   an offensive as it is launched. Updated: the council's wait (`MissingNpcGameTests`), the raider's expected return,
   the pact's reports (`FCGameTests`), mined-ore experience at a base, the hero raid draft (a report with a look).
 
+The review of this review (section 11) added six GameTests and seven unit tests (a party that turns home by its plan,
+its roll deaf to home's belief, ruins that stay ruins, losses and hero sightings that fade, two thirds in whole
+soldiers, the 3 to 2 to the nearest one, the party rule).
+
 Fifteen sabotages, each caught by a test: the council reading the enemy's true defenders, the 3-day wait, a miner's
 half-day plan at each crossing, no edge band, retraining or the blacksmith judging members away, ruins raided, every
 enemy death counted as seen, experience banked anywhere, the alarm raising anyone, the lookout's line anywhere, a lair
@@ -224,3 +234,67 @@ its limit.
   (`HeroNodeEvaluator`); an escaping hero's refuge is chosen among its faction's bases that truly stand. Today heroes
   join raids only by operator command; these belong with the leaders' raids (L4).
 * **`/fc hero info`** shows a member player its hero's true place and state (player-side, kept).
+
+## 11. The review of the knowledge review (2026-11-19)
+
+An adversarial review re-audited every entity query and every read of another faction's state in the faction-side code
+(`campaign/`, `work/`, `npc/`, `combat/`, `hero/`, `info/`, `achieve/`) and checked the fixes above for behaviour
+problems. The audit found no new leak beyond section 10; nearby-entity queries are senses (a guard sees an intruder, a
+scout sees a monster). Five behaviour problems were found, each shown by a GameTest that failed before its fix
+(`KnowledgeGameTests`, the last six tests) and by unit tests (`IntelTest`, `WhereaboutsTest`):
+
+1. **The party raided on past the plan home expected it by** (`aRaidPartyTurnsHomeByItsPlanAndHomeNeverGivesUpALiveRaid`).
+   Section 3 shortened home's expectation to the raid's plan but left the party on the spot raiding until the 3-day
+   limit: a raid that stalled at the walls had its live raiders reported missing at the plan + 2400 ticks and presumed
+   dead (and replaced) at + 12000 more, while still fighting. Worse, the party's own roll dropped a raider "its faction
+   no longer counts", so home's belief pulled presumed-dead raiders off the party where they stood and sent them home
+   (`homesBeliefDoesNotPullARaiderOffItsParty`). Now the party turns home at launch + plan - the walk home
+   (`Whereabouts.raidTurnHomeAt`), and its roll drops only a raider whose death a member saw.
+2. **Ruins seen were rebuilt by a later look** (`ruinsSeenStayRuinsWhenOnlyTheYardIsSeenAgain`). `Report.mergeBase` let a
+   newer standing look replace a fallen report, and on one trip (or in the raid party's look) the later look's `fallen`
+   won. A scout outside the walls sees the walls but not the heart's place (the walls are 5 high), so ruins once seen
+   became a standing base again and the council sent raid after raid to them. Ruins now stay ruins.
+3. **Losses never faded** (`soldiersSeenFallingLongAgoAreReplacedInTheEstimate`): eight of nine enemy soldiers seen
+   falling at our walls three days ago still made the garrison one soldier strong (the look drifts to the prior, the
+   losses stayed subtracted), and the council struck a garrison long rebuilt. Each loss now counts for less as it ages
+   over `Intel.FORGET_TICKS` from the last one seen (`Intel.weight`).
+4. **A hero seen once was counted for ever** (`aHeroSeenLongAgoCountsForLessAsTheSightingAges`): `Report.mergeBase`
+   kept every hero seen at full strength, so a council never struck a base where a strong hero had once been seen, even
+   one passing through. A report now keeps each hero's newest sighting with its time (`id=power@time`; an old
+   `id=power` entry is dated by its report's look) and the council counts each by `Intel.heroPower`, fading over
+   `Intel.FORGET_TICKS`.
+5. **The council's rule waited at 10 or 11 soldiers where it attacked at 9** (`tenSoldiersAttackAGarrisonLikeTheirOwnWhereNineDo`).
+   Against a garrison nobody has seen (the prior, like its own), the party (every soldier beyond a third, the third
+   rounded up) was compared with two thirds of the whole garrison: it matched only when 3 divided the garrison, and
+   then at exact equality, so the float rounding of `soldierPower` (1.35 for leather and a bare hand) could stop it
+   too. Two thirds is now counted in whole soldiers (`Intel.twoThirds`: the floor, the same rounding the council uses
+   for the third it keeps), so a council attacks a garrison like its own from 7 soldiers whatever their gear, never at
+   6; the counter-attack's 3 to 2 is counted to the nearest whole soldier (`Intel.threeToTwo`), and strengths within a
+   hundredth of a soldier are equal (`Intel.TIE`). The prior counts the council's ordinary soldiers, not its heroes
+   (heroes nobody saw are not assumed, and its own never join the party). The party rule itself moved to
+   `Intel.partySize` unchanged.
+
+Sabotages, each caught: the party raiding to the limit (GameTest), the turn-home time as the limit (unit), home's
+belief on the party's roll (GameTest), a standing look rebuilding ruins (GameTest), losses that never fade (unit),
+hero sightings that never fade (unit), an old hero entry dated by the newer report (GameTest), two thirds of a
+fractional head (unit), a counter-attack at exact 3 to 2 (unit and GameTest).
+
+Checked and left as they are:
+
+* **The cave survey** is written only in `CaveExplorerJob.report` at the station; an explorer that dies on the way home
+  loses it, as a scout loses its reports (the rule working). The same for a fisherman's water found away, the explorer's
+  "no way in" line and the raid party's look.
+* **The balance risk** of section 1's prior remains to be measured in a campaign (the council now attacks an unseen
+  settlement from 7 soldiers at home; before the knowledge review it read the enemy's true roster).
+
+Found and left open (not fixed here, low severity):
+
+* **A scout's pending reports are capped at 24** (`ScoutJob.addPending`, pre-existing): on a long trip full of hostile
+  groups or exposed ore, a later look at an enemy base is dropped, and the base is not reported at all.
+* **A fisherman that finds water on a far leg walks home to the storehouse before it fishes there** (section 7), a
+  round trip a player would not make; its own knowledge and the fishery record are one field.
+* **The raiders' kills at the target do not lower the estimate**: only enemy soldiers seen falling at home count as
+  losses (`BaseWatch.enemyFell`); a raid beaten back after killing half the garrison brings home a look, but not the
+  kills it saw after that look.
+* **Losses are kept as a count and the last one's time**: a loss seen before a newer look but merged after it can count
+  twice, and older losses fade with the newest one.

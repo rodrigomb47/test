@@ -117,31 +117,30 @@ public final class Report {
 
     /**
      * Two reports of one settlement or lair (knowledge review of 2026-11-19): the newer is kept, with what the older saw
-     * that it did not. Ruins are ruins. A newer report with no look at the defence (told by others) keeps the older look;
-     * the heroes seen are kept from both (a hero indoors is still there); the losses seen since the kept look are kept.
-     * {@code trip}: two looks on one trip (or a trip's and the raiders'): the one that saw more of the yard is the look
-     * kept ({@link com.factionclash.logic.campaign.Intel#better}).
+     * that it did not. Ruins are ruins, and stay ruins: no base is ever rebuilt, so a later look that sees the yard or the
+     * walls but not the heart's place does not raise it again (review of the knowledge review, 2026-11-19: the council
+     * sent raid after raid to ruins its people had seen). A newer report with no look at the defence (told by others) keeps
+     * the older look; the heroes seen are kept from both, each with its newest sighting (the council counts a sighting for
+     * less as it ages, {@link com.factionclash.logic.campaign.Intel#heroPower}); the losses seen since the kept look are
+     * kept. {@code trip}: two looks on one trip (or a trip's and the raiders'): the one that saw more of the yard is the
+     * look kept ({@link com.factionclash.logic.campaign.Intel#better}).
      */
     public static Report mergeBase(Report older, Report newer, boolean trip) {
         Report r = newer.copy();
         if (newer.fallen) {
             return r;
         }
-        if (older.fallen && !trip) {
-            return newer.observedAt > older.observedAt ? r : older.copy();
+        if (older.fallen) {
+            return older.copy();
         }
         com.factionclash.logic.campaign.Intel.Look look = trip ? com.factionclash.logic.campaign.Intel.better(older.look, newer.look)
                 : newer.look != null ? newer.look : older.look;
-        java.util.Map<String, Float> heroes = heroesOf(older.heroes);
-        heroesOf(newer.heroes).forEach((id, p) -> heroes.merge(id, p, Math::max));
-        r.heroes = joinHeroes(heroes);
-        if (look != null) {
-            double sum = heroes.values().stream().mapToDouble(Float::doubleValue).sum();
-            look = new com.factionclash.logic.campaign.Intel.Look(look.soldiers(), look.visible(), look.power(), sum, look.at());
-            if (look == older.look || older.look != null && look.at() == older.look.at() && look.soldiers() == older.look.soldiers()) {
-                r.count = older.count;
-                r.note = older.note;
-            }
+        r.heroes = com.factionclash.logic.campaign.Intel.heroes(com.factionclash.logic.campaign.Intel.mergeHeroes(
+                com.factionclash.logic.campaign.Intel.heroes(older.heroes, older.seenAt()),
+                com.factionclash.logic.campaign.Intel.heroes(newer.heroes, newer.seenAt())));
+        if (look != null && (look == older.look || older.look != null && look.at() == older.look.at() && look.soldiers() == older.look.soldiers())) {
+            r.count = older.count;
+            r.note = older.note;
         }
         r.look = look;
         long since = look == null ? 0 : look.at();
@@ -151,29 +150,9 @@ public final class Report {
         return r;
     }
 
-    /** "id=power,id=power" as a map (unreadable parts dropped). */
-    public static java.util.Map<String, Float> heroesOf(String s) {
-        java.util.Map<String, Float> out = new java.util.LinkedHashMap<>();
-        if (s == null || s.isEmpty()) {
-            return out;
-        }
-        for (String part : s.split(",")) {
-            int eq = part.indexOf('=');
-            if (eq > 0) {
-                try {
-                    out.put(part.substring(0, eq), Float.parseFloat(part.substring(eq + 1)));
-                } catch (NumberFormatException ignored) {
-                    // a damaged entry is forgotten
-                }
-            }
-        }
-        return out;
-    }
-
-    public static String joinHeroes(java.util.Map<String, Float> heroes) {
-        StringBuilder b = new StringBuilder();
-        heroes.forEach((id, p) -> b.append(b.length() == 0 ? "" : ",").append(id).append('=').append(p));
-        return b.toString();
+    /** When what this report saw of a defence was seen: its look's time, else when it was observed. */
+    public long seenAt() {
+        return look != null ? look.at() : observedAt;
     }
 
     public Report copy() {

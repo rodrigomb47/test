@@ -72,7 +72,7 @@ public final class BaseWatch {
         AABB area = new AABB(b.center).inflate(half + 8, 12, half + 8);
         int soldiers = 0;
         double power = 0;
-        Map<String, Float> heroes = new LinkedHashMap<>();
+        Map<String, Intel.Hero> heroes = new LinkedHashMap<>();
         if (b.isSettlement()) {
             for (FactionNpc n : level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == b.faction
                     && !n.isDisplayOnly() && n.fightsLikeSoldier())) {
@@ -80,7 +80,7 @@ public final class BaseWatch {
                     continue;
                 }
                 if (n instanceof com.factionclash.hero.HeroEntity h) {
-                    heroes.put(h.heroId(), (float) seenHeroPower(h));
+                    heroes.put(h.heroId(), new Intel.Hero(seenHeroPower(h), now));
                 } else {
                     soldiers++;
                     power += FactionDirector.power(n); // what anyone sees: the armour worn and the weapon held
@@ -98,14 +98,14 @@ public final class BaseWatch {
         if (inView == 0 && soldiers == 0 && heroes.isEmpty() && !heartInView && !wallsInView) {
             return null; // nothing of it in sight (behind a hill)
         }
-        double heroPower = heroes.values().stream().mapToDouble(Float::doubleValue).sum();
+        double heroPower = heroes.values().stream().mapToDouble(Intel.Hero::power).sum();
         Intel.Look look = new Intel.Look(soldiers, visible, soldiers > 0 ? power / soldiers : 0, heroPower, now);
         String seen = soldiers + (kind == Report.Kind.LAIR ? (soldiers == 1 ? " monster" : " monsters") : (soldiers == 1 ? " soldier" : " soldiers"))
                 + (heroes.isEmpty() ? "" : " and " + heroes.size() + (heroes.size() == 1 ? " hero" : " heroes")) + " seen, "
                 + Math.round(visible * 100) + "% of " + (kind == Report.Kind.LAIR ? "its ground" : "the yard") + " in view";
         Report r = new Report(kind, b.center, now, b.faction, soldiers, what + ", " + seen);
         r.look = look;
-        r.heroes = Report.joinHeroes(heroes);
+        r.heroes = Intel.heroes(heroes);
         return r;
     }
 

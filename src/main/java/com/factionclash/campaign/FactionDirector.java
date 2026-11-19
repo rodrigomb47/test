@@ -676,8 +676,10 @@ public final class FactionDirector {
 
     private static void raids(ServerLevel level, CampaignData data, FactionState f, BaseState home, long t) {
         if (f.raidTarget >= 0) {
-            // the party's own roll on the spot (docs/design/missing_npcs.md 6): a raider leaves it when its faction no
-            // longer counts it, or when it died and a member saw it; a death nobody saw keeps it on the roll
+            // the party's own roll on the spot (docs/design/missing_npcs.md 6): a raider leaves it when it died and a member
+            // saw it (with campaign.farDeathsUnknown off, every death is seen); a death nobody saw keeps it on the roll. What
+            // home believes (a raider missing, then presumed dead) is not the party's to know (review of the knowledge
+            // review, 2026-11-19: home's belief pulled live raiders off the party where they fought)
             for (UUID u : f.raiders) {
                 if (!f.lastParty.contains(u)) {
                     f.lastParty.add(u); // (a hero that joined the raid on its own rules)
@@ -685,7 +687,7 @@ public final class FactionDirector {
             }
             f.raiders.removeIf(u -> {
                 NpcRecord r = f.roster.get(u);
-                return r == null || !r.alive || r.dead && r.witnessed; // truth: the party on the spot
+                return r == null || r.dead && (r.witnessed || !RollCall.farDeathsUnknown()); // truth: the party on the spot
             });
             // the raiders still alive: they alone can tell home how the raid went
             List<UUID> survivors = f.raiders.stream().filter(u -> {
@@ -706,14 +708,19 @@ public final class FactionDirector {
                 com.factionclash.hero.HeroManager.raidLost(level, f, target);
                 f.raiders.clear();
             }
-            if (f.raiders.isEmpty() || survivors.isEmpty() || t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS) {
+            // the party keeps the council's plan: it turns home in time to be back by it (review of the knowledge review,
+            // 2026-11-19: it raided on to the 3-day limit while home took its live raiders for missing, then dead)
+            boolean timeUp = t > Whereabouts.raidTurnHomeAt(f.raidStartedAt, f.raidPlanTicks,
+                    target == null ? 0 : Math.sqrt(target.center.distSqr(home.center)));
+            if (f.raiders.isEmpty() || survivors.isEmpty() || timeUp) {
                 // (no raider left alive: nobody carries the raid on, nor the news of its end.) The council at home hears
                 // of the end only when its news comes home, or assumes it once the raid's plan has passed (review of
                 // 2026-11-19: it heard at once, and could send the next raid after a party nobody lived to report on)
                 String name = target == null ? "?" : target.faction.displayName;
                 f.raidEndNews = RollCall.tellOrCarry(level, data, f.type, RollCall.raidEndCarriers(f, survivors), "Raid on " + name
                         + " has ended" + (won ? " in victory" : ruinsSeen ? ": its " + (target.isSettlement() ? "settlement" : "lair")
-                        + " was found in ruins" : ""), null);
+                        + " was found in ruins" : timeUp && !f.raiders.isEmpty() && !survivors.isEmpty() ? ": its time is up, the party turns home"
+                        : ""), null);
                 if (f.raidEndNews == null) {
                     deliverRaidIntel(f, t); // told at home at once: what the party saw of the target with it
                 }
@@ -721,7 +728,7 @@ public final class FactionDirector {
                 com.factionclash.hero.HeroManager.raidEnded(level, f, target, won);
                 f.raidTarget = -1;
                 f.raidLast = null;
-                if (t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS || survivors.isEmpty()) {
+                if (timeUp || survivors.isEmpty()) {
                     f.raiders.clear();
                 }
                 data.setDirty();
@@ -753,10 +760,8 @@ public final class FactionDirector {
         List<FactionNpc> soldiers = level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == f.type
                 && n.getRole().combatant && n.baseId() == home.id && !n.isDisplayOnly());
         // a real attack: every soldier beyond a third of the garrison (never fewer than raidPartySize, always leaving
-        // homeDefenders at home) - small parties against a full garrison only feed an endless war of attrition
-        int keep = Math.max(FCConfig.HOME_DEFENDERS.get(), (soldiers.size() + 2) / 3);
-        int party = Math.max(FCConfig.RAID_PARTY_SIZE.get(), soldiers.size() - keep);
-        // a hero counts as one soldier of its role for the garrison and the party size, but the soldier sort never
+        // homeDefenders at home; Intel.partySize) - small parties against a full garrison only feed an endless war of
+        // attrition. A hero counts as one soldier of its role for the garrison and the party size, but the soldier sort never
         // picks it: it joins a raid only through its own rules (HEROES_V2 3.2: a leader going with the raid, its
         // behaviour), which come with the leaders
         List<FactionNpc> draftable = soldiers.stream().filter(n -> !(n instanceof com.factionclash.hero.HeroEntity)).toList();
@@ -766,8 +771,8 @@ public final class FactionDirector {
             // reads it)
             f.soldierPower = (float) draftable.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
         }
-        party = Math.min(party, draftable.size());
-        if (soldiers.size() < FCConfig.HOME_DEFENDERS.get() + party || party < FCConfig.RAID_PARTY_SIZE.get()) {
+        int party = Intel.partySize(soldiers.size(), draftable.size(), FCConfig.HOME_DEFENDERS.get(), FCConfig.RAID_PARTY_SIZE.get());
+        if (party <= 0) {
             return;
         }
         // war council: of the bases the scouts reported, the weakest garrison first (then the nearest); attack when
@@ -783,7 +788,8 @@ public final class FactionDirector {
         Report targetReport = null;
         // in a pact: only the conqueror, never an ally
         FactionType sworn = Diplomacy.swornEnemy(data, f.type);
-        Intel.Prior likeOurs = new Intel.Prior(soldiers.size(), f.soldierPower);
+        // (our soldiers, not our heroes: heroes nobody saw are not assumed, and ours never go with the party)
+        Intel.Prior likeOurs = new Intel.Prior(draftable.size(), f.soldierPower);
         for (Report r : f.knowledge) {
             if (!r.base() || r.fallen || Diplomacy.allied(data, f.type, r.subject) || sworn != null && r.subject != sworn) {
                 continue;
@@ -814,7 +820,8 @@ public final class FactionDirector {
         double defenceSoldiers = targetEstimate.soldierPower();
         double defenceHeroes = targetEstimate.heroPower();
         double defencePower = com.factionclash.logic.hero.HeroRules.countedPower(defenceSoldiers, defenceHeroes);
-        boolean counter = !intervalOver && partyPower * 2 >= defencePower * 3;
+        double unit = targetEstimate.power(); // one of its soldiers, as the council counts them
+        boolean counter = !intervalOver && Intel.threeToTwo(partyPower, defencePower, unit);
         // a pact offensive: allies that told the faction of their march on the same base, when they launched it, count
         // toward the strength needed (their party as launched; never the ally's own records, knowledge review of 2026-11-19)
         double alliedPower = 0;
@@ -826,12 +833,14 @@ public final class FactionDirector {
                 }
             }
         }
-        boolean joint = alliedPower > 0 && (partyPower + alliedPower) * 3 >= defencePower * 2;
-        boolean go = !(!joint && !counter && (!intervalOver || partyPower * 3 < defencePower * 2));
+        // two thirds of the defence in whole soldiers, a counter-attack's 3 to 2 to the nearest one (Intel.twoThirds and
+        // threeToTwo, review of the knowledge review, 2026-11-19)
+        boolean joint = alliedPower > 0 && Intel.twoThirds(partyPower + alliedPower, defencePower, unit);
+        boolean go = joint || counter || intervalOver && Intel.twoThirds(partyPower, defencePower, unit);
         // the same council with the heroes counted out: did their presence (or absence) decide it? (SLICE_PLAN 6.4)
-        boolean goWithout = !intervalOver && partySoldiers * 2 >= defenceSoldiers * 3
-                || alliedPower > 0 && (partySoldiers + alliedPower) * 3 >= defenceSoldiers * 2
-                || intervalOver && partySoldiers * 3 >= defenceSoldiers * 2;
+        boolean goWithout = !intervalOver && Intel.threeToTwo(partySoldiers, defenceSoldiers, unit)
+                || alliedPower > 0 && Intel.twoThirds(partySoldiers + alliedPower, defenceSoldiers, unit)
+                || intervalOver && Intel.twoThirds(partySoldiers, defenceSoldiers, unit);
         LAST_COUNCIL.put(f.type, String.format(java.util.Locale.ROOT,
                 "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f; %s), %s%s [truth: %.1f]",
                 t / 24000.0, target.faction.id, target.id, target.isSettlement() ? "settlement" : "lair", partyPower, partyHeroes,
@@ -868,7 +877,9 @@ public final class FactionDirector {
         Intel.Prior prior = r.kind == Report.Kind.LAIR
                 ? new Intel.Prior(Intel.lairPrior(FCConfig.LAIR_BASE_CAP.get(), FCConfig.LAIR_MAX_CAP.get(), t - data.startedAt), 1.0)
                 : likeOurs;
-        return Intel.estimate(r.look, r.losses, prior, t);
+        // the losses and the heroes seen count for less as they age (review of the knowledge review, 2026-11-19)
+        double heroes = Intel.heroPower(Intel.heroes(r.heroes, r.seenAt()).values(), t);
+        return Intel.estimate(r.look, r.losses, r.lossAt, heroes, prior, t);
     }
 
     /** "seen day 3", or "never seen". */
@@ -956,7 +967,7 @@ public final class FactionDirector {
         }
         long now = level.getGameTime();
         Intel.Prior likeOurs = new Intel.Prior(picks.size(), f.soldierPower);
-        Intel.Estimate e = known != null ? estimate(data, known, likeOurs, now) : Intel.estimate(null, 0, likeOurs, now);
+        Intel.Estimate e = known != null ? estimate(data, known, likeOurs, now) : Intel.estimate(null, 0, now, 0, likeOurs, now);
         launch(level, data, f, home, target, picks.subList(0, party), e.heads() + " defenders" + seenText(known, now), "By order! ", now);
         return f.type.displayName + " raids base " + target.id + " with " + party + " soldiers";
     }

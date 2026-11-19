@@ -55,23 +55,138 @@ public final class Intel {
 
     /**
      * The estimate from the newest {@code look} (null: nobody looked), the enemy soldiers seen to fall since it
-     * ({@code losses}), the {@code prior} and the time now: the soldiers seen, plus the prior's share of the yard out of
-     * view; as the look ages it drifts up toward the prior (never below what was seen), and the losses seen come off.
-     * The soldiers out of view and the drift have the prior's power; the heroes seen are counted as seen.
+     * ({@code losses}, the last at {@code lossAt}), the war power of the heroes seen there as it counts now
+     * ({@link #heroPower}), the {@code prior} and the time now: the soldiers seen, plus the prior's share of the yard out
+     * of view; as the look ages it drifts up toward the prior (never below what was seen), and the losses seen come off,
+     * counting for less as they age as a look does (a base hires replacements; review of the knowledge review,
+     * 2026-11-19: losses seen days ago kept a rebuilt garrison believed empty). The soldiers out of view and the drift
+     * have the prior's power.
      */
-    public static Estimate estimate(Look look, int losses, Prior prior, long now) {
+    public static Estimate estimate(Look look, int losses, long lossAt, double heroPower, Prior prior, long now) {
         double priorSoldiers = Math.max(0, prior.soldiers());
         double priorPower = Math.max(1, prior.power());
+        double lost = Math.max(0, losses) * weight(lossAt, now);
+        double heroes = Math.max(0, heroPower);
         if (look == null) {
-            return new Estimate(Math.max(0, priorSoldiers - Math.max(0, losses)), priorPower, 0);
+            return new Estimate(Math.max(0, priorSoldiers - lost), priorPower, heroes);
         }
         double unseen = priorSoldiers * (1 - look.visible());
         double seen = look.soldiers() + unseen;
-        double drift = Math.max(0, priorSoldiers - seen) * Math.min(1, Math.max(0, now - look.at()) / (double) FORGET_TICKS);
+        double drift = Math.max(0, priorSoldiers - seen) * (1 - weight(look.at(), now));
         double soldiers = seen + drift;
         double seenPower = look.soldiers() > 0 ? Math.max(1, look.power()) : priorPower;
         double power = soldiers <= 0 ? priorPower : (look.soldiers() * seenPower + (unseen + drift) * priorPower) / soldiers;
-        return new Estimate(Math.max(0, soldiers - Math.max(0, losses)), power, look.heroPower());
+        return new Estimate(Math.max(0, soldiers - lost), power, heroes);
+    }
+
+    /**
+     * How much a sighting made at {@code at} still counts at {@code now}: all of it when fresh, nothing after
+     * {@link #FORGET_TICKS} (a look, a loss seen at our walls, a hero seen at a base). A sighting dated in the future
+     * (a clock set back) counts fully.
+     */
+    public static double weight(long at, long now) {
+        return 1 - Math.min(1, Math.max(0, now - at) / (double) FORGET_TICKS);
+    }
+
+    /** A hero seen at a base: its war power at full strength (its bar and level) and when it was last seen there. */
+    public record Hero(double power, long at) {
+    }
+
+    /**
+     * The heroes' war power the council counts at a base now (review of the knowledge review, 2026-11-19): each sighting
+     * counts for less as it ages, nothing after {@link #FORGET_TICKS} (a hero goes raiding, falls, or was passing through;
+     * before, a hero seen once was counted there for ever at full strength, and the council never struck that base).
+     */
+    public static double heroPower(java.util.Collection<Hero> heroes, long now) {
+        double sum = 0;
+        for (Hero h : heroes) {
+            sum += Math.max(0, h.power()) * weight(h.at(), now);
+        }
+        return sum;
+    }
+
+    /**
+     * The heroes of a report ("id=power@at" joined by commas) by id; an entry saved before the sightings kept their time
+     * ("id=power") was seen at {@code seenAt} (its report's look). Unreadable parts are dropped.
+     */
+    public static java.util.Map<String, Hero> heroes(String s, long seenAt) {
+        java.util.Map<String, Hero> out = new java.util.LinkedHashMap<>();
+        if (s == null || s.isEmpty()) {
+            return out;
+        }
+        for (String part : s.split(",")) {
+            int eq = part.indexOf('=');
+            if (eq <= 0) {
+                continue;
+            }
+            String rest = part.substring(eq + 1);
+            int atSign = rest.indexOf('@');
+            try {
+                double power = Double.parseDouble(atSign < 0 ? rest : rest.substring(0, atSign));
+                long at = atSign < 0 ? seenAt : Long.parseLong(rest.substring(atSign + 1));
+                out.put(part.substring(0, eq), new Hero(power, at));
+            } catch (NumberFormatException ignored) {
+                // a damaged entry is forgotten
+            }
+        }
+        return out;
+    }
+
+    /** The heroes as a report keeps them: "id=power@at" joined by commas. */
+    public static String heroes(java.util.Map<String, Hero> heroes) {
+        StringBuilder b = new StringBuilder();
+        heroes.forEach((id, h) -> b.append(b.length() == 0 ? "" : ",").append(id).append('=').append((float) h.power()).append('@').append(h.at()));
+        return b.toString();
+    }
+
+    /** Two reports' heroes: every hero seen on either, each with its newest sighting (its power then). */
+    public static java.util.Map<String, Hero> mergeHeroes(java.util.Map<String, Hero> older, java.util.Map<String, Hero> newer) {
+        java.util.Map<String, Hero> out = new java.util.LinkedHashMap<>(older);
+        newer.forEach((id, h) -> out.merge(id, h, (a, b) -> b.at() >= a.at() ? b : a));
+        return out;
+    }
+
+    /**
+     * PROPOSED: a hundredth of a soldier. Strengths closer than this are equal: a float rounding of the gear's power, the
+     * prior's power mixed into an estimate, a loss faded by a tick never decide a war (review of the knowledge review).
+     */
+    static final double TIE = 0.01;
+
+    /**
+     * PROPOSED (review of the knowledge review, 2026-11-19): whether a party of strength {@code party} is a match for a
+     * defence of {@code defence}, its soldiers of mean power {@code soldierPower}: at least two thirds of the defence,
+     * counted in whole soldiers, as a council counts its own garrison (the party is every soldier beyond a third kept at
+     * home). Before, two thirds of a fractional head counted, so against a garrison like its own (the prior) a council
+     * with 9 or 12 soldiers attacked, at exact equality and only when a float rounding allowed it, and one with 10 or 11
+     * never did.
+     */
+    public static boolean twoThirds(double party, double defence, double soldierPower) {
+        double unit = Math.max(TIE, soldierPower);
+        double heads = Math.max(0, defence) / unit;
+        double need = Math.floor(heads * 2 / 3 + TIE) * unit;
+        return party + TIE * unit >= need;
+    }
+
+    /**
+     * PROPOSED (review of the knowledge review, 2026-11-19): a counter-attack's odds inside the raid interval: the party
+     * outnumbers the defence 3 to 2, the defence's half again counted to the nearest whole soldier. The estimate is
+     * fractional (a loss seen at our walls fades from the first tick), so a sliver of a soldier must not decide a war.
+     */
+    public static boolean threeToTwo(double party, double defence, double soldierPower) {
+        double unit = Math.max(TIE, soldierPower);
+        double need = Math.round(Math.max(0, defence) / unit * 3 / 2) * unit;
+        return party + TIE * unit >= need;
+    }
+
+    /**
+     * The war council's party ({@code FactionDirector}): every soldier beyond a third of the {@code atHome} garrison
+     * (heroes count by heads there), at least {@code minParty}, always leaving {@code homeDefenders} at home, no more than
+     * the {@code draftable} soldiers (a hero is never drafted); 0 when it cannot send one.
+     */
+    public static int partySize(int atHome, int draftable, int homeDefenders, int minParty) {
+        int keep = Math.max(homeDefenders, (atHome + 2) / 3);
+        int party = Math.min(Math.max(minParty, atHome - keep), draftable);
+        return atHome < homeDefenders + party || party < minParty ? 0 : party;
     }
 
     /**

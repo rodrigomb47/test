@@ -491,10 +491,16 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   tier/4 (wood 0 … diamond 0.75, netherite 1); a faction's average power is noted whenever its garrison is home, and
   rivals judge its defenders by it (a lair's monsters count 1 each). A raid goes when the interval has passed and
   the party's power is at least 2/3 of the defence; a counter-attack may go after a quarter of the interval at 3/2.
+  Since the review of the knowledge review (2026-11-19, PROPOSED `Intel.twoThirds` and `Intel.threeToTwo`): two thirds
+  of the defence counted in **whole soldiers** of its mean power (floor; the party is what a garrison of that size sends,
+  the council's own rounding), the counter-attack's 3/2 to the **nearest** whole soldier, strengths within **0.01** of a
+  soldier equal (PROPOSED `Intel.TIE`). Against a garrison nobody has seen (the prior, like its own) a council therefore
+  attacks with **7 or more** soldiers at home whatever their gear, never with 6; before, only 9 or 12 did (at exact
+  equality, when the float rounding of `soldierPower` allowed it) and 10 or 11 never did.
 * Pacts (config `war.pacts`, on): after a conquest of a human faction by a human faction, the other surviving human
   factions (2+) are allied until the conqueror falls or fewer than 2 members remain. Members learn the
   conqueror's bases, target only it, and join a member's raid on the same base when their combined power is at
-  least 2/3 of the defence (after a quarter of the interval).
+  least 2/3 of the defence in whole soldiers (after a quarter of the interval).
 * Traders (PROPOSED): hired with 14+ people and a reported village with traders within 320 blocks; one trip per 12000 ticks, by
   day (setting out between 23500 and 9000 day time), abandoned after 24000 ticks. Packs up to 8 kinds × 64 of
   surplus above the reserves (wheat, potatoes, carrots 64; beetroot 32; sticks 64; string, leather 16; feathers,
@@ -677,7 +683,8 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   `war.scoutOverdueTicks`** (24000); a raider **launch + the raid's plan** (knowledge review of 2026-11-19: the walk to
   the rally point + **6000** for the muster, `RAID_MUSTER_TICKS` + **6000** for the assault and the loot, PROPOSED
   `RAID_ASSAULT_TICKS` + the walk home from the target; about **18000** for a 300-block raid; a raid launched before:
-  launch + 72000 + the walk back); a miner at a far face or in a far cave **its shift**, fixed at its last storehouse
+  launch + 72000 + the walk back; the party on the spot turns home at launch + the plan - the walk home, PROPOSED
+  `Whereabouts.raidTurnHomeAt`, never after 72000, review of the knowledge review); a miner at a far face or in a far cave **its shift**, fixed at its last storehouse
   visit: until the coming nightfall, at least 12000, + the walk home (past its shift outside the home area it goes back
   to the storehouse); a trader **trip start + 24000** (`TRADER_ROAD_TICKS`) + the walk back from
   320 blocks; a cave explorer **departure + 12000** (`CaveExplorerJob.MAX_TRIP_TICKS`) + the walk back from its cave
@@ -695,14 +702,16 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   replaced, its record kept; coming home it rejoins (its replacement stays).
 * A member whose entity is gone from a loaded place it was last seen in for **2400** ticks (`RollCall.VANISH_TICKS`,
   as before) is lost: inside a home area its faction presumes it dead at once; away, the waits above apply.
-* A raid party drops a raider its faction no longer counts or whose death a member saw; the raid also ends when no
-  raider is left alive (nothing told). Raid end lines (and the party's "has gathered") are carried home by the raiders
+* A raid party drops a raider whose death a member saw (every death with `farDeathsUnknown` off), not one its faction
+  at home has given up (review of the knowledge review, 2026-11-19: home's belief pulled live raiders off the party);
+  the raid also ends when no raider is left alive (nothing told), and when the party must turn home to be back by the
+  council's plan (launch + the plan - the walk home, never after 72000; "its time is up, the party turns home"). Raid end lines (and the party's "has gathered") are carried home by the raiders
   alive then; when the party empties because its last raider left it alive (home at its storehouse, or falling back
   wounded), that raider carries the end (`FactionState.raidLast`, live check of 2026-11-19: a party that came home one
   by one told its end to nobody and its council waited out the whole bound). The war council plans **no new raid**
   while the end of its last raid is unheard at home, it still counts someone of that party, and the raid's plan plus
   `missingGraceTicks` has not passed (the knowledge review of 2026-11-19; launch + 72000 before). **72000** stays the
-  raid's hard limit on the spot (`Whereabouts.RAID_LIMIT_TICKS`).
+  raid's hard limit on the spot (`Whereabouts.RAID_LIMIT_TICKS`) for a raid launched before the plan was kept.
 * Lines about a member itself (a level gained) are said at once inside a home area, else told when it comes home; a
   hero's lines for its faction are heard by its whole faction only from a home area (away: the players near, as its
   other lines). A hero risen where it fell outside every home area, from a fall nobody saw, keeps its faction's view
@@ -762,13 +771,17 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   heroes in sight at full war power, and the share of the yard in view (**5 x 5** points at eye height over the walls'
   inside). Estimate (`Intel`): the soldiers seen + the prior x the share out of view, drifting up to the prior over
   **48000** ticks (PROPOSED `Intel.FORGET_TICKS`), never below what was seen, minus the enemy soldiers seen falling at
-  home since; the prior is a garrison like the council's own (its soldiers at home, its `soldierPower`), a lair's
+  home since, each loss counting less as it ages over the same 48000 ticks (the base hires replacements; review of the
+  knowledge review); the heroes seen there count by their war power, each sighting less as it ages over 48000 ticks
+  (kept as `id=power@time`, an old `id=power` as seen with its look); the prior is a garrison like the council's own
+  (its ordinary soldiers at home, not its heroes, and its `soldierPower`), a lair's
   `lairBaseCap` + 1 a day up to `lairMaxCap`. Two looks on one trip: the one with more of the yard in view (**0.1**
-  apart, else the newer). A raider sees a fall when the heart's place is in view within **48** blocks. Pact allies are
+  apart, else the newer). A raider sees a fall when the heart's place is in view within **48** blocks; ruins seen stay
+  ruins (no base is rebuilt: a later look that misses the heart's place does not raise them again). Pact allies are
   told of an offensive at launch (its party's power, until its plan's end).
 * Heroes in the war council (HEROES_V2 8.1, A1b): `soldierPower` is the average of the ordinary soldiers only (the
   faction's own, its prior for a garrison it has not seen); an enemy base's defence is its soldiers seen x their power
-  plus the war power of each hero seen there (the operators' truth, `FactionDirector.defencePower`: alive, at home, not
+  plus the war power of each hero seen there, fading with the sighting's age (the operators' truth, `FactionDirector.defencePower`: alive, at home, not
   on a raid; **half** under half health), the heroes counting at most **1.5x** the soldiers' power (the
   soldier backbone). A hero's war power is `2.25 x sqrt(maxHealth / 20) x (1.5 + level / 30) x war.heroPowerPercent /
   100` (`heroPowerPercent` **100**, 0-200; 0 counts a hero as one soldier by heads, as before). The target score reads

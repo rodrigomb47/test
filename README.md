@@ -172,8 +172,12 @@ Players respawn at their nearest surviving allied base when they have no bed.
   the yard it could not see is assumed as strong as the council's own garrison, an old look counts for less (back to
   that assumption over two days), and the enemy soldiers it saw fall at its own walls come off. A garrison that marches
   out where nobody sees it is still believed at home; one a scout saw gone is struck. A base razed by someone else is
-  believed standing until a scout or a raider sees its ruins. The raiders' own look at the target comes home with the
-  raid's end ("against about 4 defenders, as seen on day 3").
+  believed standing until a scout or a raider sees its ruins, and ruins seen stay ruins. The raiders' own look at the
+  target comes home with the raid's end ("against about 4 defenders, as seen on day 3"). Enemy losses seen at the walls
+  and heroes seen at a base count for less as the sighting ages (two days); two thirds is counted in whole soldiers, so
+  a council with 7 or more soldiers at home attacks a garrison none of its people has seen (one like its own). A raid
+  party turns home in time to be back by the council's plan ("its time is up, the party turns home"), so home never
+  gives up raiders who are still fighting.
 * **Pacts against a conqueror** (config `war.pacts`): when a human faction conquers another and two or more human
   factions survive besides it, they swear a pact against the conqueror (announced in chat). Members stop fighting
   each other (no targeting, sweeps, friendly fire or base alarms between them; raids between them are called off),
@@ -500,10 +504,11 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1107 JUnit tests for the pure rules (what a faction knows of an enemy base: a garrison nobody
+* `./gradlew test` — 1115 JUnit tests for the pure rules (what a faction knows of an enemy base: a garrison nobody
   saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
-  at home, heroes seen, the better look, a lair's prior; a raid's plan and a wipe-out given up by it, the home edge's
-  band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
+  at home and their fading, heroes seen and their sightings' fading, the better look, a lair's prior, two thirds in whole
+  soldiers (from 7 soldiers against a garrison like its own, whatever the gear), a counter-attack's 3 to 2, the party
+  rule; a raid's plan, a wipe-out given up by it and the party turning home by it, the home edge's band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
   list or true fall, and hero code reads kill credit only for its presentation lines; the roll call: when an away member is missing and presumed
   dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, a death still unknown
   under the old rule, the council's wait for its raid's news, a day's remote work expected back at nightfall, a hero's own fall, a hero's faction lines heard only
@@ -566,9 +571,12 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 388 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 394 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
-  defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not;
+  defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
+  and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
+  attack a garrison like their own; ruins seen stay ruins when only the yard is seen again; a raid party turns home by
+  its plan and home never gives up a raider still fighting, nor pulls one off its party;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid
   wiped out unseen is given up at its plan, its raiders missing then, not at three days; a miner crossing the home edge
   twice on one shift keeps one expected return; a cave survey is the faction's only when handed in at the station;

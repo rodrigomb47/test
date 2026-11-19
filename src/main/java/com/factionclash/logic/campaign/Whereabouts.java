@@ -145,6 +145,18 @@ public final class Whereabouts {
         return planTicks > 0 ? raidStartedAt + planTicks : raidStartedAt + RAID_LIMIT_TICKS + walkTicks(blocksBack);
     }
 
+    /**
+     * When the party on the spot gives its raid up and turns home (review of the knowledge review, 2026-11-19): in time to
+     * be home by the council's plan (the launch plus the plan, less the walk home over {@code blocksHome}), never later
+     * than the raid's hard limit; a raid launched before the plan was kept (plan 0) keeps the hard limit. Home expects its
+     * raiders by the plan, so a party that raided on past it was reported missing, and its live raiders presumed dead and
+     * replaced, while it still fought.
+     */
+    public static long raidTurnHomeAt(long raidStartedAt, long planTicks, double blocksHome) {
+        long limit = raidStartedAt + RAID_LIMIT_TICKS;
+        return planTicks > 0 ? Math.min(limit, raidStartedAt + Math.max(0, planTicks - walkTicks(blocksHome))) : limit;
+    }
+
     /** A raider seen leaving now: what is left of its raid's plan ({@link #raidPlannedBy}). */
     public static long raidPlan(long now, long plannedBy) {
         return Math.max(0, plannedBy - now);

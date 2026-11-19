@@ -282,4 +282,22 @@ class WhereaboutsTest {
         assertTrue(13716 < Whereabouts.dayShiftPlan(23400, 70) + WAITS.grace());
         assertTrue(13716 > Whereabouts.DEFAULT_TRIP_TICKS, "the default plan alone left it 700 ticks of grace");
     }
+
+    /**
+     * Review of the knowledge review (2026-11-19): the party on the spot keeps the council's plan. It turns home in time
+     * to be back by it (the launch plus the plan, less the walk home), never later than the raid's hard limit; a raid
+     * launched before the plan was kept turns home at the limit.
+     */
+    @Test
+    void aRaidPartyTurnsHomeInTimeToBeBackByItsPlan() {
+        long start = 50_000;
+        long plan = Whereabouts.raidPlanTicks(272, 300);
+        long turn = Whereabouts.raidTurnHomeAt(start, plan, 300);
+        assertEquals(start + plan - Whereabouts.walkTicks(300), turn);
+        assertEquals(Whereabouts.raidPlannedBy(start, plan, 300), turn + Whereabouts.walkTicks(300), "home by the plan");
+        assertTrue(turn - start >= Whereabouts.RAID_MUSTER_TICKS + Whereabouts.RAID_ASSAULT_TICKS, "time for the muster and the assault");
+        assertEquals(start + Whereabouts.RAID_LIMIT_TICKS, Whereabouts.raidTurnHomeAt(start, 0, 300), "an old raid keeps its limit");
+        assertEquals(start + Whereabouts.RAID_LIMIT_TICKS, Whereabouts.raidTurnHomeAt(start, 500_000, 300), "never past the limit");
+        assertEquals(start, Whereabouts.raidTurnHomeAt(start, 100, 300), "a plan shorter than the walk: at once");
+    }
 }

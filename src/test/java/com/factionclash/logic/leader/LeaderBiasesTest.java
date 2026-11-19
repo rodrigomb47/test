@@ -73,11 +73,17 @@ class LeaderBiasesTest {
         assertEquals(36000, n.firstRaidTicks(36000));
         contains(director, "t - f.lastRaidAt < interval / 4", "FactionDirector");
         assertEquals(0.25, n.counterWindow(), EPS);
-        contains(director, "partyPower * 2 >= defencePower * 3", "FactionDirector");
+        contains(director, "!intervalOver && Intel.threeToTwo(partyPower, defencePower, unit)", "FactionDirector");
+        contains(source("logic/campaign/Intel.java"), "Math.round(Math.max(0, defence) / unit * 3 / 2)", "Intel");
         assertEquals(1.5, n.counterOdds(), EPS);
-        contains(director, "partyPower * 3 < defencePower * 2", "FactionDirector");
+        // (two thirds of the defence in whole soldiers, and the third kept at home: Intel since the review of the
+        // knowledge review, 2026-11-19)
+        String intel = source("logic/campaign/Intel.java");
+        contains(director, "intervalOver && Intel.twoThirds(partyPower, defencePower, unit)", "FactionDirector");
+        contains(intel, "Math.floor(heads * 2 / 3 + TIE)", "Intel");
         assertEquals(2.0 / 3, n.attackOdds(), EPS);
-        contains(director, "(soldiers.size() + 2) / 3", "FactionDirector");
+        contains(director, "Intel.partySize(soldiers.size(), draftable.size()", "FactionDirector");
+        contains(intel, "(atHome + 2) / 3", "Intel");
         for (int s = 0; s <= 40; s++) {
             assertEquals((s + 2) / 3, n.garrisonKept(s), "garrison of " + s);
         }

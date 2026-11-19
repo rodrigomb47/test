@@ -691,6 +691,8 @@ public final class FCCommands {
                     so.addProperty("lookAt", r.look.at());
                 }
                 so.addProperty("losses", r.losses);
+                so.addProperty("lossAt", r.lossAt);
+                so.addProperty("heroesSeen", r.heroes); // id=power@time, each fading in the council's count
                 so.addProperty("by", r.by);
                 seen.add(so);
             }
