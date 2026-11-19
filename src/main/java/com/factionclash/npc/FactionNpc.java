@@ -899,7 +899,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             if (rec != null) {
                 rec.lastPos = blockPosition();
                 rec.lastSeen = level().getGameTime();
-                rec.alive = true;
+                // what its faction sees of it: at home, leaving, back (docs/design/missing_npcs.md)
+                com.factionclash.campaign.RollCall.sighting(this, rec);
             }
             ChunkLoading.updateTraveler(this);
         }
@@ -1247,18 +1248,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     @Override
     public void die(DamageSource source) {
         super.die(source);
-        if (level() instanceof ServerLevel sl && !isDisplayOnly()) { // (a display copy's end is no faction news)
-            CampaignData data = CampaignData.get(sl.getServer());
-            NpcRecord rec = record();
-            if (rec != null) {
-                rec.alive = false;
-                rec.lastPos = blockPosition();
-                rec.lastSeen = sl.getGameTime();
-                data.setDirty();
-            }
+        if (level() instanceof ServerLevel && !isDisplayOnly()) { // (a display copy's end is no faction news)
+            // its faction knows only what its people saw: at once near home or seen from home, later through a witness
+            // away who carries the news home, else by waiting (missing, then presumed dead; docs/design/missing_npcs.md)
+            com.factionclash.campaign.RollCall.onDeath(this);
             ChunkLoading.releaseTraveler(this);
-            Messages.toFaction(sl.getServer(), getFaction(), Component.literal(npcName + " (" + getRole().displayName + ") was killed")
-                    .withStyle(net.minecraft.ChatFormatting.RED));
         }
     }
 

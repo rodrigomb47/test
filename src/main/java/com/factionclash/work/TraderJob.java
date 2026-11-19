@@ -432,6 +432,16 @@ public class TraderJob extends Job {
         return Inv.count(npc.inventory(), o.getItemCostA()::test) >= price(npc, o) && Inv.room(npc.inventory(), o.getResult()) > 0;
     }
 
+    /** On a trip: a day on the road from its start (it gives a trip up then), and the walk back from the farthest village. */
+    @Override
+    public long tripPlanTicks(long now) {
+        if (state == State.PLAN || tripStarted <= 0) {
+            return super.tripPlanTicks(now);
+        }
+        return com.factionclash.logic.campaign.Whereabouts.planFrom(now,
+                tripStarted + com.factionclash.logic.campaign.Whereabouts.TRADER_ROAD_TICKS, TRADE_RANGE);
+    }
+
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putString("state", state.name());

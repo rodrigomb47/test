@@ -27,14 +27,15 @@ public final class ChunkLoading {
             ResourceLocation.fromNamespaceAndPath(FactionClash.MODID, "faction_areas"),
             (level, helper) -> {
                 CampaignData data = CampaignData.get(level.getServer());
-                // Drop traveller tickets of NPCs that are no longer alive in the roster, and old non-ticking ones
+                // Drop traveller tickets of NPCs that are truly gone (dead or lost; not merely presumed dead by their
+                // faction, who may be alive far away and walking home), and old non-ticking ones
                 // (they kept chunks loaded without updating the NPCs in them); living NPCs away from home get a
                 // ticking area again when the server has started (see restoreTravellers).
                 for (Map.Entry<UUID, net.neoforged.neoforge.common.world.chunk.TicketSet> e : Map.copyOf(helper.getEntityTickets()).entrySet()) {
                     UUID owner = e.getKey();
                     NpcRecord r = data.record(owner);
                     boolean lairMob = data.bases.values().stream().anyMatch(b -> b.lairMobs.contains(owner));
-                    if ((r == null || !r.alive) && !lairMob) {
+                    if ((r == null || r.gone()) && !lairMob) {
                         helper.removeAllTickets(owner);
                     } else {
                         for (long chunk : e.getValue().nonTicking().toLongArray()) {
@@ -163,7 +164,7 @@ public final class ChunkLoading {
         CampaignData data = CampaignData.get(level.getServer());
         for (com.factionclash.campaign.FactionState f : data.factions.values()) {
             for (NpcRecord r : f.roster.values()) {
-                if (!r.alive || r.lastPos == null) {
+                if (r.gone() || r.lastPos == null) { // (a member presumed dead but alive away keeps its area)
                     continue;
                 }
                 BaseState home = data.base(r.baseId);

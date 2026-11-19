@@ -16,6 +16,27 @@
 	autoStart = false
 	#Keep bases, workplaces and travelling NPCs' chunks ticking so factions progress away from players.
 	keepFactionAreasLoaded = true
+	#A faction knows only what its people saw (docs/design/missing_npcs.md): a death far from home and seen by
+	#none of its members is not known at once; a member not back by its trip's expected return is missing, then
+	#presumed dead and replaced. false: every death is known at once (the old behaviour).
+	farDeathsUnknown = true
+	#Blocks (horizontally, along either axis) from a settlement's centre within which its faction knows of a
+	#death at once and sees its members come and go.
+	# Default: 64
+	# Range: 16 ~ 256
+	homeAreaRadius = 64
+	#Blocks within which a member of the faction, with a clear line of sight, sees a death.
+	# Default: 32
+	# Range: 4 ~ 128
+	witnessRange = 32
+	#Ticks past its trip's expected return after which a member away is missing.
+	# Default: 2400
+	# Range: 0 ~ 72000
+	missingGraceTicks = 2400
+	#Ticks a member stays missing before it is presumed dead and replaced (it rejoins if it comes back).
+	# Default: 12000
+	# Range: 1200 ~ 240000
+	presumedDeadTicks = 12000
 
 #NPC movement (PROPOSED defaults)
 [movement]
@@ -107,7 +128,8 @@
 	# Default: 160
 	# Range: 32 ~ 2048
 	scoutRange = 160
-	#A scout away longer than this is presumed lost and replaced.
+	#A scout's expedition: it turns home at half of this, and its faction expects it back within it (then
+	#campaign.missingGraceTicks); a lone scout away longer than this gets a follow-up scout.
 	# Default: 24000
 	# Range: 1200 ~ 240000
 	scoutOverdueTicks = 24000

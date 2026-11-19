@@ -273,6 +273,15 @@ public abstract class Job {
 
     protected abstract void run();
 
+    /**
+     * The plan of the trip its NPC sets out on now ({@code docs/design/missing_npcs.md} 3): in how many ticks from now its
+     * faction expects it back, fixed when it is seen leaving the home area. Half a day unless the job has a plan of its
+     * own (a scout's expedition, a trader's or a cave explorer's trip).
+     */
+    public long tripPlanTicks(long now) {
+        return com.factionclash.logic.campaign.Whereabouts.DEFAULT_TRIP_TICKS;
+    }
+
     /** Called when combat or fleeing interrupts the job; progress fields are kept. */
     public void onPause() {
         npc.getNavigation().stop();

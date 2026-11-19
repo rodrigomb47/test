@@ -220,6 +220,12 @@ public class ScoutJob extends Job {
         }
     }
 
+    /** Its expedition's bound from its departure ({@code war.scoutOverdueTicks}; it turns home at half of it). */
+    @Override
+    public long tripPlanTicks(long now) {
+        return com.factionclash.logic.campaign.Whereabouts.scoutPlan(now, departedAt, FCConfig.SCOUT_OVERDUE_TICKS.get());
+    }
+
     private void returning(BaseState b) {
         BlockPos station = b.point(BaseState.STATION_STAND);
         if (!retreating) {

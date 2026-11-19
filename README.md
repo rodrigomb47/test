@@ -337,6 +337,20 @@ Players respawn at their nearest surviving allied base when they have no bed.
   where the base has found fishing water or has not looked yet (or last looked two days ago), no miner is hired for
   an open mine or a surveyed cave while one of the base's miners is free to take it up, and a role found barren is
   not hired again for two days.
+* **Deaths far from home are not known at once**: a faction knows only what its people saw. A death within 64
+  blocks of one of its settlements (`homeAreaRadius`), or one a member at home sees (32 blocks, a clear line of
+  sight), is known at once ("Ash Rook (Scout) was killed"). A death a member away sees is carried home by that member
+  and told when it gets back ("Mara Vey brings news: Ash Rook (Scout) was killed near 412, -96 on day 3"); a witness
+  who dies carries nothing. A death nobody sees is learned by waiting: every trip out of the home area has an
+  expected return (a scout's expedition, a raid, a trader's or a cave explorer's trip, half a day for anything else);
+  a member not back by then and 2 more minutes is **missing** ("is missing: expected back by day 3"), still counted
+  and not replaced, and half a day later **presumed dead** and replaced. One presumed dead who comes home after all
+  rejoins with its own gear ("presumed dead, has come back and rejoins"), and its replacement stays. Raid news ("the
+  raid is beaten back", "has ended") comes home with the surviving raiders. Heroes follow the same rule and still
+  return 10 minutes after a fall: a fall nobody saw is learned when the hero rises at home ("fell where none of the
+  faction saw it"). A member player reports deaths it saw itself by using its faction's reporting station. The kill
+  feed is for players only; no faction learns anything from it. `campaign.farDeathsUnknown` false brings back the old
+  rule (every death known at once); `/fc admin roll` shows who is away, missing or dead, beside the truth.
 * **Builders** queue houses (with straw bedrolls made from wheat) and storage expansions, carry materials to the
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
@@ -460,7 +474,9 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1074 JUnit tests for the pure rules (explosive moves: the field's forms, powers, six blasts and
+* `./gradlew test` — 1087 JUnit tests for the pure rules (the roll call: when an away member is missing and presumed
+  dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, and that no faction
+  code reads the kill feed or kill credit; explosive moves: the field's forms, powers, six blasts and
   two TNT, a heavy class and fire only on a fire move, vanilla's ray rule with obsidian kept and water soaking a blast
   up, where a move blasts, the pick never blasting near its own side, the blast's ground disc; terrain as a weapon: the edges round a target as it
   can be hurt by them, the pick's doubling, the walk round to the far side and its 3 s limit, a grab's aim, how far
@@ -519,7 +535,12 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 358 GameTests on a real headless server, including **heroes** (checkpoint 2's live check: Hinae heals hurt allies with Purify by her own choice in a fight, and a client logs no hero as dormant before any definitions are read; the review of the
+* `./gradlew runGameTestServer` — 366 GameTests on a real headless server, including **deaths far from home** (a
+  scout killed far away unseen is not known, goes missing past its expected return, is presumed dead and replaced; a
+  death near the base or seen from home is known at once; a witness away carries the news home and tells it; a dead
+  witness carries nothing; a member player reports what it saw at the station and loses it if it dies; a raider
+  presumed dead walks back in and rejoins with its gear beside its replacement; a hero killed far away is learned of
+  when it rises at home after its unchanged revival time; old roster entries and factions load), **heroes** (checkpoint 2's live check: Hinae heals hurt allies with Purify by her own choice in a fight, and a client logs no hero as dormant before any definitions are read; the review of the
   round's terrain work: a stunned soldier neither drinks its Fire Resistance nor pours its water bucket, as a stunned
   player cannot drink, and drinks once the stun is over; a soldier saved between its water landing's pour and its
   touch-down picks its water up again; a hero among five pushers still gives a soldier its 6-block edge sense; a hero

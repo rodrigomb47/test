@@ -197,12 +197,18 @@ public final class HeroManager {
                 at = spawnPoint(base);
             }
         }
+        // its faction learns of a fall nobody of it saw when the hero rises (docs/design/missing_npcs.md 7)
+        boolean unseen = com.factionclash.campaign.RollCall.heroRises(data, s.owner, s.uuid);
         HeroEntity h = spawn(server.overworld(), data, s, entry, s.owner, home, at);
         s.revivals++;
         data.setDirty();
         boolean fell = own != null && own.where() == HeroDef.RiseWhere.WHERE_IT_FELL && s.fellAt != null && !at.equals(spawnPoint(home));
-        Messages.toFaction(server, s.owner, Component.literal(h.npcName() + " returns" + (fell ? " where it fell"
-                : " to " + base.name) + ".").withStyle(ChatFormatting.GOLD));
+        String where = fell ? " where it fell" : " to " + base.name;
+        String back = unseen ? h.npcName() + " fell where none of the faction saw it and returns" + where + "."
+                : h.npcName() + " returns" + where + ".";
+        Messages.toFaction(server, s.owner, Component.literal(back).withStyle(ChatFormatting.GOLD));
+        com.factionclash.campaign.RollCall.heard(s.owner, h.getUUID(), unseen
+                ? com.factionclash.logic.campaign.Whereabouts.Event.KILLED_REPORTED : com.factionclash.logic.campaign.Whereabouts.Event.BACK, back);
         server.overworld().sendParticles(net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING, h.getX(), h.getY() + 1, h.getZ(),
                 40, 0.4, 0.8, 0.4, 0.3);
         HeroSounds.cue(h, com.factionclash.logic.hero.SoundIndex.REVIVED); // the old spare's warm chime, now the return's
@@ -341,12 +347,20 @@ public final class HeroManager {
         // overworld, on whatever stood there); a death in another dimension rises at home
         boolean overworld = h.level().dimension() == net.minecraft.world.level.Level.OVERWORLD;
         s.fellAt = overworld ? h.blockPosition() : null;
+        // its faction hears of it now only when it knows (a fall near home, or seen from home; RollCall decided in
+        // FactionNpc.die): else a witness away brings the news, or its rising at home tells it (docs/design/missing_npcs.md)
+        boolean known = com.factionclash.campaign.RollCall.known(data.record(h.getUUID()));
         fallen(server, data, s, h, "has fallen at " + h.blockPosition().getX() + ", " + h.blockPosition().getZ()
-                + (overworld ? "" : " in " + h.level().dimension().location().getPath().replace('_', ' ')));
+                + (overworld ? "" : " in " + h.level().dimension().location().getPath().replace('_', ' ')), known);
         com.factionclash.faction.FactionType theirs = com.factionclash.combat.CombatRules.factionOf(killer);
         if (theirs != null && theirs != s.owner) {
-            Messages.toFaction(server, theirs, Component.literal(h.npcName() + " of the " + s.owner.displayName + " has fallen to "
-                    + HeroEntity.nameOf(killer) + ".").withStyle(ChatFormatting.GOLD));
+            String line = h.npcName() + " of the " + s.owner.displayName + " has fallen to " + HeroEntity.nameOf(killer) + ".";
+            if (killer instanceof com.factionclash.npc.FactionNpc k && h.level() instanceof ServerLevel sl) {
+                // the killer saw it: its faction hears when it is home
+                com.factionclash.campaign.RollCall.tellOrCarry(sl, data, theirs, List.of(k.getUUID()), line, ChatFormatting.GOLD);
+            } else {
+                Messages.toFaction(server, theirs, Component.literal(line).withStyle(ChatFormatting.GOLD));
+            }
         }
     }
 
@@ -377,7 +391,7 @@ public final class HeroManager {
         return HeroRules.riteTier(levels);
     }
 
-    private static void fallen(MinecraftServer server, CampaignData data, HeroState s, HeroEntity h, String what) {
+    private static void fallen(MinecraftServer server, CampaignData data, HeroState s, HeroEntity h, String what, boolean tell) {
         if (h != null) {
             snapshot(s, h);
         }
@@ -386,12 +400,13 @@ public final class HeroManager {
         s.deaths++;
         s.reviveAt = HeroRevival.reviveAt(now, reviveSeconds(data, s));
         data.setDirty();
-        if (s.owner != null) {
+        if (s.owner != null && tell) {
             HeroDef d = HeroRegistry.definition(s.id);
             boolean night = d != null && d.v2().revival() != null && d.v2().revival().at() == HeroDef.RiseAt.NIGHT;
-            Messages.toFaction(server, s.owner, Component.literal(nameOf(s.id) + " " + what + " and returns in "
-                    + HeroRevival.countdown(s.reviveAt - now) + (night ? ", at the first nightfall after" : "") + ".")
-                    .withStyle(ChatFormatting.RED));
+            String line = nameOf(s.id) + " " + what + " and returns in " + HeroRevival.countdown(s.reviveAt - now)
+                    + (night ? ", at the first nightfall after" : "") + ".";
+            Messages.toFaction(server, s.owner, Component.literal(line).withStyle(ChatFormatting.RED));
+            com.factionclash.campaign.RollCall.heard(s.owner, s.uuid, com.factionclash.logic.campaign.Whereabouts.Event.KILLED, line);
         }
     }
 
@@ -472,7 +487,7 @@ public final class HeroManager {
                 s.reviveAt = 0;
                 NpcRecord r = data.faction(s.owner).roster.get(s.uuid);
                 if (r != null) {
-                    r.alive = true;
+                    r.vanished = false; // found again; its faction sees it when it is home (RollCall.sighting)
                 }
                 data.setDirty();
             }
@@ -507,8 +522,10 @@ public final class HeroManager {
                         snapshot(s, h);
                         data.setDirty();
                     }
-                } else if (r != null && !r.alive) {
-                    fallen(server, data, s, null, "is missing and presumed lost");
+                } else if (r != null && r.vanished) {
+                    // the engine lost it from a loaded place: it falls and returns on time (whatever its faction believes:
+                    // a hero presumed dead far away but alive walks on); its faction hears now only if it saw it go
+                    fallen(server, data, s, null, "is missing and presumed lost", !r.alive);
                 }
             } else {
                 HeroDef d = HeroRegistry.definition(s.id);

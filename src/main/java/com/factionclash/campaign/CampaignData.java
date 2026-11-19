@@ -23,10 +23,11 @@ public final class CampaignData extends SavedData {
     /**
      * The save layout's version, written with every save. 2: mines, woodlands and fishing spots carry their own
      * per-record versions (mineV, woodV, fishV) and convert older records themselves on load (WorkplaceState.load), so
-     * format 1 campaigns load and keep playing. 3: heroes ({@link #heroes}, an empty map when missing). It is read back
-     * only to be logged, never used as a gate.
+     * format 1 campaigns load and keep playing. 3: heroes ({@link #heroes}, an empty map when missing). 4: the roll call
+     * (roster entries' whereabouts and truth, factions' carried news; {@code docs/design/missing_npcs.md} 10: an older
+     * entry reads as here, away or known dead). It is read back only to be logged, never used as a gate.
      */
-    public static final int FORMAT = 3;
+    public static final int FORMAT = 4;
 
     public boolean started;
     public BlockPos center = BlockPos.ZERO;
@@ -191,8 +192,11 @@ public final class CampaignData extends SavedData {
             // older records convert themselves as they load (WorkplaceState.load): hut mine kept, old fences taken down,
             // fishing spots moved off the farm to real water
             com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} - migrating workplaces to format {}", d.loadedFormat, FORMAT);
-        } else if (d.loadedFormat < FORMAT) {
+        } else if (d.loadedFormat < 3) {
             com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} (no heroes yet) as format {}", d.loadedFormat, FORMAT);
+        } else if (d.loadedFormat < FORMAT) {
+            com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} (no roll call yet: members read as here, away or known dead) as format {}",
+                    d.loadedFormat, FORMAT);
         }
         d.started = t.getBoolean("started");
         d.center = BlockPos.of(t.getLong("center"));

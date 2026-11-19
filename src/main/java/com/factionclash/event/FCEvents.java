@@ -107,6 +107,10 @@ public final class FCEvents {
                     a.blockPosition().toShortString(), event.getSource().getMsgId(),
                     killer == null ? "-" : killer.getName().getString());
         }
+        if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer p && !event.isCanceled()) {
+            // a dead witness carries nothing: a player's news of deaths it saw dies with it (docs/design/missing_npcs.md 5)
+            com.factionclash.campaign.RollCall.forget(p.server, p.getUUID());
+        }
         if (event.getEntity().level() instanceof ServerLevel level && event.getEntity().getPersistentData().contains(BaseBuilder.LAIR_TAG)) {
             CampaignData data = CampaignData.get(level.getServer());
             BaseState lair = data.base(event.getEntity().getPersistentData().getInt(BaseBuilder.LAIR_TAG));

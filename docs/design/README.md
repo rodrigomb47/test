@@ -12,5 +12,9 @@
   any NPC or hero that carries TNT, the defenders' answers, and how ordinary NPCs live with lethal terrain (the
   owner's "no need for anyone to be civil in battle"), with a list of further tactics proposed to the owner.
 
+- `missing_npcs.md`: deaths far from home are not known at once (the owner's request of 2026-11-13; built
+  2026-11-19): what a faction knows of its members (here, away, missing, presumed dead, known dead), trips' expected
+  returns, witnesses and the news they carry home, heroes, the kill feed's place, config, save format and tests.
+
 These are historical working notes. Log files and world copies they mention lived in a temporary folder and are
 gone. Where the notes disagree with the code, README.md or BALANCE.md, those win.

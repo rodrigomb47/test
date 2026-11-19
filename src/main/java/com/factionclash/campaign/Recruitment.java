@@ -272,6 +272,7 @@ public final class Recruitment {
         r.baseId = base.id;
         r.lastPos = npc.blockPosition();
         r.lastSeen = npc.level().getGameTime();
+        r.seenHomeAt = r.lastSeen; // it joins at home (its first sighting outside the home area is its leaving)
         data.faction(base.faction).roster.put(r.uuid, r);
         data.setDirty();
     }

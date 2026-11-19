@@ -560,6 +560,17 @@ public class CaveExplorerJob extends Job {
 
     // ------------------------------------------------------------------ saving
 
+    /** On a trip: its bound from its departure ({@link #MAX_TRIP_TICKS}), and the walk back from its cave. */
+    @Override
+    public long tripPlanTicks(long now) {
+        BaseState b = base();
+        if (departedAt <= 0 || state == State.HOME || b == null) {
+            return super.tripPlanTicks(now);
+        }
+        double back = cavity == null ? CaveSurvey.MAX_RANGE : Math.sqrt(cavity.distSqr(b.center)) + CaveSurvey.MAX_RANGE;
+        return com.factionclash.logic.campaign.Whereabouts.planFrom(now, departedAt + MAX_TRIP_TICKS, back);
+    }
+
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putString("state", state.name());

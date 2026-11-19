@@ -16,6 +16,11 @@ public final class FCConfig {
     public static final ModConfigSpec.IntValue RECRUIT_INTERVAL_TICKS;
     public static final ModConfigSpec.IntValue SCOUT_RANGE;
     public static final ModConfigSpec.IntValue SCOUT_OVERDUE_TICKS;
+    public static final ModConfigSpec.BooleanValue FAR_DEATHS_UNKNOWN;
+    public static final ModConfigSpec.IntValue HOME_AREA_RADIUS;
+    public static final ModConfigSpec.IntValue WITNESS_RANGE;
+    public static final ModConfigSpec.IntValue MISSING_GRACE_TICKS;
+    public static final ModConfigSpec.IntValue PRESUMED_DEAD_TICKS;
     public static final ModConfigSpec.IntValue REPORT_STALE_TICKS;
     public static final ModConfigSpec.DoubleValue RANGED_SHARE;
     public static final ModConfigSpec.IntValue HOME_DEFENDERS;
@@ -90,6 +95,19 @@ public final class FCConfig {
                 .define("autoStart", false);
         KEEP_FACTION_AREAS_LOADED = b.comment("Keep bases, workplaces and travelling NPCs' chunks ticking so factions progress away from players.")
                 .define("keepFactionAreasLoaded", true);
+        FAR_DEATHS_UNKNOWN = b.comment("A faction knows only what its people saw (docs/design/missing_npcs.md): a death far from home and seen by",
+                        "none of its members is not known at once; a member not back by its trip's expected return is missing, then",
+                        "presumed dead and replaced. false: every death is known at once (the old behaviour).")
+                .define("farDeathsUnknown", true);
+        HOME_AREA_RADIUS = b.comment("Blocks (horizontally, along either axis) from a settlement's centre within which its faction knows of a",
+                        "death at once and sees its members come and go.")
+                .defineInRange("homeAreaRadius", 64, 16, 256);
+        WITNESS_RANGE = b.comment("Blocks within which a member of the faction, with a clear line of sight, sees a death.")
+                .defineInRange("witnessRange", 32, 4, 128);
+        MISSING_GRACE_TICKS = b.comment("Ticks past its trip's expected return after which a member away is missing.")
+                .defineInRange("missingGraceTicks", 2400, 0, 72000);
+        PRESUMED_DEAD_TICKS = b.comment("Ticks a member stays missing before it is presumed dead and replaced (it rejoins if it comes back).")
+                .defineInRange("presumedDeadTicks", 12000, 1200, 240000);
         b.pop();
 
         b.comment("NPC movement (PROPOSED defaults)").push("movement");
@@ -156,7 +174,8 @@ public final class FCConfig {
         b.comment("Scouting and war (PROPOSED defaults)").push("war");
         SCOUT_RANGE = b.comment("Maximum distance from home a scout explores.")
                 .defineInRange("scoutRange", 160, 32, 2048);
-        SCOUT_OVERDUE_TICKS = b.comment("A scout away longer than this is presumed lost and replaced.")
+        SCOUT_OVERDUE_TICKS = b.comment("A scout's expedition: it turns home at half of this, and its faction expects it back within it (then",
+                        "campaign.missingGraceTicks); a lone scout away longer than this gets a follow-up scout.")
                 .defineInRange("scoutOverdueTicks", 24000, 1200, 240000);
         REPORT_STALE_TICKS = b.comment("Enemy sightings older than this are shown as stale.")
                 .defineInRange("reportStaleTicks", 24000, 1200, 480000);

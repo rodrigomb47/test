@@ -661,6 +661,30 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
   48000+ ticks ago (and not while the role is barren), with stored food under 15 recruits' worth and a rod or 2
   string in storage.
 
+## Deaths far from home: the roll call (config `campaign`; `logic/campaign/Whereabouts`, `campaign/RollCall`) — 2026-11-19
+A faction knows only what its people saw (`docs/design/missing_npcs.md`). One rule for ordinary NPCs and heroes.
+* `farDeathsUnknown` (**true**): false makes every death known at once (the old behaviour; no missing members).
+* `homeAreaRadius` (**64**, 16-256): the home area, blocks (horizontally, along either axis) from a standing
+  settlement's centre (a GameTest base: its own radius; at least the walls plus 4). A death there is known at once;
+  a member outside every home area is away.
+* `witnessRange` (**32**, 4-128): a living member (NPC, hero or member player) this close with a clear line of sight,
+  eye to eye, sees a death. An NPC witness at home makes it known at once; one away carries the news and tells it on
+  entering a home area; a player tells it by using a station of its faction; a witness that dies carries nothing.
+* Trip plans (when a member is seen leaving the home area; its expected return): a scout **departure +
+  `war.scoutOverdueTicks`** (24000); a raider **launch + 72000** (`Whereabouts.RAID_LIMIT_TICKS`, the raid's own
+  bound) + the walk back from the target; a trader **trip start + 24000** (`TRADER_ROAD_TICKS`) + the walk back from
+  320 blocks; a cave explorer **departure + 12000** (`CaveExplorerJob.MAX_TRIP_TICKS`) + the walk back from its cave
+  (+64); anyone else **12000** (PROPOSED `DEFAULT_TRIP_TICKS`). The walk is **10 ticks a block** (PROPOSED
+  `TICKS_PER_BLOCK`, half a walking NPC's pace).
+* `missingGraceTicks` (**2400**, 0-72000): past its expected return plus this, an away member is **missing** (still
+  counted, not replaced, its workplace held).
+* `presumedDeadTicks` (**12000**, 1200-240000): this long missing, it is **presumed dead**: no longer counted,
+  replaced, its record kept; coming home it rejoins (its replacement stays).
+* A member whose entity is gone from a loaded place it was last seen in for **2400** ticks (`RollCall.VANISH_TICKS`,
+  as before) is lost: inside a home area its faction presumes it dead at once; away, the waits above apply.
+* A raid party drops a raider its faction no longer counts or whose death a member saw; the raid also ends when no
+  raider is left alive (nothing told). Raid end lines are carried home by the raiders alive then.
+
 ## Levels and affixes (`AffixRoller`, `Affix`)
 * Level n → n+1 costs 40 + 30n XP; max level 30; one affix roll per level; job affixes weighted ×2.
 * Caps: Vitality +2 HP ×5, Swiftness +3% ×5, Might +1 ×5, Toughness +1 ×5, Diligence +6% dig/build speed ×5, Prospector +5% chance an ore drops twice ×5, Regrowth +8% instant growth ×5, Green Thumb +10% chance a crop drops twice ×5, Pathfinder +16 range ×4, Mason +10% build speed ×5, Marksman +10% arrow damage ×5, Thrifty 8% chance a wear event is skipped ×4, Hardy −8% exhaustion ×4, Duelist +10% critical damage (×1.5 → ×2.0 at 5) ×5 (swordsmen, axe fighters), Angler 8% chance the fishing loot is rolled twice ×5 (fishermen), Haggler −5% emerald prices ×4 (traders).
@@ -685,7 +709,9 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
   apple) while fewer than one per two soldiers are stored.
 
 ## War (config `war`)
-* Scouts: range 160 (+Pathfinder), at least 96 blocks out, 4 sectors per expedition, overdue after 24000 ticks.
+* Scouts: range 160 (+Pathfinder), at least 96 blocks out, 4 sectors per expedition, overdue after 24000 ticks
+  (`scoutOverdueTicks`: it turns home at half of it; its faction expects it back by its departure plus this, then
+  `campaign.missingGraceTicks`; a lone scout away longer gets a follow-up scout).
   When every sector in range is explored and no living rival settlement is known, the faction's range grows by 64
   (saved, up to the far edge of the map); otherwise the explored sectors are forgotten and scouted again.
 * Scouts and structures (PROPOSED): a village (village tag), pillager outpost or woodland mansion is reported once

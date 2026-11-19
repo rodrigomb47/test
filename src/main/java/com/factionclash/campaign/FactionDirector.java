@@ -2,6 +2,7 @@ package com.factionclash.campaign;
 
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
+import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
 import com.factionclash.storage.FactionStorage;
@@ -82,26 +83,12 @@ public final class FactionDirector {
         com.factionclash.work.FishingSpots.maintain(level, data, b, t); // real water for the fishing spot, before a fisherman is hired
         // "Minecraft": the workshop's crafting table is the faction's from the start
         com.factionclash.achieve.FactionAchievements.criterion(level.getServer(), b.faction, "story/root", "crafting_table", null);
-        rosterUpkeep(level, data, f, b, t);
+        RollCall.upkeep(level, data, b, t); // who is away, missing, presumed dead (docs/design/missing_npcs.md)
         Logistics.tick(level, data, b, t);
         recruitment(level, data, f, b, t);
         projects(level, data, b, t);
         repairScan(level, data, b);
         raids(level, data, f, b, t);
-    }
-
-    private static void rosterUpkeep(ServerLevel level, CampaignData data, FactionState f, BaseState b, long t) {
-        for (NpcRecord r : f.roster.values()) {
-            if (!r.alive || r.baseId != b.id) {
-                continue;
-            }
-            Entity e = level.getEntity(r.uuid);
-            if (e == null && level.isPositionEntityTicking(r.lastPos) && t - r.lastSeen > 2400) {
-                r.alive = false;
-                data.setDirty();
-                Messages.toFaction(level.getServer(), b.faction, Component.literal(r.name + " (" + r.role.displayName + ") is missing and presumed lost"));
-            }
-        }
     }
 
     private static int living(FactionState f, BaseState b, NpcRole role) {
@@ -610,26 +597,34 @@ public final class FactionDirector {
 
     private static void raids(ServerLevel level, CampaignData data, FactionState f, BaseState home, long t) {
         if (f.raidTarget >= 0) {
+            // the party's own roll on the spot (docs/design/missing_npcs.md 6): a raider leaves it when its faction no
+            // longer counts it, or when it died and a member saw it; a death nobody saw keeps it on the roll
             f.raiders.removeIf(u -> {
                 NpcRecord r = f.roster.get(u);
-                return r == null || !r.alive;
+                return r == null || !r.alive || r.dead && r.witnessed;
             });
+            // the raiders still alive: they alone can tell home how the raid went
+            List<UUID> survivors = f.raiders.stream().filter(u -> {
+                NpcRecord r = f.roster.get(u);
+                return r != null && !r.gone();
+            }).toList();
             BaseState target = data.base(f.raidTarget);
             if (!f.raiders.isEmpty() && f.raidParty > 0 && f.raiders.size() * 2 < f.raidParty && target != null && !target.destroyed) {
                 // more than half the party is down: the survivors fall back rather than die one by one
-                Messages.toFaction(level.getServer(), f.type, Component.literal("The raid on " + target.faction.displayName
-                        + " is beaten back - " + f.raiders.size() + " of " + f.raidParty + " soldiers retreat home"));
+                RollCall.tellOrCarry(level, data, f.type, survivors, "The raid on " + target.faction.displayName
+                        + " is beaten back - " + f.raiders.size() + " of " + f.raidParty + " soldiers retreat home", null);
                 // MOBILITY_AND_WORK 7.7 (A12): its heroes in or near the target escape home, the others walk with the party
                 com.factionclash.hero.HeroManager.raidLost(level, f, target);
                 f.raiders.clear();
             }
-            if (f.raiders.isEmpty() || t - f.raidStartedAt > 72000) {
-                Messages.toFaction(level.getServer(), f.type, Component.literal("Raid on " + (target == null ? "?" : target.faction.displayName)
-                        + " has ended" + (target != null && target.destroyed ? " in victory" : "")));
+            if (f.raiders.isEmpty() || survivors.isEmpty() || t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS) {
+                // (no raider left alive: nobody carries the raid on, nor the news of its end)
+                RollCall.tellOrCarry(level, data, f.type, survivors, "Raid on " + (target == null ? "?" : target.faction.displayName)
+                        + " has ended" + (target != null && target.destroyed ? " in victory" : ""), null);
                 // v1 22.1: heroes of a won raid who survived it, and the heroes who held the base it failed against
                 com.factionclash.hero.HeroManager.raidEnded(level, f, target, target != null && target.destroyed);
                 f.raidTarget = -1;
-                if (t - f.raidStartedAt > 72000) {
+                if (t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS || survivors.isEmpty()) {
                     f.raiders.clear();
                 }
                 data.setDirty();

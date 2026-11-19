@@ -139,7 +139,7 @@ public final class CampaignManager {
             e.kill();
         }
         for (NpcRecord r : f.roster.values()) {
-            r.alive = false;
+            r.where(com.factionclash.logic.campaign.Whereabouts.State.KNOWN_DEAD, level.getGameTime());
         }
         data.setDirty();
         Messages.toAll(level.getServer(), Component.literal(faction.displayName + " has been eliminated!").withStyle(ChatFormatting.RED));

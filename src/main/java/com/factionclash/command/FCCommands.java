@@ -73,6 +73,9 @@ public final class FCCommands {
                 .then(Commands.literal("admin").requires(s -> s.hasPermission(2))
                         .then(Commands.literal("dump").executes(FCCommands::dump))
                         .then(Commands.literal("npcs").executes(FCCommands::npcs))
+                        .then(Commands.literal("roll").executes(c -> roll(c, null))
+                                .then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS)
+                                        .executes(c -> roll(c, factionArg(c)))))
                         .then(Commands.literal("spawn").then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS)
                                 .then(Commands.argument("role", StringArgumentType.word()).suggests(ROLES).executes(FCCommands::spawn))))
                         .then(Commands.literal("recruit").then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS)
@@ -246,6 +249,57 @@ public final class FCCommands {
         }
         int total = n;
         c.getSource().sendSuccess(() -> Component.literal(total + " NPCs loaded, " + ChunkLoading.travellerCount() + " travelling"), false);
+        return n;
+    }
+
+    /**
+     * The roll call ({@code docs/design/missing_npcs.md} 11): each faction's members not at home with what the faction
+     * believes (state, since, expected back) beside the truth (dead, lost), and the news each carrier holds.
+     */
+    private static int roll(CommandContext<CommandSourceStack> c, FactionType only) {
+        CampaignData data = CampaignData.get(c.getSource().getServer());
+        long now = c.getSource().getServer().overworld().getGameTime();
+        int n = 0;
+        for (FactionState f : data.factions.values()) {
+            if (only != null && f.type != only || f.roster.isEmpty()) {
+                continue;
+            }
+            java.util.EnumMap<com.factionclash.logic.campaign.Whereabouts.State, Integer> counts =
+                    new java.util.EnumMap<>(com.factionclash.logic.campaign.Whereabouts.State.class);
+            int unknown = 0;
+            for (NpcRecord r : f.roster.values()) {
+                counts.merge(r.where, 1, Integer::sum);
+                if (r.dead && r.where.counted()) {
+                    unknown++;
+                }
+            }
+            int deathsUnknown = unknown;
+            c.getSource().sendSuccess(() -> Component.literal(f.type.displayName + ": " + counts + ", deaths not known yet " + deathsUnknown
+                    + ", carriers " + f.news.size()).withStyle(f.type.color), false);
+            for (NpcRecord r : f.roster.values()) {
+                if (r.where == com.factionclash.logic.campaign.Whereabouts.State.HERE && !r.gone()) {
+                    continue;
+                }
+                n++;
+                String line = String.format(java.util.Locale.ROOT, " - %s: %s%s%s | truth: %s", com.factionclash.campaign.RollCall.who(r), r.where,
+                        r.where == com.factionclash.logic.campaign.Whereabouts.State.AWAY
+                                ? String.format(java.util.Locale.ROOT, " (left day %.2f, expected back by day %.2f)", r.leftAt / 24000.0, r.expectedBy / 24000.0) : "",
+                        r.where == com.factionclash.logic.campaign.Whereabouts.State.MISSING || r.where == com.factionclash.logic.campaign.Whereabouts.State.PRESUMED_DEAD
+                                || r.where == com.factionclash.logic.campaign.Whereabouts.State.KNOWN_DEAD
+                                ? String.format(java.util.Locale.ROOT, " (since day %.2f)", r.since / 24000.0) : "",
+                        r.dead ? String.format(java.util.Locale.ROOT, "dead day %.2f at %s%s", r.diedAt / 24000.0,
+                                r.diedPos == null ? "?" : r.diedPos.toShortString(), r.witnessed ? ", seen" : ", unseen")
+                                : r.vanished ? "lost" : "alive at " + r.lastPos.toShortString());
+                c.getSource().sendSuccess(() -> Component.literal(line), false);
+            }
+            f.news.forEach((carrier, items) -> {
+                NpcRecord cr = f.roster.get(carrier);
+                String who = cr != null ? cr.name : carrier.toString();
+                c.getSource().sendSuccess(() -> Component.literal(" * " + who + " carries " + items), false);
+            });
+        }
+        int total = n;
+        c.getSource().sendSuccess(() -> Component.literal(total + " members away, missing or dead; day " + String.format(java.util.Locale.ROOT, "%.2f", now / 24000.0)), false);
         return n;
     }
 
@@ -628,9 +682,30 @@ public final class FCCommands {
                 ro.addProperty("level", r.level);
                 ro.addProperty("pos", r.lastPos.toShortString());
                 ro.addProperty("departedAt", r.departedAt);
+                // the roll call (docs/design/missing_npcs.md): what the faction believes, and the truth beside it
+                ro.addProperty("where", r.where.name());
+                ro.addProperty("leftAt", r.leftAt);
+                ro.addProperty("expectedBy", r.expectedBy);
+                ro.addProperty("since", r.since);
+                ro.addProperty("dead", r.dead);
+                ro.addProperty("vanished", r.vanished);
+                ro.addProperty("diedAt", r.diedAt);
+                ro.addProperty("witnessed", r.witnessed);
                 roster.add(ro);
             }
             o.add("roster", roster);
+            JsonArray news = new JsonArray();
+            f.news.forEach((carrier, items) -> {
+                for (com.factionclash.campaign.News nw : items) {
+                    JsonObject no = new JsonObject();
+                    no.addProperty("carrier", carrier.toString());
+                    no.addProperty("kind", nw.kind.name());
+                    no.addProperty("text", nw.text);
+                    no.addProperty("at", nw.at);
+                    news.add(no);
+                }
+            });
+            o.add("news", news);
             String council = com.factionclash.campaign.FactionDirector.LAST_COUNCIL.get(f.type);
             o.addProperty("council", council == null ? "" : council);
             factions.add(o);

@@ -50,6 +50,12 @@ public final class FactionState {
     public record Achieved(long time, String by) {
     }
 
+    /**
+     * News carried home, by carrier (a member NPC, hero or player): deaths its members saw away from home and lines only
+     * someone there could tell ({@code docs/design/missing_npcs.md} 5). Told by {@code RollCall} when the carrier is home.
+     */
+    public final Map<UUID, List<News>> news = new LinkedHashMap<>();
+
     public FactionState() {
     }
 
@@ -154,6 +160,15 @@ public final class FactionState {
             prog.put(id, l);
         });
         t.put("advancementProgress", prog);
+        ListTag nl = new ListTag();
+        news.forEach((carrier, items) -> {
+            for (News n : items) {
+                CompoundTag e = n.save();
+                e.putUUID("carrier", carrier);
+                nl.add(e);
+            }
+        });
+        t.put("news", nl);
         return t;
     }
 
@@ -211,6 +226,14 @@ public final class FactionState {
         }
         f.reportsDelivered = t.getInt("reportsDelivered");
         f.scoutReach = t.getInt("scoutReach");
+        ListTag nl = t.getList("news", Tag.TAG_COMPOUND); // absent before 2026-11-19: no news carried
+        for (int i = 0; i < nl.size(); i++) {
+            CompoundTag e = nl.getCompound(i);
+            News n = News.load(e);
+            if (n != null && e.hasUUID("carrier")) {
+                f.news.computeIfAbsent(e.getUUID("carrier"), c -> new ArrayList<>()).add(n);
+            }
+        }
         return f;
     }
 }

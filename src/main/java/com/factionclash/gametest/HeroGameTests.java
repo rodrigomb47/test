@@ -421,7 +421,8 @@ public final class HeroGameTests {
             near(t, 1.82, loaded.getBbHeight(), "size after loading");
             t.assertTrue(HeroKit.isKit(loaded.getMainHandItem()), "the kit weapon lost its binding");
             CompoundTag campaign = t.data.save(new CompoundTag(), h.getLevel().registryAccess());
-            t.assertTrue(campaign.getInt("format") == CampaignData.FORMAT && CampaignData.FORMAT == 3, "format " + campaign.getInt("format"));
+            // heroes since format 3 (4 added the roll call, docs/design/missing_npcs.md)
+            t.assertTrue(campaign.getInt("format") == CampaignData.FORMAT && CampaignData.FORMAT >= 3, "format " + campaign.getInt("format"));
             CampaignData back = CampaignData.load(campaign, h.getLevel().registryAccess());
             HeroState s = back.heroes.get("test_rig");
             t.assertTrue(s != null && s.owner == FactionType.STONEGUARD && s.baseId == t.base.id && hero.getUUID().equals(s.uuid) && s.alive

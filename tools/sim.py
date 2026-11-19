@@ -57,6 +57,13 @@ def summary(d):
         roles = Counter(r["role"] for r in f["roster"] if r["alive"])
         print(f"  {f['faction']:15s} alive={f['alive']} npcs={alive} dead={dead} reports={f['reportsDelivered']} map={f['knowledge']} "
               f"explored={f['explored']} raids={f['raidsLaunched']} raidTarget={f['raidTarget']} destroyed={f['basesDestroyed']} {dict(roles)}")
+        # the roll call (docs/design/missing_npcs.md): what the faction believes, and the deaths it does not know yet
+        where = Counter(r.get("where", "HERE") for r in f["roster"])
+        if f["roster"] and (len(where) > 1 or "HERE" not in where):
+            unknown = sum(1 for r in f["roster"] if r.get("dead") and r.get("where") in ("HERE", "AWAY", "MISSING"))
+            print(f"  {'':15s} roll here={where.get('HERE', 0)} away={where.get('AWAY', 0)} missing={where.get('MISSING', 0)} "
+                  f"presumed={where.get('PRESUMED_DEAD', 0)} known_dead={where.get('KNOWN_DEAD', 0)} "
+                  f"deaths_not_known={unknown} news={len(f.get('news', []))}")
     for b in d["bases"]:
         line = f"  base {b['id']} {b['faction']:15s} {b['kind']:10s} {b['center']:>16s} destroyed={b['destroyed']}"
         if b["kind"] == "SETTLEMENT":
