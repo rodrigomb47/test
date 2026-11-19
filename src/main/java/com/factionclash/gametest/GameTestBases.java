@@ -203,9 +203,11 @@ public final class GameTestBases {
             base.workplaces.clear();
             data.bases.remove(base.id);
             var roster = data.faction(base.faction).roster;
+            var news = data.faction(base.faction).news;
             for (FactionNpc n : npcs) {
                 UUID u = n.getUUID();
                 roster.remove(u);
+                news.remove(u); // what it carried home dies with the test (a raid's end, a death it saw)
                 n.discard();
             }
             npcs.clear();

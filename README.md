@@ -571,12 +571,13 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 394 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 395 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
   attack a garrison like their own; ruins seen stay ruins when only the yard is seen again; a raid party turns home by
-  its plan and home never gives up a raider still fighting, nor pulls one off its party;
+  its plan and home never gives up a raider still fighting, nor pulls one off its party; a scout counts no soldier
+  behind a wall;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid
   wiped out unseen is given up at its plan, its raiders missing then, not at three days; a miner crossing the home edge
   twice on one shift keeps one expected return; a cave survey is the faction's only when handed in at the station;

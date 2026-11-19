@@ -952,11 +952,15 @@ python3 tools/rcon.py "stop"
   two thirds is now counted in whole soldiers (`Intel.twoThirds`), the counter-attack's 3 to 2 to the nearest one
   (`Intel.threeToTwo`), strengths within 0.01 of a soldier equal (`Intel.TIE`), the party rule in `Intel.partySize`
   and the prior counting soldiers, not heroes: a council attacks an unseen settlement from 7 soldiers at home, never at
-  6. Six GameTests (`KnowledgeGameTests`), seven `IntelTest`, one `WhereaboutsTest`; `LeaderBiasesTest` reads the
-  rules where they now live. Nine sabotages, each caught. **1115 unit tests, 394 GameTests.** Reported, not fixed: a
+  6. Seven GameTests (`KnowledgeGameTests`; one pins that a scout counts no soldier behind a wall), seven `IntelTest`,
+  one `WhereaboutsTest`; `LeaderBiasesTest` reads the rules where they now live; a test base's cleanup drops the news its
+  NPCs carried. Ten sabotages, each caught. **1115 unit tests, 395 GameTests.** Reported, not fixed: a
   scout's pending reports are capped at 24 and a base seen late on a long trip can be dropped; a fisherman walks home
   before it fishes water it found far off; raiders' kills at the target do not lower the estimate; losses are kept as a
-  count and the last one's time. Not checked in a campaign.
+  count and the last one's time; a Hollow raid ends at its target's fall seen from anywhere, a raiding hero reads its own
+  base's fall from afar; "never at 6" holds only without a home hero (the party counts heroes by heads, the prior does
+  not). Not checked in a campaign: watch for small parties sent into full garrisons (most looks are the prior), the
+  "its time is up" lines, and that no raider goes missing while its raid is on.
 
 ## 6. Known open items and ideas (none blocking)
 

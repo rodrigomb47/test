@@ -191,9 +191,9 @@ member away gets its worn tool replaced when it is home and seen.
   an offensive as it is launched. Updated: the council's wait (`MissingNpcGameTests`), the raider's expected return,
   the pact's reports (`FCGameTests`), mined-ore experience at a base, the hero raid draft (a report with a look).
 
-The review of this review (section 11) added six GameTests and seven unit tests (a party that turns home by its plan,
+The review of this review (section 11) added seven GameTests and seven unit tests (a party that turns home by its plan,
 its roll deaf to home's belief, ruins that stay ruins, losses and hero sightings that fade, two thirds in whole
-soldiers, the 3 to 2 to the nearest one, the party rule).
+soldiers, the 3 to 2 to the nearest one, the party rule, and a pin: a scout counts no soldier behind a wall).
 
 Fifteen sabotages, each caught by a test: the council reading the enemy's true defenders, the 3-day wait, a miner's
 half-day plan at each crossing, no edge band, retraining or the blacksmith judging members away, ruins raided, every
@@ -277,7 +277,10 @@ scout sees a monster). Five behaviour problems were found, each shown by a GameT
 Sabotages, each caught: the party raiding to the limit (GameTest), the turn-home time as the limit (unit), home's
 belief on the party's roll (GameTest), a standing look rebuilding ruins (GameTest), losses that never fade (unit),
 hero sightings that never fade (unit), an old hero entry dated by the newer report (GameTest), two thirds of a
-fractional head (unit), a counter-attack at exact 3 to 2 (unit and GameTest).
+fractional head (unit), a counter-attack at exact 3 to 2 (unit and GameTest), a look counting soldiers without a line
+of sight (GameTest `aScoutCountsOnlySoldiersInSight`, the pin for "scouts that report what is behind a wall": two
+soldiers behind a 2-high wall are not counted, nor the yard behind it). A test base's cleanup now drops the news its
+NPCs carried (a raid's end told to raiders still away).
 
 Checked and left as they are:
 
@@ -298,3 +301,9 @@ Found and left open (not fixed here, low severity):
   kills it saw after that look.
 * **Losses are kept as a count and the last one's time**: a loss seen before a newer look but merged after it can count
   twice, and older losses fade with the newest one.
+* **Two more reads of the truth, not listed in sections 9 and 10**: a Hollow raid ends the moment its target is destroyed,
+  whoever razed it (`FactionDirector.lairRaid`, with the Hollow's 300-block sense); a raiding hero heading home reads its
+  own base's fall from afar (`HeroRaid.home`), as an escaping hero's refuge does.
+* **"Never at 6" holds without a home hero**: the party still sizes off the garrison with its heroes by heads
+  (`Intel.partySize(soldiers.size(), ...)`), the prior off the soldiers alone, so six soldiers and a hero at home send
+  four against a prior of six, and go.

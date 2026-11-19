@@ -1060,4 +1060,41 @@ public final class KnowledgeGameTests {
             throw e;
         }
     }
+
+    /**
+     * A scout counts only the soldiers it sees: two of the enemy's soldiers behind a wall two blocks high are not in its
+     * look, nor the yard behind it (the walls' top is, so the base is reported); with the wall gone it counts both.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_wall")
+    public static void aScoutCountsOnlySoldiersInSight(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        List<BlockPos> wall = new ArrayList<>();
+        for (int x = 8; x <= 16; x++) {
+            for (int y = 2; y <= 3; y++) {
+                wall.add(new BlockPos(x, y, 19));
+            }
+        }
+        t.onCleanup(() -> wall.forEach(p -> h.setBlock(p, Blocks.AIR)));
+        try {
+            long now = level.getGameTime();
+            BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(12, 2, 21)));
+            stranger(t, ENEMY, 11, 22, NpcRole.SWORDSMAN);
+            stranger(t, ENEMY, 13, 22, NpcRole.SWORDSMAN);
+            FactionNpc scout = member(t, 12, 16, NpcRole.SCOUT);
+            wall.forEach(p -> h.setBlock(p, Blocks.STONE));
+            Report hidden = BaseWatch.look(level, scout, enemy, now);
+            t.assertTrue(hidden != null && hidden.look != null && hidden.look.soldiers() == 0,
+                    "the scout counted soldiers behind a wall: " + (hidden == null ? null : hidden.note));
+            wall.forEach(p -> h.setBlock(p, Blocks.AIR));
+            Report open = BaseWatch.look(level, scout, enemy, now + 1);
+            t.assertTrue(open != null && open.look != null && open.look.soldiers() == 2 && open.look.visible() > hidden.look.visible(),
+                    "with the wall gone the scout should see both soldiers and more of the yard: " + (open == null ? null : open.note)
+                            + " / behind the wall: " + hidden.note);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
 }
