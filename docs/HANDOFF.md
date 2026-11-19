@@ -110,6 +110,11 @@ commits, language and testing are in `/CLAUDE.md`.
     abilities to push someone of a cliff or to lava". Recorded in `docs/ROADMAP.md` (Phase 4 owner decisions, the
     artifacts milestone row, Phase 2 "TNT expert"); the design revision follows in `ARTIFACTS.md` and
     `BOSS_HEROES.md`.
+12. **No tail between the legs** (owner, 2026-11-19, looking at the Ender Dragon's wings sheet): "her tail downwards
+    while she is flying, and it kinda looks like a male genitalia like this, can you make it so her tail will not go
+    downwards when she flies". In every airborne pose a tail now trails behind, level with or above the hips, and
+    `herogen check` refuses any hero whose tail sits below the hips between or in front of the legs in a frame with
+    the feet off the ground, or in the front view of the turnaround (`notes/artgen.md`).
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
