@@ -101,6 +101,14 @@ public final class HeroFightMobility {
         return window;
     }
 
+    /**
+     * Whether a phase transition waits for it to come down (MOBILITY_AND_WORK 7.4: transitions happen on the ground; a
+     * hero that crosses a threshold in the air lands first): up in a fight flight, its take-off, the flight or its landing.
+     */
+    public boolean landsBeforeTransition() {
+        return air != Air.NONE && hero.movement().flying();
+    }
+
     /** Whether its reach clock counts it out of reach of every engaged enemy now. */
     public boolean outOfReach() {
         return outOfReach;

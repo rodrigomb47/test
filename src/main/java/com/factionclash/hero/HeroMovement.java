@@ -830,6 +830,7 @@ public final class HeroMovement {
                 double fix = LeapSolver.airJumpCorrection(along, up, aj, n, rise, limits(n), slice());
                 if (!Double.isNaN(fix)) {
                     hero.setDeltaMovement(leapDx * fix, aj, leapDz * fix);
+                    hero.resetFallDistance();
                     airJumpsUsed++;
                     oneShot(MovementRules.AIRBORNE, HeroActions.LOCO_ONE_SHOT_SPECIAL);
                 }
@@ -878,6 +879,7 @@ public final class HeroMovement {
         Vec3 v = hero.getDeltaMovement();
         hero.setDeltaMovement(v.x, LeapSolver.strengthFor(profile.airJumpHeight()), v.z);
         hero.hasImpulse = true;
+        hero.resetFallDistance(); // the fall that lands is the one from this jump's apex (the review of A10-A12)
         airJumpsUsed++;
         airborneOwn();
         oneShot(MovementRules.AIRBORNE, HeroActions.LOCO_ONE_SHOT_SPECIAL);
@@ -920,6 +922,7 @@ public final class HeroMovement {
         double push = MovementRules.WALL_KICK_PUSH;
         hero.setDeltaMovement(-wall.getStepX() * push, LeapSolver.strengthFor(profile.airJumpHeight()), -wall.getStepZ() * push);
         hero.hasImpulse = true;
+        hero.resetFallDistance();
         airborneOwn();
         oneShot(MovementRules.CLING, HeroActions.LOCO_ONE_SHOT_SPECIAL);
         return null;
@@ -1259,6 +1262,7 @@ public final class HeroMovement {
         Vec3 v = hero.getDeltaMovement();
         hero.setDeltaMovement(v.x, LeapSolver.strengthFor(profile.airJumpHeight()), v.z);
         hero.hasImpulse = true;
+        hero.resetFallDistance();
         airJumpsUsed++;
         oneShot(MovementRules.AIRBORNE, HeroActions.LOCO_ONE_SHOT_SPECIAL);
         return true;
@@ -2052,7 +2056,11 @@ public final class HeroMovement {
 
     // ------------------------------------------------------------------ saving (MOBILITY_AND_WORK 16)
 
-    /** {@code FcHero.mobility}: stamina, exhaustion, air poise and its last downing, and the state it was in. */
+    /**
+     * {@code FcHero.mobility}: stamina, exhaustion, air poise and its last downing, and the state it was in: a powered
+     * flight (its take-off push and its landing included, and a flyer's dive) as {@code fly}, a hero on a wall (climbing
+     * up or down, or clinging) as {@code wall} with its face.
+     */
     public void save(CompoundTag tag) {
         if (!profile.any() && stamina.max() <= 0 && airPoise.value() <= 0) {
             return;
@@ -2065,18 +2073,22 @@ public final class HeroMovement {
         if (since >= 0 && since < BossRules.NO_TAKEOFF_TICKS) {
             m.putInt("downedAgo", (int) since);
         }
-        if (flying()) {
+        if (flying() || state == State.DIVE && profile.flies()) {
             m.putString("state", "fly");
-        } else if (clinging()) {
-            m.putString("state", "cling");
+        } else if (onWall() && climbFace != null && !hero.onGround()) {
+            m.putString("state", "wall");
             m.putString("face", climbFace.getSerializedName());
         }
         tag.put("mobility", m);
     }
 
     /**
-     * Loads it back: the stamina once the profile is known (on the hero's first tick), a flight as a hover where it is,
-     * a cling as a cling on the same face; anything else ends (it stands or falls as any NPC).
+     * Loads it back: the stamina once the profile is known (on the hero's first tick); a flight comes down where it is (a
+     * powered landing: nothing drives a flight after a load, and a hover nobody steers would hang there until its stamina
+     * ran low), a hero on a wall climbs down the same face (nothing drives a cling after a load either, and letting go
+     * would drop it); anything else ends (it stands or falls as any NPC, on the motion vanilla saved). Vanilla's own
+     * {@code NoGravity} flag was saved with the entity: it is cleared here unless the landing needs it, so a hero saved
+     * in a dive (no gravity, not saved as a state) never hangs in the air (the review of A10-A12).
      */
     public void load(CompoundTag tag) {
         CompoundTag m = tag.getCompound("mobility");
@@ -2085,15 +2097,23 @@ public final class HeroMovement {
         long now = now();
         airPoise.restore(m.getDouble("airPoise"), m.contains("downedAgo") ? now - m.getInt("downedAgo") : Long.MIN_VALUE / 4, now);
         String st = m.getString("state");
+        hero.setNoGravity(false);
+        state = State.NONE;
+        stateTicks = 0;
         if ("fly".equals(st)) {
-            state = State.FLY;
-            hovering = true;
-        } else if ("cling".equals(st)) {
+            state = State.LAND;
+            hovering = false;
+            flyTarget = null;
+            inAir = true;
+            hero.setNoGravity(true);
+        } else if ("wall".equals(st) || "cling".equals(st)) {
             Direction d = Direction.byName(m.getString("face"));
             if (d != null && d.getAxis().isHorizontal()) {
                 climbFace = d;
                 climbStartY = hero.getY();
-                state = State.CLING;
+                descending = false;
+                inAir = true;
+                state = State.CLIMB_DOWN;
             }
         }
         staminaRestored = false;
@@ -2109,7 +2129,7 @@ public final class HeroMovement {
             stamina.set(savedStamina, savedExhausted);
         }
         staminaRestored = true;
-        if ((state == State.FLY && !profile.flies()) || (state == State.CLING && !profile.has(Feature.CLING))) {
+        if ((state == State.LAND && !profile.flies()) || (state == State.CLIMB_DOWN && !profile.has(Feature.CLIMB))) {
             hero.setNoGravity(false);
             state = State.NONE;
         }

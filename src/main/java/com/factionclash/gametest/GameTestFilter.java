@@ -13,8 +13,8 @@ import java.util.List;
 /**
  * A developer's filter for the GameTest server: with the system property {@code factionclash.gametestFilter} set (for
  * example {@code JAVA_TOOL_OPTIONS=-Dfactionclash.gametestFilter=herofightmobility,heroraid ./gradlew runGameTestServer}),
- * only the tests whose name (class and method, lower case) contains one of the comma-separated words run. Without the
- * property it does nothing; it never runs outside a GameTest server.
+ * only the tests whose name (the test method's name in lower case; the class name is not part of it) contains one of the
+ * comma-separated words run. Without the property it does nothing; it never runs outside a GameTest server.
  */
 @EventBusSubscriber(modid = FactionClash.MODID)
 public final class GameTestFilter {

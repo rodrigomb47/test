@@ -59,8 +59,13 @@ public final class HeroNodeEvaluator extends NpcPathNavigation.GateEvaluator {
     private HeroEntity hero;
     private MobilityRules.Profile profile = MobilityRules.NONE;
     private MobilityRules.Situation situation = MobilityRules.Situation.TRAVEL;
-    /** Links offered in all searches (tests and the sheet). */
-    public int offered;
+    /**
+     * A raid's target whose walls no link may cross into in this search (the review of A10-A12: a hero whose way in is
+     * the gate, {@link HeroRaid#wallsClosedTo}), as its centre and half size; {@code closedHalf < 0}: none.
+     */
+    private int closedX, closedZ, closedHalf = -1;
+    /** Links offered in all searches (tests and the sheet), and links left out because they crossed a closed wall. */
+    public int offered, closedRefused;
 
     HeroNodeEvaluator(HeroGroundNavigation nav) {
         this.nav = nav;
@@ -79,6 +84,12 @@ public final class HeroNodeEvaluator extends NpcPathNavigation.GateEvaluator {
             return;
         }
         situation = situation(hero);
+        BaseState closed = hero.raid().wallsClosedTo();
+        closedHalf = closed == null ? -1 : BaseZones.half(closed);
+        if (closed != null) {
+            closedX = closed.center.getX();
+            closedZ = closed.center.getZ();
+        }
         grid.reset(hero.level(), Math.max(hero.level().getMinBuildHeight(), hero.getBlockY() - FLOOR_SEARCH));
         if (HeroLinks.berth(situation, true) > 1) {
             hostileBases(hero, berth);
@@ -161,6 +172,10 @@ public final class HeroNodeEvaluator extends NpcPathNavigation.GateEvaluator {
             if (nav.dead(from, t) || !landing(t)) {
                 continue;
             }
+            if (closedHalf >= 0 && insideClosed(t.x(), t.z()) && !insideClosed(from.x(), from.z())) {
+                closedRefused++;
+                continue; // over a raid target's wall with no way out chosen: the gate with the soldiers (5.2)
+            }
             Node to = getNode(t.x(), t.y(), t.z());
             if (to.closed || contains(out, n, to)) {
                 continue; // walking gets there already
@@ -177,6 +192,11 @@ public final class HeroNodeEvaluator extends NpcPathNavigation.GateEvaluator {
             offered++;
         }
         return n;
+    }
+
+    /** Within the closed base's walls box (the wall ring included), at any height. */
+    private boolean insideClosed(int x, int z) {
+        return com.factionclash.logic.Zones.insideHalf(x - closedX, z - closedZ, closedHalf, 0);
     }
 
     private static boolean contains(Node[] out, int n, Node x) {

@@ -402,6 +402,24 @@ public final class HeroRaid {
         if (entry != null && entry.way() == WallEntry.Way.FLY_OVER && !tr.flying() && hero.onGround() && !mv.controls()) {
             tr.raidTakeOff(to);
         }
+        if (entry != null && !entry.overTheWall()) {
+            // the ground way (5.2: the gate or the breach with the soldiers): to the outside of the gate it meets, and
+            // in once one is open (any of its gates: its path goes round to an open one); while all are shut it waits at
+            // the nearest. Its path search takes no link over the wall now
+            // ({@link #wallsClosedTo}), so it is never shut in without a way out (the review of A10-A12)
+            BlockPos g = nearestGate(t);
+            if (g != null && !anyGateOpen(t)) {
+                BlockPos out = g.offset(Integer.signum(g.getX() - t.center.getX()) * 2, 0,
+                        Integer.signum(g.getZ() - t.center.getZ()) * 2);
+                if (NpcNavigator.within(hero, out, 2.0)) {
+                    nav().reset();
+                    hero.getNavigation().stop();
+                } else {
+                    nav().travel(out, 1.5, 1.0);
+                }
+                return;
+            }
+        }
         if (entry != null && (entry.way() == WallEntry.Way.CLIMB_OVER || entry.way() == WallEntry.Way.LEAP_ON)
                 && !overStarted && foot != null && side != null) {
             // up the face it chose (the nearest to it, clear of the gates) and over: the climb or the jump-up of A10
@@ -428,6 +446,58 @@ public final class HeroRaid {
             return;
         }
         nav().travel(to, 1.5, 1.0);
+    }
+
+    /** A base's gate points. */
+    private static final String[] GATES = {BaseState.GATE_WEST, BaseState.GATE_EAST, BaseState.GATE_SOUTH};
+
+    /** The gate of the target nearest the hero (null: none recorded). */
+    private BlockPos nearestGate(BaseState t) {
+        BlockPos best = null;
+        double bd = Double.MAX_VALUE;
+        for (String k : GATES) {
+            BlockPos g = t.point(k);
+            if (g != null && g.distSqr(hero.blockPosition()) < bd) {
+                bd = g.distSqr(hero.blockPosition());
+                best = g;
+            }
+        }
+        return best;
+    }
+
+    /** Whether any gate of the target lets it through now ({@link #gateOpen}). */
+    private boolean anyGateOpen(BaseState t) {
+        for (String k : GATES) {
+            BlockPos g = t.point(k);
+            if (g != null && gateOpen(t, g)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether a gate lets it through now: open, a door any NPC opens by hand, a fence gate, or broken through. */
+    private boolean gateOpen(BaseState t, BlockPos g) {
+        BlockState s = hero.level().getBlockState(g);
+        if (s.getBlock() instanceof DoorBlock door) {
+            return door.isOpen(s) || door.type().canOpenByHand();
+        }
+        return gateAt(t, g) == WallEntry.Gate.WOODEN;
+    }
+
+    /**
+     * The base whose walls its path search must not cross into now (null: none). On a raid, until it has chosen a way
+     * over the wall (5.2: a way over is chosen only with a way out), no link takes it from outside the target's walls
+     * box onto the wall or inside it: a hero whose way in is the gate goes through the gate with the soldiers, and is
+     * never shut in where it cannot get out (the review of A10-A12: before, its links took it over the wall anyway).
+     */
+    public BaseState wallsClosedTo() {
+        if (stage != Stage.RALLY && stage != Stage.APPROACH && stage != Stage.ENTRY
+                || entry != null && entry.overTheWall()) {
+            return null;
+        }
+        BaseState t = target();
+        return t == null || t.destroyed ? null : t;
     }
 
     /** The goal inside, until it ends (its own condition, the raid's end, 60 s without progress). */

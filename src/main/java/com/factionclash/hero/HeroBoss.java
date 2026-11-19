@@ -732,8 +732,10 @@ public final class HeroBoss {
             }
             // (not while it escapes: its fight is over, and a transition's hold would keep it where its pursuers are;
             // A12's escape GameTest found Natsuho held for her phase 3 as she broke off. It plays once it is safe.)
+            // (nor while it is up in a fight flight: it lands first, 7.4, and plays it on the ground; the review of
+            // A10-A12 found the transition beginning in the air the tick the threshold was crossed, before the landing)
             if (transition == null && ph.due() && !combat.running() && !combat.staggered() && !HeroStatus.stunned(hero)
-                    && !introducing() && !escape.running()) {
+                    && !introducing() && !escape.running() && !combat.air().landsBeforeTransition()) {
                 beginTransition(ph, d);
             }
             if (!fight.active() && hero.tickCount % 20 == 0) {
@@ -1236,9 +1238,11 @@ public final class HeroBoss {
         if (introDay != Long.MIN_VALUE) {
             h.putLong("introDay", introDay);
         }
+        escape.save(h);
     }
 
     void load(CompoundTag h) {
+        escape.load(h);
         introDay = h.contains("introDay") ? h.getLong("introDay") : Long.MIN_VALUE;
         loadedPhase = h.getInt("phase");
         phases = null;

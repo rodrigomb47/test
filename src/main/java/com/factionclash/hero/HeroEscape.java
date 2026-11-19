@@ -415,7 +415,73 @@ public final class HeroEscape {
         return best;
     }
 
-    /** Death, a reload or a release: the escape ends where it is (the window, kept by the campaign, stays). */
+    // ------------------------------------------------------------------ saving (MOBILITY_AND_WORK 16: the escape state)
+
+    /**
+     * {@code FcHero.escape}: an escape under way (when it began, where the fight was, its refuge or the wild) and the stay
+     * away after it (whom it fled, when, the wild point it keeps from), so a save in the middle of an escape goes on
+     * running after the load and a hero that got away does not take those it fled as targets again within its stay-away
+     * time because the server restarted (the review of A10-A12: before, a load ended the escape and forgot whom it fled).
+     */
+    void save(net.minecraft.nbt.CompoundTag h) {
+        if (escape == null && fled.isEmpty()) {
+            return;
+        }
+        net.minecraft.nbt.CompoundTag e = new net.minecraft.nbt.CompoundTag();
+        if (escape != null) {
+            e.putLong("startedAt", escape.startedAt());
+            e.putDouble("originX", escape.originX());
+            e.putDouble("originZ", escape.originZ());
+            if (escape.refuge() != null) {
+                e.putString("refuge", escape.refuge());
+            }
+        }
+        e.putLong("escapedAt", escapedAt);
+        e.putBoolean("wild", wild);
+        e.putInt("refugeBase", refugeBase);
+        if (refugePos != null) {
+            e.putLong("refugePos", refugePos.asLong());
+        }
+        if (!Double.isNaN(wildOriginX)) {
+            e.putDouble("wildX", wildOriginX);
+            e.putDouble("wildZ", wildOriginZ);
+        }
+        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+        for (UUID u : fled) {
+            list.add(net.minecraft.nbt.NbtUtils.createUUID(u));
+        }
+        e.put("fled", list);
+        h.put("escape", e);
+    }
+
+    /** Loads what {@link #save} wrote: an escape under way runs on (its stage starts afresh: running). */
+    void load(net.minecraft.nbt.CompoundTag h) {
+        escape = null;
+        fled.clear();
+        if (!h.contains("escape", 10)) {
+            return;
+        }
+        net.minecraft.nbt.CompoundTag e = h.getCompound("escape");
+        escapedAt = e.contains("escapedAt") ? e.getLong("escapedAt") : -1;
+        wild = e.getBoolean("wild");
+        refugeBase = e.contains("refugeBase") ? e.getInt("refugeBase") : -1;
+        refugePos = e.contains("refugePos") ? BlockPos.of(e.getLong("refugePos")) : null;
+        if (e.contains("wildX")) {
+            wildOriginX = e.getDouble("wildX");
+            wildOriginZ = e.getDouble("wildZ");
+        }
+        for (net.minecraft.nbt.Tag t : e.getList("fled", 11)) {
+            fled.add(net.minecraft.nbt.NbtUtils.loadUUID(t));
+        }
+        if (e.contains("startedAt")) {
+            escape = new EscapeRules.Escape(e.getLong("startedAt"), e.getDouble("originX"), e.getDouble("originZ"),
+                    e.contains("refuge") ? e.getString("refuge") : null);
+            wayAway = true;
+            hero.setStateFlag(HeroActions.STATE_ESCAPING, true);
+        }
+    }
+
+    /** Death or a release: the escape ends where it is (the window, kept by the campaign, stays). */
     void reset() {
         if (escape != null) {
             escape = null;
