@@ -306,7 +306,12 @@ def hero(hero_obj, hero_source=None):
     sources = _shared_sources() + ([hero_source] if hero_source else []) + variant_files
     if recipes:
         sources.append(style_recipe_path(style_of(hero_obj)))      # its clips may use the style's own poses
-    return _build(hero_obj["id"], recipes, lib, [st, core()], settle, sources)
+    built = _build(hero_obj["id"], recipes, lib, [st, core()], settle, sources)
+    if anim.get("tail_trail"):
+        # the tail review (2026-11-19): a heavy tail trails behind in the air, solved on her own skeleton
+        from anim import tailtrail
+        built = tailtrail.apply(built, hero_obj, anim["tail_trail"], [st, core()])
+    return built
 
 
 def library_files(styles):

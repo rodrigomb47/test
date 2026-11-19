@@ -86,6 +86,32 @@
       "bones": {"arm_r": [30, 0, 22], "forearm_r": [-14, 0, 0], "arm_l": [30, 0, -22], "forearm_l": [-14, 0, 0],
                 "wing_arm_r": [0, 24, -54], "wing_hand_r": [0, 0, 136], "wing_f2_r": [0, 0, -28], "wing_f3_r": [0, 0, -55],
                 "wing_arm_l": [0, -24, 54], "wing_hand_l": [0, 0, -136], "wing_f2_l": [0, 0, 28], "wing_f3_l": [0, 0, 55]}
+    },
+    "dwing.fall_a": {
+      "_comment": "Falling on wings (the tail review, 2026-11-19): the core's falling flail with the arms out to the sides at shoulder height instead of thrown up over the head (the claws she wears as hands went 1.1 px into her head), and the wings half open, ready to catch the air.",
+      "extends": "fall.a",
+      "bones": {"arm_r": [-34, 0, 84], "forearm_r": [-20, 0, 0], "arm_l": [-50, 0, -74], "forearm_l": [-30, 0, 0],
+                "wing_arm_r": [0, 10, -24], "wing_hand_r": [0, 0, 66], "wing_f2_r": [0, 0, -12], "wing_f3_r": [0, 0, -26],
+                "wing_arm_l": [0, -10, 28], "wing_hand_l": [0, 0, -72], "wing_f2_l": [0, 0, 14], "wing_f3_l": [0, 0, 28]}
+    },
+    "dwing.fall_b": {
+      "_comment": "The other half of the falling flail on wings (arms and wings swapped).",
+      "extends": "fall.b",
+      "bones": {"arm_r": [-50, 0, 74], "forearm_r": [-30, 0, 0], "arm_l": [-34, 0, -84], "forearm_l": [-20, 0, 0],
+                "wing_arm_r": [0, 10, -28], "wing_hand_r": [0, 0, 72], "wing_f2_r": [0, 0, -14], "wing_f3_r": [0, 0, -28],
+                "wing_arm_l": [0, -10, 24], "wing_hand_l": [0, 0, -66], "wing_f2_l": [0, 0, 12], "wing_f3_l": [0, 0, 26]}
+    },
+    "dwing.sprawl": {
+      "_comment": "Shot down on wings: the core's sprawl on the back with the arms flung out lower and the elbows nearly straight (her claws, which she wears as hands, went 2.2 px into her rolling head, and bent elbows put them into her forearms).",
+      "extends": "downed.sprawl",
+      "bones": {"arm_r": [-110, 0, 60], "forearm_r": [-4, 0, 0], "arm_l": [-116, 0, -56], "forearm_l": [-8, 0, 0]}
+    },
+    "dwing.unfurl": {
+      "_comment": "Opening a glide (the tail review, 2026-11-19): the core's glide.open, the body tipping forward out of the fall, with the arms swept halfway back toward her sides and the wings half unfolded, turned out like the glide's.",
+      "extends": "glide.open",
+      "bones": {"arm_r": [14, 0, 40], "forearm_r": [-10, 0, 0], "arm_l": [14, 0, -40], "forearm_l": [-10, 0, 0],
+                "wing_arm_r": [0, 16, -30], "wing_hand_r": [0, 0, 84], "wing_f2_r": [0, 0, -16], "wing_f3_r": [0, 0, -32],
+                "wing_arm_l": [0, -16, 30], "wing_hand_l": [0, 0, -84], "wing_f2_l": [0, 0, 16], "wing_f3_l": [0, 0, 32]}
     }
   },
   "animations": {
@@ -170,6 +196,61 @@
       "layers": [
         {"primitive": "oscillate", "params": {"bones": {"body": [0, 0, -5], "neck": [0, 4, 0], "leg_r": [3, 0, 2], "leg_l": [-3, 0, 2]}, "period": 2.4}},
         {"primitive": "oscillate", "params": {"bones": {"root": [0, 0.5, 0]}, "period": 1.2, "channel": "position"}}
+      ]
+    },
+    "move.glide_start": {
+      "wind": {"dir": [0, 0.1, 1], "strength": 0.75, "ramp": [0.05, 0.35]},
+      "description": "Opening a glide on dragon wings, 0.4 s (the tail review, 2026-11-19: the core's opened the arms and left the wings folded, and ended on the core glide's spread arms, not on this variant's): out of the fall on wings (move.fall's first pose) the body tips forward, the arms sweep back toward her sides and the wings unfold (0.14 s, half open), then spread full with a small overshoot and settle into move.glide; the rustle of the membranes.",
+      "length": 0.4,
+      "settle_to": "move.glide",
+      "kind": "base",
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "dwing.fall_a"},
+        {"t": 0.05, "sound": "minecraft:item.armor.equip_elytra"},
+        {"t": 0.14, "pose": "dwing.unfurl", "ease": "easeOutQuad"},
+        {"t": 0.32, "pose": "dwing.glide", "ease": "easeOutSine", "overshoot": 0.12, "overshoot_time": 0.06},
+        {"t": 0.4, "pose": "dwing.glide"}
+      ]
+    },
+    "move.fall": {
+      "description": "Falling on dragon wings, 0.8 s loop (the tail review, 2026-11-19: the core's flail threw her clawed hands over her head): the arms flailing out to the sides and the legs paddling slowly, the wings half open, a surprised face (face_ctrl). Not grounded.",
+      "length": 0.8,
+      "loop": true,
+      "ground": false,
+      "planted": false,
+      "keys": [
+        {"t": 0, "pose": "dwing.fall_a", "face": {"eyes": 6, "mouth": 2}},
+        {"t": 0.4, "pose": "dwing.fall_b"},
+        {"t": 0.8, "pose": "dwing.fall_a"}
+      ]
+    },
+    "move.downed": {
+      "description": "Shot down on dragon wings, 2.0 s (the core's, the tail review of 2026-11-19: its sprawl flung her clawed hands over her rolling head): sprawled on the back with the arms flung out to the sides, pain eyes and stars (0.1 s), the head rolling, dazed, until 1.0 s; she rocks back with the legs swung up (1.15 s), springs up off her shoulders (a kip, 1.23 s), lands in a deep squat (1.33 s), rises and is back in the idle stance by 2.0 s.",
+      "length": 2,
+      "settle_to": "move.idle",
+      "kind": "base",
+      "steps": true,
+      "contact": "body",
+      "ground": false,
+      "secondary": ["tail", "ears", "skirt"],
+      "keys": [
+        {"t": 0, "pose": "dwing.sprawl", "face": {"eyes": 7, "mouth": 3}},
+        {"t": 0.1, "marker": "vfx:stars"},
+        {"t": 0.35, "face": {"eyes": 7, "mouth": 5}},
+        {"t": 0.95, "pose": "dwing.sprawl"},
+        {"t": 1.15, "pose": "downed.rock", "ease": "easeInOutSine", "face": {"eyes": 4, "mouth": 4}},
+        {"t": 1.23, "pose": "downed.kip", "ease": "easeOutQuad", "root": [0, 3, 0]},
+        {"t": 1.29, "pose": "downed.tuck", "ease": "easeInOutSine", "root": [0, 1.8, 0]},
+        {"t": 1.33, "pose": "downed.tuck", "ease": "easeInQuad"},
+        {"t": 1.4, "pose": "downed.crouch", "ease": "easeOutSine"},
+        {"t": 1.55, "pose": "downed.squat", "ease": "easeOutSine"},
+        {"t": 1.75, "pose": "land.heavy_rise", "ease": "easeInOutSine", "face": "none"},
+        {"t": 2, "pose": "stance.relaxed"}
+      ],
+      "layers": [
+        {"primitive": "oscillate", "params": {"bones": {"neck": [10, 0, 12]}, "period": 0.8, "shape": "circle", "window": [0.2, 0.4, 0.8, 1]}}
       ]
     }
   }

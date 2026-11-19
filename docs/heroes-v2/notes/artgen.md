@@ -4122,3 +4122,167 @@ committed, both bosses fresh); `icons --check` and `icons sheet --check`; `hero-
 Natsuho and Hinae, and `--lineup --check`; `parts-previews --check`; `render-previews --check`; `anim-previews --core`,
 `--styles` and `--locomotion --check`; the style preview set (`previews`) re-rendered byte for byte; `lint` (2570
 builds and checks, 0 problems; run again after the review was interrupted, before the commit).
+
+---
+
+## No tail between the legs: the Ender Dragon's tail in flight and the tail rule (2026-11-19)
+
+The owner, with a screenshot of `the_ender_dragon/wings.png` (the glide and the two beat rows): "her tail downwards
+while she is flying, and it kinda looks like a male genitalia like this, can you make it so her tail will not go
+downwards when she flies". In her glide, her beat, her hover, the take-off, the landing, the circle, the gust and the
+glide's start the scaled tail hung straight down from the small of her back between her legs, and from the front and
+3/4 it read as something obscene. Fixed for her, and made impossible to come back for any hero with a tail: `herogen
+check` refuses it (`HANDOFF.md` owner request 12). No hit tick, marker or timing of any clip moved; Natsuho, Hinae,
+the Wither, the test rig, `_fallback` and the libraries build byte for byte as before.
+
+### Why it hung
+
+The library's tail follow-through (`anim/secondary.py`, the `tail` spring group, with the flight clips' `wind`) is baked
+once, on the reference skeleton, whose tail leaves the small of the back and rises like a cat's (`tail_2` to `tail_5`
+straight up). The angles are written relative to each bone, so a tail built another way turns into another shape. Her
+`tails/scaled` falls from the small of her back to the ground and trails behind: the same keys that sweep a cat's tail
+back in the wind (the glide's `tail_2` -80 degrees, `tail_3` -59) folded hers down and forward, under her. Measured with
+the rule below on B5's build: 44 spine points in the zone in the glide, the beat and the fast flight, 43-46 in the
+take-off, the landing, the circle, the gust and the glide's start, 12 in the shot-down clip's kip-up, and the tip within
+6-18 degrees of plumb below her knees in all of them.
+
+### The fix: `animations.tail_trail` (`anim/tailtrail.py`)
+
+A hero source may list clips whose tail chain is re-keyed **on her own skeleton** (one body for good, HEROES_V2 3.6), so
+the tail trails behind her in the air like the vanilla dragon's:
+
+- **Direction**: straight behind her in the world (+z, the way she flies from), raised `lift` degrees (hers: 4), or her
+  body's line (hips toward feet) when that points behind and higher (a dive head first trails the tail up behind her).
+  Never along the body's line otherwise: lying on her back that line runs toward her feet.
+- **Life**: a travelling wave up and down (`wave`: 9 degrees, 1.6 s, 0.7 rad from one link to the next: an S-curve that
+  moves down the tail) and a side sway (`sway`: 4 degrees, 2.4 s); a loop's periods are rounded so it closes exactly.
+- **Solve**: `tail_1` to `tail_5` turned root first so each link points along its direction (within half a degree,
+  `test_solve_points_every_link_along_the_trail`); the tip chain (`tail_tip_1`, `tail_tip_2`) is left to the engine's
+  procedural lag as before. Keys every 2 ticks, simplified within half a degree.
+- **Blends**: `ramp` [t0, t1] from the clip's own tail to the trail (the take-off leaves the ground at 0.2-0.42 s), `fade`
+  back (the landing touches down at 0.1-0.3 s; the kip-up of the shot-down clip swings it clear at 1.1-1.18 s and lowers
+  it at 1.3-1.45 s). A one-shot that settles on a re-keyed loop (the take-off on `move.fly`, the jump on `move.leap`, the
+  glide's start and the gust on `move.glide`) runs its wave on that loop's clock and ends on its first key exactly
+  (`quality.check_settle`).
+- **Copies**: a clip her own file does not have yet is copied from her style or the core first, every other track and
+  event unchanged (`move.jump` and `move.leap`). Her own file holds 23 clips (the cap 24).
+
+Her list: the take-off, the flight, the fast flight, the hover, the landing, the glide's start, the glide, the gust,
+the circle, the shot-down clip, the jump, the leap and the fall. Measured after: in every airborne frame no tail point
+lower than 0.5 px under the crotch, the tip 2-13 px above it and more than 15 px behind her hips; from the front only the
+root shows at the small of her back, from the side the tail streams back over the skirt with its crest up.
+
+**Three more clips in the `dragon_wings` variant** (any wearer of `wings/dragon` gets them):
+
+- `move.glide_start` (pose `dwing.unfurl`): copying the core's glide start into her file showed it never fitted her: it
+  opened the arms wide and left the wings folded, and ended on the core glide's spread arms, not on this variant's glide
+  (arms back along her sides): a pop into the glide. Now out of the fall the body tips forward, the arms sweep back, the
+  wings unfold (half open at 0.14 s) and spread full with a small overshoot into the glide.
+- `move.fall` (poses `dwing.fall_a`, `dwing.fall_b`) and `move.downed` (pose `dwing.sprawl`): copied in, the core's fall
+  and shot-down clip came under her claw rule (`grips.animation_problems`, `test_claws_clear_of_her_body`): the fall's
+  flail threw her clawed hands over her head (1.1 px into it) and the sprawl flung them over her rolling head (2.2 px).
+  She played both from the core before, unchecked. Her fall now flails the arms out to the sides at shoulder height with
+  the wings half open; her sprawl flings the arms out lower with the elbows nearly straight (bent, the claws met the
+  forearms). Everything else is the core's recipe (the kip, the stars, the timing).
+
+### The tail rule (`tails.py`, run by `herogen check` for every hero whose model has a tail)
+
+- **The zone**, per frame in world space: below the crotch (the lowest point of the base hips), between the outer edges
+  of the two legs (measured along the hips' own left-right axis, so a spread leg widens it) and from half a pixel in
+  front of the hips' back face forward (along the hips' own front-back axis). Sampled: five points along the centre
+  line of every tail cube (its spine), every phase's tail cubes included. A tail that trails behind leaves the zone
+  through the back plane; a thick root brushing it with a corner is not a tail between the legs, a segment through it
+  is (`BACK_TOL` 0.5 px: the cat tails' roots run down the seat by up to 0.4 px).
+- **The frames**: every tick of every airborne clip the hero plays (MOBILITY_AND_WORK 4.1 by its mobility traits:
+  everyone's jump, leap, fall and ladder climb; the acrobat's air jump, wall kick and mantle; the climber's cling and
+  climb down; the glider's and flyer's glide, glide start, gust and shot-down clip; the flyer's take-off, flight, fast
+  flight, hover and landing and the boss flyer's circle; the hover hero's hover and drift; riding with a mount carrier;
+  the default dive with a `dive` move; a source without a mobility block has everyone's), and every tick of any other
+  clip of its chain where the base body is more than 1 px off the ground (a jump inside a move, an emote's hop, a
+  floating hero's idle), each with the secondary and wing loops over it and actions over their base.
+- **The stance**: the turnaround's pose passes the same zone, and from the turnaround's front view (every phase look)
+  the tail may show below the crotch between the legs over at most one model pixel's area (36 px at 6x): Natsuho's tail
+  behind her shows as a hairline through the gap between her thighs (7 px, 11 in phase 2).
+- **A NOTE** for a tail tip pointing within 20 degrees of plumb below the knees in any of those frames.
+
+Before the fix the dragon fails 9 clips (40-46 spine points in the take-off, the flight, the fast flight, the landing,
+the glide's start, the glide, the gust and the circle, 11 in the kip-up of the shot-down clip) and gets the NOTE on 9;
+`tests/test_tails.py` keeps B5's source as the negative case. After it, nothing. Natsuho (acrobat III, climber I: her
+jumps, leaps, falls, wall kicks, air jumps with her cat twist, the mantle, the climb and the cling, her escape and every
+frame off the ground) passes with nothing changed, and so do the test rig and the style fixtures with tails
+(`style_tansy`'s cat tail, `style_tobin`'s fluffy one); her rest pose passes too. Checked regardless of their traits,
+those four models pass every airborne clip of the library. The live check's note that Natsuho's tail hangs straight
+down in game while the previews show its S-curve was answered by the checkpoint 2 captures (`HANDOFF.md`, "Checkpoint
+2 in game"): the engine does not bend it; seen from straight behind, her S-curve reads as a column in game and in the
+previews alike.
+
+Not played by the dragon, so not checked for her: the core's air jump (an acrobat's), riding clips (a mount carrier's)
+and default dive (a `dive` move without its own clip) put her tail between her legs (32-40 spine points). Her kit's
+`void_dive` is a dive: its own clip comes with the move step; should it fall back to `move.air_dive`, `check` refuses
+her until her `tail_trail` lists it.
+
+### Left as it is
+
+- **The tail against the skirt in flight**: the floor-length skirt streams back in the same wind as the tail, and the
+  tail's root rides along its back panel (the crest spines nearest the root inside the panel): at most 244 sample points
+  at the glide's worst tick, 230 in the fast flight and 272 in the circle (the hanging tail's was about 145; 40 at rest).
+  From the side the tail now emerges over the skirt's top line. Lifting the trail to 16 degrees only brings the glide to
+  138 and raises the tail like a cat's; the clean fix is the skirt keeping lower than the tail in her flight (a wind
+  without the skirt group, or the skirt's back panel keyed in her variant), left for the move step with her other
+  flight work.
+- **The default dive** (`move.air_dive`, which the owner's list names): it carries the ground slam's hit marker, so her
+  art-only source refuses it in her own file (`kit pending: move.air_dive has a hit or cast marker`; tried with a
+  trail and a fade over the rise) and it is a move-step clip. Until then she does not play it (no `dive` move), and
+  the day her source gets the kit with `void_dive`, `check` covers `move.air_dive` for her and refuses the core's (32-40
+  spine points) until her own `move.void_dive` exists and her `tail_trail` lists the clip she dives with.
+- **The bind pose** (no clip at all, the shape the game shows if a tail chain loses its keys): both tails pass the
+  zone and the front view (Natsuho 7 px of hairline, the dragon 0), and with the bones the engine's sway owns reset to
+  bind (Natsuho's `tail_1`-`tail_5`, the dragon's two tip bones) as well: should a tail chain ever lose its keys in
+  game, it still does not hang between the legs.
+
+### Tests (485 -> 496: `tests/test_tails.py`, 11)
+
+The owner's three rows of the wings sheet fail before (at least 10 spine points each) and pass after; `check` refuses
+B5's glide, beat and take-off (and NOTEs the glide's tip) and accepts the fix; her whole chain passes with no NOTE; the
+tail stays level with or above the crotch and its tip at least 15 px behind her in the glide, the beat, the hover, the
+fast flight and the circle; the loops close, the one-shots hand over to their loops' first keys, the copied clips keep
+every other track and event; her file within the 24-clip cap; the solve within half a degree at four body pitches (and
+up behind her in a dive); the spec's errors; the clip set by mobility; Natsuho passes; a sabotage of her stance (the
+tail swung forward under her) fails the zone and the front view.
+
+### Previews
+
+Rebuilt for her (`previews/heroes/the_ender_dragon/`): `wings.png` (the same rows: the glide and the top and bottom of
+the beat now show the tail streaming behind her from every view), `locomotion.gif` (the take-off, the flight, the
+hover, the landing, the glide, the gust and the circle) and `sheet.png` (her own file's clips, now with the jump, the
+leap, the fall, the glide's start and the shot-down clip). Her turnaround, faces, phases, string, moments and idles,
+the lineup, Natsuho's, Hinae's and the Wither's previews and every library sheet are unchanged (their checks pass).
+Looked at: the wings sheet, the locomotion GIF frame by frame, close front, 3/4 front, side and rear views of the
+glide, the beat, the hover, the take-off, the landing, the jump, the leap, the fall, the circle, the gust, the glide's
+start and the kip, at 3-7x.
+
+### Checks run
+
+On the finished tree: the full suite (496 tests, OK); `check --all --style` (every hero, the tail rule included, the
+style fixtures and the icons: no problem, and no tail NOTE for any hero); `build --all --check` (the libraries,
+`_fallback`, the test rig, Natsuho, Hinae and the Wither as committed, her files fresh; her timing file only gains the
+five clips copied in, each with the core's timing, and no existing clip's timing changed); `icons --check` and
+`icons sheet --check`; `hero-previews --check` for both bosses, Natsuho and Hinae, and `--lineup --check`;
+`parts-previews --check`; `render-previews --check`; `anim-previews --core`, `--styles` and `--locomotion --check`; the
+style preview set (`previews`) re-rendered byte for byte; `lint` (2570 builds and checks, 0 problems).
+
+### Open items
+
+- **The move step**: her move clips that leave the ground (the in-air fireball, the void dive, the wing gust, the
+  perch's take-off) must keep the tail behind her: list them in her `tail_trail` (or key the tail in their recipes).
+  `check` sees their frames off the ground, and `move.air_dive` as soon as her source has a dive move. Her own file
+  holds 23 clips of the 24 the budget allows: the move step's dozen clips need the cap raised for boss heroes (HEROES_V2
+  4.3) or flight clips moved back to the core's.
+- **B7 before the move step**: her definition must not reach the game with `void_dive` before the move step has
+  given her a dive clip with the trail; the engine would play the core's `move.air_dive`, tail between the legs, and
+  the Java checks do not run the tail rule.
+- **In game** (gate 3): see her tail stream behind her in flight. Her `visual.json` hands only the tip chain
+  (`tail_tip_1`, `tail_tip_2`) to the engine's procedural sway, so nothing in `HeroModel` overrides her trail keys.
+  (Natsuho's `tails/cat_long` hands its whole chain to that sway; the checkpoint 2 captures found her tail in game as
+  the previews draw it.)
+- **The skirt in flight** (above).

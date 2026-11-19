@@ -121,7 +121,7 @@
   "rig": "hero_rig_v3",
   "scale": 1.08,
   "secondary": [{"chain": ["tail_tip_1", "tail_tip_2"], "damping": 0.6, "part": "tails/scaled", "stiffness": 0.45}],
-  "source_sha256": "33b4df7698139c5694011a41cc69cbd30148f198423bc0fb8f7efd1c4d5174d4",
+  "source_sha256": "a2fa2b75a096306bf3b54f14122a05e08ca62dacdbb6f59e88a6ec049e855eb7",
   "states": [],
   "style": "fists",
   "texture": {"glow_outside_face": true, "glowmask": true, "height": 256, "p2": true, "width": 256},

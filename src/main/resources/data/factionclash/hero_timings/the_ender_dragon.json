@@ -27,6 +27,24 @@
       "total_ticks": 52,
       "transition_ticks": 4
     },
+    "move.downed": {
+      "events": [{"t": 0.3, "tick": 6, "type": "vfx", "value": "stars"}],
+      "kind": "base",
+      "length": 2,
+      "loop": "once",
+      "ticks": 40,
+      "total_ticks": 44,
+      "transition_ticks": 4
+    },
+    "move.fall": {
+      "events": [],
+      "kind": "base",
+      "length": 0.8,
+      "loop": "loop",
+      "ticks": 16,
+      "total_ticks": 20,
+      "transition_ticks": 4
+    },
     "move.fly": {
       "events": [],
       "kind": "base",
@@ -72,6 +90,15 @@
       "total_ticks": 52,
       "transition_ticks": 4
     },
+    "move.glide_start": {
+      "events": [{"t": 0.25, "tick": 5, "type": "sfx", "value": "minecraft:item.armor.equip_elytra"}],
+      "kind": "base",
+      "length": 0.4,
+      "loop": "once",
+      "ticks": 8,
+      "total_ticks": 12,
+      "transition_ticks": 4
+    },
     "move.gust": {
       "events": [{"t": 0.3, "tick": 6, "type": "vfx", "value": "gust"}],
       "kind": "base",
@@ -79,6 +106,24 @@
       "loop": "once",
       "ticks": 8,
       "total_ticks": 12,
+      "transition_ticks": 4
+    },
+    "move.jump": {
+      "events": [{"t": 0.2, "tick": 4, "type": "vfx", "value": "jump_dust"}],
+      "kind": "base",
+      "length": 0.3,
+      "loop": "once",
+      "ticks": 6,
+      "total_ticks": 10,
+      "transition_ticks": 4
+    },
+    "move.leap": {
+      "events": [],
+      "kind": "base",
+      "length": 1,
+      "loop": "loop",
+      "ticks": 20,
+      "total_ticks": 24,
       "transition_ticks": 4
     },
     "move.takeoff": {
@@ -166,6 +211,6 @@
   "file": "the_ender_dragon",
   "format": 2,
   "generator": "herogen 1",
-  "source_sha256": "65c343447c9e42dbd532a8b78987315ea88254ac3e5012a2f31027175063800f",
+  "source_sha256": "686ebe3272d97768bcf3c3ed14c55cb8cadbf0f55a1eb7c5199138a8f6c97b85",
   "tick": 0.05
 }

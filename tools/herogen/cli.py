@@ -130,6 +130,28 @@ def tie_problems(hero_id, files, b, hint=True):
             % (", ".join("%s/%s %d" % (k[0], k[1], n) for k, n in worst[:6]), where)]
 
 
+def tail_problems(hero_id, files, b):
+    """The tail rule (owner, 2026-11-19; tails.py): no tail between the legs in the air or from the front.
+    (problems, notes); nothing for a model without a tail."""
+    import tails
+    from anim import library as animlib
+    from render.scene import HeroAssets
+    bones = tails.tail_bones({bn: bo.parent for bn, bo in b.model.catalogue.items()})
+    if not any(c.bone in bones for c in b.model.cubes):
+        return [], []
+    files = dict(files)
+    files.update(animlib.core().files())
+    files.update(animlib.style(animlib.style_of(b.hero)).files())
+    chain = [b.animations, animlib.style(animlib.style_of(b.hero)), animlib.core()]
+
+    def lookup(name):
+        for built in chain:
+            if name in built.by_name:
+                return built.by_name[name]
+        return None
+    return tails.check(HeroAssets(hero_id, files, b.hero), b.model, lookup)
+
+
 def _check_ids(args):
     """The heroes `check` covers: the ids given (or all), `--style` adds the style fixtures, `--slice` the eight slice
     heroes (SLICE_PLAN 6.3) that have a source in herosrc/heroes."""
@@ -175,6 +197,9 @@ def cmd_check(args):
         problems += _anim_problems(hid, b)
         if not args.no_ties:
             problems += tie_problems(hid, files, b)
+        tail_bad, tail_notes = tail_problems(hid, files, b)
+        problems += tail_bad
+        notes += tail_notes
         if hid in committed:
             problems += build.check_files(hid, files)
         for p in problems:

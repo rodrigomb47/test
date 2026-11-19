@@ -181,6 +181,27 @@
     "variants": [
       "dragon_wings"
     ],
+    "tail_trail": {
+      "_comment": "The owner, 2026-11-19, looking at the wings sheet: \"her tail downwards while she is flying, and it kinda looks like a male genitalia like this, can you make it so her tail will not go downwards when she flies\". Her scaled tail falls from the small of her back to the ground, and the library's tail follow-through (baked for a tail that rises like a cat's) hung it straight down between her legs in the glide, the beat, the hover, the take-off and the landing. Every clip she plays in the air re-keys her tail chain on her own skeleton (anim/tailtrail.py) so it streams behind her like the vanilla dragon's: level with or a little above her hips (lift), or along her body's line when that is higher (a dive), with a slow travelling S-wave and a side sway for life. The take-off lifts it as she leaves the ground (ramp), the landing lowers it as she touches down (fade), the kip-up of the shot-down clip swings it clear while she is off the ground. herogen check's tail rule (tails.py) refuses a tail between the legs in any of these.",
+      "lift": 4,
+      "wave": [9, 1.6, 0.7],
+      "sway": [4, 2.4],
+      "clips": {
+        "move.takeoff": {"ramp": [0.2, 0.42]},
+        "move.fly": {},
+        "move.fly_fast": {},
+        "move.fly_hover": {},
+        "move.fly_land": {"fade": [0.1, 0.3]},
+        "move.glide_start": {},
+        "move.glide": {},
+        "move.gust": {},
+        "move.circle": {},
+        "move.downed": {"ramp": [1.1, 1.18], "fade": [1.3, 1.45]},
+        "move.jump": {},
+        "move.leap": {},
+        "move.fall": {}
+      }
+    },
     "poses": {
       "dragon.spread": {
         "_comment": "Her wings spread wide on the ground (the part's fold undone), cupped a little forward (8 degrees about y); her own ground wing loop holds the rig's wing bones at the bind angle, so these keys are the whole turn.",
