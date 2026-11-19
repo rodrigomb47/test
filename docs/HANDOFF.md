@@ -115,6 +115,12 @@ commits, language and testing are in `/CLAUDE.md`.
     downwards when she flies". In every airborne pose a tail now trails behind, level with or above the hips, and
     `herogen check` refuses any hero whose tail sits below the hips between or in front of the legs in a frame with
     the feet off the ground, or in the front view of the turnaround (`notes/artgen.md`).
+13. **Checkpoint 2 approved; the kill feed's scope** (owner, 2026-11-19), answering the checkpoint 2 captures: "1 their
+    are ok as they are 2 she is fine 3 only hero on hero and hero deaths by other sources should show, if a hero kills
+    a npc or a .onster it shouldnt show". So Natsuho and Hinae stay as they are (14.4 gate 4 passed; their ground marks
+    stay as drawn), Hinae's shrine-maiden look stays, and C2-C4 (the other six slice heroes' art) may start. The hero
+    kill feed shows every death of a hero, whatever killed it, and nothing else: no line when a hero kills an ordinary
+    NPC, a monster or an animal (a player's own death keeps vanilla's message).
 
 ## 3. Architecture map (`src/main/java/com/factionclash`)
 
