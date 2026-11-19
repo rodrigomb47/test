@@ -5409,10 +5409,87 @@ phase 2's own work (`docs/design/breaching.md` 12, X1-X4 and X6) and need nothin
 
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
-| T1 | Lethal terrain for heroes' moves (6.17): `HeroEffects.knockback` no longer cuts a push toward lava or a drop (`hazardAhead` goes); `BossRules.safeKnockback` and `HAZARD_*` stay only for a push on an ally; `HeroCombat.throwGrabbed` tries lethal edges first, then straight ahead, at full strength; `HeroBoss.shockwave` pushes only enemies, unsoftened; `HeroCombat.hop` (`move_self`) stops short of a hazard, as dashes do; `logic/hero/EdgePlay` (edges with the receiver's immunities, the pick's factor, the approach, the aim by form) read by `HeroSenses` and `MoveSelector`; `heroes.edgePlay`; `logic/hero/KillCredit` (the 15 s window, a push recorded as a hit of 0, the last-attacker refresh, vanilla's death keys) feeding the kill feed, the rewards of 6.13, `HeroState` kills and combat XP; the safe cell of a `where_it_fell` revival | A5, A6, A12 | M | `EdgePlayTest` and `KillCreditTest` (new); `BossRulesTest.hazardKnockbackAndStunsThatCannotChain` and `MoveSelectorTest` updated (no cut on an enemy's push); the GameTests of 14.5 "Battle without civility", with `grabThrowsTowardALethalEdge` replacing `grabHoldsAndThrowsSafely`. **`KillCredit` done 2026-11-19** (15.2, "Shipped heroes, kill credit and the kill feed, mobility polish"): `logic/hero/KillCredit` and `KillCreditTest`, `combat/KillCredits` (a push as a hit of 0, the last-attacker refresh, the credit at a death) feeding the kill feed, the rewards of 6.13, `HeroState` kills and combat XP; GameTests in `HeroKillFeedGameTests` (the design's `terrainDeathIsThePushersKill` is `pushedIntoLavaIsThePushersKillForAnNpcAndAPlayer` and its fall and magma siblings). The rest of T1 is open: the cut toward a hazard (`hazardAhead`) still softens pushes, `EdgePlay`, the full-strength throw and shockwave, the hop's hazard check, `heroes.edgePlay`, the safe cell of a `where_it_fell` revival |
+| T1 | Lethal terrain for heroes' moves (6.17): `HeroEffects.knockback` no longer cuts a push toward lava or a drop (`hazardAhead` goes); `BossRules.safeKnockback` and `HAZARD_*` stay only for a push on an ally; `HeroCombat.throwGrabbed` tries lethal edges first, then straight ahead, at full strength; `HeroBoss.shockwave` pushes only enemies, unsoftened; `HeroCombat.hop` (`move_self`) stops short of a hazard, as dashes do; `logic/hero/EdgePlay` (edges with the receiver's immunities, the pick's factor, the approach, the aim by form) read by `HeroSenses` and `MoveSelector`; `heroes.edgePlay`; `logic/hero/KillCredit` (the 15 s window, a push recorded as a hit of 0, the last-attacker refresh, vanilla's death keys) feeding the kill feed, the rewards of 6.13, `HeroState` kills and combat XP; the safe cell of a `where_it_fell` revival | A5, A6, A12 | M | `EdgePlayTest` and `KillCreditTest` (new); `BossRulesTest.hazardKnockbackAndStunsThatCannotChain` and `MoveSelectorTest` updated (no cut on an enemy's push); the GameTests of 14.5 "Battle without civility", with `grabThrowsTowardALethalEdge` replacing `grabHoldsAndThrowsSafely`. **`KillCredit` done 2026-11-19** (15.2, "Shipped heroes, kill credit and the kill feed, mobility polish"): `logic/hero/KillCredit` and `KillCreditTest`, `combat/KillCredits` (a push as a hit of 0, the last-attacker refresh, the credit at a death) feeding the kill feed, the rewards of 6.13, `HeroState` kills and combat XP; GameTests in `HeroKillFeedGameTests` (the design's `terrainDeathIsThePushersKill` is `pushedIntoLavaIsThePushersKillForAnNpcAndAPlayer` and its fall and magma siblings). **The rest done 2026-11-19** ("T1 and T3 as built" below this table): `HeroEffects.knockback` lands at full strength on an enemy (`BossRules.pushStrength`: the cut only for a push on its own side); `HeroBoss.shockwave` pushes only enemies, unsoftened; `HeroCombat.throwGrabbed` aims through `HeroEdgePlay.throwDirection` (A5's tries, the nearest lethal edge first, then a harmful one, else straight ahead, never softened); a hop of its own stops half a block short of a hazard (`HeroCombat.safeHop`) and a dash or a charge at fire or lava (`burnAhead`); pure `logic/hero/EdgePlay` with `EdgePlayTest` (10), read by `MoveSelector` (`edgeFactor`, `readyPush`) through `Sense.edges` and by `hero/HeroEdgePlay` (the ring, the walk round, the throw's aim); `heroes.edgePlay`; `HeroManager.safeCellNear` for a `where_it_fell` revival; `BossRulesTest.hazardKnockbackAndStunsThatCannotChain` updated (`MoveSelectorTest` needed no change: `EdgePlayTest` scores the selector); `grabThrowsTowardALethalEdge` replaces `grabHoldsAndThrowsSafely`; the GameTests of 14.5 and three more in `HeroTerrainGameTests` |
 | T2 | Explosive moves (6.18): the `explosive` field in the catalogue, reader, balance and schema; the blast in the move runner (interaction `MOB`, a damage calculator that hurts and pushes nobody); the own-side check in the pick; the blast's decal disc; `heroes.explosiveBlocks`; a hero's blast on a raid's breach spot (with `docs/design/breaching.md` X3); the fixture `fixture_bomber` | F2, A5, T1 | M | the reader and balance cases in `HeroReaderV2Test` and `HeroBalanceV2Test`; `explosiveMoveBreaksBlocksNotPeople`, `explosiveMoveSparesItsOwnBase` |
-| T3 | Ordinary NPCs and heroes against lethal terrain (`docs/design/breaching.md` 8 and X5): `EdgeSafety` in paths and spot choice, `LavaEscapeGoal` (3.5), Fire Resistance, the water landing | T1 (`KillCredit`) | M | the terrain GameTests of `docs/design/breaching.md` 11.2 |
+| T3 | Ordinary NPCs and heroes against lethal terrain (`docs/design/breaching.md` 8 and X5): `EdgeSafety` in paths and spot choice, `LavaEscapeGoal` (3.5), Fire Resistance, the water landing | T1 (`KillCredit`) | M | the terrain GameTests of `docs/design/breaching.md` 11.2. **Done 2026-11-19** ("T1 and T3 as built"): pure `logic/combat/EdgeSafety` with `EdgeSafetyTest` (5); `combat/EdgeSense` (the pushers near, the path cost in `NpcPathNavigation.GateEvaluator` for NPCs and heroes, the hold, cover and back-off spots); `combat/LavaEscapeGoal`; `combat/TerrainSurvival` (Fire Resistance, the water landing, `war.waterLanding`); `npcKeepsTheLavaEdgeAway` with its Knockback-sword player twin, `npcClimbsOutOfLava`, `waterLandingBreaksAFall`. The kill credit refresh is `KillCredit`'s (above) |
 | T4 | Docs and release: README ("Heroes", "Combat behaviour"), BALANCE rows, the config file, the kit sheets regenerated from the hero files (their TERRAIN AND BLOCKS section, kit version 3), jar and SHA-256 | T1-T3 | S | the release checklist (`HANDOFF.md` section 7) |
+
+T1 and T3 as built (2026-11-19), where they go beyond or differ from 6.17, 6.19 and `docs/design/breaching.md` 8:
+- **Full strength.** `HeroEffects.knockback` asks `BossRules.pushStrength(s, enemy, hazard)`: an enemy's push is never
+  cut, a push on its own side keeps `safeKnockback`'s cut (no move in the slice pushes its own side, effects reach
+  enemies). `HeroEffects.landingHazard`, A5's refusal, is gone; `hazardAhead` is read only for its own side. How far:
+  `FormGeometry.knockbackDistance` is vanilla's flight (0.4 a point, the lift of 0.4, the ground's friction on the first
+  tick, the air's after, the skid once down): knockback 1 carries 2.07 blocks, 2 carries 4.14 (4.13 measured in
+  `knockbackFullStrengthIntoLava`), 3 carries 6.2 and 4.3 against a vanguard's 30 resistance; 6.19's "about 2 blocks a
+  point" holds. A raised shield stops the damage, not the push (`shieldStopsDamageNotPush`: the move's knockback lands
+  whole on a blocking soldier and player alike; only vanilla's own knock-back of the blocked blow is vanilla's smaller
+  one, 0.15 for 0.4).
+- **Edges** (`logic/hero/EdgePlay`, pure; `combat/TerrainEdges` reads the blocks). A `Ring` of 16 directions out to 8
+  blocks round the hero's target (6.17 says each engaged enemy; only the target's is read, as the pick and the walk
+  round are for it), sampled every 2 s or when the target moved 1.5 blocks from its centre, keeps per direction
+  the nearest lethal and the nearest harmful edge, and a pool's far side: a push counts an edge only when it lands within
+  half a block of it and not past a pool it would fly over. `EdgePlay.Receiver` is read the same for anyone (health,
+  safe fall and fall multiplier, fire-proof: fire-immune, `ember_stride` or Fire Resistance; soft landing: Slow Falling
+  or a hero that glides or flies; freezes; a `water` weak point; knockback resistance). A drop is lethal when vanilla's
+  fall damage after a push's 1-block lift takes half the health left, harmful past the safe fall; the void is harmful
+  for one that cannot be hurt by a fall.
+- **The pick and the walk round** (`MoveSelector.edgeFactor`, `readyPush`; `hero/HeroEdgePlay`). Every push move counts
+  (`EdgePlay.push`: a grab throws any way, a pull draws in, any other move with a knockback of 1 or more pushes away,
+  whatever its form) and gets x(1 + the value) from where the hero stands. At each selector check with a push that
+  pushes away ready within 2 s (the current phase, no ultimate) and an edge in its reach, the hero walks to the far side:
+  `EdgePlay.approach` picks the best edge nearest its walk, `HeroEdgePlay` a cell the hero stands on unhurt within the
+  move's reach whose line to the target falls in the edge's 22.5-degree sector (the sector the pick reads, so a hero
+  that arrives is one the pick doubles); the pick waits while it walks (`NpcMeleeAttackGoal.walkRound`,
+  `HeroThrowGoal` follow `FactionNpc.edgeApproachSpot`); after 3 s it gives up and leaves that target alone for 10 s
+  (all its edges, not only that one). A pull scores when an edge lies between; nothing walks round for a pull or a
+  throw. The landing side of a leap or a dive is not planned beyond the walk round (kit-gaps "Boss heroes" item 6 stays
+  a proposal).
+- **The throw** (`HeroEdgePlay.throwDirection`, `EdgePlay.throwTry`): the ring of the held receiver, A5's eight tries in
+  their order, the one that lands in the nearest lethal edge, else the nearest harmful one, else straight ahead; the
+  throw's length for the aim is shortened by the receiver's knockback resistance; full strength always.
+- **Its own body.** A hop of its own stops half a block short of the first cell that would hurt it (lava, fire, powder
+  snow, thorns, the void, a drop past its safe fall, read as for itself); a dash or a charge stops at fire, a lit
+  campfire, a magma block or lava ahead unless it is fire-proof (a pool in flat ground has no drop to stop it:
+  `chargeStopsShortOfLavaItsTargetGoesInto`).
+- **Revival**: a `where_it_fell` revival rises on the nearest safe cell within 16 blocks (horizontal distance first,
+  then height, rows 8 under to 4 over where it fell, no lava or fire beside it), at home after a death below the world
+  or with none.
+- **The defence (T3)**, one rule set for faction NPCs and heroes (`docs/design/breaching.md` 8). `combat/EdgeSense`
+  reads the pushers near twice a second while the NPC has a target (enemies within 8 that can push: any hero, a Knockback
+  weapon or a Punch bow in either hand, ravagers, hoglins, zoglins, iron golems, breezes, wind charges; a player is a
+  pusher by the same test as an NPC) and caches the columns it reads until the next reading. Its path search
+  (`NpcPathNavigation.GateEvaluator`, which a hero's evaluator extends) adds `EdgeSafety.PATH_MALUS` (4) to each cell
+  with a lethal edge within the reach behind it on the line from a pusher (6 with a hero among them, else 4; a wall stops
+  it), once per cell and search; `Pursuit`'s hold spot is kept only when safe and its search scores an unsafe spot last;
+  an archer's back-off tries four random spots for a safe one. "A melee fighter strikes from the side that keeps the
+  edge to its flank" is that path cost: `npcKeepsTheLavaEdgeAway` sees the soldier go round. `LavaEscapeGoal`
+  (priority 0) heads for the nearest standable cell out of the lava within 8 blocks, jumping toward it, and keeps that
+  heading until it stands (10 ticks of grace while it bobs at the surface or jumps onto the bank, so its fight does not
+  take over half-way out; without it a hero in a 2-deep pool took 69 ticks in one run), then into water within 6 blocks
+  for 2 s while it burns. It swims at a player's pace, since `FactionNpc` already moves by a player's input; out of a
+  1-deep pool in about 2 s. `TerrainSurvival` drinks Fire Resistance in lava or after 3 s on fire with no water near (a
+  player's 1.6 s, the bottle back in its pack) and makes the water landing (`war.waterLanding`): poured on the floor 2
+  to 3 blocks above it from a fall of more than 5, picked up again once down; not over lava, water or the void, not in
+  the Nether, not with Slow Falling, not for a hero that glides or flies.
+- **Not built** (later work): soldiers taking Fire Resistance or a water bucket from the storehouse (the brewing of
+  ROADMAP phase 3); the death told to the faction "as its knowledge allows" (phase 1); the aim of a leap's or a dive's
+  landing at an edge; T2 (explosive moves) and the TNT expert (X1-X4, X6).
+- **Tests.** 1061 unit tests (15 new: `EdgePlayTest` 10, `EdgeSafetyTest` 5; `BossRulesTest` checks `pushStrength`) and
+  348 GameTests (13 new in `HeroTerrainGameTests`: `knockbackFullStrengthIntoLava`, `heroCirclesToPushTowardAnEdge`,
+  `edgePlayOffStopsTheAimNotThePush`, `shockwavePushesOnlyEnemies`, `chargeStopsShortOfTheEdgeItsTargetGoesOver`,
+  `chargeStopsShortOfLavaItsTargetGoesInto`, `shieldStopsDamageNotPush`, `hopStopsShortOfAHazard`,
+  `heroRisesSafeAfterALavaDeath`, `npcKeepsTheLavaEdgeAway`, `npcKeepsTheLavaEdgeAwayFromAKnockbackPlayer`,
+  `npcClimbsOutOfLava`, `waterLandingBreaksAFall`; `grabThrowsTowardALethalEdge` replaces A5's grab test). Each push is
+  checked on an NPC soldier and on a mock player that moves by its velocity as a client does, with the same numbers. A
+  GameTest fact learned: the platform template's floor has air under it, so lava set in the floor runs on underneath;
+  a test that needs a pool of known depth puts a stone bed under it. Sabotage, each caught by its own test: the push cut
+  for everyone, the shockwave on its own side, the throw straight ahead, no walk round, the aim with `heroes.edgePlay`
+  off, the hop unchecked, the charge into lava, the push skipped behind a raised shield, the revival in the pool, no
+  path cost, no lava escape, no Fire Resistance, no water landing; and in the pure rules the pick's factor, the reach of 6 with a hero, a fire-proof
+  receiver's lava, the skid of `knockbackDistance` (which first showed the formula 0.17 block short for knockback 2:
+  the test now holds it to the measured 4.13), the walk's 3 s, an enemy's push cut.
+- **Left open.** A campaign on a dedicated server with Natsuho or Hinae given, fighting soldiers and a real player
+  beside a cliff and lava; T2 and T4.
 
 ---
 

@@ -602,7 +602,10 @@ public final class MoveSelector {
         return kit == null || kit.states().isEmpty() ? null : kit.states().get(0).name();
     }
 
-    /** {@code weight x band fit x prefer fit x novelty x posture} (6.3). */
+    /**
+     * {@code weight x band fit x prefer fit x novelty x posture} (6.3), x the edge factor of 6.17 ({@link EdgePlay}): a
+     * move whose push would carry its target to an edge from where the hero stands gets x(1 + the edge's value).
+     */
     public double score(Move m, Sense s) {
         double w = Math.max(0, m.weight());
         if (w == 0) {
@@ -616,7 +619,49 @@ public final class MoveSelector {
         } else if (recent.contains(m.id())) {
             novelty = NOVELTY_RECENT;
         }
-        return w * band * prefer * novelty * postureFactor(m);
+        return w * band * prefer * novelty * postureFactor(m) * edgeFactor(m, s);
+    }
+
+    /** Each move's push (6.17), worked out once per move. */
+    private final Map<String, EdgePlay.Push> pushes = new HashMap<>();
+
+    /** A move's push as {@link EdgePlay#push} reads it (cached per move id). */
+    public EdgePlay.Push push(Move m) {
+        EdgePlay.Push p = pushes.get(m.id());
+        if (p == null) {
+            p = EdgePlay.push(m);
+            pushes.put(m.id(), p);
+        }
+        return p;
+    }
+
+    /**
+     * 6.17 2, the approach: the strongest push away from the hero among its moves of the current phase (ultimates aside)
+     * whose charge is back within {@code withinTicks}, or null. Only such a push makes the hero walk round its target.
+     */
+    public EdgePlay.Push readyPush(long now, Sense s, int withinTicks) {
+        EdgePlay.Push best = null;
+        for (Move m : kit.moves()) {
+            if (!runnable.test(m) || !m.phases().contains(s.phase) || isUltimate(m)) {
+                continue;
+            }
+            EdgePlay.Push p = push(m);
+            if (p.kind() != EdgePlay.PushKind.AWAY || readyAt(m, now) > now + withinTicks) {
+                continue;
+            }
+            if (best == null || p.strength() > best.strength()) {
+                best = p;
+            }
+        }
+        return best;
+    }
+
+    /** 6.17's pick factor: 1 + the value of the edge the move's push would carry its target to (1 with no edges sensed). */
+    public double edgeFactor(Move m, Sense s) {
+        if (s.edges == null || !s.target.present) {
+            return 1;
+        }
+        return EdgePlay.pickFactor(push(m), s.edges, s.toTargetX, s.toTargetZ, s.target.distance, s.targetKnockbackResistance);
     }
 
     /** {@code 1 + 0.6 (a - 0.5)} for offence, {@code 1 + 0.6 (c - 0.5)} for zoning and defence. */

@@ -150,6 +150,13 @@ public final class Sense {
     public int energy;
     /** Water or lava along a dash or charge path (6.12: those moves are skipped). */
     public boolean dashPathHazard;
+    /**
+     * Terrain is a weapon (6.17, task T1): the edges round the target as it can be hurt by them ({@link EdgePlay.Ring};
+     * null: none sampled, or {@code heroes.edgePlay} off), the unit direction from the hero to its target and the
+     * target's knockback resistance (0-1). Read by the pick's factor ({@link EdgePlay#pickFactor}).
+     */
+    public EdgePlay.Ring edges;
+    public double toTargetX, toTargetZ, targetKnockbackResistance;
     /** Cannot start moves: stunned, silenced (6.6), eating, or escaping (a cornered hero asks again). */
     public boolean stunned, silenced, escaping;
 
@@ -174,6 +181,8 @@ public final class Sense {
         ticksWithoutEnemy = 0;
         energy = 0;
         dashPathHazard = false;
+        edges = null;
+        toTargetX = toTargetZ = targetKnockbackResistance = 0;
         stunned = silenced = escaping = false;
         return this;
     }

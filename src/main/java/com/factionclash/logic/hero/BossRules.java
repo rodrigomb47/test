@@ -1061,12 +1061,24 @@ public final class BossRules {
 
     // ================================================================== knockback and control (6.12, 6.14)
 
-    /** Knockback toward lava, fire, a drop over 6 or the void within 4 blocks is cut to this, for every receiver. */
+    /**
+     * A push on the hero's own side toward lava, fire, a drop over 6 or the void within 4 blocks is cut to this (HEROES_V2
+     * 6.17: a move made to move allies keeps the old cut; none in the slice). An enemy's push is never cut.
+     */
     public static final double HAZARD_KNOCKBACK = 0.5, HAZARD_LOOKAHEAD = 4;
     public static final int HAZARD_DROP = 6;
 
     public static double safeKnockback(double strength, boolean hazardAhead) {
         return hazardAhead ? Math.min(strength, HAZARD_KNOCKBACK) : strength;
+    }
+
+    /**
+     * The vanilla knockback a hero's push lands with (6.17, the owner's answer of 2026-11-18; task T1): full strength on
+     * an enemy wherever it sends it, lava and cliffs included, the same for a player, an NPC, a hero or a monster; only a
+     * push on its own side keeps {@link #safeKnockback}'s cut toward a hazard.
+     */
+    public static double pushStrength(double strength, boolean enemy, boolean hazardAhead) {
+        return enemy ? strength : safeKnockback(strength, hazardAhead);
     }
 
     /** Knock-ups lift at most 1 block; grabs hold at most 1 s. */

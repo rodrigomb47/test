@@ -831,10 +831,12 @@ others are PROPOSED.
   oldest). Projectiles fly **1.2** blocks a tick (arrow looks **1.6**, with gravity **0.03** and an archer's lead), are
   gone after **100** ticks or their range + 4 blocks, change no block and drop nothing.
 * Effects (v1 13): knock-back of vanilla strength **0.4** (a plain blow's) per point of strength (knock-back resistance applies),
-  a lift of at most **1** block, cut to a third when it would push the receiver into lava or over a drop of more than
-  3 blocks; pull **2** blocks per point of strength, stopping **1.5** blocks from the hero, with a **0.3** hop; a shield
-  holds at most **60%** of the receiver's maximum health, a stronger one replaces a weaker one, and it runs out on time;
-  a `stat` or `effect` with no seconds lasts **8 s**; a stat's sum is held to its v1 13.3 range (attack, armour, speed
+  a lift of at most **1** block, at full strength wherever it sends an enemy (HEROES_V2 6.17: into lava, fire, the
+  void, off a cliff; about **2.07** blocks a point on flat ground, `FormGeometry.knockbackDistance`), cut to **0.5**
+  toward lava or a drop of more than 3 blocks only for a push on the hero's own side (none in the slice); pull **2**
+  blocks per point of strength, stopping **1.5** blocks from the hero, with a **0.3** hop; a shield holds at most
+  **60%** of the receiver's maximum health, a stronger one replaces a weaker one, and it runs out on time; a `stat`
+  or `effect` with no seconds lasts **8 s**; a stat's sum is held to its v1 13.3 range (attack, armour, speed
   and attack speed as a share of the total, knock-back resistance flat); damage over time once a second (**20** ticks)
   for its seconds, summed per hero and target; a freeze holds the receiver fully frozen; at most **32** statuses on one
   entity (the oldest goes); `cleanse` removes harmful potion effects, heroes' damage over time, marks an enemy put on
@@ -932,8 +934,9 @@ marked; the others are PROPOSED. No new config.
   enemy it passes once within its `range`, widened by its `width`; a block between stops it.
 * Grab: held **1 s** (20 ticks, 6.14) at a hand **1** block ahead and **0.6** up, pulled at half the gap a tick, at most
   **0.8** blocks a tick; slips free beyond **4** blocks; thrown like a knock-back of its `throw` (0.4 a point) with a lift
-  of up to its `up`, along the first safe of eight directions (ahead, 45, 90, 135 degrees each side, behind: no lava,
-  fire or drop of more than 6 where it lands or on the way), else ahead at **0.5**; a miss: **1.2 s** of recovery.
+  of up to its `up`, at full strength, toward the nearest lethal edge (then a harmful one) its throw lands in, trying
+  ahead, 45, 90, 135 degrees each side and behind in that order (HEROES_V2 6.17, `EdgePlay.throwTry`), else straight
+  ahead (also with `heroes.edgePlay` off); a miss: **1.2 s** of recovery.
 * Counter: the stance is the wind-up; the first enemy melee blow (an arrow only with `ranged`) loses its `absorb` share
   (50-90%, **80** by default), the riposte answers **1** tick later within the skill's caps.
 * Barrage: a shot every `interval` (0.15-0.6 s), re-aimed at fire time, the move's effects plus its `per_shot` list in
@@ -964,8 +967,9 @@ marked; the others are PROPOSED.
   for the rest of the fight; never in a transition, an ultimate's wind-up or a `super_armor` move (the bar fills to just
   short of full instead).
 * Phases (6.7): a phase begins when the health share falls to its `at`; its transition (**0.8-2.0 s**, 1.0 by default)
-  waits until no move runs and the hero is not staggered or stunned; shockwave radius **4**, strength **2** (hazard-aware,
-  no damage); its stats held while the phase lasts, its state for the rest of the fight (**3600 s** or the re-arm).
+  waits until no move runs and the hero is not staggered or stunned; shockwave radius **4**, strength **2** (enemies
+  only, at full strength wherever it sends them, no damage); its stats held while the phase lasts, its state for the
+  rest of the fight (**3600 s** or the re-arm).
 * Reset (6.10): **30 s** out of a fight and unhurt, it heals **1%** of its base health a second; a phase re-arms **10%**
   above its start (checked every second out of a fight).
 * Decals (6.4): sent only to players within **32** blocks; light moves draw none; grow over the wind-up (a rain impact's
@@ -1026,6 +1030,45 @@ The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breac
   always named).
 * An exhausted flyer that lands out of a fight rests (`move.winded`) until its stamina is back at **50%**, at most
   **30 s** (`HeroMovement.WINDED_MAX_TICKS`); a target, a fight, an escape or a blow ends the rest at once.
+
+## Terrain is a weapon, and the defence (config `heroes.edgePlay`, `war.waterLanding`; `logic/hero/EdgePlay`, `hero/HeroEdgePlay`, `combat/TerrainEdges`, `logic/combat/EdgeSafety`, `combat/EdgeSense`, `combat/LavaEscapeGoal`, `combat/TerrainSurvival`) — T1 and T3, 2026-11-19
+The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breaching.md` 8).
+* How far a push carries on flat ground (`FormGeometry.knockbackDistance`): knockback 1 **2.07** blocks, 2 **4.14**
+  (4.13 measured in game), 3 **6.2**, 3 against a vanguard's 30 resistance **4.3**.
+* Edges (`EdgePlay`): **16** directions out to **8** blocks round the target, sampled every **2 s** (40 ticks) or when it
+  moved **1.5** blocks from the ring's centre; lethal (value **1**): lava, the void, a drop whose fall damage after a
+  push's **1**-block lift takes at least half the health left; harmful (value **0.5**): fire, a magma block or a lit
+  campfire, powder snow (for one that freezes), cactus or a berry bush, a shorter drop past the safe fall, water for a
+  hero with a `water` weak point. Lava and fire are nothing for a fire-proof receiver (fire-immune, `ember_stride`,
+  Fire Resistance), drops for one with a soft landing (Slow Falling, a hero that glides or flies, no fall damage), for
+  which the void is harmful. A push counts an edge it lands within **0.5** block of, not one it flies past.
+* The pick: a push move (a knockback of **1** or more, a grab's throw, **2** when it names none, a pull) gets
+  x(1 + the edge's value): **x2** at a lethal edge, **x1.5** at a harmful one.
+* The walk round: a push away from the hero ready within **2 s** (40 ticks; the current phase, no ultimate); it stands
+  **2-4** blocks from the target (the move's reach less 0.5) on a cell it stands on unhurt, its line to the target
+  within **11.25** degrees of the edge's direction; given up after **3 s** (60 ticks), that target left alone **10 s**
+  (200 ticks).
+* Its own body: a hop of its own stops **0.5** block short of the first cell that would hurt it; a dash or a charge
+  stops at fire or lava within its next tick's step + **0.6** unless fire-proof.
+* A `where_it_fell` revival: the nearest safe cell within **16** blocks (rows 8 under to 4 over), no lava or fire beside
+  it; at home after the void or with none.
+* `heroes.edgePlay` (**true**): false stops the pick's factor, the walk round and the throw's aim; pushes stay full
+  strength.
+* The edge sense (`EdgeSafety`, `EdgeSense`): a lethal edge for an NPC or a hero is lava, fire, a magma block or a lit
+  campfire (not for a fire-proof one), the void, or a drop of more than **4**; pushers are enemies within **8** blocks
+  (at most **4**, read every **10** ticks while it has a target); a cell is unsafe with a lethal edge within **6** blocks
+  behind it on the line from a pusher when a hero is among them, else **4** (a wall stops it); a path costs **+4** per
+  unsafe cell; an unsafe hold or cover spot is the last choice (**+2500** on its score); an archer tries **4** back-off
+  spots for a safe one.
+* The lava escape (`LavaEscapeGoal`, priority 0): the nearest cell it stands on out of the lava within **8** blocks
+  (rows 1 under to 2 over), chosen again every **10** ticks; it keeps heading there **10** ticks after leaving the lava
+  until it stands; out and still burning, water within **6** blocks for at most **2 s** (40 ticks).
+* Fire Resistance (`TerrainSurvival`): drunk in lava, or after **3 s** (60 ticks) on fire with no water within **6**
+  blocks; a **1.6 s** (32-tick) drink; the glass bottle back in its pack.
+* The water landing: `war.waterLanding` (**true**); a fall of more than **5** blocks toward a solid floor (looked for
+  **64** blocks down), the bucket poured **2-3** blocks above it (sooner when the next tick would carry it past 3) and
+  picked up once down (at most **100** ticks later); never over lava, water or the void, in the Nether, with Slow Falling
+  or for a hero that glides or flies.
 
 ## Hero sounds (config `heroes`; `HeroSounds`, `HeroLocalSounds`, `HeroLoopSounds`, `SoundIndex`, `VoiceLine`) — S2
 Presentation only: no number here changes a fight, and every cue plays whoever causes it (HEROES_V2 6.15). Values of

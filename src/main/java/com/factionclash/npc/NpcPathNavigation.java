@@ -41,6 +41,7 @@ public class NpcPathNavigation extends GroundPathNavigation {
             public Path findPath(PathNavigationRegion region, Mob mob, Set<BlockPos> targets, float maxRange, int accuracy, float searchDepthMultiplier) {
                 LivingEntity t = mob.getTarget();
                 e.gates = mob instanceof FactionNpc n ? n.opensGates() : t != null && t.isAlive();
+                e.edges(mob instanceof FactionNpc n2 ? n2.edgeSense() : null);
                 searches++;
                 return super.findPath(region, mob, targets, maxRange, accuracy, searchDepthMultiplier);
             }
@@ -82,10 +83,38 @@ public class NpcPathNavigation extends GroundPathNavigation {
      */
     public static class GateEvaluator extends WalkNodeEvaluator {
         boolean gates;
+        /** The edge sense of the search that starts now, while a pusher is near (else null). */
+        private com.factionclash.combat.EdgeSense edges;
+        /** Nodes whose edge cost was already added in this search. */
+        private final it.unimi.dsi.fastutil.longs.LongOpenHashSet edged = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
 
         /** Whether closed fence gates count as doors in the search that starts now. */
         public void gates(boolean on) {
             gates = on;
+        }
+
+        /**
+         * The edge sense for the search that starts now ({@code docs/design/breaching.md} 8.1, task T3): while a pusher is
+         * near, a cell with a lethal edge behind it costs {@link com.factionclash.logic.combat.EdgeSafety#PATH_MALUS}
+         * more. Null or a sense with no pusher near: plain costs.
+         */
+        public void edges(com.factionclash.combat.EdgeSense sense) {
+            edges = sense != null && sense.active() ? sense : null;
+            edged.clear();
+        }
+
+        @Override
+        public int getNeighbors(net.minecraft.world.level.pathfinder.Node[] out, net.minecraft.world.level.pathfinder.Node node) {
+            int n = super.getNeighbors(out, node);
+            if (edges != null) {
+                for (int i = 0; i < n; i++) {
+                    net.minecraft.world.level.pathfinder.Node m = out[i];
+                    if (m != null && m.costMalus >= 0 && edged.add(BlockPos.asLong(m.x, m.y, m.z))) {
+                        m.costMalus += edges.malus(m.x, m.y, m.z);
+                    }
+                }
+            }
+            return n;
         }
         private final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 

@@ -80,6 +80,7 @@ public final class HeroGroundNavigation extends NpcPathNavigation {
                                  float searchDepthMultiplier) {
                 LivingEntity t = mob.getTarget();
                 e.gates(mob instanceof FactionNpc n ? n.opensGates() : t != null && t.isAlive());
+                e.edges(mob instanceof FactionNpc n2 ? n2.edgeSense() : null); // the edge sense serves heroes too (T3)
                 searches++;
                 Path p = super.findPath(region, mob, targets, maxRange, accuracy, searchDepthMultiplier);
                 self.remember(p, e);

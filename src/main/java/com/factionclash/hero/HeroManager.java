@@ -184,7 +184,12 @@ public final class HeroManager {
         BaseState base = home;
         if (own != null && s.fellAt != null) {
             if (own.where() == HeroDef.RiseWhere.WHERE_IT_FELL) {
-                at = s.fellAt;
+                // 6.17 (task T1): on the nearest safe cell within 16 blocks of where it fell (out of the lava it died in),
+                // at home after a death in the void or with no safe cell near
+                BlockPos safe = safeCellNear(server.overworld(), s.fellAt, SAFE_RISE_RADIUS);
+                if (safe != null) {
+                    at = safe;
+                }
             } else if (own.where() == HeroDef.RiseWhere.NEAREST_BASE) {
                 BlockPos fell = s.fellAt;
                 base = data.livingBasesOf(s.owner).stream()
@@ -195,7 +200,8 @@ public final class HeroManager {
         HeroEntity h = spawn(server.overworld(), data, s, entry, s.owner, home, at);
         s.revivals++;
         data.setDirty();
-        Messages.toFaction(server, s.owner, Component.literal(h.npcName() + " returns" + (at.equals(s.fellAt) ? " where it fell"
+        boolean fell = own != null && own.where() == HeroDef.RiseWhere.WHERE_IT_FELL && s.fellAt != null && !at.equals(spawnPoint(home));
+        Messages.toFaction(server, s.owner, Component.literal(h.npcName() + " returns" + (fell ? " where it fell"
                 : " to " + base.name) + ".").withStyle(ChatFormatting.GOLD));
         server.overworld().sendParticles(net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING, h.getX(), h.getY() + 1, h.getZ(),
                 40, 0.4, 0.8, 0.4, 0.3);
@@ -255,6 +261,59 @@ public final class HeroManager {
             r.level = s.level;
         }
         return h;
+    }
+
+    /** A {@code where_it_fell} revival rises within this many blocks of where the hero fell (6.17). */
+    public static final int SAFE_RISE_RADIUS = 16;
+
+    /**
+     * The nearest cell to {@code fell} (horizontally, then by height) within {@code radius} blocks where a hero stands
+     * unhurt: a floor, room for it, no lava, fire, magma, powder snow or thorns there or beside it (HEROES_V2 6.17).
+     * Null after a death in the void (below the world's floor) or when there is none.
+     */
+    public static BlockPos safeCellNear(ServerLevel level, BlockPos fell, int radius) {
+        if (fell == null || fell.getY() < level.getMinBuildHeight()) {
+            return null;
+        }
+        BlockPos.MutableBlockPos c = new BlockPos.MutableBlockPos();
+        int[] drop = new int[1];
+        List<int[]> cells = new java.util.ArrayList<>();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx * dx + dz * dz <= radius * radius) {
+                    cells.add(new int[] {dx, dz});
+                }
+            }
+        }
+        cells.sort(java.util.Comparator.comparingInt(a -> a[0] * a[0] + a[1] * a[1]));
+        int top = Math.min(level.getMaxBuildHeight() - 2, fell.getY() + 4);
+        for (int[] o : cells) {
+            int x = fell.getX() + o[0], z = fell.getZ() + o[1];
+            for (int dy = 0; dy <= 8; dy++) {
+                for (int sign = dy == 0 ? 1 : -1; sign <= 1; sign += 2) {
+                    int y = fell.getY() + sign * dy;
+                    if (y > top || y <= level.getMinBuildHeight()) {
+                        continue;
+                    }
+                    if (com.factionclash.combat.TerrainEdges.safeStand(level, x, y, z, c, drop) && clearAround(level, x, y, z, c, drop)) {
+                        return new BlockPos(x, y, z);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /** No lava or fire in the four cells beside a revival cell (it does not rise with a foot in the pool). */
+    private static boolean clearAround(ServerLevel level, int x, int y, int z, BlockPos.MutableBlockPos c, int[] drop) {
+        int[][] side = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        for (int[] o : side) {
+            var g = com.factionclash.combat.TerrainEdges.ground(level, x + o[0], y, z + o[1], c, drop);
+            if (g == com.factionclash.logic.hero.EdgePlay.Ground.LAVA || g == com.factionclash.logic.hero.EdgePlay.Ground.FIRE) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static BlockPos spawnPoint(BaseState base) {

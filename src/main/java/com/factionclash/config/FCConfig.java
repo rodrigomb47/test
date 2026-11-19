@@ -51,6 +51,8 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_SPEECH_BUBBLES;
     public static final ModConfigSpec.BooleanValue HERO_SHOW_ENERGY;
     public static final ModConfigSpec.BooleanValue HERO_KILL_FEED;
+    public static final ModConfigSpec.BooleanValue HERO_EDGE_PLAY;
+    public static final ModConfigSpec.BooleanValue WAR_WATER_LANDING;
     public static final ModConfigSpec.BooleanValue HERO_KILL_FEED_MONSTERS;
     public static final ModConfigSpec.IntValue HERO_POWER_SCALE;
     public static final ModConfigSpec.IntValue HERO_MAX_HIT;
@@ -177,6 +179,10 @@ public final class FCConfig {
         HERO_POWER_PERCENT = b.comment("How much a hero weighs in the war councils' odds, in percent of its war power (PROPOSED: 100;",
                         "a level-10 epic leader is worth about five iron soldiers). 0 counts a hero as one soldier by heads, as before.")
                 .defineInRange("heroPowerPercent", 100, 0, 200);
+        WAR_WATER_LANDING = b.comment("An NPC or hero carrying a water bucket that falls more than 5 blocks pours it on the floor 2-3 blocks",
+                        "above it, lands in the water unhurt and picks the water up again, as a player does (not over lava, the void",
+                        "or in the Nether). false: it falls like anyone without a bucket.")
+                .define("waterLanding", true);
         b.pop();
 
         b.comment("Heroes (in development: only the test model ships yet; an operator gives one with /fc admin hero give)").push("heroes");
@@ -206,6 +212,11 @@ public final class FCConfig {
         HERO_KILL_FEED_MONSTERS = b.comment("Also tell the monsters and animals a hero kills (off: only players, faction NPCs and heroes; a monster",
                         "that kills a hero is always named).")
                 .define("killFeedMonsters", false);
+        HERO_EDGE_PLAY = b.comment("Heroes aim their pushes at lava, fire, the void and cliffs (HEROES_V2 6.17): a push move that would carry its",
+                        "target to such an edge is picked up to twice as often, a hero with one ready walks round to its target's far",
+                        "side first (at most 3 s; that walk is the tell), and a grab throws toward the nearest deadly edge. The same",
+                        "against a player or an NPC. false stops the aiming; every push still lands at full strength wherever it sends.")
+                .define("edgePlay", true);
         HERO_POWER_SCALE = b.comment("Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent",
                         "(PROPOSED: 100). The same against every target, player or NPC.")
                 .defineInRange("powerScale", 100, 25, 200);

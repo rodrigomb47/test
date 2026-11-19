@@ -394,8 +394,9 @@ public final class HeroEffects {
 
     /**
      * {@code knockback}: away from the hero with vanilla's knockback (knock-back resistance applies), plus a lift of
-     * {@code up} blocks (at most 1, 6.14) for a receiver on the ground. Hazard-aware for every receiver (6.12): a push
-     * that would land it in lava or over a drop of more than 3 blocks is cut to a third.
+     * {@code up} blocks (at most 1, 6.14) for a receiver on the ground. At full strength wherever it sends an enemy, into
+     * lava, fire, the void or off a cliff (6.17, the owner's answer of 2026-11-18; task T1): the same for every receiver.
+     * Only a push on the hero's own side (none in the slice: effects reach enemies) keeps the old cut toward a hazard.
      */
     public static void knockback(HeroEntity hero, LivingEntity r, double strength, double up) {
         double dx = r.getX() - hero.getX(), dz = r.getZ() - hero.getZ();
@@ -407,9 +408,10 @@ public final class HeroEffects {
             l = 1;
         }
         double s = FormGeometry.knockbackStrength(strength);
-        if (hazardAhead(r, dx / l, dz / l, 2.5 * s / FormGeometry.KNOCKBACK_PER_STRENGTH)) {
-            s /= 3;
-        }
+        boolean enemy = HeroForms.enemy(hero, r);
+        // 6.17: full strength on an enemy wherever it goes; its own side is never pushed into a hazard
+        s = com.factionclash.logic.hero.BossRules.pushStrength(s, enemy,
+                !enemy && hazardAhead(r, dx / l, dz / l, 2.5 * s / FormGeometry.KNOCKBACK_PER_STRENGTH));
         r.knockback(s, -dx / l, -dz / l);
         if (up > 0 && r.onGround()) {
             Vec3 v = r.getDeltaMovement();
@@ -438,47 +440,9 @@ public final class HeroEffects {
     }
 
     /**
-     * Whether a throw of about {@code blocks} along (dx, dz) would land {@code r} in danger (HEROES_V2 6.12, task A5):
-     * lava or fire where it lands or on the way, or no floor within 6 blocks below (a deep drop or the void). The same
-     * test for every receiver.
+     * Lava where a push of about {@code blocks} along (dx, dz) would land it, or no floor within 3 blocks below: read
+     * only for a push on the hero's own side (6.17).
      */
-    public static boolean landingHazard(LivingEntity r, double dx, double dz, double blocks) {
-        Level level = r.level();
-        double l = Math.sqrt(dx * dx + dz * dz);
-        if (l < 1e-6) {
-            return false;
-        }
-        double ux = dx / l, uz = dz / l;
-        int steps = (int) Math.ceil(Math.max(1, blocks + 1));
-        for (int s = 1; s <= steps; s++) {
-            double d = Math.min(s, blocks + 1);
-            BlockPos land = BlockPos.containing(r.getX() + ux * d, r.getY() + 0.1, r.getZ() + uz * d);
-            if (!level.getBlockState(land).getCollisionShape(level, land).isEmpty()
-                    && !level.getBlockState(land.above()).getCollisionShape(level, land.above()).isEmpty()) {
-                return false; // a wall stops the throw here, before anything further
-            }
-            boolean floor = false;
-            for (int i = -1; i <= 6; i++) {
-                BlockPos p = land.below(i);
-                var st = level.getBlockState(p);
-                if (level.getFluidState(p).is(FluidTags.LAVA) || st.is(net.minecraft.tags.BlockTags.FIRE)
-                        || st.is(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK)
-                        || st.is(net.minecraft.tags.BlockTags.CAMPFIRES)) {
-                    return true;
-                }
-                if (i >= 0 && !st.getCollisionShape(level, p).isEmpty()) {
-                    floor = true;
-                    break;
-                }
-            }
-            if (!floor && s >= steps - 1) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Lava where a push of about {@code blocks} along (dx, dz) would land it, or no floor within 3 blocks below. */
     static boolean hazardAhead(LivingEntity r, double dx, double dz, double blocks) {
         Level level = r.level();
         BlockPos land = BlockPos.containing(r.getX() + dx * blocks, r.getY() + 0.1, r.getZ() + dz * blocks);

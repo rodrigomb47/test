@@ -187,6 +187,28 @@ public final class FormGeometry {
         return KNOCKBACK_PER_STRENGTH * Math.max(0, strength);
     }
 
+    /** Vanilla's knockback gives a receiver on the ground this upward speed (at most 0.4, whatever the strength). */
+    public static final double KNOCKBACK_LIFT = 0.4;
+
+    /**
+     * How far a {@code knockback} of {@code strength} carries a receiver standing on flat ground, blocks (HEROES_V2 6.17,
+     * 6.19: about 2 blocks a point): vanilla's knockback of 0.4 a point, shortened by its knockback resistance
+     * {@code resistance} (0-1) as vanilla's is, a lift of 0.4, its first tick with the ground's friction, the rest with the
+     * air's, then the skid where it lands (knockback 2 carries 4.14 blocks; measured in game, 4.13). Knockback 3 carries
+     * about 6.2 blocks, 4.3 with a vanguard's 30 resistance.
+     */
+    public static double knockbackDistance(double strength, double resistance) {
+        double h = knockbackStrength(strength) * (1 - Math.max(0, Math.min(1, resistance)));
+        if (h <= 0) {
+            return 0;
+        }
+        int n = airTicks(KNOCKBACK_LIFT, 0);
+        double air = groundStartDistance(h, n);
+        // its speed when it lands; it then slides on, losing the ground's friction each tick from the next one
+        double landing = h * GROUND_FRICTION * Math.pow(LeapSolver.HORIZONTAL_DRAG, n - 1);
+        return air + landing / (1 - GROUND_FRICTION);
+    }
+
     /**
      * The upward speed of a knockback's {@code up} (blocks), held to {@link #KNOCK_UP_MAX}: given only to a receiver
      * standing on the ground (v1 13.4), so repeated hits never juggle anyone into fall damage.

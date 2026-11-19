@@ -870,7 +870,8 @@ public final class Pursuit {
         double hd = horizontal(npc, t);
         List<BlockPos> others = othersHoldSpots();
         if (hd >= HOLD_MIN && hd <= (archer ? 14 : HOLD_MAX) && npc.onGround() && !crowded(others, npc.blockPosition())
-                && (!archer || npc.getSensing().hasLineOfSight(t)) && (!cover || !npc.getSensing().hasLineOfSight(t))) {
+                && (!archer || npc.getSensing().hasLineOfSight(t)) && (!cover || !npc.getSensing().hasLineOfSight(t))
+                && !npc.edgeSense().unsafeAt(npc.blockPosition())) {
             holdSpot = npc.blockPosition();
             return;
         }
@@ -889,6 +890,9 @@ public final class Pursuit {
                             // nearest the way out, apart from the others; an archer in sight of the target, a fighter
                             // being shot at out of it (or at least farther off)
                             double v = f.distSqr(anchor) + (crowded(others, f) ? 400 : 0);
+                            if (npc.edgeSense().unsafeAt(f)) {
+                                v += 2500; // a lethal edge at its back with a pusher near (breaching.md 8.1): last resort
+                            }
                             if (archer && !sight(f, t)) {
                                 v += 900;
                             } else if (cover) {

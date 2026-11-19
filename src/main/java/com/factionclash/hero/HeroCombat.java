@@ -150,6 +150,8 @@ public final class HeroCombat {
     final HeroTelegraphs telegraphs;
     /** A12: its mobility in a fight (aerial windows, the dive, reach flights, the strike from a link, the reach clock). */
     final HeroFightMobility air;
+    /** T1: terrain is a weapon (6.17): the edges round its target, the walk round, the throw's aim. */
+    final HeroEdgePlay edgePlay;
 
     HeroCombat(HeroEntity hero) {
         this.hero = hero;
@@ -158,6 +160,12 @@ public final class HeroCombat {
         this.boss = new HeroBoss(hero, this);
         this.telegraphs = new HeroTelegraphs(hero);
         this.air = new HeroFightMobility(hero, this);
+        this.edgePlay = new HeroEdgePlay(hero);
+    }
+
+    /** Terrain is a weapon (6.17, task T1). */
+    public HeroEdgePlay edgePlay() {
+        return edgePlay;
     }
 
     /** Its mobility in a fight (task A12). */
@@ -292,6 +300,9 @@ public final class HeroCombat {
                 p.reset();
             }
         }
+        if (!f && fighting) {
+            edgePlay.stop();
+        }
         fighting = f;
         states.tick();
         passives.tick(fighting);
@@ -384,6 +395,10 @@ public final class HeroCombat {
         if (air.tryAerialTakeOff(s, sense)) {
             return false;
         }
+        // 6.17 (task T1): the edges round its target for the pick, and the walk round to its far side (the pick waits)
+        if (edgePlay.update(t, sense, s, now)) {
+            return false;
+        }
         pending = s.check(now, sense);
         return pending != null;
     }
@@ -466,6 +481,7 @@ public final class HeroCombat {
     }
 
     private void begin(MoveSelector.Pick p) {
+        edgePlay.stop();
         HeroDef d = def();
         if (d == null) {
             return;
@@ -1101,15 +1117,47 @@ public final class HeroCombat {
      * target, and "back" is still away from that blow, never just behind the way it happens to face).
      */
     public void hop(Direction d, double distance) {
-        FormGeometry.Impulse i = FormGeometry.hop(d, distance);
         LivingEntity hurtBy = hero.getLastHurtByMob();
         Vec3 aim = run != null ? run.aim : hero.getTarget() != null ? hero.getTarget().position()
                 : hurtBy != null && hurtBy.isAlive() && hero.getLastHurtByMobTimestamp() == hero.tickCount ? hurtBy.position()
                 : null;
         Vec3 f = aim == null ? HeroForms.facing(hero, hero.position()) : HeroForms.facing(hero, aim);
         double sign = d == Direction.FORWARD ? 1 : d == Direction.BACK ? -1 : 0;
+        if (sign != 0) {
+            distance = safeHop(f.x * sign, f.z * sign, distance); // 6.17: its own body never into a hazard
+        }
+        FormGeometry.Impulse i = FormGeometry.hop(d, distance);
         takeOff(f.x * i.horizontal() * sign, i.vertical(), f.z * i.horizontal() * sign);
         ownHopUntil = hero.tickCount + i.airTicks() + 20;
+    }
+
+    /**
+     * How far a hop of its own along (ux, uz) may carry the hero (HEROES_V2 6.17, MOBILITY_AND_WORK 5.1.13; task T1):
+     * {@code distance}, shortened to stop half a block short of the first cell where it would be hurt (lava, fire, powder
+     * snow, thorns, the void, a drop past its safe fall: {@link com.factionclash.combat.TerrainEdges}), as its dashes stop
+     * at an edge. A wall stops the hop by itself.
+     */
+    double safeHop(double ux, double uz, double distance) {
+        if (!(distance > 0)) {
+            return 0;
+        }
+        com.factionclash.logic.hero.EdgePlay.Receiver self = com.factionclash.combat.TerrainEdges.receiver(hero);
+        BlockPos.MutableBlockPos c = new BlockPos.MutableBlockPos();
+        int[] drop = new int[1];
+        int y = com.factionclash.combat.TerrainEdges.feetRow(hero);
+        double safe = 0;
+        for (double k = 0.5; k <= distance + 0.6; k += 0.5) {
+            int x = (int) Math.floor(hero.getX() + ux * k), z = (int) Math.floor(hero.getZ() + uz * k);
+            var g = com.factionclash.combat.TerrainEdges.ground(hero.level(), x, y, z, c, drop);
+            if (g == com.factionclash.logic.hero.EdgePlay.Ground.WALL) {
+                return distance; // the wall stops it before anything beyond
+            }
+            if (com.factionclash.logic.hero.EdgePlay.value(g, drop[0], self) > 0) {
+                return Math.max(0, Math.min(distance, safe - 0.5));
+            }
+            safe = k;
+        }
+        return distance;
     }
 
     /**
@@ -2040,7 +2088,7 @@ public final class HeroCombat {
         /** A dash's or a charge's tick: the push, the stops (a wall, a drop, water), each enemy in the way once. */
         void pushTick(boolean charge) {
             boolean wall = motionTicks > 1 && hero.horizontalCollision;
-            if (dashTicks <= 0 || wall || dropAhead() || charge && waterAhead()) {
+            if (dashTicks <= 0 || wall || dropAhead() || charge && waterAhead() || burnAhead()) {
                 motion = M_NONE;
                 hero.setDeltaMovement(hero.getDeltaMovement().multiply(0.2, 1, 0.2));
                 if (charge && wall) {
@@ -2085,6 +2133,24 @@ public final class HeroCombat {
             }
             return true;
         }
+
+        /**
+         * Fire, a lit campfire, a magma block or lava just ahead (6.17, MOBILITY_AND_WORK 5.1.13; task T1): a dash or a
+         * charge stops short of it, as at a drop, unless the hero is fire-proof.
+         */
+        boolean burnAhead() {
+            if (com.factionclash.combat.TerrainEdges.fireproof(hero)) {
+                return false;
+            }
+            int x = (int) Math.floor(hero.getX() + dashDir.x * (dashSpeed + 0.6));
+            int z = (int) Math.floor(hero.getZ() + dashDir.z * (dashSpeed + 0.6));
+            int y = com.factionclash.combat.TerrainEdges.feetRow(hero);
+            var g = com.factionclash.combat.TerrainEdges.ground(hero.level(), x, y, z, burnCursor, burnDrop);
+            return g == com.factionclash.logic.hero.EdgePlay.Ground.FIRE || g == com.factionclash.logic.hero.EdgePlay.Ground.LAVA;
+        }
+
+        private final BlockPos.MutableBlockPos burnCursor = new BlockPos.MutableBlockPos();
+        private final int[] burnDrop = new int[1];
 
         /** Water or lava just ahead at the feet (a charge stops at water, 6.5). */
         boolean waterAhead() {
@@ -2173,9 +2239,10 @@ public final class HeroCombat {
         }
 
         /**
-         * The throw: away along the first of {@link FormGeometry#THROW_TRIES} whose landing is safe (no lava, fire, deep
-         * drop or void: 6.12, the same for every receiver); when none is, straight ahead and softened to 0.5. Then the
-         * move's effects land on it (unblockable, as every grab is).
+         * The throw, at full strength (6.17, task T1): toward the nearest lethal edge round where the receiver is held,
+         * then a harmful one, in the order of {@link FormGeometry#THROW_TRIES} (edges first), else straight ahead; the
+         * same for every receiver ({@link HeroEdgePlay#throwDirection}). Then the move's effects land on it (unblockable,
+         * as every grab is).
          */
         void throwGrabbed(LivingEntity g) {
             double strength = move.extra().throwStrength() > 0 ? move.extra().throwStrength() : 2;
@@ -2183,21 +2250,11 @@ public final class HeroCombat {
             FormGeometry.Impulse i = FormGeometry.throwImpulse(strength, up);
             double dist = FormGeometry.throwDistance(strength, up);
             Vec3 f = HeroForms.facing(hero, g.position());
-            double[] dir = null;
-            for (double deg : FormGeometry.THROW_TRIES) {
-                double[] d = FormGeometry.turn(f.x, f.z, deg);
-                if (!HeroEffects.landingHazard(g, d[0], d[1], dist)) {
-                    dir = d;
-                    break;
-                }
-            }
+            double res0 = Math.max(0, Math.min(1, g.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE)));
+            double[] dir = edgePlay.throwDirection(g, f.x, f.z, dist * (1 - res0));
             double h = i.horizontal();
-            if (dir == null) {
-                dir = new double[] {f.x, f.z};
-                h = BossRules.safeKnockback(h, true);
-            }
             hero.swing(InteractionHand.MAIN_HAND);
-            // the effects first: a blow's own knock-back must not bend the throw toward what it avoided
+            // the effects first: a blow's own knock-back must not bend the throw off its aim
             HeroEffects.apply(use, move.ability().effects(), 0, List.of(g), hero);
             use.landed = true;
             if (!g.isAlive()) {

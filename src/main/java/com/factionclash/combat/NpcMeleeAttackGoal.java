@@ -199,6 +199,9 @@ public class NpcMeleeAttackGoal extends Goal {
      * itself this tick (no chase); soldiers never space.
      */
     private boolean spacing(LivingEntity t) {
+        if (walkRound()) {
+            return true;
+        }
         if (stepBackUntil > npc.tickCount) {
             if (npc.getNavigation().isDone()) {
                 stepAway(t, com.factionclash.logic.hero.TargetRules.SKIRMISH_STEP);
@@ -221,6 +224,21 @@ public class NpcMeleeAttackGoal extends Goal {
             return true;
         }
         return false;
+    }
+
+    /**
+     * HEROES_V2 6.17's walk round (task T1): a hero with a push ready walks to its target's far side, so the target stands
+     * between it and an edge. True while it does (no chase). Soldiers and workers never do.
+     */
+    private boolean walkRound() {
+        net.minecraft.world.phys.Vec3 spot = npc.edgeApproachSpot();
+        if (spot == null) {
+            return false;
+        }
+        if (npc.getNavigation().isDone() || npc.tickCount % 10 == 0) {
+            npc.getNavigation().moveTo(spot.x, spot.y, spot.z, SPEED);
+        }
+        return true;
     }
 
     /** Walks away from the target, about {@code blocks} (a random spot that leads away, as a kiting archer's). */

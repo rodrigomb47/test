@@ -148,6 +148,10 @@
 	# Default: 100
 	# Range: 0 ~ 200
 	heroPowerPercent = 100
+	#An NPC or hero carrying a water bucket that falls more than 5 blocks pours it on the floor 2-3 blocks
+	#above it, lands in the water unhurt and picks the water up again, as a player does (not over lava, the void
+	#or in the Nether). false: it falls like anyone without a bucket.
+	waterLanding = true
 
 #Heroes (in development: only the test model ships yet; an operator gives one with /fc admin hero give)
 [heroes]
@@ -185,6 +189,11 @@
 	#Also tell the monsters and animals a hero kills (off: only players, faction NPCs and heroes; a monster
 	#that kills a hero is always named).
 	killFeedMonsters = false
+	#Heroes aim their pushes at lava, fire, the void and cliffs (HEROES_V2 6.17): a push move that would carry its
+	#target to such an edge is picked up to twice as often, a hero with one ready walks round to its target's far
+	#side first (at most 3 s; that walk is the tell), and a grab throws toward the nearest deadly edge. The same
+	#against a player or an NPC. false stops the aiming; every push still lands at full strength wherever it sends.
+	edgePlay = true
 	#Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent
 	#(PROPOSED: 100). The same against every target, player or NPC.
 	# Default: 100

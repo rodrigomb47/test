@@ -417,6 +417,11 @@ class BossRulesTest {
 
     @Test
     void hazardKnockbackAndStunsThatCannotChain() {
+        // 6.17 (task T1): an enemy's push is never cut, whatever lies ahead; only a push on its own side keeps the cut
+        assertEquals(2, BossRules.pushStrength(2, true, true), EPS, "an enemy into lava: full strength");
+        assertEquals(2, BossRules.pushStrength(2, true, false), EPS);
+        assertEquals(0.5, BossRules.pushStrength(2, false, true), EPS, "its own side toward lava: cut to 0.5");
+        assertEquals(2, BossRules.pushStrength(2, false, false), EPS);
         assertEquals(2, BossRules.safeKnockback(2, false), EPS);
         assertEquals(0.5, BossRules.safeKnockback(2, true), EPS, "lava or a drop ahead: cut to 0.5");
         assertEquals(0.3, BossRules.safeKnockback(0.3, true), EPS);

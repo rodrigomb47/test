@@ -92,6 +92,26 @@ public class NpcRangedAttackGoal extends Goal {
         return true;
     }
 
+    /**
+     * A back-off spot away from {@code close}: a random one leading away, as a kiting archer's, skipping one with a lethal
+     * edge at its back while a pusher is near ({@code docs/design/breaching.md} 8.1, task T3); the last try when every
+     * try is unsafe.
+     */
+    private net.minecraft.world.phys.Vec3 safeAway(LivingEntity close) {
+        net.minecraft.world.phys.Vec3 last = null;
+        for (int i = 0; i < 4; i++) {
+            net.minecraft.world.phys.Vec3 away = net.minecraft.world.entity.ai.util.DefaultRandomPos.getPosAway(npc, 10, 4, close.position());
+            if (away == null) {
+                continue;
+            }
+            last = away;
+            if (!npc.edgeSense().unsafeAt(net.minecraft.core.BlockPos.containing(away))) {
+                return away;
+            }
+        }
+        return last;
+    }
+
     @Override
     public void tick() {
         LivingEntity t = npc.getTarget();
@@ -114,7 +134,7 @@ public class NpcRangedAttackGoal extends Goal {
         if (close != null) {
             // kiting: someone got close - back away to shooting distance, like an archer player
             if (npc.getNavigation().isDone() || npc.tickCount % 20 == 0) {
-                net.minecraft.world.phys.Vec3 away = net.minecraft.world.entity.ai.util.DefaultRandomPos.getPosAway(npc, 10, 4, close.position());
+                net.minecraft.world.phys.Vec3 away = safeAway(close);
                 if (away != null) {
                     npc.getNavigation().moveTo(away.x, away.y, away.z, 1.25);
                 } else {

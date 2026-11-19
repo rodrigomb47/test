@@ -156,6 +156,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        // out of lava at once, then into water while it burns (breaching.md 8.2, HEROES_V2 6.17; task T3)
+        lavaEscape = new com.factionclash.combat.LavaEscapeGoal(this);
+        this.goalSelector.addGoal(0, lavaEscape);
         this.goalSelector.addGoal(1, new CreeperEvadeGoal(this));
         this.goalSelector.addGoal(2, new CivilianFleeGoal(this));
         if (withdrawsToRecover()) {
@@ -187,6 +190,27 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     public com.factionclash.combat.Pursuit pursuit() {
         return pursuit;
+    }
+
+    /** Its lava escape (registered in {@link #registerGoals}, which runs before the field initialisers). */
+    private com.factionclash.combat.LavaEscapeGoal lavaEscape;
+
+    public com.factionclash.combat.LavaEscapeGoal lavaEscape() {
+        return lavaEscape;
+    }
+
+    /** Fire Resistance and the water landing (task T3, {@code docs/design/breaching.md} 8.3-8.4). */
+    private final com.factionclash.combat.TerrainSurvival terrainSurvival = new com.factionclash.combat.TerrainSurvival(this);
+
+    public com.factionclash.combat.TerrainSurvival terrainSurvival() {
+        return terrainSurvival;
+    }
+
+    /** Its edge sense (task T3, {@code docs/design/breaching.md} 8.1): lethal edges behind it while a pusher is near. */
+    private final com.factionclash.combat.EdgeSense edgeSense = new com.factionclash.combat.EdgeSense(this);
+
+    public com.factionclash.combat.EdgeSense edgeSense() {
+        return edgeSense;
     }
 
     /** The tick of its last landed blow or shot. */
@@ -278,6 +302,24 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     /** A skirmisher steps back after each melee hit until its next swing is ready (v1 5.2); soldiers never do. */
     public boolean skirmishes() {
+        return false;
+    }
+
+    /**
+     * Where its fight's spacing walks it now to aim a push at an edge (HEROES_V2 6.17's walk round, task T1): a hero
+     * with a push ready walking round to its target's far side; null for soldiers and workers.
+     */
+    public net.minecraft.world.phys.Vec3 edgeApproachSpot() {
+        return null;
+    }
+
+    /** A fall that does not hurt it whatever the drop (a hero that glides or flies, HEROES_V2 6.17); soldiers never. */
+    public boolean softLanding() {
+        return false;
+    }
+
+    /** Water is a weak point of its (a hero's {@code water} weak point, 6.9): water counts as a harmful edge for it. */
+    public boolean waterWeakPoint() {
         return false;
     }
 
@@ -819,6 +861,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             return;
         }
         goldenApple();
+        terrainSurvival.tick();
         shieldTick();
         if (tickCount % 10 == 0) {
             pickUpExperience();

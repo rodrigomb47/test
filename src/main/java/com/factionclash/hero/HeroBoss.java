@@ -624,9 +624,9 @@ public final class HeroBoss {
     }
 
     /**
-     * The transition's shockwave (6.7): everyone within {@code radius} but the hero, its own adds, display copies and
-     * players outside the fight's modes (creative, spectator) is pushed back with the given strength, softened toward
-     * lava or a drop for every receiver (6.12); no damage.
+     * The transition's shockwave (6.7): every enemy within {@code radius} is pushed back with the given strength, at full
+     * strength wherever that sends it (6.17, task T1: into lava, off a cliff); its own side, its own adds, bystanders,
+     * display copies and players outside the fight's modes (creative, spectator) are left where they stand. No damage.
      */
     private void shockwave(double radius, double strength) {
         List<LivingEntity> near = hero.level().getEntitiesOfClass(LivingEntity.class, hero.getBoundingBox().inflate(radius),
@@ -634,6 +634,7 @@ public final class HeroBoss {
                         && !(e instanceof FactionNpc n && n.isDisplayOnly())
                         && !(e instanceof HeroDecoy dc && dc.owner() == hero)
                         && !(e instanceof Player pl && (pl.isSpectator() || pl.isCreative()))
+                        && HeroForms.enemy(hero, e)
                         && e.distanceToSqr(hero) <= radius * radius);
         for (LivingEntity e : near) {
             HeroEffects.knockback(hero, e, strength, 0);

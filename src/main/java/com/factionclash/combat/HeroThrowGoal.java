@@ -72,7 +72,13 @@ public class HeroThrowGoal extends Goal {
         boolean sees = hero.getSensing().hasLineOfSight(t);
         seeTime = sees ? seeTime + 1 : 0;
         double keep = Math.max(0, d.behaviour().keepDistance());
-        if (keep > 0 && dist < keep / 2) {
+        Vec3 round = hero.edgeApproachSpot();
+        if (round != null) {
+            // HEROES_V2 6.17's walk round (task T1): to the target's far side, so a push sends it at the edge
+            if (hero.getNavigation().isDone() || hero.tickCount % 10 == 0) {
+                hero.getNavigation().moveTo(round.x, round.y, round.z, 1.2);
+            }
+        } else if (keep > 0 && dist < keep / 2) {
             // an enemy came close: back away to throwing distance, as an archer does
             if (hero.getNavigation().isDone() || hero.tickCount % 20 == 0) {
                 Vec3 away = DefaultRandomPos.getPosAway(hero, (int) Math.max(6, keep), 4, t.position());

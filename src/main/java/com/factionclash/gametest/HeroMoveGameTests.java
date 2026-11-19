@@ -689,48 +689,62 @@ public final class HeroMoveGameTests {
     }
 
     /**
-     * {@code grabHoldsAndThrowsSafely}: a grab holds an NPC soldier and a mock player at the hero's hand for 1 s (their
-     * velocity set toward the hand, never a teleport), then throws them away from the lava straight ahead (never toward
-     * it, 6.12) and its damage lands on both alike; a grab that finds nobody in reach leaves the hero in a 1.2 s recovery.
+     * {@code grabThrowsTowardALethalEdge} (replaces A5's {@code grabHoldsAndThrowsSafely}, which checked the opposite;
+     * HEROES_V2 6.17, task T1): a grab holds an NPC soldier and a mock player at the hero's hand for 1 s (their velocity
+     * set toward the hand, never a teleport), then throws each at full strength toward the lava pool beside it (90
+     * degrees off its facing: the nearest lethal edge in the throw's reach, edges first) and into it, its damage the same
+     * on both; a soldier with no edge in reach is thrown straight ahead at full strength; a grab that finds nobody in
+     * reach leaves the hero in a 1.2 s recovery.
      */
     @GameTest(template = "platform", timeoutTicks = 160, batch = "hero_mv_grab")
-    public static void grabHoldsAndThrowsSafely(GameTestHelper h) {
+    public static void grabThrowsTowardALethalEdge(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, SIDE, 2, 11, 160);
         try {
-            String grab = move("seize", "grab", "\"class\": \"heavy\", \"range\": 2.5, \"throw\": 3, \"up\": 1, \"cooldown\": 10, "
+            // a throw of 2 lands about 5 blocks off: in the pools beside the first two (a strong throw would fly over them)
+            String grab = move("seize", "grab", "\"class\": \"heavy\", \"range\": 2.5, \"throw\": 2, \"cooldown\": 10, "
                     + "\"frames\": {\"windup\": 0.9, \"active\": 1.0, \"recovery\": 1.2}, " + DMG4);
-            String a = "fx_mv_grab", b = "fx_mv_grab2", c = "fx_mv_grab3";
-            HeroEntity hn = hero(t, a, def(a, "vanguard", grab, "", ""), 4, 4);
-            HeroEntity hp = hero(t, b, def(b, "vanguard", grab, "", ""), 4, 16);
-            HeroEntity miss = hero(t, c, def(c, "vanguard", grab, "", ""), 20, 22);
-            for (HeroEntity x : List.of(hn, hp, miss)) {
-                x.setNoAi(true);
-            }
-            FactionNpc npc = foe(t, 6, 4, 100);
+            // the receivers join the level first, so they tick before the heroes: the test reads the throw itself
+            FactionNpc npc = foe(t, 7, 3, 100);
             // with its AI, so the hold and the throw really move it (a mob without AI does not move by its velocity), but
-            // no walking of its own: it neither steps out of reach in the wind-up nor away from the lava by itself
+            // no walking of its own: it neither steps out of reach in the wind-up nor out of the lava by itself
             npc.setNoAi(false);
             npc.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0);
-            ServerPlayer pl = player(t, 6, 16, FOE, 100);
-            Husk far = husk(t, 20, 18, 200);
-            for (int x = 8; x <= 18; x++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    block(t, x, 1, 4 + dz, Blocks.LAVA.defaultBlockState());
-                    block(t, x, 1, 16 + dz, Blocks.LAVA.defaultBlockState());
+            ServerPlayer pl = HeroTerrainGameTests.movingPlayer(t, 7.5, 2, 14.5, FOE, 100);
+            FactionNpc ahead = foe(t, 15, 21, 100);
+            ahead.setNoAi(false);
+            ahead.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0);
+            Husk far = husk(t, 20, 9, 200);
+            String a = "fx_mv_grab", b = "fx_mv_grab2", c = "fx_mv_grab3", d = "fx_mv_grab4";
+            HeroEntity hn = hero(t, a, def(a, "vanguard", grab, "", ""), 5, 3);
+            HeroEntity hp = hero(t, b, def(b, "vanguard", grab, "", ""), 5, 14);
+            HeroEntity hs = hero(t, d, def(d, "vanguard", grab, "", ""), 13, 21);
+            HeroEntity miss = hero(t, c, def(c, "vanguard", grab, "", ""), 20, 13);
+            for (HeroEntity x : List.of(hn, hp, hs, miss)) {
+                x.setNoAi(true);
+            }
+            // lava 3-6 blocks south (+z) of the two lanes, off the hero's facing (+x); none where the third would land
+            for (int x = 5; x <= 8; x++) {
+                for (int z = 6; z <= 9; z++) {
+                    block(t, x, 1, z, Blocks.LAVA.defaultBlockState());
+                    block(t, x, 1, z + 11, Blocks.LAVA.defaultBlockState());
                 }
             }
             h.runAtTickTime(2, t.guard(() -> {
                 force(t, hn, npc, "seize");
                 force(t, hp, pl, "seize");
+                force(t, hs, ahead, "seize");
                 force(t, miss, far, "seize");
             }));
-            int[] held = {0, 0};
-            boolean[] thrown = {false, false};
+            int[] held = {0, 0, 0};
+            boolean[] thrown = {false, false, false}, burnt = {false, false};
+            Vec3[] throwV = new Vec3[3];
+            float[] dealt = new float[3];
             t.onEachTick(() -> {
-                t.assertTrue(!npc.isOnFire() && !npc.isInLava(), "the soldier was thrown toward the lava");
-                List<LivingEntity> targets = List.of(npc, pl);
-                List<HeroEntity> heroes = List.of(hn, hp);
-                for (int i = 0; i < 2; i++) {
+                burnt[0] |= npc.isInLava();
+                burnt[1] |= pl.isInLava();
+                List<LivingEntity> targets = List.of(npc, pl, ahead);
+                List<HeroEntity> heroes = List.of(hn, hp, hs);
+                for (int i = 0; i < 3; i++) {
                     HeroEntity x = heroes.get(i);
                     LivingEntity g = targets.get(i);
                     if (thrown[i]) {
@@ -738,11 +752,9 @@ public final class HeroMoveGameTests {
                     }
                     Vec3 v = g.getDeltaMovement();
                     if (g.getHealth() < 100) {
-                        // the throw: away from the lava ahead, its damage on it
                         thrown[i] = true;
-                        Vec3 flat = new Vec3(v.x, 0, v.z).normalize();
-                        t.assertTrue(flat.x < 0.75, "thrown toward the lava ahead: " + v);
-                        t.assertTrue(!HeroEffects.landingHazard(g, flat.x, flat.z, 3), "a throw into danger: " + v);
+                        throwV[i] = v;
+                        dealt[i] = 100 - g.getHealth();
                     } else if (x.combat().stage() == MoveStage.ACTIVE && x.combat().lastRelease() > 0) {
                         // held at the hero's hand: pulled in (a velocity, never a teleport) and kept close
                         Vec3 toHero = x.position().subtract(g.position());
@@ -753,9 +765,20 @@ public final class HeroMoveGameTests {
                         held[i]++;
                     }
                 }
-                if (thrown[0] && thrown[1]) {
+                if (thrown[0] && thrown[1] && thrown[2] && burnt[0] && burnt[1]) {
+                    double full = com.factionclash.logic.hero.FormGeometry.throwImpulse(2, 0).horizontal();
+                    for (int i = 0; i < 2; i++) {
+                        Vec3 flat = new Vec3(throwV[i].x, 0, throwV[i].z);
+                        t.assertTrue(flat.normalize().z > 0.9, "not thrown toward the lava beside it: " + throwV[i]);
+                        t.assertTrue(Math.abs(flat.length() - full) < 0.05, "not at full strength: " + flat.length() + " of " + full);
+                    }
+                    Vec3 flat = new Vec3(throwV[2].x, 0, throwV[2].z);
+                    t.assertTrue(flat.normalize().x > 0.9 && Math.abs(flat.length() - full) < 0.05,
+                            "with no edge in reach: straight ahead at full strength, not " + throwV[2]);
                     t.assertTrue(held[0] >= 18 && held[1] >= 18, "held " + held[0] + " and " + held[1] + " ticks");
-                    near(t, 100 - npc.getHealth(), 100 - pl.getHealth(), "the grab's damage, soldier and player");
+                    near(t, dealt[0], dealt[1], "the grab's damage, soldier and player");
+                    t.assertTrue(hn.combat().edgePlay().aimedThrows() == 1 && hs.combat().edgePlay().aimedThrows() == 0,
+                            "aimed throws " + hn.combat().edgePlay().aimedThrows() + " / " + hs.combat().edgePlay().aimedThrows());
                     MoveStage ms = miss.combat().stage();
                     t.assertTrue(ms == MoveStage.RECOVERY || !miss.combat().running(), "the missed grab " + ms);
                     t.succeed();

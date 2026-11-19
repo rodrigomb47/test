@@ -696,7 +696,8 @@ what the Java side must change, test by test, and what other documents' owners s
    each engaged enemy with the receiver's immunities; `MoveSelector` multiplies a push move's score by 1 + the edge's
    value; the spacing goal walks round to the far side (3 s, then 10 s off for that target); a charge's line runs
    through the target toward the edge; `heroes.edgePlay` (true). Unit test `EdgePlayTest`; GameTest
-   `heroCirclesToPushTowardAnEdge`.
+   `heroCirclesToPushTowardAnEdge`. *Items 1-5 built 2026-11-19* (`HEROES_V2.md` 15.9 "T1 and T3 as built"; item 2's
+   throw tries the edges through `EdgePlay.throwTry`, `landingHazard` is gone).
 6. **Kill credit** (new, `logic/hero/KillCredit`, pure, shared with ordinary NPCs): a death by terrain within 15 s of an
    enemy's push, throw, pull or blow is that enemy's kill; a push with no damage is recorded as a hit of 0 in the
    receiver's `CombatTracker`; the receiver's last attacker is refreshed every second while it falls, burns or is in
@@ -830,7 +831,8 @@ item names the rule it proposes.
 6. **Aiming a dive or a leap at an edge**: 6.17 gives the aim of knockbacks, charges, grabs and pulls, not of landings.
    Proposed for `EdgePlay` (T1): with a lethal edge near the target, a `dive` or `leap` lands on the side of the target
    away from that edge, still inside its landing disc, so its radial push sends the target over (the dragon's Void
-   Dive and Fall of the Outer Isles).
+   Dive and Fall of the Outer Isles). *Not in T1 as built (2026-11-19)*: a leap's or dive's push counts in the pick
+   and the walk round as any push away from the hero, but its landing spot is not chosen by the edge.
 7. **No smashing in flight**: the dragon hero never removes blocks she flies through (vanilla
    `EnderDragon.checkWalls` stays vanilla's). Nothing to build; a GameTest (`dragonFlightBreaksNoBlocks`) guards it.
 8. **The crystal shatter** pushes at full strength (6.17: a passive's push) and breaks no block; it is not an
@@ -865,9 +867,12 @@ and the engine's code. What the Java side must now do differently, each with the
 1. **Shields do not stop pushes** (`HEROES_V2.md` 6.17). Today's `HeroEffects` runs a move's `knockback` as its own
    effect after the damage, whether or not a raised shield blocked it, and vanilla's `LivingEntity.hurt` knocks a
    blocker back too. 6.17 now says so; nothing changes in T1. A test in T1's set: `shieldStopsDamageNotPush` (an NPC
-   soldier and a mock player with raised shields are pushed the same distance and take no damage).
+   soldier and a mock player with raised shields are pushed the same distance and take no damage). *Built 2026-11-19*
+   in `HeroTerrainGameTests`: the move's push lands whole on both blockers alike; only vanilla's own knock-back of the
+   blocked blow is vanilla's smaller one (0.15 for 0.4), so a blocker ends a little shorter than a bare receiver.
 2. **How far a push carries**: knockback strength 1 is vanilla's 0.4 (`FormGeometry.KNOCKBACK_PER_STRENGTH`), about
-   2.1 blocks on flat ground (vanilla's 0.546 ground and 0.91 air friction, 11 ticks aloft); the old hazard look-ahead
+   2.1 blocks on flat ground (vanilla's 0.546 ground and 0.91 air friction, 11 ticks aloft; *as built*
+   `FormGeometry.knockbackDistance`, 2.07, knockback 2 measured at 4.13 in game); the old hazard look-ahead
    used 2.5 a point. `EdgeSafety` (T3, X5) looks 6 blocks out while a hero is among the pushers, 4 otherwise
    (`docs/design/breaching.md` 8.1); `EdgePlay` keeps its 8.
 3. **`tuned`, not `honed`**: the artifact format key for the improvement at upgrade III is `tuned` (`ARTIFACTS.md`

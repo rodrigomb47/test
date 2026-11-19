@@ -626,6 +626,28 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return com.factionclash.logic.hero.TargetRules.leash(d == null ? null : d.behaviour().aggression());
     }
 
+    /** HEROES_V2 6.17's walk round to its target's far side, while one is under way (task T1). */
+    @Override
+    public net.minecraft.world.phys.Vec3 edgeApproachSpot() {
+        return combat == null || level().isClientSide ? null : combat.edgePlay().spot();
+    }
+
+    /** A hero that glides or flies opens its glide over a drop and lands unhurt (MOBILITY_AND_WORK 1.3, 6.17). */
+    @Override
+    public boolean softLanding() {
+        if (movement == null || level().isClientSide) {
+            return false;
+        }
+        com.factionclash.logic.hero.MobilityRules.Profile p = movement.profile();
+        return p.glides() || p.flies();
+    }
+
+    /** Its {@code water} weak point (6.9): water is a harmful edge for it (6.17). */
+    @Override
+    public boolean waterWeakPoint() {
+        return combat != null && !level().isClientSide && combat.boss().weakTo(HeroDef.WeakPoint.WATER);
+    }
+
     @Override
     public boolean skirmishes() {
         HeroDef d = dormant() ? null : definition();
