@@ -87,7 +87,7 @@ worded like a vanilla player's death message (with faction names, following the 
 built 2026-11-19 with the kill credit of terrain deaths (`HEROES_V2.md` 15.2 "Shipped heroes, kill credit and the kill
 feed, mobility polish"). Its scope, set by the owner on 2026-11-19: every death of a hero, whatever killed it (another
 hero, a player, an NPC, a monster, terrain), and nothing else; a hero killing an ordinary NPC or a monster prints no
-line. The same day the owner approved the look of Natsuho and Hinae in game ("they are ok as they are"), so the rest
+line (built 2026-11-19: `heroes.killFeedMonsters` removed, a player's death is vanilla's own message). The same day the owner approved the look of Natsuho and Hinae in game ("they are ok as they are"), so the rest
 of the slice's art may go ahead.
 Each hero has one body for good (2026-11-13): no hero changes form, and the form fits the character (adult by default,
 chibi only for a kid or a small species).

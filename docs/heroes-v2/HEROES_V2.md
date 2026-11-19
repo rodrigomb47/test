@@ -1469,7 +1469,8 @@ that never went toward lava (A5) and the softened phase shockwave (A6a); 15.9 T1
   own death messages with that killer ("was doomed to fall by", "fell too far and was finished by", "tried to swim in
   lava to escape", "walked into fire while fighting", "was burned to a crisp while fighting", "walked into the danger
   zone due to", "didn't want to live in the same world as", "drowned while trying to escape"), in the hero kill feed
-  with faction names (ROADMAP phase 4) and in vanilla's own message for a player. Vanilla keeps an attacker for 5 s,
+  with faction names when the one who died is a hero (ROADMAP phase 4; the owner's scope of 2026-11-19: every death of
+  a hero, whatever killed it, and nothing else) and in vanilla's own message for a player. Vanilla keeps an attacker for 5 s,
   so the receiver's last attacker is refreshed every second while it falls, burns or is in lava, the void or water,
   up to the 15 s. The kill counts in `HeroState` and for combat XP, and a hero's rewards go to the pusher's side
   (6.13).
@@ -5128,7 +5129,15 @@ C1, T1 and the live check above:
   death) and a hero's server-side display name is the feed's `Name (Faction)` (clients keep its name tag), so that line is
   the feed's and nothing is said twice; any other victim's line is the feed's own broadcast. Monsters and animals a hero
   kills are left out unless `heroes.killFeedMonsters` is on (a guard or butcher hero kills them all night), a monster that
-  kills a hero is named, a Hollow lair monster as `(The Hollow)`; `heroes.killFeed` turns the feed off. New lang key
+  kills a hero is named, a Hollow lair monster as `(The Hollow)`; `heroes.killFeed` turns the feed off. **Scope changed
+  the same day by the owner** ("only hero on hero and hero deaths by other sources should show, if a hero kills a npc or
+  a monster it shouldnt show"): the feed now tells every death of a hero, whatever killed it (a hero, a player, an NPC,
+  a monster, terrain), and nothing else; a hero's kills of NPCs, monsters, animals and players give no line,
+  `heroes.killFeedMonsters` is gone (an old config's key is dropped on load), and a player's death is vanilla's own
+  message with no faction added to the player's name (the hero in it keeps its server-side `Name (Faction)`).
+  `HeroKillFeedGameTests` checks a hero killed by a player, an NPC, a husk, another hero and lava, terrain kills after a
+  push credited for an NPC, a player and a hero with only the hero's told, and nothing for a hero's own kills. No
+  faction's AI reads the feed (`docs/design/missing_npcs.md`). New lang key
   `factionclash.killfeed.member` (`%1$s (%2$s)`, with that fallback for a server's log). "fell too far and was finished
   by" is vanilla's key for a killing fall that carries an attacker, which no damage in the game does, so it appears only
   where vanilla would put it; a blow after a long fall reads "was slain by", as vanilla's.

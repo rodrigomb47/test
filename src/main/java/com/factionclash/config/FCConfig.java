@@ -54,7 +54,6 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_EDGE_PLAY;
     public static final ModConfigSpec.BooleanValue HERO_EXPLOSIVE_BLOCKS;
     public static final ModConfigSpec.BooleanValue WAR_WATER_LANDING;
-    public static final ModConfigSpec.BooleanValue HERO_KILL_FEED_MONSTERS;
     public static final ModConfigSpec.IntValue HERO_POWER_SCALE;
     public static final ModConfigSpec.IntValue HERO_MAX_HIT;
     public static final ModConfigSpec.IntValue HERO_MAX_DOT_PER_SECOND;
@@ -206,13 +205,11 @@ public final class FCConfig {
                 .define("speechBubbles", true);
         HERO_SHOW_ENERGY = b.comment("Show a fighting hero's energy on its name tag: [Fighting 80%].")
                 .define("showEnergy", true);
-        HERO_KILL_FEED = b.comment("The hero kill feed: every death in which a hero is the victim or the killer is told in chat to all",
-                        "players, worded like vanilla's death messages with the factions' names, while the game rule showDeathMessages",
-                        "is on (a player's own death is vanilla's message with its faction and the hero's beside the names).")
+        HERO_KILL_FEED = b.comment("The hero kill feed: every death of a hero, whatever killed it (a hero, a player, an NPC, a monster or",
+                        "terrain), is told in chat to all players, worded like vanilla's death messages with the factions' names, while",
+                        "the game rule showDeathMessages is on. Nothing else is told: a hero killing an NPC, a monster, an animal or a",
+                        "player gives no line (a player's death is vanilla's own message). No faction's AI reads the feed.")
                 .define("killFeed", true);
-        HERO_KILL_FEED_MONSTERS = b.comment("Also tell the monsters and animals a hero kills (off: only players, faction NPCs and heroes; a monster",
-                        "that kills a hero is always named).")
-                .define("killFeedMonsters", false);
         HERO_EDGE_PLAY = b.comment("Heroes aim their pushes at lava, fire, the void and cliffs (HEROES_V2 6.17): a push move that would carry its",
                         "target to such an edge is picked up to twice as often, a hero with one ready walks round to its target's far",
                         "side first (at most 3 s; that walk is the tell), and a grab throws toward the nearest deadly edge. The same",

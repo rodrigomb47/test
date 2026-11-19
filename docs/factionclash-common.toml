@@ -182,13 +182,11 @@
 	speechBubbles = true
 	#Show a fighting hero's energy on its name tag: [Fighting 80%].
 	showEnergy = true
-	#The hero kill feed: every death in which a hero is the victim or the killer is told in chat to all
-	#players, worded like vanilla's death messages with the factions' names, while the game rule showDeathMessages
-	#is on (a player's own death is vanilla's message with its faction and the hero's beside the names).
+	#The hero kill feed: every death of a hero, whatever killed it (a hero, a player, an NPC, a monster or
+	#terrain), is told in chat to all players, worded like vanilla's death messages with the factions' names, while
+	#the game rule showDeathMessages is on. Nothing else is told: a hero killing an NPC, a monster, an animal or a
+	#player gives no line (a player's death is vanilla's own message). No faction's AI reads the feed.
 	killFeed = true
-	#Also tell the monsters and animals a hero kills (off: only players, faction NPCs and heroes; a monster
-	#that kills a hero is always named).
-	killFeedMonsters = false
 	#Heroes aim their pushes at lava, fire, the void and cliffs (HEROES_V2 6.17): a push move that would carry its
 	#target to such an edge is picked up to twice as often, a hero with one ready walks round to its target's far
 	#side first (at most 3 s; that walk is the tell), and a grab throws toward the nearest deadly edge. The same

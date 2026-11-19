@@ -370,10 +370,12 @@ Players respawn at their nearest surviving allied base when they have no bed.
   `/fc admin hero give natsuho_komezaki <faction>` (`hinae_shirasuzu`; in single player with cheats on), and from then
   on she works her duty, defends her base, counts in her faction's war council and returns 10 minutes after a death. A
   hero fights as a boss against anyone, a player or an NPC alike, with a boss bar near players. **Hero kill feed**: every
-  death in which a hero is the victim or the killer is told in chat to every player in vanilla's words with the
-  factions beside the names ("Ash Rook (Grove Covenant) tried to swim in lava to escape Natsuho Komezaki (Ember
-  Legion)"), following the `showDeathMessages` game rule; a player killed by a hero reads the same way ("Steve (Tide
-  Alliance) was slain by Hinae Shirasuzu (Ember Legion)"). A death by a fall, lava, fire, a magma block, the void,
+  death of a hero, whatever killed it (another hero, a player, an NPC, a monster or terrain), is told in chat to every
+  player in vanilla's words with the factions beside the names ("Hinae Shirasuzu (Grove Covenant) tried to swim in lava
+  to escape Natsuho Komezaki (Ember Legion)"), following the `showDeathMessages` game rule. Nothing else is: a hero
+  killing an NPC, a monster or an animal gives no line, and a player killed by a hero gets vanilla's own death message
+  ("Steve was slain by Hinae Shirasuzu (Ember Legion)"). The feed is for the players only: no faction learns anything
+  from it. A death by a fall, lava, fire, a magma block, the void,
   drowning, freezing, suffocation, a cactus or a berry bush within 15 s of an enemy's push or blow is that enemy's kill,
   for anyone ("was doomed to fall by"), as vanilla credits a player's. **Terrain is a weapon**: a hero's pushes land
   at full strength wherever they send you, into lava, fire, the void or off a cliff, and a hero aims them: with a push
@@ -385,7 +387,7 @@ Players respawn at their nearest surviving allied base when they have no bed.
   TNT nearby is lit), but the blast itself hurts and pushes nobody: only the move's own damage counts, and its ground
   mark shows how far the blast reaches. A hero never aims one where it would reach its own base. The game rule
   `mobGriefing` false or `heroes.explosiveBlocks` false keeps every block whole. No hero that ships yet has one. Config
-  `heroes.killFeed` and `heroes.killFeedMonsters` (monsters a hero kills are left out by default). An exhausted flying hero that lands stands
+  `heroes.killFeed` (an old config's `killFeedMonsters` is dropped when it loads). An exhausted flying hero that lands stands
   and catches its breath before going on.
 * **Background simulation** is bounded: base areas and travelling NPCs hold ticking chunk tickets, so factions
   progress away from players without loading the whole map.

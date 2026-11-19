@@ -30,12 +30,13 @@ import static com.factionclash.gametest.HeroBossGameTests.IDLE_MOVE;
 
 /**
  * Kill credit and the hero kill feed (HEROES_V2 6.17 "Kill credit and the kill feed", {@code docs/design/breaching.md}
- * 8.5, ROADMAP phase 4): a death by terrain within 15 s of a hero's push is the hero's kill, for an NPC soldier and a
- * mock player alike, worded as vanilla words it ("was doomed to fall by", "walked into the danger zone due to", "tried
- * to swim in lava to escape") with both factions beside the names; a hero killed by a player, by an NPC or by terrain
- * alone is told the same way; nothing is told while {@code showDeathMessages} is off. The player's line is vanilla's
- * own death message (the recorder takes it as vanilla builds it, after the credit and with the names); the NPC's is the
- * feed's own. Each test has its own batch; the pools are walled in glass and cleared by the cleanup.
+ * 8.5, ROADMAP phase 4; the feed's scope the owner's of 2026-11-19): a death by terrain within 15 s of a hero's push is
+ * the hero's kill, for an NPC soldier, a mock player and an enemy hero alike; only the hero's death is told in the feed,
+ * worded as vanilla words it ("was doomed to fall by", "walked into the danger zone due to", "tried to swim in lava to
+ * escape") with both factions beside the names. Every hero death is told, whatever killed it (a player, an NPC, a
+ * monster, another hero, terrain alone), and nothing else is: no line when a hero kills an NPC, a player, a monster or an
+ * animal (the player's own death is vanilla's message, to which the feed adds nothing). Nothing is told while
+ * {@code showDeathMessages} is off. Each test has its own batch; the pools are walled in glass and cleared by the cleanup.
  */
 @GameTestHolder(FactionClash.MODID)
 @PrefixGameTestTemplate(false)
@@ -145,6 +146,20 @@ public final class HeroKillFeedGameTests {
         return lines;
     }
 
+    /** A still hero of {@link #FOE}, given to a second test base of its own that the first one's cleanup removes. */
+    private static HeroEntity foeHero(GameTestBases.Handle t, String id, int x, int z) {
+        GameTestBases.Handle foe = GameTestBases.register(t.helper, FOE, 2, 11, 0);
+        t.onCleanup(foe::cleanup);
+        return pusher(foe, id, x, z);
+    }
+
+    /** One blow of {@code damage} on a hero brought down to 1 health first (its boss health would take a long fight). */
+    private static void finish(HeroEntity victim, net.minecraft.world.damagesource.DamageSource source, float damage) {
+        victim.setHealth(1F);
+        victim.invulnerableTime = 0;
+        victim.hurt(source, damage);
+    }
+
     private static HeroKillFeed.Line lineOf(List<HeroKillFeed.Line> lines, LivingEntity victim) {
         synchronized (lines) {
             for (HeroKillFeed.Line l : lines) {
@@ -158,7 +173,8 @@ public final class HeroKillFeedGameTests {
 
     /**
      * The line told of {@code victim}: vanilla's key {@code key}, the victim's name with {@code victimFaction} and the
-     * killer's with {@code killerFaction} (null: a one-name line), and {@code words} in the text.
+     * killer's with {@code killerFaction} (a killer with no faction: its name alone; no killer: a one-name line), and
+     * {@code words} in the text.
      */
     private static void told(GameTestBases.Handle t, List<HeroKillFeed.Line> lines, LivingEntity victim, String key,
                              String killerName, FactionType victimFaction, FactionType killerFaction, String words) {
@@ -171,9 +187,11 @@ public final class HeroKillFeedGameTests {
         String text = c.getString();
         t.assertTrue(text.contains(words), "\"" + text + "\" does not say \"" + words + "\"");
         t.assertTrue(text.contains("(" + victimFaction.displayName + ")"), "no victim faction in \"" + text + "\"");
-        if (killerName != null) {
+        if (killerName != null && killerFaction != null) {
             t.assertTrue(text.contains(killerName + " (" + killerFaction.displayName + ")"),
                     "no \"" + killerName + " (" + killerFaction.displayName + ")\" in \"" + text + "\"");
+        } else if (killerName != null) {
+            t.assertTrue(text.endsWith(killerName), "\"" + text + "\" does not end with \"" + killerName + "\"");
         } else {
             t.assertTrue(tc.getArgs().length == 1, "a one-name line names " + tc.getArgs().length);
         }
@@ -181,14 +199,23 @@ public final class HeroKillFeedGameTests {
 
     // ------------------------------------------------------------------ deaths by terrain after a push
 
+    /** Nothing told of the ordinary victims; exactly {@code count} lines in all. */
+    private static void untold(GameTestBases.Handle t, List<HeroKillFeed.Line> lines, int count, LivingEntity... victims) {
+        for (LivingEntity v : victims) {
+            HeroKillFeed.Line l = lineOf(lines, v);
+            t.assertTrue(l == null, "a death that is no hero's was told: " + (l == null ? "" : l.text().getString()));
+        }
+        t.assertTrue(lines.size() == count, count + " line(s) expected, told: " + lines);
+    }
+
     /**
-     * A hero knocks an NPC soldier and a mock player back; 6 s later (past vanilla's 5 s) they stand in water, where
-     * their last attacker is still the hero at 7 s (the refresh), then in lava, where they die: the hero's kills
-     * ("tried to swim in lava to escape Lava Pusher (Ember Legion)"), its campaign count and energy, the soldier's line
-     * the feed's own and the player's vanilla's own message with both factions.
+     * A hero knocks an NPC soldier, a mock player and an enemy hero back; 6 s later (past vanilla's 5 s) the soldier and
+     * the player stand in water, where their last attacker is still the hero at 7 s (the refresh), then in lava, where
+     * they die, and the enemy hero dies of lava: three kills for the hero, and only the enemy hero's death is told
+     * ("tried to swim in lava to escape Fixture Lava Pusher (Ember Legion)"), nothing of the soldier's or the player's.
      */
     @GameTest(template = "platform", timeoutTicks = 400, batch = "killfeed_lava")
-    public static void pushedIntoLavaIsThePushersKillForAnNpcAndAPlayer(GameTestHelper h) {
+    public static void pushedIntoLavaIsThePushersKillAndOnlyTheHerosDeathIsTold(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, SIDE, 2, 11, 400);
         try {
             List<HeroKillFeed.Line> lines = recording(t);
@@ -196,6 +223,7 @@ public final class HeroKillFeedGameTests {
             FactionNpc soldier = foe(t, 8, 6, 6);
             soldier.setNpcName("Ash Rook");
             ServerPlayer p = mortal(t, 8, 12, FOE, 6);
+            HeroEntity enemy = foeHero(t, "fixture_lava_hero", 8, 16);
             pool(t, 14, 6, Blocks.WATER);
             pool(t, 14, 12, Blocks.WATER);
             pool(t, 19, 6, Blocks.LAVA);
@@ -203,6 +231,7 @@ public final class HeroKillFeedGameTests {
             h.runAfterDelay(5, t.guard(() -> {
                 HeroEffects.knockback(hero, soldier, 1, 0); // the moves' own push
                 HeroEffects.knockback(hero, p, 1, 0);
+                HeroEffects.knockback(hero, enemy, 1, 0);
                 t.assertTrue(soldier.getLastHurtByMob() == hero && p.getLastHurtByMob() == hero, "the push set no last attacker");
             }));
             h.runAfterDelay(125, t.guard(() -> {
@@ -217,16 +246,16 @@ public final class HeroKillFeedGameTests {
                         + p.getLastHurtByMob());
                 put(t, soldier, 19, 6);
                 put(t, p, 19, 12);
+                finish(enemy, enemy.damageSources().lava(), 4F);
             }));
             h.runAfterDelay(260, t.guard(() -> {
-                t.assertTrue(soldier.isDeadOrDying() && p.isDeadOrDying(), "the lava did not kill: soldier "
-                        + soldier.getHealth() + ", player " + p.getHealth());
-                told(t, lines, soldier, "death.attack.lava.player", "Fixture Lava Pusher", FOE, SIDE, "tried to swim in lava to escape");
-                told(t, lines, p, "death.attack.lava.player", "Fixture Lava Pusher", FOE, SIDE, "tried to swim in lava to escape");
-                t.assertTrue(!lineOf(lines, soldier).vanilla() && lineOf(lines, p).vanilla(), "the player's line is vanilla's own");
+                t.assertTrue(soldier.isDeadOrDying() && p.isDeadOrDying() && enemy.isDeadOrDying(), "the lava did not kill: soldier "
+                        + soldier.getHealth() + ", player " + p.getHealth() + ", hero " + enemy.getHealth());
+                told(t, lines, enemy, "death.attack.lava.player", "Fixture Lava Pusher", FOE, SIDE, "tried to swim in lava to escape");
+                t.assertTrue(lineOf(lines, enemy).killer() == hero, "the killer is the hero");
+                untold(t, lines, 1, soldier, p);
                 HeroState s = hero.campaignRecord();
-                t.assertTrue(s != null && s.kills == 2, "the hero's kills: " + (s == null ? "no record" : s.kills));
-                t.assertTrue(lineOf(lines, soldier).killer() == hero && lineOf(lines, p).killer() == hero, "the killer is the hero");
+                t.assertTrue(s != null && s.kills == 3, "the hero's kills: " + (s == null ? "no record" : s.kills));
                 t.succeed();
             }));
         } catch (RuntimeException | Error e) {
@@ -237,8 +266,8 @@ public final class HeroKillFeedGameTests {
 
     /**
      * Knocked back by a hero, then a fall of 12 blocks (vanilla's landing: the fall damage with the fall distance on
-     * it): "was doomed to fall by" the hero, for an NPC soldier and a mock player alike, from the push's hit of 0 in
-     * their combat trackers.
+     * it): "was doomed to fall by" the hero, credited for an NPC soldier, a mock player (vanilla's own death message says
+     * it) and an enemy hero alike, from the push's hit of 0 in their combat trackers; only the hero's death is told.
      */
     @GameTest(template = "platform", timeoutTicks = 120, batch = "killfeed_fall")
     public static void pushedToItsDeathByAFallIsDoomedToFallByThePusher(GameTestHelper h) {
@@ -248,25 +277,32 @@ public final class HeroKillFeedGameTests {
             HeroEntity hero = pusher(t, "fixture_fall_pusher", 4, 9);
             FactionNpc soldier = foe(t, 8, 6, 4);
             ServerPlayer p = mortal(t, 8, 12, FOE, 4);
+            HeroEntity enemy = foeHero(t, "fixture_fall_hero", 8, 16);
             h.runAfterDelay(5, t.guard(() -> {
                 HeroEffects.knockback(hero, soldier, 1, 0);
                 HeroEffects.knockback(hero, p, 1, 0);
+                HeroEffects.knockback(hero, enemy, 1, 0);
             }));
+            String[] playerMessage = new String[1];
             h.runAfterDelay(40, t.guard(() -> {
-                for (LivingEntity r : List.of(soldier, p)) {
+                enemy.setHealth(1F);
+                for (LivingEntity r : List.of(soldier, p, enemy)) {
                     r.fallDistance = 12;
                     r.causeFallDamage(12F, 1F, r.damageSources().fall());
                 }
+                playerMessage[0] = p.getCombatTracker().getDeathMessage().getString(); // vanilla's own, as it tells it now
             }));
             h.runAfterDelay(60, t.guard(() -> {
-                t.assertTrue(soldier.isDeadOrDying() && p.isDeadOrDying(), "the fall did not kill");
+                t.assertTrue(soldier.isDeadOrDying() && p.isDeadOrDying() && enemy.isDeadOrDying(), "the fall did not kill");
                 // (vanilla's ".item" key when the pusher's weapon has a name of its own)
                 String key = hero.getMainHandItem().has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)
                         ? "death.fell.assist.item" : "death.fell.assist";
-                told(t, lines, soldier, key, "Fixture Fall Pusher", FOE, SIDE, "was doomed to fall by");
-                told(t, lines, p, key, "Fixture Fall Pusher", FOE, SIDE, "was doomed to fall by");
+                told(t, lines, enemy, key, "Fixture Fall Pusher", FOE, SIDE, "was doomed to fall by");
+                untold(t, lines, 1, soldier, p);
+                t.assertTrue(playerMessage[0] != null && playerMessage[0].contains("was doomed to fall by Fixture Fall Pusher"),
+                        "the player's own death message: " + playerMessage[0]);
                 HeroState s = hero.campaignRecord();
-                t.assertTrue(s != null && s.kills == 2, "the hero's kills: " + (s == null ? "no record" : s.kills));
+                t.assertTrue(s != null && s.kills == 3, "the hero's kills: " + (s == null ? "no record" : s.kills));
                 t.succeed();
             }));
         } catch (RuntimeException | Error e) {
@@ -276,8 +312,9 @@ public final class HeroKillFeedGameTests {
     }
 
     /**
-     * Knocked back by a hero, then, 6 s later (vanilla has forgotten the hero), burnt by a magma block's hot floor:
-     * "walked into the danger zone due to" the hero, an NPC soldier and a mock player alike.
+     * Knocked back by a hero, then, 6 s later (vanilla has forgotten the hero), burnt by a magma block's hot floor: the
+     * hero's kill for an NPC soldier, a mock player and an enemy hero; the hero's death is told, "walked into the danger
+     * zone due to" the pusher.
      */
     @GameTest(template = "platform", timeoutTicks = 200, batch = "killfeed_magma")
     public static void pushedOntoMagmaWalkedIntoTheDangerZoneDueToThePusher(GameTestHelper h) {
@@ -287,9 +324,11 @@ public final class HeroKillFeedGameTests {
             HeroEntity hero = pusher(t, "fixture_magma_pusher", 4, 9);
             FactionNpc soldier = foe(t, 8, 6, 4);
             ServerPlayer p = mortal(t, 8, 12, FOE, 4);
+            HeroEntity enemy = foeHero(t, "fixture_magma_hero", 8, 16);
             h.runAfterDelay(5, t.guard(() -> {
                 HeroEffects.knockback(hero, soldier, 1, 0);
                 HeroEffects.knockback(hero, p, 1, 0);
+                HeroEffects.knockback(hero, enemy, 1, 0);
             }));
             h.runAfterDelay(130, t.guard(() -> {
                 // 6.25 s after the push, standing (no refresh): past vanilla's 5 s, inside the credit's 15 s
@@ -298,12 +337,16 @@ public final class HeroKillFeedGameTests {
                     r.invulnerableTime = 0;
                     r.hurt(r.damageSources().hotFloor(), 10F); // what MagmaBlock.stepOn deals, with a killing amount
                 }
+                finish(enemy, enemy.damageSources().hotFloor(), 10F);
             }));
             h.runAfterDelay(150, t.guard(() -> {
-                told(t, lines, soldier, "death.attack.hotFloor.player", "Fixture Magma Pusher", FOE, SIDE,
+                t.assertTrue(soldier.isDeadOrDying() && p.isDeadOrDying() && enemy.isDeadOrDying(), "the hot floor did not kill: soldier "
+                        + soldier.getHealth() + ", player " + p.getHealth() + ", hero " + enemy.getHealth());
+                told(t, lines, enemy, "death.attack.hotFloor.player", "Fixture Magma Pusher", FOE, SIDE,
                         "walked into the danger zone due to");
-                told(t, lines, p, "death.attack.hotFloor.player", "Fixture Magma Pusher", FOE, SIDE,
-                        "walked into the danger zone due to");
+                untold(t, lines, 1, soldier, p);
+                HeroState s = hero.campaignRecord();
+                t.assertTrue(s != null && s.kills == 3, "the hero's kills: " + (s == null ? "no record" : s.kills));
                 t.succeed();
             }));
         } catch (RuntimeException | Error e) {
@@ -312,7 +355,10 @@ public final class HeroKillFeedGameTests {
         }
     }
 
-    /** A push 15 s or more before a terrain death is no credit: "tried to swim in lava", nobody named, no kill. */
+    /**
+     * A push 15 s or more before a terrain death is no credit: the soldier's death is no kill and untold, and the enemy
+     * hero's is told with nobody named ("tried to swim in lava").
+     */
     @GameTest(template = "platform", timeoutTicks = 420, batch = "killfeed_window")
     public static void aPushOverFifteenSecondsOldIsNoCredit(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, SIDE, 2, 11, 420);
@@ -320,15 +366,23 @@ public final class HeroKillFeedGameTests {
             List<HeroKillFeed.Line> lines = recording(t);
             HeroEntity hero = pusher(t, "fixture_old_pusher", 4, 9);
             FactionNpc soldier = foe(t, 8, 6, 4);
-            h.runAfterDelay(5, t.guard(() -> HeroEffects.knockback(hero, soldier, 1, 0)));
+            HeroEntity enemy = foeHero(t, "fixture_old_hero", 8, 12);
+            h.runAfterDelay(5, t.guard(() -> {
+                HeroEffects.knockback(hero, soldier, 1, 0);
+                HeroEffects.knockback(hero, enemy, 1, 0);
+            }));
             h.runAfterDelay(320, t.guard(() -> {
-                t.assertTrue(KillCredits.credited(soldier, "lava") == null, "a 15 s old push still counts");
+                t.assertTrue(KillCredits.credited(soldier, "lava") == null && KillCredits.credited(enemy, "lava") == null,
+                        "a 15 s old push still counts");
                 soldier.invulnerableTime = 0;
                 soldier.hurt(soldier.damageSources().lava(), 20F);
+                finish(enemy, enemy.damageSources().lava(), 4F);
             }));
             h.runAfterDelay(340, t.guard(() -> {
-                t.assertTrue(soldier.isDeadOrDying(), "the lava did not kill");
-                t.assertTrue(lineOf(lines, soldier) == null, "an ordinary NPC's lone death is no hero's: " + lines);
+                t.assertTrue(soldier.isDeadOrDying() && enemy.isDeadOrDying(), "the lava did not kill");
+                told(t, lines, enemy, "death.attack.lava", null, FOE, null, "tried to swim in lava");
+                t.assertTrue(lineOf(lines, enemy).killer() == null, "a killer named: " + lineOf(lines, enemy).killer());
+                untold(t, lines, 1, soldier);
                 HeroState s = hero.campaignRecord();
                 t.assertTrue(s != null && s.kills == 0, "the hero got a kill: " + (s == null ? "no record" : s.kills));
                 t.succeed();
@@ -339,43 +393,58 @@ public final class HeroKillFeedGameTests {
         }
     }
 
-    // ------------------------------------------------------------------ a hero's death
+    // ------------------------------------------------------------------ a hero's death, and a hero's kills
 
     /**
-     * Three heroes fall, to a mock player's blow, to an NPC soldier's blow and to lava alone: each is told with its
-     * faction ("was slain by hero-test-player (Grove Covenant)", "was slain by <soldier> (Grove Covenant)", "tried to
-     * swim in lava" with no killer), and a player killed by a hero's blow reads with both factions.
+     * Five heroes fall, to a mock player's blow, to an NPC soldier's, to a husk's, to an enemy hero's and to lava alone:
+     * each is told with its faction ("was slain by hero-test-player (Grove Covenant)", "was slain by Ash Rook (Grove
+     * Covenant)", "was slain by Husk", "was slain by Fixture Feed Foe (Grove Covenant)", "tried to swim in lava" with no
+     * killer). The same moment a hero kills a mock player, an NPC soldier, a husk and a cow: none of those is told (the
+     * player's own death is vanilla's message), so exactly five lines.
      */
     @GameTest(template = "platform", timeoutTicks = 120, batch = "killfeed_hero")
-    public static void heroDeathsAndAHerosKillAreTold(GameTestHelper h) {
+    public static void everyHeroDeathIsToldAndAHerosOwnKillsAreNot(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, SIDE, 2, 11, 120);
         try {
             List<HeroKillFeed.Line> lines = recording(t);
-            HeroEntity byPlayer = pusher(t, "fixture_feed_one", 4, 4);
-            HeroEntity byNpc = pusher(t, "fixture_feed_two", 4, 10);
-            HeroEntity byLava = pusher(t, "fixture_feed_three", 4, 16);
-            ServerPlayer p = mortal(t, 7, 4, FOE, 20);
-            FactionNpc soldier = foe(t, 7, 10, 20);
+            HeroEntity byPlayer = pusher(t, "fixture_feed_one", 4, 3);
+            HeroEntity byNpc = pusher(t, "fixture_feed_two", 4, 7);
+            HeroEntity byLava = pusher(t, "fixture_feed_three", 4, 11);
+            HeroEntity byMonster = pusher(t, "fixture_feed_four", 4, 15);
+            HeroEntity byHero = pusher(t, "fixture_feed_five", 4, 19);
+            ServerPlayer p = mortal(t, 7, 3, FOE, 20);
+            FactionNpc soldier = foe(t, 7, 7, 20);
             soldier.setNpcName("Ash Rook");
-            ServerPlayer victim = mortal(t, 7, 16, FOE, 4);
+            net.minecraft.world.entity.monster.Husk husk = HeroAbilityGameTests.husk(t, 7, 15, 20);
+            HeroEntity enemy = foeHero(t, "fixture_feed_foe", 7, 19);
+            // the hero's own kills, none of them told
+            ServerPlayer victim = mortal(t, 10, 3, FOE, 4);
+            FactionNpc slain = foe(t, 10, 7, 4);
+            net.minecraft.world.entity.monster.Husk prey = HeroAbilityGameTests.husk(t, 10, 11, 4);
+            net.minecraft.world.entity.animal.Cow cow = t.track(h.spawn(net.minecraft.world.entity.EntityType.COW, new BlockPos(10, 2, 15)));
+            cow.setNoAi(true);
             h.runAfterDelay(5, t.guard(() -> {
-                victim.hurt(byLava.damageSources().mobAttack(byLava), 20F); // a hero's blow on a player
-                for (HeroEntity x : List.of(byPlayer, byNpc, byLava)) {
-                    x.setHealth(1F); // one capped blow kills it
+                for (LivingEntity v : List.of(victim, slain, prey, cow)) {
+                    v.hurt(byLava.damageSources().mobAttack(byLava), 40F); // a hero's blow
                 }
-                byPlayer.hurt(p.damageSources().playerAttack(p), 6F);
-                byNpc.hurt(soldier.damageSources().mobAttack(soldier), 6F);
-                byLava.hurt(byLava.damageSources().lava(), 6F);
+                finish(byPlayer, p.damageSources().playerAttack(p), 6F);
+                finish(byNpc, soldier.damageSources().mobAttack(soldier), 6F);
+                finish(byLava, byLava.damageSources().lava(), 6F);
+                finish(byMonster, husk.damageSources().mobAttack(husk), 6F);
+                finish(byHero, enemy.damageSources().mobAttack(enemy), 6F);
             }));
             h.runAfterDelay(25, t.guard(() -> {
-                t.assertTrue(byPlayer.isDeadOrDying() && byNpc.isDeadOrDying() && byLava.isDeadOrDying() && victim.isDeadOrDying(),
-                        "not all fell");
+                for (LivingEntity v : List.of(byPlayer, byNpc, byLava, byMonster, byHero, victim, slain, prey, cow)) {
+                    t.assertTrue(v.isDeadOrDying(), v.getName().getString() + " did not fall");
+                }
                 told(t, lines, byPlayer, "death.attack.player", "hero-test-player", SIDE, FOE, "was slain by");
                 told(t, lines, byNpc, "death.attack.mob", soldier.npcName(), SIDE, FOE, "was slain by");
                 told(t, lines, byLava, "death.attack.lava", null, SIDE, null, "tried to swim in lava");
-                String key = byLava.getMainHandItem().has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)
+                told(t, lines, byMonster, "death.attack.mob", "Husk", SIDE, null, "was slain by");
+                String key = enemy.getMainHandItem().has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)
                         ? "death.attack.mob.item" : "death.attack.mob";
-                told(t, lines, victim, key, "Fixture Feed Three", FOE, SIDE, "was slain by");
+                told(t, lines, byHero, key, "Fixture Feed Foe", SIDE, FOE, "was slain by");
+                untold(t, lines, 5, victim, slain, prey, cow);
                 t.succeed();
             }));
         } catch (RuntimeException | Error e) {
@@ -384,7 +453,7 @@ public final class HeroKillFeedGameTests {
         }
     }
 
-    /** With {@code showDeathMessages} off nothing is told, of an NPC's death by a hero's push or of a hero's own. */
+    /** With {@code showDeathMessages} off nothing is told, of a hero's death or of anyone else's. */
     @GameTest(template = "platform", timeoutTicks = 100, batch = "killfeed_rule")
     public static void nothingIsToldWithDeathMessagesOff(GameTestHelper h) {
         GameTestBases.Handle t = GameTestBases.register(h, SIDE, 2, 11, 100);
@@ -401,8 +470,7 @@ public final class HeroKillFeedGameTests {
                 HeroEffects.knockback(hero, soldier, 1, 0);
                 soldier.invulnerableTime = 0;
                 soldier.hurt(soldier.damageSources().lava(), 20F);
-                fallen.setHealth(1F);
-                fallen.hurt(fallen.damageSources().lava(), 6F);
+                finish(fallen, fallen.damageSources().lava(), 6F);
             }));
             h.runAfterDelay(25, t.guard(() -> {
                 t.assertTrue(soldier.isDeadOrDying() && fallen.isDeadOrDying(), "they did not die");

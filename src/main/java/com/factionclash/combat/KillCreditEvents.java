@@ -10,7 +10,6 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -18,8 +17,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
  * The game's half of {@link KillCredit} (HEROES_V2 6.17, {@code docs/design/breaching.md} 8.5): every blow is recorded
  * for its receiver ({@link KillCredits#blow}), the refresh runs once a second, and at a death with no attacker of its
  * own the credited enemy becomes the receiver's last attacker (vanilla's message and kill score then name it), a hero
- * credited with a death by terrain gets its kill ({@link HeroEntity#creditKill}), and the kill feed is told
- * ({@link HeroKillFeed}). The same for every receiver: a player, an NPC, a hero or a monster.
+ * credited with a death by terrain gets its kill ({@link HeroEntity#creditKill}), and a hero's death is told in the kill
+ * feed ({@link HeroKillFeed}). The same for every receiver: a player, an NPC, a hero or a monster.
  */
 public final class KillCreditEvents {
     /** Every blow with a living attacker, whether or not armour, a shield or a hurt cooldown takes it. */
@@ -37,7 +36,7 @@ public final class KillCreditEvents {
 
     /**
      * Last of the death's handlers (a cancelled death is no death), and before a player's own death message, which
-     * vanilla builds after the event.
+     * vanilla builds after the event (so it names the credited enemy).
      */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onDeath(LivingDeathEvent event) {
@@ -58,15 +57,8 @@ public final class KillCreditEvents {
         HeroKillFeed.onDeath(victim, source);
     }
 
-    /** A dying player's faction beside its name, for its own death message only ({@link HeroKillFeed}). */
-    @SubscribeEvent
-    public void onNameFormat(PlayerEvent.NameFormat event) {
-        event.setDisplayname(HeroKillFeed.playerName(event.getEntity(), event.getDisplayname()));
-    }
-
     @SubscribeEvent
     public void onServerStopped(ServerStoppedEvent event) {
         KillCredits.clear();
-        HeroKillFeed.clearAll();
     }
 }

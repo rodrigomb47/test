@@ -11,9 +11,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.CombatEntry;
 import net.minecraft.world.damagesource.CombatTracker;
@@ -30,32 +28,31 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
- * The hero kill feed (the owner's request of 2026-11-13, ROADMAP phase 4; HEROES_V2 6.17): every death in which a hero
- * is the victim or the killer is told in chat to all players, worded like vanilla's death messages with each name's
- * faction ("Ash Rook (Grove Covenant) tried to swim in lava to escape Natsuho Komezaki (Ember Legion)"), and only while
- * the game rule {@code showDeathMessages} is on. The killer is {@link KillCredits}'s: the blow's attacker, or the enemy
- * whose push, throw, pull or blow came within 15 s before a death by terrain; the words are vanilla's keys as
- * {@link KillCredit#words} chooses them. One rule for every victim and killer: a player killed by a hero, a hero killed
- * by a player, by an NPC, by a monster or by terrain alone. Only presentation differs: a player's death is already told
- * by vanilla's own message, so for a player the feed is that message, with the player's faction beside its name
- * ({@link #naming}) and the hero's name and faction from the hero's server-side display name; any other victim's line
- * is the feed's own. Monsters and animals a hero kills are left out unless {@code heroes.killFeedMonsters} is on (a hero
- * on guard or butcher duty kills them all night); a monster that kills a hero is named.
+ * The hero kill feed (the owner's request of 2026-11-13, ROADMAP phase 4; HEROES_V2 6.17; its scope the owner's of
+ * 2026-11-19: "only hero on hero and hero deaths by other sources should show, if a hero kills a npc or a monster it
+ * shouldnt show"): every death of a hero, whatever killed it, is told in chat to all players, worded like vanilla's death
+ * messages with each name's faction ("Natsuho Komezaki (Ember Legion) tried to swim in lava to escape Hiss (Grove
+ * Covenant)"), and only while the game rule {@code showDeathMessages} is on. Nothing else is told: no line when a hero
+ * kills an ordinary NPC, a monster, an animal or a player (a player's own death is vanilla's own message, to which the
+ * feed adds nothing; the hero in it is named by its server-side display name). The killer is {@link KillCredits}'s: the
+ * blow's attacker, or the enemy whose push, throw, pull or blow came within 15 s before a death by terrain; the words are
+ * vanilla's keys as {@link KillCredit#words} chooses them. One rule for every killer: a hero, a player, an NPC, a monster
+ * or terrain alone.
+ *
+ * <p>The feed is player-side presentation: it tells every player at once what no faction's people saw. No campaign code
+ * reads it (the factions learn of deaths only through their own people, {@code docs/design/missing_npcs.md}).
  */
 public final class HeroKillFeed {
     private HeroKillFeed() {
     }
 
-    /** Players whose display name carries their faction during their own death message (server thread only). */
-    private static final Set<Player> NAMING = Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     /** GameTests: the feed's lines while recording (null: not recording). */
     private static List<Line> recorder;
 
-    /** A line of the feed: who died, what was said, and whether it was the player's own vanilla message. */
-    public record Line(LivingEntity victim, Entity killer, Component text, boolean vanilla) {
+    /** A line of the feed: the hero that died, its killer (null: none) and what was said. */
+    public record Line(LivingEntity victim, Entity killer, Component text) {
     }
 
     /** Starts recording the feed's lines (GameTests); {@link #stopRecording} ends it. */
@@ -68,66 +65,26 @@ public final class HeroKillFeed {
         recorder = null;
     }
 
-    /** Whether a hero is the victim or the killer, and the death is the feed's (persons, unless monsters are on). */
-    public static boolean told(LivingEntity victim, Entity killer) {
-        if (victim instanceof FactionNpc n && n.isDisplayOnly()) {
-            return false; // a preview copy, a display NPC: no campaign death
-        }
-        boolean heroDied = victim instanceof HeroEntity;
-        boolean heroKilled = killer instanceof HeroEntity k && !k.isDisplayOnly();
-        if (!heroDied && !heroKilled) {
-            return false;
-        }
-        return heroDied || person(victim) || FCConfig.HERO_KILL_FEED_MONSTERS.get();
+    /** Whether a death is the feed's: a campaign hero's (a preview or display copy has no campaign death), whoever killed it. */
+    public static boolean told(LivingEntity victim) {
+        return victim instanceof HeroEntity h && !h.isDisplayOnly();
     }
 
-    /** A person: a player or a faction NPC (a hero is one). */
-    static boolean person(Entity e) {
-        return e instanceof Player || e instanceof FactionNpc;
-    }
-
-    /**
-     * At a death (after its killer is credited, before vanilla tells a player's): the feed's line for a non-player
-     * victim, broadcast while {@code showDeathMessages} is on; for a player, its name with its faction for vanilla's
-     * own message, which follows.
-     */
+    /** At a hero's death (after its killer is credited): the feed's line, broadcast while {@code showDeathMessages} is on. */
     public static void onDeath(LivingEntity victim, DamageSource source) {
-        if (!(victim.level() instanceof ServerLevel level) || !FCConfig.HERO_KILL_FEED.get()) {
-            return;
-        }
-        Entity killer = KillCredits.killer(victim, source);
-        if (!told(victim, killer) || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)) {
-            return;
-        }
-        MinecraftServer server = level.getServer();
-        if (victim instanceof ServerPlayer p) {
-            naming(p, true);
-            // only for vanilla's message, which follows at once (a queued task: execute would run it now)
-            server.tell(new net.minecraft.server.TickTask(server.getTickCount(), () -> naming(p, false)));
-            note(new Line(victim, killer, p.getCombatTracker().getDeathMessage(), true));
+        if (!(victim.level() instanceof ServerLevel level) || !FCConfig.HERO_KILL_FEED.get() || !told(victim)
+                || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)) {
             return;
         }
         Component line = line(victim, source);
-        server.getPlayerList().broadcastSystemMessage(line, false);
-        note(new Line(victim, killer, line, false));
+        level.getServer().getPlayerList().broadcastSystemMessage(line, false);
+        note(new Line(victim, KillCredits.killer(victim, source), line));
     }
 
     private static synchronized void note(Line l) {
         if (recorder != null) {
             recorder.add(l);
         }
-    }
-
-    /** Puts a player's faction beside its name in its own display name (its death message), or takes it off again. */
-    static void naming(Player p, boolean on) {
-        if (on ? NAMING.add(p) : NAMING.remove(p)) {
-            p.refreshDisplayName();
-        }
-    }
-
-    /** {@code PlayerEvent.NameFormat}: the faction beside a dying player's name, for its death message only. */
-    public static Component playerName(Player p, Component username) {
-        return NAMING.contains(p) ? member(username.copy(), CombatRules.factionOf(p)) : username;
     }
 
     /**
@@ -218,10 +175,5 @@ public final class HeroKillFeed {
         }
         return Component.translatableWithFallback("factionclash.killfeed.member", "%1$s (%2$s)",
                 name.withStyle(f.color), Component.literal(f.displayName).withStyle(f.color));
-    }
-
-    /** A new server: no player is left named. */
-    public static void clearAll() {
-        NAMING.clear();
     }
 }

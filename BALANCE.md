@@ -1024,10 +1024,11 @@ The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breac
   enemy's kill, the newest one's; any other death with no attacker keeps vanilla's **5 s** (100 ticks). A push is written
   into the receiver's combat tracker as a hit of **0** at most once a second per pusher; the last attacker of a
   receiver that falls, burns or is in lava, the void or water is set again every **1 s**, up to the 15 s.
-* `heroes.killFeed` (**true**): every death in which a hero is the victim or the killer is told to all players in
-  vanilla's words with the factions beside the names, while the game rule `showDeathMessages` is on.
-  `heroes.killFeedMonsters` (**false**): also the monsters and animals a hero kills (a monster that kills a hero is
-  always named).
+* `heroes.killFeed` (**true**): every death of a hero, whatever killed it (a hero, a player, an NPC, a monster or
+  terrain), is told to all players in vanilla's words with the factions beside the names, while the game rule
+  `showDeathMessages` is on; nothing else is told (a hero's kills of NPCs, monsters, animals and players give no line;
+  a player's death is vanilla's own message). The owner's scope of 2026-11-19. `heroes.killFeedMonsters` is gone (an
+  old config file's key is dropped when it loads). No faction's AI reads the feed.
 * An exhausted flyer that lands out of a fight rests (`move.winded`) until its stamina is back at **50%**, at most
   **30 s** (`HeroMovement.WINDED_MAX_TICKS`); a target, a fight, an escape or a blow ends the rest at once.
 
