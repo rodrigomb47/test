@@ -366,6 +366,21 @@ public final class RollCall {
     }
 
     /**
+     * Who can tell how a raid ended ({@code docs/design/missing_npcs.md} 6): the raiders still in the party and alive
+     * there, or, when the party emptied because its last member left it alive (home with its loot, or falling back
+     * wounded; {@link FactionState#raidLast}), that member, who saw it end (live check of 2026-11-19: a party that came
+     * home one by one carried its end to nobody, and the council waited out the raid's whole bound). Nobody when the
+     * party ended in deaths.
+     */
+    public static List<UUID> raidEndCarriers(FactionState f, List<UUID> survivors) {
+        if (!survivors.isEmpty() || !f.raiders.isEmpty() || f.raidLast == null) {
+            return survivors;
+        }
+        NpcRecord last = f.roster.get(f.raidLast);
+        return last != null && !last.gone() ? List.of(f.raidLast) : survivors;
+    }
+
+    /**
      * A line about a member itself (a level it gained): said at once when it is inside a home area of its faction (or
      * with {@code campaign.farDeathsUnknown} off), else it tells it when it comes home (review of 2026-11-19: a member
      * away, perhaps presumed dead, was heard levelling up at once).

@@ -547,6 +547,12 @@ public class FishermanJob extends Job {
         return top;
     }
 
+    /** Its far work stops at nightfall (the night rule): its faction expects it back then ({@link #dayShiftPlan}). */
+    @Override
+    public long tripPlanTicks(long now, long dayTime) {
+        return dayShiftPlan(dayTime);
+    }
+
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putString("state", state.name());

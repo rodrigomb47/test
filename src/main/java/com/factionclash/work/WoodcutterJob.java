@@ -2637,6 +2637,12 @@ public class WoodcutterJob extends Job {
         breaker.reset(npc);
     }
 
+    /** Its far work stops at nightfall (the night rule): its faction expects it back then ({@link #dayShiftPlan}). */
+    @Override
+    public long tripPlanTicks(long now, long dayTime) {
+        return dayShiftPlan(dayTime);
+    }
+
     @Override
     public void save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putInt("v", 2);

@@ -104,6 +104,20 @@ public final class Whereabouts {
         return departedAt <= 0 ? overdueTicks : Math.max(0, departedAt + overdueTicks - now);
     }
 
+    /** When remote daylight work stops: dusk, dayTime 13000 ({@code Job.NIGHT_START}). */
+    public static final long NIGHTFALL = 13000;
+
+    /**
+     * A worker whose work outside the home area is daylight-only (a fisherman at far water, a woodcutter in a far wood,
+     * with {@code survival.remoteWorkInDaylightOnly}): it is expected back when that work stops at the coming nightfall,
+     * plus the walk home, and never sooner than the default plan (live check of 2026-11-19: a fisherman out from dawn to
+     * dusk came home 700 ticks inside the default plan and its grace). {@code dayTime} is the world's day time.
+     */
+    public static long dayShiftPlan(long dayTime, double blocksBack) {
+        long untilNightfall = Math.floorMod(NIGHTFALL - dayTime, (long) TICKS_PER_DAY);
+        return Math.max(DEFAULT_TRIP_TICKS, untilNightfall + walkTicks(blocksBack));
+    }
+
     /** A raider: launch + the raid's bound, plus the walk back from the target. */
     public static long raidPlan(long now, long raidStartedAt, double blocksBack) {
         return planFrom(now, raidStartedAt + RAID_LIMIT_TICKS, blocksBack);

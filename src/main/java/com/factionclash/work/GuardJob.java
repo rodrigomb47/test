@@ -88,7 +88,7 @@ public class GuardJob extends Job {
                     return;
                 }
                 unloadNow();
-                f.raiders.remove(npc.getUUID());
+                f.leaveRaid(npc.getUUID()); // the last one home saw the raid end (FactionState.raidLast)
                 data().setDirty();
                 state = State.PATROL;
             }
@@ -193,7 +193,7 @@ public class GuardJob extends Job {
             return;
         }
         if (npc.getHealth() < npc.getMaxHealth() * 0.35F) {
-            f.raiders.remove(npc.getUUID());
+            f.leaveRaid(npc.getUUID());
             state = State.RAID_RETURN;
             return;
         }

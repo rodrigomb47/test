@@ -678,7 +678,7 @@ public final class HeroRaid {
         }
         BlockPos spawn = b.point(BaseState.SPAWN) != null ? b.point(BaseState.SPAWN) : b.center;
         if (nav().travel(spawn, 3, 1.0) == NpcNavigator.Result.ARRIVED || BaseZones.insideWalls(b, hero.blockPosition(), 0)) {
-            if (f != null && f.raiders.remove(hero.getUUID())) {
+            if (f != null && f.leaveRaid(hero.getUUID())) {
                 data().setDirty();
             }
             stage = Stage.NONE;

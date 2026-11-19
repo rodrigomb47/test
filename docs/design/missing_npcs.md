@@ -57,7 +57,8 @@ The trip's plan (`Job.tripPlanTicks`, pure numbers in `Whereabouts`), in ticks f
 | Raider | the raid's own bound: launch + 72000 (a raid ends by then) + the walk back from the target − now |
 | Trader | its trip's bound: start + 24000 (it gives a trip up after a day on the road) + the walk back from 320 blocks − now |
 | Cave explorer | its trip's bound: departure + 12000 (`CaveExplorerJob.MAX_TRIP_TICKS`) + the walk back from its cave (+64) − now |
-| Anyone else (a woodcutter foraging, a hero's duty) | 12000 (half a day) |
+| Fisherman at far water, woodcutter in a far wood | its day's remote work: until the coming nightfall (day time 13000) + the walk home from where it leaves, never under 12000; 12000 with `survival.remoteWorkInDaylightOnly` off (section 14) |
+| Anyone else (a miner at a far face, a hero's duty) | 12000 (half a day) |
 
 The walk is `Whereabouts.walkTicks(blocks)` = 10 ticks a block (0.1 blocks a tick: half a walking NPC's pace, for
 detours and nights).
@@ -120,6 +121,11 @@ seen leaving yet), `alive` stays true, nothing is said. `dead` and `diedAt` are 
   the council plans no new raid while that news has not been told at home, it still counts someone of the party, and
   the raid's own bound (launch + 72000) has not passed (`Whereabouts.raidStillOutAtHome`). A party nobody lived to
   report on therefore keeps the council waiting until the bound; one whose every raider died in sight of home does not.
+* **The last raider to leave the party alive saw its end** (live check, section 14): a raider leaves the party when it
+  is home at its storehouse with its loot or falls back wounded (`GuardJob`), a hero when it reaches home
+  (`HeroRaid`), through `FactionState.leaveRaid`; the one whose leaving empties the party is kept
+  (`FactionState.raidLast`, saved) and carries the raid's end (`RollCall.raidEndCarriers`): told at once when it is
+  home, else when it gets there.
 * The **raid party's roll** (`FactionState.raiders`) is the party's own knowledge on the spot: a raider leaves the
   party when the faction no longer counts it (`alive` false) or when it died and a member saw it (`witnessed`). The raid
   ends as before, or when every raider is truly gone (no one is left to carry it on; nothing is told at home).
@@ -219,3 +225,86 @@ faction's miners can use it before the explorer is home; the council judges an e
 and hero state; the retraining reads a far worker's live job and the blacksmith a far member's gear; `/fc hero info`
 shows a member player the hero's true place and state; the hero lookout's "spots N enemies" line is said at once
 wherever the hero stands.
+
+## 14. Live check of 2026-11-19
+
+A fresh campaign on a dedicated server (seed 20261107, `fc start 256`, four factions and the Hollow), days 0 to 6.94,
+with Natsuho Komezaki given to Ember Legion and Hinae Shirasuzu to Stoneguard (`fc admin hero give`). A tracker
+(`tools/rolltrack.py`) polled `fc admin dump` every 8 s and logged every change of each member's record (the faction's
+view beside the truth), every crossing of a home area's edge, news carried and dropped, and the heroes' deaths and
+revivals; `sim.py`'s `roll` line was read each day; chat was captured with the Xvfb viewer
+(`docs/screenshots/rollcall/`).
+
+Seen as designed, against the truth:
+
+* **Near home, known at once**: Tide's farmer Pell Grey killed by the operator at home: "Pell Grey (Farmer) was killed"
+  the same tick, a farmer recruited at once. Every death in a base fight (Grove's and Stoneguard's last days) was known
+  at once, most of them seen by a member.
+* **Far, unseen: missing, then presumed dead**: Ember's scout Edrin Cole died to monsters at night at 431, 65, 53 (day
+  0.98): nothing said; a follow-up scout recruited for the overdue scout, missing at day 2.02 (its expedition's bound +
+  grace), presumed dead at 2.52. Stoneguard's scout Isla Oakes, killed by the operator far away at day 1.27: missing at
+  2.29, presumed dead at 2.79. Stoneguard's scout Rhea Lowe (killed by Natsuho near Ember, day 2.67, no feed line):
+  missing 3.71, presumed dead 4.21. Tide's cave explorer Orla North (killed by Stoneguard's returning raiders, 2.72):
+  missing 3.37, presumed dead 3.87. Ember's three raiders Hinae smote at Stoneguard (day 1.37, no feed line; Yara's death
+  seen only by raiders who died, so the news died with them): missing at 4.48 (launch + 72000 + the walk back + grace),
+  presumed dead at 4.98.
+* **Presumed dead, then back**: Tide's scout Elsa Thorne, held alive by the operator in a barrier box at 371, 62, -302
+  (NoAI): missing 1.89, presumed dead 2.35 ("is presumed dead (missing since day 2)"; the station: "Away 2; presumed
+  dead: Elsa Thorne (Scout)"), released at day 2.39: "Elsa Thorne (Scout), presumed dead, has come back and rejoins",
+  then her report; the follow-up scout Soren Flint, recruited while she was overdue, stayed.
+* **Witnesses carry news home**: the operator killed Tide's raider Zeno Stone beside Nils Stone at 274, -46: Nils
+  carried it and told it at home ("Nils Stone brings news: Zeno Stone (Swordsman) was killed near 274, -46 on day 2"),
+  with the raid's "beaten back" and "has ended". At day 6.64 Natsuho fell at Ember's rally point before Grove, seen by
+  Nils Grey and Hale Reed: "Nils Grey brings news: Natsuho Komezaki has fallen near 501, 145 on day 7 and returns in
+  7:33"; "Dara Ives brings news: Beck Reed (Swordsman) was killed near 518, 127 on day 7". The raid party's "has
+  gathered" came home with Natsuho and with Hinae.
+* **Heroes**: Natsuho, slain at Stoneguard in a raid (day 1.42, feed: "Natsuho Komezaki (Ember Legion) was slain by
+  Kael Oakes (Stoneguard)"), rose at home 10 minutes later: "Natsuho Komezaki fell where none of the faction saw it and
+  returns to Ember Legion Keep". Hinae killed at home by the operator (1.98): feed "Hinae Shirasuzu (Stoneguard) was
+  killed" and "[Stoneguard] Hinae Shirasuzu has fallen at 400, 16 and returns in 10:00" at once.
+* **The kill feed**: four lines in seven days, all hero deaths ("was slain by Kael Oakes (Stoneguard)", "was killed");
+  none for the 92 other named deaths in the server log, among them Hinae's three kills of Ember raiders and Natsuho's
+  of Rhea Lowe. No faction code reads it (`KnowledgeIsolationTest`).
+* **A miner stuck far out is missing while alive**: Grove's miner Pell Vale, stuck at a tunnel face at 565, 15, 211
+  (67 blocks out, 52 stuck recoveries), was missing at 2.70 and back ("is back") at 2.98: right from the faction's view.
+  Every other member reported missing (13 in all) was truly dead, or held by the operator (Elsa Thorne).
+  Miners working branch mines that cross the 64-block edge (Ember's Kael Wells, Stoneguard's Elsa Stone) went in and
+  out many times a day, each crossing setting a new half-day plan; none was reported missing while working.
+
+Found and fixed (the tests fail without the fixes; the fixes were checked again live on a new jar from day 5.44, the
+world loading with the new `raidLast` field absent):
+
+1. **A raid party that came home one by one told its end to nobody**: each raider leaves the party at its storehouse,
+   so the party emptied with no raider "alive in the party" to carry the end; the end's news had no carrier and the
+   council waited out the raid's whole bound (Stoneguard's won raid on the Hollow at day 2.6 never said "has ended in
+   victory" and its council stayed silent). Now the last to leave carries it (section 6); live with the new jar:
+   "[Ember Legion] Raid on The Hollow has ended in victory" said at home as the last raider arrived.
+   `MissingNpcGameTests.aRaidPartyThatComesHomeTellsItsEnd` (the raiders' own guard jobs at the storehouse and falling
+   back wounded).
+2. **A day's remote work risked a false "missing"**: Natsuho (a fisherman, her spot about 70 blocks out) was away 13716
+   ticks from dawn to dusk against 14400 (half a day + the grace): 700 ticks from being reported missing while fishing.
+   Fishermen and woodcutters stop remote work at nightfall, so their plan is now "until nightfall + the walk home"
+   (section 3); live with the new jar, her dawn trip was planned 13320 ticks.
+   `WhereaboutsTest.aDaysRemoteWorkIsExpectedBackAtNightfall`, `MissingNpcGameTests.aDaysRemoteWorkIsExpectedBackAtNightfall`.
+3. **Wording**: the recruitment reason "replacing the missing farmer" read as the roll call's "missing" (a member not
+   back yet); it is now "no farmer left".
+
+Seen and left open:
+
+* **The council judges an enemy base by that enemy's own roster** (the open item of section 6): at day 6.13 the operator
+  sent Stoneguard's six soldiers and Hinae against a Hollow lair; within five seconds Tide's and Grove's councils both
+  launched raids on the emptied Stoneguard ("against about 4 defenders"), and Tide's destroyed it by about 6.2. Neither
+  had a report of the garrison leaving. A fix needs the scouts' reports to carry
+  a garrison count and the council to use only those.
+* **A raid wiped out unseen waits out its bound**: Ember's raid of day 1.3 (three raiders and Natsuho, all dead at
+  Stoneguard) held Ember's council back until day 4.3 (its next raid of its own went out about day 5), and the three
+  raiders were presumed dead only at 4.98.
+  This is the rule as built (the raid's own plan); the owner may want a shorter bound for raids.
+* A hero that dies keeps no news (like a member player who dies): Natsuho, last of her raid to fall, rose at home
+  knowing nothing of how it went. Equal to the player's case, so left as is.
+
+Tick time: 6.62 ms a tick on day 1 (151 ticks/s in sprint, no viewer), 9.9 ms with the viewer on, 9-12 ms over days
+5-7 with the art workflow's Python jobs on two of the four cores. Workers' mean stuck recoveries 11.4 (day 4) and 13.3
+(day 5), as in earlier campaigns (12.9); the heroes' own recoveries 0. Workers, recruitment (follow-up scouts for
+overdue scouts, replacements for the presumed dead), raids (four by Ember, three by Tide, two lairs and two factions
+destroyed) and pacts went on as before.

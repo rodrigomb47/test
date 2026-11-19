@@ -40,6 +40,12 @@ public final class FactionState {
     public UUID raidEndNews;
     /** The last raid's party as launched (the council's own list, kept after the raid ends). */
     public final List<UUID> lastParty = new ArrayList<>();
+    /**
+     * The raider whose leaving (home with its loot, or falling back wounded) emptied the party: the last one there, it saw
+     * the raid's end and carries it home (live check of 2026-11-19: a party that came home one by one never told its end,
+     * and the council waited out the raid's whole bound). Null while others are still in the party.
+     */
+    public UUID raidLast;
     public int basesDestroyed;
     /** Average fighting power of the faction's soldiers at home (1 = bare-handed and unarmoured, up to 3), last seen. */
     public float soldierPower = 1.0F;
@@ -56,6 +62,18 @@ public final class FactionState {
     public final Map<String, java.util.Set<String>> advancementProgress = new java.util.HashMap<>();
 
     public record Achieved(long time, String by) {
+    }
+
+    /**
+     * A raider leaves the party alive (home with its loot, falling back wounded, a hero's way home): when it was the last
+     * one, it is the one who saw the raid end ({@link #raidLast}). Returns whether it was in the party.
+     */
+    public boolean leaveRaid(UUID raider) {
+        if (!raiders.remove(raider)) {
+            return false;
+        }
+        raidLast = raiders.isEmpty() ? raider : null;
+        return true;
     }
 
     /**
@@ -149,6 +167,9 @@ public final class FactionState {
         if (raidEndNews != null) {
             t.putUUID("raidEndNews", raidEndNews);
         }
+        if (raidLast != null) {
+            t.putUUID("raidLast", raidLast);
+        }
         ListTag lp = new ListTag();
         for (UUID u : lastParty) {
             lp.add(NbtUtils.createUUID(u));
@@ -221,6 +242,7 @@ public final class FactionState {
         f.raidRally = t.contains("raidRally") ? t.getLong("raidRally") : Long.MIN_VALUE;
         f.raidMusteredAt = t.getLong("raidMusteredAt");
         f.raidEndNews = t.hasUUID("raidEndNews") ? t.getUUID("raidEndNews") : null; // absent before the review of 2026-11-19
+        f.raidLast = t.hasUUID("raidLast") ? t.getUUID("raidLast") : null; // absent before the live check of 2026-11-19
         for (Tag u : t.getList("lastParty", Tag.TAG_INT_ARRAY)) {
             f.lastParty.add(NbtUtils.loadUUID(u));
         }

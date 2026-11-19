@@ -2390,7 +2390,7 @@ public final class FCGameTests {
             var level = h.getLevel();
             long now = level.getGameTime();
             java.util.function.LongPredicate wantsWoodcutter = at -> com.factionclash.campaign.FactionDirector.needs(level, t.data, t.base, at).stream()
-                    .anyMatch(n -> n.role() == NpcRole.WOODCUTTER && n.reason().startsWith("replacing"));
+                    .anyMatch(n -> n.role() == NpcRole.WOODCUTTER && n.reason().equals("no woodcutter left"));
             h.assertTrue(wantsWoodcutter.test(now), "a base without a woodcutter should want one");
             t.base.markBarren(NpcRole.WOODCUTTER, now + 100);
             t.base.markBarren(NpcRole.WOODCUTTER, now + 50); // never shortened

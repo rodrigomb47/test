@@ -202,4 +202,22 @@ class WhereaboutsTest {
         assertEquals("Ira fell near 120, -40 on day 3 where none of the faction saw it, and has risen again",
                 Whereabouts.ownFall("Ira", 120, -40, 2 * Whereabouts.TICKS_PER_DAY + 5));
     }
+
+    /**
+     * A day's remote work (live check of 2026-11-19): a worker setting out at dawn is expected back at nightfall plus the
+     * walk home, which outlasts half a day; one setting out late in the day keeps half a day; one setting out at night
+     * is expected by the next nightfall.
+     */
+    @Test
+    void aDaysRemoteWorkIsExpectedBackAtNightfall() {
+        assertEquals(13000 + 800, Whereabouts.dayShiftPlan(0, 80), "dawn: the whole working day and the walk home");
+        assertEquals(1000 + 13000 + 700, Whereabouts.dayShiftPlan(23000, 70), "before dawn: until the coming nightfall");
+        assertEquals(1000 + 13000 + 700, Whereabouts.dayShiftPlan(24000 * 5 + 23000, 70), "the world's day time counts in days");
+        assertEquals(Whereabouts.DEFAULT_TRIP_TICKS, Whereabouts.dayShiftPlan(6000, 80), "from noon, never under half a day");
+        assertEquals(Whereabouts.DEFAULT_TRIP_TICKS, Whereabouts.dayShiftPlan(12900, 80), "just before dusk");
+        assertEquals(7000 + 13000 + 500, Whereabouts.dayShiftPlan(17000, 50), "at night: by the next nightfall");
+        // the live case: out from dawn to dusk (13716 ticks), now well inside the plan and its grace
+        assertTrue(13716 < Whereabouts.dayShiftPlan(23400, 70) + WAITS.grace());
+        assertTrue(13716 > Whereabouts.DEFAULT_TRIP_TICKS, "the default plan alone left it 700 ticks of grace");
+    }
 }

@@ -164,7 +164,7 @@ public final class MissingNpcGameTests {
             t.assertTrue(about(lines, scout.getUUID()).stream().anyMatch(l -> l.event() == Event.PRESUMED_DEAD
                     && l.line().endsWith("is presumed dead (missing since day " + Whereabouts.day(missingAt) + ")")), "the line: " + lines);
             t.assertTrue(FactionDirector.needs(level, t.data, t.base, missingAt + presume()).stream()
-                    .anyMatch(n -> n.role() == NpcRole.SCOUT && n.reason().contains("replacing")), "the scout is not replaced");
+                    .anyMatch(n -> n.role() == NpcRole.SCOUT && n.reason().equals("no scout left")), "the scout is not replaced");
             t.assertTrue(t.data.faction(SIDE).roster.get(scout.getUUID()) == r, "the record must be kept");
             t.succeed();
         } catch (RuntimeException | Error e) {
@@ -475,6 +475,20 @@ public final class MissingNpcGameTests {
                     BaseState.class, long.class);
             m.setAccessible(true);
             m.invoke(null, t.helper.getLevel(), t.data, f, t.base, at);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Sets a soldier's guard job state (private) by name, as a campaign would have brought it there. */
+    private static void guardState(FactionNpc n, String state) {
+        try {
+            var job = n.job();
+            var field = com.factionclash.work.GuardJob.class.getDeclaredField("state");
+            field.setAccessible(true);
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            Object value = Enum.valueOf((Class) field.getType(), state);
+            field.set(job, value);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
@@ -824,6 +838,140 @@ public final class MissingNpcGameTests {
             t.succeed();
         } catch (RuntimeException | Error e) {
             data.started = wasStarted;
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    // ------------------------------------------------------------------ the live check of 2026-11-19
+
+    /**
+     * A raid party that comes home one by one (each raider leaves the party at its storehouse) tells its end at once: the
+     * last one home saw it, and the council plans again (live check of 2026-11-19: the end was carried by nobody and
+     * the council waited out the raid's whole bound). When the last raider leaves the party away from home (falling back
+     * wounded), it carries the end home, and the council hears of it when it arrives. The raiders' own guard jobs leave
+     * the party (home at the storehouse, wounded on the way), as in a campaign.
+     */
+    @GameTest(template = "platform", timeoutTicks = 100, batch = "missing_live_raidhome")
+    public static void aRaidPartyThatComesHomeTellsItsEnd(GameTestHelper h) {
+        // the storehouse inside the home area (the default test stand is outside it)
+        GameTestBases.Handle t = GameTestBases.register(h, SIDE, 2, 3, 100, new BlockPos(HOME_X, 2, HOME_Z - 1));
+        ServerLevel level = h.getLevel();
+        CampaignData data = t.data;
+        FactionState f = data.faction(SIDE);
+        long now = level.getGameTime();
+        int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+        try {
+            t.assertTrue(f.raidTarget < 0, "the faction already has a raid under way");
+            BaseState target = reportedTarget(t, f, now);
+            t.onCleanup(() -> f.raidLast = null);
+            List<RollCall.Told> lines = recording(t);
+            int[][] spots = {{10, 10}, {11, 10}, {13, 10}, {14, 10}, {10, 14}, {14, 14}};
+            for (int[] p : spots) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            data.startedAt = now - interval - 1;
+            FactionNpc a = member(t, HOME_X, HOME_Z, NpcRole.SWORDSMAN), b = member(t, HOME_X + 1, HOME_Z, NpcRole.SWORDSMAN);
+            f.raidTarget = target.id;
+            f.raiders.clear();
+            f.raiders.add(a.getUUID());
+            f.raiders.add(b.getUUID());
+            f.lastParty.clear();
+            f.lastParty.add(a.getUUID());
+            f.lastParty.add(b.getUUID());
+            f.raidParty = 2;
+            f.raidStartedAt = now;
+            f.lastRaidAt = now - interval - 1;
+            // both come home with their loot: each leaves the party at the storehouse (its guard job), b the last
+            for (FactionNpc n : new FactionNpc[] {a, b}) {
+                n.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+                guardState(n, "RAID_RETURN");
+            }
+            a.job().tick();
+            t.assertTrue(!f.raiders.contains(a.getUUID()), "the raider home at the storehouse should leave the party");
+            t.assertTrue(f.raidLast == null, "a raider leaving while others are still out saw no end");
+            b.job().tick();
+            t.assertTrue(f.raiders.isEmpty() && b.getUUID().equals(f.raidLast), "the last raider to leave the party saw its end");
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget < 0, "the raid did not end");
+            t.assertTrue(f.raidEndNews == null, "the last raider is home: the council should hear of the end at once");
+            t.assertTrue(lines.stream().anyMatch(l -> l.line().startsWith("Raid on ") && l.line().contains("has ended")),
+                    "the end was not said at home: " + lines);
+            raids(t, f, now + 1);
+            t.assertTrue(f.raidTarget == target.id, "the council should plan again once its raid is home");
+            // a party whose last raider falls back wounded far from home: it carries the end home
+            lines.clear();
+            f.raidTarget = target.id;
+            f.raiders.clear();
+            f.raiders.add(a.getUUID());
+            f.lastParty.clear();
+            f.lastParty.add(a.getUUID());
+            f.raidEndNews = null;
+            f.raidLast = null;
+            f.raidParty = 1;
+            f.raidStartedAt = now + 2;
+            goTo(t, a, FAR_X, FAR_Z);
+            a.setHealth(a.getMaxHealth() * 0.33F); // below the guard job's 35%: it falls back
+            a.job().tick();
+            t.assertTrue(f.raiders.isEmpty() && a.getUUID().equals(f.raidLast), "the wounded raider should leave the party: "
+                    + f.raiders + ", last " + f.raidLast);
+            raids(t, f, now + 3);
+            t.assertTrue(f.raidTarget < 0 && f.raidEndNews != null, "the end should travel with the wounded raider");
+            t.assertTrue(lines.stream().noneMatch(l -> l.line().contains("has ended")), "the end was said at home at once: " + lines);
+            List<News> carried = f.news.get(a.getUUID());
+            t.assertTrue(carried != null && carried.stream().anyMatch(n -> n.text.contains("has ended")), "the raider carries nothing: " + carried);
+            int launched = f.raidsLaunched;
+            f.lastRaidAt = now + 4 - interval - 1;
+            raids(t, f, now + 4);
+            t.assertTrue(f.raidsLaunched == launched, "the council planned a raid before its last one's end was heard");
+            goTo(t, a, HOME_X, HOME_Z);
+            t.assertTrue(f.raidEndNews == null && lines.stream().anyMatch(l -> l.line().contains("brings news: Raid on")),
+                    "coming home, the raider should tell the end: " + lines);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * A day's remote work (live check of 2026-11-19: a fisherman out from dawn to dusk came home 700 ticks before it
+     * would have been called missing): a fisherman or a woodcutter setting out is expected back at nightfall plus the walk
+     * home, never sooner than half a day; a miner keeps half a day. The roll call takes the plan at the world's time.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20, batch = "missing_live_dayshift")
+    public static void aDaysRemoteWorkIsExpectedBackAtNightfall(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 20);
+        boolean wasDaylight = FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.get();
+        t.onCleanup(() -> FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.set(wasDaylight));
+        try {
+            FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.set(true);
+            ServerLevel level = h.getLevel();
+            long now = level.getGameTime();
+            FactionNpc fisher = member(t, FAR_X, FAR_Z, NpcRole.FISHERMAN), cutter = member(t, FAR_X + 1, FAR_Z, NpcRole.WOODCUTTER),
+                    miner = member(t, FAR_X - 1, FAR_Z, NpcRole.MINER);
+            for (FactionNpc n : new FactionNpc[] {fisher, cutter}) {
+                double dx = n.getX() - (t.base.center.getX() + 0.5), dz = n.getZ() - (t.base.center.getZ() + 0.5);
+                double back = Math.sqrt(dx * dx + dz * dz);
+                long dawn = n.job().tripPlanTicks(now, 0);
+                t.assertTrue(dawn == Whereabouts.dayShiftPlan(0, back) && dawn > Whereabouts.DEFAULT_TRIP_TICKS,
+                        n.getRole().id + " setting out at dawn should be expected at nightfall: " + dawn);
+                t.assertTrue(n.job().tripPlanTicks(now, 6000) == Whereabouts.DEFAULT_TRIP_TICKS, "from noon: half a day");
+            }
+            t.assertTrue(miner.job().tripPlanTicks(now, 0) == Whereabouts.DEFAULT_TRIP_TICKS, "a miner has no day shift");
+            FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.set(false);
+            t.assertTrue(fisher.job().tripPlanTicks(now, 0) == Whereabouts.DEFAULT_TRIP_TICKS, "working through the night: no end of day");
+            FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.set(true);
+            // the roll call's plan is the job's at the world's time
+            FactionNpc leaving = member(t, HOME_X, HOME_Z, NpcRole.FISHERMAN);
+            NpcRecord r = t.data.record(leaving.getUUID());
+            RollCall.sighting(leaving, r);
+            goTo(t, leaving, FAR_X, FAR_Z + 1);
+            t.assertTrue(r.where == State.AWAY, "the fisherman did not leave: " + r.where);
+            long plan = leaving.job().tripPlanTicks(now, level.getDayTime());
+            t.assertTrue(r.expectedBy - r.leftAt == plan, "expected back " + (r.expectedBy - r.leftAt) + " after leaving, the plan " + plan);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
             t.cleanup();
             throw e;
         }

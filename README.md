@@ -342,11 +342,13 @@ Players respawn at their nearest surviving allied base when they have no bed.
   sight), is known at once ("Ash Rook (Scout) was killed"). A death a member away sees is carried home by that member
   and told when it gets back ("Mara Vey brings news: Ash Rook (Scout) was killed near 412, -96 on day 3"); a witness
   who dies carries nothing. A death nobody sees is learned by waiting: every trip out of the home area has an
-  expected return (a scout's expedition, a raid, a trader's or a cave explorer's trip, half a day for anything else);
+  expected return (a scout's expedition, a raid, a trader's or a cave explorer's trip, nightfall plus the walk home for
+  a fisherman or woodcutter working far water or a far wood, half a day for anything else);
   a member not back by then and 2 more minutes is **missing** ("is missing: expected back by day 3"), still counted
   and not replaced, and half a day later **presumed dead** and replaced. One presumed dead who comes home after all
   rejoins with its own gear ("presumed dead, has come back and rejoins"), and its replacement stays. Raid news ("the
-  raid party has gathered", "the raid is beaten back", "has ended") comes home with the raiders who saw it, and the
+  raid party has gathered", "the raid is beaten back", "has ended") comes home with the raiders who saw it (a party
+  that comes home one by one: the last one home tells how it ended), and the
   war council sends no new raid until that news is home, every raider of the party is known or presumed dead, or the
   raid's own three days have passed. A level a member gains away is announced when it comes home, and a hero's lines
   for its faction carry home only from home (away, only players near hear them). Heroes follow the same rule and still
@@ -480,9 +482,9 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1092 JUnit tests for the pure rules (the roll call: when an away member is missing and presumed
+* `./gradlew test` — 1093 JUnit tests for the pure rules (the roll call: when an away member is missing and presumed
   dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, a death still unknown
-  under the old rule, the council's wait for its raid's news, a hero's own fall, a hero's faction lines heard only
+  under the old rule, the council's wait for its raid's news, a day's remote work expected back at nightfall, a hero's own fall, a hero's faction lines heard only
   nearby away from home, and that no faction code reads the kill feed, kill credit or a roster entry's truth; explosive moves: the field's forms, powers, six blasts and
   two TNT, a heavy class and fire only on a fire move, vanilla's ray rule with obsidian kept and water soaking a blast
   up, where a move blasts, the pick never blasting near its own side, the blast's ground disc; terrain as a weapon: the edges round a target as it
@@ -542,7 +544,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 373 GameTests on a real headless server, including **deaths far from home** (a
+* `./gradlew runGameTestServer` — 375 GameTests on a real headless server, including **deaths far from home** (a
   scout killed far away unseen is not known, goes missing past its expected return, is presumed dead and replaced; a
   death near the base or seen from home is known at once; a witness away carries the news home and tells it; a dead
   witness carries nothing; a member player reports what it saw at the station and loses it if it dies; a raider
@@ -552,7 +554,10 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   every raider died in sight of home; a death still unknown is known once `farDeathsUnknown` is off; a hero that rises
   unseen where it fell far away tells nobody until it is home; a level gained away is told on coming home; the raid
   party's gathering travels home with it; the station tells who is away, missing and presumed dead; "Adventure" is
-  made when a death is known, not when it happens), **heroes** (checkpoint 2's live check: Hinae heals hurt allies with Purify by her own choice in a fight, and a client logs no hero as dormant before any definitions are read; the review of the
+  made when a death is known, not when it happens; and from their live check: a raid party whose raiders come home
+  one by one, each leaving the party at its storehouse, tells its end with the last one home, and a raider falling back
+  wounded carries it home; a fisherman's and a woodcutter's day of remote work is expected back at nightfall plus the
+  walk home), **heroes** (checkpoint 2's live check: Hinae heals hurt allies with Purify by her own choice in a fight, and a client logs no hero as dormant before any definitions are read; the review of the
   round's terrain work: a stunned soldier neither drinks its Fire Resistance nor pours its water bucket, as a stunned
   player cannot drink, and drinks once the stun is over; a soldier saved between its water landing's pour and its
   touch-down picks its water up again; a hero among five pushers still gives a soldier its 6-block edge sense; a hero
@@ -612,6 +617,29 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   per-day summary of every faction (see the source for usage).
 
 ### Dedicated-server simulation results (installed jar, NeoForge 21.1.209, fixed seed)
+
+**Deaths far from home: the roll call on a real server** (fresh campaign, same seed, seven days, Natsuho with Ember
+Legion and Hinae with Stoneguard; `docs/design/missing_npcs.md` 14, screenshots in `docs/screenshots/rollcall/`):
+* A farmer killed at home was known at once ("Pell Grey (Farmer) was killed") and replaced. Scouts killed far away
+  where nobody saw it were not known: each went missing at its expedition's bound plus two minutes and was presumed
+  dead half a day later (Ember's Edrin Cole, dead at night on day 1, missing early on day 3, presumed dead that
+  evening). Three Ember raiders smitten by Hinae at Stoneguard were missing three days later, the raid's own bound.
+* A Tide scout held alive far away by the operator went missing, was presumed dead ("Elsa Thorne (Scout) is presumed
+  dead (missing since day 2)"; the station: "Away 2; presumed dead: Elsa Thorne (Scout)") and, set free, walked home:
+  "Elsa Thorne (Scout), presumed dead, has come back and rejoins".
+* Witnesses brought news home: "Nils Stone brings news: Zeno Stone (Swordsman) was killed near 274, -46 on day 2",
+  "Nils Grey brings news: Natsuho Komezaki has fallen near 501, 145 on day 7 and returns in 7:33". Natsuho, slain
+  unseen in a raid, rose at home: "Natsuho Komezaki fell where none of the faction saw it and returns to Ember Legion
+  Keep". Hinae's fall at home was told at once.
+* The kill feed printed four lines in seven days, all hero deaths; Hinae's and Natsuho's kills of NPCs printed nothing.
+* Of 13 members reported missing, 11 were dead, one was held by the operator and one was a miner truly stuck far out;
+  no working member was reported missing. Two fixes came from this run: a raid party that came home one by one never
+  told how its raid ended (now the last one home does: "Raid on The Hollow has ended in victory"), and a fisherman
+  out from dawn to dusk came within 700 ticks of being called missing (fishermen and woodcutters are now expected back
+  at nightfall).
+* Seen and left open: when Stoneguard's garrison left on a raid, Tide and Grove both raided the emptied base within
+  seconds and Tide destroyed it; the war council still judges an enemy base by that enemy's own roster, not by what
+  its scouts saw.
 
 **Pits and long mine walks (a 15-day campaign, continued from day 15 with the fixes):** two Grove miners had sat
 for 8 and 2 days in a hole they had dug into the pad beside the south wall, at the bottom of a 20-block ravine

@@ -276,10 +276,30 @@ public abstract class Job {
     /**
      * The plan of the trip its NPC sets out on now ({@code docs/design/missing_npcs.md} 3): in how many ticks from now its
      * faction expects it back, fixed when it is seen leaving the home area. Half a day unless the job has a plan of its
-     * own (a scout's expedition, a trader's or a cave explorer's trip).
+     * own (a scout's expedition, a trader's or a cave explorer's trip, a day's remote work).
      */
     public long tripPlanTicks(long now) {
+        return tripPlanTicks(now, level().getDayTime());
+    }
+
+    /** {@link #tripPlanTicks(long)} at the world's day time {@code dayTime} (a day's remote work ends at nightfall). */
+    public long tripPlanTicks(long now, long dayTime) {
         return com.factionclash.logic.campaign.Whereabouts.DEFAULT_TRIP_TICKS;
+    }
+
+    /**
+     * A day's remote work (a fisherman at far water, a woodcutter in a far wood, both stopped by the night rule): back at
+     * the coming nightfall plus the walk home from here, never sooner than half a day; with
+     * {@code remoteWorkInDaylightOnly} off the work has no end of day, and the plan is half a day (live check of
+     * 2026-11-19).
+     */
+    protected long dayShiftPlan(long dayTime) {
+        BaseState b = base();
+        if (b == null || !FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.get()) {
+            return com.factionclash.logic.campaign.Whereabouts.DEFAULT_TRIP_TICKS;
+        }
+        double dx = npc.getX() - (b.center.getX() + 0.5), dz = npc.getZ() - (b.center.getZ() + 0.5);
+        return com.factionclash.logic.campaign.Whereabouts.dayShiftPlan(dayTime, Math.sqrt(dx * dx + dz * dz));
     }
 
     /** Called when combat or fleeing interrupts the job; progress fields are kept. */

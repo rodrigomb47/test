@@ -121,7 +121,8 @@ public final class FactionDirector {
         for (NpcRole r : new NpcRole[]{NpcRole.MINER, NpcRole.WOODCUTTER, NpcRole.FARMER, NpcRole.BUILDER, NpcRole.BLACKSMITH,
                 NpcRole.CHEF, NpcRole.SCOUT}) {
             if (living(f, b, r) == 0 && !b.barren(r, t)) { // a barren role's last worker had nothing to do here
-                out.add(new Need(r, "replacing the missing " + r.displayName.toLowerCase()));
+                // "no X left", not "missing": the roll call's missing is a member not back yet (live check of 2026-11-19)
+                out.add(new Need(r, "no " + r.displayName.toLowerCase() + " left"));
             }
         }
         int scouts = living(f, b, NpcRole.SCOUT);
@@ -626,12 +627,13 @@ public final class FactionDirector {
                 // (no raider left alive: nobody carries the raid on, nor the news of its end.) The council at home hears
                 // of the end only when its news comes home, or assumes it once the raid's own bound has passed (review of
                 // 2026-11-19: it heard at once, and could send the next raid after a party nobody lived to report on)
-                f.raidEndNews = RollCall.tellOrCarry(level, data, f.type, survivors, "Raid on "
+                f.raidEndNews = RollCall.tellOrCarry(level, data, f.type, RollCall.raidEndCarriers(f, survivors), "Raid on "
                         + (target == null ? "?" : target.faction.displayName) + " has ended"
                         + (target != null && target.destroyed ? " in victory" : ""), null);
                 // v1 22.1: heroes of a won raid who survived it, and the heroes who held the base it failed against
                 com.factionclash.hero.HeroManager.raidEnded(level, f, target, target != null && target.destroyed);
                 f.raidTarget = -1;
+                f.raidLast = null;
                 if (t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS || survivors.isEmpty()) {
                     f.raiders.clear();
                 }
@@ -784,6 +786,7 @@ public final class FactionDirector {
                                List<FactionNpc> party, int targetDefence, String prefix, long t) {
         f.raiders.clear();
         f.raidEndNews = null; // a new raid: the last one's end is old news
+        f.raidLast = null;
         f.lastParty.clear();
         for (FactionNpc n : party) {
             f.raiders.add(n.getUUID());

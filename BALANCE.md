@@ -649,7 +649,7 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
   site", "no trees or saplings", "no woodland of its own", "no fishing water") or without its tool for 12000 ticks
   takes up the base's most needed role instead of a recruit, keeping its level and affixes, and hands back every
   workplace it held. When it was idle (not toolless) and no other worker of its old role at the base still has work,
-  that role is barren for 48000 ticks (BARREN_TICKS, two days): "replacing the missing ..." is not raised for it and
+  that role is barren for 48000 ticks (BARREN_TICKS, two days): "no ... left" is not raised for it and
   no fisherman is hired. A barren base therefore tries one new worker in that role about every two and a half days.
 * Miners: "an open mine has no miner" and "a surveyed cave with ore to mine" are raised only while no miner of the
   base is free (holding neither an open mine nor a cave); at most 2 cave miners per base. A helper holds neither, so
@@ -674,8 +674,11 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   `war.scoutOverdueTicks`** (24000); a raider **launch + 72000** (`Whereabouts.RAID_LIMIT_TICKS`, the raid's own
   bound) + the walk back from the target; a trader **trip start + 24000** (`TRADER_ROAD_TICKS`) + the walk back from
   320 blocks; a cave explorer **departure + 12000** (`CaveExplorerJob.MAX_TRIP_TICKS`) + the walk back from its cave
-  (+64); anyone else **12000** (PROPOSED `DEFAULT_TRIP_TICKS`). The walk is **10 ticks a block** (PROPOSED
-  `TICKS_PER_BLOCK`, half a walking NPC's pace).
+  (+64); a fisherman at far water or a woodcutter in a far wood (their remote work is daylight-only with
+  `survival.remoteWorkInDaylightOnly`) **until the coming nightfall** (day time **13000**, `Whereabouts.NIGHTFALL`) + the
+  walk home, never under 12000 (live check of 2026-11-19: a fisherman out from dawn to dusk came home 700 ticks inside
+  the default plan and its grace; with the rule off they keep 12000); anyone else **12000** (PROPOSED
+  `DEFAULT_TRIP_TICKS`). The walk is **10 ticks a block** (PROPOSED `TICKS_PER_BLOCK`, half a walking NPC's pace).
 * `missingGraceTicks` (**2400**, 0-72000): past its expected return plus this, an away member is **missing** (still
   counted, not replaced, its workplace held).
 * `presumedDeadTicks` (**12000**, 1200-240000): this long missing, it is **presumed dead**: no longer counted,
@@ -684,8 +687,11 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   as before) is lost: inside a home area its faction presumes it dead at once; away, the waits above apply.
 * A raid party drops a raider its faction no longer counts or whose death a member saw; the raid also ends when no
   raider is left alive (nothing told). Raid end lines (and the party's "has gathered") are carried home by the raiders
-  alive then. The war council plans **no new raid** while the end of its last raid is unheard at home, it still counts
-  someone of that party, and the raid's own bound (launch + **72000**) has not passed (review of 2026-11-19).
+  alive then; when the party empties because its last raider left it alive (home at its storehouse, or falling back
+  wounded), that raider carries the end (`FactionState.raidLast`, live check of 2026-11-19: a party that came home one
+  by one told its end to nobody and its council waited out the whole bound). The war council plans **no new raid**
+  while the end of its last raid is unheard at home, it still counts someone of that party, and the raid's own bound
+  (launch + **72000**) has not passed (review of 2026-11-19).
 * Lines about a member itself (a level gained) are said at once inside a home area, else told when it comes home; a
   hero's lines for its faction are heard by its whole faction only from a home area (away: the players near, as its
   other lines). A hero risen where it fell outside every home area, from a fall nobody saw, keeps its faction's view
