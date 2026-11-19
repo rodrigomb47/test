@@ -85,7 +85,10 @@ one target), and no hero yields: each escapes or fights to the death as its own 
 A hero kill feed (2026-11-13): every death in which a hero is the victim or the killer shows in chat for all players,
 worded like a vanilla player's death message (with faction names, following the showDeathMessages game rule);
 built 2026-11-19 with the kill credit of terrain deaths (`HEROES_V2.md` 15.2 "Shipped heroes, kill credit and the kill
-feed, mobility polish").
+feed, mobility polish"). Its scope, set by the owner on 2026-11-19: every death of a hero, whatever killed it (another
+hero, a player, an NPC, a monster, terrain), and nothing else; a hero killing an ordinary NPC or a monster prints no
+line. The same day the owner approved the look of Natsuho and Hinae in game ("they are ok as they are"), so the rest
+of the slice's art may go ahead.
 Each hero has one body for good (2026-11-13): no hero changes form, and the form fits the character (adult by default,
 chibi only for a kid or a small species).
 The owner plays single-player only: nothing is tuned for multiplayer or co-op (it should not break, but it is not a
