@@ -1345,6 +1345,77 @@ class HeroReaderV2Test {
         }
     }
 
+    // ------------------------------------------------------------------ explosive moves (6.18, task T2)
+
+    private static final String FIRE = "{\"type\": \"damage\", \"amount\": 2, \"element\": \"fire\"}";
+
+    @Test
+    void anExplosiveReadsItsPowerItsFireAndOneBlastPerImpact() {
+        HeroDef d = def(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"shot\", \"cooldown\": 30,"
+                + " \"effects\": [" + FIRE + "], \"explosive\": {\"power\": 2, \"fire\": true}"));
+        assertEquals(new HeroDef.Explosive(2, true, 1), move(d, "bomb").explosive());
+        assertNull(move(d, "lunge").explosive(), "a move without the field breaks no block");
+        // a bare number is the power, with no fire
+        HeroDef bare = def(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"zone\", \"zone_at\":"
+                + " \"target\", \"range\": 10, \"cooldown\": 30, \"effects\": [" + DMG + "], \"explosive\": 1"));
+        assertEquals(new HeroDef.Explosive(1, false, 1), move(bare, "bomb").explosive(), "a zone blasts on its first pulse");
+        // one blast per impact: a volley's projectiles, a rain's impacts, a bolt's hits; one for a leap
+        Object[][] forms = {{"\"form\": \"volley\", \"count\": 5", 5}, {"\"form\": \"rain\", \"radius\": 4, \"count\": 4,"
+                + " \"delay\": 0.9", 4}, {"\"form\": \"bolt\", \"hits\": 3", 3}, {"\"form\": \"leap\"", 1},
+                {"\"form\": \"nova\", \"radius\": 3", 1}};
+        for (Object[] f : forms) {
+            HeroDef x = def(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", " + f[0] + ", \"cooldown\": 60,"
+                    + " \"effects\": [" + DMG + "], \"explosive\": 1"));
+            assertEquals((int) f[1], move(x, "bomb").explosive().blasts(), (String) f[0]);
+        }
+        assertEquals(1, HeroCatalogue.impactsPerUse(Form.DIVE, 9, 9));
+        assertEquals(6, HeroCatalogue.impactsPerUse(Form.BARRAGE, 6, 1));
+        // the power is 1 to 4 (the catalogue's range: a 9 is clamped to 4, then the balance pass holds a skill to 2)
+        Loaded big = read(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"shot\", \"cooldown\": 30,"
+                + " \"effects\": [" + DMG + "], \"explosive\": {\"power\": 9}"));
+        assertEquals(Severity.ADJUSTED, one(big, Code.CLAMPED).severity());
+        assertEquals(2, move(big.hero("test_hero"), "bomb").explosive().power());
+    }
+
+    @Test
+    void anExplosiveIsOnlyForExplosionsByNatureAndItsFireOnlyForFireMoves() {
+        // a melee blow is no explosion: the part is left out, the move stays
+        Loaded melee = read(withMove("\"id\": \"club\", \"name\": \"Club\", \"form\": \"melee\", \"cooldown\": 30,"
+                + " \"effects\": [" + DMG + "], \"explosive\": {\"power\": 2}"));
+        Problem p = one(melee, Code.EXPLOSIVE_RULE);
+        assertEquals(Severity.PART_LEFT_OUT, p.severity());
+        assertEquals("Explosive", p.part());
+        assertEquals("only a move that is an explosion by nature breaks blocks: a shot, bolt, volley, barrage, nova, zone,"
+                + " rain, leap or dive (HEROES_V2 6.18); a melee is not, so it breaks none", p.message());
+        assertEquals("move 2 \"Club\" > explosive", p.path());
+        assertNull(move(melee.hero("test_hero"), "club").explosive());
+        for (String form : List.of("combo", "cone", "line", "sweep", "wave", "charge", "dash", "grab", "chain", "counter",
+                "self")) {
+            assertFalse(HeroCatalogue.EXPLOSIVE_FORMS.contains(HeroCatalogue.enumOf(Form.class, form)), form);
+        }
+        assertEquals(9, HeroCatalogue.EXPLOSIVE_FORMS.size());
+        // fire only on a fire move: its fire is left out, its blasts stay
+        Loaded cold = read(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"shot\", \"cooldown\": 30,"
+                + " \"effects\": [" + DMG + "], \"explosive\": {\"power\": 1, \"fire\": true}"));
+        Problem f = one(cold, Code.EXPLOSIVE_RULE);
+        assertEquals(Severity.PART_LEFT_OUT, f.severity());
+        assertEquals("Fire", f.part());
+        assertEquals(new HeroDef.Explosive(1, false, 1), move(cold.hero("test_hero"), "bomb").explosive());
+        HeroDef ignite = def(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"shot\", \"cooldown\": 30,"
+                + " \"effects\": [" + DMG + ", {\"type\": \"ignite\", \"seconds\": 3}], \"explosive\": {\"power\": 1,"
+                + " \"fire\": true}"));
+        assertTrue(move(ignite, "bomb").explosive().fire(), "an ignite makes it a fire move");
+        // not an object or a number
+        Loaded word = read(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"shot\", \"cooldown\": 30,"
+                + " \"effects\": [" + DMG + "], \"explosive\": \"big\""));
+        assertEquals(Severity.ADJUSTED, one(word, Code.WRONG_TYPE).severity());
+        assertNull(move(word.hero("test_hero"), "bomb").explosive());
+        // an ultimate may carry one too, up to TNT's 4
+        HeroDef u = def(hero2("\"ultimate\": {\"id\": \"big\", \"name\": \"Big\", \"form\": \"nova\", \"line\": \"Now!\","
+                + " \"radius\": 5, \"effects\": [" + DMG + "], \"explosive\": {\"power\": 4}}"));
+        assertEquals(new HeroDef.Explosive(4, false, 1), u.v2().ultimate().explosive());
+    }
+
     // ------------------------------------------------------------------ limits and damaged files
 
     @Test

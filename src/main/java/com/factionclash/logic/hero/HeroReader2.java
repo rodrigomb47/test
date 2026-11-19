@@ -860,9 +860,10 @@ final class HeroReader2 {
         }
         int channel = channel(f);
         Telegraph tele = telegraph(f);
+        HeroDef.Explosive explosive = explosive(f, form, count, hits, fx, strikes, perShot);
         String anim = ult ? (p.machine().endsWith("awakened") ? "ultimate.awakened" : "ultimate") : "move." + id;
         Move m = new Move(id, a, cls, frames, bands, weight, phases, prefer, followups, repeatable, breaksGuard,
-                unblockable, superArmor, channel, tele, extra, strikes, perShot, anim);
+                unblockable, superArmor, channel, tele, extra, strikes, perShot, anim, explosive);
         movePaths.put(m, p);
         moveLines.put(m, o.line());
         moveWhere.put(id, new Pos(p, o.line(), f));
@@ -1017,6 +1018,66 @@ final class HeroReader2 {
         c.report(Severity.ADJUSTED, Code.WRONG_TYPE, n.line(), f.at("channel"), "should be an object { \"interrupt\":"
                 + " 15 }, not " + c.shown(n) + ". It was ignored", null);
         return 0;
+    }
+
+    /**
+     * {@code explosive} (HEROES_V2 6.18, task T2): {@code { "power": 1-4, "fire": false }}, or a bare power. Only a move
+     * that is an explosion by nature keeps it (a shot, bolt, volley, barrage, nova, zone, rain, leap or dive; PART LEFT
+     * OUT otherwise); {@code fire} only on a fire move (a fire damage or damage over time, or an ignite; otherwise that
+     * part is left out). Its blasts are one per impact of a use ({@link HeroCatalogue#impactsPerUse}); the balance pass
+     * holds the power to the move's slot and the blasts to 6 and a total power of 8.
+     */
+    HeroDef.Explosive explosive(Ctx.Fields f, Form form, int count, int hits, List<Effect> fx, List<Strike> strikes,
+                                List<List<Effect>> perShot) {
+        Node n = f.node("explosive");
+        if (n == null) {
+            return null;
+        }
+        int power;
+        boolean fire = false;
+        Path at = f.at("explosive");
+        if (n instanceof Num) {
+            power = (int) c.number(f, HeroCatalogue.EXPLOSIVE_AS_POWER, "explosive", 1);
+        } else if (n instanceof Obj o) {
+            Ctx.Fields ef = c.fields(o, at, HeroCatalogue.EXPLOSIVE);
+            power = (int) c.number(ef, HeroCatalogue.EXPLOSIVE, "power", 1);
+            fire = c.bool(ef, "fire", false);
+        } else {
+            c.report(Severity.ADJUSTED, Code.WRONG_TYPE, n.line(), at, "should be an object { \"power\": 2 }, not "
+                    + c.shown(n) + ". It was ignored", null);
+            return null;
+        }
+        if (!HeroCatalogue.EXPLOSIVE_FORMS.contains(form)) {
+            c.report(Severity.PART_LEFT_OUT, Code.EXPLOSIVE_RULE, n.line(), at, "only a move that is an explosion by"
+                    + " nature breaks blocks: a shot, bolt, volley, barrage, nova, zone, rain, leap or dive (HEROES_V2"
+                    + " 6.18); a " + form.id() + " is not, so it breaks none", "Explosive");
+            return null;
+        }
+        if (fire && !fireMove(fx, strikes, perShot)) {
+            c.report(Severity.PART_LEFT_OUT, Code.EXPLOSIVE_RULE, n.line(), at, "\"fire\" is only for a fire move (a"
+                    + " fire damage, a fire damage over time or an ignite): this move's blasts start no fire", "Fire");
+            fire = false;
+        }
+        return new HeroDef.Explosive(power, fire, HeroCatalogue.impactsPerUse(form, count, hits));
+    }
+
+    /** A fire move (6.18): one of its effects deals fire damage or fire damage over time, or ignites. */
+    static boolean fireMove(List<Effect> fx, List<Strike> strikes, List<List<Effect>> perShot) {
+        List<List<Effect>> lists = new ArrayList<>();
+        lists.add(fx);
+        for (Strike st : strikes) {
+            lists.add(st.effects());
+        }
+        lists.addAll(perShot);
+        for (List<Effect> l : lists) {
+            for (Effect e : l) {
+                if (e instanceof HeroDef.Ignite || e instanceof HeroDef.Damage d && d.element() == HeroDef.Element.FIRE
+                        || e instanceof HeroDef.Dot dt && dt.element() == HeroDef.Element.FIRE) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     Telegraph telegraph(Ctx.Fields f) {
@@ -1349,7 +1410,8 @@ final class HeroReader2 {
             }
             replace(m, new Move(m.id(), m.ability(), m.cls(), merged, m.bands(), m.weight(), m.phases(),
                     m.preferWhen(), m.followups(), m.repeatable(), m.breaksGuard(), m.unblockable(), m.superArmor(),
-                    m.channel(), m.telegraph(), m.extra(), m.strikes(), m.perShot(), anim == null ? m.anim() : anim));
+                    m.channel(), m.telegraph(), m.extra(), m.strikes(), m.perShot(), anim == null ? m.anim() : anim,
+                    m.explosive()));
         }
         for (Move m : allMoves()) {
             if (!seen.contains(m.id())) {
@@ -1863,7 +1925,7 @@ final class HeroReader2 {
                 replace(m, new Move(m.id(), m.ability(), m.cls(), m.frames(), m.bands(), m.weight(), m.phases(),
                         m.preferWhen(), m.followups(), m.repeatable(), m.breaksGuard(), m.unblockable(),
                         m.superArmor(), m.channel(), m.telegraph(), m.extra().withDiveFrom(from), m.strikes(),
-                        m.perShot(), m.anim()));
+                        m.perShot(), m.anim(), m.explosive()));
             }
         }
     }

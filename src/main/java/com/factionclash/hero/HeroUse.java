@@ -33,7 +33,9 @@ public final class HeroUse {
     public boolean landed;
     /** How many impacts of the use sounded (S2: a list of impact sounds cycles per shot). */
     int impacts;
-    /** Whether the hero already struck its taunting pose for this use (A4). */
+    /** Blasts the use set off so far (6.18: at most its move's {@code explosive.blasts}). */
+    int blasts;
+        /** Whether the hero already struck its taunting pose for this use (A4). */
     boolean taunted;
     /** Where the area of a nova, zone or leap is (its allies-in-area effects use it). */
     Vec3 areaCenter;

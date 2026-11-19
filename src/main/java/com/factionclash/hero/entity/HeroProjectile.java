@@ -1,5 +1,6 @@
 package com.factionclash.hero.entity;
 
+import com.factionclash.hero.HeroBlasts;
 import com.factionclash.hero.HeroDamage;
 import com.factionclash.hero.HeroEffects;
 import com.factionclash.hero.HeroEntity;
@@ -33,8 +34,9 @@ import java.util.List;
  * custom models are A9), flies straight, or with an arrow's gravity for the arrow looks, passes through the hero's
  * allies, and on its first enemy applies what it carries: the move's effects to that enemy and to enemies within its
  * splash radius (one use, so every projectile of a volley counts against the same slot caps), or the basic hit's
- * damage, energy and {@code on_hit}. It changes no block (no fire, no broken pot) and drops nothing; it is not saved,
- * and one that outlives its hero or the use it carries simply fizzles.
+ * damage, energy and {@code on_hit}. It changes no block itself (no fire, no broken pot) and drops nothing, but where an
+ * explosive move's projectile strikes, its blast goes off ({@code HeroBlasts}, HEROES_V2 6.18); it is not saved, and one
+ * that outlives its hero or the use it carries simply fizzles.
  */
 public class HeroProjectile extends ThrowableItemProjectile {
     /** Arrow looks fly at a bow's speed with gravity; item looks straight and slower (v1 B.6). */
@@ -224,15 +226,24 @@ public class HeroProjectile extends ThrowableItemProjectile {
             }
         }
         HeroEffects.apply(use, effects, listIndex, rs, this);
+        HeroBlasts.blast(use, r.getLocation()); // HEROES_V2 6.18: an explosive move's blast where it strikes
     }
 
-    /** A block stops it and nothing happens to the block (v1 13.6: no block changes); a splash still lands. */
+    /**
+     * A block stops it: a splash still lands, and an explosive move's blast goes off at the face it struck (HEROES_V2
+     * 6.18); otherwise nothing happens to the block (v1 13.6: no block changes).
+     */
     @Override
     protected void onHitBlock(BlockHitResult r) {
         HeroEntity h = hero();
-        if (level().isClientSide || h == null || kind != Kind.MOVE || use == null || splash <= 0) {
+        if (level().isClientSide || h == null || kind != Kind.MOVE || use == null) {
             return;
         }
-        HeroEffects.apply(use, effects, listIndex, HeroForms.enemiesNear(h, r.getLocation(), splash), this);
+        if (splash > 0) {
+            HeroEffects.apply(use, effects, listIndex, HeroForms.enemiesNear(h, r.getLocation(), splash), this);
+        }
+        // just off the face, on its own side: a centre exactly on the face would sit in the block it struck
+        Vec3 n = Vec3.atLowerCornerOf(r.getDirection().getNormal());
+        HeroBlasts.blast(use, r.getLocation().add(n.scale(0.05)));
     }
 }

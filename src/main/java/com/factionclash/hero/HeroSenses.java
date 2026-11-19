@@ -4,6 +4,7 @@ import com.factionclash.combat.Pursuit;
 import com.factionclash.logic.hero.HeroActions;
 import com.factionclash.logic.hero.HeroDef.TargetKind;
 import com.factionclash.logic.hero.HeroRules;
+import com.factionclash.logic.hero.MoveSelector;
 import com.factionclash.logic.hero.Sense;
 import com.factionclash.npc.FactionNpc;
 import net.minecraft.core.BlockPos;
@@ -170,6 +171,13 @@ public final class HeroSenses {
         s.state = hero.combat().stateName();
         s.empowered = s.state != null;
         s.dashPathHazard = target != null && hazardBetween(hero, target);
+        // 6.18 (task T2): how near its own side's blocks its blasts would land (only for a kit with an explosive move)
+        MoveSelector sel = hero.combat().selector();
+        if (sel != null && sel.explosive) {
+            s.ownFromSelf = HeroBlasts.ownSideDistance(hero, hero.getX(), hero.getZ());
+            s.ownFromTarget = target == null || !target.isAlive() ? s.ownFromSelf
+                    : HeroBlasts.ownSideDistance(hero, target.getX(), target.getZ());
+        }
         s.escaping = hero.combat().boss().escape().fleeing(); // 6.13: no move while it runs; a cornered hero asks again
     }
 

@@ -138,7 +138,15 @@ public final class MoveSelector {
         for (Reaction r : kit.boss().reactions()) {
             reactions.add(new ReactionState(r));
         }
+        boolean ex = false;
+        for (Move m : kit.allMoves()) {
+            ex |= m.explosive() != null;
+        }
+        explosive = ex;
     }
+
+    /** Whether any of the kit's moves is explosive (6.18): only then are its own side's distances sensed. */
+    public final boolean explosive;
 
     /**
      * Starts its random draws again from {@code seed} (task A6b: two heroes given the same seed draw the same gaps,
@@ -535,6 +543,11 @@ public final class MoveSelector {
         if (needCharge && (isUltimate(m) ? !ultimateReady(m, now, s.energy) : refill(m, now).left <= 0)) {
             return false;
         }
+        // 6.18 (task T2): never a blast that would reach its own side's blocks, whatever starts it (a pick, a followup,
+        // a reaction, an opening ultimate)
+        if (ownSideFactor(m, s) == 0) {
+            return false;
+        }
         Form f = m.form();
         if (s.climbing) {
             return false;
@@ -604,7 +617,8 @@ public final class MoveSelector {
 
     /**
      * {@code weight x band fit x prefer fit x novelty x posture} (6.3), x the edge factor of 6.17 ({@link EdgePlay}): a
-     * move whose push would carry its target to an edge from where the hero stands gets x(1 + the edge's value).
+     * move whose push would carry its target to an edge from where the hero stands gets x(1 + the edge's value); x the
+     * own-side factor of 6.18 ({@link #ownSideFactor}: 0 for a blast that would reach its own side's blocks).
      */
     public double score(Move m, Sense s) {
         double w = Math.max(0, m.weight());
@@ -619,7 +633,16 @@ public final class MoveSelector {
         } else if (recent.contains(m.id())) {
             novelty = NOVELTY_RECENT;
         }
-        return w * band * prefer * novelty * postureFactor(m) * edgeFactor(m, s);
+        return w * band * prefer * novelty * postureFactor(m) * edgeFactor(m, s) * ownSideFactor(m, s);
+    }
+
+    /**
+     * 6.18's own-side check (task T2): 0 for an explosive move whose blast where it lands would reach a block of the
+     * hero's own side ({@link Blasts#ownSideFactor}), else 1.
+     */
+    public double ownSideFactor(Move m, Sense s) {
+        return m.explosive() == null ? 1 : Blasts.ownSideFactor(m, s.ownFromTarget, s.ownFromSelf,
+                s.target.present ? s.target.distance : 0);
     }
 
     /** Each move's push (6.17), worked out once per move. */

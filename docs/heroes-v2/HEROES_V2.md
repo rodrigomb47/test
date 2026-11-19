@@ -5410,7 +5410,7 @@ phase 2's own work (`docs/design/breaching.md` 12, X1-X4 and X6) and need nothin
 | ID | Task | Depends | Size | Done when |
 |---|---|---|---|---|
 | T1 | Lethal terrain for heroes' moves (6.17): `HeroEffects.knockback` no longer cuts a push toward lava or a drop (`hazardAhead` goes); `BossRules.safeKnockback` and `HAZARD_*` stay only for a push on an ally; `HeroCombat.throwGrabbed` tries lethal edges first, then straight ahead, at full strength; `HeroBoss.shockwave` pushes only enemies, unsoftened; `HeroCombat.hop` (`move_self`) stops short of a hazard, as dashes do; `logic/hero/EdgePlay` (edges with the receiver's immunities, the pick's factor, the approach, the aim by form) read by `HeroSenses` and `MoveSelector`; `heroes.edgePlay`; `logic/hero/KillCredit` (the 15 s window, a push recorded as a hit of 0, the last-attacker refresh, vanilla's death keys) feeding the kill feed, the rewards of 6.13, `HeroState` kills and combat XP; the safe cell of a `where_it_fell` revival | A5, A6, A12 | M | `EdgePlayTest` and `KillCreditTest` (new); `BossRulesTest.hazardKnockbackAndStunsThatCannotChain` and `MoveSelectorTest` updated (no cut on an enemy's push); the GameTests of 14.5 "Battle without civility", with `grabThrowsTowardALethalEdge` replacing `grabHoldsAndThrowsSafely`. **`KillCredit` done 2026-11-19** (15.2, "Shipped heroes, kill credit and the kill feed, mobility polish"): `logic/hero/KillCredit` and `KillCreditTest`, `combat/KillCredits` (a push as a hit of 0, the last-attacker refresh, the credit at a death) feeding the kill feed, the rewards of 6.13, `HeroState` kills and combat XP; GameTests in `HeroKillFeedGameTests` (the design's `terrainDeathIsThePushersKill` is `pushedIntoLavaIsThePushersKillForAnNpcAndAPlayer` and its fall and magma siblings). **The rest done 2026-11-19** ("T1 and T3 as built" below this table): `HeroEffects.knockback` lands at full strength on an enemy (`BossRules.pushStrength`: the cut only for a push on its own side); `HeroBoss.shockwave` pushes only enemies, unsoftened; `HeroCombat.throwGrabbed` aims through `HeroEdgePlay.throwDirection` (A5's tries, the nearest lethal edge first, then a harmful one, else straight ahead, never softened); a hop of its own stops half a block short of a hazard (`HeroCombat.safeHop`) and a dash or a charge at fire or lava (`burnAhead`); pure `logic/hero/EdgePlay` with `EdgePlayTest` (10), read by `MoveSelector` (`edgeFactor`, `readyPush`) through `Sense.edges` and by `hero/HeroEdgePlay` (the ring, the walk round, the throw's aim); `heroes.edgePlay`; `HeroManager.safeCellNear` for a `where_it_fell` revival; `BossRulesTest.hazardKnockbackAndStunsThatCannotChain` updated (`MoveSelectorTest` needed no change: `EdgePlayTest` scores the selector); `grabThrowsTowardALethalEdge` replaces `grabHoldsAndThrowsSafely`; the GameTests of 14.5 and three more in `HeroTerrainGameTests` |
-| T2 | Explosive moves (6.18): the `explosive` field in the catalogue, reader, balance and schema; the blast in the move runner (interaction `MOB`, a damage calculator that hurts and pushes nobody); the own-side check in the pick; the blast's decal disc; `heroes.explosiveBlocks`; a hero's blast on a raid's breach spot (with `docs/design/breaching.md` X3); the fixture `fixture_bomber` | F2, A5, T1 | M | the reader and balance cases in `HeroReaderV2Test` and `HeroBalanceV2Test`; `explosiveMoveBreaksBlocksNotPeople`, `explosiveMoveSparesItsOwnBase` |
+| T2 | Explosive moves (6.18): the `explosive` field in the catalogue, reader, balance and schema; the blast in the move runner (interaction `MOB`, a damage calculator that hurts and pushes nobody); the own-side check in the pick; the blast's decal disc; `heroes.explosiveBlocks`; a hero's blast on a raid's breach spot (with `docs/design/breaching.md` X3); the fixture `fixture_bomber` | F2, A5, T1 | M | the reader and balance cases in `HeroReaderV2Test` and `HeroBalanceV2Test`; `explosiveMoveBreaksBlocksNotPeople`, `explosiveMoveSparesItsOwnBase`. **Done 2026-11-19** ("T2 as built" below this table) but for the raid's breach spot, which waits for `docs/design/breaching.md` X1's `BreachPlanner` and X3's breach: `HeroDef.Explosive` (`power`, `fire`, `blasts`) on a move, the field in `HeroCatalogue` (`EXPLOSIVE`, its forms, the caps), `HeroReader2.explosive`, `HeroBalance.explosive` and the schema (`hero2.schema.json`), the problem code `explosive_rule`; pure `logic/hero/Blasts` (the reach, vanilla's ray rule, where a move blasts, the pick's own-side factor) read by `MoveSelector` (score and eligibility) through `Sense.ownFromTarget`/`ownFromSelf`; `hero/HeroBlasts` (vanilla's `Level.explode` with interaction `MOB`, its damage calculator and the detonation's empty entity list) called at every blast point of the runner; the blast's disc in `Decals.forMove`; `heroes.explosiveBlocks`; the fixture `fixture_bomber` in `HeroExplosiveGameTests` with `HeroReaderV2Test` (2), `HeroBalanceV2Test` (2), `BlastsTest` (5) and four GameTests |
 | T3 | Ordinary NPCs and heroes against lethal terrain (`docs/design/breaching.md` 8 and X5): `EdgeSafety` in paths and spot choice, `LavaEscapeGoal` (3.5), Fire Resistance, the water landing | T1 (`KillCredit`) | M | the terrain GameTests of `docs/design/breaching.md` 11.2. **Done 2026-11-19** ("T1 and T3 as built"): pure `logic/combat/EdgeSafety` with `EdgeSafetyTest` (5); `combat/EdgeSense` (the pushers near, the path cost in `NpcPathNavigation.GateEvaluator` for NPCs and heroes, the hold, cover and back-off spots); `combat/LavaEscapeGoal`; `combat/TerrainSurvival` (Fire Resistance, the water landing, `war.waterLanding`); `npcKeepsTheLavaEdgeAway` with its Knockback-sword player twin, `npcClimbsOutOfLava`, `waterLandingBreaksAFall`. The kill credit refresh is `KillCredit`'s (above) |
 | T4 | Docs and release: README ("Heroes", "Combat behaviour"), BALANCE rows, the config file, the kit sheets regenerated from the hero files (their TERRAIN AND BLOCKS section, kit version 3), jar and SHA-256 | T1-T3 | S | the release checklist (`HANDOFF.md` section 7) |
 
@@ -5473,7 +5473,7 @@ T1 and T3 as built (2026-11-19), where they go beyond or differ from 6.17, 6.19 
   the Nether, not with Slow Falling, not for a hero that glides or flies.
 - **Not built** (later work): soldiers taking Fire Resistance or a water bucket from the storehouse (the brewing of
   ROADMAP phase 3); the death told to the faction "as its knowledge allows" (phase 1); the aim of a leap's or a dive's
-  landing at an edge; T2 (explosive moves) and the TNT expert (X1-X4, X6).
+  landing at an edge; T2 (explosive moves, since built: "T2 as built" below) and the TNT expert (X1-X4, X6).
 - **Tests.** 1061 unit tests (15 new: `EdgePlayTest` 10, `EdgeSafetyTest` 5; `BossRulesTest` checks `pushStrength`) and
   348 GameTests (13 new in `HeroTerrainGameTests`: `knockbackFullStrengthIntoLava`, `heroCirclesToPushTowardAnEdge`,
   `edgePlayOffStopsTheAimNotThePush`, `shockwavePushesOnlyEnemies`, `chargeStopsShortOfTheEdgeItsTargetGoesOver`,
@@ -5489,7 +5489,73 @@ T1 and T3 as built (2026-11-19), where they go beyond or differ from 6.17, 6.19 
   receiver's lava, the skid of `knockbackDistance` (which first showed the formula 0.17 block short for knockback 2:
   the test now holds it to the measured 4.13), the walk's 3 s, an enemy's push cut.
 - **Left open.** A campaign on a dedicated server with Natsuho or Hinae given, fighting soldiers and a real player
-  beside a cliff and lava; T2 and T4.
+  beside a cliff and lava; T2 (since built, below) and T4.
+
+T2 as built (2026-11-19), where it goes beyond or differs from 6.18, 12.7 and 14.5:
+- **The field** (`HeroDef.Explosive`): `"explosive": { "power": 1-4, "fire": false }` or a bare power, on a move or an
+  ultimate. The reader keeps it only on a `shot`, `bolt`, `volley`, `barrage`, `nova`, `zone`, `rain`, `leap` or `dive`
+  (`explosive_rule`, PART LEFT OUT otherwise, the move stays) and its `fire` only on a fire move: a fire damage, a fire
+  damage over time or an `ignite` (PART LEFT OUT: the fire goes, the blasts stay). Its `blasts` are the move's impacts
+  a use (`HeroCatalogue.impactsPerUse`): a volley's projectiles, a barrage's shots, a rain's impacts, a bolt's or a nova's
+  hits, one for a shot, a zone (its first pulse), a leap or a dive. The balance pass (`HeroBalance.explosive`, ADJUSTED
+  each): power at most 2 for a skill and 4 for an ultimate, 1 for a volley's, barrage's or rain's; at most 6 blasts (a
+  rain of 8 blasts at its first 6 impacts, not fewer impacts); their powers at most 8 (the power lowered to fit: a bolt of
+  5 hits at power 2 becomes power 1); the class raised to at least `heavy` (`class_raised`). The blasts weigh nothing in
+  the move's weight or cooldown floor: they are terrain only. The schema (`hero2.schema.json`) has `explosive`.
+- **The blast** (`hero/HeroBlasts`): `Level.explode(hero, null, CALCULATOR, x, y, z, power, fire, MOB)`; with
+  `heroes.explosiveBlocks` false the interaction is `NONE`. `mobGriefing` is vanilla's per-entity check of `MOB`
+  (NeoForge's `EntityMobGriefingEvent` for the hero). `CALCULATOR` keeps vanilla's block rules and hurts and pushes nobody
+  (`shouldDamageEntity` false, `getKnockbackMultiplier` 0); beyond 6.18, while a hero's blast goes off its detonation
+  empties the explosion's entity list, so nobody is "hit by an explosion" at all (a player's last explosion, which
+  vanilla keeps for its fall and advancements, is left as it was), and a blast that keeps its blocks names none (no
+  repair queued for walls that stand). Fire only where blocks may break, as a ghast's fireball (with `mobGriefing` false
+  or the config off, no fire). Where each blast lands: a projectile's hit point on the entity it struck, or 0.05 off the
+  face of the block it struck (a centre on the face would sit in that block); a bolt at its target's feet; a nova, a
+  leap's and a dive's landing at the hero's feet; a zone at its centre on its first pulse; each rain impact at its spot.
+  The use counts its blasts (`HeroUse.blasts`), so a zone's one blast is spent on its first pulse and a rain's six on its
+  first six impacts. A projectile that flies out of range or outlives its hero blasts nowhere.
+- **Vanilla's TNT.** The blast is vanilla's explosion with vanilla's block rules: `explosiveBlastIsVanillasTntAndHurtsNobody`
+  sets the level's random seed, sets off a hero's blast of power 2 at a stone-brick wall with obsidian, bedrock and TNT
+  in it, sets the seed again and sets off vanilla's TNT explosion of power 2 at an identical wall: the same blocks break
+  (obsidian and bedrock stand, the TNT is lit in both). Pure `logic/hero/Blasts.broken` is vanilla's ray rule with one
+  strength for every ray: what a blast breaks lies between its weakest rays' set (power x 0.7) and its strongest's
+  (power x 1.3), which the GameTests hold the game to; its strongest ray reaches `1.3 x power / 0.225 x 0.3`, 1.73 blocks
+  a power (6.18's "about 1.7 x its power").
+- **Its own side** (`Blasts.ownSideFactor`, `HeroBlasts.ownSideDistance`). The distance from the target and from the
+  hero to the nearest block of its own side: the walls box (at any height) of every standing base of its faction or a
+  pact ally, and the box round that base's planned buildings (`BaseState.planBox`, rebuilt with the plan index), within
+  24 blocks; sensed only for a kit with an explosive move (`MoveSelector.explosive`). A move scores 0 when that distance
+  from where its blasts land (the hero for a nova or a zone at or following the hero, else the target) is within the
+  blast's reach plus its spread (a rain's radius + 0.5, a volley's fan at the target's distance, a leap's or a dive's
+  1.5 beside the target). Beyond 6.18's "the pick scores 0", the same check keeps a followup, a reaction or an opening
+  ultimate from starting it (`MoveSelector.eligible`): nothing starts a blast at its own side. Once the wind-up runs,
+  collateral is real, as 6.18 says.
+- **The decal** (`Decals.forMove`): a move that breaks blocks draws, beside its form's mark, a disc of the blast's reach
+  where it blasts (at the target, at the hero, or at a leap's or a dive's landing); a rain's impact discs are as wide as
+  its blast's reach when that is wider than 1.5 (`Decals.impactRadius`).
+- **The fixture** `fixture_bomber` (14.5) is a JSON string in `gametest/HeroExplosiveGameTests`, registered for each test
+  as the other fixtures are: a common marksman with `blast_shot` (a shot of power 2, a 3-block splash of 4 damage, a fire
+  charge's look) and `bomb_rain` (8 impacts of power 1, 6 of which blast); the tests add a pulsing zone and two light
+  bolts as needed.
+- **Not built.** A hero's blast on a raid's breach spot (6.18 "When", `docs/design/breaching.md` 9): the spot is
+  `BreachPlanner`'s (X1) and the breach on a raid X3's, both ROADMAP phase 2, so no hero blasts a wall on a raid of its
+  own accord yet; `HeroBlasts.blastAt` is the hook X3 will call. The Wither's `resistance_cap` (`BOSS_HEROES.md`, B1/B3)
+  will extend `CALCULATOR`'s block rule.
+- **Tests.** 1071 unit tests (10 new: `BlastsTest` 5, `HeroReaderV2Test` 2, `HeroBalanceV2Test` 2, the message case of
+  `explosive_rule`; `V2Sanity` checks every explosive move) and 352 GameTests (4 new in `HeroExplosiveGameTests`:
+  `explosiveBlastIsVanillasTntAndHurtsNobody`, `explosiveMoveBreaksBlocksNotPeople` (the shot at a wall opens its hole within
+  the ray rule, leaves an obsidian block and a dropped item whole, lights the TNT, deals only its splash, the same to an
+  NPC soldier and a mock player and a hero's damage, draws its blast's disc; then the same shot with `mobGriefing` false
+  and with `heroes.explosiveBlocks` false breaks nothing, lights nothing and deals the same damage),
+  `explosiveRainBlastsAtMostSixTimes` (and a zone of 3 pulses blasts once), `explosiveMoveSparesItsOwnBase` (two heroes,
+  one against an NPC soldier and one against a mock player inside their own base's walls box, never pick the shot whatever
+  its weight while they pick their two other moves, and pick it once the targets stand outside)). Sabotage, each caught by
+  its own test: in the pure rules the slot's power cap, the six blasts, the two TNT, the heavy class, the forms, the fire
+  move, the ray rule's resistance, a nova's own-side distance, the own-side eligibility, the decal's disc; in the game the
+  blast hurting and pushing (the calculator and the empty entity list together: each alone already keeps everyone
+  whole), the pick at home, the use's blast count, interaction `TNT` for `MOB` (`mobGriefing` ignored), the config ignored,
+  the decal's disc, a power off by one, a zone's three blasts. A GameTest fact learned: the pick never plays the same move
+  twice running, so a fixture whose only other move is held back picks once and stops; give it two.
 
 ---
 

@@ -72,6 +72,8 @@ public final class Problems {
         SIGNATURE_SHARED, MOBILITY_UNKNOWN, MOBILITY_ADJUSTED, MOBILITY_CARRIER, FLYERS_SHARE,
         // the dive form (MOBILITY_AND_WORK 7.3, 8.3)
         DIVE_RULE,
+        // explosive moves (HEROES_V2 6.18, task T2)
+        EXPLOSIVE_RULE,
         // the game's set of heroes (A1b, HeroAssembly): built-in definitions only, and operators' overrides
         NOT_BUILTIN, OVERRIDE_NO_HERO, OVERRIDE_UNREADABLE, OVERRIDE_FIXED, OVERRIDE_BREAKS;
 

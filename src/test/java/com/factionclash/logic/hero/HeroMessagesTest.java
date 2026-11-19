@@ -409,6 +409,9 @@ class HeroMessagesTest {
         c(Problems.Code.DIVE_RULE, PL, "a dive needs an airborne mobility trait", () -> read(V2Files.withMove(
                 "\"id\": \"swoop\", \"name\": \"Swoop\", \"form\": \"dive\", \"effects\": [{\"type\":"
                         + " \"damage\", \"amount\": 3}]")));
+        c(Problems.Code.EXPLOSIVE_RULE, PL, "only a move that is an explosion by nature breaks blocks", () -> read(
+                V2Files.withMove("\"id\": \"club\", \"name\": \"Club\", \"form\": \"melee\", \"effects\": [{\"type\":"
+                        + " \"damage\", \"amount\": 3}], \"explosive\": 2")));
         c(Problems.Code.FLYERS_SHARE, NO, "8 of the 8 loaded heroes fly, more than 15%", () -> {
             List<Source> s = new java.util.ArrayList<>();
             for (int i = 0; i < 8; i++) {

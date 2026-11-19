@@ -83,6 +83,15 @@ final class V2Sanity {
                 assertTrue(f.chance() >= 1 && f.chance() <= 100, w + "chance");
             }
             assertTrue(m.channel() == 0 || m.channel() >= 5 && m.channel() <= 30, w + "channel");
+            HeroDef.Explosive ex = m.explosive();
+            if (ex != null) {
+                // 6.18: only explosions by nature, held to their slot, 6 blasts and two TNT, with a heavy tell
+                assertTrue(HeroCatalogue.EXPLOSIVE_FORMS.contains(m.form()), w + "explosive form");
+                assertTrue(ex.power() >= 1 && ex.power() <= (ult ? 4 : 2), w + "blast power");
+                assertTrue(!HeroCatalogue.EXPLOSIVE_MANY_FORMS.contains(m.form()) || ex.power() == 1, w + "many blasts at 1");
+                assertTrue(ex.blasts() >= 1 && ex.blasts() <= 6 && ex.total() <= 8, w + "blasts");
+                assertTrue(m.cls().atLeast(MoveClass.HEAVY), w + "a blast needs a heavy tell");
+            }
             capped(m, d, w);
         }
         // strings: no loop through other moves, at most 4 moves (repeats aside: the runtime ends them)

@@ -327,7 +327,8 @@ moment a player would; it takes the bucket out of the backpack as a player switc
 - **Explosive moves**: a move that is an explosion by nature breaks blocks as a vanilla explosion of its power does
   (`HEROES_V2.md` 6.18). On a raid with soldiers held outside, a hero with such a move may blast the breach spot of
   6.2 instead of placing TNT (the one use of a move on a wall, and only in that goal). None of the eight slice heroes
-  has one.
+  has one. The moves themselves are built (2026-11-19, `HEROES_V2.md` 15.9 T2: `hero/HeroBlasts`, with the hook
+  `HeroBlasts.blastAt`); their use on the breach spot waits for X1's planner and X3's breach.
 - **The Wither** breaches by the rule above, with no exception of her own (`docs/heroes-v2/BOSS_HEROES.md` 4.5,
   revised 2026-11-18): her blue skulls (Ruin Skull) are an explosive move of power 1 that keeps the vanilla blue
   skull's rule (every block but the wither-immune ones counts as no stronger than 0.8), so to the planner of 6.2 every

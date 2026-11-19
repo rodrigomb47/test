@@ -674,6 +674,42 @@ public final class HeroBalance {
         return out;
     }
 
+    /**
+     * 6.18's limits on a move's blasts (task T2, ADJUSTED each): the power at most 2 for a skill and 4 for an ultimate,
+     * 1 for a volley's, barrage's or rain's many blasts; at most 6 blasts a use (the first 6 impacts blast); their powers
+     * adding up to at most 8 (the power is lowered to fit).
+     */
+    static HeroDef.Explosive explosive(HeroDef.Explosive e, HeroDef.Form form, boolean ult, Object where, Sink sink) {
+        int power = e.power();
+        int cap = ult ? HeroCatalogue.EXPLOSIVE_ULTIMATE_POWER : HeroCatalogue.EXPLOSIVE_SKILL_POWER;
+        if (power > cap) {
+            sink.report(where, "explosive", Code.EXPLOSIVE_RULE, "a blast of power " + power + " is above "
+                    + (ult ? "an ultimate's " : "a skill's ") + cap + " (TNT is 4, HEROES_V2 6.18). Set to " + cap);
+            power = cap;
+        }
+        if (HeroCatalogue.EXPLOSIVE_MANY_FORMS.contains(form) && power > HeroCatalogue.EXPLOSIVE_MANY_POWER) {
+            sink.report(where, "explosive", Code.EXPLOSIVE_RULE, "a " + form.id() + "'s many blasts are power "
+                    + HeroCatalogue.EXPLOSIVE_MANY_POWER + " each, not " + power + " (HEROES_V2 6.18). Set to "
+                    + HeroCatalogue.EXPLOSIVE_MANY_POWER);
+            power = HeroCatalogue.EXPLOSIVE_MANY_POWER;
+        }
+        int blasts = e.blasts();
+        if (blasts > HeroCatalogue.EXPLOSIVE_MAX_BLASTS) {
+            sink.report(where, "explosive", Code.EXPLOSIVE_RULE, "one use blasts at most "
+                    + HeroCatalogue.EXPLOSIVE_MAX_BLASTS + " times, and this one has " + blasts + " impacts (HEROES_V2"
+                    + " 6.18). Only its first " + HeroCatalogue.EXPLOSIVE_MAX_BLASTS + " blast");
+            blasts = HeroCatalogue.EXPLOSIVE_MAX_BLASTS;
+        }
+        if (power * blasts > HeroCatalogue.EXPLOSIVE_MAX_TOTAL) {
+            int fit = Math.max(1, HeroCatalogue.EXPLOSIVE_MAX_TOTAL / blasts);
+            sink.report(where, "explosive", Code.EXPLOSIVE_RULE, blasts + " blasts of power " + power + " add up to "
+                    + power * blasts + ", above " + HeroCatalogue.EXPLOSIVE_MAX_TOTAL + " a use (two TNT, HEROES_V2 6.18)."
+                    + " Set to power " + fit);
+            power = fit;
+        }
+        return power == e.power() && blasts == e.blasts() ? e : new HeroDef.Explosive(power, e.fire(), blasts);
+    }
+
     /** One move: per-effect caps, class, frames, decal, slot caps and weight. */
     static HeroDef.Move balanceMove(HeroDef.Move m0, Ref r, Map<String, HeroDef.State> states, Sink sink,
                                     Map<Object, Object> origin) {
@@ -711,6 +747,13 @@ public final class HeroBalance {
             sink.report(where, "class", Code.CLASS_RAISED, "a move that stuns an enemy is at least \"heavy\": a stun"
                     + " now stops a player too, so it needs a heavy tell (a 0.8 s wind-up and its sound). Read as"
                     + " \"heavy\"");
+            cls = HeroDef.MoveClass.HEAVY;
+        }
+        HeroDef.Explosive explosive = m0.explosive() == null ? null : explosive(m0.explosive(), form, ult, where, sink);
+        if (explosive != null && !cls.atLeast(HeroDef.MoveClass.HEAVY)) {
+            sink.report(where, "class", Code.CLASS_RAISED, "a move that breaks blocks is at least \"heavy\": every"
+                    + " blast has its tell (a 0.8 s wind-up, a ground mark at each blast point and its sound, HEROES_V2"
+                    + " 6.18). Read as \"heavy\"");
             cls = HeroDef.MoveClass.HEAVY;
         }
         // 3. frames: the class minimums; a zone's delay runs inside its wind-up
@@ -815,7 +858,7 @@ public final class HeroBalance {
         // 6. weight and floor
         HeroDef.Move m = new HeroDef.Move(m0.id(), a, cls, frames, m0.bands(), m0.weight(), m0.phases(),
                 m0.preferWhen(), m0.followups(), m0.repeatable(), m0.breaksGuard(), m0.unblockable(), m0.superArmor(),
-                m0.channel(), new HeroDef.Telegraph(shape, color), m0.extra(), strikes, perShot, m0.anim());
+                m0.channel(), new HeroDef.Telegraph(shape, color), m0.extra(), strikes, perShot, m0.anim(), explosive);
         double w = moveWeight(m, r, states);
         HeroDef.Ability done;
         if (ult) {

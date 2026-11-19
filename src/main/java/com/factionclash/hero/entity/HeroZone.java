@@ -1,5 +1,6 @@
 package com.factionclash.hero.entity;
 
+import com.factionclash.hero.HeroBlasts;
 import com.factionclash.hero.HeroEffects;
 import com.factionclash.hero.HeroEntity;
 import com.factionclash.hero.HeroForms;
@@ -108,6 +109,8 @@ public class HeroZone extends Entity {
         HeroEffects.particleRing(level(), position(), radius, p);
         HeroEffects.particleRing(level(), position(), radius * 0.5, p);
         HeroEffects.apply(use, ability.effects(), 0, HeroForms.enemiesNear(h, position().add(0, 0.5, 0), radius), h);
+        // HEROES_V2 6.18: a pulsing zone blasts on its first pulse only (its use has one blast, spent here)
+        HeroBlasts.blast(use, position());
     }
 
     @Override

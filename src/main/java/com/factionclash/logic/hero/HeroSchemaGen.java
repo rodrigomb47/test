@@ -98,6 +98,7 @@ public final class HeroSchemaGen {
         def("channel", oneOf(Map.of("type", "boolean"), integer(5, 30),
                 object(HeroCatalogue.CHANNEL, "channel")));
         def("telegraph", oneOf(enumOf("decal"), object(HeroCatalogue.TELEGRAPH, "telegraph")));
+        def("explosive", oneOf(integer(1, 4), object(HeroCatalogue.EXPLOSIVE, "explosive")));
         def("strike", object(HeroCatalogue.STRIKE, "strike"));
         def("move", object(HeroCatalogue.MOVE, "move"));
         Map<String, Field> ult = new LinkedHashMap<>(HeroCatalogue.MOVE);
@@ -229,6 +230,7 @@ public final class HeroSchemaGen {
             case "move.followups", "ultimate.followups" -> array(ref("followup"), (int) f.min(), (int) f.max());
             case "move.channel", "ultimate.channel" -> ref("channel");
             case "move.telegraph", "ultimate.telegraph" -> ref("telegraph");
+            case "move.explosive", "ultimate.explosive" -> ref("explosive");
             case "move.per_shot", "ultimate.per_shot" -> array(array(ref("effect"), 0, 3), (int) f.min(),
                     (int) f.max());
             case "move.strikes", "ultimate.strikes" -> array(ref("strike"), (int) f.min(), (int) f.max());

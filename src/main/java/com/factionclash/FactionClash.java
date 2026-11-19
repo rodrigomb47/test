@@ -40,6 +40,7 @@ public final class FactionClash {
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroControlEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroMoveEvents());
         NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroBossEvents());
+        NeoForge.EVENT_BUS.register(new com.factionclash.hero.HeroBlasts.Events());
         NeoForge.EVENT_BUS.register(new com.factionclash.combat.KillCreditEvents());
     }
 

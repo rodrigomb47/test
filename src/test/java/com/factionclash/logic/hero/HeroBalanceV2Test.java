@@ -417,6 +417,73 @@ class HeroBalanceV2Test {
         assertEquals(0, w.ability().delay(), EPS);
     }
 
+    // ------------------------------------------------------------------ explosive moves (6.18, task T2)
+
+    private static Loaded bomb(String form, String power) {
+        return read(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", " + form + ", \"cooldown\": 60, \"effects\": ["
+                + dmg(2) + "], \"explosive\": " + power));
+    }
+
+    @Test
+    void anExplosiveMoveIsAtLeastHeavy() {
+        // a shot is light by its form; breaking blocks makes it heavy (its tell: a 0.8 s wind-up, its marks, its sound)
+        Loaded l = bomb("\"form\": \"shot\", \"class\": \"light\"", "1");
+        Move m = move(l.hero("test_hero"), "bomb");
+        assertEquals(MoveClass.HEAVY, m.cls());
+        assertEquals(0.8, m.frames().windup(), EPS);
+        assertEquals(0.8, m.frames().recovery(), EPS);
+        Problem p = one(l, Code.CLASS_RAISED);
+        assertEquals(Severity.ADJUSTED, p.severity());
+        assertTrue(p.message().startsWith("a move that breaks blocks is at least \"heavy\""), p.message());
+        assertEquals(Decal.STRIP, m.telegraph().shape(), "a heavy shot draws its track");
+        // the same shot without the field stays light
+        Loaded plain = read(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"shot\", \"class\": \"light\","
+                + " \"cooldown\": 60, \"effects\": [" + dmg(2) + "]"));
+        assertEquals(MoveClass.LIGHT, move(plain.hero("test_hero"), "bomb").cls());
+        // an area move stays area, an ultimate an ultimate
+        assertEquals(MoveClass.AREA, move(bomb("\"form\": \"nova\", \"radius\": 3", "1").hero("test_hero"), "bomb").cls());
+    }
+
+    @Test
+    void anExplosiveIsHeldToItsSlotItsBlastsAndTwoTnt() {
+        // a skill at most 2
+        Loaded skill = bomb("\"form\": \"shot\"", "{\"power\": 3}");
+        assertEquals(new HeroDef.Explosive(2, false, 1), move(skill.hero("test_hero"), "bomb").explosive());
+        Problem p = one(skill, Code.EXPLOSIVE_RULE);
+        assertEquals(Severity.ADJUSTED, p.severity());
+        assertEquals("a blast of power 3 is above a skill's 2 (TNT is 4, HEROES_V2 6.18). Set to 2", p.message());
+        assertEquals("move 2 \"Bomb\" > explosive", p.path());
+        // an ultimate at most 4 (the catalogue's range): 4 stays
+        HeroDef u = def(hero2("\"ultimate\": {\"id\": \"big\", \"name\": \"Big\", \"form\": \"nova\", \"line\": \"Now!\","
+                + " \"radius\": 5, \"effects\": [" + dmg(2) + "], \"explosive\": {\"power\": 4}}"));
+        assertEquals(4, u.v2().ultimate().explosive().power());
+        // a volley's, barrage's or rain's many blasts are power 1
+        Loaded volley = bomb("\"form\": \"volley\", \"count\": 3", "2");
+        assertEquals(new HeroDef.Explosive(1, false, 3), move(volley.hero("test_hero"), "bomb").explosive());
+        assertEquals("a volley's many blasts are power 1 each, not 2 (HEROES_V2 6.18). Set to 1",
+                one(volley, Code.EXPLOSIVE_RULE).message());
+        // at most 6 blasts a use: a rain of 9 impacts blasts at its first 6
+        Loaded rain = bomb("\"form\": \"rain\", \"radius\": 4, \"count\": 9, \"delay\": 0.9", "1");
+        assertEquals(new HeroDef.Explosive(1, false, 6), move(rain.hero("test_hero"), "bomb").explosive());
+        assertEquals("one use blasts at most 6 times, and this one has 9 impacts (HEROES_V2 6.18). Only its first 6 blast",
+                one(rain, Code.EXPLOSIVE_RULE).message());
+        // their powers add up to at most 8: a bolt of 5 hits at power 2 (10) is lowered to power 1
+        Loaded bolt = bomb("\"form\": \"bolt\", \"hits\": 5", "2");
+        assertEquals(new HeroDef.Explosive(1, false, 5), move(bolt.hero("test_hero"), "bomb").explosive());
+        assertEquals("5 blasts of power 2 add up to 10, above 8 a use (two TNT, HEROES_V2 6.18). Set to power 1",
+                one(bolt, Code.EXPLOSIVE_RULE).message());
+        // 4 hits at power 2 is exactly two TNT: kept
+        Loaded four = bomb("\"form\": \"bolt\", \"hits\": 4", "2");
+        assertTrue(of(four, Code.EXPLOSIVE_RULE).isEmpty(), four.problems().report());
+        assertEquals(8, move(four.hero("test_hero"), "bomb").explosive().total());
+        // the blasts weigh nothing: the move's weight and cooldown floor are its effects'
+        Loaded with = bomb("\"form\": \"shot\"", "2");
+        Loaded without = read(withMove("\"id\": \"bomb\", \"name\": \"Bomb\", \"form\": \"shot\", \"class\": \"heavy\","
+                + " \"cooldown\": 60, \"effects\": [" + dmg(2) + "]"));
+        assertEquals(weight(move(without.hero("test_hero"), "bomb")), weight(move(with.hero("test_hero"), "bomb")), EPS,
+                "terrain only: a blast is no damage");
+    }
+
     @Test
     void theSliceKitsBalanceAsTheirSheetsSay() throws java.io.IOException {
         // the numbers SLICE_PLAN 3 gives that F2 kept (the cooldowns the fixtures raised are listed in SliceKitsTest)

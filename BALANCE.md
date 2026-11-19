@@ -1070,6 +1070,25 @@ The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breac
   picked up once down (at most **100** ticks later); never over lava, water or the void, in the Nether, with Slow Falling
   or for a hero that glides or flies.
 
+## Explosive moves (config `heroes.explosiveBlocks`; `logic/hero/Blasts`, `hero/HeroBlasts`, `HeroCatalogue.EXPLOSIVE_*`) — T2, 2026-11-19
+HEROES_V2 6.18, PROPOSED. A blast is terrain only: it hurts and pushes nobody; the move's own effects do the damage.
+* `explosive.power` (vanilla's explosion power): **1-4**; a skill at most **2**, an ultimate at most **4**; a volley's,
+  barrage's or rain's blasts **1** each (`EXPLOSIVE_SKILL_POWER`, `EXPLOSIVE_ULTIMATE_POWER`, `EXPLOSIVE_MANY_POWER`).
+* Blasts a use: one per impact (a volley's projectiles, a barrage's shots, a rain's impacts, a bolt's or a nova's hits;
+  one for a shot, a zone's first pulse, a leap's or a dive's landing), at most **6** (`EXPLOSIVE_MAX_BLASTS`), their
+  powers adding up to at most **8** (`EXPLOSIVE_MAX_TOTAL`, two TNT; the power is lowered to fit).
+* The class: at least **heavy** (a 0.8 s wind-up, its ground mark and sound).
+* Reach (vanilla's strongest ray in the open): **1.73** blocks a power (`Blasts.REACH_PER_POWER` = 1.3 x 0.3 / 0.225):
+  power 1 **1.73**, 2 **3.47**, 4 **6.93**; the wind-up's disc at each blast point is that wide (a rain impact's disc
+  at least **1.5**).
+* Blocks: vanilla's rules (blast resistance; obsidian 1200 and bedrock never; water and lava soak it up; TNT lit),
+  drops by `mobExplosionDropDecay`, fire (a fire move only) only where blocks may break. `mobGriefing` false or
+  `heroes.explosiveBlocks` (**true**) false: no block breaks, no TNT is lit, no fire; the damage is the same.
+* Its own side: the pick never starts a blast whose reach plus spread (a rain's radius + **0.5**, a volley's fan, a
+  leap's or a dive's **1.5**) from where it lands (the hero for a nova or a zone at the hero, else the target) touches the
+  walls box or the planned buildings' box of a standing base of its faction or a pact ally, looked for within **24**
+  blocks (`HeroBlasts.OWN_SIDE_LOOK`).
+
 ## Hero sounds (config `heroes`; `HeroSounds`, `HeroLocalSounds`, `HeroLoopSounds`, `SoundIndex`, `VoiceLine`) — S2
 Presentation only: no number here changes a fight, and every cue plays whoever causes it (HEROES_V2 6.15). Values of
 `SOUND.md` sections 6-8 are marked; the others are PROPOSED. Loudness and ranges per sound are in the index

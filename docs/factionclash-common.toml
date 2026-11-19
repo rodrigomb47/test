@@ -194,6 +194,11 @@
 	#side first (at most 3 s; that walk is the tell), and a grab throws toward the nearest deadly edge. The same
 	#against a player or an NPC. false stops the aiming; every push still lands at full strength wherever it sends.
 	edgePlay = true
+	#A hero's explosive moves break blocks as a vanilla explosion of their power does (HEROES_V2 6.18):
+	#blast resistance decides, obsidian and bedrock never break, TNT in reach is lit. The game rule mobGriefing
+	#false also keeps every block whole. false keeps every block whole too; the moves still land their effects.
+	#Blocks are blocks: a player's house and a faction's hall break alike.
+	explosiveBlocks = true
 	#Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent
 	#(PROPOSED: 100). The same against every target, player or NPC.
 	# Default: 100

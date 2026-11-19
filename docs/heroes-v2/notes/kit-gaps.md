@@ -715,7 +715,10 @@ what the Java side must change, test by test, and what other documents' owners s
    1.21.1 sources: vanilla's explosion skips both for every entity, items included). The pick scores 0 an explosive
    move whose blast at the target would reach its own side's blocks; `heroes.explosiveBlocks` (true). No slice move
    has it; the test-only `fixture_bomber` carries the GameTests (`explosiveMoveBreaksBlocksNotPeople`,
-   `explosiveMoveSparesItsOwnBase`).
+   `explosiveMoveSparesItsOwnBase`). **Built 2026-11-19** (HEROES_V2 15.9, "T2 as built"), with two more GameTests
+   (`explosiveBlastIsVanillasTntAndHurtsNobody`, `explosiveRainBlastsAtMostSixTimes`); the own-side check also keeps a
+   followup, a reaction or an opener from starting a blast, and the blast on a raid's breach spot waits for
+   `docs/design/breaching.md` X1 and X3.
 9. **The kit sheets** are at kit version 3 by hand (a TERRAIN AND BLOCKS section in each of the eight). When herogen
    writes the sheets (C1-C4), its template needs that section: the hero's pushing moves with their strengths, its
    knockback resistance and safe fall or fall immunity, its fire-proofing, and whether any move is `explosive`.

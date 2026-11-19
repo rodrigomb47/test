@@ -122,6 +122,30 @@ public final class BaseState {
 
     public void invalidatePlanIndex() {
         planIndex = null;
+        planBox = null;
+    }
+
+    /** Transient box round the planned blocks (min x, min z, max x, max z), rebuilt with the plan index. */
+    private transient int[] planBox;
+
+    /** The horizontal box round every planned block (min x, min z, max x, max z), or null with none planned. */
+    public int[] planBox() {
+        if (planBox == null) {
+            Map<Long, net.minecraft.world.level.block.state.BlockState> plan = planIndex();
+            if (plan.isEmpty()) {
+                return null;
+            }
+            int[] box = {Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
+            for (long p : plan.keySet()) {
+                int px = BlockPos.getX(p), pz = BlockPos.getZ(p);
+                box[0] = Math.min(box[0], px);
+                box[1] = Math.min(box[1], pz);
+                box[2] = Math.max(box[2], px);
+                box[3] = Math.max(box[3], pz);
+            }
+            planBox = box;
+        }
+        return planBox;
     }
 
     public BlockPos point(String key) {

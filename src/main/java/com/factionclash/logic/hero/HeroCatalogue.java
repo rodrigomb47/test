@@ -23,6 +23,7 @@ import com.factionclash.logic.hero.HeroDef.UseWhen;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1237,6 +1238,32 @@ public final class HeroCatalogue {
      */
     public static final double DIVE_EXTRA_WEIGHT = 1, DIVE_MIN_RECOVERY = 1.0, DIVE_TOUCH_DOWN = 0.5;
 
+    /**
+     * HEROES_V2 6.18 (task T2, PROPOSED): a move that is an explosion by nature. Its {@code power} is vanilla's explosion
+     * power: a skill at most 2, an ultimate at most 4; a rain's, volley's or barrage's blasts are power 1; one use blasts
+     * at most 6 times with its powers adding up to at most 8 (two TNT). Only these forms are explosions by nature.
+     */
+    public static final int EXPLOSIVE_SKILL_POWER = 2, EXPLOSIVE_ULTIMATE_POWER = 4, EXPLOSIVE_MANY_POWER = 1,
+            EXPLOSIVE_MAX_BLASTS = 6, EXPLOSIVE_MAX_TOTAL = 8;
+    public static final Set<Form> EXPLOSIVE_FORMS = Collections.unmodifiableSet(EnumSet.of(Form.SHOT, Form.BOLT,
+            Form.VOLLEY, Form.BARRAGE, Form.NOVA, Form.ZONE, Form.RAIN, Form.LEAP, Form.DIVE));
+    /** The forms whose many impacts blast at power 1 (6.18, ADJUSTED). */
+    public static final Set<Form> EXPLOSIVE_MANY_FORMS = Collections.unmodifiableSet(EnumSet.of(Form.VOLLEY,
+            Form.BARRAGE, Form.RAIN));
+
+    /**
+     * How many impacts one use of a move of {@code form} has (each a blast point, 6.18): a volley's projectiles, a
+     * barrage's shots and a rain's impacts ({@code count}), a bolt's or a nova's hits; one for a shot, a zone (its first
+     * pulse), a leap or a dive (the landing).
+     */
+    public static int impactsPerUse(Form form, int count, int hits) {
+        return switch (form) {
+            case VOLLEY, BARRAGE, RAIN -> Math.max(1, count);
+            case BOLT, NOVA -> Math.max(1, hits);
+            default -> 1;
+        };
+    }
+
     /** MOBILITY_AND_WORK 4.4: names a move id may not take, because {@code move.<id>} would shadow the core clip. */
     public static final Set<String> LOCOMOTION_NAMES = Set.of("idle", "walk", "run", "swim", "fall", "climb", "crouch",
             "jump", "crouch_jump", "leap", "air_jump", "wall_kick", "mantle", "land", "land_heavy", "land_roll",
@@ -1572,7 +1599,7 @@ public final class HeroCatalogue {
             num("speed", Unit.NONE, 6, 200, Double.NaN), of("wall_stun", Kind.BOOL), whole("waves", Unit.NONE, 1, 3, 1),
             whole("arc", Unit.DEGREES, 60, 180, 120), num("throw", Unit.NONE, 1, 4, 2), num("up", Unit.BLOCKS, 0, 1, 0),
             num("stance", Unit.SECONDS, 0.8, 2, 1), whole("absorb", Unit.PERCENT, 50, 90, 80), of("ranged", Kind.BOOL),
-            of("awakened", Kind.OBJECT), word("from", "dive_from"));
+            of("awakened", Kind.OBJECT), word("from", "dive_from"), of("explosive", Kind.OBJECT));
 
     public static final Map<String, Field> FRAMES = shape(num("windup", Unit.SECONDS, 0, 4, Double.NaN),
             num("active", Unit.SECONDS, 0, 6, Double.NaN), num("recovery", Unit.SECONDS, 0, 4, Double.NaN));
@@ -1580,6 +1607,9 @@ public final class HeroCatalogue {
             whole("chance", Unit.PERCENT, 1, 100, 100), whole("max", Unit.NONE, 1, 3, Double.NaN));
     public static final Map<String, Field> CHANNEL = shape(whole("interrupt", Unit.PERCENT, 5, 30, 15));
     public static final Map<String, Field> TELEGRAPH = shape(word("shape", "decal"), of("color", Kind.COLOR));
+    public static final Map<String, Field> EXPLOSIVE = shape(whole("power", Unit.NONE, 1, 4, 1), of("fire", Kind.BOOL));
+    /** {@code "explosive": 2}, a bare power. */
+    public static final Map<String, Field> EXPLOSIVE_AS_POWER = shape(whole("explosive", Unit.NONE, 1, 4, 1));
     public static final Map<String, Field> STRIKE = shape(num("windup", Unit.SECONDS, 0, 2, 0),
             num("active", Unit.SECONDS, 0, 2, 0), num("radius", Unit.BLOCKS, 0, 3, 0), req(list("effects", 1, 3)));
     public static final Map<String, Field> PASSIVE_2 = with(retyped(PASSIVE, "trigger", "trigger2"),
@@ -1656,6 +1686,7 @@ public final class HeroCatalogue {
         SHAPES2.put("followup", FOLLOWUP);
         SHAPES2.put("channel", CHANNEL);
         SHAPES2.put("telegraph", TELEGRAPH);
+        SHAPES2.put("explosive", EXPLOSIVE);
         SHAPES2.put("strike", STRIKE);
         SHAPES2.put("passive_2", PASSIVE_2);
         SHAPES2.put("state", STATE);

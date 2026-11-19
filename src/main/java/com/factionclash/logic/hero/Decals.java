@@ -300,11 +300,27 @@ public final class Decals {
             case LANDING -> out.add(retag(disc(aim.landX(), aim.landZ(), Math.max(1, a.radius())), Decal.LANDING));
             case IMPACTS -> {
                 for (double[] p : aim.impacts()) {
-                    out.add(retag(disc(p[0], p[1], IMPACT_RADIUS), Decal.IMPACTS));
+                    out.add(retag(disc(p[0], p[1], impactRadius(m)), Decal.IMPACTS));
                 }
             }
         }
+        // 6.18 (task T2): a move that breaks blocks also draws a disc of its blast's reach where it blasts (a rain's
+        // impacts draw theirs as each is called, at least that wide)
+        HeroDef.Explosive e = m.explosive();
+        if (e != null && kind != Decal.NONE && f != Form.RAIN) {
+            double r = Blasts.decalRadius(e);
+            out.add(switch (Blasts.at(m)) {
+                case SELF -> disc(0, 0, r);
+                case TARGET -> f == Form.LEAP || f == Form.DIVE ? disc(aim.landX(), aim.landZ(), r)
+                        : disc(aim.targetX(), aim.targetZ(), r);
+            });
+        }
         return out;
+    }
+
+    /** A rain impact's disc (6.5): {@link #IMPACT_RADIUS}, or its blast's reach when that is wider (6.18). */
+    public static double impactRadius(Move m) {
+        return m.explosive() == null ? IMPACT_RADIUS : Math.max(IMPACT_RADIUS, Blasts.decalRadius(m.explosive()));
     }
 
     private static Shape discFor(Move m, Aim aim) {

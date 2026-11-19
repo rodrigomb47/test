@@ -157,6 +157,13 @@ public final class Sense {
      */
     public EdgePlay.Ring edges;
     public double toTargetX, toTargetZ, targetKnockbackResistance;
+    /**
+     * Explosive moves (6.18, task T2): the distance from the target and from the hero to the nearest block of the
+     * hero's own side (its faction's or a pact ally's planned buildings, or anything inside the walls box of one of
+     * their bases; infinite when none is near or the hero has no explosive move). Read by the pick's own-side check
+     * ({@link Blasts#ownSideFactor}).
+     */
+    public double ownFromTarget = Double.POSITIVE_INFINITY, ownFromSelf = Double.POSITIVE_INFINITY;
     /** Cannot start moves: stunned, silenced (6.6), eating, or escaping (a cornered hero asks again). */
     public boolean stunned, silenced, escaping;
 
@@ -183,6 +190,7 @@ public final class Sense {
         dashPathHazard = false;
         edges = null;
         toTargetX = toTargetZ = targetKnockbackResistance = 0;
+        ownFromTarget = ownFromSelf = Double.POSITIVE_INFINITY;
         stunned = silenced = escaping = false;
         return this;
     }

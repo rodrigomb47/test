@@ -1069,14 +1069,36 @@ public record HeroDef(int format, String id, String name, String title, String d
     public enum DiveFrom implements Word { AIR, APEX }
 
     /**
+     * A move that is an explosion by nature (HEROES_V2 6.18, task T2): at each of its first {@code blasts} impacts of a
+     * use, a vanilla explosion of {@code power} (1-4: a wither skull is 1, a creeper 3, TNT 4) that breaks blocks by
+     * vanilla's rules and hurts and pushes nobody; with {@code fire}, vanilla's explosion fire (a fire move only).
+     */
+    public record Explosive(int power, boolean fire, int blasts) {
+        /** The powers of one use's blasts added up (at most 8, two TNT). */
+        public int total() {
+            return power * blasts;
+        }
+    }
+
+    /**
      * A format-2 move (HEROES_V2 12.7): a v1 ability ({@link #ability}: form, form fields, effects, look, line,
      * cooldown, charges...) plus the move fields. {@code phases} are the boss phases it belongs to; {@code anim} the
-     * animation that plays it; {@code channel} the share of max health whose damage breaks it (0: not channelled).
+     * animation that plays it; {@code channel} the share of max health whose damage breaks it (0: not channelled);
+     * {@code explosive} its blasts (6.18; null: it breaks no block).
      */
     public record Move(String id, Ability ability, MoveClass cls, Frames frames, List<Band> bands, int weight,
                        List<Integer> phases, Condition preferWhen, List<Followup> followups, boolean repeatable,
                        boolean breaksGuard, boolean unblockable, boolean superArmor, int channel, Telegraph telegraph,
-                       FormExtra extra, List<Strike> strikes, List<List<Effect>> perShot, String anim) {
+                       FormExtra extra, List<Strike> strikes, List<List<Effect>> perShot, String anim,
+                       Explosive explosive) {
+        public Move(String id, Ability ability, MoveClass cls, Frames frames, List<Band> bands, int weight,
+                    List<Integer> phases, Condition preferWhen, List<Followup> followups, boolean repeatable,
+                    boolean breaksGuard, boolean unblockable, boolean superArmor, int channel, Telegraph telegraph,
+                    FormExtra extra, List<Strike> strikes, List<List<Effect>> perShot, String anim) {
+            this(id, ability, cls, frames, bands, weight, phases, preferWhen, followups, repeatable, breaksGuard,
+                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim, null);
+        }
+
         public Move {
             bands = List.copyOf(bands);
             phases = List.copyOf(phases);
@@ -1095,27 +1117,32 @@ public record HeroDef(int format, String id, String name, String title, String d
 
         public Move withAbility(Ability a) {
             return new Move(id, a, cls, frames, bands, weight, phases, preferWhen, followups, repeatable, breaksGuard,
-                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim);
+                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim, explosive);
         }
 
         public Move withClass(MoveClass c, Frames f, Telegraph t) {
             return new Move(id, ability, c, f, bands, weight, phases, preferWhen, followups, repeatable, breaksGuard,
-                    unblockable, superArmor, channel, t, extra, strikes, perShot, anim);
+                    unblockable, superArmor, channel, t, extra, strikes, perShot, anim, explosive);
         }
 
         public Move withParts(List<Strike> s, List<List<Effect>> p) {
             return new Move(id, ability, cls, frames, bands, weight, phases, preferWhen, followups, repeatable,
-                    breaksGuard, unblockable, superArmor, channel, telegraph, extra, s, p, anim);
+                    breaksGuard, unblockable, superArmor, channel, telegraph, extra, s, p, anim, explosive);
         }
 
         public Move withFollowups(List<Followup> f) {
             return new Move(id, ability, cls, frames, bands, weight, phases, preferWhen, f, repeatable, breaksGuard,
-                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim);
+                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim, explosive);
         }
 
         public Move withPhases(List<Integer> p) {
             return new Move(id, ability, cls, frames, bands, weight, p, preferWhen, followups, repeatable, breaksGuard,
-                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim);
+                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim, explosive);
+        }
+
+        public Move withExplosive(Explosive e) {
+            return new Move(id, ability, cls, frames, bands, weight, phases, preferWhen, followups, repeatable, breaksGuard,
+                    unblockable, superArmor, channel, telegraph, extra, strikes, perShot, anim, e);
         }
 
         /** Every effect list of the move: its effects, each strike's and each per-shot list. */

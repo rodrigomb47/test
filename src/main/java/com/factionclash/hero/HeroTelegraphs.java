@@ -141,7 +141,7 @@ public final class HeroTelegraphs {
             return -1;
         }
         Vec3 o = hero.position();
-        Decals.Shape disc = Decals.disc(at.x - o.x, at.z - o.z, Decals.IMPACT_RADIUS);
+        Decals.Shape disc = Decals.disc(at.x - o.x, at.z - o.z, Decals.impactRadius(m));
         return send(sl, to, m, Decal.IMPACTS, List.of(disc), growTicks, at);
     }
 

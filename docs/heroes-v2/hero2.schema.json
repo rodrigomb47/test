@@ -1651,6 +1651,32 @@
         }
       ]
     },
+    "explosive": {
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        {
+          "type": "object",
+          "properties": {
+            "power": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "fire": {
+              "type": "boolean"
+            }
+          },
+          "patternProperties": {
+            "^_": {}
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
     "strike": {
       "type": "object",
       "required": ["effects"],
@@ -1948,6 +1974,9 @@
         },
         "from": {
           "enum": ["air", "apex"]
+        },
+        "explosive": {
+          "$ref": "#/$defs/explosive"
         }
       },
       "patternProperties": {
@@ -2218,6 +2247,9 @@
         },
         "from": {
           "enum": ["air", "apex"]
+        },
+        "explosive": {
+          "$ref": "#/$defs/explosive"
         }
       },
       "patternProperties": {

@@ -1329,6 +1329,7 @@ public final class HeroCombat {
             telegraphs.clear(decal);
             HeroEffects.particleRing(hero.level(), at, FormGeometry.RAIN_IMPACT_RADIUS, look);
             HeroEffects.apply(use, effects, 0, HeroForms.enemiesNear(hero, at.add(0, 0.5, 0), FormGeometry.RAIN_IMPACT_RADIUS), hero);
+            HeroBlasts.blast(use, at); // 6.18: each impact blasts (its first 6 at most)
             return true;
         }
     }
@@ -1727,6 +1728,9 @@ public final class HeroCombat {
                                 HeroEffects.particle(a.look(), element(), color()));
                     }
                     HeroEffects.apply(use, fx, 0, rs, hero);
+                    if (!rs.isEmpty()) {
+                        HeroBlasts.blast(use, rs.get(0).position()); // 6.18: a bolt's blast where it strikes
+                    }
                 }
                 case CHAIN -> chainLink(hit);
                 case CONE -> {
@@ -1742,6 +1746,7 @@ public final class HeroCombat {
                     use.area(hero.position(), a.radius());
                     HeroEffects.particleRing(hero.level(), hero.position(), a.radius(), HeroEffects.particle(a.look(), element(), color()));
                     HeroEffects.apply(use, fx, 0, HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), a.radius()), hero);
+                    HeroBlasts.blast(use, hero.position()); // 6.18: a nova's blast at its burst
                 }
                 case SELF -> HeroEffects.apply(use, fx, 0, List.of(hero), hero);
                 case ALLY -> HeroEffects.apply(use, fx, 0, List.of(HeroForms.mostHurtAlly(hero, a.range())), hero);
@@ -2042,6 +2047,7 @@ public final class HeroCombat {
             use.area(hero.position(), r);
             HeroEffects.particleRing(hero.level(), hero.position(), r, HeroEffects.particle(a.look(), element(), color()));
             HeroEffects.apply(use, a.effects(), 0, HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), r), hero);
+            HeroBlasts.blast(use, hero.position()); // 6.18: a dive's blast where it lands
             // a touch-and-go (0.5 s) while the window has dives left, else the full recovery after the last dive (7.3)
             int td = air.diveLanded();
             if (td > 0) {
@@ -2082,6 +2088,7 @@ public final class HeroCombat {
                 use.area(hero.position(), a.radius());
                 HeroEffects.particleRing(hero.level(), hero.position(), a.radius(), HeroEffects.particle(a.look(), element(), color()));
                 HeroEffects.apply(use, a.effects(), 0, HeroForms.enemiesNear(hero, hero.position().add(0, 0.5, 0), a.radius()), hero);
+                HeroBlasts.blast(use, hero.position()); // 6.18: a leap's blast where it lands
             }
         }
 

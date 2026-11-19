@@ -52,6 +52,7 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_SHOW_ENERGY;
     public static final ModConfigSpec.BooleanValue HERO_KILL_FEED;
     public static final ModConfigSpec.BooleanValue HERO_EDGE_PLAY;
+    public static final ModConfigSpec.BooleanValue HERO_EXPLOSIVE_BLOCKS;
     public static final ModConfigSpec.BooleanValue WAR_WATER_LANDING;
     public static final ModConfigSpec.BooleanValue HERO_KILL_FEED_MONSTERS;
     public static final ModConfigSpec.IntValue HERO_POWER_SCALE;
@@ -217,6 +218,11 @@ public final class FCConfig {
                         "side first (at most 3 s; that walk is the tell), and a grab throws toward the nearest deadly edge. The same",
                         "against a player or an NPC. false stops the aiming; every push still lands at full strength wherever it sends.")
                 .define("edgePlay", true);
+        HERO_EXPLOSIVE_BLOCKS = b.comment("A hero's explosive moves break blocks as a vanilla explosion of their power does (HEROES_V2 6.18):",
+                        "blast resistance decides, obsidian and bedrock never break, TNT in reach is lit. The game rule mobGriefing",
+                        "false also keeps every block whole. false keeps every block whole too; the moves still land their effects.",
+                        "Blocks are blocks: a player's house and a faction's hall break alike.")
+                .define("explosiveBlocks", true);
         HERO_POWER_SCALE = b.comment("Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent",
                         "(PROPOSED: 100). The same against every target, player or NPC.")
                 .defineInRange("powerScale", 100, 25, 200);
