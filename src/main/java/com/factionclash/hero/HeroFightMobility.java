@@ -401,8 +401,12 @@ public final class HeroFightMobility {
      * there, or it holds out of reach): it takes off to it, when it may.
      */
     private void reachFlight(LivingEntity t, HeroMovement mv) {
+        // in an aerial phase its take-offs are the selector's windows, unless the reach clock sent it back to its
+        // enemies (5.1.15) from where it cannot walk: a flyer in a pit under archers comes back by air (the live check of
+        // 2026-11-19: Ambrose stood 17 s in a 5-deep trench under two NPC archers' arrows, his clock firing every 4 s)
+        boolean comingBack = returnUntil >= 0 && hero.tickCount < returnUntil;
         if (!mv.profile().flies() || !hero.onGround() || t.getY() - hero.getY() < REACH_RISE || !standing(t)
-                || FightMobility.aerialPhase(aerial(), combat.boss().phase())) {
+                || FightMobility.aerialPhase(aerial(), combat.boss().phase()) && !comingBack) {
             return;
         }
         if (mv.takeOffRefusal() != null || !room(FightMobility.AERIAL_HEADROOM)) {
@@ -509,6 +513,7 @@ public final class HeroFightMobility {
             mv.land();
         } else {
             returnUntil = hero.tickCount + FightMobility.RETURN_TICKS;
+            reachCheckAt = hero.tickCount; // a flyer that cannot walk back takes off this tick (reachFlight)
         }
     }
 

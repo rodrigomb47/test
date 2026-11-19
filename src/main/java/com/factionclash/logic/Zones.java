@@ -53,6 +53,21 @@ public final class Zones {
         return new int[]{clamp(x, cx - r, cx + r), clamp(z, cz - r, cz + r)};
     }
 
+    /**
+     * Where a raid party gathers before going in (FactionDirector): {@code distance} blocks short of the target's centre
+     * on the line home, measured on the axis that runs furthest, so a diagonal approach stays outside the target's
+     * square walls too (the straight-line 28 of before put the rally 19.8 blocks out on each axis, inside a settlement's
+     * 24-block walls: found by the mobility live check of 2026-11-19, where the party gathered in the enemy's yard).
+     */
+    public static int[] rally(int tx, int tz, int hx, int hz, int distance) {
+        double dx = hx - tx, dz = hz - tz;
+        double m = Math.max(Math.abs(dx), Math.abs(dz));
+        if (m < 1) {
+            return new int[]{tx + distance, tz};
+        }
+        return new int[]{tx + (int) Math.round(dx / m * distance), tz + (int) Math.round(dz / m * distance)};
+    }
+
     private static int clamp(int v, int lo, int hi) {
         return Math.max(lo, Math.min(hi, v));
     }

@@ -523,13 +523,20 @@ public final class HeroEndGameTests {
             }));
             h.runAtTickTime(160, t.guard(() -> near(t, foes.get(0).getHealth(), foes.get(1).getHealth(), EPS,
                     "the same move dealt the same with and without a player near")));
+            long[] introDay = {Long.MIN_VALUE, Long.MIN_VALUE};
+            h.runAtTickTime(63, () -> introDay[0] = BossRules.day(h.getLevel().getDayTime()));
             h.runAtTickTime(330, t.guard(() -> {
                 t.assertTrue(!intro.combat().boss().fighting(), "the fight did not end 10 s after its enemy");
                 FactionNpc again = soldier(t, 20, 6);
                 intro.setTarget(again);
+                introDay[1] = BossRules.day(h.getLevel().getDayTime());
             }));
             h.runAtTickTime(340, t.guard(() -> {
-                t.assertTrue(intro.combat().boss().fighting() && intro.combat().boss().intros() == 1, "a second intro the same day");
+                // the suite's clock runs on (a full run passes two game days): a second fight on the next day opens with
+                // the intro again, by the rule; on the same day it does not
+                boolean newDay = introDay[1] != introDay[0];
+                t.assertTrue(intro.combat().boss().fighting() && intro.combat().boss().intros() == (newDay ? 2 : 1),
+                        newDay ? "no intro on the next day" : "a second intro the same day");
                 t.succeed();
             }));
         } catch (RuntimeException | Error e) {

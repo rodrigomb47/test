@@ -727,24 +727,65 @@ public final class FactionDirector {
         if (!go) {
             return; // not yet, or not strong enough for that garrison
         }
+        launch(level, data, f, home, target, picks.subList(0, party), targetDefence,
+                joint ? "Joining the pact's offensive! " : counter ? "Counter-attack! " : "", t);
+    }
+
+    /**
+     * Operator hook for live checks ({@code /fc admin raid <faction> <base>}): launches {@code f}'s raid on {@code target}
+     * now from its first standing settlement, its party picked as the war council picks one (every soldier beyond a third
+     * of the garrison, at least {@code raidPartySize}, the best first; never a hero), whatever the interval, the scouts'
+     * reports and the strength rule say. Returns what it did, or why it could not.
+     */
+    public static String forceRaid(ServerLevel level, CampaignData data, FactionState f, BaseState target) {
+        if (f.raidTarget >= 0) {
+            return f.type.displayName + " already raids base " + f.raidTarget;
+        }
+        if (target == null || target.destroyed || target.faction == f.type) {
+            return "no such enemy base standing";
+        }
+        BaseState home = data.bases.values().stream().filter(b -> b.faction == f.type && !b.destroyed && b.isSettlement())
+                .findFirst().orElse(null);
+        if (home == null) {
+            return f.type.displayName + " has no settlement standing";
+        }
+        BlockPos min = home.point(BaseState.MIN), max = home.point(BaseState.MAX);
+        AABB area = new AABB(min.getX(), min.getY() - 40, min.getZ(), max.getX() + 1, max.getY() + 40, max.getZ() + 1);
+        List<FactionNpc> picks = new ArrayList<>(level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive()
+                && n.getFaction() == f.type && n.getRole().combatant && n.baseId() == home.id && !n.isDisplayOnly()
+                && !(n instanceof com.factionclash.hero.HeroEntity)));
+        int keep = Math.max(FCConfig.HOME_DEFENDERS.get(), (picks.size() + 2) / 3);
+        int party = Math.min(picks.size(), Math.max(FCConfig.RAID_PARTY_SIZE.get(), picks.size() - keep));
+        if (party <= 0) {
+            return f.type.displayName + " has no soldier at home to send";
+        }
+        picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
+        launch(level, data, f, home, target, picks.subList(0, party), defenders(data, target), "By order! ",
+                level.getGameTime());
+        return f.type.displayName + " raids base " + target.id + " with " + party + " soldiers";
+    }
+
+    /** Sends a raid party: the raiders, the target, the rally 28 blocks short of it on the home side, the message. */
+    private static void launch(ServerLevel level, CampaignData data, FactionState f, BaseState home, BaseState target,
+                               List<FactionNpc> party, int targetDefence, String prefix, long t) {
         f.raiders.clear();
-        for (int i = 0; i < party; i++) {
-            f.raiders.add(picks.get(i).getUUID());
+        for (FactionNpc n : party) {
+            f.raiders.add(n.getUUID());
         }
         f.raidTarget = target.id;
-        f.raidParty = party;
+        f.raidParty = party.size();
         f.raidMusteredAt = 0;
-        // the party gathers 28 blocks short of the target, on the home side, before going in together
-        double dx = home.center.getX() - target.center.getX(), dz = home.center.getZ() - target.center.getZ();
-        double len = Math.max(1, Math.sqrt(dx * dx + dz * dz));
-        int rx = target.center.getX() + (int) Math.round(dx / len * 28), rz = target.center.getZ() + (int) Math.round(dz / len * 28);
-        f.raidRally = new BlockPos(rx, target.center.getY(), rz).asLong();
+        // the party gathers 28 blocks short of the target, on the home side and outside its walls on any heading,
+        // before going in together
+        int[] r = com.factionclash.logic.Zones.rally(target.center.getX(), target.center.getZ(), home.center.getX(),
+                home.center.getZ(), 28);
+        f.raidRally = new BlockPos(r[0], target.center.getY(), r[1]).asLong();
         f.raidStartedAt = t;
         f.lastRaidAt = t;
         f.raidsLaunched++;
         data.setDirty();
-        Messages.toFaction(level.getServer(), f.type, Component.literal((joint ? "Joining the pact's offensive! " : counter ? "Counter-attack! " : "")
-                + "Launching a raid with " + party
+        Messages.toFaction(level.getServer(), f.type, Component.literal(prefix
+                + "Launching a raid with " + party.size()
                 + " soldiers (against about " + targetDefence + " defenders) on the "
                 + target.faction.displayName + (target.isSettlement() ? " settlement" : " lair") + " reported at " + target.center.toShortString()));
     }

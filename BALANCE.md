@@ -499,8 +499,9 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   flesh, paper, clay, rabbit hide 0; no food while rationing) and up to 192 emeralds. Buys only gear of iron or
   better (or a bow/crossbow) when the storehouse has none of that kind at that rank or better, at most 2 per kind
   per trip; bread only while rationing. One trade per second.
-* Raids: rally point 28 blocks short of the target toward home; the assault starts when 70% of the living raiders
-  are within 12 blocks of it or after 6000 ticks; a raid that has lost more than half its party is called off.
+* Raids: rally point 28 blocks short of the target toward home, on the axis that runs furthest (a diagonal approach
+  stays outside its walls); the assault starts when 70% of the living raiders are within 12 blocks of it or after 6000
+  ticks; a raid that has lost more than half its party is called off.
 
 ## Reaching a target (`Pursuit`, `ReachPlanner`, `Reach`, `OpenGateGoal`)
 A fighter whose path to its target comes back partial (it cannot walk up to it and hit it) plans a way or waits out
@@ -1097,11 +1098,13 @@ All PROPOSED unless MOBILITY_AND_WORK gives the number; heroes only (workers and
   **0.91**); a heavy landing without the roll slows to **50%** for **10** ticks; a fall of **2** blocks plays a landing,
   of **4** a heavy one.
 * Air jumps and wall kicks: an air jump's height (`p` x **1.25**); a wall kick pushes **0.4** away, never off the same
-  face twice in a row. The mantle: a ledge within **1** block of its hands (80% of its height).
+  face twice in a row; in a chimney it leans **0.15** a tick toward the side it kicks off next. The mantle: a ledge
+  within **1** block of its hands (80% of its height); at the top of a climb (acrobat III, climber III) once the top
+  **0.4** of its body is over the face.
 * Climbing: a push of **0.12** into the face; vanilla's ladder **2.35 b/s** up, **3** down; let go on any hit or a
   knock-back of **0.5**; grip again after **10** ticks.
-* Gliding: opened by itself falling faster than **0.2** a tick over a drop of **4+** blocks; the forward speed blended
-  **35%** a tick; ended by any projectile (no new glide before landing) or water.
+* Gliding: opened by itself falling faster than **0.2** a tick over a drop of **4+** blocks under its whole footprint;
+  the forward speed blended **35%** a tick; ended by any projectile (no new glide before landing) or water.
 * Flight: steering blended **35%** a tick toward cruise speed and climb rate (Slowness I halves the climb); descends at
   most **3 b/s** (or its climb rate), a landing at **4 b/s**; slows within **0.35 x** the distance, on its point within
   **0.3**; a backpack more than half full counts as loaded.

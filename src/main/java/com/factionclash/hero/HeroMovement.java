@@ -630,7 +630,7 @@ public final class HeroMovement {
             // a glider opens its glide when it falls from a height (1.9)
             if (profile.glides() && !noGlideUntilLanding && !glideChecked && hero.getDeltaMovement().y < -MovementRules.GLIDE_OPEN_SPEED) {
                 glideChecked = true;
-                if (MovementRules.opensGlide(hero.getDeltaMovement().y, dropBelow(40))) {
+                if (MovementRules.opensGlide(hero.getDeltaMovement().y, footprintDrop(40))) {
                     Vec3 v = hero.getDeltaMovement();
                     double h = Math.sqrt(v.x * v.x + v.z * v.z);
                     Vec3 look = hero.getLookAngle();
@@ -1097,8 +1097,10 @@ public final class HeroMovement {
         hero.setDeltaMovement(climbFace.getStepX() * CLIMB_PUSH, v.y, climbFace.getStepZ() * CLIMB_PUSH);
         face(climbFace.getStepX(), climbFace.getStepZ());
         hero.resetFallDistance();
-        if (climbLeftGround && profile.has(Feature.MANTLE) && !hero.horizontalCollision && stateTicks > 2
-                && mantle() == null) {
+        // an acrobat III or a climber III mantles once the face ends at its head (vanilla's horizontal collision stays
+        // on until its feet clear the top, so it never mantled and the ladder physics carried it over: the live check of
+        // 2026-11-19)
+        if (climbLeftGround && profile.has(Feature.MANTLE) && stateTicks > 2 && faceEndsAtHead() && mantle() == null) {
             return;
         }
         int limit = profile.climbHeight();
@@ -1143,6 +1145,17 @@ public final class HeroMovement {
         AABB box = hero.getBoundingBox().deflate(0, 0.05, 0);
         return !hero.level().noCollision(hero, box.move(climbFace.getStepX() * reach, 0, climbFace.getStepZ() * reach));
     }
+
+    /** Whether the face it climbs ends below the top of its head (its upper body is over the top). */
+    private boolean faceEndsAtHead() {
+        AABB b = hero.getBoundingBox();
+        AABB head = new AABB(b.minX, b.maxY - MANTLE_HEAD, b.minZ, b.maxX, b.maxY, b.maxZ)
+                .move(climbFace.getStepX() * 0.1, 0, climbFace.getStepZ() * 0.1);
+        return hero.level().noCollision(hero, head);
+    }
+
+    /** The part of the hero above the top of the face when it mantles (blocks). */
+    static final double MANTLE_HEAD = 0.4;
 
     private boolean touchingFace() {
         AABB box = hero.getBoundingBox().deflate(0, 0.05, 0);
@@ -1314,6 +1327,14 @@ public final class HeroMovement {
             if (wallKick() != null) {
                 spendAirJump();
             }
+        } else if (!ground && touchingWall() == null) {
+            // a 1-2 wide shaft is wider than the hero: it leans toward a side so the next apex finds a wall to kick off
+            // (the side opposite its last kick; found by the live check of 2026-11-19, where it only air-jumped, fell
+            // back and the trip failed into DigOut and the stuck hop)
+            Direction w = chimneyWall();
+            if (w != null) {
+                hero.setDeltaMovement(w.getStepX() * CHIMNEY_LEAN, v.y, w.getStepZ() * CHIMNEY_LEAN);
+            }
         }
         if (ground && stateTicks > TELL_TICKS + 1) {
             setState(State.NONE);
@@ -1322,6 +1343,38 @@ public final class HeroMovement {
             setState(State.NONE);
         }
     }
+
+    /** How fast a hero in a chimney leans toward the side it kicks off next (blocks a tick). */
+    static final double CHIMNEY_LEAN = 0.15;
+
+    /**
+     * The side of the shaft a chimney kicks off next: a solid neighbour at its chest that is not the face of its last
+     * kick, a side of the narrow way (both sides solid) first. Null when the shaft has none.
+     */
+    private Direction chimneyWall() {
+        Level level = hero.level();
+        BlockPos at = BlockPos.containing(hero.getX(), hero.getY() + 1.0, hero.getZ());
+        Direction best = null;
+        boolean bestNarrow = false;
+        for (Direction d : HORIZONTAL) {
+            if (d.get2DDataValue() == lastKickFace) {
+                continue;
+            }
+            BlockPos n = at.relative(d);
+            if (level.getBlockState(n).getCollisionShape(level, n).isEmpty()) {
+                continue;
+            }
+            BlockPos o = at.relative(d.getOpposite());
+            boolean narrow = !level.getBlockState(o).getCollisionShape(level, o).isEmpty();
+            if (best == null || narrow && !bestNarrow) {
+                best = d;
+                bestNarrow = narrow;
+            }
+        }
+        return best;
+    }
+
+    private static final Direction[] HORIZONTAL = {Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
 
     /**
      * A climb-down link (A11): from the ledge it stands on, it backs over the edge toward {@code over} and climbs down
@@ -1666,10 +1719,26 @@ public final class HeroMovement {
         flyTarget = null;
     }
 
+    /**
+     * The drop under its whole footprint: the shallowest of the drops under its box's four corners, so a hero whose middle
+     * is over a pit while its box still rests on the edge does not count the pit (the live check of 2026-11-19: a glide
+     * opened for a tick on the lip of a ditch and landed at once).
+     */
+    public double footprintDrop(int max) {
+        AABB b = hero.getBoundingBox();
+        double e = 0.01;
+        double d = Math.min(dropBelow(max, b.minX + e, b.minZ + e), dropBelow(max, b.maxX - e, b.minZ + e));
+        return Math.min(d, Math.min(dropBelow(max, b.minX + e, b.maxZ - e), dropBelow(max, b.maxX - e, b.maxZ - e)));
+    }
+
     /** The drop under its feet to the first block that holds it, within {@code max} blocks (infinity: none). */
     public double dropBelow(int max) {
+        return dropBelow(max, hero.getX(), hero.getZ());
+    }
+
+    private double dropBelow(int max, double x, double z) {
         Level level = hero.level();
-        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos(hero.getBlockX(), Mth.floor(hero.getY() + 0.01), hero.getBlockZ());
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos(Mth.floor(x), Mth.floor(hero.getY() + 0.01), Mth.floor(z));
         for (int i = 0; i <= max; i++) {
             if (!level.isLoaded(p)) {
                 return Double.POSITIVE_INFINITY;

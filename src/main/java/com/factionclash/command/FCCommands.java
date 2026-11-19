@@ -84,6 +84,8 @@ public final class FCCommands {
                         .then(Commands.literal("blocks").then(Commands.argument("from", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos())
                                 .then(Commands.argument("to", net.minecraft.commands.arguments.coordinates.BlockPosArgument.blockPos()).executes(FCCommands::blockDump))))
                         .then(Commands.literal("destroy").then(Commands.argument("baseId", IntegerArgumentType.integer(1)).executes(FCCommands::destroy)))
+                        .then(Commands.literal("raid").then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS)
+                                .then(Commands.argument("baseId", IntegerArgumentType.integer(1)).executes(FCCommands::raid))))
                         .then(HeroCommands.admin())));
     }
 
@@ -369,6 +371,20 @@ public final class FCCommands {
             return 0;
         }
         CampaignManager.destroyBase(c.getSource().getServer().overworld(), b, null, "admin");
+        return 1;
+    }
+
+    /** {@code raid <faction> <baseId>} (live checks): that faction's raid on that base now, its party picked by the council. */
+    private static int raid(CommandContext<CommandSourceStack> c) {
+        CampaignData data = CampaignData.get(c.getSource().getServer());
+        FactionType t = FactionType.byId(StringArgumentType.getString(c, "faction"));
+        if (t == null || !data.factions.containsKey(t)) {
+            c.getSource().sendFailure(Component.literal("Name a human faction."));
+            return 0;
+        }
+        String r = com.factionclash.campaign.FactionDirector.forceRaid(c.getSource().getServer().overworld(), data, data.faction(t),
+                data.base(IntegerArgumentType.getInteger(c, "baseId")));
+        c.getSource().sendSuccess(() -> Component.literal(r), true);
         return 1;
     }
 
