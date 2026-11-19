@@ -838,7 +838,8 @@ public final class HeroMobilityGameTests {
                         }
                     }
                     case 6 -> {
-                        if (m.state() == HeroMovement.State.NONE && amb.onGround()) {
+                        // (exhausted, it lands into the winded rest: MOBILITY_AND_WORK 2.2)
+                        if ((m.state() == HeroMovement.State.NONE || m.winded()) && amb.onGround()) {
                             stage[0] = 7;
                             at[0] = (int) (h.getTick());
                         }

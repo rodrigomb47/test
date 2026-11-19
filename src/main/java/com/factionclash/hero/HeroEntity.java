@@ -1440,6 +1440,16 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
     @Override
     public boolean killedEntity(ServerLevel level, LivingEntity victim) {
         boolean r = super.killedEntity(level, victim);
+        creditKill(level, victim);
+        return r;
+    }
+
+    /**
+     * A kill credited to it (its own blow's through {@link #killedEntity}, or a death by terrain within 15 s of its push,
+     * throw, pull or blow: HEROES_V2 6.17, {@code combat/KillCredits}): energy, the {@code kill} line, the campaign's
+     * count, combat XP and its {@code on_kill} passives, the same for any victim.
+     */
+    public void creditKill(ServerLevel level, LivingEntity victim) {
         if (!preview) {
             gainEnergy(HeroRules.ENERGY_KILL);
             HeroState s = campaignRecord();
@@ -1451,7 +1461,26 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             awardCombatXp(HeroRules.killXp(victim.getMaxHealth())); // v1 22.1: 10 + its max health / 2
             combat().trigger(com.factionclash.logic.hero.PassiveBook.Event.of(HeroDef.Trigger.ON_KILL), victim, null);
         }
-        return r;
+    }
+
+    /** An enemy pushed, threw or pulled it (6.17): for the rewards of its death, as a blow by that enemy. */
+    public void creditedBy(LivingEntity enemy) {
+        if (!preview && !level().isClientSide) {
+            combat().boss().hurtBy(enemy);
+        }
+    }
+
+    /**
+     * On the server, its name in vanilla's death messages, command feedback and logs is the kill feed's
+     * {@code Name (Faction)} (HEROES_V2 6.17, ROADMAP phase 4), so a player's own death message names the hero that
+     * killed it with its faction; clients keep the name tag, which is the synced custom name.
+     */
+    @Override
+    public Component getDisplayName() {
+        if (level() == null || level().isClientSide || heroId().isEmpty()) {
+            return super.getDisplayName();
+        }
+        return HeroKillFeed.name(this);
     }
 
     /** A level gained: the numbers grow (re-applied with the affixes) and it says {@code level_up}. */
@@ -1741,6 +1770,9 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
             super.travel(net.minecraft.world.phys.Vec3.ZERO);
         } else {
             super.travel(input);
+        }
+        if (movement != null && !level().isClientSide && !preview) {
+            movement.afterTravel(); // a touch-down shows its landing on this tick (the live check's seams)
         }
     }
 

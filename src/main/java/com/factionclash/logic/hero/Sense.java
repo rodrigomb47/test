@@ -141,6 +141,8 @@ public final class Sense {
     public double staminaShare = 1;
     /** Light ranged moves it started since its last take-off (MOBILITY_AND_WORK 5.1.5: at most 3 in the air; A12). */
     public int airLights;
+    /** On a reach flight (MOBILITY_AND_WORK 3.7, 7.4): in the air outside its aerial phases, no move starts. */
+    public boolean reachFlight;
     public final Map<String, Integer> marks = new HashMap<>();
     /** No enemy for this many ticks (v1 {@code out_of_combat}: 5 s). */
     public int ticksWithoutEnemy;
@@ -167,6 +169,7 @@ public final class Sense {
         empowered = shielded = airborne = flying = climbing = false;
         staminaShare = 1;
         airLights = 0;
+        reachFlight = false;
         marks.clear();
         ticksWithoutEnemy = 0;
         energy = 0;

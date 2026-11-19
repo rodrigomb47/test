@@ -159,6 +159,7 @@ public final class HeroSenses {
         var st0 = hero.movement().stamina();
         s.staminaShare = st0.max() > 0 ? st0.share() : 1;
         s.airLights = hero.combat().air().window().lights();
+        s.reachFlight = s.airborne && hero.combat().air().air() == HeroFightMobility.Air.REACH;
         HeroStatus st = HeroStatus.peek(hero);
         if (st != null && !st.book().isEmpty()) {
             s.marks.putAll(st.book().marks(now));

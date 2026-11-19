@@ -495,6 +495,17 @@ public final class HeroStatus {
             e.setDeltaMovement(dx / d * v, Math.max(m.y, dy / d * v), dz / d * v);
             e.hasImpulse = true;
             e.hurtMarked = true;
+            if (now % com.factionclash.logic.hero.KillCredit.TRACKER_TICKS == 0 && e.level() instanceof ServerLevel sl
+                    && te.source != null) {
+                // 6.17: a tether's pull is its hero's push (looked up once a second, not every tick of the pull)
+                try {
+                    if (sl.getEntity(java.util.UUID.fromString(te.source)) instanceof HeroEntity by) {
+                        com.factionclash.combat.KillCredits.push(by, e, com.factionclash.logic.hero.KillCredit.Kind.PULL);
+                    }
+                } catch (IllegalArgumentException ignored) {
+                    // not a UUID: no pusher to credit
+                }
+            }
         }
         if ((now & 7) == 0 && e.level() instanceof ServerLevel sl) {
             int n = (int) Math.min(12, Math.max(2, d * 2));

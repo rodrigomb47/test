@@ -50,6 +50,8 @@ public final class FCConfig {
     public static final ModConfigSpec.BooleanValue HERO_DEFAULT_LINES;
     public static final ModConfigSpec.BooleanValue HERO_SPEECH_BUBBLES;
     public static final ModConfigSpec.BooleanValue HERO_SHOW_ENERGY;
+    public static final ModConfigSpec.BooleanValue HERO_KILL_FEED;
+    public static final ModConfigSpec.BooleanValue HERO_KILL_FEED_MONSTERS;
     public static final ModConfigSpec.IntValue HERO_POWER_SCALE;
     public static final ModConfigSpec.IntValue HERO_MAX_HIT;
     public static final ModConfigSpec.IntValue HERO_MAX_DOT_PER_SECOND;
@@ -197,6 +199,13 @@ public final class FCConfig {
                 .define("speechBubbles", true);
         HERO_SHOW_ENERGY = b.comment("Show a fighting hero's energy on its name tag: [Fighting 80%].")
                 .define("showEnergy", true);
+        HERO_KILL_FEED = b.comment("The hero kill feed: every death in which a hero is the victim or the killer is told in chat to all",
+                        "players, worded like vanilla's death messages with the factions' names, while the game rule showDeathMessages",
+                        "is on (a player's own death is vanilla's message with its faction and the hero's beside the names).")
+                .define("killFeed", true);
+        HERO_KILL_FEED_MONSTERS = b.comment("Also tell the monsters and animals a hero kills (off: only players, faction NPCs and heroes; a monster",
+                        "that kills a hero is always named).")
+                .define("killFeedMonsters", false);
         HERO_POWER_SCALE = b.comment("Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent",
                         "(PROPOSED: 100). The same against every target, player or NPC.")
                 .defineInRange("powerScale", 100, 25, 200);

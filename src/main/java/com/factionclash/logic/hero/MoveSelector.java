@@ -540,8 +540,8 @@ public final class MoveSelector {
             return false;
         }
         // MOBILITY_AND_WORK 5.1.5 (task A12): in the air only light ranged moves, at most 3 a take-off, and the wind-up
-        // of a telegraphed dive or rain
-        if (s.airborne && !FightMobility.airMoveAllowed(f, m.cls(), s.airLights)) {
+        // of a telegraphed dive or rain; none at all on a reach flight (3.7, 7.4)
+        if (s.airborne && !FightMobility.airMoveAllowed(f, m.cls(), s.airLights, s.reachFlight)) {
             return false;
         }
         // a dive from the air starts only in the air; one from the apex starts with its jump (MOBILITY_AND_WORK 7.3)

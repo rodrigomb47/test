@@ -274,7 +274,8 @@ public final class HeroManager {
         if (s == null || !s.alive || !h.getUUID().equals(s.uuid)) {
             return;
         }
-        Entity killer = source == null ? null : source.getEntity();
+        // the killer: the blow's, or the enemy whose push or blow came within 15 s of a death by terrain (6.17)
+        Entity killer = source == null ? null : com.factionclash.combat.KillCredits.killer(h, source);
         h.say(LineEvent.FALLEN, killer == null ? java.util.Map.of() : java.util.Map.of("enemy", HeroEntity.nameOf(killer)), null);
         s.fellAt = h.blockPosition();
         fallen(server, data, s, h, "has fallen at " + h.blockPosition().getX() + ", " + h.blockPosition().getZ());

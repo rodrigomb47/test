@@ -417,6 +417,7 @@ public final class HeroEffects {
             r.setDeltaMovement(v.x, Math.max(v.y, lift), v.z);
         }
         r.hurtMarked = true;
+        com.factionclash.combat.KillCredits.push(hero, r, com.factionclash.logic.hero.KillCredit.Kind.PUSH); // 6.17
     }
 
     /** {@code pull}: toward the hero, two blocks per point of strength, never onto it; a small hop carries it. */
@@ -433,6 +434,7 @@ public final class HeroEffects {
         r.setDeltaMovement(dx / l * v, Math.max(r.getDeltaMovement().y, FormGeometry.PULL_LIFT), dz / l * v);
         r.hasImpulse = true;
         r.hurtMarked = true;
+        com.factionclash.combat.KillCredits.push(hero, r, com.factionclash.logic.hero.KillCredit.Kind.PULL); // 6.17
     }
 
     /**

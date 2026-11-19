@@ -437,7 +437,14 @@ public final class HeroBoss {
      * (a player, a faction NPC or a hero) is remembered with its side for the rewards of a death.
      */
     void hurtBy(DamageSource src) {
-        Entity a = src == null ? null : src.getEntity();
+        hurtBy(src == null ? null : src.getEntity());
+    }
+
+    /**
+     * A person's blow or push (6.17: a push with no damage counts as a blow for the rewards of a death, so a hero
+     * pushed to its death by terrain rewards the pusher's side).
+     */
+    void hurtBy(Entity a) {
         if (a != null && a != hero && (a instanceof Player || a instanceof FactionNpc n && !n.isDisplayOnly())) {
             HeroRules.Side side = side(a);
             if (side != null) {

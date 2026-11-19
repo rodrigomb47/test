@@ -153,6 +153,62 @@ class BuiltinHeroesTest {
         assertEquals(4, m, "four men in the slice");
     }
 
+    /** The art sources the art was made for ({@code herosrc/heroes/<id>.hero.json}, repository only). */
+    static final Path ART = Path.of("herosrc/heroes");
+
+    /**
+     * A shipped hero's kit is one kit (HEROES_V2 15.2, C1): every field of its definition (but {@code _comment}) equals
+     * its slice fixture's, when it has one (the GameTests run the fixture), and its art source's, when that exists and
+     * holds a kit (the art was made for it: the frames of its clips are the definition's); the art source's own
+     * {@code art}, {@code animations} and comments are not the definition's. The two slice heroes shipped so far are
+     * both checked; the test rig has neither.
+     */
+    @Test
+    void aShippedKitIsItsFixtureAndItsArtSource() throws IOException {
+        int compared = 0;
+        for (Source s : read(DIR)) {
+            String id = HeroReader.idFromFileName(s.path());
+            Map<String, Object> shipped = kitFields(s.text());
+            Path fixture = SLICE.resolve(id + ".json");
+            if (Files.exists(fixture)) {
+                assertEquals(kitFields(Files.readString(fixture, StandardCharsets.UTF_8)), shipped,
+                        s.path() + " differs from its slice fixture " + fixture);
+                compared++;
+            }
+            Path art = ART.resolve(id + ".hero.json");
+            if (Files.exists(art)) {
+                Map<String, Object> source = kitFields(Files.readString(art, StandardCharsets.UTF_8));
+                if (source.get("moves") instanceof List<?> moves && !moves.isEmpty() && !"pending".equals(source.get("kit"))) {
+                    // (an art-only source, the test rig's or a boss look's, holds no kit to compare)
+                    source.keySet().removeAll(Set.of("art", "animations"));
+                    assertEquals(source, shipped, s.path() + " differs from the kit of its art source " + art);
+                }
+            }
+        }
+        assertTrue(compared >= 2, "Natsuho and Hinae ship with their fixtures beside them: " + compared);
+    }
+
+    /** A definition's top-level fields as parsed JSON, comments ({@code _...}) left out. */
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> kitFields(String text) {
+        Object o = HeroAssetCheck.Json.parse(text.getBytes(StandardCharsets.UTF_8));
+        Map<String, Object> m = new TreeMap<>((Map<String, Object>) o);
+        m.keySet().removeIf(k -> k.startsWith("_"));
+        return m;
+    }
+
+    @Test
+    void theSliceHeroesShipped() throws IOException {
+        Loaded l = assemble(read(DIR));
+        for (String id : List.of("natsuho_komezaki", "hinae_shirasuzu")) {
+            HeroDef d = l.hero(id);
+            assertNotNull(d, id + " is not shipped");
+            assertEquals(HeroDef.Gender.FEMALE, d.v2().gender(), id);
+        }
+        assertEquals("Natsuho Komezaki", l.hero("natsuho_komezaki").name());
+        assertEquals("Hinae Shirasuzu", l.hero("hinae_shirasuzu").name());
+    }
+
     /** The rules above catch what they are for (each one broken on purpose, on test text, never on shipped files). */
     @Test
     void theChecksCatchADuplicateABrokenHeroAPartLeftOutAndAWrongId() {

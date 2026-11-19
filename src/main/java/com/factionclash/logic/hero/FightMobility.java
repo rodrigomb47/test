@@ -64,6 +64,18 @@ public final class FightMobility {
      * else: melee is for the ground (or a dive).
      */
     public static boolean airMoveAllowed(Form f, MoveClass c, int lightsUsed) {
+        return airMoveAllowed(f, c, lightsUsed, false);
+    }
+
+    /**
+     * The same, on a reach flight too: a flyer outside its aerial phases flies in a fight only to reach a target no walk
+     * reaches, with no moves in the air and its basic attack only (MOBILITY_AND_WORK 3.7 and 7.4, which narrow 5.1.5 for
+     * that flight: the rule of the 2026-11-19 live check, where Ambrose wound up Great Brew on a reach flight).
+     */
+    public static boolean airMoveAllowed(Form f, MoveClass c, int lightsUsed, boolean reachFlight) {
+        if (reachFlight) {
+            return false;
+        }
         if (f == Form.DIVE || f == Form.RAIN) {
             return true;
         }

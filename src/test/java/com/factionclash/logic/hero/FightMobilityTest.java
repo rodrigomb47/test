@@ -193,5 +193,14 @@ class FightMobilityTest {
         assertFalse(m.eligible(k.move("smash"), t + 200, close), "melee in the air");
         air.airLights = 3;
         assertFalse(m.eligible(k.move("vial"), t + 200, air), "the fourth light move of a take-off");
+        // a reach flight (3.7, 7.4): no move at all in the air, the light shot included; on the ground it is no flight
+        Sense reach = MoveSelectorTest.at(6);
+        reach.airborne = true;
+        reach.reachFlight = true;
+        assertFalse(m.eligible(k.move("vial"), t + 200, reach), "a move on a reach flight");
+        for (Form f : new Form[]{Form.SHOT, Form.RAIN, Form.DIVE, Form.BARRAGE}) {
+            assertFalse(FightMobility.airMoveAllowed(f, MoveClass.LIGHT, 0, true), f + " on a reach flight");
+            assertTrue(FightMobility.airMoveAllowed(f, MoveClass.LIGHT, 0, false), f + " in an aerial window");
+        }
     }
 }

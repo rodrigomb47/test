@@ -140,6 +140,77 @@ public final class HeroDefinitionGameTests {
     // ------------------------------------------------------------------ the definition on the entity
 
     /**
+     * The slice's first two heroes ship (HEROES_V2 15.2, C1): Natsuho and Hinae load from their built-in definitions with
+     * their own art, join a faction by the operators' give (SLICE_PLAN 1.2: the slice's heroes join factions only so
+     * until L4's leaders), take their names, titles and boss health, and are listed by {@code /fc hero list}; one whose
+     * definition goes is dormant and comes back with it, with no crash; an operator's override of a shipped hero
+     * applies on {@code /fc hero reload} and goes with its file.
+     */
+    @GameTest(template = "platform", timeoutTicks = 120, batch = "hero_def_shipped")
+    public static void shippedSliceHeroesServeACampaign(GameTestHelper h) throws IOException {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 120);
+        MinecraftServer server = h.getLevel().getServer();
+        String cat = "natsuho_komezaki", priest = "hinae_shirasuzu";
+        Path dir = FMLPaths.CONFIGDIR.get().resolve(FactionClash.MODID).resolve("heroes");
+        Path override = dir.resolve(priest + ".json");
+        List<HeroRegistry.Transient> handles = new ArrayList<>();
+        t.onCleanup(() -> {
+            try {
+                Files.deleteIfExists(override);
+            } catch (IOException ignored) {
+                // nothing to undo
+            }
+            handles.forEach(HeroRegistry.Transient::close);
+            HeroRegistry.reload();
+            HeroManager.forget(server, cat);
+            HeroManager.forget(server, priest);
+        });
+        try {
+            for (String id : List.of(cat, priest)) {
+                var e = HeroRegistry.get(id);
+                t.assertTrue(e != null && e.def() != null && !e.dormant(), id + " is not a built-in hero with a definition: "
+                        + HeroRegistry.report().problems().report());
+                t.assertTrue(e.source() == com.factionclash.hero.HeroEntry.Source.BUILTIN && e.ownModel(), id + ": its own art");
+            }
+            HeroEntity natsuho = give(t, cat, 6, 6);
+            HeroEntity hinae = give(t, priest, 6, 14);
+            natsuho.setNoAi(true);
+            hinae.setNoAi(true);
+            t.assertTrue(natsuho.npcName().equals("Natsuho Komezaki") && tag(natsuho).contains("the Harbour Cat"), "tag " + tag(natsuho));
+            t.assertTrue(hinae.npcName().equals("Hinae Shirasuzu") && tag(hinae).contains(HeroRegistry.get(priest).title()), "tag " + tag(hinae));
+            t.assertTrue(natsuho.getMaxHealth() > FIXTURE_MAX && hinae.getMaxHealth() > FIXTURE_MAX,
+                    "epic boss health " + natsuho.getMaxHealth() + ", " + hinae.getMaxHealth());
+            List<String> listed = command(h, "fc hero list");
+            t.assertTrue(listed.stream().anyMatch(l -> l.contains("Natsuho Komezaki")) && listed.stream().anyMatch(l -> l.contains("Hinae Shirasuzu")),
+                    "/fc hero list said " + listed);
+            // a definition gone (a datapack removing it, a broken file): dormant, then back with it
+            // (a test fixture replaces a built-in hero: one with a broken definition stands for a broken or removed file)
+            handles.add(HeroRegistry.registerTransient(cat, visual("fists"), "{\"format\": 2, \"id\": \"" + cat + "\"}"));
+            HeroManager.refreshAll(server);
+            t.assertTrue(natsuho.dormant() && tag(natsuho).contains(HeroSpeech.DORMANT), "not dormant without a definition: " + tag(natsuho));
+            handles.remove(0).close();
+            HeroManager.refreshAll(server);
+            t.assertTrue(!natsuho.dormant() && tag(natsuho).contains("the Harbour Cat"), "not back with its definition: " + tag(natsuho));
+            // an operator's override of a shipped hero
+            Files.createDirectories(dir);
+            Files.writeString(override, "{\"title\": \"the Overridden Bell\"}");
+            command(h, "fc hero reload");
+            t.assertTrue(HeroRegistry.get(priest).title().equals("the Overridden Bell") && tag(hinae).contains("the Overridden Bell"),
+                    "the override did not apply: " + tag(hinae));
+            Files.delete(override);
+            command(h, "fc hero reload");
+            t.assertTrue(!tag(hinae).contains("Overridden"), "the override outlived its file: " + tag(hinae));
+            h.runAfterDelay(20, t.guard(() -> {
+                t.assertTrue(natsuho.isAlive() && hinae.isAlive(), "a shipped hero did not survive a second");
+                t.succeed();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
      * The test rig's definition on its entity: boss health from spawn (28 x 250% x 1.2 at level 1: a common striker),
      * the attack, armour and knock-back of its file, its kit (the iron "Test Blade", bound), a swordsman, the name tag
      * {@code ★ Test Rig · the Test Model} and its {@code summoned} line with a speech bubble.

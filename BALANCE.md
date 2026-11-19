@@ -1013,6 +1013,20 @@ and MOBILITY_AND_WORK 7.7 are marked; the others are PROPOSED.
   counts): XP orbs **7 x level**, at most **100**; the crest once per hero per winning side per in-game day; its non-kit
   gear as any NPC's. An escape drops nothing.
 
+## Kill credit and the hero kill feed (config `heroes`; `logic/hero/KillCredit`, `combat/KillCredits`, `hero/HeroKillFeed`) — 2026-11-19
+The same for every receiver and every pusher (HEROES_V2 6.17, `docs/design/breaching.md` 8.5).
+* A death by terrain (a fall, a stalagmite, lava, fire, a magma block, the void, drowning, freezing, suffocation, a
+  cactus, a berry bush) within **15 s** (`KillCredit.WINDOW_TICKS`, 300) of an enemy's push, throw, pull or blow is that
+  enemy's kill, the newest one's; any other death with no attacker keeps vanilla's **5 s** (100 ticks). A push is written
+  into the receiver's combat tracker as a hit of **0** at most once a second per pusher; the last attacker of a
+  receiver that falls, burns or is in lava, the void or water is set again every **1 s**, up to the 15 s.
+* `heroes.killFeed` (**true**): every death in which a hero is the victim or the killer is told to all players in
+  vanilla's words with the factions beside the names, while the game rule `showDeathMessages` is on.
+  `heroes.killFeedMonsters` (**false**): also the monsters and animals a hero kills (a monster that kills a hero is
+  always named).
+* An exhausted flyer that lands out of a fight rests (`move.winded`) until its stamina is back at **50%**, at most
+  **30 s** (`HeroMovement.WINDED_MAX_TICKS`); a target, a fight, an escape or a blow ends the rest at once.
+
 ## Hero sounds (config `heroes`; `HeroSounds`, `HeroLocalSounds`, `HeroLoopSounds`, `SoundIndex`, `VoiceLine`) — S2
 Presentation only: no number here changes a fight, and every cue plays whoever causes it (HEROES_V2 6.15). Values of
 `SOUND.md` sections 6-8 are marked; the others are PROPOSED. Loudness and ranges per sound are in the index

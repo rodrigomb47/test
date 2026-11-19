@@ -2207,6 +2207,7 @@ public final class HeroCombat {
             g.setDeltaMovement(dir[0] * h * res, i.vertical(), dir[1] * h * res);
             g.hasImpulse = true;
             g.hurtMarked = true;
+            com.factionclash.combat.KillCredits.push(hero, g, com.factionclash.logic.hero.KillCredit.Kind.THROW); // 6.17
             HeroEffects.particles(hero.level(), g, HeroEffects.particle(move.ability().look(), element(), color()), 10);
         }
     }

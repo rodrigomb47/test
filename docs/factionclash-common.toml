@@ -178,6 +178,13 @@
 	speechBubbles = true
 	#Show a fighting hero's energy on its name tag: [Fighting 80%].
 	showEnergy = true
+	#The hero kill feed: every death in which a hero is the victim or the killer is told in chat to all
+	#players, worded like vanilla's death messages with the factions' names, while the game rule showDeathMessages
+	#is on (a player's own death is vanilla's message with its faction and the hero's beside the names).
+	killFeed = true
+	#Also tell the monsters and animals a hero kills (off: only players, faction NPCs and heroes; a monster
+	#that kills a hero is always named).
+	killFeedMonsters = false
 	#Multiplies every amount of every hero's moves (damage, damage over time, heals, shields), in percent
 	#(PROPOSED: 100). The same against every target, player or NPC.
 	# Default: 100

@@ -41,6 +41,9 @@ custom projectile models (only `decoy` ships now; projectiles use v1's vanilla i
 libraries, the full parts library, the other 6 base styles; the other 17 talents; wandering heroes, tokens v2,
 recruitment of further heroes by the AI, duels, escorts, commissions, bonds, posts, awakened ultimates (milestone 3);
 the other 192 heroes. The slice's own heroes join factions beyond their leaders only through `/fc admin hero give`.
+Shipped so far (2026-11-19): Natsuho Komezaki and Hinae Shirasuzu (C1), as built-in definitions beside the test rig; until
+L4 drafts leaders, every hero joins a faction only through `/fc admin hero give` (HEROES_V2 15.2, "Shipped heroes, kill
+credit and the kill feed, mobility polish"). The other six stay test fixtures until C2-C4.
 
 ### 1.3 Prerequisite
 

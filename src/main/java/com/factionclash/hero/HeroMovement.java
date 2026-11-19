@@ -111,7 +111,13 @@ public final class HeroMovement {
         /** a climb-down link (A11): backing over the edge of a ledge onto the face below it */
         DESCEND,
         /** a {@code dive} (A12, 7.3): pushed along a straight line to its marker, stopped by blocks */
-        DIVE
+        DIVE,
+        /**
+         * an exhausted flyer that landed, catching its breath out of a fight ({@code move.winded}, MOBILITY_AND_WORK
+         * 2.2: "a flyer lands, rests and goes on"): it stands until it is no longer exhausted (50%); a fight, a target,
+         * an escape or a blow ends it at once
+         */
+        WINDED
     }
 
     /** What downed it (the log and the tests). */
@@ -358,6 +364,7 @@ public final class HeroMovement {
     /** Whether it is held still on the ground (a tell, a landing, downed): no move starts. */
     public boolean holdsStill() {
         return state == State.TELL || state == State.TAKEOFF || state == State.LANDING || state == State.DOWNED
+                || state == State.WINDED
                 || (state == State.JUMP_UP || state == State.CHIMNEY) && stateTicks < TELL_TICKS;
     }
 
@@ -544,8 +551,18 @@ public final class HeroMovement {
             case CHIMNEY -> chimneyTick(ground);
             case DESCEND -> descendTick(ground);
             case DIVE -> diveTick(ground);
+            case WINDED -> windedTick();
+        }
+        if (windedPending) {
+            windedPending = false;
+            if (state == State.NONE && hero.onGround() && mayRest()) {
+                setState(State.WINDED); // 2.2: exhausted on landing, it pants where it stands
+            }
         }
         staminaTick(now);
+        if (state == State.WINDED && !stamina.exhausted()) {
+            setState(State.NONE); // rested (50%): on with its job this tick
+        }
         if (profile.any()) {
             if (bursting || hero.tickCount % 5 == 0) {
                 burstTick(now);
@@ -554,11 +571,35 @@ public final class HeroMovement {
         }
         landingSlowTick();
         loco.tick();
+        publishLoco();
+    }
+
+    /** {@code DATA_LOCO} from the state now. */
+    private void publishLoco() {
         loco.mode(shownMode());
         loco.tired(profile.flies() && stamina.max() > 0 && stamina.low());
         byte b = loco.pack();
         if (hero.loco() != b) {
             hero.setLoco(b);
+        }
+    }
+
+    /**
+     * After vanilla's travel this tick (from {@link HeroEntity#travel}): a downed fall that touched down here goes on to
+     * {@code move.downed} on this same tick, so the client never sees the hero on the ground in the ground mode between
+     * {@code move.fall} and {@code move.downed} (the live check of 2026-11-19 saw an idle frame there); any other airtime
+     * that ends here starts its landing one-shot on this tick too.
+     */
+    public void afterTravel() {
+        boolean down = hero.onGround() || hero.isInWater() || hero.onClimbable();
+        if (state == State.DOWNED_FALL && down) {
+            downedFallTick(true);
+            publishLoco();
+        } else if (state == State.NONE && inAir && down && !hero.isPreview()) {
+            // the same for any airtime that ends here (a jump, a dive's last bit): its landing one-shot from this tick, not
+            // one tick in the air clip on the ground first
+            noneTick(hero.onGround());
+            publishLoco();
         }
     }
 
@@ -587,7 +628,11 @@ public final class HeroMovement {
             case CLIMB, CLIMB_DOWN, MANTLE -> MovementRules.CLIMB;
             case CLING -> MovementRules.CLING;
             case GLIDE -> MovementRules.GLIDE;
-            case TAKEOFF, RISE, LAND, LANDING -> rider ? MovementRules.RIDE : MovementRules.FLY;
+            case TAKEOFF, RISE, LAND -> rider ? MovementRules.RIDE : MovementRules.FLY;
+            // landed: the landing one-shot shows its own mode (the ride's or the flight's) while it plays; under it the
+            // hero stands, so no tick of the ride loop shows after move.fly_land (the live check of 2026-11-19)
+            case LANDING -> MovementRules.GROUND;
+            case WINDED -> MovementRules.WINDED;
             case DIVE -> rider ? MovementRules.RIDE : profile.flies() ? MovementRules.FLY : MovementRules.AIRBORNE;
             case FLY -> rider ? MovementRules.RIDE : hovering ? MovementRules.FLY_HOVER : MovementRules.FLY;
             case DOWNED -> MovementRules.DOWNED;
@@ -639,14 +684,49 @@ public final class HeroMovement {
                 }
             }
         } else if (inAir) {
-            landed(false, peakY - hero.getY());
+            // a dive that reached its marker just above the ground touches down here: a dive's heavy landing all the same,
+            // so its one-shot covers the touch-down instead of a run while the client's smoothed speed falls (live check)
+            landed(diveLanding, peakY - hero.getY());
         }
+    }
+
+    /** A dive ended just above the ground: its touch-down is a dive's landing (A12; the live check of 2026-11-19). */
+    private boolean diveLanding;
+    /** It landed exhausted: the winded rest begins after this tick's state, if it may rest (2.2). */
+    private boolean windedPending;
+    /** The winded rest never lasts longer than this (a safety bound: 50% comes back in about 10 s at level 1). */
+    static final int WINDED_MAX_TICKS = 30 * 20;
+
+    /** Out of a fight, with no target, not escaping and not in water: an exhausted flyer may stand and pant (2.2). */
+    private boolean mayRest() {
+        return !hero.isPreview() && hero.getTarget() == null && !hero.isInWater() && !hero.combat().boss().fighting()
+                && !hero.combat().boss().escape().running();
+    }
+
+    /** The winded rest: it stands still (no walking, no job) until it is no longer exhausted, or a fight calls it. */
+    private void windedTick() {
+        if (!stamina.exhausted() || !mayRest() || !hero.onGround() || hero.hurtTime > 0 || stateTicks > WINDED_MAX_TICKS) {
+            setState(State.NONE);
+            return;
+        }
+        hero.getNavigation().stop();
+        Vec3 v = hero.getDeltaMovement();
+        hero.setDeltaMovement(0, Math.min(0, v.y), 0);
+    }
+
+    /** Whether it stands catching its breath (2.2). */
+    public boolean winded() {
+        return state == State.WINDED;
     }
 
     /** It touched down after an airtime: the landing of {@link MovementRules#landing}; the counts reset. */
     private void landed(boolean afterLeap, double fall) {
         inAir = false;
         ownAirtime = false;
+        diveLanding = false;
+        if (profile.flies() && stamina.exhausted()) {
+            windedPending = true; // 2.2: move.winded on landing (taken after this tick's state, out of a fight)
+        }
         noGlideUntilLanding = false;
         airJumpsUsed = 0;
         lastKickFace = MovementRules.NO_FACE;
@@ -1477,6 +1557,9 @@ public final class HeroMovement {
             ownAirtime = false;
             noGlideUntilLanding = false;
             oneShot(MovementRules.GLIDE, HeroActions.LOCO_ONE_SHOT_END);
+            if (profile.flies() && stamina.exhausted()) {
+                windedPending = true; // the exhausted glide down ends in the winded rest (2.2)
+            }
             return;
         }
         if (hero.isInWater()) {
@@ -1523,7 +1606,7 @@ public final class HeroMovement {
 
     /** Why it may not take off now (null: it may), by {@link MobilityRules#takeOffRefusal} and its downing. */
     public String takeOffRefusal() {
-        if (state != State.NONE) {
+        if (state != State.NONE && state != State.WINDED) { // (a winded flyer is exhausted: the refusal below says so)
             return "busy";
         }
         if (!hero.onGround() || hero.isInWater()) {
@@ -1797,6 +1880,10 @@ public final class HeroMovement {
             setState(State.NONE);
             if (ground || hero.onGround()) {
                 landed(true, 0);
+            } else {
+                diveLanding = true; // it comes down the last bit under gravity: noneTick lands it as a dive
+                inAir = true;
+                peakY = hero.getY();
             }
             return;
         }
