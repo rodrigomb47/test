@@ -1,0 +1,24 @@
+{
+  "_comment": "A ridge of seven bone vertebrae down the back (B5, the Wither's: the boss's spine, seen between the halves of a split cape): five on the chest and two on the waist, from the nape down, each a body with a spinous process standing out behind it, a little smaller toward the waist. They stand 0.6-1.15 px out of the back (inside a split cape's 2.6 px gap). They glow in the phase look with the stays (`glow: phase`).",
+  "id": "markings/spine_ridge",
+  "category": "markings",
+  "slots": {"main": "secondary"},
+  "occupies": ["spine"],
+  "vars": {"step": "(chest_top - waist_y - 1.2) / 6.5"},
+  "cubes": [
+    {"name": "v1", "bone": "chest", "origin": [-0.7, "chest_top - 0.6 - 0.75", "chest_d / 2 - 0.1"], "size": [1.4, 0.75, 0.7], "material": "bone", "glow": "phase"},
+    {"name": "v2", "bone": "chest", "origin": [-0.75, "chest_top - 0.6 - step - 0.8", "chest_d / 2 - 0.1"], "size": [1.5, 0.8, 0.7], "material": "bone", "glow": "phase"},
+    {"name": "v3", "bone": "chest", "origin": [-0.75, "chest_top - 0.6 - 2 * step - 0.8", "chest_d / 2 - 0.1"], "size": [1.5, 0.8, 0.7], "material": "bone", "glow": "phase"},
+    {"name": "v4", "bone": "chest", "origin": [-0.7, "chest_top - 0.6 - 3 * step - 0.8", "chest_d / 2 - 0.1"], "size": [1.4, 0.8, 0.7], "material": "bone", "glow": "phase"},
+    {"name": "v5", "bone": "chest", "origin": [-0.65, "chest_top - 0.6 - 4 * step - 0.75", "chest_d / 2 - 0.1"], "size": [1.3, 0.75, 0.7], "material": "bone", "glow": "phase"},
+    {"name": "v6", "bone": "waist", "origin": [-0.6, "chest_top - 0.6 - 5 * step - 0.75", "waist_d / 2 - 0.1"], "size": [1.2, 0.75, 0.7], "material": "bone", "glow": "phase"},
+    {"name": "v7", "bone": "waist", "origin": [-0.55, "chest_top - 0.6 - 6 * step - 0.7", "waist_d / 2 - 0.1"], "size": [1.1, 0.7, 0.7], "material": "bone", "glow": "phase"},
+    {"name": "p1", "bone": "chest", "origin": [-0.25, "chest_top - 0.6 - 0.6", "chest_d / 2 + 0.55"], "size": [0.5, 0.5, 0.5], "material": "bone", "glow": "phase", "fine": true},
+    {"name": "p2", "bone": "chest", "origin": [-0.25, "chest_top - 0.6 - step - 0.65", "chest_d / 2 + 0.55"], "size": [0.5, 0.55, 0.55], "material": "bone", "glow": "phase", "fine": true},
+    {"name": "p3", "bone": "chest", "origin": [-0.25, "chest_top - 0.6 - 2 * step - 0.65", "chest_d / 2 + 0.55"], "size": [0.5, 0.55, 0.55], "material": "bone", "glow": "phase", "fine": true},
+    {"name": "p4", "bone": "chest", "origin": [-0.25, "chest_top - 0.6 - 3 * step - 0.65", "chest_d / 2 + 0.55"], "size": [0.5, 0.55, 0.5], "material": "bone", "glow": "phase", "fine": true},
+    {"name": "p5", "bone": "chest", "origin": [-0.25, "chest_top - 0.6 - 4 * step - 0.6", "chest_d / 2 + 0.55"], "size": [0.5, 0.5, 0.45], "material": "bone", "glow": "phase", "fine": true},
+    {"name": "p6", "bone": "waist", "origin": [-0.25, "chest_top - 0.6 - 5 * step - 0.6", "waist_d / 2 + 0.55"], "size": [0.5, 0.5, 0.45], "material": "bone", "glow": "phase", "fine": true},
+    {"name": "p7", "bone": "waist", "origin": [-0.25, "chest_top - 0.6 - 6 * step - 0.55", "waist_d / 2 + 0.55"], "size": [0.5, 0.45, 0.4], "material": "bone", "glow": "phase", "fine": true}
+  ]
+}

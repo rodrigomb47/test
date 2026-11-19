@@ -1,0 +1,177 @@
+{
+  "_comment": "A torn cape split down the middle (B5, the Wither's; the full library's planned torn cape): two halves hanging from the shoulders on the cape chain (cape_1 to the waist, cape_2 down to the calves) with a gap down the middle that shows the spine, the inner side and the split's edges lined in the alt colour, the hems torn and cut jagged, and a few tattered strips hanging from each half. `drop` scales the lower half, `gap` the split.",
+  "id": "back/cape_torn",
+  "category": "back",
+  "slots": {
+    "main": "primary",
+    "alt": "accent",
+    "trim": "trim"
+  },
+  "params": {
+    "drop": {
+      "default": 1,
+      "max": 1.2,
+      "min": 0.6
+    },
+    "gap": {
+      "default": 1.3,
+      "max": 2,
+      "min": 0.8
+    }
+  },
+  "occupies": [
+    "back"
+  ],
+  "vars": {
+    "half_w": "chest_w / 2 + 1.35 - gap",
+    "low_y": "chest_y - (chest_y - knee_y) * 1.25 * drop"
+  },
+  "bones": [
+    {
+      "name": "cape_1",
+      "parent": "back",
+      "pivot": [
+        0,
+        "chest_top",
+        "chest_d / 2 + 0.75"
+      ]
+    },
+    {
+      "name": "cape_2",
+      "parent": "cape_1",
+      "pivot": [
+        0,
+        "chest_y",
+        "chest_d / 2 + 1.55"
+      ]
+    }
+  ],
+  "paint": [
+    {
+      "cubes": [
+        "#top*",
+        "#low*"
+      ],
+      "faces": [
+        "north",
+        "east",
+        "west"
+      ],
+      "material": "cloth",
+      "slot": "alt"
+    }
+  ],
+  "cubes": [],
+  "groups": [
+    {
+      "rotation": [
+        7,
+        0,
+        0
+      ],
+      "pivot": [
+        0,
+        "chest_top",
+        "chest_d / 2 + 0.75"
+      ],
+      "cubes": [
+        {
+          "name": "top",
+          "bone": "cape_1",
+          "origin": [
+            "-gap - half_w",
+            "chest_y - 0.25",
+            "chest_d / 2 + 0.6"
+          ],
+          "size": [
+            "half_w",
+            "chest_top - chest_y + 0.05",
+            0.6
+          ],
+          "material": "cloth",
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "rotation": [
+        5,
+        0,
+        0
+      ],
+      "pivot": [
+        0,
+        "chest_y",
+        "chest_d / 2 + 1.55"
+      ],
+      "cubes": [
+        {
+          "name": "low",
+          "bone": "cape_2",
+          "origin": [
+            "-gap - half_w - 0.35",
+            "low_y",
+            "chest_d / 2 + 1.45"
+          ],
+          "size": [
+            "half_w + 0.35",
+            "chest_y - low_y + 0.3",
+            0.6
+          ],
+          "material": "cloth",
+          "cutout": "torn",
+          "mirror": true
+        }
+      ]
+    }
+  ],
+  "strands": [
+    {
+      "name": "tatter",
+      "bone": "cape_2",
+      "path": "line",
+      "from": [
+        "-gap - half_w + 0.2",
+        "low_y + 2.5",
+        "chest_d / 2 + 2.0"
+      ],
+      "to": [
+        "-gap - 0.6",
+        "low_y + 2.5",
+        "chest_d / 2 + 2.0"
+      ],
+      "out": [
+        0,
+        0,
+        1
+      ],
+      "count": 3,
+      "width": [
+        1.1,
+        0.8,
+        1.0
+      ],
+      "depth": 0.4,
+      "length": [
+        4.5,
+        6,
+        3.5
+      ],
+      "flare": [
+        6,
+        9,
+        4
+      ],
+      "material": "cloth",
+      "slot": "main",
+      "tone": [
+        -1,
+        0,
+        -1
+      ],
+      "taper": 0.5,
+      "cutout": "tip_jagged_1",
+      "mirror": true
+    }
+  ]
+}

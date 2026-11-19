@@ -3436,3 +3436,284 @@ untouched (no hero, part or clip changed).
 - **R5**: the Artificer's Bench's block textures.
 - R6's other half (the core clips `artifact.attune`, `artifact.raise`, `artifact.cast` and the `artifact` sound set)
   is not part of this task.
+
+---
+
+## B5: the Wither's look (2026-11-18)
+
+HEROES_V2.md 15.8 row B5, the Wither's half of the look gate (the Ender Dragon is the other half): `BOSS_HEROES.md` 4.1,
+4.2, 4.6 (hover and flight), 4.12 (her own animations), 4.13 (Hollow Star's worn part) and the LOOK section of
+`kits/the_wither.txt`. It comes before her kit exists as data: the look, the parts, the phase looks, the idle quirks,
+the locomotion and the moments without hit ticks. No move clip is authored: their frames come from the B1 kit fixture
+the Java side writes, and the move clips are a later step against it. She has one body for good (HEROES_V2 3.6, the
+owner's rule of 2026-11-13): **an adult woman, female, slim (the boss's gaunt silhouette), drawn at 104% (1.89
+blocks)**. Every preview shows her only in that body. Three interruptions (usage-limit pauses and a
+container restart) stopped the earlier runs; between them they built the parts, the source and the clips, fixed what the
+tests, the lint and the previews found (below), and added the rebirth look, the tests and these notes; the last run
+re-ran every check on the finished tree (below) and committed. No hit tick, marker or timing
+file of an existing clip changed: Natsuho, the test rig, `_fallback` and the libraries build byte for byte as before,
+Hinae's `visual.json` changed only its `source_sha256` (her `hair/hime_long` file gained the `ash` parameter), and her
+files are new. With no definition in `data/factionclash/heroes/` she stays dormant in the game until
+B1/B7 add one.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/the_wither.hero.json` | the art-only source (`"kit": "pending"`, below): `mobility` (flyer III, hover II, carrier `levitation` on `robes/smoke_gown`), `art` (body, palette, face, 12 parts, the sceptre, phase looks, the rebirth look) and `animations` (style `focus`, blink `calm`, 28 poses, 21 clips) |
+| `herosrc/parts/`: `headwear/bone_crown`, `accessories/skull_familiars`, `outfit_top/ribbed_corset`, `robes/smoke_gown`, `back/cape_torn`, `markings/spine_ridge`, `armour/bone_bracers`, `weapons/wither_rose_sceptre`, `accessories/hollow_star_brooch`, `accessories/wither_rose`, `markings/soul_fire_tips` | the eleven new parts (4.2's nine, the rose of her idle quirk and the phase-3 soul fire), built with the library's generators and conventions so G8 can reuse them |
+| `herosrc/parts/hair/hime_long.json` | `ash` 0..1 (default 0): the side locks, the back layer and the tail tipped in the alt slot (`hair_accent`), cut `tip_jagged_1`; `ash` 0 builds the cut exactly as before (the three groups are copies with `when`) |
+| generated | `geo/hero`, `textures/entity/hero/the_wither.png`, `_glowmask`, `_p2`, `_p2_glowmask`, `_rebirth`, `_rebirth_glowmask`, `heroes/the_wither.visual.json` (no moves), `animations/hero/the_wither.animation.json`, `data/factionclash/hero_timings/the_wither.json` |
+| `build.py` | the art-only mode (`art_only_problems`, `KIT_PENDING`, `locomotion_names`) and the rebirth look (`rebirth_look`, `out_paths` `rebirth`, `rebirth_glowmask`, `visual.json` `texture.rebirth`) |
+| `face.py` | `iris_glow` (the irises, pupils and highlights of every open frame in the glow mask) and the `sockets` face paint |
+| `parts.py`, `rig.py`, `visual.py` | a part's `artifact` (a signature's worn part, `visual.json` `bones.artifacts`), and a mirrored cube on a nested bone mirrors its whole bone chain |
+| `anim/library.py` | `copy` (an alias) in a hero's own file: her `move.hover` is her `move.idle`, her `move.drift` her `move.walk` |
+| `assets.py` | `check_visual`: a `texture.rebirth` flag needs both rebirth files |
+| `lint.py` | a part worn over a hairstyle is linted on the mannequin wearing that hair (below) |
+| `render/scene.py`, `render/hero_previews.py` | the rebirth texture (`look`), a flyer's and hover hero's locomotion set, the rebirth moment, her own captions |
+| `tests/test_wither.py` | 20 tests (below) |
+
+### The art-only source (`"kit": "pending"`)
+
+`herogen check` compares `visual.json`'s moves with the definition, or with the slice fixture when there is none (G7),
+and her kit exists in neither yet. The smallest honest answer: a source with `"kit": "pending"` holds **no kit and fakes
+none**. `build.art_only_problems` refuses (and `build` fails on) a pending source with moves, states, an ultimate or a
+basic attack, and an own clip that is a kit clip (`move.<id>` that is not a locomotion name, `ultimate*`, `state.*`)
+or carries a `hit` or `cast` marker. `locomotion_names` is the core's `move.*` clips plus the six G10b adds
+(MOBILITY_AND_WORK 4.1: `move.hover`, `move.drift`, ...), which a hero may override. Her `visual.json` lists no moves;
+`assets.definition_of` finds no definition, so the move-list and frame rules have nothing to compare, and every other
+rule of 14.2 runs as for any hero. Every other hero builds exactly as before (the mode is only read when `kit` is
+`pending`). The move step removes `"kit": "pending"`, copies the fixture's kit fields in and authors the move clips.
+
+### Her look
+
+The vanilla Wither made into a woman, read at once: charcoal and bone, three skulls, a soul-blue glow.
+
+- **Hair**: `hair/hime_long` at its longest (length 26, locks 11) in charcoal `#2A282D`, with `ash` 1: the side locks,
+  the back layer and the tail end in ash grey (`hair_accent` `#8E8A93`), cut jagged so they fray like smoke. The tie in
+  `metal`.
+- **Head**: `headwear/bone_crown`, a low circlet of seven short bone slabs over the front half of the head (the hair
+  hides the back half) with three prongs at the front, the middle one tallest, bone-white points, and a soul-blue gem at
+  the foot of the middle prong (glow).
+- **Her side heads**: `accessories/skull_familiars` (below).
+- **Body**: `outfit_top/ribbed_corset`, a high-collared charcoal bodice with long fitted sleeves, a busk over the chest
+  and on it a sternum and five pairs of ribs in bone: from the front the stays read as a ribcage, and they stay drawn
+  beyond the fine distance (the ribcage is how she reads from afar). `robes/smoke_gown`, a floor-length gown of hinged
+  panels on the skirt bones in two depths, each fading to ash at a jagged hem, with smoke wisps hanging from it; her
+  flight carrier. `back/cape_torn`, a charcoal cape split down the middle, its inside and the split's edges lined in
+  soul blue, the hems torn, a few tattered strips. `markings/spine_ridge`, seven bone vertebrae down her back between
+  the cape's halves. `armour/bone_bracers`, bone forearm shells with ridged rims and three short spines each.
+  `legwear/tights_boots` in leather, hidden by the gown. Modest throughout: a high collar, long sleeves, a floor-length
+  gown (ROSTER_PLAN's rule).
+- **Weapon**: `weapons/wither_rose_sceptre` in her right hand: a slender black shaft with a bone ferrule and collar, two
+  thorns, and a wither rose for a head (five black petals round a glowing soul-blue heart, two dark leaves); at her
+  right hip, head down and swung back, when sheathed (`hip_same`).
+- **Palette** (4.2's): skin `#E3DFDA`, skin_shade `#ABA59F`, eyes `#9FE8FF`, primary `#232127`, secondary `#E6E0D2`,
+  accent `#3CC6E8`, trim `#5E5A63`, metal `#34313A` (the gown), leather `#29262B`, glow `#7FE2FF`.
+- **Face**: `sharp` eyes, `glossy` irises with `pupil: none` and the new `iris_glow` (the soul-blue irises glow in every
+  open frame), lashes 2, `thin_arched` brows, the `soft` mouth, no blush; the new `sockets` face paint, a charcoal
+  shadow under each eye fading at both ends with a fainter row under the outer half (a skull's sockets echoed, never a
+  bruise). Blink `calm`. Overrides: `happy` is a thin half-lidded smile (eyes `half`, mouth `smile`), `angry` the
+  glowing frame, `flustered` without a blush.
+- **Budget**: 286 cubes (127 beyond the fine distance, the cap 130), 88 bones, a 256x128 texture. 4.2 asked for about
+  240 cubes on 256x256: the hair took 92 (the ash tips are extra strands) and the sceptre 26, and everything still fits
+  4.3's limits; the smaller sheet is enough for all of it.
+
+| Part | Cubes | Notes |
+|---|---|---|
+| `hair/hime_long` (ash 1) | 92 | 10 beyond the fine distance |
+| `robes/smoke_gown` | 27 | panels on `skirt_*`, the hem band glows in the phase look |
+| `accessories/skull_familiars` | 26 | two skulls, their jaws, the smoke |
+| `weapons/wither_rose_sceptre` | 26 | in the hand and the hip copy |
+| `outfit_top/ribbed_corset` | 14 | all beyond the fine distance (the ribcage) |
+| `markings/spine_ridge` | 14 | seven vertebrae with their processes |
+| `markings/soul_fire_tips` | 13 | phase 3 only, on `p3_` bones |
+| `headwear/bone_crown` | 12 | the gem glows |
+| `armour/bone_bracers` | 12 | |
+| `back/cape_torn` | 10 | the cape chain |
+| `accessories/wither_rose` | 7 | inside her left hand at rest |
+| `accessories/hollow_star_brooch` | 6 | on `artifact_hollow_star` |
+
+### The skull familiars
+
+`accessories/skull_familiars` declares its own bones `familiar_r` and `familiar_l` (parent `chest`, pivots at the
+skulls' centres, 12 px either side of the head's centre at eye height) and a jaw bone each (`familiar_jaw_r`/`_l`,
+hinged at the back, so a clip can snap the jaws). Each skull is 6 x 6 x 6 px: a charcoal cranium, a bone brow, dark
+sockets with a glowing core (glow), a nasal hole, bone teeth top and bottom, and three smoke wisps hanging back and
+down from under it (ash fading to `hair_accent`, cut jagged). **The bob**: `HeroAnimator` plays `sec.loop` on the
+secondary controller whenever the chain has one, so the design's `sec.familiars` is her `sec.loop` (4 s): the two
+skulls bob out of step and drift a little, keying **only their position**. No other clip of hers keys their position,
+so every clip may turn them (their rotation) to aim with her: the idle looks about, the bicker turns them to each
+other, the intro and phase 2 tip them up, and the move clips will aim them (4.12: "every move clip keys their
+rotation"). Phase 3 hides both bones (they are adds from then on, 4.3).
+
+### Phase looks and the rebirth
+
+- **Phase 2 (the wither armour)**: the phase palette turns `secondary` to `#D6F2FF` (the bone goes a cold blue-white)
+  and `trim` to soul blue; the rib stays, the spine, the crown's gem and the gown's hem band are `glow: phase` and light
+  up in `_p2.png` and its glow mask. The faint blue shimmer of `soul` particles on her outline is the engine's (a
+  particle, not a texture: open below).
+- **Phase 3**: `hide` the two familiars, `show` the soul fire, `eyes_glow`. `markings/soul_fire_tips` (worn with
+  `"phase": 3`, `requires` `hair/hime_long`, its `length` and `locks` matching the hair's) puts tongues of glowing soul
+  fire at the hair's tips: a ring round the tail's end just outside its flared strands and three on each side lock, on
+  `p3_` children of the hair's bones, so they follow every key and spring of the hair.
+- **The rebirth** (new, `art.rebirth` `{palette}`): `build.rebirth_look` paints her phase-2 look again with the slots the
+  rebirth names (hers: `metal` `#CDEBFA`, the gown, and `accent` `#F1FBFF`, the cape's lining, the gem, the skulls'
+  eyes, the rose's heart) and writes every texel that changed to the glow mask too, as `the_wither_rebirth.png` and
+  `the_wither_rebirth_glowmask.png`, with `visual.json` `texture.rebirth: true`: the gown and the lining blaze the
+  blue-white of vanilla's spawn charge. `HeroModel` must show those two textures while the rebirth plays (the engine's
+  hook, open below; until then the files are simply unused). A palette naming an unknown slot, an empty one, or one
+  that recolours nothing is an error. A hero without `art.rebirth` gets no file and no key (every other hero's
+  `visual.json` is unchanged). The previews draw the rebirth clip and a cell of `phases.png` with it.
+
+**Why a texture and not shells or a phase**: the phase texture shows from phase 2 for good (`HeroModel` reads
+`visual.json`'s flag, 4.7), and the rebirth is a 2-second moment between phases 2 and 3; glowing shells (Hinae's
+`phase_glow`) would double the gown's 27 cubes and still need a hook to show them. A second texture costs no cube and
+the hook is one line beside `getTextureResource`'s phase rule.
+
+### Hollow Star's worn part
+
+A part with `"artifact": "<id>"` is a signature artifact's `worn_part` (ARTIFACTS 12.7 and 16.4): all its cubes must sit
+on the bone it declares, `artifact_<id>` (or below it), and `visual.json` `bones.artifacts` maps the artifact id to
+those bones (`{"hollow_star": ["artifact_hollow_star"]}`). `accessories/hollow_star_brooch` is a nether star burnt
+black at the front of her collar: eight points (a cross and a smaller saltire behind it) round a dark gem heart with a
+faint soul-blue light. **The engine's hook** (R3): `HeroModel` hides the bones of `bones.artifacts` unless the hero
+wears that artifact. Until R3 they are drawn always, which is right for her (a boss hero comes with her signature in
+her first slot), and the previews draw it.
+
+### The floating rule
+
+Every pose of hers that floats carries a root position of 4 px (a hand's breadth at her scale): her pointed toes hang
+about 2 px above the ground in the idle, and the gown's hem 2-3 px. `test_she_floats` measures the lowest sole of every
+own clip on every tick (actions over the clip they play on) on her body: at least 2 px everywhere, the rebirth's
+sink into the soul sand the one exception. Found on the way: the half-turn (`personal.3`) keys the root to turn her, and its fold poses
+carried no lift, so for its 5 s she dropped to the ground with her pointed toes 1.4 px through it (the fold poses now
+carry the 4 px); the take-off's gather sank to 3 px (toes at 1.5 px; now 3.5); `move.fly_hover`'s swinging knee
+reached 1.6 px on the bob (now a pixel higher, 5 px: she is in the air there); and the rebirth's kneel left her
+kneeling 6.7 px over the ground with her folded thighs pushed out through the front of the gown (the gown hangs from
+the hips on the skirt bones and does not fold with a kneel), so the rebirth is now a sink: the root goes 14 px down
+and she sinks into the soul sand to her thighs, the hips level and the legs hanging straight inside the gown, curled
+over from the waist up (a first try pitched the hips, which swung the gown's hem forward off the legs), the gown's hem
+going into the sand with her.
+
+### Her clips (no hit ticks)
+
+| Clip | Length | What happens |
+|---|---|---|
+| `move.idle` (= `move.hover`) | 6.0 s | floating a hand's breadth up: a 0.6 px bob every 3 s, breathing, the gown's panels billowing in a quarter-cycle wave, the legs drifting inside it, two glances, the familiars looking about |
+| `combat.idle` | 3.0 s | the focus style's casting stance above the waist (so every focus action settles on it), floating, a quicker bob |
+| `move.walk` (= `move.drift`), `move.run` | 1.6, 1.2 s | she never walks: a lean into the drift with the gown trailing and a slow bank; the fast glide with the arms swept back |
+| `move.takeoff`, `move.fly`, `move.fly_fast`, `move.fly_hover`, `move.glide`, `move.fly_land` | 0.6 s, loops 2.0 / 1.0 / 1.6 / 2.4 s, 0.4 s | G10's flight set adapted to a floating gown (the gown is the carrier: no wings, no running legs): the gather (the tell: arms open down and out, the hem lifting) and the rise into the flight lean; the flight, nearly level when fast, everything streaming; upright in the air with the knees under the gown; the arms spread in the glide; the flare and settle back to her hover height |
+| `sec.loop` | 4.0 s | the familiars' bob (above) |
+| `personal.1` | 3.2 s | the familiars bicker: they turn to face each other across her and snap their jaws in turn while she glances from one to the other, then lifts her chin and shuts her eyes; they jerk back to the front and dip, chastened |
+| `personal.2` | 3.6 s | she turns a wither rose: the left hand comes up palm up and the rose rises out of her fingers (`accessories/wither_rose`'s bone `rose_l` slides out of the hand), turned slowly once round with a thin half-lidded smile, then put away |
+| `personal.3` | 5.0 s | a slow half-turn with her arms folded: round on her floating spot (the root turned 150 degrees), her back (the torn cape and the spine) to the front for a moment with a cold glance over her shoulder, then back |
+| `intro` | 2.2 s | chin up, a smug half-smile, the left hand opened toward the challenger while the familiars cackle, then the sceptre levelled |
+| `phase.2` | 1.2 s | inside the transition: arched back, the arms flung down and out, eyes blazing, the skulls tipped up with their jaws wide |
+| `rebirth` | 2.4 s | no action code yet: she sinks into the soul sand to her thighs and curls over, arms round herself, then rises higher than her hover, arms flung up and wide, blazing (drawn with the rebirth look), and floats down into her stance |
+| `phase.3` | 1.4 s | she grabs the skulls at the sides of her head and flings them away, eyes blazing |
+| `last_stand` | 1.8 s | no action code yet: the sceptre thrust up overhead, the left arm flung down and out, then set in her stance, determined. She fights to the death: no `escape` clip |
+
+`face_ctrl` is keyed in the quirks and the moments. The sounds of 4.11 (her `quirks.*` and the moment slots) are not
+markers yet: her sound set (B6) does not exist, and a marker must name a sound of her catalogue; the move step adds
+them with the set. Every own clip passes the quality rules on all six bases, and the sceptre stays clear of her body on
+every second tick (`grips.animation_problems`).
+
+### Generator additions and fixes (shared code; every other hero builds byte for byte as before)
+
+1. **Art-only sources** (above).
+2. **The rebirth look** (above).
+3. **`face.iris_glow`** and the **`sockets`** face paint (above).
+4. **A part's `artifact`** (above).
+5. **Mirrored nested phase bones**: a mirrored cube on a nested bone (`fine_p3_hair_r`, the soul fire on the right lock)
+   now mirrors its whole chain (`p3_hair_l` under `hair_l`, then `fine_p3_hair_l` under it); before, the left cube hung
+   from the right-hand bone.
+6. **`copy` in a hero's own file** (`anim/library.py` resolves the hero's aliases as it does a library's).
+7. **`hair/hime_long` `ash`** (above).
+8. **`lint` wears a required hairstyle**: a part with `requires` naming a hair (the soul fire over `hair/hime_long`) is
+   built on the mannequin wearing that hair in place of its short crop; before, the two hairs clashed on `hair_top` and
+   the part could not be linted. Parts that require a tail (Natsuho's puffed fur) are built as before.
+9. **`armour/bone_bracers`' spines on a short forearm**: on a chibi the three spines stood 0.25 px apart and z-fought
+   (`lint`: 70 px of coplanar faces on chibi_m); their span now shrinks to a fifth of the bracer at each end, so they
+   stand 0.9 px apart there (a spine is 0.7 wide), and the adult's are where they were within 0.2 px.
+10. **Previews**: `loco_segments` gives a flyer or hover hero her drift, hover and flight set (no jumps or ladder);
+    `phase_of_clip` draws a rebirth in the phase before the last; the moments add the rebirth; `Shot.look`,
+    `HeroAssets.textures(phase, look)` and `look_of_clip` draw it with the rebirth texture; `phases.png` adds a rebirth
+    cell for a hero with one. Her own captions are in `OWN_CAPTIONS`.
+
+### Previews (`docs/heroes-v2/previews/heroes/the_wither/` and `heroes/lineup.png`)
+
+Laid out like Natsuho's and Hinae's, with a README: `turnaround.png`, `faces.png`, `phases.png` (phases 1-3 front and
+back, the rebirth, phase 3 at night), `sheet.png`, `string.gif` (the focus string with her sceptre; her thrown-skull
+basic attack comes with the kit), `moments.gif`, `idles.gif` and `locomotion.gif`. No move GIFs and no `ultimate.gif`
+(no kit yet). The lineup now has her beside Natsuho, Hinae and the test rig, at her own scale (the tallest: 1.89
+blocks). The parts sheets (`previews/parts/`) show the new parts on the six bases: `head_headwear.png` (the crown),
+`body_tops_robes.png` (the corset, the gown), `body_armour_back.png` (the bracers, the torn cape),
+`details_accessories.png` (the familiars, the rose, the brooch, the spine, the soul fire over the hime cut) and
+`weapons.png` (the sceptre). Looked at: the turnaround and head close-ups at 8x beside Hinae's (the same hair from
+above), the faces, the phases with the rebirth, the three quirks as 8-frame strips at 4-7x, the locomotion, moments
+and idle films frame by frame.
+
+### Tests (440 -> 460: `tests/test_wither.py`, 20)
+
+Her one body (adult, slim, 104, no phase changes it); the budget; the art-only source (no moves, no kit clip, no hit or
+cast; a pending source with a move, a `hit` marker or an `ultimate` is refused); her clips pass every rule on every
+base, at most 24, no `escape`; the sceptre clear of her body; she floats (every own clip's lowest sole at least 2 px
+up, the rebirth's sink going into the ground; sabotage: the idle without its lift stands on the ground); `move.hover`
+and `move.drift` are aliases; `sec.loop` keys only the familiars' position and no other clip does, and the bicker turns
+them to each other; the rose lies inside her hand at rest and comes out in `personal.2`; the familiars (6x6x6, their
+bones, 12 px out, glowing eyes, hidden in phase 3); the glow mask (gem, eyes, sceptre's heart; the stays and the spine
+only in the phase texture); the ash tips keep the hime cut (`ash` 0 unchanged); the soul fire on `p3_` bones outside
+the tail's ends, its left copy on the left lock; the brooch on its artifact bone (a cube elsewhere refused); the face
+(pupil-less glowing irises, the overrides, never a blush); the rebirth look (the gown recoloured and glowing, the
+bodice unchanged, blue-white; sabotage: without `art.rebirth` no file and no flag, a missing file reported, bad
+palettes refused); the bracers' spines a spine's width apart on every base (sabotage: the old span gives 0.25 px on a
+chibi); `lint` wears a required hairstyle and still wears a required tail over its own hair; the preview rules (the
+rebirth in phase 2 with its look, the last stand in 3, the flight set, the moments, the lineup).
+`test_details`' slice-column test pinned the library's markings to the slice's three; it now lets B5's two through
+by name, so any other new marking still fails it.
+
+**At the commit** (the finished tree): the full suite (460 tests, OK), `check --all --style` (every hero, the style
+fixtures and the icons), `build --all --check` (the libraries, `_fallback`, the test rig, Natsuho and Hinae as
+committed, her files fresh), `lint` (268 builds and checks, 0 problems), `render-previews --check`, `parts-previews
+--check`, `anim-previews --locomotion --check`, `hero-previews --check` for her, Natsuho and Hinae, and `hero-previews
+--lineup --check`; the style preview set (`previews`) re-rendered byte for byte as committed.
+
+### Decisions
+
+1. **Art only, no fake kit**: `"kit": "pending"` and an empty move list, refused the moment anything kit-like appears;
+   no check of another hero was weakened.
+2. **`sec.loop` is `sec.familiars`**: the controller the engine already runs, keying only the skulls' position.
+3. **The rebirth look is a texture**, not cubes and not a phase (above).
+4. **The brooch is drawn until R3's hook exists**: correct for her, since she comes with Hollow Star.
+5. **256x128** for her texture: everything fits, half the memory of 4.2's 256x256.
+6. **The rebirth sinks rather than kneels** (4.12 says "kneeling into soul sand"): a floating gown on the skirt bones
+   cannot fold round a kneel without the thighs pushing through it, and in game the sand hides her to the thighs either
+   way, so the sink reads as the kneel without the clipping.
+7. **The gown is metal-slot**: so the rebirth can blaze it without recolouring the bodice and cape (primary); the hair's
+   tie (also `metal`) and the brooch go blue-white with it, a small flourish of the same charge.
+
+### Open items
+
+- **The move step** (against the B1 kit fixture, `BOSS_HEROES.md` 4.3 and 4.12): remove `"kit": "pending"` and copy the
+  fixture's kit fields into the source; author `move.skull_volley`, `move.ruin_skull`, `move.withering_pulse`,
+  `move.rose_bloom`, `move.soul_dash`, `move.grave_grasp`, `move.unbound_heads`, `move.stray_skulls`, `ultimate`
+  (Birth Blast) with its `ultimate.loop` for the 3 s channel (the loop the engine plays while the channel lasts; check
+  `MoveTiming.stops` and the `ultimate.end` rule as Hinae's section explains), `ultimate.awakened` (Skullfall),
+  `state.wither_armour`, `victory` (she turns her back, the familiars cackle), `taunt` (a slow beckoning finger) and the
+  `work.mine` override (her palm to the stone), each with the kit's frames to the tick (`hit` at the release, `cast` on
+  the active part's last tick), keying the familiars' rotation so they aim with her (never their position, which is
+  `sec.loop`'s); `attack.ranged` for her thrown skull if the focus library's does not read as one; `string.gif` then
+  shows it. The sound markers of 4.11 once B6 writes her sound set (`quirks.*` in `personal.1-3`, the intro, the
+  phases, the rebirth slot). Her kit sheet's ANIMATIONS section lists the same.
+- **Engine hooks** (B1/B3/R3): an action code for `rebirth` (kit-gaps) and for `last_stand`; `HeroModel` showing
+  `_rebirth.png` and `_rebirth_glowmask.png` while the rebirth plays (`visual.json` `texture.rebirth`); hiding
+  `bones.artifacts` unless the artifact is worn (R3); the phase-2 `soul` particle shimmer on her outline and the smoke
+  and soul sparks from her hem (`vfx_feet`, 4.2); the hover's lift is in the clips (4 px), so the hitbox and the
+  hover height of MOBILITY 1.11 (0.6-1.0 blocks) are the engine's; her definition in `data/factionclash/heroes/` (B7).
+- **Gate 3/4**: in-game screenshots (lineup, a phase transition, the rebirth, a face close-up) once she has a
+  definition; ROSTER_PLAN 8's concept search on the look (the vanilla boss is the intended reference; nothing here
+  comes from another creator's design).
+- Not run here (Gradle is off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
+  `verifyHeroAssets`; they will see her files, which pass the Python mirror of their rules), GameTests, the in-game
+  and campaign checks, and the jar.

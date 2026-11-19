@@ -1,0 +1,140 @@
+{
+  "_comment": "Soul fire at the hair's tips (B5, the Wither's phase 3: her ash tips burn): tongues of glowing flame licking up from the ends of `hair/hime_long` (the part it is worn over): a ring round the tail's tip on `tail_hair_2`, just outside the flared strand ends and rising from below them, and three on each side lock, outside the lock's tips, in the detail slot with a lighter core, cut jagged. Worn with \"phase\": 3, so its cubes nest in p3_ children of the hair's bones and follow the hair. `length` and `locks` must match the hair's own.",
+  "id": "markings/soul_fire_tips",
+  "category": "markings",
+  "slots": {
+    "main": "accent",
+    "alt": "glow"
+  },
+  "requires": [
+    "hair/hime_long"
+  ],
+  "params": {
+    "length": {
+      "default": 18,
+      "max": 26,
+      "min": 8
+    },
+    "locks": {
+      "default": 9.5,
+      "max": 11,
+      "min": 7
+    }
+  },
+  "occupies": [
+    "hair_fire"
+  ],
+  "offset": [
+    0,
+    "head_y",
+    0
+  ],
+  "vars": {
+    "tip_y": "max(0.75 - length * 0.85, 0.5 - head_y)",
+    "tip_r": "1.6 + length * 0.85 * 0.07"
+  },
+  "strands": [
+    {
+      "name": "tail_fire",
+      "bone": "tail_hair_2",
+      "path": "arc",
+      "center": [
+        0,
+        6.7
+      ],
+      "radius": [
+        "tip_r",
+        "tip_r - 0.1"
+      ],
+      "y": "tip_y - 0.6",
+      "angles": [
+        -160,
+        155
+      ],
+      "count": 7,
+      "dir": "up",
+      "width": [
+        1.1,
+        0.9,
+        1.2
+      ],
+      "depth": 0.7,
+      "length": [
+        3.25,
+        2.5,
+        3.75,
+        2.75,
+        3.5,
+        2.5
+      ],
+      "flare": [
+        12,
+        -4,
+        16
+      ],
+      "material": "glow",
+      "slot": "main",
+      "tip": {
+        "slot": "alt",
+        "frac": 0.35,
+        "edge": "bottom"
+      },
+      "taper": 0.8,
+      "cutout": "tip_jagged_1",
+      "fine": true,
+      "clear_face": false,
+      "outline": false
+    },
+    {
+      "name": "lock_fire",
+      "bone": "hair_r",
+      "path": "line",
+      "from": [
+        -6.25,
+        "9.75 - locks - 0.5",
+        -4.5
+      ],
+      "to": [
+        -6.5,
+        "9.75 - locks - 0.5",
+        -2.6
+      ],
+      "out": [
+        -1,
+        0,
+        -0.4
+      ],
+      "count": 3,
+      "dir": "up",
+      "width": [
+        0.9,
+        1.1,
+        0.8
+      ],
+      "depth": 0.6,
+      "length": [
+        2.5,
+        3.0,
+        2.25
+      ],
+      "flare": [
+        10,
+        -2,
+        6
+      ],
+      "material": "glow",
+      "slot": "main",
+      "tip": {
+        "slot": "alt",
+        "frac": 0.35,
+        "edge": "bottom"
+      },
+      "taper": 0.8,
+      "cutout": "tip_jagged_1",
+      "fine": true,
+      "clear_face": false,
+      "outline": false,
+      "mirror": true
+    }
+  ]
+}

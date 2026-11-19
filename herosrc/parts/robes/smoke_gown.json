@@ -1,0 +1,218 @@
+{
+  "_comment": "A floor-length smoke gown (B5, the Wither's; her flight carrier, MOBILITY_AND_WORK 2.5: the gown lifts and smoke pours from its hem at take-off): the skirt of a robe, worn under a separate top (it takes the skirt and the upper legs, not the torso). A waistband 0.3 px round the hips, then a ring of hinged panels on the skirt bones in two depths falling to the floor with a small flare, the lowest part of each panel fading to the trim colour (ash) and cut jagged, and a ring of thin smoke wisps hanging from the hem in the trim colour. The legs under it are painted the main colour. The hem band glows in the phase look (`glow: phase`). Panels and wisps follow the skirt bones (the follow-through bake and the flight wind: the hem lifts and flutters with her hover). `drop` scales the length (1: the hem 0.6 px over the ground at rest).",
+  "id": "robes/smoke_gown",
+  "category": "robes",
+  "slots": {
+    "main": "primary",
+    "trim": "trim",
+    "alt": "secondary"
+  },
+  "params": {
+    "drop": {
+      "default": 1,
+      "max": 1,
+      "min": 0.7
+    },
+    "wisps": {
+      "default": 1,
+      "max": 1,
+      "min": 0
+    }
+  },
+  "occupies": [
+    "skirt",
+    "legs_upper"
+  ],
+  "vars": {
+    "hem_len": "(waist_y + 0.25 - 0.6) * drop",
+    "hem_y": "waist_y + 0.25 - (waist_y + 0.25 - 0.6) * drop"
+  },
+  "paint": [
+    {
+      "cubes": [
+        "hips",
+        "thigh_*",
+        "shin_*"
+      ],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": [
+        "#panel*"
+      ],
+      "y": [
+        -100,
+        "hem_y + 8"
+      ],
+      "material": "cloth",
+      "slot": "main",
+      "tone": 1
+    },
+    {
+      "cubes": [
+        "#panel*"
+      ],
+      "y": [
+        -100,
+        "hem_y + 3.5"
+      ],
+      "material": "cloth",
+      "slot": "trim",
+      "glow": "phase"
+    },
+    {
+      "cubes": [
+        "#panel*"
+      ],
+      "faces": [
+        "south"
+      ],
+      "y": [
+        -100,
+        "hem_y + 6"
+      ],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -2
+    }
+  ],
+  "cubes": [
+    {
+      "name": "band",
+      "bone": "body",
+      "origin": [
+        "-hips_w / 2 - 0.3",
+        "waist_y - 1.25",
+        "-hips_d / 2 - 0.3"
+      ],
+      "size": [
+        "hips_w + 0.6",
+        1.5,
+        "hips_d + 0.6"
+      ],
+      "material": "cloth",
+      "tone": -1
+    }
+  ],
+  "strands": [
+    {
+      "name": "panel",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "waist_y + 0.25",
+      "radius": [
+        "hips_w / 2 + 0.4",
+        "hips_d / 2 + 0.4"
+      ],
+      "angles": [
+        -180,
+        157.5
+      ],
+      "count": 16,
+      "width": "(hips_w + hips_d) * 0.24 + 0.6",
+      "depth": 0.6,
+      "length": "hem_len",
+      "flare": [
+        7,
+        9
+      ],
+      "material": "cloth",
+      "slot": "main",
+      "fine": false,
+      "tone": [
+        0,
+        -1
+      ],
+      "layers": [
+        0,
+        0.3
+      ],
+      "cutout": "tip_jagged_2",
+      "bones_by_angle": {
+        "skirt_f": [
+          -45,
+          45
+        ],
+        "skirt_l": [
+          45,
+          135
+        ],
+        "skirt_b": [
+          135,
+          225
+        ],
+        "skirt_r": [
+          -135,
+          -45
+        ]
+      }
+    },
+    {
+      "name": "wisp",
+      "when": "wisps",
+      "bone": "skirt",
+      "path": "arc",
+      "y": "hem_y + 2.25",
+      "radius": [
+        "hips_w / 2 + 0.95 + (waist_y - hem_y) * 0.14",
+        "hips_d / 2 + 0.95 + (waist_y - hem_y) * 0.14"
+      ],
+      "angles": [
+        -168.75,
+        146.25
+      ],
+      "count": 10,
+      "width": [
+        0.8,
+        1.1,
+        0.7,
+        1.0
+      ],
+      "depth": 0.45,
+      "length": [
+        4.75,
+        3.0,
+        5.5,
+        3.5,
+        4.5,
+        2.75
+      ],
+      "flare": [
+        16,
+        24,
+        12,
+        20
+      ],
+      "jitter": 0.25,
+      "material": "cloth",
+      "slot": "trim",
+      "taper": 0.85,
+      "cutout": "tip_jagged_1",
+      "tone": [
+        -1,
+        0,
+        -1,
+        1
+      ],
+      "bones_by_angle": {
+        "skirt_f": [
+          -45,
+          45
+        ],
+        "skirt_l": [
+          45,
+          135
+        ],
+        "skirt_b": [
+          135,
+          225
+        ],
+        "skirt_r": [
+          -135,
+          -45
+        ]
+      }
+    }
+  ]
+}

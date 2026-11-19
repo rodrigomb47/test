@@ -1,0 +1,289 @@
+{
+  "_comment": "A high-collared bodice with a ribcage of stays (B5, the Wither's): the chest, waist and arms in the main colour (long fitted sleeves), a standing collar up the neck, a flat corset front (the busk) over the chest and the bust, and on it a sternum and five pairs of ribs sloping down and out from it in the alt colour (bone): from the front the stays read as a ribcage. Shoulder seams give the sleeves a little volume; a pointed basque dips over the waistband at the front. The ribs stay drawn beyond the fine distance (the ribcage is how she reads from afar). The stays glow in the phase look (`glow: phase`: the wither armour of phase 2). Layers: the busk 0.2 px in front of the bust, the stays 0.3 px in front of the busk; the collar 0.6 px round the neck, the shoulder seams 0.55 round the upper arm (the sleeve shoulders' value).",
+  "id": "outfit_top/ribbed_corset",
+  "category": "outfit_top",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim"
+  },
+  "params": {
+    "collar": {
+      "default": 1.75,
+      "max": 2.25,
+      "min": 1
+    }
+  },
+  "occupies": [
+    "torso",
+    "sleeves"
+  ],
+  "vars": {
+    "busk_z": "-chest_d / 2 - bust_d - 0.2",
+    "rib_z": "-chest_d / 2 - bust_d - 0.45"
+  },
+  "paint": [
+    {
+      "cubes": [
+        "chest",
+        "bust",
+        "waist",
+        "upper_arm_*",
+        "forearm_*"
+      ],
+      "material": "cloth",
+      "slot": "main"
+    },
+    {
+      "cubes": [
+        "forearm_*"
+      ],
+      "y": [
+        -100,
+        "wrist_y + 0.75"
+      ],
+      "material": "cloth",
+      "slot": "main",
+      "tone": -1
+    }
+  ],
+  "cubes": [
+    {
+      "name": "collar",
+      "bone": "chest",
+      "origin": [
+        "-neck_w / 2 - 0.6",
+        "chest_top - 0.25",
+        "-neck_d / 2 - 0.6"
+      ],
+      "size": [
+        "neck_w + 1.2",
+        "min(collar + 0.25, head_y - chest_top - 0.15)",
+        "neck_d + 1.2"
+      ],
+      "material": "cloth",
+      "trim": {
+        "slot": "trim",
+        "edge": "top",
+        "width": 1
+      }
+    },
+    {
+      "name": "busk",
+      "bone": "chest",
+      "origin": [
+        "-bust_w / 2 - 0.35",
+        "chest_y - 0.25",
+        "busk_z"
+      ],
+      "size": [
+        "bust_w + 0.7",
+        "chest_top - chest_y - 1.0",
+        "-busk_z - 0.5"
+      ],
+      "material": "cloth"
+    },
+    {
+      "name": "shoulder",
+      "bone": "arm_r",
+      "origin": [
+        "-shoulder_x - arm_w / 2 - 0.55",
+        "arm_top - 2.25",
+        "-arm_d / 2 - 0.55"
+      ],
+      "size": [
+        "arm_w + 1.1",
+        2.0,
+        "arm_d + 1.1"
+      ],
+      "material": "cloth",
+      "mirror": true,
+      "trim": {
+        "slot": "trim",
+        "edge": "bottom",
+        "width": 1
+      }
+    },
+    {
+      "name": "sternum",
+      "bone": "chest",
+      "origin": [
+        -0.4,
+        "chest_y + 0.5",
+        "rib_z"
+      ],
+      "size": [
+        0.8,
+        "chest_top - chest_y - 2.75",
+        0.3
+      ],
+      "slot": "alt",
+      "material": "bone",
+      "glow": "phase"
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [
+        0,
+        0,
+        -24
+      ],
+      "pivot": [
+        -0.4,
+        "chest_top - 2.5",
+        "rib_z"
+      ],
+      "cubes": [
+        {
+          "name": "rib1",
+          "bone": "chest",
+          "origin": [
+            -2.3,
+            "chest_top - 2.95",
+            "rib_z"
+          ],
+          "size": [
+            1.9,
+            0.45,
+            0.3
+          ],
+          "slot": "alt",
+          "material": "bone",
+          "glow": "phase",
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "rotation": [
+        0,
+        0,
+        -26
+      ],
+      "pivot": [
+        -0.4,
+        "chest_top - 4.0",
+        "rib_z"
+      ],
+      "cubes": [
+        {
+          "name": "rib2",
+          "bone": "chest",
+          "origin": [
+            -2.6,
+            "chest_top - 4.45",
+            "rib_z"
+          ],
+          "size": [
+            2.2,
+            0.45,
+            0.3
+          ],
+          "slot": "alt",
+          "material": "bone",
+          "glow": "phase",
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "rotation": [
+        0,
+        0,
+        -28
+      ],
+      "pivot": [
+        -0.4,
+        "chest_top - 5.5",
+        "rib_z"
+      ],
+      "cubes": [
+        {
+          "name": "rib3",
+          "bone": "chest",
+          "origin": [
+            -2.7,
+            "chest_top - 5.95",
+            "rib_z"
+          ],
+          "size": [
+            2.3,
+            0.45,
+            0.3
+          ],
+          "slot": "alt",
+          "material": "bone",
+          "glow": "phase",
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "rotation": [
+        0,
+        0,
+        -30
+      ],
+      "pivot": [
+        -0.4,
+        "chest_top - 7.0",
+        "rib_z"
+      ],
+      "cubes": [
+        {
+          "name": "rib4",
+          "bone": "chest",
+          "origin": [
+            -2.5,
+            "chest_top - 7.45",
+            "rib_z"
+          ],
+          "size": [
+            2.1,
+            0.45,
+            0.3
+          ],
+          "slot": "alt",
+          "material": "bone",
+          "glow": "phase",
+          "mirror": true
+        }
+      ]
+    },
+    {
+      "rotation": [
+        0,
+        0,
+        45
+      ],
+      "pivot": [
+        0,
+        "waist_y - 0.1",
+        "-waist_d / 2 - 0.75"
+      ],
+      "cubes": [
+        {
+          "name": "basque",
+          "bone": "waist",
+          "origin": [
+            -0.9,
+            "waist_y - 1.0",
+            "-waist_d / 2 - 0.75"
+          ],
+          "size": [
+            1.8,
+            1.8,
+            0.3
+          ],
+          "material": "cloth",
+          "trim": {
+            "slot": "trim",
+            "edge": "all",
+            "width": 1
+          }
+        }
+      ]
+    }
+  ]
+}

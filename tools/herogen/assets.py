@@ -251,6 +251,11 @@ def check_visual(hero_id, files, visual, geo):
     wants_p2 = tex.get("p2") or any(p.get("texture") == "p2" for p in visual.get("phases", []) or [])
     if wants_p2 and paths["p2"] not in files:
         out.append("visual.json names a phase texture, %s is missing" % paths["p2"])
+    if tex.get("rebirth"):
+        # B5: a boss hero's rebirth look (build.rebirth_look)
+        for k in ("rebirth", "rebirth_glowmask"):
+            if paths[k] not in files:
+                out.append("visual.json names a rebirth texture, %s is missing" % paths[k])
     rig = load_rig()
     tpl, planes = rig["uv_template"], rig["face"]["planes"]
     regions = ((visual.get("face") or {}).get("regions")) or {}

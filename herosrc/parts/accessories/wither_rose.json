@@ -1,0 +1,138 @@
+{
+  "_comment": "A small wither rose kept in the left hand (B5, the Wither's idle quirk: she turns a wither rose in her fingers): a black rose (four petals round a dark heart with a faint soul-blue core) on a short stem, on its own bone `rose_l` under the left hand. At rest every cube lies inside the hand (nothing shows); a clip brings the rose out by keying the bone's position along the hand (toward the fingertips) and turns it there, then puts it back.",
+  "id": "accessories/wither_rose",
+  "category": "accessories",
+  "slots": {
+    "main": "primary",
+    "alt": "leather",
+    "detail": "accent"
+  },
+  "occupies": [
+    "hand_l_item"
+  ],
+  "vars": {
+    "hx": "shoulder_x",
+    "hy": "hand_bottom + 1.55"
+  },
+  "bones": [
+    {
+      "name": "rose_l",
+      "parent": "hand_l",
+      "pivot": [
+        "hx",
+        "hy",
+        0
+      ]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "stem",
+      "bone": "rose_l",
+      "origin": [
+        "hx - 0.175",
+        "hy - 0.2",
+        -0.175
+      ],
+      "size": [
+        0.35,
+        1.9,
+        0.35
+      ],
+      "slot": "alt",
+      "material": "cloth"
+    },
+    {
+      "name": "bloom",
+      "bone": "rose_l",
+      "origin": [
+        "hx - 0.65",
+        "hy - 1.45",
+        -0.65
+      ],
+      "size": [
+        1.3,
+        1.25,
+        1.3
+      ],
+      "material": "cloth",
+      "tone": -1
+    },
+    {
+      "name": "core",
+      "bone": "rose_l",
+      "origin": [
+        "hx - 0.3",
+        "hy - 1.5",
+        -0.3
+      ],
+      "size": [
+        0.6,
+        0.3,
+        0.6
+      ],
+      "slot": "detail",
+      "material": "glow"
+    },
+    {
+      "name": "petal_a",
+      "bone": "rose_l",
+      "origin": [
+        "hx - 1.1",
+        "hy - 1.45",
+        -0.4
+      ],
+      "size": [
+        0.45,
+        1.05,
+        0.8
+      ],
+      "material": "cloth"
+    },
+    {
+      "name": "petal_b",
+      "bone": "rose_l",
+      "origin": [
+        "hx + 0.65",
+        "hy - 1.45",
+        -0.4
+      ],
+      "size": [
+        0.45,
+        1.05,
+        0.8
+      ],
+      "material": "cloth"
+    },
+    {
+      "name": "petal_c",
+      "bone": "rose_l",
+      "origin": [
+        "hx - 0.4",
+        "hy - 1.5",
+        -1.1
+      ],
+      "size": [
+        0.8,
+        1.05,
+        0.45
+      ],
+      "material": "cloth"
+    },
+    {
+      "name": "petal_d",
+      "bone": "rose_l",
+      "origin": [
+        "hx - 0.4",
+        "hy - 1.5",
+        0.65
+      ],
+      "size": [
+        0.8,
+        1.05,
+        0.45
+      ],
+      "material": "cloth"
+    }
+  ]
+}

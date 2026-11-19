@@ -56,7 +56,9 @@ class LibraryTest(unittest.TestCase):
         ids = lint.part_ids()
         for name in G6C_ACCESSORIES:
             self.assertIn("accessories/" + name, ids)
-        self.assertEqual(sorted(i for i in ids if i.startswith("markings/")),
+        # B5 (the Wither) added two markings of its own; any other new marking still fails here
+        later = ("markings/soul_fire_tips", "markings/spine_ridge")
+        self.assertEqual(sorted(i for i in ids if i.startswith("markings/") and i not in later),
                          ["markings/arm_stripes", "markings/calico", "markings/crest"])
         for pid in SLICE_WEAPONS:
             self.assertIn(pid, ids)

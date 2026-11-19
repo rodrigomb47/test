@@ -94,6 +94,9 @@ def visual_json(hero, model, spec, textures, source_hash, moves=None, states=Non
             # shown only while riding (HeroModel must hide it otherwise)
             **({"mount": ["mount"]} if _has_mount(model) else {}),
             "locators": sorted(n for n, b in model.bones.items() if b.kind == "locator"),
+            # B5: a signature artifact's worn part (artifact id -> its artifact_<id> bones), drawn only while worn
+            **({"artifacts": {k: list(v) for k, v in sorted(model.artifact_bones.items())}}
+               if getattr(model, "artifact_bones", None) else {}),
         },
         "weapon": _weapon_info(weapon, model) if weapon.get("prop") else None,
         **({"carrier": carrier_info(model)} if _has_mount(model) else {}),

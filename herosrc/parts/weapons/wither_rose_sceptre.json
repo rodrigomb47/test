@@ -1,0 +1,248 @@
+{
+ "_comment": "A wither-rose sceptre (B5, the Wither's, in the right hand; style focus): a slender black shaft with a bone ferrule at its foot and a bone collar under the head, two small thorns, and at the head a wither rose: a cup of five black petals round a glowing soul-blue heart, with two dark leaves under it. Grip space (the grip at 0, the head along -z, a held item at rest). Carried at the hip when sheathed (`hip_same`: on the right hip, head down and swung back, clear of the gown's front).",
+ "id": "weapons/wither_rose_sceptre",
+ "category": "weapons",
+ "slots": {
+  "main": "primary",
+  "trim": "secondary",
+  "alt": "leather",
+  "detail": "accent"
+ },
+ "style": "focus",
+ "sheath": "hip_same",
+ "tip": [
+  0,
+  0,
+  -12.6
+ ],
+ "cubes": [
+  {
+   "name": "shaft",
+   "origin": [
+    -0.35,
+    -0.35,
+    -10.0
+   ],
+   "size": [
+    0.7,
+    0.7,
+    12.6
+   ],
+   "material": "lacquer"
+  },
+  {
+   "name": "ferrule",
+   "origin": [
+    -0.5,
+    -0.5,
+    2.4
+   ],
+   "size": [
+    1.0,
+    1.0,
+    0.8
+   ],
+   "slot": "trim",
+   "material": "bone",
+   "fine": true
+  },
+  {
+   "name": "collar",
+   "origin": [
+    -0.55,
+    -0.55,
+    -10.4
+   ],
+   "size": [
+    1.1,
+    1.1,
+    0.6
+   ],
+   "slot": "trim",
+   "material": "bone"
+  },
+  {
+   "name": "thorn_a",
+   "origin": [
+    -0.95,
+    -0.15,
+    -6.2
+   ],
+   "size": [
+    0.6,
+    0.3,
+    0.3
+   ],
+   "slot": "trim",
+   "material": "bone",
+   "fine": true
+  },
+  {
+   "name": "thorn_b",
+   "origin": [
+    0.35,
+    -0.15,
+    -3.6
+   ],
+   "size": [
+    0.6,
+    0.3,
+    0.3
+   ],
+   "slot": "trim",
+   "material": "bone",
+   "fine": true
+  },
+  {
+   "name": "heart",
+   "origin": [
+    -0.55,
+    -0.55,
+    -12.1
+   ],
+   "size": [
+    1.1,
+    1.1,
+    1.1
+   ],
+   "slot": "detail",
+   "material": "glow"
+  },
+  {
+   "name": "petal_1",
+   "origin": [
+    -0.75,
+    -1.05,
+    -12.6
+   ],
+   "size": [
+    1.5,
+    0.45,
+    1.8
+   ],
+   "material": "cloth"
+  },
+  {
+   "name": "petal_3",
+   "origin": [
+    -0.75,
+    0.6,
+    -12.6
+   ],
+   "size": [
+    1.5,
+    0.45,
+    1.8
+   ],
+   "material": "cloth"
+  },
+  {
+   "name": "petal_2",
+   "origin": [
+    0.6,
+    -0.75,
+    -12.45
+   ],
+   "size": [
+    0.45,
+    1.5,
+    1.7
+   ],
+   "material": "cloth",
+   "tone": -1
+  },
+  {
+   "name": "petal_4",
+   "origin": [
+    -1.05,
+    -0.75,
+    -12.45
+   ],
+   "size": [
+    0.45,
+    1.5,
+    1.7
+   ],
+   "material": "cloth",
+   "tone": -1
+  },
+  {
+   "name": "petal_5",
+   "origin": [
+    -0.65,
+    -0.65,
+    -11.1
+   ],
+   "size": [
+    1.3,
+    1.3,
+    0.5
+   ],
+   "material": "cloth",
+   "tone": -1,
+   "rotation": [
+    0,
+    0,
+    45
+   ],
+   "pivot": [
+    0,
+    0,
+    -10.85
+   ],
+   "fine": true
+  },
+  {
+   "name": "leaf_a",
+   "origin": [
+    0.3,
+    -0.2,
+    -10.3
+   ],
+   "size": [
+    1.6,
+    0.25,
+    0.9
+   ],
+   "slot": "alt",
+   "material": "cloth",
+   "rotation": [
+    0,
+    0,
+    -20
+   ],
+   "pivot": [
+    0.3,
+    0,
+    -9.85
+   ],
+   "fine": true
+  },
+  {
+   "name": "leaf_b",
+   "origin": [
+    -1.9,
+    -0.05,
+    -9.9
+   ],
+   "size": [
+    1.6,
+    0.25,
+    0.9
+   ],
+   "slot": "alt",
+   "material": "cloth",
+   "rotation": [
+    0,
+    0,
+    20
+   ],
+   "pivot": [
+    -0.3,
+    0,
+    -9.45
+   ],
+   "fine": true
+  }
+ ]
+}

@@ -46,6 +46,9 @@ class HeroAssets:
         self.glow = _png(files[paths["glowmask"]]) if paths["glowmask"] in files else None
         self.tex_p2 = _png(files[paths["p2"]]) if paths["p2"] in files else None
         self.glow_p2 = _png(files[paths["p2_glowmask"]]) if paths["p2_glowmask"] in files else None
+        # B5: a boss hero's rebirth look (build.rebirth_look), drawn while the rebirth plays
+        self.tex_rebirth = _png(files[paths["rebirth"]]) if paths["rebirth"] in files else None
+        self.glow_rebirth = _png(files[paths["rebirth_glowmask"]]) if paths["rebirth_glowmask"] in files else None
         chain = []
         for name in self.visual.get("animation_chain", [hero_id]):
             p = animlib.out_paths(name)["animation"]
@@ -140,8 +143,11 @@ class HeroAssets:
     def tint(self, rgb=SASH_TINT):
         return {b: tuple(rgb) for b in self.bones("tint")} if rgb else None
 
-    def textures(self, phase=1):
-        """(texture, glow mask) of a phase look: the _p2 texture from phase 2 when the phase entry asks for it."""
+    def textures(self, phase=1, look=None):
+        """(texture, glow mask) of a phase look: the _p2 texture from phase 2 when the phase entry asks for it; with
+        `look` "rebirth" (B5), the rebirth texture when the hero has one."""
+        if look == "rebirth" and self.tex_rebirth is not None:
+            return self.tex_rebirth, self.glow_rebirth
         use_p2 = any(p["phase"] <= phase and p.get("texture") == "p2" for p in self.visual.get("phases", []))
         if use_p2 and self.tex_p2 is not None:
             return self.tex_p2, self.glow_p2
@@ -169,10 +175,10 @@ class HeroAssets:
     # -------------------------------------------------------------- drawing
 
     def render(self, view, pose=None, face=(0, 0, 0), phase=1, drawn=False, far=False, tint=SASH_TINT,
-               bounds=None, pad=2, brightness=1.0, glow=True, frame=False, riding=False):
-        """One image (RGBA array, or a raster.Frame with frame=True)."""
+               bounds=None, pad=2, brightness=1.0, glow=True, frame=False, riding=False, look=None):
+        """One image (RGBA array, or a raster.Frame with frame=True). `look` "rebirth": the rebirth texture (B5)."""
         pose = {b: v for b, v in (pose or {}).items() if b in self.geo.bones}
-        tex, gl = self.textures(phase)
+        tex, gl = self.textures(phase, look)
         return raster.render(self.geo, tex, view, pose=pose, hidden=self.hidden(phase, drawn, far, riding),
                              uv_shift=self.face_shift(*face), tint=self.tint(tint), glow=gl if glow else None,
                              bounds=bounds, pad=pad, brightness=brightness, frame=frame)

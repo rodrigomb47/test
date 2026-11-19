@@ -1,0 +1,275 @@
+{
+  "_comment": "Two skull familiars (B5, the Wither's side heads): wither skulls of 6 x 6 x 6 px floating `out` px either side of the head's centre at eye height, on their own bones `familiar_r` and `familiar_l` (parent chest, pivots at the skulls' centres, so a move keys their rotation to aim them and the secondary loop keys their position to bob them), each with a jaw on its own bone (`familiar_jaw_r`/`_l`, hinged at the back: the jaw snaps), dark eye sockets with a glowing core (detail slot, glow), a nasal hole, bone teeth (alt) and a small smoke trail of three wisps hanging back and down from under it like a ghost's tail (ash fading to the light ash of hair_accent at the jagged tips). The cranium in the main colour, a bone material. Hidden while they are unbound (the hero's phase look hides the two bones).",
+  "id": "accessories/skull_familiars",
+  "category": "accessories",
+  "slots": {
+    "main": "primary",
+    "alt": "secondary",
+    "trim": "trim",
+    "detail": "accent"
+  },
+  "params": {
+    "out": {
+      "default": 12,
+      "max": 14,
+      "min": 10
+    }
+  },
+  "occupies": [
+    "familiars"
+  ],
+  "vars": {
+    "fx": "-out",
+    "fy": "head_y + 3",
+    "fz": 0.5
+  },
+  "bones": [
+    {
+      "name": "familiar_r",
+      "parent": "chest",
+      "pivot": [
+        "fx",
+        "fy",
+        "fz"
+      ]
+    },
+    {
+      "name": "familiar_jaw_r",
+      "parent": "familiar_r",
+      "pivot": [
+        "fx",
+        "fy - 2",
+        "fz + 2.4"
+      ]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "cranium",
+      "bone": "familiar_r",
+      "origin": [
+        "fx - 3",
+        "fy - 2",
+        "fz - 3"
+      ],
+      "size": [
+        6,
+        5,
+        6
+      ],
+      "material": "bone",
+      "mirror": true
+    },
+    {
+      "name": "brow",
+      "bone": "familiar_r",
+      "origin": [
+        "fx - 2.7",
+        "fy + 0.85",
+        "fz - 3.15"
+      ],
+      "size": [
+        5.4,
+        0.6,
+        0.3
+      ],
+      "material": "bone",
+      "tone": 1,
+      "mirror": true,
+      "fine": true
+    },
+    {
+      "name": "socket_r",
+      "bone": "familiar_r",
+      "origin": [
+        "fx - 2.4",
+        "fy - 0.55",
+        "fz - 3.12"
+      ],
+      "size": [
+        1.9,
+        1.4,
+        0.2
+      ],
+      "material": "bone",
+      "tone": -2,
+      "mirror": true
+    },
+    {
+      "name": "socket_l",
+      "bone": "familiar_r",
+      "origin": [
+        "fx + 0.5",
+        "fy - 0.55",
+        "fz - 3.12"
+      ],
+      "size": [
+        1.9,
+        1.4,
+        0.2
+      ],
+      "material": "bone",
+      "tone": -2,
+      "mirror": true
+    },
+    {
+      "name": "eye_r",
+      "bone": "familiar_r",
+      "origin": [
+        "fx - 1.95",
+        "fy - 0.35",
+        "fz - 3.2"
+      ],
+      "size": [
+        1.0,
+        0.9,
+        0.15
+      ],
+      "slot": "detail",
+      "material": "glow",
+      "mirror": true
+    },
+    {
+      "name": "eye_l",
+      "bone": "familiar_r",
+      "origin": [
+        "fx + 0.95",
+        "fy - 0.35",
+        "fz - 3.2"
+      ],
+      "size": [
+        1.0,
+        0.9,
+        0.15
+      ],
+      "slot": "detail",
+      "material": "glow",
+      "mirror": true
+    },
+    {
+      "name": "nose",
+      "bone": "familiar_r",
+      "origin": [
+        "fx - 0.4",
+        "fy - 1.45",
+        "fz - 3.1"
+      ],
+      "size": [
+        0.8,
+        0.7,
+        0.15
+      ],
+      "material": "bone",
+      "tone": -2,
+      "mirror": true,
+      "fine": true
+    },
+    {
+      "name": "teeth",
+      "bone": "familiar_r",
+      "origin": [
+        "fx - 2.1",
+        "fy - 2.0",
+        "fz - 3.1"
+      ],
+      "size": [
+        4.2,
+        0.55,
+        0.2
+      ],
+      "slot": "alt",
+      "material": "bone",
+      "mirror": true
+    },
+    {
+      "name": "jaw",
+      "bone": "familiar_jaw_r",
+      "origin": [
+        "fx - 2.65",
+        "fy - 3.15",
+        "fz - 2.85"
+      ],
+      "size": [
+        5.3,
+        1.4,
+        5.5
+      ],
+      "material": "bone",
+      "tone": -1,
+      "mirror": true
+    },
+    {
+      "name": "teeth_low",
+      "bone": "familiar_jaw_r",
+      "origin": [
+        "fx - 1.9",
+        "fy - 2.25",
+        "fz - 2.95"
+      ],
+      "size": [
+        3.8,
+        0.45,
+        0.2
+      ],
+      "slot": "alt",
+      "material": "bone",
+      "fine": true,
+      "mirror": true
+    }
+  ],
+  "strands": [
+    {
+      "name": "smoke",
+      "bone": "familiar_r",
+      "path": "line",
+      "from": [
+        "fx - 0.9",
+        "fy - 1.9",
+        "fz + 2.2"
+      ],
+      "to": [
+        "fx + 0.9",
+        "fy - 1.9",
+        "fz + 2.2"
+      ],
+      "out": [
+        0,
+        0,
+        1
+      ],
+      "count": 3,
+      "width": [
+        1.0,
+        1.9,
+        1.0
+      ],
+      "depth": 0.7,
+      "length": [
+        2.75,
+        5.0,
+        2.5
+      ],
+      "flare": [
+        40,
+        50,
+        34
+      ],
+      "material": "cloth",
+      "slot": "trim",
+      "tone": [
+        -1,
+        0,
+        -1
+      ],
+      "taper": 0.8,
+      "clear_face": false,
+      "mirror": true,
+      "tip": {
+        "slot": "hair_accent",
+        "frac": 0.4
+      },
+      "fan": 6,
+      "cutout": "tip_jagged_1"
+    }
+  ]
+}

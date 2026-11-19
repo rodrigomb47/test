@@ -1,0 +1,37 @@
+{
+  "_comment": "Bone bracers (B5, the Wither's): a bone shell round each forearm from the wrist up `length` of it (0.4 px out, the bracers' layer), a ridged rim at each end in the trim colour and three short spines standing out from the outer side, angled up toward the elbow. The lower rim reaches 0.2 px past the wrist (the bracers' rule). The hands stay bare. On a short forearm (a chibi's) the spines move toward the rims, so they stand a spine's width apart and never overlap.",
+  "id": "armour/bone_bracers",
+  "category": "armour",
+  "slots": {"main": "secondary", "trim": "trim"},
+  "params": {
+    "length": {"default": 0.75, "max": 0.95, "min": 0.45}
+  },
+  "occupies": ["forearms"],
+  "vars": {"top_y": "wrist_y + (elbow_y - wrist_y) * length"},
+  "cubes": [
+    {"name": "shell", "bone": "forearm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.4", "wrist_y + 0.1", "-arm_d / 2 - 0.4"], "size": ["arm_w + 0.8", "top_y - wrist_y - 0.2", "arm_d + 0.8"], "material": "bone", "mirror": true},
+    {"name": "rim_low", "bone": "forearm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.55", "wrist_y - 0.2", "-arm_d / 2 - 0.55"], "size": ["arm_w + 1.1", 0.8, "arm_d + 1.1"], "slot": "trim", "material": "bone", "mirror": true},
+    {"name": "rim_high", "bone": "forearm_r", "origin": ["-shoulder_x - arm_w / 2 - 0.55", "top_y - 0.75", "-arm_d / 2 - 0.55"], "size": ["arm_w + 1.1", 0.75, "arm_d + 1.1"], "slot": "trim", "material": "bone", "mirror": true}
+  ],
+  "strands": [
+    {
+      "name": "spine",
+      "bone": "forearm_r",
+      "path": "line",
+      "from": ["-shoulder_x - arm_w / 2 - 0.25", "wrist_y + min(1.1, (top_y - wrist_y) * 0.2)", 0.2],
+      "to": ["-shoulder_x - arm_w / 2 - 0.25", "top_y - min(1.4, (top_y - wrist_y) * 0.2)", 0.2],
+      "out": [-1, 0, 0.35],
+      "count": 3,
+      "dir": "up",
+      "width": 0.7,
+      "depth": 0.7,
+      "length": [1.3, 1.6, 1.3],
+      "flare": 62,
+      "taper": 0.75,
+      "material": "bone",
+      "slot": "main",
+      "mirror": true,
+      "clear_face": false
+    }
+  ]
+}

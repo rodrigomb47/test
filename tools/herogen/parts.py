@@ -273,7 +273,9 @@ def _mirror_bone(ctx, bone):
     src = model.catalogue[bone]
     parent = mirror_name(src.parent) if src.parent else None
     if parent not in model.catalogue:
-        parent = src.parent
+        # B5: a mirrored cube on a nested bone (fine_p3_hair_r) needs its whole chain mirrored: its left parent
+        # (p3_hair_l under hair_l) is made first, else the left cube would hang from the right-hand bone
+        parent = _mirror_bone(ctx, src.parent) if parent != src.parent else src.parent
     model.declare_bone(m, parent, (-src.pivot[0], src.pivot[1], src.pivot[2]), ctx.where)
     return m
 
@@ -536,6 +538,8 @@ def apply_part(model, entry, index):
         if not any(c.part == ctx.pid and c.bone.endswith("mount") for c in model.cubes):
             raise HerogenError("%s: a mounts part puts its cubes on the `mount` bone" % ctx.where)
         model.carrier_kinds.setdefault("mount", []).append(part.get("carrier", "mount"))
+    if part.get("artifact"):
+        _worn_part(ctx)
     if part.get("secondary"):
         sec = dict(part["secondary"])
         # a chain built several times ("copies": a fox's tails) declares one spring chain per copy
@@ -927,6 +931,36 @@ def _place_mount(model, w, index):
         rot, q = _spec_rot(ctx, spec)
         _add(model, ctx, spec, n, loc.name, _placed(o, s, rot, q, IDENT, t), "mount:%s#%d" % (prop, n), "r")
     model.mount = {"prop": prop, "seat": [0.0, height, 0.0], "bone": "mount", "kind": spec_m.get("kind", "broom")}
+
+
+def _worn_part(ctx):
+    """B5 (ARTIFACTS 12.7, 16.4 `worn_part`): a part with `"artifact": "<id>"` is a signature artifact drawn on its own
+    hero only while she wears it (Hollow Star's brooch). Its cubes all sit on the bones it declares, named
+    `artifact_<id>` (or nested below one), and `visual.json` `bones.artifacts` {id: [bones]} lists them: HeroModel hides
+    those bones unless the hero wears that artifact (the hook R3 adds; until then they are drawn always, as a boss
+    hero comes with her signature in her first slot)."""
+    model, art = ctx.model, ctx.part["artifact"]
+    if not isinstance(art, str) or not art.replace("_", "").isalnum() or art != art.lower():
+        raise HerogenError("%s: artifact %r must be a lower_snake_case artifact id" % (ctx.where, art))
+    top = ctx.renames.get("artifact_" + art, ctx.prefix + "artifact_" + art)
+    if top not in model.bones or (model.catalogue[top].source == "rig"):
+        raise HerogenError("%s: a worn artifact part declares its bone artifact_%s" % (ctx.where, art))
+    for c in model.cubes:
+        if c.part == ctx.pid and not _under_bone(model, c.bone, top):
+            raise HerogenError("%s: cube %s is not on the artifact's bone %s (a worn part shows only while worn)"
+                               % (ctx.where, c.name, top))
+    bones = model.artifact_bones.setdefault(art, [])
+    if top not in bones:
+        bones.append(top)
+
+
+def _under_bone(model, bone, top):
+    while bone is not None:
+        if bone == top:
+            return True
+        b = model.bones.get(bone)
+        bone = b.parent if b is not None else None
+    return False
 
 
 HANDS = ("right", "left", "both", "pair")

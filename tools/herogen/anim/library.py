@@ -291,7 +291,7 @@ def hero(hero_obj, hero_source=None):
             if name in own:
                 raise HerogenError("%s: animation %s is both a signature and an override" % (hero_obj["id"], name))
             own[name] = r
-    recipes.update(own)
+    recipes.update(_resolve_copies(own))       # B5: a hero's alias (the Wither's move.hover is her move.idle)
     lib = style_poses(style_of(hero_obj))
     if variant_poses:
         clash = sorted(n for n in variant_poses if n in lib.specs)

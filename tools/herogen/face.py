@@ -166,9 +166,9 @@ def _marks(raw):
         if m["type"] == "face_paint":
             m.setdefault("style", "stripes")
             m.setdefault("color", "accent")
-            if m["style"] not in ("stripes", "tear", "dots", "chevron", "whiskers"):
-                raise HerogenError("art.face.marks[%d]: face_paint style is stripes, tear, dots, chevron or whiskers"
-                                   % i)
+            if m["style"] not in ("stripes", "tear", "dots", "chevron", "whiskers", "sockets"):
+                raise HerogenError("art.face.marks[%d]: face_paint style is stripes, tear, dots, chevron, whiskers "
+                                   "or sockets" % i)
         out.append(m)
     return out
 
@@ -179,7 +179,7 @@ def face_spec(art_face, family, palette_hex):
     f = dict(FAMILY_DEFAULTS[family])
     f.update({"iris": palette_hex["eyes"], "iris2": None, "iris_style": "gradient", "spacing": 6, "fang": "none",
               "blush": False, "blush_style": "hatch", "marks": [], "glasses": None, "glasses_color": "metal",
-              "eyepatch": None, "overrides": {}})
+              "eyepatch": None, "overrides": {}, "iris_glow": False})
     shape = art_face.get("eyes", f["eyes"])
     shape = SHAPE_ALIASES.get(shape, shape)
     if shape not in EYE_SHAPES:
@@ -227,6 +227,8 @@ def face_spec(art_face, family, palette_hex):
         raise HerogenError("art.face.eyepatch must be r or l (the hero's right or left eye)")
     if f["glasses"] and f["eyepatch"]:
         raise HerogenError("art.face: glasses and an eye patch together are not drawn")
+    if not isinstance(f["iris_glow"], bool):
+        raise HerogenError("art.face.iris_glow must be true or false")
     parse_hex(f["iris"])
     if f["iris2"] is not None:
         parse_hex(f["iris2"])
@@ -423,6 +425,14 @@ def skin_layer(spec, col):
                 elif style == "chevron":
                     for (r, x) in ((17, 0), (18, 1), (17, 2)):
                         put(r, fc(x), paint)
+                elif style == "sockets":
+                    # the Wither: a soft shadow under each eye, darkest under its middle and fading at both ends,
+                    # with a fainter second row under the outer half (a skull's socket echoed, never a bruise)
+                    deep, faint = mix(paint, col.skin, 0.45), mix(paint, col.skin, 0.72)
+                    for x in range(g.W):
+                        put(17, fc(x), faint if x in (0, g.W - 1) else deep)
+                    for x in range(0, max(1, g.W // 2)):
+                        put(18, fc(x), faint)
                 elif style == "whiskers":
                     # G6c: two faint whisker lines from the face's edge on each cheek, under the blush, the inner
                     # end fading into the skin (a cat's face, never a scar)
@@ -614,6 +624,9 @@ def _draw_open(cv, spec, col, lid_fn=None, shrink=0, highlight=True, pupil=True,
     irises = (col.glow, col.glow) if glow else (col.iris, col.iris2)
     pupils = (col.white, col.white) if glow else (col.pupil, col.pupil2)
     shines = (col.shine, col.shine2)
+    # `iris_glow` (the Wither's soul-blue eyes): the iris, pupil and highlights of every open-type frame go into the
+    # glow mask in their own colours; frame 10 (glowing) still swaps them for the glow colour
+    lit = glow or bool(spec.get("iris_glow"))
     for x, (t, b) in opening.items():
         n_vis = b - t + 1
         for r in range(t, b + 1):
@@ -630,7 +643,7 @@ def _draw_open(cv, spec, col, lid_fn=None, shrink=0, highlight=True, pupil=True,
             if white_top and r == t:
                 continue
             tone = _iris_tone(style, r - t0, n, x in (icols[0], icols[-1]) and len(icols) >= 4)
-            cv.put_side(BODY + r, x, (irises[0][tone], irises[1][tone]), glow=glow)
+            cv.put_side(BODY + r, x, (irises[0][tone], irises[1][tone]), glow=lit)
     if not itop:
         _draw_lash(cv, spec, col, opening)
         return
@@ -647,28 +660,28 @@ def _draw_open(cv, spec, col, lid_fn=None, shrink=0, highlight=True, pupil=True,
         if ptype in ("round", "dot"):
             for r in prows:
                 for x in pcols:
-                    cv.put_side(BODY + r, x, pupils, glow=glow)
+                    cv.put_side(BODY + r, x, pupils, glow=lit)
         elif ptype == "slit":
             for r in range(max(t, t0 + 1), b):
-                cv.put_side(BODY + r, mid, pupils, glow=glow)
+                cv.put_side(BODY + r, mid, pupils, glow=lit)
         elif ptype == "star":
-            cv.put(BODY + ptop, mid, col.white, glow=glow)
+            cv.put(BODY + ptop, mid, col.white, glow=lit)
             for x in pcols:
                 if x != mid:
-                    cv.put_side(BODY + ptop, x, (irises[0][4], irises[1][4]), glow=glow)
+                    cv.put_side(BODY + ptop, x, (irises[0][4], irises[1][4]), glow=lit)
             if ptop + 1 <= b:
-                cv.put_side(BODY + ptop + 1, mid, (irises[0][4], irises[1][4]), glow=glow)
+                cv.put_side(BODY + ptop + 1, mid, (irises[0][4], irises[1][4]), glow=lit)
         elif ptype == "ring":
             for r in prows:
                 for x in pcols:
-                    cv.put_side(BODY + r, x, pupils, glow=glow)
+                    cv.put_side(BODY + r, x, pupils, glow=lit)
             for x in icols:
                 if x not in pcols and x in opening and opening[x][0] <= prows[0] <= opening[x][1]:
-                    cv.put_side(BODY + prows[0], x, (irises[0][4], irises[1][4]), glow=glow)
+                    cv.put_side(BODY + prows[0], x, (irises[0][4], irises[1][4]), glow=lit)
     _draw_lash(cv, spec, col, opening)
     _draw_lower_lash(cv, spec, col, opening)
     if highlight:
-        _draw_highlights(cv, spec, col, opening, icols, itop, irises, pupils, shines, glow)
+        _draw_highlights(cv, spec, col, opening, icols, itop, irises, pupils, shines, lit)
 
 
 def _draw_highlights(cv, spec, col, opening, icols, itop, irises, pupils, shines, glow):

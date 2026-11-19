@@ -1,0 +1,31 @@
+{
+  "_comment": "Hollow Star's worn part (B5; ARTIFACTS 12.7 and 16.4 `worn_part`, BOSS_HEROES 4.13): a nether star burnt black, worn as a brooch at the front of the collar, a faint soul-blue light caught in its heart. On its own bone `artifact_hollow_star` (`artifact`: drawn on its hero only while she wears the artifact, `visual.json` `bones.artifacts`). Eight points (a cross and a smaller saltire behind it) round a dark gem heart, 0.25-0.65 px in front of the collar.",
+  "id": "accessories/hollow_star_brooch",
+  "category": "accessories",
+  "slots": {"main": "metal", "alt": "accent"},
+  "occupies": ["brooch"],
+  "artifact": "hollow_star",
+  "vars": {
+    "bz": "-neck_d / 2 - 0.9",
+    "by": "chest_top + 0.7"
+  },
+  "bones": [
+    {"name": "artifact_hollow_star", "parent": "chest", "pivot": [0, "by", "bz"]}
+  ],
+  "cubes": [
+    {"name": "heart", "bone": "artifact_hollow_star", "origin": [-0.6, "by - 0.6", "bz - 0.45"], "size": [1.2, 1.2, 0.5], "material": "gem"},
+    {"name": "light", "bone": "artifact_hollow_star", "origin": [-0.3, "by - 0.3", "bz - 0.6"], "size": [0.6, 0.6, 0.15], "slot": "alt", "material": "glow"},
+    {"name": "bar_v", "bone": "artifact_hollow_star", "origin": [-0.25, "by - 1.25", "bz - 0.3"], "size": [0.5, 2.5, 0.3], "material": "metal"},
+    {"name": "bar_h", "bone": "artifact_hollow_star", "origin": [-1.25, "by - 0.25", "bz - 0.25"], "size": [2.5, 0.5, 0.3], "material": "metal"}
+  ],
+  "groups": [
+    {
+      "rotation": [0, 0, 45],
+      "pivot": [0, "by", "bz"],
+      "cubes": [
+        {"name": "diag_a", "bone": "artifact_hollow_star", "origin": [-0.9, "by - 0.2", "bz - 0.2"], "size": [1.8, 0.4, 0.25], "material": "metal", "tone": -1, "fine": true},
+        {"name": "diag_b", "bone": "artifact_hollow_star", "origin": [-0.2, "by - 0.9", "bz - 0.15"], "size": [0.4, 1.8, 0.25], "material": "metal", "tone": -1, "fine": true}
+      ]
+    }
+  ]
+}

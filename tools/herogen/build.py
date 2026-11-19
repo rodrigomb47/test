@@ -16,6 +16,7 @@ committed files.
 import glob
 import os
 
+import numpy as np
 from PIL import Image
 
 import face as facemod
@@ -60,6 +61,8 @@ def out_paths(hero_id):
         "glowmask": "%s/textures/entity/hero/%s_glowmask.png" % (ASSETS, hero_id),
         "p2": "%s/textures/entity/hero/%s_p2.png" % (ASSETS, hero_id),
         "p2_glowmask": "%s/textures/entity/hero/%s_p2_glowmask.png" % (ASSETS, hero_id),
+        "rebirth": "%s/textures/entity/hero/%s_rebirth.png" % (ASSETS, hero_id),
+        "rebirth_glowmask": "%s/textures/entity/hero/%s_rebirth_glowmask.png" % (ASSETS, hero_id),
         "animation": animlib.out_paths(hero_id)["animation"],
         "timing": animlib.out_paths(hero_id)["timing"],
         "visual": "%s/heroes/%s.visual.json" % (ASSETS, hero_id),
@@ -97,9 +100,10 @@ def base_id_of(hero):
 class Built:
     """Everything one build produced, in memory."""
 
-    def __init__(self, hero, model, spec, ramps, image, glow, p2=None, p2_glow=None):
+    def __init__(self, hero, model, spec, ramps, image, glow, p2=None, p2_glow=None, rebirth=None, rebirth_glow=None):
         self.hero, self.model, self.spec, self.ramps = hero, model, spec, ramps
         self.image, self.glow, self.p2, self.p2_glow = image, glow, p2, p2_glow
+        self.rebirth, self.rebirth_glow = rebirth, rebirth_glow
         self.animations = None          # the hero's own animation file (anim.library.Built), set by build_files
 
 
@@ -158,7 +162,39 @@ def build(hero):
         # a phase that recolours the eyes recolours the iris too, even when art.face.iris was authored
         face_changes = {"iris": pal["eyes"]} if any("eyes" in ph["palette"] for ph in changes) else None
         _, _, p2, p2_glow = paint_all(model, hero, pal, face_changes, phase_look=True)
-    return Built(hero, model, spec, ramps, img, glow, p2, p2_glow)
+    rebirth, rebirth_glow = rebirth_look(model, hero, changes, p2 if p2 is not None else img)
+    return Built(hero, model, spec, ramps, img, glow, p2, p2_glow, rebirth, rebirth_glow)
+
+
+def rebirth_look(model, hero, changes, before):
+    """B5 (BOSS_HEROES 4.2): a boss hero's rebirth look, `art.rebirth` {palette}: the texture of her phase look with
+    the slots the rebirth names recoloured (the Wither's gown and cape lining turn the blue-white of vanilla's spawn
+    charge), every recoloured texel blazing (written to the glow mask), as `<id>_rebirth.png` and its glow mask.
+    HeroModel shows it while the rebirth plays (the engine's hook, B3). No `art.rebirth`: (None, None)."""
+    reb = hero["art"].get("rebirth")
+    if reb is None:
+        return None, None
+    if not isinstance(reb, dict) or not isinstance(reb.get("palette"), dict) or not reb["palette"]:
+        raise HerogenError("%s: art.rebirth is {\"palette\": {slot: colour}} (the slots the rebirth recolours)"
+                           % hero["id"])
+    unknown = sorted(set(reb["palette"]) - set(palette.SLOTS))
+    if unknown or set(reb) - {"palette", "_comment"}:
+        raise HerogenError("%s: art.rebirth: unknown %s" % (hero["id"], ", ".join(unknown or sorted(set(reb) - {
+            "palette", "_comment"}))))
+    pal = dict(hero["art"].get("palette", {}))
+    for ph in sorted(changes, key=lambda p: p["phase"]):
+        pal.update(ph["palette"])
+    pal.update(reb["palette"])
+    face_changes = {"iris": pal["eyes"]} if "eyes" in reb["palette"] or any("eyes" in ph["palette"]
+                                                                            for ph in changes) else None
+    _, _, img, glow = paint_all(model, hero, pal, face_changes, phase_look=True)
+    lit = (img[:, :, 3] > 0) & np.any(img != before, axis=2)
+    if not lit.any():
+        raise HerogenError("%s: art.rebirth recolours nothing (no part uses %s)"
+                           % (hero["id"], ", ".join(sorted(reb["palette"]))))
+    glow = glow.copy()
+    glow[lit] = img[lit]
+    return img, glow
 
 
 def source_hash(hero, model):
@@ -181,13 +217,55 @@ def to_image(arr):
     return Image.fromarray(arr, "RGBA")
 
 
+KIT_PENDING = "pending"
+
+
+def art_only_problems(hero, anims):
+    """B5: a source whose kit is not written yet (`"kit": "pending"`: the look gate of a hero whose moves come from a
+    kit fixture later, the boss heroes) holds no kit and fakes none: an empty `moves` list, no ultimate, states or
+    basic attack, and in its own animation file no `move.<id>` other than locomotion, no `ultimate*` or `state.*`
+    clip and no `hit` or `cast` marker. Its visual.json then lists no moves, and `herogen check` compares nothing
+    with a definition until the kit's definition exists (assets.definition_of)."""
+    if hero.get("kit") != KIT_PENDING:
+        return []
+    out = []
+    for key in ("moves", "states"):
+        if hero.get(key):
+            out.append("kit pending: %s must be empty until the kit is written" % key)
+    for key in ("ultimate", "basic_attack"):
+        if hero.get(key):
+            out.append("kit pending: no %s until the kit is written" % key)
+    loco = locomotion_names()
+    for clip in anims.clips:
+        n = clip.name
+        if n.startswith(("ultimate", "state.")) or (n.startswith("move.") and n not in loco):
+            out.append("kit pending: %s is a kit clip (its frames come from the kit fixture)" % n)
+        if clip.hits():
+            out.append("kit pending: %s has a hit or cast marker" % n)
+    return out
+
+
+# MOBILITY_AND_WORK 4.1: the locomotion clips G10b adds beside the core's own move.* clips
+LOCOMOTION_LATER = ("move.hover", "move.drift", "move.swim_fast", "move.tread", "move.swim_down", "move.surface_leap")
+
+
+def locomotion_names():
+    """Every locomotion clip name (a hero may override them; a move id may not take one, MOBILITY_AND_WORK 4.4):
+    the core library's move.* clips and the ones G10b adds."""
+    return {n for n in animlib.core().by_name if n.startswith("move.")} | set(LOCOMOTION_LATER)
+
+
 def build_files(hero_id, hero=None):
     hero = hero or load_hero(hero_id)
     b = build(hero)
     paths = out_paths(hero_id)
     textures = {"width": b.model.tex_w, "height": b.model.tex_h, "glowmask": bool(b.glow[:, :, 3].any()),
-                "glow_outside_face": _glow_outside_face(b), "p2": b.p2 is not None}
+                "glow_outside_face": _glow_outside_face(b), "p2": b.p2 is not None,
+                **({"rebirth": True} if b.rebirth is not None else {})}
     anims = animlib.hero(hero, hero_path(hero_id))
+    pending = art_only_problems(hero, anims)
+    if pending:
+        raise HerogenError("%s: %s" % (hero_id, "; ".join(pending)))
     files = {
         paths["geo"]: dumps_json(geo_json(b.model)).encode("utf-8"),
         paths["texture"]: png_bytes(to_image(b.image)),
@@ -202,6 +280,9 @@ def build_files(hero_id, hero=None):
         files[paths["p2"]] = png_bytes(to_image(b.p2))
         if b.p2_glow[:, :, 3].any():
             files[paths["p2_glowmask"]] = png_bytes(to_image(b.p2_glow))
+    if b.rebirth is not None:
+        files[paths["rebirth"]] = png_bytes(to_image(b.rebirth))
+        files[paths["rebirth_glowmask"]] = png_bytes(to_image(b.rebirth_glow))
     return files, b
 
 

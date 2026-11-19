@@ -132,7 +132,14 @@ def lint_hero(pid, base_id, params=None, sheet=False):
     if pid.startswith("hair/"):
         parts[0] = dict(entry, color="hair", detail="hair_accent", alt="primary" if sheet else "secondary")
     elif not pid.startswith("weapons/"):
-        parts.extend(required_entries(pid, sheet))
+        for r in required_entries(pid, sheet):
+            if r["part"].startswith("hair/"):
+                # B5: a part worn over a hairstyle (markings/soul_fire_tips over hair/hime_long) wears that hair in
+                # place of the mannequin's own, in the hair's colours
+                parts[0] = {"part": r["part"], "color": "hair", "detail": "hair_accent",
+                            "alt": "primary" if sheet else "secondary"}
+            else:
+                parts.append(r)
         parts.append(entry)
     safe = pid.replace("/", "_")
     anims = {"blink": "normal"}

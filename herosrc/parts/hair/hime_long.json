@@ -1,14 +1,16 @@
 {
-  "_comment": "Long straight hair tied low (G6a, a hime cut): a blunt straight fringe, straight side locks cut level at the jaw (the hime cut's sidelocks), the back gathered low at the nape by a paper tie with two folded paper strips, and a long straight tail cut blunt. The two crown strands over the front are shorter (3.5), so their tips stay behind the straight fringe (longer, their dark tips showed between its strands). Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px; the cap, dome and base slabs are the far silhouette, the strands are on fine_ bones.",
+  "_comment": "Long straight hair tied low (G6a, a hime cut): a blunt straight fringe, straight side locks cut level at the jaw (the hime cut's sidelocks), the back gathered low at the nape by a paper tie with two folded paper strips, and a long straight tail cut blunt. The two crown strands over the front are shorter (3.5), so their tips stay behind the straight fringe (longer, their dark tips showed between its strands). Head-local (offset head_y: y 0 is the chin, the face is at z -5, the head spans x and z -5..5, y 0..10), 1 texel per px; the cap, dome and base slabs are the far silhouette, the strands are on fine_ bones. B5: `ash` 1 (the Wither) gives the side locks, the back layer and the tail ash tips in the alt colour (hair_accent), cut tip_jagged_1, so they read as fraying into smoke; those three groups are copied after the others with `when` (`ash` 0 builds exactly as before).",
   "id": "hair/hime_long",
   "category": "hair",
   "slots": {
     "main": "hair",
-    "trim": "secondary"
+    "trim": "secondary",
+    "alt": "hair_accent"
   },
   "params": {
     "length": {"default": 18, "max": 26, "min": 8},
-    "locks": {"default": 9.5, "max": 11, "min": 7}
+    "locks": {"default": 9.5, "max": 11, "min": 7},
+    "ash": {"default": 0, "max": 1, "min": 0}
   },
   "occupies": ["hair_top", "hair_back"],
   "conflicts": ["hair/twin_tails*", "hair/high_ponytail*"],
@@ -195,6 +197,7 @@
     },
     {
       "name": "sidelock",
+      "when": "1 - ash",
       "bone": "hair_r",
       "path": "line",
       "from": [-5.7, 9.75, -4.6],
@@ -211,6 +214,7 @@
     },
     {
       "name": "back",
+      "when": "1 - ash",
       "bone": "hair_back",
       "path": "arc",
       "y": 10,
@@ -227,6 +231,7 @@
     },
     {
       "name": "tail",
+      "when": "1 - ash",
       "bone": "tail_hair_2",
       "path": "arc",
       "center": [0, 6.7],
@@ -240,6 +245,63 @@
       "flare": 4,
       "jitter": 0.25,
       "tone": [0, -1, 0, 1]
+    },
+    {
+      "name": "sidelock",
+      "when": "ash",
+      "bone": "hair_r",
+      "path": "line",
+      "from": [-5.7, 9.75, -4.6],
+      "to": [-5.95, 9.75, -2.6],
+      "out": [-1, 0, -0.4],
+      "count": 3,
+      "width": 1.75,
+      "depth": 1.1,
+      "length": "locks",
+      "flare": 2,
+      "layers": [0, 0.3],
+      "mirror": true,
+      "tone": [0, -1, 0],
+      "tip": {"slot": "alt", "frac": 0.3},
+      "cutout": "tip_jagged_1"
+    },
+    {
+      "name": "back",
+      "when": "ash",
+      "bone": "hair_back",
+      "path": "arc",
+      "y": 10,
+      "radius": [6, 6.1],
+      "angles": [128, 232],
+      "count": 9,
+      "width": 2.75,
+      "depth": 1.25,
+      "length": 9.25,
+      "flare": 6,
+      "fan": -18,
+      "layers": [0, 0.45],
+      "tone": [0, -1, 0, -1],
+      "tip": {"slot": "alt", "frac": 0.3},
+      "cutout": "tip_jagged_1"
+    },
+    {
+      "name": "tail",
+      "when": "ash",
+      "bone": "tail_hair_2",
+      "path": "arc",
+      "center": [0, 6.7],
+      "radius": [1.35, 1.2],
+      "y": 0.75,
+      "angles": [-180, 140],
+      "count": 8,
+      "width": 1.6,
+      "depth": 1.25,
+      "length": "length * 0.85",
+      "flare": 4,
+      "jitter": 0.25,
+      "tone": [0, -1, 0, 1],
+      "tip": {"slot": "alt", "frac": 0.3},
+      "cutout": "tip_jagged_1"
     }
   ],
   "secondary": {

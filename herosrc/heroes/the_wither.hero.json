@@ -1,0 +1,3550 @@
+{
+  "_comment": "The Wither, Queen of Three Skulls (BOSS_HEROES.md section 4; owner request of 2026-11-18): the vanilla Wither made into a woman. ART ONLY for now (the look gate, B5): her body, palette, face, parts, phase looks, the floating rule and her clips without hit ticks. Her kit (moves, ultimate, passives, states, boss block, lines) comes from the B1 kit fixture the Java side writes; the move clips are authored against it later (`kit: pending`, docs/heroes-v2/notes/artgen.md). One body for good (HEROES_V2 3.6): an adult woman, slim, drawn at 104%.",
+  "format": 2,
+  "id": "the_wither",
+  "name": "The Wither",
+  "title": "Queen of Three Skulls",
+  "description": "A weapon that learned to want things: soul sand, three skulls and a will forced into one body. A cold queen who floats a hand's breadth above the ground, flanked by two skull familiars that are her side heads.",
+  "gender": "female",
+  "archetype": "wither",
+  "rarity": "legendary",
+  "element": "blight",
+  "kit": "pending",
+  "moves": [],
+  "mobility": {
+    "primary": {
+      "trait": "flyer",
+      "tier": 3
+    },
+    "secondary": {
+      "trait": "hover",
+      "tier": 2
+    },
+    "carrier": {
+      "kind": "levitation",
+      "part": "robes/smoke_gown"
+    }
+  },
+  "art": {
+    "base": "female",
+    "form": "adult",
+    "build": "slim",
+    "scale": 104,
+    "palette": {
+      "skin": "#E3DFDA",
+      "skin_shade": "#ABA59F",
+      "hair": "#2A282D",
+      "hair_accent": "#8E8A93",
+      "eyes": "#9FE8FF",
+      "primary": "#232127",
+      "secondary": "#E6E0D2",
+      "accent": "#3CC6E8",
+      "trim": "#5E5A63",
+      "metal": "#34313A",
+      "leather": "#29262B",
+      "glow": "#7FE2FF"
+    },
+    "base_layer": {
+      "base_top": "primary",
+      "base_bottom": "leather",
+      "shoes": "leather"
+    },
+    "parts": [
+      {
+        "part": "hair/hime_long",
+        "color": "hair",
+        "trim": "metal",
+        "alt": "hair_accent",
+        "params": {
+          "length": 26,
+          "locks": 11,
+          "ash": 1
+        }
+      },
+      {
+        "part": "headwear/bone_crown",
+        "color": "trim",
+        "alt": "secondary",
+        "detail": "accent"
+      },
+      {
+        "part": "outfit_top/ribbed_corset",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim"
+      },
+      {
+        "part": "robes/smoke_gown",
+        "color": "metal",
+        "trim": "trim",
+        "params": {
+          "drop": 0.92
+        }
+      },
+      {
+        "part": "back/cape_torn",
+        "color": "primary",
+        "alt": "accent",
+        "trim": "trim"
+      },
+      {
+        "part": "markings/spine_ridge",
+        "color": "secondary"
+      },
+      {
+        "part": "armour/bone_bracers",
+        "color": "secondary",
+        "trim": "trim"
+      },
+      {
+        "part": "legwear/tights_boots",
+        "color": "leather",
+        "alt": "leather",
+        "trim": "leather"
+      },
+      {
+        "part": "accessories/skull_familiars",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim",
+        "detail": "accent"
+      },
+      {
+        "part": "accessories/wither_rose",
+        "color": "primary",
+        "alt": "leather",
+        "detail": "accent"
+      },
+      {
+        "part": "accessories/hollow_star_brooch",
+        "color": "metal",
+        "alt": "accent"
+      },
+      {
+        "part": "markings/soul_fire_tips",
+        "color": "accent",
+        "alt": "glow",
+        "phase": 3,
+        "params": {
+          "length": 26,
+          "locks": 11
+        }
+      }
+    ],
+    "face": {
+      "eyes": "sharp",
+      "iris_style": "glossy",
+      "pupil": "none",
+      "iris_glow": true,
+      "lashes": 2,
+      "brows": "thin_arched",
+      "mouth": "soft",
+      "blush": false,
+      "marks": [
+        {
+          "type": "face_paint",
+          "style": "sockets",
+          "color": "primary"
+        }
+      ],
+      "overrides": {
+        "happy": {
+          "eyes": "half",
+          "mouth": "smile",
+          "cheeks": "none"
+        },
+        "angry": {
+          "eyes": "glowing"
+        },
+        "flustered": {
+          "cheeks": "none"
+        }
+      }
+    },
+    "weapon": {
+      "prop": "weapons/wither_rose_sceptre",
+      "hand": "right",
+      "sheathed": "hip_same",
+      "color": "primary",
+      "trim": "secondary",
+      "alt": "leather",
+      "detail": "accent"
+    },
+    "phases": [
+      {
+        "phase": 2,
+        "palette": {
+          "secondary": "#D6F2FF",
+          "trim": "#3CC6E8"
+        }
+      },
+      {
+        "phase": 3,
+        "hide": [
+          "familiar_r",
+          "familiar_l"
+        ],
+        "show": [
+          "p3_tail_hair_2",
+          "p3_hair_r",
+          "p3_hair_l"
+        ],
+        "eyes_glow": true
+      }
+    ],
+    "rebirth": {
+      "_comment": "The rebirth look (BOSS_HEROES 4.2: the gown and the cape's lining blaze the blue-white of the vanilla Wither's spawn charge): her phase-2 look with the gown (metal) and the soul-fire accents (accent: the cape's lining, the gem, the familiars' eyes, the rose's heart) recoloured and glowing, written to the_wither_rebirth.png and its glow mask; HeroModel shows it while the rebirth plays (the engine's hook).",
+      "palette": {
+        "metal": "#CDEBFA",
+        "accent": "#F1FBFF"
+      }
+    }
+  },
+  "animations": {
+    "style": "focus",
+    "blink": "calm",
+    "signatures": {
+      "move.idle": {
+        "description": "Her floating idle (base, 6 s loop): a hand's breadth above the ground, she bobs 0.6 px each way every 3 s and breathes, the gown's panels billow slowly round her (the skirt bones in a quarter-cycle wave), the legs drift a little inside it, she glances aside twice and the familiars look about on their own. Never grounded: her feet never touch.",
+        "length": 6.0,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.float"
+          },
+          {
+            "t": 6.0,
+            "pose": "wither.float"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.6,
+                  0
+                ]
+              },
+              "period": 3.0,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 6.0
+            }
+          },
+          {
+            "primitive": "breathe",
+            "params": {
+              "period": 3
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "leg_r": [
+                  3,
+                  0,
+                  0
+                ],
+                "leg_l": [
+                  -3,
+                  0,
+                  0
+                ]
+              },
+              "period": 6.0
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "familiar_r": {
+                  "amp": [
+                    3,
+                    14,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "familiar_l": {
+                  "amp": [
+                    3,
+                    -12,
+                    0
+                  ],
+                  "phase": 0.4
+                }
+              },
+              "period": 6.0
+            }
+          },
+          {
+            "primitive": "look",
+            "params": {
+              "glances": [
+                [
+                  1.2,
+                  1.6,
+                  2.4,
+                  2.8,
+                  14,
+                  2
+                ],
+                [
+                  3.9,
+                  4.3,
+                  4.9,
+                  5.3,
+                  -12,
+                  -1
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "move.hover": {
+        "copy": "move.idle",
+        "description": "Hovering in place (DATA_LOCO mode hover, MOBILITY_AND_WORK 1.11): her floating idle, the same clip (an alias of move.idle)."
+      },
+      "combat.idle": {
+        "description": "Her combat idle (base, 3 s loop): the focus style's casting stance above the waist (so every focus action settles on it), floating a hand's breadth up with a quicker bob, breathing at 1.5 s like the style's, the gown stirring.",
+        "length": 3.0,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.ready"
+          },
+          {
+            "t": 3.0,
+            "pose": "wither.ready"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.5,
+                  0
+                ]
+              },
+              "period": 1.5,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 3.0
+            }
+          },
+          {
+            "primitive": "breathe",
+            "params": {
+              "period": 1.5,
+              "depth": 1.1
+            }
+          }
+        ]
+      },
+      "move.walk": {
+        "description": "Drifting (base, 1.6 s loop; the base controller scales it with her speed): she glides a hand's breadth up, leaning into the drift, the gown trailing back and swaying, a slow side-to-side bank. She never walks.",
+        "length": 1.6,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.drift"
+          },
+          {
+            "t": 1.6,
+            "pose": "wither.drift"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.5,
+                  0
+                ]
+              },
+              "period": 0.8,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 1.6
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "body": [
+                  0,
+                  0,
+                  2.5
+                ],
+                "chest": [
+                  0,
+                  0,
+                  -1.5
+                ]
+              },
+              "period": 1.6
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "arm_r": [
+                  4,
+                  0,
+                  0
+                ],
+                "arm_l": [
+                  -4,
+                  0,
+                  0
+                ]
+              },
+              "period": 1.6,
+              "phase": 0.25
+            }
+          }
+        ],
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.3,
+          "groups": [
+            "tail",
+            "ponytail",
+            "cape"
+          ]
+        }
+      },
+      "move.drift": {
+        "copy": "move.walk",
+        "description": "Drifting while hovering (DATA_LOCO mode hover moving, MOBILITY_AND_WORK 1.11): her move.walk (an alias)."
+      },
+      "move.run": {
+        "description": "The fast glide (base, 1.2 s loop): leaning further with the arms swept back, the gown and the hair streaming behind her, a quick shallow bob.",
+        "length": 1.2,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.drift_fast"
+          },
+          {
+            "t": 1.2,
+            "pose": "wither.drift_fast"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.4,
+                  0
+                ]
+              },
+              "period": 0.6,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 1.2
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "body": [
+                  0,
+                  0,
+                  2
+                ],
+                "chest": [
+                  0,
+                  0,
+                  -1
+                ]
+              },
+              "period": 1.2
+            }
+          }
+        ],
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.55,
+          "groups": [
+            "tail",
+            "ponytail",
+            "cape"
+          ]
+        }
+      },
+      "move.fly": {
+        "description": "Powered flight (DATA_LOCO mode fly, 2.0 s loop): leaning into the flight, carried by the smoke gown (her levitation carrier: no wings, no running legs), the gown, the cape and the hair streaming behind, a slow bob and the arms drifting.",
+        "length": 2.0,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.fly"
+          },
+          {
+            "t": 2.0,
+            "pose": "wither.fly"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.8,
+                  0
+                ]
+              },
+              "period": 2.0,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 1.0
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "arm_r": [
+                  4,
+                  0,
+                  3
+                ],
+                "arm_l": [
+                  4,
+                  0,
+                  -3
+                ],
+                "body": [
+                  -2,
+                  0,
+                  0
+                ]
+              },
+              "period": 2.0,
+              "phase": 0.25
+            }
+          }
+        ],
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.65,
+          "groups": [
+            "tail",
+            "ponytail",
+            "cape"
+          ]
+        }
+      },
+      "move.fly_fast": {
+        "description": "Fast flight (1.0 s loop): nearly level, everything streaming back, a quick shallow bob and a fast flutter of the hem.",
+        "length": 1.0,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.fly_fast"
+          },
+          {
+            "t": 1.0,
+            "pose": "wither.fly_fast"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.4,
+                  0
+                ]
+              },
+              "period": 1.0,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 0.5
+            }
+          }
+        ],
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.85
+        }
+      },
+      "move.fly_hover": {
+        "description": "Hovering in flight (DATA_LOCO mode fly hover, 1.6 s loop): upright in the air, the arms out for balance, the gown's panels fluttering round her legs and a bob on each pulse.",
+        "length": 1.6,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.fly_hover"
+          },
+          {
+            "t": 1.6,
+            "pose": "wither.fly_hover"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  1.0,
+                  0
+                ]
+              },
+              "period": 0.8,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 0.8
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "leg_r": [
+                  8,
+                  0,
+                  0
+                ],
+                "leg_l": [
+                  -8,
+                  0,
+                  0
+                ],
+                "arm_r": [
+                  0,
+                  0,
+                  5
+                ],
+                "arm_l": [
+                  0,
+                  0,
+                  -5
+                ]
+              },
+              "period": 1.6
+            }
+          }
+        ]
+      },
+      "move.glide": {
+        "description": "Gliding (DATA_LOCO mode glide, 2.4 s loop): the arms spread wide and banking slowly one way and the other, the gown and the cape streaming behind, a gentle bob.",
+        "length": 2.4,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.glide"
+          },
+          {
+            "t": 2.4,
+            "pose": "wither.glide"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.5,
+                  0
+                ]
+              },
+              "period": 1.2,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "skirt_f": {
+                  "amp": [
+                    -2.5,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "skirt_b": {
+                  "amp": [
+                    3,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                },
+                "skirt_r": {
+                  "amp": [
+                    0,
+                    0,
+                    2.5
+                  ],
+                  "phase": 0.25
+                },
+                "skirt_l": {
+                  "amp": [
+                    0,
+                    0,
+                    -2.5
+                  ],
+                  "phase": 0.75
+                }
+              },
+              "period": 1.2
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "arm_r": [
+                  0,
+                  0,
+                  8
+                ],
+                "arm_l": [
+                  0,
+                  0,
+                  8
+                ],
+                "chest": [
+                  0,
+                  4,
+                  -5
+                ],
+                "neck": [
+                  0,
+                  -4,
+                  3
+                ]
+              },
+              "period": 2.4
+            }
+          }
+        ],
+        "wind": {
+          "dir": [
+            0,
+            0.1,
+            1
+          ],
+          "strength": 0.75,
+          "groups": [
+            "tail",
+            "ponytail",
+            "cape"
+          ]
+        }
+      },
+      "move.takeoff": {
+        "description": "Take-off (0.6 s, the tell, MOBILITY_AND_WORK 2.2): she settles a little lower with the arms opening down and out while the gown's hem lifts and spreads (the wind blows up from under it: the smoke pours from the hem), then rises and tips forward into move.fly's pose by 0.6 s; a cold, determined face.",
+        "length": 0.6,
+        "settle_to": "move.fly",
+        "kind": "base",
+        "ground": false,
+        "planted": false,
+        "wind": {
+          "dir": [
+            0,
+            1,
+            0.25
+          ],
+          "strength": 0.3,
+          "ramp": [
+            0.05,
+            0.3
+          ]
+        },
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.float",
+            "face": "determined"
+          },
+          {
+            "t": 0.25,
+            "pose": "wither.lift_gather",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.45,
+            "pose": "wither.lift_rise",
+            "ease": "easeInQuad",
+            "face": "none"
+          },
+          {
+            "t": 0.6,
+            "pose": "wither.fly",
+            "ease": "easeOutQuad"
+          }
+        ]
+      },
+      "move.fly_land": {
+        "description": "Landing from flight (0.4 s): the flare upright with the arms out and the legs swung under her, sinking a little past her hover height and settling back to it (her feet never touch the ground), into move.idle by 0.4 s.",
+        "length": 0.4,
+        "settle_to": "move.idle",
+        "kind": "base",
+        "ground": false,
+        "planted": false,
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.6,
+          "fade": [
+            0,
+            0.25
+          ],
+          "groups": [
+            "tail",
+            "ponytail",
+            "cape"
+          ]
+        },
+        "keys": [
+          {
+            "t": 0,
+            "pose": "wither.alight"
+          },
+          {
+            "t": 0.22,
+            "pose": "wither.float",
+            "root": [
+              0,
+              -0.8,
+              0
+            ],
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 0.4,
+            "pose": "wither.float",
+            "ease": "easeOutQuad"
+          }
+        ]
+      },
+      "sec.loop": {
+        "description": "The familiars' bob on the secondary controller (HeroAnimator plays sec.loop whenever the chain has one; the design's sec.familiars): the two skulls bob up and down out of step and drift a little, 4 s. It keys only their position, so every clip may still turn them (their rotation) to aim with her or to bicker; hidden with them in phase 3.",
+        "length": 4.0,
+        "loop": true,
+        "bones": [
+          "familiar_r",
+          "familiar_l"
+        ],
+        "secondary": false,
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "familiar_r": {
+                  "amp": [
+                    0,
+                    0.9,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "familiar_l": {
+                  "amp": [
+                    0,
+                    0.9,
+                    0
+                  ],
+                  "phase": 0.5
+                }
+              },
+              "period": 2.0,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "familiar_r": {
+                  "amp": [
+                    0.4,
+                    0,
+                    0.3
+                  ],
+                  "phase": 0.0
+                },
+                "familiar_l": {
+                  "amp": [
+                    -0.4,
+                    0,
+                    0.3
+                  ],
+                  "phase": 0.25
+                }
+              },
+              "period": 4.0,
+              "channel": "position"
+            }
+          }
+        ]
+      },
+      "personal.1": {
+        "description": "The familiars bicker (personal.1, a rare idle), 3.2 s over move.idle: the two skulls turn to face each other across her and snap their jaws in turn while she glances from one to the other, then lifts her chin and closes her eyes; the skulls jerk back to the front and dip, chastened, and she gives a thin smile. Neck, chest and the familiars' rotations (the bob of sec.loop goes on).",
+        "length": 3.2,
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "planted": false,
+        "bones": [
+          "chest",
+          "neck",
+          "familiar_r",
+          "familiar_l",
+          "familiar_jaw_r",
+          "familiar_jaw_l"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.45,
+            "pose": "wither.bk_turn",
+            "ease": "easeOutBack",
+            "face": {
+              "eyes": 0,
+              "mouth": 5
+            }
+          },
+          {
+            "t": 1.1,
+            "pose": "wither.bk_turn"
+          },
+          {
+            "t": 1.35,
+            "pose": "wither.bk_turn2"
+          },
+          {
+            "t": 1.85,
+            "pose": "wither.bk_turn2"
+          },
+          {
+            "t": 2.0,
+            "pose": "wither.bk_sigh",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 2,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 2.45,
+            "pose": "wither.bk_cowed",
+            "face": {
+              "eyes": 1,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.85,
+            "pose": "wither.bk_cowed",
+            "face": "none"
+          },
+          {
+            "t": 3.2,
+            "pose": "@stance"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "familiar_jaw_r": {
+                  "amp": [
+                    26,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "familiar_jaw_l": {
+                  "amp": [
+                    26,
+                    0,
+                    0
+                  ],
+                  "phase": 0.5
+                }
+              },
+              "period": 0.25,
+              "shape": "pulse",
+              "window": [
+                0.5,
+                0.6,
+                1.8,
+                1.95
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "familiar_r": [
+                  0,
+                  0,
+                  7
+                ],
+                "familiar_l": [
+                  0,
+                  0,
+                  -7
+                ]
+              },
+              "period": 0.5,
+              "window": [
+                0.5,
+                0.6,
+                1.8,
+                1.95
+              ]
+            }
+          }
+        ]
+      },
+      "personal.2": {
+        "description": "Turning a wither rose (personal.2, a rare idle), 3.6 s over move.idle: the left hand comes up before her chest, palm up, and a wither rose rises out of her fingers (the rose_l bone of accessories/wither_rose slides out along the hand); she turns it slowly once round with a thin half-lidded smile, then closes her hand on it and lowers it.",
+        "length": 3.6,
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "planted": false,
+        "bones": [
+          "chest",
+          "neck",
+          "arm_l",
+          "forearm_l",
+          "hand_l",
+          "rose_l"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.6,
+            "pose": "wither.rose_hold"
+          },
+          {
+            "t": 0.95,
+            "pose": "wither.rose_show",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 1,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.6,
+            "pose": "wither.rose_show"
+          },
+          {
+            "t": 2.9,
+            "pose": "wither.rose_hold",
+            "ease": "easeInQuad",
+            "face": "none"
+          },
+          {
+            "t": 3.6,
+            "pose": "@stance"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "spin",
+            "params": {
+              "bones": {
+                "rose_l": [
+                  0,
+                  360,
+                  0
+                ]
+              },
+              "t0": 1.0,
+              "t1": 2.55
+            }
+          }
+        ]
+      },
+      "personal.3": {
+        "description": "A slow half-turn (personal.3, a rare idle), 5.0 s over move.idle: she folds her arms and drifts round on her floating spot, turning her back (the torn cape and the spine) for a moment with a cold glance over her shoulder, then turns back and lets her arms fall.",
+        "length": 5.0,
+        "plays_over": "move.idle",
+        "settle_to": "move.idle",
+        "planted": false,
+        "bones": [
+          "root",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.7,
+            "pose": "wither.fold",
+            "face": {
+              "eyes": 1
+            }
+          },
+          {
+            "t": 1.0,
+            "pose": "wither.fold"
+          },
+          {
+            "t": 2.4,
+            "pose": "wither.fold_turn"
+          },
+          {
+            "t": 2.85,
+            "pose": "wither.fold_glance",
+            "face": {
+              "eyes": 9,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 3.25,
+            "pose": "wither.fold_turn",
+            "face": {
+              "eyes": 1
+            }
+          },
+          {
+            "t": 4.4,
+            "pose": "wither.fold",
+            "face": "none"
+          },
+          {
+            "t": 5.0,
+            "pose": "@stance"
+          }
+        ]
+      },
+      "intro": {
+        "description": "Intro (code 16), 2.2 s over combat.idle: she raises her chin and looks down on the challenger with a smug half-smile, the left hand opened toward them while the familiars turn on them and cackle (their jaws chattering), then levels her sceptre at them, focused, and is back in her stance by 2.2 s.",
+        "length": 2.2,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "familiar_r",
+          "familiar_l",
+          "familiar_jaw_r",
+          "familiar_jaw_l"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.4,
+            "pose": "wither.in_regard",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.1,
+            "pose": "wither.in_regard"
+          },
+          {
+            "t": 1.45,
+            "pose": "wither.in_command",
+            "ease": "easeOutBack",
+            "face": "focused"
+          },
+          {
+            "t": 1.8,
+            "pose": "wither.in_command"
+          },
+          {
+            "t": 2.2,
+            "pose": "@stance"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "familiar_jaw_r": {
+                  "amp": [
+                    22,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                },
+                "familiar_jaw_l": {
+                  "amp": [
+                    22,
+                    0,
+                    0
+                  ],
+                  "phase": 0.33
+                }
+              },
+              "period": 0.2,
+              "shape": "pulse",
+              "window": [
+                0.45,
+                0.55,
+                1.0,
+                1.15
+              ]
+            }
+          }
+        ]
+      },
+      "phase.2": {
+        "description": "phase.2 (inside the 1.2 s transition): the wither armour. She arches back with her head thrown back and her arms flung down and out, her eyes blazing, while the skulls tip up with their jaws wide (the blue shell flares across her ribs: the stays, the crown's gem and the hem light up in the phase texture), then she settles into her stance.",
+        "length": 1.2,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "familiar_r",
+          "familiar_l",
+          "familiar_jaw_r",
+          "familiar_jaw_l"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.3,
+            "pose": "wither.p2_arch",
+            "ease": "easeOutBack",
+            "face": {
+              "eyes": 10,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 0.75,
+            "pose": "wither.p2_arch"
+          },
+          {
+            "t": 1.0,
+            "face": "focused"
+          },
+          {
+            "t": 1.2,
+            "pose": "@stance"
+          }
+        ]
+      },
+      "phase.3": {
+        "description": "phase.3 (inside the 1.4 s transition): she tears the skulls from her side. Both hands go up to the sides of her head where they float, she hunches and snarls, then flings them away with both arms thrown wide (the familiars are gone from her from phase 3: they are adds now), her eyes blazing and her hair's tips burning.",
+        "length": 1.4,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.35,
+            "pose": "wither.p3_grab",
+            "face": {
+              "eyes": 4,
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.5,
+            "pose": "wither.p3_grab"
+          },
+          {
+            "t": 0.68,
+            "pose": "wither.p3_fling",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 10,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 1.0,
+            "pose": "wither.p3_fling"
+          },
+          {
+            "t": 1.2,
+            "face": "focused"
+          },
+          {
+            "t": 1.4,
+            "pose": "@stance"
+          }
+        ]
+      },
+      "rebirth": {
+        "description": "The rebirth (BOSS_HEROES 4.12, no action code yet: kit-gaps), 2.4 s over combat.idle: struck down, she sinks into the soul sand to her thighs and curls over with her arms round herself and her eyes shut; then she rises higher than her hover with her arms flung up and wide, head back and eyes blazing (vanilla's spawn charge), and floats down into her stance.",
+        "length": 2.4,
+        "planted": false,
+        "bones": [
+          "root",
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "leg_*",
+          "shin_*",
+          "foot_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 7,
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.55,
+            "pose": "wither.rb_sink",
+            "root": [
+              0,
+              -14.0,
+              0
+            ],
+            "ease": "easeInQuad",
+            "face": {
+              "eyes": 2,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.25,
+            "pose": "wither.rb_sink",
+            "root": [
+              0,
+              -14.0,
+              0
+            ]
+          },
+          {
+            "t": 1.7,
+            "pose": "wither.rb_rise",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 10,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 2.0,
+            "pose": "wither.rb_rise",
+            "face": "focused"
+          },
+          {
+            "t": 2.4,
+            "pose": "@stance"
+          }
+        ]
+      },
+      "last_stand": {
+        "description": "The last stand (no action code yet), 1.8 s over combat.idle, drawn in her last phase: she thrusts the sceptre up overhead with the left arm flung down and out, chest out and eyes blazing (\"I was built to end things. I will not end.\"), then sets herself in her stance, determined. She fights to the death: there is no escape clip.",
+        "length": 1.8,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.4,
+            "pose": "wither.ls_defy",
+            "ease": "easeOutBack",
+            "face": {
+              "eyes": 10,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 1.05,
+            "pose": "wither.ls_defy"
+          },
+          {
+            "t": 1.3,
+            "face": "determined"
+          },
+          {
+            "t": 1.8,
+            "pose": "@stance"
+          }
+        ]
+      }
+    },
+    "poses": {
+      "wither.float": {
+        "_comment": "Her floating idle (move.idle, move.hover): upright and proud, the chest a little back and the chin level, the arms a little out from the sides with the hands relaxed, the legs hanging inside the gown with the toes pointed (the boots show under the hem); the whole body a hand's breadth (4 px: her pointed toes hang about 2 px above it) above the ground.",
+        "bones": {
+          "chest": [
+            -3,
+            0,
+            0
+          ],
+          "neck": [
+            -2,
+            0,
+            0
+          ],
+          "arm_r": [
+            3,
+            0,
+            7
+          ],
+          "forearm_r": [
+            -14,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -4
+          ],
+          "arm_l": [
+            3,
+            0,
+            -7
+          ],
+          "forearm_l": [
+            -14,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            4
+          ],
+          "leg_r": [
+            4,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            8,
+            0,
+            0
+          ],
+          "foot_r": [
+            34,
+            0,
+            0
+          ],
+          "leg_l": [
+            -5,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            16,
+            0,
+            0
+          ],
+          "foot_l": [
+            30,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.ready": {
+        "_comment": "Her combat idle: the focus style's casting stance above the waist (focus.stance's own angles, so every focus action settles on it without a pop), the legs hanging under the gown, a hand's breadth up.",
+        "bones": {
+          "body": [
+            0,
+            10,
+            0
+          ],
+          "chest": [
+            0,
+            6,
+            0
+          ],
+          "neck": [
+            3,
+            -16,
+            0
+          ],
+          "arm_r": [
+            -12.7,
+            2.7,
+            0.2
+          ],
+          "forearm_r": [
+            -81.6,
+            0.9,
+            0
+          ],
+          "hand_r": [
+            53.7,
+            8.4,
+            0.4
+          ],
+          "arm_l": [
+            -2.1,
+            -12.4,
+            -13
+          ],
+          "forearm_l": [
+            -23.8,
+            -12.5,
+            0
+          ],
+          "hand_l": [
+            40.3,
+            -11.4,
+            -0.9
+          ],
+          "leg_r": [
+            4,
+            8,
+            1.5
+          ],
+          "shin_r": [
+            8,
+            0,
+            0
+          ],
+          "foot_r": [
+            34,
+            0,
+            0
+          ],
+          "leg_l": [
+            -5,
+            8,
+            -1.5
+          ],
+          "shin_l": [
+            16,
+            0,
+            0
+          ],
+          "foot_l": [
+            30,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.drift": {
+        "_comment": "Drifting (move.walk, move.drift): leaning 7 degrees into the glide, the arms trailing a little behind, the legs hanging in line with the body.",
+        "bones": {
+          "body": [
+            7,
+            0,
+            0
+          ],
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -5,
+            0,
+            0
+          ],
+          "arm_r": [
+            10,
+            0,
+            9
+          ],
+          "forearm_r": [
+            -16,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -4
+          ],
+          "arm_l": [
+            10,
+            0,
+            -9
+          ],
+          "forearm_l": [
+            -16,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            4
+          ],
+          "leg_r": [
+            9,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            8,
+            0,
+            0
+          ],
+          "foot_r": [
+            34,
+            0,
+            0
+          ],
+          "leg_l": [
+            6,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            14,
+            0,
+            0
+          ],
+          "foot_l": [
+            30,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.drift_fast": {
+        "_comment": "The fast glide (move.run): leaning 16 degrees, the arms swept back from the shoulders, the chin up.",
+        "bones": {
+          "body": [
+            16,
+            0,
+            0
+          ],
+          "chest": [
+            -5,
+            0,
+            0
+          ],
+          "neck": [
+            -13,
+            0,
+            0
+          ],
+          "arm_r": [
+            26,
+            0,
+            12
+          ],
+          "forearm_r": [
+            -10,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -6
+          ],
+          "arm_l": [
+            26,
+            0,
+            -12
+          ],
+          "forearm_l": [
+            -10,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            6
+          ],
+          "leg_r": [
+            18,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            6,
+            0,
+            0
+          ],
+          "foot_r": [
+            36,
+            0,
+            0
+          ],
+          "leg_l": [
+            15,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            10,
+            0,
+            0
+          ],
+          "foot_l": [
+            34,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.fly": {
+        "_comment": "Powered flight (move.fly): leaning 34 degrees into the flight with the legs in line inside the gown (no running legs: the gown carries her), the arms swept back at the sides, the head up.",
+        "bones": {
+          "body": [
+            34,
+            0,
+            0
+          ],
+          "waist": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -28,
+            0,
+            0
+          ],
+          "arm_r": [
+            26,
+            0,
+            14
+          ],
+          "forearm_r": [
+            -16,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            6
+          ],
+          "arm_l": [
+            26,
+            0,
+            -14
+          ],
+          "forearm_l": [
+            -16,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            -6
+          ],
+          "leg_r": [
+            34,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            6,
+            0,
+            0
+          ],
+          "foot_r": [
+            36,
+            0,
+            0
+          ],
+          "leg_l": [
+            31,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            12,
+            0,
+            0
+          ],
+          "foot_l": [
+            34,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.fly_fast": {
+        "_comment": "Fast flight (move.fly_fast): nearly level, the arms straight back along the sides, the legs and the gown streaming behind.",
+        "bones": {
+          "body": [
+            62,
+            0,
+            0
+          ],
+          "chest": [
+            -6,
+            0,
+            0
+          ],
+          "neck": [
+            -40,
+            0,
+            0
+          ],
+          "arm_r": [
+            56,
+            0,
+            10
+          ],
+          "forearm_r": [
+            -6,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            4
+          ],
+          "arm_l": [
+            56,
+            0,
+            -10
+          ],
+          "forearm_l": [
+            -6,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            -4
+          ],
+          "leg_r": [
+            62,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            2,
+            0,
+            0
+          ],
+          "foot_r": [
+            40,
+            0,
+            0
+          ],
+          "leg_l": [
+            59,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            4,
+            0,
+            0
+          ],
+          "foot_l": [
+            38,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.fly_hover": {
+        "_comment": "Hovering in flight (move.fly_hover): upright, the arms a little out for balance, one knee forward under the gown, the toes pointed; a pixel higher than her ground hover, so the swinging toes stay clear on the bob.",
+        "bones": {
+          "body": [
+            3,
+            0,
+            0
+          ],
+          "chest": [
+            -3,
+            0,
+            0
+          ],
+          "neck": [
+            -3,
+            0,
+            0
+          ],
+          "arm_r": [
+            -8,
+            0,
+            22
+          ],
+          "forearm_r": [
+            -24,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -6
+          ],
+          "arm_l": [
+            -8,
+            0,
+            -22
+          ],
+          "forearm_l": [
+            -24,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            6
+          ],
+          "leg_r": [
+            -10,
+            0,
+            2
+          ],
+          "shin_r": [
+            20,
+            0,
+            0
+          ],
+          "foot_r": [
+            30,
+            0,
+            0
+          ],
+          "leg_l": [
+            4,
+            0,
+            -2
+          ],
+          "shin_l": [
+            8,
+            0,
+            0
+          ],
+          "foot_l": [
+            32,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            5.0,
+            0
+          ]
+        }
+      },
+      "wither.glide": {
+        "_comment": "Gliding (move.glide): pitched 46 degrees with the arms spread wide like a slow bird's, the gown and the cape streaming behind, the head up.",
+        "bones": {
+          "body": [
+            46,
+            0,
+            0
+          ],
+          "chest": [
+            -6,
+            0,
+            0
+          ],
+          "neck": [
+            -34,
+            0,
+            0
+          ],
+          "arm_r": [
+            -16,
+            0,
+            72
+          ],
+          "forearm_r": [
+            -8,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            6
+          ],
+          "arm_l": [
+            -16,
+            0,
+            -72
+          ],
+          "forearm_l": [
+            -8,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            -6
+          ],
+          "leg_r": [
+            46,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            4,
+            0,
+            0
+          ],
+          "foot_r": [
+            38,
+            0,
+            0
+          ],
+          "leg_l": [
+            43,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            8,
+            0,
+            0
+          ],
+          "foot_l": [
+            36,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.lift_gather": {
+        "_comment": "Take-off, the gather (the tell): settling half a pixel lower with the arms opened down and out, palms to the ground, the chin up, as the gown begins to lift (the pointed toes stay 2 px clear of the ground).",
+        "bones": {
+          "body": [
+            -5,
+            0,
+            0
+          ],
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -8,
+            0,
+            0
+          ],
+          "arm_r": [
+            2,
+            0,
+            34
+          ],
+          "forearm_r": [
+            -12,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -22
+          ],
+          "arm_l": [
+            2,
+            0,
+            -34
+          ],
+          "forearm_l": [
+            -12,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            22
+          ],
+          "leg_r": [
+            -2,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            6,
+            0,
+            0
+          ],
+          "foot_r": [
+            40,
+            0,
+            0
+          ],
+          "leg_l": [
+            -5,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            10,
+            0,
+            0
+          ],
+          "foot_l": [
+            38,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            3.5,
+            0
+          ]
+        }
+      },
+      "wither.lift_rise": {
+        "_comment": "Take-off, the rise: lifted higher with the arms spread wider and the body beginning to tip into the flight.",
+        "bones": {
+          "body": [
+            16,
+            0,
+            0
+          ],
+          "chest": [
+            -5,
+            0,
+            0
+          ],
+          "neck": [
+            -16,
+            0,
+            0
+          ],
+          "arm_r": [
+            6,
+            0,
+            44
+          ],
+          "forearm_r": [
+            -12,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -10
+          ],
+          "arm_l": [
+            6,
+            0,
+            -44
+          ],
+          "forearm_l": [
+            -12,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            10
+          ],
+          "leg_r": [
+            16,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            6,
+            0,
+            0
+          ],
+          "foot_r": [
+            38,
+            0,
+            0
+          ],
+          "leg_l": [
+            13,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            10,
+            0,
+            0
+          ],
+          "foot_l": [
+            36,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            6.0,
+            0
+          ]
+        }
+      },
+      "wither.alight": {
+        "_comment": "Landing from flight, the flare: upright and a little back, the arms out and the legs swung under her before she settles to her hover height.",
+        "bones": {
+          "body": [
+            -8,
+            0,
+            0
+          ],
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -6,
+            0,
+            0
+          ],
+          "arm_r": [
+            -14,
+            0,
+            30
+          ],
+          "forearm_r": [
+            -18,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -8
+          ],
+          "arm_l": [
+            -14,
+            0,
+            -30
+          ],
+          "forearm_l": [
+            -18,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            8
+          ],
+          "leg_r": [
+            -6,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            12,
+            0,
+            0
+          ],
+          "foot_r": [
+            30,
+            0,
+            0
+          ],
+          "leg_l": [
+            -9,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            16,
+            0,
+            0
+          ],
+          "foot_l": [
+            28,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            5.5,
+            0
+          ]
+        }
+      },
+      "wither.bk_turn": {
+        "_comment": "The familiars bicker: the two skulls turned to face each other across her and tipped in, she glances at the right one.",
+        "bones": {
+          "neck": [
+            2,
+            16,
+            0
+          ],
+          "familiar_r": [
+            4,
+            -64,
+            -6
+          ],
+          "familiar_l": [
+            4,
+            64,
+            6
+          ]
+        }
+      },
+      "wither.bk_turn2": {
+        "_comment": "The bickering goes on: she glances at the left one.",
+        "bones": {
+          "neck": [
+            2,
+            -16,
+            0
+          ],
+          "familiar_r": [
+            6,
+            -58,
+            -10
+          ],
+          "familiar_l": [
+            6,
+            58,
+            10
+          ]
+        }
+      },
+      "wither.bk_sigh": {
+        "_comment": "Enough: the chin up and the eyes closed, while the skulls jerk back to face the front.",
+        "bones": {
+          "neck": [
+            -9,
+            0,
+            0
+          ],
+          "chest": [
+            -2,
+            0,
+            0
+          ],
+          "familiar_r": [
+            -6,
+            -12,
+            0
+          ],
+          "familiar_l": [
+            -6,
+            12,
+            0
+          ]
+        }
+      },
+      "wither.bk_cowed": {
+        "_comment": "Chastened: the skulls dipped toward the ground, facing front.",
+        "bones": {
+          "neck": [
+            -4,
+            0,
+            0
+          ],
+          "familiar_r": [
+            14,
+            6,
+            0
+          ],
+          "familiar_l": [
+            14,
+            -6,
+            0
+          ]
+        }
+      },
+      "wither.rose_hold": {
+        "_comment": "The rose, cupped: the left hand raised before her left shoulder at the height of her chin, the head turned a little to look at it (the rose is still inside the hand).",
+        "bones": {
+          "chest": [
+            -2,
+            -8,
+            0
+          ],
+          "neck": [
+            6,
+            -14,
+            0
+          ],
+          "arm_l": [
+            -34,
+            0,
+            16
+          ],
+          "forearm_l": [
+            -122,
+            0,
+            0
+          ],
+          "hand_l": [
+            -6,
+            0,
+            0
+          ]
+        }
+      },
+      "wither.rose_show": {
+        "_comment": "The rose shown: the same, the wither rose risen out of her fingers (its bone pushed along the hand toward the fingertips).",
+        "bones": {
+          "chest": [
+            -2,
+            -8,
+            0
+          ],
+          "neck": [
+            6,
+            -14,
+            0
+          ],
+          "arm_l": [
+            -34,
+            0,
+            16
+          ],
+          "forearm_l": [
+            -122,
+            0,
+            0
+          ],
+          "hand_l": [
+            -6,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "rose_l": [
+            0,
+            -2.6,
+            0
+          ]
+        }
+      },
+      "wither.fold": {
+        "_comment": "Arms folded under the bodice's ribs, the chin up, a hand's breadth up (the half-turn keys the root, so its poses carry her lift).",
+        "bones": {
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -6,
+            0,
+            0
+          ],
+          "arm_r": [
+            -28.3,
+            -38.2,
+            -34.5
+          ],
+          "forearm_r": [
+            -37.6,
+            0.9,
+            0.9
+          ],
+          "hand_r": [
+            25.6,
+            -45.4,
+            13.4
+          ],
+          "arm_l": [
+            -33.1,
+            -0.7,
+            -24.0
+          ],
+          "forearm_l": [
+            -76.8,
+            47.0,
+            -0.6
+          ],
+          "hand_l": [
+            75.0,
+            -59.1,
+            -15.5
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.fold_turn": {
+        "_comment": "Arms folded, turned half round on her floating spot (the root turned 150 degrees: her back, the cape and the spine to the front).",
+        "bones": {
+          "root": [
+            0,
+            150,
+            0
+          ],
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -6,
+            0,
+            0
+          ],
+          "arm_r": [
+            -28.3,
+            -38.2,
+            -34.5
+          ],
+          "forearm_r": [
+            -37.6,
+            0.9,
+            0.9
+          ],
+          "hand_r": [
+            25.6,
+            -45.4,
+            13.4
+          ],
+          "arm_l": [
+            -33.1,
+            -0.7,
+            -24.0
+          ],
+          "forearm_l": [
+            -76.8,
+            47.0,
+            -0.6
+          ],
+          "hand_l": [
+            75.0,
+            -59.1,
+            -15.5
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.fold_glance": {
+        "_comment": "Turned away, a cold glance back over her shoulder.",
+        "bones": {
+          "root": [
+            0,
+            150,
+            0
+          ],
+          "chest": [
+            -4,
+            8,
+            0
+          ],
+          "neck": [
+            -6,
+            40,
+            0
+          ],
+          "arm_r": [
+            -28.3,
+            -38.2,
+            -34.5
+          ],
+          "forearm_r": [
+            -37.6,
+            0.9,
+            0.9
+          ],
+          "hand_r": [
+            25.6,
+            -45.4,
+            13.4
+          ],
+          "arm_l": [
+            -33.1,
+            -0.7,
+            -24.0
+          ],
+          "forearm_l": [
+            -76.8,
+            47.0,
+            -0.6
+          ],
+          "hand_l": [
+            75.0,
+            -59.1,
+            -15.5
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            4.0,
+            0
+          ]
+        }
+      },
+      "wither.in_regard": {
+        "_comment": "Intro: the chin raised to look down on the challenger, the left hand opened out palm up toward them, the familiars turned on them.",
+        "bones": {
+          "body": [
+            0,
+            10,
+            0
+          ],
+          "chest": [
+            -6,
+            4,
+            0
+          ],
+          "neck": [
+            -10,
+            -8,
+            0
+          ],
+          "arm_r": [
+            -12.7,
+            2.7,
+            0.2
+          ],
+          "forearm_r": [
+            -81.6,
+            0.9,
+            0
+          ],
+          "hand_r": [
+            53.7,
+            8.4,
+            0.4
+          ],
+          "arm_l": [
+            -34,
+            0,
+            -30
+          ],
+          "forearm_l": [
+            -28,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            -30,
+            0
+          ],
+          "familiar_r": [
+            8,
+            10,
+            0
+          ],
+          "familiar_l": [
+            8,
+            -10,
+            0
+          ]
+        }
+      },
+      "wither.in_command": {
+        "_comment": "Intro: the sceptre raised high and pointed at the challenger, the left hand back at her side.",
+        "bones": {
+          "body": [
+            0,
+            10,
+            0
+          ],
+          "chest": [
+            -4,
+            2,
+            0
+          ],
+          "neck": [
+            -4,
+            -10,
+            0
+          ],
+          "arm_r": [
+            -100,
+            4,
+            12
+          ],
+          "forearm_r": [
+            -10,
+            0,
+            0
+          ],
+          "hand_r": [
+            50,
+            0,
+            0
+          ],
+          "arm_l": [
+            -2.1,
+            -12.4,
+            -13
+          ],
+          "forearm_l": [
+            -23.8,
+            -12.5,
+            0
+          ],
+          "hand_l": [
+            40.3,
+            -11.4,
+            -0.9
+          ],
+          "familiar_r": [
+            10,
+            6,
+            0
+          ],
+          "familiar_l": [
+            10,
+            -6,
+            0
+          ]
+        }
+      },
+      "wither.p2_arch": {
+        "_comment": "Phase 2, the wither armour: arched back with the head thrown back and the arms flung down and out, the skulls tipped up with their jaws wide as the blue shell flares across her ribs.",
+        "bones": {
+          "body": [
+            -6,
+            4,
+            0
+          ],
+          "chest": [
+            -14,
+            0,
+            0
+          ],
+          "neck": [
+            -18,
+            -4,
+            0
+          ],
+          "arm_r": [
+            -6,
+            0,
+            42
+          ],
+          "forearm_r": [
+            -14,
+            0,
+            0
+          ],
+          "hand_r": [
+            20,
+            0,
+            0
+          ],
+          "arm_l": [
+            -6,
+            0,
+            -42
+          ],
+          "forearm_l": [
+            -14,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            10
+          ],
+          "familiar_r": [
+            -24,
+            -16,
+            0
+          ],
+          "familiar_l": [
+            -24,
+            16,
+            0
+          ],
+          "familiar_jaw_r": [
+            26,
+            0,
+            0
+          ],
+          "familiar_jaw_l": [
+            26,
+            0,
+            0
+          ]
+        }
+      },
+      "wither.p3_grab": {
+        "_comment": "Phase 3: both hands up at the sides of her head where the skulls float, hunched forward to tear them away.",
+        "bones": {
+          "body": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            3,
+            0,
+            0
+          ],
+          "neck": [
+            4,
+            0,
+            0
+          ],
+          "arm_r": [
+            -12,
+            0,
+            118
+          ],
+          "forearm_r": [
+            -92,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            -10
+          ],
+          "arm_l": [
+            -12,
+            0,
+            -118
+          ],
+          "forearm_l": [
+            -92,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            10
+          ]
+        }
+      },
+      "wither.p3_fling": {
+        "_comment": "Phase 3: the skulls flung away, both arms thrown wide and forward, the chest open.",
+        "bones": {
+          "body": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            -6,
+            0,
+            0
+          ],
+          "arm_r": [
+            -44,
+            0,
+            72
+          ],
+          "forearm_r": [
+            -16,
+            0,
+            0
+          ],
+          "hand_r": [
+            20,
+            0,
+            0
+          ],
+          "arm_l": [
+            -44,
+            0,
+            -72
+          ],
+          "forearm_l": [
+            -16,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            6
+          ]
+        }
+      },
+      "wither.rb_sink": {
+        "_comment": "The rebirth: sunk into the soul sand to the thighs (the clip's root key), curled over from the waist up with the arms wrapped round herself and the head bowed; the hips stay level and the legs hang straight down inside the gown (a kneel, or a pitch at the hips, would push the legs out through it), so the gown's hem goes into the sand with them.",
+        "bones": {
+          "body": [
+            3,
+            0,
+            0
+          ],
+          "waist": [
+            16,
+            0,
+            0
+          ],
+          "chest": [
+            18,
+            0,
+            0
+          ],
+          "neck": [
+            26,
+            0,
+            0
+          ],
+          "arm_r": [
+            -34,
+            18,
+            -16
+          ],
+          "forearm_r": [
+            -96,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            0
+          ],
+          "arm_l": [
+            -34,
+            -18,
+            16
+          ],
+          "forearm_l": [
+            -96,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            0
+          ],
+          "leg_r": [
+            2,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            8,
+            0,
+            0
+          ],
+          "foot_r": [
+            34,
+            0,
+            0
+          ],
+          "leg_l": [
+            -3,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            14,
+            0,
+            0
+          ],
+          "foot_l": [
+            30,
+            0,
+            0
+          ]
+        }
+      },
+      "wither.rb_rise": {
+        "_comment": "The rebirth: risen higher than her hover with the arms flung up and wide and the head thrown back, blazing.",
+        "bones": {
+          "body": [
+            -4,
+            0,
+            0
+          ],
+          "chest": [
+            -14,
+            0,
+            0
+          ],
+          "neck": [
+            -22,
+            0,
+            0
+          ],
+          "arm_r": [
+            -148,
+            0,
+            36
+          ],
+          "forearm_r": [
+            -10,
+            0,
+            0
+          ],
+          "hand_r": [
+            0,
+            0,
+            0
+          ],
+          "arm_l": [
+            -148,
+            0,
+            -36
+          ],
+          "forearm_l": [
+            -10,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            0
+          ],
+          "leg_r": [
+            2,
+            0,
+            1.5
+          ],
+          "shin_r": [
+            10,
+            0,
+            0
+          ],
+          "foot_r": [
+            40,
+            0,
+            0
+          ],
+          "leg_l": [
+            -2,
+            0,
+            -1.5
+          ],
+          "shin_l": [
+            14,
+            0,
+            0
+          ],
+          "foot_l": [
+            38,
+            0,
+            0
+          ]
+        },
+        "position": {
+          "root": [
+            0,
+            8.0,
+            0
+          ]
+        }
+      },
+      "wither.ls_defy": {
+        "_comment": "The last stand: the sceptre thrust up overhead, the left arm flung down and out, the chest out and the head up: she will not fall.",
+        "bones": {
+          "body": [
+            -3,
+            4,
+            0
+          ],
+          "chest": [
+            -10,
+            0,
+            0
+          ],
+          "neck": [
+            -14,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -164,
+            0,
+            8
+          ],
+          "forearm_r": [
+            -8,
+            0,
+            0
+          ],
+          "hand_r": [
+            30,
+            0,
+            0
+          ],
+          "arm_l": [
+            8,
+            0,
+            -36
+          ],
+          "forearm_l": [
+            -10,
+            0,
+            0
+          ],
+          "hand_l": [
+            0,
+            0,
+            12
+          ]
+        }
+      }
+    }
+  }
+}

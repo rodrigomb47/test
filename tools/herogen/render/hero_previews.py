@@ -16,10 +16,11 @@ controller's queue blends for 4), with HeroFace's frames, face_ctrl keys and bli
                     attack.2 > attack.3) and the kit's followup chains, each code sent as
                     the last ends
   moments.gif       intro, the phase transitions, taunt, victory and the clips that have no action code yet (last
-                    stand, escape), each over the base it plays on
+                    stand, escape, a boss hero's rebirth), each over the base it plays on
   idles.gif         personal.1-3 over move.idle
   locomotion.gif    walk, run and the set its mobility traits use, with its own overrides (Natsuho, an acrobat: a
-                    cat's twist on move.air_jump; Hinae, a runner and swimmer: the run, the swim and a plain jump)
+                    cat's twist on move.air_jump; Hinae, a runner and swimmer: the run, the swim and a plain jump;
+                    the Wither, a flyer who hovers: her drift, hover and flight set)
   sheet.png         every clip of its own file, 7 frames each from the action's start
 `herogen hero-previews <id> [--check]` writes (or checks) them. The captions fit any hero (the pronoun from its base);
 the lines that name what a hero's phase looks, escape and variants show are in OWN_CAPTIONS.
@@ -68,6 +69,13 @@ OWN_CAPTIONS = {
         "phase.3": "phase.3 (her eyes and the streamers light up)",
         "escape": "escape, an apologetic bow (no code yet), over the run",
     },
+    "the_wither": {
+        "phases": "the phase looks (2: soul-blue stays, gem and hem; 3: no familiars, burning tips, blazing eyes); "
+                  "the rebirth, blue-white",
+        "phase.2": "phase.2 (the wither armour flares)",
+        "phase.3": "phase.3 (she tears the skulls away)",
+        "rebirth": "rebirth (no code yet), blue-white from the soul sand",
+    },
 }
 
 
@@ -79,6 +87,7 @@ def captions(a):
          "phases": "the phase looks",
          "phase.2": "phase.2", "phase.3": "phase.3",
          "escape": "escape (no code yet), over the run",
+         "rebirth": "rebirth (no code yet)",
          "air_jump": "air_jump"}
     c.update(OWN_CAPTIONS.get(a.hero.get("id"), {}))
     return c
@@ -113,12 +122,20 @@ def phase_of_clip(a, name):
         phase = int(name[6:])
     elif name == "last_stand":
         phase = max([1] + [int(p["phase"]) for p in a.visual.get("phases", [])])
+    elif name == "rebirth":
+        # B5: a boss hero's rebirth comes before her last phase (the Wither's at 30%, between phases 2 and 3)
+        phase = max([1] + [int(p["phase"]) - 1 for p in a.visual.get("phases", [])])
     clip = a.chain.get(name)
     keyed = {b for b, _ in clip.tracks} if clip is not None else set()
     for b, n in a.visual["bones"].get("phase", {}).items():
         if b in keyed:
             phase = max(phase, int(n))
     return phase
+
+
+def look_of_clip(a, name):
+    """B5: "rebirth" for the rebirth clip of a hero with a rebirth texture (build.rebirth_look), else None."""
+    return "rebirth" if name == "rebirth" and getattr(a, "tex_rebirth", None) is not None else None
 
 
 def assets(hero_id):
@@ -178,6 +195,13 @@ def phases(a, path, scale=6):
             cells.append(("phase %d, %s" % (ph, side), to_image(a.render(v, pose, face=face, phase=ph,
                                                                          bounds=(xb[0], xb[1], yb[2], yb[3])))))
     v = views[0]
+    if getattr(a, "tex_rebirth", None) is not None:
+        # B5: the rebirth look (build.rebirth_look) in the phase the rebirth plays in
+        ph = phase_of_clip(a, "rebirth")
+        xb = a.bounds([v], (pose,), phase=ph)
+        cells.append(("the rebirth (phase %d)" % ph, to_image(a.render(v, pose, face=a.mood("calm"), phase=ph,
+                                                                         look="rebirth",
+                                                                         bounds=(xb[0], xb[1], yb[2], yb[3])))))
     xb = a.bounds([v], (pose,), phase=max(looks))
     face = (10, 0, 0) if glow_phase else a.mood("calm")
     cells.append(("phase %d at night" % max(looks), to_image(a.render(v, pose, face=face, phase=max(looks),
@@ -202,8 +226,9 @@ class Shot:
     """A labelled stretch of a film: actions back to back over a base loop, each started when the one before ends
     (or at an explicit offset), and the phase look and weapon flag to draw it with."""
 
-    def __init__(self, label, actions, base="combat.idle", drawn=True, phase=1, at=None, hold=0.0):
+    def __init__(self, label, actions, base="combat.idle", drawn=True, phase=1, at=None, hold=0.0, look=None):
         self.label, self.actions, self.base, self.drawn, self.phase = label, actions, base, drawn, phase
+        self.look = look                # B5: "rebirth" draws the rebirth texture
         self.at = at or {}
         self.hold = hold
 
@@ -243,7 +268,8 @@ def film(a, shots, fps=FPS, scale=SCALE):
         for t in gif.ticks(0.0, dur, fps):
             pose = secondary(a, pb.pose(t), t)
             face = sim.frames(t, pose, blink_ok=pb.action_phase(t) is None)
-            cells = [to_image(a.render(v, pose, face=face, phase=shot.phase, drawn=shot.drawn, bounds=b, pad=2))
+            cells = [to_image(a.render(v, pose, face=face, phase=shot.phase, drawn=shot.drawn, bounds=b, pad=2,
+                                       look=shot.look))
                      for v, b in zip(views, bounds)]
             evs = gif._event_lines(pb.events(t - 1.0 / fps + 1e-6, t + 1e-6))
             gap = 18
@@ -279,7 +305,8 @@ def mobility_traits(a):
 
 def loco_segments(a):
     """The locomotion a hero's mobility traits use (MOBILITY_AND_WORK 1, 4.1): an acrobat's jumps, wall kicks and
-    mantle; otherwise the walk and run, a plain jump and the ladder climb, and the swim for a swimmer."""
+    mantle; a flyer's or hover hero's drift, hover and flight set (B5); otherwise the walk and run, a plain jump and
+    the ladder climb, and the swim for a swimmer."""
     from anim.loco_preview import Segment
     traits = mobility_traits(a)
     if "acrobat" in traits:
@@ -291,6 +318,18 @@ def loco_segments(a):
                                                     ("move.land", None)]),
                 Segment("climb > climb_idle (clinging) > mantle", [("move.climb", 1.0), ("move.climb_idle", 1.0),
                                                                     ("move.mantle", None)])]
+    if "flyer" in traits or "hover" in traits:
+        # B5: a hero who floats or flies (the Wither): her drift, the hover loops and the flight set, no jumps or
+        # ladder (MOBILITY_AND_WORK 1.10, 1.11)
+        segs = [Segment("walk > run", [("move.walk", 1.6), ("move.run", 1.2)])]
+        if "hover" in traits:
+            segs.append(Segment("hover > drift (hover)", [("move.hover", 2.0), ("move.drift", 1.6)]))
+        if "flyer" in traits:
+            segs.append(Segment("takeoff (the tell) > fly > fly_fast > fly_hover > fly_land",
+                                [("move.takeoff", None), ("move.fly", 2.0), ("move.fly_fast", 1.0),
+                                 ("move.fly_hover", 1.6), ("move.fly_land", None)]))
+            segs.append(Segment("glide", [("move.glide", 2.4)]))
+        return segs
     segs = [Segment("walk > run%s" % (" (a runner)" if "runner" in traits else ""),
                     [("move.walk", 1.0), ("move.run", 1.6)]),
             Segment("jump > leap > land", [("move.jump", None), ("move.leap", 0.35), ("move.land", None)])]
@@ -391,10 +430,12 @@ def sheet(a, path, per_clip=7, scale=2):
         b = a.bounds([v], poses, drawn=drawn, phase=phase)
         b = (b[0] - 1, b[1] + 1, min(b[2], -1.0), b[3] + 1)
         sim = a.face_sim("calm", 0)
+        look = look_of_clip(a, name)
         cells = [(t, to_image(a.render(v, p, face=sim.frames(t, p, blink_ok=False), drawn=drawn, bounds=b, pad=2,
-                                       phase=phase)))
+                                       phase=phase, look=look)))
                  for t, p in zip(times, poses)]
-        rows.append((name if phase == 1 else "%s (phase %d)" % (name, phase), cells))
+        label = name if phase == 1 else "%s (phase %d)" % (name, phase)
+        rows.append(("%s, the rebirth look" % label if look else label, cells))
     cw = max(c.width for _, cells in rows for _, c in cells)
     ch = max(c.height for _, cells in rows for _, c in cells)
     W = 16 + per_clip * (cw + 10)
@@ -465,13 +506,14 @@ def gif_shots(a):
     for name, label, base, drawn, phase in (
             ("intro", "intro (code 16)", "combat.idle", True, 1),
             ("phase.2", cap["phase.2"], "combat.idle", True, 2),
+            ("rebirth", cap["rebirth"], "combat.idle", True, phase_of_clip(a, "rebirth")),
             ("phase.3", cap["phase.3"], "combat.idle", True, 3),
             ("taunt", "taunt (code 14)", "combat.idle", True, 1),
             ("victory", "victory (code 20)", "combat.idle", True, 1),
             ("last_stand", "last_stand (no code yet)", "combat.idle", True, 3),
             ("escape", cap["escape"], "move.run", False, 3)):
         if a.chain.get(name) is not None and name in own_clips(a):
-            moments.append(Shot(label, [name], base=base, drawn=drawn, phase=phase))
+            moments.append(Shot(label, [name], base=base, drawn=drawn, phase=phase, look=look_of_clip(a, name)))
     out["moments.gif"] = moments
     out["idles.gif"] = [Shot("%s (a rare idle)" % n, [n], base="move.idle", drawn=False)
                         for n in ("personal.1", "personal.2", "personal.3") if n in own_clips(a)]
