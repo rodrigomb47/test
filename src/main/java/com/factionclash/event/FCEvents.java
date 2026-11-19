@@ -114,7 +114,11 @@ public final class FCEvents {
         if (event.getEntity().level() instanceof ServerLevel level && event.getEntity().getPersistentData().contains(BaseBuilder.LAIR_TAG)) {
             CampaignData data = CampaignData.get(level.getServer());
             BaseState lair = data.base(event.getEntity().getPersistentData().getInt(BaseBuilder.LAIR_TAG));
-            if (lair != null && lair.lairMobs.remove(event.getEntity().getUUID())) {
+            // the Hollow follows the roll call too (knowledge review of 2026-11-19, equal treatment): a monster that falls
+            // at its lair is missed at once; one that falls far off (on a raid) is missed only when it stays away
+            // (FactionDirector's lair keeps it for its absence first), so the lair does not replace it at once
+            if (lair != null && com.factionclash.campaign.FactionDirector.atLair(lair, event.getEntity().blockPosition())
+                    && lair.lairMobs.remove(event.getEntity().getUUID())) {
                 data.setDirty();
             }
         }

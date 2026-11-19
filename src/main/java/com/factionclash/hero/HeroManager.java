@@ -353,7 +353,7 @@ public final class HeroManager {
             return;
         }
         // the killer: the blow's, or the enemy whose push or blow came within 15 s of a death by terrain (6.17)
-        Entity killer = source == null ? null : com.factionclash.combat.KillCredits.killer(h, source);
+        Entity killer = source == null ? null : com.factionclash.combat.KillCredits.killer(h, source); // truth: the killer's name in the hero's last words and the fall's line (presentation); the witnesses carry the line
         h.say(LineEvent.FALLEN, killer == null ? java.util.Map.of() : java.util.Map.of("enemy", HeroEntity.nameOf(killer)), null);
         // where it fell, for a where_it_fell or nearest_base revival: only in the overworld, where every base and every
         // revival is (review of T1, 2026-11-19: a hero that died beyond a portal rose at the same coordinates in the
@@ -368,11 +368,17 @@ public final class HeroManager {
         com.factionclash.faction.FactionType theirs = com.factionclash.combat.CombatRules.factionOf(killer);
         if (theirs != null && theirs != s.owner) {
             String line = h.npcName() + " of the " + s.owner.displayName + " has fallen to " + HeroEntity.nameOf(killer) + ".";
-            if (killer instanceof com.factionclash.npc.FactionNpc k && h.level() instanceof ServerLevel sl) {
-                // the killer saw it: its faction hears when it is home
-                com.factionclash.campaign.RollCall.tellOrCarry(sl, data, theirs, List.of(k.getUUID()), line, ChatFormatting.GOLD);
-            } else {
-                Messages.toFaction(server, theirs, Component.literal(line).withStyle(ChatFormatting.GOLD));
+            if (killer instanceof net.minecraft.server.level.ServerPlayer) {
+                Messages.toFaction(server, theirs, Component.literal(line).withStyle(ChatFormatting.GOLD)); // the player saw it
+            } else if (h.level() instanceof ServerLevel sl) {
+                // the members of the killer's side who saw it fall (the roll call's witness rule: 32 blocks, a line of
+                // sight) carry it home; told at once when one of them stands at home (knowledge review of 2026-11-19: a
+                // summon's or a decoy's kill was told at once from anywhere, and a pusher that had walked off carried it)
+                List<java.util.UUID> saw = new java.util.ArrayList<>();
+                for (com.factionclash.campaign.RollCall.Witness w : com.factionclash.campaign.RollCall.witnesses(sl, data, h, theirs)) {
+                    saw.add(w.uuid()); // (a member player carries it to a station, as its other news)
+                }
+                com.factionclash.campaign.RollCall.tellOrCarry(sl, data, theirs, saw, line, ChatFormatting.GOLD);
             }
         }
     }

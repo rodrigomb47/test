@@ -500,6 +500,18 @@ public class CaveMinerJob extends Job {
 
     // ------------------------------------------------------------------ leaving
 
+    /**
+     * Its shift is over away from home ({@code MinerJob}): out of the cave along its route and back to the storehouse,
+     * as it planned when it left it (knowledge review of 2026-11-19).
+     */
+    void endShift() {
+        if (state == State.TRAVEL) {
+            state = State.STORAGE;
+        } else if (state == State.ROUTE || state == State.MINE || state == State.PROSPECT) {
+            beginReturn();
+        }
+    }
+
     private void beginReturn() {
         breaker.reset(npc);
         WorkplaceState w = cave();

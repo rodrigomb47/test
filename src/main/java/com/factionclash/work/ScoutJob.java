@@ -1,6 +1,7 @@
 package com.factionclash.work;
 
 import com.factionclash.campaign.BaseState;
+import com.factionclash.campaign.BaseWatch;
 import com.factionclash.campaign.BaseZones;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.FactionState;
@@ -189,9 +190,10 @@ public class ScoutJob extends Job {
     private boolean extendReach(BaseState b) {
         CampaignData data = data();
         FactionState f = data.faction(npc.getFaction());
-        boolean rivalKnown = f.knowledge.stream().anyMatch(r -> r.kind == com.factionclash.campaign.Report.Kind.ENEMY_BASE
-                && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), r.subject)
-                && data.bases.values().stream().anyMatch(o -> o.faction == r.subject && !o.destroyed && o.center.distSqr(r.pos) < 32 * 32));
+        // a rival the faction knows of: a settlement its scouts reported standing (not seen in ruins since); the true list
+        // of bases is not the faction's to read (knowledge review of 2026-11-19)
+        boolean rivalKnown = f.knowledge.stream().anyMatch(r -> r.kind == com.factionclash.campaign.Report.Kind.ENEMY_BASE && !r.fallen
+                && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), r.subject));
         int dx = Math.abs(b.center.getX() - data.center.getX()) + data.radius, dz = Math.abs(b.center.getZ() - data.center.getZ()) + data.radius;
         int maxReach = (int) Math.sqrt((double) dx * dx + dz * dz) - FCConfig.SCOUT_RANGE.get();
         if (rivalKnown || f.scoutReach >= maxReach) {
@@ -775,17 +777,17 @@ public class ScoutJob extends Job {
         CampaignData data = data();
         pendingSectors.add(FactionState.sector(here.getX(), here.getZ()));
         for (BaseState other : data.bases.values()) {
-            if (other.faction == npc.getFaction() || other.destroyed) {
+            if (other.faction == npc.getFaction()) {
                 continue;
             }
             double d = Math.sqrt(other.center.distSqr(new BlockPos(here.getX(), other.center.getY(), here.getZ())));
-            if (d <= 64) {
-                int seen = level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(40), e -> e.isAlive()
-                        && ((e instanceof FactionNpc o && o.getFaction() == other.faction)
-                        || (other.faction == FactionType.HOLLOW && other.lairMobs.contains(e.getUUID())))).size();
-                Report.Kind kind = other.faction == FactionType.HOLLOW ? Report.Kind.LAIR : Report.Kind.ENEMY_BASE;
-                addPending(new Report(kind, other.center, now, other.faction, seen,
-                        other.faction.displayName + (kind == Report.Kind.LAIR ? " lair" : " settlement") + ", " + seen + " seen"));
+            if (d <= BaseWatch.SIGHT) {
+                // what it sees of the base from here (knowledge review of 2026-11-19): its walls or yard in view, the
+                // soldiers and heroes in sight and how much of the yard it could see, or its ruins; nothing behind a hill
+                Report look = BaseWatch.look(level(), npc, other, now);
+                if (look != null) {
+                    addPending(look);
+                }
             }
         }
         int hostiles = level().getEntitiesOfClass(Monster.class, npc.getBoundingBox().inflate(24), CombatRules::isHostileMonster).size();
@@ -902,6 +904,9 @@ public class ScoutJob extends Job {
 
     /** Two looks at the same subject on one trip (see {@link #addPending}). */
     public static Report mergeOnTrip(Report old, Report fresh) {
+        if (fresh.base() && old.base()) {
+            return Report.mergeBase(old, fresh, true); // the look that saw most of the yard, the heroes seen on either
+        }
         if (fresh.kind != Report.Kind.VILLAGE) {
             return fresh;
         }

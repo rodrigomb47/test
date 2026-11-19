@@ -54,6 +54,8 @@ public final class BaseState {
     public BlockPos center = BlockPos.ZERO;
     public boolean destroyed;
     public long destroyedAt;
+    /** Truth: who broke its heart (null: the Hollow's raiders by name only, an operator, or a save from before 2026-11-19). */
+    public FactionType destroyedBy;
     public final Map<String, BlockPos> points = new HashMap<>();
     public final EnumMap<StorageCategory, List<BlockPos>> storage = new EnumMap<>(StorageCategory.class);
     public final List<BlockPos> beds = new ArrayList<>();
@@ -212,6 +214,9 @@ public final class BaseState {
         t.putLong("center", center.asLong());
         t.putBoolean("destroyed", destroyed);
         t.putLong("destroyedAt", destroyedAt);
+        if (destroyedBy != null) {
+            t.putString("destroyedBy", destroyedBy.id);
+        }
         CompoundTag pts = new CompoundTag();
         points.forEach((k, v) -> pts.putLong(k, v.asLong()));
         t.put("points", pts);
@@ -281,6 +286,7 @@ public final class BaseState {
         b.center = BlockPos.of(t.getLong("center"));
         b.destroyed = t.getBoolean("destroyed");
         b.destroyedAt = t.getLong("destroyedAt");
+        b.destroyedBy = t.contains("destroyedBy") ? FactionType.byId(t.getString("destroyedBy")) : null;
         CompoundTag pts = t.getCompound("points");
         for (String k : pts.getAllKeys()) {
             b.points.put(k, BlockPos.of(pts.getLong(k)));

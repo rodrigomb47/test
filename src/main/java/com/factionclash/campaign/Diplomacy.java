@@ -15,9 +15,14 @@ import java.util.stream.Collectors;
 /**
  * The balance of power. When a human faction conquers another, the surviving human factions (two or more besides
  * the conqueror) swear a pact against it: they stop fighting each other, the survivors of the fallen faction tell
- * them where the conqueror's bases are, they only raid the conqueror, and a member joins an offensive another member
- * has launched. The pact ends when the conqueror falls (the next conquest can raise a new one against the new
- * conqueror) or fewer than two members are left. Off with config {@code war.pacts}.
+ * them what their scouts had seen of the conqueror's bases, they only raid the conqueror, and a member joins an
+ * offensive another member told it of when it launched. The pact ends when the conqueror falls (the next conquest can
+ * raise a new one against the new conqueror) or fewer than two members are left. Off with config {@code war.pacts}.
+ *
+ * <p>The pact is diplomacy between the factions' leaders, announced to the world (an exception to "a faction knows only
+ * what its people saw", kept by choice, {@code docs/design/knowledge.md}): it is sworn, and raids between the new allies
+ * called off, the moment the conquest happens. What the allies learn of the conqueror is only what the fallen faction's
+ * scouts had seen.
  */
 public final class Diplomacy {
     private Diplomacy() {
@@ -89,16 +94,25 @@ public final class Diplomacy {
                         + " is called off: we are allies now"));
             }
         }
-        // the fallen faction's survivors tell the allies where the conqueror lives
+        // the fallen faction's survivors tell the allies where the conqueror lives: what the fallen faction's own scouts
+        // had reported of it, with when they saw it (knowledge review of 2026-11-19: the conqueror's true list of bases was
+        // handed over, ones nobody had scouted among them)
         long now = level.getGameTime();
+        List<Report> told = new ArrayList<>();
+        for (Report r : data.faction(fallen).knowledge) {
+            if (r.subject == against && r.base()) {
+                told.add(r);
+            }
+        }
         for (FactionType m : members) {
             FactionState f = data.faction(m);
-            for (BaseState b : data.livingBasesOf(against)) {
-                Report r = new Report(Report.Kind.ENEMY_BASE, b.center, now, against, 0,
-                        against.displayName + " settlement (told by " + fallen.displayName + " survivors)");
-                r.by = fallen.displayName + " survivors";
-                r.deliveredAt = now;
-                f.addReport(r);
+            f.pactOffensives.clear(); // a new pact: the old one's offensives are no news
+            for (Report r : told) {
+                Report c = r.copy();
+                c.note = r.note + " (told by " + fallen.displayName + " survivors)";
+                c.by = fallen.displayName + " survivors (" + (r.by.isEmpty() ? "?" : r.by) + ")";
+                c.deliveredAt = now;
+                f.addReport(c);
             }
         }
     }

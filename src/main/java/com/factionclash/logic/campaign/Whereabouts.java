@@ -81,8 +81,18 @@ public final class Whereabouts {
     public static final double TICKS_PER_BLOCK = 10.0;
     /** PROPOSED: the plan of a trip with no plan of its own (a woodcutter foraging, a hero's duty): half a day. */
     public static final long DEFAULT_TRIP_TICKS = 12000;
-    /** A raid's own bound: {@code FactionDirector} ends a raid this long after its launch. */
+    /**
+     * A raid's hard limit on the spot: {@code FactionDirector} ends a raid this long after its launch, wherever its party
+     * is. It is the party's own end, not the council's plan ({@link #raidPlanTicks}).
+     */
     public static final long RAID_LIMIT_TICKS = 72000;
+    /** The longest a raid party waits at its rally point for its members ({@code GuardJob}'s muster). */
+    public static final long RAID_MUSTER_TICKS = 6000;
+    /**
+     * PROPOSED: the council's allowance for the assault and the loot: the heart takes 400 ticks of blows, plus the fight at
+     * the walls and the walk to the enemy storehouse (knowledge review of 2026-11-19).
+     */
+    public static final long RAID_ASSAULT_TICKS = 6000;
     /** A trader's own bound: it gives a trip up after a day on the road ({@code TraderJob}). */
     public static final long TRADER_ROAD_TICKS = 24000;
 
@@ -118,9 +128,65 @@ public final class Whereabouts {
         return Math.max(DEFAULT_TRIP_TICKS, untilNightfall + walkTicks(blocksBack));
     }
 
-    /** A raider: launch + the raid's bound, plus the walk back from the target. */
-    public static long raidPlan(long now, long raidStartedAt, double blocksBack) {
-        return planFrom(now, raidStartedAt + RAID_LIMIT_TICKS, blocksBack);
+    /**
+     * The council's plan for a raid it launches (knowledge review of 2026-11-19, known leak 5): the march to the rally point,
+     * the muster's longest wait, the assault and the loot, and the march home from the target. Its raiders are expected
+     * back by the launch plus this; a party nobody lived to report on is overdue then, not at the raid's hard limit.
+     */
+    public static long raidPlanTicks(double blocksToRally, double blocksHome) {
+        return walkTicks(blocksToRally) + RAID_MUSTER_TICKS + RAID_ASSAULT_TICKS + walkTicks(blocksHome);
+    }
+
+    /**
+     * When the council expects its raid home: the launch plus its plan, or, with no plan (a raid launched before the
+     * plan was kept, 2026-11-19), the raid's hard limit plus the walk back from the target, as before.
+     */
+    public static long raidPlannedBy(long raidStartedAt, long planTicks, double blocksBack) {
+        return planTicks > 0 ? raidStartedAt + planTicks : raidStartedAt + RAID_LIMIT_TICKS + walkTicks(blocksBack);
+    }
+
+    /** A raider seen leaving now: what is left of its raid's plan ({@link #raidPlannedBy}). */
+    public static long raidPlan(long now, long plannedBy) {
+        return Math.max(0, plannedBy - now);
+    }
+
+    /**
+     * A miner's shift (knowledge review of 2026-11-19, known leak 6): from the storehouse until the coming nightfall, at
+     * least half a day, as a day's remote work. Fixed when it leaves the storehouse, so a branch face beyond the home
+     * area's edge does not set a new plan each time it is crossed. {@code dayTime} is the world's day time then.
+     */
+    public static long shiftEnd(long leftStorageAt, long dayTime) {
+        return leftStorageAt + dayShiftPlan(dayTime, 0);
+    }
+
+    /** The plan of a worker out on a shift that ends at {@code shiftEnd}: what is left of it, plus the walk home. */
+    public static long shiftPlan(long now, long shiftEnd, double blocksBack) {
+        return planFrom(now, shiftEnd, blocksBack);
+    }
+
+    /**
+     * PROPOSED: how far past a home area's edge a member must go to be seen leaving, and how far inside it to be seen
+     * home again when it was away (knowledge review of 2026-11-19, known leak 6: miners at a branch face just past the
+     * edge crossed it dozens of times a day). An eighth of the area's radius, at most 8 blocks (0 for a tiny test base).
+     */
+    public static int edgeBand(int radius) {
+        return Math.max(0, Math.min(8, radius / 8));
+    }
+
+    /**
+     * A sighting {@code beyond} blocks past the nearest home area's edge (0 or less: inside it), with that area's
+     * {@code band}: a member last seen at home leaves only past the edge plus the band; an away member is home again only
+     * the band inside the edge; a missing or presumed-dead member seen anywhere inside the home area is back at once.
+     * Inside the band nothing changes.
+     */
+    public static Step sighted(State s, int beyond, int band) {
+        if (beyond <= -band || beyond <= 0 && s != State.AWAY) {
+            return seenHome(s);
+        }
+        if (beyond > band) {
+            return seenAway(s);
+        }
+        return new Step(s, Event.NONE);
     }
 
     /** The director's check of an away or missing member. */
@@ -174,11 +240,12 @@ public final class Whereabouts {
     /**
      * Whether the council at home still believes its last raid is out ({@code docs/design/missing_npcs.md} 6): its end
      * was not heard at home yet (the line is carried by the survivors, or nobody lives to carry it), it still counts
-     * someone of the party (not every raider is known or presumed dead), and the raid's own bound has not passed. While
-     * it is out the council plans no new raid.
+     * someone of the party (not every raider is known or presumed dead), and the raid's plan ({@link #raidPlannedBy})
+     * and the missing grace have not passed: by then its raiders are overdue and missing. While it is out the council
+     * plans no new raid.
      */
-    public static boolean raidStillOutAtHome(boolean endUnheard, boolean raiderCounted, long now, long raidStartedAt) {
-        return endUnheard && raiderCounted && now <= raidStartedAt + RAID_LIMIT_TICKS;
+    public static boolean raidStillOutAtHome(boolean endUnheard, boolean raiderCounted, long now, long plannedBy, long grace) {
+        return endUnheard && raiderCounted && now <= plannedBy + grace;
     }
 
     /** The faction learns of a death, at once or by news; a death already known tells nothing. */

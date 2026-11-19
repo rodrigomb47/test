@@ -156,8 +156,16 @@ public final class HeroRaid {
         return hero.navigator();
     }
 
+    /**
+     * Whether the hero sees that its target has fallen (its heart gone, the place in view): a fall far off is not its
+     * news on the march (knowledge review of 2026-11-19; the raid's end reaches it with the party).
+     */
+    private boolean seesFall(BaseState t) {
+        return com.factionclash.campaign.BaseWatch.seesFall(hero, t);
+    }
+
     private void rally(FactionState f, BaseState t) {
-        if (t == null || t.destroyed) {
+        if (t == null || seesFall(t)) {
             stage = Stage.HOME;
             return;
         }
@@ -175,7 +183,7 @@ public final class HeroRaid {
 
     /** Within 24 blocks of the walls it chooses its way in and its goal (5.2). */
     private void approach(BaseState t) {
-        if (t == null || t.destroyed) {
+        if (t == null || seesFall(t)) {
             stage = Stage.HOME;
             return;
         }
@@ -380,7 +388,7 @@ public final class HeroRaid {
 
     /** The way in: over the wall by its mobility (its links and flights cross it), or the gate with the soldiers. */
     private void entry(BaseState t) {
-        if (t == null || t.destroyed) {
+        if (t == null || seesFall(t)) {
             stage = Stage.HOME;
             return;
         }
@@ -497,12 +505,12 @@ public final class HeroRaid {
             return null;
         }
         BaseState t = target();
-        return t == null || t.destroyed ? null : t;
+        return t == null || seesFall(t) ? null : t;
     }
 
     /** The goal inside, until it ends (its own condition, the raid's end, 60 s without progress). */
     private void goal(FactionState f, BaseState t) {
-        boolean over = t == null || t.destroyed || f == null || f.raidTarget < 0;
+        boolean over = t == null || seesFall(t) || f == null || f.raidTarget < 0;
         BlockPos to = over ? null : goalPoint(t);
         double d = to == null ? 0 : Math.sqrt(hero.blockPosition().distSqr(to));
         if (d < best - 1) {
@@ -528,7 +536,7 @@ public final class HeroRaid {
         WallEntry.GoalEnd end = WallEntry.end(goal, new WallEntry.GoalState(over, hero.tickCount - progressAt, everyoneIn,
                 hunted != null && (!hunted.isAlive() || hunted.combat().boss().escape().running()),
                 hero.tickCount - huntedSeenAt, archersNear > 0, looted, !over && !t.allStoragePositions().isEmpty(),
-                over && t != null && t.destroyed));
+                over && t != null && seesFall(t)));
         if (end != WallEntry.GoalEnd.ONGOING) {
             goalsEnded++;
             WallEntry.After after = WallEntry.after(goal, end, looted);
@@ -643,7 +651,7 @@ public final class HeroRaid {
 
     /** The party's goal, the heart, struck as any raider strikes it. */
     private void heart(BaseState t) {
-        if (t == null || t.destroyed) {
+        if (t == null || seesFall(t)) {
             stage = Stage.HOME;
             return;
         }

@@ -342,9 +342,13 @@ public class MinerJob extends Job {
         if (leaveFirst >= 0 && !climbedOutFirst(own)) {
             return;
         }
+        boolean shiftOver = shiftOverAway();
         if (cave != null) {
             spareSince = -1;
             markBusy();
+            if (shiftOver) {
+                caveJob.endShift();
+            }
             caveJob.tick();
             return;
         }
@@ -365,6 +369,13 @@ public class MinerJob extends Job {
             markBusy();
         }
         collect(wp);
+        if (shiftOver && (state == State.TRAVEL || state == State.MINE || state == State.EXTEND || state == State.CLEAR)) {
+            // its shift is over, and it is out beyond the home area: back to the storehouse as it planned when it left
+            // it (knowledge review of 2026-11-19, known leak 6), where the next shift starts
+            breaker.reset(npc);
+            status("Shift over - back to the storehouse", "Returning");
+            state = State.STORAGE;
+        }
         switch (state) {
             case CHECK, SITE -> state = pickTier() < 0 || Inv.freeSlots(npc.inventory()) <= 1 || workLevel(wp) == null
                     ? State.STORAGE : State.TRAVEL;
@@ -381,6 +392,47 @@ public class MinerJob extends Job {
             }
             case CLEAR -> clear(wp);
         }
+    }
+
+    /**
+     * When its shift ends ({@link com.factionclash.logic.campaign.Whereabouts#shiftEnd}): until the coming nightfall from
+     * its last storehouse visit (in a mine or a cave), at least half a day; 0 when it has not been to the storehouse since
+     * it was loaded. Fixed at the storehouse ({@code now} and {@code dayTime} are not read).
+     */
+    public long shiftEnd(long now, long dayTime) {
+        boolean cave = caveJob.unloadedAt() > unloadedAt;
+        long from = cave ? caveJob.unloadedAt() : unloadedAt;
+        long fromDay = cave ? caveJob.unloadedDayTime() : unloadedDayTime;
+        return from <= 0 ? 0 : com.factionclash.logic.campaign.Whereabouts.shiftEnd(from, fromDay);
+    }
+
+    /** Its shift is over and it stands outside every home area of its faction (checked once a second). */
+    private boolean shiftOverAway() {
+        if (npc.tickCount % 20 != 0) {
+            return false;
+        }
+        long end = shiftEnd(now(), level().getDayTime());
+        return end > 0 && now() > end
+                && !com.factionclash.campaign.RollCall.inHomeArea(data(), npc.getFaction(), level(), npc.blockPosition());
+    }
+
+    /**
+     * A miner seen leaving the home area (a branch face past its edge, a far cave) is on its shift: expected back when the
+     * shift ends, plus the walk home from where it is (knowledge review of 2026-11-19, known leak 6: each crossing of the
+     * edge set a new half-day plan). The same plan however often it crosses; before its first storehouse visit, a day's
+     * remote work from now.
+     */
+    @Override
+    public long tripPlanTicks(long now, long dayTime) {
+        BaseState b = base();
+        double back = 0;
+        if (b != null) {
+            double dx = npc.getX() - (b.center.getX() + 0.5), dz = npc.getZ() - (b.center.getZ() + 0.5);
+            back = Math.sqrt(dx * dx + dz * dz);
+        }
+        long end = shiftEnd(now, dayTime);
+        return end > 0 ? com.factionclash.logic.campaign.Whereabouts.shiftPlan(now, end, back)
+                : com.factionclash.logic.campaign.Whereabouts.dayShiftPlan(dayTime, back);
     }
 
     /** The block this miner is breaking right now, or null (for GameTests). */
@@ -2068,6 +2120,9 @@ public class MinerJob extends Job {
         CompoundTag cave = new CompoundTag();
         caveJob.save(cave, provider);
         tag.put("cave", cave);
+        boolean inCave = caveJob.unloadedAt() > unloadedAt;
+        tag.putLong("shiftFrom", inCave ? caveJob.unloadedAt() : unloadedAt); // where its shift began (2026-11-19)
+        tag.putLong("shiftFromDay", inCave ? caveJob.unloadedDayTime() : unloadedDayTime);
     }
 
     @Override
@@ -2095,5 +2150,7 @@ public class MinerJob extends Job {
             siteFailReason = why.equals("the ground here is too shallow for a mine") ? TOO_SHALLOW : why;
         }
         caveJob.load(tag.getCompound("cave"), provider);
+        unloadedAt = tag.getLong("shiftFrom"); // absent before 2026-11-19: no shift yet (a day's remote work from now)
+        unloadedDayTime = tag.getLong("shiftFromDay");
     }
 }

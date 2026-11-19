@@ -93,9 +93,12 @@ class WhereaboutsTest {
         assertEquals(24000, Whereabouts.scoutPlan(5000, 0, 24000), "no departure: the whole bound");
         assertEquals(20000, Whereabouts.scoutPlan(9000, 5000, 24000));
         assertEquals(0, Whereabouts.scoutPlan(40000, 5000, 24000), "already past its bound: back now");
-        // a raider: the raid's bound from its launch, and the walk back
-        assertEquals(72000 - 1000 + 1500, Whereabouts.raidPlan(11000, 10000, 150));
-        assertEquals(1500, Whereabouts.raidPlan(200000, 10000, 150), "past the raid's bound: only the walk back");
+        // a raider: what is left of its raid's plan (knowledge review of 2026-11-19)
+        assertEquals(17000, Whereabouts.raidPlan(11000, 28000));
+        assertEquals(0, Whereabouts.raidPlan(200000, 28000), "past the raid's plan: back now");
+        // a raid launched before the plan was kept: the raid's hard limit and the walk back, as before
+        assertEquals(10000 + 72000 + 1500, Whereabouts.raidPlannedBy(10000, 0, 150));
+        assertEquals(10000 + 18000, Whereabouts.raidPlannedBy(10000, 18000, 150));
         assertEquals(24000 - 100 + 3200, Whereabouts.planFrom(100, Whereabouts.TRADER_ROAD_TICKS, 320));
     }
 
@@ -188,12 +191,71 @@ class WhereaboutsTest {
      */
     @Test
     void theCouncilBelievesItsRaidIsOutUntilItHearsOrTheBoundPasses() {
-        long start = 100_000;
-        assertTrue(Whereabouts.raidStillOutAtHome(true, true, start + 1, start), "nobody brought the end home yet");
-        assertTrue(Whereabouts.raidStillOutAtHome(true, true, start + Whereabouts.RAID_LIMIT_TICKS, start), "the bound's last tick");
-        assertFalse(Whereabouts.raidStillOutAtHome(true, true, start + Whereabouts.RAID_LIMIT_TICKS + 1, start), "past the bound it is over");
-        assertFalse(Whereabouts.raidStillOutAtHome(false, true, start + 1, start), "the end was heard");
-        assertFalse(Whereabouts.raidStillOutAtHome(true, false, start + 1, start), "every raider known dead: the party is no more");
+        long start = 100_000, planned = start + 18_000, grace = WAITS.grace();
+        assertTrue(Whereabouts.raidStillOutAtHome(true, true, start + 1, planned, grace), "nobody brought the end home yet");
+        assertTrue(Whereabouts.raidStillOutAtHome(true, true, planned + grace, planned, grace), "the plan and the grace's last tick");
+        assertFalse(Whereabouts.raidStillOutAtHome(true, true, planned + grace + 1, planned, grace), "past them its raiders are overdue");
+        assertFalse(Whereabouts.raidStillOutAtHome(false, true, start + 1, planned, grace), "the end was heard");
+        assertFalse(Whereabouts.raidStillOutAtHome(true, false, start + 1, planned, grace), "every raider known dead: the party is no more");
+    }
+
+    /**
+     * Known leak 5 (knowledge review of 2026-11-19): the council expects its raid back by its own plan (the march to the
+     * rally, the muster's longest wait, the assault, the march home), not by the raid's 3-day limit. A party wiped out
+     * unseen at a target 300 blocks away is taken as lost after about three quarters of a day, as its raiders go missing.
+     */
+    @Test
+    void aRaidWipedOutUnseenIsTakenAsLostByItsPlanNotItsLimit() {
+        long plan = Whereabouts.raidPlanTicks(272, 300);
+        assertEquals(2720 + Whereabouts.RAID_MUSTER_TICKS + Whereabouts.RAID_ASSAULT_TICKS + 3000, plan);
+        long start = 50_000, planned = Whereabouts.raidPlannedBy(start, plan, 300), grace = WAITS.grace();
+        assertTrue(planned + grace - start < Whereabouts.TICKS_PER_DAY, "a 300-block raid is overdue within the day: " + (planned - start));
+        assertFalse(Whereabouts.raidStillOutAtHome(true, true, planned + grace + 1, planned, grace));
+        assertTrue(planned + grace < start + Whereabouts.RAID_LIMIT_TICKS, "the plan ends long before the raid's hard limit");
+        // its raiders, seen leaving at the launch, are missing at the same moment the council gives the raid up
+        long expectedBy = start + Whereabouts.raidPlan(start, planned);
+        assertEquals(new Step(State.MISSING, Event.MISSING), Whereabouts.waits(State.AWAY, planned + grace + 1, expectedBy, 0, WAITS));
+    }
+
+    /**
+     * Known leak 6 (knowledge review of 2026-11-19): a member near a home area's edge changes side only past its band, so
+     * a miner at a branch face just past the edge is not seen leaving and coming back dozens of times a day; a missing
+     * member seen anywhere inside is back at once. A tiny test base has no band.
+     */
+    @Test
+    void aMemberNearTheEdgeChangesSideOnlyPastItsBand() {
+        assertEquals(8, Whereabouts.edgeBand(64));
+        assertEquals(0, Whereabouts.edgeBand(6));
+        assertEquals(8, Whereabouts.edgeBand(400), "at most 8 blocks");
+        int band = 8;
+        assertEquals(new Step(State.HERE, Event.NONE), Whereabouts.sighted(State.HERE, 5, band), "just past the edge: still here");
+        assertEquals(new Step(State.AWAY, Event.LEFT), Whereabouts.sighted(State.HERE, 9, band), "past the band: it left");
+        assertEquals(new Step(State.AWAY, Event.NONE), Whereabouts.sighted(State.AWAY, -3, band), "just inside: still away");
+        assertEquals(new Step(State.HERE, Event.NONE), Whereabouts.sighted(State.AWAY, -8, band), "the band inside: home");
+        assertEquals(new Step(State.HERE, Event.BACK), Whereabouts.sighted(State.MISSING, -1, band), "a missing member seen inside is back");
+        assertEquals(new Step(State.HERE, Event.REJOINED), Whereabouts.sighted(State.PRESUMED_DEAD, 0, band));
+        assertEquals(new Step(State.MISSING, Event.NONE), Whereabouts.sighted(State.MISSING, 30, band), "away and missing: no change");
+        // no band: the edge itself
+        assertEquals(new Step(State.AWAY, Event.LEFT), Whereabouts.sighted(State.HERE, 1, 0));
+        assertEquals(new Step(State.HERE, Event.NONE), Whereabouts.sighted(State.AWAY, 0, 0));
+        assertEquals(new Step(State.AWAY, Event.LEFT), Whereabouts.sighted(State.HERE, Integer.MAX_VALUE, 0), "no home area at all");
+    }
+
+    /**
+     * Known leak 6: a miner's shift is fixed at the storehouse (until the coming nightfall, at least half a day), and its
+     * trip's plan is what is left of it plus the walk home, the same expected return however often it crosses the edge.
+     */
+    @Test
+    void aMinersShiftIsPlannedAtTheStorehouse() {
+        long left = 240_000; // dawn of day 11 (day time 0)
+        long end = Whereabouts.shiftEnd(left, 0);
+        assertEquals(left + 13000, end, "from dawn: until nightfall");
+        assertEquals(left + Whereabouts.DEFAULT_TRIP_TICKS + 6000, Whereabouts.shiftEnd(left + 6000, 6000), "from noon: half a day");
+        // crossing the edge out at two different times gives the same expected return (plus the walk from each point)
+        long first = left + 3000, second = left + 9000;
+        assertEquals(end + 700, first + Whereabouts.shiftPlan(first, end, 70));
+        assertEquals(end + 700, second + Whereabouts.shiftPlan(second, end, 70));
+        assertEquals(700, Whereabouts.shiftPlan(end + 500, end, 70), "past its shift: the walk home");
     }
 
     /** A hero risen unseen far away tells its own fall when it comes home: where, and on which day. */

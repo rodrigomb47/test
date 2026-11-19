@@ -99,6 +99,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     private ItemStack meal = ItemStack.EMPTY;
     private net.minecraft.world.phys.Vec3 lastSwimPos;
     private int recordTimer;
+    /**
+     * Experience it picked up away from home, carried until it is home (knowledge review of 2026-11-19: orbs picked up
+     * anywhere went straight into the faction's bank). Dropped as orbs where it dies, as a player's would be.
+     */
+    private int carriedXp;
     private long lastHurtTime;
     /** (Not 0: a freshly spawned NPC has not "just landed a blow" in its first 40 ticks.) */
     private long lastAttackTime = -1000;
@@ -903,15 +908,37 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
                 // what its faction sees of it: at home, leaving, back (docs/design/missing_npcs.md)
                 com.factionclash.campaign.RollCall.sighting(this, rec);
             }
+            if (carriedXp > 0) {
+                bankCarriedXp();
+            }
             ChunkLoading.updateTraveler(this);
         }
     }
 
     private long targetSetAt;
 
+    /** Experience it carries home (picked up away from home), for the GameTests and the dump. */
+    public int carriedXp() {
+        return carriedXp;
+    }
+
+    /** Home with experience picked up away: it goes into the faction's experience now. */
+    private void bankCarriedXp() {
+        if (level().getServer() == null || isDisplayOnly()) {
+            return;
+        }
+        CampaignData data = CampaignData.get(level().getServer());
+        if (com.factionclash.campaign.RollCall.inHomeArea(data, getFaction(), level(), blockPosition())) {
+            data.faction(getFaction()).xpBank += carriedXp;
+            carriedXp = 0;
+            data.setDirty();
+        }
+    }
+
     /**
      * Experience orbs within reach drift to an NPC as they would to a player (ores it mined, a furnace it emptied,
-     * animals it bred). What it picks up goes to its faction's experience, which the enchanter spends.
+     * animals it bred). What it picks up at home goes to its faction's experience, which the enchanter spends; what it
+     * picks up away it carries home (knowledge review of 2026-11-19), and loses where it dies.
      */
     private void pickUpExperience() {
         java.util.List<net.minecraft.world.entity.ExperienceOrb> orbs = level().getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class,
@@ -927,8 +954,12 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             total += orb.getValue() * Math.max(1, t.getInt("Count"));
             orb.discard();
         }
-        f.xpBank += total;
-        data.setDirty();
+        if (!isDisplayOnly() && !com.factionclash.campaign.RollCall.inHomeArea(data, getFaction(), level(), blockPosition())) {
+            carriedXp += total; // away from home: carried there
+        } else {
+            f.xpBank += total;
+            data.setDirty();
+        }
         level().playSound(null, blockPosition(), net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP,
                 net.minecraft.sounds.SoundSource.NEUTRAL, 0.1F, 0.55F + random.nextFloat() * 0.7F);
     }
@@ -1253,6 +1284,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             // its faction knows only what its people saw: at once near home or seen from home, later through a witness
             // away who carries the news home, else by waiting (missing, then presumed dead; docs/design/missing_npcs.md)
             com.factionclash.campaign.RollCall.onDeath(this);
+            // an enemy soldier seen falling at a rival's home lowers that rival's estimate of its garrison (BaseWatch)
+            com.factionclash.campaign.BaseWatch.enemyFell((ServerLevel) level(), CampaignData.get(level().getServer()), this);
             ChunkLoading.releaseTraveler(this);
         }
     }
@@ -1277,6 +1310,11 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (!ammo.isEmpty()) {
             spawnAtLocation(ammo);
             ammo = ItemStack.EMPTY;
+        }
+        if (carriedXp > 0) {
+            // the experience it carried home dies with it, as orbs where it fell (a player's would too)
+            net.minecraft.world.entity.ExperienceOrb.award(level, position(), carriedXp);
+            carriedXp = 0;
         }
     }
 
@@ -1313,6 +1351,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         }
         tag.putInt("FcLevel", npcLevel);
         tag.putInt("FcXp", xp);
+        if (carriedXp > 0) {
+            tag.putInt("FcCarriedXp", carriedXp);
+        }
         CompoundTag af = new CompoundTag();
         affixes.forEach((k, v) -> af.putInt(k.name(), v));
         tag.put("FcAffixes", af);
@@ -1350,6 +1391,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         ammo = tag.contains("FcAmmo") ? ItemStack.parseOptional(registryAccess(), tag.getCompound("FcAmmo")) : ItemStack.EMPTY;
         npcLevel = tag.getInt("FcLevel");
         xp = tag.getInt("FcXp");
+        carriedXp = tag.getInt("FcCarriedXp"); // absent before 2026-11-19: nothing carried
         affixes.clear();
         CompoundTag af = tag.getCompound("FcAffixes");
         for (String k : af.getAllKeys()) {

@@ -6,7 +6,9 @@ amount of time then the faction should assume that they died and replace them". 
 home are not known at once". Built 2026-11-19; this is the design as built.
 
 The rule is the scouts' report model applied to deaths: **a faction knows only what its people saw, and knowledge
-travels home with someone.** One rule for every member, ordinary NPC or hero.
+travels home with someone.** One rule for every member, ordinary NPC or hero. The same rule for everything else a
+faction's AI reads (the war council's view of enemy bases, raids' plans, a miner's shift, retraining, the blacksmith,
+the lookout and more) is `docs/design/knowledge.md`, the knowledge review of 2026-11-19.
 
 ## 1. Truth and knowledge
 
@@ -48,17 +50,21 @@ Every 40 ticks (the record timer that already writes `lastPos`) a member's where
   carries is told (section 5).
 * **Outside every home area while HERE**: it leaves. `leftAt` = now, `expectedBy` = now + its trip's plan, state AWAY.
   The plan is fixed when it leaves: a change of plan made away from home is not known at home.
+* **The edge band** (knowledge review of 2026-11-19, `docs/design/knowledge.md` 4): a member seen at home leaves only
+  past the edge plus an eighth of the radius (8 blocks for 64); an away member is home again only that far inside the
+  edge (a missing or presumed-dead one anywhere inside). Deaths still use the edge itself.
 
 The trip's plan (`Job.tripPlanTicks`, pure numbers in `Whereabouts`), in ticks from leaving:
 
 | Who | Plan |
 |---|---|
 | Scout | its expedition's own bound: departure + `war.scoutOverdueTicks` (24000; it turns home at half of it) − now |
-| Raider | the raid's own bound: launch + 72000 (a raid ends by then) + the walk back from the target − now |
+| Raider | the raid's plan, kept at launch (knowledge review of 2026-11-19, `docs/design/knowledge.md` 3): the walk to the rally point + the muster's longest wait (6000) + the assault (6000) + the walk home from the target; launch + that − now. A raid launched before the plan was kept: launch + 72000 + the walk back |
 | Trader | its trip's bound: start + 24000 (it gives a trip up after a day on the road) + the walk back from 320 blocks − now |
 | Cave explorer | its trip's bound: departure + 12000 (`CaveExplorerJob.MAX_TRIP_TICKS`) + the walk back from its cave (+64) − now |
 | Fisherman at far water, woodcutter in a far wood | its day's remote work: until the coming nightfall (day time 13000) + the walk home from where it leaves, never under 12000; 12000 with `survival.remoteWorkInDaylightOnly` off (section 14) |
-| Anyone else (a miner at a far face, a hero's duty) | 12000 (half a day) |
+| Miner at a far face or in a far cave | its shift, fixed at its last storehouse visit: until the coming nightfall, at least half a day; what is left of it + the walk home (knowledge review of 2026-11-19, known leak 6); past its shift outside the home area it goes back to the storehouse |
+| Anyone else (a hero's duty) | 12000 (half a day) |
 
 The walk is `Whereabouts.walkTicks(blocks)` = 10 ticks a block (0.1 blocks a tick: half a walking NPC's pace, for
 detours and nights).
@@ -119,8 +125,9 @@ seen leaving yet), `alive` stays true, nothing is said. `dead` and `diedAt` are 
 * The **council hears of its raid's end only through its people** (review of 2026-11-19): when the party ends its raid
   on the spot, the end's news id is kept (`FactionState.raidEndNews`, with the party as launched in `lastParty`), and
   the council plans no new raid while that news has not been told at home, it still counts someone of the party, and
-  the raid's own bound (launch + 72000) has not passed (`Whereabouts.raidStillOutAtHome`). A party nobody lived to
-  report on therefore keeps the council waiting until the bound; one whose every raider died in sight of home does not.
+  the raid's plan plus `missingGraceTicks` has not passed (`Whereabouts.raidStillOutAtHome`; the plan since the
+  knowledge review of 2026-11-19, the raid's 72000-tick limit before). A party nobody lived to report on therefore keeps
+  the council waiting until its raiders are overdue and missing; one whose every raider died in sight of home does not.
 * **The last raider to leave the party alive saw its end** (live check, section 14): a raider leaves the party when it
   is home at its storehouse with its loot or falls back wounded (`GuardJob`), a hero when it reaches home
   (`HeroRaid`), through `FactionState.leaveRaid`; the one whose leaving empties the party is kept
@@ -129,8 +136,9 @@ seen leaving yet), `alive` stays true, nothing is said. `dead` and `diedAt` are 
 * The **raid party's roll** (`FactionState.raiders`) is the party's own knowledge on the spot: a raider leaves the
   party when the faction no longer counts it (`alive` false) or when it died and a member saw it (`witnessed`). The raid
   ends as before, or when every raider is truly gone (no one is left to carry it on; nothing is told at home).
-* Not changed (open item): the council's estimate of an *enemy* base still reads that enemy's own roster and heroes
-  (pre-existing; the scouts' reports do not yet carry a garrison count).
+* The council's estimate of an *enemy* base reads only what its people saw (knowledge review of 2026-11-19,
+  `docs/design/knowledge.md` 1): its scouts' and raiders' looks at the garrison, aged, a prior where nobody looked, and
+  the enemy soldiers seen falling at home.
 
 ## 7. Heroes
 
@@ -224,7 +232,8 @@ Left open (pre-existing, not about deaths): a cave explorer's survey is written 
 faction's miners can use it before the explorer is home; the council judges an enemy base by that enemy's own roster
 and hero state; the retraining reads a far worker's live job and the blacksmith a far member's gear; `/fc hero info`
 shows a member player the hero's true place and state; the hero lookout's "spots N enemies" line is said at once
-wherever the hero stands.
+wherever the hero stands. All but `/fc hero info` (player-side) were taken up by the knowledge review of 2026-11-19
+(`docs/design/knowledge.md`; the survey turned out to be handed in at the station already).
 
 ## 14. Live check of 2026-11-19
 
@@ -269,7 +278,9 @@ Seen as designed, against the truth:
   (67 blocks out, 52 stuck recoveries), was missing at 2.70 and back ("is back") at 2.98: right from the faction's view.
   Every other member reported missing (13 in all) was truly dead, or held by the operator (Elsa Thorne).
   Miners working branch mines that cross the 64-block edge (Ember's Kael Wells, Stoneguard's Elsa Stone) went in and
-  out many times a day, each crossing setting a new half-day plan; none was reported missing while working.
+  out many times a day, each crossing setting a new half-day plan; none was reported missing while working (since the
+  knowledge review of 2026-11-19 a miner's trip is its shift, fixed at the storehouse, and the edge has a band:
+  `docs/design/knowledge.md` 4).
 
 Found and fixed (the tests fail without the fixes; the fixes were checked again live on a new jar from day 5.44, the
 world loading with the new `raidLast` field absent):
@@ -294,12 +305,13 @@ Seen and left open:
 * **The council judges an enemy base by that enemy's own roster** (the open item of section 6): at day 6.13 the operator
   sent Stoneguard's six soldiers and Hinae against a Hollow lair; within five seconds Tide's and Grove's councils both
   launched raids on the emptied Stoneguard ("against about 4 defenders"), and Tide's destroyed it by about 6.2. Neither
-  had a report of the garrison leaving. A fix needs the scouts' reports to carry
-  a garrison count and the council to use only those.
+  had a report of the garrison leaving. Fixed by the knowledge review of 2026-11-19 (`docs/design/knowledge.md` 1): the
+  scouts' reports carry a look at the garrison and the council uses only those.
 * **A raid wiped out unseen waits out its bound**: Ember's raid of day 1.3 (three raiders and Natsuho, all dead at
   Stoneguard) held Ember's council back until day 4.3 (its next raid of its own went out about day 5), and the three
   raiders were presumed dead only at 4.98.
-  This is the rule as built (the raid's own plan); the owner may want a shorter bound for raids.
+  Fixed by the knowledge review of 2026-11-19 (`docs/design/knowledge.md` 3): a raider is expected back by the raid's
+  own plan (the march there, the muster, the assault, the march home), about 0.75 day for a 300-block raid.
 * A hero that dies keeps no news (like a member player who dies): Natsuho, last of her raid to fall, rose at home
   knowing nothing of how it went. Equal to the player's case, so left as is.
 

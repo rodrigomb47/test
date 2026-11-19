@@ -320,6 +320,7 @@ public final class MissingNpcGameTests {
         t.onCleanup(() -> {
             f.raidTarget = -1;
             f.raiders.clear();
+            f.raidPlanTicks = 0;
         });
         try {
             List<RollCall.Told> lines = recording(t);
@@ -331,9 +332,10 @@ public final class MissingNpcGameTests {
             f.raidTarget = target.base.id;
             f.raiders.add(raider.getUUID());
             f.raidStartedAt = now;
+            f.raidPlanTicks = Whereabouts.raidPlanTicks(0, 0); // the council's plan for a target beside home
             goTo(t, raider, FAR_X, FAR_Z);
-            t.assertTrue(r.where == State.AWAY && r.expectedBy == now + Whereabouts.RAID_LIMIT_TICKS,
-                    "a raider is expected back by the raid's bound (the target is beside home): " + r.expectedBy + " at " + now);
+            t.assertTrue(r.where == State.AWAY && r.expectedBy == now + f.raidPlanTicks,
+                    "a raider is expected back by the raid's plan (the target is beside home): " + r.expectedBy + " at " + now);
             RollCall.upkeep(level, t.data, t.base, r.expectedBy + grace() + 1);
             RollCall.upkeep(level, t.data, t.base, r.since + presume());
             t.assertTrue(r.where == State.PRESUMED_DEAD && !r.alive && !r.dead, "not presumed dead: " + r.where);
@@ -503,9 +505,10 @@ public final class MissingNpcGameTests {
         target.name = "Missing review raid target";
         t.data.addBase(target);
         Report seen = new Report(Report.Kind.ENEMY_BASE, target.center, now, FactionType.GROVE_COVENANT, 0, "");
+        seen.look = new com.factionclash.logic.campaign.Intel.Look(0, 1.0, 0, 0, now); // its scouts saw the yard empty
         f.knowledge.add(seen);
         long oldStarted = t.data.startedAt, oldLastRaid = f.lastRaidAt, oldRaidStarted = f.raidStartedAt, oldRally = f.raidRally,
-                oldMustered = f.raidMusteredAt;
+                oldMustered = f.raidMusteredAt, oldPlan = f.raidPlanTicks;
         int oldLaunched = f.raidsLaunched, oldParty = f.raidParty;
         float oldPower = f.soldierPower;
         t.onCleanup(() -> {
@@ -523,6 +526,8 @@ public final class MissingNpcGameTests {
             f.raidsLaunched = oldLaunched;
             f.raidParty = oldParty;
             f.soldierPower = oldPower;
+            f.raidPlanTicks = oldPlan;
+            f.raidIntel = null;
         });
         return target;
     }
@@ -562,6 +567,7 @@ public final class MissingNpcGameTests {
             f.lastParty.clear();
             f.raidParty = 1;
             f.raidStartedAt = now;
+            f.raidPlanTicks = Whereabouts.raidPlanTicks(272, 300); // the council's plan for a target 300 blocks out
             f.lastRaidAt = now - interval - 1;
             goTo(t, raider, FAR_X, FAR_Z);
             kill(raider);
@@ -573,8 +579,12 @@ public final class MissingNpcGameTests {
             raids(t, f, now + 1);
             t.assertTrue(f.raidTarget < 0 && f.raidsLaunched == launched, "the council sent a new raid after a party it heard nothing of");
             t.assertTrue(lines.isEmpty(), "something was said: " + lines);
-            // past the raid's own bound the council takes it as over, and plans again
-            long later = now + Whereabouts.RAID_LIMIT_TICKS + 1;
+            // past the raid's plan and the grace the council takes it as over, and plans again (knowledge review of
+            // 2026-11-19: not the raid's 3-day limit)
+            long later = now + f.raidPlanTicks + grace() + 1;
+            t.assertTrue(later < now + Whereabouts.RAID_LIMIT_TICKS, "the plan should end long before the raid's limit");
+            raids(t, f, later - 2);
+            t.assertTrue(f.raidTarget < 0 && f.raidEndNews != null, "the council gave the raid up before its plan and the grace passed");
             f.lastRaidAt = later - interval - 1;
             raids(t, f, later);
             t.assertTrue(f.raidTarget == target.id && f.raidEndNews == null, "past the raid's bound the council should plan again");
@@ -937,7 +947,7 @@ public final class MissingNpcGameTests {
     /**
      * A day's remote work (live check of 2026-11-19: a fisherman out from dawn to dusk came home 700 ticks before it
      * would have been called missing): a fisherman or a woodcutter setting out is expected back at nightfall plus the walk
-     * home, never sooner than half a day; a miner keeps half a day. The roll call takes the plan at the world's time.
+     * home, never sooner than half a day; a miner works its shift. The roll call takes the plan at the world's time.
      */
     @GameTest(template = "platform", timeoutTicks = 20, batch = "missing_live_dayshift")
     public static void aDaysRemoteWorkIsExpectedBackAtNightfall(GameTestHelper h) {
@@ -958,7 +968,10 @@ public final class MissingNpcGameTests {
                         n.getRole().id + " setting out at dawn should be expected at nightfall: " + dawn);
                 t.assertTrue(n.job().tripPlanTicks(now, 6000) == Whereabouts.DEFAULT_TRIP_TICKS, "from noon: half a day");
             }
-            t.assertTrue(miner.job().tripPlanTicks(now, 0) == Whereabouts.DEFAULT_TRIP_TICKS, "a miner has no day shift");
+            // a miner's trip is its shift (knowledge review of 2026-11-19): before its first storehouse visit, a day's
+            // remote work from now (KnowledgeGameTests.aMinersTripIsItsShiftNotEachCrossing: the shift from the storehouse)
+            double minerBack = Math.sqrt(Math.pow(miner.getX() - (t.base.center.getX() + 0.5), 2) + Math.pow(miner.getZ() - (t.base.center.getZ() + 0.5), 2));
+            t.assertTrue(miner.job().tripPlanTicks(now, 0) == Whereabouts.dayShiftPlan(0, minerBack), "a miner's shift from dawn");
             FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.set(false);
             t.assertTrue(fisher.job().tripPlanTicks(now, 0) == Whereabouts.DEFAULT_TRIP_TICKS, "working through the night: no end of day");
             FCConfig.REMOTE_WORK_IN_DAYLIGHT_ONLY.set(true);

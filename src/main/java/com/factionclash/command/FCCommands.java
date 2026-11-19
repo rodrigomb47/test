@@ -671,7 +671,30 @@ public final class FCCommands {
             o.addProperty("explored", f.explored.size());
             o.addProperty("raidsLaunched", f.raidsLaunched);
             o.addProperty("raidTarget", f.raidTarget);
+            o.addProperty("raidPlanTicks", f.raidPlanTicks);
             o.addProperty("basesDestroyed", f.basesDestroyed);
+            // what the faction knows of enemy bases (docs/design/knowledge.md): its newest look at each, ruins, losses seen
+            JsonArray seen = new JsonArray();
+            for (com.factionclash.campaign.Report r : f.knowledge) {
+                if (!r.base()) {
+                    continue;
+                }
+                JsonObject so = new JsonObject();
+                so.addProperty("subject", r.subject == null ? "?" : r.subject.id);
+                so.addProperty("pos", r.pos.toShortString());
+                so.addProperty("fallen", r.fallen);
+                if (r.look != null) {
+                    so.addProperty("soldiers", r.look.soldiers());
+                    so.addProperty("visible", Math.round(r.look.visible() * 100) / 100.0);
+                    so.addProperty("power", Math.round(r.look.power() * 100) / 100.0);
+                    so.addProperty("heroPower", Math.round(r.look.heroPower() * 100) / 100.0);
+                    so.addProperty("lookAt", r.look.at());
+                }
+                so.addProperty("losses", r.losses);
+                so.addProperty("by", r.by);
+                seen.add(so);
+            }
+            o.add("enemyBasesKnown", seen);
             JsonArray roster = new JsonArray();
             for (NpcRecord r : f.roster.values()) {
                 JsonObject ro = new JsonObject();

@@ -108,7 +108,7 @@ public abstract class Job {
         boolean needsFood = npc.hunger().foodLevel() <= 6 || npc.getHealth() <= npc.getMaxHealth() * 0.3F && npc.hunger().foodLevel() < 18;
         if (FCConfig.HUNGER.get() && needsFood && now() >= nextMealTrip
                 && Inv.count(npc.inventory(), Job::isProvision) == 0 && !npc.isEatingMeal()) {
-            if (FactionStorage.count(level(), b, Job::isProvision) == 0) {
+            if (storehouseFood(b) == 0) {
                 nextMealTrip = now() + 2400; // nothing to eat at home either: work on, and look again later
                 return false;
             }
@@ -523,8 +523,42 @@ public abstract class Job {
 
     public enum Unload { DONE, PARTIAL_FULL }
 
+    /**
+     * When its worker last unloaded at the storehouse (game time; 0: not since it was loaded, unless its job keeps it):
+     * where a shift starts ({@code MinerJob}'s trip plan, knowledge review of 2026-11-19).
+     */
+    protected long unloadedAt;
+    /** The world's day time then ({@link #unloadedAt}). */
+    protected long unloadedDayTime;
+
+    public long unloadedAt() {
+        return unloadedAt;
+    }
+
+    public long unloadedDayTime() {
+        return unloadedDayTime;
+    }
+
+    /** The provisions it saw in the storehouse at its last visit (-1: none seen since it was loaded). */
+    private int foodSeen = -1;
+
+    /**
+     * The provisions in the storehouse as this worker knows them (knowledge review of 2026-11-19): counted when it is in a
+     * home area of its faction, else what it saw there at its last visit (a worker at far water does not see the
+     * storehouse run dry, nor fill up).
+     */
+    protected int storehouseFood(BaseState b) {
+        if (foodSeen < 0 || com.factionclash.campaign.RollCall.inHomeArea(data(), npc.getFaction(), level(), npc.blockPosition())) {
+            foodSeen = FactionStorage.count(level(), b, Job::isProvision);
+        }
+        return foodSeen;
+    }
+
     /** Deposits cargo into faction storage. Must be at the storehouse. Never deletes items. */
     protected Unload unloadNow() {
+        unloadedAt = now();
+        unloadedDayTime = level().getDayTime();
+        foodSeen = FactionStorage.count(level(), base(), Job::isProvision);
         BaseState b = base();
         boolean full = false;
         int[] kept = keptPerSlot();

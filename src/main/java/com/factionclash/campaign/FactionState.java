@@ -46,6 +46,33 @@ public final class FactionState {
      * and the council waited out the raid's whole bound). Null while others are still in the party.
      */
     public UUID raidLast;
+    /**
+     * The council's plan for its raid, in ticks from the launch (knowledge review of 2026-11-19, known leak 5): the march
+     * there, the muster, the assault and the march home ({@code Whereabouts.raidPlanTicks}). Its raiders are expected back
+     * by then; 0 for a raid launched before the plan was kept (the raid's hard limit then, as before).
+     */
+    public long raidPlanTicks;
+    /**
+     * What the raid party saw of its target (its best look, or its ruins), carried home with the raid's end: the faction's
+     * report of that base is refreshed when the end's news is told at home ({@code RollCall.tell}); lost with a party
+     * nobody lived to report on.
+     */
+    public Report raidIntel;
+    /**
+     * Offensives the faction's pact allies told it of when they launched them (knowledge review of 2026-11-19): by ally,
+     * the target base, the party's power as launched and when the ally expects it home. A council joins one from this,
+     * never from the ally's own records.
+     */
+    public final Map<FactionType, Offensive> pactOffensives = new java.util.EnumMap<>(FactionType.class);
+
+    /** An ally's offensive as it told it: its target, its party's power at launch, its plan's end. */
+    public record Offensive(int target, double power, long until) {
+    }
+
+    /** When the council expects its raid home ({@code Whereabouts.raidPlannedBy}); {@code blocksBack}: an old raid's walk home. */
+    public long raidPlannedBy(double blocksBack) {
+        return com.factionclash.logic.campaign.Whereabouts.raidPlannedBy(raidStartedAt, raidPlanTicks, blocksBack);
+    }
     public int basesDestroyed;
     /** Average fighting power of the faction's soldiers at home (1 = bare-handed and unarmoured, up to 3), last seen. */
     public float soldierPower = 1.0F;
@@ -175,6 +202,20 @@ public final class FactionState {
             lp.add(NbtUtils.createUUID(u));
         }
         t.put("lastParty", lp);
+        t.putLong("raidPlan", raidPlanTicks);
+        if (raidIntel != null) {
+            t.put("raidIntel", raidIntel.save());
+        }
+        ListTag po = new ListTag();
+        pactOffensives.forEach((ally, o) -> {
+            CompoundTag e = new CompoundTag();
+            e.putString("ally", ally.id);
+            e.putInt("target", o.target());
+            e.putDouble("power", o.power());
+            e.putLong("until", o.until());
+            po.add(e);
+        });
+        t.put("pactOffensives", po);
         t.putInt("basesDestroyed", basesDestroyed);
         t.putFloat("soldierPower", soldierPower);
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
@@ -245,6 +286,17 @@ public final class FactionState {
         f.raidLast = t.hasUUID("raidLast") ? t.getUUID("raidLast") : null; // absent before the live check of 2026-11-19
         for (Tag u : t.getList("lastParty", Tag.TAG_INT_ARRAY)) {
             f.lastParty.add(NbtUtils.loadUUID(u));
+        }
+        // the raid's plan, what the party saw and the allies' offensives: absent before the knowledge review of 2026-11-19
+        f.raidPlanTicks = t.getLong("raidPlan");
+        f.raidIntel = t.contains("raidIntel") ? Report.load(t.getCompound("raidIntel")) : null;
+        ListTag po = t.getList("pactOffensives", Tag.TAG_COMPOUND);
+        for (int i = 0; i < po.size(); i++) {
+            CompoundTag e = po.getCompound(i);
+            FactionType ally = FactionType.byId(e.getString("ally"));
+            if (ally != null) {
+                f.pactOffensives.put(ally, new Offensive(e.getInt("target"), e.getDouble("power"), e.getLong("until")));
+            }
         }
         f.basesDestroyed = t.getInt("basesDestroyed");
         f.soldierPower = t.contains("soldierPower") ? t.getFloat("soldierPower") : 1.0F;

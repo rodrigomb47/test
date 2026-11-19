@@ -84,6 +84,13 @@ public class FishermanJob extends Job {
     private long nextSearch;
     private int forageDir, forageFails;
     private long restUntil;
+    /**
+     * What a forage leg out of the home area found (knowledge review of 2026-11-19): water, or no water anywhere after a
+     * round. The fishery record (the faction's knowledge, read by the director) learns it when the fisherman is back at
+     * the storehouse, as a cave explorer hands in its survey.
+     */
+    private FishingWater.Spot foundAway;
+    private boolean noWaterAway;
     private int casts;
     private BlockPos forageTarget;
     private long forageStart;
@@ -258,8 +265,19 @@ public class FishermanJob extends Job {
      * storehouse, idle.
      */
     private void forage(BaseState b, WorkplaceState w) {
-        if (w.spot == FishingWater.VALID) {
-            waterKnownAgain(); // the director found water meanwhile
+        if (foundAway != null) {
+            // water found on a far leg: home first, to tell it at the storehouse (then it goes fishing there)
+            status("Bringing word of fishing water home", "Returning");
+            if (!atStorage()) {
+                return;
+            }
+            FishingWater.Spot s = foundAway;
+            foundAway = null;
+            found(b, w, s);
+            return;
+        }
+        if (w.spot == FishingWater.VALID && atHome()) {
+            waterKnownAgain(); // the director found water meanwhile (it hears of it at home, not out on its leg)
             return;
         }
         if (restUntil > 0) {
@@ -269,6 +287,10 @@ public class FishermanJob extends Job {
                 markIdle("no fishing water");
                 if (!atStorage()) {
                     return;
+                }
+                if (noWaterAway) {
+                    noWaterAway = false;
+                    recordNoWater(b, w); // home: its faction hears that there is no water within reach
                 }
                 status("No fishing water within reach", "Idle");
                 waitFor(1200);
@@ -293,7 +315,11 @@ public class FishermanJob extends Job {
             forageTarget = null;
             FishingWater.Spot s = FishingSpots.search(level(), data(), b, npc.blockPosition(), FORAGE_SCAN, FishingSpots.reach(b, true), w.badSpots);
             if (s != null) {
-                found(b, w, s);
+                if (atHome()) {
+                    found(b, w, s);
+                } else {
+                    foundAway = s; // told at the storehouse (knowledge review of 2026-11-19)
+                }
                 return;
             }
             forageDir = (forageDir + 1) % FORAGE_DIRECTIONS;
@@ -320,14 +346,31 @@ public class FishermanJob extends Job {
         forageTarget = null;
     }
 
-    /** Neither the search nor a round of foraging found water: the base has none within reach, for now. */
-    private void noWater(BaseState b, WorkplaceState w) {
+    /** Whether it stands in a home area of its faction now, where what it found is heard at once. */
+    private boolean atHome() {
+        return com.factionclash.campaign.RollCall.inHomeArea(data(), npc.getFaction(), level(), npc.blockPosition());
+    }
+
+    /** The faction learns there is no fishing water within reach, for now. */
+    private void recordNoWater(BaseState b, WorkplaceState w) {
         w.spot = FishingWater.NONE;
         w.searched = now();
         w.open = false;
         w.origin = b.center;
         w.extent = b.center;
         data().setDirty();
+    }
+
+    /**
+     * Neither the search nor a round of foraging found water: the base has none within reach, for now. Its faction learns
+     * it when the fisherman is home (it rests at the storehouse), not at the end of a far leg.
+     */
+    private void noWater(BaseState b, WorkplaceState w) {
+        if (atHome()) {
+            recordNoWater(b, w);
+        } else {
+            noWaterAway = true;
+        }
         restUntil = now() + FORAGE_REST_TICKS;
         forageTarget = null;
         state = State.FORAGE;
@@ -560,6 +603,11 @@ public class FishermanJob extends Job {
         tag.putInt("forageFails", forageFails);
         tag.putLong("restUntil", restUntil);
         tag.putInt("casts", casts);
+        if (foundAway != null) {
+            FishingWater.Spot f = foundAway;
+            tag.putIntArray("foundAway", new int[]{f.bx(), f.by(), f.bz(), f.sx(), f.sy(), f.sz(), f.open() ? 1 : 0, f.body()});
+        }
+        tag.putBoolean("noWaterAway", noWaterAway);
     }
 
     @Override
@@ -574,5 +622,8 @@ public class FishermanJob extends Job {
         forageFails = Math.max(0, tag.getInt("forageFails"));
         restUntil = tag.getLong("restUntil");
         casts = Math.max(0, tag.getInt("casts"));
+        int[] f = tag.getIntArray("foundAway"); // absent before 2026-11-19
+        foundAway = f.length == 8 ? new FishingWater.Spot(f[0], f[1], f[2], f[3], f[4], f[5], f[6] != 0, f[7]) : null;
+        noWaterAway = tag.getBoolean("noWaterAway");
     }
 }

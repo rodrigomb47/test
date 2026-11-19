@@ -149,9 +149,14 @@ public final class BaseInfo {
             out.addAll(stock);
         }
         out.add("Experience gathered for enchanting: " + f.xpBank + " points (level " + com.factionclash.logic.XpLevels.levelFor(f.xpBank) + ")");
-        if (f.raidTarget >= 0) {
-            BaseState t = data.base(f.raidTarget);
-            out.add("Raid in progress on " + (t == null ? "?" : t.faction.displayName) + " with " + f.raiders.size() + " soldiers");
+        if (f.raidTarget >= 0 || f.raidEndNews != null) {
+            // the faction's own view (knowledge review of 2026-11-19): the party as it set out and its plan, no news of it
+            // until someone brings it home (the party's roll on the spot is not the station's to show)
+            BaseState t = f.raidTarget >= 0 ? data.base(f.raidTarget) : null;
+            double back = t == null ? 0 : Math.sqrt(t.center.distSqr(b.center));
+            out.add("Raid under way" + (t == null ? "" : " on " + t.faction.displayName) + ": " + f.lastParty.size()
+                    + " soldiers set out on day " + com.factionclash.logic.campaign.Whereabouts.day(f.raidStartedAt)
+                    + ", expected back by day " + com.factionclash.logic.campaign.Whereabouts.day(f.raidPlannedBy(back)) + "; no news yet");
         }
         out.add("Great People: not implemented in this build");
         return out;
@@ -296,7 +301,8 @@ public final class BaseInfo {
             long age = (now - r.observedAt) / 20;
             boolean stale = r.kind.canGoStale && now - r.observedAt > FCConfig.REPORT_STALE_TICKS.get();
             out.add(r.kind.label + " at " + r.pos.getX() + ", " + r.pos.getZ() + (r.subject != null ? " [" + r.subject.displayName + "]" : "")
-                    + " - " + r.note + " (seen " + age + "s ago by " + r.by + (stale ? ", STALE" : "") + ")");
+                    + " - " + r.note + (r.losses > 0 ? "; " + r.losses + " of its soldiers seen falling at our walls since" : "")
+                    + " (seen " + age + "s ago by " + r.by + (stale ? ", STALE" : "") + ")");
         }
         return out;
     }

@@ -240,8 +240,9 @@ public class CaveExplorerJob extends Job {
         entrance = CaveWork.findEntrance(level(), cavity, npc.blockPosition());
         if (entrance == null) {
             noEntrance.add(cavity.asLong());
-            Messages.toFaction(level().getServer(), npc.getFaction(), Component.literal("Cave explorer " + npc.npcName()
-                    + " found no way into the cave at " + cavity.toShortString() + " (explorers do not dig)"));
+            // its own news: told when it is home (knowledge review of 2026-11-19; the cave may lie 128 blocks out)
+            com.factionclash.campaign.RollCall.ownLine(npc, "Cave explorer " + npc.npcName()
+                    + " found no way into the cave at " + cavity.toShortString() + " (explorers do not dig)");
             cavity = null;
             finishSurvey("no way in");
             return;

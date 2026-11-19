@@ -683,8 +683,10 @@ public final class HeroEndGameTests {
                         "the escape hook did not start an escape");
             }));
             h.runAtTickTime(40, t.guard(() -> {
-                long gained = CampaignData.get(h.getLevel().getServer()).faction(FOE).xpBank - bank[0];
-                t.assertTrue(gained == HeroRules.rewardXp(byNpc.npcLevel()), "the soldier's faction picked up " + gained + " XP");
+                // the soldier picks the orbs up: banked at home, carried home from anywhere else (it has no base here;
+                // knowledge review of 2026-11-19)
+                long gained = CampaignData.get(h.getLevel().getServer()).faction(FOE).xpBank - bank[0] + s.carriedXp();
+                t.assertTrue(gained == HeroRules.rewardXp(byNpc.npcLevel()), "the soldier picked up " + gained + " XP");
                 t.assertTrue(orbs(h, spot[0], 3) == 0, "orbs left by the soldier");
                 t.assertTrue(escaper.isAlive() && orbs(h, spot[2], 6) == 0 && crests(h, spot[2], 6).isEmpty()
                         && h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(spot[2], spot[2]).inflate(6),

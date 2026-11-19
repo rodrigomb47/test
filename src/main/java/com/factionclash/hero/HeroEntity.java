@@ -1504,7 +1504,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         if (level() == null || level().isClientSide || heroId().isEmpty()) {
             return super.getDisplayName();
         }
-        return HeroKillFeed.name(this);
+        return HeroKillFeed.name(this); // truth: its name in the players' death messages (presentation)
     }
 
     /** A level gained: the numbers grow (re-applied with the affixes) and it says {@code level_up}. */

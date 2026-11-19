@@ -393,7 +393,8 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
 ## Experience and enchanting (`EnchanterJob`, `XpLevels`)
 * Experience is real orbs, picked up by any faction NPC within 4 blocks into the faction's experience: ores mined
   with a tool that harvests them (vanilla amounts, e.g. diamond 3–7, coal 0–2), furnace and smoker output taken
-  (vanilla recipe experience), animals bred (1–7).
+  (vanilla recipe experience), animals bred (1–7). Picked up away from home it is carried and banked when the NPC is
+  back in a home area; an NPC that dies drops what it carried as orbs (knowledge review of 2026-11-19).
 * Hiring (PROPOSED): when the enchanting table stands, the faction has at least level 10 worth of experience
   (160 points), 6+ lapis and at least one unenchanted good item in storage.
 * The enchanter takes all of the faction's experience as its own points (vanilla level curve) and works only from
@@ -430,7 +431,9 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   with a wooden pickaxe gets a stone one as soon as there are 3 cobblestone; then an iron one (3 ingots), which opens
   the gold and diamond layers, and a diamond one (6 diamonds stored), which only digs faster. A Silk Touch pickaxe in
   storage does not count as one (miners rate it below a plain one). The blacksmith's crew is every living member of
-  its base on the roster (soldiers too) within 256 blocks (horizontally) of the centre, wherever it works (CREW_RANGE).
+  its base on the roster (soldiers too) that the base sees at home: the roll call has it here and it stands in a home
+  area (knowledge review of 2026-11-19; the 256-block CREW_RANGE is gone). A member away gets its worn tool replaced
+  once it is home.
   A worker lacks its tool when there is none of its kind in its hand or its backpack (a woodcutter digging dirt with
   a shovel has its axe put away meanwhile), or the one it holds is worn.
 * Anvil (vanilla): each material unit repairs a quarter; cost = units + prior work; prior work becomes
@@ -671,14 +674,21 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   eye to eye, sees a death. An NPC witness at home makes it known at once; one away carries the news and tells it on
   entering a home area; a player tells it by using a station of its faction; a witness that dies carries nothing.
 * Trip plans (when a member is seen leaving the home area; its expected return): a scout **departure +
-  `war.scoutOverdueTicks`** (24000); a raider **launch + 72000** (`Whereabouts.RAID_LIMIT_TICKS`, the raid's own
-  bound) + the walk back from the target; a trader **trip start + 24000** (`TRADER_ROAD_TICKS`) + the walk back from
+  `war.scoutOverdueTicks`** (24000); a raider **launch + the raid's plan** (knowledge review of 2026-11-19: the walk to
+  the rally point + **6000** for the muster, `RAID_MUSTER_TICKS` + **6000** for the assault and the loot, PROPOSED
+  `RAID_ASSAULT_TICKS` + the walk home from the target; about **18000** for a 300-block raid; a raid launched before:
+  launch + 72000 + the walk back); a miner at a far face or in a far cave **its shift**, fixed at its last storehouse
+  visit: until the coming nightfall, at least 12000, + the walk home (past its shift outside the home area it goes back
+  to the storehouse); a trader **trip start + 24000** (`TRADER_ROAD_TICKS`) + the walk back from
   320 blocks; a cave explorer **departure + 12000** (`CaveExplorerJob.MAX_TRIP_TICKS`) + the walk back from its cave
   (+64); a fisherman at far water or a woodcutter in a far wood (their remote work is daylight-only with
   `survival.remoteWorkInDaylightOnly`) **until the coming nightfall** (day time **13000**, `Whereabouts.NIGHTFALL`) + the
   walk home, never under 12000 (live check of 2026-11-19: a fisherman out from dawn to dusk came home 700 ticks inside
   the default plan and its grace; with the rule off they keep 12000); anyone else **12000** (PROPOSED
   `DEFAULT_TRIP_TICKS`). The walk is **10 ticks a block** (PROPOSED `TICKS_PER_BLOCK`, half a walking NPC's pace).
+* The edge band (PROPOSED `Whereabouts.edgeBand`, knowledge review of 2026-11-19): a member seen at home leaves only
+  **an eighth of the radius past the edge, at most 8** (8 for 64); an away member is home again only that far inside it
+  (a missing or presumed-dead one anywhere inside). A tiny GameTest base has none.
 * `missingGraceTicks` (**2400**, 0-72000): past its expected return plus this, an away member is **missing** (still
   counted, not replaced, its workplace held).
 * `presumedDeadTicks` (**12000**, 1200-240000): this long missing, it is **presumed dead**: no longer counted,
@@ -690,8 +700,9 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   alive then; when the party empties because its last raider left it alive (home at its storehouse, or falling back
   wounded), that raider carries the end (`FactionState.raidLast`, live check of 2026-11-19: a party that came home one
   by one told its end to nobody and its council waited out the whole bound). The war council plans **no new raid**
-  while the end of its last raid is unheard at home, it still counts someone of that party, and the raid's own bound
-  (launch + **72000**) has not passed (review of 2026-11-19).
+  while the end of its last raid is unheard at home, it still counts someone of that party, and the raid's plan plus
+  `missingGraceTicks` has not passed (the knowledge review of 2026-11-19; launch + 72000 before). **72000** stays the
+  raid's hard limit on the spot (`Whereabouts.RAID_LIMIT_TICKS`).
 * Lines about a member itself (a level gained) are said at once inside a home area, else told when it comes home; a
   hero's lines for its faction are heard by its whole faction only from a home area (away: the players near, as its
   other lines). A hero risen where it fell outside every home area, from a fall nobody saw, keeps its faction's view
@@ -745,13 +756,32 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   encounter, or after 40 escapes on one expedition (a typical trip needs well under 20); cornered with a monster within 3.5 blocks it fights back for 100 ticks while over half health. An
   encounter ends after 100 quiet ticks. Enemy soldiers: retreat home as before (2 threats, or 1 under 60% health).
 * Raids: interval 36000 ticks, party at least 3 (see the war council above), 3 home defenders kept; assault takes 400 ticks at the target heart.
-* Heroes in the war council (HEROES_V2 8.1, A1b): `soldierPower` is the average of the ordinary soldiers only; a
-  base's defence is its soldiers at home x that power plus the war power of each hero whose home it is (alive, at
-  home, not on a raid; **half** under half health), the heroes counting at most **1.5x** the soldiers' power (the
+* What the war council knows of an enemy base (knowledge review of 2026-11-19, `docs/design/knowledge.md`): only its
+  scouts' and raiders' looks. A look (`BaseWatch`) is made within **64** blocks of the base's centre: the soldiers in
+  sight (a ray from the eyes; within the walls box + **8**), their mean visible power (`FactionDirector.power`), the
+  heroes in sight at full war power, and the share of the yard in view (**5 x 5** points at eye height over the walls'
+  inside). Estimate (`Intel`): the soldiers seen + the prior x the share out of view, drifting up to the prior over
+  **48000** ticks (PROPOSED `Intel.FORGET_TICKS`), never below what was seen, minus the enemy soldiers seen falling at
+  home since; the prior is a garrison like the council's own (its soldiers at home, its `soldierPower`), a lair's
+  `lairBaseCap` + 1 a day up to `lairMaxCap`. Two looks on one trip: the one with more of the yard in view (**0.1**
+  apart, else the newer). A raider sees a fall when the heart's place is in view within **48** blocks. Pact allies are
+  told of an offensive at launch (its party's power, until its plan's end).
+* Heroes in the war council (HEROES_V2 8.1, A1b): `soldierPower` is the average of the ordinary soldiers only (the
+  faction's own, its prior for a garrison it has not seen); an enemy base's defence is its soldiers seen x their power
+  plus the war power of each hero seen there (the operators' truth, `FactionDirector.defencePower`: alive, at home, not
+  on a raid; **half** under half health), the heroes counting at most **1.5x** the soldiers' power (the
   soldier backbone). A hero's war power is `2.25 x sqrt(maxHealth / 20) x (1.5 + level / 30) x war.heroPowerPercent /
   100` (`heroPowerPercent` **100**, 0-200; 0 counts a hero as one soldier by heads, as before). The target score reads
   the defence in soldier units. With no hero on either side every decision is the same as before.
-* Hollow lairs: start with 5 monsters, +1 per day up to 12; raid every 30000 ticks on the nearest settlement within 300 blocks.
+* Hollow lairs: start with 5 monsters, +1 per day up to 12; raid every 30000 ticks on the nearest settlement within 300 blocks
+  (an exception kept: the Hollow senses settlements in its territory). A lair monster that falls within **28** blocks
+  of its lair (PROPOSED `FactionDirector.LAIR_GROUND`) is missed at once; one that falls further off after **6000**
+  ticks away (knowledge review of 2026-11-19).
+* The base alarm: an intruder inside the walls box is handed to the guards only when one of the four nearest of the
+  base's people within **24** blocks sees it, one stands within **3** blocks of it (PROPOSED `FactionDirector.HEARD`),
+  one within 24 was hurt by it in the last **100** ticks (PROPOSED `HURT_MEMORY`), or it is within **4.5** blocks of the
+  heart (`HEART_HEARD`: a raider strikes the heart from 4); once noticed it stays raised for **600** ticks (PROPOSED
+  `NOTICE_MEMORY`).
 * Damage: zombies, skeletons and variants deal ×0.5 to NPCs; with `survival.hunger` off, NPCs regenerate 1 HP per 4 s once 10 s have passed since they were last hurt; with it on (the default) they heal only through the food bar (see Hunger).
 * Victory rule (proposed): a base falls when its **Faction Heart** is destroyed; a faction with no standing bases is eliminated; the last faction standing (The Hollow included) wins. The reporting station is not the defeat core.
 

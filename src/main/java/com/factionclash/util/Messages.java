@@ -25,6 +25,31 @@ public final class Messages {
             }
         }
         FactionClash.LOGGER.info("[{}] {}", faction.displayName, msg.getString());
+        note(faction, msg.getString());
+    }
+
+    // ------------------------------------------------------------------ GameTests
+
+    /** A faction line said, while a GameTest records them. */
+    public record Said(FactionType faction, String line) {
+    }
+
+    private static java.util.List<Said> recorder;
+
+    /** Starts recording what every faction is told (GameTests); {@link #stopRecording} ends it. */
+    public static synchronized java.util.List<Said> record() {
+        recorder = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+        return recorder;
+    }
+
+    public static synchronized void stopRecording() {
+        recorder = null;
+    }
+
+    private static synchronized void note(FactionType faction, String line) {
+        if (recorder != null) {
+            recorder.add(new Said(faction, line));
+        }
     }
 
     public static void toAll(MinecraftServer server, Component msg) {

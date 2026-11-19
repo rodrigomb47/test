@@ -71,15 +71,30 @@ public final class RollCall {
 
     /** Inside a home area of {@code faction}: within {@link #homeRadius} (horizontally) of a standing settlement's centre. */
     public static boolean inHomeArea(CampaignData data, FactionType faction, Level level, BlockPos p) {
+        return edge(data, faction, level, p)[0] <= 0;
+    }
+
+    /**
+     * How far {@code p} lies past the edge of the nearest home area of {@code faction} (0 or less: inside it) and that
+     * area's edge band ({@link Whereabouts#edgeBand}); {Integer.MAX_VALUE, 0} with no home area (another dimension, no
+     * settlement standing).
+     */
+    public static int[] edge(CampaignData data, FactionType faction, Level level, BlockPos p) {
+        int[] best = {Integer.MAX_VALUE, 0};
         if (faction == null || level == null || p == null || level.dimension() != Level.OVERWORLD) {
-            return false;
+            return best;
         }
         for (BaseState b : data.bases.values()) {
-            if (!b.destroyed && b.faction == faction && b.isSettlement() && BaseZones.chebyshev(b, p) <= homeRadius(b)) {
-                return true;
+            if (!b.destroyed && b.faction == faction && b.isSettlement()) {
+                int r = homeRadius(b);
+                int beyond = BaseZones.chebyshev(b, p) - r;
+                if (beyond < best[0]) {
+                    best[0] = beyond;
+                    best[1] = Whereabouts.edgeBand(r);
+                }
             }
         }
-        return false;
+        return best;
     }
 
     // ------------------------------------------------------------------ sightings
@@ -97,18 +112,18 @@ public final class RollCall {
         long now = level.getGameTime();
         rec.dead = false; // truth: it lives (an old record's or a lost entity's mark is wrong)
         rec.vanished = false;
-        if (inHomeArea(data, npc.getFaction(), level, npc.blockPosition())) {
+        int[] edge = edge(data, npc.getFaction(), level, npc.blockPosition());
+        if (edge[0] <= 0) {
             rec.seenHomeAt = now;
             tell(server, data, npc.getFaction(), npc.getUUID(), npc.npcName());
-            Step s = Whereabouts.seenHome(rec.where);
-            if (s.changed(rec.where)) {
-                apply(server, data, npc.getFaction(), rec, s, now, null, null);
-            }
-        } else {
-            Step s = Whereabouts.seenAway(rec.where);
-            if (s.event() == Event.LEFT) {
-                leaves(data, npc, rec, now);
-            }
+        }
+        // a member near the edge changes side only past its band (knowledge review of 2026-11-19, known leak 6: a miner at
+        // a branch face just past the edge crossed it dozens of times a day, each crossing a new plan)
+        Step s = Whereabouts.sighted(rec.where, edge[0], edge[1]);
+        if (s.event() == Event.LEFT) {
+            leaves(data, npc, rec, now);
+        } else if (s.changed(rec.where)) {
+            apply(server, data, npc.getFaction(), rec, s, now, null, null);
         }
     }
 
@@ -124,9 +139,10 @@ public final class RollCall {
     public static long plan(CampaignData data, FactionNpc npc, long now) {
         FactionState f = data.faction(npc.getFaction());
         if (f.raidTarget >= 0 && f.raiders.contains(npc.getUUID())) {
+            // the council's own plan for the raid (knowledge review of 2026-11-19, known leak 5), not its hard limit
             BaseState target = data.base(f.raidTarget), home = data.base(npc.baseId());
             double back = target != null && home != null ? Math.sqrt(target.center.distSqr(home.center)) : 0;
-            return Whereabouts.raidPlan(now, f.raidStartedAt, back);
+            return Whereabouts.raidPlan(now, f.raidPlannedBy(back));
         }
         Job job = npc.job();
         return job != null ? job.tripPlanTicks(now) : Whereabouts.DEFAULT_TRIP_TICKS;
@@ -321,6 +337,7 @@ public final class RollCall {
                         n.kind == News.Kind.OWN ? n.text : Whereabouts.carried(carrierName, n.text), null);
                 if (n.id.equals(f.raidEndNews)) {
                     f.raidEndNews = null; // the council hears that its raid is over (docs/design/missing_npcs.md 6)
+                    FactionDirector.deliverRaidIntel(f, now); // and what the party saw of its target (knowledge review)
                 }
                 told++;
             }

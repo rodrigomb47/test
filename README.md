@@ -167,12 +167,19 @@ Players respawn at their nearest surviving allied base when they have no bed.
   then the nearest. The raid party is every soldier beyond a third of the garrison (at least `raidPartySize`), and
   it only goes when it is at least two thirds of the defenders' strength, weighed by arms and armour (a soldier in
   diamond with a diamond sword counts almost three times one in leather with a stone sword); a beaten enemy
-  outnumbered 3 to 2 is **counter-attacked** sooner.
+  outnumbered 3 to 2 is **counter-attacked** sooner. The council judges a garrison **only by what its own people saw**:
+  a scout near an enemy base counts the soldiers and heroes it can see and how much of the walled yard it can see into;
+  the yard it could not see is assumed as strong as the council's own garrison, an old look counts for less (back to
+  that assumption over two days), and the enemy soldiers it saw fall at its own walls come off. A garrison that marches
+  out where nobody sees it is still believed at home; one a scout saw gone is struck. A base razed by someone else is
+  believed standing until a scout or a raider sees its ruins. The raiders' own look at the target comes home with the
+  raid's end ("against about 4 defenders, as seen on day 3").
 * **Pacts against a conqueror** (config `war.pacts`): when a human faction conquers another and two or more human
   factions survive besides it, they swear a pact against the conqueror (announced in chat). Members stop fighting
   each other (no targeting, sweeps, friendly fire or base alarms between them; raids between them are called off),
-  the fallen faction's survivors tell them where the conqueror's bases are, they raid only the conqueror, and a
-  member joins an offensive another member has launched when their parties together are strong enough. The pact
+  the fallen faction's survivors tell them what their scouts had seen of the conqueror's bases, they raid only the
+  conqueror, and a member joins an offensive another member told it of when it launched it, when their parties
+  together are strong enough. The pact
   ends when the conqueror falls or fewer than two members are left; the next conquest can raise a new one. Shown in
   `/fc status` and the base information screen.
 * **Traders and villages**: scouts report villages - any village they come within sight of (plains, desert,
@@ -350,7 +357,10 @@ Players respawn at their nearest surviving allied base when they have no bed.
   raid party has gathered", "the raid is beaten back", "has ended") comes home with the raiders who saw it (a party
   that comes home one by one: the last one home tells how it ended), and the
   war council sends no new raid until that news is home, every raider of the party is known or presumed dead, or the
-  raid's own three days have passed. A level a member gains away is announced when it comes home, and a hero's lines
+  raid's own plan has passed (the march there, the muster, the assault and the march home, about three quarters of a
+  day for a target 300 blocks away; its raiders are missing then). A miner working a branch face or a cave beyond the
+  home area is on its shift, planned at the storehouse (until nightfall, at least half a day): crossing the edge again
+  sets no new plan, and it comes back when the shift ends. A level a member gains away is announced when it comes home, and a hero's lines
   for its faction carry home only from home (away, only players near hear them). Heroes follow the same rule and still
   return 10 minutes after a fall: a fall nobody saw is learned when the hero rises at home ("fell where none of the
   faction saw it"); a hero that rises where it fell, far from home, tells its fall itself when it gets back. The
@@ -359,6 +369,14 @@ Players respawn at their nearest surviving allied base when they have no bed.
   faction's reporting station. The kill feed is for players only; no faction learns anything from it.
   `campaign.farDeathsUnknown` false brings back the old rule (every death known at once, and the next roll call knows
   the deaths not yet known); `/fc admin roll` shows who is away, missing or dead, beside the truth.
+* **A faction knows only what its people know** (`docs/design/knowledge.md`): besides deaths and the war council's
+  view of enemy bases, a worker away is not retrained (nobody at home sees it idle) and the blacksmith plans gear for
+  the members it sees at home; a cave survey, fishing water found on a far leg, a lookout hero's "spots 3 enemies" and
+  the news of an enemy hero's fall reach the faction when someone brings them home (or say them at home); experience
+  picked up away is carried home and lost with its carrier; guards are sent at an intruder in the yard only when
+  someone sees or hears it; a Hollow lair misses a monster that fell far off only when it stays away. Kept as
+  exceptions: a pact against a conqueror is sworn at once (diplomacy, announced to all), and a lair senses settlements
+  within 300 blocks.
 * **Builders** queue houses (with straw bedrolls made from wheat) and storage expansions, carry materials to the
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
@@ -482,7 +500,11 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1093 JUnit tests for the pure rules (the roll call: when an away member is missing and presumed
+* `./gradlew test` — 1107 JUnit tests for the pure rules (what a faction knows of an enemy base: a garrison nobody
+  saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
+  at home, heroes seen, the better look, a lair's prior; a raid's plan and a wipe-out given up by it, the home edge's
+  band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
+  list or true fall, and hero code reads kill credit only for its presentation lines; the roll call: when an away member is missing and presumed
   dead, coming home, who knows a death at once, the trip plans, the faction's lines, old records, a death still unknown
   under the old rule, the council's wait for its raid's news, a day's remote work expected back at nightfall, a hero's own fall, a hero's faction lines heard only
   nearby away from home, and that no faction code reads the kill feed, kill credit or a roster entry's truth; explosive moves: the field's forms, powers, six blasts and
@@ -544,13 +566,22 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 375 GameTests on a real headless server, including **deaths far from home** (a
+* `./gradlew runGameTestServer` — 388 GameTests on a real headless server, including **what a faction knows** (a
+  council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
+  defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not;
+  a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid
+  wiped out unseen is given up at its plan, its raiders missing then, not at three days; a miner crossing the home edge
+  twice on one shift keeps one expected return; a cave survey is the faction's only when handed in at the station;
+  retraining and the blacksmith see only members at home; a worker away knows the storehouse's food as it last saw it;
+  experience picked up away is carried home and dropped at death; the alarm needs someone to see the intruder, or the intruder to be at the heart; a lookout hero's line is heard
+  only at home; a lair misses a monster that fell far off only later; a pact ally is told of an offensive at launch, and
+  allies are handed only what the fallen faction's scouts had seen), **deaths far from home** (a
   scout killed far away unseen is not known, goes missing past its expected return, is presumed dead and replaced; a
   death near the base or seen from home is known at once; a witness away carries the news home and tells it; a dead
   witness carries nothing; a member player reports what it saw at the station and loses it if it dies; a raider
   presumed dead walks back in and rejoins with its gear beside its replacement; a hero killed far away is learned of
   when it rises at home after its unchanged revival time; old roster entries and factions load; and from their review:
-  the war council sends no raid after a party nobody lived to report on until the raid's bound, and plans at once when
+  the war council sends no raid after a party nobody lived to report on until the raid's plan, and plans at once when
   every raider died in sight of home; a death still unknown is known once `farDeathsUnknown` is off; a hero that rises
   unseen where it fell far away tells nobody until it is home; a level gained away is told on coming home; the raid
   party's gathering travels home with it; the station tells who is away, missing and presumed dead; "Adventure" is
@@ -637,9 +668,9 @@ Legion and Hinae with Stoneguard; `docs/design/missing_npcs.md` 14, screenshots 
   told how its raid ended (now the last one home does: "Raid on The Hollow has ended in victory"), and a fisherman
   out from dawn to dusk came within 700 ticks of being called missing (fishermen and woodcutters are now expected back
   at nightfall).
-* Seen and left open: when Stoneguard's garrison left on a raid, Tide and Grove both raided the emptied base within
-  seconds and Tide destroyed it; the war council still judges an enemy base by that enemy's own roster, not by what
-  its scouts saw.
+* Seen there: when Stoneguard's garrison left on a raid, Tide and Grove both raided the emptied base within seconds and
+  Tide destroyed it; the war council judged an enemy base by that enemy's own roster. Fixed afterwards by the knowledge
+  review (`docs/design/knowledge.md`): the council now judges a garrison only by what its scouts and raiders saw.
 
 **Pits and long mine walks (a 15-day campaign, continued from day 15 with the fixes):** two Grove miners had sat
 for 8 and 2 days in a hole they had dug into the pad beside the south wall, at the bottom of a 20-block ravine

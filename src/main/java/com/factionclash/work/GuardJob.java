@@ -188,7 +188,9 @@ public class GuardJob extends Job {
             state = State.RAID_RETURN;
             return;
         }
-        if (target.destroyed) {
+        if (com.factionclash.campaign.BaseWatch.seesFall(npc, target)) {
+            // its heart is gone and the raider sees it: the ruins' storehouse is there for the taking. A fall it cannot
+            // see (far off on the march) is not its news (knowledge review of 2026-11-19)
             state = State.RAID_LOOT;
             return;
         }
@@ -215,7 +217,7 @@ public class GuardJob extends Job {
                     gathered.add(u);
                 }
             }
-            if (here * 10 >= f.raiders.size() * 7 || now() - f.raidStartedAt > 6000) {
+            if (here * 10 >= f.raiders.size() * 7 || now() - f.raidStartedAt > com.factionclash.logic.campaign.Whereabouts.RAID_MUSTER_TICKS) {
                 f.raidMusteredAt = now();
                 data().setDirty();
                 // the party at the rally point saw it: its faction hears it when one of them is home (docs/design/missing_npcs.md
@@ -239,7 +241,7 @@ public class GuardJob extends Job {
     private void raidAssault(FactionState f) {
         BaseState target = data().base(f.raidTarget);
         if (target == null || target.destroyed) {
-            state = State.RAID_LOOT;
+            state = State.RAID_LOOT; // (at the heart: it sees the heart broken)
             return;
         }
         BlockPos heart = target.point(BaseState.HEART);

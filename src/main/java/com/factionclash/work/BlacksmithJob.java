@@ -564,27 +564,20 @@ public class BlacksmithJob extends Job {
         return item instanceof ArmorItem a ? a.getDefense() : 0;
     }
 
-    /** PROPOSED: members this far from the base centre (horizontally) or nearer count as the blacksmith's crew. */
-    static final int CREW_RANGE = 256;
-
     /**
-     * The base's people the blacksmith makes gear for: every living member of its roster that is in the world within
-     * {@link #CREW_RANGE} blocks of the centre at any depth, so deep miners, fishermen at a far lake and woodcutters
-     * out foraging get their worn tools replaced too.
+     * The base's people the blacksmith makes gear for: the living members of its roster the base sees at home (the roll
+     * call has them here and they stand in a home area: deep miners, the fishermen and woodcutters in the home area). A
+     * member away gets its worn tool replaced once it is home and the blacksmith sees it (knowledge review of
+     * 2026-11-19, known leak 3: the crew reached 256 blocks out, and a death nobody knew of dropped out at once).
      */
     private List<FactionNpc> members() {
         BaseState b = base();
         FactionState f = data().faction(npc.getFaction());
         List<FactionNpc> out = new ArrayList<>();
         for (com.factionclash.campaign.NpcRecord r : f.roster.values()) {
-            if (!r.alive || r.baseId != b.id) {
-                continue;
-            }
-            if (level().getEntity(r.uuid) instanceof FactionNpc n && n.isAlive()) {
-                double dx = n.getX() - (b.center.getX() + 0.5), dz = n.getZ() - (b.center.getZ() + 0.5);
-                if (dx * dx + dz * dz <= (double) CREW_RANGE * CREW_RANGE) {
-                    out.add(n);
-                }
+            if (r.alive && r.baseId == b.id && com.factionclash.campaign.FactionDirector.seenAtHome(level(), data(), f, r)
+                    && level().getEntity(r.uuid) instanceof FactionNpc n) {
+                out.add(n);
             }
         }
         return out;

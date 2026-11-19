@@ -252,6 +252,13 @@ public final class HeroTalents {
             }
         }
         Alerts.callGuards(h, nearest, r);
+        // its faction hears the line only when the hero stands in a home area, where its people hear it (knowledge review
+        // of 2026-11-19, known leak 4: the work belt reaches 30 blocks past the home area); out there only the guards near
+        // are called, and a sighting would be stale by the time it was carried home
+        if (!(h.level() instanceof net.minecraft.server.level.ServerLevel sl) || !com.factionclash.campaign.RollCall.inHomeArea(
+                CampaignData.get(h.getServer()), h.getFaction(), sl, h.blockPosition())) {
+            return;
+        }
         Long said = LOOKOUT_SAID.get(h.getUUID());
         if (said == null || now - said >= LOOKOUT_LINE_EVERY) {
             LOOKOUT_SAID.put(h.getUUID(), now);

@@ -378,6 +378,13 @@ public final class FCGameTests {
             b.name = t.displayName + " test keep";
             made.add(data.addBase(b));
         }
+        // a second Ember settlement Grove's scouts never found (knowledge review of 2026-11-19: it was handed over too)
+        com.factionclash.campaign.BaseState hidden = new com.factionclash.campaign.BaseState();
+        hidden.faction = FactionType.EMBER_LEGION;
+        hidden.kind = com.factionclash.campaign.BaseState.Kind.SETTLEMENT;
+        hidden.center = new BlockPos(900_000, 70, 901_000);
+        hidden.name = "Ember hidden test keep";
+        made.add(data.addBase(hidden));
         Runnable cleanup = () -> {
             for (var b : made) {
                 data.bases.remove(b.id);
@@ -385,18 +392,27 @@ public final class FCGameTests {
             data.pactAgainst = null;
             data.pactMembers.clear();
             data.faction(FactionType.GROVE_COVENANT).alive = true;
-            for (FactionType t : List.of(FactionType.TIDE_ALLIANCE, FactionType.STONEGUARD)) {
+            for (FactionType t : List.of(FactionType.TIDE_ALLIANCE, FactionType.STONEGUARD, FactionType.GROVE_COVENANT)) {
                 data.faction(t).knowledge.removeIf(r -> r.pos.getX() >= 900_000);
             }
         };
         try {
+            // what Grove's own scouts had seen of Ember: its first keep, two soldiers in a yard half in view
+            com.factionclash.campaign.Report groveSaw = new com.factionclash.campaign.Report(com.factionclash.campaign.Report.Kind.ENEMY_BASE,
+                    made.get(0).center, h.getLevel().getGameTime() - 500, FactionType.EMBER_LEGION, 2, "Ember settlement, 2 soldiers seen");
+            groveSaw.by = "Grove scout";
+            groveSaw.look = new com.factionclash.logic.campaign.Intel.Look(2, 0.5, 1.5, 0, groveSaw.observedAt);
+            data.faction(FactionType.GROVE_COVENANT).knowledge.add(groveSaw);
             made.get(1).destroyed = true;
             data.faction(FactionType.GROVE_COVENANT).alive = false;
             com.factionclash.campaign.Diplomacy.onElimination(h.getLevel(), data, FactionType.GROVE_COVENANT, FactionType.EMBER_LEGION);
             h.assertTrue(data.pactAgainst == FactionType.EMBER_LEGION, "no pact against the conqueror: " + data.pactAgainst);
             h.assertTrue(data.pactMembers.equals(java.util.EnumSet.of(FactionType.TIDE_ALLIANCE, FactionType.STONEGUARD)), "members " + data.pactMembers);
             h.assertTrue(data.faction(FactionType.STONEGUARD).knowledge.stream().anyMatch(r -> r.subject == FactionType.EMBER_LEGION
-                    && r.pos.equals(made.get(0).center)), "the allies were not told where Ember lives");
+                    && r.pos.equals(made.get(0).center) && r.look != null && r.look.soldiers() == 2 && r.observedAt == groveSaw.observedAt
+                    && r.by.contains("Grove scout")), "the allies were not told what Grove's scouts had seen of Ember");
+            h.assertTrue(data.faction(FactionType.STONEGUARD).knowledge.stream().noneMatch(r -> r.pos.equals(hidden.center)),
+                    "the allies were told of an Ember settlement no Grove scout had found");
             FactionNpc tide = npc(h, 5, 5, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN);
             FactionNpc stone = npc(h, 6, 6, FactionType.STONEGUARD, NpcRole.SWORDSMAN);
             FactionNpc ember = npc(h, 6, 5, FactionType.EMBER_LEGION, NpcRole.SWORDSMAN);
@@ -806,10 +822,14 @@ public final class FCGameTests {
         h.succeed();
     }
 
-    /** Ores an NPC mines give real experience orbs, and NPCs pick them up into their faction's experience. */
+    /**
+     * Ores an NPC mines give real experience orbs, and NPCs pick them up into their faction's experience: at home (in its
+     * home area) at once; away it carries them home (knowledge review of 2026-11-19, KnowledgeGameTests).
+     */
     @GameTest(template = "platform", timeoutTicks = 80)
     public static void minedOreExperienceGoesToTheFaction(GameTestHelper h) {
-        FactionNpc n = npc(h, 5, 5, FactionType.TIDE_ALLIANCE, NpcRole.MINER);
+        GameTestBases.Handle home = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 11, 80);
+        FactionNpc n = home.register(npc(h, 5, 5, FactionType.TIDE_ALLIANCE, NpcRole.MINER));
         n.equip(new ItemStack(Items.IRON_PICKAXE));
         com.factionclash.campaign.FactionState f = com.factionclash.campaign.CampaignData.get(h.getLevel().getServer()).faction(FactionType.TIDE_ALLIANCE);
         long before = f.xpBank;
@@ -821,7 +841,7 @@ public final class FCGameTests {
             h.assertTrue(f.xpBank >= before + 3, "diamond ore gives 3-7 experience; the faction got " + (f.xpBank - before));
             h.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.ExperienceOrb.class,
                     new net.minecraft.world.phys.AABB(h.absolutePos(ore)).inflate(4)).isEmpty(), "orbs were left lying around");
-            h.succeed();
+            home.succeed();
         });
     }
 
@@ -2068,7 +2088,11 @@ public final class FCGameTests {
         h.succeedWhen(() -> h.assertTrue(guard.getTarget() == raider || !raider.isAlive(), "guard ignored an enemy NPC"));
     }
 
-    /** The defence alarm sends guards at intruders they cannot see (e.g. raiders inside the heart's hall). */
+    /**
+     * The defence alarm sends guards at intruders they cannot see themselves (e.g. raiders inside the heart's hall): one
+     * at the heart is heard across the base (one hidden elsewhere that nobody sees is not raised:
+     * {@code KnowledgeGameTests.theAlarmNeedsSomeoneToSeeTheIntruder}).
+     */
     @GameTest(template = "platform", timeoutTicks = 100)
     public static void defenceAlarmAssignsGuardsWithoutSight(GameTestHelper h) {
         for (int x = 8; x <= 16; x++) {

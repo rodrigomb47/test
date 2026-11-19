@@ -215,10 +215,16 @@ public final class HeroBossEvents {
         }
     }
 
-    /** A base's heart fell: an escaping hero whose home it was goes at once (6.13, MOBILITY_AND_WORK 7.7). */
+    /**
+     * A base's heart fell: an escaping hero whose home it was goes at once (6.13, MOBILITY_AND_WORK 7.7) when it is there,
+     * inside that base's home area, to see it (knowledge review of 2026-11-19: a hero on a far raid broke off at once). One
+     * away learns of it when it comes home to the ruins. Called before the base is marked destroyed.
+     */
     public static void baseLost(ServerLevel level, BaseState base) {
+        int radius = com.factionclash.campaign.RollCall.homeRadius(base);
         for (HeroEntity h : HeroEntity.live()) {
-            if (h.isAlive() && !h.isPreview() && h.base() == base) {
+            if (h.isAlive() && !h.isPreview() && h.base() == base && h.level() == level
+                    && com.factionclash.campaign.BaseZones.chebyshev(base, h.blockPosition()) <= radius) {
                 h.combat().boss().escape().lostBase(h.combat().boss().fighting());
             }
         }

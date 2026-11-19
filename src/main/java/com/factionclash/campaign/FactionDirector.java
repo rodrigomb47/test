@@ -2,6 +2,7 @@ package com.factionclash.campaign;
 
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
+import com.factionclash.logic.campaign.Intel;
 import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
@@ -348,6 +349,11 @@ public final class FactionDirector {
             if (!r.alive || r.baseId != b.id || r.role == top.role() || r.role.combatant || r.isHero()) {
                 continue; // (a hero is never retrained: its duty is its own)
             }
+            // only a worker the base sees at home: its record here and its entity in a home area (knowledge review of
+            // 2026-11-19, known leak 3: a worker 100 blocks out was judged idle by telepathy and changed job where it stood)
+            if (!seenAtHome(level, data, f, r)) {
+                continue;
+            }
             if (!(level.getEntity(r.uuid) instanceof FactionNpc n) || n.job() == null) {
                 continue;
             }
@@ -363,7 +369,7 @@ public final class FactionDirector {
             }
             NpcRole old = r.role;
             String why = spare ? job.spareReason() : idle ? (job.idleReason().isEmpty() ? "nothing to do" : job.idleReason()) : "no " + old.tool.noun();
-            if (idle && !toolless && !othersBusy(level, f, b, r)) {
+            if (idle && !toolless && !othersBusy(level, data, f, b, r)) {
                 b.markBarren(old, t + BARREN_TICKS); // nothing to do here even with its tool: do not hire into it again
             }
             r.role = top.role();
@@ -392,16 +398,18 @@ public final class FactionDirector {
     }
 
     /**
-     * True when another living worker of {@code idle}'s role at this base still has work (or is not loaded, so it
-     * may). The idle one was then only one too many - every mine taken, say - and the role is not barren: if the
-     * busy ones die, the base must hire again. A role is barren only when none of its workers has anything to do.
+     * True when another living worker of {@code idle}'s role at this base still has work, or the base cannot tell (it is
+     * away, or not loaded: it may). The idle one was then only one too many - every mine taken, say - and the role is
+     * not barren: if the busy ones die, the base must hire again. A role is barren only when none of its workers has
+     * anything to do, as far as the base sees (knowledge review of 2026-11-19: a far worker's idleness is unknown at home).
      */
-    private static boolean othersBusy(ServerLevel level, FactionState f, BaseState b, NpcRecord idle) {
+    private static boolean othersBusy(ServerLevel level, CampaignData data, FactionState f, BaseState b, NpcRecord idle) {
         for (NpcRecord o : f.roster.values()) {
             if (o == idle || !o.alive || o.baseId != b.id || o.role != idle.role) {
                 continue;
             }
-            if (!(level.getEntity(o.uuid) instanceof FactionNpc n) || n.job() == null || !n.job().idleFor(RETRAIN_IDLE_TICKS)) {
+            if (!seenAtHome(level, data, f, o) || !(level.getEntity(o.uuid) instanceof FactionNpc n) || n.job() == null
+                    || !n.job().idleFor(RETRAIN_IDLE_TICKS)) {
                 return true;
             }
         }
@@ -409,8 +417,19 @@ public final class FactionDirector {
     }
 
     /**
-     * Base defence: intruders inside the walls (enemy NPCs, enemy players, hostile raiders) are assigned to the
-     * nearest free guards even without line of sight, and anything at the heart draws every guard (spec 14).
+     * Whether the base sees this member now: the roll call has it here ({@code docs/design/missing_npcs.md}) and its
+     * entity stands in a home area of its faction. What a member away does (idle, toolless, its gear) is unknown at home
+     * until it comes back (knowledge review of 2026-11-19).
+     */
+    public static boolean seenAtHome(ServerLevel level, CampaignData data, FactionState f, NpcRecord r) {
+        return r.where == Whereabouts.State.HERE && level.getEntity(r.uuid) instanceof FactionNpc n && n.isAlive()
+                && RollCall.inHomeArea(data, f.type, level, n.blockPosition());
+    }
+
+    /**
+     * Base defence: intruders inside the walls (enemy NPCs, enemy players, hostile raiders) that one of the base's people
+     * sees or hears are assigned to the nearest free guards even without their own line of sight (they are told), and
+     * anything at the heart draws every guard (spec 14).
      */
     public static int defenceAlarm(ServerLevel level, BaseState b) {
         BlockPos heart = b.point(BaseState.HEART);
@@ -427,6 +446,11 @@ public final class FactionDirector {
                         || (e instanceof net.minecraft.server.level.ServerPlayer p && !p.isCreative() && !p.isSpectator()
                         && CampaignData.get(level.getServer()).players.get(p.getUUID()) != null
                         && Diplomacy.hostile(level.getServer(), CampaignData.get(level.getServer()).players.get(p.getUUID()), b.faction))));
+        // only an intruder one of the base's people sees (a line of sight within 24 blocks) or hears close by (3 blocks),
+        // or one at the heart (its blows on the heart are heard across the base): one hidden in a house or a tunnel under
+        // the yard is not handed to the guards (knowledge review of 2026-11-19)
+        long now = level.getGameTime();
+        intruders.removeIf(e -> !(heart != null && e.blockPosition().closerThan(heart, HEART_HEARD)) && !remembered(level, b, e, now));
         // A12: an enemy hero seen on its approach by a base NPC within 24 blocks (a line of sight) raises the alarm before
         // it reaches the box; only an approach out of sight reaches the wall unannounced
         approaching(level, b, walls, intruders);
@@ -468,6 +492,60 @@ public final class FactionDirector {
             }
         }
         return assigned;
+    }
+
+    /** PROPOSED: a member this close hears an intruder it cannot see (a fight, a block broken beside it). */
+    static final double HEARD = 3;
+    /** An intruder this close to the heart is at it, raising the alarm unseen (a raider strikes the heart from 4 blocks). */
+    static final double HEART_HEARD = 4.5;
+    /** PROPOSED: an intruder that hurt one of the base's people this recently is known where it is, seen or not. */
+    static final int HURT_MEMORY = 100;
+    /**
+     * PROPOSED: an intruder noticed this recently stays raised while it is inside the walls box (half a minute), so the
+     * guards do not lose it behind a corner or a door it shut.
+     */
+    static final long NOTICE_MEMORY = 600;
+    /** An intruder noticed at one base. */
+    private record Noticed(UUID who, int base) {
+    }
+
+    /** Intruders each base noticed, and when (game time); old entries are dropped as it grows. */
+    private static final Map<Noticed, Long> NOTICED_AT = new HashMap<>();
+
+    /** {@link #noticed} now, or noticed by this base within {@link #NOTICE_MEMORY}. */
+    static boolean remembered(ServerLevel level, BaseState b, net.minecraft.world.entity.LivingEntity e, long now) {
+        if (noticed(level, b, e)) {
+            if (NOTICED_AT.size() > 512) {
+                NOTICED_AT.values().removeIf(at -> now - at > NOTICE_MEMORY);
+            }
+            NOTICED_AT.put(new Noticed(e.getUUID(), b.id), now);
+            return true;
+        }
+        Long at = NOTICED_AT.get(new Noticed(e.getUUID(), b.id));
+        return at != null && now - at <= NOTICE_MEMORY && now >= at;
+    }
+
+    /**
+     * Whether one of the base's people notices an intruder inside the walls box: one of the four nearest members within
+     * 24 blocks has a line of sight to it, or stands within {@link #HEARD} blocks of it (the same rule as an approaching
+     * hero's, {@link #approaching}), or a member within 24 blocks was hurt by it in the last {@link #HURT_MEMORY} ticks
+     * (a player striking through a gap from behind a wall).
+     */
+    static boolean noticed(ServerLevel level, BaseState b, net.minecraft.world.entity.LivingEntity e) {
+        double r = com.factionclash.logic.hero.FightMobility.APPROACH_SIGHT;
+        List<FactionNpc> lookouts = level.getEntitiesOfClass(FactionNpc.class, e.getBoundingBox().inflate(r),
+                n -> n.isAlive() && n.getFaction() == b.faction && !n.isDisplayOnly() && n != e);
+        lookouts.sort(Comparator.comparingDouble(n -> n.distanceToSqr(e)));
+        for (int i = 0; i < lookouts.size(); i++) {
+            FactionNpc n = lookouts.get(i);
+            if (n.getLastHurtByMob() == e && n.tickCount - n.getLastHurtByMobTimestamp() < HURT_MEMORY) {
+                return true; // it hurt one of them: they know where it is
+            }
+            if (i < 4 && (n.distanceToSqr(e) <= HEARD * HEARD || n.distanceToSqr(e) <= r * r && n.hasLineOfSight(e))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -615,7 +693,12 @@ public final class FactionDirector {
                 return r != null && !r.gone(); // truth: who is left to carry the raid on
             }).toList();
             BaseState target = data.base(f.raidTarget);
-            if (!f.raiders.isEmpty() && f.raidParty > 0 && f.raiders.size() * 2 < f.raidParty && target != null && !target.destroyed) {
+            watchTarget(level, data, f, target, t);
+            // the party knows it won when it broke the heart itself, or found the place in ruins (it saw that); a fall
+            // elsewhere on the map is not its news (knowledge review of 2026-11-19)
+            boolean won = target != null && target.destroyed && target.destroyedBy == f.type; // truth: its own party broke the heart
+            boolean ruinsSeen = f.raidIntel != null && f.raidIntel.fallen;
+            if (!f.raiders.isEmpty() && f.raidParty > 0 && f.raiders.size() * 2 < f.raidParty && target != null && !won && !ruinsSeen) {
                 // more than half the party is down: the survivors fall back rather than die one by one
                 RollCall.tellOrCarry(level, data, f.type, survivors, "The raid on " + target.faction.displayName
                         + " is beaten back - " + f.raiders.size() + " of " + f.raidParty + " soldiers retreat home", null);
@@ -625,13 +708,17 @@ public final class FactionDirector {
             }
             if (f.raiders.isEmpty() || survivors.isEmpty() || t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS) {
                 // (no raider left alive: nobody carries the raid on, nor the news of its end.) The council at home hears
-                // of the end only when its news comes home, or assumes it once the raid's own bound has passed (review of
+                // of the end only when its news comes home, or assumes it once the raid's plan has passed (review of
                 // 2026-11-19: it heard at once, and could send the next raid after a party nobody lived to report on)
-                f.raidEndNews = RollCall.tellOrCarry(level, data, f.type, RollCall.raidEndCarriers(f, survivors), "Raid on "
-                        + (target == null ? "?" : target.faction.displayName) + " has ended"
-                        + (target != null && target.destroyed ? " in victory" : ""), null);
+                String name = target == null ? "?" : target.faction.displayName;
+                f.raidEndNews = RollCall.tellOrCarry(level, data, f.type, RollCall.raidEndCarriers(f, survivors), "Raid on " + name
+                        + " has ended" + (won ? " in victory" : ruinsSeen ? ": its " + (target.isSettlement() ? "settlement" : "lair")
+                        + " was found in ruins" : ""), null);
+                if (f.raidEndNews == null) {
+                    deliverRaidIntel(f, t); // told at home at once: what the party saw of the target with it
+                }
                 // v1 22.1: heroes of a won raid who survived it, and the heroes who held the base it failed against
-                com.factionclash.hero.HeroManager.raidEnded(level, f, target, target != null && target.destroyed);
+                com.factionclash.hero.HeroManager.raidEnded(level, f, target, won);
                 f.raidTarget = -1;
                 f.raidLast = null;
                 if (t - f.raidStartedAt > Whereabouts.RAID_LIMIT_TICKS || survivors.isEmpty()) {
@@ -646,10 +733,13 @@ public final class FactionDirector {
                 NpcRecord r = f.roster.get(u);
                 return r != null && r.alive;
             });
-            if (Whereabouts.raidStillOutAtHome(true, counted, t, f.raidStartedAt)) {
+            // its own plan for the raid (knowledge review of 2026-11-19, known leak 5): a party wiped out unseen is taken as
+            // lost once its raiders are overdue, not at the raid's 3-day limit
+            if (Whereabouts.raidStillOutAtHome(true, counted, t, f.raidPlannedBy(0), RollCall.waits().grace())) {
                 return; // as far as the council knows, its last raid is still out (docs/design/missing_npcs.md 6)
             }
-            f.raidEndNews = null; // past the raid's own bound, or nobody of the party counted: the council takes it as over
+            f.raidEndNews = null; // past the raid's plan, or nobody of the party counted: the council takes it as over
+            f.raidIntel = null; // what the lost party saw is lost with it
             data.setDirty();
         }
         int interval = FCConfig.RAID_INTERVAL_TICKS.get();
@@ -671,8 +761,9 @@ public final class FactionDirector {
         // behaviour), which come with the leaders
         List<FactionNpc> draftable = soldiers.stream().filter(n -> !(n instanceof com.factionclash.hero.HeroEntity)).toList();
         if (!draftable.isEmpty()) {
-            // how well armed the garrison is, as the war councils of other factions will judge it: ordinary soldiers
-            // only (HEROES_V2 8.1), a home hero's war power is added on top of them, so one hero does not inflate eight
+            // how well armed its own garrison is (ordinary soldiers only, HEROES_V2 8.1): the faction's own figure, which
+            // it also assumes of a garrison none of its people has seen (knowledge review of 2026-11-19; no other faction
+            // reads it)
             f.soldierPower = (float) draftable.stream().mapToDouble(FactionDirector::power).average().orElse(1.0);
         }
         party = Math.min(party, draftable.size());
@@ -682,29 +773,34 @@ public final class FactionDirector {
         // war council: of the bases the scouts reported, the weakest garrison first (then the nearest); attack when
         // the party is at least two thirds of its defenders, or - sooner - when it outnumbers a beaten enemy 3 to 2.
         // Strength is weighed by arms and armour, not only heads: eight soldiers in leather do not storm diamond.
+        // Each garrison is judged only by what the faction's own people saw of it (knowledge review of 2026-11-19, known
+        // leak 1): the newest look its scouts or raiders brought home, counting for less as it ages, a garrison like its
+        // own where nobody looked, less the soldiers of that settlement it saw fall at its walls since (Intel). A garrison
+        // that marched out unseen is still believed at home.
         BaseState target = null;
         double best = Double.MAX_VALUE;
-        int targetDefence = 0;
+        Intel.Estimate targetEstimate = null;
+        Report targetReport = null;
         // in a pact: only the conqueror, never an ally
         FactionType sworn = Diplomacy.swornEnemy(data, f.type);
+        Intel.Prior likeOurs = new Intel.Prior(soldiers.size(), f.soldierPower);
         for (Report r : f.knowledge) {
-            if (r.kind != Report.Kind.ENEMY_BASE && r.kind != Report.Kind.LAIR || Diplomacy.allied(data, f.type, r.subject)
-                    || sworn != null && r.subject != sworn) {
+            if (!r.base() || r.fallen || Diplomacy.allied(data, f.type, r.subject) || sworn != null && r.subject != sworn) {
                 continue;
             }
-            for (BaseState b : data.bases.values()) {
-                if (b.faction == r.subject && !b.destroyed && b.center.distSqr(r.pos) < 32 * 32) {
-                    int heads = defenders(data, b);
-                    // in soldier units: heads, plus the home heroes' war power as so many soldiers of that garrison
-                    double unit = b.isSettlement() ? Math.max(0.1, data.faction(b.faction).soldierPower) : 1.0;
-                    double defence = defencePower(level, data, b) / unit;
-                    double score = defence * 1000.0 + Math.sqrt(b.center.distSqr(home.center));
-                    if (score < best) {
-                        best = score;
-                        target = b;
-                        targetDefence = heads;
-                    }
-                }
+            BaseState b = reportedBase(data, r);
+            if (b == null) {
+                continue;
+            }
+            Intel.Estimate e = estimate(data, r, likeOurs, t);
+            // in soldier units: heads, plus the heroes seen as so many soldiers of that garrison
+            double defence = com.factionclash.logic.hero.HeroRules.countedPower(e.soldierPower(), e.heroPower()) / Math.max(0.1, e.power());
+            double score = defence * 1000.0 + Math.sqrt(b.center.distSqr(home.center));
+            if (score < best) {
+                best = score;
+                target = b;
+                targetEstimate = e;
+                targetReport = r;
             }
         }
         if (target == null) {
@@ -715,17 +811,18 @@ public final class FactionDirector {
         double partySoldiers = picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
         double partyHeroes = 0; // heroes go only by their own rules (leaders, behaviour.raids), which come with L4
         double partyPower = com.factionclash.logic.hero.HeroRules.countedPower(partySoldiers, partyHeroes);
-        double defenceSoldiers = targetDefence * (target.isSettlement() ? data.faction(target.faction).soldierPower : 1.0);
-        double defenceHeroes = heroDefence(level, data, target);
+        double defenceSoldiers = targetEstimate.soldierPower();
+        double defenceHeroes = targetEstimate.heroPower();
         double defencePower = com.factionclash.logic.hero.HeroRules.countedPower(defenceSoldiers, defenceHeroes);
         boolean counter = !intervalOver && partyPower * 2 >= defencePower * 3;
-        // a pact offensive: allies already marching on the same base count toward the strength needed
+        // a pact offensive: allies that told the faction of their march on the same base, when they launched it, count
+        // toward the strength needed (their party as launched; never the ally's own records, knowledge review of 2026-11-19)
         double alliedPower = 0;
         if (sworn != null) {
-            for (FactionType m : data.pactMembers) {
-                FactionState ally = data.faction(m);
-                if (m != f.type && ally.raidTarget == target.id) {
-                    alliedPower += ally.raiders.size() * ally.soldierPower;
+            for (Map.Entry<FactionType, FactionState.Offensive> e : f.pactOffensives.entrySet()) {
+                FactionState.Offensive o = e.getValue();
+                if (o.target() == target.id && t <= o.until() && data.pactMembers.contains(e.getKey()) && e.getKey() != f.type) {
+                    alliedPower += o.power();
                 }
             }
         }
@@ -736,15 +833,89 @@ public final class FactionDirector {
                 || alliedPower > 0 && (partySoldiers + alliedPower) * 3 >= defenceSoldiers * 2
                 || intervalOver && partySoldiers * 3 >= defenceSoldiers * 2;
         LAST_COUNCIL.put(f.type, String.format(java.util.Locale.ROOT,
-                "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f), %s%s",
+                "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f; %s), %s%s [truth: %.1f]",
                 t / 24000.0, target.faction.id, target.id, target.isSettlement() ? "settlement" : "lair", partyPower, partyHeroes,
-                defencePower, defenceSoldiers, defenceHeroes, go ? "attack" : "wait",
-                go == goWithout ? "" : go ? " (the heroes decided it)" : " (the defending heroes held it off)"));
+                defencePower, defenceSoldiers, defenceHeroes, seenText(targetReport), go ? "attack" : "wait",
+                go == goWithout ? "" : go ? " (the heroes decided it)" : " (the defending heroes held it off)",
+                defencePower(level, data, target))); // truth: the operators' line (fc admin dump), never the council's
         if (!go) {
             return; // not yet, or not strong enough for that garrison
         }
-        launch(level, data, f, home, target, picks.subList(0, party), targetDefence,
+        launch(level, data, f, home, target, picks.subList(0, party), targetEstimate.heads() + " defenders" + seenText(targetReport, t),
                 joint ? "Joining the pact's offensive! " : counter ? "Counter-attack! " : "", t);
+    }
+
+    /**
+     * The settlement or lair a report names: the base of its subject its observer saw there (the nearest within 32 blocks
+     * of the report). Whether it still stands is the report's to say ({@link Report#fallen}), not the base record's.
+     */
+    static BaseState reportedBase(CampaignData data, Report r) {
+        BaseState best = null;
+        for (BaseState b : data.bases.values()) {
+            if (b.faction == r.subject && b.center.distSqr(r.pos) < 32 * 32 && (best == null || b.center.distSqr(r.pos) < best.center.distSqr(r.pos))) {
+                best = b;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * The council's estimate of a reported base's defence ({@link Intel#estimate}): the report's look, the losses seen since,
+     * and the prior: for a settlement a garrison like the council's own ({@code likeOurs}); for a lair, as grown as the
+     * campaign's days allow (every faction knows how lairs grow).
+     */
+    static Intel.Estimate estimate(CampaignData data, Report r, Intel.Prior likeOurs, long t) {
+        Intel.Prior prior = r.kind == Report.Kind.LAIR
+                ? new Intel.Prior(Intel.lairPrior(FCConfig.LAIR_BASE_CAP.get(), FCConfig.LAIR_MAX_CAP.get(), t - data.startedAt), 1.0)
+                : likeOurs;
+        return Intel.estimate(r.look, r.losses, prior, t);
+    }
+
+    /** "seen day 3", or "never seen". */
+    private static String seenText(Report r) {
+        return r == null || r.look == null ? "garrison never seen" : "seen day " + Whereabouts.day(r.look.at());
+    }
+
+    /** ", as seen on day 3", or ", a garrison none of ours has seen" (the launch line). */
+    private static String seenText(Report r, long t) {
+        return r == null || r.look == null ? ", a garrison none of ours has seen" : ", as seen on day " + Whereabouts.day(r.look.at());
+    }
+
+    /**
+     * Each director pass of a raid under way: what the raiders at the target see of it (up to three looks), kept as the
+     * party's best look ({@link FactionState#raidIntel}), its ruins when its heart is gone and the place in view. It
+     * reaches home with the raid's end.
+     */
+    private static void watchTarget(ServerLevel level, CampaignData data, FactionState f, BaseState target, long t) {
+        if (target == null) {
+            return;
+        }
+        int looked = 0;
+        for (UUID u : f.raiders) {
+            if (looked >= 3) {
+                break;
+            }
+            if (level.getEntity(u) instanceof net.minecraft.world.entity.LivingEntity e && e.isAlive()) {
+                Report seen = BaseWatch.look(level, e, target, t);
+                if (seen != null) {
+                    looked++;
+                    f.raidIntel = f.raidIntel == null ? seen : Report.mergeBase(f.raidIntel, seen, true);
+                    data.setDirty();
+                }
+            }
+        }
+    }
+
+    /** The raid's end is told at home: what its party saw of the target becomes the faction's report of it. */
+    static void deliverRaidIntel(FactionState f, long t) {
+        if (f.raidIntel == null) {
+            return;
+        }
+        Report r = f.raidIntel;
+        f.raidIntel = null;
+        r.deliveredAt = t;
+        r.by = "the raid party";
+        f.addReport(r);
     }
 
     /**
@@ -776,17 +947,31 @@ public final class FactionDirector {
             return f.type.displayName + " has no soldier at home to send";
         }
         picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
-        launch(level, data, f, home, target, picks.subList(0, party), defenders(data, target), "By order! ",
-                level.getGameTime());
+        // the faction's own view of the target (its report, else a garrison like its own), never the target's records
+        Report known = null;
+        for (Report r : f.knowledge) {
+            if (r.base() && reportedBase(data, r) == target) {
+                known = r;
+            }
+        }
+        long now = level.getGameTime();
+        Intel.Prior likeOurs = new Intel.Prior(picks.size(), f.soldierPower);
+        Intel.Estimate e = known != null ? estimate(data, known, likeOurs, now) : Intel.estimate(null, 0, likeOurs, now);
+        launch(level, data, f, home, target, picks.subList(0, party), e.heads() + " defenders" + seenText(known, now), "By order! ", now);
         return f.type.displayName + " raids base " + target.id + " with " + party + " soldiers";
     }
 
-    /** Sends a raid party: the raiders, the target, the rally 28 blocks short of it on the home side, the message. */
+    /**
+     * Sends a raid party: the raiders, the target, the rally 28 blocks short of it on the home side, the council's plan
+     * for the raid (knowledge review of 2026-11-19: the march there, the muster, the assault and the march home), the
+     * pact allies told of it, the message ({@code defenders}: "about N defenders, as seen on day D").
+     */
     private static void launch(ServerLevel level, CampaignData data, FactionState f, BaseState home, BaseState target,
-                               List<FactionNpc> party, int targetDefence, String prefix, long t) {
+                               List<FactionNpc> party, String defenders, String prefix, long t) {
         f.raiders.clear();
         f.raidEndNews = null; // a new raid: the last one's end is old news
         f.raidLast = null;
+        f.raidIntel = null;
         f.lastParty.clear();
         for (FactionNpc n : party) {
             f.raiders.add(n.getUUID());
@@ -799,14 +984,26 @@ public final class FactionDirector {
         // before going in together
         int[] r = com.factionclash.logic.Zones.rally(target.center.getX(), target.center.getZ(), home.center.getX(),
                 home.center.getZ(), 28);
-        f.raidRally = new BlockPos(r[0], target.center.getY(), r[1]).asLong();
+        BlockPos rally = new BlockPos(r[0], target.center.getY(), r[1]);
+        f.raidRally = rally.asLong();
         f.raidStartedAt = t;
+        f.raidPlanTicks = Whereabouts.raidPlanTicks(Math.sqrt(home.center.distSqr(rally)), Math.sqrt(target.center.distSqr(home.center)));
         f.lastRaidAt = t;
         f.raidsLaunched++;
+        // the pact's members are told of the offensive as it is launched: its target, its strength, its plan
+        FactionType sworn = Diplomacy.swornEnemy(data, f.type);
+        if (sworn != null && target.faction == sworn) {
+            double power = party.stream().mapToDouble(FactionDirector::power).sum();
+            for (FactionType m : data.pactMembers) {
+                if (m != f.type) {
+                    data.faction(m).pactOffensives.put(f.type, new FactionState.Offensive(target.id, power, t + f.raidPlanTicks));
+                }
+            }
+        }
         data.setDirty();
         Messages.toFaction(level.getServer(), f.type, Component.literal(prefix
                 + "Launching a raid with " + party.size()
-                + " soldiers (against about " + targetDefence + " defenders) on the "
+                + " soldiers (against about " + defenders + ") on the "
                 + target.faction.displayName + (target.isSettlement() ? " settlement" : " lair") + " reported at " + target.center.toShortString()));
     }
 
@@ -901,8 +1098,8 @@ public final class FactionDirector {
             if (e instanceof Mob m && m.isAlive()) {
                 mobs.add(m);
                 MISSING_SINCE.remove(u);
-            } else if (e != null) {
-                lair.lairMobs.remove(u); // present but dead
+            } else if (e != null && atLair(lair, e.blockPosition())) {
+                lair.lairMobs.remove(u); // dead at the lair: seen there
                 data.setDirty();
             } else {
                 // Entities load asynchronously after a restart: only forget a monster after a long absence,
@@ -931,6 +1128,18 @@ public final class FactionDirector {
             ChunkLoading.updateTraveler(m, m.distanceToSqr(lair.center.getX(), m.getY(), lair.center.getZ()) > 28 * 28);
         }
         lairRaid(level, data, lair, mobs, t);
+    }
+
+    /**
+     * PROPOSED: a lair's own ground, where its monsters see one of theirs fall (the 28 blocks its monsters keep chunks
+     * loaded within, ChunkLoading). Beyond it a death is the lair's only once the monster stays away.
+     */
+    public static final int LAIR_GROUND = 28;
+
+    /** Within the lair's own ground ({@link #LAIR_GROUND}, horizontally). */
+    public static boolean atLair(BaseState lair, BlockPos p) {
+        double dx = p.getX() - lair.center.getX(), dz = p.getZ() - lair.center.getZ();
+        return dx * dx + dz * dz <= LAIR_GROUND * LAIR_GROUND;
     }
 
     private static void lairRaid(ServerLevel level, CampaignData data, BaseState lair, List<Mob> mobs, long t) {
@@ -975,7 +1184,8 @@ public final class FactionDirector {
         if (t - lair.lastLairRaid < FCConfig.LAIR_RAID_INTERVAL_TICKS.get() || mobs.size() < 4) {
             return;
         }
-        // The Hollow senses settlements within its territory (PROPOSED: 300 blocks); no global knowledge.
+        // The Hollow senses settlements within its territory (PROPOSED: 300 blocks): an explicit exception to "a faction
+        // knows only what its people saw" (docs/design/knowledge.md), its monsters never leave the lair to scout
         BaseState target = null;
         double best = 300 * 300;
         for (BaseState b : data.bases.values()) {
