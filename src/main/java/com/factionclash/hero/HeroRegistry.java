@@ -67,6 +67,12 @@ public final class HeroRegistry {
     private static volatile HeroReader.Loaded definitions = new HeroReader.Loaded(Map.of(), Map.of(), List.of(), new Problems());
     /** The server definitions the reload listener last read, and the operator's overrides. */
     private static volatile List<HeroReader.Source> definitionSources = List.of();
+    /**
+     * Whether server definitions were ever read in this JVM (the reload listener or {@code /fc hero reload}). A client
+     * connected to a dedicated server never reads any (definitions are server data), nor does any game before its first
+     * world loads.
+     */
+    private static volatile boolean definitionsRead;
     private static volatile List<HeroReader.Source> overrideSources = List.of();
     private static volatile Set<String> shipped;
     private static final Map<String, Transient> TRANSIENT = new ConcurrentHashMap<>();
@@ -174,6 +180,7 @@ public final class HeroRegistry {
     public static synchronized void reload(ResourceManager resources) {
         if (resources != null) {
             definitionSources = HeroDefinitions.read(resources);
+            definitionsRead = true;
         }
         reload();
     }
@@ -185,6 +192,7 @@ public final class HeroRegistry {
      */
     static synchronized void setDefinitionSources(List<HeroReader.Source> sources) {
         definitionSources = List.copyOf(sources);
+        definitionsRead = true;
         reload();
     }
 
@@ -222,11 +230,33 @@ public final class HeroRegistry {
                 FactionClash.LOGGER.warn(p.log());
             }
         }
-        for (Map.Entry<String, HeroEntry> e : heroes.entrySet()) {
+        for (String id : dormantToReport(heroes, definitionsRead)) {
+            FactionClash.LOGGER.warn("[Heroes] {} has no valid definition: dormant (a plain soldier with the neutral look)", id);
+        }
+    }
+
+    /**
+     * The heroes a load reports as dormant: none until server definitions have been read (checkpoint 2 in game,
+     * 2026-11-19: the client of a dedicated server, which never reads them, warned at every resource load that every
+     * hero, Natsuho and Hinae included, was "dormant (a plain soldier with the neutral look)" while it drew them in their
+     * own models), then every hero without a valid definition.
+     */
+    public static List<String> dormantToReport(Map<String, HeroEntry> entries, boolean definitionsWereRead) {
+        if (!definitionsWereRead) {
+            return List.of();
+        }
+        List<String> ids = new ArrayList<>();
+        for (Map.Entry<String, HeroEntry> e : entries.entrySet()) {
             if (e.getValue().dormant()) {
-                FactionClash.LOGGER.warn("[Heroes] {} has no valid definition: dormant (a plain soldier with the neutral look)", e.getKey());
+                ids.add(e.getKey());
             }
         }
+        return ids;
+    }
+
+    /** Whether server definitions were ever read in this JVM ({@link #dormantToReport}). */
+    public static boolean definitionsRead() {
+        return definitionsRead;
     }
 
     /**

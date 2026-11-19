@@ -865,6 +865,8 @@ kit changes; from C1 on herogen writes it from the hero source.
 | 4. Campaigns | V1-V3 done | the full gallery and the campaign numbers |
 | 5. Release | V4-V5 done | the report: what changed, what was verified, what is left |
 
+Status (2026-11-19): checkpoint 1 reached 2026-11-12 (`docs/heroes-v2/previews/game/cp1/`). Checkpoint 2 reached in game 2026-11-19 for Natsuho, and for Hinae with her: both as built-in heroes in their own models on a dedicated server with the real client, every move, phase and face, Natsuho's boss fight against a player and against NPC soldiers, her escape and her stand at home, Hinae healing her allies, pushes into lava and the kill feed, plus the 3-day smoke of design §14.4 gate 5 (design §15.2 "Checkpoint 2 in game"; screenshots and GIFs in `docs/heroes-v2/previews/game/cp2/`). The owner's feedback on the look is next, before C2-C4.
+
 Parallel tracks from the start: F1-F4, G1 and L1-L3 need neither GeckoLib nor each other; A0 needs only the download
 (and the owner's network approval if the host is refused again).
 

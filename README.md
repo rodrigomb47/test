@@ -517,7 +517,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 356 GameTests on a real headless server, including **heroes** (the review of the
+* `./gradlew runGameTestServer` — 358 GameTests on a real headless server, including **heroes** (checkpoint 2's live check: Hinae heals hurt allies with Purify by her own choice in a fight, and a client logs no hero as dormant before any definitions are read; the review of the
   round's terrain work: a stunned soldier neither drinks its Fire Resistance nor pours its water bucket, as a stunned
   player cannot drink, and drinks once the stun is over; a soldier saved between its water landing's pour and its
   touch-down picks its water up again; a hero among five pushers still gives a soldier its 6-block edge sense; a hero
