@@ -432,6 +432,68 @@ public final class KnowledgeGameTests {
         }
     }
 
+    /**
+     * Live check of a faction's fall (2026-11-25): Stoneguard's council sent a party on the Grove Covenant's settlement,
+     * which the Ember Legion had razed 1.6 days before where none of Stoneguard saw. Its raiders saw the heart gone and
+     * turned to loot the ruins, but the raid "has ended" with no word of them: the party kept only the director's looks
+     * of the yard, none with the heart's place in view, so its council went on weighing Grove's ruins as a standing base.
+     * A raider that sees its target in ruins keeps them for the party: the raid ends "found in ruins", the ruins replace
+     * the standing report, and the council no longer picks them.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_raidruins")
+    public static void aPartyThatFindsRuinsBringsThemHome(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        List<Messages.Said> lines = recording(t);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(FAR_X, 2, FAR_Z)));
+            Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
+            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            deliver(t, f, seen, now);
+            // the Ember Legion razed it, unseen by us; our raid on it is under way, its raider on the march beside the ruins
+            enemy.destroyed = true;
+            enemy.destroyedBy = FactionType.EMBER_LEGION;
+            enemy.destroyedAt = now;
+            FactionNpc raider = member(t, HOME_X, HOME_Z + 1, NpcRole.SWORDSMAN);
+            f.raidTarget = enemy.id;
+            f.raiders.add(raider.getUUID());
+            f.raidParty = 1;
+            f.raidStartedAt = now;
+            f.raidMusteredAt = now; // (past the muster)
+            t.assertTrue(BaseWatch.seesFall(raider, enemy), "the raider beside the ruins does not see them");
+            // its guard job on the march: it sees the heart gone and turns to what is left there
+            call(com.factionclash.work.GuardJob.class, raider.job(), "run", new Class<?>[0]);
+            Object state = get(com.factionclash.work.GuardJob.class, raider.job(), "state");
+            t.assertTrue(!"RAID_TRAVEL".equals(String.valueOf(state)), "the raider did not see the fall: " + state);
+            // it comes home and the raid ends there; no look the director took had the heart's place in view (it took none)
+            f.leaveRaid(raider.getUUID());
+            raids(t, f, now + 100);
+            t.assertTrue(f.raidTarget < 0, "the raid did not end with its party home");
+            t.assertTrue(said(lines, SIDE, "found in ruins"), "the raid's end told no ruins");
+            t.assertTrue(!said(lines, SIDE, "ended in victory"), "a victory was told for ruins another faction made");
+            t.assertTrue(f.knowledge.stream().anyMatch(r -> r.subject == ENEMY && r.pos.equals(enemy.center) && r.fallen),
+                    "the ruins the raider saw did not replace the standing report");
+            f.lastRaidAt = now - interval - 1;
+            FactionDirector.LAST_COUNCIL.remove(SIDE);
+            raids(t, f, now + 200);
+            t.assertTrue(f.raidTarget < 0 && FactionDirector.LAST_COUNCIL.get(SIDE) == null,
+                    "the council weighs the ruins its party found: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
     // ------------------------------------------------------------------ the raid's plan (known leak 5)
 
     /**

@@ -699,13 +699,11 @@ public final class FactionDirector {
             // the party knows it won when it broke the heart itself, or found the place in ruins (it saw that); a fall
             // elsewhere on the map is not its news (knowledge review of 2026-11-19)
             boolean won = target != null && target.destroyed && target.destroyedBy == f.type; // truth: its own party broke the heart
-            if (won && (f.raidIntel == null || !f.raidIntel.fallen)) {
+            if (won) {
                 // the raider that broke the heart saw it go: the party brings the ruins home with the raid's end (live
                 // check of the knowledge review, 2026-11-19: the parties' looks had missed the heart's place after the
                 // fall, so two councils came home "in victory" and kept weighing their conquests' ruins as standing bases)
-                Report ruins = BaseWatch.ruins(target, t);
-                f.raidIntel = f.raidIntel == null ? ruins : Report.mergeBase(f.raidIntel, ruins, true);
-                data.setDirty();
+                partySawRuins(data, f, target, t);
             }
             boolean ruinsSeen = f.raidIntel != null && f.raidIntel.fallen;
             if (!f.raiders.isEmpty() && f.raidParty > 0 && f.raiders.size() * 2 < f.raidParty && target != null && !won && !ruinsSeen) {
@@ -883,6 +881,24 @@ public final class FactionDirector {
     /** ", as seen on day 3", or ", a garrison none of ours has seen" (the launch line). */
     private static String seenText(Report r, long t) {
         return r == null || r.look == null ? ", a garrison none of ours has seen" : ", as seen on day " + Whereabouts.day(r.look.at());
+    }
+
+    /**
+     * A raider of {@code f}'s party (a soldier or a hero) sees its target in ruins, its heart gone and the heart's place in
+     * view ({@link BaseWatch#seesFall}): the party keeps the ruins and brings them home with the raid's end ("its settlement
+     * was found in ruins", or "in victory" when its own people broke the heart), and the ruins replace the standing report
+     * (docs/design/knowledge.md 2). Live check of a faction's fall (2026-11-25): a party that found ruins another faction
+     * had made turned to loot them, but kept only the director's looks of the yard, none with the heart's place in view,
+     * so it came home with a standing base and its council went on weighing the ruins as a target. Does nothing for a base
+     * that stands, or one that is not the target of the raid under way.
+     */
+    public static void partySawRuins(CampaignData data, FactionState f, BaseState target, long now) {
+        if (f == null || target == null || !target.destroyed || f.raidTarget != target.id || f.raidIntel != null && f.raidIntel.fallen) {
+            return;
+        }
+        Report ruins = BaseWatch.ruins(target, now);
+        f.raidIntel = f.raidIntel == null ? ruins : Report.mergeBase(f.raidIntel, ruins, true);
+        data.setDirty();
     }
 
     /**

@@ -189,8 +189,10 @@ public class GuardJob extends Job {
             return;
         }
         if (com.factionclash.campaign.BaseWatch.seesFall(npc, target)) {
-            // its heart is gone and the raider sees it: the ruins' storehouse is there for the taking. A fall it cannot
-            // see (far off on the march) is not its news (knowledge review of 2026-11-19)
+            // its heart is gone and the raider sees it: the ruins' storehouse is there for the taking, and the party brings
+            // the ruins home (FactionDirector.partySawRuins). A fall it cannot see (far off on the march) is not its news
+            // (knowledge review of 2026-11-19)
+            com.factionclash.campaign.FactionDirector.partySawRuins(data(), f, target, now());
             state = State.RAID_LOOT;
             return;
         }
@@ -241,7 +243,8 @@ public class GuardJob extends Job {
     private void raidAssault(FactionState f) {
         BaseState target = data().base(f.raidTarget);
         if (target == null || target.destroyed) {
-            state = State.RAID_LOOT; // (at the heart: it sees the heart broken)
+            com.factionclash.campaign.FactionDirector.partySawRuins(data(), f, target, now()); // (at the heart: it sees it broken)
+            state = State.RAID_LOOT;
             return;
         }
         BlockPos heart = target.point(BaseState.HEART);

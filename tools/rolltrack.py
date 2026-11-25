@@ -116,7 +116,7 @@ class War:
                 self.wl.write(f"{day:8.3f} {fn:15s} LAUNCH #{n} on base {tgt} ({b['faction']} {b['kind'].lower()}): {line}\n"
                               f"{'':25s} report used: {look_text(report_of(fac, b), t)}\n"
                               f"{'':25s} truth now: " + (f"{g['soldiers']} soldiers in its walls, heroes {g['heroes']}" if g else
-                                                         f"lair mobs {b['lairMobs']}")
+                                                         "ruins, its heart gone" if b.get("destroyed") else f"lair mobs {b['lairMobs']}")
                               + (f"; its own raid party out since day {left / 24000.0:.2f}" if away and left else "") + "\n")
             if fn in self.target and self.target[fn] >= 0 and tgt < 0:
                 self.wl.write(f"{day:8.3f} {fn:15s} RAID OVER (was base {self.target[fn]})\n")

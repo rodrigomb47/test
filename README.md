@@ -575,7 +575,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 409 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 410 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers

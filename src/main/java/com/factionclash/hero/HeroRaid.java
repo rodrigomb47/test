@@ -158,10 +158,15 @@ public final class HeroRaid {
 
     /**
      * Whether the hero sees that its target has fallen (its heart gone, the place in view): a fall far off is not its
-     * news on the march (knowledge review of 2026-11-19; the raid's end reaches it with the party).
+     * news on the march (knowledge review of 2026-11-19; the raid's end reaches it with the party). Ruins it sees, the
+     * party brings home ({@code FactionDirector.partySawRuins}).
      */
     private boolean seesFall(BaseState t) {
-        return com.factionclash.campaign.BaseWatch.seesFall(hero, t);
+        if (!com.factionclash.campaign.BaseWatch.seesFall(hero, t)) {
+            return false;
+        }
+        com.factionclash.campaign.FactionDirector.partySawRuins(data(), faction(), t, hero.level().getGameTime());
+        return true;
     }
 
     private void rally(FactionState f, BaseState t) {

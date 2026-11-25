@@ -94,8 +94,10 @@ people sees the ruins: a scout (or raider) with the heart's place in view report
 that sees the walls or the yard but not the heart's place does not raise the ruins again (section 11). The council never targets a fallen report and may
 target a base that fell unseen (a raid sent to ruins is the player-like mistake). Raiders and raiding heroes learn the
 fall only when they see the heart's place within 48 blocks (`BaseWatch.seesFall`; `GuardJob`, `HeroRaid`), then loot
-what is left. "Has ended in victory" only when the faction's own people broke the heart; "its settlement was found in
-ruins" when the party saw ruins it did not make. The scouts' `rivalKnown` reads only the faction's reports.
+what is left, and the party keeps the ruins it saw for home (`FactionDirector.partySawRuins`; before the live check of
+2026-11-25 only a party that broke the heart itself kept them, so a party that found another faction's ruins came home
+with a look of the yard and its council kept weighing them). "Has ended in victory" only when the faction's own people
+broke the heart; "its settlement was found in ruins" when the party saw ruins it did not make. The scouts' `rivalKnown` reads only the faction's reports.
 An escaping hero whose home falls reacts only if it is in that base's home area (`HeroBossEvents.baseLost`).
 
 ## 3. A raid's expected return is its plan (known leak 5)
