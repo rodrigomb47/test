@@ -39,8 +39,7 @@ import java.util.List;
  * whether anyone is a player. The particles and the sound are vanilla's, by id.
  *
  * <p>The own-side check of the pick ({@link #ownSideDistance}): the distance to the nearest block of the hero's own
- * side, its faction's or a pact ally's bases (the walls box at any height, and the box round each base's planned
- * buildings).
+ * side, its faction's bases (the walls box at any height, and the box round each base's planned buildings).
  */
 public final class HeroBlasts {
     private HeroBlasts() {
@@ -152,7 +151,7 @@ public final class HeroBlasts {
 
     /**
      * The horizontal distance from {@code (x, z)} to the nearest block of {@code hero}'s own side: anything inside
-     * the walls box of a standing base of its faction or of a pact ally, or the box round that base's planned buildings
+     * the walls box of a standing base of its faction, or the box round that base's planned buildings
      * (6.18). Infinite when none is within {@link #OWN_SIDE_LOOK}, the hero has no faction, or it is not in the overworld,
      * where every base stands.
      */
@@ -164,7 +163,7 @@ public final class HeroBlasts {
         CampaignData data = CampaignData.get(hero.getServer());
         double best = Double.POSITIVE_INFINITY;
         for (BaseState b : data.bases.values()) {
-            if (b.destroyed || b.center == null || !Diplomacy.allied(data, f, b.faction)) {
+            if (b.destroyed || b.center == null || !Diplomacy.allied(f, b.faction)) {
                 continue;
             }
             int half = BaseZones.half(b);

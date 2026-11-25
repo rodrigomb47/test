@@ -115,18 +115,97 @@ public final class HeroManager {
                 snapshot(s, h);
                 h.discard();
             }
-            if (was != null) {
-                data.faction(was).roster.remove(s.uuid);
-            }
+        }
+        free(data, s);
+        if (was != null) {
+            Messages.toFaction(server, was, Component.literal(nameOf(s.id) + " " + why + "."));
+        }
+    }
+
+    /**
+     * The hero serves no faction from now (released, or its faction fell): its roster entry goes, it keeps its level,
+     * experience and traits for whoever takes it next (a hero of a fallen faction may be recruited again by a later
+     * milestone), and it has no revival pending. Any entity copy of it that loads later is a stale one ({@link #mayJoin}).
+     */
+    private static void free(CampaignData data, HeroState s) {
+        if (s.owner != null && s.uuid != null) {
+            data.faction(s.owner).roster.remove(s.uuid);
         }
         s.owner = null;
         s.baseId = -1;
         s.alive = false;
         s.reviveAt = 0;
         data.setDirty();
-        if (was != null) {
-            Messages.toFaction(server, was, Component.literal(nameOf(s.id) + " " + why + "."));
+    }
+
+    // ------------------------------------------------------------------ a faction's fall
+
+    /**
+     * Its faction has fallen ({@code logic/campaign/Elimination}): every hero of it dies with it and never comes back
+     * (no base to rise at); each is a free hero from then on, its level kept. A hero alive in a loaded place is killed
+     * there (its own death is the kill feed's line and frees it, {@link #onDeath}); one alive away in an unloaded place
+     * dies unseen, with one kill-feed line now; one already dead and waiting to rise is freed with nothing more told.
+     * Called at the elimination, and from {@link #tick} for a save in which a faction fell before this rule.
+     */
+    public static void factionFell(MinecraftServer server, CampaignData data, FactionType faction) {
+        for (HeroState s : new ArrayList<>(data.heroes.values())) {
+            if (s.owner == faction) {
+                fellWithFaction(server, data, s);
+            }
         }
+    }
+
+    /** One hero of a fallen faction (see {@link #factionFell}); does nothing for a hero that serves no faction. */
+    private static void fellWithFaction(MinecraftServer server, CampaignData data, HeroState s) {
+        if (s.owner == null) {
+            return;
+        }
+        HeroEntity h = living(s);
+        switch (com.factionclash.logic.campaign.Elimination.heroFate(s.alive, h != null)) {
+            case DIES_THERE -> {
+                h.kill(); // its death (onDeath) frees it, and the feed tells it
+                if (h.isAlive()) {
+                    h.setHealth(0);
+                    h.die(h.damageSources().genericKill());
+                }
+                if (s.owner != null) {
+                    settleFallen(data, s, h); // (a death that did not reach onDeath)
+                }
+            }
+            case TOLD_AND_FREED -> {
+                // it dies where it is, unseen: the feed tells every hero's death, so this one is told now, in vanilla's
+                // generic words with its faction beside its name (owner, 2026-11-25)
+                HeroKillFeed.fellAway(server, nameOf(s.id), s.owner);
+                settleFallen(data, s, null);
+            }
+            case FREED -> settleFallen(data, s, null);
+        }
+    }
+
+    /** A hero of a fallen faction is dead for good: counted as a death if it was alive, then free. */
+    private static void settleFallen(CampaignData data, HeroState s, HeroEntity h) {
+        if (h != null) {
+            snapshot(s, h);
+        }
+        if (s.alive) {
+            s.deaths++;
+        }
+        FactionType was = s.owner;
+        free(data, s);
+        FactionClash.LOGGER.info("[Heroes] {} fell with the {} and is free (level {})", s.id, was == null ? "?" : was.displayName, s.level);
+    }
+
+    /** The campaign's own living entity of this hero in any loaded place (any dimension), or null. */
+    private static HeroEntity living(HeroState s) {
+        if (s.uuid == null) {
+            return null;
+        }
+        for (HeroEntity h : HeroEntity.live()) {
+            if (s.uuid.equals(h.getUUID()) && h.isAlive() && !h.isPreview()) {
+                return h;
+            }
+        }
+        return null;
     }
 
     /** A new campaign: every hero is released, and the loaded hero entities leave the world. */
@@ -352,6 +431,13 @@ public final class HeroManager {
         if (s == null || !s.alive || !h.getUUID().equals(s.uuid)) {
             return;
         }
+        if (s.owner != null && com.factionclash.campaign.CampaignManager.fallen(data, s.owner)) {
+            // it dies with its fallen faction (or after it, a straggler): no base to rise at, so it never returns and is
+            // free from now; the kill feed has told its death; nobody of its faction is left to hear of it
+            h.say(LineEvent.FALLEN);
+            settleFallen(data, s, h);
+            return;
+        }
         // the killer: the blow's, or the enemy whose push or blow came within 15 s of a death by terrain (6.17)
         Entity killer = source == null ? null : com.factionclash.combat.KillCredits.killer(h, source); // truth: the killer's name in the hero's last words and the fall's line (presentation); the witnesses carry the line
         h.say(LineEvent.FALLEN, killer == null ? java.util.Map.of() : java.util.Map.of("enemy", HeroEntity.nameOf(killer)), null);
@@ -530,6 +616,12 @@ public final class HeroManager {
         long now = server.overworld().getGameTime();
         for (HeroState s : new ArrayList<>(data.heroes.values())) {
             if (s.owner == null) {
+                continue;
+            }
+            if (com.factionclash.campaign.CampaignManager.fallen(data, s.owner)) {
+                // its faction fell (a save from before every member died with its faction, or a hero that slipped through):
+                // dead for good and free, never "has no standing base to return to and leaves" ten minutes later
+                fellWithFaction(server, data, s);
                 continue;
             }
             if (s.alive) {

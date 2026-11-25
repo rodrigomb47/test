@@ -153,13 +153,12 @@ public final class FCEvents {
 
     /**
      * Whether a player of faction {@code player} (null: none) is an outsider to a base of {@code base}: not of its
-     * faction and not allied to it. A player of no faction counts: it is neutral until it fights, but a block it
-     * puts in a base (a pillar to hit soldiers from) is no more the base's than an enemy's is (live check: the
-     * soldiers could not touch a factionless player's pillar in their yard).
+     * faction. A player of no faction counts: it is neutral until it fights, but a block it puts in a base (a pillar to
+     * hit soldiers from) is no more the base's than an enemy's is (live check: the soldiers could not touch a factionless
+     * player's pillar in their yard).
      */
-    public static boolean outsider(net.minecraft.server.MinecraftServer server, com.factionclash.faction.FactionType player,
-                                   com.factionclash.faction.FactionType base) {
-        return player != base && (player == null || com.factionclash.campaign.Diplomacy.hostile(server, player, base));
+    public static boolean outsider(com.factionclash.faction.FactionType player, com.factionclash.faction.FactionType base) {
+        return !com.factionclash.campaign.Diplomacy.allied(player, base);
     }
 
     @SubscribeEvent
@@ -176,7 +175,7 @@ public final class FCEvents {
                 b.playerEdits.add(event.getPos().asLong());
             }
             data.setDirty();
-        } else if (b != null && !p.isCreative() && outsider(p.server, data.players.get(p.getUUID()), b.faction)
+        } else if (b != null && !p.isCreative() && outsider(data.players.get(p.getUUID()), b.faction)
                 && b.intruderBlocks.size() < BaseState.MAX_INTRUDER_BLOCKS) {
             // an enemy or a player of no faction building in the base (a block in a doorway, a pillar to stand on):
             // its soldiers may break it when it is in their way to someone they fight
@@ -204,7 +203,18 @@ public final class FCEvents {
         }
     }
 
-    /** Respawn at the nearest surviving allied base when the player has no bed (spec 1). */
+    /**
+     * A member player whose faction fell while it was offline dies as it logs in (single-player: as the world loads),
+     * as every member of a fallen faction does, and is factionless from then on.
+     */
+    @SubscribeEvent
+    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer p) {
+            com.factionclash.campaign.CampaignManager.loggedIn(p);
+        }
+    }
+
+    /** Respawn at the nearest surviving base of its faction when the player has no bed (spec 1). */
     @SubscribeEvent
     public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.isEndConquered() || !(event.getEntity() instanceof ServerPlayer p)) {

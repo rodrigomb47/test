@@ -72,10 +72,9 @@ public final class CombatRules {
         return CampaignData.get(p.server).players.get(p.getUUID()) == f;
     }
 
-    /** Same faction, or allied by a pact (no friendly fire, no retaliation, no alarms between them). */
+    /** Same faction (no friendly fire, no retaliation, no alarms between them). */
     public static boolean sameSide(Entity a, Entity b) {
-        FactionType fa = factionOf(a), fb = factionOf(b);
-        return fa != null && fb != null && (fa == fb || com.factionclash.campaign.Diplomacy.allied(a.getServer(), fa, fb));
+        return com.factionclash.campaign.Diplomacy.allied(factionOf(a), factionOf(b));
     }
 
     public static boolean isEnemyPlayer(FactionNpc npc, ServerPlayer p) {
@@ -83,6 +82,6 @@ public final class CombatRules {
             return false;
         }
         FactionType f = CampaignData.get(p.server).players.get(p.getUUID());
-        return com.factionclash.campaign.Diplomacy.hostile(p.server, f, npc.getFaction());
+        return com.factionclash.campaign.Diplomacy.hostile(f, npc.getFaction());
     }
 }

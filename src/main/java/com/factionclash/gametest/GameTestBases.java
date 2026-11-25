@@ -85,11 +85,17 @@ public final class GameTestBases {
         private final List<UUID> absent = new ArrayList<>();
         private final List<Runnable> undo = new ArrayList<>();
         private boolean cleaned;
+        /** The faction's survival as it was at the registration (a faction never eliminated when it had no state). */
+        private final boolean factionAlive;
+        private final long factionEliminatedAt;
 
         private Handle(GameTestHelper helper, CampaignData data, BaseState base) {
             this.helper = helper;
             this.data = data;
             this.base = base;
+            com.factionclash.campaign.FactionState f = data.factions.get(base.faction);
+            this.factionAlive = f == null || f.alive;
+            this.factionEliminatedAt = f == null ? 0 : f.eliminatedAt;
         }
 
         /** Spawns an NPC of the base's faction at relative (x, 2, z) and registers it as a member of the base. */
@@ -217,6 +223,13 @@ public final class GameTestBases {
             extras.clear();
             undo.forEach(Runnable::run);
             undo.clear();
+            // a test whose base was its faction's last to fall eliminated that faction: it stands again for the next test,
+            // whose members would otherwise die on their first tick (CampaignManager.diesWithFaction)
+            com.factionclash.campaign.FactionState f = data.factions.get(base.faction);
+            if (f != null) {
+                f.alive = factionAlive;
+                f.eliminatedAt = factionEliminatedAt;
+            }
             data.setDirty();
         }
     }

@@ -142,8 +142,8 @@ class KnowledgeIsolationTest {
                         found.add(head + " reads another's " + m.group(2) + ": " + line.trim());
                     }
                 }
-                if (code.contains("data.faction(") && !code.contains("pactOffensives.put")) {
-                    found.add(head + " reads another faction's state: " + line.trim()); // (telling the allies is a write)
+                if (code.contains("data.faction(")) {
+                    found.add(head + " reads another faction's state: " + line.trim());
                 }
             }
         }
@@ -153,8 +153,9 @@ class KnowledgeIsolationTest {
 
     /**
      * {@code hero/} holds a hero's faction-facing lines and decisions too (knowledge review of 2026-11-19): it never reads
-     * the kill feed or kill credit, but for the engine's writes ({@code KillCredits.push}, the tracker's clock), the kill
-     * feed itself (player-side presentation) and the presentation lines that say so with {@code // truth:}.
+     * the kill feed or kill credit, but for the engine's writes ({@code KillCredits.push}, the tracker's clock, and
+     * {@code HeroKillFeed.fellAway}: the feed's line for a hero that died unloaded with its faction), the kill feed itself
+     * (player-side presentation) and the presentation lines that say so with {@code // truth:}.
      */
     @Test
     void heroCodeReadsTheKillFeedAndKillCreditOnlyForPresentation() throws IOException {
@@ -167,6 +168,7 @@ class KnowledgeIsolationTest {
                 for (int i = 0; i < lines.size(); i++) {
                     String line = lines.get(i);
                     if (line.trim().startsWith("*") || line.contains("KillCredits.push(") || line.contains("KillCredit.TRACKER_TICKS")
+                            || line.contains("HeroKillFeed.fellAway(")
                             || line.contains("KillCredit.Kind.")) {
                         continue;
                     }

@@ -77,7 +77,7 @@ public final class HeroAbilityGameTests {
     }
 
     private static final double EPS = 1e-3;
-    /** The heroes' side and their enemies' (hostile with no pact). */
+    /** The heroes' side and their enemies' (two factions: hostile). */
     private static final FactionType SIDE = FactionType.EMBER_LEGION, FOE = FactionType.GROVE_COVENANT;
 
     // ------------------------------------------------------------------ fixtures

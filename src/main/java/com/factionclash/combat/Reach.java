@@ -38,8 +38,8 @@ public final class Reach {
     /**
      * True if {@code npc} may break the block at {@code pos} in a fight. The planned block of a base never; another
      * block standing in a planned cell (a raider's dirt in a doorway) yes, unless a player of the base's own faction
-     * put it there (a deliberate edit) and the fighter is of that faction or an ally. Unplanned blocks in the walls box of a base
-     * of its own side (its own or an ally's) only when a hostile player placed them; the ground of any base (from its
+     * put it there (a deliberate edit) and the fighter is of that faction. Unplanned blocks in the walls box of a base
+     * of its own faction only when a hostile player placed them; the ground of any base (from its
      * floor down) never.
      */
     public static boolean mayBreak(ServerLevel level, BlockPos pos, FactionNpc npc) {
@@ -63,7 +63,7 @@ public final class Reach {
                 if (planned.getBlock() == s.getBlock()) {
                     return false; // a faction's own building
                 }
-                if (b.playerEdits.contains(key) && !Diplomacy.hostile(level.getServer(), npc.getFaction(), b.faction)) {
+                if (b.playerEdits.contains(key) && !Diplomacy.hostile(npc.getFaction(), b.faction)) {
                     return false; // what the base's own player chose to put there: not for its own side to undo
                 }
                 continue;
@@ -74,7 +74,7 @@ public final class Reach {
             if (pos.getY() < b.center.getY()) {
                 return false; // the base's ground: its yard floor and the rock under it
             }
-            boolean ownSide = !Diplomacy.hostile(level.getServer(), npc.getFaction(), b.faction);
+            boolean ownSide = !Diplomacy.hostile(npc.getFaction(), b.faction);
             if (ownSide && !b.intruderBlocks.contains(key)) {
                 return false; // its own side's base: only what an enemy built there
             }
@@ -182,7 +182,7 @@ public final class Reach {
             if (b.planIndex().containsKey(pos.asLong())) {
                 return false;
             }
-            if (BaseZones.insideWalls(b, pos, 1) && !Diplomacy.hostile(level.getServer(), npc.getFaction(), b.faction)
+            if (BaseZones.insideWalls(b, pos, 1) && !Diplomacy.hostile(npc.getFaction(), b.faction)
                     && pos.getY() >= b.center.getY()) {
                 return false; // (below its floor it only fills a hole in its own ground: a pit it is shut in)
             }

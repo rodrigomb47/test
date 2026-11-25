@@ -106,7 +106,7 @@ public final class EdgeSense {
             return true;
         }
         if (e instanceof FactionNpc o) {
-            return com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), o.getFaction());
+            return com.factionclash.campaign.Diplomacy.hostile(npc.getFaction(), o.getFaction());
         }
         if (e instanceof ServerPlayer p) {
             return CombatRules.isEnemyPlayer(npc, p);

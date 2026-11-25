@@ -50,9 +50,9 @@ import java.util.List;
  * one of its people sees the ruins; a raid nobody lived to report on is taken as lost by its plan; a miner's trip is
  * planned at the storehouse; a cave survey is the faction's only when the explorer hands it in; retraining and the
  * blacksmith see only members at home; experience picked up away is carried home; the alarm needs someone to see the
- * intruder; the lookout's line is heard only at home; a lair misses a monster that fell far off only later; a pact ally
- * is told of an offensive when it is launched. Each test registers a small test base (walls half 2, work radius 3: its
- * home area reaches 6 blocks from the centre at relative (12, 2, 12)) and has its own batch.
+ * intruder; the lookout's line is heard only at home; a lair misses a monster that fell far off only later. Each test
+ * registers a small test base (walls half 2, work radius 3: its home area reaches 6 blocks from the centre at relative
+ * (12, 2, 12)) and has its own batch.
  */
 @GameTestHolder(FactionClash.MODID)
 @PrefixGameTestTemplate(false)
@@ -796,53 +796,6 @@ public final class KnowledgeGameTests {
             lair.lairMobs.add(near.getUUID());
             kill(near);
             t.assertTrue(!lair.lairMobs.contains(near.getUUID()), "a monster that fell at its lair was not missed");
-            t.succeed();
-        } catch (RuntimeException | Error e) {
-            t.cleanup();
-            throw e;
-        }
-    }
-
-    // ------------------------------------------------------------------ the pact's offensives
-
-    /**
-     * A pact member's offensive is told to its allies when it is launched (target, party power, plan): an ally's council
-     * joins from that notice, never from the ally's own raid party on the spot.
-     */
-    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_pact")
-    public static void anAllyIsToldOfAnOffensiveWhenItIsLaunched(GameTestHelper h) {
-        GameTestBases.Handle t = base(h, 40);
-        ServerLevel level = h.getLevel();
-        CampaignData data = t.data;
-        FactionState f = data.faction(SIDE);
-        FactionState ally = data.faction(FactionType.STONEGUARD);
-        keepRaidState(t, f);
-        FactionType oldAgainst = data.pactAgainst;
-        java.util.Set<FactionType> oldMembers = java.util.EnumSet.noneOf(FactionType.class);
-        oldMembers.addAll(data.pactMembers);
-        t.onCleanup(() -> {
-            data.pactAgainst = oldAgainst;
-            data.pactMembers.clear();
-            data.pactMembers.addAll(oldMembers);
-            ally.pactOffensives.remove(SIDE);
-        });
-        try {
-            for (int[] p : GARRISON) {
-                member(t, p[0], p[1], NpcRole.SWORDSMAN);
-            }
-            BaseState ember = enemyBase(t, FactionType.EMBER_LEGION, t.base.center.offset(0, 0, 200));
-            data.pactAgainst = FactionType.EMBER_LEGION;
-            data.pactMembers.clear();
-            data.pactMembers.add(SIDE);
-            data.pactMembers.add(FactionType.STONEGUARD);
-            String r = FactionDirector.forceRaid(level, data, f, ember);
-            t.assertTrue(f.raidTarget == ember.id, "no raid: " + r);
-            FactionState.Offensive o = ally.pactOffensives.get(SIDE);
-            t.assertTrue(o != null && o.target() == ember.id && o.power() >= f.raidParty && o.until() == f.raidStartedAt + f.raidPlanTicks,
-                    "the ally was not told of the offensive as launched: " + o);
-            // the party's losses on the spot are its own: the notice the ally holds does not change with them
-            f.raiders.clear();
-            t.assertTrue(ally.pactOffensives.get(SIDE) == o, "the ally's notice changed with the party's roll");
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();

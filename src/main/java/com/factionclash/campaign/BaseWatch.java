@@ -180,7 +180,7 @@ public final class BaseWatch {
         long now = level.getGameTime();
         for (FactionType seer : FactionType.humans()) {
             FactionState f = data.faction(seer);
-            if (seer == victim.getFaction() || !f.alive || !Diplomacy.hostile(level.getServer(), seer, victim.getFaction())) {
+            if (seer == victim.getFaction() || !f.alive || !Diplomacy.hostile(seer, victim.getFaction())) {
                 continue;
             }
             boolean seen = RollCall.inHomeArea(data, seer, level, at);

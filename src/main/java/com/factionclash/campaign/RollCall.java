@@ -218,6 +218,12 @@ public final class RollCall {
         rec.diedPos = pos;
         rec.lastPos = pos;
         rec.lastSeen = now;
+        if (CampaignManager.fallen(data, faction)) {
+            // it died with its fallen faction (or after it): known dead already, and nobody of it is left to tell
+            rec.where(State.KNOWN_DEAD, now);
+            data.setDirty();
+            return Knowing.AT_ONCE;
+        }
         List<Witness> seen = witnesses(level, data, victim, faction);
         rec.witnessed = !seen.isEmpty();
         int atHome = 0, away = 0;
@@ -254,6 +260,23 @@ public final class RollCall {
         }
         data.setDirty();
         return k;
+    }
+
+    /**
+     * The faction fell ({@code CampaignManager.eliminate}, after the members in loaded places died): every member is known
+     * dead. A member still away in an unloaded place is dead for the engine too (its entity dies where it stands when it
+     * loads, {@code CampaignManager.diesWithFaction}), so no traveller's chunk is kept or brought back for it.
+     */
+    static void factionFell(CampaignData data, FactionState f, long now) {
+        for (NpcRecord r : f.roster.values()) {
+            if (!r.dead) {
+                r.dead = true; // (its entity, if it is away unloaded, dies when its chunk loads)
+                r.diedAt = now;
+                r.diedPos = r.lastPos;
+            }
+            r.where(State.KNOWN_DEAD, now);
+        }
+        data.setDirty();
     }
 
     /**

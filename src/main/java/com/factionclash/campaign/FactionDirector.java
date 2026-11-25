@@ -438,14 +438,14 @@ public final class FactionDirector {
         AABB walls = new AABB(b.center).inflate(com.factionclash.structure.BaseLayout.HALF + 4, 12, com.factionclash.structure.BaseLayout.HALF + 4)
                 .setMaxY(b.center.getY() + 1 + up);
         List<net.minecraft.world.entity.LivingEntity> intruders = level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, walls,
-                e -> e.isAlive() && ((e instanceof FactionNpc n && Diplomacy.hostile(level.getServer(), n.getFaction(), b.faction))
+                e -> e.isAlive() && ((e instanceof FactionNpc n && Diplomacy.hostile(n.getFaction(), b.faction))
                         // a monster only in the yard or close to it, not in a cave under the base (live check: a creeper
                         // shut in a pocket of the ground five blocks under the yard was handed to the guards over and over)
                         || (e instanceof net.minecraft.world.entity.monster.Monster m && com.factionclash.combat.CombatRules.isHostileMonster(m)
                         && m.getY() >= b.center.getY() - 2)
                         || (e instanceof net.minecraft.server.level.ServerPlayer p && !p.isCreative() && !p.isSpectator()
                         && CampaignData.get(level.getServer()).players.get(p.getUUID()) != null
-                        && Diplomacy.hostile(level.getServer(), CampaignData.get(level.getServer()).players.get(p.getUUID()), b.faction))));
+                        && Diplomacy.hostile(CampaignData.get(level.getServer()).players.get(p.getUUID()), b.faction))));
         // only an intruder one of the base's people sees (a line of sight within 24 blocks) or hears close by (3 blocks),
         // or one at the heart (its blows on the heart are heard across the base): one hidden in a house or a tunnel under
         // the yard is not handed to the guards (knowledge review of 2026-11-19)
@@ -556,7 +556,7 @@ public final class FactionDirector {
         double r = com.factionclash.logic.hero.FightMobility.APPROACH_SIGHT;
         List<com.factionclash.hero.HeroEntity> near = level.getEntitiesOfClass(com.factionclash.hero.HeroEntity.class,
                 walls.inflate(r, 8, r), h -> h.isAlive() && !h.isPreview() && !walls.contains(h.position())
-                        && Diplomacy.hostile(level.getServer(), h.getFaction(), b.faction));
+                        && Diplomacy.hostile(h.getFaction(), b.faction));
         for (com.factionclash.hero.HeroEntity h : near) {
             List<FactionNpc> lookouts = level.getEntitiesOfClass(FactionNpc.class, h.getBoundingBox().inflate(r),
                     n -> n.isAlive() && n.getFaction() == b.faction && n.baseId() == b.id && !n.isDisplayOnly());
@@ -794,12 +794,10 @@ public final class FactionDirector {
         double best = Double.MAX_VALUE;
         Intel.Estimate targetEstimate = null;
         Report targetReport = null;
-        // in a pact: only the conqueror, never an ally
-        FactionType sworn = Diplomacy.swornEnemy(data, f.type);
         // (our soldiers, not our heroes: heroes nobody saw are not assumed, and ours never go with the party)
         Intel.Prior likeOurs = new Intel.Prior(draftable.size(), f.soldierPower);
         for (Report r : f.knowledge) {
-            if (!r.base() || r.fallen || Diplomacy.allied(data, f.type, r.subject) || sworn != null && r.subject != sworn) {
+            if (!r.base() || r.fallen || !Diplomacy.hostile(f.type, r.subject)) {
                 continue;
             }
             BaseState b = reportedBase(data, r);
@@ -830,24 +828,11 @@ public final class FactionDirector {
         double defencePower = com.factionclash.logic.hero.HeroRules.countedPower(defenceSoldiers, defenceHeroes);
         double unit = targetEstimate.power(); // one of its soldiers, as the council counts them
         boolean counter = !intervalOver && Intel.threeToTwo(partyPower, defencePower, unit);
-        // a pact offensive: allies that told the faction of their march on the same base, when they launched it, count
-        // toward the strength needed (their party as launched; never the ally's own records, knowledge review of 2026-11-19)
-        double alliedPower = 0;
-        if (sworn != null) {
-            for (Map.Entry<FactionType, FactionState.Offensive> e : f.pactOffensives.entrySet()) {
-                FactionState.Offensive o = e.getValue();
-                if (o.target() == target.id && t <= o.until() && data.pactMembers.contains(e.getKey()) && e.getKey() != f.type) {
-                    alliedPower += o.power();
-                }
-            }
-        }
         // two thirds of the defence in whole soldiers, a counter-attack's 3 to 2 to the nearest one (Intel.twoThirds and
         // threeToTwo, review of the knowledge review, 2026-11-19)
-        boolean joint = alliedPower > 0 && Intel.twoThirds(partyPower + alliedPower, defencePower, unit);
-        boolean go = joint || counter || intervalOver && Intel.twoThirds(partyPower, defencePower, unit);
+        boolean go = counter || intervalOver && Intel.twoThirds(partyPower, defencePower, unit);
         // the same council with the heroes counted out: did their presence (or absence) decide it? (SLICE_PLAN 6.4)
         boolean goWithout = !intervalOver && Intel.threeToTwo(partySoldiers, defenceSoldiers, unit)
-                || alliedPower > 0 && Intel.twoThirds(partySoldiers + alliedPower, defenceSoldiers, unit)
                 || intervalOver && Intel.twoThirds(partySoldiers, defenceSoldiers, unit);
         LAST_COUNCIL.put(f.type, String.format(java.util.Locale.ROOT,
                 "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f; %s), %s%s [truth: %.1f]",
@@ -859,7 +844,7 @@ public final class FactionDirector {
             return; // not yet, or not strong enough for that garrison
         }
         launch(level, data, f, home, target, picks.subList(0, party), targetEstimate.heads() + " defenders" + seenText(targetReport, t),
-                joint ? "Joining the pact's offensive! " : counter ? "Counter-attack! " : "", t);
+                counter ? "Counter-attack! " : "", t);
     }
 
     /**
@@ -983,7 +968,7 @@ public final class FactionDirector {
     /**
      * Sends a raid party: the raiders, the target, the rally 28 blocks short of it on the home side, the council's plan
      * for the raid (knowledge review of 2026-11-19: the march there, the muster, the assault and the march home), the
-     * pact allies told of it, the message ({@code defenders}: "about N defenders, as seen on day D").
+     * message ({@code defenders}: "about N defenders, as seen on day D").
      */
     private static void launch(ServerLevel level, CampaignData data, FactionState f, BaseState home, BaseState target,
                                List<FactionNpc> party, String defenders, String prefix, long t) {
@@ -1009,16 +994,6 @@ public final class FactionDirector {
         f.raidPlanTicks = Whereabouts.raidPlanTicks(Math.sqrt(home.center.distSqr(rally)), Math.sqrt(target.center.distSqr(home.center)));
         f.lastRaidAt = t;
         f.raidsLaunched++;
-        // the pact's members are told of the offensive as it is launched: its target, its strength, its plan
-        FactionType sworn = Diplomacy.swornEnemy(data, f.type);
-        if (sworn != null && target.faction == sworn) {
-            double power = party.stream().mapToDouble(FactionDirector::power).sum();
-            for (FactionType m : data.pactMembers) {
-                if (m != f.type) {
-                    data.faction(m).pactOffensives.put(f.type, new FactionState.Offensive(target.id, power, t + f.raidPlanTicks));
-                }
-            }
-        }
         data.setDirty();
         Messages.toFaction(level.getServer(), f.type, Component.literal(prefix
                 + "Launching a raid with " + party.size()

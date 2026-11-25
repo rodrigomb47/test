@@ -41,10 +41,6 @@ public final class CampaignData extends SavedData {
     public final Map<UUID, FactionType> players = new HashMap<>();
     /** Every hero that has ever been given to a faction, by hero id (HeroState: owner, base, entity, alive, revival). */
     public final Map<String, HeroState> heroes = new LinkedHashMap<>();
-    /** The pact (Diplomacy): members sworn against one conqueror; null when there is none. */
-    public FactionType pactAgainst;
-    public final java.util.Set<FactionType> pactMembers = java.util.EnumSet.noneOf(FactionType.class);
-    public long pactSince;
     public int nextBaseId = 1;
     public int nextWorkplaceId = 1;
     public int nextProjectId = 1;
@@ -130,8 +126,6 @@ public final class CampaignData extends SavedData {
             h.alive = false;
             h.reviveAt = 0;
         }
-        pactAgainst = null;
-        pactMembers.clear();
         nextBaseId = 1;
         nextWorkplaceId = 1;
         nextProjectId = 1;
@@ -172,13 +166,6 @@ public final class CampaignData extends SavedData {
             hl.add(h.save());
         }
         t.put("heroes", hl);
-        if (pactAgainst != null) {
-            t.putString("pactAgainst", pactAgainst.id);
-            ListTag pm = new ListTag();
-            pactMembers.forEach(m -> pm.add(net.minecraft.nbt.StringTag.valueOf(m.id)));
-            t.put("pactMembers", pm);
-            t.putLong("pactSince", pactSince);
-        }
         t.putInt("nextBase", nextBaseId);
         t.putInt("nextWorkplace", nextWorkplaceId);
         t.putInt("nextProject", nextProjectId);
@@ -225,17 +212,8 @@ public final class CampaignData extends SavedData {
                 d.workplaces.put(w.id, w);
             }
         }
-        if (t.contains("pactAgainst")) {
-            d.pactAgainst = FactionType.byId(t.getString("pactAgainst"));
-            ListTag pm = t.getList("pactMembers", Tag.TAG_STRING);
-            for (int i = 0; i < pm.size(); i++) {
-                FactionType m = FactionType.byId(pm.getString(i));
-                if (m != null) {
-                    d.pactMembers.add(m);
-                }
-            }
-            d.pactSince = t.getLong("pactSince");
-        }
+        // (a save from before 2026-11-25 may hold a pact against a conqueror, "pactAgainst", "pactMembers" and
+        // "pactSince": the owner removed pacts, so those keys are left unread and are gone at the next save)
         ListTag hl = t.getList("heroes", Tag.TAG_COMPOUND);
         for (int i = 0; i < hl.size(); i++) {
             HeroState h = HeroState.load(hl.getCompound(i));

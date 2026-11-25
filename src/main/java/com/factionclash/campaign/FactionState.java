@@ -58,17 +58,6 @@ public final class FactionState {
      * nobody lived to report on.
      */
     public Report raidIntel;
-    /**
-     * Offensives the faction's pact allies told it of when they launched them (knowledge review of 2026-11-19): by ally,
-     * the target base, the party's power as launched and when the ally expects it home. A council joins one from this,
-     * never from the ally's own records.
-     */
-    public final Map<FactionType, Offensive> pactOffensives = new java.util.EnumMap<>(FactionType.class);
-
-    /** An ally's offensive as it told it: its target, its party's power at launch, its plan's end. */
-    public record Offensive(int target, double power, long until) {
-    }
-
     /** When the council expects its raid home ({@code Whereabouts.raidPlannedBy}); {@code blocksBack}: an old raid's walk home. */
     public long raidPlannedBy(double blocksBack) {
         return com.factionclash.logic.campaign.Whereabouts.raidPlannedBy(raidStartedAt, raidPlanTicks, blocksBack);
@@ -206,16 +195,6 @@ public final class FactionState {
         if (raidIntel != null) {
             t.put("raidIntel", raidIntel.save());
         }
-        ListTag po = new ListTag();
-        pactOffensives.forEach((ally, o) -> {
-            CompoundTag e = new CompoundTag();
-            e.putString("ally", ally.id);
-            e.putInt("target", o.target());
-            e.putDouble("power", o.power());
-            e.putLong("until", o.until());
-            po.add(e);
-        });
-        t.put("pactOffensives", po);
         t.putInt("basesDestroyed", basesDestroyed);
         t.putFloat("soldierPower", soldierPower);
         t.putLongArray("explored", explored.stream().mapToLong(Long::longValue).toArray());
@@ -287,17 +266,10 @@ public final class FactionState {
         for (Tag u : t.getList("lastParty", Tag.TAG_INT_ARRAY)) {
             f.lastParty.add(NbtUtils.loadUUID(u));
         }
-        // the raid's plan, what the party saw and the allies' offensives: absent before the knowledge review of 2026-11-19
+        // the raid's plan and what the party saw: absent before the knowledge review of 2026-11-19 ("pactOffensives", the
+        // pact allies' offensives of a save from before 2026-11-25, is left unread: the owner removed pacts)
         f.raidPlanTicks = t.getLong("raidPlan");
         f.raidIntel = t.contains("raidIntel") ? Report.load(t.getCompound("raidIntel")) : null;
-        ListTag po = t.getList("pactOffensives", Tag.TAG_COMPOUND);
-        for (int i = 0; i < po.size(); i++) {
-            CompoundTag e = po.getCompound(i);
-            FactionType ally = FactionType.byId(e.getString("ally"));
-            if (ally != null) {
-                f.pactOffensives.put(ally, new Offensive(e.getInt("target"), e.getDouble("power"), e.getLong("until")));
-            }
-        }
         f.basesDestroyed = t.getInt("basesDestroyed");
         f.soldierPower = t.contains("soldierPower") ? t.getFloat("soldierPower") : 1.0F;
         f.xpBank = t.getLong("xpBank");

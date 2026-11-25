@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * Who a form reaches (HERO_FORMAT.md 10.1; task A3), in the world. <b>Enemies</b> are exactly whom the hero's side
- * fights: NPCs and heroes of hostile factions (pacts respected), enemy players (never creative or spectator), hostile
+ * fights: NPCs and heroes of other factions, enemy players (never creative or spectator), hostile
  * monsters and its own target; <b>allies</b> are its side, players of its faction included. Animals, villagers,
  * golems, armour stands and display copies are never affected. The same tests for a player and an NPC: nothing here
  * treats a player differently except what vanilla itself does (creative and spectator players are never enemies,
@@ -56,17 +56,17 @@ public final class HeroForms {
             return false;
         }
         if (e instanceof FactionNpc o) {
-            return Diplomacy.hostile(hero.getServer(), hero.getFaction(), o.getFaction());
+            return Diplomacy.hostile(hero.getFaction(), o.getFaction());
         }
         if (e instanceof Player p) {
             return p instanceof ServerPlayer sp && CombatRules.isEnemyPlayer(hero, sp);
         }
         if (HeroSummons.isSummon(e)) {
-            return Diplomacy.hostile(hero.getServer(), hero.getFaction(), HeroSummons.factionOf(e));
+            return Diplomacy.hostile(hero.getFaction(), HeroSummons.factionOf(e));
         }
         if (e instanceof com.factionclash.hero.entity.HeroDecoy d) {
             // an enemy hero's decoy fools a hero as it fools a player (HEROES_V2 6.11, 6.15)
-            return d.faction() != null && Diplomacy.hostile(hero.getServer(), hero.getFaction(), d.faction());
+            return d.faction() != null && Diplomacy.hostile(hero.getFaction(), d.faction());
         }
         return e == hero.getTarget() || e instanceof Enemy && CombatRules.isHostileMonster(e);
     }

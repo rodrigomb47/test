@@ -51,7 +51,10 @@ public final class HeroKillFeed {
     /** GameTests: the feed's lines while recording (null: not recording). */
     private static List<Line> recorder;
 
-    /** A line of the feed: the hero that died, its killer (null: none) and what was said. */
+    /**
+     * A line of the feed: the hero that died (null: one that died unloaded, {@link #fellAway}), its killer (null: none)
+     * and what was said.
+     */
     public record Line(LivingEntity victim, Entity killer, Component text) {
     }
 
@@ -79,6 +82,22 @@ public final class HeroKillFeed {
         Component line = line(victim, source);
         level.getServer().getPlayerList().broadcastSystemMessage(line, false);
         note(new Line(victim, KillCredits.killer(victim, source), line));
+    }
+
+    /**
+     * A hero that died with its fallen faction away in an unloaded place (owner, 2026-11-25): no entity died where anyone
+     * could see, but the feed tells every hero's death, so it is told at the fall in vanilla's generic words
+     * ({@code death.attack.genericKill}, "was killed", the words of a hero killed with its faction where it stood) with its
+     * faction beside its name, while {@code showDeathMessages} is on. Its line has no victim entity.
+     */
+    public static void fellAway(net.minecraft.server.MinecraftServer server, String name, FactionType faction) {
+        if (server == null || !FCConfig.HERO_KILL_FEED.get()
+                || !server.overworld().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)) {
+            return;
+        }
+        Component line = Component.translatable("death.attack.genericKill", member(Component.literal(name), faction));
+        server.getPlayerList().broadcastSystemMessage(line, false);
+        note(new Line(null, null, line));
     }
 
     private static synchronized void note(Line l) {

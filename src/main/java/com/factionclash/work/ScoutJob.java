@@ -193,7 +193,7 @@ public class ScoutJob extends Job {
         // a rival the faction knows of: a settlement its scouts reported standing (not seen in ruins since); the true list
         // of bases is not the faction's to read (knowledge review of 2026-11-19)
         boolean rivalKnown = f.knowledge.stream().anyMatch(r -> r.kind == com.factionclash.campaign.Report.Kind.ENEMY_BASE && !r.fallen
-                && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), r.subject));
+                && com.factionclash.campaign.Diplomacy.hostile(npc.getFaction(), r.subject));
         int dx = Math.abs(b.center.getX() - data.center.getX()) + data.radius, dz = Math.abs(b.center.getZ() - data.center.getZ()) + data.radius;
         int maxReach = (int) Math.sqrt((double) dx * dx + dz * dz) - FCConfig.SCOUT_RANGE.get();
         if (rivalKnown || f.scoutReach >= maxReach) {
@@ -436,7 +436,7 @@ public class ScoutJob extends Job {
             return false;
         }
         List<LivingEntity> soldiers = level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(10), e -> e.isAlive()
-                && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), o.getFaction())
+                && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(npc.getFaction(), o.getFaction())
                 && o.getRole().combatant);
         List<Monster> around = monstersAround();
         List<Monster> threats = threatening(around);

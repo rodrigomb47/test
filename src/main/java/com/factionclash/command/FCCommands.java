@@ -143,10 +143,6 @@ public final class FCCommands {
             c.getSource().sendSuccess(() -> Component.literal(" " + t.displayName + ": " + (alive > 0 ? alive + " base(s) standing" : "eliminated"))
                     .withStyle(t.color), false);
         }
-        String pact = com.factionclash.campaign.Diplomacy.describe(data);
-        if (pact != null) {
-            c.getSource().sendSuccess(() -> Component.literal(" " + pact).withStyle(ChatFormatting.GOLD), false);
-        }
         return 1;
     }
 
@@ -525,8 +521,6 @@ public final class FCCommands {
     public static JsonObject snapshot(ServerLevel level) {
         CampaignData data = CampaignData.get(level.getServer());
         JsonObject root = new JsonObject();
-        String pact = com.factionclash.campaign.Diplomacy.describe(data);
-        root.addProperty("pact", pact == null ? "" : pact);
         root.addProperty("gameTime", level.getGameTime());
         root.addProperty("dayTime", level.getDayTime());
         root.addProperty("started", data.started);

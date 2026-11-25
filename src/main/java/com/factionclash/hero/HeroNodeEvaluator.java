@@ -146,7 +146,7 @@ public final class HeroNodeEvaluator extends NpcPathNavigation.GateEvaluator {
         }
         CampaignData data = CampaignData.get(hero.getServer());
         for (BaseState b : data.bases.values()) {
-            if (b.destroyed || b.faction == null || !Diplomacy.hostile(hero.getServer(), hero.getFaction(), b.faction)) {
+            if (b.destroyed || b.faction == null || !Diplomacy.hostile(hero.getFaction(), b.faction)) {
                 continue;
             }
             int h = BaseZones.half(b);

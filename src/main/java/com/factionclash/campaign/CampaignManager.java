@@ -86,8 +86,12 @@ public final class CampaignManager {
         base.destroyed = true;
         base.destroyedAt = level.getGameTime();
         base.destroyedBy = by;
-        // its heroes: an escaping hero goes at once, a last-stand one finishes its fight (HEROES_V2 6.13, task A6b)
-        com.factionclash.hero.HeroBossEvents.baseLost(level, base);
+        // the faction's last base: everyone of it dies with it (eliminate, below), so no hero of it runs from this fall
+        boolean last = data.livingBasesOf(base.faction).isEmpty();
+        if (!last) {
+            // its heroes: an escaping hero goes at once, a last-stand one finishes its fight (HEROES_V2 6.13, task A6b)
+            com.factionclash.hero.HeroBossEvents.baseLost(level, base);
+        }
         BlockPos heart = base.point(BaseState.HEART);
         destroying = true;
         try {
@@ -106,25 +110,43 @@ public final class CampaignManager {
         Messages.toAll(level.getServer(), Component.literal(base.faction.displayName + (base.isSettlement() ? " settlement" : " lair")
                 + " at " + base.center.toShortString() + " has fallen" + (by == null ? "" : " to " + by.displayName + " (" + byName + ")"))
                 .withStyle(ChatFormatting.GOLD));
-        if (data.livingBasesOf(base.faction).isEmpty()) {
+        if (last) {
             eliminate(level, data, base.faction);
-            Diplomacy.onElimination(level, data, base.faction, by);
         }
     }
 
+    /**
+     * The faction has no base left: it is eliminated, and every member of it dies with it (the owner's rule of 2026-11-25,
+     * {@code logic/campaign/Elimination}). Members in loaded places die now, where they stand, their things dropping as on
+     * any death (an NPC's death is no chat line; a hero's is the kill feed's); a member away in an unloaded place dies when
+     * it next loads ({@link #diesWithFaction}, from {@code FactionNpc.tick}); its heroes are freed for good
+     * ({@code HeroManager.factionFell}); a member player dies now, or at its next login ({@link #loggedIn}), and is
+     * factionless after. Nothing of the faction acts again: its bases are all fallen, so the director runs no recruitment,
+     * council, raid or work for it.
+     */
     public static void eliminate(ServerLevel level, CampaignData data, FactionType faction) {
         FactionState f = data.faction(faction);
         if (!f.alive) {
             return;
         }
+        MinecraftServer server = level.getServer();
+        long now = level.getGameTime();
+        // stamped first: every death below (and any later one) already reads the faction as fallen
         f.alive = false;
-        f.eliminatedAt = level.getGameTime();
+        f.eliminatedAt = com.factionclash.logic.campaign.Elimination.stamp(now);
         f.raidTarget = -1;
         f.raiders.clear();
+        f.raidEndNews = null;
+        f.news.clear(); // nobody is left at home to be told
+        data.setDirty();
+        Messages.toAll(server, Component.literal(faction.displayName + " has been eliminated! All of its people die with it.")
+                .withStyle(ChatFormatting.RED));
         List<Entity> remove = new ArrayList<>();
-        for (Entity e : level.getAllEntities()) {
-            if (e instanceof FactionNpc n && n.getFaction() == faction) {
-                remove.add(e);
+        for (ServerLevel lv : server.getAllLevels()) { // (a member beyond a portal too)
+            for (Entity e : lv.getAllEntities()) {
+                if (e instanceof FactionNpc n && n.getFaction() == faction && n.isAlive() && !n.isDisplayOnly()) {
+                    remove.add(e);
+                }
             }
         }
         for (BaseState b : data.basesOf(faction)) {
@@ -137,14 +159,79 @@ public final class CampaignManager {
             b.lairMobs.clear();
         }
         for (Entity e : remove) {
-            e.kill();
+            killOutright(e);
         }
-        for (NpcRecord r : f.roster.values()) {
-            r.where(com.factionclash.logic.campaign.Whereabouts.State.KNOWN_DEAD, level.getGameTime());
+        com.factionclash.hero.HeroManager.factionFell(server, data, faction); // its heroes away, or waiting to rise
+        for (net.minecraft.server.level.ServerPlayer p : membersOnline(server, data, faction)) {
+            data.players.remove(p.getUUID()); // factionless from now: it respawns by vanilla's rules and may join another
+            killOutright(p);
         }
+        RollCall.factionFell(data, f, now); // every member known dead, the ones still away in unloaded places too
         data.setDirty();
-        Messages.toAll(level.getServer(), Component.literal(faction.displayName + " has been eliminated!").withStyle(ChatFormatting.RED));
-        checkVictory(level.getServer(), data);
+        checkVictory(server, data);
+    }
+
+    /** The online players who are members of {@code faction}, in every dimension (a GameTest's mock player too). */
+    private static List<net.minecraft.server.level.ServerPlayer> membersOnline(MinecraftServer server, CampaignData data, FactionType faction) {
+        List<net.minecraft.server.level.ServerPlayer> out = new ArrayList<>();
+        for (ServerLevel lv : server.getAllLevels()) {
+            for (net.minecraft.server.level.ServerPlayer p : lv.players()) {
+                if (data.players.get(p.getUUID()) == faction && !out.contains(p)) {
+                    out.add(p);
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * A death with its faction: vanilla's {@code kill} (a generic kill that no armour, shield, barrier or invulnerability
+     * stops), and if something still held it up, its health to nothing and its death all the same.
+     */
+    private static void killOutright(Entity e) {
+        e.kill();
+        if (e instanceof net.minecraft.world.entity.LivingEntity l && l.isAlive()) {
+            l.setHealth(0);
+            l.die(l.damageSources().genericKill());
+        }
+    }
+
+    /** Whether {@code faction} has fallen in this campaign ({@link com.factionclash.logic.campaign.Elimination#fallen}). */
+    public static boolean fallen(CampaignData data, FactionType faction) {
+        FactionState f = faction == null ? null : data.factions.get(faction); // (never creates a faction's state)
+        return f != null && com.factionclash.logic.campaign.Elimination.fallen(f.alive, f.eliminatedAt);
+    }
+
+    /**
+     * A member that was in an unloaded place when its faction fell, now loaded and ticking (an NPC or hero away on a
+     * trip, a raider, a far miner): it dies where it stands, as its faction's people did, its things dropping. Returns
+     * whether it died. Read by {@code FactionNpc.tick} on its first tick and once a second after.
+     */
+    public static boolean diesWithFaction(FactionNpc npc) {
+        if (npc.isDisplayOnly() || !npc.isAlive() || npc.getServer() == null
+                || !fallen(CampaignData.get(npc.getServer()), npc.getFaction())) {
+            return false;
+        }
+        FactionClash.LOGGER.info("[Faction Clash] {} of the fallen {} dies where it stands at {}",
+                npc.npcName().isEmpty() ? npc.getUUID() : npc.npcName(), npc.getFaction().displayName, npc.blockPosition().toShortString());
+        killOutright(npc);
+        return true;
+    }
+
+    /**
+     * A player logs in (single-player: the world loads): a member of a faction that fell while it was away dies now, as
+     * its faction's people did, and is factionless from then on.
+     */
+    public static void loggedIn(net.minecraft.server.level.ServerPlayer p) {
+        CampaignData data = CampaignData.get(p.server);
+        FactionType f = data.players.get(p.getUUID());
+        if (f == null || !fallen(data, f)) {
+            return;
+        }
+        data.players.remove(p.getUUID());
+        data.setDirty();
+        p.sendSystemMessage(Component.literal(f.displayName + " fell while you were away. You die with it.").withStyle(ChatFormatting.RED));
+        killOutright(p);
     }
 
     public static List<FactionType> survivors(CampaignData data) {

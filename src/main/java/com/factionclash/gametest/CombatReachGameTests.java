@@ -465,24 +465,11 @@ public final class CombatReachGameTests {
             h.assertFalse(may.test(own, a) || may.test(foe, a), "a planned block must never be broken");
             h.assertTrue(may.test(own, b) && may.test(foe, b), "a foreign block in a planned cell may be broken");
             h.assertFalse(may.test(own, c), "an own player's edit must be left to the own side");
-            var data = CampaignData.get(level.getServer());
-            FactionType against = data.pactAgainst;
-            java.util.Set<FactionType> members = java.util.EnumSet.noneOf(FactionType.class);
-            members.addAll(data.pactMembers);
-            try {
-                data.pactAgainst = FactionType.STONEGUARD; // Ember and Tide in a pact: allies
-                data.pactMembers.clear();
-                data.pactMembers.add(FactionType.EMBER_LEGION);
-                data.pactMembers.add(FactionType.TIDE_ALLIANCE);
-                FactionNpc ally = t.track(soldier(h, 8, 20, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN));
-                h.assertFalse(may.test(ally, c), "an ally must leave the base's own player's edit too");
-                h.assertFalse(may.test(ally, d), "an unplanned block in an ally's base is not its to break either");
-                h.assertTrue(may.test(ally, e), "an ally may break a hostile player's block");
-            } finally {
-                data.pactAgainst = against;
-                data.pactMembers.clear();
-                data.pactMembers.addAll(members);
-            }
+            // no faction is another's ally (the owner removed the pact against a conqueror, 2026-11-25): a third
+            // faction's soldier treats the base as any enemy does
+            FactionNpc third = t.track(soldier(h, 8, 20, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN));
+            h.assertTrue(may.test(third, c) && may.test(third, d) && may.test(third, e),
+                    "a third faction's soldier is the base's enemy like any other");
             h.assertTrue(may.test(foe, c), "an enemy may break an edit of the base's players");
             h.assertFalse(may.test(own, d), "an unplanned block in its own base is not its to break");
             h.assertTrue(may.test(foe, d), "an enemy may break an unplanned block in the base");

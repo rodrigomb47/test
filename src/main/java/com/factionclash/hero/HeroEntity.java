@@ -1291,7 +1291,7 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
 
     private boolean isHostileTo(LivingEntity e) {
         if (e instanceof FactionNpc n) {
-            return com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), n.getFaction());
+            return com.factionclash.campaign.Diplomacy.hostile(getFaction(), n.getFaction());
         }
         if (e instanceof ServerPlayer p) {
             return CombatRules.isEnemyPlayer(this, p);

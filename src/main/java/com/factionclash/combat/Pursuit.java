@@ -823,7 +823,7 @@ public final class Pursuit {
         double bestD = INTRUDER_RANGE * INTRUDER_RANGE;
         for (LivingEntity e : npc.level().getEntitiesOfClass(LivingEntity.class, npc.getBoundingBox().inflate(INTRUDER_RANGE),
                 e -> e.isAlive() && !ignores(e) && (e instanceof net.minecraft.server.level.ServerPlayer p && CombatRules.isEnemyPlayer(npc, p)
-                        || e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(npc.getServer(), npc.getFaction(), o.getFaction())))) {
+                        || e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(npc.getFaction(), o.getFaction())))) {
             double d = npc.distanceToSqr(e);
             if (d < bestD && npc.getSensing().hasLineOfSight(e)) {
                 best = e;

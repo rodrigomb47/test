@@ -184,7 +184,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, 10, true, false,
                 e -> isGuardDuty() && CombatRules.isHostileMonster(e) && !pursuit.ignores(e) && senses(e)));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, FactionNpc.class, 10, true, false,
-                e -> isGuardDuty() && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), o.getFaction())
+                e -> isGuardDuty() && e instanceof FactionNpc o && com.factionclash.campaign.Diplomacy.hostile(getFaction(), o.getFaction())
                         && !pursuit.ignores(e) && senses(e)));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
                 e -> isGuardDuty() && e instanceof ServerPlayer p && CombatRules.isEnemyPlayer(this, p) && !pursuit.ignores(e) && senses(e)));
@@ -860,12 +860,21 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         return false;
     }
 
+    /** Whether its faction's fall has been checked since it was loaded (the first tick does it at once). */
+    private boolean fateChecked;
+
     @Override
     public void tick() {
         super.tick();
         if (level().isClientSide || !isAlive() || isDisplayOnly()) {
             return;
         }
+        // a member whose faction fell while it was away in an unloaded place dies on its first tick here (the owner's
+        // rule of 2026-11-25: every member dies with its faction); once a second after, for a straggler anywhere
+        if ((!fateChecked || tickCount % 20 == 0) && com.factionclash.campaign.CampaignManager.diesWithFaction(this)) {
+            return;
+        }
+        fateChecked = true;
         goldenApple();
         terrainSurvival.tick();
         shieldTick();
@@ -1050,7 +1059,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     /** Hostile monsters, other factions' NPCs and enemy players: what a sweep may hit. */
     public boolean isEnemy(LivingEntity e) {
         if (e instanceof FactionNpc o) {
-            return com.factionclash.campaign.Diplomacy.hostile(getServer(), getFaction(), o.getFaction());
+            return com.factionclash.campaign.Diplomacy.hostile(getFaction(), o.getFaction());
         }
         if (e instanceof net.minecraft.server.level.ServerPlayer p) {
             return com.factionclash.combat.CombatRules.isEnemyPlayer(this, p);
