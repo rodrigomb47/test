@@ -331,7 +331,8 @@ in 5.18 days (the first on day 3.10, as the raid interval allows); the roll call
 enemy's own roster, launched 4 by itself in 6.94 days (with 6 operator raids drawing soldiers away). War comes more
 often, not less. It rarely works: of the 11 settlement raids, 1 took its target (the Tide Alliance razed Stoneguard on
 day 7.21; Grove's party struck the same garrison in the same hour and lost 5 of 7), 1 was beaten back, 8 lost every
-raider who set out, and 1 set out with one raider of its three (the frozen archers below), who died. Both lair raids won without a loss (the Hollow was
+raider who set out, and 1 set out with one raider of its three (the frozen archers below), who died. Both lair raids
+won without a loss (the Hollow was
 eliminated on day 7.19, Stoneguard on day 7.21; the Ember Legion and the Grove Covenant then swore their pact against
 the Tide Alliance).
 
@@ -370,7 +371,8 @@ party that had never left home (below): the turn-home in the field was not seen 
 **Surveys and far workers** (known leaks 2 and 6). Every cave survey line (57 in the clean run, 39 in the continuation)
 came while the explorer was home or bound for the station; the one line the polls could not place was checked in the
 server log (the explorer walked in, handed in and went out between two polls). No miner's expected return changed while
-it was away; crossings of the home edge no longer moved it. The Tide Alliance's miner Tamsin Kerr died unseen at a branch
+it was away; crossings of the home edge no longer moved it. The Tide Alliance's miner Tamsin Kerr died unseen at a
+branch
 face 99 blocks out on day 5.40, went missing at 5.91 (its shift and the grace) and was presumed dead at 6.38.
 
 **Found and fixed: archers frozen on a far target.** On day 4.78 Hinae chased Ember's raiders home to Ember's walls and
@@ -394,22 +396,78 @@ broke its target's heart now keeps the ruins (`BaseWatch.ruins`) and brings them
 (`KnowledgeGameTests.aPartyThatBreaksTheHeartBringsTheRuinsHome`; the sabotage that skips it fails it).
 
 **Regressions looked for.** Recruitment replaced losses ("garrison growth", "home defence", "no X left"; 68 recruits in
-the clean run) and the populations grew from 11 to 14 per faction to 21 to 25 by day 5. Stuck recoveries (`sim.py`'s workers' mean):
+the clean run) and the populations grew from 11 to 14 per faction to 21 to 25 by day 5. Stuck recoveries (`sim.py`'s
+workers' mean):
 11.1 at day 5.1 in the clean run, against 11 to 13 at days 5 to 7 in the roll call's live check: level; 15.4 over the
 4 days after the restart (the count starts again at a load), most of it two Grove miners at a far branch mine (141 and
-180, bursts of "going back and forth" by their mine's entrance, never stuck for good). Tick time 5.8 to 8.6 ms a tick per day (earlier
+180, bursts of "going back and forth" by their mine's entrance, never stuck for good). Tick time 5.8 to 8.6 ms a tick
+per day (earlier
 6.6 on day 1 and 9 to 12 on days 5 to 7 with the art workflow's jobs). Tools: `sim.py` and `rolltrack.py` failed on a
 hero with no faction (Hinae once Stoneguard fell; the dump leaves `owner` out); both read it as absent now.
 
+**The verification campaign (2026-11-25).** A fresh world on a new server folder (same seed and config, same layout),
+the jar of commit 7b8db3e (both fixes above), Natsuho with the Ember Legion and Hinae with Stoneguard, followed the same
+way (`warcheck.py`): no operator command to day 5.19, then one forced raid (Stoneguard on Ember with Hinae, to draw the
+archers onto a hero), then on to day 7.25; the server was stopped cleanly. The launches:
+
+| day | launcher | target | basis | "about N" | the truth | out | dead |
+|---|---|---|---|---|---|---|---|
+| 3.94 | Tide Alliance | Hollow lair | a look (lair) | 7 | 8 monsters | 3 | 0, lair razed |
+| 4.10 | Ember Legion | Stoneguard | the prior (blind look) | 7 | 3 + Hinae | 4 | 4 |
+| 4.34 | Stoneguard | Ember Legion | losses seen at home | 1 | 5 | 3 | 3 |
+| 5.20 | Stoneguard (forced) | Ember Legion | losses seen at home | 1 | 6 + Natsuho | 3 + Hinae | all |
+| 5.44 | Tide Alliance | Stoneguard | the prior (blind look) | 7 | 0 | 4 | 0, Stoneguard razed |
+| 5.47 | Grove Covenant | Ember Legion | the prior (blind look) | 7 | 9 + Natsuho | 4 | 4 |
+
+* **The archers.** Ten fighters had a target more than 24 blocks off at some poll (24 to 43 blocks); every one had let
+  it go by the next poll but an Ember crossbowman whose target stood at the walls' foot at 24 blocks (the edge of the
+  watch, positions rounded to the block) for three polls. No ranged soldier stood frozen on a far target (the first
+  run's archers kept theirs 1.9 days); every party set out whole (out = party, the archers drafted with them). Hinae,
+  forced on Ember, fell there to its soldiers at her escape (13%), so the original case (a hero walking home out of
+  reach) did not come back.
+* **Won raids.** Both victories brought the ruins home: "REPORT hollow ...: ruins (by the raid party)" (day 4.10) and
+  "REPORT stoneguard ...: ruins (by the raid party)" (day 5.66), and the Tide Alliance's council weighed neither again.
+* **The rate.** Five launches by the councils in 7.25 days, three of them by day 5.19 (the first run: six by 5.18; the
+  roll call's live check: four in 6.94 days), the first at day 3.94. None after day 5.55: Stoneguard's fall made the
+  Ember Legion and the Grove Covenant swear their pact against the Tide Alliance, whose base neither had found (a
+  sworn council weighs only the conqueror's bases, not even a lair), and the Tide Alliance knew nothing but ruins.
+* **The leak test.** Four garrison departures of 3 or more; no other council's estimate moved without a report of its
+  own. When Stoneguard's garrison and Hinae left on the forced raid (5.22), the Ember Legion's estimate of Stoneguard
+  fell from 11.4 to 5.9 only as it saw Stoneguard's raiders fall at its own walls (losses 1, then 3); the Tide
+  Alliance's stayed 12.3 (its look of day 4.40). The Tide Alliance struck the emptied base on day 5.44 because its raid
+  interval ran out, on that look ("about 7"), and razed it.
+* **The roll, surveys and far miners.** 38 roll changes to missing or presumed dead, every one a dead member; 70
+  survey lines, all
+  told with the explorer at home or bound for the station; no miner's expected return changed while it was away.
+* **Regressions looked for.** Recruitment: 61 recruits by day 5.19 (the first run: 68), 94 by 7.25; populations from
+  10 to 11 per faction to 17 to 21 by day 5. Tick time 6.6, 6.6, 8.6, 7.8, 8.1, 8.8, 8.6 ms on days 1 to 7. Stuck
+  recoveries (workers' mean): 2.2, 2.6, 5.5, 9.5, 12.7 on days 1 to 5 (the first run 11.1 at day 5.1), then 19.0 and
+  25.0 on days 6 and 7, against a median of 2: two Grove miners (198 and 194 at day 7.25) whose branch tunnels at
+  y=14 to 15 run 120 to 170 blocks from home, the faces reached a few blocks a poll ("Walking to the tunnel face" for
+  a quarter day at a time), a Tide hauler (122) and a Grove woodcutter (116); the same Grove mine led the first run's
+  continuation (180).
+
 Left open, with the evidence above, for the owner:
 
-* **The war's balance**: raids come more often than before (about 1.2 a day in the clean run against 0.6) and nearly
-  all fail; a council attacks a settlement nobody has seen from 7 soldiers at home, and its party of two thirds meets
-  walls, archers, the alarm and often a hero. The party rule, the prior and the defenders' edge are the owner's call.
-* **The loss model**: the estimates built on losses were the worst (above). Three ways to improve it, none taken: each
-  loss fading from its own time (today the older ones fade with the newest: Ember's three losses of day 3.1 counted in
-  full again at day 4.7); a look that saw none of the yard not replacing an older look nor clearing the losses seen
-  since (today it does: a blind look on day 5.01 cleared Ember's seven losses on Stoneguard, another replaced Ember's
-  32% look at Grove); a floor of `homeDefenders` for a base whose raiders fell (a council never sends those). The first
-  two need a save format change for `Report`; the effect on decisions was small here (one counter-attack of the 3
-  would have waited).
+* **The war's balance**: raids rarely work. Of the 15 settlement raids in both campaigns (the forced one apart), 2
+  took their target, the Tide Alliance on Stoneguard both times (once in the same hour as Grove's party, once on a
+  garrison already lost at Ember); the rest lost every raider or were beaten back. Most estimates rest on the prior
+  (the blind look: a scout outside 5-high walls sees
+  the walls), and the parties of two thirds meet walls, archers, the alarm and often a hero. The party rule, the prior
+  and the defenders' edge are the owner's call.
+* **The loss model (the estimates' calibration)**: the estimates built on losses seen at home were the worst in both
+  campaigns: "about 0" against 3 + Hinae, 4 and 4 + Hinae (the first run), "about 1" against 5 and 6 + Natsuho (the
+  verification): the council's own garrison less every enemy raider seen falling at its walls, where every council
+  keeps a third of its soldiers (at least `homeDefenders`, 3) at home. Three ways to improve it, none taken: each loss
+  fading from its own time (today the older ones fade with the newest: Ember's three losses of day 3.1 counted in full
+  again at day 4.7); a look that saw none of the yard not replacing an older look nor clearing the losses seen since
+  (today it does: a blind look on day 5.01 cleared Ember's seven losses on Stoneguard, another replaced Ember's 32% look
+  at Grove); a floor of `homeDefenders` for a base whose raiders fell. The first two need a save format change for
+  `Report`.
+* **A pact against a conqueror nobody has found**: the pact's councils weigh only the conqueror's bases, so with none
+  reported they launch nothing at all (no lair either) until a scout finds one: 1.7 days without a launch here.
+* **A miner at the storehouse overnight**: Stoneguard's miner stood at the storehouse stand from day 2.49 to 2.96 (its
+  status "Walking to the storehouse", no path, its own stand one block off, a full backpack of 401 items, the
+  storehouse's cobblestone at 511 of the 512 junk limit) and went back to its mine at dawn; once in 7 days, cause not
+  found.
+* **Long branch tunnels**: the stuck recoveries above (pre-existing mining navigation, not of this review).
