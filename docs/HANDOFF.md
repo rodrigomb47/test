@@ -1078,10 +1078,12 @@ python3 tools/rcon.py "stop"
   after each, so the other factions' travellers got their areas back. (1) **Grove Covenant** fell on day 3.38 to an
   Ember raid sent by `/fc admin raid` (Natsuho in it): 20 on its roll, 11 killed in the battle, the other 9 at once at
   the fall, all loaded (two far miners and a woodcutter among them); its things lay where they fell (19 stacks in the
-  yard, 17 and 8 at the far miner's and woodcutter's spots). (2) **The Ember Legion** fell on day 3.61 to Stoneguard's
-  own council raid (Isla Marsh broke the heart): 4 of its 19 had died before (Natsuho slain by Isla Marsh at her last
-  stand, one feed line, waiting to rise); 15 died at once at the fall, among them its 2 raiders 243 blocks away on the
-  march to the Tide Alliance, a miner 143 blocks away, a scout stuck in water 148 blocks away and a second scout 80 away;
+  yard, 17 and 8 at the far miner's and woodcutter's spots). (2) **The Ember Legion** fell on day 3.61 to a raid
+  Stoneguard's council chose (Isla Marsh broke the heart; Ember's three soldiers were out on raids ordered by
+  `/fc admin raid`, and the fall came a minute after the unloading window): 4 of its 20 (19 NPCs and Natsuho) had died
+  before (Natsuho slain by Isla Marsh at her last stand, one feed line, waiting to rise); 15 died at once at the fall,
+  among them its 2 raiders 243 blocks away on the operator-ordered march to the Tide Alliance, a miner 143 blocks away,
+  a scout stuck in water 148 blocks away and a second scout 80 away;
   one, a cave explorer 89 blocks away, was in an unloaded place: it stayed in the region files alive through a restart
   and died where it stood ("... of the fallen Ember Legion dies where it stands at 457, 64, 103") when its chunk was
   force-loaded, 7 stacks dropping. Natsuho was freed in silence at the fall ("fell with the Ember Legion and is free (level
@@ -1103,8 +1105,10 @@ python3 tools/rcon.py "stop"
   of them, the report stayed a standing base and the council kept weighing it (only a party that broke the heart itself
   kept the ruins). Test `KnowledgeGameTests.aPartyThatFindsRuinsBringsThemHome` (failed first; two sabotages caught).
   Live on the new jar: Stoneguard's next raid on Grove ended "its settlement was found in ruins" (day 6.67) and the
-  Tide Alliance's raid on Stoneguard's unseen ruins the same way (day 8.02). `tools/rolltrack.py` names a launch on
-  ruins as ruins. **1119 unit tests, 410 GameTests.** Evidence (the session's scratchpad, not in the repository):
+  Tide Alliance's raid on Stoneguard's unseen ruins the same way (day 8.02); Stoneguard's report of Grove stayed ruins
+  to its own fall (its council did not sit again before it, so that the council then leaves the ruins rests on the
+  test). The hero's half of the fix (`HeroRaid`) has no test of its own and was not seen live. `tools/rolltrack.py`
+  names a launch on ruins as ruins (checked by compiling only; the running tracker kept the old text). **1119 unit tests, 410 GameTests.** Evidence (the session's scratchpad, not in the repository):
   `elim/LIVE_NOTES.md`, `track1/`, `fallenwatch.log`, region scans, the four server logs. Not checked live: a member
   player (single-player only; the GameTests cover it).
 
