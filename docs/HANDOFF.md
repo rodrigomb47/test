@@ -1054,7 +1054,10 @@ python3 tools/rcon.py "stop"
   `HEROES_V2.md` (8.1, 6.13, A6b as built), `MOBILITY_AND_WORK.md` 7.7 and `ARTIFACTS.md` no longer send a hero away from,
   or exile it after, its faction's last base; `BOSS_HEROES.md` 3.12's hero carrier. Tests: `EliminationTest` (4),
   `EliminationGameTests` (12: the Hollow's monsters wherever they are; a lair monster's chunk area; an away hero's things;
-  a hero presumed lost). Six sabotages, each caught by its test. **1119 unit tests, 407 GameTests.**
+  a hero presumed lost). Five sabotages, each caught by its test. **1119 unit tests, 407 GameTests.** Then (the
+  lead's check): a hero presumed lost whose entity was in fact loaded at the fall (another dimension) was told twice, by
+  its death and by the fall's "died away" line; its real death now clears the presumption and settles it
+  (`HeroManager.onDeath`), test `elimHeroPresumedLostButLoadedIsToldOnce` (failed first with two lines).
 - **Members of an ended campaign** (2026-11-25, the same review; pre-existing, made visible by the fall's rule): a
   campaign has an id (`CampaignData.campaignId`, random, new at every `/fc start` in `reset`, and given at load to a
   started campaign saved before ids), and each member carries the id of the campaign it was recruited in
@@ -1065,7 +1068,7 @@ python3 tools/rcon.py "stop"
   faction's base. An id of 0 (an NPC saved before ids, a test's or an operator's NPC that joined no roll) is never
   checked. Visible: `/fc start` now also ends the old campaign's loaded NPCs within a second (heroes were already
   discarded by `HeroManager.releaseAll`). GameTest `elimAMemberOfAnEndedCampaignDiesWhenItLoads` (failed first; its
-  sabotage caught). **1119 unit tests, 408 GameTests.**
+  sabotage caught). **1119 unit tests, 409 GameTests** (with the presumed-lost fix above).
 
 ## 6. Known open items and ideas (none blocking)
 

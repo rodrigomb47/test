@@ -432,7 +432,20 @@ public final class HeroManager {
     public static void onDeath(MinecraftServer server, HeroEntity h, net.minecraft.world.damagesource.DamageSource source) {
         CampaignData data = CampaignData.get(server);
         HeroState s = data.heroes.get(h.heroId());
-        if (s == null || !s.alive || !h.getUUID().equals(s.uuid)) {
+        if (s == null || !h.getUUID().equals(s.uuid)) {
+            return;
+        }
+        if (!s.alive) {
+            if (s.presumedLost) {
+                // presumed lost, but its entity lived on where the presumption could not see it (another dimension):
+                // this is its real death, told by the feed now and counted at the presumption, so no presumption is left
+                // for a faction's fall to tell; a fallen faction's hero is settled for good (no second death)
+                s.presumedLost = false;
+                data.setDirty();
+                if (s.owner != null && com.factionclash.campaign.CampaignManager.fallen(data, s.owner)) {
+                    settleFallen(data, s, h);
+                }
+            }
             return;
         }
         if (s.owner != null && com.factionclash.campaign.CampaignManager.fallen(data, s.owner)) {

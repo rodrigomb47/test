@@ -575,7 +575,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 408 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 409 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
@@ -591,7 +591,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   unloaded place dies when its chunk loads and its things drop; a member of a faction never eliminated lives; a hero at
   home dies with the last base without running and is free for good, as are one waiting to rise and one away, the feed
   telling each death once and the away one's stale copy discarded, what it carried dropping where it stood (an older
-  copy drops nothing); a hero presumed lost is told dead at the fall; the Hollow's monsters die with its last lair, a
+  copy drops nothing); a hero presumed lost is told dead at the fall, once, whether it is away or in fact loaded; the Hollow's monsters die with its last lair, a
   loaded one on no lair's list and one away when it loads, and a lair monster's death gives up its chunk area; a member
   player dies and is factionless, at once or at its login; a member of an ended campaign dies when it loads in a new one;
   the survivors of a conquest stay enemies; an old save that holds a pact loads), **deaths far from home** (a

@@ -754,6 +754,39 @@ public final class EliminationGameTests {
     }
 
     /**
+     * (xii b) A hero presumed lost whose entity was in fact loaded at the fall (in another dimension, say, where the
+     * presumption could not see it) dies there with its faction: one feed line, its own, and no second "died away" line;
+     * no second death is counted, and it is free for good.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "elim_hero_presumed_loaded")
+    public static void elimHeroPresumedLostButLoadedIsToldOnce(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FALLS, 2, 3, 40);
+        try {
+            lastBase(t);
+            List<HeroKillFeed.Line> lines = feed(t);
+            String id = "fx_elim_presumed_here";
+            HeroEntity hero = schemer(t, id, 12, 12);
+            HeroState s = t.data.heroes.get(id);
+            // the record as the presumption left it (HeroManager.tick's "is missing and presumed lost")
+            s.alive = false;
+            s.presumedLost = true;
+            s.deaths = 1;
+            s.reviveAt = h.getLevel().getGameTime() + 12_000;
+            CampaignManager.eliminate(h.getLevel(), t.data, FALLS);
+            t.assertTrue(hero.isDeadOrDying(), "the hero outlived its faction");
+            String name = HeroManager.nameOf(id);
+            List<HeroKillFeed.Line> told = naming(lines, name);
+            t.assertTrue(told.size() == 1, "the loaded presumed-lost hero's death was told " + told.size() + " times: " + told);
+            t.assertTrue(s.deaths == 1, "the fall counted a second death: " + s.deaths);
+            freeForGood(t, id, "the loaded presumed-lost hero");
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
      * (xiii) A member of an ended campaign (an operator ran {@code /fc start} again; its faction may have fallen in the old
      * one while it was away) dies where it stands when it loads in the new one, its things dropping. A recruit of this
      * campaign carries its id and lives; an NPC with no campaign id (saved before ids, a test's) lives.
