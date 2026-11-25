@@ -1055,6 +1055,17 @@ python3 tools/rcon.py "stop"
   or exile it after, its faction's last base; `BOSS_HEROES.md` 3.12's hero carrier. Tests: `EliminationTest` (4),
   `EliminationGameTests` (12: the Hollow's monsters wherever they are; a lair monster's chunk area; an away hero's things;
   a hero presumed lost). Six sabotages, each caught by its test. **1119 unit tests, 407 GameTests.**
+- **Members of an ended campaign** (2026-11-25, the same review; pre-existing, made visible by the fall's rule): a
+  campaign has an id (`CampaignData.campaignId`, random, new at every `/fc start` in `reset`, and given at load to a
+  started campaign saved before ids), and each member carries the id of the campaign it was recruited in
+  (`FactionNpc` `FcCampaign`, stamped by `Recruitment.register`, so heroes and the starting NPCs too). A member of an
+  earlier campaign that is on no roll of this one dies where it stands on its first tick, its things dropping
+  (`CampaignManager.ofAnEndedCampaign`, read by `diesWithFaction`): before, a scout away when Stoneguard fell loaded
+  alive after `/fc start` as a member of the new Stoneguard, with a base id the new numbering may give to another
+  faction's base. An id of 0 (an NPC saved before ids, a test's or an operator's NPC that joined no roll) is never
+  checked. Visible: `/fc start` now also ends the old campaign's loaded NPCs within a second (heroes were already
+  discarded by `HeroManager.releaseAll`). GameTest `elimAMemberOfAnEndedCampaignDiesWhenItLoads` (failed first; its
+  sabotage caught). **1119 unit tests, 408 GameTests.**
 
 ## 6. Known open items and ideas (none blocking)
 
@@ -1068,7 +1079,8 @@ python3 tools/rcon.py "stop"
   text still names pact allies where it is not built: `BOSS_HEROES.md` 3.12's "A pact" case and its own-side lines,
   `notes/kit-gaps.md`, and in `HEROES_V2.md` the leader diplomacy's "today's pact" (5.x relations, the save table),
   left for the owner's answer on that diplomacy; the retired `tools/herotool/prompt-template.txt` still says "make
-  pacts".
+  pacts"; (6) an NPC saved before campaign ids (2026-11-25) carries none, so the first `/fc start` after that leaves it
+  alive as before (one recruited after the update is told apart).
 - The roll call's open items (`docs/design/missing_npcs.md` 13-14: the survey, the council's view of an enemy base, the
   retraining and the blacksmith, the lookout's line, the raid's 3-day bound, a far miner's crossings) were taken up by
   the knowledge review (2026-11-19, `docs/design/knowledge.md`); `/fc hero info` (player-side) stays. Left open by that

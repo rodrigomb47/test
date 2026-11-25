@@ -104,6 +104,12 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
      * anywhere went straight into the faction's bank). Dropped as orbs where it dies, as a player's would be.
      */
     private int carriedXp;
+    /**
+     * The id of the campaign it joined ({@code CampaignData.campaignId}, stamped by {@code Recruitment.register}): a member
+     * of an ended campaign that loads in a new one is told apart by it ({@code CampaignManager.diesWithFaction}). 0: none
+     * (an NPC saved before 2026-11-25, a test's or an operator's NPC that joined no roster), never checked.
+     */
+    private long campaignId;
     private long lastHurtTime;
     /** (Not 0: a freshly spawned NPC has not "just landed a blow" in its first 40 ticks.) */
     private long lastAttackTime = -1000;
@@ -640,6 +646,15 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
 
     public void setBaseId(int id) {
         this.baseId = id;
+    }
+
+    /** The id of the campaign it joined (0: none; see the field). */
+    public long campaignId() {
+        return campaignId;
+    }
+
+    public void setCampaignId(long id) {
+        this.campaignId = id;
     }
 
     public BaseState base() {
@@ -1363,6 +1378,9 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         if (carriedXp > 0) {
             tag.putInt("FcCarriedXp", carriedXp);
         }
+        if (campaignId != 0) {
+            tag.putLong("FcCampaign", campaignId);
+        }
         CompoundTag af = new CompoundTag();
         affixes.forEach((k, v) -> af.putInt(k.name(), v));
         tag.put("FcAffixes", af);
@@ -1401,6 +1419,7 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
         npcLevel = tag.getInt("FcLevel");
         xp = tag.getInt("FcXp");
         carriedXp = tag.getInt("FcCarriedXp"); // absent before 2026-11-19: nothing carried
+        campaignId = tag.getLong("FcCampaign"); // absent before 2026-11-25: none, never checked
         affixes.clear();
         CompoundTag af = tag.getCompound("FcAffixes");
         for (String k : af.getAllKeys()) {

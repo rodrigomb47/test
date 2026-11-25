@@ -274,6 +274,7 @@ public final class Recruitment {
         r.lastSeen = npc.level().getGameTime();
         r.seenHomeAt = r.lastSeen; // it joins at home (its first sighting outside the home area is its leaving)
         data.faction(base.faction).roster.put(r.uuid, r);
+        npc.setCampaignId(data.campaignId); // a member of this campaign (CampaignManager.ofAnEndedCampaign)
         data.setDirty();
     }
 }

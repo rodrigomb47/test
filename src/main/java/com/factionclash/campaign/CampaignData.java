@@ -33,6 +33,12 @@ public final class CampaignData extends SavedData {
     public BlockPos center = BlockPos.ZERO;
     public int radius;
     public long startedAt;
+    /**
+     * This campaign's own id, a random number other than 0 given when a campaign is prepared ({@link #reset}), or when a
+     * started campaign saved before 2026-11-25 loads. Each member carries the id of the campaign it was recruited in
+     * ({@code FactionNpc.campaignId}), so a member of an ended campaign that loads later is told apart. 0: none yet.
+     */
+    public long campaignId;
     public FactionType winner;
     public long finishedAt;
     public final EnumMap<FactionType, FactionState> factions = new EnumMap<>(FactionType.class);
@@ -100,6 +106,15 @@ public final class CampaignData extends SavedData {
         return w;
     }
 
+    /** A random campaign id, never 0 (0 means none). */
+    private static long newCampaignId() {
+        long id = 0;
+        while (id == 0) {
+            id = java.util.concurrent.ThreadLocalRandom.current().nextLong();
+        }
+        return id;
+    }
+
     public NpcRecord record(UUID uuid) {
         for (FactionState f : factions.values()) {
             NpcRecord r = f.roster.get(uuid);
@@ -111,6 +126,7 @@ public final class CampaignData extends SavedData {
     }
 
     public void reset() {
+        campaignId = newCampaignId(); // a new campaign: members of the old one are told apart when they load
         started = false;
         winner = null;
         finishedAt = 0;
@@ -139,6 +155,7 @@ public final class CampaignData extends SavedData {
         t.putLong("center", center.asLong());
         t.putInt("radius", radius);
         t.putLong("startedAt", startedAt);
+        t.putLong("campaignId", campaignId);
         if (winner != null) {
             t.putString("winner", winner.id);
         }
@@ -189,6 +206,11 @@ public final class CampaignData extends SavedData {
         d.center = BlockPos.of(t.getLong("center"));
         d.radius = t.getInt("radius");
         d.startedAt = t.getLong("startedAt");
+        d.campaignId = t.getLong("campaignId");
+        if (d.campaignId == 0 && d.started) {
+            d.campaignId = newCampaignId(); // (a campaign saved before ids: its members recruited from now on carry it)
+            d.setDirty();
+        }
         d.winner = t.contains("winner") ? FactionType.byId(t.getString("winner")) : null;
         d.finishedAt = t.getLong("finishedAt");
         ListTag fl = t.getList("factions", Tag.TAG_COMPOUND);

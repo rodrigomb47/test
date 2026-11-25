@@ -33,7 +33,7 @@ No other mods are required. Build from source with `./gradlew build` (jar in `bu
 
 | Command | Who | What |
 |---|---|---|
-| `/fc start [radius]` | op | Start a new campaign (map centred on world spawn) |
+| `/fc start [radius]` | op | Start a new campaign (map centred on world spawn); the NPCs of an earlier campaign die where they stand (loaded ones within a second, others when they load) |
 | `/fc status` | all | Which factions still stand; the winner when there is one |
 | `/fc join <faction>` / `/fc leave` | all | Join or leave a human faction |
 | `/fc base` | member | Teleport to your faction's base (the player teleport; NPCs always travel physically) |
@@ -575,7 +575,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 407 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 408 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
@@ -593,8 +593,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   telling each death once and the away one's stale copy discarded, what it carried dropping where it stood (an older
   copy drops nothing); a hero presumed lost is told dead at the fall; the Hollow's monsters die with its last lair, a
   loaded one on no lair's list and one away when it loads, and a lair monster's death gives up its chunk area; a member
-  player dies and is factionless, at once or at its login; the survivors of a conquest stay enemies; an old save that
-  holds a pact loads), **deaths far from home** (a
+  player dies and is factionless, at once or at its login; a member of an ended campaign dies when it loads in a new one;
+  the survivors of a conquest stay enemies; an old save that holds a pact loads), **deaths far from home** (a
   scout killed far away unseen is not known, goes missing past its expected return, is presumed dead and replaced; a
   death near the base or seen from home is known at once; a witness away carries the news home and tells it; a dead
   witness carries nothing; a member player reports what it saw at the station and loses it if it dies; a raider

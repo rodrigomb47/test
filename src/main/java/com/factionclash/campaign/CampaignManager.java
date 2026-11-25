@@ -254,18 +254,35 @@ public final class CampaignManager {
 
     /**
      * A member that was in an unloaded place when its faction fell, now loaded and ticking (an NPC or hero away on a
-     * trip, a raider, a far miner): it dies where it stands, as its faction's people did, its things dropping. Returns
-     * whether it died. Read by {@code FactionNpc.tick} on its first tick and once a second after.
+     * trip, a raider, a far miner): it dies where it stands, as its faction's people did, its things dropping. So does a
+     * member of an ended campaign that loads in a new one ({@link #ofAnEndedCampaign}: an operator ran {@code /fc start}
+     * again; its faction may have fallen in the old one while it was away). Returns whether it died. Read by
+     * {@code FactionNpc.tick} on its first tick and once a second after.
      */
     public static boolean diesWithFaction(FactionNpc npc) {
-        if (npc.isDisplayOnly() || !npc.isAlive() || npc.getServer() == null
-                || !fallen(CampaignData.get(npc.getServer()), npc.getFaction())) {
+        if (npc.isDisplayOnly() || !npc.isAlive() || npc.getServer() == null) {
             return false;
         }
-        FactionClash.LOGGER.info("[Faction Clash] {} of the fallen {} dies where it stands at {}",
-                npc.npcName().isEmpty() ? npc.getUUID() : npc.npcName(), npc.getFaction().displayName, npc.blockPosition().toShortString());
+        CampaignData data = CampaignData.get(npc.getServer());
+        String who = npc.npcName().isEmpty() ? npc.getUUID().toString() : npc.npcName();
+        if (fallen(data, npc.getFaction())) {
+            FactionClash.LOGGER.info("[Faction Clash] {} of the fallen {} dies where it stands at {}", who, npc.getFaction().displayName,
+                    npc.blockPosition().toShortString());
+        } else if (ofAnEndedCampaign(data, npc)) {
+            FactionClash.LOGGER.info("[Faction Clash] {} of an ended campaign dies where it stands at {}", who, npc.blockPosition().toShortString());
+        } else {
+            return false;
+        }
         killOutright(npc);
         return true;
+    }
+
+    /**
+     * Whether {@code npc} joined an earlier campaign than this one: both carry a campaign id ({@code FactionNpc.campaignId},
+     * {@link CampaignData#campaignId}; 0 is none, never checked), they differ, and this campaign's roll has no entry for it.
+     */
+    public static boolean ofAnEndedCampaign(CampaignData data, FactionNpc npc) {
+        return npc.campaignId() != 0 && data.campaignId != 0 && npc.campaignId() != data.campaignId && data.record(npc.getUUID()) == null;
     }
 
     /**

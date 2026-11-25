@@ -59,7 +59,7 @@ import java.util.UUID;
  * member player dies and is factionless, at once or at its next login; after a conquest the survivors stay enemies; an
  * old save that holds a pact loads. The review of 2026-11-25 added: the Hollow's monsters die with its last lair wherever
  * they are (an unloaded one when it loads) and give up their chunk tickets; an away hero's things drop where its copy
- * stood; a hero presumed lost is told dead at the fall. Each test that eliminates a faction has its own batch, sets the faction's other
+ * stood; a hero presumed lost is told dead at the fall; a member of an ended campaign dies when it loads in a new one. Each test that eliminates a faction has its own batch, sets the faction's other
  * standing bases aside and puts its roster back afterwards (the test base's cleanup restores its fall stamp).
  */
 @GameTestHolder(FactionClash.MODID)
@@ -745,6 +745,40 @@ public final class EliminationGameTests {
                 t.assertTrue(lying(h, at, Items.GOLD_INGOT) == 3, "its pack did not drop where it stood: " + lying(h, at, Items.GOLD_INGOT));
                 t.assertTrue(naming(lines, name).size() == 1, "a second line: " + naming(lines, name));
                 t.assertTrue(s.owner == null && !s.alive, "the copy brought the hero back");
+                t.succeed();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * (xiii) A member of an ended campaign (an operator ran {@code /fc start} again; its faction may have fallen in the old
+     * one while it was away) dies where it stands when it loads in the new one, its things dropping. A recruit of this
+     * campaign carries its id and lives; an NPC with no campaign id (saved before ids, a test's) lives.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "elim_old_campaign")
+    public static void elimAMemberOfAnEndedCampaignDiesWhenItLoads(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.TIDE_ALLIANCE, 2, 3, 40);
+        try {
+            CampaignData data = t.data;
+            long was = data.campaignId;
+            t.onCleanup(() -> data.campaignId = was);
+            data.campaignId = 0x5EED_0002L;
+            FactionNpc member = t.npc(6, 6, NpcRole.SWORDSMAN);
+            member.setNoAi(true);
+            t.assertTrue(member.campaignId() == data.campaignId, "a recruit does not carry its campaign's id: " + member.campaignId());
+            FactionNpc old = still(t, 8, 6, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN);
+            old.setCampaignId(0x5EED_0001L);
+            old.inventory().addItem(new ItemStack(Items.IRON_INGOT, 2));
+            Vec3 oldAt = old.position();
+            FactionNpc unknown = still(t, 10, 6, FactionType.TIDE_ALLIANCE, NpcRole.SWORDSMAN);
+            h.runAfterDelay(25, t.guard(() -> {
+                t.assertTrue(!old.isAlive(), "a member of an ended campaign lives on in the new one");
+                t.assertTrue(lying(h, oldAt, Items.IRON_INGOT) == 2, "its things did not drop: " + lying(h, oldAt, Items.IRON_INGOT));
+                t.assertTrue(member.isAlive(), "a recruit of this campaign died");
+                t.assertTrue(unknown.isAlive(), "an NPC with no campaign id died");
                 t.succeed();
             }));
         } catch (RuntimeException | Error e) {
