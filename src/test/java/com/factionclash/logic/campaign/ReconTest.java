@@ -39,7 +39,7 @@ class ReconTest {
     // ---- 1. The good look ----
 
     @Test
-    void aGoodLookHasEightOfTheTwentyFivePointsAndTheMiddleForTenSeconds() {
+    void aGoodLookHasEightOfTheTwentyFivePointsAndTheMiddleForHalfAMinute() {
         assertTrue(recon(3, 8, true, 1200, 100).good(), "8 of 25 with the middle");
         assertFalse(recon(3, 7, true, 1200, 100).good(), "7 of 25: blind, whatever it counted");
         assertFalse(recon(3, 20, false, 1200, 100).good(), "20 of 25 without the middle: the guards' routes missed");
