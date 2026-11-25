@@ -1033,9 +1033,8 @@ python3 tools/rcon.py "stop"
   player dies and is factionless, at once and at its login; an old save with a pact loads); removed the two pact tests
   (`FCGameTests`, `KnowledgeGameTests`) and the pact ally case of `CombatReachGameTests`. Nine sabotages, each caught
   (one, the hero's death branch alone, was first covered by the fall's own hero pass, so the test now also checks that
-  no return is announced). **1118 unit tests, 403 GameTests.** Not checked in a campaign yet: watch a fall live (the
-  line, the deaths, a far scout or raider dying when its chunk loads, a hero's feed line, nothing of the faction acting
-  after).
+  no return is announced). **1118 unit tests, 403 GameTests.** Checked live on 2026-11-25 (below, "The faction's fall,
+  checked live").
 - **The faction's fall, reviewed** (2026-11-25, two read-only reviewers, then fixes, each with a test that failed
   first): (a) the Hollow's monsters die with its last lair wherever they are: `eliminate` now kills every mob with the
   lair mark (`BaseBuilder.LAIR_TAG`, `CampaignManager.lairMonster`) in every dimension, not only the tracked ones in the
@@ -1069,6 +1068,45 @@ python3 tools/rcon.py "stop"
   checked. Visible: `/fc start` now also ends the old campaign's loaded NPCs within a second (heroes were already
   discarded by `HeroManager.releaseAll`). GameTest `elimAMemberOfAnEndedCampaignDiesWhenItLoads` (failed first; its
   sabotage caught). **1119 unit tests, 409 GameTests** (with the presumed-lost fix above).
+- **The faction's fall, checked live** (2026-11-25): a campaign on a dedicated server (`/home/user/fcserver_elim`, seed
+  20261107, `fc start 256`, Natsuho with the Ember Legion, Hinae with Stoneguard, the build jar of bd8a470, then of the
+  fix below), followed by `rolltrack.py` and a watcher of the dump to day 8.22, with three falls. With
+  `keepFactionAreasLoaded` on (the default) every member away holds a ticking 3x3 area, so it is loaded where it stands
+  and dies at the fall like the members at home; a member away is in an unloaded place only when nothing keeps its
+  chunk, so for the unloaded cases the option was turned off (the file edited in place, NeoForge reloads it) for the
+  few seconds the travellers took to give up their areas, and turned on again before the fall; the server was restarted
+  after each, so the other factions' travellers got their areas back. (1) **Grove Covenant** fell on day 3.38 to an
+  Ember raid sent by `/fc admin raid` (Natsuho in it): 20 on its roll, 11 killed in the battle, the other 9 at once at
+  the fall, all loaded (two far miners and a woodcutter among them); its things lay where they fell (19 stacks in the
+  yard, 17 and 8 at the far miner's and woodcutter's spots). (2) **The Ember Legion** fell on day 3.61 to Stoneguard's
+  own council raid (Isla Marsh broke the heart): 4 of its 19 had died before (Natsuho slain by Isla Marsh at her last
+  stand, one feed line, waiting to rise); 15 died at once at the fall, among them its 2 raiders 243 blocks away on the
+  march to the Tide Alliance, a miner 143 blocks away, a scout stuck in water 148 blocks away and a second scout 80 away;
+  one, a cave explorer 89 blocks away, was in an unloaded place: it stayed in the region files alive through a restart
+  and died where it stood ("... of the fallen Ember Legion dies where it stands at 457, 64, 103") when its chunk was
+  force-loaded, 7 stacks dropping. Natsuho was freed in silence at the fall ("fell with the Ember Legion and is free (level
+  3)", no second line, no return ten minutes later or after); `fc hero list` showed her free at level 3. (3)
+  **Stoneguard** fell on day 7.12 by `/fc admin destroy 4` with Natsuho, given to it by `fc admin hero give` (she kept
+  level 3), at home and Hinae on a raid in an unloaded place: 23 NPCs and Natsuho died at once (6 raiders 80 blocks out
+  among them), Natsuho's death gave "Natsuho Komezaki (Stoneguard) was killed" and Hinae's fall away gave one line,
+  "Hinae Shirasuzu (Stoneguard) was killed"; both freed with their levels (3 and 4). Hinae's copy, loaded later, was
+  discarded ("Discarding a stale copy ...; the hero is free") with her pack and armour dropping where she stood and no
+  second line; the 3 members left in unloaded places (a raider, a miner, a cave explorer) died where they stood when
+  their chunks loaded after a restart. Every roll entry was known dead at each fall; no line of a fallen faction after
+  its fall; a region scan of the entity files (`save-all flush`, then the saved NPCs) found no living member of a
+  fallen faction at the end, only copies saved during their death animation, which finish dying when they load with no
+  second drop (checked at a far miner's spot: 18 stacks before and after). No pact anywhere (`/fc status`, chat, logs),
+  no exception in the four server logs, tick time 2.0 to 6.1 ms; the survivors kept raiding (7 council launches and 3
+  by operator command by day 8). Found and fixed: **a raid party that finds ruins brings them home** (`FactionDirector.partySawRuins`, called by `GuardJob`
+  and `HeroRaid` when a raider sees the fall): Stoneguard's council sent a party on Grove's settlement 1.6 days after
+  it fell where none of its people saw; the raiders saw the ruins and looted them, but the raid "has ended" with no word
+  of them, the report stayed a standing base and the council kept weighing it (only a party that broke the heart itself
+  kept the ruins). Test `KnowledgeGameTests.aPartyThatFindsRuinsBringsThemHome` (failed first; two sabotages caught).
+  Live on the new jar: Stoneguard's next raid on Grove ended "its settlement was found in ruins" (day 6.67) and the
+  Tide Alliance's raid on Stoneguard's unseen ruins the same way (day 8.02). `tools/rolltrack.py` names a launch on
+  ruins as ruins. **1119 unit tests, 410 GameTests.** Evidence (the session's scratchpad, not in the repository):
+  `elim/LIVE_NOTES.md`, `track1/`, `fallenwatch.log`, region scans, the four server logs. Not checked live: a member
+  player (single-player only; the GameTests cover it).
 
 ## 6. Known open items and ideas (none blocking)
 
@@ -1083,7 +1121,17 @@ python3 tools/rcon.py "stop"
   `notes/kit-gaps.md`, and in `HEROES_V2.md` the leader diplomacy's "today's pact" (5.x relations, the save table),
   left for the owner's answer on that diplomacy; the retired `tools/herotool/prompt-template.txt` still says "make
   pacts"; (6) an NPC saved before campaign ids (2026-11-25) carries none, so the first `/fc start` after that leaves it
-  alive as before (one recruited after the update is told apart).
+  alive as before (one recruited after the update is told apart). Seen in the live check (2026-11-25): (7) a member of
+  a fallen faction brought into a loaded but not ticking ring (two chunks round a ticking area: another traveller's,
+  a force-loaded chunk, a player's view beyond the simulation distance) stands there alive and still until it ticks,
+  then dies; twice in the live check, both from the check's own force-loads (killing it on load, as the lair monsters
+  are, is an option); (8) a member killed by the fall in a chunk that unloads within its death animation is saved dead
+  and finishes dying when it loads (no second drop), and one killed in a not ticking ring lies loaded and dead until the
+  chunk ticks or unloads; (9) a hero dying with its faction says its "ally fallen" line for a member dying in the same
+  tick ("Yara Flint... no!"); (10) a scout's look of ruins whose heart's place it cannot see is reported as a standing
+  base with an empty yard (Stoneguard's scout looked at Grove's ruins three times), so the first raid there finds them;
+  (11) not of the fall: the Ember scout Garo Pike stood in water 148 blocks from home for 1.4 days ("Retreating home",
+  "no route", 0 stuck recoveries) until his faction fell.
 - The roll call's open items (`docs/design/missing_npcs.md` 13-14: the survey, the council's view of an enemy base, the
   retraining and the blacksmith, the lookout's line, the raid's 3-day bound, a far miner's crossings) were taken up by
   the knowledge review (2026-11-19, `docs/design/knowledge.md`); `/fc hero info` (player-side) stays. Left open by that
