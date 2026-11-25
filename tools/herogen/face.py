@@ -166,9 +166,9 @@ def _marks(raw):
         if m["type"] == "face_paint":
             m.setdefault("style", "stripes")
             m.setdefault("color", "accent")
-            if m["style"] not in ("stripes", "tear", "dots", "chevron", "whiskers", "sockets", "scales"):
+            if m["style"] not in ("stripes", "tear", "dots", "chevron", "whiskers", "sockets", "scales", "liner"):
                 raise HerogenError("art.face.marks[%d]: face_paint style is stripes, tear, dots, chevron, whiskers, "
-                                   "sockets or scales" % i)
+                                   "sockets, scales or liner" % i)
         out.append(m)
     return out
 
@@ -444,6 +444,13 @@ def skin_layer(spec, col):
                     for r, k, c in ((15, 0, deep), (16, 0, faint), (17, 0, deep), (17, 1, faint), (18, 1, deep),
                                     (19, 1, faint)):
                         put(r, edge + k * step, c)
+                elif style == "liner":
+                    # C2 (Yugen): a kitsune's red eye-liner, a stroke along the outer half of the lower lid fading
+                    # toward the nose (the row under the eye, which every eye frame leaves as skin, so it shows with
+                    # the eyes shut too)
+                    put(16, fc(0), paint)
+                    put(16, fc(1), paint)
+                    put(16, fc(2), mix(paint, col.skin, 0.45))
                 elif style == "whiskers":
                     # G6c: two faint whisker lines from the face's edge on each cheek, under the blush, the inner
                     # end fading into the skin (a cat's face, never a scar)

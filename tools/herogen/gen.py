@@ -33,6 +33,13 @@ hand would make 250-cube heroes unmaintainable, so a part can carry generators n
   - "reuse" (C1): a chain over the bones of a chain an earlier part built (the tail a phase part's fur puffs up),
     with no "points" of its own: it takes that chain's points, declares no bone and puts its boxes on those bones
     (pN_ children with a phase prefix, so they follow every key of the chain).
+  - "angles" (C2): the copies' fan angles listed in build order (expressions; as many as "copies"), in place of
+    "fan": the first keeps the bone names, the rest take "_b", "_c", ... in that order (a fan whose tails a hero's
+    phase looks show a few at a time, Yugen's nine).
+  - "lod_from" (C2): copies from this index on (in build order) are level-of-detail: each is built on ONE bone,
+    "fine_" + the first bone's name + its suffix (fine_tail_1_d), holding every segment, on "lod_points" and
+    "lod_sections" (default "copy_points" and "copy_sections"); beyond the fine distance they vanish, and a whole
+    tail costs one bone (it keeps its shape and sways as one piece).
 `groups` (a list): {"rotation", "pivot", "cubes": [...]}: plain cubes that share one rotation about one pivot (an
   ear's stacked slabs tilted as one piece).
 Every generator may carry "when": <expression>; it is skipped when that is 0 (an optional ahoge).
@@ -251,27 +258,47 @@ def chains(ctx, declare, add_cube):
         n_copies = int(round(float(ctx.ev(ch.get("copies", 1)))))
         if not 1 <= n_copies <= 11:
             raise HerogenError("%s: chain %d copies must be 1..11" % (ctx.where, ci))
-        fan = float(ctx.ev(ch.get("fan", 0)))
         axis = np.array(ctx.ev(ch.get("fan_axis", [0, 0, 1])), dtype=float)
         axis = axis / (np.linalg.norm(axis) or 1.0)
-        angles = [0.0] if n_copies == 1 else [fan * (j / float(n_copies - 1) - 0.5) for j in range(n_copies)]
-        order = sorted(range(n_copies), key=lambda j: (abs(angles[j]), angles[j]))
+        if "angles" in ch:
+            # C2: the fan's angles in build order (the first keeps the names)
+            angles = [float(ctx.ev(a)) for a in ch["angles"]]
+            if len(angles) != n_copies:
+                raise HerogenError("%s: chain %d has %d angles for %d copies" % (ctx.where, ci, len(angles), n_copies))
+            order = list(range(n_copies))
+        else:
+            fan = float(ctx.ev(ch.get("fan", 0)))
+            angles = [0.0] if n_copies == 1 else [fan * (j / float(n_copies - 1) - 0.5) for j in range(n_copies)]
+            order = sorted(range(n_copies), key=lambda j: (abs(angles[j]), angles[j]))
         copy_scale = float(ctx.ev(ch.get("copy_scale", 1.0)))
         cpts = ch.get("copy_points", list(range(len(pts0))))
         csec = ch.get("copy_sections", list(range(len(names))))
         if len(csec) != len(cpts) - 1 or any(not 0 <= i < len(pts0) for i in cpts):
             raise HerogenError("%s: chain %d copy_points / copy_sections do not match" % (ctx.where, ci))
+        lod_from = int(round(float(ctx.ev(ch["lod_from"])))) if "lod_from" in ch else None
+        if lod_from is not None and not 1 <= lod_from <= n_copies:
+            raise HerogenError("%s: chain %d lod_from must be 1..copies" % (ctx.where, ci))
+        lpts = ch.get("lod_points", cpts)
+        lsec = ch.get("lod_sections", csec)
+        if lod_from is not None and (len(lsec) != len(lpts) - 1 or any(not 0 <= i < len(pts0) for i in lpts)):
+            raise HerogenError("%s: chain %d lod_points / lod_sections do not match" % (ctx.where, ci))
         all_names = []
         for k, j in enumerate(order):
             suffix = "" if k == 0 else "_" + "bcdefghijk"[k - 1]
-            idx = list(range(len(pts0))) if k == 0 else cpts
-            cnames = [nm + suffix for nm in (names if k == 0 else names[:len(cpts) - 1])]
-            sections = ch["sections"] if k == 0 else [ch["sections"][i % len(ch["sections"])] for i in csec]
+            lod = lod_from is not None and k >= lod_from
+            pi, si = (lpts, lsec) if lod else (cpts, csec)
+            idx = list(range(len(pts0))) if k == 0 else pi
+            if lod:
+                # C2: a level-of-detail copy: every segment on one fine_ bone
+                cnames = ["fine_" + names[0] + suffix] * (len(pi) - 1)
+            else:
+                cnames = [nm + suffix for nm in (names if k == 0 else names[:len(cpts) - 1])]
+            sections = ch["sections"] if k == 0 else [ch["sections"][i % len(ch["sections"])] for i in si]
             rot = about(axis, angles[j]) if angles[j] else np.eye(3)
             sc = 1.0 if k == 0 else copy_scale
             pts = [pts0[0] + rot @ ((pts0[i] - pts0[0]) * sc) for i in idx]
             _one_chain(ctx, ch, ci, cnames, pts, sections, sc, suffix, declare, add_cube)
-            all_names.append(cnames)
+            all_names.append(cnames[:1] if lod else cnames)
         copies_of[tuple(names)] = all_names
     return copies_of
 
@@ -281,13 +308,17 @@ def _one_chain(ctx, ch, ci, names, pts, sections, scale, suffix, declare, add_cu
     overlap = float(ctx.ev(ch.get("overlap", 0.5)))
     slots = ch.get("slots", "main")
     parent = ch.get("parent", "body")
+    rigid = len(names) > 1 and len(set(names)) == 1      # C2: a level-of-detail copy, every segment on one bone
     if not ch.get("reuse"):
-        for i, name in enumerate(names):
-            declare(name, parent if i == 0 else names[i - 1], tuple(pts[i]))
-        # C1: kept, so a later part can lay a chain over the same bones (`reuse`)
-        if not hasattr(ctx.model, "chain_points"):
-            ctx.model.chain_points = {}
-        ctx.model.chain_points[tuple(names)] = [np.array(p, dtype=float) for p in pts]
+        if rigid:
+            declare(names[0], parent, tuple(pts[0]))
+        else:
+            for i, name in enumerate(names):
+                declare(name, parent if i == 0 else names[i - 1], tuple(pts[i]))
+            # C1: kept, so a later part can lay a chain over the same bones (`reuse`)
+            if not hasattr(ctx.model, "chain_points"):
+                ctx.model.chain_points = {}
+            ctx.model.chain_points[tuple(names)] = [np.array(p, dtype=float) for p in pts]
     extra = ch.get("extra", [])
     prev = None
     for i, name in enumerate(names):

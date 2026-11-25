@@ -79,6 +79,14 @@ OWN_CAPTIONS = {
         "phase.2": "phase.2 (the horn flares)",
         "phase.3": "phase.3 (steam from the horn, glowing eyes)",
     },
+    "yugen_kagaribi": {
+        "phases": "the phase looks (1: three tails; 2: six fanned wide; 3: nine, the middle three tipped with foxfire, "
+                  "glowing eyes)",
+        "phase.2": "phase.2 (six tails fan out, a laugh behind the sleeve)",
+        "phase.3": "phase.3 (nine tails, the lanterns flare)",
+        "escape": "escape, a sleeve and a smirk (no code yet), over the run",
+        "sprint": "sprint (his fox lope)",
+    },
     "the_wither": {
         "phases": "the phase looks (2: soul-blue stays, gem and hem; 3: no familiars, burning tips, blazing eyes); "
                   "the rebirth, blue-white",
@@ -103,7 +111,7 @@ def captions(a):
          "phase.2": "phase.2", "phase.3": "phase.3",
          "escape": "escape (no code yet), over the run",
          "rebirth": "rebirth (no code yet)",
-         "air_jump": "air_jump"}
+         "air_jump": "air_jump", "sprint": "sprint"}
     c.update(OWN_CAPTIONS.get(a.hero.get("id"), {}))
     return c
 
@@ -372,9 +380,9 @@ def mobility_traits(a):
 
 def loco_segments(a):
     """The locomotion a hero's mobility traits use (MOBILITY_AND_WORK 1, 4.1): an acrobat's jumps, wall kicks and
-    mantle; a flyer's or hover hero's drift, hover and flight set (B5); otherwise the walk and run, a charger's charging
-    run and skid (C2), a leaper's crouch jump, leap and heavy landing (C2) or else a plain jump, the ladder climb, and
-    the swim for a swimmer."""
+    mantle; a flyer's or hover hero's drift, hover and flight set (B5); otherwise the walk and run, a runner's own
+    sprint burst when its file overrides it (C2: Yugen's fox lope), a charger's charging run and skid (C2), a leaper's
+    crouch jump, leap and heavy landing (C2) or else a plain jump, the ladder climb, and the swim for a swimmer."""
     from anim.loco_preview import Segment
     traits = mobility_traits(a)
     if "acrobat" in traits:
@@ -415,6 +423,10 @@ def loco_segments(a):
         return segs
     segs = [Segment("walk > run%s" % (" (a runner)" if "runner" in traits else ""),
                     [("move.walk", 1.0), ("move.run", 1.6)])]
+    if "runner" in traits and (a.hero or {}).get("animations") and "move.sprint" in own_clips(a):
+        # C2: a runner whose own file overrides the sprint burst (Yugen's fox lope, MOBILITY_AND_WORK 15.2) shows it
+        segs.append(Segment("run > %s, the runner's sprint burst" % captions(a)["sprint"],
+                            [("move.run", 0.6), ("move.sprint", 1.8)]))
     if "charger" in traits:
         # C2: a charger's traversal charge and the skid that stops it (MOBILITY_AND_WORK 1.5)
         segs.append(Segment("charge_run > skid (a charger's traversal charge)",

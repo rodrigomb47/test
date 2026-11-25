@@ -1,0 +1,137 @@
+{
+  "_comment": "Three small paper lanterns orbiting the hero (C2; Yugen's foxfire, after G6c's `accessories/foxfire_lanterns`): a glowing paper body (glow), lacquered caps (alt) and a tassel (detail) each, on their own bones `fine_lantern_1..3` (level of detail: they vanish beyond the fine distance) under `lantern_orbit`, which turns about the hero's long axis (his `sec.loop` keys its rotation: the orbit), under `lantern_ring`, which a clip may move and tilt without touching the orbit (the ultimate tips it up behind him into a wheel; tilted, the orbit turns in its plane). Both pivots are on the body's axis at the top of the chest, under `root`, so the lanterns stay level when he bows. They float 120 degrees apart at three heights about the shoulders, a hand's breadth outside the widest sleeves.",
+  "id": "accessories/orbit_lanterns",
+  "category": "accessories",
+  "slots": {"main": "glow", "alt": "leather", "detail": "trim"},
+  "occupies": ["orbit"],
+  "bones": [
+    {
+      "name": "lantern_ring",
+      "parent": "root",
+      "pivot": [0, "chest_top", 0]
+    },
+    {
+      "name": "lantern_orbit",
+      "parent": "lantern_ring",
+      "pivot": [0, "chest_top", 0]
+    },
+    {
+      "name": "fine_lantern_1",
+      "parent": "lantern_orbit",
+      "pivot": ["(chest_w / 2 + 8) * -0.94", "chest_top - 2.5", "(chest_w / 2 + 8) * -0.342"]
+    },
+    {
+      "name": "fine_lantern_2",
+      "parent": "lantern_orbit",
+      "pivot": ["(chest_w / 2 + 8) * 0.766", "chest_top - 0.5", "(chest_w / 2 + 8) * -0.643"]
+    },
+    {
+      "name": "fine_lantern_3",
+      "parent": "lantern_orbit",
+      "pivot": ["(chest_w / 2 + 8) * 0.174", "chest_top + 1.5", "(chest_w / 2 + 8) * 0.985"]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "paper_0",
+      "bone": "fine_lantern_1",
+      "origin": ["(chest_w / 2 + 8) * -0.94 - 1.05", "chest_top - 3.75", "(chest_w / 2 + 8) * -0.342 - 1.05"],
+      "size": [2.1, 2.6, 2.1],
+      "material": "glow"
+    },
+    {
+      "name": "cap_0",
+      "bone": "fine_lantern_1",
+      "origin": ["(chest_w / 2 + 8) * -0.94 - 1.25", "chest_top - 1.15", "(chest_w / 2 + 8) * -0.342 - 1.25"],
+      "size": [2.5, 0.5, 2.5],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "name": "base_0",
+      "bone": "fine_lantern_1",
+      "origin": ["(chest_w / 2 + 8) * -0.94 - 1.15", "chest_top - 4.25", "(chest_w / 2 + 8) * -0.342 - 1.15"],
+      "size": [2.3, 0.5, 2.3],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "name": "tassel_0",
+      "bone": "fine_lantern_1",
+      "origin": ["(chest_w / 2 + 8) * -0.94 - 0.2", "chest_top - 5.45", "(chest_w / 2 + 8) * -0.342 - 0.2"],
+      "size": [0.4, 1.2, 0.4],
+      "slot": "detail",
+      "material": "cloth"
+    },
+    {
+      "name": "paper_1",
+      "bone": "fine_lantern_2",
+      "origin": ["(chest_w / 2 + 8) * 0.766 - 1.05", "chest_top - 1.75", "(chest_w / 2 + 8) * -0.643 - 1.05"],
+      "size": [2.1, 2.6, 2.1],
+      "material": "glow"
+    },
+    {
+      "name": "cap_1",
+      "bone": "fine_lantern_2",
+      "origin": [
+        "(chest_w / 2 + 8) * 0.766 - 1.25",
+        "chest_top + 0.8500000000000001",
+        "(chest_w / 2 + 8) * -0.643 - 1.25"
+      ],
+      "size": [2.5, 0.5, 2.5],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "name": "base_1",
+      "bone": "fine_lantern_2",
+      "origin": ["(chest_w / 2 + 8) * 0.766 - 1.15", "chest_top - 2.25", "(chest_w / 2 + 8) * -0.643 - 1.15"],
+      "size": [2.3, 0.5, 2.3],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "name": "tassel_1",
+      "bone": "fine_lantern_2",
+      "origin": ["(chest_w / 2 + 8) * 0.766 - 0.2", "chest_top - 3.45", "(chest_w / 2 + 8) * -0.643 - 0.2"],
+      "size": [0.4, 1.2, 0.4],
+      "slot": "detail",
+      "material": "cloth"
+    },
+    {
+      "name": "paper_2",
+      "bone": "fine_lantern_3",
+      "origin": ["(chest_w / 2 + 8) * 0.174 - 1.05", "chest_top + 0.25", "(chest_w / 2 + 8) * 0.985 - 1.05"],
+      "size": [2.1, 2.6, 2.1],
+      "material": "glow"
+    },
+    {
+      "name": "cap_2",
+      "bone": "fine_lantern_3",
+      "origin": ["(chest_w / 2 + 8) * 0.174 - 1.25", "chest_top + 2.85", "(chest_w / 2 + 8) * 0.985 - 1.25"],
+      "size": [2.5, 0.5, 2.5],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "name": "base_2",
+      "bone": "fine_lantern_3",
+      "origin": ["(chest_w / 2 + 8) * 0.174 - 1.15", "chest_top - 0.25", "(chest_w / 2 + 8) * 0.985 - 1.15"],
+      "size": [2.3, 0.5, 2.3],
+      "slot": "alt",
+      "material": "lacquer"
+    },
+    {
+      "name": "tassel_2",
+      "bone": "fine_lantern_3",
+      "origin": [
+        "(chest_w / 2 + 8) * 0.174 - 0.2",
+        "chest_top - 1.4500000000000002",
+        "(chest_w / 2 + 8) * 0.985 - 0.2"
+      ],
+      "size": [0.4, 1.2, 0.4],
+      "slot": "detail",
+      "material": "cloth"
+    }
+  ]
+}

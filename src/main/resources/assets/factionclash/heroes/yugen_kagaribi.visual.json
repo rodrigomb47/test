@@ -1,0 +1,179 @@
+{
+  "animation_chain": ["yugen_kagaribi", "_style_focus", "_core"],
+  "base": "adult_m",
+  "bones": {
+    "fine": [
+      "fine_bangs",
+      "fine_chest",
+      "fine_ear_l",
+      "fine_ear_r",
+      "fine_foot_l",
+      "fine_foot_r",
+      "fine_fox_mask",
+      "fine_hair_back",
+      "fine_hair_l",
+      "fine_hair_r",
+      "fine_hair_top",
+      "fine_lantern_1",
+      "fine_lantern_2",
+      "fine_lantern_3",
+      "fine_sash",
+      "fine_tail_1",
+      "fine_tail_1_b",
+      "fine_tail_1_c",
+      "fine_tail_1_d",
+      "fine_tail_1_e",
+      "fine_tail_1_f",
+      "fine_tail_1_g",
+      "fine_tail_1_h",
+      "fine_tail_1_i",
+      "fine_tail_2",
+      "fine_tail_2_b",
+      "fine_tail_2_c",
+      "fine_tail_3",
+      "fine_tail_4",
+      "fine_tail_hair_1",
+      "fine_weapon_back",
+      "fine_weapon_r"
+    ],
+    "items": ["item_r", "item_l"],
+    "locators": ["item_l", "item_r", "vfx_chest", "vfx_feet", "vfx_head", "vfx_tip_l", "vfx_tip_r"],
+    "phase": {},
+    "tint": ["fine_sash", "sash"],
+    "weapon_drawn": ["weapon_r"],
+    "weapon_sheathed": ["weapon_back"]
+  },
+  "build": "slim",
+  "face": {
+    "asymmetric": false,
+    "blink": {
+      "double_chance": 0.15,
+      "interval": [4, 7],
+      "over_eyes": [0, 4, 5, 8, 9],
+      "profile": "calm",
+      "ticks": [1, 2, 1]
+    },
+    "cheek_frames": ["none", "blush", "sweat", "tears"],
+    "eye_frames": [
+      "open",
+      "half",
+      "closed",
+      "happy",
+      "angry",
+      "sad",
+      "surprised",
+      "pain",
+      "focused",
+      "smug",
+      "glowing",
+      "sleeping"
+    ],
+    "mood_order": [
+      "calm",
+      "happy",
+      "angry",
+      "focused",
+      "hurt",
+      "tired",
+      "sad",
+      "smug",
+      "surprised",
+      "asleep",
+      "flustered",
+      "determined"
+    ],
+    "moods": {
+      "angry": {"cheeks": 0, "eyes": 8, "mouth": 0},
+      "asleep": {"cheeks": 0, "eyes": 11, "mouth": 0},
+      "calm": {"cheeks": 0, "eyes": 0, "mouth": 1},
+      "determined": {"cheeks": 0, "eyes": 4, "mouth": 0},
+      "flustered": {"cheeks": 1, "eyes": 6, "mouth": 5},
+      "focused": {"cheeks": 0, "eyes": 8, "mouth": 1},
+      "happy": {"cheeks": 0, "eyes": 3, "mouth": 1},
+      "hurt": {"cheeks": 0, "eyes": 7, "mouth": 4},
+      "sad": {"cheeks": 0, "eyes": 5, "mouth": 5},
+      "smug": {"cheeks": 0, "eyes": 9, "mouth": 1},
+      "surprised": {"cheeks": 0, "eyes": 6, "mouth": 2},
+      "tired": {"cheeks": 2, "eyes": 1, "mouth": 0}
+    },
+    "mouth_frames": ["neutral", "smile", "talk_a", "talk_b", "grit", "frown", "cat", "fang_grin"],
+    "overrides": {
+      "angry": {"eyes": "focused", "mouth": "neutral"},
+      "calm": {"mouth": "smile"},
+      "focused": {"eyes": "focused", "mouth": "smile"}
+    },
+    "regions": {
+      "cheeks": {"columns": 4, "frames": 4, "h": 2, "u": 64, "v": 33, "w": 16},
+      "eyes": {"columns": 4, "frames": 12, "h": 10, "u": 64, "v": 0, "w": 20},
+      "mouth": {"columns": 8, "frames": 8, "h": 3, "u": 64, "v": 30, "w": 8}
+    }
+  },
+  "form": "adult",
+  "format": 1,
+  "generator": "herogen 1",
+  "head_y": 42,
+  "height_px": 52,
+  "id": "yugen_kagaribi",
+  "moves": ["foxfire_volley", "lantern_ring", "fan_cut", "vanish", "mirage", "foxfire_rain"],
+  "phases": [
+    {
+      "eyes_glow": false,
+      "hide": ["fine_tail_1_d", "fine_tail_1_e", "fine_tail_1_f", "fine_tail_1_g", "fine_tail_1_h", "fine_tail_1_i"],
+      "phase": 1,
+      "show": [],
+      "texture": "base"
+    },
+    {
+      "eyes_glow": false,
+      "hide": ["tail_1"],
+      "phase": 2,
+      "show": ["fine_tail_1_f", "fine_tail_1_g", "fine_tail_1_h", "fine_tail_1_i"],
+      "texture": "p2"
+    },
+    {
+      "eyes_glow": true,
+      "hide": [],
+      "phase": 3,
+      "show": ["tail_1", "fine_tail_1_d", "fine_tail_1_e"],
+      "texture": "p2"
+    }
+  ],
+  "render_scale": 0.56,
+  "rig": "hero_rig_v3",
+  "scale": 1,
+  "secondary": [
+    {"chain": ["tail_hair_1"], "damping": 0.6, "part": "hair/half_up_long", "stiffness": 0.45},
+    {"chain": ["ear_r", "ear_l"], "damping": 0.6, "part": "ears/fox", "stiffness": 0.6},
+    {
+      "chain": ["tail_1", "tail_2", "tail_3", "tail_4", "tail_5"],
+      "damping": 0.55,
+      "part": "tails/fox_nine",
+      "stiffness": 0.3
+    },
+    {
+      "chain": ["tail_1_b", "tail_2_b", "tail_3_b"],
+      "damping": 0.55,
+      "part": "tails/fox_nine",
+      "stiffness": 0.3
+    },
+    {
+      "chain": ["tail_1_c", "tail_2_c", "tail_3_c"],
+      "damping": 0.55,
+      "part": "tails/fox_nine",
+      "stiffness": 0.3
+    },
+    {"chain": ["fine_tail_1_d"], "damping": 0.55, "part": "tails/fox_nine", "stiffness": 0.3},
+    {"chain": ["fine_tail_1_e"], "damping": 0.55, "part": "tails/fox_nine", "stiffness": 0.3},
+    {"chain": ["fine_tail_1_f"], "damping": 0.55, "part": "tails/fox_nine", "stiffness": 0.3},
+    {"chain": ["fine_tail_1_g"], "damping": 0.55, "part": "tails/fox_nine", "stiffness": 0.3},
+    {"chain": ["fine_tail_1_h"], "damping": 0.55, "part": "tails/fox_nine", "stiffness": 0.3},
+    {"chain": ["fine_tail_1_i"], "damping": 0.55, "part": "tails/fox_nine", "stiffness": 0.3},
+    {"chain": ["sleeve_r", "sleeve_l"], "damping": 0.7, "part": "robes/court_robe", "stiffness": 0.5}
+  ],
+  "source_sha256": "3614f3a97a72ea94b2cafa817a27d109f841c5306dcaf790bcbe668f5660fd27",
+  "states": [],
+  "style": "focus",
+  "texture": {"glow_outside_face": true, "glowmask": true, "height": 256, "p2": true, "width": 256},
+  "voice": {"blip": "flute", "pitch": 1, "rate": 3},
+  "weapon": {"hand": "right", "sheathed": "hip"}
+}

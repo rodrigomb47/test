@@ -1,0 +1,16 @@
+{
+  "_comment": "Foxfire tips (C2; Yugen's phase 3): the tips of the three tails of `tails/fox_nine` that his phase-2 look hides (the middle one, `tail_1`, and the level-of-detail pair at +-18.75 degrees, `fine_tail_1_d` and `_e`) repainted in their own slot (`main`, his `metal`: white like the other tips in the base texture) and lit in the phase texture's glow mask (`glow: phase`). The phase texture shows from phase 2 on, and those three tails are hidden through phase 2, so their tips burn only when they come back in phase 3 (his phase-3 palette turns the slot foxfire blue): no extra bone or cube.",
+  "id": "markings/foxfire_tips",
+  "category": "markings",
+  "slots": {"main": "metal"},
+  "requires": ["tails/fox_nine"],
+  "occupies": ["tail_marks"],
+  "paint": [
+    {
+      "cubes": ["tails/fox_nine#tail4_0", "tails/fox_nine#tail2_0_d", "tails/fox_nine#tail2_0_e"],
+      "slot": "main",
+      "material": "hair",
+      "glow": "phase"
+    }
+  ]
+}

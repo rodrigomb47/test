@@ -1,0 +1,7051 @@
+{
+  "_comment": "Yugen Kagaribi, the lantern fox (SLICE_PLAN 3.2, kit sheet docs/heroes-v2/kits/yugen_kagaribi.txt). The kit fields are the slice fixture's (src/test/resources/heroes/slice/yugen_kagaribi.json); art and animations are source only (HEROES_V2 12.5, 12.6). One body for good (the owner's rule of 2026-11-13, HEROES_V2 3.6): an adult of ordinary size, slim build, drawn at 100%.",
+  "format": 2,
+  "id": "yugen_kagaribi",
+  "name": "Yugen Kagaribi",
+  "title": "the Lantern Fox",
+  "description": "A soft-spoken fox merchant-lord whose foxfire burns blue and cold.",
+  "gender": "male",
+  "archetype": "fox",
+  "rarity": "epic",
+  "element": "arcane",
+  "behaviour": {
+    "combat_role": "marksman",
+    "duel_style": "zoner",
+    "duty": "trader"
+  },
+  "basic_attack": {
+    "style": "thrown",
+    "projectile": "blaze_powder",
+    "amount": 4,
+    "interval": 1.5
+  },
+  "moves": [
+    {
+      "id": "foxfire_volley",
+      "name": "Foxfire Volley",
+      "form": "volley",
+      "class": "light",
+      "band": [
+        "mid",
+        "far"
+      ],
+      "count": 5,
+      "range": 16,
+      "cooldown": 13,
+      "frames": {
+        "windup": 0.5,
+        "active": 0.3,
+        "recovery": 0.4
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 4
+        }
+      ]
+    },
+    {
+      "id": "lantern_ring",
+      "name": "Lantern Ring",
+      "form": "zone",
+      "class": "area",
+      "band": [
+        "close"
+      ],
+      "zone_at": "self",
+      "radius": 4,
+      "delay": 1.0,
+      "duration": 3,
+      "interval": 1,
+      "cooldown": 20,
+      "frames": {
+        "windup": 1.0,
+        "active": 3.0,
+        "recovery": 0.8
+      },
+      "prefer_when": "target_close",
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 3
+        },
+        {
+          "type": "effect",
+          "id": "slowness",
+          "level": 1,
+          "seconds": 2
+        }
+      ]
+    },
+    {
+      "id": "fan_cut",
+      "name": "Fan Cut",
+      "form": "combo",
+      "class": "light",
+      "band": [
+        "close"
+      ],
+      "cooldown": 6,
+      "frames": {
+        "windup": 0.4,
+        "active": 0.3,
+        "recovery": 0.3
+      },
+      "strikes": [
+        {
+          "effects": [
+            {
+              "type": "damage",
+              "amount": {
+                "attack_percent": 60
+              }
+            }
+          ]
+        },
+        {
+          "effects": [
+            {
+              "type": "damage",
+              "amount": {
+                "attack_percent": 60
+              }
+            },
+            {
+              "type": "knockback",
+              "strength": 2
+            }
+          ]
+        }
+      ],
+      "followups": [
+        {
+          "move": "vanish",
+          "chance": 80
+        }
+      ]
+    },
+    {
+      "id": "vanish",
+      "name": "Vanish",
+      "form": "self",
+      "class": "light",
+      "band": [
+        "close"
+      ],
+      "cooldown": 8,
+      "frames": {
+        "windup": 0.4,
+        "active": 0.1,
+        "recovery": 0.3
+      },
+      "effects": [
+        {
+          "type": "effect",
+          "id": "invisibility",
+          "seconds": 2
+        },
+        {
+          "type": "move_self",
+          "direction": "back",
+          "distance": 6
+        }
+      ],
+      "followups": [
+        {
+          "move": "foxfire_volley",
+          "chance": 70
+        }
+      ]
+    },
+    {
+      "id": "mirage",
+      "name": "Mirage",
+      "form": "self",
+      "class": "heavy",
+      "band": [
+        "any"
+      ],
+      "phases": [
+        2,
+        3
+      ],
+      "cooldown": 16,
+      "frames": {
+        "windup": 0.8,
+        "active": 0.2,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "spawn_add",
+          "add": "decoy",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": "foxfire_rain",
+      "name": "Foxfire Rain",
+      "form": "rain",
+      "class": "area",
+      "band": [
+        "mid",
+        "far"
+      ],
+      "phases": [
+        3
+      ],
+      "count": 8,
+      "radius": 5,
+      "duration": 2,
+      "delay": 0.9,
+      "cooldown": 14,
+      "frames": {
+        "windup": 1.0,
+        "active": 2.0,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 5
+        }
+      ]
+    }
+  ],
+  "ultimate": {
+    "id": "ninefold_lantern",
+    "name": "Ninefold Lantern",
+    "form": "barrage",
+    "class": "ultimate",
+    "count": 9,
+    "interval": 0.2,
+    "range": 16,
+    "projectile": "blaze_powder",
+    "frames": {
+      "windup": 1.6,
+      "active": 1.8,
+      "recovery": 1.5
+    },
+    "effects": [
+      {
+        "type": "damage",
+        "amount": 3
+      },
+      {
+        "type": "mark",
+        "mark": "bewitched",
+        "max_stacks": 3
+      }
+    ],
+    "line": "Nine lanterns, one bill. Shall we settle it?"
+  },
+  "passives": [
+    {
+      "name": "Contract",
+      "trigger": "on_hurt",
+      "chance": 25,
+      "form": "trigger_enemy",
+      "cooldown": 4,
+      "if": {
+        "condition": "target_close",
+        "value": 4
+      },
+      "effects": [
+        {
+          "type": "mark",
+          "mark": "bewitched",
+          "max_stacks": 3
+        }
+      ]
+    },
+    {
+      "name": "Bewitched",
+      "trigger": "on_mark_full",
+      "mark": "bewitched",
+      "form": "trigger_enemy",
+      "cooldown": 12,
+      "effects": [
+        {
+          "type": "stun",
+          "seconds": 1
+        }
+      ]
+    }
+  ],
+  "boss": {
+    "health_scale": 350,
+    "poise": 70,
+    "weak_points": [
+      {
+        "point": "iron",
+        "hint": "Iron... how crude."
+      },
+      "recovery"
+    ],
+    "phases": [
+      {
+        "at": 100
+      },
+      {
+        "at": 60,
+        "transition": {
+          "seconds": 1.2,
+          "line": "Which of me is lying? All of us, perhaps."
+        }
+      },
+      {
+        "at": 25,
+        "transition": {
+          "seconds": 1.2,
+          "line": "Enough games. Let the lanterns speak."
+        }
+      }
+    ],
+    "reactions": [
+      {
+        "when": "target_close",
+        "move": "vanish",
+        "chance": 70,
+        "cooldown": 8
+      },
+      {
+        "when": "target_drawing_bow",
+        "move": "foxfire_volley",
+        "chance": 50,
+        "cooldown": 8
+      },
+      {
+        "when": "target_behind",
+        "move": "fan_cut",
+        "chance": 60,
+        "cooldown": 8
+      }
+    ],
+    "intro": {
+      "line": "A customer? How delightful. The price today is your patience."
+    }
+  },
+  "personality": {
+    "temperament": "schemer",
+    "traits": {
+      "aggression": 45,
+      "honour": 20,
+      "ambition": 85,
+      "caution": 70,
+      "greed": 70,
+      "sociability": 60,
+      "loyalty": 30,
+      "volatility": 25
+    },
+    "likes": [
+      "gold_ingot",
+      "emerald",
+      "lantern"
+    ],
+    "dislikes": [
+      "iron_ingot"
+    ],
+    "quirks": [
+      "smiles most when he is lying, and he is always smiling"
+    ]
+  },
+  "leader": {
+    "title": "Master of the Veiled Lantern",
+    "faction_names": [
+      "Veiled Lantern Exchange",
+      "The Blue Lantern Company"
+    ],
+    "short_name": "Veiled Lantern",
+    "motto": "Every promise has a price.",
+    "colors": {
+      "primary": "#6B2148",
+      "secondary": "#D8DCE6",
+      "accent": "#5AA9FF"
+    },
+    "banner": {
+      "base": "purple",
+      "patterns": [
+        {
+          "pattern": "circle",
+          "color": "light_blue"
+        },
+        {
+          "pattern": "triangles_top",
+          "color": "white"
+        }
+      ]
+    },
+    "base_style": "cherry_court",
+    "culture": "east",
+    "economy_focus": [
+      "trade",
+      "lore"
+    ]
+  },
+  "talents": [
+    {
+      "id": "merchant_prince",
+      "realm": true
+    },
+    "spymaster"
+  ],
+  "voice": {
+    "blip": "flute",
+    "pitch": 1.0,
+    "rate": 3
+  },
+  "lines": {
+    "founding": [
+      "Sign here, and here. Congratulations: you all work for the Veiled Lantern now."
+    ],
+    "greeting": [
+      "Ah, {player}. Buying or selling? With me it is always both."
+    ],
+    "kill": [
+      "Paid in full."
+    ],
+    "escape": [
+      "Mm. A poor bargain. Let us call the account... deferred."
+    ],
+    "fallen": [
+      "So the bill comes due after all. How novel."
+    ]
+  },
+  "mobility": {
+    "primary": {
+      "trait": "runner",
+      "tier": 3
+    },
+    "secondary": {
+      "trait": "leaper",
+      "tier": 1
+    }
+  },
+  "art": {
+    "base": "male",
+    "form": "adult",
+    "build": "slim",
+    "scale": 100,
+    "palette": {
+      "skin": "#F4DCCB",
+      "hair": "#D8DCE6",
+      "hair_accent": "#F6F6FA",
+      "eyes": "#8FB7FF",
+      "primary": "#6B2148",
+      "secondary": "#D8DCE6",
+      "accent": "#5AA9FF",
+      "trim": "#B23A48",
+      "glow": "#7FC8FF",
+      "leather": "#2A2430",
+      "metal": "#F6F6FA"
+    },
+    "base_layer": {
+      "base_top": "secondary",
+      "base_bottom": "accent",
+      "shoes": "leather"
+    },
+    "parts": [
+      {
+        "part": "hair/half_up_long",
+        "color": "hair",
+        "trim": "trim"
+      },
+      {
+        "part": "ears/fox",
+        "color": "hair",
+        "alt": "hair_accent",
+        "detail": "leather"
+      },
+      {
+        "part": "tails/fox_nine",
+        "color": "hair",
+        "alt": "hair_accent",
+        "params": {
+          "size": 1.15
+        }
+      },
+      {
+        "part": "markings/foxfire_tips",
+        "color": "metal"
+      },
+      {
+        "part": "robes/court_robe",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim"
+      },
+      {
+        "part": "headwear/fox_mask",
+        "color": "hair_accent",
+        "detail": "trim",
+        "alt": "leather"
+      },
+      {
+        "part": "accessories/sash_obi"
+      },
+      {
+        "part": "legwear/socks_shoes",
+        "color": "secondary",
+        "alt": "leather",
+        "trim": "trim",
+        "params": {
+          "sock": 0.2
+        }
+      },
+      {
+        "part": "accessories/prayer_beads",
+        "color": "leather",
+        "alt": "trim"
+      },
+      {
+        "part": "accessories/orbit_lanterns",
+        "color": "glow",
+        "alt": "leather",
+        "detail": "trim"
+      },
+      {
+        "part": "markings/crest",
+        "emblem": "plum",
+        "color": "secondary",
+        "params": {
+          "back": 1,
+          "sleeves": 1
+        }
+      }
+    ],
+    "face": {
+      "eyes": "narrow",
+      "lashes": 1,
+      "flick": "up",
+      "brows": "thin_arched",
+      "mouth": "soft",
+      "highlights": "one",
+      "marks": [
+        {
+          "type": "face_paint",
+          "style": "liner",
+          "color": "trim"
+        }
+      ],
+      "overrides": {
+        "calm": {
+          "mouth": "smile"
+        },
+        "focused": {
+          "eyes": "focused",
+          "mouth": "smile"
+        },
+        "angry": {
+          "eyes": "focused",
+          "mouth": "neutral"
+        }
+      }
+    },
+    "weapon": {
+      "prop": "weapons/folding_fan",
+      "hand": "right",
+      "sheathed": "hip",
+      "color": "secondary",
+      "alt": "accent",
+      "trim": "hair_accent",
+      "detail": "trim"
+    },
+    "phases": [
+      {
+        "phase": 1,
+        "hide": [
+          "fine_tail_1_d",
+          "fine_tail_1_e",
+          "fine_tail_1_f",
+          "fine_tail_1_g",
+          "fine_tail_1_h",
+          "fine_tail_1_i"
+        ]
+      },
+      {
+        "phase": 2,
+        "show": [
+          "fine_tail_1_f",
+          "fine_tail_1_g",
+          "fine_tail_1_h",
+          "fine_tail_1_i"
+        ],
+        "hide": [
+          "tail_1"
+        ]
+      },
+      {
+        "phase": 3,
+        "show": [
+          "tail_1",
+          "fine_tail_1_d",
+          "fine_tail_1_e"
+        ],
+        "palette": {
+          "metal": "#7FC8FF"
+        },
+        "eyes_glow": true
+      }
+    ]
+  },
+  "animations": {
+    "style": "focus",
+    "blink": "calm",
+    "variants": [
+      "fox_lope"
+    ],
+    "poses": {
+      "yug.fv_wind": {
+        "_comment": "Foxfire Volley wind-up: the chest turned to his left, the closed fan cocked across before the left shoulder pointing up and back, the left sleeve drawn back low; his tails flare wide and lift (the tell).",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -4,
+            0
+          ],
+          "chest": [
+            -2,
+            -14,
+            0
+          ],
+          "neck": [
+            0,
+            22,
+            0
+          ],
+          "tail_1_b": [
+            -10,
+            0,
+            9.38
+          ],
+          "tail_1_c": [
+            -10,
+            0,
+            -9.38
+          ],
+          "fine_tail_1_d": [
+            -10,
+            0,
+            4.69
+          ],
+          "fine_tail_1_e": [
+            -10,
+            0,
+            -4.69
+          ],
+          "fine_tail_1_f": [
+            -10,
+            0,
+            14.06
+          ],
+          "fine_tail_1_g": [
+            -10,
+            0,
+            -14.06
+          ],
+          "fine_tail_1_h": [
+            -10,
+            0,
+            18.75
+          ],
+          "fine_tail_1_i": [
+            -10,
+            0,
+            -18.75
+          ],
+          "tail_1": [
+            -10,
+            0,
+            0
+          ],
+          "arm_r": [
+            -19.5,
+            -23.1,
+            12.5
+          ],
+          "forearm_r": [
+            -87.8,
+            -28.8,
+            0.0
+          ],
+          "hand_r": [
+            42.2,
+            -12.0,
+            -22.5
+          ],
+          "arm_l": [
+            -4.9,
+            -44.5,
+            -19.5
+          ],
+          "forearm_l": [
+            -3.4,
+            -44.0,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -9.4,
+            -29.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.fv_fling": {
+        "_comment": "Foxfire Volley's release: the fan snapped open and swept out flat to the front right at shoulder height, the chest turning into it, the left arm out for balance; five flames fly.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            8,
+            0
+          ],
+          "waist": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            2,
+            10,
+            0
+          ],
+          "neck": [
+            -2,
+            -16,
+            0
+          ],
+          "tail_1_b": [
+            -10,
+            0,
+            9.38
+          ],
+          "tail_1_c": [
+            -10,
+            0,
+            -9.38
+          ],
+          "fine_tail_1_d": [
+            -10,
+            0,
+            4.69
+          ],
+          "fine_tail_1_e": [
+            -10,
+            0,
+            -4.69
+          ],
+          "fine_tail_1_f": [
+            -10,
+            0,
+            14.06
+          ],
+          "fine_tail_1_g": [
+            -10,
+            0,
+            -14.06
+          ],
+          "fine_tail_1_h": [
+            -10,
+            0,
+            18.75
+          ],
+          "fine_tail_1_i": [
+            -10,
+            0,
+            -18.75
+          ],
+          "tail_1": [
+            -10,
+            0,
+            0
+          ],
+          "arm_r": [
+            -51.6,
+            -8.6,
+            -24.4
+          ],
+          "forearm_r": [
+            -62.9,
+            8.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            22.7,
+            3.7
+          ],
+          "arm_l": [
+            37.2,
+            -29.0,
+            -12.2
+          ],
+          "forearm_l": [
+            -78.7,
+            -38.3,
+            0.0
+          ],
+          "hand_l": [
+            79.7,
+            -10.4,
+            -1.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.fv_follow": {
+        "_comment": "Foxfire Volley follow-through: the open fan carried on out to his right, the chest turned right, the sleeves trailing.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            14,
+            0
+          ],
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            16,
+            0
+          ],
+          "neck": [
+            -2,
+            -26,
+            0
+          ],
+          "tail_1_b": [
+            -5,
+            0,
+            4.5
+          ],
+          "tail_1_c": [
+            -5,
+            0,
+            -4.5
+          ],
+          "fine_tail_1_d": [
+            -5,
+            0,
+            2.25
+          ],
+          "fine_tail_1_e": [
+            -5,
+            0,
+            -2.25
+          ],
+          "fine_tail_1_f": [
+            -5,
+            0,
+            6.75
+          ],
+          "fine_tail_1_g": [
+            -5,
+            0,
+            -6.75
+          ],
+          "fine_tail_1_h": [
+            -5,
+            0,
+            9.0
+          ],
+          "fine_tail_1_i": [
+            -5,
+            0,
+            -9.0
+          ],
+          "tail_1": [
+            -5,
+            0,
+            0
+          ],
+          "arm_r": [
+            -43.9,
+            3.4,
+            -21.2
+          ],
+          "forearm_r": [
+            -72.3,
+            17.6,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            41.6,
+            0.5
+          ],
+          "arm_l": [
+            38.2,
+            -26.4,
+            -10.8
+          ],
+          "forearm_l": [
+            -72.0,
+            -34.3,
+            0.0
+          ],
+          "hand_l": [
+            75.0,
+            -11.8,
+            -1.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.fc_wind1": {
+        "_comment": "Fan Cut wind-up: the fan snapped open and drawn back high beside the right side of his head, edge first, the chest turned right, the left hand up before the chest.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            10,
+            0
+          ],
+          "waist": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            -4,
+            14,
+            0
+          ],
+          "neck": [
+            2,
+            -22,
+            0
+          ],
+          "arm_r": [
+            -52.6,
+            3.2,
+            -10.8
+          ],
+          "forearm_r": [
+            -126.7,
+            11.7,
+            0.0
+          ],
+          "hand_r": [
+            75.5,
+            51.3,
+            -2.3
+          ],
+          "arm_l": [
+            9.6,
+            -18.4,
+            -4.5
+          ],
+          "forearm_l": [
+            -108.4,
+            -17.6,
+            0.0
+          ],
+          "hand_l": [
+            65.1,
+            -23.5,
+            2.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.fc_cut1": {
+        "_comment": "Fan Cut, the first strike: the open fan slashed down and across to the front left, the chest turning into it, the weight forward.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            6,
+            -8,
+            0
+          ],
+          "waist": [
+            2,
+            -4,
+            0
+          ],
+          "chest": [
+            4,
+            -12,
+            0
+          ],
+          "neck": [
+            -8,
+            18,
+            0
+          ],
+          "arm_r": [
+            -34.7,
+            -13.6,
+            -5.9
+          ],
+          "forearm_r": [
+            -42.8,
+            -12.0,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -53.4,
+            17.5
+          ],
+          "arm_l": [
+            -23.0,
+            -26.1,
+            44.0
+          ],
+          "forearm_l": [
+            -85.5,
+            -53.8,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -44.3,
+            -20.4
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.fc_wind2": {
+        "_comment": "Fan Cut, between the strikes: the open fan whipped round to his left at chest height for the backhand, the chest wound to the left.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            4,
+            -12,
+            0
+          ],
+          "waist": [
+            2,
+            -6,
+            0
+          ],
+          "chest": [
+            2,
+            -18,
+            0
+          ],
+          "neck": [
+            -4,
+            28,
+            0
+          ],
+          "arm_r": [
+            -37.1,
+            -15.4,
+            19.8
+          ],
+          "forearm_r": [
+            -98.4,
+            -29.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            47.2,
+            -35.0
+          ],
+          "arm_l": [
+            -26.5,
+            -29.0,
+            30.2
+          ],
+          "forearm_l": [
+            -63.5,
+            -55.3,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -34.3,
+            -19.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.fc_cut2": {
+        "_comment": "Fan Cut, the second strike: a flat backhand sweep out to the front right at chest height (the knockback), the chest turned right behind it, the left arm flung back for balance.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            4,
+            10,
+            0
+          ],
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            14,
+            0
+          ],
+          "neck": [
+            -4,
+            -24,
+            0
+          ],
+          "arm_r": [
+            -53.4,
+            -9.7,
+            -21.2
+          ],
+          "forearm_r": [
+            -47.0,
+            5.4,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -28.1,
+            24.9
+          ],
+          "arm_l": [
+            38.3,
+            -32.0,
+            -41.1
+          ],
+          "forearm_l": [
+            -1.0,
+            -64.0,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            27.8,
+            -31.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.fc_follow": {
+        "_comment": "Fan Cut follow-through: the open fan carried on out to his right and tipped up, the chest still turned right.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            0.89,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.89,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -10.07,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            2.07,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            14,
+            0
+          ],
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            0,
+            16,
+            0
+          ],
+          "neck": [
+            -2,
+            -28,
+            0
+          ],
+          "arm_r": [
+            -33.4,
+            8.2,
+            -12.9
+          ],
+          "forearm_r": [
+            -87.1,
+            14.4,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            39.5,
+            -2.0
+          ],
+          "arm_l": [
+            44.7,
+            -22.8,
+            -10.8
+          ],
+          "forearm_l": [
+            -71.2,
+            -32.1,
+            0.0
+          ],
+          "hand_l": [
+            74.1,
+            -12.3,
+            1.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.va_veil": {
+        "_comment": "Vanish wind-up: the knees dip and the left sleeve sweeps up before his face, veiling it to the eyes (a sly glance over it), the fan drawn in to the chest.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -8.51,
+            0.0,
+            2.03
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -19.49,
+            0.0,
+            -2.03
+          ],
+          "leg_l": [
+            -19.78,
+            0.0,
+            -3.06
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -8.22,
+            0.0,
+            3.06
+          ],
+          "body": [
+            8,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            2,
+            -6,
+            0
+          ],
+          "neck": [
+            -8,
+            8,
+            0
+          ],
+          "arm_r": [
+            18.0,
+            9.2,
+            -6.4
+          ],
+          "forearm_r": [
+            -130.5,
+            6.6,
+            0.0
+          ],
+          "hand_r": [
+            33.3,
+            7.8,
+            3.9
+          ],
+          "arm_l": [
+            -99.9,
+            -43.9,
+            -78.8
+          ],
+          "forearm_l": [
+            -75.1,
+            -9.5,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -11.6,
+            10.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.va_hop": {
+        "_comment": "Vanish: the hop back (the server carries him 6 blocks): off the ground with the knees tucked, the body tipped a little forward, the sleeve still before his face.",
+        "extends": "focus.stance",
+        "bones": {
+          "body": [
+            10,
+            -6,
+            0
+          ],
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            2,
+            -6,
+            0
+          ],
+          "neck": [
+            -10,
+            8,
+            0
+          ],
+          "leg_r": [
+            -42,
+            0,
+            4
+          ],
+          "shin_r": [
+            70,
+            0,
+            0
+          ],
+          "foot_r": [
+            -14,
+            0,
+            0
+          ],
+          "leg_l": [
+            -30,
+            0,
+            -4
+          ],
+          "shin_l": [
+            62,
+            0,
+            0
+          ],
+          "foot_l": [
+            -18,
+            0,
+            0
+          ],
+          "arm_r": [
+            10.1,
+            9.1,
+            -6.5
+          ],
+          "forearm_r": [
+            -146.2,
+            6.7,
+            0.0
+          ],
+          "hand_r": [
+            54.0,
+            9.5,
+            2.7
+          ],
+          "arm_l": [
+            -92.8,
+            -60.6,
+            -90.0
+          ],
+          "forearm_l": [
+            -63.8,
+            -14.2,
+            0.0
+          ],
+          "hand_l": [
+            72.0,
+            -7.1,
+            8.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.va_land": {
+        "_comment": "Vanish's landing: soft on bent knees, the sleeve swept down and away, the fan out to the side.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -10.36,
+            0.0,
+            2.04
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -21.64,
+            0.0,
+            -2.04
+          ],
+          "leg_l": [
+            -21.74,
+            0.0,
+            -3.08
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -10.26,
+            0.0,
+            3.08
+          ],
+          "body": [
+            10,
+            4,
+            0
+          ],
+          "waist": [
+            0,
+            2,
+            0
+          ],
+          "chest": [
+            0,
+            4,
+            0
+          ],
+          "neck": [
+            -10,
+            -8,
+            0
+          ],
+          "arm_r": [
+            3.8,
+            15.2,
+            2.6
+          ],
+          "forearm_r": [
+            -94.1,
+            13.8,
+            0.0
+          ],
+          "hand_r": [
+            60.3,
+            7.6,
+            2.3
+          ],
+          "arm_l": [
+            24.3,
+            -17.2,
+            -17.7
+          ],
+          "forearm_l": [
+            -60.9,
+            -22.3,
+            0.0
+          ],
+          "hand_l": [
+            74.7,
+            -15.0,
+            4.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.mi_hide": {
+        "_comment": "Mirage wind-up: the fan opened as a screen beside his face, half of it hidden behind the paper, one narrowed eye over the edge, the left hand at his chest, the lanterns drawn in close and burning bright (the tell).",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            -2,
+            4,
+            0
+          ],
+          "neck": [
+            4,
+            -8,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "arm_r": [
+            -43.2,
+            7.8,
+            30.3
+          ],
+          "forearm_r": [
+            -109.0,
+            -13.3,
+            0.0
+          ],
+          "hand_r": [
+            68.4,
+            -60.0,
+            35.0
+          ],
+          "arm_l": [
+            -3.0,
+            9.3,
+            -15.8
+          ],
+          "forearm_l": [
+            -99.0,
+            9.4,
+            0.0
+          ],
+          "hand_l": [
+            55.3,
+            -11.9,
+            17.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            -1,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            0.7,
+            0.7,
+            0.7
+          ],
+          "fine_lantern_1": [
+            1.8571,
+            1.8571,
+            1.8571
+          ],
+          "fine_lantern_2": [
+            1.8571,
+            1.8571,
+            1.8571
+          ],
+          "fine_lantern_3": [
+            1.8571,
+            1.8571,
+            1.8571
+          ]
+        }
+      },
+      "yug.mi_reveal": {
+        "_comment": "Mirage's release: the open fan swept aside low to his right and the left arm opened out to the left, palm up, presenting the two mirages that step out of him; the lanterns flung wide.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            -2,
+            0,
+            0
+          ],
+          "chest": [
+            -6,
+            0,
+            0
+          ],
+          "neck": [
+            6,
+            0,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "arm_r": [
+            -22.9,
+            28.1,
+            22.0
+          ],
+          "forearm_r": [
+            -26.0,
+            16.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -7.4,
+            6.7
+          ],
+          "arm_l": [
+            -17.4,
+            -29.2,
+            -19.6
+          ],
+          "forearm_l": [
+            -56.5,
+            -28.8,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -37.0,
+            3.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            0,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.35,
+            1.35,
+            1.35
+          ],
+          "fine_lantern_1": [
+            0.8519,
+            0.8519,
+            0.8519
+          ],
+          "fine_lantern_2": [
+            0.8519,
+            0.8519,
+            0.8519
+          ],
+          "fine_lantern_3": [
+            0.8519,
+            0.8519,
+            0.8519
+          ]
+        }
+      },
+      "yug.mi_pose": {
+        "_comment": "Mirage recovery: the fan brought back before his chest, half closed, a smug tilt of the head.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            0,
+            6,
+            2
+          ],
+          "neck": [
+            2,
+            -12,
+            6
+          ],
+          "arm_r": [
+            -21.7,
+            -11.4,
+            -2.1
+          ],
+          "forearm_r": [
+            -105.7,
+            -12.0,
+            0.0
+          ],
+          "hand_r": [
+            61.6,
+            9.3,
+            -5.3
+          ],
+          "arm_l": [
+            4.3,
+            -17.0,
+            -11.5
+          ],
+          "forearm_l": [
+            -35.0,
+            -17.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -31.8,
+            9.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.lr_raise": {
+        "_comment": "Lantern Ring wind-up: the closed fan raised upright before his face like a prayer stick, eyes shut, the left hand at its foot; the lanterns sink to his hips and spread wide around him (the tell).",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            -2,
+            0,
+            0
+          ],
+          "chest": [
+            -4,
+            0,
+            0
+          ],
+          "neck": [
+            6,
+            0,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "arm_r": [
+            -21.4,
+            -4.4,
+            0.7
+          ],
+          "forearm_r": [
+            -105.8,
+            -6.1,
+            0.0
+          ],
+          "hand_r": [
+            48.7,
+            6.8,
+            -3.1
+          ],
+          "arm_l": [
+            -41.4,
+            23.9,
+            -4.3
+          ],
+          "forearm_l": [
+            -62.0,
+            19.9,
+            0.0
+          ],
+          "hand_l": [
+            79.1,
+            -14.6,
+            28.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            -11,
+            0.0
+          ]
+        },
+        "scale": {
+          "lantern_ring": [
+            1.55,
+            1.55,
+            1.55
+          ],
+          "fine_lantern_1": [
+            0.8065,
+            0.8065,
+            0.8065
+          ],
+          "fine_lantern_2": [
+            0.8065,
+            0.8065,
+            0.8065
+          ],
+          "fine_lantern_3": [
+            0.8065,
+            0.8065,
+            0.8065
+          ]
+        }
+      },
+      "yug.lr_snap": {
+        "_comment": "Lantern Ring's release: the fan snapped open and swept down and out to his right, pointing at the ground; the ring of lantern fire around him ignites.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -2.89,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -13.11,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -13.93,
+            0.0,
+            -3.01
+          ],
+          "shin_l": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -2.07,
+            0.0,
+            3.01
+          ],
+          "body": [
+            6,
+            8,
+            0
+          ],
+          "chest": [
+            2,
+            8,
+            0
+          ],
+          "neck": [
+            -8,
+            -14,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "arm_r": [
+            -50.5,
+            37.1,
+            -22.3
+          ],
+          "forearm_r": [
+            -1.0,
+            69.4,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -13.8
+          ],
+          "arm_l": [
+            14.2,
+            -16.0,
+            -25.8
+          ],
+          "forearm_l": [
+            -37.1,
+            -20.4,
+            0.0
+          ],
+          "hand_l": [
+            78.1,
+            -12.8,
+            0.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            -14,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.8,
+            1.8,
+            1.8
+          ],
+          "fine_lantern_1": [
+            0.7778,
+            0.7778,
+            0.7778
+          ],
+          "fine_lantern_2": [
+            0.7778,
+            0.7778,
+            0.7778
+          ],
+          "fine_lantern_3": [
+            0.7778,
+            0.7778,
+            0.7778
+          ]
+        }
+      },
+      "yug.lr_hold": {
+        "_comment": "Lantern Ring, held: upright and composed inside the ring, the open fan held before his chest and fanning lazily, the left hand tucked behind him.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            -2,
+            4,
+            0
+          ],
+          "neck": [
+            0,
+            -10,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "arm_r": [
+            -25.9,
+            -4.0,
+            8.4
+          ],
+          "forearm_r": [
+            -104.5,
+            -9.1,
+            0.0
+          ],
+          "hand_r": [
+            60.0,
+            -58.1,
+            35.0
+          ],
+          "arm_l": [
+            6.8,
+            -89.6,
+            -3.8
+          ],
+          "forearm_l": [
+            -40.8,
+            -90.0,
+            0.0
+          ],
+          "hand_l": [
+            75.3,
+            -35.8,
+            -35.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            -14,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.8,
+            1.8,
+            1.8
+          ],
+          "fine_lantern_1": [
+            0.7778,
+            0.7778,
+            0.7778
+          ],
+          "fine_lantern_2": [
+            0.7778,
+            0.7778,
+            0.7778
+          ],
+          "fine_lantern_3": [
+            0.7778,
+            0.7778,
+            0.7778
+          ]
+        }
+      },
+      "yug.fr_call": {
+        "_comment": "Foxfire Rain wind-up: the closed fan pointed straight up overhead, the left hand raised palm up, the head tipped back; the lanterns climb high over him (the tell).",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            -4,
+            4,
+            0
+          ],
+          "chest": [
+            -8,
+            2,
+            0
+          ],
+          "neck": [
+            18,
+            -6,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -8,
+            0,
+            3.75
+          ],
+          "tail_1_c": [
+            -8,
+            0,
+            -3.75
+          ],
+          "fine_tail_1_d": [
+            -8,
+            0,
+            1.88
+          ],
+          "fine_tail_1_e": [
+            -8,
+            0,
+            -1.88
+          ],
+          "fine_tail_1_f": [
+            -8,
+            0,
+            5.62
+          ],
+          "fine_tail_1_g": [
+            -8,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_h": [
+            -8,
+            0,
+            7.5
+          ],
+          "fine_tail_1_i": [
+            -8,
+            0,
+            -7.5
+          ],
+          "tail_1": [
+            -8,
+            0,
+            0
+          ],
+          "arm_r": [
+            -114.1,
+            -12.3,
+            -12.1
+          ],
+          "forearm_r": [
+            -47.2,
+            -1.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            54.0,
+            -12.1
+          ],
+          "arm_l": [
+            -14.7,
+            -15.7,
+            -14.7
+          ],
+          "forearm_l": [
+            -73.1,
+            -15.8,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -59.1,
+            15.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            13,
+            0.0
+          ]
+        },
+        "scale": {
+          "lantern_ring": [
+            0.8,
+            0.8,
+            0.8
+          ],
+          "fine_lantern_1": [
+            1.5625,
+            1.5625,
+            1.5625
+          ],
+          "fine_lantern_2": [
+            1.5625,
+            1.5625,
+            1.5625
+          ],
+          "fine_lantern_3": [
+            1.5625,
+            1.5625,
+            1.5625
+          ]
+        }
+      },
+      "yug.fr_drop": {
+        "_comment": "Foxfire Rain's release: the fan snapped open and swept down to point at the ground ahead, calling the flames down; the lanterns high and wide.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            6,
+            4,
+            0
+          ],
+          "chest": [
+            4,
+            2,
+            0
+          ],
+          "neck": [
+            -6,
+            -6,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -8,
+            0,
+            3.75
+          ],
+          "tail_1_c": [
+            -8,
+            0,
+            -3.75
+          ],
+          "fine_tail_1_d": [
+            -8,
+            0,
+            1.88
+          ],
+          "fine_tail_1_e": [
+            -8,
+            0,
+            -1.88
+          ],
+          "fine_tail_1_f": [
+            -8,
+            0,
+            5.62
+          ],
+          "fine_tail_1_g": [
+            -8,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_h": [
+            -8,
+            0,
+            7.5
+          ],
+          "fine_tail_1_i": [
+            -8,
+            0,
+            -7.5
+          ],
+          "tail_1": [
+            -8,
+            0,
+            0
+          ],
+          "arm_r": [
+            -75.4,
+            -5.0,
+            12.0
+          ],
+          "forearm_r": [
+            -2.2,
+            -17.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            14.4
+          ],
+          "arm_l": [
+            8.8,
+            -23.1,
+            -9.7
+          ],
+          "forearm_l": [
+            -82.5,
+            -23.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -47.9,
+            11.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            12,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.3,
+            1.3,
+            1.3
+          ],
+          "fine_lantern_1": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "fine_lantern_2": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "fine_lantern_3": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "yug.fr_beckon": {
+        "_comment": "Foxfire Rain, between the impacts: the open fan lifted a little to beat time again.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            0.89,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.89,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -10.07,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            2.07,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            0,
+            2,
+            0
+          ],
+          "neck": [
+            -2,
+            -6,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -8,
+            0,
+            3.75
+          ],
+          "tail_1_c": [
+            -8,
+            0,
+            -3.75
+          ],
+          "fine_tail_1_d": [
+            -8,
+            0,
+            1.88
+          ],
+          "fine_tail_1_e": [
+            -8,
+            0,
+            -1.88
+          ],
+          "fine_tail_1_f": [
+            -8,
+            0,
+            5.62
+          ],
+          "fine_tail_1_g": [
+            -8,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_h": [
+            -8,
+            0,
+            7.5
+          ],
+          "fine_tail_1_i": [
+            -8,
+            0,
+            -7.5
+          ],
+          "tail_1": [
+            -8,
+            0,
+            0
+          ],
+          "arm_r": [
+            -63.3,
+            2.3,
+            16.7
+          ],
+          "forearm_r": [
+            -44.9,
+            -12.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            19.9
+          ],
+          "arm_l": [
+            4.1,
+            -23.0,
+            -9.4
+          ],
+          "forearm_l": [
+            -72.4,
+            -22.9,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -49.0,
+            11.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            12,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.3,
+            1.3,
+            1.3
+          ],
+          "fine_lantern_1": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "fine_lantern_2": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "fine_lantern_3": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "yug.ul_open": {
+        "_comment": "Ninefold Lantern wind-up: a half step of weight back, the fan opened beside his face as a screen, the left hand raised by it; the lanterns gather behind him and stand up into a wheel.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            0.89,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.89,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -10.07,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            2.07,
+            0.0,
+            2.99
+          ],
+          "body": [
+            -4,
+            6,
+            0
+          ],
+          "chest": [
+            -6,
+            6,
+            0
+          ],
+          "neck": [
+            6,
+            -12,
+            0
+          ],
+          "lantern_ring": [
+            -90,
+            0,
+            0
+          ],
+          "fine_lantern_1": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_2": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_3": [
+            90,
+            0,
+            0
+          ],
+          "arm_r": [
+            -43.3,
+            1.6,
+            24.1
+          ],
+          "forearm_r": [
+            -100.6,
+            -15.7,
+            0.0
+          ],
+          "hand_r": [
+            63.8,
+            -60.0,
+            35.0
+          ],
+          "arm_l": [
+            -29.9,
+            -8.7,
+            -12.1
+          ],
+          "forearm_l": [
+            -109.5,
+            -11.8,
+            0.0
+          ],
+          "hand_l": [
+            78.2,
+            -27.5,
+            -0.4
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            6,
+            9
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.05,
+            1.05,
+            1.05
+          ],
+          "fine_lantern_1": [
+            1.4286,
+            1.4286,
+            1.4286
+          ],
+          "fine_lantern_2": [
+            1.4286,
+            1.4286,
+            1.4286
+          ],
+          "fine_lantern_3": [
+            1.4286,
+            1.4286,
+            1.4286
+          ]
+        }
+      },
+      "yug.ul_raise": {
+        "_comment": "Ninefold Lantern wind-up: the open fan swept up high at his right, the left arm out and open, the chest lifted; the wheel of lanterns blazes behind him ('Nine lanterns, one bill').",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            0.89,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.89,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -10.07,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            2.07,
+            0.0,
+            2.99
+          ],
+          "body": [
+            -4,
+            4,
+            0
+          ],
+          "chest": [
+            -10,
+            4,
+            0
+          ],
+          "neck": [
+            8,
+            -8,
+            0
+          ],
+          "lantern_ring": [
+            -90,
+            0,
+            0
+          ],
+          "fine_lantern_1": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_2": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_3": [
+            90,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -10,
+            0,
+            5.62
+          ],
+          "tail_1_c": [
+            -10,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_d": [
+            -10,
+            0,
+            2.81
+          ],
+          "fine_tail_1_e": [
+            -10,
+            0,
+            -2.81
+          ],
+          "fine_tail_1_f": [
+            -10,
+            0,
+            8.44
+          ],
+          "fine_tail_1_g": [
+            -10,
+            0,
+            -8.44
+          ],
+          "fine_tail_1_h": [
+            -10,
+            0,
+            11.25
+          ],
+          "fine_tail_1_i": [
+            -10,
+            0,
+            -11.25
+          ],
+          "tail_1": [
+            -10,
+            0,
+            0
+          ],
+          "arm_r": [
+            -100.2,
+            17.3,
+            19.0
+          ],
+          "forearm_r": [
+            -37.1,
+            5.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -58.8,
+            19.6
+          ],
+          "arm_l": [
+            -32.0,
+            -25.4,
+            -14.7
+          ],
+          "forearm_l": [
+            -62.5,
+            -30.1,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            50.3,
+            -25.4
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            6,
+            9
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.15,
+            1.15,
+            1.15
+          ],
+          "fine_lantern_1": [
+            1.4783,
+            1.4783,
+            1.4783
+          ],
+          "fine_lantern_2": [
+            1.4783,
+            1.4783,
+            1.4783
+          ],
+          "fine_lantern_3": [
+            1.4783,
+            1.4783,
+            1.4783
+          ]
+        }
+      },
+      "yug.ul_shot_a": {
+        "_comment": "Ninefold Lantern, a shot: the open fan flicked forward and a little to his right, edge on, sending one flame from the wheel; the chest turned into it.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            2,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            8,
+            0
+          ],
+          "neck": [
+            -2,
+            -14,
+            0
+          ],
+          "lantern_ring": [
+            -90,
+            0,
+            0
+          ],
+          "fine_lantern_1": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_2": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_3": [
+            90,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -10,
+            0,
+            5.62
+          ],
+          "tail_1_c": [
+            -10,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_d": [
+            -10,
+            0,
+            2.81
+          ],
+          "fine_tail_1_e": [
+            -10,
+            0,
+            -2.81
+          ],
+          "fine_tail_1_f": [
+            -10,
+            0,
+            8.44
+          ],
+          "fine_tail_1_g": [
+            -10,
+            0,
+            -8.44
+          ],
+          "fine_tail_1_h": [
+            -10,
+            0,
+            11.25
+          ],
+          "fine_tail_1_i": [
+            -10,
+            0,
+            -11.25
+          ],
+          "tail_1": [
+            -10,
+            0,
+            0
+          ],
+          "arm_r": [
+            -65.9,
+            -4.9,
+            -13.9
+          ],
+          "forearm_r": [
+            -44.9,
+            6.6,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            13.3,
+            2.0
+          ],
+          "arm_l": [
+            11.1,
+            -26.5,
+            -15.7
+          ],
+          "forearm_l": [
+            -83.3,
+            -28.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            53.8,
+            -19.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            6,
+            9
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.15,
+            1.15,
+            1.15
+          ],
+          "fine_lantern_1": [
+            1.4783,
+            1.4783,
+            1.4783
+          ],
+          "fine_lantern_2": [
+            1.4783,
+            1.4783,
+            1.4783
+          ],
+          "fine_lantern_3": [
+            1.4783,
+            1.4783,
+            1.4783
+          ]
+        }
+      },
+      "yug.ul_shot_b": {
+        "_comment": "Ninefold Lantern, the next shot: the fan flicked back across to the front left, the chest turning with it.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            2,
+            -2,
+            0
+          ],
+          "chest": [
+            2,
+            -4,
+            0
+          ],
+          "neck": [
+            -2,
+            6,
+            0
+          ],
+          "lantern_ring": [
+            -90,
+            0,
+            0
+          ],
+          "fine_lantern_1": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_2": [
+            90,
+            0,
+            0
+          ],
+          "fine_lantern_3": [
+            90,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -10,
+            0,
+            5.62
+          ],
+          "tail_1_c": [
+            -10,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_d": [
+            -10,
+            0,
+            2.81
+          ],
+          "fine_tail_1_e": [
+            -10,
+            0,
+            -2.81
+          ],
+          "fine_tail_1_f": [
+            -10,
+            0,
+            8.44
+          ],
+          "fine_tail_1_g": [
+            -10,
+            0,
+            -8.44
+          ],
+          "fine_tail_1_h": [
+            -10,
+            0,
+            11.25
+          ],
+          "fine_tail_1_i": [
+            -10,
+            0,
+            -11.25
+          ],
+          "tail_1": [
+            -10,
+            0,
+            0
+          ],
+          "arm_r": [
+            -58.9,
+            -8.4,
+            -1.9
+          ],
+          "forearm_r": [
+            -52.0,
+            -8.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -23.0,
+            4.1
+          ],
+          "arm_l": [
+            -7.0,
+            -25.6,
+            -10.7
+          ],
+          "forearm_l": [
+            -76.6,
+            -26.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -60.0,
+            13.2
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            6,
+            9
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.15,
+            1.15,
+            1.15
+          ],
+          "fine_lantern_1": [
+            1.4783,
+            1.4783,
+            1.4783
+          ],
+          "fine_lantern_2": [
+            1.4783,
+            1.4783,
+            1.4783
+          ],
+          "fine_lantern_3": [
+            1.4783,
+            1.4783,
+            1.4783
+          ]
+        }
+      },
+      "yug.ul_close": {
+        "_comment": "Ninefold Lantern recovery: the fan snapped shut and lowered before his chest with a small courteous bow ('paid in full'); the wheel lowering and lying back down into his orbit.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            14,
+            4,
+            0
+          ],
+          "chest": [
+            6,
+            2,
+            0
+          ],
+          "neck": [
+            -14,
+            -6,
+            0
+          ],
+          "lantern_ring": [
+            -40,
+            0,
+            0
+          ],
+          "fine_lantern_1": [
+            40,
+            0,
+            0
+          ],
+          "fine_lantern_2": [
+            40,
+            0,
+            0
+          ],
+          "fine_lantern_3": [
+            40,
+            0,
+            0
+          ],
+          "arm_r": [
+            -4.0,
+            -14.9,
+            16.9
+          ],
+          "forearm_r": [
+            -126.2,
+            -17.8,
+            0.0
+          ],
+          "hand_r": [
+            64.3,
+            6.8,
+            -16.8
+          ],
+          "arm_l": [
+            17.0,
+            1.7,
+            -9.6
+          ],
+          "forearm_l": [
+            -74.0,
+            2.1,
+            0.0
+          ],
+          "hand_l": [
+            73.0,
+            -21.4,
+            19.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            2,
+            4
+          ]
+        },
+        "scale": {
+          "lantern_ring": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "fine_lantern_1": [
+            1.2,
+            1.2,
+            1.2
+          ],
+          "fine_lantern_2": [
+            1.2,
+            1.2,
+            1.2
+          ],
+          "fine_lantern_3": [
+            1.2,
+            1.2,
+            1.2
+          ]
+        }
+      },
+      "yug.p2_laugh": {
+        "_comment": "Phase 2: the laugh behind the sleeve, the left hand up before his mouth with the sleeve hanging from it, the head tipped and the eyes closed in delight, the fan held at his chest; his six tails fan out past their place.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            2,
+            2,
+            -3
+          ],
+          "neck": [
+            4,
+            -6,
+            6
+          ],
+          "tail_1_b": [
+            -6,
+            0,
+            5.62
+          ],
+          "tail_1_c": [
+            -6,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_d": [
+            -6,
+            0,
+            2.81
+          ],
+          "fine_tail_1_e": [
+            -6,
+            0,
+            -2.81
+          ],
+          "fine_tail_1_f": [
+            -6,
+            0,
+            8.44
+          ],
+          "fine_tail_1_g": [
+            -6,
+            0,
+            -8.44
+          ],
+          "fine_tail_1_h": [
+            -6,
+            0,
+            11.25
+          ],
+          "fine_tail_1_i": [
+            -6,
+            0,
+            -11.25
+          ],
+          "tail_1": [
+            -6,
+            0,
+            0
+          ],
+          "arm_r": [
+            -0.4,
+            -3.5,
+            0.7
+          ],
+          "forearm_r": [
+            -115.1,
+            -5.3,
+            0.0
+          ],
+          "hand_r": [
+            45.2,
+            8.0,
+            -1.7
+          ],
+          "arm_l": [
+            -78.7,
+            -18.3,
+            -52.4
+          ],
+          "forearm_l": [
+            -86.5,
+            2.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -54.9,
+            23.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.p3_flare": {
+        "_comment": "Phase 3: the arms flung up and open, the fan open high at his right, the chest lifted and the head up with glowing eyes; the lanterns flare and rise ('Let the lanterns speak').",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            0.89,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -8.89,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -10.07,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            2.07,
+            0.0,
+            2.99
+          ],
+          "body": [
+            -4,
+            0,
+            0
+          ],
+          "chest": [
+            -12,
+            0,
+            0
+          ],
+          "neck": [
+            10,
+            0,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -12,
+            0,
+            4.5
+          ],
+          "tail_1_c": [
+            -12,
+            0,
+            -4.5
+          ],
+          "fine_tail_1_d": [
+            -12,
+            0,
+            2.25
+          ],
+          "fine_tail_1_e": [
+            -12,
+            0,
+            -2.25
+          ],
+          "fine_tail_1_f": [
+            -12,
+            0,
+            6.75
+          ],
+          "fine_tail_1_g": [
+            -12,
+            0,
+            -6.75
+          ],
+          "fine_tail_1_h": [
+            -12,
+            0,
+            9.0
+          ],
+          "fine_tail_1_i": [
+            -12,
+            0,
+            -9.0
+          ],
+          "tail_1": [
+            -12,
+            0,
+            0
+          ],
+          "arm_r": [
+            -80.4,
+            33.4,
+            23.4
+          ],
+          "forearm_r": [
+            -39.2,
+            22.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            19.7,
+            2.2
+          ],
+          "arm_l": [
+            -66.5,
+            -34.5,
+            -38.6
+          ],
+          "forearm_l": [
+            -41.2,
+            -33.5,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -60.0,
+            8.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            4,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            1.4,
+            1.4,
+            1.4
+          ],
+          "fine_lantern_1": [
+            1.2857,
+            1.2857,
+            1.2857
+          ],
+          "fine_lantern_2": [
+            1.2857,
+            1.2857,
+            1.2857
+          ],
+          "fine_lantern_3": [
+            1.2857,
+            1.2857,
+            1.2857
+          ]
+        }
+      },
+      "yug.in_bow": {
+        "_comment": "Intro: a slow courteous bow, the closed fan laid flat across his chest, the left hand folded behind his back.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            26,
+            2,
+            0
+          ],
+          "waist": [
+            4,
+            0,
+            0
+          ],
+          "chest": [
+            8,
+            0,
+            0
+          ],
+          "neck": [
+            -24,
+            -2,
+            0
+          ],
+          "arm_r": [
+            -14.3,
+            -16.7,
+            32.6
+          ],
+          "forearm_r": [
+            -123.4,
+            -26.4,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            28.2,
+            -26.3
+          ],
+          "arm_l": [
+            16.8,
+            27.9,
+            13.4
+          ],
+          "forearm_l": [
+            -17.0,
+            37.6,
+            0.0
+          ],
+          "hand_l": [
+            64.3,
+            12.5,
+            35.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.in_rise": {
+        "_comment": "Intro: up from the bow with the closed fan touched to his lips, eyes smiling over it.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            -2,
+            4,
+            0
+          ],
+          "neck": [
+            2,
+            -8,
+            4
+          ],
+          "arm_r": [
+            -15.8,
+            -7.5,
+            9.8
+          ],
+          "forearm_r": [
+            -100.9,
+            -11.7,
+            0.0
+          ],
+          "hand_r": [
+            12.4,
+            -7.3,
+            -10.6
+          ],
+          "arm_l": [
+            28.3,
+            36.0,
+            5.3
+          ],
+          "forearm_l": [
+            -55.8,
+            51.1,
+            0.0
+          ],
+          "hand_l": [
+            60.7,
+            -0.3,
+            35.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.vi_fan": {
+        "_comment": "Victory: fanning himself lazily, the open fan beside his face at shoulder height, the left hand tucked into the right sleeve before his waist.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            -2,
+            6,
+            0
+          ],
+          "neck": [
+            4,
+            -10,
+            6
+          ],
+          "arm_r": [
+            -41.7,
+            9.2,
+            19.0
+          ],
+          "forearm_r": [
+            -113.0,
+            -3.8,
+            0.0
+          ],
+          "hand_r": [
+            79.5,
+            -39.2,
+            10.5
+          ],
+          "arm_l": [
+            -20.8,
+            19.3,
+            -12.6
+          ],
+          "forearm_l": [
+            -69.5,
+            19.3,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -20.6,
+            31.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ]
+        }
+      },
+      "yug.vi_tap": {
+        "_comment": "Victory: the fan snapped shut and tapped into his left palm ('paid in full').",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            2,
+            2,
+            0
+          ],
+          "neck": [
+            -2,
+            -8,
+            0
+          ],
+          "arm_r": [
+            -43.5,
+            -5.1,
+            31.4
+          ],
+          "forearm_r": [
+            -73.8,
+            -28.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            49.8,
+            -27.5
+          ],
+          "arm_l": [
+            -5.3,
+            -3.4,
+            10.7
+          ],
+          "forearm_l": [
+            -82.8,
+            -5.7,
+            0.0
+          ],
+          "hand_l": [
+            64.8,
+            -28.6,
+            0.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.ta_tease": {
+        "_comment": "Taunt: the closed fan touched to his lips, the left hand held out palm up at chest height, beckoning with curling fingers ('the price today is your patience').",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            -2,
+            2,
+            0
+          ],
+          "neck": [
+            2,
+            -6,
+            -6
+          ],
+          "arm_r": [
+            -14.6,
+            -6.7,
+            10.4
+          ],
+          "forearm_r": [
+            -102.2,
+            -10.9,
+            0.0
+          ],
+          "hand_r": [
+            12.7,
+            -7.2,
+            -10.5
+          ],
+          "arm_l": [
+            -29.0,
+            -7.9,
+            -15.5
+          ],
+          "forearm_l": [
+            -64.6,
+            -9.1,
+            0.0
+          ],
+          "hand_l": [
+            73.8,
+            -19.8,
+            5.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.ls_snap": {
+        "_comment": "Last stand: the fan snapped shut and held point down at his right side, the smile gone, the chin lowered.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -1.0,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -11.0,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -12.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -0.0,
+            0.0,
+            3.0
+          ],
+          "body": [
+            6,
+            6,
+            0
+          ],
+          "chest": [
+            4,
+            4,
+            0
+          ],
+          "neck": [
+            -12,
+            -10,
+            0
+          ],
+          "arm_r": [
+            -16.0,
+            2.9,
+            16.1
+          ],
+          "forearm_r": [
+            -15.9,
+            -3.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            45.4,
+            -14.1
+          ],
+          "arm_l": [
+            0.8,
+            -12.2,
+            -16.5
+          ],
+          "forearm_l": [
+            -15.8,
+            -12.4,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -19.4,
+            7.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.ls_guard": {
+        "_comment": "Last stand: the fan flicked open into a guard before his chest, the left hand raised with two fingers up beside it (a sign), the lanterns drawn in close and blazing; no more games.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            -2.89,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -13.11,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -13.93,
+            0.0,
+            -3.01
+          ],
+          "shin_l": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -2.07,
+            0.0,
+            3.01
+          ],
+          "body": [
+            6,
+            -4,
+            0
+          ],
+          "chest": [
+            2,
+            -6,
+            0
+          ],
+          "neck": [
+            -6,
+            10,
+            0
+          ],
+          "lantern_ring": [
+            0.0,
+            0,
+            0
+          ],
+          "tail_1_b": [
+            -6,
+            0,
+            3.75
+          ],
+          "tail_1_c": [
+            -6,
+            0,
+            -3.75
+          ],
+          "fine_tail_1_d": [
+            -6,
+            0,
+            1.88
+          ],
+          "fine_tail_1_e": [
+            -6,
+            0,
+            -1.88
+          ],
+          "fine_tail_1_f": [
+            -6,
+            0,
+            5.62
+          ],
+          "fine_tail_1_g": [
+            -6,
+            0,
+            -5.62
+          ],
+          "fine_tail_1_h": [
+            -6,
+            0,
+            7.5
+          ],
+          "fine_tail_1_i": [
+            -6,
+            0,
+            -7.5
+          ],
+          "tail_1": [
+            -6,
+            0,
+            0
+          ],
+          "arm_r": [
+            -30.4,
+            8.0,
+            25.7
+          ],
+          "forearm_r": [
+            -113.2,
+            -6.3,
+            0.0
+          ],
+          "hand_r": [
+            74.2,
+            -60.0,
+            35.0
+          ],
+          "arm_l": [
+            -49.7,
+            1.2,
+            -12.4
+          ],
+          "forearm_l": [
+            -108.3,
+            -3.4,
+            0.0
+          ],
+          "hand_l": [
+            62.1,
+            -27.4,
+            3.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "lantern_ring": [
+            0,
+            -2,
+            0.0
+          ]
+        },
+        "scale": {
+          "weapon_r": [
+            1,
+            3.0,
+            1
+          ],
+          "fine_weapon_r": [
+            1,
+            0.333,
+            1
+          ],
+          "lantern_ring": [
+            0.75,
+            0.75,
+            0.75
+          ],
+          "fine_lantern_1": [
+            2.0,
+            2.0,
+            2.0
+          ],
+          "fine_lantern_2": [
+            2.0,
+            2.0,
+            2.0
+          ],
+          "fine_lantern_3": [
+            2.0,
+            2.0,
+            2.0
+          ]
+        }
+      },
+      "yug.es_sleeve": {
+        "_comment": "Escape (over the run, upper body): the left sleeve swept up before his face as he turns away, a sidelong glance back over it, the fan tucked to his chest.",
+        "extends": "focus.stance",
+        "bones": {
+          "waist": [
+            0,
+            -6,
+            0
+          ],
+          "chest": [
+            0,
+            -10,
+            0
+          ],
+          "neck": [
+            0,
+            34,
+            0
+          ],
+          "arm_r": [
+            12.2,
+            -1.8,
+            1.1
+          ],
+          "forearm_r": [
+            -121.1,
+            -3.4,
+            0.0
+          ],
+          "hand_r": [
+            42.5,
+            7.8,
+            -1.2
+          ],
+          "arm_l": [
+            -99.0,
+            -11.7,
+            -54.4
+          ],
+          "forearm_l": [
+            -71.9,
+            9.4,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -10.4,
+            19.6
+          ]
+        }
+      },
+      "yug.pl_sleeve": {
+        "_comment": "Sleeve laugh: the left sleeve raised to his mouth, the head tipped, eyes closed.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            4,
+            -3
+          ],
+          "neck": [
+            4,
+            -8,
+            8
+          ],
+          "arm_r": [
+            -0.4,
+            2.0,
+            -1.3
+          ],
+          "forearm_r": [
+            -94.8,
+            0.2,
+            0.0
+          ],
+          "hand_r": [
+            37.5,
+            7.9,
+            1.9
+          ],
+          "arm_l": [
+            -74.9,
+            -18.0,
+            -52.0
+          ],
+          "forearm_l": [
+            -85.5,
+            2.8,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -53.5,
+            24.4
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.ps_point": {
+        "_comment": "Lantern spin: the closed fan raised before him, its tip drawing a slow circle that the lanterns answer.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            -4,
+            4,
+            0
+          ],
+          "neck": [
+            8,
+            -8,
+            0
+          ],
+          "arm_r": [
+            -51.6,
+            -1.1,
+            -3.6
+          ],
+          "forearm_r": [
+            -74.3,
+            0.9,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            38.5,
+            -8.3
+          ],
+          "arm_l": [
+            -6.9,
+            -1.1,
+            -10.1
+          ],
+          "forearm_l": [
+            -35.1,
+            -1.7,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -37.3,
+            20.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.pt_glance": {
+        "_comment": "Tail-fan flick: a glance back over his left shoulder as his tails flare wide and lift, the fan held at his chest.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            0,
+            -4,
+            0
+          ],
+          "chest": [
+            0,
+            -12,
+            0
+          ],
+          "neck": [
+            0,
+            40,
+            0
+          ],
+          "tail_1_b": [
+            -18,
+            0,
+            13.12
+          ],
+          "tail_1_c": [
+            -18,
+            0,
+            -13.12
+          ],
+          "fine_tail_1_d": [
+            -18,
+            0,
+            6.56
+          ],
+          "fine_tail_1_e": [
+            -18,
+            0,
+            -6.56
+          ],
+          "fine_tail_1_f": [
+            -18,
+            0,
+            19.69
+          ],
+          "fine_tail_1_g": [
+            -18,
+            0,
+            -19.69
+          ],
+          "fine_tail_1_h": [
+            -18,
+            0,
+            26.25
+          ],
+          "fine_tail_1_i": [
+            -18,
+            0,
+            -26.25
+          ],
+          "tail_1": [
+            -18,
+            0,
+            0
+          ],
+          "arm_r": [
+            12.8,
+            8.1,
+            -2.1
+          ],
+          "forearm_r": [
+            -121.4,
+            6.4,
+            0.0
+          ],
+          "hand_r": [
+            42.2,
+            6.9,
+            1.2
+          ],
+          "arm_l": [
+            -23.6,
+            -7.3,
+            -10.2
+          ],
+          "forearm_l": [
+            -1.9,
+            -10.1,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -20.3,
+            9.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.p2_laugh2": {
+        "_comment": "Phase 2: the laugh held, the six tails settled in their fan.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            2.79,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -6.79,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -8.15,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            4.15,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            2,
+            2,
+            -3
+          ],
+          "neck": [
+            4,
+            -6,
+            6
+          ],
+          "arm_r": [
+            -0.4,
+            -3.5,
+            0.7
+          ],
+          "forearm_r": [
+            -115.1,
+            -5.3,
+            0.0
+          ],
+          "hand_r": [
+            45.2,
+            8.0,
+            -1.7
+          ],
+          "arm_l": [
+            -78.7,
+            -18.3,
+            -52.4
+          ],
+          "forearm_l": [
+            -86.5,
+            2.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -54.9,
+            23.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.vi_tap2": {
+        "_comment": "Victory: the fan lifted from the palm between the two taps.",
+        "extends": "focus.stance",
+        "bones": {
+          "leg_r": [
+            4.7,
+            0.0,
+            2.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -4.7,
+            0.0,
+            -2.0
+          ],
+          "leg_l": [
+            -6.24,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            6.24,
+            0.0,
+            2.99
+          ],
+          "body": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            2,
+            2,
+            0
+          ],
+          "neck": [
+            -2,
+            -8,
+            0
+          ],
+          "arm_r": [
+            -36.7,
+            -2.2,
+            27.6
+          ],
+          "forearm_r": [
+            -93.0,
+            -20.0,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            27.2,
+            -21.3
+          ],
+          "arm_l": [
+            -5.3,
+            -3.4,
+            10.7
+          ],
+          "forearm_l": [
+            -82.8,
+            -5.7,
+            0.0
+          ],
+          "hand_l": [
+            64.8,
+            -28.6,
+            0.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "yug.p2_fold": {
+        "_comment": "Phase 2's start, offsets over the stance: his six tails folded together onto the middle, where his three were.",
+        "bones": {
+          "fine_tail_1_f": [
+            0,
+            0,
+            -56.25
+          ],
+          "fine_tail_1_g": [
+            0,
+            0,
+            56.25
+          ],
+          "fine_tail_1_h": [
+            0,
+            0,
+            -75.0
+          ],
+          "fine_tail_1_i": [
+            0,
+            0,
+            75.0
+          ],
+          "tail_1_b": [
+            0,
+            0,
+            -18.75
+          ],
+          "tail_1_c": [
+            0,
+            0,
+            18.75
+          ]
+        }
+      },
+      "yug.p3_fold": {
+        "_comment": "Phase 3's start, offsets over the stance: the three returning tails folded down and together.",
+        "bones": {
+          "tail_1": [
+            30,
+            0,
+            0
+          ],
+          "fine_tail_1_d": [
+            30,
+            0,
+            -18.75
+          ],
+          "fine_tail_1_e": [
+            30,
+            0,
+            18.75
+          ]
+        }
+      }
+    },
+    "signatures": {
+      "move.foxfire_volley": {
+        "description": "Foxfire Volley (move slot 0, a volley of 5, light: 0.5 / 0.3 / 0.4 s): his tails flare wide and lift (the tell) while the closed fan is cocked across before his left shoulder and the chest turns away (0.22 s), a held beat, then the fan snaps open and sweeps out flat to the front right at shoulder height as five flames fly at 0.40 s (hit, tick 10), carrying on out to his right until 0.65 s (cast: the active part's last tick, tick 15); the fan snaps shut and he is back in his stance by 1.1 s. Upper body, hips and tails.",
+        "length": 1.1,
+        "class": "light",
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "tail_1",
+          "tail_1_b",
+          "tail_1_c",
+          "fine_tail_1_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.22,
+            "pose": "yug.fv_wind",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.32,
+            "pose": "yug.fv_wind"
+          },
+          {
+            "t": 0.4,
+            "pose": "yug.fv_fling",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:foxfire_fan",
+            "sound": "factionclash:hero.yugen_kagaribi.foxfire_volley",
+            "face": {
+              "eyes": 8,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.65,
+            "pose": "yug.fv_follow",
+            "ease": "easeOutSine",
+            "marker": "cast"
+          },
+          {
+            "t": 0.78,
+            "pose": "yug.fv_follow",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.95,
+            "face": "none"
+          },
+          {
+            "t": 1.1,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "move.lantern_ring": {
+        "description": "Lantern Ring (move slot 1, a zone of radius 4 round him, area: 1.0 / 3.0 / 0.8 s): he raises the closed fan upright before his face like a prayer stick, eyes shut, while his lanterns sink to his hips and spread wide round him (the tell, 0.45-0.8 s); the fan snaps open and sweeps down and out to his right at 0.90 s (hit, tick 20: the ring of lantern fire ignites), and he stands composed inside it fanning himself while it pulses (to 3.85 s, cast, tick 79); the fan shuts and the lanterns rise back into their orbit by 4.7 s.",
+        "length": 4.7,
+        "class": "area",
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "lantern_ring",
+          "fine_lantern_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 2,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.45,
+            "pose": "yug.lr_raise",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.8,
+            "pose": "yug.lr_raise"
+          },
+          {
+            "t": 0.9,
+            "pose": "yug.lr_snap",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:lantern_ring",
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.3,
+            "pose": "yug.lr_hold",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 3.85,
+            "pose": "yug.lr_hold",
+            "marker": "cast"
+          },
+          {
+            "t": 4.3,
+            "face": "none"
+          },
+          {
+            "t": 4.7,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  12,
+                  0,
+                  0
+                ],
+                "forearm_r": [
+                  -4,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.5,
+              "window": [
+                1.3,
+                1.5,
+                3.6,
+                3.85
+              ]
+            }
+          }
+        ]
+      },
+      "move.fan_cut": {
+        "description": "Fan Cut (move slot 2, a combo of 2, light: 0.4 / 0.3 / 0.3 s): the fan snaps open and is drawn back high beside his head (0.18 s), slashed down and across to the front left at 0.30 s (the first strike, tick 8), whipped round to his left and swept flat out to the front right at 0.55 s (the second strike and its knockback, tick 13), carried on out and tipped up, and shut again as he settles by 0.9 s. Upper body and hips.",
+        "length": 0.9,
+        "class": "light",
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.18,
+            "pose": "yug.fc_wind1",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.3,
+            "pose": "yug.fc_cut1",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:fan_arc",
+            "sound": "factionclash:hero.yugen_kagaribi.fan_cut",
+            "face": {
+              "eyes": 8,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.43,
+            "pose": "yug.fc_wind2",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.55,
+            "pose": "yug.fc_cut2",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:fan_arc"
+          },
+          {
+            "t": 0.68,
+            "pose": "yug.fc_follow",
+            "ease": "easeOutSine",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.8,
+            "face": "none"
+          },
+          {
+            "t": 0.9,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "move.vanish": {
+        "description": "Vanish (move slot 3, on himself, light: 0.4 / 0.1 / 0.3 s): the knees dip and the left sleeve sweeps up before his face, a sly glance over it (0.16 s); the hop back at 0.30 s (hit, tick 8: he turns invisible and the server carries him 6 blocks back), knees tucked under the sleeve, cast at 0.35 s (tick 9), down soft on bent knees at 0.5 s with the sleeve swept away, and back in his stance by 0.7 s.",
+        "length": 0.7,
+        "class": "light",
+        "planted": false,
+        "steps": true,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.16,
+            "pose": "yug.va_veil",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.24,
+            "pose": "yug.va_veil"
+          },
+          {
+            "t": 0.3,
+            "pose": "yug.va_hop",
+            "root": [
+              0,
+              4.0,
+              0
+            ],
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:vanish_smoke",
+            "sound": "factionclash:hero.yugen_kagaribi.vanish",
+            "face": {
+              "eyes": 2,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.35,
+            "marker": "cast"
+          },
+          {
+            "t": 0.4,
+            "pose": "yug.va_hop",
+            "root": [
+              0,
+              3.0,
+              0
+            ],
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 0.48,
+            "pose": "yug.va_land",
+            "ease": "easeInQuad",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.6,
+            "face": "none"
+          },
+          {
+            "t": 0.7,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "move.mirage": {
+        "description": "Mirage (move slot 4, two decoys, heavy: 0.8 / 0.2 / 0.8 s): the fan opens beside his face as a screen and only his narrowed eyes show past its edge, the lanterns drawn in close and burning bright, his body wavering side to side like a heat shimmer (the tell, 0.3-0.62 s); the fan sweeps aside low to his right and his left arm opens palm up at 0.70 s (hit, tick 16: the two mirages step out of him), the lanterns flung wide, cast at 0.85 s (tick 19); a smug tilt of the head with the fan back at his chest, and his stance by 1.7 s.",
+        "length": 1.7,
+        "class": "heavy",
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "lantern_ring",
+          "fine_lantern_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "yug.mi_hide",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.62,
+            "pose": "yug.mi_hide"
+          },
+          {
+            "t": 0.7,
+            "pose": "yug.mi_reveal",
+            "ease": "easeOutQuad",
+            "marker": "hit;vfx:mirage",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.85,
+            "pose": "yug.mi_reveal",
+            "marker": "cast"
+          },
+          {
+            "t": 1.05,
+            "pose": "yug.mi_reveal"
+          },
+          {
+            "t": 1.3,
+            "pose": "yug.mi_pose",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.5,
+            "face": "none"
+          },
+          {
+            "t": 1.7,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "body": [
+                  0,
+                  0,
+                  3
+                ],
+                "chest": [
+                  0,
+                  0,
+                  -2.5
+                ],
+                "neck": [
+                  0,
+                  0,
+                  2
+                ]
+              },
+              "period": 0.16,
+              "window": [
+                0.3,
+                0.36,
+                0.56,
+                0.62
+              ]
+            }
+          }
+        ]
+      },
+      "move.foxfire_rain": {
+        "description": "Foxfire Rain (move slot 5, 8 impacts within 5 blocks over 2 s, area: 1.0 / 2.0 / 0.8 s): the closed fan pointed straight up overhead and the left hand raised palm up, his head tipped back, while the lanterns climb high over him (the tell, 0.45-0.8 s); the fan snaps open and sweeps down to point at the ground ahead at 0.90 s (hit, tick 20: the rain begins), then beats time with the falling flames, lifted and dropped every half second, to 2.85 s (cast, tick 59); the fan shuts and the lanterns come down by 3.7 s.",
+        "length": 3.7,
+        "class": "area",
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "tail_1",
+          "tail_1_b",
+          "tail_1_c",
+          "fine_tail_1_*",
+          "lantern_ring",
+          "fine_lantern_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.45,
+            "pose": "yug.fr_call",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.8,
+            "pose": "yug.fr_call"
+          },
+          {
+            "t": 0.9,
+            "pose": "yug.fr_drop",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:foxfire_rain",
+            "face": {
+              "eyes": 8,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.15,
+            "pose": "yug.fr_beckon",
+            "ease": "easeOutSine",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.4,
+            "pose": "yug.fr_drop",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.65,
+            "pose": "yug.fr_beckon",
+            "ease": "easeOutSine"
+          },
+          {
+            "t": 1.9,
+            "pose": "yug.fr_drop",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 2.15,
+            "pose": "yug.fr_beckon",
+            "ease": "easeOutSine"
+          },
+          {
+            "t": 2.4,
+            "pose": "yug.fr_drop",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 2.85,
+            "pose": "yug.fr_drop",
+            "marker": "cast"
+          },
+          {
+            "t": 3.3,
+            "face": "none"
+          },
+          {
+            "t": 3.7,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "ultimate": {
+        "description": "Ninefold Lantern (the ultimate, a barrage of 9 foxfire 0.2 s apart: 1.6 / 1.8 / 1.5 s): a half step of weight back with the fan opened beside his face, while his three lanterns gather behind him and stand up into a wheel (0.35-0.75 s); the fan swept up high at his right and the left arm opened, the wheel blazing ('Nine lanterns, one bill', 1.2 s); then nine flicks of the open fan, forward right and forward left in turn, one flame each, at 1.50 to 3.10 s (hits, ticks 32 to 64, 4 ticks apart), cast at 3.25 s (tick 67); the fan snapped shut with a small courteous bow while the wheel lies back down into his orbit, and his stance by 4.8 s.",
+        "length": 4.8,
+        "class": "ultimate",
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "tail_1",
+          "tail_1_b",
+          "tail_1_c",
+          "fine_tail_1_*",
+          "lantern_ring",
+          "fine_lantern_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.35,
+            "pose": "yug.ul_open",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.75,
+            "pose": "yug.ul_open"
+          },
+          {
+            "t": 1.2,
+            "pose": "yug.ul_raise",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 9,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.38,
+            "pose": "yug.ul_raise",
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.5,
+            "pose": "yug.ul_shot_a",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 1.7,
+            "pose": "yug.ul_shot_b",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 1.9,
+            "pose": "yug.ul_shot_a",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 2.1,
+            "pose": "yug.ul_shot_b",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 2.3,
+            "pose": "yug.ul_shot_a",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 2.5,
+            "pose": "yug.ul_shot_b",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 2.7,
+            "pose": "yug.ul_shot_a",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 2.9,
+            "pose": "yug.ul_shot_b",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 3.1,
+            "pose": "yug.ul_shot_a",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:ninefold_shot",
+            "sound": "factionclash:hero.yugen_kagaribi.ninefold_shot"
+          },
+          {
+            "t": 3.25,
+            "pose": "yug.ul_shot_a",
+            "marker": "cast"
+          },
+          {
+            "t": 3.5,
+            "pose": "yug.ul_close",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 3.95,
+            "pose": "yug.ul_close"
+          },
+          {
+            "t": 4.5,
+            "face": "none"
+          },
+          {
+            "t": 4.8,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "phase.2": {
+        "description": "Phase 2 (inside the 1.2 s transition): his six tails fan out from behind him (they start folded together where his three were and spread past their place, settling) while he laughs behind his left sleeve, eyes closed in delight ('Which of me is lying? All of us, perhaps.').",
+        "length": 1.1,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "tail_1",
+          "tail_1_b",
+          "tail_1_c",
+          "fine_tail_1_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "yug.p2_fold",
+            "over": true,
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.1,
+            "sound": "factionclash:hero.yugen_kagaribi.tails_fan"
+          },
+          {
+            "t": 0.38,
+            "pose": "yug.p2_laugh",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.85,
+            "pose": "yug.p2_laugh2",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.98,
+            "face": "none"
+          },
+          {
+            "t": 1.1,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  2.5,
+                  0,
+                  0
+                ],
+                "neck": [
+                  -2,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.16,
+              "window": [
+                0.35,
+                0.4,
+                0.75,
+                0.82
+              ]
+            }
+          }
+        ]
+      },
+      "phase.3": {
+        "description": "Phase 3 (inside the 1.2 s transition): his first three tails come back burning, rising and spreading into the middle of the fan, while he flings his arms up and open with the fan wide, the chest lifted and the eyes glowing, and the lanterns flare and rise ('Enough games. Let the lanterns speak.').",
+        "length": 1.1,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "tail_1",
+          "tail_1_b",
+          "tail_1_c",
+          "fine_tail_1_*",
+          "lantern_ring",
+          "fine_lantern_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "yug.p3_fold",
+            "over": true,
+            "face": {
+              "eyes": 10,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.1,
+            "sound": "factionclash:hero.yugen_kagaribi.lantern_flare"
+          },
+          {
+            "t": 0.4,
+            "pose": "yug.p3_flare",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.72,
+            "pose": "yug.p3_flare",
+            "face": {
+              "eyes": 10,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.98,
+            "face": "none"
+          },
+          {
+            "t": 1.1,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "intro": {
+        "description": "Intro (the server holds the intro as long as the clip): a slow courteous bow with the closed fan laid across his chest and the left hand behind his back, eyes shut and smiling; up again with the closed fan touched to his lips, eyes smiling over it ('A customer? How delightful.').",
+        "length": 1.5,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 2,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.55,
+            "pose": "yug.in_bow",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.8,
+            "pose": "yug.in_bow"
+          },
+          {
+            "t": 0.95,
+            "sound": "factionclash:hero.yugen_kagaribi.intro"
+          },
+          {
+            "t": 1.1,
+            "pose": "yug.in_rise",
+            "ease": "easeOutCubic",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.35,
+            "face": "none"
+          },
+          {
+            "t": 1.5,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "victory": {
+        "description": "Victory: fanning himself lazily with the open fan beside his face, the left hand tucked into his right sleeve, laughing softly with his eyes closed; then the fan snapped shut and tapped twice into his left palm ('Paid in full.').",
+        "length": 2.0,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.4,
+            "pose": "yug.vi_fan",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.5,
+            "sound": "factionclash:hero.yugen_kagaribi.laugh"
+          },
+          {
+            "t": 1.0,
+            "pose": "yug.vi_fan"
+          },
+          {
+            "t": 1.25,
+            "pose": "yug.vi_tap",
+            "ease": "easeInQuad",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.38,
+            "pose": "yug.vi_tap2",
+            "ease": "easeOutSine"
+          },
+          {
+            "t": 1.5,
+            "pose": "yug.vi_tap",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.8,
+            "face": "none"
+          },
+          {
+            "t": 2.0,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  14,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.4,
+              "window": [
+                0.4,
+                0.5,
+                0.9,
+                1.0
+              ]
+            }
+          }
+        ]
+      },
+      "taunt": {
+        "description": "Taunt: the closed fan touched to his lips, the left hand held out palm up and beckoning with curling fingers, a smug look over the fan ('The price today is your patience').",
+        "length": 1.5,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.35,
+            "pose": "yug.ta_tease",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 1.1,
+            "pose": "yug.ta_tease"
+          },
+          {
+            "t": 1.3,
+            "face": "none"
+          },
+          {
+            "t": 1.5,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_l": [
+                  -26,
+                  0,
+                  0
+                ]
+              },
+              "shape": "pulse",
+              "period": 0.35,
+              "window": [
+                0.35,
+                0.4,
+                1.05,
+                1.1
+              ]
+            }
+          }
+        ]
+      },
+      "last_stand": {
+        "description": "Last stand (no action code yet: for the engine side to play when he cannot run, HEROES_V2 6.13): the fan snapped shut and held point down at his side, the smile gone for once; then flicked open into a guard before his chest with two fingers raised beside it, the lanterns drawn in close and blazing: no more games.",
+        "length": 1.6,
+        "bones": [
+          "body",
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "weapon_r",
+          "fine_weapon_r",
+          "tail_1",
+          "tail_1_b",
+          "tail_1_c",
+          "fine_tail_1_*",
+          "lantern_ring",
+          "fine_lantern_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 8,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "yug.ls_snap",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.6,
+            "pose": "yug.ls_snap"
+          },
+          {
+            "t": 0.85,
+            "pose": "yug.ls_guard",
+            "ease": "easeOutCubic",
+            "face": {
+              "eyes": 4,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.3,
+            "pose": "yug.ls_guard"
+          },
+          {
+            "t": 1.45,
+            "face": "none"
+          },
+          {
+            "t": 1.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "escape": {
+        "description": "Escape (no action code yet: for the engine side to play as an escape starts, HEROES_V2 6.13), 0.6 s over the run: 'Mm. A poor bargain.' The left sleeve swept up before his face as he turns away, a sidelong glance back over it with a smirk, then the arms back into the run. The upper body only, over and back into move.run.",
+        "length": 0.6,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "plays_over": "move.run",
+        "settle_to": "move.run",
+        "planted": false,
+        "secondary": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.15,
+            "pose": "yug.es_sleeve",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.35,
+            "pose": "yug.es_sleeve"
+          },
+          {
+            "t": 0.5,
+            "face": "none"
+          },
+          {
+            "t": 0.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "personal.1": {
+        "description": "Idle quirk, the sleeve laugh: the left sleeve raised to his mouth, the head tipped and the eyes closed, his shoulders shaking with a soft laugh (the fan stays at his hip).",
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "length": 2.4,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.45,
+            "pose": "yug.pl_sleeve",
+            "ease": "easeOutCubic",
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.5,
+            "sound": "factionclash:hero.yugen_kagaribi.laugh"
+          },
+          {
+            "t": 1.7,
+            "pose": "yug.pl_sleeve"
+          },
+          {
+            "t": 1.95,
+            "face": "none"
+          },
+          {
+            "t": 2.4,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  2.5,
+                  0,
+                  0
+                ],
+                "neck": [
+                  -2,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.2,
+              "window": [
+                0.5,
+                0.6,
+                1.5,
+                1.65
+              ]
+            }
+          }
+        ]
+      },
+      "personal.2": {
+        "description": "Idle quirk, the lantern spin: his right hand raised with one finger up, drawing a slow circle, and the three lanterns answer it, each whirling once round on itself and bobbing (the fan stays at his hip).",
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "length": 2.6,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "lantern_ring",
+          "fine_lantern_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.4,
+            "pose": "yug.ps_point",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.45,
+            "sound": "factionclash:hero.yugen_kagaribi.lantern_spin"
+          },
+          {
+            "t": 1.9,
+            "pose": "yug.ps_point"
+          },
+          {
+            "t": 2.2,
+            "face": "none"
+          },
+          {
+            "t": 2.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  10,
+                  0,
+                  10
+                ]
+              },
+              "shape": "circle",
+              "period": 0.7,
+              "window": [
+                0.4,
+                0.5,
+                1.8,
+                1.9
+              ]
+            }
+          },
+          {
+            "primitive": "spin",
+            "params": {
+              "bones": {
+                "fine_lantern_1": [
+                  0,
+                  360,
+                  0
+                ],
+                "fine_lantern_2": [
+                  0,
+                  360,
+                  0
+                ],
+                "fine_lantern_3": [
+                  0,
+                  360,
+                  0
+                ]
+              },
+              "t0": 0.5,
+              "t1": 1.8
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "fine_lantern_1": [
+                  0,
+                  1.2,
+                  0
+                ],
+                "fine_lantern_2": {
+                  "amp": [
+                    0,
+                    1.2,
+                    0
+                  ],
+                  "phase": 0.33
+                },
+                "fine_lantern_3": {
+                  "amp": [
+                    0,
+                    1.2,
+                    0
+                  ],
+                  "phase": 0.66
+                }
+              },
+              "channel": "position",
+              "period": 0.65,
+              "window": [
+                0.5,
+                0.65,
+                1.65,
+                1.8
+              ]
+            }
+          }
+        ]
+      },
+      "personal.3": {
+        "description": "Idle quirk, the tail-fan flick: a smug glance back over his left shoulder as all his tails flare wide and lift, then settle (the fan stays at his hip).",
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "length": 2.2,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "tail_1",
+          "tail_1_b",
+          "tail_1_c",
+          "fine_tail_1_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.35,
+            "pose": "yug.pt_glance",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 1.1,
+            "pose": "yug.pt_glance"
+          },
+          {
+            "t": 1.8,
+            "face": "none"
+          },
+          {
+            "t": 2.2,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "sec.loop": {
+        "description": "The lanterns' orbit on the secondary controller (HeroAnimator plays sec.loop whenever the chain has it): the three lanterns go once round him every 6 s, the orbit wobbling a little like a floating ring. It keys only lantern_orbit's rotation, so a move may still move, tilt and widen the ring (lantern_ring) and turn or scale a lantern (fine_lantern_N).",
+        "length": 6.0,
+        "loop": true,
+        "bones": [
+          "lantern_orbit"
+        ],
+        "secondary": false,
+        "layers": [
+          {
+            "primitive": "spin",
+            "params": {
+              "bones": {
+                "lantern_orbit": [
+                  0,
+                  360,
+                  0
+                ]
+              },
+              "ease": "linear"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "lantern_orbit": {
+                  "amp": [
+                    4,
+                    0,
+                    0
+                  ],
+                  "phase": 0.0
+                }
+              },
+              "period": 3.0
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "lantern_orbit": {
+                  "amp": [
+                    0,
+                    0,
+                    4
+                  ],
+                  "phase": 0.25
+                }
+              },
+              "period": 3.0
+            }
+          }
+        ]
+      }
+    }
+  }
+}

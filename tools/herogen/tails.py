@@ -4,7 +4,8 @@ The owner, looking at the Ender Dragon's wings sheet: "her tail downwards while 
 male genitalia like this, can you make it so her tail will not go downwards when she flies". A tail that hangs below
 the hips between or in front of the legs reads as something obscene from the front and from 3/4, so `herogen check`
 refuses it for every hero whose model has a tail (cubes on the rig's `tail_1` or any bone below it: a cat's, a
-fox's, the dragon's scaled tail, any later tail part):
+fox's, the dragon's scaled tail, any later tail part; C2: and on every other tail chain beside it, a fox's copies and
+their level-of-detail copies, `tail_bones`):
 
 - **The zone**, per frame in world (file) space: below the crotch (the lowest point of the base body's hips, the
   `body` bone's base cube), between the outer edges of the two legs (the base legs' cubes, measured along the hips'
@@ -31,6 +32,7 @@ A tail that trails behind (level with or above the hips, continuing the body's l
 through the back plane. `docs/heroes-v2/notes/artgen.md`, "No tail between the legs".
 """
 import math
+import re
 
 import numpy as np
 
@@ -63,11 +65,19 @@ AIRBORNE_OVER = {"move.air_dive": "move.leap"}
 LEG_BONES = ("leg_r", "shin_r", "foot_r", "leg_l", "shin_l", "foot_l")
 
 
+TAIL_ROOT = re.compile(r"^(?:fine_|p[1-9]_)*tail_1(?:_[a-k])?$")
+SHELL_PREFIXES = ("fine_", "p1_", "p2_", "p3_", "p4_")
+
+
 def tail_bones(parents):
-    """The rig's tail chain and every bone below it ({bone: parent}); empty for a model without `tail_1`."""
-    if "tail_1" not in parents:
+    """Every tail chain's bones ({bone: parent}): the rig's `tail_1` and every other chain root a tail part builds
+    beside it (C2: a fox's copies `tail_1_b`.., their level-of-detail copies `fine_tail_1_d`.., a phase part's own
+    `p2_tail_1`..), each with every bone below it; empty for a model without a tail. Before C2 only `tail_1`'s chain
+    counted, so a fox's copies (children of `body`) were never checked."""
+    roots = {b for b in parents if TAIL_ROOT.match(b)}
+    if not roots:
         return set()
-    out = {"tail_1"}
+    out = set(roots)
     grew = True
     while grew:
         grew = False
@@ -107,17 +117,35 @@ class TailRule:
                 pts = (m @ (pts - pv).T).T + pv
             self.points[c.bone] = np.vstack([self.points[c.bone], pts]) if c.bone in self.points else pts
         self.has_tail = bool(self.points)
-        # the tip: the deepest tail bone with cubes, and its sample point farthest from its pivot
-        self.tip = None
+        # the tips: each chain's deepest bone with cubes, and its sample point farthest from its pivot; `tip` is the
+        # main chain's (the rig's tail_1, or the first chain), `tips` every chain's (C2: a fox's nine tails)
+        self.tip, self.tips = None, []
         if self.has_tail:
+            parents = dict(self.sk.parent)
+
             def depth(b):
                 return len(self.sk.chain_to_root(b))
-            # the main chain's end (fine_/pN_ copies are shells over a chain bone, not its continuation)
-            chain = [b for b in self.points if not b.startswith(("fine_", "p2_", "p3_", "p4_"))] or list(self.points)
-            tb = max(chain, key=lambda b: (depth(b), b))
-            pv = self.sk.pivot[tb]
-            far = self.points[tb][int(np.argmax(np.linalg.norm(self.points[tb] - pv, axis=1)))]
-            self.tip = (tb, pv, far)
+
+            def shell(b):
+                # a fine_/pN_ shell nested over a chain bone (the same pivot), not the chain's continuation
+                return any(b == pre + str(parents.get(b)) for pre in SHELL_PREFIXES)
+
+            def root_of(b):
+                while not TAIL_ROOT.match(b) or shell(b):
+                    b = parents[b]
+                return b
+
+            chains = {}
+            for b in self.points:
+                chains.setdefault(root_of(b), []).append(b)
+            for root in sorted(chains, key=lambda r: (r != "tail_1", r)):
+                bones = chains[root]
+                chain = [b for b in bones if not shell(b)] or bones
+                tb = max(chain, key=lambda b: (depth(b), b))
+                pv = self.sk.pivot[tb]
+                far = self.points[tb][int(np.argmax(np.linalg.norm(self.points[tb] - pv, axis=1)))]
+                self.tips.append((tb, pv, far))
+            self.tip = self.tips[0]
         self.hips = np.array(self.sk.body["body"])
         self.legs = {b: np.array(self.sk.body[b]) for b in LEG_BONES if b in self.sk.body}
         self.hips_c = self.hips.mean(axis=0)
@@ -151,21 +179,21 @@ class TailRule:
         return out
 
     def tip_down(self, world):
-        """The tip's angle from plumb (degrees) when it points down below the knees, else None."""
-        if self.tip is None:
-            return None
-        b, pv, far = self.tip
-        r, t = world[b]
-        p0, p1 = r @ pv + t, r @ far + t
-        v = p1 - p0
-        n = float(np.linalg.norm(v))
-        if n < 1e-6:
-            return None
-        ang = math.degrees(math.acos(max(-1.0, min(1.0, -v[1] / n))))
+        """The angle from plumb (degrees) of the tip that points most nearly straight down below the knees, else
+        None (every chain's tip)."""
         knees = min(float((world[s][0] @ self.sk.pivot[s] + world[s][1])[1]) for s in ("shin_r", "shin_l"))
-        if ang <= DOWN_DEG and p1[1] < knees:
-            return ang
-        return None
+        best = None
+        for b, pv, far in self.tips:
+            r, t = world[b]
+            p0, p1 = r @ pv + t, r @ far + t
+            v = p1 - p0
+            n = float(np.linalg.norm(v))
+            if n < 1e-6:
+                continue
+            ang = math.degrees(math.acos(max(-1.0, min(1.0, -v[1] / n))))
+            if ang <= DOWN_DEG and p1[1] < knees and (best is None or ang < best):
+                best = ang
+        return best
 
     def lowest(self, world):
         """The base body's lowest point (height) in a frame."""

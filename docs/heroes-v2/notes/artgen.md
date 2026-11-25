@@ -4464,3 +4464,224 @@ benika_akagane --check`, `hero-previews natsuho_komezaki hinae_shirasuzu the_wit
 - Not run here (Gradle and Java are off limits in this task, a Java workflow runs beside it): the Java suites
   (`HeroAssetsTest`, `BuiltinHeroesTest`, `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3
   and 5), and the jar.
+
+## C2: Yugen Kagaribi (2026-11-25)
+
+HEROES_V2.md 15.2 row C2, Yugen's half (Benika's is above). This adds his source file, his art, his signature
+animations, three parts and the generator pieces he needed. His kit is the slice fixture's
+(`src/test/resources/heroes/slice/yugen_kagaribi.json`, copied field for field; his server definition belongs to the
+engine side). He has one body for good (the owner's rule, HEROES_V2 3.6): **adult, male, slim build, drawn at 100%**
+(SLICE_PLAN 3.2). Every preview shows him only in that body. No hit tick, marker or timing file of an existing clip
+changed: the libraries, `_fallback`, Natsuho, Hinae, Benika, the test rig, the Wither and the Ender Dragon build byte for
+byte as before, and his animation and timing files are new.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/yugen_kagaribi.hero.json` | the source: the kit, `art` (body, palette, parts, face with three overrides and the `liner` mark, the folding fan, phase looks) and `animations` (style `focus`, blink `calm`, the G10 variant `fox_lope`, 42 poses of his own, 18 signatures and `sec.loop`) |
+| `herosrc/parts/tails/fox_nine.json` | nine fox tails in one fan: three full chains and six level-of-detail copies (below) |
+| `herosrc/parts/accessories/orbit_lanterns.json` | three paper lanterns on an orbit a clip can tilt and widen (below) |
+| `herosrc/parts/markings/foxfire_tips.json` | the tips of the three tails phase 3 brings back, in their own slot and lit in the phase glow mask |
+| generated | `geo/hero` (95 bones of the 100 budget, 298 cubes of the 300, 127 of the 130 beyond the fine distance), `textures/entity/hero` (256x256 texture, glow mask, `_p2` texture and its glow mask), `heroes/*.visual.json`, `animations/hero/yugen_kagaribi.animation.json`, `data/factionclash/hero_timings/yugen_kagaribi.json` |
+| `gen.py` | chain fields `angles` and `lod_from` (`lod_points`, `lod_sections`) |
+| `render/scene.py` | `hidden()` follows `HeroModel.plan`: phase looks that show bones, and `p1_` bones only in phase 1 |
+| `tails.py` | the tail rule covers every tail chain, not only `tail_1`'s |
+| `face.py` | the `liner` face paint |
+| `render/hero_previews.py`, `anim/loco_preview.py` | a runner's own sprint in his locomotion film, his captions; `hero_yugen.gif` of G10 from his own source |
+| `render/partsheet.py` | the orbit lanterns' band on the accessories sheet; `previews/parts/head_tails_wings.png` and `details_accessories.png` re-rendered |
+| `tests/test_yugen.py` | 21 tests (below) |
+
+### His look
+
+The lantern fox of the sample outfit (G6b, G6c), with the changes below. Long silver-white hair half tied up with a
+red cord, fox ears, a plum court robe with silver-white sleeves and a red trim, his crest (a plum blossom) on the back
+and the sleeves, a white fox mask worn on the side of his head, the faction sash, prayer beads, white socks and dark
+shoes, and the folding fan at his right hip. The palette is SLICE_PLAN 3.2's (plum `primary` #6B2148, silver-white
+`secondary` and `hair`, foxfire blue `accent` and `glow`, red `trim`).
+
+- **Nine tails in one fan** (`tails/fox_nine`, size 1.15), in place of the sample's three (`tails/fox`, count 3). The
+  kit's phases show three, six and nine. Three wearings of `tails/fox` (one per phase) would cost 173 bones, so the
+  fan is built once: the middle tail on the rig's `tail_1..5`, the pair at +-37.5 degrees on coarser three-bone chains
+  (`tail_1_b`, `_c`), and six level-of-detail copies at +-18.75, +-56.25 and +-75 degrees (`fine_tail_1_d` .. `_i`),
+  each on ONE bone with all its segments: a whole tail for one bone, swaying as one piece, and gone beyond the fine
+  distance.
+- **The phase looks** hide and show their roots: phase 1 hides the six copies (three tails: the middle one and the
+  pair); phase 2 shows the four outer copies and hides the middle tail (six, fanned wide); phase 3 shows the middle
+  tail and the inner pair (nine). Beyond the fine distance phases 1 and 3 keep three tails and phase 2 two (the pair).
+- **Foxfire tips** (`markings/foxfire_tips`): the tips of the three tails phase 3 brings back (the middle one and the
+  inner pair) are repainted in their own slot, `metal` (white like the other tips; nothing else wears `metal`). Phase
+  3's palette turns `metal` foxfire blue (#7FC8FF) in the `_p2` texture and the tips are lit in its glow mask, so the
+  three tails that come back come back burning. Phase 3 also lights his eyes (frame 10 in the glow colour).
+- **The lanterns** (`accessories/orbit_lanterns`, in place of G6c's `accessories/foxfire_lanterns`): `lantern_ring`
+  (under `root`, at the top of his chest, so the lanterns stay level when he bows) holds `lantern_orbit`, which his
+  `sec.loop` turns once round him every 6 s, and that holds the three lanterns `fine_lantern_1..3`. A move moves,
+  tilts and widens the ring (the ultimate stands it up behind him as a wheel) and turns or scales a lantern, while the
+  orbit keeps turning in the ring's plane. Five bones, one fewer than the G6c part, with one key track for the orbit
+  instead of three.
+- **The face**: `narrow` eyes with lashes and an upward flick, `thin_arched` brows, the `soft` mouth, one highlight and
+  a new face paint, `liner` (`face.py`): a kitsune's red eye-liner along the outer half of the lower lid, fading
+  toward the nose, on the row under the eye that every eye frame leaves as skin, so it shows with the eyes shut too
+  (the eye frames reach the face's edge, so an outward flick past the eye had no room). His overrides keep him
+  smiling: `calm` smiles, `focused` keeps the focused eyes with the smile, and `angry` is focused eyes over a flat
+  mouth: he never shouts.
+- **Smaller changes**: the socks end lower (`sock` 0.2, from 0.4), since the cuffs poked through the robe at the
+  knees in the deep bows.
+
+Plum and silver-white keep him apart from the others: their two largest colour regions differ from Benika's by
+delta-E 39.8 and 79.8, Hinae's by 47.5 and 78.0 and Natsuho's by 36.5 and 69.8 (the NOTE is at 15). Front and side
+silhouettes at 4x overlap 0.66 with Benika, 0.69 with Hinae and 0.58 with Natsuho (the NOTE is at 0.90). He is the
+only fox with a source, so `check` gives no NOTE.
+
+### Signature animations
+
+His own file has the 18 signatures and `sec.loop`; the focus library and the core cover the rest: his basic string
+`attack.1-3`, his thrown basic attack (`attack.ranged`), the locomotion, the hurt and the death. Each move's clip has
+the kit's frames to the tick: the `hit` on the release and a `cast` on the active part's last tick; Fan Cut has a
+`hit` on each of its two strikes and the ultimate one on each of its nine shots (MovePlan takes the markers as the
+form's hit ticks when the counts match). He fights with the folding fan: closed it is a baton, and it snaps open for
+each release (below, "The open fan").
+
+| Clip | Length | Class | Server frames (ticks) | What happens |
+|---|---|---|---|---|
+| `move.foxfire_volley` | 1.1 s | light | 10 / 6 / 8 | his tails flare wide and lift (the tell) while the closed fan is cocked across before his left shoulder and the chest turns away, a held beat, then the fan snaps open and sweeps out flat to the front right as five flames fly (`hit` 10), on out to his right (`cast` 15); the fan snaps shut and he settles |
+| `move.lantern_ring` | 4.7 s | area | 20 / 60 / 16 | the closed fan raised upright before his face like a prayer stick, eyes shut, while the lanterns sink to his hips and spread wide (the tell); the fan snaps open and sweeps down and out (`hit` 20, the ring of lantern fire), and he stands composed inside it fanning himself while it pulses (`cast` 79); the fan shuts and the lanterns rise back into their orbit |
+| `move.fan_cut` | 0.9 s | light | 8 / 6 / 6 | the fan snaps open and is drawn back high beside his head, slashed down and across (`hit` 8), whipped round and swept flat out to the front right (`hit` 13, the knockback), carried on out and tipped up, shut as he settles |
+| `move.vanish` | 0.7 s | light | 8 / 2 / 6 | the knees dip and the left sleeve sweeps up before his face, a sly glance over it; the hop back (`hit` 8: invisible, carried 6 blocks back), knees tucked under the sleeve (`cast` 9), down soft on bent knees with the sleeve swept away |
+| `move.mirage` | 1.7 s | heavy | 16 / 4 / 16 | the fan opens beside his face as a screen with only his narrowed eyes showing past it, the lanterns drawn in close and bright, his body wavering side to side like a heat shimmer (the tell); the fan sweeps aside low and the left arm opens palm up (`hit` 16, the two mirages step out of him), the lanterns flung wide (`cast` 19); a smug tilt of the head |
+| `move.foxfire_rain` | 3.7 s | area | 20 / 40 / 16 | the closed fan pointed straight up and the left palm raised, head tipped back, the lanterns climbing high (the tell); the fan snaps open and sweeps down to point at the ground ahead (`hit` 20, the rain begins), then beats time with the falling flames every half second (`cast` 59); the fan shuts and the lanterns come down |
+| `ultimate` | 4.8 s | ultimate | 32 / 36 / 30 | Ninefold Lantern: a half step back with the fan opened before his face while the lanterns gather behind him and the ring stands up into a wheel (`lantern_ring` tipped 90 degrees, 9 px behind him); the fan swept up high and the left arm opened, the wheel blazing ("Nine lanterns, one bill"); nine flicks of the open fan, forward right and forward left in turn, one flame each (`hit` 32, 36 .. 64), `cast` 67; the fan snapped shut with a small courteous bow while the wheel lies back down into his orbit |
+| `phase.2`, `phase.3` | 1.1, 1.1 s | - | - | inside the 1.2 s transitions: the six tails fan out from behind him (from folded together where his three were, past their place, settling) while he laughs behind his left sleeve; the three tails come back burning into the middle of the fan while he flings his arms up and open with the fan wide, the eyes glowing and the lanterns flaring and rising |
+| `intro`, `victory`, `taunt` | 1.5, 2.0, 1.5 s | - | - | a slow courteous bow with the closed fan across his chest and the left hand behind his back, up again with the closed fan to his lips, eyes smiling; fanning himself lazily, laughing softly with his eyes closed, then the fan snapped shut and tapped twice into his left palm ("Paid in full."); the closed fan to his lips and the left hand held out palm up, beckoning with curling fingers |
+| `last_stand` | 1.6 s | - | - | the fan snapped shut and held point down at his side, the smile gone for once; then flicked open into a guard before his chest with two fingers raised beside it, the lanterns drawn in close and blazing |
+| `escape` | 0.6 s | - | - | over the run ("Mm. A poor bargain."): the left sleeve swept up before his face as he turns away, a sidelong glance back over it with a smirk, then the arms back into the run; upper body only |
+| `personal.1-3` | 2.4, 2.6, 2.2 s | - | - | the sleeve laugh (the sleeve to his mouth, the head tipped, the shoulders shaking); the lantern spin (one finger up drawing a slow circle, and each lantern whirls once round on itself and bobs); the tail-fan flick (a smug glance back over his left shoulder as all his tails flare wide and lift, then settle) |
+| `sec.loop` | 6.0 s | - | - | the lanterns' orbit on the secondary controller: once round him every 6 s, wobbling a little like a floating ring; it keys only `lantern_orbit` |
+| `move.sprint` | - | - | - | G10's `fox_lope` variant (MOBILITY_AND_WORK 15.2), named in `animations.variants`: his runner's sprint burst is the low fox lope |
+
+- **The open fan**: the folding fan part is one closed slat stack, and it opens by scale: `weapon_r` scales 3x along
+  the slats' width and `fine_weapon_r` (the cord and tassel) 1/3 back, keyed with the rotations. `Skeleton.world`
+  ignores scale, so `grips.animation_problems` checks the closed fan only; `test_yugen` samples the open fan's slats
+  at their scaled size on every tick of every clip that opens it (the volley, Lantern Ring, Fan Cut, Mirage, the
+  ultimate) and finds them clear of his body.
+- **A fan beside the face, not over the mouth**: a fan held across the mouth needs the right wrist past its limit on
+  his skeleton, so Mirage and the ultimate hold the open fan up beside his face as a screen (his eyes show past its
+  edge), and the intro and the taunt put the closed fan to his lips.
+- **The wheel**: tilted 90 degrees, the orbit turns in the wheel's plane, so the lanterns would hang sideways; each
+  lantern is turned back by the ring's tilt (`fine_lantern_N` rotated by -90 degrees) at the wheel's start, so they
+  face him as they climb and tumble a little as the wheel turns.
+- **No `ultimate.loop`**: as Hinae's and Benika's.
+- **Markers**: the client sounds of SOUND.md 4.7 are markers in the clips their slots name: the releases of the volley
+  (`foxfire_volley`), Fan Cut (`fan_cut`) and Vanish (`vanish`), the ultimate's nine shots (`ninefold_shot` on each
+  hit), both phases (`tails_fan`, `lantern_flare`), the intro (`intro`), the victory and the sleeve laugh (`laugh`)
+  and the lantern spin (`lantern_spin`). The wind-ups, the impacts and the server's releases are not markers.
+- **Faces**: every clip keys `face_ctrl`.
+- **Rules**: every own clip passes the quality rules on all six bases (no foot slides, planted feet within 0.5 px, the
+  soles on the ground, the joint limits), the closed fan stays clear of his body and above the ground on every tick,
+  and `herogen check` passes the tail rule for all nine tails in every clip. The arm poses were solved on his own
+  skeleton for grip points and the fan's direction; the idle quirks name `move.idle` as their base (`settle_to`,
+  `plays_over`).
+
+### Generator additions (every other hero builds and previews byte for byte as before)
+
+- **`gen.py`, chain `angles`**: the copies' fan angles listed in build order, in place of `fan` (the first keeps the
+  bone names, the others take `_b`, `_c` .. in that order), so a phase look can show the copies a few at a time.
+  The count must equal `copies`.
+- **`gen.py`, chain `lod_from`** (with `lod_points` and `lod_sections`, by default the copies'): copies from that index
+  on are each built on one bone, `fine_` + the first bone's name + the copy's suffix, holding every segment; such a
+  copy declares no other bones and leaves no `chain_points` behind. `lod_from` outside 1..copies or a points/sections
+  mismatch is an error.
+- **`render/scene.py`**: the preview renderer hid a phase look's `hide` list but ignored its `show` list, and drew a
+  `p1_` bone in every phase. `hidden()` now follows `HeroModel.plan`: a `pN_` bone from phase N on (a `p1_` bone in
+  phase 1 only), then each phase look up to the current phase shows and hides its lists in phase order, the later
+  look winning. No other hero uses `show` or `p1_` bones, so their previews are unchanged.
+- **`tails.py`**: the tail rule took only the rig's `tail_1` and its descendants, so a fox's copies (`tail_1_b` ..,
+  children of `body`) were never checked. It now takes every tail chain root (`tail_1`, `tail_1_b` .., `fine_` and
+  `pN_` prefixes) with every bone below it, and `tip_down` checks each chain's tip. Natsuho, the Wither and the Ender
+  Dragon pass as before.
+- **`face.py`**: the `liner` face paint (above).
+- **`render/hero_previews.py`**: a runner whose own file overrides `move.sprint` shows `run > sprint` in
+  `locomotion.gif` (his fox lope); his captions (`OWN_CAPTIONS`). Hinae's, Natsuho's and Benika's segments are
+  unchanged.
+- **`anim/loco_preview.py`**: G10's `hero_yugen.gif` (the fox lope) is drawn from his own source in his one body
+  (before, from the sample outfit); `previews/anim/locomotion/hero_yugen.*` and its README line are re-rendered.
+- **`render/partsheet.py`**: the orbit lanterns are drawn in the lanterns' band (as `accessories/foxfire_lanterns`);
+  the parts sheets `head_tails_wings.png` and `details_accessories.png` are re-rendered with the three new parts (the
+  other sheets are unchanged). `tests/test_details.py` lists `markings/foxfire_tips` beside B5's markings.
+
+### Previews (`docs/heroes-v2/previews/heroes/yugen_kagaribi/` and `heroes/lineup.png`)
+
+His set, as Natsuho's, Hinae's and Benika's, with a README: `turnaround.png`, `faces.png`, `phases.png`, `sheet.png`,
+a GIF per move (Mirage in phase 2 and Foxfire Rain in phase 3, their first kit phases), `ultimate.gif`, `string.gif`
+(the thrown basic attack, the focus string, Fan Cut > Vanish and Vanish > Foxfire Volley, their followups),
+`moments.gif`, `idles.gif` and `locomotion.gif` (walk > run, run > the fox lope, crouch jump > leap > heavy landing,
+climb). The lineup now has him last of the heroes, before the test rig.
+
+### Tests (512 -> 533: `tests/test_yugen.py`, 21)
+
+- His one body: adult, male, slim, 100, and no phase changes it; the kit is the fixture's; the budgets (95 bones,
+  298 cubes, 127 beyond the fine distance) are within 100 / 300 / 130.
+- Every move's and the ultimate's frames equal the kit's (Fan Cut's two strikes and the ultimate's nine shots 4 ticks
+  apart), and `assets.check_frames` passes on the written chain.
+- His own clips pass every rule on every base, at most 24, no `ultimate.loop`, and `escape`, `last_stand`,
+  `move.sprint` and `sec.loop` are there; the closed fan stays clear of his body on every tick; the open fan (scaled)
+  stays clear on every tick and opens in the volley, Lantern Ring, Fan Cut, Mirage and the ultimate.
+- Every client slot has its marker (the ultimate's nine), no server slot is a marker; `face_ctrl` in every clip; his
+  calm and focused faces smile, and the liner is painted.
+- One fan of nine: the six level-of-detail copies are single `fine_` bones with every segment's cubes, nine secondary
+  chains, the fan's angles in build order.
+- The phase looks show three, six and nine tails (and two, two and three beyond the fine distance as the text says);
+  `scene.hidden` follows `HeroModel.plan` (show lists, `p1_` bones, Natsuho's phases unchanged).
+- The foxfire tips: only the marking wears `metal`, the `_p2` tips are bluer, the `_p2` glow mask lights more texels,
+  and the tip cubes are on `tail_5`, `fine_tail_1_d` and `fine_tail_1_e`.
+- The tail rule sees every tail: a level-of-detail tail turned down between the legs is refused, and his clips pass.
+- The lanterns' orbit keys only `lantern_orbit`; the ultimate stands the ring up (-90 degrees, more than 6 px behind
+  him) and turns each lantern back by 90 degrees.
+- `gen.py`: `angles` and `lod_from` build what they say, and a wrong count, a `lod_from` out of range and mismatched
+  `lod_points` are errors.
+- The `liner` paints six texels on row 16 only; his locomotion film has the sprint (Hinae's list unchanged); the
+  lineup takes him.
+
+Sabotage (each restored afterwards, the diff clean): the old `scene.hidden` fails the two phase tests; the old
+`tail_bones` fails the tail test; `lod_from` ignored puts him over the bone budget (the class fails to set up); no
+sprint segment fails the locomotion test; a `liner` that paints nothing fails the liner test.
+
+### Checks run
+
+`herogen check yugen_kagaribi` (all of 14.2, the tail rule for all nine tails included) OK; `check --all --style`
+OK (every hero, the style fixtures and the icons; its one NOTE, the test rig's `lunge`, is old); `build --check --all` OK (the libraries, `_fallback`, Natsuho, Hinae, Benika, the test rig, the Wither and the
+Ender Dragon build byte for byte as committed); `lint` of his twelve parts (half_up_long, fox ears, fox_nine,
+foxfire_tips, court_robe, fox_mask, sash_obi, socks_shoes, prayer_beads, orbit_lanterns, crest, folding_fan) on every
+base: 260 builds and checks, 0 problems; `sfxgen check` 0 errors; `hero-previews yugen_kagaribi --check`, `hero-previews
+natsuho_komezaki hinae_shirasuzu benika_akagane the_wither the_ender_dragon --check`,
+`hero-previews --lineup --check`, `anim-previews --locomotion --check`, `--core --check` and `--styles --check`,
+`parts-previews --check`, `render-previews --check` and `icons --check` OK; the Python suite, 533 tests, OK. (A first
+run of the suite caught `test_benika`'s locomotion test calling the new sprint branch with a bare stub hero; the branch
+now asks only a hero with an `animations` block for its own clips.)
+
+### Decisions
+
+1. **His kit is the fixture's verbatim** (as the other slice heroes').
+2. **One fan of nine tails with level-of-detail copies**, shown three, six and nine by the phase looks, rather than a
+   part per phase: three fans would cost 173 bones. The price: beyond the fine distance phase 2 shows two tails, and a
+   level-of-detail tail sways as one piece.
+3. **Phase 2 hides the middle tail**, so six read as a wide fan with a gap, and phase 3 fills the middle with the
+   three that come back burning: the foxfire tips are on exactly the tails phase 3 adds.
+4. **The fan opens by scale**, keyed with the rotations, rather than a second fan part swapped in: no extra bones, and
+   GeckoLib plays scale keys. Its clearance has its own test because the rules' skeleton ignores scale.
+5. **His own lantern part** with a ring and an orbit, so one key track turns the orbit and a move can still tilt and
+   widen the ring.
+6. **An escape clip**: he escapes when a fight is lost (SLICE_PLAN 3.2: a schemer's life is his best asset), so he
+   has one, a sleeve and a smirk over the run.
+
+### Open items
+
+- **Engine side**: his definition in `data/factionclash/heroes/` (the fixture's fields); the `last_stand` and `escape`
+  action codes (6.13); the `vfx:` markers of his moves (the flames, the ring, the rain, the mirages, the wheel).
+- **In game**: the open fan's scale keys and the wheel's lanterns (they tumble a little as the wheel turns) want a look
+  in the client; the engine's procedural sway on a one-bone tail.
+- **Followup films**: as Benika's, `string.gif` starts each followup after the whole first clip (the shared followup
+  film); in game it starts at the end of the first move's active part.
+- Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
+  `verifyHeroAssets`, which also hold the 100 / 300 / 130 budgets), GameTests, the in-game and campaign checks (gates
+  3 and 5), and the jar.

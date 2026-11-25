@@ -149,7 +149,7 @@ BANDS = {"accessories/choker_bell": (0, 30), "accessories/prayer_beads": (2, 30)
          "accessories/talisman_strips": (12, 14), "accessories/belt": (12, 14), "accessories/sash_obi": (12, 14),
          "accessories/sash_bow": (12, 14), "accessories/kunai_holster": (16, 8), "accessories/scarf": (4, 30),
          "accessories/foxfire_lanterns": (4, 34), "markings/arm_stripes": (10, 22), "markings/crest": (6, 26),
-         "markings/calico": (0, 34)}
+         "markings/calico": (0, 34), "accessories/orbit_lanterns": (4, 34)}
 
 
 def _part_row(job):

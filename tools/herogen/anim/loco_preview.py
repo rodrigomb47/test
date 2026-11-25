@@ -18,9 +18,10 @@ Per group a GIF at 20 fps (one frame a tick) and a contact sheet:
 on a chibi and an adult (Tansy, chibi_f, and Maren, adult_f: a tail, twin tails, sleeves and a skirt; a ponytail, a
 cape, armour and greaves), and one GIF per slice hero's variant (MOBILITY_AND_WORK 15) in that hero's one body only
 (the owner's one-body rule, HEROES_V2 3.6: the adult for all eight): hero_natsuho (the cat twist, from her own source,
-herosrc/heroes/natsuho_komezaki.hero.json), hero_yugen (the fox lope), hero_kagenori (the crane leap), hero_ambrose (the
-broom, side-saddle, on his staff), the last three from their sample outfits (herosrc/style/outfits.json) until their
-sources exist. `herogen anim-previews --locomotion [--groups ...] [--check]` writes or checks them.
+herosrc/heroes/natsuho_komezaki.hero.json), hero_yugen (the fox lope, from his own source since C2,
+herosrc/heroes/yugen_kagaribi.hero.json), hero_kagenori (the crane leap), hero_ambrose (the broom, side-saddle, on his
+staff), the last two from their sample outfits (herosrc/style/outfits.json) until their sources exist.
+`herogen anim-previews --locomotion [--groups ...] [--check]` writes or checks them.
 """
 import copy
 import os
@@ -225,7 +226,7 @@ HERO_GIFS = {
                      [Segment("jump > leap > air_jump (cat twist) > leap > land_roll",
                               [("move.jump", None), ("move.leap", 0.3), ("move.air_jump", None), ("move.leap", 0.4),
                                ("move.land_roll", None)])]),
-    "hero_yugen": ("yugen", ["adult_m"], "Yugen's fox lope (move.sprint, variant fox_lope)",
+    "hero_yugen": ("yugen_kagaribi", None, "Yugen's fox lope (move.sprint, variant fox_lope)",
                    [Segment("run (core) > sprint (the fox lope) > skid", [("move.run", 1.2), ("move.sprint", 2.4),
                                                                           ("move.skid", None)])]),
     "hero_kagenori": ("kagenori", ["adult_m"], "Kagenori's crane leap (move.leap, variant crane_leap)",

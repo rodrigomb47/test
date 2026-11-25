@@ -104,15 +104,22 @@ class HeroAssets:
     def hidden(self, phase=1, drawn=False, far=False, riding=False):
         """Bones hidden in a frame: phase bones of a later phase, the sheathed copy while the weapon is drawn (or the
         drawn one while it is sheathed), the fine bones beyond the fine distance (4.9), and the carrier on the mount
-        bone unless riding (G6c, G10; while riding a carrier that is the weapon, its hand and sheathed copies instead)."""
-        out = [b for b, p in self.visual["bones"].get("phase", {}).items() if phase < p]
+        bone unless riding (G6c, G10; while riding a carrier that is the weapon, its hand and sheathed copies instead).
+        The phase rule is `HeroModel.plan`'s (C2): a pN_ bone from phase N on (a p1_ bone only in phase 1), then each
+        phase look up to this phase shows and hides its own lists in phase order, the later look winning (Yugen's tails:
+        his phase-1 look hides six, phase 2 shows four of them and hides one, phase 3 shows the rest)."""
+        vis = {b: (phase == 1 if p == 1 else phase >= p) for b, p in self.visual["bones"].get("phase", {}).items()}
+        for ph in sorted(self.visual.get("phases", []), key=lambda q: q["phase"]):
+            if ph["phase"] <= phase:
+                for b in ph.get("show", []):
+                    vis[b] = True
+                for b in ph.get("hide", []):
+                    vis[b] = False
+        out = [b for b, v in vis.items() if not v]
         if riding and self.carrier_is_weapon():
             out += self.bones("weapon_drawn") + self.bones("weapon_sheathed")
         elif not riding:
             out += self.bones("mount")
-        for ph in self.visual.get("phases", []):
-            if ph["phase"] <= phase:
-                out += ph.get("hide", [])
         if riding:
             pass
         elif drawn:
