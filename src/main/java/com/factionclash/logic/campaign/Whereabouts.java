@@ -114,6 +114,35 @@ public final class Whereabouts {
         return departedAt <= 0 ? overdueTicks : Math.max(0, departedAt + overdueTicks - now);
     }
 
+    /**
+     * A recon trip's whole plan ({@code docs/design/recon.md} 2.5): the walk to the target over {@code blocks}, the vantage
+     * allowance (two sides, the walk round between them and the hold on the pillar, {@link ReconRules#VANTAGE_TICKS}), the
+     * watch ({@link ReconRules#WATCH_TICKS}) and the walk home. 250 blocks: 11000 ticks.
+     */
+    public static long reconPlanTicks(double blocks) {
+        return walkTicks(blocks) + ReconRules.VANTAGE_TICKS + ReconRules.WATCH_TICKS + walkTicks(blocks);
+    }
+
+    /**
+     * A recon trip's plan from now: fixed when the scout leaves ({@code departedAt}), like every trip; what is left of
+     * {@link #reconPlanTicks}, never negative. No departure: the whole plan.
+     */
+    public static long reconPlan(long now, long departedAt, double blocks) {
+        long plan = reconPlanTicks(blocks);
+        return departedAt <= 0 ? plan : Math.max(0, departedAt + plan - now);
+    }
+
+    /**
+     * Whether a base needs a follow-up scout (recon.md 2.5): its only scout is MISSING (the roll call's view, for an
+     * exploring trip and a recon trip alike; before, the scout's departure plus the overdue bound). {@code scouts} are the
+     * roll-call states of the base's scouts; those no longer counted (presumed or known dead) are left out, as the "no scout
+     * left" need replaces them.
+     */
+    public static boolean scoutFollowUp(java.util.Collection<State> scouts) {
+        java.util.List<State> counted = scouts.stream().filter(s -> s != null && s.counted()).toList();
+        return counted.size() == 1 && counted.get(0) == State.MISSING;
+    }
+
     /** When remote daylight work stops: dusk, dayTime 13000 ({@code Job.NIGHT_START}). */
     public static final long NIGHTFALL = 13000;
 

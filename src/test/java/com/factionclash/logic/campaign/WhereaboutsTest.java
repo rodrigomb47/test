@@ -300,4 +300,35 @@ class WhereaboutsTest {
         assertEquals(start + Whereabouts.RAID_LIMIT_TICKS, Whereabouts.raidTurnHomeAt(start, 500_000, 300), "never past the limit");
         assertEquals(start, Whereabouts.raidTurnHomeAt(start, 100, 300), "a plan shorter than the walk: at once");
     }
+
+    /**
+     * A recon trip's plan (docs/design/recon.md 2.5): the walk there, the vantage allowance, the watch and the walk back,
+     * fixed at departure. For a target 250 blocks away that is 11000 ticks; MISSING comes past it and the grace (13400).
+     */
+    @Test
+    void aReconTripsPlanCoversTheWalksTheVantageAndTheWatch() {
+        assertEquals(2500 + 4800 + 1200 + 2500, Whereabouts.reconPlanTicks(250));
+        assertEquals(11000, Whereabouts.reconPlan(7000, 0, 250), "no departure: the whole plan");
+        long departed = 5000;
+        assertEquals(10000, Whereabouts.reconPlan(departed + 1000, departed, 250), "fixed when it left");
+        assertEquals(0, Whereabouts.reconPlan(departed + 50_000, departed, 250), "past it: back now");
+        assertTrue(Whereabouts.reconPlanTicks(250) >= 2 * Whereabouts.walkTicks(250) + ReconRules.HOLD_MAX_TICKS + ReconRules.WATCH_TICKS,
+                "the hold on the pillar is in the plan, so a scout that waits is not reported missing for it");
+        long expected = departed + Whereabouts.reconPlan(departed, departed, 250);
+        assertEquals(new Step(State.AWAY, Event.NONE), Whereabouts.waits(State.AWAY, departed + 13400, expected, 0, WAITS));
+        assertEquals(new Step(State.MISSING, Event.MISSING), Whereabouts.waits(State.AWAY, departed + 13401, expected, 0, WAITS));
+    }
+
+    /** The follow-up scout is hired when the base's only scout is MISSING (the roll call's view, any trip). */
+    @Test
+    void aFollowUpScoutWhenTheOnlyScoutIsMissing() {
+        assertTrue(Whereabouts.scoutFollowUp(java.util.List.of(State.MISSING)));
+        assertFalse(Whereabouts.scoutFollowUp(java.util.List.of(State.AWAY)), "away, not overdue");
+        assertFalse(Whereabouts.scoutFollowUp(java.util.List.of(State.HERE)));
+        assertFalse(Whereabouts.scoutFollowUp(java.util.List.of(State.MISSING, State.HERE)), "another scout is at work");
+        assertTrue(Whereabouts.scoutFollowUp(java.util.List.of(State.MISSING, State.PRESUMED_DEAD)),
+                "the presumed dead is no longer counted (the no-scout-left need replaces it)");
+        assertFalse(Whereabouts.scoutFollowUp(java.util.List.of(State.PRESUMED_DEAD)), "none counted: the no-scout-left need");
+        assertFalse(Whereabouts.scoutFollowUp(java.util.List.of()));
+    }
 }
