@@ -181,14 +181,16 @@ Players respawn at their faction's nearest surviving base when they have no bed.
 * **A faction's fall**: a faction whose last base falls is eliminated ("Stoneguard has been eliminated! All of its
   people die with it."), and every member of it dies with it, wherever it is: the NPCs and heroes in loaded places at
   once, where they stand, their things dropping as on any death; a member away in an unloaded place (a scout, a far
-  miner, a raider, a monster of the Hollow) where it stands when its chunk next loads, its things dropping too; a hero
+  miner, a raider, a monster of the Hollow) where it stands when its chunk next loads, a moment later, even where nothing
+  ticks (a chunk loaded at the edge of a ticking area), its things dropping too; a hero
   away there is told dead at the fall, and when its chunk loads what it carried drops where it stood (its kit vanishes,
   as at any hero's death); a member player at once, or as it next logs in, after which it respawns by vanilla's rules
   with no faction and may join a surviving one. A hero dies for good: it never rises again (it has no base to rise at)
   and becomes a free hero with its level kept. The kill feed tells each hero's death once: a hero killed where it stood,
   or one that died unloaded or was missing and presumed lost, in vanilla's words with its faction ("Natsuho Komezaki
   (Ember Legion) was killed"); a hero already dead and waiting to rise is freed with no second line. Nothing of the fallen
-  faction acts again (no recruitment, council, raid or work). There is no diplomacy between factions: the owner removed
+  faction acts again (no recruitment, council, raid or work), and no hero of it mourns another of its people dying with
+  it (the fall kills them all at once). There is no diplomacy between factions: the owner removed
   the pact against a conqueror on 2026-11-25, so the survivors of a conquest stay each other's enemies.
 * **Traders and villages**: scouts report villages - any village they come within sight of (plains, desert,
   savanna, snowy, taiga, abandoned ones too), with the villagers with a trade they saw there, or two or more such
@@ -575,7 +577,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 410 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 412 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
@@ -588,7 +590,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   retraining and the blacksmith see only members at home; a worker away knows the storehouse's food as it last saw it;
   experience picked up away is carried home and dropped at death; the alarm needs someone to see the intruder, or the intruder to be at the heart; a lookout hero's line is heard
   only at home; a lair misses a monster that fell far off only later), **a faction's fall** (a member away in an
-  unloaded place dies when its chunk loads and its things drop; a member of a faction never eliminated lives; a hero at
+  unloaded place dies when its chunk loads and its things drop, at the next tick in a chunk loaded but not ticking too; a
+  member of a faction never eliminated lives; a hero dying with its faction mourns nobody dying with it; a hero at
   home dies with the last base without running and is free for good, as are one waiting to rise and one away, the feed
   telling each death once and the away one's stale copy discarded, what it carried dropping where it stood (an older
   copy drops nothing); a hero presumed lost is told dead at the fall, once, whether it is away or in fact loaded; the Hollow's monsters die with its last lair, a

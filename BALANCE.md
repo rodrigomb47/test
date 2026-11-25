@@ -499,9 +499,10 @@ woodcutters fell the natural trees around the base, replant them, and keep a gro
   equality, when the float rounding of `soldierPower` allowed it) and 10 or 11 never did.
 * No pacts (owner, 2026-11-25; config `war.pacts` removed): every faction is hostile to every other, and the
   survivors of a conquest stay enemies. A faction whose last base falls is eliminated and every member dies with it:
-  loaded members at once; a member in an unloaded place on its first tick once loaded (then checked once a second,
-  every **20** ticks); a member player at once or at its next login; its heroes never rise again and are freed with their
-  level kept (no number to tune).
+  loaded members at once; a member in an unloaded place at the server tick after it loads (in a chunk that does not tick
+  too), or on its first tick (then checked once a second, every **20** ticks); a member player at once or at its next
+  login; its heroes never rise again and are freed with their level kept, and none says its `ally_fallen` line for a
+  member dying with it (no number to tune).
 * Traders (PROPOSED): hired with 14+ people and a reported village with traders within 320 blocks; one trip per 12000 ticks, by
   day (setting out between 23500 and 9000 day time), abandoned after 24000 ticks. Packs up to 8 kinds × 64 of
   surplus above the reserves (wheat, potatoes, carrots 64; beetroot 32; sticks 64; string, leather 16; feathers,
@@ -843,7 +844,8 @@ a faction with `/fc admin hero give`.
   (PROPOSED where v1 is silent): a fight starts when it takes a target after **10 s** without one; it is won after
   **5 s** with no target and no hostile within **16** blocks; low health under **30%**, said again only after it has
   been back above **50%**; `idle` at its base with a faction player within **12** blocks; `ally_fallen` for a member of
-  its side within **24**. Events a file has no line for use short generic lines (`heroes.defaultLines`).
+  its side within **24** (not for one dying with its faction at its fall). Events a file has no line for use short
+  generic lines (`heroes.defaultLines`).
 * Death: `heroes.reviveSeconds` **600** (30-3600) later the hero returns at its home base's spawn point (or its
   faction's first standing base), at full health with its kit, level, experience and traits, as a new entity; a faction
   with no standing base loses it (released). Its own `revival` block sets its delay instead (30-3600 s) and where it

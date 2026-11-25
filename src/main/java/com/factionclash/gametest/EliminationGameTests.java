@@ -11,6 +11,7 @@ import com.factionclash.campaign.HeroState;
 import com.factionclash.campaign.NpcRecord;
 import com.factionclash.campaign.Report;
 import com.factionclash.combat.CombatRules;
+import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.hero.HeroEntity;
 import com.factionclash.hero.HeroKillFeed;
@@ -32,6 +33,7 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -40,6 +42,8 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -59,7 +63,9 @@ import java.util.UUID;
  * member player dies and is factionless, at once or at its next login; after a conquest the survivors stay enemies; an
  * old save that holds a pact loads. The review of 2026-11-25 added: the Hollow's monsters die with its last lair wherever
  * they are (an unloaded one when it loads) and give up their chunk tickets; an away hero's things drop where its copy
- * stood; a hero presumed lost is told dead at the fall; a member of an ended campaign dies when it loads in a new one. Each test that eliminates a faction has its own batch, sets the faction's other
+ * stood; a hero presumed lost is told dead at the fall; a member of an ended campaign dies when it loads in a new one. The
+ * live check's follow-ups (2026-11-25): a member loading in a chunk that does not tick dies there at the next tick; a hero
+ * dying with its faction mourns nobody. Each test that eliminates a faction has its own batch, sets the faction's other
  * standing bases aside and puts its roster back afterwards (the test base's cleanup restores its fall stamp).
  */
 @GameTestHolder(FactionClash.MODID)
@@ -812,6 +818,171 @@ public final class EliminationGameTests {
                 t.assertTrue(lying(h, oldAt, Items.IRON_INGOT) == 2, "its things did not drop: " + lying(h, oldAt, Items.IRON_INGOT));
                 t.assertTrue(member.isAlive(), "a recruit of this campaign died");
                 t.assertTrue(unknown.isAlive(), "an NPC with no campaign id died");
+                t.succeed();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    // ------------------------------------------------------------------ the live check's follow-ups (2026-11-25)
+
+    /**
+     * A chunk round the test's own force-loaded chunks that is loaded but does not tick its entities (the ring any ticking
+     * area keeps loaded round it), found by its state, not assumed: null when there is none within 4 chunks.
+     */
+    private static ChunkPos nonTickingRing(GameTestHelper h) {
+        ServerLevel level = h.getLevel();
+        AABB box = h.getBounds();
+        int x0 = Mth.floor(box.minX) >> 4, x1 = Mth.floor(box.maxX) >> 4, z0 = Mth.floor(box.minZ) >> 4, z1 = Mth.floor(box.maxZ) >> 4;
+        int y = Mth.floor(box.minY);
+        for (int d = 1; d <= 4; d++) {
+            for (int cx = x0 - d; cx <= x1 + d; cx++) {
+                for (int cz = z0 - d; cz <= z1 + d; cz++) {
+                    if (Math.max(Math.max(x0 - cx, cx - x1), Math.max(z0 - cz, cz - z1)) != d) {
+                        continue; // (only the ring at distance d)
+                    }
+                    if (level.hasChunk(cx, cz) && !level.isPositionEntityTicking(new BlockPos(cx * 16 + 8, y, cz * 16 + 8))) {
+                        return new ChunkPos(cx, cz);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /** The ground's top in chunk {@code c}, {@code dx} blocks in from its west edge, half way along it. */
+    private static BlockPos surface(ServerLevel level, ChunkPos c, int dx) {
+        int x = c.getMinBlockX() + dx, z = c.getMinBlockZ() + 8;
+        return new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z), z);
+    }
+
+    /**
+     * A member that joins the level at {@code at} as a chunk loading there brings it in: its faction, campaign id (0: none)
+     * and things already set when it joins; still (no AI); discarded by the cleanup.
+     */
+    private static FactionNpc joining(GameTestBases.Handle t, BlockPos at, FactionType faction, long campaign, int iron) {
+        ServerLevel level = t.helper.getLevel();
+        FactionNpc n = ModEntities.FACTION_NPC.get().create(level);
+        if (n == null) {
+            throw new net.minecraft.gametest.framework.GameTestAssertException("no NPC was made");
+        }
+        n.setPersistenceRequired();
+        n.faction(faction);
+        n.role(NpcRole.MINER);
+        n.setNoAi(true);
+        n.setCampaignId(campaign);
+        if (iron > 0) {
+            n.inventory().addItem(new ItemStack(Items.IRON_INGOT, iron));
+        }
+        n.moveTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 0F, 0F);
+        t.track(n);
+        t.assertTrue(level.addFreshEntity(n), "the member was refused at " + at.toShortString());
+        return n;
+    }
+
+    /**
+     * (xiv) A member of a fallen faction brought into a chunk that is loaded but does not tick (the ring round a ticking
+     * area: another traveller's, a force-loaded chunk, a player's view beyond the simulation distance; here the ring the
+     * test's own force-loaded chunks keep loaded) dies where it stands at the next server tick, though it never ticks, the
+     * iron it carried lying there; so does a member of an ended campaign. Not in its join event: right after it joined it
+     * is in the level, alive, and nothing lies there. A member of a standing faction of this campaign in the same chunk
+     * lives on. (The live check of 2026-11-25: such members stood alive and still until their chunks ticked.)
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "elim_ring_join")
+    public static void elimAMemberLoadingWhereNothingTicksDies(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FALLS, 2, 3, 40);
+        try {
+            lastBase(t);
+            ServerLevel level = h.getLevel();
+            CampaignData data = t.data;
+            long was = data.campaignId;
+            t.onCleanup(() -> data.campaignId = was);
+            data.campaignId = 0x5EED_0004L;
+            CampaignManager.eliminate(level, data, FALLS);
+            ChunkPos ring = nonTickingRing(h);
+            t.assertTrue(ring != null, "no loaded chunk that does not tick round the test area");
+            BlockPos a = surface(level, ring, 3), b = surface(level, ring, 8), c = surface(level, ring, 13);
+            // what dies there drops there, outside the test area: the cleanup takes it away, or the chunk would save it
+            AABB chunk = new AABB(ring.getMinBlockX(), a.getY() - 8, ring.getMinBlockZ(), ring.getMaxBlockX() + 1, a.getY() + 8,
+                    ring.getMaxBlockZ() + 1);
+            t.onCleanup(() -> level.getEntitiesOfClass(ItemEntity.class, chunk).forEach(Entity::discard));
+            FactionNpc fallen = joining(t, a, FALLS, 0, 7);
+            FactionNpc ended = joining(t, b, CONQUEROR, 0x5EED_0003L, 2);
+            FactionNpc standing = joining(t, c, CONQUEROR, data.campaignId, 0);
+            for (FactionNpc n : List.of(fallen, ended, standing)) {
+                t.assertTrue(level.getEntity(n.getUUID()) == n && n.isAlive(), "a member is not in the level alive after its join "
+                        + "(in " + level.getEntity(n.getUUID()) + ", alive " + n.isAlive() + ")");
+            }
+            Vec3 fallenAt = fallen.position(), endedAt = ended.position();
+            t.assertTrue(lying(h, fallenAt, Items.IRON_INGOT) + lying(h, endedAt, Items.IRON_INGOT) == 0, "iron on the ground at the join");
+            h.runAfterDelay(5, t.guard(() -> {
+                t.assertTrue(!level.isPositionEntityTicking(a), "the chunk began to tick: the test proves nothing");
+                for (FactionNpc n : List.of(fallen, ended, standing)) {
+                    t.assertTrue(n.tickCount == 0, "a member there ticked (" + n.tickCount + "): the test proves nothing");
+                }
+                t.assertTrue(!fallen.isAlive(), "a member of the fallen faction stands alive where nothing ticks");
+                t.assertTrue(lying(h, fallenAt, Items.IRON_INGOT) == 7, "its iron did not drop where it died: " + lying(h, fallenAt, Items.IRON_INGOT));
+                t.assertTrue(!ended.isAlive(), "a member of an ended campaign stands alive where nothing ticks");
+                t.assertTrue(lying(h, endedAt, Items.IRON_INGOT) == 2, "its iron did not drop where it died: " + lying(h, endedAt, Items.IRON_INGOT));
+                t.assertTrue(standing.isAlive(), "a member of a standing faction of this campaign died");
+                t.succeed();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /** How many lines the hero has said since it joined (the count in its spoken line, {@code HeroEntity.spokenLine}). */
+    private static int linesSaid(HeroEntity hero) {
+        String s = hero.spokenLine();
+        int nl = s.indexOf('\n');
+        return nl < 0 ? 0 : Integer.parseInt(s.substring(0, nl));
+    }
+
+    /**
+     * (xv) A hero dying with its faction mourns nobody: the fall kills every member at once, so a member that dies ahead of
+     * it in the same tick (the fall kills them in the order they joined) draws no {@code ally_fallen} line (the live check
+     * of 2026-11-25: "Yara Flint... no!"); at most its own {@code fallen} line is said. The test's own control: before the
+     * fall, a member's death beside it draws the line. The dialogue cooldown is set to its least, 5 s, so each line may
+     * follow the one before.
+     */
+    @GameTest(template = "platform", timeoutTicks = 300, batch = "elim_no_mourning")
+    public static void elimAHeroDyingWithItsFactionMournsNobody(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FALLS, 2, 3, 300);
+        try {
+            lastBase(t);
+            int cooldown = FCConfig.HERO_DIALOGUE_COOLDOWN_SECONDS.get();
+            t.onCleanup(() -> FCConfig.HERO_DIALOGUE_COOLDOWN_SECONDS.set(cooldown));
+            FCConfig.HERO_DIALOGUE_COOLDOWN_SECONDS.set(5);
+            FactionNpc ahead = t.npc(10, 12, NpcRole.SWORDSMAN); // joined before the hero: the fall kills it first
+            ahead.setNoAi(true);
+            ahead.setNpcName("Yara Flint");
+            HeroEntity hero = schemer(t, "fx_elim_mourning", 12, 12);
+            FactionNpc behind = t.npc(14, 12, NpcRole.SWORDSMAN); // joined after it: dies after it
+            behind.setNoAi(true);
+            FactionNpc control = t.npc(12, 10, NpcRole.FARMER);
+            control.setNoAi(true);
+            control.setNpcName("Garo Pike");
+            int gap = 5 * 20 + 2; // the 5 s between two lines, and a little
+            h.runAfterDelay(gap, t.guard(() -> {
+                int before = linesSaid(hero);
+                control.kill(); // a member's death beside it, its faction standing
+                t.assertTrue(linesSaid(hero) == before + 1 && hero.lastLine().contains("Garo Pike"),
+                        "the control: a member's ordinary death drew no ally_fallen line (said " + (linesSaid(hero) - before)
+                                + ", last: " + hero.lastLine() + ")");
+            }));
+            h.runAfterDelay(2 * gap, t.guard(() -> {
+                int before = linesSaid(hero);
+                CampaignManager.destroyBase(h.getLevel(), t.base, CONQUEROR, "test");
+                t.assertTrue(CampaignManager.fallen(t.data, FALLS), "the faction did not fall with its last base");
+                t.assertTrue(!ahead.isAlive() && !behind.isAlive() && hero.isDeadOrDying(), "a member outlived its faction");
+                int said = linesSaid(hero) - before;
+                t.assertTrue(said <= 1, "the hero said " + said + " lines at its faction's fall (it mourned a member dying with it),"
+                        + " the last: " + hero.lastLine());
+                t.assertTrue(!hero.lastLine().contains("Yara Flint"), "it mourned a member dying with it: " + hero.lastLine());
                 t.succeed();
             }));
         } catch (RuntimeException | Error e) {

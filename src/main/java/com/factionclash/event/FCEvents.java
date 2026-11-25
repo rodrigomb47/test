@@ -54,7 +54,16 @@ public final class FCEvents {
     /** Vanilla hostiles hunt faction NPCs under their normal species behaviour; Hollow mobs keep to their lair. */
     @SubscribeEvent
     public void onJoin(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof Mob mob) || mob instanceof FactionNpc) {
+        if (event.getLevel().isClientSide()) {
+            return;
+        }
+        if (event.getEntity() instanceof FactionNpc npc) {
+            // a member of a fallen faction (or of an ended campaign) loading anywhere dies at the next tick, in a chunk
+            // that does not tick too
+            CampaignManager.memberJoined(npc);
+            return;
+        }
+        if (!(event.getEntity() instanceof Mob mob)) {
             return;
         }
         if (CombatRules.huntsNpcs(mob)) {

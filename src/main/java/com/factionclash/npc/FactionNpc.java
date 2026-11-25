@@ -885,7 +885,8 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
             return;
         }
         // a member whose faction fell while it was away in an unloaded place dies on its first tick here (the owner's
-        // rule of 2026-11-25: every member dies with its faction); once a second after, for a straggler anywhere
+        // rule of 2026-11-25: every member dies with its faction), if the tick after it joined has not already killed it
+        // (CampaignManager.memberJoined, in a chunk that does not tick too); once a second after, for a straggler anywhere
         if ((!fateChecked || tickCount % 20 == 0) && com.factionclash.campaign.CampaignManager.diesWithFaction(this)) {
             return;
         }

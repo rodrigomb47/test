@@ -137,7 +137,7 @@ commits, language and testing are in `/CLAUDE.md`.
 
 | Package | What lives there |
 |---|---|
-| `campaign/` | Saved campaign state and the per-base "brain". `RollCall` (what a faction knows of its members: home area, sightings, trips' expected returns, missing and presumed dead, witnesses and the `News` they carry home (deaths, lines, a member's own lines such as a level gained away), `/fc admin roll`; pure rules `logic/campaign/Whereabouts`; `docs/design/missing_npcs.md`; the council's wait for its raid's end: `FactionState.raidEndNews`/`lastParty`; the last raider to leave the party alive carries its end: `FactionState.leaveRaid`/`raidLast`, `RollCall.raidEndCarriers`; a day's remote work is planned until nightfall: `Job.tripPlanTicks(now, dayTime)`, `Whereabouts.dayShiftPlan`); `NpcRecord` keeps the faction's knowledge (`alive`, `where`) apart from the truth (`dead`, `vanished`), which only the engine reads. What a faction knows of everything else (`docs/design/knowledge.md`, the knowledge review of 2026-11-19): `BaseWatch` (what its people see of an enemy base: a look at the garrison with how much of the yard was in view, ruins, enemy soldiers seen falling at home; `seesFall`) and pure `logic/campaign/Intel` (the war council's estimate from the newest look, aged, a prior like its own garrison, losses seen); `Report.look`/`heroes`/`fallen`/`losses`; `FactionState.raidPlanTicks` (the raid's plan), `raidIntel` (the party's look, home with the raid's end); `FactionDirector.seenAtHome` (retraining and the blacksmith). `CampaignData` (SavedData, FORMAT 2), `BaseState` (one settlement or lair: centre, points, MIN/MAX work belt, `barrenUntil`, shortages), `FactionState` (reports, explored sectors, raid target, `alive`/`eliminatedAt`), `WorkplaceState` (MINE / TREE_PLOT / FISHERY / FARM / PEN / CAVE records; per-type NBT blocks keyed `mineV`, `woodV`, `fishV`; old saves convert in `load`), `FactionDirector` (needs, recruitment, retraining, war council, `FishingSpots.maintain`), `BaseBuilder` (builds settlements; `ensureWorkplaces`), `CampaignStarter`/`CampaignManager` (a base's fall; `eliminate`: every member dies with its faction, `diesWithFaction` for one that loads later, `loggedIn` for a member player; pure rules `logic/campaign/Elimination`), `Diplomacy` (who is hostile: any two different factions; there are no pacts since 2026-11-25), `Logistics`, `Report`, `BaseZones` + `MapBounds` (walls-box zone maths, map clamp). |
+| `campaign/` | Saved campaign state and the per-base "brain". `RollCall` (what a faction knows of its members: home area, sightings, trips' expected returns, missing and presumed dead, witnesses and the `News` they carry home (deaths, lines, a member's own lines such as a level gained away), `/fc admin roll`; pure rules `logic/campaign/Whereabouts`; `docs/design/missing_npcs.md`; the council's wait for its raid's end: `FactionState.raidEndNews`/`lastParty`; the last raider to leave the party alive carries its end: `FactionState.leaveRaid`/`raidLast`, `RollCall.raidEndCarriers`; a day's remote work is planned until nightfall: `Job.tripPlanTicks(now, dayTime)`, `Whereabouts.dayShiftPlan`); `NpcRecord` keeps the faction's knowledge (`alive`, `where`) apart from the truth (`dead`, `vanished`), which only the engine reads. What a faction knows of everything else (`docs/design/knowledge.md`, the knowledge review of 2026-11-19): `BaseWatch` (what its people see of an enemy base: a look at the garrison with how much of the yard was in view, ruins, enemy soldiers seen falling at home; `seesFall`) and pure `logic/campaign/Intel` (the war council's estimate from the newest look, aged, a prior like its own garrison, losses seen); `Report.look`/`heroes`/`fallen`/`losses`; `FactionState.raidPlanTicks` (the raid's plan), `raidIntel` (the party's look, home with the raid's end); `FactionDirector.seenAtHome` (retraining and the blacksmith). `CampaignData` (SavedData, FORMAT 2), `BaseState` (one settlement or lair: centre, points, MIN/MAX work belt, `barrenUntil`, shortages), `FactionState` (reports, explored sectors, raid target, `alive`/`eliminatedAt`), `WorkplaceState` (MINE / TREE_PLOT / FISHERY / FARM / PEN / CAVE records; per-type NBT blocks keyed `mineV`, `woodV`, `fishV`; old saves convert in `load`), `FactionDirector` (needs, recruitment, retraining, war council, `FishingSpots.maintain`), `BaseBuilder` (builds settlements; `ensureWorkplaces`), `CampaignStarter`/`CampaignManager` (a base's fall; `eliminate`: every member dies with its faction, `memberJoined` and `diesWithFaction` for one that loads later, `loggedIn` for a member player; pure rules `logic/campaign/Elimination`), `Diplomacy` (who is hostile: any two different factions; there are no pacts since 2026-11-25), `Logistics`, `Report`, `BaseZones` + `MapBounds` (walls-box zone maths, map clamp). |
 | `work/` | One `Job` per role (`Jobs.create`). `Job` = shared helpers: `goTo`, `atStorage`, survival errands, `markIdle/markBusy/idleFor`, `beforeErrand`, night rule. Big ones: `MinerJob` (+`MineSites` site search/retire/rest, `WorkSafety.mayDig`), `WoodcutterJob` (+`ForestScan`, which also holds `TreeClaims`; `Scaffold`, the dirt pillar it fells tall trees from), `FishermanJob` (+`FishingSpots`), `ScoutJob` (+`StructureSightings`), `CaveMinerJob`/`CaveWork`, `TraderJob`, `BlacksmithJob`, `BuilderJob`, `HaulerJob`, `CookingJob`/`ChefJob`/`SmelterJob`. `BlockWork` = player-speed breaking (`Breaker`), reach, wear. `Workplaces` = claim/held/release (role-aware holder check). |
 | `logic/` | Pure, unit-tested rules (no Minecraft classes): `SpiralMine` (shaft + branch geometry), `MinePlanner` (which layer next), `MineSiteRules`, `LegacyMine` (old hut-mine maths, migration only), `TreeShape`, `ForestRules`, `FishingWater`, `EscapeRoute`, `StructureRules`, `Zones`, `CaveSurvey`, `NpcHunger`, `Ledger`, `FoodPayment`, `AffixRoller`, `XpLevels`, `StuckRecovery`, `ScoutRules`, `Pads`; `logic/campaign/Whereabouts` (the roll call's states, waits, trip plans (a raid's plan, a miner's shift), the edge band, lines), `logic/campaign/Intel` (the war council's estimate of an enemy base; since the review of the review: losses and hero
 sightings that fade (`weight`, `heroPower`, the `id=power@time` list), two thirds in whole soldiers (`twoThirds`), the
@@ -1111,6 +1111,23 @@ python3 tools/rcon.py "stop"
   names a launch on ruins as ruins (checked by compiling only; the running tracker kept the old text). **1119 unit tests, 410 GameTests.** Evidence (the session's scratchpad, not in the repository):
   `elim/LIVE_NOTES.md`, `track1/`, `fallenwatch.log`, region scans, the four server logs. Not checked live: a member
   player (single-player only; the GameTests cover it).
+- **The faction's fall, the live check's follow-up** (2026-11-25, section 6 items 7 and 9): (a) a member of a fallen
+  faction, or of an ended campaign, that joins a level dies where it stands at the next server tick, whether or not its
+  chunk ticks (`FCEvents.onJoin` -> `CampaignManager.memberJoined` -> the join queue `afterJoin` -> `diesWithFaction`,
+  only if the entity is in its level by then; never in the join event itself), as the Hollow's monsters already did;
+  before, one brought into a chunk that is loaded but does not tick stood alive and still until the chunk ticked (twice
+  in the live check). The first-tick check in `FactionNpc.tick` stays, and so does the once-a-second one. (b) no hero
+  mourns a death of its faction's fall: `HeroEvents.onDeath` skips the `ally_fallen` line and the `ally_hero_died`
+  trigger when the dead one's faction has fallen (the fall is stamped before its first death), so a hero killed after a
+  member in the same tick no longer says "Yara Flint... no!". Its own `fallen` line at its death is kept ("Ugh...",
+  Natsuho's "Tch... keep my spot warm."), heard by its faction's member players at home: whether a hero dying with its
+  faction keeps its last words is the owner's call. Tests (`EliminationGameTests`, each failed with its sabotage):
+  `elimAMemberLoadingWhereNothingTicksDies` (three members join a chunk in the ring round the test's own force-loaded
+  chunks, found by its state: in the level and alive right after the join, then never ticked yet the fallen one and the
+  ended campaign's one dead with their iron on the ground, the standing faction's one alive) and
+  `elimAHeroDyingWithItsFactionMournsNobody` (a member killed before the fall draws the line; at the fall, a member
+  that joined before the hero dies first and draws none). Four sabotages caught: no join hook, no ended-campaign branch
+  at the join, a kill in the join event itself, no mourning gate. **1119 unit tests, 412 GameTests.**
 
 ## 6. Known open items and ideas (none blocking)
 
@@ -1125,15 +1142,17 @@ python3 tools/rcon.py "stop"
   `notes/kit-gaps.md`, and in `HEROES_V2.md` the leader diplomacy's "today's pact" (5.x relations, the save table),
   left for the owner's answer on that diplomacy; the retired `tools/herotool/prompt-template.txt` still says "make
   pacts"; (6) an NPC saved before campaign ids (2026-11-25) carries none, so the first `/fc start` after that leaves it
-  alive as before (one recruited after the update is told apart). Seen in the live check (2026-11-25): (7) a member of
-  a fallen faction brought into a loaded but not ticking ring (two chunks round a ticking area: another traveller's,
-  a force-loaded chunk, a player's view beyond the simulation distance) stands there alive and still until it ticks,
-  then dies; twice in the live check, both from the check's own force-loads (killing it on load, as the lair monsters
-  are, is an option); (8) a member killed by the fall in a chunk that unloads within its death animation is saved dead
-  and finishes dying when it loads (no second drop), and one killed in a not ticking ring lies loaded and dead until the
-  chunk ticks or unloads; (9) a hero dying with its faction says its "ally fallen" line for a member dying in the same
-  tick ("Yara Flint... no!"); (10) a scout's look of ruins whose heart's place it cannot see is reported as a standing
-  base with an empty yard (Stoneguard's scout looked at Grove's ruins three times), so the first raid there finds them;
+  alive as before (one recruited after the update is told apart). Seen in the live check (2026-11-25): (7) closed by
+  the elimination follow-up (section 5): a member of a fallen faction (or of an ended campaign) brought into a loaded but
+  not ticking ring (two chunks round a ticking area: another traveller's, a force-loaded chunk, a player's view beyond
+  the simulation distance) stood there alive and still until it ticked; it now dies at the server tick after it joins,
+  as the lair monsters do (`CampaignManager.memberJoined`), checked by GameTest only, not yet live; (8) a member killed
+  by the fall in a chunk that unloads within its death animation is saved dead and finishes dying when it loads (no
+  second drop), and one killed in a not ticking ring (at the fall, or now when it joins one) lies loaded and dead until
+  the chunk ticks or unloads; (9) closed by the same follow-up: a hero dying with its faction said its "ally fallen" line
+  for a member dying in the same tick ("Yara Flint... no!"); no hero mourns a death of its faction's fall now (its own
+  `fallen` line is still said, a question for the owner in that section 5 entry); (10) a scout's look of ruins whose
+  heart's place it cannot see is reported as a standing base with an empty yard (Stoneguard's scout looked at Grove's ruins three times), so the first raid there finds them;
   (11) not of the fall: the Ember scout Garo Pike stood in water 148 blocks from home for 1.4 days ("Retreating home",
   "no route", 0 stuck recoveries) until his faction fell.
 - The roll call's open items (`docs/design/missing_npcs.md` 13-14: the survey, the council's view of an enemy base, the

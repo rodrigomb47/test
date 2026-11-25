@@ -65,7 +65,10 @@ public final class HeroEvents {
         HeroSounds.serverStopped();
     }
 
-    /** {@code ally_fallen}: heroes within 24 blocks of a member of their side who died (an NPC, a hero or a player). */
+    /**
+     * {@code ally_fallen}: heroes within 24 blocks of a member of their side who died (an NPC, a hero or a player); not
+     * for a death of its faction's fall.
+     */
     @SubscribeEvent
     public void onDeath(LivingDeathEvent event) {
         LivingEntity dead = event.getEntity();
@@ -73,6 +76,14 @@ public final class HeroEvents {
             return;
         }
         if (dead instanceof com.factionclash.npc.FactionNpc n && n.isDisplayOnly()) {
+            return;
+        }
+        if (com.factionclash.campaign.CampaignManager.fallen(com.factionclash.campaign.CampaignData.get(level.getServer()),
+                CombatRules.factionOf(dead))) {
+            // a death of its faction's fall (the fall kills every member at once, a straggler when it loads; the fall is
+            // stamped before the first death): nobody of its side is left to mourn it, so no hero of it says its ally_fallen
+            // line for a member dying in the same tick ("Yara Flint... no!", the live check of 2026-11-25) and none takes
+            // the ally_hero_died trigger
             return;
         }
         double r = HeroEntity.ALLY_RADIUS;

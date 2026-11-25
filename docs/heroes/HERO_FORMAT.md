@@ -973,7 +973,7 @@ happens a random line is said, unless the hero is rate-limited.
 | `ultimate` | it uses its ultimate with no `line` of its own | `{name}`, `{enemy}`, `{ability}` | nearby |
 | `low_health` | its health drops under 30% | `{name}` | nearby |
 | `kill` | it kills an enemy (30%) | `{name}`, `{enemy}` | nearby |
-| `ally_fallen` | an NPC, hero or player of its side dies within 24 blocks | `{name}`, `{ally}` | nearby |
+| `ally_fallen` | an NPC, hero or player of its side dies within 24 blocks (not a death of its faction's fall, which kills every member at once) | `{name}`, `{ally}` | nearby |
 | `victory` | a fight ends with no enemy left nearby | `{name}` | nearby |
 | `raid_start` | its raid party sets out | `{name}`, `{faction}` | the faction |
 | `base_attacked` | its base's defence alarm goes off | `{name}`, `{faction}` | the faction |

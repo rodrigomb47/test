@@ -124,8 +124,9 @@ public final class CampaignManager {
     /**
      * The faction has no base left: it is eliminated, and every member of it dies with it (the owner's rule of 2026-11-25,
      * {@code logic/campaign/Elimination}). Members in loaded places die now, where they stand, their things dropping as on
-     * any death (an NPC's death is no chat line; a hero's is the kill feed's); a member away in an unloaded place dies when
-     * it next loads ({@link #diesWithFaction}, from {@code FactionNpc.tick}; a Hollow monster, {@link #lairMonsterJoined});
+     * any death (an NPC's death is no chat line; a hero's is the kill feed's; no hero of it mourns another, HeroEvents); a
+     * member away in an unloaded place dies when it next loads, at the next tick even in a chunk that does not tick
+     * ({@link #memberJoined}, then {@link #diesWithFaction}; a Hollow monster, {@link #lairMonsterJoined});
      * its heroes are freed for good
      * ({@code HeroManager.factionFell}); a member player dies now, or at its next login ({@link #loggedIn}), and is
      * factionless after. Nothing of the faction acts again: its bases are all fallen, so the director runs no recruitment,
@@ -225,6 +226,31 @@ public final class CampaignManager {
     }
 
     /**
+     * A member joined a level (its chunk loaded, or it was added): one of a fallen faction, or of an ended campaign, dies
+     * where it stands at the next server tick ({@link #diesWithFaction}), whether or not its chunk ticks. A chunk that is
+     * loaded but does not tick (the ring round a ticking area: another traveller's, a force-loaded chunk, a player's view
+     * beyond the simulation distance) never gives it its first tick, so before this it stood there alive and still until
+     * the chunk ticked (the live check of 2026-11-25). The Hollow's monsters do the same ({@link #lairMonsterJoined}). Not
+     * from the join event itself ({@link #afterJoin}); the first tick's check in {@code FactionNpc.tick} stays (once a
+     * second after it, for a straggler anywhere).
+     */
+    public static void memberJoined(FactionNpc npc) {
+        if (npc.isDisplayOnly() || npc.getServer() == null) {
+            return;
+        }
+        CampaignData data = CampaignData.get(npc.getServer());
+        if (!fallen(data, npc.getFaction()) && !ofAnEndedCampaign(data, npc)) {
+            return;
+        }
+        afterJoin(npc, e -> {
+            // only if it is in its level now: another handler may have refused its join, or its chunk unloaded again
+            if (e instanceof FactionNpc n && n.level() instanceof ServerLevel lv && lv.getEntity(n.getUUID()) == n) {
+                diesWithFaction(n);
+            }
+        });
+    }
+
+    /**
      * Runs {@code then} for an entity that is joining a level, at the next server tick: an entity that joins with its
      * chunk must not touch the level from its join event (the chunk may not be ready, and loading it from there can
      * deadlock), so a death or a drop it is due waits a tick. Server thread only.
@@ -253,11 +279,12 @@ public final class CampaignManager {
     }
 
     /**
-     * A member that was in an unloaded place when its faction fell, now loaded and ticking (an NPC or hero away on a
-     * trip, a raider, a far miner): it dies where it stands, as its faction's people did, its things dropping. So does a
-     * member of an ended campaign that loads in a new one ({@link #ofAnEndedCampaign}: an operator ran {@code /fc start}
-     * again; its faction may have fallen in the old one while it was away). Returns whether it died. Read by
-     * {@code FactionNpc.tick} on its first tick and once a second after.
+     * A member that was in an unloaded place when its faction fell, now loaded, its chunk ticking or not (an NPC or hero
+     * away on a trip, a raider, a far miner): it dies where it stands, as its faction's people did, its things dropping.
+     * So does a member of an ended campaign that loads in a new one ({@link #ofAnEndedCampaign}: an operator ran
+     * {@code /fc start} again; its faction may have fallen in the old one while it was away). Returns whether it died.
+     * Read at the tick after it joined a level ({@link #memberJoined}), and by {@code FactionNpc.tick} on its first tick
+     * and once a second after.
      */
     public static boolean diesWithFaction(FactionNpc npc) {
         if (npc.isDisplayOnly() || !npc.isAlive() || npc.getServer() == null) {
