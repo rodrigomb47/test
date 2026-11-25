@@ -156,10 +156,19 @@ the old one's view (away, missing or presumed dead, the same expected return), a
 that vanished from a loaded place is the engine's "fallen" (it revives) whatever the faction believes (`vanished`, not
 `alive`, drives that).
 
+**A faction's fall** (owner, 2026-11-25: "if a faction gets eliminated, all of their members dies"): when its last base
+falls, every member dies with it and the roll call marks every entry known dead at once (`RollCall.factionFell`). A
+member still away in an unloaded place is dead for the engine too (its record's `dead`), so no traveller's chunk is
+kept or brought back for it; its entity dies where it stands when its chunk next loads (`CampaignManager.diesWithFaction`,
+from `FactionNpc.tick`), and its death tells nobody (there is nobody left at home; `RollCall.onDeath`). Its heroes never
+rise again: each is freed with its level kept (`HeroManager.factionFell`), a hero waiting to rise included.
+
 ## 8. The kill feed
 
 `hero/HeroKillFeed` is player-side presentation: every player sees every hero death at once, in chat. No campaign,
-work or NPC code reads it, nor `combat/KillCredits` (a unit test, `KnowledgeIsolationTest`, scans those packages).
+work or NPC code reads it, nor `combat/KillCredits` (a unit test, `KnowledgeIsolationTest`, scans those packages). A
+hero that dies with its fallen faction in an unloaded place is told at the fall (`HeroKillFeed.fellAway`, vanilla's
+"was killed" with its faction), once.
 The faction's records and its AI follow only section 4-5.
 
 ## 9. Config (`[campaign]`; the scouts' bound is in `[war]`)
@@ -322,4 +331,4 @@ Tick time: 6.62 ms a tick on day 1 (151 ticks/s in sprint, no viewer), 9.9 ms wi
 5-7 with the art workflow's Python jobs on two of the four cores. Workers' mean stuck recoveries 11.4 (day 4) and 13.3
 (day 5), as in earlier campaigns (12.9); the heroes' own recoveries 0. Workers, recruitment (follow-up scouts for
 overdue scouts, replacements for the presumed dead), raids (four by Ember, three by Tide, two lairs and two factions
-destroyed) and pacts went on as before.
+destroyed) and pacts (removed by the owner on 2026-11-25) went on as before.

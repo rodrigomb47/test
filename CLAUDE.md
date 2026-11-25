@@ -1,7 +1,7 @@
 # Faction Clash — notes for Claude
 
 A NeoForge 21.1.209 / Minecraft 1.21.1 / Java 21 mod: autonomous factions with player-like NPC workers, scouts,
-recruitment, raids and pacts. Owner: rodrigomb47. **Before doing anything substantial, read `docs/HANDOFF.md`**
+recruitment and raids. Owner: rodrigomb47. **Before doing anything substantial, read `docs/HANDOFF.md`**
 (state of the project, history of requests, architecture map, how to verify in a real campaign, open items) and
 `docs/ROADMAP.md` (the agreed plan; update its Status column as items land).
 README.md describes the mod for players; BALANCE.md lists every tunable and PROPOSED constant.

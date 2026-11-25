@@ -224,7 +224,7 @@ does not wait for a breach: a party that gets in by the gate goes on, and an unu
 ### 6.5 Never near its own side
 
 - **Never at home.** No NPC places TNT, lit or not, inside or within 16 blocks of the walls box of a base of its own
-  faction or of a pact ally (`war.tntHomeMargin`). Defenders never use TNT at their own base, even against raiders
+  faction (`war.tntHomeMargin`; there are no pact allies since the owner removed pacts on 2026-11-25). Defenders never use TNT at their own base, even against raiders
   inside (a player does not blow up their own base on purpose).
 - **Never beside its friends.** A charge is lit only with no member of its own side within 4 blocks but the breacher
   and its escorts, who stand clear with it (6.3). After that, collateral is real: a friend who walks into the blast is

@@ -809,8 +809,10 @@ Worked numbers (appendix A defaults, `k = 1`):
   there is no vengeance raid, since nobody died. For that time its war power is in no party and in no base's defence
   but its refuge's (3.2), so rivals see the base it left without it. There is no "spared" state: a leader is alive
   and fighting, away after an escape, or dead for 10 minutes.
-- **Elimination** (last base falls; `CampaignManager.eliminate` kills every NPC today): heroes are no longer killed;
-  the leader becomes an exiled free hero, never a leader again in this campaign, recruitable later (milestone 3).
+- **Elimination** (last base falls; `CampaignManager.eliminate`): every member dies with its faction, heroes and the
+  leader included (owner, 2026-11-25: "if a faction gets eliminated, all of their members dies"); a hero of a fallen
+  faction never rises again and becomes a free hero with its level kept, never a leader again in this campaign,
+  recruitable later (milestone 3).
 - **Succession** happens only with `leaders.permadeath` (off): the faction's highest-level hero with compatibility
   0.5 or more takes over, else a regent keeps the saved personality. The faction name never changes mid-campaign.
 
@@ -905,8 +907,8 @@ wars: its war power and the limits that keep NPC wars from being decided by hero
   Creative and spectator players are never enemies. **People** are players, faction NPCs and heroes; the word is
   used only for the intro (6.13: a hero does not announce itself to a zombie). Every other rule of a fight, the end
   of it included, is the same against monsters.
-- **Fighting**: from the first engaged enemy until 10 s after the last one leaves, dies or stops being an enemy (a
-  pact). The fight drives the move gap (6.3), enrage and reset (6.10), arena samples (6.12), the bar (6.13) and the
+- **Fighting**: from the first engaged enemy until 10 s after the last one leaves, dies or stops being an enemy. The
+  fight drives the move gap (6.3), enrage and reset (6.10), arena samples (6.12), the bar (6.13) and the
   fight's air and reach rules (`MOBILITY_AND_WORK.md` 5.1). No rule in a fight reads whether an enemy is a player, and
   none scales with how many enemies there are (the reach clock and the altitude ceiling look at where the engaged
   enemies stand, not at who or how many they are).
@@ -1435,7 +1437,7 @@ that never went toward lava (A5) and the softened phase shockwave (A6a); 15.9 T1
   4. *No shorter tells*: wind-ups, decals and sounds are the same next to a cliff as anywhere. The hero walking round
      to your far side is the tell, and the kit sheets say so.
 - **What stays forbidden.**
-  - *Its own side*: no move pushes, throws or pulls a member of the hero's side or of a pact ally (effects reach
+  - *Its own side*: no move pushes, throws or pulls a member of the hero's side (effects reach
     enemies only, as before; the phase shockwave now pushes only enemies). A move made to move allies (none in the
     slice) keeps the old cut toward a hazard.
   - *Its own body*: no leap, hop, dash, charge, glide, landing or dive of its own into lava, fire, the void or past its
@@ -1512,7 +1514,7 @@ breach walls") opens it for moves that are explosions by nature. Numbers PROPOSE
   `docs/design/breaching.md` 6.2 picks: the one use of a move against a block, in that raid goal only.
 - **Its own side, player-like**: a player does not blow up their own base on purpose, so the pick (6.3) scores 0 an
   explosive move whose blast at the target's place would reach (about 1.7 x its power in blocks) a block of its own
-  side's planned buildings or anything inside the walls box of a base of its faction or a pact ally. A hero defending
+  side's planned buildings or anything inside the walls box of a base of its faction. A hero defending
   its own walls uses its other moves there. Once the wind-up starts, collateral is real: the blast lands where the
   move lands, on whoever's blocks are there.
 - **Terrain only**: the blast is not damage. The move's damage stays its element's: Blast Protection does not reduce
@@ -3822,7 +3824,7 @@ phase 4, and the row above:
   decals are A6's). A target that dies, goes or moves more than 2 blocks past the move's range during the wind-up
   calls it off with the charge kept. After a use that landed, a followup replaces the recovery (6.3).
 - **Forms** (`hero/HeroForms`, `logic/hero/FormGeometry`): enemies are exactly whom the hero's side fights (hostile
-  factions' NPCs and heroes with pacts respected, enemy players, hostile monsters, its own target), allies its side
+  factions' NPCs and heroes, enemy players, hostile monsters, its own target), allies its side
   with the hero itself; animals, villagers, golems, armour stands and display copies are never touched; an area
   takes at most 16 receivers, nearest first. Melee and combo strikes reach 3.5 blocks to the target's box plus the
   strike's splash; a bolt and a chain's first link need sight; a cone reads its angle, a line stops at the first solid
@@ -5601,8 +5603,8 @@ T2 as built (2026-11-19), where it goes beyond or differs from 6.18, 12.7 and 14
   (power x 1.3), which the GameTests hold the game to; its strongest ray reaches `1.3 x power / 0.225 x 0.3`, 1.73 blocks
   a power (6.18's "about 1.7 x its power").
 - **Its own side** (`Blasts.ownSideFactor`, `HeroBlasts.ownSideDistance`). The distance from the target and from the
-  hero to the nearest block of its own side: the walls box (at any height) of every standing base of its faction or a
-  pact ally, and the box round that base's planned buildings (`BaseState.planBox`, rebuilt with the plan index), within
+  hero to the nearest block of its own side: the walls box (at any height) of every standing base of its faction, and
+  the box round that base's planned buildings (`BaseState.planBox`, rebuilt with the plan index), within
   24 blocks; sensed only for a kit with an explosive move (`MoveSelector.explosive`). A move scores 0 when that distance
   from where its blasts land (the hero for a nova or a zone at or following the hero, else the target) is within the
   blast's reach plus its spread (a rain's radius + 0.5, a volley's fan at the target's distance, a leap's or a dive's

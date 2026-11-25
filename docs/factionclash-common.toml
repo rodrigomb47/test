@@ -137,9 +137,6 @@
 	# Default: 24000
 	# Range: 1200 ~ 480000
 	reportStaleTicks = 24000
-	#When a human faction conquers another, the surviving factions (two or more) swear a pact against
-	#the conqueror: no fighting between them, the conqueror's bases revealed, joint raids on it.
-	pacts = true
 	#Soldiers a faction always keeps at home.
 	# Default: 3
 	# Range: 0 ~ 20

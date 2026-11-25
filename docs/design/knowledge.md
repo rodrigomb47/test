@@ -74,9 +74,9 @@ sash shows the faction, not the base). This is what makes a counter-attack possi
 director pass; the party keeps its best look, or the ruins. It reaches home with the raid's end: told at once when a
 raider is home, else when the last one gets there (`RollCall.tell`); lost with a party nobody lived to report on.
 
-**Pact offensives** (`FactionState.pactOffensives`): a pact member that launches against the sworn enemy tells its
-allies its target, its party's power and its plan's end; an ally's council joins from that notice while it lasts. It
-no longer reads the ally's live raid party or soldier power.
+**Pact offensives** (removed on 2026-11-25 with the pact itself, by the owner's word: "Lets remove the pacts thing"):
+a pact member that launched against the sworn enemy told its allies its target, its party's power and its plan's end,
+and an ally's council joined from that notice. There are no pacts now, so no council joins another's offensive.
 
 `FactionDirector.defenders`, `defencePower`, `heroDefence` and `heroWarPower` remain for operators (the dump, the
 council line's truth) and the hero GameTests; the war council never calls them (`KnowledgeIsolationTest` scans its
@@ -169,8 +169,9 @@ member away gets its worn tool replaced when it is home and seen.
   One hidden in a house or a tunnel that nobody noticed is not raised.
 * **The Hollow's roll call**: a lair monster that falls on the lair's own ground (28 blocks) is missed at once; one
   that falls far off is missed only after it has stayed away 6000 ticks, so the lair does not replace it at once.
-* **The pact** hands the allies the fallen faction's own reports of the conqueror (with when they were seen and by
-  whom), not the conqueror's true list of bases.
+* **The pact** handed the allies the fallen faction's own reports of the conqueror (with when they were seen and by
+  whom), not the conqueror's true list of bases. Removed with the pact on 2026-11-25: a fallen faction's reports go to
+  nobody.
 
 ## 8. Tests
 
@@ -189,7 +190,9 @@ member away gets its worn tool replaced when it is home and seen.
   dropped at death; the alarm needs someone to see the intruder;
   the lookout's line is heard only at home; a lair misses a monster that fell far off only later; an ally is told of
   an offensive as it is launched. Updated: the council's wait (`MissingNpcGameTests`), the raider's expected return,
-  the pact's reports (`FCGameTests`), mined-ore experience at a base, the hero raid draft (a report with a look).
+  the pact's reports (`FCGameTests`), mined-ore experience at a base, the hero raid draft (a report with a look). (The
+  two pact tests went with the pact on 2026-11-25; `EliminationGameTests.elimConquestLeavesTheSurvivorsHostile` pins
+  that the survivors of a conquest stay enemies and are handed nothing.)
 
 The review of this review (section 11) added seven GameTests and seven unit tests (a party that turns home by its plan,
 its roll deaf to home's belief, ruins that stay ruins, losses and hero sightings that fade, two thirds in whole
@@ -203,11 +206,10 @@ its limit.
 
 ## 9. Exceptions kept, and why
 
-* **The pact** is diplomacy between the factions' leaders, announced to the world: it is sworn, and raids between the
-  new allies called off, the moment a faction is conquered, and allies stop fighting at once. What the allies learn of
-  the conqueror is only what the fallen faction's scouts had seen. The owner may want the news of a conquest to travel
-  (each faction joining when its people learn of it); that would need per-member joining and a recall carried to
-  parties in the field.
+* **The pact** (no longer an exception: the owner removed pacts on 2026-11-25) was diplomacy between the factions'
+  leaders, sworn the moment a faction was conquered. Now no faction is another's ally, and a faction whose last base
+  falls dies with all its people (`CampaignManager.eliminate`); the "X has been eliminated!" line is told to everyone,
+  as before, and is player-side presentation, never read by a council.
 * **The Hollow senses settlements within 300 blocks** of a lair (its raid target): its monsters never leave the lair to
   scout, so without this sense lairs would never raid. Documented as an exception for the owner's decision.
 * **A raid party's roll on the spot** (`FactionState.raiders`) and the raid's end on the spot read the truth (who is
@@ -468,8 +470,9 @@ Left open, with the evidence above, for the owner:
   (today it does: a blind look on day 5.01 cleared Ember's seven losses on Stoneguard, another replaced Ember's 32% look
   at Grove); a floor of `homeDefenders` for a base whose raiders fell. The first two need a save format change for
   `Report`.
-* **A pact against a conqueror nobody has found**: the pact's councils weigh only the conqueror's bases, so with none
-  reported they launch nothing at all (no lair either) until a scout finds one: 1.7 days without a launch here.
+* **A pact against a conqueror nobody has found**: the pact's councils weighed only the conqueror's bases, so with none
+  reported they launched nothing at all (no lair either) until a scout found one: 1.7 days without a launch here.
+  Removed by the owner on 2026-11-25 (no more pacts; every member of a fallen faction dies with it): closed.
 * **A miner at the storehouse overnight**: Stoneguard's miner stood at the storehouse stand from day 2.49 to 2.96 (its
   status "Walking to the storehouse", no path, its own stand one block off, a full backpack of 401 items, the
   storehouse's cobblestone at 511 of the 512 junk limit) and went back to its mine at dawn; once in 7 days, cause not

@@ -178,14 +178,16 @@ Players respawn at their nearest surviving allied base when they have no bed.
   a council with 7 or more soldiers at home attacks a garrison none of its people has seen (one like its own). A raid
   party turns home in time to be back by the council's plan ("its time is up, the party turns home"), so home never
   gives up raiders who are still fighting.
-* **Pacts against a conqueror** (config `war.pacts`): when a human faction conquers another and two or more human
-  factions survive besides it, they swear a pact against the conqueror (announced in chat). Members stop fighting
-  each other (no targeting, sweeps, friendly fire or base alarms between them; raids between them are called off),
-  the fallen faction's survivors tell them what their scouts had seen of the conqueror's bases, they raid only the
-  conqueror, and a member joins an offensive another member told it of when it launched it, when their parties
-  together are strong enough. The pact
-  ends when the conqueror falls or fewer than two members are left; the next conquest can raise a new one. Shown in
-  `/fc status` and the base information screen.
+* **A faction's fall**: a faction whose last base falls is eliminated ("Stoneguard has been eliminated! All of its
+  people die with it."), and every member of it dies with it, wherever it is: the NPCs and heroes in loaded places at
+  once, where they stand, their things dropping as on any death; a member away in an unloaded place (a scout, a far
+  miner, a raider, a hero) when its chunk next loads; a member player at once, or as it next logs in, after which it
+  respawns by vanilla's rules with no faction and may join a surviving one. A hero dies for good: it never rises again
+  (it has no base to rise at) and becomes a free hero with its level kept. The kill feed tells each hero's death once: a
+  hero killed where it stood or one that died unloaded in vanilla's words with its faction ("Natsuho Komezaki (Ember
+  Legion) was killed"); a hero already dead and waiting to rise is freed with no second line. Nothing of the fallen
+  faction acts again (no recruitment, council, raid or work). There is no diplomacy between factions: the owner removed
+  the pact against a conqueror on 2026-11-25, so the survivors of a conquest stay each other's enemies.
 * **Traders and villages**: scouts report villages - any village they come within sight of (plains, desert,
   savanna, snowy, taiga, abandoned ones too), with the villagers with a trade they saw there, or two or more such
   villagers met elsewhere. A base of 14 or more people with a village with traders within 320 blocks hires a
@@ -378,9 +380,8 @@ Players respawn at their nearest surviving allied base when they have no bed.
   the members it sees at home; a cave survey, fishing water found on a far leg, a lookout hero's "spots 3 enemies" and
   the news of an enemy hero's fall reach the faction when someone brings them home (or say them at home); experience
   picked up away is carried home and lost with its carrier; guards are sent at an intruder in the yard only when
-  someone sees or hears it; a Hollow lair misses a monster that fell far off only when it stays away. Kept as
-  exceptions: a pact against a conqueror is sworn at once (diplomacy, announced to all), and a lair senses settlements
-  within 300 blocks.
+  someone sees or hears it; a Hollow lair misses a monster that fell far off only when it stays away. Kept as an
+  exception: a lair senses settlements within 300 blocks.
 * **Builders** queue houses (with straw bedrolls made from wheat) and storage expansions, carry materials to the
   staging chest, build bottom-up from saved plans with substitutes for unavailable styled blocks, and repair any
   damaged plan block.
@@ -504,8 +505,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1115 JUnit tests for the pure rules (what a faction knows of an enemy base: a garrison nobody
-  saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
+* `./gradlew test` — 1118 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate; what
+  a faction knows of an enemy base: a garrison nobody saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
   at home and their fading, heroes seen and their sightings' fading, the better look, a lair's prior, two thirds in whole
   soldiers (from 7 soldiers against a garrison like its own, whatever the gear), a counter-attack's 3 to 2, the party
   rule; a raid's plan, a wipe-out given up by it and the party turning home by it, the home edge's band, a miner's shift; and that the war council reads no enemy roster, soldier power, raid party, hero record, lair
@@ -571,7 +572,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 397 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 403 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
@@ -583,8 +584,11 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   twice on one shift keeps one expected return; a cave survey is the faction's only when handed in at the station;
   retraining and the blacksmith see only members at home; a worker away knows the storehouse's food as it last saw it;
   experience picked up away is carried home and dropped at death; the alarm needs someone to see the intruder, or the intruder to be at the heart; a lookout hero's line is heard
-  only at home; a lair misses a monster that fell far off only later; a pact ally is told of an offensive at launch, and
-  allies are handed only what the fallen faction's scouts had seen), **deaths far from home** (a
+  only at home; a lair misses a monster that fell far off only later), **a faction's fall** (a member away in an
+  unloaded place dies when its chunk loads and its things drop; a member of a faction never eliminated lives; a hero at
+  home dies with the last base without running and is free for good, as are one waiting to rise and one away, the feed
+  telling each death once and the away one's stale copy discarded; a member player dies and is factionless, at once or
+  at its login; the survivors of a conquest stay enemies; an old save that holds a pact loads), **deaths far from home** (a
   scout killed far away unseen is not known, goes missing past its expected return, is presumed dead and replaced; a
   death near the base or seen from home is known at once; a witness away carries the news home and tells it; a dead
   witness carries nothing; a member player reports what it saw at the station and loses it if it dies; a raider

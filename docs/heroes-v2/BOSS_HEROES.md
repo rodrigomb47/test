@@ -493,9 +493,9 @@ their people can see its trail.
   back to be used.
 - **A token in a minecart chest, an item frame, an armour stand or a hopper chain**: in the world, takeable; inside a
   base it counts as lying there.
-- **The carrier's faction is eliminated while it carries the token**: the token stays in the world whatever the
-  elimination does with the carrier: an exiled hero keeps carrying it as a factionless carrier, and an NPC that leaves
-  the world drops it where it stood.
+- **The carrier's faction is eliminated while it carries the token**: the carrier dies with its faction (every member
+  does, the owner's rule of 2026-11-25) and the token drops where it fell, as at any death; a carrier away in an
+  unloaded place drops it where it stands when its chunk loads and it dies. The token stays in the world, takeable.
 - **The hero's file is removed** (an operator): a bound hero goes dormant as any hero (v1 25.5); a token whose hero has
   no definition says so in its tooltip and cannot be used until the file is back.
 - **`heroes.enabled = false` with a bound boss hero**: as any hero; the token rules pause.
