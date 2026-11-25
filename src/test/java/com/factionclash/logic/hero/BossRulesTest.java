@@ -622,7 +622,7 @@ class BossRulesTest {
         e.hurtBy(4, 110);
         assertEquals(3, e.count(120, 7, all), "two attackers and the target");
         assertEquals(2, e.count(120, 3, all), "the target that also struck counts once");
-        assertEquals(2, e.count(120, 7, id -> id != 4), "an attacker that left (dead, a pact, 32 blocks) is not engaged");
+        assertEquals(2, e.count(120, 7, id -> id != 4), "an attacker that left (dead, no longer an enemy, 32 blocks) is not engaged");
         // 15 s after its last blow an attacker is forgotten
         assertEquals(2, e.count(100 + BossRules.ENGAGE_MEMORY_TICKS - 1, -1, all), "both still inside 15 s");
         assertEquals(1, e.count(100 + BossRules.ENGAGE_MEMORY_TICKS, -1, all), "the first is forgotten at 15 s");
