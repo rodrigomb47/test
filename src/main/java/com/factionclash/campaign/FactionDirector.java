@@ -699,6 +699,14 @@ public final class FactionDirector {
             // the party knows it won when it broke the heart itself, or found the place in ruins (it saw that); a fall
             // elsewhere on the map is not its news (knowledge review of 2026-11-19)
             boolean won = target != null && target.destroyed && target.destroyedBy == f.type; // truth: its own party broke the heart
+            if (won && (f.raidIntel == null || !f.raidIntel.fallen)) {
+                // the raider that broke the heart saw it go: the party brings the ruins home with the raid's end (live
+                // check of the knowledge review, 2026-11-19: the parties' looks had missed the heart's place after the
+                // fall, so two councils came home "in victory" and kept weighing their conquests' ruins as standing bases)
+                Report ruins = BaseWatch.ruins(target, t);
+                f.raidIntel = f.raidIntel == null ? ruins : Report.mergeBase(f.raidIntel, ruins, true);
+                data.setDirty();
+            }
             boolean ruinsSeen = f.raidIntel != null && f.raidIntel.fallen;
             if (!f.raiders.isEmpty() && f.raidParty > 0 && f.raiders.size() * 2 < f.raidParty && target != null && !won && !ruinsSeen) {
                 // more than half the party is down: the survivors fall back rather than die one by one

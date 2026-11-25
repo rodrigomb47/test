@@ -307,3 +307,109 @@ Found and left open (not fixed here, low severity):
 * **"Never at 6" holds without a home hero**: the party still sizes off the garrison with its heroes by heads
   (`Intel.partySize(soldiers.size(), ...)`), the prior off the soldiers alone, so six soldiers and a hero at home send
   four against a prior of six, and go.
+
+## 12. The live check (2026-11-19)
+
+A campaign on a dedicated server with the jar of the review above (seed 20261107, `fc start 256`, Natsuho Komezaki with
+the Ember Legion and Hinae Shirasuzu with Stoneguard, no operator command), followed every 6 s by `tools/rolltrack.py`,
+whose war record (`war.log`, `war.jsonl`, `chat.log`) sets each council's line, each launch and the report its estimate
+rested on beside the truth; `tools/warcheck.py` reads it (`docs/HANDOFF.md` 4).
+
+**The restart.** A container restart killed the server at day 5.18. The campaign data had last been saved at day 4.29,
+so the campaign went on from there to day 8.34 (the war record to day 7.63, where `rolltrack.py` failed on Hinae
+rising with no faction, below): the first run (days 0 to 5.18, unbroken) is the clean run, used for
+rates, recruitment, recoveries and tick time; the continuation (4.29 to 8.34) replayed 4.29 to 5.18 from the same
+save, and its launches of days 4.61 and 4.70 are the clean run's 4.59 and 4.70 again (counted once below). The hard kill
+left the region and entity files ahead of the saved data: five members away (Natsuho at her fishing spot, a miner, two
+scouts and a cave explorer) were in no saved chunk, vanished at the load and went missing, then presumed dead
+(Natsuho "missing and presumed lost", back at home after her 600 s). These are the restart's, not the mod's.
+
+**Launches.** 12 on the main line (the first run to day 4.29, then the continuation) by day 8.34, none after day
+7.11 (every council's interval was still running), and one more in the lost branch (the first run's days 4.29 to 5.18),
+all by the councils: 11 on settlements and 2 on Hollow lairs. The clean run launched 6
+in 5.18 days (the first on day 3.10, as the raid interval allows); the roll call's live check, whose council read the
+enemy's own roster, launched 4 by itself in 6.94 days (with 6 operator raids drawing soldiers away). War comes more
+often, not less. It rarely works: of the 11 settlement raids, 1 took its target (the Tide Alliance razed Stoneguard on
+day 7.21; Grove's party struck the same garrison in the same hour and lost 5 of 7), 1 was beaten back, 8 lost every
+raider who set out, and 1 set out with one raider of its three (the frozen archers below), who died. Both lair raids won without a loss (the Hollow was
+eliminated on day 7.19, Stoneguard on day 7.21; the Ember Legion and the Grove Covenant then swore their pact against
+the Tide Alliance).
+
+What each settlement raid's estimate rested on (`warcheck.py`'s launch table; "the truth" is the soldiers in the
+target's walls at the launch, heroes apart):
+
+| basis | raids | the council's "about N defenders" | the truth | outcome |
+|---|---|---|---|---|
+| the prior (a look that saw none of the yard) | 6 | 5, 6, 10, 10, 10, 11 | 3, 5 + a hero, 3 + a hero, 9 + a hero, 2 + a hero, 4 + a hero | 5 lost every raider, 1 won |
+| a look into the yard | 2 | 5 (52% of the yard seen), 5 (4% seen) | 4, 6 | both lost every raider |
+| enemy soldiers seen falling at home | 3 | 0, 0, 8 | 3 + Hinae, 4, 4 + Hinae | 2 lost every raider, 1 beaten back |
+
+Of 26 looks at settlements in the clean run, 23 saw none of the yard (a scout outside 5-high walls sees the walls);
+the mean share in view was 4%. Lairs, without walls, were seen at 26%. So most estimates are the prior, and the prior
+(a garrison like the council's own) overestimated the garrisons it was used on; the parties lost anyway. The estimates
+built on losses seen at home were the worst: the council's own garrison less every enemy raider seen falling at its
+walls gives "about 0" for a base whose raids failed, where every council keeps a third of its soldiers (at least
+`homeDefenders`, 3) at home.
+
+**The leak test** (known leak 1: in the roll call's live check two councils struck Stoneguard's emptied base within
+five seconds of its garrison leaving). For every departure of 3 or more soldiers, every other council's estimate of
+that base at the polls around it: none moved without a report of its own. Ember's estimate of Grove dropped from 14.4 to
+0.1 at day 5.59 because Ember saw four of Grove's raiders fall at its own walls (a loss seen at home); its
+counter-attack followed. The Tide Alliance and the Grove Covenant launched on Stoneguard in one poll at day 7.07 because
+both raid intervals ran out then (each launched on day 5.56, one interval earlier): Grove's council had said "wait" from
+day 6.93 to 7.04 while its estimate rose from 10.7 to 14.1; Tide's report was a look from day 5.83 that saw none of the
+yard; Stoneguard held 4 soldiers and Hinae (its own party of three had been wiped at Grove by day 6.80). No council
+struck an emptied base it had not seen.
+
+**Raids' ends** (known leak 5). Every party wiped out unseen went missing at its launch plus 0.70 to 0.73 day (the
+plan, about 15000 ticks for 160 to 190 blocks, plus the 2400-tick grace) and was presumed dead half a day later, not
+after three days. Every member reported missing was dead but for the five the restart lost; no raider went missing while
+its raid was on. The line "its time is up, the party turns home" was said once (Ember's counter-attack, day 6.16), by a
+party that had never left home (below): the turn-home in the field was not seen live.
+
+**Surveys and far workers** (known leaks 2 and 6). Every cave survey line (57 in the clean run, 39 in the continuation)
+came while the explorer was home or bound for the station; the one line the polls could not place was checked in the
+server log (the explorer walked in, handed in and went out between two polls). No miner's expected return changed while
+it was away; crossings of the home edge no longer moved it. The Tide Alliance's miner Tamsin Kerr died unseen at a branch
+face 99 blocks out on day 5.40, went missing at 5.91 (its shift and the grace) and was presumed dead at 6.38.
+
+**Found and fixed: archers frozen on a far target.** On day 4.78 Hinae chased Ember's raiders home to Ember's walls and
+walked back to Stoneguard. Two of Ember's ranged soldiers (an archer and a crossbowman) kept her as their target, then
+an enemy scout that had passed by, for 1.9 days: they stood at their hold spots in `NpcRangedAttackGoal` with targets
+77 to 275 blocks away, their guard posts forgotten; drafted into Ember's counter-attack of day 5.59, they never set out
+(one raider went, alone, and died at Grove). `Pursuit.approachRanged` kept a ranged fighter's target engaged at any
+distance while it waited out of reach, so the stale-target rule (no blows for 10 s) never fired; a melee fighter's hold
+already watched only within 24 blocks. Both now share `Pursuit.WATCH` (24): a target that walked off out of reach goes
+stale and is let go (`CombatReachGameTests.anArcherLetsGoOfATargetThatWentFarOutOfReach`; the sabotage that keeps it
+engaged at any distance fails it). The same method serves a hero's throw.
+
+**Found and fixed: a won raid brought home a standing base.** The Tide Alliance's party broke Stoneguard's heart on day
+7.21 and came home "in victory", and the Ember Legion's broke the Hollow's last lair on day 7.19, but the report each
+party brought home was a look from before the fall (Tide's: day 7.19, 60% of the yard, Hinae seen; Ember's: day 7.16):
+the director looks at the target through at most three raiders every 100 ticks, keeps the look that saw most of the
+yard, and none of those looks had the heart's place in view after the fall (the breaker had gone on to the storehouse).
+Tide's council went on weighing Stoneguard's ruins as its target (about 17 to 24 defenders, the prior and Hinae, "wait")
+to day 8.33; in time it would have raided them. The raider that broke the heart saw it go: a party whose own raider
+broke its target's heart now keeps the ruins (`BaseWatch.ruins`) and brings them home with the raid's end
+(`KnowledgeGameTests.aPartyThatBreaksTheHeartBringsTheRuinsHome`; the sabotage that skips it fails it).
+
+**Regressions looked for.** Recruitment replaced losses ("garrison growth", "home defence", "no X left"; 68 recruits in
+the clean run) and the populations grew from 11 to 14 per faction to 21 to 25 by day 5. Stuck recoveries (`sim.py`'s workers' mean):
+11.1 at day 5.1 in the clean run, against 11 to 13 at days 5 to 7 in the roll call's live check: level; 15.4 over the
+4 days after the restart (the count starts again at a load), most of it two Grove miners at a far branch mine (141 and
+180, bursts of "going back and forth" by their mine's entrance, never stuck for good). Tick time 5.8 to 8.6 ms a tick per day (earlier
+6.6 on day 1 and 9 to 12 on days 5 to 7 with the art workflow's jobs). Tools: `sim.py` and `rolltrack.py` failed on a
+hero with no faction (Hinae once Stoneguard fell; the dump leaves `owner` out); both read it as absent now.
+
+Left open, with the evidence above, for the owner:
+
+* **The war's balance**: raids come more often than before (about 1.2 a day in the clean run against 0.6) and nearly
+  all fail; a council attacks a settlement nobody has seen from 7 soldiers at home, and its party of two thirds meets
+  walls, archers, the alarm and often a hero. The party rule, the prior and the defenders' edge are the owner's call.
+* **The loss model**: the estimates built on losses were the worst (above). Three ways to improve it, none taken: each
+  loss fading from its own time (today the older ones fade with the newest: Ember's three losses of day 3.1 counted in
+  full again at day 4.7); a look that saw none of the yard not replacing an older look nor clearing the losses seen
+  since (today it does: a blind look on day 5.01 cleared Ember's seven losses on Stoneguard, another replaced Ember's
+  32% look at Grove); a floor of `homeDefenders` for a base whose raiders fell (a council never sends those). The first
+  two need a save format change for `Report`; the effect on decisions was small here (one counter-attack of the 3
+  would have waited).

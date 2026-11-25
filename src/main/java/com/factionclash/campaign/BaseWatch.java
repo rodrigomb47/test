@@ -52,9 +52,7 @@ public final class BaseWatch {
         BlockPos heart = b.point(BaseState.HEART) != null ? b.point(BaseState.HEART) : b.center;
         boolean heartInView = clear(level, observer, Vec3.atCenterOf(heart));
         if (b.destroyed && heartInView) {
-            Report r = new Report(kind, b.center, now, b.faction, 0, what + " in ruins, its heart gone");
-            r.fallen = true;
-            return r;
+            return ruins(b, now);
         }
         int half = BaseZones.half(b);
         int reach = Math.max(1, half - 2);
@@ -106,6 +104,15 @@ public final class BaseWatch {
         Report r = new Report(kind, b.center, now, b.faction, soldiers, what + ", " + seen);
         r.look = look;
         r.heroes = Intel.heroes(heroes);
+        return r;
+    }
+
+    /** {@code b} seen in ruins, its heart gone, at {@code at}: a fallen report of its faction (by nobody yet). */
+    public static Report ruins(BaseState b, long at) {
+        Report.Kind kind = b.isSettlement() ? Report.Kind.ENEMY_BASE : Report.Kind.LAIR;
+        String what = b.faction.displayName + (kind == Report.Kind.LAIR ? " lair" : " settlement");
+        Report r = new Report(kind, b.center, at, b.faction, 0, what + " in ruins, its heart gone");
+        r.fallen = true;
         return r;
     }
 

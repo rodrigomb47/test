@@ -70,6 +70,11 @@ public final class Pursuit {
      */
     static final int GIVE_UP_AWAY = 1200, IGNORE_TICKS = 1200;
     /**
+     * A fighter waiting out of its target's reach keeps watching it (the target does not go stale) only while it is within
+     * this many blocks. Farther off, it goes stale after ten seconds as any target does and is let go.
+     */
+    public static final double WATCH = 24;
+    /**
      * PROPOSED: blows it takes from its target without being able to hit back (while working its way in, or with no
      * path to it) before it counts that spot of the target's as one it cannot get at from here: it backs off out of
      * reach and does not walk up to it again (a player hitting soldiers from just behind a fence, through the gap
@@ -770,7 +775,7 @@ public final class Pursuit {
         boolean sees = npc.getSensing().hasLineOfSight(t);
         // keeps watching: the target does not go stale while it waits in sight of it, in cover from it, or, an
         // intruder, at home (an intruder hiding in a hole in its base is still there)
-        if ((sees || cover || intruder && atHome()) && npc.distanceTo(t) < 24) {
+        if ((sees || cover || intruder && atHome()) && npc.distanceTo(t) < WATCH) {
             engagedAt = npc.tickCount;
         }
         npc.getLookControl().setLookAt(t, 30.0F, 30.0F);
@@ -986,7 +991,14 @@ public final class Pursuit {
             npc.getNavigation().moveTo(t, 1.0);
             return;
         }
-        engagedAt = npc.tickCount;
+        // waiting out of its reach keeps the target only while it is near, as a melee fighter's hold does (WATCH);
+        // one that walked off goes stale and is let go (live check of the knowledge review, 2026-11-19: an enemy hero chased
+        // raiders home and walked back to its own base 160 blocks away, and two archers kept it, then an enemy scout that
+        // had passed by, as their target for two days, standing at their hold spots: their guard posts forgotten, and a
+        // raid they were drafted into never set out)
+        if (npc.distanceTo(t) < WATCH) {
+            engagedAt = npc.tickCount;
+        }
         goToHoldSpot(t, 1.0);
     }
 

@@ -561,7 +561,9 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
 * Cover (review): a waiting melee fighter shot by its target waits out of the target's sight (900 penalty for a spot
   in sight, rings 6.5 and 10, farther preferred), or 12 blocks off when there is no such spot.
 * Stale targets: the 10 s without trading blows rule counts working toward the target, waiting in sight of it, in
-  cover from it, or, for an intruder (a player or an enemy soldier), at home (within 24 blocks) as engaged. Vanilla's
+  cover from it, or, for an intruder (a player or an enemy soldier), at home (within 24 blocks) as engaged; a melee
+  fighter's hold and an archer's wait out of reach keep the target only within **24** blocks (`Pursuit.WATCH`; live
+  check of the knowledge review: two archers kept an enemy hero that had walked home 160 blocks off for two days). Vanilla's
   hurt-by target memory still lets go of an attacker unseen for 3 s. Live check 2: a monster it waits on (HOLD) and
   that goes stale is also ignored for 1200 ticks (IGNORE_TICKS), and at home a monster it cannot get at is given up
   after 1200 ticks of waiting as away from home (a creeper shut in a pocket of the ground under the yard held two
@@ -776,7 +778,8 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   (kept as `id=power@time`, an old `id=power` as seen with its look); the prior is a garrison like the council's own
   (its ordinary soldiers at home, not its heroes, and its `soldierPower`), a lair's
   `lairBaseCap` + 1 a day up to `lairMaxCap`. Two looks on one trip: the one with more of the yard in view (**0.1**
-  apart, else the newer). A raider sees a fall when the heart's place is in view within **48** blocks; ruins seen stay
+  apart, else the newer). A raider sees a fall when the heart's place is in view within **48** blocks, and a party that
+  broke the heart itself brings the ruins home with the raid's end (live check); ruins seen stay
   ruins (no base is rebuilt: a later look that misses the heart's place does not raise them again). Pact allies are
   told of an offensive at launch (its party's power, until its plan's end).
 * Heroes in the war council (HEROES_V2 8.1, A1b): `soldierPower` is the average of the ordinary soldiers only (the

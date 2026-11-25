@@ -1117,6 +1117,71 @@ public final class CombatReachGameTests {
         });
     }
 
+    /** A closed stone box around the two cells at relative {@code feet} and above it (walls, roof, and a floor if asked). */
+    private static List<BlockPos> stoneBox(GameTestHelper h, BlockPos feet, boolean floor) {
+        List<BlockPos> cells = new ArrayList<>();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int dy = floor ? -1 : 0; dy <= 2; dy++) {
+                    if (dx == 0 && dz == 0 && (dy == 0 || dy == 1)) {
+                        continue;
+                    }
+                    BlockPos c = feet.offset(dx, dy, dz);
+                    h.setBlock(c, Blocks.STONE);
+                    cells.add(c);
+                }
+            }
+        }
+        return cells;
+    }
+
+    /**
+     * Live check of the knowledge review (2026-11-19): an enemy hero chased Ember's raiders home, out of the archers'
+     * reach, then walked back to its own base 160 blocks off; two archers at home kept it (and then an enemy scout that
+     * had passed by) as their target for two days, standing at their hold spots, their guard posts forgotten and a raid
+     * they were drafted into never set out: waiting out of reach kept an archer's target engaged at any distance. An
+     * archer waiting on a target it cannot get at watches it only while it is near ({@code Pursuit.WATCH}, as a melee
+     * fighter's hold); one that went far goes stale and is let go.
+     */
+    @GameTest(template = "platform", timeoutTicks = 640, batch = "reach_far_archer")
+    public static void anArcherLetsGoOfATargetThatWentFarOutOfReach(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.EMBER_LEGION, 6, 11, 640);
+        BlockPos near = new BlockPos(12, 2, 16);
+        BlockPos far = new BlockPos(12, 34, 16); // 32 blocks off the archer, beyond the watch
+        stoneBox(h, near, false); // on the platform's floor (the template is placed again for each test)
+        List<BlockPos> above = stoneBox(h, far, true); // above the template: cleared again
+        t.onCleanup(() -> above.forEach(c -> h.setBlock(c, Blocks.AIR)));
+        FactionNpc archer = t.register(soldier(h, 12, 4, FactionType.EMBER_LEGION, NpcRole.ARCHER));
+        FactionNpc enemy = t.track(soldier(h, near.getX(), near.getZ(), FactionType.GROVE_COVENANT, NpcRole.SWORDSMAN));
+        enemy.setNoAi(true); // shut in, out of reach and out of sight
+        archer.setTarget(enemy);
+        int[] movedAt = {-1};
+        int[] droppedAt = {-1};
+        t.onEachTick(() -> {
+            long tick = h.getTick();
+            if (tick == 260) {
+                // near, it is still watched past the ten seconds after which a target nobody trades blows with goes stale
+                t.assertTrue(archer.getTarget() == enemy && archer.pursuit().mode() == com.factionclash.combat.Pursuit.Mode.HOLD,
+                        "the archer should still wait on the enemy near it: target " + archer.getTarget() + ", mode " + archer.pursuit().mode());
+                BlockPos a = h.absolutePos(far);
+                enemy.teleportTo(a.getX() + 0.5, a.getY(), a.getZ() + 0.5);
+                movedAt[0] = (int) tick;
+            }
+            if (movedAt[0] > 0 && droppedAt[0] < 0 && archer.getTarget() != enemy) {
+                t.assertTrue(archer.distanceTo(enemy) > com.factionclash.combat.Pursuit.WATCH, "the enemy should be beyond the watch");
+                droppedAt[0] = (int) tick;
+            }
+            if (droppedAt[0] > 0 && tick == droppedAt[0] + 40) {
+                t.assertTrue(archer.getTarget() != enemy, "the archer took the far enemy back");
+                t.succeed();
+            }
+            if (tick >= 620) {
+                t.fail("the archer still waits on an enemy " + String.format("%.0f", archer.distanceTo(enemy)) + " blocks off that it "
+                        + "can neither see nor get at: target " + archer.getTarget() + ", mode " + archer.pursuit().mode());
+            }
+        });
+    }
+
     /**
      * Live check: workers hit by a player standing in a 1x1 pit two deep in their yard jumped in after it, were wounded,
      * could not flee (no way up) and stood there until killed. A wounded worker with no way away from a threat beside it

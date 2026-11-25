@@ -127,7 +127,7 @@ def summary(d):
         life = "alive" if h["alive"] else (f"returns in {h['returnsIn'] // 60}:{h['returnsIn'] % 60:02d}" if h["returnsIn"] else "fallen")
         fights = ",".join(f"{k}={v}" for k, v in sorted(h.get("fights", {}).items())) or "-"
         casts = ",".join(f"{k}={v}" for k, v in sorted(h.get("casts", {}).items())) or "-"
-        line = (f"  hero {h['id']:20s} {str(h['owner']):15s} {life:16s} L{h['level']:<2d} war={h['warPower']:.1f}"
+        line = (f"  hero {h['id']:20s} {str(h.get('owner')):15s} {life:16s} L{h['level']:<2d} war={h['warPower']:.1f}"
                 f" fights[{fights}] kills={h['kills']} deaths={h['deaths']} revivals={h['revivals']}"
                 f" casts[{casts}] phase={h['phaseReached']} staggers={h['staggers']} escapes={h['escapes']} laststands={h['lastStands']}")
         if "health" in h:

@@ -571,13 +571,13 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 395 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 397 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
   attack a garrison like their own; ruins seen stay ruins when only the yard is seen again; a raid party turns home by
   its plan and home never gives up a raider still fighting, nor pulls one off its party; a scout counts no soldier
-  behind a wall;
+  behind a wall; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid
   wiped out unseen is given up at its plan, its raiders missing then, not at three days; a miner crossing the home edge
   twice on one shift keeps one expected return; a cave survey is the faction's only when handed in at the station;
@@ -612,7 +612,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   cover when shot at while waiting; a worker steps out of reach; what a fighter or an ally may break and build, and
   that a factionless player's blocks in a base are its soldiers' to break; a broken door put back with no door in
   the storehouse; go round through the gate to a player pressed against the pen's far fence; a guard waiting on a
-  monster it cannot get at turns to an intruder, and lets go of one it can neither see nor reach; a wounded worker
+  monster it cannot get at turns to an intruder, and lets go of one it can neither see nor reach; an archer lets go of
+  a target that went far out of its reach; a wounded worker
   shut in a pit with the player gets out), **miners** (digs its own
   shaft and plugs the ground ring around the mouth, digs on through an aquifer and clears a flooded tunnel, goes on
   down a half-dug shaft, never digs protected blocks, finds no site on shallow ground, fetches a better pickaxe for

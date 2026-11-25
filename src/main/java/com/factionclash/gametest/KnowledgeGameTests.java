@@ -374,6 +374,64 @@ public final class KnowledgeGameTests {
         }
     }
 
+    /**
+     * Live check of the knowledge review (2026-11-19): two parties broke their target's heart and came home "in victory",
+     * but none of the looks the director takes of the target from up to three raiders had the heart's place in view after
+     * the fall, so the report they brought home was a standing base, and the Tide Alliance's council went on weighing the
+     * ruins of Stoneguard (with a hero it had seen there) as its next target. The raider that broke the heart saw it go: a
+     * party that broke its target's heart brings the ruins home, and the council no longer picks them.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_raidwon")
+    public static void aPartyThatBreaksTheHeartBringsTheRuinsHome(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        FactionState f = t.data.faction(SIDE);
+        keepRaidState(t, f);
+        List<Messages.Said> lines = recording(t);
+        try {
+            long now = level.getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            t.data.startedAt = now - interval - 1;
+            f.lastRaidAt = now - interval - 1;
+            for (int[] p : GARRISON) {
+                member(t, p[0], p[1], NpcRole.SWORDSMAN);
+            }
+            BaseState enemy = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 300));
+            Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 0, "an empty yard");
+            seen.look = new Intel.Look(0, 1.0, 0, 0, now);
+            deliver(t, f, seen, now);
+            raids(t, f, now);
+            t.assertTrue(f.raidTarget == enemy.id && f.raiders.size() == 3, "no raid of three: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            List<java.util.UUID> party = List.copyOf(f.raiders);
+            // one of the party breaks the heart; no look the director takes has the heart's place in view (here: the
+            // raiders stand 300 blocks off, so it takes none)
+            enemy.destroyed = true;
+            enemy.destroyedBy = SIDE;
+            enemy.destroyedAt = now + 10;
+            raids(t, f, now + 100);
+            t.assertTrue(f.raidIntel != null && f.raidIntel.fallen, "the party that broke the heart did not keep the ruins it saw: "
+                    + (f.raidIntel == null ? null : f.raidIntel.note));
+            // the raiders come home, the last one tells the raid's end
+            for (java.util.UUID u : party) {
+                f.leaveRaid(u);
+            }
+            raids(t, f, now + 200);
+            t.assertTrue(f.raidTarget < 0, "the raid did not end with its party home");
+            t.assertTrue(said(lines, SIDE, "ended in victory"), "no victory told at home");
+            t.assertTrue(f.knowledge.stream().anyMatch(r -> r.subject == ENEMY && r.pos.equals(enemy.center) && r.fallen),
+                    "the ruins the party saw did not replace the standing report");
+            f.lastRaidAt = now - interval - 1;
+            FactionDirector.LAST_COUNCIL.remove(SIDE);
+            raids(t, f, now + 300);
+            t.assertTrue(f.raidTarget < 0 && FactionDirector.LAST_COUNCIL.get(SIDE) == null,
+                    "the council weighs the ruins its own party made: " + FactionDirector.LAST_COUNCIL.get(SIDE));
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
     // ------------------------------------------------------------------ the raid's plan (known leak 5)
 
     /**

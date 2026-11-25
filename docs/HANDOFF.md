@@ -189,6 +189,16 @@ python3 tools/rcon.py "stop"
   the cases happen: `kill <uuid>` far away (unseen) or beside a member (a witness); a member held alive far away with
   `data merge entity <uuid> {NoAI:1b}` inside a barrier box (missing, then presumed dead; `NoAI:0b` and it walks home
   and rejoins); `fc admin raid <faction> <base>` with `fc admin hero raid <id>` for raids.
+- **Watching the war** (what a faction knows, `docs/design/knowledge.md` 12): the same `rolltrack.py` run also writes
+  `<out_dir>/war.log` (each change of a council's line with `[truth: ...]`, each launch with the report its estimate
+  rested on and the soldiers truly in the target's walls, each raid's end, each report delivered or changed),
+  `war.jsonl` (one record per poll) and `chat.log` (the faction lines, stamped with the game day). `python3
+  tools/warcheck.py <out_dir> [from_tick] [to_tick]` reads it: the launch table (basis, "about N defenders", the truth,
+  the raiders out and dead), the leak test (every garrison departure of 3 or more with the other councils' estimates
+  of that base round it), the members reported missing or presumed dead beside the truth, far miners' expected
+  returns, the cave surveys with the explorer's place, fighters keeping a target more than 24 blocks off, and members
+  frozen on one spot with a moving status. Stop the server cleanly (`save-all flush`, then `stop`): a hard kill leaves
+  the region files ahead of the campaign data (the knowledge live check lost a day that way).
 - `/locate structure minecraft:pillager_outpost` (or `#minecraft:village`, `minecraft:mansion`) via RCON finds
   structures to test scouts; a scout can be teleported next to one (`tp <uuid> x y z`) and back home to deliver.
 - **Seeing a hero in game** (Heroes v2; the art pipeline's `test_rig`, Natsuho Komezaki and Hinae Shirasuzu ship:
