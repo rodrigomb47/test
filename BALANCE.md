@@ -532,7 +532,7 @@ of reach; see `docs/design/notes/combat-unreachable.md`. All values PROPOSED.
   never plans: it steps out of reach (at most 100 ticks) and lets the target be.
 * Breaking (`Reach.mayBreak`): never a planned block, a block entity, a block in or beside a fluid, a mine's stairs,
   a base's ground (its walls box + 1, below its floor), or anything over 100 ticks to break with the held item; a
-  foreign block in a planned cell yes (not the base's own player's edit for that faction or its allies); in a base of
+  foreign block in a planned cell yes (not the base's own player's edit, for a fighter of that faction); in a base of
   its own side an unplanned block only if a player not of its side placed it (`intruderBlocks`, at most 4096 per
   base; live check: also a player of no faction, whose pillar in a yard the soldiers could not touch before). A
   block it broke for a target and that is put back is not broken again for that target.

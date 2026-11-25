@@ -62,6 +62,10 @@ public final class FCEvents {
             mob.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(mob, FactionNpc.class, 10, true, false,
                     e -> !spider || mob.getLightLevelDependentMagicValue() < 0.5F));
         }
+        if (mob.getPersistentData().contains(BaseBuilder.LAIR_TAG) && event.getLevel().getServer() != null) {
+            // a monster of the Hollow loading after the Hollow fell (it was away in an unloaded place): it dies with it
+            CampaignManager.lairMonsterJoined(mob, CampaignData.get(event.getLevel().getServer()));
+        }
         if (mob.getPersistentData().contains(BaseBuilder.LAIR_TAG) && mob instanceof PathfinderMob pm) {
             pm.goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(pm, 1.0));
             if (event.getLevel().getServer() != null) {
@@ -112,6 +116,11 @@ public final class FCEvents {
             com.factionclash.campaign.RollCall.forget(p.server, p.getUUID());
         }
         if (event.getEntity().level() instanceof ServerLevel level && event.getEntity().getPersistentData().contains(BaseBuilder.LAIR_TAG)) {
+            if (event.getEntity() instanceof Mob m && !event.isCanceled()) {
+                // a monster away from its lair held a ticking area (FactionDirector's lair); it gives it up at its death,
+                // wherever and however it dies (on a raid, or with the Hollow at its fall), as a faction NPC does
+                com.factionclash.util.ChunkLoading.releaseTraveler(m);
+            }
             CampaignData data = CampaignData.get(level.getServer());
             BaseState lair = data.base(event.getEntity().getPersistentData().getInt(BaseBuilder.LAIR_TAG));
             // the Hollow follows the roll call too (knowledge review of 2026-11-19, equal treatment): a monster that falls

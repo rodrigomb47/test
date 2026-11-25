@@ -64,7 +64,7 @@ In the world:
 * **Faction Heart**: destroy it and the base falls. Members' deliberate edits inside their own base are
   preserved by builders; damage from mobs, explosions or enemies is repaired.
 
-Players respawn at their nearest surviving allied base when they have no bed.
+Players respawn at their faction's nearest surviving base when they have no bed.
 
 ## How the simulation works
 
@@ -181,11 +181,13 @@ Players respawn at their nearest surviving allied base when they have no bed.
 * **A faction's fall**: a faction whose last base falls is eliminated ("Stoneguard has been eliminated! All of its
   people die with it."), and every member of it dies with it, wherever it is: the NPCs and heroes in loaded places at
   once, where they stand, their things dropping as on any death; a member away in an unloaded place (a scout, a far
-  miner, a raider, a hero) when its chunk next loads; a member player at once, or as it next logs in, after which it
-  respawns by vanilla's rules with no faction and may join a surviving one. A hero dies for good: it never rises again
-  (it has no base to rise at) and becomes a free hero with its level kept. The kill feed tells each hero's death once: a
-  hero killed where it stood or one that died unloaded in vanilla's words with its faction ("Natsuho Komezaki (Ember
-  Legion) was killed"); a hero already dead and waiting to rise is freed with no second line. Nothing of the fallen
+  miner, a raider, a monster of the Hollow) where it stands when its chunk next loads, its things dropping too; a hero
+  away there is told dead at the fall, and when its chunk loads what it carried drops where it stood (its kit vanishes,
+  as at any hero's death); a member player at once, or as it next logs in, after which it respawns by vanilla's rules
+  with no faction and may join a surviving one. A hero dies for good: it never rises again (it has no base to rise at)
+  and becomes a free hero with its level kept. The kill feed tells each hero's death once: a hero killed where it stood,
+  or one that died unloaded or was missing and presumed lost, in vanilla's words with its faction ("Natsuho Komezaki
+  (Ember Legion) was killed"); a hero already dead and waiting to rise is freed with no second line. Nothing of the fallen
   faction acts again (no recruitment, council, raid or work). There is no diplomacy between factions: the owner removed
   the pact against a conqueror on 2026-11-25, so the survivors of a conquest stay each other's enemies.
 * **Traders and villages**: scouts report villages - any village they come within sight of (plains, desert,
@@ -505,7 +507,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1118 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate; what
+* `./gradlew test` — 1119 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
+  presumed lost dies with its faction too); what
   a faction knows of an enemy base: a garrison nobody saw assumed like the council's own, a partial view of a yard, a garrison seen gone and the look's ageing, losses seen
   at home and their fading, heroes seen and their sightings' fading, the better look, a lair's prior, two thirds in whole
   soldiers (from 7 soldiers against a garrison like its own, whatever the gear), a counter-attack's 3 to 2, the party
@@ -572,7 +575,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 403 GameTests on a real headless server, including **what a faction knows** (a
+* `./gradlew runGameTestServer` — 407 GameTests on a real headless server, including **what a faction knows** (a
   council does not raid a garrison that marched out unseen and raids one its scout saw gone, "against about 0
   defenders, as seen on day N"; enemy soldiers seen falling at home bring a counter-attack, one killed unseen does not,
   and three days later they are replaced; a hero seen there three days ago no longer holds a council back; ten soldiers
@@ -587,8 +590,11 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   only at home; a lair misses a monster that fell far off only later), **a faction's fall** (a member away in an
   unloaded place dies when its chunk loads and its things drop; a member of a faction never eliminated lives; a hero at
   home dies with the last base without running and is free for good, as are one waiting to rise and one away, the feed
-  telling each death once and the away one's stale copy discarded; a member player dies and is factionless, at once or
-  at its login; the survivors of a conquest stay enemies; an old save that holds a pact loads), **deaths far from home** (a
+  telling each death once and the away one's stale copy discarded, what it carried dropping where it stood (an older
+  copy drops nothing); a hero presumed lost is told dead at the fall; the Hollow's monsters die with its last lair, a
+  loaded one on no lair's list and one away when it loads, and a lair monster's death gives up its chunk area; a member
+  player dies and is factionless, at once or at its login; the survivors of a conquest stay enemies; an old save that
+  holds a pact loads), **deaths far from home** (a
   scout killed far away unseen is not known, goes missing past its expected return, is presumed dead and replaced; a
   death near the base or seen from home is known at once; a witness away carries the news home and tells it; a dead
   witness carries nothing; a member player reports what it saw at the station and loses it if it dies; a raider
@@ -613,7 +619,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   hit a player one block up without breaking anything, wait out of the player's reach and call the archer when there
   is no way in, then go in once there is; take only a few blows from a player in a 1x1 hole, then keep away; get out
   of a pit in their own yard with the player at the edge, by building up or by the stuck recovery; take
-  cover when shot at while waiting; a worker steps out of reach; what a fighter or an ally may break and build, and
+  cover when shot at while waiting; a worker steps out of reach; what a fighter may break and build (a third faction's
+  soldier treated as any enemy), and
   that a factionless player's blocks in a base are its soldiers' to break; a broken door put back with no door in
   the storehouse; go round through the gate to a player pressed against the pen's far fence; a guard waiting on a
   monster it cannot get at turns to an intruder, and lets go of one it can neither see nor reach; an archer lets go of

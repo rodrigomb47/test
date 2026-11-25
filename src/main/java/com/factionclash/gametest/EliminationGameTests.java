@@ -1,6 +1,7 @@
 package com.factionclash.gametest;
 
 import com.factionclash.FactionClash;
+import com.factionclash.campaign.BaseBuilder;
 import com.factionclash.campaign.BaseState;
 import com.factionclash.campaign.CampaignData;
 import com.factionclash.campaign.CampaignManager;
@@ -13,16 +14,19 @@ import com.factionclash.combat.CombatRules;
 import com.factionclash.faction.FactionType;
 import com.factionclash.hero.HeroEntity;
 import com.factionclash.hero.HeroKillFeed;
+import com.factionclash.hero.HeroKit;
 import com.factionclash.hero.HeroManager;
 import com.factionclash.logic.campaign.Whereabouts.State;
 import com.factionclash.npc.FactionNpc;
 import com.factionclash.npc.NpcRole;
 import com.factionclash.registry.ModEntities;
+import com.factionclash.util.ChunkLoading;
 import com.factionclash.util.Messages;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -30,7 +34,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -50,7 +57,9 @@ import java.util.UUID;
  * a member of a faction never eliminated lives; a hero of the faction dies with its last base without running and is
  * free for good, whether it was loaded, waiting to rise or away (one kill-feed line each, its stale copy discarded); a
  * member player dies and is factionless, at once or at its next login; after a conquest the survivors stay enemies; an
- * old save that holds a pact loads. Each test that eliminates a faction has its own batch, sets the faction's other
+ * old save that holds a pact loads. The review of 2026-11-25 added: the Hollow's monsters die with its last lair wherever
+ * they are (an unloaded one when it loads) and give up their chunk tickets; an away hero's things drop where its copy
+ * stood; a hero presumed lost is told dead at the fall. Each test that eliminates a faction has its own batch, sets the faction's other
  * standing bases aside and puts its roster back afterwards (the test base's cleanup restores its fall stamp).
  */
 @GameTestHolder(FactionClash.MODID)
@@ -523,5 +532,224 @@ public final class EliminationGameTests {
             h.assertTrue(!fl.getCompound(i).contains("pactOffensives"), "a faction still saves its pact allies' offensives");
         }
         h.succeed();
+    }
+
+    // ------------------------------------------------------------------ the review of 2026-11-25
+
+    /**
+     * A monster of the test base, made a Hollow lair, at relative (x, 2, z): still, persistent, in the lair's leather
+     * helmet (no burning in daylight), with a sword in hand that always drops; on the lair's list when {@code tracked}.
+     */
+    private static Zombie lairMonster(GameTestBases.Handle t, int x, int z, boolean tracked) {
+        Zombie m = t.track(t.helper.spawn(EntityType.ZOMBIE, new BlockPos(x, 2, z)));
+        m.getPersistentData().putInt(BaseBuilder.LAIR_TAG, t.base.id);
+        m.setNoAi(true);
+        m.setPersistenceRequired();
+        m.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+        m.setDropChance(EquipmentSlot.HEAD, 0.0F);
+        m.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        m.setDropChance(EquipmentSlot.MAINHAND, 2.0F);
+        if (tracked) {
+            t.base.lairMobs.add(m.getUUID());
+        }
+        return m;
+    }
+
+    /** The test base as the Hollow's last lair. */
+    private static GameTestBases.Handle lastLair(GameTestHelper h, int timeout) {
+        GameTestBases.Handle t = GameTestBases.register(h, FactionType.HOLLOW, 2, 3, timeout);
+        t.base.kind = BaseState.Kind.LAIR;
+        lastBase(t);
+        return t;
+    }
+
+    /**
+     * (ix) The Hollow's last lair falls: every monster of it dies, wherever it is. One loaded but on no lair's list any
+     * more (it walked off, or the lair stopped tracking it) dies at once; one away in an unloaded place dies when its chunk
+     * loads, where it stands, and its sword drops; a wild zombie lives.
+     */
+    @GameTest(template = "platform", timeoutTicks = 60, batch = "elim_lair_away")
+    public static void elimHollowMonstersDieWithTheLastLairWhereverTheyAre(GameTestHelper h) {
+        GameTestBases.Handle t = lastLair(h, 60);
+        try {
+            Zombie away = lairMonster(t, 18, 18, true);
+            Vec3 at = away.position();
+            Zombie loose = lairMonster(t, 6, 18, false);
+            Zombie wild = t.track(h.spawn(EntityType.ZOMBIE, new BlockPos(6, 2, 6)));
+            wild.setNoAi(true);
+            wild.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
+            CompoundTag saved = unload(away);
+            CampaignManager.destroyBase(h.getLevel(), t.base, CONQUEROR, "test");
+            t.assertTrue(CampaignManager.fallen(t.data, FactionType.HOLLOW), "the Hollow did not fall with its last lair");
+            t.assertTrue(!loose.isAlive(), "a loaded Hollow monster on no lair's list outlived the Hollow");
+            t.assertTrue(wild.isAlive(), "a wild zombie died with the Hollow");
+            Entity back = reload(t, saved);
+            t.assertTrue(back instanceof Zombie, "the away monster did not load again");
+            h.runAfterDelay(3, t.guard(() -> {
+                t.assertTrue(!back.isAlive(), "a Hollow monster away at the fall loaded and lives on");
+                t.assertTrue(lying(h, at, Items.IRON_SWORD) == 1, "its sword did not drop where it died: " + lying(h, at, Items.IRON_SWORD));
+                t.assertTrue(wild.isAlive(), "a wild zombie died after the Hollow's fall");
+                t.succeed();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * (x) A lair monster away from its lair holds a ticking 3x3 area (ChunkLoading); its death gives the area up, whether
+     * it dies on a raid or with the Hollow at its fall (before, only a faction NPC's death did, and the areas stayed loaded
+     * until the server restarted).
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "elim_lair_ticket")
+    public static void elimALairMonstersDeathGivesUpItsChunkTicket(GameTestHelper h) {
+        GameTestBases.Handle t = lastLair(h, 40);
+        try {
+            Zombie raider = lairMonster(t, 18, 18, true);
+            Zombie other = lairMonster(t, 6, 18, true);
+            t.onCleanup(() -> {
+                ChunkLoading.releaseTraveler(raider);
+                ChunkLoading.releaseTraveler(other);
+            });
+            ChunkLoading.updateTraveler(raider, true);
+            ChunkLoading.updateTraveler(other, true);
+            t.assertTrue(ChunkLoading.travellerRadius(raider.getUUID()) > 0 && ChunkLoading.travellerRadius(other.getUUID()) > 0,
+                    "precondition: the monsters hold no ticking area (keepFactionAreasLoaded off?)");
+            other.kill(); // a death away from the lair, the Hollow standing
+            t.assertTrue(!other.isAlive(), "precondition: the monster did not die");
+            t.assertTrue(ChunkLoading.travellerRadius(other.getUUID()) == 0, "a lair monster that died away keeps its ticking area");
+            CampaignManager.destroyBase(h.getLevel(), t.base, CONQUEROR, "test");
+            t.assertTrue(!raider.isAlive(), "the raider outlived the Hollow");
+            t.assertTrue(ChunkLoading.travellerRadius(raider.getUUID()) == 0, "a raider killed at the Hollow's fall keeps its ticking area");
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /** Experience lying in orbs within 3 blocks of {@code at}. */
+    private static int xpNear(GameTestHelper h, Vec3 at) {
+        int n = 0;
+        for (ExperienceOrb o : h.getLevel().getEntitiesOfClass(ExperienceOrb.class, new AABB(at, at).inflate(3), e -> true)) {
+            n += o.getValue() * Math.max(1, o.saveWithoutId(new CompoundTag()).getInt("Count"));
+        }
+        return n;
+    }
+
+    /** Kit items lying within 3 blocks of {@code at}. */
+    private static int kitLying(GameTestHelper h, Vec3 at) {
+        return h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(at, at).inflate(3), e -> HeroKit.isKit(e.getItem())).size();
+    }
+
+    /** The saved entity moved to relative (x, 2, z) as another entity of the same hero (an older copy: another UUID). */
+    private static CompoundTag olderCopy(GameTestHelper h, CompoundTag saved, int x, int z) {
+        CompoundTag c = saved.copy();
+        c.putUUID("UUID", UUID.randomUUID());
+        Vec3 p = Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(x, 2, z)));
+        ListTag pos = new ListTag();
+        pos.add(DoubleTag.valueOf(p.x));
+        pos.add(DoubleTag.valueOf(p.y));
+        pos.add(DoubleTag.valueOf(p.z));
+        c.put("Pos", pos);
+        return c;
+    }
+
+    /**
+     * (xi) A hero away when its faction falls dies with it there: when its chunk loads, its copy is discarded and what it
+     * carried drops where it stood, as at any hero's death (its pack, its ammunition, the experience it carried; its kit
+     * vanishes); no second feed line. An older stale copy of it (another entity) drops nothing, so nothing is doubled.
+     */
+    @GameTest(template = "platform", timeoutTicks = 60, batch = "elim_hero_things")
+    public static void elimAwayHerosThingsDropWhereItsCopyStood(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FALLS, 2, 3, 60);
+        try {
+            lastBase(t);
+            List<HeroKillFeed.Line> lines = feed(t);
+            String id = "fx_elim_things";
+            HeroEntity hero = schemer(t, id, 18, 18);
+            hero.inventory().addItem(new ItemStack(Items.IRON_INGOT, 5));
+            hero.setAmmo(new ItemStack(Items.ARROW)); // (its ammunition is one arrow, FactionNpc.setAmmo)
+            boolean kit = false;
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                kit |= HeroKit.isKit(hero.getItemBySlot(slot));
+            }
+            t.assertTrue(kit, "precondition: the hero wears no kit item");
+            Vec3 at = hero.position();
+            CompoundTag saved = unload(hero);
+            saved.putInt("FcCarriedXp", 30);
+            CompoundTag older = olderCopy(h, saved, 6, 18);
+            Vec3 olderAt = Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(6, 2, 18)));
+            CampaignManager.eliminate(h.getLevel(), t.data, FALLS);
+            String name = HeroManager.nameOf(id);
+            t.assertTrue(naming(lines, name).size() == 1, "the away hero's death was not told once: " + naming(lines, name));
+            Entity copy = reload(t, saved);
+            Entity old = reload(t, older);
+            t.assertTrue(copy == null && old == null, "a stale copy of the hero joined the world");
+            h.runAfterDelay(3, t.guard(() -> {
+                t.assertTrue(lying(h, at, Items.IRON_INGOT) == 5, "its pack did not drop where it stood: " + lying(h, at, Items.IRON_INGOT));
+                t.assertTrue(lying(h, at, Items.ARROW) == 1, "its ammunition did not drop: " + lying(h, at, Items.ARROW));
+                t.assertTrue(xpNear(h, at) == 30, "the experience it carried did not drop: " + xpNear(h, at));
+                t.assertTrue(kitLying(h, at) == 0, "its kit dropped");
+                t.assertTrue(lying(h, olderAt, Items.IRON_INGOT) == 0 && lying(h, olderAt, Items.ARROW) == 0,
+                        "an older stale copy dropped its things too (a duplicate)");
+                t.assertTrue(naming(lines, name).size() == 1, "a second line for the away hero: " + naming(lines, name));
+                t.succeed();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /**
+     * (xii) A hero presumed lost (its entity went missing from a loaded place; it may be alive where it is) when its faction
+     * falls dies with it: the feed tells it once at the fall (the presumption told nothing), no second death is counted,
+     * it is free for good, and its copy's things drop where it stood when it loads.
+     */
+    @GameTest(template = "platform", timeoutTicks = 60, batch = "elim_hero_presumed")
+    public static void elimHeroPresumedLostIsToldDeadAtTheFall(GameTestHelper h) {
+        GameTestBases.Handle t = GameTestBases.register(h, FALLS, 2, 3, 60);
+        try {
+            lastBase(t);
+            List<HeroKillFeed.Line> lines = feed(t);
+            var server = h.getLevel().getServer();
+            String id = "fx_elim_presumed";
+            HeroEntity hero = schemer(t, id, 18, 18);
+            hero.inventory().addItem(new ItemStack(Items.GOLD_INGOT, 3));
+            UUID uuid = hero.getUUID();
+            Vec3 at = hero.position();
+            HeroState s = t.data.heroes.get(id);
+            CompoundTag saved = unload(hero);
+            NpcRecord r = t.data.faction(FALLS).roster.get(uuid);
+            t.assertTrue(r != null, "precondition: the hero has no roster entry");
+            r.vanished = true; // the engine lost it from a loaded place (RollCall.upkeep)
+            HeroManager.tick(server);
+            t.assertTrue(!s.alive && s.reviveAt > 0 && s.owner == FALLS && s.deaths == 1,
+                    "precondition: not presumed lost (alive " + s.alive + ", reviveAt " + s.reviveAt + ", deaths " + s.deaths + ")");
+            String name = HeroManager.nameOf(id);
+            t.assertTrue(naming(lines, name).isEmpty(), "the presumption was told as a death: " + naming(lines, name));
+            CampaignManager.eliminate(h.getLevel(), t.data, FALLS);
+            List<HeroKillFeed.Line> told = naming(lines, name);
+            t.assertTrue(told.size() == 1 && told.get(0).victim() == null,
+                    "the presumed-lost hero's death with its faction was told " + told.size() + " times: " + told);
+            var c = told.get(0).text();
+            t.assertTrue(c.getContents() instanceof TranslatableContents tc && tc.getKey().equals("death.attack.genericKill")
+                    && c.getString().contains(name + " (" + FALLS.displayName + ")"), "not vanilla's words with its faction: " + c.getString());
+            t.assertTrue(s.deaths == 1, "the fall counted a second death: " + s.deaths);
+            freeForGood(t, id, "the presumed-lost hero");
+            Entity copy = reload(t, saved);
+            t.assertTrue(copy == null && h.getLevel().getEntity(uuid) == null, "the presumed-lost hero's copy joined the world");
+            h.runAfterDelay(3, t.guard(() -> {
+                t.assertTrue(lying(h, at, Items.GOLD_INGOT) == 3, "its pack did not drop where it stood: " + lying(h, at, Items.GOLD_INGOT));
+                t.assertTrue(naming(lines, name).size() == 1, "a second line: " + naming(lines, name));
+                t.assertTrue(s.owner == null && !s.alive, "the copy brought the hero back");
+                t.succeed();
+            }));
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
     }
 }

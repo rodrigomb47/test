@@ -971,7 +971,7 @@ a player, NPC soldiers, another hero and monsters are the same)
 |---|---|---|
 | Low health | in any fight, its health drops under its escape threshold `flee_at` (8-15% of its max health: a third of its `retreat_below`, kept inside its last phase, §6.13) | its home base; when the fight is at its home base, the nearest other standing base of its faction, and with none the wild (below) |
 | Lost raid | its raid falls back (beaten back by the fall-back share of §5.5, or its leader fell or escaped: §5.6) while the hero is in or near the target (its walls box plus 16 blocks) or fighting; elsewhere it walks home with the party | its home base |
-| Lost base | the heart of the base it is defending is destroyed (a `home` stand ends with the heart) | the nearest standing base of its faction; with none the wild, and then the elimination rule of §5.6 |
+| Lost base | the heart of the base it is defending is destroyed (a `home` stand ends with the heart) | the nearest standing base of its faction (not the faction's last base: every member then dies with it, `HEROES_V2.md` 5.6) |
 
 A **last-stand hero** has no trigger. Under the same health it has its last-stand beat (§6.13) and fights on. When
 its raid falls back or its base's heart falls, it finishes the fight it is in (until its engaged enemies are dead or
@@ -1031,8 +1031,8 @@ hero home as the soldiers go. And no hero "withdraws" as soldiers do (`WithdrawG
   faction (against -8 for a hero killed and -20 for a leader killed); nothing for the side it fled.
 - **Lines**: its `escape` line as it goes (temperament fallback banks cover it), and a chat line to the players
   within 32 blocks: "Name fled".
-- Its home base is gone: the nearest standing base of its faction; no base left: the elimination rule of §5.6 (an
-  exiled free hero).
+- Its home base is gone: the nearest standing base of its faction; no base left: the elimination rule of
+  `HEROES_V2.md` 5.6 (it dies with its faction and is freed with its level kept).
 
 **Why it cannot loop.** An escape is followed by at least 300 s away and above 50% health, during which it starts
 nothing against those it fled, and by a 600 s window in which nothing escapes: a hero caught again inside it fights

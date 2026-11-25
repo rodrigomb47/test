@@ -16,7 +16,6 @@ import net.minecraft.world.level.block.Blocks;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Campaign lifecycle and the PROPOSED victory rules: a base falls when its faction heart is destroyed; a faction
@@ -25,6 +24,12 @@ import java.util.UUID;
 public final class CampaignManager {
     private static CampaignStarter starter;
     private static boolean destroying;
+
+    /** Something for an entity that joined a level, done at the next server tick ({@link #afterJoin}). */
+    private record AfterJoin(Entity entity, java.util.function.Consumer<Entity> then) {
+    }
+
+    private static final List<AfterJoin> AFTER_JOIN = new ArrayList<>();
 
     private CampaignManager() {
     }
@@ -38,6 +43,7 @@ public final class CampaignManager {
     }
 
     public static void tick(MinecraftServer server) {
+        runAfterJoin(server); // (first: with or without a campaign, and while one is being prepared)
         if (starter != null) {
             if (starter.step()) {
                 starter = null;
@@ -119,7 +125,8 @@ public final class CampaignManager {
      * The faction has no base left: it is eliminated, and every member of it dies with it (the owner's rule of 2026-11-25,
      * {@code logic/campaign/Elimination}). Members in loaded places die now, where they stand, their things dropping as on
      * any death (an NPC's death is no chat line; a hero's is the kill feed's); a member away in an unloaded place dies when
-     * it next loads ({@link #diesWithFaction}, from {@code FactionNpc.tick}); its heroes are freed for good
+     * it next loads ({@link #diesWithFaction}, from {@code FactionNpc.tick}; a Hollow monster, {@link #lairMonsterJoined});
+     * its heroes are freed for good
      * ({@code HeroManager.factionFell}); a member player dies now, or at its next login ({@link #loggedIn}), and is
      * factionless after. Nothing of the faction acts again: its bases are all fallen, so the director runs no recruitment,
      * council, raid or work for it.
@@ -146,16 +153,14 @@ public final class CampaignManager {
             for (Entity e : lv.getAllEntities()) {
                 if (e instanceof FactionNpc n && n.getFaction() == faction && n.isAlive() && !n.isDisplayOnly()) {
                     remove.add(e);
+                } else if (faction == FactionType.HOLLOW && lairMonster(e) && e.isAlive()) {
+                    // every monster of the Hollow, by its lair's mark: one on no lair's list any more too (it walked off
+                    // on a raid, or its lair stopped tracking it)
+                    remove.add(e);
                 }
             }
         }
         for (BaseState b : data.basesOf(faction)) {
-            for (UUID u : b.lairMobs) {
-                Entity e = level.getEntity(u);
-                if (e != null) {
-                    remove.add(e);
-                }
-            }
             b.lairMobs.clear();
         }
         for (Entity e : remove) {
@@ -193,6 +198,51 @@ public final class CampaignManager {
         if (e instanceof net.minecraft.world.entity.LivingEntity l && l.isAlive()) {
             l.setHealth(0);
             l.die(l.damageSources().genericKill());
+        }
+    }
+
+    /** A monster of a Hollow lair (marked by its lair, {@code BaseBuilder.LAIR_TAG}). */
+    public static boolean lairMonster(Entity e) {
+        return e instanceof net.minecraft.world.entity.Mob && !(e instanceof FactionNpc)
+                && e.getPersistentData().contains(BaseBuilder.LAIR_TAG);
+    }
+
+    /**
+     * A Hollow monster joined a level (its chunk loaded) after the Hollow fell: it was away in an unloaded place at the
+     * fall, and dies where it stands at the next tick, its things dropping as at any death (vanilla monsters have no
+     * {@code FactionNpc.tick} of their own to read the fall).
+     */
+    public static void lairMonsterJoined(net.minecraft.world.entity.Mob mob, CampaignData data) {
+        if (!fallen(data, FactionType.HOLLOW)) {
+            return;
+        }
+        afterJoin(mob, e -> {
+            if (e.isAlive() && !e.isRemoved() && e.getServer() != null && fallen(CampaignData.get(e.getServer()), FactionType.HOLLOW)) {
+                FactionClash.LOGGER.info("[Faction Clash] A monster of the fallen Hollow dies where it stands at {}", e.blockPosition().toShortString());
+                killOutright(e);
+            }
+        });
+    }
+
+    /**
+     * Runs {@code then} for an entity that is joining a level, at the next server tick: an entity that joins with its
+     * chunk must not touch the level from its join event (the chunk may not be ready, and loading it from there can
+     * deadlock), so a death or a drop it is due waits a tick. Server thread only.
+     */
+    public static void afterJoin(Entity e, java.util.function.Consumer<Entity> then) {
+        AFTER_JOIN.add(new AfterJoin(e, then));
+    }
+
+    private static void runAfterJoin(MinecraftServer server) {
+        if (AFTER_JOIN.isEmpty()) {
+            return;
+        }
+        List<AfterJoin> due = List.copyOf(AFTER_JOIN);
+        AFTER_JOIN.clear();
+        for (AfterJoin a : due) {
+            if (a.entity().getServer() == server) { // (not one left over from a world closed before this one opened)
+                a.then().accept(a.entity());
+            }
         }
     }
 

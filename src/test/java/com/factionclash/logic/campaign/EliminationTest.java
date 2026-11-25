@@ -25,9 +25,18 @@ class EliminationTest {
 
     @Test
     void aHerosFateFollowsWhereItIs() {
-        assertEquals(HeroFate.DIES_THERE, Elimination.heroFate(true, true), "loaded: killed there, its death told by the feed");
-        assertEquals(HeroFate.TOLD_AND_FREED, Elimination.heroFate(true, false), "away, unloaded: one line now, free");
-        assertEquals(HeroFate.FREED, Elimination.heroFate(false, false), "waiting to rise: free, no second line");
-        assertEquals(HeroFate.FREED, Elimination.heroFate(false, true), "a corpse still in its death animation: free, no second line");
+        assertEquals(HeroFate.DIES_THERE, Elimination.heroFate(true, false, true), "loaded: killed there, its death told by the feed");
+        assertEquals(HeroFate.TOLD_AND_FREED, Elimination.heroFate(true, false, false), "away, unloaded: one line now, free");
+        assertEquals(HeroFate.FREED, Elimination.heroFate(false, false, false), "waiting to rise: free, no second line");
+        assertEquals(HeroFate.FREED, Elimination.heroFate(false, false, true), "a corpse still in its death animation: free, no second line");
+    }
+
+    @Test
+    void aHeroPresumedLostIsAliveWhereItIsAndDiesWithItsFaction() {
+        // its last fall was a presumption (its entity went missing): nobody has told its death, so the fall tells it
+        assertEquals(HeroFate.TOLD_AND_FREED, Elimination.heroFate(false, true, false),
+                "presumed lost, away: its death with the faction is told once, not freed in silence");
+        assertEquals(HeroFate.DIES_THERE, Elimination.heroFate(false, true, true),
+                "presumed lost but standing in a loaded place: killed there, its death told by the feed");
     }
 }

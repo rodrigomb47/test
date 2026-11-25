@@ -135,6 +135,7 @@ public final class HeroManager {
         s.baseId = -1;
         s.alive = false;
         s.reviveAt = 0;
+        s.presumedLost = false;
         data.setDirty();
     }
 
@@ -144,7 +145,9 @@ public final class HeroManager {
      * Its faction has fallen ({@code logic/campaign/Elimination}): every hero of it dies with it and never comes back
      * (no base to rise at); each is a free hero from then on, its level kept. A hero alive in a loaded place is killed
      * there (its own death is the kill feed's line and frees it, {@link #onDeath}); one alive away in an unloaded place
-     * dies unseen, with one kill-feed line now; one already dead and waiting to rise is freed with nothing more told.
+     * dies unseen, with one kill-feed line now (what it carried drops where it stood when its chunk loads, {@link #mayJoin});
+     * one already dead and waiting to rise is freed with nothing more told. A hero presumed lost (its entity went missing:
+     * no death was told, and it may be alive where it is) counts as alive here: it dies with its faction, told once.
      * Called at the elimination, and from {@link #tick} for a save in which a faction fell before this rule.
      */
     public static void factionFell(MinecraftServer server, CampaignData data, FactionType faction) {
@@ -161,7 +164,7 @@ public final class HeroManager {
             return;
         }
         HeroEntity h = living(s);
-        switch (com.factionclash.logic.campaign.Elimination.heroFate(s.alive, h != null)) {
+        switch (com.factionclash.logic.campaign.Elimination.heroFate(s.alive, s.presumedLost, h != null)) {
             case DIES_THERE -> {
                 h.kill(); // its death (onDeath) frees it, and the feed tells it
                 if (h.isAlive()) {
@@ -350,6 +353,7 @@ public final class HeroManager {
         s.uuid = h.getUUID();
         s.alive = true;
         s.reviveAt = 0;
+        s.presumedLost = false;
         data.setDirty();
         level.addFreshEntity(h);
         Recruitment.register(data, h, base);
@@ -590,6 +594,7 @@ public final class HeroManager {
                 // presumed lost while its chunk was away, and back before its timer ran out
                 s.alive = true;
                 s.reviveAt = 0;
+                s.presumedLost = false;
                 NpcRecord r = data.faction(s.owner).roster.get(s.uuid);
                 if (r != null) {
                     r.vanished = false; // found again; its faction sees it when it is home (RollCall.sighting)
@@ -600,6 +605,17 @@ public final class HeroManager {
         }
         FactionClash.LOGGER.info("Discarding a stale copy of hero {} ({}); the hero is {}", id, h.getUUID(),
                 s.owner == null ? "free" : s.uuid + " of the " + s.owner.displayName);
+        if (s.owner == null && h.getUUID().equals(s.uuid) && com.factionclash.campaign.CampaignManager.fallen(data, h.getFaction())) {
+            // the hero's own last entity, away in an unloaded place when its faction fell: it died with it there (its death
+            // was told and counted at the fall), so what it carried drops where it stood, as at any hero's death (its kit
+            // vanishes). Not now: a copy joining with its chunk must not touch the level yet (the next tick does it). Only
+            // this entity: any older copy is another one, whose things would be a duplicate.
+            com.factionclash.campaign.CampaignManager.afterJoin(h, e -> {
+                if (e instanceof HeroEntity copy) {
+                    copy.dropCarried();
+                }
+            });
+        }
         return false;
     }
 
@@ -637,6 +653,7 @@ public final class HeroManager {
                     // the engine lost it from a loaded place: it falls and returns on time (whatever its faction believes:
                     // a hero presumed dead far away but alive walks on); its faction hears now only if it saw it go
                     fallen(server, data, s, null, "is missing and presumed lost", !r.alive);
+                    s.presumedLost = true; // (no death was told: if its faction falls meanwhile, the fall tells it)
                 }
             } else {
                 HeroDef d = HeroRegistry.definition(s.id);

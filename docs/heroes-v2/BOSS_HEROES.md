@@ -495,7 +495,9 @@ their people can see its trail.
   base it counts as lying there.
 - **The carrier's faction is eliminated while it carries the token**: the carrier dies with its faction (every member
   does, the owner's rule of 2026-11-25) and the token drops where it fell, as at any death; a carrier away in an
-  unloaded place drops it where it stands when its chunk loads and it dies. The token stays in the world, takeable.
+  unloaded place drops it where it stands when its chunk loads (an NPC carrier dies there then; a hero carrier was told
+  dead at the fall, and what it carried, the token among it, drops where its copy stood as the copy is discarded,
+  `HeroManager.mayJoin`). The token stays in the world, takeable.
 - **The hero's file is removed** (an operator): a bound hero goes dormant as any hero (v1 25.5); a token whose hero has
   no definition says so in its tooltip and cannot be used until the file is back.
 - **`heroes.enabled = false` with a bound boss hero**: as any hero; the token rules pause.

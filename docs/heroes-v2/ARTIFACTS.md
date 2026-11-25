@@ -236,7 +236,7 @@ tooltip's "works only for a hero" has a visible first half.
   included). `silence` stops only those that have moves (heroes and casting NPCs), as 6.6 says. Nothing in this file
   reads whether anyone is a player; only presentation (bars, tooltips, sounds, the screen) is for players.
 - **Whose hero it is does not matter**: an AI faction's hero and a player's faction's hero wear artifacts by the same
-  rules and make the same choices (section 10); a free (exiled or wandering) hero keeps what it wears.
+  rules and make the same choices (section 10); a free (wandering) hero keeps what it wears.
 
 ---
 
@@ -1412,8 +1412,9 @@ winner is the side whose effective health times damage per second is larger. Bui
   now. The faction notices at its next look at its ledger (its own storehouse is its own knowledge).
 - **A player's chest**: no hero or NPC of the faction takes from containers that are not its storehouse; a player can
   of course raid anyone's.
-- **A hero changes faction** (exiled when its faction's last base falls, then joins another by a token or, in milestone
-  3, by recruitment): what it wears goes with it; its lent marks and wishes are cleared.
+- **A hero changes faction** (released, or freed with its level kept after it died with its fallen faction, then joins
+  another by a token or, in milestone 3, by recruitment): what it wears goes with it; its lent marks and wishes are
+  cleared. What a hero wears when it dies with its faction (`HEROES_V2.md` 5.6) follows the death rules first.
 - **The faction loses the base whose store holds its artifacts**: they are loot for the raiders like everything else.
 - **A dormant hero** (10.6): inert slots; no choices; its artifacts go to the store at its base; dropped if it dies.
 - **A free or wandering hero**: wears what it has and chooses from its backpack and what it picks up (10.4 with no

@@ -31,6 +31,12 @@ public final class HeroState {
     public boolean alive;
     /** Game time a fallen hero returns at its home base; 0 when none is due. */
     public long reviveAt;
+    /**
+     * Its last fall was a presumption, not a death: its entity went missing from a loaded place ("is missing and presumed
+     * lost", {@code HeroManager.tick}) and may still be alive where it is. Cleared when that entity is found again, when the
+     * hero rises and when it is freed. A faction that falls meanwhile takes it with it, told by the kill feed.
+     */
+    public boolean presumedLost;
     public int level;
     public int xp;
     /** The role id it last had (a dormant hero returns as a plain soldier of it). */
@@ -83,6 +89,9 @@ public final class HeroState {
         }
         t.putBoolean("alive", alive);
         t.putLong("reviveAt", reviveAt);
+        if (presumedLost) {
+            t.putBoolean("presumedLost", true);
+        }
         t.putInt("level", level);
         t.putInt("xp", xp);
         CompoundTag af = new CompoundTag();
@@ -130,6 +139,7 @@ public final class HeroState {
         s.uuid = t.hasUUID("uuid") ? t.getUUID("uuid") : null;
         s.alive = t.getBoolean("alive") && s.owner != null;
         s.reviveAt = t.getLong("reviveAt");
+        s.presumedLost = t.getBoolean("presumedLost") && s.owner != null; // (absent before 2026-11-25: none)
         s.level = t.getInt("level");
         s.xp = t.getInt("xp");
         CompoundTag af = t.getCompound("affixes");

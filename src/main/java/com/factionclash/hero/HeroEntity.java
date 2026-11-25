@@ -1615,6 +1615,18 @@ public class HeroEntity extends FactionNpc implements GeoEntity {
         return target == slot;
     }
 
+    /**
+     * This entity died with its faction while away in an unloaded place and is discarded as it loads
+     * ({@code HeroManager.mayJoin}): what it carried drops where it stands, exactly as at its death by a generic kill
+     * (its pack, its ammunition, the experience it carried, any guaranteed equipment drop; its kit vanishes). There is no
+     * death, so no second feed line and no reward.
+     */
+    public void dropCarried() {
+        if (level() instanceof ServerLevel sl && !preview) {
+            dropCustomDeathLoot(sl, damageSources().genericKill(), false);
+        }
+    }
+
     /** Kit items never drop: they vanish here and the hero gets them back when it returns. */
     @Override
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {

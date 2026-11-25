@@ -920,7 +920,8 @@ wars: its war power and the limits that keep NPC wars from being decided by hero
   soldiers do (`WithdrawGoal` is not a hero's goal, 3.5). A fight it is losing ends by its own nature, the same
   against a player, NPC soldiers, another hero or monsters: an escaping-kind hero breaks off for good at its escape
   threshold (`MOBILITY_AND_WORK.md` 7.7), a last-stand hero fights until it dies (6.13). A lost raid or a lost base
-  also sends an escaping-kind hero away; a last-stand hero finishes the fight it is in first (8.1).
+  also sends an escaping-kind hero away (not the faction's last base: every member then dies with it, 5.6); a
+  last-stand hero finishes the fight it is in first (8.1).
 - **Presentation for players**: the boss bar and the intro title go to players within 32 blocks of a fighting hero;
   telegraph decals are spawned only while a player is within 32 blocks (display entities only players see; a move's
   timing, hit test and sounds never depend on them); sounds and speech play as `SOUND.md` section 7 says. None of
@@ -1240,7 +1241,8 @@ of this section), so nothing in this section or the next ones depends on whether
   | `leader` | while its faction's leader is fighting within 32 blocks of it (heroes other than the leader): it does not leave its leader in a fight | loyalty 85 or more |
 
   A stand ends with its reason: when the heart is destroyed, or the leader falls or leaves, the hero is an escaping
-  hero again (a lost base sends it away at once, whatever its health: 7.7 there). Temperament rules on top of the
+  hero again (a lost base sends it away at once, whatever its health: 7.7 there; not the faction's last base: every
+  member then dies with it, 5.6). Temperament rules on top of the
   formula: `sleepy` stands everywhere (its rule "bold under half health": once it is that awake it sees the fight
   through); `yandere` gets a third situation with milestone 3's relationships (never while its favoured hero fights
   beside it). A hero with an unspent `rebirth` (6.7) does not escape before it; the threshold is read again after
@@ -4247,7 +4249,8 @@ row above:
   a second, for 3 s) it fights the nearest pursuer within 16 blocks and runs again once a way opens (looked for every
   second). Over inside its refuge's walls or 10 s with no pursuer within 48 blocks; then it does not take those it fled
   as targets for `heroes.escapeAwaySeconds` and until above half health, and in the wild keeps 64 blocks off. A lost base
-  (`CampaignManager.destroyBase`) sends an escaping hero there off at once (`EscapeRules.lostBase`). A reload ends an
+  (`CampaignManager.destroyBase`) sends an escaping hero there off at once (`EscapeRules.lostBase`); not the faction's
+  last base, whose fall kills every member of it (5.6; since 2026-11-25 `destroyBase` starts no escape then). A reload ends an
   escape in progress (the window stays). Leaders (L4) and the rebirth (legendary, none in the slice) hold no one yet.
 - **Rewards** (6.13; `HeroRewards`): at a death only, to the side of the last person (a player, a faction NPC or a hero)
   whose blow hurt it in its last 15 s, the killing blow included (a factionless player is a side of one): XP orbs

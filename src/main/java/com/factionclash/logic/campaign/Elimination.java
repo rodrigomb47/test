@@ -31,15 +31,22 @@ public final class Elimination {
         DIES_THERE,
         /** Alive in an unloaded place: it dies with its faction unseen; one kill-feed line now, and it is free. */
         TOLD_AND_FREED,
-        /** Already dead, waiting for its revival: it never comes back (no base to rise at); free, nothing more told. */
+        /**
+         * Already dead, waiting for its revival: it never comes back (no base to rise at); free, nothing more told. (A
+         * hero only presumed lost is not dead: it takes one of the two fates above.)
+         */
         FREED
     }
 
-    /** {@code alive}: the campaign's record of the hero; {@code loaded}: a living entity of it is in a loaded place. */
-    public static HeroFate heroFate(boolean alive, boolean loaded) {
-        if (!alive) {
+    /**
+     * {@code alive}: the campaign's record of the hero; {@code presumedLost}: its last fall was a presumption (its entity
+     * went missing, and may be alive where it is); {@code loaded}: a living entity of it is in a loaded place.
+     */
+    public static HeroFate heroFate(boolean alive, boolean presumedLost, boolean loaded) {
+        if (!alive && !presumedLost) {
             return HeroFate.FREED;
         }
+        // (a hero presumed lost has had no death told: it may be alive where it is, so it dies with its faction now)
         return loaded ? HeroFate.DIES_THERE : HeroFate.TOLD_AND_FREED;
     }
 }

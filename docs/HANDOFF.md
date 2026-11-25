@@ -1036,6 +1036,25 @@ python3 tools/rcon.py "stop"
   no return is announced). **1118 unit tests, 403 GameTests.** Not checked in a campaign yet: watch a fall live (the
   line, the deaths, a far scout or raider dying when its chunk loads, a hero's feed line, nothing of the faction acting
   after).
+- **The faction's fall, reviewed** (2026-11-25, two read-only reviewers, then fixes, each with a test that failed
+  first): (a) the Hollow's monsters die with its last lair wherever they are: `eliminate` now kills every mob with the
+  lair mark (`BaseBuilder.LAIR_TAG`, `CampaignManager.lairMonster`) in every dimension, not only the tracked ones in the
+  overworld, and one that loads after the fall dies where it stands at the next tick (`FCEvents.onJoin` ->
+  `CampaignManager.lairMonsterJoined`; before, a monster of a lair that fell first, or one the lair had stopped
+  tracking, lived on for good); (b) a lair monster's death gives up its traveller's chunk area (`FCEvents.onDeath`
+  -> `ChunkLoading.releaseTraveler`; before, a raider killed away, or at the Hollow's fall, kept 3x3 ticking chunks until
+  the server restarted); (c) a hero away when its faction falls: when its copy loads and is discarded, what it carried
+  drops where it stood (`HeroManager.mayJoin` -> `HeroEntity.dropCarried`, the same `dropCustomDeathLoot` as a death by a
+  generic kill: pack, ammunition, carried experience, its kit vanishing), only for the record's own last entity (an
+  older stale copy drops nothing); (d) a hero presumed lost (its entity missing from a loaded place,
+  `HeroState.presumedLost`, saved) whose faction falls is told dead once at the fall and counts no second death
+  (`Elimination.heroFate(alive, presumedLost, loaded)`; before, it was freed in silence). Work an entity joining with its
+  chunk must not do in its join event (a death, a drop) waits for the next server tick (`CampaignManager.afterJoin`,
+  drained first in `CampaignManager.tick`). Docs: the reach rule names no allies (BALANCE, README); the escape texts in
+  `HEROES_V2.md` (8.1, 6.13, A6b as built), `MOBILITY_AND_WORK.md` 7.7 and `ARTIFACTS.md` no longer send a hero away from,
+  or exile it after, its faction's last base; `BOSS_HEROES.md` 3.12's hero carrier. Tests: `EliminationTest` (4),
+  `EliminationGameTests` (12: the Hollow's monsters wherever they are; a lair monster's chunk area; an away hero's things;
+  a hero presumed lost). Six sabotages, each caught by its test. **1119 unit tests, 407 GameTests.**
 
 ## 6. Known open items and ideas (none blocking)
 
@@ -1044,8 +1063,8 @@ python3 tools/rcon.py "stop"
   fall's stamp, so it applies to older saves too: a straggler of a faction that fell before this change dies when it
   loads, a member player of it at its next login, and its heroes are freed at the first second (an away hero gets its
   one feed line then); (3) a member player dies whatever its game mode (vanilla's kill reaches creative and spectator
-  players); (4) monsters of a fallen Hollow in unloaded places become ordinary monsters when they load, as before (the
-  rule covers faction NPCs, heroes and players; the Hollow's loaded and travelling monsters die with it); (5) design
+  players); (4) a fallen Hollow's monster in an unloaded place dies when its chunk loads, as any member does (fixed by the
+  review of 2026-11-25; before, it lived on as an ordinary monster); (5) design
   text still names pact allies where it is not built: `BOSS_HEROES.md` 3.12's "A pact" case and its own-side lines,
   `notes/kit-gaps.md`, and in `HEROES_V2.md` the leader diplomacy's "today's pact" (5.x relations, the save table),
   left for the owner's answer on that diplomacy; the retired `tools/herotool/prompt-template.txt` still says "make
