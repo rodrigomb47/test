@@ -419,12 +419,13 @@ archers onto a hero), then on to day 7.25; the server was stopped cleanly. The l
 | 5.44 | Tide Alliance | Stoneguard | the prior (blind look) | 7 | 0 | 4 | 0, Stoneguard razed |
 | 5.47 | Grove Covenant | Ember Legion | the prior (blind look) | 7 | 9 + Natsuho | 4 | 4 |
 
-* **The archers.** Ten fighters had a target more than 24 blocks off at some poll (24 to 43 blocks); every one had let
-  it go by the next poll but an Ember crossbowman whose target stood at the walls' foot at 24 blocks (the edge of the
-  watch, positions rounded to the block) for three polls. No ranged soldier stood frozen on a far target (the first
-  run's archers kept theirs 1.9 days); every party set out whole (out = party, the archers drafted with them). Hinae,
-  forced on Ember, fell there to its soldiers at her escape (13%), so the original case (a hero walking home out of
-  reach) did not come back.
+* **The archers.** Ten fighters had a target more than 24 blocks off at some poll (24 to 43 blocks). Seven had let it
+  go by the next poll; the other three (an Ember crossbowman, 33 blocks off, and two axe fighters) were on one enemy
+  that came back to the walls' foot, about 24 blocks from them, where the crossbowman held it two more polls (the edge
+  of the watch; positions rounded to the block) and then took another target. No ranged soldier stood frozen on a far
+  target (the first run's archers kept theirs 1.9 days); every party set out whole (out = party). The original case (a
+  hero walking home out of reach) did not come back: Hinae, forced on Ember, fell there at her escape (13%). The fix
+  rests on its GameTest and the sabotage that fails it.
 * **Won raids.** Both victories brought the ruins home: "REPORT hollow ...: ruins (by the raid party)" (day 4.10) and
   "REPORT stoneguard ...: ruins (by the raid party)" (day 5.66), and the Tide Alliance's council weighed neither again.
 * **The rate.** Five launches by the councils in 7.25 days, three of them by day 5.19 (the first run: six by 5.18; the
@@ -445,7 +446,10 @@ archers onto a hero), then on to day 7.25; the server was stopped cleanly. The l
   25.0 on days 6 and 7, against a median of 2: two Grove miners (198 and 194 at day 7.25) whose branch tunnels at
   y=14 to 15 run 120 to 170 blocks from home, the faces reached a few blocks a poll ("Walking to the tunnel face" for
   a quarter day at a time), a Tide hauler (122) and a Grove woodcutter (116); the same Grove mine led the first run's
-  continuation (180).
+  continuation (180). Not of this review: in the roll call's live check, before it, Grove's miner at the far face of
+  the same mine #10 (570, 15, 323) had 169 by day 6.6 (Grove was eliminated before that campaign's end, so its final
+  mean of 9.1 leaves him out), while miners in branch tunnels as long elsewhere (Ember's and Tide's, 2483 blocks) stayed
+  under 30 in all three campaigns.
 
 Left open, with the evidence above, for the owner:
 
@@ -470,4 +474,5 @@ Left open, with the evidence above, for the owner:
   status "Walking to the storehouse", no path, its own stand one block off, a full backpack of 401 items, the
   storehouse's cobblestone at 511 of the 512 junk limit) and went back to its mine at dawn; once in 7 days, cause not
   found.
-* **Long branch tunnels**: the stuck recoveries above (pre-existing mining navigation, not of this review).
+* **Grove's far branch faces**: the stuck recoveries above (mining navigation to faces 120 to 175 blocks from home at
+  Grove's mines; seen before this review too).

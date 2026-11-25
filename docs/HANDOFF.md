@@ -977,7 +977,8 @@ python3 tools/rcon.py "stop"
   review's jar) ran to day 8.34 (a container restart at day 5.18 rewound it to its day 4.29 save; days 0 to 5.18 are the
   clean run); the second (commit 7b8db3e) ran on a fresh world to day 7.25, with no operator command to day 5.19 and one
   forced raid after. What held: no council moved its estimate of a base at a garrison's departure without a report of
-  its own (the roll call's leak of two councils striking Stoneguard's emptied base did not come back); raids wiped out
+  its own (when the Tide Alliance struck Stoneguard's emptied base in the second campaign, it was because its raid
+  interval ran out, on a look that still counted about 7 defenders); raids wiped out
   unseen went missing at their plan plus the grace (launch + 0.70 to 0.73 day), not after three days; every member
   reported missing or presumed dead was dead (but for the five the restart lost); every cave survey was told with its
   explorer at home or bound for the station; no far miner's expected return changed while it was away; recruitment
@@ -986,15 +987,17 @@ python3 tools/rcon.py "stop"
   soldiers kept an enemy hero, then a passing scout, as their target 77 to 275 blocks off for 1.9 days, frozen at their
   hold spots, and never set out on the raid they were drafted into: `Pursuit.approachRanged` kept a target it could not
   reach engaged at any distance; it now keeps it only within `Pursuit.WATCH` (24 blocks, as the melee hold already did;
-  `CombatReachGameTests.anArcherLetsGoOfATargetThatWentFarOutOfReach`); in the second campaign ten fighters had a
-  target over 24 blocks off and all let it go by the next poll, but one at the edge of the watch; (2) both parties that
+  `CombatReachGameTests.anArcherLetsGoOfATargetThatWentFarOutOfReach`; the original case did not recur live, the fix
+  rests on the test and its sabotage); in the second campaign ten fighters had a target over 24 blocks off, seven let
+  it go by the next poll and three kept one enemy that came back to about 24 blocks at their walls; (2) both parties that
   broke their target's heart came home "in victory" with a look from before the fall, so the Tide Alliance's council kept
   weighing Stoneguard's ruins as a standing base; the party now keeps the ruins its raider saw (`BaseWatch.ruins`,
   `KnowledgeGameTests.aPartyThatBreaksTheHeartBringsTheRuinsHome`); in the second campaign both victories brought "ruins
   (by the raid party)" home. Both new tests fail under sabotage. Tools: `sim.py` and `rolltrack.py` read a hero with no
-  faction (Hinae once Stoneguard fell). **1115 unit tests, 397 GameTests** (flakes rerun and passed:
-  `airborneHeroEscapesOrDiesInTheAir`, `npcKeepsTheLavaEdgeAwayFromAKnockbackPlayer`,
-  `pushedIntoLavaIsThePushersKillAndOnlyTheHerosDeathIsTold`). Left open: section 6.
+  faction (Hinae once Stoneguard fell). **1115 unit tests, 397 GameTests** (the last full run on the final tree passed
+  all 397; earlier runs had flakes that passed when rerun: `airborneHeroEscapesOrDiesInTheAir`,
+  `npcKeepsTheLavaEdgeAwayFromAKnockbackPlayer`, `pushedIntoLavaIsThePushersKillAndOnlyTheHerosDeathIsTold`). Left
+  open: section 6.
 
 ## 6. Known open items and ideas (none blocking)
 
@@ -1025,9 +1028,10 @@ python3 tools/rcon.py "stop"
   Stoneguard miner stood at the storehouse stand overnight (day 2.49 to 2.96, status "Walking to the storehouse", a full
   backpack, the storehouse's cobblestone one under the junk limit) and went back to work at dawn: once, cause not
   found; (5) stuck recoveries: the workers' mean reached 25 at day 7.25 (median 2), nearly all two Grove miners whose
-  branch tunnels at y=14 to 15 run 120 to 170 blocks from home (pre-existing mining navigation; the same mine led the
-  first run) and a hauler and a woodcutter; (6) the turn-home in the field ("its time is up, the party turns home") was
-  said once, by a party that never left (the frozen archers), and not seen in a party at its target.
+  branch tunnels at y=14 to 15 run 120 to 170 blocks from home, and a hauler and a woodcutter; not of the knowledge
+  review: Grove's miner at the same mine's far face had 169 by day 6.6 in the roll call's check before it, while miners
+  in branch tunnels as long elsewhere stay under 30; (6) the turn-home in the field ("its time is up, the party turns
+  home") was said once, by a party that never left (the frozen archers), and not seen in a party at its target.
 
 - Left open by the review of the round (2026-11-19, `HEROES_V2.md` 15.9 "Review of the round"): the walk round stands at
   most 4 blocks from its target (`EdgePlay.STAND_MAX`), so a ranged hero with a knockback shot would give up its distance
