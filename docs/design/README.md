@@ -16,5 +16,13 @@
   2026-11-19): what a faction knows of its members (here, away, missing, presumed dead, known dead), trips' expected
   returns, witnesses and the news they carry home, heroes, the kill feed's place, config, save format and tests.
 
+- `knowledge.md`: what a faction knows (the knowledge review of 2026-11-19, built): ruins seen, a raid's plan, a
+  miner's shift, retraining and the blacksmith at home, news; its war council section is now a summary of
+  `recon.md`, the estimate model it replaced kept as history.
+
+- `recon.md`: focused reconnaissance (the owner's rule of 2026-11-25, built 2026-11-26 in tasks R1 to R7 and R9 to
+  R12; the live check, R8, is next): a war council judges an enemy defence only by a scout sent to watch that base, the
+  plan with its reserve, the sightings, the spyglass, the operators' tools; its as-built notes are 3.8 and 5.7 to 5.10.
+
 These are historical working notes. Log files and world copies they mention lived in a temporary folder and are
 gone. Where the notes disagree with the code, README.md or BALANCE.md, those win.

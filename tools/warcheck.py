@@ -258,7 +258,8 @@ why_n = {}
 for so in sides_over:
     why_n[so["why"]] = why_n.get(so["why"], 0) + 1
     print(f"  {so['t'] / 24000:7.3f} {so['faction']:15s} {so['scoutName'][:15]:15s} {so['subject']} {so['side']}: {so['why']}"
-          f" (columns {so.get('columns')}, best look {so.get('bestPoints')} points, middle {so.get('bestMiddle')}, at {so.get('bestHeight')})")
+          f" (columns {so.get('columns')}, last look at {so.get('lookedAt')}, best look {so.get('bestPoints')} points, middle "
+          f"{so.get('bestMiddle')}, at {so.get('bestHeight')})")
 print("  sides given up: " + (", ".join(f"{k} {v}" for k, v in sorted(why_n.items())) or "none"))
 targets = {}
 for e in ends:
@@ -266,9 +267,11 @@ for e in ends:
 never = [(k, v) for k, v in targets.items() if "DONE" not in v and any(x in ("BLIND", "EMPTY_HANDED") for x in v)]
 for k, v in never:
     print(f"  never good: {k[0]} on {k[1]} at {k[2]}: {v}")
-calls = sum(1 for v in targets.values() if v and all(x in ("BLIND", "EMPTY_HANDED") for x in v))
-print(f"  {len(never)} targets with a failed recon and none good; orders blind on every side tried: {calls} of {len(targets)}"
-      + (" (more than one in five: recon.md 10.4 calls for a look at the blind bands)" if targets and calls * 5 > len(targets) else ""))
+blind_orders = sum(by_end.get(k, 0) for k in ("BLIND", "EMPTY_HANDED"))
+told = blind_orders + by_end.get("DONE", 0)
+print(f"  {len(never)} targets with a failed recon and none good; orders that came home blind or with no vantage on every "
+      f"side tried: {blind_orders} of {told} reported"
+      + (" (more than one in five: recon.md 10.4 calls for a look at the blind bands)" if told and blind_orders * 5 > told else ""))
 
 print("\n=== attacked: recon scouts hurt on the pillar, and pillar blocks left ===")
 guards = 0

@@ -1133,7 +1133,8 @@ Built on 2026-11-26 after R12. Where this list and the sections above differ, th
   strike, plan and roster bases; the station's lines with no truth in them; the truth of a watched box); six sabotages
   (the dump's recon, the plan, the station telling `LAST_COUNCIL`, the truth counting every faction, the dump's
   orders, the station's recon lines) were each caught. The tools ran on an 8-day headless campaign's logs (HANDOFF
-  section 5: 26 orders, 13 good watches each equal to the truth of the box, 4 launches on recons).
+  section 5: 34 orders ended, 21 watches, all good and each equal to the truth of the box, 4 launches on recons, 9 of 28
+  reported orders blind on every side tried).
 * **Docs (R7):** `knowledge.md` 1 (now a summary and a pointer here, the old model kept as history), 8 to 12;
   `missing_npcs.md` 3, 5 and 6; `MOBILITY_AND_WORK.md` 5.2 ("Scouting ahead"); README, BALANCE.md (War), HANDOFF and
   ROADMAP. No config key was added (`docs/factionclash-common.toml` is unchanged; a fresh server writes the same file).

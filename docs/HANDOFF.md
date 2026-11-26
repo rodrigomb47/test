@@ -1179,21 +1179,26 @@ python3 tools/rcon.py "stop"
   tests, 458 GameTests.** **The tools on a headless run** (`/home/user/fcserver_recon`, seed 20261107, `fc start 256`,
   8.1 days, no heroes; a spyglass put in Ember's general chest; logs in the round's scratchpad, not kept): to day 3.1 no
   faction had six soldiers at home, so no party and no order (the rule, not a fault); an operator recruited three
-  swordsmen each for Ember, Stoneguard and Grove at day 3.1; from then 26 orders (20 taken, a median 15 s from order to
-  taking; 11 done, 5 blind, 1 empty-handed, 4 dropped, no scout lost on a recon), 13 watches, all good (32 to 44% of the
-  yard, pillars of 11 to 19 blocks, a lair from the ground), each count equal to the truth of the box at its last sample
-  (no miss in 12 settlement and 1 lair recons), no scout hurt on a pillar, no hold; 10 sides given up (4 "no vantage", 6
-  "no good look"), 5 targets never seen well (Grove's scout on Stoneguard and Ember, three lair orders), 3 of 10 targets
-  blind on every side tried (above warcheck's one-in-five line); 4 launches, each on a recon (Stoneguard on a Hollow lair
-  counted 9, the truth 9; Ember on Stoneguard against 11 and a reserve of 6, the truth 12, all 8 raiders died; Stoneguard
-  on Ember's emptied base against 4 and 2, the truth 4; Tide on Stoneguard against 4 and a reserve of 3 from sightings
-  (2 met in the field, 1 at its walls; 2 of the 3 were back home by then), the truth 11, all 8 died); 28 sightings (25
-  at home, 3 in the field; 18 seen to fall). Ember's scout watched twice through the planted spyglass, died at
-  Stoneguard's walls on a sector trip, and Stoneguard's scout watched three times through it after (a spyglass changes
-  hands as any dropped item). Seams of the run, not of the mod: `rolltrack.py` crashed at the first launch (day 4.56, a
-  variable it reused; fixed and tested offline), so the record has no polls from 4.56 to 6.13; the server was restarted at
-  6.12 from its save, and the first poll after (entities not loaded yet) shows every garrison at 0 in warcheck's leak
-  section. A real live check (R8) is still to do.
+  swordsmen each for Ember, Stoneguard and Grove at day 3.1. From then: 34 orders ended (19 done, 7 blind, 2
+  empty-handed, 6 dropped; no scout lost on a recon; the polls saw 26 placed and 20 taken, a median 15 s from order to
+  taking, but miss days 4.56 to 6.13, below); 21 watches, all good (32 to 44% of the yard, pillars of 11 to 19 blocks,
+  two lairs from the ground), each count equal to the truth of the box at its last sample (19 settlement and 2 lair
+  recons, no miss), no scout hurt on a pillar, no hold; 18 sides given up (8 "no vantage", 10 "no good look"), 3 targets
+  never seen well (Grove's scouts on Ember, six orders, their climbs stopping at 8 to 10 blocks, once 16, under the 20
+  cap: short of dirt, most likely, not checked; two lair orders); 9 of 28 reported orders came home blind or without a
+  vantage on every side tried (above warcheck's one-in-five line); 4 launches, each on a recon (Stoneguard on a Hollow
+  lair counted 9, the truth 9, no raider lost; Ember on Stoneguard against 11 and a reserve of 6, the truth 12, all 8
+  raiders died; Stoneguard on Ember's emptied base against 4 and 2, the truth 4; Tide on Stoneguard against 4 and a
+  reserve of 3 from sightings (2 met in the field, 1 at its walls; 2 of the 3 were back home by then): a true count of
+  an emptied yard whose party came home, the truth 11 at the launch, all 8 raiders died); 28 sightings (25 at home, 3 in
+  the field; 18 seen to fall). Ember's scout watched twice through the planted spyglass, died at Stoneguard's walls on a
+  sector trip (day 3.95), and Stoneguard's scout watched five times through it after (a dropped spyglass changes hands
+  as any item). Seams of the run, not of the mod: `rolltrack.py` crashed at the first launch (day 4.56, a variable it
+  reused; fixed and tested offline) and was resumed after a server restart at 6.12, so the polls have a gap from 4.56 to
+  6.13; its `FC_RECON` and chat lines were backfilled from the first server log; the first poll after the restart
+  (entities not loaded yet) shows every garrison at 0 in warcheck's leak section. The tools' attacked and holds
+  branches were also run on the GameTests' own `FC_RECON` lines (two scouts hurt on a pillar, two holds of 15 s, one
+  indoor soldier the watch missed). A real live check (R8) is still to do.
 
 ## 6. Known open items and ideas (none blocking)
 
@@ -1235,7 +1240,11 @@ python3 tools/rcon.py "stop"
   scout-duty hero's flight or climb as a vantage is left for later; (6) a passing look still shares the 24-report cap
   (a recon's report is apart); (7) a fallen faction's soldiers stay in other factions' sightings until they age out
   (half a day), so a council may wait that long for an army that is dead (recon.md 8); (8) `warcheck.py`'s "waits on
-  the reserve alone" leaves the gear out (two thirds of the count head for head against the party), an estimate.
+  the reserve alone" leaves the gear out (two thirds of the count head for head against the party), an estimate; (9)
+  seen in R6's headless run (section 5): no recon order before a faction has six soldiers at home (its party rule; an
+  operator recruited soldiers at day 3.1 to start them), Grove's recon scouts climbed only 8 to 10 blocks (once 16) and
+  never got a good look at Ember or Stoneguard (short of dirt, most likely: the trip and the dump do not show the dirt it
+  carried; R8 should check it), and 9 of 28 reported orders came home blind on every side tried.
 - The roll call's open items (`docs/design/missing_npcs.md` 13-14: the survey, the council's view of an enemy base, the
   retraining and the blacksmith, the lookout's line, the raid's 3-day bound, a far miner's crossings) were taken up by
   the knowledge review (2026-11-19, `docs/design/knowledge.md`); `/fc hero info` (player-side) stays. Left open by that
