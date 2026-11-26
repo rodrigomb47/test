@@ -134,6 +134,7 @@ public final class BaseInfo {
         if (!places.isEmpty()) {
             out.add(places);
         }
+        out.addAll(warLines(f, level.getGameTime()));
         if (!f.achievements.isEmpty()) {
             String last = f.achievements.keySet().stream().reduce((a, x) -> x).orElse("");
             out.add("Advancements made: " + f.achievements.size() + " (latest: " + com.factionclash.achieve.FactionAchievements.title(level.getServer(), last)
@@ -250,6 +251,111 @@ public final class BaseInfo {
     }
 
     /** Colour coding for the station screen. */
+    /**
+     * The war as the faction knows it, for its station (recon.md, task R6): the council's last plan in its own words
+     * (the waiting or launch line's "against" text: the count, the scout and the day, the reserve, the heroes known), the
+     * open recon orders, each enemy base's focused recon (its count, coverage, vantage and instrument, fresh or stale, or
+     * blind and backing off, or never watched), the strikes seen at our walls since our last raid and the enemy soldiers
+     * and heroes our people saw away in the last half day. Only what the faction's own people know; never the
+     * operators' truth ({@code FactionDirector.LAST_COUNCIL} carries it, and is not read here).
+     */
+    public static List<String> warLines(FactionState f, long now) {
+        List<String> out = new ArrayList<>();
+        FactionDirector.CouncilPlan cp = FactionDirector.LAST_PLAN.get(f.type);
+        if (cp != null) {
+            String what = com.factionclash.campaign.ReconOrder.what(cp.subject(),
+                    cp.lair() ? Report.Kind.LAIR : Report.Kind.ENEMY_BASE);
+            String head = "War council, day " + com.factionclash.logic.campaign.Whereabouts.day(cp.at()) + ": ";
+            out.add(head + (cp.byOrder() ? "raid by order on " + what + " with " + cp.party() + " soldiers against " + cp.against()
+                    : "WAIT".equals(cp.verdict())
+                    ? com.factionclash.logic.campaign.Reserve.waitLine(what, cp.party(), cp.needed(), cp.against())
+                    : (cp.counter() ? "counter-attack on " : "raid on ") + what + " with " + cp.party() + " soldiers against " + cp.against()));
+        }
+        String orders = com.factionclash.campaign.ReconOrders.line(f);
+        if (orders != null) {
+            out.add("Recon orders: " + orders);
+        }
+        for (Report r : f.knowledge) {
+            if (!r.base() || r.fallen || r.subject == null) {
+                continue;
+            }
+            out.add(reconLine(r, now));
+        }
+        List<String> struck = new ArrayList<>();
+        f.struckBy.forEach((enemy, at) -> {
+            if (com.factionclash.logic.campaign.ReconRules.struckSince(at, f.lastRaidAt)) {
+                struck.add(enemy.displayName + " (day " + com.factionclash.logic.campaign.Whereabouts.day(at) + ")");
+            }
+        });
+        if (!struck.isEmpty()) {
+            out.add("Struck at our walls since our last raid by " + String.join(", ", struck));
+        }
+        long revive = FCConfig.HERO_REVIVE_SECONDS.get() * 20L;
+        Map<String, int[]> away = new java.util.TreeMap<>();
+        java.util.Set<String> heroes = new java.util.TreeSet<>();
+        for (com.factionclash.logic.campaign.Sightings.Sighting x : f.sightings.all()) {
+            if (!com.factionclash.logic.campaign.Sightings.counts(x, now, revive)) {
+                continue;
+            }
+            if (x.isHero()) {
+                com.factionclash.hero.HeroEntry e = com.factionclash.hero.HeroRegistry.get(x.hero());
+                heroes.add((e == null ? x.hero() : e.name()) + (x.fallen() ? " (seen to fall)" : ""));
+            } else {
+                away.computeIfAbsent(x.faction(), k -> new int[1])[0]++;
+            }
+        }
+        if (!away.isEmpty() || !heroes.isEmpty()) {
+            List<String> parts = new ArrayList<>();
+            away.forEach((faction, n) -> {
+                FactionType ft = FactionType.byId(faction);
+                parts.add(n[0] + " " + (ft == null ? faction : ft.displayName) + (n[0] == 1 ? " soldier" : " soldiers"));
+            });
+            parts.addAll(heroes);
+            out.add("Seen away in the last half day: " + String.join(", ", parts));
+        }
+        return out;
+    }
+
+    /**
+     * One enemy base's focused recon as its station tells it (recon.md 4): "Recon of the Grove Covenant settlement at
+     * 400, 16: about 4 soldiers and Hinae Shirasuzu (scout Edrin Cole, day 5; 40% of the yard from pillar 14 with a
+     * spyglass), fresh"; "... stale"; with failed attempts since, "1 failed recon since, backing off"; none yet, "never
+     * watched" or "no good look yet".
+     */
+    static String reconLine(Report r, long now) {
+        String what = com.factionclash.campaign.ReconOrder.what(r.subject, r.kind);
+        StringBuilder b = new StringBuilder("Recon of ").append(what).append(" at ").append(r.pos.getX()).append(", ").append(r.pos.getZ()).append(": ");
+        com.factionclash.logic.campaign.Intel.Recon c = r.recon;
+        boolean lair = r.kind == Report.Kind.LAIR;
+        if (c == null) {
+            b.append(r.reconFailures > 0 ? "no good look yet" : "never watched");
+        } else {
+            List<String> names = new ArrayList<>();
+            for (String id : c.heroes().keySet()) {
+                com.factionclash.hero.HeroEntry e = com.factionclash.hero.HeroRegistry.get(id);
+                names.add(e == null ? id : e.name());
+            }
+            b.append(c.soldiers() == 0 ? (lair ? "no monsters" : "an empty yard")
+                    : "about " + c.soldiers() + (lair ? (c.soldiers() == 1 ? " monster" : " monsters") : (c.soldiers() == 1 ? " soldier" : " soldiers")));
+            if (!names.isEmpty()) {
+                b.append(c.soldiers() == 0 ? " but for " : " and ").append(String.join(", ", names));
+            }
+            com.factionclash.logic.campaign.ReconOptic o = com.factionclash.logic.campaign.ReconOptic.of(c);
+            b.append(" (").append(c.by().isEmpty() ? "a scout's watch" : "scout " + c.by()).append(", day ")
+                    .append(com.factionclash.logic.campaign.Whereabouts.day(c.at())).append("; ").append(Math.round(c.coverage() * 100))
+                    .append(lair ? "% of its ground" : "% of the yard").append(c.vantage().isEmpty() ? "" : " from " + c.vantage())
+                    .append(o.none() ? "" : " with " + o.name()).append("), ")
+                    .append(com.factionclash.logic.campaign.Intel.usable(c, now) ? "fresh" : "stale");
+        }
+        if (r.reconFailures > 0) {
+            b.append("; ").append(r.reconFailures).append(r.reconFailures == 1 ? " failed recon since" : " failed recons since");
+            if (com.factionclash.logic.campaign.ReconRules.backingOff(r.reconFile(), now)) {
+                b.append(", backing off");
+            }
+        }
+        return b.toString();
+    }
+
     static int lineColor(String l) {
         if (l.startsWith("! ")) {
             return 0xFF8A65; // a resource that is short
@@ -260,8 +366,11 @@ public final class BaseInfo {
         if (l.startsWith("Surveyed cave")) {
             return 0x26C6DA;
         }
-        if (l.startsWith("Raid")) {
+        if (l.startsWith("Raid") || l.startsWith("War council") || l.startsWith("Struck")) {
             return 0xE57373;
+        }
+        if (l.startsWith("Recon") || l.startsWith("Seen away")) {
+            return 0x90CAF9;
         }
         if (l.startsWith("Recruitment")) {
             return 0xFFD54F;

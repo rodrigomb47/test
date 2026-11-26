@@ -26,53 +26,45 @@ enemy's own council wrote), its heroes' records and the hero entities' live heal
 true list of monsters. The scouts' `count` was ignored. Live (`missing_npcs.md` 14): when Stoneguard's six soldiers and
 Hinae left on a raid, Tide's and Grove's councils struck the emptied base within five seconds, and Tide destroyed it.
 
-**Now.** A report of an enemy settlement or lair carries a **look** at its defence (`Report.look`, pure
-`logic/campaign/Intel.Look`): the soldiers seen with a line of sight (a lair: the hostile monsters there), the share
-of the yard in view, the mean visible power of the soldiers seen (`FactionDirector.power`: the armour worn and the
-weapon held, which anyone can see), the heroes seen (`Report.heroes`, id and war power at full strength) and the time.
-`campaign/BaseWatch.look` makes it:
+**Now (since 2026-11-26): focused reconnaissance.** The design and its as-built notes are `docs/design/recon.md`
+(tasks R1 to R12); where it and the code differ, the code is the truth. The owner's rule (2026-11-25): "Only estimate
+enemy defence when the scout or other related role makes a report of what he saw while focused on this particilar
+task". In short:
 
-* within 64 blocks (horizontally) of the base's centre;
-* the yard: 25 look-out points over the walls' inside at eye height, each tested with a ray from the observer's eyes
-  (blocks with a collision shape stop it; the walls are 5 high, so a scout outside sees little of a yard);
-* the soldiers: the base's faction's fighters within the walls box plus 8 blocks, each with a line of sight;
-* the base is reported only when something of it is in view (a wall's top, a yard point, its heart's place or one of
-  its people); behind a hill it is not seen at all.
+* **Orders.** Half a day before its raid interval ends (or urgently, once the fight at home is over, after an enemy
+  struck our walls) the council orders a recon of a target it has never judged, whose last recon is stale or blind
+  (`ReconOrders`, at most one ordinary and one urgent order a faction). A scout takes the order only at home, at the
+  station or the storehouse; a second scout is hired for an order nobody took in 6000 ticks.
+* **The watch.** The scout walks to the target, round it outside a standoff of 61 blocks (a lair: 46), finds a column
+  in the band out to 72 blocks (96 with a vanilla spyglass it carries), climbs a dirt pillar of up to 20 blocks block by
+  block, looking after each, stops two blocks above its first good look and watches for a minute, counting each soldier
+  once by its face (UUID). A look is **good** with 8 of the yard's 25 points and its middle in view; a worse one is a
+  **blind** report ("could not see inside"), never "about 0". A lair is watched from the ground on a gap's axis. It
+  carries the report home apart from its others and tells it first at the station (`ReconTrip`, `ScoutJob`).
+* **The estimate** (`Intel.estimate`): only a good recon no older than half a day; the faces counted, their mean
+  visible power, the heroes seen in that watch. No prior, no drift, no losses, no passing look's count (a passing look
+  tells only where a base is and that it stands), no raid party's look (a raid brings home only the ruins it saw).
+* **The plan** (`Reserve.plan`): the count is a floor (the owner's answer: "they can assume that what they saw is not
+  the enemy mainforce"). The council plans against the count plus a reserve, the larger of half again the count and the
+  soldiers of that faction its own people saw away from that base in the last half day and did not see fall
+  (`FactionState.sightings`), with the heroes the watch saw or its people know of; a lair and a counter-attack get no
+  share. It chooses the target with the least plan, then the nearest, and goes at two thirds of it.
+* **Strikes.** Enemy soldiers seen falling at our walls lower nothing: they record a strike (`FactionState.struckBy`),
+  which orders an urgent recon of the striker's nearest reported settlement. Inside the raid interval the council
+  judges only the settlements of factions that struck us, at 3 to 2, and only on a recon made since the strike.
+* **Lines.** "Launching a raid with 3 soldiers on the Grove Covenant settlement reported at 400, 67, 16, against about 4
+  defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 2 (half again the 4 counted)"; while it waits,
+  "waiting on ...: 3 soldiers to send, 6 needed against ..." or "waiting for a scout's report on ... (never watched)".
 
-On one trip a scout keeps its best look at each base (the most of the yard in view, else the newer;
-`Intel.better`), with every hero seen on any look. At home the newest report replaces the older one, keeping the
-heroes seen before (a hero indoors is still there) and the losses seen since its look (`Report.mergeBase`).
-
-The council's **estimate** (`Intel.estimate`):
-
-* soldiers = the soldiers seen + the prior times the share of the yard **out of view**;
-* as the look ages it drifts up toward the prior over `Intel.FORGET_TICKS` (48000, two days), never below what was
-  seen;
-* minus the soldiers of that settlement the faction **saw fall** since the look (below), each loss counting for less
-  as it ages over the same two days (the base hires replacements; section 11);
-* their power: the seen soldiers' visible power, the prior's for the rest; the heroes seen count by their war power,
-  each sighting for less as it ages over two days (section 11).
-
-The **prior** (what the council assumes where nobody looked): for a settlement, a garrison like its own (its ordinary
-soldiers at home, not its heroes, and its own `soldierPower`; "assume they are as strong as we are"); for a lair, as grown as the campaign's days
-allow (`lairBaseCap` plus one a day up to `lairMaxCap`: the rule every faction knows). A report saved before this
-review has no look: the prior.
-
-The decision is unchanged in form (the target with the least defence, then the nearest; attack at two thirds, a
-counter-attack inside the interval only at 3 to 2), but every number is the estimate, and since section 11 two thirds
-is counted in whole soldiers (`Intel.twoThirds`) and the 3 to 2 to the nearest one (`Intel.threeToTwo`). A garrison that **marches out
-unseen is still believed at home**; one a scout saw gone is struck. The launch line says what it rests on: "against
-about 4 defenders, as seen on day 3" or "a garrison none of ours has seen". `LAST_COUNCIL` (in `/fc admin dump`) adds
-the truth for operators (`[truth: …]`).
-
-**Losses seen at home** (`BaseWatch.enemyFell`, from `FactionNpc.die`): an enemy soldier (not a hero: it rises again)
-that falls inside a faction's home area, or in sight of one of its members standing in it (the roll call's witness
-rule), counts as one loss against that faction's report of the nearest settlement of the dead soldier's faction (its
-sash shows the faction, not the base). This is what makes a counter-attack possible after a raid is beaten at the walls.
-
-**Raid intel** (`FactionState.raidIntel`): while a raid is on, up to three raiders at a time look at the target each
-director pass; the party keeps its best look, or the ruins. It reaches home with the raid's end: told at once when a
-raider is home, else when the last one gets there (`RollCall.tell`); lost with a party nobody lived to report on.
+The model that stood from this review to 2026-11-26 is kept here as history, since sections 8, 11 and 12 refer to it.
+A report carried a **look** (`Report.look`, `Intel.Look`): the soldiers seen with a line of sight, the share of the yard
+in view, their mean power, the heroes seen; any passing scout's or raider's look within 64 blocks counted. The
+**estimate** was the soldiers seen plus a **prior** (a garrison like the council's own) times the share of the yard out
+of view, drifting up toward the prior over two days, minus the enemy soldiers seen falling at home (**losses**, fading
+over two days), with the heroes seen fading the same way; a lair's prior was as grown as the campaign's days allowed.
+The raid party's look came home with the raid's end (`FactionState.raidIntel`). The knowledge live check (section 12)
+found 23 of 26 looks at settlements saw none of the yard, so most estimates were the prior; focused reconnaissance
+replaced the whole model (recon.md 7 lists what was deleted).
 
 **Pact offensives** (removed on 2026-11-25 with the pact itself, by the owner's word: "Lets remove the pacts thing"):
 a pact member that launched against the sworn enemy told its allies its target, its party's power and its plan's end,
@@ -80,7 +72,9 @@ and an ally's council joined from that notice. There are no pacts now, so no cou
 
 `FactionDirector.defenders`, `defencePower`, `heroDefence` and `heroWarPower` remain for operators (the dump, the
 council line's truth) and the hero GameTests; the war council never calls them (`KnowledgeIsolationTest` scans its
-methods).
+methods, and since task R5 checks that of a base's report it reads only the focused recon). The operators' view of
+the recons, orders, strikes, sightings and the council's last plan is `/fc admin dump` (task R6), with the truth of a
+watched yard at each watch's end in the server log (`FC_RECON`, read by `tools/rolltrack.py` and `tools/warcheck.py`).
 
 ## 2. A fall is known when someone sees the ruins
 
@@ -177,6 +171,16 @@ member away gets its worn tool replaced when it is home and seen.
 
 ## 8. Tests
 
+Since focused reconnaissance (2026-11-26) the war council's tests are recon.md 10's: unit `ReconTest`, `IntelTest`
+(rewritten: the recon's estimate, good, blind and stale, the kept recon's merge and back-off), `ReserveTest` (the plan,
+its lines, the target by its plan), `ReconOpticTest` and the sightings ledger; GameTests `KnowledgeGameTests` (the
+council's switch: no launch on a passing look, a raid party's look or losses; the reserve; the counter-attack on a recon
+since the strike; a weaker bystander does not block it; a lair with no reserve; an operator's raid), `ReconOrderGameTests`,
+`ReconVantageGameTests`, `ReconTripGameTests`, `ReconOpticGameTests`, `SightingsGameTests` and `ReconOperatorsGameTests`
+(the dump's recons, orders, strikes and plan, the station's war lines with no truth in them, the truth of a watched box).
+The list below is this review's, as it was built; its estimate items (the prior, partial views, ageing, losses, heroes
+fading, the better look, the lair's prior) were deleted or rewritten with task R5 (recon.md 7).
+
 * Unit: `IntelTest` (the prior, a full and a partial view, a garrison seen gone and the look's ageing, never below
   what was seen, losses, heroes, the better look, a lair's prior); `WhereaboutsTest` (the raid's plan and a wipe-out
   given up by it, the edge band, a miner's shift); `KnowledgeIsolationTest` (the war council's methods read no
@@ -213,12 +217,16 @@ its limit.
   falls dies with all its people (`CampaignManager.eliminate`); the "X has been eliminated!" line is told to everyone,
   as before, and is player-side presentation, never read by a council.
 * **The Hollow senses settlements within 300 blocks** of a lair (its raid target): its monsters never leave the lair to
-  scout, so without this sense lairs would never raid. Documented as an exception for the owner's decision.
+  scout, so without this sense lairs would never raid. Documented as an exception for the owner's decision; the owner's
+  answer of 2026-11-25 moves it to the lair-energy design (`docs/design/lair_energy.md`: a lair gathers energy and may
+  spend it on a larger detection range). The Hollow estimates no defence, so focused reconnaissance does not touch it.
 * **A raid party's roll on the spot** (`FactionState.raiders`) and the raid's end on the spot read the truth (who is
   left to carry the raid on); the council at home hears of them only through its people (`missing_npcs.md` 6).
 * **The HeroState health and level snapshot** stays for the engine (revival) and operators; no council reads it.
-* **What a look counts**: a soldier's visible power and a hero's war power at full strength are read from the entity in
-  sight (what a player sees: armour, weapon, the hero's bar and level).
+* **What a watch counts**: a soldier's visible power and a hero's war power at full strength are read from the entity in
+  sight (what a player sees: armour, weapon, the hero's bar and level). Since focused reconnaissance only a recon watch
+  counts anyone (recon.md 3.6); a passing look counts nobody, and the faces a watch counts are kept by UUID, as a player
+  keeps track of each soldier by where it walks and what it wears.
 
 ## 10. Left open
 
@@ -233,8 +241,9 @@ its limit.
   far columns it cannot see.
 * **A miner reads the storehouse's pickaxes** for a resting mine before walking home (cheap and rare). A hungry worker
   away now judges the storehouse's food by what it saw at its last visit (`Job.storehouseFood`).
-* **Heroes on a raid** choose their goal with a home hero found within 64 blocks and archers within 48 without a line
-  of sight, and count party members anywhere; a hero's path keeps a berth round every hostile base, reported or not
+* **Heroes on a raid** choose their goal with archers within 48 without a line of sight, and count party members
+  anywhere (since task R9, 2026-11-26, a defending hero is known to be home only from the recon the raid was launched on,
+  `FactionState.raidReconHeroes`, or seen inside the walls in the raider's own line of sight: recon.md 5.8); a hero's path keeps a berth round every hostile base, reported or not
   (`HeroNodeEvaluator`); an escaping hero's refuge is chosen among its faction's bases that truly stand. Today heroes
   join raids only by operator command; these belong with the leaders' raids (L4).
 * **`/fc hero info`** shows a member player its hero's true place and state (player-side, kept).
@@ -258,11 +267,13 @@ scout sees a monster). Five behaviour problems were found, each shown by a GameT
    newer standing look replace a fallen report, and on one trip (or in the raid party's look) the later look's `fallen`
    won. A scout outside the walls sees the walls but not the heart's place (the walls are 5 high), so ruins once seen
    became a standing base again and the council sent raid after raid to them. Ruins now stay ruins.
-3. **Losses never faded** (`soldiersSeenFallingLongAgoAreReplacedInTheEstimate`): eight of nine enemy soldiers seen
+3. (Superseded 2026-11-26: losses seen at home no longer count at all; they record a strike that orders a recon,
+   recon.md 6.) **Losses never faded** (`soldiersSeenFallingLongAgoAreReplacedInTheEstimate`): eight of nine enemy soldiers seen
    falling at our walls three days ago still made the garrison one soldier strong (the look drifts to the prior, the
    losses stayed subtracted), and the council struck a garrison long rebuilt. Each loss now counts for less as it ages
    over `Intel.FORGET_TICKS` from the last one seen (`Intel.weight`).
-4. **A hero seen once was counted for ever** (`aHeroSeenLongAgoCountsForLessAsTheSightingAges`): `Report.mergeBase`
+4. (Superseded 2026-11-26: a hero counts only in the watch that saw her, or as a sighting for half a day, recon.md 5.3
+   and 5.5.) **A hero seen once was counted for ever** (`aHeroSeenLongAgoCountsForLessAsTheSightingAges`): `Report.mergeBase`
    kept every hero seen at full strength, so a council never struck a base where a strong hero had once been seen, even
    one passing through. A report now keeps each hero's newest sighting with its time (`id=power@time`; an old
    `id=power` entry is dated by its report's look) and the council counts each by `Intel.heroPower`, fading over
@@ -297,22 +308,28 @@ Checked and left as they are:
 Found and left open (not fixed here, low severity):
 
 * **A scout's pending reports are capped at 24** (`ScoutJob.addPending`, pre-existing): on a long trip full of hostile
-  groups or exposed ore, a later look at an enemy base is dropped, and the base is not reported at all.
+  groups or exposed ore, a later look at an enemy base is dropped, and the base is not reported at all. (Since focused
+  reconnaissance a recon's report is held apart and never capped, recon.md 4; a passing look, which now tells only where
+  a base is, is still capped with the rest.)
 * **A fisherman that finds water on a far leg walks home to the storehouse before it fishes there** (section 7), a
   round trip a player would not make; its own knowledge and the fishery record are one field.
-* **The raiders' kills at the target do not lower the estimate**: only enemy soldiers seen falling at home count as
-  losses (`BaseWatch.enemyFell`); a raid beaten back after killing half the garrison brings home a look, but not the
-  kills it saw after that look.
-* **Losses are kept as a count and the last one's time**: a loss seen before a newer look but merged after it can count
-  twice, and older losses fade with the newest one.
+* **The raiders' kills at the target do not lower the estimate**: (moot since 2026-11-26: no kill or loss lowers an
+  estimate; a raid brings home only the ruins it saw, and the next judgement waits for a fresh recon.)
+* **Losses are kept as a count and the last one's time**: (moot since 2026-11-26: losses are gone, recon.md 7.)
 * **Two more reads of the truth, not listed in sections 9 and 10**: a Hollow raid ends the moment its target is destroyed,
   whoever razed it (`FactionDirector.lairRaid`, with the Hollow's 300-block sense); a raiding hero heading home reads its
   own base's fall from afar (`HeroRaid.home`), as an escaping hero's refuge does.
 * **"Never at 6" holds without a home hero**: the party still sizes off the garrison with its heroes by heads
   (`Intel.partySize(soldiers.size(), ...)`), the prior off the soldiers alone, so six soldiers and a hero at home send
-  four against a prior of six, and go.
+  four against a prior of six, and go. (Since 2026-11-26 there is no prior: a party goes against a recon's count plus
+  its reserve, and with the reserve of half again two thirds of the plan is the count head for head, so a party of four
+  goes against four counted and waits against five; the party's heads rule is unchanged.)
 
 ## 12. The live check (2026-11-19)
+
+(History: the live check of the estimate model of this review, which focused reconnaissance replaced on 2026-11-26,
+`docs/design/recon.md`. Its launch table, its "prior" and "losses" bases and its findings on the war's balance are the
+evidence that design rests on, 5.4's replay among them; `tools/warcheck.py` now reads the recon's records too.)
 
 A campaign on a dedicated server with the jar of the review above (seed 20261107, `fc start 256`, Natsuho Komezaki with
 the Ember Legion and Hinae Shirasuzu with Stoneguard, no operator command), followed every 6 s by `tools/rolltrack.py`,

@@ -518,6 +518,100 @@ public final class FCCommands {
         return out;
     }
 
+    /**
+     * A focused recon as the dump lists it (recon.md 4, task R6): the faces counted and their mean power, the heroes seen
+     * at their war power, the yard's coverage, its points and middle, the watch's length, its last sample, the vantage,
+     * the scout, the instrument ("spyglass", or "" for the eyes), how many faces it keeps, whether it is good and usable now.
+     */
+    static JsonObject reconJson(com.factionclash.logic.campaign.Intel.Recon r, long now) {
+        JsonObject j = new JsonObject();
+        j.addProperty("soldiers", r.soldiers());
+        j.addProperty("power", Math.round(r.power() * 100) / 100.0);
+        JsonObject heroes = new JsonObject();
+        r.heroes().forEach((id, p) -> heroes.addProperty(id, Math.round(p * 100) / 100.0));
+        j.add("heroes", heroes);
+        j.addProperty("coverage", Math.round(r.coverage() * 100) / 100.0);
+        j.addProperty("points", r.points());
+        j.addProperty("middle", r.middle());
+        j.addProperty("watchTicks", r.watchTicks());
+        j.addProperty("at", r.at());
+        j.addProperty("vantage", r.vantage());
+        j.addProperty("by", r.by());
+        j.addProperty("optic", r.optic());
+        j.addProperty("faces", r.faces().size());
+        j.addProperty("good", r.good());
+        j.addProperty("usable", com.factionclash.logic.campaign.Intel.usable(r, now));
+        return j;
+    }
+
+    /**
+     * The last plan a council judged a target by (recon.md 5.5, task R6; {@code FactionDirector.LAST_PLAN}): when, the
+     * base, whether it was a counter-attack's or an operator's, the verdict, the party, its power and the soldiers it
+     * needed; the recon it rests on, the count, the share and its soldiers, the soldiers seen away (each sighting), the
+     * reserve, whether the sightings made it, the heroes in the plan and those known only from sightings, the soldiers'
+     * and the heroes' power, the plan's power, its unit and its heads; and the line's "against" text.
+     */
+    static JsonObject planJson(com.factionclash.campaign.FactionDirector.CouncilPlan cp, long now) {
+        com.factionclash.logic.campaign.Reserve.Plan p = cp.plan();
+        JsonObject j = new JsonObject();
+        j.addProperty("at", cp.at());
+        j.addProperty("base", cp.base());
+        j.addProperty("subject", cp.subject() == null ? "" : cp.subject().id);
+        j.addProperty("lair", cp.lair());
+        j.addProperty("counter", cp.counter());
+        j.addProperty("byOrder", cp.byOrder());
+        j.addProperty("verdict", cp.verdict());
+        j.addProperty("party", cp.party());
+        j.addProperty("partyPower", Math.round(cp.partyPower() * 100) / 100.0);
+        j.addProperty("needed", cp.needed());
+        j.add("recon", reconJson(p.recon(), now));
+        j.addProperty("counted", p.counted());
+        j.addProperty("countedPower", Math.round(p.countedPower() * 100) / 100.0);
+        j.addProperty("share", p.share());
+        j.addProperty("shareSoldiers", p.shareSoldiers());
+        JsonArray away = new JsonArray();
+        for (com.factionclash.logic.campaign.Sightings.Sighting x : p.seenAway()) {
+            away.add(sightingJson(x));
+        }
+        j.add("seenAway", away);
+        j.addProperty("reserve", p.reserve());
+        j.addProperty("reservePower", Math.round(p.reservePower() * 100) / 100.0);
+        j.addProperty("fromSightings", p.fromSightings());
+        JsonObject heroes = new JsonObject();
+        p.heroes().forEach((id, hp) -> heroes.addProperty(id, Math.round(hp * 100) / 100.0));
+        j.add("heroes", heroes);
+        JsonArray known = new JsonArray();
+        for (com.factionclash.logic.campaign.Sightings.Sighting x : p.knownHeroes()) {
+            known.add(sightingJson(x));
+        }
+        j.add("knownHeroes", known);
+        j.addProperty("soldierPower", Math.round(p.soldierPower() * 100) / 100.0);
+        j.addProperty("heroPower", Math.round(p.heroPower() * 100) / 100.0);
+        j.addProperty("power", Math.round(p.power() * 100) / 100.0);
+        j.addProperty("unit", Math.round(p.unit() * 100) / 100.0);
+        j.addProperty("heads", Math.round(p.heads() * 100) / 100.0);
+        j.addProperty("against", cp.against() == null ? "" : cp.against());
+        return j;
+    }
+
+    /** One sighting as the dump lists it (recon.md 5.5, task R11). */
+    static JsonObject sightingJson(com.factionclash.logic.campaign.Sightings.Sighting x) {
+        JsonObject si = new JsonObject();
+        si.addProperty("id", x.id().toString());
+        si.addProperty("faction", x.faction());
+        if (x.isHero()) {
+            si.addProperty("hero", x.hero());
+        }
+        si.addProperty("power", Math.round(x.power() * 100) / 100.0);
+        si.addProperty("at", x.at());
+        si.addProperty("pos", x.x() + ", " + x.z());
+        si.addProperty("source", x.source().name().toLowerCase(java.util.Locale.ROOT));
+        si.addProperty("by", x.by());
+        si.addProperty("base", x.base());
+        si.addProperty("fallen", x.fallen());
+        return si;
+    }
+
     public static JsonObject snapshot(ServerLevel level) {
         CampaignData data = CampaignData.get(level.getServer());
         JsonObject root = new JsonObject();
@@ -667,8 +761,11 @@ public final class FCCommands {
             o.addProperty("raidTarget", f.raidTarget);
             o.addProperty("raidPlanTicks", f.raidPlanTicks);
             o.addProperty("basesDestroyed", f.basesDestroyed);
+            o.addProperty("lastRaidAt", f.lastRaidAt);
             // what the faction knows of enemy bases (docs/design/knowledge.md, recon.md): where each is, whether it is seen in
-            // ruins (its focused recons are task R6's to list)
+            // ruins, and its focused recons (recon.md 4, task R6): the kept good recon, the failed attempts since and the
+            // sides tried; "base" is the base its report names (the operators' key, FactionDirector.reportedBase)
+            long now = level.getGameTime();
             JsonArray seen = new JsonArray();
             for (com.factionclash.campaign.Report r : f.knowledge) {
                 if (!r.base()) {
@@ -676,30 +773,62 @@ public final class FCCommands {
                 }
                 JsonObject so = new JsonObject();
                 so.addProperty("subject", r.subject == null ? "?" : r.subject.id);
+                so.addProperty("kind", r.kind.name());
                 so.addProperty("pos", r.pos.toShortString());
                 so.addProperty("fallen", r.fallen);
                 so.addProperty("by", r.by);
+                so.addProperty("observedAt", r.observedAt);
+                so.addProperty("deliveredAt", r.deliveredAt);
+                BaseState named = com.factionclash.campaign.FactionDirector.reportedBase(data, r);
+                so.addProperty("base", named == null ? -1 : named.id);
+                if (r.recon != null) {
+                    so.add("recon", reconJson(r.recon, now));
+                }
+                so.addProperty("reconFailedAt", r.reconFailedAt);
+                so.addProperty("reconFailures", r.reconFailures);
+                so.addProperty("reconSidesTried", r.reconSidesTried);
+                so.addProperty("backingOff", com.factionclash.logic.campaign.ReconRules.backingOff(r.reconFile(), now));
                 seen.add(so);
             }
             o.add("enemyBasesKnown", seen);
+            // the council's recon orders (recon.md 2.1), the strikes it saw (6), its last urgent orders, the heroes its
+            // raid's recon saw (R9) and the last plan it judged a target by (5.5): the faction's own knowledge
+            JsonArray orders = new JsonArray();
+            for (com.factionclash.campaign.ReconOrder ro : f.reconOrders) {
+                JsonObject oo = new JsonObject();
+                oo.addProperty("target", ro.target == null ? "" : ro.target.toShortString());
+                oo.addProperty("subject", ro.subject == null ? "" : ro.subject.id);
+                oo.addProperty("kind", ro.kind == null ? "" : ro.kind.name());
+                oo.addProperty("homeBase", ro.homeBase);
+                oo.addProperty("orderedAt", ro.orderedAt);
+                oo.addProperty("urgent", ro.urgent);
+                oo.addProperty("scout", ro.scout == null ? "" : ro.scout.toString());
+                NpcRecord sr = ro.scout == null ? null : f.roster.get(ro.scout);
+                oo.addProperty("scoutName", sr == null ? "" : sr.name);
+                oo.addProperty("takenAt", ro.takenAt);
+                oo.addProperty("reported", ro.reported.name());
+                oo.addProperty("reportedSides", ro.reportedSides);
+                orders.add(oo);
+            }
+            o.add("reconOrders", orders);
+            JsonObject struck = new JsonObject();
+            f.struckBy.forEach((by, at) -> struck.addProperty(by.id, at));
+            o.add("struckBy", struck);
+            JsonObject urgentAt = new JsonObject();
+            f.reconUrgentAt.forEach((by, at) -> urgentAt.addProperty(by.id, at));
+            o.add("reconUrgentAt", urgentAt);
+            JsonArray reconHeroes = new JsonArray();
+            f.raidReconHeroes.forEach(reconHeroes::add);
+            o.add("raidReconHeroes", reconHeroes);
+            com.factionclash.campaign.FactionDirector.CouncilPlan cp = com.factionclash.campaign.FactionDirector.LAST_PLAN.get(f.type);
+            if (cp != null) {
+                o.add("plan", planJson(cp, now));
+            }
             // what its people saw of enemy soldiers and heroes away from their bases (recon.md 5.5, task R11): the
             // council's reserve reads them on top of a fresh good recon
             JsonArray sightings = new JsonArray();
             for (com.factionclash.logic.campaign.Sightings.Sighting x : f.sightings.all()) {
-                JsonObject si = new JsonObject();
-                si.addProperty("id", x.id().toString());
-                si.addProperty("faction", x.faction());
-                if (x.isHero()) {
-                    si.addProperty("hero", x.hero());
-                }
-                si.addProperty("power", Math.round(x.power() * 100) / 100.0);
-                si.addProperty("at", x.at());
-                si.addProperty("pos", x.x() + ", " + x.z());
-                si.addProperty("source", x.source().name().toLowerCase(java.util.Locale.ROOT));
-                si.addProperty("by", x.by());
-                si.addProperty("base", x.base());
-                si.addProperty("fallen", x.fallen());
-                sightings.add(si);
+                sightings.add(sightingJson(x));
             }
             o.add("sightings", sightings);
             JsonArray roster = new JsonArray();
@@ -711,6 +840,7 @@ public final class FCCommands {
                 ro.addProperty("alive", r.alive);
                 ro.addProperty("level", r.level);
                 ro.addProperty("pos", r.lastPos.toShortString());
+                ro.addProperty("base", r.baseId);
                 ro.addProperty("departedAt", r.departedAt);
                 // the roll call (docs/design/missing_npcs.md): what the faction believes, and the truth beside it
                 ro.addProperty("where", r.where.name());
@@ -788,6 +918,11 @@ public final class FCCommands {
                 n.affixes().forEach((k, v) -> af.addProperty(k.name(), v));
                 o.add("affixes", af);
                 o.addProperty("workplace", n.job() == null ? "" : n.job().workplaceInfo());
+                o.addProperty("base", n.baseId());
+                // a scout's recon trip (recon.md 3.8, task R6): the order, the side, the pillar, the watch, the holds
+                if (n.job() instanceof com.factionclash.work.ScoutJob sj && sj.reconJson() != null) {
+                    o.add("recon", sj.reconJson());
+                }
                 npcs.add(o);
             }
         }

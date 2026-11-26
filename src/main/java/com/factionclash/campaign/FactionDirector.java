@@ -51,6 +51,18 @@ public final class FactionDirector {
      * power, the heroes' share, the decision and whether the heroes decided it. Read by {@code /fc admin dump}.
      */
     public static final Map<FactionType, String> LAST_COUNCIL = new HashMap<>();
+    /**
+     * The last plan each faction's council judged a target by (recon.md 5.5, task R6), or an operator's raid planned
+     * ({@code byOrder}): when, the base and what the faction knows of it, whether it was a counter-attack's plan, the plan
+     * itself (the recon it rests on, the count, the share, the soldiers seen away, the reserve, the heroes), the party and
+     * its power, the soldiers it needed, the verdict and the line's "against" text. Only the faction's own knowledge: read
+     * by {@code /fc admin dump}, {@code tools/rolltrack.py} and the station's lines ({@code BaseInfo}); never saved.
+     */
+    public record CouncilPlan(long at, int base, FactionType subject, boolean lair, boolean counter, Reserve.Plan plan,
+                              int party, double partyPower, int needed, String verdict, String against, boolean byOrder) {
+    }
+
+    public static final Map<FactionType, CouncilPlan> LAST_PLAN = new HashMap<>();
     private static final Map<UUID, Long> MISSING_SINCE = new HashMap<>();
 
     private FactionDirector() {
@@ -953,6 +965,9 @@ public final class FactionDirector {
         String what = ReconOrder.what(targetReport.subject, targetReport.kind);
         String against = Reserve.defenceText(targetPlan, lair, targetReport.subject.displayName, heroNames(targetPlan));
         Intel.Recon seen = targetPlan.recon();
+        // the plan as the operators' tools read it (recon.md 10.4, task R6): the faction's own knowledge only
+        LAST_PLAN.put(f.type, new CouncilPlan(t, target.id, targetReport.subject, lair, !intervalOver, targetPlan, party, partyPower,
+                Reserve.needed(targetPlan, partySoldiers / party, !intervalOver), verdict.name(), against, false));
         councilLine(f.type, String.format(java.util.Locale.ROOT,
                 "day %.2f: %s base %d (%s): party %.1f (heroes %.1f), defence %.1f (soldiers %.1f, heroes %.1f; recon %d%% day %d%s), %s%s [truth: %.1f]%s",
                 t / 24000.0, targetReport.subject.id, target.id, lair ? "lair" : "settlement", partyPower, partyHeroes,
@@ -1044,7 +1059,7 @@ public final class FactionDirector {
      * The settlement or lair a report names: the base of its subject its observer saw there (the nearest within 32 blocks
      * of the report). Whether it still stands is the report's to say ({@link Report#fallen}), not the base record's.
      */
-    static BaseState reportedBase(CampaignData data, Report r) {
+    public static BaseState reportedBase(CampaignData data, Report r) {
         BaseState best = null;
         for (BaseState b : data.bases.values()) {
             if (b.faction == r.subject && b.center.distSqr(r.pos) < 32 * 32 && (best == null || b.center.distSqr(r.pos) < best.center.distSqr(r.pos))) {
@@ -1146,6 +1161,12 @@ public final class FactionDirector {
         Reserve.Plan plan = known == null ? null : Reserve.plan(known.recon, now, Reserve.share(lair, false, ReconOptic.of(known.recon)),
                 lair ? List.of() : f.sightings.forBase(target.id, reportedSettlements(data, f)), revive);
         String against = plan == null ? null : Reserve.defenceText(plan, lair, target.faction.displayName, heroNames(plan));
+        if (plan != null) {
+            LAST_PLAN.put(f.type, new CouncilPlan(now, target.id, target.faction, lair, false, plan, party,
+                    picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum(), 0, "BY_ORDER", against, true));
+        } else {
+            LAST_PLAN.remove(f.type); // an operator's raid with no scout's report of it: no plan
+        }
         launch(level, data, f, home, target, picks.subList(0, party), against, plan == null ? List.of() : plan.recon().heroes().keySet(),
                 "By order! ", now);
         return f.type.displayName + " raids base " + target.id + " with " + party + " soldiers";

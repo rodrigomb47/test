@@ -109,6 +109,9 @@ public final class ReconOrders {
             NpcRecord scout = o.scout == null ? null : f.roster.get(o.scout);
             ReconRules.Ending e = ReconRules.settle(o.taken(), o.reported, scout == null ? null : scout.where,
                     scout != null && scout.role == NpcRole.SCOUT, o.orderedAt, now, r == null ? null : r.reconFile());
+            if (e != ReconRules.Ending.OPEN) {
+                log(f, o, now, e); // the operators' log (tools/rolltrack.py): how the order ended, before it is changed
+            }
             if (e == ReconRules.Ending.REOPENED) {
                 o.scout = null;
                 o.takenAt = 0;
@@ -124,6 +127,31 @@ public final class ReconOrders {
             }
         }
         return changed;
+    }
+
+    /**
+     * One {@code FC_RECON} line in the server log for {@code tools/rolltrack.py} (recon.md 10.4, task R6): how an order
+     * ended ({@code ending}: done, blind, empty-handed, lost, reopened or dropped), with what the order held. The faction's
+     * own records only; the operators read it, no faction does.
+     */
+    private static void log(FactionState f, ReconOrder o, long now, ReconRules.Ending ending) {
+        com.google.gson.JsonObject j = new com.google.gson.JsonObject();
+        j.addProperty("ev", "order_end");
+        j.addProperty("t", now);
+        j.addProperty("faction", f.type.id);
+        j.addProperty("target", o.target == null ? "" : o.target.toShortString());
+        j.addProperty("subject", o.subject == null ? "" : o.subject.id);
+        j.addProperty("kind", o.kind == null ? "" : o.kind.name());
+        j.addProperty("urgent", o.urgent);
+        j.addProperty("orderedAt", o.orderedAt);
+        j.addProperty("takenAt", o.takenAt);
+        NpcRecord s = o.scout == null ? null : f.roster.get(o.scout);
+        j.addProperty("scout", o.scout == null ? "" : o.scout.toString());
+        j.addProperty("scoutName", s == null ? "" : s.name);
+        j.addProperty("reported", o.reported.name());
+        j.addProperty("reportedSides", o.reportedSides);
+        j.addProperty("ending", ending.name());
+        com.factionclash.FactionClash.LOGGER.info("FC_RECON {}", j);
     }
 
     /**

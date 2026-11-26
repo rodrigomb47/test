@@ -757,11 +757,18 @@ raid ends without a victory it goes home (an escape when it is in or near the ta
 and goes home as the soldiers do.
 
 **Scouting ahead.** A flyer hero on a raid scouts first: it circles the target at 8-24 blocks, over the walls when it
-chooses, and its sightings go into the faction's report of that base (`ScoutJob.observe`'s count of the base's NPCs it
-sees, plus the heroes it saw by name, so a leader it saw is known to be home), because the faction only knows what
-someone saw. A scouting hero on its duty round (a climber up a rival's wall, a flyer over the yard, a leaper onto a
-tower) may look inside the same way; the base's alarm sees it as any intruder (below), and its step aside or retreat is
-an escape's movement (7.7).
+chooses, and the raid uses what it sees there and then (where the defenders and a home hero stand). Not built yet
+(the circle). What it sees never feeds the council's estimate of that base: since focused reconnaissance
+(`docs/design/recon.md`, the owner's rule of 2026-11-25: "Only estimate enemy defence when the scout or other related
+role makes a report of what he saw while focused on this particilar task"), a council judges a defence only by a
+focused recon, a scout sent from home to watch that one base for a minute, and a raid party's look (soldiers' and
+heroes' alike) brings home only the ruins it saw. A scouting hero's look counts as a focused recon only when the hero
+is on the scout duty (`behaviour.duty: scout`, so it runs `ScoutJob`) and took a recon order at home: then it watches
+as a scout does, from a pillar or a hill 61 or more blocks out (with a spyglass, up to 96), and its report goes home
+with it. Its own flight or climbing as a vantage (a hover over the yard, a cliff) is left for later (recon.md 8 and the
+Phase 6 rows of `docs/ROADMAP.md`). A hero on a duty round that is not a recon (a climber up a rival's wall, a flyer
+over the yard, a leaper onto a tower) only tells where the base is and that it stands, as a passing scout does; the
+base's alarm sees it as any intruder (below), and its step aside or retreat is an escape's movement (7.7).
 
 **Entry** (`logic/hero/WallEntry`, pure; chosen after the muster, when the party is 24 blocks from the walls, PROPOSED).
 A way over the wall is a whole route (up, over, and down inside within its safe fall, by a climb down or a glide) and

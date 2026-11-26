@@ -106,8 +106,18 @@ final class ReconTrip {
     String optic = "";
     End end = End.NONE;
     String why = "";
+    /**
+     * The operators' record of the hold after the watch (recon.md 3.5, task R6; read by {@code /fc admin dump} and the watch's
+     * {@code FC_RECON} line, never by the trip): how often it held still for an enemy close below, for how many ticks in
+     * all, and since when it holds now (-1: it does not).
+     */
+    int holds;
+    long heldTicks;
+    long holdSince = -1;
 
     // ---- not saved: worked out again after a load ----
+    /** The operators' truth of the target's box at the watch's last sample ({@code BaseWatch.truth}; null: not taken yet). */
+    BaseWatch.Truth endTruth;
     /** The columns found on this side, best first, and the one it tries; the corners still to walk by; the walk's ticks. */
     List<ReconVantage.Vantage> columns;
     int columnIndex;
@@ -236,6 +246,11 @@ final class ReconTrip {
         }
         t.putString("end", end.name());
         t.putString("why", why);
+        if (holds > 0) {
+            t.putInt("holds", holds);
+            t.putLong("heldTicks", heldTicks);
+            t.putLong("holdSince", holdSince);
+        }
         return t;
     }
 
@@ -277,6 +292,9 @@ final class ReconTrip {
         r.optic = ReconOptic.byId(t.getString("optic")).id();
         r.end = valueOf(End.class, t.getString("end"), End.NONE);
         r.why = t.getString("why");
+        r.holds = t.getInt("holds");
+        r.heldTicks = t.getLong("heldTicks");
+        r.holdSince = t.contains("holdSince") ? t.getLong("holdSince") : -1;
         if (r.phase == Phase.PILLAR && r.pillar == null) {
             r.phase = Phase.FOOT; // (a pillar that could not be read: the column is walked to again)
         }

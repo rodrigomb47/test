@@ -1,9 +1,11 @@
 # Focused reconnaissance: a council judges a defence only from a scout sent to watch it
 
 Design, 2026-11-25, reviewed the same day (section 13 lists what the review changed), updated the same day with the
-owner's answers to its questions (section 14 lists what they changed), and that update reviewed (section 15). Not built
-yet; tasks R1 to R12 (section 11) build it. It replaces the estimate model of `docs/design/knowledge.md` section 1 (the
-prior, the losses seen at home, every passing look).
+owner's answers to its questions (section 14 lists what they changed), and that update reviewed (section 15); the
+owner's answers of 2026-11-26 are section 16. Built on 2026-11-26 in tasks R1 to R7, R9 to R12 (section 11; the
+as-built notes are 3.8, 5.7, 5.8, 5.9 and 5.10, and where they and the design differ, the code is the truth); the live
+check, R8, is next. It replaces the estimate model of `docs/design/knowledge.md` section 1 (the prior, the losses seen
+at home, every passing look).
 
 ## 0. The owner's decisions, and the design in brief
 
@@ -943,9 +945,8 @@ share, the watch's heroes; R11 fills the ledger). Where this list and the sectio
 * **Old saves.** A report that carries the old `look`, `losses` or `heroes` tag loads as a position: no recon, count 0,
   the passing look's note (its old note's numbers dropped), and none of those tags is written back. A saved raid party's
   look that is not ruins is dropped on load; ruins are kept.
-* **Tools** (R6): `warcheck.py` still matches the old launch line ("raid with N soldiers (against about N defenders",
-  so its party and "about" columns print "?") and reads the council line's "defence N" (kept), and `rolltrack.py`
-  prints "no look" for every standing base (the dump has no look fields now); both still run.
+* **Tools** (R6, as it stood after R5): `warcheck.py` still matched the old launch line and `rolltrack.py` printed "no
+  look" for every standing base; R6 rewrote both (5.10).
 
 ### 5.8 As built (tasks R11 and R9): the sightings, and the raid's home hero
 
@@ -1087,6 +1088,57 @@ this list and the sections above differ, the code is the truth:
   recipe, the blacksmith's two rules, the lair, a tag the trip did not earn, and four pure rules) were each caught.
 * **Not checked live.** The live check (R8, after R6 and R7) measures how often the eyes' band is blinded and how often
   a faction has a spyglass at all (it needs a geode met by a branch tunnel, and copper).
+
+### 5.10 As built (tasks R6 and R7): the operators' tools and the docs
+
+Built on 2026-11-26 after R12. Where this list and the sections above differ, the code is the truth:
+
+* **`/fc admin dump`** (`FCCommands.snapshot`). Per faction: each known base's report with the base it names (`base`,
+  `FactionDirector.reportedBase`), its `kind`, `observedAt`, the kept `recon` (soldiers, power, heroes, coverage,
+  points, middle, watch ticks, `at`, vantage, by, `optic`, the faces kept, `good`, `usable` now), `reconFailedAt`,
+  `reconFailures`, `reconSidesTried`, `backingOff`; the `reconOrders` (target, subject, kind, home base, ordered and
+  taken times, urgent, the scout and its name, what it reported and the sides); `struckBy`, `reconUrgentAt`,
+  `raidReconHeroes`, `lastRaidAt`, the `sightings` (R11) and the `plan`: the last plan its council judged a target by
+  (`FactionDirector.LAST_PLAN`, a `CouncilPlan`: when, the base, a lair, a counter-attack's or an operator's, the
+  verdict, the party, its power and the soldiers it needed, the recon, the count and its power, the share and its
+  soldiers, each sighting seen away, the reserve and whether the sightings made it, the heroes and those known only from
+  sightings, the powers, the unit, the heads and the line's "against" text). Only the faction's own knowledge is in it;
+  the truth stays in `council`'s `[truth: ...]`. Per roster entry its `base`; per NPC its `base`, and a scout on a recon
+  trip its `recon` (`ScoutJob.reconJson`: the order, phase and step, the side and the sides tried, the column's foot
+  and rise, the pillar's height, the first good height, the watch so far, the vantage, the instrument, the holds and
+  whether it holds now, how the trip at the target ended and why, the report it carries).
+* **The server log's `FC_RECON` lines** (one JSON object each, like `FC_DUMP`; logger only, never a faction's line):
+  `order_end` (`ReconOrders.settle`: each order that ends or reopens, with its ending), `side_over` (`ScoutJob.nextSide`:
+  the side given up and why: "no vantage", "could not get there", "no column reached", "no good look", with its best look)
+  and `watch_end` (`ScoutJob.watchEnded`, as it starts down, leaves its column or a lair's ground watch ends: the watch,
+  why it ended, the holds, who hurt it when it was hurt, and the operators' truth of the target's box,
+  `BaseWatch.truth`: the soldiers in the sample's box whatever is in sight, the heroes there, a lair's monsters, taken
+  at the watch's last sample, or at its end for a watch cut short). The holds (`ReconTrip.holds`, `heldTicks`) are
+  counted for the operators and saved with the trip; nothing in the trip reads them.
+* **The station** (`BaseInfo.warLines`, on the base's information panel): the council's last plan in its own words
+  ("War council, day 5: waiting on the Grove Covenant settlement: 3 soldiers to send, 6 needed against ..."), the open
+  orders, each enemy base's recon ("Recon of the Grove Covenant settlement at 400, 16: about 6 soldiers (scout Edrin
+  Cole, day 5; 48% of the yard from pillar 12), fresh", "stale", "never watched", "no good look yet", "; 1 failed recon
+  since, backing off"), the strikes since our last raid and the enemy soldiers and heroes seen away in the last half
+  day. Never `LAST_COUNCIL` (its truth).
+* **`tools/rolltrack.py`** records: `recon.jsonl` ("poll" records with every faction's orders, strikes, recons,
+  sightings and plan, every scout's trip and the truth of each base, its soldiers home and away and its heroes; the
+  `FC_RECON` lines as "log" records; a "launch" record with the plan launched on and the truth then) and `recon.log`.
+  Nothing is judged there. **`tools/warcheck.py`** reads it: the launch basis ("recon N% day D"; a launch with no recon
+  is a FAILURE but for an operator's raid), the orders, every focused look against the truth (and its instrument), the
+  sides given up, the scouts attacked and pillar blocks left, the holds, the plan beside the truth away, the sightings
+  by source, the waits on the reserve alone (an estimate that leaves gear out) and each faction's longest gap and why.
+  **`tools/sim.py`** prints a `recon`, a `plan` and a `scout` line.
+* **Tests.** GameTest `ReconOperatorsGameTests.theOperatorsSeeTheReconTheOrdersAndThePlan` (the dump's recon, order,
+  strike, plan and roster bases; the station's lines with no truth in them; the truth of a watched box); six sabotages
+  (the dump's recon, the plan, the station telling `LAST_COUNCIL`, the truth counting every faction, the dump's
+  orders, the station's recon lines) were each caught. The tools ran on an 8-day headless campaign's logs (HANDOFF
+  section 5: 26 orders, 13 good watches each equal to the truth of the box, 4 launches on recons).
+* **Docs (R7):** `knowledge.md` 1 (now a summary and a pointer here, the old model kept as history), 8 to 12;
+  `missing_npcs.md` 3, 5 and 6; `MOBILITY_AND_WORK.md` 5.2 ("Scouting ahead"); README, BALANCE.md (War), HANDOFF and
+  ROADMAP. No config key was added (`docs/factionclash-common.toml` is unchanged; a fresh server writes the same file).
+  `logic/leader/Talents`' SPYMASTER text ("base reports carry garrison counts") is code and left for the talent's own
+  task (section 9).
 
 ## 6. What replaces the 3-to-2 counter-attack's input
 
@@ -1451,7 +1503,8 @@ truth: the soldiers in the target's walls and its heroes at the watch's last sam
 * **lairs** (5.5): each lair's count against its monsters at the watch's end; if counts run low, a lair share for the
   lair-energy design;
 * **blind bands** (5.6): recon orders that ended blind on every side tried, and why (trees, hills, the cap); more than
-  one in five calls R12 (the spyglass) next;
+  one in five calls for a look at the bands (R12, the spyglass, is built already: how often a scout carries one, and
+  how often its deeper band helped, are measured too);
 * **the war rate** against the replay's 35 to 50% of the logged launches (5.4);
 * regressions as before: recruitment, stuck recoveries, tick time.
 
@@ -1472,8 +1525,8 @@ phase (the owner deferred it until heroes are playable): no task rebuilds it or 
 | **R4a** | M | The shared pillar: lift the climb and descent driver out of `WoodcutterJob` (jump and place, hold still, break underfoot, misses, save and resume) into `work/PillarClimb` beside `Scaffold`, with a "look at each block" hook. Woodcutters use it unchanged. The vantage column search (`work/ReconVantage`: side order, band, axis first, ground it can walk to, plan and alarm boxes) | every woodcutter tall-tree GameTest unchanged; a column-search GameTest in `mobility_field` (a hill, a tree, a base plan in the band) |
 | **R4b** | M | `ScoutJob` recon trip on R4a, and the recruitment needs it brings (a second scout after `RECON_WAIT`, the follow-up on a MISSING scout instead of `departedAt + SCOUT_OVERDUE_TICKS`): take the order at home, keep or dig 22 dirt, travel, climb and look, climb two past, watch (the accumulator), the hold and the hits, down, the next side, `reconReport` held apart and delivered first at the station, `tripPlanTicks` recon branch, save and load; lairs on the ground on a gap axis | GameTests 10.2 items 1, 2, 3 (the blind report delivered), 8, 9, 11, 12 in `mobility_field`; the second-scout need; a watch saved and loaded midway counts a soldier seen before and after the load once (its UUID) |
 | **R5** | L | The switch and every deletion: `raids()` judges only usable recons, on the plan of 5.5 from R10 with an empty sightings ledger (the count, its share, the watch's heroes): the target by its plan, inside the interval only among the struck factions' settlements, two thirds of it at the interval, the counter-attack's 3 to 2 only after a strike, on the urgent recon and its own plan (6); the waiting and launch lines of 5.4 (all but the sightings' form); `watchTarget` and `deliverRaidIntel` ruins only; `forceRaid`'s line; delete the prior, the drift, the losses, `better`, `Intel.Look`, the passing look's counts and heroes, `enemyFell`'s loss counting, the old save tags (ignored on load), the dump's and `BaseInfo`'s loss text; rewrite the old tests (`IntelTest`, `KnowledgeGameTests`, `MissingNpcGameTests` line 508, `HeroGameTests` line 263, the hero raid draft) and recalibrate every council test that launches on a count for the reserve (7); `KnowledgeIsolationTest` (the council reads only `Report.recon`). Large, and not split: a deletion and the tests it breaks must land together for both suites to pass | GameTests 10.2 items 3 (the council side), 4, 5, 6, 7, 10, 13 (with the rewritten ten-soldier test and `aCounterAttackIsNotBlockedByAWeakerBystander`), 16 (its first half: no sighting); unit 10.1 item 15 (all but the sightings' form); every sabotage of 10.3 that needs no sighting |
-| **R6** | S | Operators and tools: `/fc admin dump` (recon, orders, `struckBy`), `BaseInfo` station lines, `sim.py`, `rolltrack.py` (orders, watches, holds, truth at the watch's end), `warcheck.py` (basis "recon", the recon against the truth, gaps, scouts attacked; the plan's reserve and what it rested on beside the target's soldiers outside its walls and heroes away at the launch; sightings by source) | the tools run on a short campaign's logs |
-| **R7** | S | Docs: `knowledge.md` (section 9's list), `missing_npcs.md`, `MOBILITY_AND_WORK.md` 5.2, README, BALANCE.md, HANDOFF, ROADMAP (status, and the Phase 6 and Phase 3 rows of section 9). The download jar is not rebuilt in this phase | none |
+| **R6** (built, 5.10) | S | Operators and tools: `/fc admin dump` (recon, orders, `struckBy`), `BaseInfo` station lines, `sim.py`, `rolltrack.py` (orders, watches, holds, truth at the watch's end), `warcheck.py` (basis "recon", the recon against the truth, gaps, scouts attacked; the plan's reserve and what it rested on beside the target's soldiers outside its walls and heroes away at the launch; sightings by source) | the tools run on a short campaign's logs |
+| **R7** (built, 5.10) | S | Docs: `knowledge.md` (section 9's list), `missing_npcs.md`, `MOBILITY_AND_WORK.md` 5.2, README, BALANCE.md, HANDOFF, ROADMAP (status, and the Phase 6 and Phase 3 rows of section 9). The download jar is not rebuilt in this phase | none |
 | **R8** | L | Campaign verification (10.4) on a fresh world, the same seed and setup as the last two; report the replay's prediction (section 5.4) against what happened, the plan's terms against the truth, and the blind bands that decide R12 | the live checks of 10.4 |
 | **R9** | S | `HeroRaid.homeHeroKnown` from the launching recon's heroes (instead of a hero within 64 blocks) | a hero raid GameTest with and without a hero in the recon |
 | **R10** | S | Pure rules, additive: `logic/campaign/Reserve` (the plan of 5.5: the larger of the share and the seen-away, faces counted once, the heroes known, the backbone, the lair's and the counter-attack's share of 0, the line's reason text; with an empty ledger the count, its share and the watch's heroes) and the pure sightings ledger (newest per UUID, fallen, age, the cap, the attribution). Nothing reads it yet | unit 10.1 items 10 to 13 |
@@ -1689,3 +1742,24 @@ treatment, the player-like rules and the vanilla rule hold: no new rule is NPC-o
 of any tech level, and nothing changes the hard defence the owner keeps. The scripts of this review (`sight_proxy.py`
 and the rerun outputs) are in the design session's scratchpad, not kept in the repository; every number they gave is
 above.
+
+## 16. The owner's answers (2026-11-26)
+
+The answers to section 12's three questions, as the round's lead relayed them:
+
+1. On a reserve of half again the count, raised by what our people saw away: "ok".
+2. On lairs without a reserve for now: "ok".
+3. On the spyglass: "we can use the spyglass leaving potential for more advanced recon items made for this mod in the
+   future that will require tech level, vanilla spyglass requires no tech level".
+
+What they changed:
+
+| answer | change | sections |
+|---|---|---|
+| 1 | The recommended plan stands: the share of half again (`Reserve.SHARE` 0.5) and the seen-away term with the known heroes, the designer's addition, kept and built (R11, 5.8) | 0 (item 8), 5.5, 5.7, 5.8, 9, 11 (R5, R11), 12 |
+| 2 | Lairs keep no share (`Reserve.SHARE_LAIR` 0, built in R5); a lair share waits for the lair-energy design or for counts that run low live (10.4) | 5.5, 5.7, 9, 12 |
+| 3 | R12 moved ahead of R6, R7 and the live check and was built at once (5.9): the instruments are rows of `ReconOptic` with a tech level each; the vanilla spyglass needs none, ever; the mod's own later instruments (binoculars, a drone, a vehicle) come as rows with their tech level (ROADMAP Phase 6, "Faction tech levels and research" and "Scouting vehicles") | 0 (item 9), 5.6, 5.9, 9, 10.4, 11 (R12), 12 |
+
+The round that built R1 to R12 kept the owner's earlier rules as given: "Its fine to keep a hard defence" (no defence
+tuning: the guards, walls and alarm are as they were) and the second scout for watching (the owner's "ok" of
+2026-11-25, built in R4b).

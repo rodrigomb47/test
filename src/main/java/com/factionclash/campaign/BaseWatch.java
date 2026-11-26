@@ -210,6 +210,37 @@ public final class BaseWatch {
     }
 
     /**
+     * The operators' truth of what a recon sample's box holds now (recon.md 10.4, task R6; never read by a faction): a
+     * settlement's living soldiers in it whatever is in sight (heroes apart), its heroes in it by hero id, every hostile
+     * monster in a lair's box, and the lair's own monsters on its record. The box is the sample's
+     * ({@link #reconSample}: the walls' half or the monsters' ground, plus 8, 12 up and down), so a watch's count can be
+     * set beside it. The scout's watch logs it at its last sample for {@code tools/warcheck.py}.
+     */
+    public record Truth(int soldiers, List<String> heroes, int monsters, int lairMobs) {
+    }
+
+    /** {@link Truth} of {@code b} now (the operators' log line at a watch's end; truth: never a faction's knowledge). */
+    public static Truth truth(ServerLevel level, BaseState b) {
+        int box = Math.max(BaseZones.half(b), reconReach(b)) + 8;
+        AABB area = new AABB(b.center).inflate(box, 12, box);
+        int soldiers = 0, monsters = 0;
+        List<String> heroes = new ArrayList<>();
+        if (b.isSettlement()) {
+            for (FactionNpc n : level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == b.faction
+                    && !n.isDisplayOnly() && n.fightsLikeSoldier())) {
+                if (n instanceof com.factionclash.hero.HeroEntity h) {
+                    heroes.add(h.heroId());
+                } else {
+                    soldiers++;
+                }
+            }
+        } else {
+            monsters = level.getEntitiesOfClass(Monster.class, area, CombatRules::isHostileMonster).size();
+        }
+        return new Truth(soldiers, heroes, monsters, b.isSettlement() ? 0 : b.lairMobs.size());
+    }
+
+    /**
      * A watch as saved with its scout's job (recon.md 7): the yard points seen, the faces counted by UUID with their
      * power, the heroes with theirs, and the first and newest sample times. The runtime entity id is never saved: it
      * changes when a chunk reloads, and a watch resumed after a save would count one soldier twice.

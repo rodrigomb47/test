@@ -58,7 +58,7 @@ The trip's plan (`Job.tripPlanTicks`, pure numbers in `Whereabouts`), in ticks f
 
 | Who | Plan |
 |---|---|
-| Scout | its expedition's own bound: departure + `war.scoutOverdueTicks` (24000; it turns home at half of it) − now |
+| Scout | its expedition's own bound: departure + `war.scoutOverdueTicks` (24000; it turns home at half of it) − now. A scout on a **recon trip** (`docs/design/recon.md` 2.5 and 3.8: sent from home to watch one enemy base) has the trip's own plan instead, fixed when it leaves: `Whereabouts.reconPlan` = the walk there + 4800 (`ReconRules.VANTAGE_TICKS`: two sides, each a climb and a descent of up to 20 blocks, the walk round between them, a hold of up to a minute) + 1200 (the watch) + the walk back, from departure; it turns home in time to be back by it, so a live scout watching from its pillar is not reported missing |
 | Raider | the raid's plan, kept at launch (knowledge review of 2026-11-19, `docs/design/knowledge.md` 3): the walk to the rally point + the muster's longest wait (6000) + the assault (6000) + the walk home from the target; launch + that − now. A raid launched before the plan was kept: launch + 72000 + the walk back |
 | Trader | its trip's bound: start + 24000 (it gives a trip up after a day on the road) + the walk back from 320 blocks − now |
 | Cave explorer | its trip's bound: departure + 12000 (`CaveExplorerJob.MAX_TRIP_TICKS`) + the walk back from its cave (+64) − now |
@@ -110,6 +110,12 @@ seen leaving yet), `alive` stays true, nothing is said. `dead` and `diedAt` are 
   back" and "has ended" lines are carried by the raiders there at that moment (none alive: never told; the raiders go
   missing on schedule), and "X of the Y has fallen to Z" (an enemy hero killed by one of ours) is carried by the killer
   unless it is at home (a player killer: told at once, the player saw it).
+* **Sightings and recons are news carried home** (`docs/design/recon.md` 4, 5.5 and 5.8): a scout away carries the enemy
+  soldiers and heroes it saw outside their bases, and the enemy falls it saw, in its own ledger (`ScoutJob`'s carried
+  sightings, saved with it) and tells them at the station after its reports; a recon scout carries its watch's report
+  apart from its other reports (never capped with them) and tells it first. A scout that dies loses both, as any dead
+  witness loses its news; one presumed dead that walks home tells them late, each aged by its own time. Members at home
+  file their sightings at once (the home area is where the faction is), and other members away carry no sightings yet.
 * A line about a member itself (`News.Kind.OWN`, told as it is): a level it gains away from home ("X reached level
   4 ...") is said when it comes home (`RollCall.ownLine`); at home, at once.
 * A hero's own speech: its lines for its faction (`HeroSpeech.Audience.FACTION`: its fall, its level, its revival...)
@@ -139,9 +145,14 @@ seen leaving yet), `alive` stays true, nothing is said. `dead` and `diedAt` are 
   review, 2026-11-19: home's belief pulled live raiders off the party where they fought). The raid ends as before, when
   every raider is truly gone (no one is left to carry it on; nothing is told at home), or when the party must turn home
   to be back by the council's plan (`Whereabouts.raidTurnHomeAt`, `docs/design/knowledge.md` 3).
-* The council's estimate of an *enemy* base reads only what its people saw (knowledge review of 2026-11-19,
-  `docs/design/knowledge.md` 1): its scouts' and raiders' looks at the garrison, aged, a prior where nobody looked, and
-  the enemy soldiers seen falling at home.
+* The council's estimate of an *enemy* base reads only a **focused recon** (`docs/design/recon.md`, built 2026-11-26;
+  the owner's rule of 2026-11-25: "Only estimate enemy defence when the scout or other related role makes a report of
+  what he saw while focused on this particilar task"): a scout ordered at home to watch that base, which walks there,
+  watches for a minute from a pillar or a hill and carries the count home to the station. No prior, no passing look,
+  no raid party's look, no losses seen at home (those are a strike now, which orders an urgent recon). A recon is good
+  for half a day; the council plans against it plus a reserve (half again the count, or more when its people saw more
+  of that faction's soldiers away), never with less. A recon scout that goes missing ends its order as lost and the
+  target backs off.
 
 ## 7. Heroes
 

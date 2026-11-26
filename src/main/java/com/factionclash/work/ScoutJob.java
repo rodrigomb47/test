@@ -1537,6 +1537,7 @@ public class ScoutJob extends Job {
         if (r.step == ReconTrip.Step.WATCH) {
             r.end = ReconTrip.End.HOME;
             r.why = "monsters about";
+            watchEnded(r);
             r.phase = ReconTrip.Phase.DONE;
         } else {
             r.phase = ReconTrip.Phase.FOOT;
@@ -1575,7 +1576,7 @@ public class ScoutJob extends Job {
                 return;
             }
             if (stuck && !level().hasChunk(goal.getX() >> 4, goal.getZ() >> 4)) {
-                nextSide(r); // could not get there, and nothing of it is loaded to look at
+                nextSide(r, "could not get there"); // could not get there, and nothing of it is loaded to look at
                 return;
             }
             r.tried |= s.bit();
@@ -1583,7 +1584,7 @@ public class ScoutJob extends Job {
             r.columnIndex = 0;
             if (r.columns.isEmpty()) {
                 status("No vantage on the " + side(s) + " side of " + r.what(), "Scouting");
-                nextSide(r);
+                nextSide(r, "no vantage");
                 return;
             }
             pickColumn(r);
@@ -1613,11 +1614,25 @@ public class ScoutJob extends Job {
             pickColumn(r);
             return;
         }
-        nextSide(r);
+        nextSide(r, "no column reached");
     }
 
-    /** On to the next side of its trip, or home when it has tried them all (with a blind report, or none). */
-    private void nextSide(ReconTrip r) {
+    /**
+     * On to the next side of its trip, or home when it has tried them all (with a blind report, or none); {@code why} the
+     * side was given up goes into the operators' log ({@code FC_RECON side_over}, task R6).
+     */
+    private void nextSide(ReconTrip r, String why) {
+        if (r.current() != null) {
+            com.google.gson.JsonObject j = reconEvent("side_over", r, now());
+            j.addProperty("why", why);
+            j.addProperty("columns", r.columns == null ? 0 : r.columns.size());
+            j.addProperty("column", r.columnIndex);
+            j.addProperty("lookedAt", r.lookedAt);
+            j.addProperty("bestPoints", r.bestPoints);
+            j.addProperty("bestMiddle", r.bestMiddle);
+            j.addProperty("bestHeight", r.bestHeight);
+            com.factionclash.FactionClash.LOGGER.info("FC_RECON {}", j);
+        }
         Side s = r.current();
         if (s != null && r.columns != null) {
             r.tried |= s.bit();
@@ -1652,7 +1667,7 @@ public class ScoutJob extends Job {
                 }
             }
             if (r.columns.isEmpty()) {
-                nextSide(r);
+                nextSide(r, "no vantage");
                 return;
             }
         }
@@ -1689,6 +1704,7 @@ public class ScoutJob extends Job {
             // moved off its column (it cannot be knocked off): the watch ends there, the blocks still standing stay
             r.end = ReconTrip.End.RETREAT;
             r.why = "off its pillar";
+            watchEnded(r);
             r.pillar = null;
             leaveTarget(r);
             return;
@@ -1825,8 +1841,19 @@ public class ScoutJob extends Job {
             // the heroes it sees, and the target's soldiers outside its box (a party leaving, a patrol below): sightings
             // told with its report (recon.md 5.5)
             EnemySightings.watch(level(), npc, t, carriedSightings, now);
+            if (now >= end) {
+                r.endTruth = BaseWatch.truth(level(), t); // truth: the operators' log line at the last sample, never the scout's report
+            }
         }
-        switch (ReconRules.perch(now, r.watchStartedAt, ReconRules.WATCH_TICKS, enemyNear(), false, false)) {
+        ReconRules.Perch perch = ReconRules.perch(now, r.watchStartedAt, ReconRules.WATCH_TICKS, enemyNear(), false, false);
+        if (perch == ReconRules.Perch.HOLD && r.holdSince < 0) {
+            r.holdSince = now; // (the operators' count of its holds, task R6)
+            r.holds++;
+        } else if (perch != ReconRules.Perch.HOLD && r.holdSince >= 0) {
+            r.heldTicks += now - r.holdSince;
+            r.holdSince = -1;
+        }
+        switch (perch) {
             case WATCH -> status("Watching " + r.what() + " from " + r.vantage + ": " + r.watch.soldiers().size()
                     + (r.lair() ? " monsters" : " soldiers") + " counted, " + Math.round(Intel.coverage(r.watch.points()) * 100)
                     + "% of the yard seen", "Watching");
@@ -1944,6 +1971,7 @@ public class ScoutJob extends Job {
 
     /** It starts down its pillar now (block by block, as it came up); not climbed yet, it is simply on the ground. */
     private void startDown(ReconTrip r) {
+        watchEnded(r);
         r.step = ReconTrip.Step.DOWN;
         putAwayOptic(); // the watch is over: its weapon back in its hand before it climbs down
         breaker.reset(npc);
@@ -1964,7 +1992,7 @@ public class ScoutJob extends Job {
             leaveTarget(r);
             return;
         }
-        nextSide(r);
+        nextSide(r, "no good look");
     }
 
     /**
@@ -2031,6 +2059,132 @@ public class ScoutJob extends Job {
             };
             case DONE -> "Going home from " + r.what();
         };
+    }
+
+    // ---- the operators' view of a recon trip (recon.md 10.4, task R6: /fc admin dump, tools/rolltrack.py, never a faction)
+
+    /**
+     * The recon trip as the operators see it ({@code /fc admin dump}'s {@code recon} of a scout), or null with none: the
+     * order it took (target, faction, kind, urgent), where the trip stands (phase, step, the side, the sides tried, the
+     * column's foot and rise, the pillar's height, the first good height), the watch so far (its start, last sample, the
+     * yard points and middle, the faces counted, the heroes seen), the vantage and the instrument, the holds after the
+     * watch, how the trip at the target ended and why, and the report it carries home.
+     */
+    public com.google.gson.JsonObject reconJson() {
+        if (recon == null) {
+            return null;
+        }
+        ReconTrip r = recon;
+        com.google.gson.JsonObject j = reconEvent("trip", r, now());
+        j.addProperty("phase", r.phase.name());
+        j.addProperty("step", r.step.name());
+        j.addProperty("firstGood", r.firstGood);
+        j.addProperty("end", r.end.name());
+        j.addProperty("why", r.why);
+        j.addProperty("holding", r.holdSince >= 0);
+        if (r.watch != null) {
+            watchJson(j, r);
+        }
+        Report carried = r.brought(npc.npcName(), now());
+        j.addProperty("carries", carried == null || carried.recon == null ? "" : carried.recon.good() ? "good" : "blind");
+        return j;
+    }
+
+    /** The fields every operators' record of a recon trip has: the event, its time, the scout, the order, the side and the column. */
+    private com.google.gson.JsonObject reconEvent(String ev, ReconTrip r, long now) {
+        com.google.gson.JsonObject j = new com.google.gson.JsonObject();
+        j.addProperty("ev", ev);
+        j.addProperty("t", now);
+        j.addProperty("faction", npc.getFaction().id);
+        j.addProperty("scout", npc.getUUID().toString());
+        j.addProperty("scoutName", npc.npcName());
+        j.addProperty("target", r.target.toShortString());
+        j.addProperty("subject", r.subject == null ? "" : r.subject.id);
+        j.addProperty("kind", r.kind.name());
+        j.addProperty("urgent", r.urgent);
+        j.addProperty("departedAt", departedAt);
+        Side s = r.current();
+        j.addProperty("side", s == null ? "" : side(s));
+        j.addProperty("sideIndex", r.side);
+        j.addProperty("tried", r.tried);
+        j.addProperty("foot", r.foot == null ? "" : r.foot.toShortString());
+        j.addProperty("rise", r.rise);
+        j.addProperty("height", r.pillar == null ? 0 : r.pillar.height);
+        j.addProperty("vantage", r.vantage);
+        j.addProperty("optic", r.optic);
+        j.addProperty("holds", r.holds);
+        j.addProperty("heldTicks", r.heldTicks + (r.holdSince >= 0 ? now - r.holdSince : 0));
+        return j;
+    }
+
+    /** The watch so far: when it started, its last sample, the yard points and middle, the faces counted, the heroes, good or not. */
+    private void watchJson(com.google.gson.JsonObject j, ReconTrip r) {
+        ReconWatch w = r.watch;
+        j.addProperty("watchStartedAt", r.watchStartedAt);
+        j.addProperty("first", w.first());
+        j.addProperty("last", w.last());
+        j.addProperty("points", w.points());
+        j.addProperty("middle", w.middle());
+        j.addProperty("counted", w.soldiers().size());
+        com.google.gson.JsonArray heroes = new com.google.gson.JsonArray();
+        w.heroes().keySet().forEach(heroes::add);
+        j.add("heroes", heroes);
+        j.addProperty("good", w.recon(r.vantage, npc.npcName(), r.optic).good());
+    }
+
+    /**
+     * The watch is over (it starts down, is off its column, or a lair's ground watch ends): one {@code FC_RECON watch_end}
+     * line in the server log with the watch, why it ended (its trip's {@code why}: "done" for a full watch, else "hurt on
+     * its pillar", "a block of its pillar broken", "an errand home", "out of time", "off its pillar", "monsters about"),
+     * the holds, who hurt it, and the truth of the target's box at the watch's last sample (or now, for a watch cut
+     * short). For the operators' tools only (recon.md 10.4); it changes nothing of the trip.
+     */
+    private void watchEnded(ReconTrip r) {
+        if (r.step != ReconTrip.Step.WATCH || r.watch == null) {
+            return;
+        }
+        long now = now();
+        if (r.holdSince >= 0) {
+            r.heldTicks += now - r.holdSince;
+            r.holdSince = -1;
+        }
+        com.google.gson.JsonObject j = reconEvent("watch_end", r, now);
+        j.addProperty("why", r.why.isEmpty() ? "done" : r.why);
+        watchJson(j, r);
+        if (r.why.startsWith("hurt")) {
+            com.google.gson.JsonObject by = new com.google.gson.JsonObject();
+            LivingEntity a = npc.getLastHurtByMob();
+            by.addProperty("damage", npc.getLastDamageSource() == null ? "" : npc.getLastDamageSource().getMsgId());
+            if (a != null) {
+                by.addProperty("type", net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(a.getType()).toString());
+                by.addProperty("distance", Math.round(npc.distanceTo(a) * 10) / 10.0);
+                if (a instanceof FactionNpc o) {
+                    by.addProperty("faction", o.getFaction() == null ? "" : o.getFaction().id);
+                    by.addProperty("role", o.getRole().id);
+                    by.addProperty("hero", o instanceof com.factionclash.hero.HeroEntity);
+                    by.addProperty("base", o.baseId());
+                } else if (a instanceof net.minecraft.world.entity.player.Player p) {
+                    by.addProperty("player", p.getGameProfile().getName());
+                }
+            }
+            j.add("attacker", by);
+        }
+        BaseState t = reconBase(r);
+        BaseWatch.Truth truth = r.endTruth != null ? r.endTruth : t == null ? null : BaseWatch.truth(level(), t); // truth: the operators' log line
+        if (truth != null) {
+            com.google.gson.JsonObject tj = new com.google.gson.JsonObject();
+            tj.addProperty("base", t == null ? -1 : t.id);
+            tj.addProperty("soldiers", truth.soldiers());
+            com.google.gson.JsonArray heroes = new com.google.gson.JsonArray();
+            truth.heroes().forEach(heroes::add);
+            tj.add("heroes", heroes);
+            tj.addProperty("monsters", truth.monsters());
+            tj.addProperty("lairMobs", truth.lairMobs());
+            tj.addProperty("atLastSample", r.endTruth != null);
+            j.add("truth", tj);
+        }
+        r.endTruth = null;
+        com.factionclash.FactionClash.LOGGER.info("FC_RECON {}", j);
     }
 
     /** The recon trip it is on, or null (for the GameTests): its phase and step, the sides tried, the watch, its pillar. */

@@ -163,21 +163,33 @@ Players respawn at their faction's nearest surviving base when they have no bed.
   with it as a player does, picking the water up again (`war.waterLanding`). A stunned NPC drinks and pours nothing, as a
   stunned player can use no item.
   Raids **muster** at a rally point outside the target and go in together; a party that loses more than half
-  **retreats**. A **war council** picks the target: of the bases its scouts reported, the weakest garrison first,
-  then the nearest. The raid party is every soldier beyond a third of the garrison (at least `raidPartySize`), and
-  it only goes when it is at least two thirds of the defenders' strength, weighed by arms and armour (a soldier in
-  diamond with a diamond sword counts almost three times one in leather with a stone sword); a beaten enemy
-  outnumbered 3 to 2 is **counter-attacked** sooner. The council judges a garrison **only by what its own people saw**:
-  a scout near an enemy base counts the soldiers and heroes it can see and how much of the walled yard it can see into;
-  the yard it could not see is assumed as strong as the council's own garrison, an old look counts for less (back to
-  that assumption over two days), and the enemy soldiers it saw fall at its own walls come off. A garrison that marches
-  out where nobody sees it is still believed at home; one a scout saw gone is struck. A base razed by someone else is
-  believed standing until a scout or a raider sees its ruins, and ruins seen stay ruins. The raiders' own look at the
-  target comes home with the raid's end ("against about 4 defenders, as seen on day 3"). Enemy losses seen at the walls
-  and heroes seen at a base count for less as the sighting ages (two days); two thirds is counted in whole soldiers, so
-  a council with 7 or more soldiers at home attacks a garrison none of its people has seen (one like its own). A raid
-  party turns home in time to be back by the council's plan ("its time is up, the party turns home"), so home never
-  gives up raiders who are still fighting.
+  **retreats**. A **war council** decides when and whom to raid, and it judges an enemy's defence **only by a scout it
+  sent to watch that base** (the owner's rule: "Only estimate enemy defence when the scout or other related role makes
+  a report of what he saw while focused on this particilar task"). Half a day before its raid interval ends it orders a
+  **recon** of a base it has never judged or whose last recon is old or blind (at most two orders open, one of them
+  urgent after an enemy struck its walls); a scout takes the order at home and walks out. Outside 5-high walls nobody
+  sees into a yard, so the scout stands 61 or more blocks from the centre (where no guard in the yard can see it), builds
+  a dirt pillar block by block, looking after each, stops two blocks above its first good look and **watches for a
+  minute**, counting each soldier once. A look is good with a third of the yard and its middle in view; a worse one comes
+  home as "could not see inside", never as "nobody there", and the council tries another side next time. It carries the
+  report home to the station like any news: a scout killed on the way brings nothing. A recon is fresh for half a day,
+  and with no fresh good recon of any target the council does not launch. It treats the count as a floor ("they can
+  assume that what they saw is not the enemy mainforce", the owner's words) and plans against the count plus a
+  **reserve**: half again the soldiers counted, or more when its own people saw more of that faction's soldiers away
+  from home in the last half day (at its walls, met by a scout, seen leaving from the pillar), with the heroes the watch
+  saw or its people met. It picks the target with the smallest plan, then the nearest. The raid party is every soldier
+  beyond a third of the garrison (at least `raidPartySize`), and it goes when it is at least two thirds of that plan,
+  weighed by arms and armour (a soldier in diamond with a diamond sword counts almost three times one in leather with a
+  stone sword): so a party goes against as many soldiers counted as it sends, in the same gear. Enemy soldiers seen
+  falling at our walls lower nothing; they send a scout to the striker's base once the fight is over, and a **counter-
+  attack** may go sooner, at 3 to 2 on what that scout counted. Lairs are watched from the ground and get no reserve.
+  The launch line says what the plan rests on: "Launching a raid with 3 soldiers on the Grove Covenant settlement
+  reported at 400, 67, 16, against about 4 defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 2
+  (half again the 4 counted)". The reporting station shows the council's last plan, the open orders, each enemy base's
+  recon (fresh, stale or blind), the strikes at our walls and the enemy soldiers seen away. A raiding party brings home
+  only the ruins it saw. A base razed by someone else is believed standing until a scout or a raider sees its ruins, and
+  ruins seen stay ruins. A raid party turns home in time to be back by the council's plan ("its time is up, the party
+  turns home"), so home never gives up raiders who are still fighting.
 * **A faction's fall**: a faction whose last base falls is eliminated ("Stoneguard has been eliminated! All of its
   people die with it."), and every member of it dies with it, wherever it is: the NPCs and heroes in loaded places at
   once, where they stand, their things dropping as on any death; a member away in an unloaded place (a scout, a far
@@ -401,8 +413,13 @@ Players respawn at their faction's nearest surviving base when they have no bed.
   woodland mansions are dangerous ground: no exploration target, mine, tree, fishing spot or travel waypoint lies
   within 48 blocks of one. Once
   everything within `scoutRange` is explored and no living rival settlement is known, they push the frontier out
-  64 blocks at a time, up to the edge of the map, so distant factions find each other. A scout sent to watch an enemy
-  settlement takes a spyglass along when the storehouse has one and holds it up while it watches, as a player does: it
+  64 blocks at a time, up to the edge of the map, so distant factions find each other. A passing scout tells only
+  where a base is and that it stands; counting a garrison is a **recon trip**, ordered by the war council and taken at
+  home (above): the scout keeps 22 dirt for its pillar (from the storehouse, or dug near home), walks round the target
+  outside its guards' sight, tries up to two sides a trip, holds still on its pillar while an enemy passes below and
+  comes down at once when hit. The enemy soldiers and heroes any scout meets away from their bases come home with it as
+  sightings for the council's reserve. A base with one scout busy exploring hires a second for an order nobody took. A
+  scout sent to watch an enemy settlement takes a spyglass along when the storehouse has one and holds it up while it watches, as a player does: it
   can then watch from up to 96 blocks away instead of 72, so trees or a hill near the walls blind it less often (a lair
   is watched from the ground with the eyes). The spyglass is vanilla and needs no tech level; later instruments of
   the mod's own (binoculars, drones) will need one.
@@ -588,7 +605,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 457 GameTests on a real headless server, including **focused reconnaissance** (a
+* `./gradlew runGameTestServer` — 458 GameTests on a real headless server, including **focused reconnaissance** (a
   scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
   open ground at home when the storehouse has none; walks round
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
@@ -615,7 +632,10 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   storehouse, holds it in hand all through the watch (also across a save and reload) with its sword in its backpack,
   puts it away as it climbs down and reports "with a spyglass" from the hill; at a lair it keeps it in its pack; it
   keeps one through unloading and the tag survives a save; the blacksmith forges vanilla's recipe for a scout with
-  none; a branch miner keeps the four shards of an amethyst cluster its tunnel uncovers), **what a faction knows**
+  none; a branch miner keeps the four shards of an amethyst cluster its tunnel uncovers; the operators' view: the dump
+  lists each known base's recon, the open orders, the strikes and the plan the council last judged by, the station
+  tells the same in the faction's words with no truth in it, and the truth of a watched yard counts its soldiers
+  whatever is in sight), **what a faction knows**
   (ruins seen stay ruins when only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
   pulls one off its party; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid

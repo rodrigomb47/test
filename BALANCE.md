@@ -776,6 +776,22 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   (`HOLD_MAX_TICKS`); a hit or a broken pillar block brings it down at once. A lair: the gap axes, from the ground.
   The trip's plan is `Whereabouts.reconPlan`; it turns home in time to be back by it. A second scout is wanted for an
   order untaken for 6000 ticks while the base has one (`WAIT_TICKS`, `MAX_SCOUTS` 2).
+* Recon orders (PROPOSED, `docs/design/recon.md` 2.1 and 2.4, `ReconOrders`, `ReconRules`; values from the code): the
+  window opens **12000** ticks before the raid interval ends (`LEAD_TICKS`); a recon is fresh for **12000**
+  (`FRESH_TICKS`, equal to the lead, so an answered order is fresh at the interval); at most **2** orders open a faction
+  (`ORDERS_MAX`: one ordinary, one urgent), one a target; an order nobody takes is dropped after **12000**. An urgent
+  order (after a strike: an enemy soldier seen at our walls, `FactionState.struckBy`) waits until the alarm has been
+  quiet **600** ticks (`QUIET_TICKS`, the alarm's `NOTICE_MEMORY`), at most one per enemy faction per **interval / 4**
+  (9000 at the default 36000). A blind, empty-handed or lost recon backs its target off **12000**, doubling with each
+  failure in a row to **48000** at most (`RETRY_TICKS`, `RETRY_MAX_TICKS`). An order untaken for **6000** ticks
+  (`WAIT_TICKS`) wants a second scout while the base has fewer than **2** (`MAX_SCOUTS`).
+* A recon's vantage (PROPOSED, recon.md 3.3 to 3.7; `ReconRules`, `ReconVantage`): a settlement's band runs from the
+  standoff **61** (`STANDOFF`, Chebyshev from the centre: no yard place within the guards' 48-block reach sees a pillar
+  there) to the reach **72** (`SIGHT`; 96 with a spyglass, below), **8** blocks to either side of a side's axis
+  (`LATERAL`); a lair's from **46** (`LAIR_STANDOFF`: the leash 10 + a zombie's follow range 35 + 1) to **64**
+  (`LAIR_SIGHT`), its grid over the monsters' ground out to the leash **10** (`BaseWatch.LAIR_REACH`). The first look
+  from **4** blocks up (`LOOK_FROM`). A sample's yard grid has **25** points (`POINTS`). The trip's plan allows
+  **4800** ticks at the target (`VANTAGE_TICKS`: two sides, the walk round, a hold) beside its walks and the watch.
 * A scout's instrument (task R12, `docs/design/recon.md` 5.6 and 5.9; rows of `logic/campaign/ReconOptic`): the eyes
   reach **72** (`ReconRules.SIGHT`, the band 61 to 72), a vanilla spyglass (PROPOSED `ReconOptic.SPYGLASS`) **96**,
   so its band runs 61 to 96 and its samples are taken out to 96; the columns within 72 keep their order first, the

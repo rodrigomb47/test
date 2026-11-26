@@ -123,6 +123,7 @@ def summary(d):
     for f in d["factions"]:
         if f.get("council"):
             print(f"  council {f['faction']:15s} {f['council']}")
+    recon_lines(d)
     for h in d.get("heroes", []):
         life = "alive" if h["alive"] else (f"returns in {h['returnsIn'] // 60}:{h['returnsIn'] % 60:02d}" if h["returnsIn"] else "fallen")
         fights = ",".join(f"{k}={v}" for k, v in sorted(h.get("fights", {}).items())) or "-"
@@ -151,6 +152,47 @@ def summary(d):
     worn = [n for n in d["npcs"] if n["toolDamage"] > 0]
     print(f"  npcs loaded={len(d['npcs'])} with damaged tools={len(worn)} max level={max([n['level'] for n in d['npcs']] or [0])} "
           f"recoveries={sum(n['recoveries'] for n in d['npcs'])}")
+
+
+def recon_lines(d):
+    """Focused reconnaissance (docs/design/recon.md, task R6): per faction its recon orders, the strikes it saw, each
+    known base's kept recon (or none yet, failures and back-off), its sightings by source and the last plan it judged;
+    per scout on a recon trip, where the trip stands."""
+    t = d["gameTime"]
+    for f in d["factions"]:
+        orders = [f"{'urgent ' if o['urgent'] else ''}{o['subject']}@{o['target']} "
+                  + (f"{o['scoutName']} {'reported ' + o['reported'].lower() if o['reported'] != 'NONE' else 'on the way'}"
+                     if o['takenAt'] else "not taken")
+                  for o in f.get("reconOrders") or []]
+        struck = ",".join(f"{k}@{v / 24000:.2f}" for k, v in (f.get("struckBy") or {}).items() if v > f.get("lastRaidAt", 0))
+        known = []
+        for r in f.get("enemyBasesKnown") or []:
+            if r.get("fallen"):
+                continue
+            c = r.get("recon")
+            k = (f"{r['subject'][:6]}#{r.get('base')}: " + (f"{c['soldiers']} ({int(round(c['coverage'] * 100))}%, day {c['at'] / 24000:.2f}"
+                                                            f"{', ' + c['optic'] if c.get('optic') else ''}, {'usable' if c.get('usable') else 'stale'})"
+                                                            if c else "none"))
+            if r.get("reconFailures"):
+                k += f" {r['reconFailures']} failed{' backing off' if r.get('backingOff') else ''}"
+            known.append(k)
+        src = Counter(x["source"] for x in f.get("sightings") or [])
+        if orders or struck or known or src:
+            print(f"  recon   {f['faction']:15s} orders [{'; '.join(orders)}] struck [{struck}] known [{'; '.join(known)}]"
+                  f" sightings {dict(src)}")
+        p = f.get("plan")
+        if p:
+            print(f"  plan    {f['faction']:15s} day {p['at'] / 24000:.2f} base {p['base']} ({p['subject']}): {p['counted']} counted + reserve"
+                  f" {p['reserve']} (share {p['shareSoldiers']}, seen away {len(p.get('seenAway', []))}), heroes {sorted(p.get('heroes', {}))}"
+                  f" -> {p['verdict']} (party {p['party']}, needed {p['needed']}){' by order' if p.get('byOrder') else ''}")
+    for n in d["npcs"]:
+        r = n.get("recon")
+        if r:
+            w = f" watch {r.get('counted')} counted {r.get('points')}/25 middle {r.get('middle')}" if "counted" in r else ""
+            print(f"  scout   {n['name'][:16]:16s} {n['faction']:15s} recon {r['phase']}/{r['step']} side {r['side'] or '-'} of {r['subject']}"
+                  f" at {r['target']} height {r['height']} {r['vantage']}{' with ' + r['optic'] if r['optic'] else ''}{w}"
+                  f" holds {r['holds']}{' HOLDING' if r.get('holding') else ''} carries {r.get('carries') or '-'}"
+                  f" ({(t - r['departedAt']) / 20:.0f} s out)")
 
 
 if __name__ == "__main__":
