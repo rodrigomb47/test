@@ -5170,7 +5170,7 @@ animation and timing files are new.
 
 | Path | What |
 |---|---|
-| `herosrc/heroes/ilsabet_frostmere.hero.json` | the source: the kit, `art` (body, palette, parts, face with two overrides, the longsword and the kite shield, phase looks) and `animations` (style `sword_shield`, blink `normal`, 61 poses of her own, 18 signatures and `sec.loop`) |
+| `herosrc/heroes/ilsabet_frostmere.hero.json` | the source: the kit, `art` (body, palette, parts, face with two overrides, the longsword and the kite shield, phase looks) and `animations` (style `sword_shield`, blink `normal`, 62 poses of her own, 18 signatures and `sec.loop`) |
 | `herosrc/parts/headwear/visored_helm.json` | the visor now hangs from a cubeless `visor_hinge` bone at its own pivot (below) |
 | generated | `geo/hero` (66 bones of the 100 budget, 237 cubes of the 300, 125 of the 130 beyond the fine distance), `textures/entity/hero` (256x128 texture and glow mask; no `_p2` texture: nothing of hers changes colour), `heroes/*.visual.json`, `animations/hero/ilsabet_frostmere.animation.json`, `data/factionclash/hero_timings/ilsabet_frostmere.json` |
 | `render/scene.py` | `HeroAssets.held()`: the channels a hero's `sec.loop` holds at one value, laid over `stance()` (below) |
@@ -5276,8 +5276,8 @@ each of its two cuts (ticks 9 and 15: MovePlan takes the markers as the form's h
   parts them, over their 15 separating axes. Measured so, the first solve put the raised sword arm's gauntlet through
   the helm's cheek and visor plates (Call the Guard 1.47 px, `phase.3` 1.48, the ultimate 2.13, Rime Wall's shield
   hand 1.03, Frozen Standard 1.05) and 0.99 px into her bare head in the ultimate (phase 1 has no helm); and in
-  `phase.2` the salute's upright blade crossed the raised visor, which juts some 9 px forward from her brow until it
-  snaps down (0.68 px, 1.3 as it starts down). Nine arm poses (`rw_lift`, `rw_set`, `ts_e`, `ts_f`, `fs_raise`,
+  `phase.2` the salute's upright blade crossed the raised visor, which juts 9.8 px forward of its hinge at her brow
+  (11.7 px in front of her face) until it snaps down (0.68 px, 1.3 as it starts down). Nine arm poses (`rw_lift`, `rw_set`, `ts_e`, `ts_f`, `fs_raise`,
   `cg_raise`, `vw_raise`, `vw_peak`, `p3_rally`) were re-solved with the exact overlap against the helm (visor down)
   and the head in the solver's cost (each grip moved about 1 px), and `phase.2` now salutes with the sword upright
   beside the right of her face (`ils.salute_side`, the nod's sword with it), clear of the raised visor. Now, on every
@@ -5372,7 +5372,10 @@ props' body clearance on every tick; `check --all --style` OK (the old NOTE only
 other hero byte for byte as committed); her previews re-rendered (`move_call_the_guard`, `move_frozen_standard`,
 `move_rime_wall`, `move_turning_sweep`, `ultimate`, `moments` and `sheet` changed) and `hero-previews
 ilsabet_frostmere --check` OK; `hero-previews --lineup --check` OK (her stance is unchanged); `tests.test_ilsabet`, 20
-tests, OK; the three new sabotage cases fail as they should.
+tests, OK; then on the committed tree all ten sabotage cases rerun, each `failures=1` and every file restored byte for
+byte, and the Python suite, 596 tests, OK. The other heroes' preview checks, `anim-previews`, `render-previews` and
+`icons --check` ran before this work (above) and were not rerun: since then `grips.py` only gained functions that
+nothing built or rendered calls, and `render/scene.py` and `render/hero_previews.py` did not change.
 
 ### Decisions
 
@@ -5393,7 +5396,7 @@ tests, OK; the three new sabotage cases fail as they should.
 8. **No escape clip** (she never escapes), as for Benika and Kagenori.
 9. **The exact overlap for her phase looks**, not a tighter limit on the sampled depth, which cannot see a crossing of
    a plate thinner than twice the limit. It is the solver's cost for the re-solved arms and the test's measure.
-10. **Phase 2's salute beside her face**: the raised visor juts some 9 px forward from her brow, so a blade upright
+10. **Phase 2's salute beside her face**: the raised visor juts 9.8 px forward of its hinge at her brow, so a blade upright
     before her face crosses it at any distance she can hold it; beside her face it clears the visor, and the nod's
     sword stays there while the visor snaps shut. The intro (phase 1, no helm) keeps the salute before her face.
 
