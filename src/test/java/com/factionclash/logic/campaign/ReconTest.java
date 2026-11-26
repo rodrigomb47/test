@@ -22,8 +22,9 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Focused reconnaissance ({@code docs/design/recon.md} 10.1 items 1, 4, 5 and 7): the good look, the council's orders
- * and their endings, the counter-attack after a strike, and the vantage, the climb and the hold.
+ * Focused reconnaissance ({@code docs/design/recon.md} 10.1 items 1 to 7): the good look, the estimate, the merge, the
+ * council's orders and their endings, the counter-attack after a strike, the watch accumulator, and the vantage, the
+ * climb and the hold.
  */
 class ReconTest {
     private static final int INTERVAL = 36000;
@@ -430,5 +431,112 @@ class ReconTest {
         // a watch cut short counts only past 600 ticks and when good
         assertFalse(recon(3, 12, true, 599, 100).good());
         assertTrue(recon(3, 12, true, 600, 100).good());
+    }
+
+    // ---- 6. The watch accumulator (task R2) ----
+
+    /** The mask of the grid points (x, z). */
+    private static int points(int[]... xz) {
+        int m = 0;
+        for (int[] p : xz) {
+            m |= 1 << (p[0] * ReconWatch.GRID + p[1]);
+        }
+        return m;
+    }
+
+    private static ReconWatch.Sample sample(int mask, Map<java.util.UUID, Double> soldiers, Map<String, Double> heroes, long at) {
+        return new ReconWatch.Sample(mask, soldiers, heroes, at);
+    }
+
+    @Test
+    void aWatchCountsEachFaceOnceOverThirtySamples() {
+        java.util.UUID walker = java.util.UUID.randomUUID(), guard = java.util.UUID.randomUUID();
+        ReconWatch w = new ReconWatch();
+        long start = 20_000;
+        for (int i = 0; i < 30; i++) {
+            // the walker in view every other sample, the guard at its post in every one
+            Map<java.util.UUID, Double> seen = i % 2 == 0 ? Map.of(walker, 1.0, guard, 2.0) : Map.of(guard, 2.0);
+            w.add(sample(points(new int[]{0, 0}, new int[]{0, 1}), seen, Map.of(), start + 40L * i));
+        }
+        Recon r = w.recon("pillar 12", "Edrin Cole");
+        assertEquals(2, r.soldiers(), "each soldier counted once, not once per sample");
+        assertEquals(Set.of(walker, guard), r.faces(), "the faces counted, by UUID");
+        assertEquals(1.5, r.power(), 1e-9, "the mean visible power of the distinct soldiers");
+        assertEquals(29 * 40, r.watchTicks(), "from the first sample to the last");
+        assertEquals(start + 29 * 40, r.at(), "the watch's last sample");
+        assertEquals("pillar 12", r.vantage());
+        assertEquals("Edrin Cole", r.by());
+        // a soldier's power is the one of its newest sighting (it picked up a sword)
+        w.add(sample(0, Map.of(walker, 2.0), Map.of(), start + 30 * 40));
+        assertEquals(2, w.soldiers().size());
+        assertEquals(2.0, w.soldiers().get(walker), 1e-9);
+        assertEquals(2.0, w.power(), 1e-9);
+        // a null sample (the base out of sight) changes nothing
+        long before = w.watchTicks();
+        w.add(null);
+        assertEquals(before, w.watchTicks());
+        // nothing seen yet: no faces, power 0, no watch
+        ReconWatch empty = new ReconWatch();
+        assertTrue(empty.empty());
+        assertEquals(0, empty.power(), 1e-9);
+        assertEquals(0, empty.watchTicks());
+        assertEquals(0, empty.recon("ground", "x").soldiers());
+        assertFalse(empty.recon("ground", "x").good());
+    }
+
+    @Test
+    void aWatchSavedAndLoadedMidwayStillCountsEachFaceOnce() {
+        java.util.UUID walker = java.util.UUID.randomUUID();
+        ReconWatch w = new ReconWatch();
+        long start = 30_000;
+        for (int i = 0; i < 15; i++) {
+            w.add(sample(points(new int[]{2, 2}), Map.of(walker, 1.0), Map.of("hinae", 6.8), start + 40L * i));
+        }
+        // saved with the scout's job and loaded after a restart: what the save keeps, nothing more
+        ReconWatch loaded = ReconWatch.restore(w.mask(), new java.util.HashMap<>(w.soldiers()), new java.util.HashMap<>(w.heroes()),
+                w.first(), w.last());
+        for (int i = 15; i < 30; i++) {
+            loaded.add(sample(points(new int[]{2, 3}), Map.of(walker, 1.0), Map.of(), start + 40L * i));
+        }
+        Recon r = loaded.recon("pillar 13", "Edrin Cole");
+        assertEquals(1, r.soldiers(), "the soldier seen before and after the load is one face");
+        assertEquals(29 * 40, r.watchTicks(), "the watch runs on from its first sample before the save");
+        assertEquals(1, ReconWatch.restore(w.mask(), null, null, w.first(), w.last()).points(), "the points seen before the save");
+        assertEquals(Map.of("hinae", 6.8), r.heroes(), "a hero seen before the save is kept, at its power");
+        assertEquals(6.8, r.heroPower(), 1e-9);
+        assertEquals(2, r.points());
+    }
+
+    @Test
+    void theYardPointsSeenAreAUnionAndTheMiddleSeenOnceIsEnough() {
+        ReconWatch w = new ReconWatch();
+        long start = 40_000;
+        // three corner points from one height, four other points from the next; the middle in view in one sample only
+        w.add(sample(points(new int[]{0, 0}, new int[]{0, 4}, new int[]{4, 0}), Map.of(), Map.of(), start));
+        w.add(sample(points(new int[]{1, 1}, new int[]{1, 2}, new int[]{1, 3}, new int[]{0, 0}), Map.of(), Map.of(), start + 40));
+        w.add(sample(points(new int[]{2, 2}), Map.of(), Map.of(), start + 80));
+        for (int i = 3; i < 16; i++) {
+            w.add(sample(points(new int[]{3, 3}), Map.of(), Map.of(), start + 40L * i));
+        }
+        assertEquals(8, w.points(), "the union: a point seen twice counts once");
+        assertTrue(w.middle(), "the middle seen once is enough");
+        Recon r = w.recon("pillar 14", "Edrin Cole");
+        assertEquals(8, r.points());
+        assertEquals(0.32, r.coverage(), 1e-9);
+        assertTrue(r.middle());
+        assertEquals(600, r.watchTicks());
+        assertTrue(r.good(), "8 of 25 with the middle, watched 600 ticks: good, and an empty yard is a real 'about 0'");
+        assertEquals(0, r.soldiers());
+        // the middle is the grid's centre point, and a sample knows it
+        assertEquals(12, ReconWatch.MIDDLE);
+        assertTrue(sample(1 << ReconWatch.MIDDLE, null, null, 0).middle());
+        assertFalse(sample(ReconWatch.ALL_POINTS & ~(1 << ReconWatch.MIDDLE), null, null, 0).middle());
+        assertEquals(24, sample(ReconWatch.ALL_POINTS & ~(1 << ReconWatch.MIDDLE), null, null, 0).points());
+        assertEquals(25, sample(-1, null, null, 0).points(), "a mask never holds more than the 25 points");
+        // without the middle, a wide look is blind
+        ReconWatch corners = new ReconWatch();
+        corners.add(sample(ReconWatch.ALL_POINTS & ~(1 << ReconWatch.MIDDLE), Map.of(), Map.of(), start));
+        corners.add(sample(0, Map.of(), Map.of(), start + 1200));
+        assertFalse(corners.recon("pillar 12", "Edrin Cole").good(), "24 of 25 without the middle: blind");
     }
 }

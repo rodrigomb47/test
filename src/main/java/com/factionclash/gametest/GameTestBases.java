@@ -88,6 +88,12 @@ public final class GameTestBases {
         /** The faction's survival as it was at the registration (a faction never eliminated when it had no state). */
         private final boolean factionAlive;
         private final long factionEliminatedAt;
+        /**
+         * The faction's strikes seen and open recon orders at the registration (recon.md 6 and 2.1): a test's enemies
+         * killed or noticed at its base write strikes into the faction's shared state, which later tests' councils read.
+         */
+        private final java.util.Map<FactionType, Long> factionStruckBy;
+        private final List<com.factionclash.campaign.ReconOrder> factionReconOrders;
 
         private Handle(GameTestHelper helper, CampaignData data, BaseState base) {
             this.helper = helper;
@@ -96,6 +102,8 @@ public final class GameTestBases {
             com.factionclash.campaign.FactionState f = data.factions.get(base.faction);
             this.factionAlive = f == null || f.alive;
             this.factionEliminatedAt = f == null ? 0 : f.eliminatedAt;
+            this.factionStruckBy = f == null ? java.util.Map.of() : new java.util.HashMap<>(f.struckBy);
+            this.factionReconOrders = f == null ? List.of() : new ArrayList<>(f.reconOrders);
         }
 
         /** Spawns an NPC of the base's faction at relative (x, 2, z) and registers it as a member of the base. */
@@ -229,6 +237,10 @@ public final class GameTestBases {
             if (f != null) {
                 f.alive = factionAlive;
                 f.eliminatedAt = factionEliminatedAt;
+                f.struckBy.clear();
+                f.struckBy.putAll(factionStruckBy);
+                f.reconOrders.clear();
+                f.reconOrders.addAll(factionReconOrders);
             }
             data.setDirty();
         }

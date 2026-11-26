@@ -451,6 +451,7 @@ public final class FactionDirector {
         // the yard is not handed to the guards (knowledge review of 2026-11-19)
         long now = level.getGameTime();
         intruders.removeIf(e -> !(heart != null && e.blockPosition().closerThan(heart, HEART_HEARD)) && !remembered(level, b, e, now));
+        struck(level, b, intruders, now);
         // A12: an enemy hero seen on its approach by a base NPC within 24 blocks (a line of sight) raises the alarm before
         // it reaches the box; only an approach out of sight reaches the wall unannounced
         approaching(level, b, walls, intruders);
@@ -492,6 +493,35 @@ public final class FactionDirector {
             }
         }
         return assigned;
+    }
+
+    /**
+     * Focused reconnaissance ({@code docs/design/recon.md} 6, task R2): an enemy fighter the base's people noticed inside its
+     * walls box, or heard at its heart, is a strike by its faction ({@link FactionState#struckBy}): an enemy soldier or hero
+     * (a worker passing through is not), or a member player of a hostile faction (a player can fight, as a soldier can).
+     * Monsters strike for no faction. Recorded before the approaching heroes join the list: a hero seen outside the box
+     * has not struck yet.
+     */
+    static void struck(ServerLevel level, BaseState b, List<net.minecraft.world.entity.LivingEntity> intruders, long now) {
+        if (b.faction == null || !b.faction.human || intruders.isEmpty()) {
+            return;
+        }
+        CampaignData data = CampaignData.get(level.getServer());
+        boolean changed = false;
+        for (net.minecraft.world.entity.LivingEntity e : intruders) {
+            FactionType striker = null;
+            if (e instanceof FactionNpc n) {
+                striker = !n.isDisplayOnly() && n.fightsLikeSoldier() ? n.getFaction() : null;
+            } else if (e instanceof net.minecraft.server.level.ServerPlayer p) {
+                striker = data.players.get(p.getUUID());
+            }
+            if (striker != null && striker.human && Diplomacy.hostile(striker, b.faction)) {
+                changed |= data.faction(b.faction).struck(striker, now);
+            }
+        }
+        if (changed) {
+            data.setDirty();
+        }
     }
 
     /** PROPOSED: a member this close hears an intruder it cannot see (a fight, a block broken beside it). */

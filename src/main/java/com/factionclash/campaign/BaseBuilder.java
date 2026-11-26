@@ -291,6 +291,8 @@ public final class BaseBuilder {
     }
 
     public static final String LAIR_TAG = "factionclash_lair";
+    /** A lair monster's leash: it stays within this many blocks of the lair's centre (a focused recon watches that ground). */
+    public static final int LAIR_LEASH = 10;
 
     /** Hollow monsters are ordinary vanilla mobs with their usual behaviour, tied to a lair. */
     public static Mob spawnLairMob(ServerLevel level, CampaignData data, BaseState lair) {
@@ -311,7 +313,7 @@ public final class BaseBuilder {
         CompoundTag tag = mob.getPersistentData();
         tag.putInt(LAIR_TAG, lair.id);
         if (mob instanceof net.minecraft.world.entity.PathfinderMob pm) {
-            pm.restrictTo(lair.center, 10);
+            pm.restrictTo(lair.center, LAIR_LEASH);
         }
         level.addFreshEntity(mob);
         lair.lairMobs.add(mob.getUUID());

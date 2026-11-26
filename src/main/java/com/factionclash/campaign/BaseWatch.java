@@ -4,8 +4,13 @@ import com.factionclash.combat.CombatRules;
 import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.logic.campaign.Intel;
+import com.factionclash.logic.campaign.ReconRules;
+import com.factionclash.logic.campaign.ReconWatch;
 import com.factionclash.npc.FactionNpc;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -16,9 +21,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * What a faction's people see of an enemy settlement or a Hollow lair (knowledge review of 2026-11-19,
@@ -36,7 +43,18 @@ public final class BaseWatch {
     /** PROPOSED: a raider sees its target's heart (standing or gone) within this many blocks with a clear view. */
     public static final double HEART_SIGHT = 48;
     /** The yard's look-out points per side (5 x 5 over the walls' inside; a lair: its clearing). */
-    static final int GRID = 5;
+    static final int GRID = ReconWatch.GRID;
+    /**
+     * A focused look's reach ({@code docs/design/recon.md} 3.5): a scout sent to watch a base sees it from up to 72 blocks
+     * (horizontally, from the centre), so its vantage band runs from the standoff (61) to 72. A passing look keeps
+     * {@link #SIGHT}.
+     */
+    public static final double RECON_SIGHT = ReconRules.SIGHT;
+    /**
+     * A recon sample's grid at a lair (recon.md 3.7): the monsters' ground, out to their leash
+     * ({@link BaseBuilder#LAIR_LEASH}), not the roofed hall the passing look's grid covers (half - 2 = 5).
+     */
+    public static final int LAIR_REACH = BaseBuilder.LAIR_LEASH;
 
     /**
      * What {@code observer} sees of {@code b} now, as a report of its faction (ENEMY_BASE or LAIR, by nobody yet), or null
@@ -56,42 +74,19 @@ public final class BaseWatch {
         }
         int half = BaseZones.half(b);
         int reach = Math.max(1, half - 2);
-        int inView = 0;
-        double y = b.center.getY() + 1.5;
-        for (int i = 0; i < GRID; i++) {
-            for (int j = 0; j < GRID; j++) {
-                double dx = reach * (2.0 * i / (GRID - 1) - 1), dz = reach * (2.0 * j / (GRID - 1) - 1);
-                if (clear(level, observer, new Vec3(b.center.getX() + 0.5 + dx, y, b.center.getZ() + 0.5 + dz))) {
-                    inView++;
-                }
-            }
-        }
+        int inView = Integer.bitCount(inView(level, observer, points(b, reach)));
         double visible = inView / (double) (GRID * GRID);
         AABB area = new AABB(b.center).inflate(half + 8, 12, half + 8);
-        int soldiers = 0;
+        Map<UUID, Double> seenSoldiers = new LinkedHashMap<>();
+        Map<String, Double> seenHeroes = new LinkedHashMap<>();
+        defenders(level, observer, b, area, seenSoldiers, seenHeroes);
+        int soldiers = seenSoldiers.size();
         double power = 0;
-        Map<String, Intel.Hero> heroes = new LinkedHashMap<>();
-        if (b.isSettlement()) {
-            for (FactionNpc n : level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == b.faction
-                    && !n.isDisplayOnly() && n.fightsLikeSoldier())) {
-                if (!observer.hasLineOfSight(n)) {
-                    continue;
-                }
-                if (n instanceof com.factionclash.hero.HeroEntity h) {
-                    heroes.put(h.heroId(), new Intel.Hero(seenHeroPower(h), now));
-                } else {
-                    soldiers++;
-                    power += FactionDirector.power(n); // what anyone sees: the armour worn and the weapon held
-                }
-            }
-        } else {
-            for (Monster m : level.getEntitiesOfClass(Monster.class, area, CombatRules::isHostileMonster)) {
-                if (observer.hasLineOfSight(m)) {
-                    soldiers++;
-                    power += 1;
-                }
-            }
+        for (double p : seenSoldiers.values()) {
+            power += p;
         }
+        Map<String, Intel.Hero> heroes = new LinkedHashMap<>();
+        seenHeroes.forEach((id, p) -> heroes.put(id, new Intel.Hero(p, now)));
         boolean wallsInView = b.isSettlement() && wallsInView(level, observer, b, half);
         if (inView == 0 && soldiers == 0 && heroes.isEmpty() && !heartInView && !wallsInView) {
             return null; // nothing of it in sight (behind a hill)
@@ -105,6 +100,145 @@ public final class BaseWatch {
         r.look = look;
         r.heroes = Intel.heroes(heroes);
         return r;
+    }
+
+    // ------------------------------------------------------------------ the focused look (docs/design/recon.md 3.6)
+
+    /**
+     * One sample of a focused watch of {@code b} from where {@code observer} stands (recon.md 3.6; task R2: taken by R4b's
+     * recon scout every 40 ticks of its watch and after each block of its climb): the yard points in view (a mask of the
+     * 5 x 5 grid, bit x * 5 + z, the middle at {@link ReconWatch#MIDDLE}), the soldiers in sight by UUID with their visible
+     * power (armour worn and weapon held), the heroes in sight by hero id with their war power at full strength (a lair:
+     * its hostile monsters in sight, power 1 each, and no heroes), and the time. The same rays and the same
+     * {@code hasLineOfSight} as a passing look ({@link #look}), but out to {@link #RECON_SIGHT} and, at a lair, over the
+     * monsters' ground ({@link #LAIR_REACH}). A sample counts nothing by itself: {@link ReconWatch} counts each face once
+     * over the watch. Null when the base is beyond {@link #RECON_SIGHT} or in another level; otherwise a sample, even with
+     * nothing in view (behind a hill: an empty mask).
+     */
+    public static ReconWatch.Sample reconSample(ServerLevel level, LivingEntity observer, BaseState b, long now) {
+        if (b == null || b.center == null || observer.level() != level || horizontal(observer.position(), b.center) > RECON_SIGHT) {
+            return null;
+        }
+        int reach = reconReach(b);
+        int mask = inView(level, observer, points(b, reach));
+        int box = Math.max(BaseZones.half(b), reach) + 8;
+        Map<UUID, Double> soldiers = new LinkedHashMap<>();
+        Map<String, Double> heroes = new LinkedHashMap<>();
+        defenders(level, observer, b, new AABB(b.center).inflate(box, 12, box), soldiers, heroes);
+        return new ReconWatch.Sample(mask, soldiers, heroes, now);
+    }
+
+    /**
+     * The reach of a recon sample's grid from the centre: a settlement's walls' inside (half - 2, as a passing look); a
+     * lair's monsters' ground, out to their leash ({@link #LAIR_REACH}), except a GameTest lair with a small
+     * {@link BaseState#testHalf}, whose grid stays inside its own small walls.
+     */
+    public static int reconReach(BaseState b) {
+        int half = BaseZones.half(b);
+        if (b.isSettlement() || b.testHalf > 0) {
+            return Math.max(1, half - 2);
+        }
+        return LAIR_REACH;
+    }
+
+    /**
+     * The 25 look-out points of {@code b}'s grid of reach {@code reach}: 1.5 above its floor at its centre block's middle
+     * plus {@code reach} times -1, -1/2, 0, 1/2 and 1 on each axis; point i * 5 + j lies i steps east and j steps south of
+     * the north-west corner (the middle is 12).
+     */
+    public static List<Vec3> points(BaseState b, int reach) {
+        List<Vec3> out = new ArrayList<>(GRID * GRID);
+        double y = b.center.getY() + 1.5;
+        for (int i = 0; i < GRID; i++) {
+            for (int j = 0; j < GRID; j++) {
+                double dx = reach * (2.0 * i / (GRID - 1) - 1), dz = reach * (2.0 * j / (GRID - 1) - 1);
+                out.add(new Vec3(b.center.getX() + 0.5 + dx, y, b.center.getZ() + 0.5 + dz));
+            }
+        }
+        return out;
+    }
+
+    /** The mask of {@code points} (at most 32) that {@code observer} has a clear view of. */
+    static int inView(Level level, Entity observer, List<Vec3> points) {
+        int mask = 0;
+        for (int k = 0; k < points.size() && k < 32; k++) {
+            if (clear(level, observer, points.get(k))) {
+                mask |= 1 << k;
+            }
+        }
+        return mask;
+    }
+
+    /**
+     * The defenders of {@code b} in {@code area} that {@code observer} has in sight: a settlement's soldiers (into
+     * {@code soldiers}, by UUID, with their visible power: what anyone sees, the armour worn and the weapon held) and its
+     * heroes (into {@code heroes}, by hero id, at their war power at full strength); a lair's hostile monsters (power 1
+     * each).
+     */
+    private static void defenders(ServerLevel level, LivingEntity observer, BaseState b, AABB area, Map<UUID, Double> soldiers,
+                                  Map<String, Double> heroes) {
+        if (b.isSettlement()) {
+            for (FactionNpc n : level.getEntitiesOfClass(FactionNpc.class, area, n -> n.isAlive() && n.getFaction() == b.faction
+                    && !n.isDisplayOnly() && n.fightsLikeSoldier())) {
+                if (!observer.hasLineOfSight(n)) {
+                    continue;
+                }
+                if (n instanceof com.factionclash.hero.HeroEntity h) {
+                    heroes.put(h.heroId(), seenHeroPower(h));
+                } else {
+                    soldiers.put(n.getUUID(), FactionDirector.power(n));
+                }
+            }
+        } else {
+            for (Monster m : level.getEntitiesOfClass(Monster.class, area, CombatRules::isHostileMonster)) {
+                if (observer.hasLineOfSight(m)) {
+                    soldiers.put(m.getUUID(), 1.0);
+                }
+            }
+        }
+    }
+
+    /**
+     * A watch as saved with its scout's job (recon.md 7): the yard points seen, the faces counted by UUID with their
+     * power, the heroes with theirs, and the first and newest sample times. The runtime entity id is never saved: it
+     * changes when a chunk reloads, and a watch resumed after a save would count one soldier twice.
+     */
+    public static CompoundTag saveWatch(ReconWatch w) {
+        CompoundTag t = new CompoundTag();
+        t.putInt("mask", w.mask());
+        t.putLong("first", w.first());
+        t.putLong("last", w.last());
+        ListTag faces = new ListTag();
+        w.soldiers().forEach((id, power) -> {
+            CompoundTag f = new CompoundTag();
+            f.putUUID("id", id);
+            f.putDouble("power", power);
+            faces.add(f);
+        });
+        t.put("faces", faces);
+        CompoundTag heroes = new CompoundTag();
+        w.heroes().forEach(heroes::putDouble);
+        t.put("heroes", heroes);
+        return t;
+    }
+
+    /** A watch as {@link #saveWatch} wrote it: later samples go on counting the same faces once. */
+    public static ReconWatch loadWatch(CompoundTag t) {
+        Map<UUID, Double> soldiers = new LinkedHashMap<>();
+        ListTag faces = t.getList("faces", Tag.TAG_COMPOUND);
+        for (int i = 0; i < faces.size(); i++) {
+            CompoundTag f = faces.getCompound(i);
+            if (f.hasUUID("id")) {
+                soldiers.put(f.getUUID("id"), f.getDouble("power"));
+            }
+        }
+        Map<String, Double> heroes = new LinkedHashMap<>();
+        CompoundTag h = t.getCompound("heroes");
+        for (String id : h.getAllKeys()) {
+            heroes.put(id, h.getDouble(id));
+        }
+        return ReconWatch.restore(t.getInt("mask"), soldiers, heroes, t.contains("first") ? t.getLong("first") : -1,
+                t.contains("last") ? t.getLong("last") : -1);
     }
 
     /** {@code b} seen in ruins, its heart gone, at {@code at}: a fallen report of its faction (by nobody yet). */
@@ -170,12 +304,16 @@ public final class BaseWatch {
      * dead soldier's settlement: the nearest settlement of that faction its scouts reported (whose soldier it was, the
      * sash alone does not tell). The council's estimate of that garrison is lowered by it until a newer look. A hero is
      * no loss (it rises again at home).
+     *
+     * <p>Focused reconnaissance ({@code docs/design/recon.md} 6, task R2): each of those factions also notes that the dead
+     * fighter's faction struck it ({@link FactionState#struckBy}), a hero's fall included, whether or not it knows where
+     * that faction lives. The losses go with the council's switch (R5); the strike stays.
      */
     public static void enemyFell(ServerLevel level, CampaignData data, FactionNpc victim) {
-        if (victim.isDisplayOnly() || victim instanceof com.factionclash.hero.HeroEntity || !victim.fightsLikeSoldier()
-                || victim.getFaction() == null || !victim.getFaction().human) {
+        if (victim.isDisplayOnly() || !victim.fightsLikeSoldier() || victim.getFaction() == null || !victim.getFaction().human) {
             return;
         }
+        boolean hero = victim instanceof com.factionclash.hero.HeroEntity;
         BlockPos at = victim.blockPosition();
         long now = level.getGameTime();
         for (FactionType seer : FactionType.humans()) {
@@ -190,6 +328,12 @@ public final class BaseWatch {
             }
             if (!seen) {
                 continue;
+            }
+            if (f.struck(victim.getFaction(), now)) {
+                data.setDirty();
+            }
+            if (hero) {
+                continue; // no loss: it rises again at home
             }
             Report nearest = null;
             for (Report r : f.knowledge) {

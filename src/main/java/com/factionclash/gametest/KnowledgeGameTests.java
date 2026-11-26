@@ -14,6 +14,8 @@ import com.factionclash.config.FCConfig;
 import com.factionclash.faction.FactionType;
 import com.factionclash.hero.HeroEntity;
 import com.factionclash.logic.campaign.Intel;
+import com.factionclash.logic.campaign.ReconRules;
+import com.factionclash.logic.campaign.ReconWatch;
 import com.factionclash.logic.campaign.Whereabouts;
 import com.factionclash.logic.campaign.Whereabouts.State;
 import com.factionclash.npc.FactionNpc;
@@ -130,6 +132,8 @@ public final class KnowledgeGameTests {
         int oldLaunched = f.raidsLaunched, oldParty = f.raidParty;
         float oldPower = f.soldierPower;
         List<Report> oldKnowledge = new ArrayList<>(f.knowledge);
+        java.util.Map<FactionType, Long> oldStruck = new java.util.HashMap<>(f.struckBy);
+        List<com.factionclash.campaign.ReconOrder> oldOrders = new ArrayList<>(f.reconOrders);
         t.onCleanup(() -> {
             t.data.startedAt = oldStarted;
             f.lastRaidAt = oldLast;
@@ -148,6 +152,10 @@ public final class KnowledgeGameTests {
             f.raidIntel = null;
             f.knowledge.clear();
             f.knowledge.addAll(oldKnowledge);
+            f.struckBy.clear();
+            f.struckBy.putAll(oldStruck);
+            f.reconOrders.clear();
+            f.reconOrders.addAll(oldOrders);
             FactionDirector.LAST_COUNCIL.remove(f.type);
         });
     }
@@ -300,18 +308,21 @@ public final class KnowledgeGameTests {
             Report seen = new Report(Report.Kind.ENEMY_BASE, enemy.center, now, ENEMY, 6, "6 soldiers seen");
             seen.look = new Intel.Look(6, 1.0, 1.0, 0, now);
             deliver(t, f, seen, now);
+            f.struckBy.remove(ENEMY); // (the cleanup restores it)
             // one dies far from home where none of ours sees it (the scouts see 4 blocks here): no loss known
             FCConfig.WITNESS_RANGE.set(4);
             FactionNpc unseen = stranger(t, ENEMY, 12, 23, NpcRole.SWORDSMAN);
             kill(unseen);
             Report ours = f.knowledge.stream().filter(r -> r.subject == ENEMY && r.pos.equals(enemy.center)).findFirst().orElseThrow();
             t.assertTrue(ours.losses == 0, "a death none of ours saw lowered the estimate: " + ours.losses);
-            // four fall inside our home area
+            t.assertTrue(f.struckAt(ENEMY) == 0, "a death none of ours saw was a strike: " + f.struckBy);
+            // four fall inside our home area: a strike by their faction (recon.md 6, task R2)
             for (int i = 0; i < 4; i++) {
                 FactionNpc g = stranger(t, ENEMY, 11 + i, 13, NpcRole.SWORDSMAN);
                 kill(g);
             }
             t.assertTrue(ours.losses == 4, "the soldiers seen falling at our walls: " + ours.losses);
+            t.assertTrue(f.struckAt(ENEMY) >= now, "the soldiers seen falling at our walls were no strike: " + f.struckBy);
             raids(t, f, now + 1);
             t.assertTrue(f.raidTarget == enemy.id && said(lines, SIDE, "Counter-attack!"),
                     "no counter-attack into the weakened enemy: " + FactionDirector.LAST_COUNCIL.get(SIDE));
@@ -786,13 +797,23 @@ public final class KnowledgeGameTests {
                     }
                 }
             }
+            FactionState f = t.data.faction(SIDE);
+            f.struckBy.remove(ENEMY); // (the cleanup restores the faction's strikes)
+            f.struckBy.remove(FactionType.EMBER_LEGION);
             FactionNpc intruder = stranger(t, ENEMY, 15, 15, NpcRole.SWORDSMAN);
             int hidden = FactionDirector.defenceAlarm(level, t.base);
             t.assertTrue(hidden == 0 && guard.getTarget() == null, "a hidden intruder was handed to the guards: " + hidden);
+            t.assertTrue(f.struckAt(ENEMY) == 0, "a hidden intruder was a strike: " + f.struckBy);
             box.forEach(p -> h.setBlock(p, Blocks.AIR.defaultBlockState()));
             box.clear();
+            long now = level.getGameTime();
             int seen = FactionDirector.defenceAlarm(level, t.base);
             t.assertTrue(seen >= 1 && guard.getTarget() == intruder, "an intruder in sight was not raised: " + seen);
+            t.assertTrue(f.struckAt(ENEMY) == now, "a soldier noticed inside our walls was no strike (recon.md 6): " + f.struckBy);
+            // a worker of another faction passing through is noticed, but strikes nobody
+            stranger(t, FactionType.EMBER_LEGION, 9, 12, NpcRole.FARMER);
+            FactionDirector.defenceAlarm(level, t.base);
+            t.assertTrue(f.struckAt(FactionType.EMBER_LEGION) == 0, "a worker passing through was a strike: " + f.struckBy);
             t.succeed();
         } catch (RuntimeException | Error e) {
             t.cleanup();
@@ -1169,5 +1190,249 @@ public final class KnowledgeGameTests {
             t.cleanup();
             throw e;
         }
+    }
+
+    // ------------------------------------------------------------------ focused reconnaissance (docs/design/recon.md, task R2)
+
+    /**
+     * recon.md 10.2 item 13: {@link #aScoutCountsOnlySoldiersInSight} on a focused watch's sample. Behind the wall the
+     * sample holds no soldier and not the yard's middle; with the wall gone it holds both soldiers, by their UUIDs, and the
+     * middle; a watch of those samples counts the two once each. A base beyond the recon's sight gives no sample, and a
+     * lair's grid reaches its monsters' leash.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "knowledge_recon_wall")
+    public static void aReconSampleCountsOnlySoldiersInSight(GameTestHelper h) {
+        GameTestBases.Handle t = base(h, 40);
+        ServerLevel level = h.getLevel();
+        List<BlockPos> wall = new ArrayList<>();
+        for (int x = 8; x <= 16; x++) {
+            for (int y = 2; y <= 3; y++) {
+                wall.add(new BlockPos(x, y, 19));
+            }
+        }
+        t.onCleanup(() -> wall.forEach(p -> h.setBlock(p, Blocks.AIR)));
+        try {
+            long now = level.getGameTime();
+            BaseState enemy = enemyBase(t, ENEMY, h.absolutePos(new BlockPos(12, 2, 21)));
+            FactionNpc a = stranger(t, ENEMY, 11, 22, NpcRole.SWORDSMAN);
+            FactionNpc b = stranger(t, ENEMY, 13, 22, NpcRole.SWORDSMAN);
+            FactionNpc scout = member(t, 12, 16, NpcRole.SCOUT);
+            wall.forEach(p -> h.setBlock(p, Blocks.STONE));
+            ReconWatch.Sample hidden = BaseWatch.reconSample(level, scout, enemy, now);
+            t.assertTrue(hidden != null && hidden.soldiers().isEmpty() && !hidden.middle(),
+                    "the recon sample counted soldiers or the middle behind a wall: " + hidden);
+            wall.forEach(p -> h.setBlock(p, Blocks.AIR));
+            ReconWatch.Sample open = BaseWatch.reconSample(level, scout, enemy, now + 40);
+            t.assertTrue(open != null && open.soldiers().keySet().equals(java.util.Set.of(a.getUUID(), b.getUUID())) && open.middle()
+                    && open.points() > hidden.points(), "with the wall gone the sample should hold both soldiers by face, the middle and more"
+                    + " of the yard: " + open + " / behind the wall: " + hidden);
+            ReconWatch watch = new ReconWatch();
+            watch.add(hidden);
+            watch.add(open);
+            watch.add(BaseWatch.reconSample(level, scout, enemy, now + 80));
+            Intel.Recon r = watch.recon("ground", scout.npcName());
+            t.assertTrue(r.soldiers() == 2 && r.faces().equals(java.util.Set.of(a.getUUID(), b.getUUID())) && r.watchTicks() == 80,
+                    "a watch of three samples should count the two soldiers once each: " + r);
+            // beyond the recon's sight (72 blocks from the centre): no sample
+            BaseState far = enemyBase(t, ENEMY, t.base.center.offset(0, 0, 200));
+            t.assertTrue(BaseWatch.reconSample(level, scout, far, now) == null, "a base 200 blocks off was sampled");
+            t.assertTrue(BaseWatch.RECON_SIGHT == 72, "the recon's sight: " + BaseWatch.RECON_SIGHT);
+            // the grids: a settlement's yard inside its walls, a lair's monsters' ground out to their leash
+            BaseState lair = new BaseState();
+            lair.kind = BaseState.Kind.LAIR;
+            lair.faction = FactionType.HOLLOW;
+            lair.center = new BlockPos(0, 64, 0);
+            BaseState town = new BaseState();
+            town.kind = BaseState.Kind.SETTLEMENT;
+            town.center = new BlockPos(0, 64, 0);
+            t.assertTrue(BaseWatch.reconReach(lair) == BaseWatch.LAIR_REACH && BaseWatch.LAIR_REACH == 10,
+                    "a lair's recon grid reaches " + BaseWatch.reconReach(lair));
+            t.assertTrue(BaseWatch.reconReach(town) == com.factionclash.structure.BaseLayout.HALF - 2,
+                    "a settlement's recon grid reaches " + BaseWatch.reconReach(town));
+            Vec3 middle = BaseWatch.points(lair, 10).get(ReconWatch.MIDDLE);
+            t.assertTrue(middle.equals(new Vec3(0.5, 65.5, 0.5)) && BaseWatch.points(lair, 10).get(0).equals(new Vec3(-9.5, 65.5, -9.5)),
+                    "the grid's middle point is not the centre: " + middle);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
+
+    /** A focused recon as a scout's watch gives it (recon.md 4). */
+    private static Intel.Recon recon(int points, boolean middle, long at, java.util.Map<java.util.UUID, Double> faces,
+                                     java.util.Map<String, Double> heroes) {
+        double power = faces.values().stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        return new Intel.Recon(faces.size(), power, heroes, Intel.coverage(points), middle, 1200, at, "pillar 12", "Edrin Cole",
+                faces.keySet());
+    }
+
+    /** A base report a scout delivers, with the recon its watch gave (null: a passing look) and the sides its trip tried. */
+    private static Report delivered(Report.Kind kind, BlockPos pos, FactionType subject, long observedAt, Intel.Recon recon, int sides) {
+        Report r = new Report(kind, pos, observedAt, subject, recon == null ? 0 : recon.soldiers(), "a test report");
+        r.recon = recon;
+        r.reconSidesTried = sides;
+        r.deliveredAt = observedAt;
+        r.by = "a test scout";
+        return r;
+    }
+
+    /**
+     * recon.md 10.2 (task R2): a faction's recon of a base, its back-off, its open orders and the strikes it saw survive a
+     * save and a reload of the campaign (format 5), each face and power exact. A format-4 report with an old look and
+     * losses loads with no recon (the old look still read until the council's switch), and a format-4 faction with no
+     * orders and no strikes.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20, batch = "workers_static")
+    public static void aReconAndTheOrdersSurviveASaveAndReload(GameTestHelper h) {
+        var provider = h.getLevel().registryAccess();
+        FactionState f = new FactionState(SIDE);
+        BlockPos town = new BlockPos(100, 64, 200), lairAt = new BlockPos(-300, 70, 40);
+        java.util.UUID u1 = java.util.UUID.randomUUID(), u2 = java.util.UUID.randomUUID(), scout = java.util.UUID.randomUUID();
+        java.util.Map<java.util.UUID, Double> faces = new java.util.LinkedHashMap<>();
+        faces.put(u1, 1.375);
+        faces.put(u2, 2.0625);
+        Intel.Recon good = recon(12, true, 5000, faces, java.util.Map.of("hinae", 6.8125));
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, town, ENEMY, 5000, good, ReconRules.Side.SOUTH.bit()));
+        int sides = ReconRules.Side.WEST.bit() | ReconRules.Side.EAST.bit();
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, town, ENEMY, 6000, recon(5, false, 6000, java.util.Map.of(), java.util.Map.of()), sides));
+        f.addReport(delivered(Report.Kind.LAIR, lairAt, FactionType.HOLLOW, 7000, recon(3, true, 7000, java.util.Map.of(), java.util.Map.of()),
+                ReconRules.Side.NORTH.bit()));
+        com.factionclash.campaign.ReconOrder urgent = new com.factionclash.campaign.ReconOrder(town, ENEMY, Report.Kind.ENEMY_BASE, 3, 8000, true);
+        urgent.scout = scout;
+        urgent.takenAt = 8100;
+        com.factionclash.campaign.ReconOrder ordinary = new com.factionclash.campaign.ReconOrder(lairAt, FactionType.HOLLOW, Report.Kind.LAIR, 3, 8200, false);
+        f.reconOrders.add(urgent);
+        f.reconOrders.add(ordinary);
+        f.struck(ENEMY, 7500);
+        f.struck(FactionType.EMBER_LEGION, 7600);
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        tag.putInt("format", CampaignData.FORMAT);
+        tag.putBoolean("started", true);
+        net.minecraft.nbt.ListTag factions = new net.minecraft.nbt.ListTag();
+        factions.add(f.save());
+        tag.put("factions", factions);
+        net.minecraft.nbt.CompoundTag saved = CampaignData.load(tag, provider).save(new net.minecraft.nbt.CompoundTag(), provider);
+        h.assertTrue(saved.getInt("format") == 5, "the campaign format: " + saved.getInt("format"));
+        FactionState back = CampaignData.load(saved, provider).factions.get(SIDE);
+        Report kept = back.knowledge.stream().filter(r -> r.kind == Report.Kind.ENEMY_BASE).findFirst().orElseThrow();
+        h.assertTrue(good.equals(kept.recon), "the recon did not come back whole: " + kept.recon + " / " + good);
+        h.assertTrue(kept.recon.faces().equals(java.util.Set.of(u1, u2)) && kept.recon.power() == (1.375 + 2.0625) / 2
+                && kept.recon.heroes().get("hinae") == 6.8125, "the faces, powers and heroes: " + kept.recon);
+        h.assertTrue(kept.reconFailures == 1 && kept.reconFailedAt == 6000 && kept.reconSidesTried == sides,
+                "the back-off after the blind look: " + kept.reconFailures + " at " + kept.reconFailedAt + ", sides " + kept.reconSidesTried);
+        Report lair = back.knowledge.stream().filter(r -> r.kind == Report.Kind.LAIR).findFirst().orElseThrow();
+        h.assertTrue(lair.recon == null && lair.reconFailures == 1 && lair.reconFailedAt == 7000 && lair.reconSidesTried == ReconRules.Side.NORTH.bit(),
+                "a first, blind recon keeps no recon and one failed attempt: " + lair.recon + ", " + lair.reconFailures);
+        h.assertTrue(back.reconOrders.size() == 2, "the orders: " + back.reconOrders);
+        com.factionclash.campaign.ReconOrder u = back.reconOrders.get(0), o = back.reconOrders.get(1);
+        h.assertTrue(u.target.equals(town) && u.subject == ENEMY && u.kind == Report.Kind.ENEMY_BASE && u.homeBase == 3 && u.orderedAt == 8000
+                && u.urgent && scout.equals(u.scout) && u.takenAt == 8100, "the urgent order: " + u);
+        h.assertTrue(o.target.equals(lairAt) && o.subject == FactionType.HOLLOW && o.kind == Report.Kind.LAIR && o.orderedAt == 8200
+                && !o.urgent && !o.taken() && o.takenAt == 0, "the ordinary order: " + o);
+        h.assertTrue(back.struckBy.equals(java.util.Map.of(ENEMY, 7500L, FactionType.EMBER_LEGION, 7600L)), "the strikes: " + back.struckBy);
+        // a watch saved with its scout's job midway (R4b saves it): a face seen before the save and one after are two faces,
+        // the points seen on either side of it join, and the watch runs on from its first sample
+        int before = 1 << ReconWatch.MIDDLE, after = 1 | 1 << 24;
+        java.util.UUID u3 = java.util.UUID.randomUUID(); // u1 seen only before the save, u2 before and after, u3 only after
+        ReconWatch mid = new ReconWatch();
+        mid.add(new ReconWatch.Sample(before, java.util.Map.of(u1, 1.375), java.util.Map.of("hinae", 6.8125), 1000));
+        mid.add(new ReconWatch.Sample(before, java.util.Map.of(u1, 1.375, u2, 2.0625), java.util.Map.of(), 1040));
+        ReconWatch resumed = BaseWatch.loadWatch(BaseWatch.saveWatch(mid));
+        resumed.add(new ReconWatch.Sample(after, java.util.Map.of(u2, 2.0625), java.util.Map.of(), 1080));
+        resumed.add(new ReconWatch.Sample(after, java.util.Map.of(u2, 2.0625, u3, 1.0), java.util.Map.of(), 1120));
+        h.assertTrue(resumed.soldiers().keySet().equals(java.util.Set.of(u1, u2, u3)) && resumed.power() == (1.375 + 2.0625 + 1.0) / 3,
+                "a watch resumed after a save should count three faces once each: " + resumed.soldiers());
+        h.assertTrue(resumed.first() == 1000 && resumed.watchTicks() == 120 && resumed.mask() == (before | after) && resumed.middle()
+                && resumed.heroes().equals(java.util.Map.of("hinae", 6.8125)), "a watch resumed after a save: first " + resumed.first()
+                + ", " + resumed.watchTicks() + " ticks, mask " + resumed.mask() + ", heroes " + resumed.heroes());
+        h.assertTrue(BaseWatch.loadWatch(BaseWatch.saveWatch(new ReconWatch())).empty(), "an empty watch saved and loaded is not empty");
+        // a format-4 save: its report's old look and losses, no recon, no orders, no strikes
+        FactionState old = new FactionState(SIDE);
+        Report looked = new Report(Report.Kind.ENEMY_BASE, town, 4000, ENEMY, 3, "3 soldiers seen");
+        looked.look = new Intel.Look(3, 0.6, 1.0, 0, 4000);
+        looked.losses = 2;
+        looked.lossAt = 4500;
+        old.knowledge.add(looked);
+        net.minecraft.nbt.CompoundTag oldFaction = old.save();
+        oldFaction.remove("reconOrders");
+        oldFaction.remove("struckBy");
+        net.minecraft.nbt.CompoundTag oldTag = new net.minecraft.nbt.CompoundTag();
+        oldTag.putInt("format", 4);
+        oldTag.putBoolean("started", true);
+        net.minecraft.nbt.ListTag oldFactions = new net.minecraft.nbt.ListTag();
+        oldFactions.add(oldFaction);
+        oldTag.put("factions", oldFactions);
+        FactionState loaded = CampaignData.load(oldTag, provider).factions.get(SIDE);
+        Report r4 = loaded.knowledge.get(0);
+        h.assertTrue(r4.recon == null && r4.reconFailures == 0 && r4.look != null && r4.look.soldiers() == 3 && r4.losses == 2,
+                "a format-4 report: recon " + r4.recon + ", look " + r4.look + ", losses " + r4.losses);
+        h.assertTrue(loaded.reconOrders.isEmpty() && loaded.struckBy.isEmpty(), "a format-4 faction has orders or strikes: "
+                + loaded.reconOrders + " / " + loaded.struckBy);
+        h.succeed();
+    }
+
+    /**
+     * recon.md 4's table on the faction's kept report (task R2), by delivery and the watches' times, not by the reports'
+     * {@code observedAt}: a passing look never clears the recon; a blind one keeps it and counts a failed attempt; a newer
+     * good one replaces it and clears the back-off; a late scout's newer watch delivered after a newer passing look still
+     * replaces it, and a late scout's older watch in a report observed later does not; ruins drop it for good. A first
+     * report that brings a blind recon keeps no recon and one failure.
+     */
+    @GameTest(template = "platform", timeoutTicks = 20, batch = "workers_static")
+    public static void aKeptReconFollowsTheMergeTableByDelivery(GameTestHelper h) {
+        FactionState f = new FactionState(SIDE);
+        BlockPos at = new BlockPos(500, 64, -200);
+        java.util.function.Supplier<Report> kept = () -> f.knowledge.stream().filter(r -> r.kind == Report.Kind.ENEMY_BASE).findFirst().orElseThrow();
+        java.util.Map<java.util.UUID, Double> two = java.util.Map.of(java.util.UUID.randomUUID(), 1.0, java.util.UUID.randomUUID(), 1.0);
+        int w = ReconRules.Side.WEST.bit(), e = ReconRules.Side.EAST.bit(), s = ReconRules.Side.SOUTH.bit();
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 1000, null, 0));
+        h.assertTrue(kept.get().recon == null && kept.get().reconFailures == 0, "a passing look made a recon");
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 2000, recon(4, true, 2000, two, java.util.Map.of()), w));
+        h.assertTrue(kept.get().recon == null && kept.get().reconFailures == 1 && kept.get().reconFailedAt == 2000 && kept.get().reconSidesTried == w,
+                "a blind recon is kept or not counted: " + kept.get().recon + ", " + kept.get().reconFailures);
+        Intel.Recon g1 = recon(12, true, 3000, two, java.util.Map.of());
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 3000, g1, e));
+        h.assertTrue(g1.equals(kept.get().recon) && kept.get().reconFailures == 0 && kept.get().reconSidesTried == 0,
+                "a good recon did not replace the blind attempts: " + kept.get().recon + ", " + kept.get().reconFailures);
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 5000, null, 0));
+        h.assertTrue(g1.equals(kept.get().recon), "a newer passing look cleared the recon");
+        // a late scout: its report observed before the kept one, its watch newer than the kept recon
+        Intel.Recon g2 = recon(15, true, 4000, java.util.Map.of(), java.util.Map.of());
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 4000, g2, 0));
+        h.assertTrue(g2.equals(kept.get().recon), "a late scout's newer watch was dropped for an older report: " + kept.get().recon);
+        // a report observed later, with a watch older than the kept recon
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 6000, recon(20, true, 2500, two, java.util.Map.of()), 0));
+        h.assertTrue(g2.equals(kept.get().recon), "an older watch replaced the kept recon: " + kept.get().recon);
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 7000, recon(6, false, 7000, java.util.Map.of(), java.util.Map.of()), e | s));
+        h.assertTrue(g2.equals(kept.get().recon) && kept.get().reconFailures == 1 && kept.get().reconFailedAt == 7000
+                && kept.get().reconSidesTried == (e | s), "a blind recon after a good one: " + kept.get().recon + ", " + kept.get().reconFailures);
+        // a late scout's passing look, observed long before the kept report: the back-off stays
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 100, null, 0));
+        h.assertTrue(g2.equals(kept.get().recon) && kept.get().reconFailures == 1 && kept.get().reconFailedAt == 7000
+                && kept.get().reconSidesTried == (e | s), "a late passing look changed the back-off: " + kept.get().reconFailures);
+        // a late scout's blind watch, newer than the kept recon, in a report observed before the kept one: one more failure
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 6500, recon(5, true, 7500, java.util.Map.of(), java.util.Map.of()), w));
+        h.assertTrue(g2.equals(kept.get().recon) && kept.get().reconFailures == 2 && kept.get().reconFailedAt == 7500
+                && kept.get().reconSidesTried == (e | s | w), "a late blind watch: " + kept.get().reconFailures + " at " + kept.get().reconFailedAt);
+        Intel.Recon g3 = recon(9, true, 8000, two, java.util.Map.of());
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 8000, g3, w));
+        h.assertTrue(g3.equals(kept.get().recon) && kept.get().reconFailures == 0 && kept.get().reconSidesTried == 0,
+                "a newer good recon: " + kept.get().recon + ", " + kept.get().reconFailures);
+        Report ruins = delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 9000, null, 0);
+        ruins.fallen = true;
+        f.addReport(ruins);
+        h.assertTrue(kept.get().fallen && kept.get().recon == null, "ruins kept the recon: " + kept.get().recon);
+        f.addReport(delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 10_000, recon(12, true, 10_000, two, java.util.Map.of()), 0));
+        h.assertTrue(kept.get().fallen && kept.get().recon == null, "ruins took a recon again: " + kept.get().recon);
+        h.assertTrue(f.knowledge.size() == 1, "one base, one report: " + f.knowledge.size());
+        // on one trip, two looks at a base: the newer watch, good or blind, is what the scout carries home
+        Report first = delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 1000, recon(12, true, 1000, two, java.util.Map.of()), w);
+        Report blind = delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 1500, recon(3, true, 1500, java.util.Map.of(), java.util.Map.of()), e);
+        Report carried = ScoutJob.mergeOnTrip(first, blind);
+        h.assertTrue(carried.recon == blind.recon && carried.reconSidesTried == (w | e), "a trip's newer watch: " + carried.recon);
+        h.assertTrue(ScoutJob.mergeOnTrip(blind, delivered(Report.Kind.ENEMY_BASE, at, ENEMY, 1600, null, 0)).recon == blind.recon,
+                "a passing look on the trip dropped the blind watch");
+        h.succeed();
     }
 }

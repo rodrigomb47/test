@@ -25,9 +25,12 @@ public final class CampaignData extends SavedData {
      * per-record versions (mineV, woodV, fishV) and convert older records themselves on load (WorkplaceState.load), so
      * format 1 campaigns load and keep playing. 3: heroes ({@link #heroes}, an empty map when missing). 4: the roll call
      * (roster entries' whereabouts and truth, factions' carried news; {@code docs/design/missing_npcs.md} 10: an older
-     * entry reads as here, away or known dead). It is read back only to be logged, never used as a gate.
+     * entry reads as here, away or known dead). 5: focused reconnaissance ({@code docs/design/recon.md} 7): a base report's
+     * {@code recon} and its back-off ({@code reconFailedAt}, {@code reconFailures}, {@code reconSidesTried}), a faction's
+     * {@code reconOrders} and {@code struckBy} (an older save has none: no recon, no order, no strike seen; its reports'
+     * old looks still read until the council's switch). It is read back only to be logged, never used as a gate.
      */
-    public static final int FORMAT = 4;
+    public static final int FORMAT = 5;
 
     public boolean started;
     public BlockPos center = BlockPos.ZERO;
@@ -198,8 +201,11 @@ public final class CampaignData extends SavedData {
             com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} - migrating workplaces to format {}", d.loadedFormat, FORMAT);
         } else if (d.loadedFormat < 3) {
             com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} (no heroes yet) as format {}", d.loadedFormat, FORMAT);
-        } else if (d.loadedFormat < FORMAT) {
+        } else if (d.loadedFormat < 4) {
             com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} (no roll call yet: members read as here, away or known dead) as format {}",
+                    d.loadedFormat, FORMAT);
+        } else if (d.loadedFormat < FORMAT) {
+            com.factionclash.FactionClash.LOGGER.info("Loading campaign format {} (no focused recon yet: no recon, order or strike seen) as format {}",
                     d.loadedFormat, FORMAT);
         }
         d.started = t.getBoolean("started");

@@ -98,6 +98,39 @@ public final class FactionState {
      */
     public final Map<UUID, List<News>> news = new LinkedHashMap<>();
 
+    /**
+     * The war council's open recon orders ({@code docs/design/recon.md} 2.1): at most one ordinary and one urgent
+     * ({@link com.factionclash.logic.campaign.ReconRules#ORDERS_MAX}). Kept and saved since task R2; R3 places and settles
+     * them, R4b's scouts take them at home.
+     */
+    public final List<ReconOrder> reconOrders = new ArrayList<>();
+    /**
+     * When the faction last saw each enemy faction strike it at home (recon.md 6): an enemy soldier or hero falling in its
+     * home area or seen falling by a member standing in it ({@code BaseWatch.enemyFell}), or an enemy fighter its alarm
+     * noticed inside a settlement's walls box ({@code FactionDirector.defenceAlarm}). The faction's own observation,
+     * saved; it never lowers an estimate. Read from task R3 on (the urgent recon and the counter-attack).
+     */
+    public final Map<FactionType, Long> struckBy = new java.util.EnumMap<>(FactionType.class);
+
+    /** {@code striker} was seen striking us at {@code at}: the newest strike is kept. Returns whether that changed anything. */
+    public boolean struck(FactionType striker, long at) {
+        if (striker == null || striker == type) {
+            return false;
+        }
+        Long old = struckBy.get(striker);
+        if (old != null && old >= at) {
+            return false;
+        }
+        struckBy.put(striker, at);
+        return true;
+    }
+
+    /** When {@code striker} was last seen striking us (0: never). */
+    public long struckAt(FactionType striker) {
+        Long at = striker == null ? null : struckBy.get(striker);
+        return at == null ? 0 : at;
+    }
+
     public FactionState() {
     }
 
@@ -130,14 +163,26 @@ public final class FactionState {
      * {@link Report#merge}: a village seen without traders keeps the traders seen before). Over {@link #MAX_REPORTS}
      * the oldest report is forgotten - the oldest that is not a village, pillager outpost or woodland mansion, which
      * stay where they are and which traders and the workers' dangerous-ground rules rely on.
+     *
+     * <p>A settlement's or lair's focused recon ({@code docs/design/recon.md} 4) follows its own table, by delivery and the
+     * watches' times rather than by {@code observedAt} ({@link Report#fileRecon}): the kept report holds only the newest
+     * good recon, with the failed attempts since it; a first report of a base that brought a blind recon keeps no recon
+     * and one failed attempt.
      */
     public boolean addReport(Report r) {
         for (int i = 0; i < knowledge.size(); i++) {
             Report old = knowledge.get(i);
             if (old.sameSubject(r)) {
-                knowledge.set(i, r.observedAt >= old.observedAt ? Report.merge(old, r) : Report.merge(r, old));
+                Report merged = r.observedAt >= old.observedAt ? Report.merge(old, r) : Report.merge(r, old);
+                if (merged.base()) {
+                    merged.reconFile(Report.fileRecon(old, r));
+                }
+                knowledge.set(i, merged);
                 return false;
             }
+        }
+        if (r.base()) {
+            r.reconFile(Report.fileRecon(null, r));
         }
         knowledge.add(r);
         while (knowledge.size() > MAX_REPORTS) {
@@ -226,6 +271,14 @@ public final class FactionState {
             }
         });
         t.put("news", nl);
+        ListTag ro = new ListTag();
+        for (ReconOrder o : reconOrders) {
+            ro.add(o.save());
+        }
+        t.put("reconOrders", ro);
+        CompoundTag sb = new CompoundTag();
+        struckBy.forEach((faction, at) -> sb.putLong(faction.id, at));
+        t.put("struckBy", sb);
         return t;
     }
 
@@ -298,6 +351,21 @@ public final class FactionState {
             News n = News.load(e);
             if (n != null && e.hasUUID("carrier")) {
                 f.news.computeIfAbsent(e.getUUID("carrier"), c -> new ArrayList<>()).add(n);
+            }
+        }
+        // the recon orders and the strikes seen: absent before campaign format 5 (2026-11-26: none open, none seen)
+        ListTag ro = t.getList("reconOrders", Tag.TAG_COMPOUND);
+        for (int i = 0; i < ro.size(); i++) {
+            ReconOrder o = ReconOrder.load(ro.getCompound(i));
+            if (o != null) {
+                f.reconOrders.add(o);
+            }
+        }
+        CompoundTag sb = t.getCompound("struckBy");
+        for (String id : sb.getAllKeys()) {
+            FactionType striker = FactionType.byId(id);
+            if (striker != null) { // (a faction this version does not know is left out)
+                f.struckBy.put(striker, sb.getLong(id));
             }
         }
         return f;
