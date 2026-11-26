@@ -199,7 +199,10 @@ public class ScoutJob extends Job {
         return state == State.OUTBOUND || state == State.RETURN;
     }
 
-    /** On its lookout pillar (or jumping up onto it): nothing moves it off before it has taken the pillar down. */
+    /**
+     * On its lookout pillar (or jumping up onto it): no fight or creeper dodge moves it off before it has taken the
+     * pillar down. A hit's knock-back can (it does not {@link #resistsKnockback}): thrown off, it falls as a player would.
+     */
     @Override
     public boolean onScaffold() {
         return reconPerched();
@@ -1731,7 +1734,8 @@ public class ScoutJob extends Job {
     private void reconPillar(ReconTrip r, BaseState t) {
         Scaffold.Pillar p = r.pillar;
         if (PillarClimb.offColumn(npc, p)) {
-            // moved off its column (it cannot be knocked off): the watch ends there, the blocks still standing stay
+            // knocked or moved off its column (a hit's knock-back throws it off, as it would a player): the watch ends
+            // there, it falls, and the blocks still standing stay
             r.end = ReconTrip.End.RETREAT;
             r.why = "off its pillar";
             watchEnded(r);

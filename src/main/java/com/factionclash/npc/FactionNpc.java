@@ -401,15 +401,30 @@ public class FactionNpc extends PathfinderMob implements RangedAttackMob {
     }
 
     /**
-     * No knockback while it stands on a scaffold pillar it built (a woodcutter up a tall tree): like a player crouched
-     * at the edge, it is not pushed off; hurt up there, its job brings it down first.
+     * A hit's knock-back, as a player takes it: on a 1 x 1 pillar it can throw the NPC off (the review of the focused
+     * reconnaissance round, finding 7: the recon scout on its lookout pillar took none, which a player there never has).
+     * Only a job that says so resists it ({@link com.factionclash.work.Job#resistsKnockback}: a woodcutter on its
+     * scaffold, for now). While the push plays out nothing holds it still ({@link #reelingFromKnockback}).
      */
     @Override
     public void knockback(double strength, double x, double z) {
-        if (job != null && job.onScaffold()) {
+        if (job != null && job.resistsKnockback()) {
             return;
         }
         super.knockback(strength, x, z);
+        knockedAt = level().getGameTime();
+    }
+
+    /** When it last took a knock-back (game time; long ago at first). Not saved: a push does not outlive a reload. */
+    private long knockedAt = -10_000;
+
+    /**
+     * Thrown by a knock-back it took a moment ago and not landed yet: nothing that holds a climber still over its column
+     * ({@code Scaffold.holdStill}) undoes the push meanwhile, as nothing undoes a player's.
+     */
+    public boolean reelingFromKnockback() {
+        long since = level().getGameTime() - knockedAt;
+        return since >= 0 && (since <= 2 || !onGround() && since < 60);
     }
 
     /** Allies pass through each other so narrow doors and stairs do not become permanent jams. */

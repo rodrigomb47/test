@@ -91,6 +91,9 @@ public final class Scaffold {
      * motion, and back to the middle if it slid off it a little.
      */
     public static void holdStill(FactionNpc npc, BlockPos column) {
+        if (npc.reelingFromKnockback()) {
+            return; // a hit's push plays out as a player's would: off the column it falls ({@code PillarClimb.offColumn})
+        }
         npc.getNavigation().stop();
         // no step left over from a walk: the move control's last order is to stand at the middle, at no speed
         npc.getMoveControl().setWantedPosition(column.getX() + 0.5, npc.getY(), column.getZ() + 0.5, 0.0);

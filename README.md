@@ -170,8 +170,9 @@ Players respawn at their faction's nearest surviving base when they have no bed.
   urgent after an enemy struck its walls); a scout takes the order at home and walks out. Outside 5-high walls nobody
   sees into a yard, so the scout stands 61 or more blocks from the centre (where no guard in the yard can see it), builds
   a dirt pillar block by block, looking after each, stops two blocks above its first good look and **watches for a
-  minute**, counting each soldier once. A look is good with a third of the yard and its middle in view; a worse one comes
-  home as "could not see inside", never as "nobody there", and the council tries another side next time. It carries the
+  minute**, counting each soldier once (a hit up there can knock it off, as it would a player). A look is good with a
+  third of the yard and its middle in view; a worse one comes home as "could not see inside", never as "nobody there",
+  and the council tries another side next time. It carries the
   report home to the station like any news: a scout killed on the way brings nothing. A recon is fresh for half a day,
   and with no fresh good recon of any target the council does not launch. It treats the count as a floor ("they can
   assume that what they saw is not the enemy mainforce", the owner's words) and plans against the count plus a
@@ -608,7 +609,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 464 GameTests on a real headless server, including **focused reconnaissance** (a
+* `./gradlew runGameTestServer` — 465 GameTests on a real headless server, including **focused reconnaissance** (a
   scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
   open ground at home when the storehouse has none; walks round
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
@@ -641,7 +642,8 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   whatever is in sight; the review of the build: a council raids a target its party can beat while another it cannot
   no longer holds it back; a scout whose trip was lost to a retraining takes its order again; a scout given up as lost
   that walks in blind counts its trip once; after an errand home a scout done at the target reports instead of walking
-  back out to its corners; no urgent recon before the faction's first raid), **what a faction knows**
+  back out to its corners; no urgent recon before the faction's first raid; a monster's hit knocks a scout off its
+  pillar as it would a player, and it falls), **what a faction knows**
   (ruins seen stay ruins when only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
   pulls one off its party; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid

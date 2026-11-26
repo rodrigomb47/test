@@ -1207,10 +1207,20 @@ python3 tools/rcon.py "stop"
   council's own counter-attack window (`ReconRules.counterWindow`, never before the first raid); a scout given up as lost
   that walks in blind counts its trip once (`Report.reconAttemptCounted`); after an errand home a scout done at the
   target reports instead of walking back to the corners; `KnowledgeIsolationTest` counts the council's `// truth:`
-  lines exactly (7), scans the helpers the council calls and the sightings ledger. `GameTestBases` clears the test
-  bases a stopped run left in the kept GameTest world (`run/world`). **1172 unit tests, 464 GameTests.**
+  lines exactly (7), scans the helpers the council calls and the sightings ledger; and (a separate commit, easy to
+  revert) a hit's knock-back throws a recon scout off its pillar as it would a player (`Job.resistsKnockback`,
+  `FactionNpc.reelingFromKnockback`; the woodcutter on its scaffold keeps the old guard). `GameTestBases` clears the test
+  bases a stopped run left in the kept GameTest world (`run/world`). **1172 unit tests, 465 GameTests.**
 
 ## 6. Known open items and ideas (none blocking)
+
+- Left open by the review of focused reconnaissance (2026-11-26, `docs/design/recon.md` 17): (1) the woodcutter on its
+  scaffold still takes no knock-back (`WoodcutterJob.resistsKnockback`), an NPC-only protection a player up a tree
+  lacks: the owner decides whether it goes too (a tall tree's scaffold is up to 30 blocks); (2) with knock-back on its
+  pillar a recon scout hit up there now usually falls 12 to 20 blocks, often fatally: the live check (R8) should count
+  the scouts lost that way and say whether the hold and the standoff keep hits rare; (3) vanilla's target search still
+  does not pick an NPC 6 or more blocks up, so a soldier passing below ignores the scout where it would attack a player
+  (recon.md 8, deferred).
 
 - Left open by the faction's fall (2026-11-25, section 5): (1) a member in an unloaded place stays an entity there until
   its chunk loads (it is dead for the roll call and the engine, so nothing loads it on purpose); (2) the rule reads the

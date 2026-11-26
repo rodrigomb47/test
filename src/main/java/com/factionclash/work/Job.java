@@ -336,10 +336,21 @@ public abstract class Job {
     }
 
     /**
-     * True while the worker stands on a scaffold pillar it built (a woodcutter felling a tall tree): nothing may move
-     * it off there (a creeper dodge, a knockback) before it has come down by breaking the pillar under its feet.
+     * True while the worker stands on a scaffold pillar it built (a woodcutter felling a tall tree, a recon scout on its
+     * lookout pillar): no fight or creeper dodge moves it off there before it has come down by breaking the pillar under
+     * its feet. A hit's knock-back is {@link #resistsKnockback}'s.
      */
     public boolean onScaffold() {
+        return false;
+    }
+
+    /**
+     * Whether a hit's knock-back leaves it where it stands ({@code FactionNpc.knockback}). No by default: an NPC is knocked
+     * back as a player is, a recon scout on its lookout pillar too (the review of the focused reconnaissance round, finding
+     * 7: a player on a 1 x 1 pillar is knocked off by a hit, sneaking or not). The woodcutter on its scaffold keeps the old
+     * guard for now (an open question for the owner).
+     */
+    public boolean resistsKnockback() {
         return false;
     }
 

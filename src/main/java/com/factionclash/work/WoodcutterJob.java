@@ -288,6 +288,12 @@ public class WoodcutterJob extends Job {
         return pillar != null && (pillar.height > 0 || pillar.phase == Scaffold.Phase.CLIMB && !npc.onGround());
     }
 
+    /** On its scaffold a hit does not knock it off (the guard every scaffold had before the recon scout's was lifted). */
+    @Override
+    public boolean resistsKnockback() {
+        return onScaffold();
+    }
+
     @Override
     public boolean ignoresCombat() {
         return onScaffold();

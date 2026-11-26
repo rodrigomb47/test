@@ -17,11 +17,15 @@ import com.factionclash.npc.NpcRole;
 import com.factionclash.storage.FactionStorage;
 import com.factionclash.util.Messages;
 import com.factionclash.work.ReconVantage;
+import com.factionclash.work.Scaffold;
 import com.factionclash.work.ScoutJob;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -35,8 +39,8 @@ import java.util.UUID;
  * The fixes of the focused reconnaissance round's two reviews ({@code docs/design/recon.md} 17): the council judges every
  * target it may raid, not only the one with the fewest heads; a scout that lost its trip gives its order back; a scout
  * given up as lost that comes home late counts its attempt once; after an errand home a scout done at the target reports
- * instead of walking back out to its corners. The trips run in the 32 x 32 {@code mobility_field} of
- * {@link ReconTripGameTests}, with {@code skyAccess = true}.
+ * instead of walking back out to its corners; a hit's knock-back throws a scout off its pillar as it would a player. The
+ * trips run in the 32 x 32 {@code mobility_field} of {@link ReconTripGameTests}, with {@code skyAccess = true}.
  */
 @GameTestHolder(FactionClash.MODID)
 @PrefixGameTestTemplate(false)
@@ -274,6 +278,67 @@ public final class ReconReviewGameTests {
             }
             t.assertTrue(trip.reported == ReconRules.ScoutReport.GOOD && trip.filed.recon != null && trip.filed.recon.good(),
                     "its good recon reported after the errand: " + trip.reported + ", " + trip.filed.recon);
+            t.succeed();
+        });
+    }
+
+    // ------------------------------------------------------------------ a hit throws it off its pillar
+
+    /**
+     * Review finding 7: a player on a 1 x 1 pillar hit by a monster is knocked back and can fall off; the recon scout took
+     * no knock-back there. A zombie at the pillar's foot hits the scout on top of its pillar: the hit throws it off the
+     * column, the watch ends ("off its pillar"), it falls and takes vanilla fall damage, and the pillar's blocks stay
+     * where they are.
+     */
+    @GameTest(template = FIELD, timeoutTicks = 4000, batch = "recon_review_knockback", skyAccess = true)
+    public static void aHitKnocksTheScoutOffItsPillar(GameTestHelper h) {
+        ReconTripGameTests.Field fl = ReconTripGameTests.field(h, 4000, 4, true);
+        GameTestBases.Handle t = fl.t();
+        try {
+            ReconTripGameTests.defender(t, 17, 21);
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+        ReconTripGameTests.Trip trip = new ReconTripGameTests.Trip();
+        long[] hitAt = {-1}, offAt = {-1};
+        BlockPos[] column = {null};
+        boolean[] offWhy = {false};
+        t.onEachTick(() -> {
+            ReconTripGameTests.follow(fl, trip);
+            ScoutJob job = fl.job();
+            FactionNpc n = fl.scout();
+            long now = h.getLevel().getGameTime();
+            if (hitAt[0] < 0) {
+                Scaffold.Pillar p = job.reconPillar();
+                if (!trip.sawWatch || now - trip.watchFrom < 100 || p == null || p.height != trip.top || !n.onGround()) {
+                    return;
+                }
+                column[0] = p.base;
+                BlockPos foot = ReconTripGameTests.rel(h, p.base);
+                Zombie zombie = t.track(h.spawn(EntityType.ZOMBIE, foot.offset(-2, 0, 0)));
+                zombie.setNoAi(true);
+                n.invulnerableTime = 0;
+                n.hurt(n.damageSources().mobAttack(zombie), 1.0F);
+                hitAt[0] = now;
+                return;
+            }
+            offWhy[0] |= job.reconWhy().equals("off its pillar");
+            double dx = n.getX() - (column[0].getX() + 0.5), dz = n.getZ() - (column[0].getZ() + 0.5);
+            if (offAt[0] < 0 && dx * dx + dz * dz > 0.8 * 0.8) {
+                offAt[0] = now;
+            }
+            if (now - hitAt[0] == 100) {
+                t.assertTrue(offAt[0] > 0, "a hit with its knock-back should throw it off its pillar, as it would a player: "
+                        + String.format(java.util.Locale.ROOT, "%.2f, %.2f from the column", dx, dz) + ", " + job.reconPhase());
+            }
+            if (offAt[0] < 0 || !n.onGround() || n.getY() > column[0].getY() + 0.5) {
+                return;
+            }
+            t.assertTrue(offWhy[0], "the watch should end off its pillar: " + job.reconWhy());
+            t.assertTrue(n.getLastDamageSource() != null && n.getLastDamageSource().is(DamageTypes.FALL),
+                    "it should take fall damage: " + (n.getLastDamageSource() == null ? null : n.getLastDamageSource().getMsgId()));
+            t.assertTrue(ReconTripGameTests.dirtIn(h, ReconTripGameTests.rel(h, column[0])) > 0, "the pillar's blocks stay where they are");
             t.succeed();
         });
     }
