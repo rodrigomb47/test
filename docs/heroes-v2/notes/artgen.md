@@ -4908,3 +4908,243 @@ Sabotage (each restored afterwards, every file byte for byte): a leaper II landi
   left as they are; a hat-aware variant (or his own copies of the fight ones) is a shared decision for later.
 - Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
   `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3 and 5), and the jar.
+
+## C3: Ambrose Nettlewick (2026-11-26)
+
+HEROES_V2.md 15.2 row C3, Ambrose's half (Kagenori's is above). This adds his source file, his art, his signature
+animations and the pieces he needed. His kit is the slice fixture's
+(`src/test/resources/heroes/slice/ambrose_nettlewick.json`, copied field for field; his server definition belongs to
+the engine side). He has one body for good (the owner's rule, HEROES_V2 3.6): **adult, male, slim build, drawn at
+100%** (SLICE_PLAN 3.8), 52 px tall (1.82 blocks). Every preview shows him only in that body. He has no tail. No hit
+tick, marker or timing file of an existing clip changed: the libraries, `_fallback`, Natsuho, Hinae, Benika, Yugen,
+Kagenori, the test rig, the Wither and the Ender Dragon build byte for byte as before, and his animation and timing
+files are new.
+
+### What exists
+
+| Path | What |
+|---|---|
+| `herosrc/heroes/ambrose_nettlewick.hero.json` | the source: the kit, `art` (body, palette, parts, face with three overrides, the cauldron staff that is also his broom, phase looks) and `animations` (style `staff`, blink `nervous`, the G10 variant `broom`, 69 poses of his own, 17 signatures, his own take-off, ride and landing, and `sec.loop`) |
+| `herosrc/parts/headwear/witch_brim_up.json` | new: the witch hat's brim turned up at the front, worn with `"phase": 3` over the hat (below) |
+| `herosrc/parts/accessories/field_kit.json` | new: a vial and a notebook in his left hand and a pencil in his right, hidden inside the hand at rest (below) |
+| `herosrc/parts/accessories/crow.json` | the crow's folded wings now hang from their own bones, `crow_wing_r` and `crow_wing_l` (below) |
+| generated | `geo/hero` (73 bones of the 100 budget, 217 cubes of the 300, 122 of the 130 beyond the fine distance), `textures/entity/hero` (256x128 texture and glow mask; no `_p2` texture: nothing of his changes colour), `heroes/*.visual.json` (with `carrier`: the staff on the `mount` bone), `animations/hero/ambrose_nettlewick.animation.json`, `data/factionclash/hero_timings/ambrose_nettlewick.json` |
+| `render/hero_previews.py` | `rides_mount`; a flyer on a mount carrier films his take-off, ride, cast from the broom, landing and glide with the carrier shown, not `move.fly*`; the sheet draws a rider's broom clips riding (below); his captions |
+| `anim/loco_preview.py` | G10's `hero_ambrose.gif` drawn from his own source in his one body |
+| `tests/test_ambrose.py` | 24 tests (below) |
+
+### His look
+
+The cauldron warlock of the sample outfit (G6a-c), with the changes below: messy medium hair in a dark green-black, a
+wide-brimmed pointed hat worn tilted with a gold band and a purple patch, round gold glasses and freckles, a long purple
+coat with gold trim over dark trousers and brown boots, the faction sash, the vial bandolier across his chest (green,
+grey and black vials: his barrage's colours), the crow on his left shoulder and the gnarled cauldron staff (on his
+back, head up, when carried). The palette is SLICE_PLAN 3.8's (`primary` purple #5B3A86, `secondary` near-black,
+`accent` and `eyes` green, `trim` and `metal` gold, `glow` #9DFF6B). Face: `wide` eyes, lashes 1, `bold` brows, the
+`wide` mouth, the round glasses, freckles; blink `nervous` (every 1.5-3.5 s). Three overrides fit a cheerful scholar:
+`calm` smiles, `focused` keeps the focused eyes with the smile (he enjoys an experiment), and `angry` is angry eyes over
+a frown, indignant rather than snarling.
+
+- **Phase 2** (60%): broom bristles sprout round the staff's foot (the staff's own `phase` cubes, from phase 2, in the
+  hand, on his back and on the broom).
+- **Phase 3** (25%): his eyes glow green and his hat's brim lifts (below).
+
+**The lifted brim** (`headwear/witch_brim_up`). The witch hat's brim is one bone (`brim`, so a clip can turn it), and a
+clip's keys end with the clip: a brim lifted only in `phase.3` would drop again when it ends. So the lifted brim is a
+phase look. The new part holds the same two crossed slabs turned up by `lift` degrees (16) about a line across the back
+of the band, so the front edge rises about 3 px and the back stays on the hair; worn with `"phase": 3` (its bone is
+`p3_brim_up`, shown from phase 3) and `requires` the hat. Phase 3's look hides the hat's own `brim`, so from phase 3 the
+lifted brim shows in its place. Two cubes; `tilt` matches the hat's.
+
+**The crow's wings.** The kit sheet has the crow flap along beside him when he flies; its wings were cubes on the body's
+bone (G10's open item). They now hang from `crow_wing_r` and `crow_wing_l`, hinged at the top of each folded wing, in
+exactly the place they were (the sample outfit renders as before: `previews/parts/outfits.png` and the crow's row of
+`details_accessories.png` are unchanged).
+
+**The field kit** (`accessories/field_kit`): a stoppered vial (`vial_l`) and a small notebook (`notebook_l`) in his left
+hand and a pencil (`pencil_r`) in his right, each on its own bone under the hand and lying inside it at rest, as the
+Wither's rose does. A clip brings one out by keying its bone along the hand toward the fingertips: the vial for each
+barrage throw (back in the next tick: thrown), the fume step, the last stand and the vial shake; the notebook in the
+victory and the notebook quirk; the pencil in the quirk.
+
+Purple and near-black keep him apart from the others: his two largest colour regions (the purple coat, the near-black
+hat and trousers) differ from Natsuho's by delta-E 50.1 and 84.0, from Hinae's by 48.1 and 74.2, from Benika's by
+53.5 and 64.3, from Yugen's by 71.5 and 34.9 and from Kagenori's by 80.0 and 3.4 (the near-black against his black
+hair; one pair under the NOTE's 15 at most). Front and side silhouettes at 4x overlap 0.69 with Hinae and Kagenori,
+0.68 with Natsuho, 0.67 with Benika and 0.61 with Yugen (the NOTE is at 0.90): the wide hat and the coat carry him.
+He is the only witch with a source, so `check` gives no NOTE.
+
+### Signature animations
+
+His own file has the 17 signatures, his own take-off, ride and landing on the broom (G10's `broom` variant with the crow
+added), the variant's cast from the broom and `sec.loop`: 22 clips of the 24 the own file may hold. The staff library
+and the core cover the rest: his basic string `attack.1-3`, his thrown basic attack (`attack.ranged`, a vial), the
+locomotion, the hurt and the death. Each move's clip has the kit's frames to the tick: the `hit` on the release and a
+`cast` on the active part's last tick; Potion Barrage has a `hit` per vial.
+
+| Clip | Length | Class | Server frames (ticks) | What happens |
+|---|---|---|---|---|
+| `move.potion_barrage` | 2.15 s | light | 12 / 17 / 16, hits 12, 20, 28 | three underhand lobs with the left hand, kept low so the arm never sweeps through the crow on his shoulder: each vial plucked from the bandolier (it slides out of his fingers), swung back past his hip with the chest turned away and lobbed forward and up (a `hit` and the throw sound each); after the third the hand pats along the empty loops, the head bowed, reaching for new vials |
+| `move.cauldron` | 1.8 s | area | 20 / 2 / 16 | the staff raised high at his right so the cauldron rides above his head, swirled like a censer while the left hand conducts (the tell); swung out beside him and forward one-handed, the cauldron flinging its brew at the target with the left palm thrown after it (`hit` 20), `cast` 21; the cauldron dips on and he straightens |
+| `move.hex_mark` | 0.9 s | light | 10 / 2 / 8 | the left hand traces the hex with two fingers before his chest, is cocked beside his cheek and flicked out at the target (`hit` 10, the hex sound), `cast` 11, a sly smile |
+| `move.fume_step` | 0.8 s | light | 8 / 2 / 8 | down on bent knees with a vial snatched up, dashed at his feet (`hit` 8, the fume sound), `cast` 9; the hop back with the knees tucked (the server carries him 5 blocks), down again fanning the fumes from his face |
+| `move.broom_hops` | 2.0 s | heavy | 16 / 10 / 16 | the staff brought down level at his hip as he crouches, then lower over it (the tell); the hop (`hit` 16, the broom sound) up side-saddle on the staff held under him exactly where the broom rides when he flies, the left arm out for balance; down on deep knees with the staff swung forward (`cast` 25: the splash and the puddle; the next hop starts here), the glasses pushed up |
+| `move.great_brew` | 7.9 s | area | 20 / 100 / 40 | the staff tipped forward so the cauldron hangs before his waist (the tell; `hit` 20, the channel begins); bent over it, stirring in quick circles and bobbing with the boil for 3 s; at 3.9 s (tick 80) the staff thrust at the sky, the cauldron tipped empty, arched back as the rain begins; watching the splashes fall with the left hand shading his eyes (`cast` 119); the staff lowered, the glasses pushed up with an "a-ha!" |
+| `ultimate` | 6.0 s | ultimate | 32 / 60 / 30 | Grand Experiment: the cauldron lifted high on the staff at his right, the left arm flung wide, the chest arched while the crow spreads its wings (the tell); drawn back over his shoulder, trembling, and swept forward and up so the cauldron flings its brew at the sky (`hit` 32: "Hypothesis: you lose!"); swung round high in slow circles while he laughs, the left hand waving the rain on (`cast` 91); lowered, the glasses pushed up, "a-ha!" |
+| `phase.2`, `phase.3` | 1.1, 1.1 s | - | - | inside the 1.2 s transitions: he stares at the new bristles with delight (the bristles sound), hops up side-saddle on the staff for a test perch while the crow flaps up off his shoulder, and drops back with a happy face ("Fascinating! Let's test mobility!"); the head bows so the brim, turned down, hides his eyes, trembling, then snaps up with the eyes glowing as the left hand flicks the brim up (the glow sound), the brim overshooting and settling lifted |
+| `intro`, `victory`, `taunt` | 1.5, 2.0, 1.5 s | - | - | the hat tipped with the left hand and a small bow, the glasses pushed up, the left hand opened palm up toward the challenger ("Ah, a test subject! I mean, a guest."); the staff thrust up and the left fist pumped with an "a-ha!" while the crow spreads its wings, then the notebook held up to read the result with two pleased nods ("Data acquired."); leaning in to peer over his glasses, then a wagging forefinger ("Hold still, please.") |
+| `last_stand`, `escape` | 1.6, 0.6 s | - | - | bent over panting with the staff planted and a hand on his knee, then up, the glasses pushed up, the staff raised and a vial ready, the jaw set; over the run (or the take-off): the right hand clutching his hat to his head, a glance back over his shoulder and the left hand flapped back ("Don't touch my notes!") |
+| `personal.1-3` | 3.0, 2.6, 3.0 s | - | - | the notebook scribble (notebook and pencil out, writing, the pencil tapped on his chin, a last line, both away); the vial shake (a vial held up to his glasses, shaken by the ear, lifted to the light, tucked back in the bandolier); the crow hops onto his hat's brim and pecks the crown three times, he glares up at it and hitches his shoulder, it flaps off and settles back on his shoulder, and he sighs |
+| `move.takeoff`, `move.ride`, `move.fly_land` | 0.6, 2.0 (loop), 0.4 s | - | - | G10's broom variant, every body channel unchanged (a test compares them tick by tick), with the crow added: it lifts off his shoulder at the hop, flaps along beside him (off his left shoulder, its wings beating four times a second, bobbing on the air), and drops back onto his shoulder as he lands. `move.ride_cast` stays the variant's (an action over the ride: it keys no crow) |
+| `sec.loop` | 6.0 s | - | - | the crow's glances on the secondary controller: quick head turns to his face, out to the side, a curious tilt, down at the ground, with holds between. It keys only `crow_head`, and no other clip does, so every clip may move the crow's body and wings |
+
+- **What plays over the broom.** In a fight he may cast his light ranged moves from the broom and wind a rain up in the
+  air (A12's aerial windows), and the engine plays a move over whatever base runs, `move.ride` included (it never sends
+  `move.ride_cast`, a reserved name the art keeps for a cast from the broom). So Potion Barrage and Hex Mark key only the
+  waist, chest, neck and left arm (the vial and the hex are thrown with the left hand; the right is left to the base:
+  the staff upright on the ground, the hand on the shaft on the broom), and the ultimate and the escape key no leg, hip
+  or root bone: the ride's seat stays under them. The ultimate's right arm lifts the cauldron: from the broom it lifts
+  an empty hand (the staff is the broom then), the price of one clip for both.
+- **One hand on the staff.** The staff is a one-handed prop (`hand: right`), so the body check counts a left hand on it
+  as a clip into the left arm; every staff move holds it in the right hand and casts, throws or gestures with the left.
+  The staff's foot is 17 px behind the grip: a swing that tips the head outward brings the foot back into the body.
+  The cauldron's swing passes through a solved waypoint with the staff in a vertical plane beside him (`amb.cau_swing`),
+  added when the first draft's swing drove the foot into his chest; with the final raise and release poses the plain
+  blend is clear as well (measured: 0.43 px at most either way), so the waypoint now shapes the arc, out beside him
+  rather than across his front.
+- **Broom Hops shows the hand's copy.** A leap runs in the ground and airborne modes, where the engine shows the staff in
+  his hand, not the mount copy (`MovementRules.showsMount`: fly, hover, glide, ride). So the hop's seat lays the held
+  staff exactly where the mount copy rides (the solver maps the grip onto the mount's placement, `parts._place_mount`),
+  and he perches side-saddle on it as on the broom.
+- **The Great Brew rains after its channel.** The kit (and SLICE_PLAN 3.8) rain the ten splashes for 2 s after the 3 s
+  channel, so the clip stirs until 3.9 s and flings the brew skyward on tick 80 (the active part's end less the rain's
+  2 s). The engine's `MovePlan` spreads a rain's impacts from the wind-up's end (ticks 20-56): open below.
+- **No `ultimate.loop`** (as for the others): the kit sheet's "loop held while the rain falls" is the ultimate's own
+  active part (the circling swing); the engine never sends `ultimate.end`.
+- **Markers**: the client sounds of SOUND.md 4.7 are markers in the clips their slots name: the releases of the barrage
+  (`vial_throw`, one per vial), Hex Mark (`hex_cast`), Fume Step (`fume_puff`) and Broom Hops (`broom_hop`), both phases
+  (`bristles`, `phase3_glow`), the intro (`intro`), the three quirks (`scribble`, `vial_shake`, `crow_peck`) and his
+  `eureka` emote (the victory, the brew's and the ultimate's recoveries). The wind-ups (the crow's caw is the hops'),
+  the impacts and the brew's and ultimate's releases are the server's.
+- **Faces**: every signature clip keys `face_ctrl`; the moves key the mouth and leave the eyes to the mood (the wind-up's
+  focused eyes, phase 3's green glow).
+- **Rules**: every own clip passes the quality rules on all six bases (no foot slides, planted feet within 0.5 px, the
+  soles on the ground, the joint limits); the staff and the field kit stay clear of his body on every tick of every clip
+  but the riding ones (where the hand's copy is hidden); and, a check his wide hat and the crow needed, his arms, the
+  staff and the props stay within 0.5 px of the hat (cone, band, both brims) and the crow on every tick, and the staff
+  and props out of his head (the closest: the intro's hand resting on the brim's edge and the vial shake's arm passing
+  the crow, 0.38 px each).
+
+### Generator additions (every other hero builds and previews byte for byte as before)
+
+- **`render/hero_previews.py`**: `rides_mount(a)` (the hero's `visual.json` `carrier` is on the `mount` bone); a flyer
+  on a mount carrier films `takeoff > ride > ride_cast > ride > fly_land` and the glide, with the carrier shown, in place
+  of the `move.fly*` set (HeroMovement shows every flight state of a rider as the ride mode, so he never plays them).
+  The Wither and the Ender Dragon have no mount carrier: their films are unchanged. His captions (`OWN_CAPTIONS`).
+- **`anim/loco_preview.py`**: G10's `hero_ambrose.gif` is drawn from his own source in his one body (before, the sample
+  outfit), with the crow flying beside him; `previews/anim/locomotion/hero_ambrose.*` and its README line are
+  re-rendered.
+- **`render/hero_previews.py`, the sheet**: a rider's broom clips (`RIDE_CLIPS`: `move.takeoff`, `move.ride`,
+  `move.fly_land`) and an action over the ride (`move.ride_cast`) are drawn riding, the carrier on the mount bone and
+  the staff's hand and back copies hidden, as in game (before, he sat on the air in those rows). Only a hero whose
+  carrier is on the `mount` bone rides there, so every other hero's sheet is byte for byte as before.
+- **Parts**: `headwear/witch_brim_up` and `accessories/field_kit` (new), the crow's wing bones (above). The parts
+  sheets show the new parts, and only these two sheets changed: `previews/parts/head_headwear.png` (the lifted brim,
+  drawn over the hat it requires with the hat's own brim still on: the phase look hides that one in game) and
+  `details_accessories.png` (the field kit's row shows bare hands: its props lie inside them at rest).
+
+### Previews (`docs/heroes-v2/previews/heroes/ambrose_nettlewick/` and `heroes/lineup.png`)
+
+His set, as the others', with a hand-written README: `turnaround.png`, `faces.png`, `phases.png` (phase 2 with the bristles on the
+staff, phase 3 with the lifted brim and glowing eyes), `sheet.png` (the broom clips drawn riding), a GIF per move
+(Broom Hops in phase 2, the Great Brew in phase 3, their first kit phases), `ultimate.gif`, `string.gif` (his thrown
+vial twice and the staff string; Broom Hops follows only itself, and the shared films leave a move's followup of itself
+out), `moments.gif`, `idles.gif` and `locomotion.gif` (walk > run, the broom set with a cast from the broom, the glide
+on the broom). The lineup now has him first (alphabetical), at 1.82 blocks.
+
+### Tests (552 -> 576: `tests/test_ambrose.py`, 24)
+
+- His one body: adult, male, slim, 100, no phase changes it, no tail; the kit is the fixture's; the budgets (bones,
+  cubes, cubes beyond the fine distance, the own file's 24 clips).
+- Every move's and the ultimate's frames equal the kit's (Potion Barrage's three vials on the barrage's own 8-tick
+  spacing, its active part one tick over the kit's 16), and `assets.check_frames` passes on the written chain.
+- His own clips pass every rule on every base (the clip set: the 17 signatures, his broom set, the variant's cast,
+  `sec.loop`; no `ultimate.loop`); the staff and the props clear of his body on every tick (the riding clips aside);
+  his arms, the staff and the props clear of the hat and the crow, and the staff and props out of his head, on every
+  tick.
+- The barrage, the hex, the ultimate and the escape key no leg, hip or root bone, and the barrage and the hex no right
+  arm.
+- Every client slot has its marker (three throws in the barrage), no server slot is a marker; `face_ctrl` in every
+  signature, his calm and focused faces smile, his angry one frowns, and the moves never key the eyes.
+- The phase looks: the bristles' `p2_` bones from phase 2, the lifted brim's `p3_` bone from phase 3 with the hat's brim
+  hidden then; the lifted brim's front edge more than 2 px above the hat's, its back within 1.5 px; `phase.3` turns it
+  down over his eyes and flicks it up with an overshoot.
+- The crow: `sec.loop` keys only its head and no other clip does; on the broom it is off his shoulder with its wings
+  beating, the take-off lifts it off its perch and the landing puts it back; the broom set's body channels equal the
+  variant's on every tick; the wings hang from their own bones where they were.
+- The field kit: every prop inside its hand at rest; the vial out at each barrage throw and gone the next tick; the
+  notebook and the pencil out in the notebook quirk.
+- The previews: his locomotion film rides the broom (no `move.fly*`; the Wither keeps her flight set), his sheet draws
+  exactly the broom clips and the cast over the ride riding (the render calls recorded; Kagenori has no mount
+  carrier), his clips' phases, G10's GIF from his source, the lineup.
+
+Sabotage (each restored afterwards, every file byte for byte): the rider branch taken out of the locomotion film
+(`test_his_locomotion_film_rides_the_broom` fails: `move.fly*` in his film), G10's GIF back on the sample outfit
+(`test_g10_broom_gif_is_drawn_from_his_source`), Potion Barrage's third hit a tick late (`test_move_frames_equal_the_kit`:
+hits 12, 20, 29), the brim lifted 6 degrees instead of 16 (`test_the_lifted_brim`: the front edge only 1.28 px up), a
+vial cube 2 px out of the hand (`test_the_field_kit_hides_in_his_hands`), the crow left on its perch in the intro, the
+first draft (`test_clear_of_his_hat_and_crow`: the arm 0.93 px into the crow), the cauldron swing's staff turned 60
+degrees at the wrist (`test_staff_clear_of_his_body`: 1.6 px into his leg), and the sheet never riding or its render
+call dropping `riding` (`test_his_sheet_draws_the_broom_clips_riding`, both). A first try, the cauldron's swing without
+its waypoint, still passed: measured, the plain blend is clear too now (above), so the turned swing replaced it.
+
+### Checks run
+
+`herogen check ambrose_nettlewick` (all of 14.2) OK and `check --all --style` OK (its one NOTE, the test rig's
+`lunge`, is old); `build --check --all` OK (the libraries, `_fallback`, Natsuho, Hinae, Benika, Yugen, Kagenori, the
+test rig, the Wither and the Ender Dragon build byte for byte as committed); `lint` of his eleven parts (messy_medium,
+witch_hat, witch_brim_up, long_coat, trousers, boots, sash_obi, vial_bandolier, crow, field_kit, cauldron_staff) on
+every base with the sample outfits: 230 builds and checks, 0 problems; `sfxgen check` 0 errors; his clips' rules on
+every base (0 problems) and the hat, crow and head clearance on every tick (all within 0.5 px); `hero-previews
+ambrose_nettlewick --check`, `hero-previews natsuho_komezaki hinae_shirasuzu benika_akagane yugen_kagaribi
+kagenori_tsurumine the_wither the_ender_dragon --check` and `hero-previews --lineup --check` OK; `anim-previews
+--locomotion --check`, `--core --check` and `--styles --check`, `render-previews --check` and `icons --check` OK;
+`parts-previews` re-rendered (only `head_headwear.png` and `details_accessories.png` changed) and `--check` OK; the
+Python suite, 576 tests, OK.
+
+### Decisions
+
+1. **His kit is the fixture's verbatim** (as the other slice heroes').
+2. **The lifted brim is a phase part over the hat**, not a brim keyed in `phase.3`: a clip's keys end with the clip.
+3. **The crow keeps its head for `sec.loop`** (its glances play under every clip) and the clips move its body and wings:
+   on his shoulder, onto his hat in the peck, beside him on the broom.
+4. **Props hidden in the hands** (the Wither's rose's method) rather than props that follow a hand with dense keys
+   (Benika's gourd): a vial, a notebook and a pencil small enough to vanish inside a hand need no follow solve.
+5. **One-handed staff work**, the left hand free for vials, hexes and gestures (above).
+6. **The light ranged moves, the ultimate and the escape key the upper body only** so they read over the broom.
+7. **His own broom set from G10's variant with the crow added**, body channels unchanged; the core's glide kept: on the
+   broom it reads as a belly-down glide over the staff, and a set of his own (glide, glide start, gust) would cost three
+   of the two clips the own file has left.
+8. **An escape clip**: he escapes (SLICE_PLAN 3.8), so he has one, over the run or the take-off. No `ultimate.loop`.
+
+### Open items
+
+- **Engine side**: his definition in `data/factionclash/heroes/` (the fixture's fields); the `last_stand` and `escape`
+  action codes (6.13); his `vfx:` markers (`vial_green`, `vial_grey`, `vial_black`, `cauldron_splash`, `hex_bolt`,
+  `fume_burst`, `jump_dust`, `puddle_splash`, `brew_boil`, `brew_fling`, `experiment_fling`).
+- **The Great Brew's rain**: `MovePlan` spreads a rain's ten impacts from the wind-up's end (ticks 20-56, inside the
+  channel); the kit rains them after the 3 s channel (from tick 80, where the clip flings the brew). The format has no
+  rain start; the engine could start a channelled rain at the active part's end less its duration. And kit-gaps' "one of
+  his three effects at random" (the fixture's 33% each) is the engine's call, not the art's.
+- **From the broom**: the ultimate lifts an empty right hand (above); `move.ride_cast` is ready for an engine that sends
+  it for a cast from the broom.
+- **The crow's head and the secondary controller's 6-tick blend**: in game the glances blend in like any `sec.loop`.
+- **In game**: the crow beside him in flight and on his hat in the peck, the field kit's props sliding out of his hands,
+  and the lifted brim in phase 3 want a look in the client.
+- **Followup films**: Broom Hops follows itself (up to twice), and the shared followup films leave a move's followup of
+  itself out, so no film chains the hops; in game the next hop starts at the end of the active part (`cast` 25).
+- **The glide on the broom** is the core's `move.glide` with the carrier shown: he lies prone along the staff with his
+  arms spread, hands off it. It reads as a broom glide in the previews; an own `move.glide` (gripping the shaft) would
+  take one of the two clips his own file has left. A look in game decides.
+- Not run here (Gradle and Java are off limits in this task): the Java suites (`HeroAssetsTest`, `BuiltinHeroesTest`,
+  `verifyHeroAssets`), GameTests, the in-game and campaign checks (gates 3 and 5), and the jar.

@@ -21,7 +21,7 @@ cape, armour and greaves), and one GIF per slice hero's variant (MOBILITY_AND_WO
 herosrc/heroes/natsuho_komezaki.hero.json), hero_yugen (the fox lope, from his own source since C2,
 herosrc/heroes/yugen_kagaribi.hero.json), hero_kagenori (the crane leap and his leaper II landing roll, from his own
 source since C3, herosrc/heroes/kagenori_tsurumine.hero.json), hero_ambrose (the broom, side-saddle, on his staff,
-from his sample outfit in herosrc/style/outfits.json until his source exists).
+from his own source since C3, herosrc/heroes/ambrose_nettlewick.hero.json, with the crow flying beside him).
 `herogen anim-previews --locomotion [--groups ...] [--check]` writes or checks them.
 """
 import copy
@@ -233,7 +233,8 @@ HERO_GIFS = {
     "hero_kagenori": ("kagenori_tsurumine", None, "Kagenori's crane leap (move.leap, variant crane_leap)",
                       [Segment("crouch_jump > leap (the crane) > land_roll (a leaper II)",
                                [("move.crouch_jump", None), ("move.leap", 2.4), ("move.land_roll", None)])]),
-    "hero_ambrose": ("ambrose", ["adult_m"], "Ambrose on his staff-broom (variant broom: side-saddle)",
+    "hero_ambrose": ("ambrose_nettlewick", None, "Ambrose on his staff-broom (his own take-off, ride and landing with "
+                     "the crow beside him; ride_cast from the broom variant)",
                      [Segment("takeoff > ride > ride_cast (a vial) > ride > fly_land",
                               [("move.takeoff", None), ("move.ride", 2.8), ("move.fly_land", None)],
                               actions=[("move.ride_cast", 1, 0.8)], riding=True)]),

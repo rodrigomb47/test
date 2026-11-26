@@ -93,6 +93,12 @@ OWN_CAPTIONS = {
         "phase.2": "phase.2 (the helmet goes on)",
         "phase.3": "phase.3 (the short sword drawn, the eyes and edges glow)",
     },
+    "ambrose_nettlewick": {
+        "phases": "the phase looks (2: broom bristles at the staff's foot; 3: glowing eyes, the hat's brim lifted)",
+        "phase.2": "phase.2 (the bristles sprout, a test hop on the staff)",
+        "phase.3": "phase.3 (the brim flicked up, the eyes glow)",
+        "escape": "escape, clutching his hat (no code yet), over the run",
+    },
     "the_wither": {
         "phases": "the phase looks (2: soul-blue stays, gem and hem; 3: no familiars, burning tips, blazing eyes); "
                   "the rebirth, blue-white",
@@ -384,6 +390,16 @@ def mobility_traits(a):
     return [(mob.get(k) or {}).get("trait") for k in ("primary", "secondary") if mob.get(k)]
 
 
+# C3: the base clips of a rider's flight (HeroMovement: the carrier shows from the take-off until the landing has played)
+RIDE_CLIPS = ("move.takeoff", "move.ride", "move.fly_land")
+
+
+def rides_mount(a):
+    """C3: the hero's carrier rides on the rig's `mount` bone (visual.json `carrier`: a broom part or a weapon that is
+    its own carrier, Ambrose's staff-broom)."""
+    return ((getattr(a, "visual", None) or {}).get("carrier") or {}).get("bone") == "mount"
+
+
 def mobility_tier(a, trait):
     """C3: the tier (1-3) of one of a hero's mobility traits, 0 when it lacks the trait."""
     mob = (a.hero or {}).get("mobility") or {}
@@ -423,7 +439,15 @@ def loco_segments(a):
             segs = [Segment("walk > run", [("move.walk", 1.6), ("move.run", 1.2)])]
         if "hover" in traits:
             segs.append(Segment("hover > drift (hover)", [("move.hover", 2.0), ("move.drift", 1.6)]))
-        if "flyer" in traits:
+        if "flyer" in traits and rides_mount(a):
+            # C3: a flyer on a mount carrier (Ambrose's staff-broom) flies in the ride mode (HeroMovement: every
+            # flight state of a rider shows move.ride, never move.fly*), and glides with the carrier shown
+            segs.append(Segment("takeoff (the tell) > ride > ride_cast > ride > fly_land (on his carrier)",
+                                [("move.takeoff", None), ("move.ride", 2.4), ("move.fly_land", None)],
+                                actions=[("move.ride_cast", 1, 0.8)], riding=True))
+            segs.append(Segment("glide (on his carrier, when his stamina runs out)", [("move.glide", 2.4)],
+                                riding=True))
+        elif "flyer" in traits:
             fly = [("move.takeoff", None), ("move.fly", 2.0), ("move.fly_fast", 1.0), ("move.fly_hover", 1.6),
                    ("move.fly_land", None)]
             segs.append(Segment("takeoff (the tell) > fly > fly_fast > fly_hover > fly_land", fly,
@@ -534,6 +558,8 @@ def sheet(a, path, per_clip=7, scale=2):
         meta = own_built(a).by_name[name].meta
         kind = meta.get("kind", "base")
         phase = phase_of_clip(a, name)
+        # C3: a rider's broom clips (and an action over the ride) show the carrier on the mount bone, as in game
+        riding = rides_mount(a) and (name in RIDE_CLIPS or meta.get("over") == "move.ride")
         if name.startswith("sec."):
             # a secondary loop plays over whatever the base shows: here the combat stance
             pb = SequencePlayback(a.chain, "combat.idle", [], a.form_var())
@@ -550,12 +576,12 @@ def sheet(a, path, per_clip=7, scale=2):
             times = [span * i / (per_clip - 1) for i in range(per_clip)]
             drawn = base == "combat.idle"
         poses = [wings(a, secondary(a, pb.pose(t), t), t, wing_loop_of(name)) for t in times]
-        b = a.bounds([v], poses, drawn=drawn, phase=phase)
+        b = a.bounds([v], poses, drawn=drawn, phase=phase, riding=riding)
         b = (b[0] - 1, b[1] + 1, min(b[2], -1.0), b[3] + 1)
         sim = a.face_sim("calm", 0)
         look = look_of_clip(a, name)
         cells = [(t, to_image(a.render(v, p, face=sim.frames(t, p, blink_ok=False), drawn=drawn, bounds=b, pad=2,
-                                       phase=phase, look=look)))
+                                       phase=phase, look=look, riding=riding)))
                  for t, p in zip(times, poses)]
         label = name if phase == 1 else "%s (phase %d)" % (name, phase)
         rows.append(("%s, the rebirth look" % label if look else label, cells))

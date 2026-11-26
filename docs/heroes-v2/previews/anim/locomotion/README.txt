@@ -8,6 +8,6 @@ ride.gif / ride.png: Riding a carrier (a mounts/broom on the mount bone): takeof
 hero_natsuho.gif / hero_natsuho.png: Natsuho's cat twist (move.air_jump, variant cat_twist) (adult_f, its own source in its one body)
 hero_yugen.gif / hero_yugen.png: Yugen's fox lope (move.sprint, variant fox_lope) (adult_m, its own source in its one body)
 hero_kagenori.gif / hero_kagenori.png: Kagenori's crane leap (move.leap, variant crane_leap) (adult_m, its own source in its one body)
-hero_ambrose.gif / hero_ambrose.png: Ambrose on his staff-broom (variant broom: side-saddle) (adult_m, the sample outfit in the hero's one body)
+hero_ambrose.gif / hero_ambrose.png: Ambrose on his staff-broom (his own take-off, ride and landing with the crow beside him; ride_cast from the broom variant) (adult_m, its own source in its one body)
 
 Core groups on style_tansy (chibi_f) and style_maren (adult_f); flight adds feathered wings, ride a mounts/broom (preview variants built in memory). One-shots and loops play as the base controller's queue (4-tick blends), actions over it (2 ticks), wing loops on the secondary controller (6 ticks).

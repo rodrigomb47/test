@@ -1,0 +1,195 @@
+{
+  "_comment": "A scholar's field kit kept in his hands (C3, Ambrose's: the vials he throws and shakes, the notebook he scribbles in): a stoppered glass vial (`vial_l`) and a small notebook (`notebook_l`) in the left hand and a pencil (`pencil_r`) in the right, each on its own bone under the hand. At rest every cube lies inside the hand (nothing shows), as the Wither's rose does; a clip brings a prop out by keying its bone's position along the hand (toward the fingertips) and turns it there, then puts it back.",
+  "id": "accessories/field_kit",
+  "category": "accessories",
+  "slots": {
+    "main": "leather",
+    "alt": "accent",
+    "detail": "trim"
+  },
+  "occupies": [
+    "hand_l_item",
+    "hand_r_item"
+  ],
+  "vars": {
+    "hx": "shoulder_x",
+    "hy": "hand_bottom + 1.55"
+  },
+  "bones": [
+    {
+      "name": "vial_l",
+      "parent": "hand_l",
+      "pivot": [
+        "hx",
+        "hy",
+        0
+      ]
+    },
+    {
+      "name": "notebook_l",
+      "parent": "hand_l",
+      "pivot": [
+        "hx",
+        "hy",
+        0
+      ]
+    },
+    {
+      "name": "pencil_r",
+      "parent": "hand_r",
+      "pivot": [
+        "-hx",
+        "hy",
+        0
+      ]
+    }
+  ],
+  "cubes": [
+    {
+      "name": "vial_glass",
+      "bone": "vial_l",
+      "origin": [
+        "hx - 0.55",
+        "hy - 1.25",
+        -0.55
+      ],
+      "size": [
+        1.1,
+        1.5,
+        1.1
+      ],
+      "slot": "alt",
+      "material": "gem"
+    },
+    {
+      "name": "vial_neck",
+      "bone": "vial_l",
+      "origin": [
+        "hx - 0.3",
+        "hy + 0.25",
+        -0.3
+      ],
+      "size": [
+        0.6,
+        0.45,
+        0.6
+      ],
+      "slot": "alt",
+      "material": "gem",
+      "tone": 1
+    },
+    {
+      "name": "vial_cork",
+      "bone": "vial_l",
+      "origin": [
+        "hx - 0.4",
+        "hy + 0.7",
+        -0.4
+      ],
+      "size": [
+        0.8,
+        0.45,
+        0.8
+      ],
+      "slot": "main",
+      "material": "wood"
+    },
+    {
+      "name": "book_front",
+      "bone": "notebook_l",
+      "origin": [
+        "hx - 0.45",
+        "hy - 1.3",
+        -1.0
+      ],
+      "size": [
+        0.15,
+        2.6,
+        2.0
+      ],
+      "slot": "main",
+      "material": "leather"
+    },
+    {
+      "name": "book_back",
+      "bone": "notebook_l",
+      "origin": [
+        "hx + 0.3",
+        "hy - 1.3",
+        -1.0
+      ],
+      "size": [
+        0.15,
+        2.6,
+        2.0
+      ],
+      "slot": "main",
+      "material": "leather"
+    },
+    {
+      "name": "book_spine",
+      "bone": "notebook_l",
+      "origin": [
+        "hx - 0.3",
+        "hy - 1.3",
+        0.85
+      ],
+      "size": [
+        0.6,
+        2.6,
+        0.15
+      ],
+      "slot": "main",
+      "material": "leather"
+    },
+    {
+      "name": "book_pages",
+      "bone": "notebook_l",
+      "origin": [
+        "hx - 0.28",
+        "hy - 1.2",
+        -0.92
+      ],
+      "size": [
+        0.56,
+        2.4,
+        1.75
+      ],
+      "slot": "sclera",
+      "material": "paper"
+    },
+    {
+      "name": "pencil",
+      "bone": "pencil_r",
+      "origin": [
+        "-hx - 0.15",
+        "hy - 1.2",
+        -0.15
+      ],
+      "size": [
+        0.3,
+        2.6,
+        0.3
+      ],
+      "slot": "detail",
+      "material": "wood"
+    },
+    {
+      "name": "pencil_tip",
+      "bone": "pencil_r",
+      "origin": [
+        "-hx - 0.1",
+        "hy - 1.5",
+        -0.1
+      ],
+      "size": [
+        0.2,
+        0.3,
+        0.2
+      ],
+      "slot": "main",
+      "material": "wood",
+      "tone": -2
+    }
+  ]
+}

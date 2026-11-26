@@ -1,0 +1,93 @@
+{
+  "_comment": "The witch hat's brim blown up at the front (C3, Ambrose's phase 3: 'his hat brim lifts'): the two crossed slabs of headwear/witch_hat's brim on their own bone, turned up by `lift` degrees about a line across the back of the band (so the front edge rises and the back stays on the hair). Worn with a phase over headwear/witch_hat (it `requires` it), whose phase look hides the hat's own `brim` bone, so from that phase the lifted brim shows instead. `tilt` must match the hat's. Head-local (offset head_y), as the hat.",
+  "id": "headwear/witch_brim_up",
+  "category": "headwear",
+  "slots": {
+    "main": "accent"
+  },
+  "params": {
+    "tilt": {
+      "default": 8,
+      "min": -16,
+      "max": 16
+    },
+    "lift": {
+      "default": 16,
+      "min": 6,
+      "max": 30
+    }
+  },
+  "occupies": [
+    "hat_brim"
+  ],
+  "requires": [
+    "headwear/witch_hat"
+  ],
+  "offset": [
+    0,
+    "head_y",
+    0
+  ],
+  "bones": [
+    {
+      "name": "brim_up",
+      "parent": "hat",
+      "pivot": [
+        0,
+        11.2,
+        0
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "rotation": [
+        "-4 - lift",
+        0,
+        "tilt"
+      ],
+      "pivot": [
+        0,
+        11.0,
+        2.5
+      ],
+      "cubes": [
+        {
+          "name": "brim_a",
+          "bone": "brim_up",
+          "origin": [
+            -8.75,
+            10.75,
+            -5.75
+          ],
+          "size": [
+            17.5,
+            0.5,
+            11.5
+          ],
+          "material": "cloth",
+          "trim": {
+            "slot": "main",
+            "edge": "all",
+            "width": 1
+          }
+        },
+        {
+          "name": "brim_b",
+          "bone": "brim_up",
+          "origin": [
+            -5.6,
+            10.8,
+            -8.75
+          ],
+          "size": [
+            11.2,
+            0.4,
+            17.5
+          ],
+          "material": "cloth"
+        }
+      ]
+    }
+  ]
+}

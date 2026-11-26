@@ -1,0 +1,126 @@
+{
+  "animation_chain": ["ambrose_nettlewick", "_style_staff", "_core"],
+  "base": "adult_m",
+  "bones": {
+    "fine": [
+      "fine_bangs",
+      "fine_chest",
+      "fine_foot_l",
+      "fine_foot_r",
+      "fine_hair_back",
+      "fine_hair_l",
+      "fine_hair_r",
+      "fine_hair_top",
+      "fine_hat",
+      "fine_mount",
+      "fine_sash",
+      "fine_waist",
+      "fine_weapon_back",
+      "fine_weapon_r"
+    ],
+    "items": ["item_r", "item_l"],
+    "locators": ["item_l", "item_r", "vfx_chest", "vfx_feet", "vfx_head", "vfx_tip_l", "vfx_tip_r"],
+    "mount": ["mount"],
+    "phase": {"p2_mount": 2, "p2_weapon_back": 2, "p2_weapon_r": 2, "p3_brim_up": 3},
+    "tint": ["fine_sash", "sash"],
+    "weapon_drawn": ["weapon_r"],
+    "weapon_sheathed": ["weapon_back"]
+  },
+  "build": "slim",
+  "carrier": {
+    "bone": "mount",
+    "kind": "broom",
+    "part": "weapon",
+    "prop": "weapons/cauldron_staff",
+    "seat": [0, 22.75, 0]
+  },
+  "face": {
+    "asymmetric": false,
+    "blink": {
+      "double_chance": 0.15,
+      "interval": [1.5, 3.5],
+      "over_eyes": [0, 4, 5, 8, 9],
+      "profile": "nervous",
+      "ticks": [1, 2, 1]
+    },
+    "cheek_frames": ["none", "blush", "sweat", "tears"],
+    "eye_frames": [
+      "open",
+      "half",
+      "closed",
+      "happy",
+      "angry",
+      "sad",
+      "surprised",
+      "pain",
+      "focused",
+      "smug",
+      "glowing",
+      "sleeping"
+    ],
+    "mood_order": [
+      "calm",
+      "happy",
+      "angry",
+      "focused",
+      "hurt",
+      "tired",
+      "sad",
+      "smug",
+      "surprised",
+      "asleep",
+      "flustered",
+      "determined"
+    ],
+    "moods": {
+      "angry": {"cheeks": 0, "eyes": 4, "mouth": 5},
+      "asleep": {"cheeks": 0, "eyes": 11, "mouth": 0},
+      "calm": {"cheeks": 0, "eyes": 0, "mouth": 1},
+      "determined": {"cheeks": 0, "eyes": 4, "mouth": 0},
+      "flustered": {"cheeks": 1, "eyes": 6, "mouth": 5},
+      "focused": {"cheeks": 0, "eyes": 8, "mouth": 1},
+      "happy": {"cheeks": 0, "eyes": 3, "mouth": 1},
+      "hurt": {"cheeks": 0, "eyes": 7, "mouth": 4},
+      "sad": {"cheeks": 0, "eyes": 5, "mouth": 5},
+      "smug": {"cheeks": 0, "eyes": 9, "mouth": 1},
+      "surprised": {"cheeks": 0, "eyes": 6, "mouth": 2},
+      "tired": {"cheeks": 2, "eyes": 1, "mouth": 0}
+    },
+    "mouth_frames": ["neutral", "smile", "talk_a", "talk_b", "grit", "frown", "cat", "fang_grin"],
+    "overrides": {
+      "angry": {"eyes": "angry", "mouth": "frown"},
+      "calm": {"eyes": "open", "mouth": "smile"},
+      "focused": {"eyes": "focused", "mouth": "smile"}
+    },
+    "regions": {
+      "cheeks": {"columns": 4, "frames": 4, "h": 2, "u": 64, "v": 33, "w": 16},
+      "eyes": {"columns": 4, "frames": 12, "h": 10, "u": 64, "v": 0, "w": 20},
+      "mouth": {"columns": 8, "frames": 8, "h": 3, "u": 64, "v": 30, "w": 8}
+    }
+  },
+  "form": "adult",
+  "format": 1,
+  "generator": "herogen 1",
+  "head_y": 42,
+  "height_px": 52,
+  "id": "ambrose_nettlewick",
+  "moves": ["potion_barrage", "cauldron", "hex_mark", "fume_step", "broom_hops", "great_brew"],
+  "phases": [
+    {"eyes_glow": false, "hide": [], "phase": 2, "show": [], "texture": "base"},
+    {"eyes_glow": true, "hide": ["brim"], "phase": 3, "show": [], "texture": "base"}
+  ],
+  "render_scale": 0.56,
+  "rig": "hero_rig_v3",
+  "scale": 1,
+  "secondary": [],
+  "source_sha256": "52239973d33d09aca1223ee279eee39415725ca49a660df4ac5d57d88ee06dd3",
+  "states": [],
+  "style": "staff",
+  "texture": {"glow_outside_face": true, "glowmask": true, "height": 128, "p2": false, "width": 256},
+  "voice": {"blip": "pling", "pitch": 1.05, "rate": 2},
+  "weapon": {
+    "hand": "right",
+    "mount": {"bone": "mount", "kind": "broom", "prop": "weapons/cauldron_staff", "seat": [0, 22.75, 0]},
+    "sheathed": "back_up"
+  }
+}

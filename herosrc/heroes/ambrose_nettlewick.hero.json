@@ -1,0 +1,6374 @@
+{
+  "_comment": "Ambrose Nettlewick, the cauldron warlock (SLICE_PLAN 3.8, kit sheet docs/heroes-v2/kits/ambrose_nettlewick.txt). The kit fields are the slice fixture's (src/test/resources/heroes/slice/ambrose_nettlewick.json); art and animations are source only (HEROES_V2 12.5, 12.6). One body for good (the owner's rule of 2026-11-13, HEROES_V2 3.6): an adult of ordinary size, slim build, drawn at 100%.",
+  "format": 2,
+  "id": "ambrose_nettlewick",
+  "name": "Ambrose Nettlewick",
+  "title": "the Cauldron Warlock",
+  "description": "A cheerful, absent-minded potion scholar who treats every fight as an experiment.",
+  "gender": "male",
+  "archetype": "witch",
+  "rarity": "epic",
+  "element": "venom",
+  "behaviour": {
+    "combat_role": "controller",
+    "duel_style": "trapper",
+    "duty": "enchanter"
+  },
+  "basic_attack": {
+    "style": "thrown",
+    "projectile": "slime_ball",
+    "amount": 4,
+    "interval": 1.5
+  },
+  "moves": [
+    {
+      "id": "potion_barrage",
+      "name": "Potion Barrage",
+      "form": "barrage",
+      "class": "light",
+      "band": [
+        "mid"
+      ],
+      "count": 3,
+      "interval": 0.4,
+      "range": 16,
+      "projectile": "slime_ball",
+      "cooldown": 12,
+      "frames": {
+        "windup": 0.6,
+        "active": 0.8,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 3
+        }
+      ],
+      "per_shot": [
+        [
+          {
+            "type": "effect",
+            "id": "poison",
+            "level": 1,
+            "seconds": 4
+          }
+        ],
+        [
+          {
+            "type": "effect",
+            "id": "slowness",
+            "level": 2,
+            "seconds": 3
+          }
+        ],
+        [
+          {
+            "type": "effect",
+            "id": "weakness",
+            "level": 1,
+            "seconds": 4
+          }
+        ]
+      ]
+    },
+    {
+      "id": "cauldron",
+      "name": "Cauldron",
+      "form": "zone",
+      "class": "area",
+      "band": [
+        "mid"
+      ],
+      "zone_at": "target",
+      "range": 12,
+      "radius": 3,
+      "delay": 1.0,
+      "duration": 6,
+      "interval": 1,
+      "cooldown": 30,
+      "frames": {
+        "windup": 1.0,
+        "active": 0.1,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "dot",
+          "amount": 2,
+          "seconds": 3
+        },
+        {
+          "type": "effect",
+          "id": "poison",
+          "level": 1,
+          "seconds": 3
+        }
+      ]
+    },
+    {
+      "id": "hex_mark",
+      "name": "Hex Mark",
+      "form": "bolt",
+      "class": "light",
+      "band": [
+        "mid",
+        "far"
+      ],
+      "range": 12,
+      "cooldown": 6,
+      "frames": {
+        "windup": 0.5,
+        "active": 0.1,
+        "recovery": 0.4
+      },
+      "effects": [
+        {
+          "type": "mark",
+          "mark": "hex",
+          "max_stacks": 3
+        }
+      ]
+    },
+    {
+      "id": "fume_step",
+      "name": "Fume Step",
+      "form": "nova",
+      "class": "light",
+      "band": [
+        "close"
+      ],
+      "radius": 3,
+      "cooldown": 8,
+      "frames": {
+        "windup": 0.4,
+        "active": 0.1,
+        "recovery": 0.4
+      },
+      "prefer_when": "target_close",
+      "effects": [
+        {
+          "type": "effect",
+          "id": "slowness",
+          "level": 2,
+          "seconds": 3
+        },
+        {
+          "type": "move_self",
+          "direction": "back",
+          "distance": 5
+        }
+      ]
+    },
+    {
+      "id": "broom_hops",
+      "name": "Broom Hops",
+      "form": "leap",
+      "class": "heavy",
+      "band": [
+        "any"
+      ],
+      "phases": [
+        2,
+        3
+      ],
+      "range": 8,
+      "radius": 2,
+      "repeatable": true,
+      "cooldown": 10,
+      "frames": {
+        "windup": 0.8,
+        "active": 0.5,
+        "recovery": 0.8
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 4
+        },
+        {
+          "type": "effect",
+          "id": "slowness",
+          "level": 1,
+          "seconds": 3
+        }
+      ],
+      "followups": [
+        {
+          "move": "broom_hops",
+          "chance": 100,
+          "max": 2
+        }
+      ]
+    },
+    {
+      "id": "great_brew",
+      "name": "Great Brew",
+      "form": "rain",
+      "class": "area",
+      "band": [
+        "any"
+      ],
+      "phases": [
+        3
+      ],
+      "count": 10,
+      "radius": 6,
+      "duration": 2,
+      "channel": {
+        "interrupt": 15
+      },
+      "cooldown": 20,
+      "frames": {
+        "windup": 1.0,
+        "active": 5.0,
+        "recovery": 2.0
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "amount": 5
+        },
+        {
+          "type": "effect",
+          "id": "poison",
+          "level": 1,
+          "seconds": 4,
+          "chance": 33
+        },
+        {
+          "type": "effect",
+          "id": "slowness",
+          "level": 2,
+          "seconds": 3,
+          "chance": 33
+        },
+        {
+          "type": "effect",
+          "id": "weakness",
+          "level": 1,
+          "seconds": 4,
+          "chance": 33
+        }
+      ],
+      "line": "Big one coming, please don't interrupt!"
+    }
+  ],
+  "ultimate": {
+    "id": "grand_experiment",
+    "name": "Grand Experiment",
+    "form": "rain",
+    "class": "ultimate",
+    "count": 12,
+    "radius": 7,
+    "duration": 3,
+    "frames": {
+      "windup": 1.6,
+      "active": 3.0,
+      "recovery": 1.5
+    },
+    "effects": [
+      {
+        "type": "damage",
+        "amount": 4
+      },
+      {
+        "type": "effect",
+        "id": "poison",
+        "level": 1,
+        "seconds": 4,
+        "chance": 33
+      },
+      {
+        "type": "effect",
+        "id": "slowness",
+        "level": 2,
+        "seconds": 3,
+        "chance": 33
+      },
+      {
+        "type": "effect",
+        "id": "weakness",
+        "level": 1,
+        "seconds": 4,
+        "chance": 33
+      },
+      {
+        "type": "cleanse",
+        "to": "self"
+      }
+    ],
+    "line": "Hypothesis: you lose!"
+  },
+  "passives": [
+    {
+      "name": "Field Notes",
+      "trigger": "on_hurt",
+      "form": "self",
+      "chance": 20,
+      "cooldown": 2,
+      "effects": [
+        {
+          "type": "stat",
+          "stat": "damage_dealt",
+          "percent": 5,
+          "seconds": 15,
+          "max_stacks": 4
+        }
+      ]
+    },
+    {
+      "name": "Hex Complete",
+      "trigger": "on_mark_full",
+      "mark": "hex",
+      "form": "trigger_enemy",
+      "cooldown": 6,
+      "effects": [
+        {
+          "type": "effect",
+          "id": "weakness",
+          "level": 2,
+          "seconds": 6
+        },
+        {
+          "type": "effect",
+          "id": "glowing",
+          "seconds": 6
+        }
+      ]
+    }
+  ],
+  "boss": {
+    "health_scale": 350,
+    "poise": 80,
+    "weak_points": [
+      {
+        "point": "channel",
+        "hint": "Big one coming, please don't interrupt!"
+      },
+      "recovery"
+    ],
+    "phases": [
+      {
+        "at": 100
+      },
+      {
+        "at": 60,
+        "transition": {
+          "seconds": 1.2,
+          "line": "Fascinating! Let's test mobility!",
+          "face": "happy"
+        }
+      },
+      {
+        "at": 25,
+        "transition": {
+          "seconds": 1.2,
+          "line": "Time for the big one. Please don't interrupt."
+        }
+      }
+    ],
+    "reactions": [
+      {
+        "when": "target_close",
+        "move": "fume_step",
+        "chance": 70,
+        "cooldown": 8
+      },
+      {
+        "when": "target_blocking",
+        "move": "cauldron",
+        "chance": 60,
+        "cooldown": 12
+      },
+      {
+        "when": "target_eating",
+        "move": "hex_mark",
+        "chance": 50,
+        "cooldown": 8
+      }
+    ],
+    "intro": {
+      "line": "Ah, a test subject! I mean, a guest. Hold still, please."
+    }
+  },
+  "personality": {
+    "temperament": "eccentric_genius",
+    "traits": {
+      "aggression": 35,
+      "honour": 60,
+      "ambition": 75,
+      "caution": 55,
+      "greed": 50,
+      "sociability": 55,
+      "loyalty": 50,
+      "volatility": 70
+    },
+    "likes": [
+      "glass_bottle",
+      "book",
+      "glow_berries"
+    ],
+    "dislikes": [
+      "milk_bucket"
+    ],
+    "quirks": [
+      "names every potion after the person it was tested on"
+    ]
+  },
+  "leader": {
+    "title": "Archivist of the Nettlewick Conclave",
+    "faction_names": [
+      "Nettlewick Conclave",
+      "The Bubbling Academy"
+    ],
+    "short_name": "Nettlewick",
+    "motto": "Hypothesis: we win. Let us test it.",
+    "colors": {
+      "primary": "#4E7A2E",
+      "secondary": "#5B3A86",
+      "accent": "#7BCB5E"
+    },
+    "banner": {
+      "base": "green",
+      "patterns": [
+        {
+          "pattern": "circle",
+          "color": "purple"
+        },
+        {
+          "pattern": "gradient_up",
+          "color": "black"
+        }
+      ]
+    },
+    "base_style": "dark_manor",
+    "culture": "west",
+    "economy_focus": [
+      "lore",
+      "craft"
+    ]
+  },
+  "talents": [
+    {
+      "id": "sage_of_letters",
+      "realm": true
+    },
+    "ember_keeper"
+  ],
+  "voice": {
+    "blip": "pling",
+    "pitch": 1.05,
+    "rate": 2
+  },
+  "lines": {
+    "founding": [
+      "Welcome to the Nettlewick Conclave! Please do not drink anything labelled 'maybe'."
+    ],
+    "greeting": [
+      "{player}! Perfect timing, I need someone to hold this. Don't sniff it."
+    ],
+    "kill": [
+      "Data acquired."
+    ],
+    "escape": [
+      "Experiment concluded! Result: I should leave. Don't touch my notes!"
+    ],
+    "fallen": [
+      "Fascinating... so that is what it feels like. Noted."
+    ]
+  },
+  "mobility": {
+    "primary": {
+      "trait": "flyer",
+      "tier": 2
+    },
+    "carrier": {
+      "kind": "broom",
+      "part": "weapon"
+    },
+    "aerial": {
+      "phases": [
+        2
+      ],
+      "max_air": 8,
+      "dives": 3
+    },
+    "travel": true
+  },
+  "art": {
+    "base": "male",
+    "form": "adult",
+    "build": "slim",
+    "scale": 100,
+    "palette": {
+      "skin": "#EBCFB8",
+      "hair": "#23302A",
+      "eyes": "#7BCB5E",
+      "primary": "#5B3A86",
+      "secondary": "#1F1A26",
+      "accent": "#7BCB5E",
+      "trim": "#C69C4E",
+      "leather": "#6B4A33",
+      "glow": "#9DFF6B",
+      "metal": "#C69C4E"
+    },
+    "base_layer": {
+      "base_top": "secondary",
+      "base_bottom": "secondary",
+      "shoes": "leather"
+    },
+    "parts": [
+      {
+        "part": "hair/messy_medium",
+        "color": "hair"
+      },
+      {
+        "part": "headwear/witch_hat",
+        "color": "secondary",
+        "trim": "trim",
+        "detail": "primary"
+      },
+      {
+        "part": "headwear/witch_brim_up",
+        "color": "secondary",
+        "phase": 3
+      },
+      {
+        "part": "robes/long_coat",
+        "color": "primary",
+        "alt": "secondary",
+        "trim": "trim",
+        "detail": "trim"
+      },
+      {
+        "part": "outfit_bottom/trousers",
+        "color": "secondary"
+      },
+      {
+        "part": "legwear/boots",
+        "color": "leather",
+        "trim": "trim"
+      },
+      {
+        "part": "accessories/sash_obi"
+      },
+      {
+        "part": "accessories/vial_bandolier",
+        "color": "leather",
+        "alt": "accent",
+        "detail": "metal",
+        "trim": "secondary"
+      },
+      {
+        "part": "accessories/crow",
+        "color": "secondary",
+        "alt": "trim",
+        "detail": "metal"
+      },
+      {
+        "part": "accessories/field_kit",
+        "color": "leather",
+        "alt": "accent",
+        "detail": "trim"
+      }
+    ],
+    "face": {
+      "eyes": "wide",
+      "lashes": 1,
+      "flick": "none",
+      "brows": "bold",
+      "mouth": "wide",
+      "glasses": "round",
+      "glasses_color": "metal",
+      "marks": [
+        "freckles"
+      ],
+      "overrides": {
+        "calm": {
+          "eyes": "open",
+          "mouth": "smile"
+        },
+        "focused": {
+          "eyes": "focused",
+          "mouth": "smile"
+        },
+        "angry": {
+          "eyes": "angry",
+          "mouth": "frown"
+        }
+      }
+    },
+    "weapon": {
+      "prop": "weapons/cauldron_staff",
+      "hand": "right",
+      "sheathed": "back_up",
+      "mount": true,
+      "color": "leather",
+      "trim": "trim",
+      "alt": "secondary",
+      "detail": "glow"
+    },
+    "phases": [
+      {
+        "phase": 2
+      },
+      {
+        "phase": 3,
+        "eyes_glow": true,
+        "hide": [
+          "brim"
+        ]
+      }
+    ]
+  },
+  "animations": {
+    "style": "staff",
+    "blink": "nervous",
+    "variants": [
+      "broom"
+    ],
+    "poses": {
+      "amb.hex_trace": {
+        "_comment": "Hex Mark's tell: the left hand raised before his chest, two fingers up, tracing the sign; the chest turned a little to his right, the eyes on the target over the hand.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            8,
+            0
+          ],
+          "neck": [
+            2,
+            -16,
+            0
+          ],
+          "arm_l": [
+            -26.1,
+            -21.2,
+            -84.2
+          ],
+          "forearm_l": [
+            -116.9,
+            14.8,
+            0.0
+          ],
+          "hand_l": [
+            49.2,
+            60.0,
+            -35.0
+          ]
+        }
+      },
+      "amb.hex_cock": {
+        "_comment": "Hex Mark, cocked: the hand drawn back beside his left cheek, fingers up and forward, the chest wound to his right.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            12,
+            0
+          ],
+          "chest": [
+            3,
+            12,
+            0
+          ],
+          "neck": [
+            2,
+            -20,
+            0
+          ],
+          "arm_l": [
+            1.8,
+            -61.5,
+            -16.8
+          ],
+          "forearm_l": [
+            -144.9,
+            -63.5,
+            0.0
+          ],
+          "hand_l": [
+            -7.6,
+            58.9,
+            19.5
+          ]
+        }
+      },
+      "amb.hex_flick": {
+        "_comment": "Hex Mark's release: the left arm flung out straight at the target, the fingers spread and pointing, the chest unwound to his left.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            -10,
+            0
+          ],
+          "chest": [
+            1,
+            -12,
+            0
+          ],
+          "neck": [
+            1,
+            6,
+            0
+          ],
+          "arm_l": [
+            -85.9,
+            10.3,
+            -32.0
+          ],
+          "forearm_l": [
+            -34.8,
+            29.2,
+            0.0
+          ],
+          "hand_l": [
+            25.9,
+            29.1,
+            7.4
+          ]
+        }
+      },
+      "amb.bar_reach": {
+        "_comment": "Potion Barrage: the left hand across at the bandolier, plucking a vial from its loop, the head dipped to look.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            6,
+            6,
+            0
+          ],
+          "neck": [
+            16,
+            -8,
+            0
+          ],
+          "arm_l": [
+            -62.5,
+            -0.9,
+            -80.8
+          ],
+          "forearm_l": [
+            -107.7,
+            58.4,
+            0.0
+          ],
+          "hand_l": [
+            -66.3,
+            -5.8,
+            35.0
+          ]
+        }
+      },
+      "amb.bar_wind": {
+        "_comment": "Potion Barrage, the swing back: the vial drawn back low past his left hip, the chest turned to his left, the eyes kept on the target.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            -14,
+            0
+          ],
+          "chest": [
+            3,
+            -10,
+            0
+          ],
+          "neck": [
+            2,
+            16,
+            0
+          ],
+          "arm_l": [
+            45.6,
+            10.4,
+            -21.3
+          ],
+          "forearm_l": [
+            -69.9,
+            11.8,
+            0.0
+          ],
+          "hand_l": [
+            14.8,
+            -6.1,
+            9.3
+          ]
+        },
+        "position": {
+          "vial_l": [
+            0,
+            -1.9,
+            0
+          ]
+        }
+      },
+      "amb.bar_lob": {
+        "_comment": "Potion Barrage, the lob: the left arm swung through forward and up, the vial leaving his fingers at chest height, the chest turned to his right.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -2,
+            10,
+            0
+          ],
+          "chest": [
+            -3,
+            12,
+            0
+          ],
+          "neck": [
+            0,
+            -8,
+            0
+          ],
+          "arm_l": [
+            -23.3,
+            -8.2,
+            -47.6
+          ],
+          "forearm_l": [
+            -75.6,
+            6.3,
+            0.0
+          ],
+          "hand_l": [
+            18.0,
+            52.6,
+            -20.7
+          ]
+        },
+        "position": {
+          "vial_l": [
+            0,
+            -1.9,
+            0
+          ]
+        }
+      },
+      "amb.bar_follow": {
+        "_comment": "Potion Barrage, the follow-through: the empty hand carried on up, the fingers spread.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -2,
+            14,
+            0
+          ],
+          "chest": [
+            -5,
+            15,
+            0
+          ],
+          "neck": [
+            -2,
+            -10,
+            0
+          ],
+          "arm_l": [
+            -31.7,
+            -26.9,
+            -58.3
+          ],
+          "forearm_l": [
+            -88.2,
+            2.8,
+            0.0
+          ],
+          "hand_l": [
+            38.4,
+            56.6,
+            0.0
+          ]
+        }
+      },
+      "amb.bar_fumble": {
+        "_comment": "Potion Barrage's recovery, reaching for new vials: the left hand patting along the bandolier, the head bowed over it, the shoulders hunched.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            2,
+            4,
+            0
+          ],
+          "chest": [
+            8,
+            4,
+            0
+          ],
+          "neck": [
+            20,
+            -4,
+            0
+          ],
+          "arm_l": [
+            -50.9,
+            11.4,
+            -70.8
+          ],
+          "forearm_l": [
+            -96.0,
+            55.4,
+            0.0
+          ],
+          "hand_l": [
+            -55.8,
+            -1.6,
+            35.0
+          ]
+        }
+      },
+      "amb.cau_raise": {
+        "_comment": "Cauldron's tell: the staff raised high in the right hand to his right front, the cauldron swung up above his head height, the knees softened, the eyes up on it.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -0.1,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -7.9,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -9.08,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            8.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            1.08,
+            0.0,
+            2.99
+          ],
+          "waist": [
+            0,
+            10,
+            0
+          ],
+          "chest": [
+            -6,
+            6,
+            0
+          ],
+          "neck": [
+            -12,
+            -4,
+            0
+          ],
+          "arm_r": [
+            -60.3,
+            19.6,
+            27.3
+          ],
+          "forearm_r": [
+            -66.4,
+            16.2,
+            0.0
+          ],
+          "hand_r": [
+            79.3,
+            41.2,
+            -4.2
+          ],
+          "arm_l": [
+            -6.9,
+            -26.9,
+            -3.9
+          ],
+          "forearm_l": [
+            -108.9,
+            -26.7,
+            0.0
+          ],
+          "hand_l": [
+            21.8,
+            12.6,
+            -10.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.cau_heave": {
+        "_comment": "Cauldron's release: the staff swung forward and down in both hands, the cauldron out before him at chest height so the brew flies at the target, the weight forward over bent knees.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -9.53,
+            0.0,
+            3.05
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -18.47,
+            0.0,
+            -3.05
+          ],
+          "leg_l": [
+            -18.75,
+            0.0,
+            -3.06
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -9.25,
+            0.0,
+            3.06
+          ],
+          "waist": [
+            8,
+            4,
+            0
+          ],
+          "chest": [
+            8,
+            0,
+            0
+          ],
+          "neck": [
+            -6,
+            -2,
+            0
+          ],
+          "arm_r": [
+            -31.0,
+            -1.0,
+            22.0
+          ],
+          "forearm_r": [
+            -87.4,
+            -2.9,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            23.4,
+            -3.3
+          ],
+          "arm_l": [
+            -17.5,
+            -11.0,
+            -43.4
+          ],
+          "forearm_l": [
+            -102.6,
+            -0.7,
+            0.0
+          ],
+          "hand_l": [
+            19.4,
+            50.3,
+            -5.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.cau_follow": {
+        "_comment": "Cauldron's follow-through: the staff dipped on, the cauldron swinging low before him.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -11.4,
+            0.0,
+            3.07
+          ],
+          "shin_r": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -20.6,
+            0.0,
+            -3.07
+          ],
+          "leg_l": [
+            -20.71,
+            0.0,
+            -3.08
+          ],
+          "shin_l": [
+            32.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -11.29,
+            0.0,
+            3.08
+          ],
+          "waist": [
+            10,
+            2,
+            0
+          ],
+          "chest": [
+            8,
+            -2,
+            0
+          ],
+          "neck": [
+            -4,
+            0,
+            0
+          ],
+          "arm_r": [
+            -30.6,
+            -4.3,
+            20.7
+          ],
+          "forearm_r": [
+            -63.8,
+            -5.5,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            22.4,
+            -2.7
+          ],
+          "arm_l": [
+            -10.1,
+            -0.3,
+            -49.9
+          ],
+          "forearm_l": [
+            -95.3,
+            6.0,
+            0.0
+          ],
+          "hand_l": [
+            24.8,
+            36.1,
+            3.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.fume_crouch": {
+        "_comment": "Fume Step's tell: down on bent knees, a vial snatched up in the left hand to his shoulder.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -7.66,
+            0.0,
+            3.03
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -16.34,
+            0.0,
+            -3.03
+          ],
+          "leg_l": [
+            -16.81,
+            0.0,
+            -3.04
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -7.19,
+            0.0,
+            3.04
+          ],
+          "waist": [
+            8,
+            0,
+            0
+          ],
+          "chest": [
+            6,
+            -4,
+            0
+          ],
+          "neck": [
+            -8,
+            6,
+            0
+          ],
+          "arm_r": [
+            -2.9,
+            6.9,
+            14.3
+          ],
+          "forearm_r": [
+            -103.3,
+            7.4,
+            0.0
+          ],
+          "hand_r": [
+            10.9,
+            21.3,
+            -4.2
+          ],
+          "arm_l": [
+            -13.2,
+            -54.2,
+            6.6
+          ],
+          "forearm_l": [
+            -150.0,
+            -60.1,
+            0.0
+          ],
+          "hand_l": [
+            -40.7,
+            60.0,
+            -35.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "vial_l": [
+            0,
+            -1.9,
+            0
+          ]
+        }
+      },
+      "amb.fume_smash": {
+        "_comment": "Fume Step's release: the vial dashed down at his feet, the left arm flung down before him.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -13.26,
+            0.0,
+            3.09
+          ],
+          "shin_r": [
+            36.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -22.74,
+            0.0,
+            -3.09
+          ],
+          "leg_l": [
+            -22.67,
+            0.0,
+            -3.1
+          ],
+          "shin_l": [
+            36.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -13.33,
+            0.0,
+            3.1
+          ],
+          "waist": [
+            14,
+            0,
+            0
+          ],
+          "chest": [
+            8,
+            -6,
+            0
+          ],
+          "neck": [
+            -12,
+            4,
+            0
+          ],
+          "arm_r": [
+            -8.7,
+            7.5,
+            16.0
+          ],
+          "forearm_r": [
+            -92.9,
+            7.8,
+            0.0
+          ],
+          "hand_r": [
+            8.0,
+            20.3,
+            -2.3
+          ],
+          "arm_l": [
+            -22.9,
+            4.6,
+            -0.1
+          ],
+          "forearm_l": [
+            -33.7,
+            -1.4,
+            0.0
+          ],
+          "hand_l": [
+            21.8,
+            -4.2,
+            -2.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "vial_l": [
+            0,
+            -1.9,
+            0
+          ]
+        }
+      },
+      "amb.fume_hop": {
+        "_comment": "Fume Step's hop back: the knees tucked up under him, the body leaning forward over them as the hop carries him back, the left arm out for balance, a hand waving the fumes away.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            14,
+            0,
+            0
+          ],
+          "chest": [
+            6,
+            -4,
+            0
+          ],
+          "neck": [
+            -10,
+            4,
+            0
+          ],
+          "leg_r": [
+            -38,
+            0,
+            4
+          ],
+          "shin_r": [
+            62,
+            0,
+            0
+          ],
+          "foot_r": [
+            -20,
+            0,
+            0
+          ],
+          "leg_l": [
+            -30,
+            0,
+            -4
+          ],
+          "shin_l": [
+            56,
+            0,
+            0
+          ],
+          "foot_l": [
+            -22,
+            0,
+            0
+          ],
+          "arm_r": [
+            -7.6,
+            12.2,
+            15.4
+          ],
+          "forearm_r": [
+            -110.7,
+            12.5,
+            0.0
+          ],
+          "hand_r": [
+            24.1,
+            27.8,
+            -7.6
+          ],
+          "arm_l": [
+            -3.1,
+            -32.1,
+            3.2
+          ],
+          "forearm_l": [
+            -126.0,
+            -32.2,
+            0.0
+          ],
+          "hand_l": [
+            18.5,
+            -21.1,
+            9.7
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.fume_land": {
+        "_comment": "Fume Step's landing: down on bent knees, the left hand fanning the fumes from his face.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -9.53,
+            0.0,
+            3.05
+          ],
+          "shin_r": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -18.47,
+            0.0,
+            -3.05
+          ],
+          "leg_l": [
+            -18.75,
+            0.0,
+            -3.06
+          ],
+          "shin_l": [
+            28.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -9.25,
+            0.0,
+            3.06
+          ],
+          "waist": [
+            10,
+            0,
+            0
+          ],
+          "chest": [
+            4,
+            4,
+            0
+          ],
+          "neck": [
+            -4,
+            -4,
+            0
+          ],
+          "arm_r": [
+            -12.5,
+            3.7,
+            15.2
+          ],
+          "forearm_r": [
+            -96.7,
+            4.3,
+            0.0
+          ],
+          "hand_r": [
+            12.2,
+            21.7,
+            -4.4
+          ],
+          "arm_l": [
+            -57.3,
+            -3.9,
+            -13.0
+          ],
+          "forearm_l": [
+            -122.9,
+            -4.4,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -28.1,
+            6.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.hop_ready": {
+        "_comment": "Broom Hops' tell: crouched, the staff brought down level at his right hip with its head forward and the left hand on it behind the right, ready to hop on.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -7.66,
+            0.0,
+            3.03
+          ],
+          "shin_r": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -16.34,
+            0.0,
+            -3.03
+          ],
+          "leg_l": [
+            -16.81,
+            0.0,
+            -3.04
+          ],
+          "shin_l": [
+            24.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -7.19,
+            0.0,
+            3.04
+          ],
+          "waist": [
+            8,
+            6,
+            0
+          ],
+          "chest": [
+            6,
+            2,
+            0
+          ],
+          "neck": [
+            -8,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -16.4,
+            -12.3,
+            9.6
+          ],
+          "forearm_r": [
+            -55.7,
+            -9.3,
+            0.0
+          ],
+          "hand_r": [
+            53.0,
+            10.9,
+            1.8
+          ],
+          "arm_l": [
+            30.2,
+            -11.1,
+            -10.9
+          ],
+          "forearm_l": [
+            -81.3,
+            -14.0,
+            0.0
+          ],
+          "hand_l": [
+            36.8,
+            8.9,
+            -5.6
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.hop_load": {
+        "_comment": "Broom Hops, loaded: the knees deep, the body low over the staff, the eyes on the landing.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -18.78,
+            0.0,
+            3.18
+          ],
+          "shin_r": [
+            48.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -29.22,
+            0.0,
+            -3.18
+          ],
+          "leg_l": [
+            -28.58,
+            0.0,
+            -3.21
+          ],
+          "shin_l": [
+            48.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -19.42,
+            0.0,
+            3.21
+          ],
+          "waist": [
+            16,
+            6,
+            0
+          ],
+          "chest": [
+            8,
+            2,
+            0
+          ],
+          "neck": [
+            -14,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -24.0,
+            -12.5,
+            10.1
+          ],
+          "forearm_r": [
+            -51.8,
+            -8.9,
+            0.0
+          ],
+          "hand_r": [
+            47.1,
+            9.8,
+            2.8
+          ],
+          "arm_l": [
+            33.7,
+            -14.2,
+            -8.4
+          ],
+          "forearm_l": [
+            -72.4,
+            -17.5,
+            0.0
+          ],
+          "hand_l": [
+            12.4,
+            8.1,
+            -11.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.hop_air": {
+        "_comment": "Broom Hops in the air: perched side-saddle on the staff (the seat of broom.saddle), the right hand holding it exactly where the broom rides when he flies, the left arm out for balance.",
+        "extends": "broom.saddle",
+        "bones": {
+          "arm_r": [
+            -24.7,
+            8.2,
+            -17.5
+          ],
+          "forearm_r": [
+            -2.5,
+            2.5,
+            0.0
+          ],
+          "hand_r": [
+            15.0,
+            0.7,
+            14.6
+          ],
+          "arm_l": [
+            -8.1,
+            -12.2,
+            6.4
+          ],
+          "forearm_l": [
+            -104.2,
+            -11.2,
+            0.0
+          ],
+          "hand_l": [
+            5.1,
+            6.7,
+            -1.3
+          ]
+        }
+      },
+      "amb.hop_land": {
+        "_comment": "Broom Hops' landing: down on deep knees, the staff swung forward and down, the splash at his feet.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -16.95,
+            0.0,
+            3.15
+          ],
+          "shin_r": [
+            44.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -27.05,
+            0.0,
+            -3.15
+          ],
+          "leg_l": [
+            -26.6,
+            0.0,
+            -3.17
+          ],
+          "shin_l": [
+            44.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -17.4,
+            0.0,
+            3.17
+          ],
+          "waist": [
+            14,
+            2,
+            0
+          ],
+          "chest": [
+            6,
+            0,
+            0
+          ],
+          "neck": [
+            -10,
+            -2,
+            0
+          ],
+          "arm_r": [
+            -21.9,
+            -5.2,
+            14.4
+          ],
+          "forearm_r": [
+            -67.4,
+            -3.6,
+            0.0
+          ],
+          "hand_r": [
+            43.2,
+            15.0,
+            -0.1
+          ],
+          "arm_l": [
+            30.2,
+            -11.6,
+            -15.1
+          ],
+          "forearm_l": [
+            -116.3,
+            -16.9,
+            0.0
+          ],
+          "hand_l": [
+            64.0,
+            -0.4,
+            8.5
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.glasses": {
+        "_comment": "Pushing his glasses up the bridge of his nose with a finger of the left hand, the staff upright in the right.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            2,
+            0
+          ],
+          "chest": [
+            0,
+            4,
+            0
+          ],
+          "neck": [
+            4,
+            -6,
+            0
+          ],
+          "arm_l": [
+            -65.1,
+            18.1,
+            1.6
+          ],
+          "forearm_l": [
+            -99.7,
+            3.2,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            -9.6,
+            -1.7
+          ]
+        }
+      },
+      "amb.brew_set": {
+        "_comment": "Great Brew's tell: the staff held out before him and tipped forward so the cauldron hangs at his waist, the left hand over it, the knees bent.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -3.89,
+            0.0,
+            3.01
+          ],
+          "shin_r": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -12.11,
+            0.0,
+            -3.01
+          ],
+          "leg_l": [
+            -12.93,
+            0.0,
+            -3.01
+          ],
+          "shin_l": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -3.07,
+            0.0,
+            3.01
+          ],
+          "waist": [
+            10,
+            4,
+            0
+          ],
+          "chest": [
+            6,
+            0,
+            0
+          ],
+          "neck": [
+            2,
+            -2,
+            0
+          ],
+          "arm_r": [
+            10.3,
+            -6.6,
+            25.0
+          ],
+          "forearm_r": [
+            -121.2,
+            -4.9,
+            0.0
+          ],
+          "hand_r": [
+            62.4,
+            14.6,
+            -7.9
+          ],
+          "arm_l": [
+            -48.2,
+            16.7,
+            14.1
+          ],
+          "forearm_l": [
+            -54.3,
+            -6.7,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            19.0,
+            -20.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.brew_stir": {
+        "_comment": "Great Brew, the channel: leaning in over the cauldron, the left hand stirring the brew in circles, the face lit from below.",
+        "extends": "amb.brew_set",
+        "bones": {
+          "leg_r": [
+            -5.78,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -14.22,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -14.87,
+            0.0,
+            -3.02
+          ],
+          "shin_l": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -5.13,
+            0.0,
+            3.02
+          ],
+          "waist": [
+            14,
+            4,
+            0
+          ],
+          "chest": [
+            8,
+            0,
+            0
+          ],
+          "neck": [
+            6,
+            -2,
+            0
+          ],
+          "arm_r": [
+            11.4,
+            -7.6,
+            24.0
+          ],
+          "forearm_r": [
+            -127.0,
+            -6.1,
+            0.0
+          ],
+          "hand_r": [
+            65.5,
+            9.7,
+            -4.3
+          ],
+          "arm_l": [
+            -46.4,
+            17.4,
+            15.3
+          ],
+          "forearm_l": [
+            -61.2,
+            -7.5,
+            0.0
+          ],
+          "hand_l": [
+            80.0,
+            21.9,
+            -18.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.brew_heave": {
+        "_comment": "Great Brew, the heave: the staff hauled up in both hands, the cauldron swinging up beside his right shoulder.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -2.0,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -10.0,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -11.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -1.0,
+            0.0,
+            3.0
+          ],
+          "waist": [
+            -2,
+            8,
+            0
+          ],
+          "chest": [
+            -6,
+            6,
+            0
+          ],
+          "neck": [
+            -14,
+            -4,
+            0
+          ],
+          "arm_r": [
+            -35.7,
+            12.3,
+            23.1
+          ],
+          "forearm_r": [
+            -90.8,
+            9.8,
+            0.0
+          ],
+          "hand_r": [
+            63.8,
+            53.2,
+            -16.7
+          ],
+          "arm_l": [
+            4.5,
+            -26.9,
+            0.6
+          ],
+          "forearm_l": [
+            -100.5,
+            -26.9,
+            0.0
+          ],
+          "hand_l": [
+            3.2,
+            6.8,
+            -12.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.brew_fling": {
+        "_comment": "Great Brew, the fling: the staff thrust up at the sky, the cauldron tipped empty high before him, the body arched back, the head thrown back.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            1.8,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -5.8,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -7.16,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            3.16,
+            0.0,
+            2.99
+          ],
+          "waist": [
+            -8,
+            2,
+            0
+          ],
+          "chest": [
+            -10,
+            2,
+            0
+          ],
+          "neck": [
+            -22,
+            -2,
+            0
+          ],
+          "arm_r": [
+            -69.2,
+            22.0,
+            35.9
+          ],
+          "forearm_r": [
+            -51.5,
+            11.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            53.2,
+            -10.6
+          ],
+          "arm_l": [
+            -22.5,
+            -31.5,
+            -23.1
+          ],
+          "forearm_l": [
+            -90.9,
+            -23.3,
+            0.0
+          ],
+          "hand_l": [
+            37.5,
+            27.0,
+            -13.1
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.brew_watch": {
+        "_comment": "Great Brew, the rain: the staff held up at his right, the left hand shading his eyes as he watches the splashes fall.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            1.8,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -5.8,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -7.16,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            3.16,
+            0.0,
+            2.99
+          ],
+          "waist": [
+            -2,
+            4,
+            0
+          ],
+          "chest": [
+            -4,
+            6,
+            0
+          ],
+          "neck": [
+            -10,
+            -6,
+            0
+          ],
+          "crow": [
+            0,
+            0,
+            18
+          ],
+          "arm_r": [
+            -30.3,
+            7.9,
+            19.2
+          ],
+          "forearm_r": [
+            -90.0,
+            7.4,
+            0.0
+          ],
+          "hand_r": [
+            51.9,
+            42.2,
+            -14.1
+          ],
+          "arm_l": [
+            -69.6,
+            -46.0,
+            -67.7
+          ],
+          "forearm_l": [
+            -78.9,
+            18.0,
+            0.0
+          ],
+          "hand_l": [
+            52.2,
+            -31.7,
+            35.0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "crow": [
+            1.4,
+            0.6,
+            1.2
+          ]
+        }
+      },
+      "amb.ult_take": {
+        "_comment": "Grand Experiment: the staff taken in both hands before his chest, the cauldron swinging.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            6,
+            0
+          ],
+          "chest": [
+            2,
+            4,
+            0
+          ],
+          "neck": [
+            2,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -27.4,
+            1.5,
+            16.1
+          ],
+          "forearm_r": [
+            -83.5,
+            2.6,
+            0.0
+          ],
+          "hand_r": [
+            45.6,
+            28.0,
+            -6.4
+          ],
+          "arm_l": [
+            -5.1,
+            -11.5,
+            -0.3
+          ],
+          "forearm_l": [
+            -83.8,
+            -12.2,
+            0.0
+          ],
+          "hand_l": [
+            -5.7,
+            -0.8,
+            -17.3
+          ]
+        }
+      },
+      "amb.ult_lift": {
+        "_comment": "Grand Experiment's tell: the cauldron lifted high on the staff at his right, the left arm flung out wide, the chest arched and the eyes up on it while the crow caws.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -4,
+            8,
+            0
+          ],
+          "chest": [
+            -8,
+            6,
+            0
+          ],
+          "neck": [
+            -16,
+            -6,
+            0
+          ],
+          "arm_r": [
+            -73.0,
+            22.6,
+            31.3
+          ],
+          "forearm_r": [
+            -65.0,
+            17.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -9.4
+          ],
+          "arm_l": [
+            -2.2,
+            -46.3,
+            -26.7
+          ],
+          "forearm_l": [
+            -96.7,
+            -44.4,
+            0.0
+          ],
+          "hand_l": [
+            31.8,
+            13.6,
+            3.9
+          ]
+        }
+      },
+      "amb.ult_cock": {
+        "_comment": "Grand Experiment, drawn back: the staff tipped back over his right shoulder, the body coiled back and trembling.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -6,
+            14,
+            0
+          ],
+          "chest": [
+            -8,
+            10,
+            0
+          ],
+          "neck": [
+            -10,
+            -10,
+            0
+          ],
+          "arm_r": [
+            -53.7,
+            10.7,
+            13.4
+          ],
+          "forearm_r": [
+            -96.9,
+            16.9,
+            0.0
+          ],
+          "hand_r": [
+            37.6,
+            56.0,
+            -9.0
+          ],
+          "arm_l": [
+            4.7,
+            -34.0,
+            -10.0
+          ],
+          "forearm_l": [
+            -82.9,
+            -35.5,
+            0.0
+          ],
+          "hand_l": [
+            -3.9,
+            7.2,
+            -15.4
+          ]
+        }
+      },
+      "amb.ult_fling": {
+        "_comment": "Grand Experiment's release: the staff swept forward and up, the cauldron flinging its brew at the sky before him ('Hypothesis: you lose!').",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            4,
+            -8,
+            0
+          ],
+          "chest": [
+            2,
+            -10,
+            0
+          ],
+          "neck": [
+            -12,
+            4,
+            0
+          ],
+          "arm_r": [
+            -53.4,
+            61.6,
+            68.5
+          ],
+          "forearm_r": [
+            -43.1,
+            7.8,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -21.1
+          ],
+          "arm_l": [
+            -49.6,
+            -12.3,
+            -9.7
+          ],
+          "forearm_l": [
+            -91.9,
+            -14.6,
+            0.0
+          ],
+          "hand_l": [
+            32.0,
+            29.8,
+            -31.6
+          ]
+        }
+      },
+      "amb.ult_swirl": {
+        "_comment": "Grand Experiment, the rain: the staff held high and swung round in a slow circle, the cauldron sloshing over the falling splashes, the left hand out.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -2,
+            4,
+            0
+          ],
+          "chest": [
+            -4,
+            4,
+            0
+          ],
+          "neck": [
+            -14,
+            -2,
+            0
+          ],
+          "arm_r": [
+            -77.4,
+            25.5,
+            33.7
+          ],
+          "forearm_r": [
+            -54.0,
+            19.7,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            60.0,
+            -12.7
+          ],
+          "arm_l": [
+            -10.5,
+            -30.9,
+            -8.6
+          ],
+          "forearm_l": [
+            -93.2,
+            -29.4,
+            0.0
+          ],
+          "hand_l": [
+            15.1,
+            12.5,
+            -16.2
+          ]
+        }
+      },
+      "amb.bar_lob_x": {
+        "_comment": "Potion Barrage, just after the release: the lob's follow-through with the vial gone.",
+        "extends": "amb.bar_lob",
+        "bones": {
+          "waist": [
+            -2,
+            11,
+            0
+          ],
+          "chest": [
+            -4,
+            13,
+            0
+          ],
+          "neck": [
+            -1,
+            -9,
+            0
+          ]
+        },
+        "position": {
+          "vial_l": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "amb.fume_smash_x": {
+        "_comment": "Fume Step, just after the vial broke: the arm still down, the vial gone.",
+        "extends": "amb.fume_smash",
+        "bones": {
+          "leg_r": [
+            -13.26,
+            0.0,
+            3.09
+          ],
+          "shin_r": [
+            36.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -22.74,
+            0.0,
+            -3.09
+          ],
+          "leg_l": [
+            -22.67,
+            0.0,
+            -3.1
+          ],
+          "shin_l": [
+            36.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -13.33,
+            0.0,
+            3.1
+          ],
+          "waist": [
+            14,
+            0,
+            0
+          ],
+          "chest": [
+            8,
+            -6,
+            0
+          ],
+          "neck": [
+            -12,
+            4,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "vial_l": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "amb.hop_drop": {
+        "_comment": "Broom Hops, coming down: the legs reaching for the ground under him, the staff swinging forward off his seat.",
+        "extends": "amb.hop_land",
+        "bones": {
+          "leg_r": [
+            1.8,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -5.8,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -7.16,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            3.16,
+            0.0,
+            2.99
+          ],
+          "waist": [
+            6,
+            2,
+            0
+          ],
+          "chest": [
+            4,
+            0,
+            0
+          ],
+          "neck": [
+            -6,
+            -2,
+            0
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.p3_bow": {
+        "_comment": "Phase 3, gathering: the head bowed so the hat's brim (turned down again) hides his eyes, the staff drawn in, the left hand at the brim's edge.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -2.0,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -10.0,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -11.0,
+            0.0,
+            -3.0
+          ],
+          "shin_l": [
+            12.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -1.0,
+            0.0,
+            3.0
+          ],
+          "waist": [
+            8,
+            2,
+            0
+          ],
+          "chest": [
+            8,
+            0,
+            0
+          ],
+          "neck": [
+            22,
+            -4,
+            0
+          ],
+          "p3_brim_up": [
+            16,
+            0,
+            0
+          ],
+          "crow": [
+            0,
+            0,
+            18
+          ],
+          "arm_r": [
+            2.9,
+            1.5,
+            14.4
+          ],
+          "forearm_r": [
+            -109.1,
+            1.8,
+            0.0
+          ],
+          "hand_r": [
+            3.1,
+            17.5,
+            -3.8
+          ],
+          "arm_l": [
+            -70.5,
+            -45.7,
+            -57.0
+          ],
+          "forearm_l": [
+            -80.6,
+            3.6,
+            0.0
+          ],
+          "hand_l": [
+            48.7,
+            13.8,
+            20.2
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "crow": [
+            1.4,
+            0.4,
+            1.4
+          ]
+        }
+      },
+      "amb.p3_rise": {
+        "_comment": "Phase 3, the reveal: the head snapped up with the eyes glowing green, the left hand flicking the brim up, the staff raised.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            3.7,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -3.7,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -5.25,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            5.25,
+            0.0,
+            2.99
+          ],
+          "waist": [
+            -4,
+            -2,
+            0
+          ],
+          "chest": [
+            -6,
+            -2,
+            0
+          ],
+          "neck": [
+            -12,
+            0,
+            0
+          ],
+          "p3_brim_up": [
+            -6,
+            0,
+            0
+          ],
+          "crow": [
+            0,
+            0,
+            18
+          ],
+          "arm_r": [
+            -25.3,
+            19.2,
+            25.5
+          ],
+          "forearm_r": [
+            -96.5,
+            15.6,
+            0.0
+          ],
+          "hand_r": [
+            63.3,
+            56.9,
+            -18.4
+          ],
+          "arm_l": [
+            -95.0,
+            -29.2,
+            -53.9
+          ],
+          "forearm_l": [
+            -35.0,
+            11.9,
+            0.0
+          ],
+          "hand_l": [
+            24.1,
+            21.8,
+            4.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "crow": [
+            1.4,
+            0.4,
+            1.4
+          ]
+        }
+      },
+      "amb.p3_hold": {
+        "_comment": "Phase 3, settled: the brim up, the staff ready, the left hand open at his side.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            0,
+            2,
+            0
+          ],
+          "chest": [
+            -2,
+            2,
+            0
+          ],
+          "neck": [
+            -4,
+            -8,
+            0
+          ],
+          "p3_brim_up": [
+            0,
+            0,
+            0
+          ],
+          "arm_r": [
+            -17.7,
+            7.9,
+            18.2
+          ],
+          "forearm_r": [
+            -98.6,
+            7.6,
+            0.0
+          ],
+          "hand_r": [
+            36.6,
+            32.5,
+            -11.3
+          ],
+          "arm_l": [
+            2.8,
+            -15.3,
+            -4.2
+          ],
+          "forearm_l": [
+            -85.5,
+            -15.3,
+            0.0
+          ],
+          "hand_l": [
+            -7.4,
+            -3.6,
+            -6.0
+          ]
+        }
+      },
+      "amb.intro_tip": {
+        "_comment": "The intro: the left hand at the front of his hat's brim, tipping it, the head bowed a little in greeting.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            4,
+            2,
+            0
+          ],
+          "chest": [
+            4,
+            0,
+            0
+          ],
+          "neck": [
+            14,
+            -4,
+            0
+          ],
+          "hat": [
+            10,
+            0,
+            0
+          ],
+          "crow": [
+            0,
+            0,
+            18
+          ],
+          "arm_l": [
+            -82.4,
+            -53.3,
+            -61.9
+          ],
+          "forearm_l": [
+            -64.2,
+            2.7,
+            0.0
+          ],
+          "hand_l": [
+            44.1,
+            6.5,
+            23.5
+          ]
+        },
+        "position": {
+          "crow": [
+            1.5,
+            0.5,
+            1.5
+          ]
+        }
+      },
+      "amb.intro_present": {
+        "_comment": "The intro: the left hand opened palm up toward the challenger ('Ah, a test subject! I mean, a guest.'), the head tilted.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -2,
+            -6,
+            0
+          ],
+          "chest": [
+            -2,
+            -6,
+            0
+          ],
+          "neck": [
+            2,
+            6,
+            8
+          ],
+          "arm_l": [
+            -40.9,
+            1.3,
+            -23.0
+          ],
+          "forearm_l": [
+            -39.6,
+            7.0,
+            0.0
+          ],
+          "hand_l": [
+            68.1,
+            15.8,
+            -3.8
+          ]
+        }
+      },
+      "amb.vic_cheer": {
+        "_comment": "The victory: the staff thrust up high in the right hand, the left fist pumped before his chest ('Eureka!').",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -4,
+            4,
+            0
+          ],
+          "chest": [
+            -6,
+            4,
+            0
+          ],
+          "neck": [
+            -10,
+            -4,
+            0
+          ],
+          "arm_r": [
+            -62.8,
+            23.6,
+            30.7
+          ],
+          "forearm_r": [
+            -75.0,
+            18.2,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            57.3,
+            -8.8
+          ],
+          "arm_l": [
+            -46.4,
+            -2.4,
+            -8.4
+          ],
+          "forearm_l": [
+            -89.2,
+            -6.3,
+            0.0
+          ],
+          "hand_l": [
+            43.4,
+            22.4,
+            -19.7
+          ]
+        }
+      },
+      "amb.vic_note": {
+        "_comment": "The victory: the notebook held up in the left hand before his face, reading back the result with a pleased nod ('Data acquired.'), the staff upright.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            4,
+            -4,
+            0
+          ],
+          "neck": [
+            8,
+            4,
+            0
+          ],
+          "arm_r": [
+            -2.0,
+            6.4,
+            14.5
+          ],
+          "forearm_r": [
+            -99.4,
+            6.8,
+            0.0
+          ],
+          "hand_r": [
+            11.2,
+            21.1,
+            -4.1
+          ],
+          "arm_l": [
+            -51.4,
+            13.6,
+            -1.8
+          ],
+          "forearm_l": [
+            -96.3,
+            2.8,
+            0.0
+          ],
+          "hand_l": [
+            47.7,
+            13.2,
+            -14.2
+          ]
+        },
+        "position": {
+          "notebook_l": [
+            0,
+            -2.0,
+            -0.5
+          ]
+        }
+      },
+      "amb.taunt_peer": {
+        "_comment": "The taunt: leaning in, peering at the enemy over his glasses with the left hand at their rim, the head tilted.",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            8,
+            -4,
+            0
+          ],
+          "chest": [
+            8,
+            -4,
+            0
+          ],
+          "neck": [
+            6,
+            4,
+            10
+          ],
+          "arm_l": [
+            -84.1,
+            8.5,
+            -7.9
+          ],
+          "forearm_l": [
+            -104.4,
+            2.8,
+            0.0
+          ],
+          "hand_l": [
+            69.7,
+            36.3,
+            -16.0
+          ]
+        }
+      },
+      "amb.taunt_wag": {
+        "_comment": "The taunt: upright, the left forefinger raised and wagging before him ('Hold still, please').",
+        "extends": "staff.stance",
+        "bones": {
+          "waist": [
+            -2,
+            2,
+            0
+          ],
+          "chest": [
+            -2,
+            2,
+            0
+          ],
+          "neck": [
+            -2,
+            -4,
+            -6
+          ],
+          "arm_l": [
+            -42.3,
+            -17.0,
+            -48.5
+          ],
+          "forearm_l": [
+            -94.8,
+            9.3,
+            0.0
+          ],
+          "hand_l": [
+            10.0,
+            60.0,
+            -35.0
+          ]
+        }
+      },
+      "amb.ls_slump": {
+        "_comment": "The last stand: bent over, panting, the staff planted, the left hand on his knee.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -5.78,
+            0.0,
+            3.02
+          ],
+          "shin_r": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -14.22,
+            0.0,
+            -3.02
+          ],
+          "leg_l": [
+            -14.87,
+            0.0,
+            -3.02
+          ],
+          "shin_l": [
+            20.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -5.13,
+            0.0,
+            3.02
+          ],
+          "waist": [
+            20,
+            0,
+            0
+          ],
+          "chest": [
+            10,
+            0,
+            0
+          ],
+          "neck": [
+            -16,
+            0,
+            0
+          ],
+          "arm_r": [
+            -9.9,
+            1.5,
+            9.2
+          ],
+          "forearm_r": [
+            -72.7,
+            3.2,
+            0.0
+          ],
+          "hand_r": [
+            -29.2,
+            24.6,
+            14.5
+          ],
+          "arm_l": [
+            -14.4,
+            -0.1,
+            -2.2
+          ],
+          "forearm_l": [
+            -27.8,
+            -3.1,
+            0.0
+          ],
+          "hand_l": [
+            8.1,
+            -6.3,
+            1.3
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.ls_ready": {
+        "_comment": "The last stand: straight up with the staff raised and a vial ready in the left hand, the jaw set ('Very well. One last experiment.').",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            1.8,
+            0.0,
+            3.0
+          ],
+          "shin_r": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -5.8,
+            0.0,
+            -3.0
+          ],
+          "leg_l": [
+            -7.16,
+            0.0,
+            -2.99
+          ],
+          "shin_l": [
+            4.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            3.16,
+            0.0,
+            2.99
+          ],
+          "waist": [
+            -2,
+            4,
+            0
+          ],
+          "chest": [
+            -4,
+            4,
+            0
+          ],
+          "neck": [
+            -6,
+            -8,
+            0
+          ],
+          "arm_r": [
+            -38.3,
+            15.4,
+            23.2
+          ],
+          "forearm_r": [
+            -93.3,
+            12.9,
+            0.0
+          ],
+          "hand_r": [
+            65.4,
+            60.0,
+            -17.4
+          ],
+          "arm_l": [
+            -0.4,
+            -19.4,
+            -5.4
+          ],
+          "forearm_l": [
+            -98.3,
+            -19.4,
+            0.0
+          ],
+          "hand_l": [
+            9.0,
+            1.0,
+            -4.9
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ],
+        "position": {
+          "vial_l": [
+            0,
+            -1.9,
+            0
+          ]
+        }
+      },
+      "amb.esc_clutch": {
+        "_comment": "The escape: the right hand clutching his hat to his head, a glance back over the shoulder.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "waist": [
+            0,
+            -10,
+            0
+          ],
+          "chest": [
+            0,
+            -10,
+            0
+          ],
+          "neck": [
+            -4,
+            40,
+            0
+          ],
+          "arm_r": [
+            -63.0,
+            69.1,
+            80.4
+          ],
+          "forearm_r": [
+            -65.3,
+            -2.5,
+            0.0
+          ],
+          "hand_r": [
+            36.4,
+            4.8,
+            -35.0
+          ]
+        }
+      },
+      "amb.esc_wave": {
+        "_comment": "The escape: the left hand flapped back at the pursuer ('Don't touch my notes!').",
+        "extends": "amb.esc_clutch",
+        "bones": {
+          "waist": [
+            0,
+            -12,
+            0
+          ],
+          "chest": [
+            0,
+            -12,
+            0
+          ],
+          "neck": [
+            -2,
+            45,
+            0
+          ],
+          "arm_l": [
+            8.7,
+            -38.8,
+            -5.6
+          ],
+          "forearm_l": [
+            -52.9,
+            -39.0,
+            0.0
+          ],
+          "hand_l": [
+            -20.6,
+            -27.7,
+            -30.8
+          ]
+        }
+      },
+      "amb.note_write": {
+        "_comment": "Field notes: the notebook open in the left hand before his chest, the pencil in the right scribbling on it, the head bowed to read.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "waist": [
+            2,
+            0,
+            0
+          ],
+          "chest": [
+            4,
+            0,
+            0
+          ],
+          "neck": [
+            9,
+            0,
+            0
+          ],
+          "arm_r": [
+            -54.0,
+            -19.8,
+            -11.1
+          ],
+          "forearm_r": [
+            -44.2,
+            -10.9,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -37.2,
+            7.4
+          ],
+          "arm_l": [
+            -16.0,
+            13.4,
+            4.9
+          ],
+          "forearm_l": [
+            -97.5,
+            10.3,
+            0.0
+          ],
+          "hand_l": [
+            20.1,
+            5.5,
+            -3.5
+          ]
+        },
+        "position": {
+          "notebook_l": [
+            0,
+            -2.0,
+            -0.5
+          ],
+          "pencil_r": [
+            0,
+            -1.6,
+            0
+          ]
+        }
+      },
+      "amb.note_think": {
+        "_comment": "Field notes: the pencil tapped against his chin, the eyes turned up, thinking.",
+        "extends": "amb.note_write",
+        "bones": {
+          "waist": [
+            0,
+            0,
+            0
+          ],
+          "chest": [
+            2,
+            0,
+            0
+          ],
+          "neck": [
+            -8,
+            -10,
+            4
+          ],
+          "arm_r": [
+            -68.3,
+            -14.0,
+            1.7
+          ],
+          "forearm_r": [
+            -92.1,
+            -24.3,
+            0.0
+          ],
+          "hand_r": [
+            80.0,
+            -60.0,
+            15.9
+          ]
+        }
+      },
+      "amb.vial_look": {
+        "_comment": "Vial shake: a vial held up at eye level in the left hand, squinted at through his glasses.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "waist": [
+            0,
+            2,
+            0
+          ],
+          "chest": [
+            0,
+            4,
+            0
+          ],
+          "neck": [
+            -2,
+            -8,
+            0
+          ],
+          "arm_l": [
+            -65.4,
+            30.0,
+            75.0
+          ],
+          "forearm_l": [
+            -23.8,
+            -40.3,
+            0.0
+          ],
+          "hand_l": [
+            43.9,
+            -60.0,
+            34.6
+          ]
+        },
+        "position": {
+          "vial_l": [
+            0,
+            -1.9,
+            0
+          ]
+        }
+      },
+      "amb.vial_sky": {
+        "_comment": "Vial shake: the vial lifted toward the light, the head tilted back to look up through it.",
+        "extends": "amb.vial_look",
+        "bones": {
+          "waist": [
+            -2,
+            2,
+            0
+          ],
+          "chest": [
+            -4,
+            4,
+            0
+          ],
+          "neck": [
+            -16,
+            -6,
+            0
+          ],
+          "arm_l": [
+            -74.0,
+            34.9,
+            79.5
+          ],
+          "forearm_l": [
+            -21.2,
+            -38.5,
+            0.0
+          ],
+          "hand_l": [
+            42.5,
+            -60.0,
+            19.4
+          ]
+        }
+      },
+      "amb.vial_stow": {
+        "_comment": "Vial shake: the vial tucked back into the bandolier on his chest.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "waist": [
+            0,
+            4,
+            0
+          ],
+          "chest": [
+            4,
+            4,
+            0
+          ],
+          "neck": [
+            14,
+            -6,
+            0
+          ],
+          "arm_l": [
+            -74.1,
+            1.2,
+            -74.3
+          ],
+          "forearm_l": [
+            -92.4,
+            65.7,
+            0.0
+          ],
+          "hand_l": [
+            -78.2,
+            3.0,
+            35.0
+          ]
+        }
+      },
+      "amb.crow_look": {
+        "_comment": "The crow's peck: the head turned up and to his left at the crow on his hat, the left shoulder hitched to shoo it.",
+        "extends": "stance.relaxed",
+        "bones": {
+          "waist": [
+            0,
+            -2,
+            0
+          ],
+          "chest": [
+            -2,
+            -4,
+            4
+          ],
+          "neck": [
+            -18,
+            -30,
+            -4
+          ],
+          "arm_l": [
+            0,
+            0,
+            -12
+          ]
+        }
+      },
+      "amb.cau_swing": {
+        "_comment": "Cauldron, on the way down: the staff swung out to his right side before it comes forward, so its foot passes clear of his body.",
+        "extends": "staff.stance",
+        "bones": {
+          "leg_r": [
+            -3.89,
+            0.0,
+            3.01
+          ],
+          "shin_r": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_r": [
+            -12.11,
+            0.0,
+            -3.01
+          ],
+          "leg_l": [
+            -12.93,
+            0.0,
+            -3.01
+          ],
+          "shin_l": [
+            16.0,
+            0.0,
+            0.0
+          ],
+          "foot_l": [
+            -3.07,
+            0.0,
+            3.01
+          ],
+          "waist": [
+            4,
+            8,
+            0
+          ],
+          "chest": [
+            0,
+            4,
+            0
+          ],
+          "neck": [
+            -8,
+            -4,
+            0
+          ],
+          "arm_r": [
+            -37.1,
+            12.9,
+            31.6
+          ],
+          "forearm_r": [
+            -83.9,
+            5.2,
+            0.0
+          ],
+          "hand_r": [
+            72.4,
+            37.6,
+            -15.6
+          ],
+          "arm_l": [
+            -12.9,
+            -20.9,
+            -0.4
+          ],
+          "forearm_l": [
+            -99.3,
+            -22.1,
+            0.0
+          ],
+          "hand_l": [
+            10.0,
+            8.3,
+            -19.8
+          ]
+        },
+        "knees": 0,
+        "fix": [
+          "floor"
+        ],
+        "floor": [
+          "foot_*"
+        ]
+      },
+      "amb.p2_crow_up": {
+        "_comment": "amb.hop_air with the crow off its perch.",
+        "extends": "amb.hop_air",
+        "bones": {
+          "crow": [
+            -20,
+            0,
+            -10
+          ],
+          "crow_wing_r": [
+            10,
+            0,
+            70
+          ],
+          "crow_wing_l": [
+            10,
+            0,
+            -70
+          ]
+        },
+        "position": {
+          "crow": [
+            0.5,
+            5.0,
+            1.5
+          ]
+        }
+      },
+      "amb.p2_crow_flap": {
+        "_comment": "amb.hop_air with the crow off its perch.",
+        "extends": "amb.hop_air",
+        "bones": {
+          "crow": [
+            -10,
+            0,
+            -10
+          ],
+          "crow_wing_r": [
+            -10,
+            0,
+            25
+          ],
+          "crow_wing_l": [
+            -10,
+            0,
+            -25
+          ]
+        },
+        "position": {
+          "crow": [
+            0.8,
+            6.0,
+            1.5
+          ]
+        }
+      },
+      "amb.vic_cheer_c": {
+        "_comment": "amb.vic_cheer with the crow off its perch.",
+        "extends": "amb.vic_cheer",
+        "bones": {
+          "crow": [
+            -25,
+            0,
+            0
+          ],
+          "crow_wing_r": [
+            10,
+            0,
+            55
+          ],
+          "crow_wing_l": [
+            10,
+            0,
+            -55
+          ]
+        }
+      },
+      "amb.peck_hop": {
+        "_comment": "amb.crow_look with the crow off its perch.",
+        "extends": "amb.crow_look",
+        "bones": {
+          "crow": [
+            -20,
+            40,
+            0
+          ],
+          "crow_wing_r": [
+            0,
+            0,
+            70
+          ],
+          "crow_wing_l": [
+            0,
+            0,
+            -70
+          ]
+        },
+        "position": {
+          "crow": [
+            2.6,
+            8.0,
+            0.2
+          ]
+        }
+      },
+      "amb.peck_up": {
+        "_comment": "amb.crow_look with the crow off its perch.",
+        "extends": "amb.crow_look",
+        "bones": {
+          "crow": [
+            0,
+            80,
+            0
+          ],
+          "crow_wing_r": [
+            0,
+            0,
+            10
+          ],
+          "crow_wing_l": [
+            0,
+            0,
+            -10
+          ]
+        },
+        "position": {
+          "crow": [
+            -0.26,
+            15.6,
+            -1.2
+          ]
+        }
+      },
+      "amb.peck_hit": {
+        "_comment": "amb.crow_look with the crow off its perch.",
+        "extends": "amb.crow_look",
+        "bones": {
+          "crow": [
+            35,
+            80,
+            0
+          ]
+        },
+        "position": {
+          "crow": [
+            -0.26,
+            15.6,
+            -1.2
+          ]
+        }
+      },
+      "amb.peck_shoo": {
+        "_comment": "amb.crow_look with the crow off its perch.",
+        "extends": "amb.crow_look",
+        "bones": {
+          "crow": [
+            -15,
+            40,
+            0
+          ],
+          "crow_wing_r": [
+            -10,
+            0,
+            75
+          ],
+          "crow_wing_l": [
+            -10,
+            0,
+            -75
+          ]
+        },
+        "position": {
+          "crow": [
+            1.5,
+            17.0,
+            -0.6
+          ]
+        }
+      },
+      "amb.peck_down": {
+        "_comment": "amb.crow_look with the crow off its perch.",
+        "extends": "amb.crow_look",
+        "bones": {
+          "crow": [
+            -10,
+            20,
+            0
+          ],
+          "crow_wing_r": [
+            0,
+            0,
+            60
+          ],
+          "crow_wing_l": [
+            0,
+            0,
+            -60
+          ]
+        },
+        "position": {
+          "crow": [
+            2.6,
+            7.0,
+            0.2
+          ]
+        }
+      },
+      "amb.ride_seat": {
+        "_comment": "broom.saddle with the crow off its perch.",
+        "extends": "broom.saddle",
+        "bones": {
+          "crow": [
+            -5,
+            0,
+            0
+          ],
+          "crow_wing_r": [
+            0,
+            0,
+            80
+          ],
+          "crow_wing_l": [
+            0,
+            0,
+            -80
+          ]
+        },
+        "position": {
+          "crow": [
+            4.5,
+            4.0,
+            2.5
+          ]
+        }
+      },
+      "amb.ride_hop": {
+        "_comment": "broom.hop with the crow off its perch.",
+        "extends": "broom.hop",
+        "bones": {
+          "crow": [
+            -12,
+            0,
+            -5
+          ],
+          "crow_wing_r": [
+            0,
+            0,
+            70
+          ],
+          "crow_wing_l": [
+            0,
+            0,
+            -70
+          ]
+        },
+        "position": {
+          "crow": [
+            2.5,
+            3.0,
+            1.5
+          ]
+        }
+      },
+      "amb.land_hop": {
+        "_comment": "broom.hop with the crow off its perch.",
+        "extends": "broom.hop",
+        "bones": {
+          "crow": [
+            -8,
+            0,
+            -5
+          ],
+          "crow_wing_r": [
+            0,
+            0,
+            60
+          ],
+          "crow_wing_l": [
+            0,
+            0,
+            -60
+          ]
+        },
+        "position": {
+          "crow": [
+            2.0,
+            2.0,
+            1.0
+          ]
+        }
+      },
+      "amb.crow_h0": {
+        "_comment": "The crow's head turned for its glances (sec.loop).",
+        "bones": {
+          "crow_head": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "amb.crow_h1": {
+        "_comment": "The crow's head turned for its glances (sec.loop).",
+        "bones": {
+          "crow_head": [
+            0,
+            40,
+            0
+          ]
+        }
+      },
+      "amb.crow_h2": {
+        "_comment": "The crow's head turned for its glances (sec.loop).",
+        "bones": {
+          "crow_head": [
+            5,
+            -35,
+            0
+          ]
+        }
+      },
+      "amb.crow_h3": {
+        "_comment": "The crow's head turned for its glances (sec.loop).",
+        "bones": {
+          "crow_head": [
+            -10,
+            -10,
+            28
+          ]
+        }
+      },
+      "amb.crow_h4": {
+        "_comment": "The crow's head turned for its glances (sec.loop).",
+        "bones": {
+          "crow_head": [
+            25,
+            15,
+            0
+          ]
+        }
+      }
+    },
+    "signatures": {
+      "move.potion_barrage": {
+        "description": "Potion Barrage (move slot 0, a barrage of 3 vials 0.4 s apart, light: 0.6 / 0.8 / 0.8 s): three underhand lobs with the left hand, kept low so the arm never sweeps through the crow on his shoulder. Each time the hand plucks a vial from the bandolier on his chest (the vial slides out of his fingers), swings it back past his left hip with the chest turned away and lobs it forward and up (hit and the throw sound at 0.50, 0.90 and 1.30 s: ticks 12, 20 and 28, the barrage's own 8-tick spacing); after the third his hand pats along the empty loops, the head bowed to look, reaching for new vials, and he is back on guard by 2.15 s. Upper body and left arm only: the staff stays in the right hand as the base carries it, so the clip plays over his stance and over the broom alike.",
+        "length": 2.15,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_l",
+          "forearm_l",
+          "hand_l",
+          "vial_l"
+        ],
+        "class": "light",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.14,
+            "pose": "amb.bar_reach",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.32,
+            "pose": "amb.bar_wind",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.4,
+            "pose": "amb.bar_wind"
+          },
+          {
+            "t": 0.5,
+            "pose": "amb.bar_lob",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:vial_green",
+            "sound": "factionclash:hero.ambrose_nettlewick.vial_throw",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.55,
+            "pose": "amb.bar_lob_x",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.64,
+            "pose": "amb.bar_reach",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.76,
+            "pose": "amb.bar_wind",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.8,
+            "pose": "amb.bar_wind"
+          },
+          {
+            "t": 0.9,
+            "pose": "amb.bar_lob",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:vial_grey",
+            "sound": "factionclash:hero.ambrose_nettlewick.vial_throw",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.95,
+            "pose": "amb.bar_lob_x",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 1.04,
+            "pose": "amb.bar_reach",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.16,
+            "pose": "amb.bar_wind",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.2,
+            "pose": "amb.bar_wind"
+          },
+          {
+            "t": 1.3,
+            "pose": "amb.bar_lob",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:vial_black",
+            "sound": "factionclash:hero.ambrose_nettlewick.vial_throw",
+            "face": {
+              "mouth": 3
+            }
+          },
+          {
+            "t": 1.35,
+            "pose": "amb.bar_lob_x",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 1.45,
+            "pose": "amb.bar_follow",
+            "ease": "easeOutSine",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.65,
+            "pose": "amb.bar_fumble",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 5
+            }
+          },
+          {
+            "t": 1.85,
+            "pose": "amb.bar_fumble"
+          },
+          {
+            "t": 1.98,
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.15,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_l": [
+                  0,
+                  0,
+                  9
+                ],
+                "forearm_l": [
+                  6,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.14,
+              "window": [
+                1.62,
+                1.68,
+                1.86,
+                1.94
+              ]
+            }
+          }
+        ]
+      },
+      "move.cauldron": {
+        "description": "Cauldron (move slot 1, a pool at the target, area: 1.0 / 0.05 / 0.8 s): the staff swung up high at his right so the cauldron rides above his head, swirled round twice like a censer while the knees soften and the left hand conducts (the tell: the disc grows under the target); then the staff is swung forward and down one-handed, the cauldron out before him at chest height flinging its brew, the left palm thrown out after it at the target (hit at 0.90 s, tick 20; cast 0.95, tick 21); the cauldron dips on, and he straightens back to his guard by 1.8 s. Feet planted.",
+        "length": 1.8,
+        "class": "area",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.cau_raise",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.68,
+            "pose": "amb.cau_raise"
+          },
+          {
+            "t": 0.8,
+            "pose": "amb.cau_swing",
+            "ease": "easeInSine"
+          },
+          {
+            "t": 0.9,
+            "pose": "amb.cau_heave",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:cauldron_splash",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.95,
+            "marker": "cast"
+          },
+          {
+            "t": 1.12,
+            "pose": "amb.cau_follow",
+            "ease": "easeOutSine"
+          },
+          {
+            "t": 1.3,
+            "pose": "amb.cau_follow",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.8,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  3,
+                  0,
+                  3
+                ],
+                "arm_r": [
+                  3,
+                  0,
+                  3
+                ]
+              },
+              "period": 0.21,
+              "shape": "circle",
+              "window": [
+                0.25,
+                0.32,
+                0.6,
+                0.68
+              ]
+            }
+          }
+        ]
+      },
+      "move.hex_mark": {
+        "description": "Hex Mark (move slot 2, a bolt, light: 0.5 / 0.05 / 0.4 s): the left hand comes up before his chest with two fingers raised, tracing the hex in a quick circle (0.15 s), is cocked back beside his cheek, and flicked out straight at the target with the fingers spread (hit and the hex sound at 0.40 s, tick 10; cast 0.45, tick 11); held a beat with a sly smile, back on guard by 0.9 s. Upper body and left arm only (it plays over the broom too).",
+        "length": 0.9,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_l",
+          "forearm_l",
+          "hand_l",
+          "vial_l"
+        ],
+        "class": "light",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.15,
+            "pose": "amb.hex_trace",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.26,
+            "pose": "amb.hex_trace"
+          },
+          {
+            "t": 0.34,
+            "pose": "amb.hex_cock",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.4,
+            "pose": "amb.hex_flick",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:hex_bolt",
+            "sound": "factionclash:hero.ambrose_nettlewick.hex_cast",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.45,
+            "marker": "cast"
+          },
+          {
+            "t": 0.58,
+            "pose": "amb.hex_flick",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.9,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_l": [
+                  12,
+                  0,
+                  12
+                ]
+              },
+              "period": 0.11,
+              "shape": "circle",
+              "window": [
+                0.13,
+                0.16,
+                0.24,
+                0.28
+              ]
+            }
+          }
+        ]
+      },
+      "move.fume_step": {
+        "description": "Fume Step (move slot 3, a hop back 5 and a nova of fumes where he stood, light: 0.4 / 0.05 / 0.4 s): down on bent knees with a vial snatched up to his shoulder (0.12 s), dashed at his feet (hit and the fume sound at 0.30 s, tick 8; cast 0.35, tick 9) as the knees load; the hop back (the server carries him 5 blocks) with the knees tucked up and the body over them, the left hand waving the fumes off, down on bent knees at 0.6 s, fanning his face, back on guard by 0.8 s.",
+        "length": 0.8,
+        "planted": false,
+        "steps": true,
+        "class": "light",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.12,
+            "pose": "amb.fume_crouch",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.fume_smash",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:fume_burst",
+            "sound": "factionclash:hero.ambrose_nettlewick.fume_puff",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.35,
+            "pose": "amb.fume_smash_x",
+            "marker": "cast"
+          },
+          {
+            "t": 0.46,
+            "pose": "amb.fume_hop",
+            "ease": "easeOutQuad",
+            "root": [
+              0,
+              2.5,
+              0
+            ],
+            "face": {
+              "mouth": 5,
+              "cheeks": 2
+            }
+          },
+          {
+            "t": 0.58,
+            "pose": "amb.fume_land",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 0.66,
+            "pose": "amb.fume_land",
+            "face": {
+              "mouth": 5
+            }
+          },
+          {
+            "t": 0.72,
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.8,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_l": [
+                  0,
+                  0,
+                  14
+                ]
+              },
+              "period": 0.12,
+              "window": [
+                0.56,
+                0.6,
+                0.7,
+                0.76
+              ]
+            }
+          }
+        ]
+      },
+      "move.broom_hops": {
+        "description": "Broom Hops (move slot 4, phases 2-3, a leap of 8 that lands in a slowing puddle and follows itself twice, heavy: 0.8 / 0.5 / 0.8 s): the staff brought down level at his right hip, head forward, as he crouches (0.25 s), then sinks deeper over it, the eyes on the landing (the tell; the crow caws on the server); the hop (hit and the broom sound at 0.70 s, tick 16): up side-saddle on the staff held under him exactly where the broom rides when he flies, the left arm out for balance; down on deep knees with the staff swung forward (cast at 1.15 s, tick 25: the splash and the puddle; the next hop starts here), up again pushing his glasses into place, back on guard by 2.0 s.",
+        "length": 2.0,
+        "planted": false,
+        "steps": true,
+        "class": "heavy",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.25,
+            "pose": "amb.hop_ready",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.55,
+            "pose": "amb.hop_load",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.66,
+            "pose": "amb.hop_load"
+          },
+          {
+            "t": 0.7,
+            "pose": "amb.hop_load",
+            "marker": "hit;vfx:jump_dust",
+            "sound": "factionclash:hero.ambrose_nettlewick.broom_hop",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.82,
+            "pose": "amb.hop_air",
+            "ease": "easeOutQuad",
+            "root": [
+              0,
+              4,
+              0
+            ]
+          },
+          {
+            "t": 0.98,
+            "pose": "amb.hop_air",
+            "root": [
+              0,
+              4.5,
+              0
+            ],
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.08,
+            "pose": "amb.hop_drop",
+            "ease": "easeInQuad",
+            "root": [
+              0,
+              1.5,
+              0
+            ]
+          },
+          {
+            "t": 1.15,
+            "pose": "amb.hop_land",
+            "ease": "easeOutQuad",
+            "marker": "cast;vfx:puddle_splash",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.3,
+            "pose": "amb.hop_land",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.55,
+            "pose": "amb.glasses",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.7,
+            "pose": "amb.glasses"
+          },
+          {
+            "t": 2.0,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "move.great_brew": {
+        "description": "Great Brew (move slot 5, phase 3, a 3 s channel that breaks at 15%, then a rain of 10 over 2 s, area: 1.0 / 5.0 / 2.0 s): the staff tipped forward so the cauldron hangs before his waist, the left hand over it (the tell, to 0.9 s: hit, tick 20, the channel begins); bent low over the cauldron he stirs it in quick circles for 3 s, bobbing with the boil ('Big one coming, please don't interrupt!'; the server loops the boil); at 3.75 s he hauls the staff up beside his shoulder and at 3.9 s (tick 80) thrusts it at the sky, the cauldron tipped empty, arched back, the rain beginning; he watches the splashes fall with the staff held high and the left hand shading his eyes (cast at 5.85 s, tick 119); lowers the staff, pushes his glasses up with a satisfied grin, and is back on guard by 7.9 s.",
+        "length": 7.9,
+        "class": "area",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 0.4,
+            "pose": "amb.brew_set",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.9,
+            "pose": "amb.brew_stir",
+            "ease": "easeInOutSine",
+            "marker": "hit;vfx:brew_boil"
+          },
+          {
+            "t": 3.55,
+            "pose": "amb.brew_stir",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 3.75,
+            "pose": "amb.brew_heave",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 3.9,
+            "pose": "amb.brew_fling",
+            "ease": "easeOutQuad",
+            "marker": "vfx:brew_fling",
+            "face": {
+              "mouth": 3
+            }
+          },
+          {
+            "t": 4.3,
+            "pose": "amb.brew_fling",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 4.7,
+            "pose": "amb.brew_watch",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 5.7,
+            "pose": "amb.brew_watch"
+          },
+          {
+            "t": 5.85,
+            "marker": "cast"
+          },
+          {
+            "t": 6.4,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 6.75,
+            "pose": "amb.glasses",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 7.0,
+            "pose": "amb.glasses",
+            "sound": "factionclash:hero.ambrose_nettlewick.eureka"
+          },
+          {
+            "t": 7.9,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_l": [
+                  14,
+                  0,
+                  14
+                ],
+                "forearm_l": [
+                  8,
+                  0,
+                  8
+                ]
+              },
+              "period": 0.45,
+              "shape": "circle",
+              "window": [
+                0.8,
+                1.0,
+                3.4,
+                3.6
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  2.5,
+                  0,
+                  0
+                ],
+                "neck": [
+                  -2,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.3,
+              "shape": "pulse",
+              "window": [
+                0.9,
+                1.1,
+                3.4,
+                3.6
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  0,
+                  4,
+                  0
+                ],
+                "neck": [
+                  0,
+                  10,
+                  0
+                ]
+              },
+              "period": 1.0,
+              "window": [
+                4.6,
+                4.8,
+                5.6,
+                5.8
+              ]
+            }
+          }
+        ]
+      },
+      "ultimate": {
+        "description": "Grand Experiment (the ultimate: a rain of 12 over 3 s, 1.6 / 3.0 / 1.5 s): the staff taken up before him (0.3 s) and the cauldron lifted high at his right, the left arm flung wide and the chest arched while the crow on his shoulder spreads its wings and caws (the tell); the staff drawn back over his shoulder, trembling (1.25 s), and swept forward and up so the cauldron flings its brew at the sky ('Hypothesis: you lose!'; hit at 1.50 s, tick 32); while the rain falls he swings the cauldron round high in slow circles, laughing (cast at 4.45 s, tick 91: the rain's end); the staff lowered, the glasses pushed up with a grin and an 'a-ha!', back on guard by 6.0 s. Upper body only (he may wind it up in the air).",
+        "length": 6.0,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "crow_wing_*"
+        ],
+        "class": "ultimate",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.05,
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.ult_take",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.8,
+            "pose": "amb.ult_lift",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 3
+            }
+          },
+          {
+            "t": 1.05,
+            "pose": "amb.ult_lift"
+          },
+          {
+            "t": 1.25,
+            "pose": "amb.ult_cock",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.42,
+            "pose": "amb.ult_cock"
+          },
+          {
+            "t": 1.5,
+            "pose": "amb.ult_fling",
+            "ease": "easeInQuad",
+            "marker": "hit;vfx:experiment_fling",
+            "face": {
+              "mouth": 3
+            }
+          },
+          {
+            "t": 1.75,
+            "pose": "amb.ult_swirl",
+            "ease": "easeOutSine",
+            "face": {
+              "mouth": 2
+            }
+          },
+          {
+            "t": 4.3,
+            "pose": "amb.ult_swirl"
+          },
+          {
+            "t": 4.45,
+            "marker": "cast"
+          },
+          {
+            "t": 4.9,
+            "pose": "@stance",
+            "ease": "easeInOutSine",
+            "face": {
+              "mouth": 1
+            }
+          },
+          {
+            "t": 5.15,
+            "pose": "amb.glasses",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 5.4,
+            "pose": "amb.glasses",
+            "sound": "factionclash:hero.ambrose_nettlewick.eureka"
+          },
+          {
+            "t": 6.0,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "arm_r": [
+                  12,
+                  0,
+                  10
+                ],
+                "chest": [
+                  3,
+                  0,
+                  3
+                ]
+              },
+              "period": 0.9,
+              "shape": "circle",
+              "window": [
+                1.75,
+                2.05,
+                4.0,
+                4.3
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "arm_l": [
+                  0,
+                  0,
+                  12
+                ],
+                "forearm_l": [
+                  -10,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.6,
+              "window": [
+                1.8,
+                2.1,
+                4.0,
+                4.3
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "neck": [
+                  -4,
+                  0,
+                  0
+                ],
+                "chest": [
+                  -1.5,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.28,
+              "shape": "pulse",
+              "window": [
+                2.0,
+                2.1,
+                2.9,
+                3.0
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  1.5,
+                  0,
+                  0
+                ],
+                "arm_r": [
+                  1.5,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.1,
+              "window": [
+                1.22,
+                1.26,
+                1.4,
+                1.45
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "crow_wing_r": [
+                  25,
+                  0,
+                  8
+                ],
+                "crow_wing_l": [
+                  0,
+                  0,
+                  -60
+                ]
+              },
+              "period": 0.2,
+              "shape": "pulse",
+              "window": [
+                0.55,
+                0.62,
+                1.2,
+                1.3
+              ]
+            }
+          }
+        ]
+      },
+      "phase.2": {
+        "description": "Phase 2 (inside the 1.2 s transition, 'Fascinating! Let's test mobility!'): broom bristles have burst from the staff's foot; he swings it down level and stares at them with delight (the bristles sound at 0.15 s), crouches and hops up side-saddle onto it for a test perch (0.55 s) while the crow flaps up off his shoulder in alarm, drops back to his feet (0.9 s) and is on guard by 1.1 s with a happy face.",
+        "length": 1.1,
+        "planted": false,
+        "steps": true,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 6,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.15,
+            "pose": "amb.hop_ready",
+            "ease": "easeOutQuad",
+            "sound": "factionclash:hero.ambrose_nettlewick.bristles",
+            "face": {
+              "eyes": 3,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.36,
+            "pose": "amb.hop_load",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.55,
+            "pose": "amb.p2_crow_up",
+            "ease": "easeOutQuad",
+            "root": [
+              0,
+              4,
+              0
+            ],
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.72,
+            "pose": "amb.p2_crow_flap",
+            "root": [
+              0,
+              4,
+              0
+            ]
+          },
+          {
+            "t": 0.84,
+            "pose": "amb.hop_drop",
+            "ease": "easeInQuad",
+            "root": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "t": 0.92,
+            "pose": "amb.hop_land",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 1.0,
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.1,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "phase.3": {
+        "description": "Phase 3 (inside the 1.2 s transition, 'Time for the big one. Please don't interrupt.'): the head bows so the hat's brim, turned down, hides his eyes, the staff drawn in and the shoulders trembling (0.15-0.5 s); the head snaps up with the eyes glowing green as the left hand flicks the brim up (the glow sound at 0.62 s; the brim overshoots and settles lifted), the staff raised, then on guard by 1.1 s. The lifted brim is the phase look (headwear/witch_brim_up): this clip only turns it.",
+        "length": 1.1,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "mouth": 5
+            }
+          },
+          {
+            "t": 0.15,
+            "pose": "amb.p3_bow",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.5,
+            "pose": "amb.p3_bow"
+          },
+          {
+            "t": 0.6,
+            "sound": "factionclash:hero.ambrose_nettlewick.phase3_glow"
+          },
+          {
+            "t": 0.62,
+            "pose": "amb.p3_rise",
+            "ease": "easeOutQuad",
+            "face": {
+              "mouth": 7
+            }
+          },
+          {
+            "t": 0.82,
+            "pose": "amb.p3_hold",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 1.1,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  1.5,
+                  0,
+                  1.0
+                ],
+                "neck": [
+                  1,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.1,
+              "window": [
+                0.18,
+                0.24,
+                0.46,
+                0.52
+              ]
+            }
+          }
+        ]
+      },
+      "intro": {
+        "description": "The intro (the server holds it as long as the clip, 'Ah, a test subject! I mean, a guest. Hold still, please.'): the left hand to the front of his hat's brim and the hat tipped with a little bow (the intro sound at 0.25 s), the glasses pushed up his nose (0.8 s), then the left hand opened palm up toward the challenger with the head tilted, and back on guard by 1.5 s.",
+        "length": 1.5,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 0,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.25,
+            "pose": "amb.intro_tip",
+            "ease": "easeOutQuad",
+            "sound": "factionclash:hero.ambrose_nettlewick.intro",
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.5,
+            "pose": "amb.intro_tip"
+          },
+          {
+            "t": 0.78,
+            "pose": "amb.glasses",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 0,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.0,
+            "pose": "amb.intro_present",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 3,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.25,
+            "pose": "amb.intro_present",
+            "face": {
+              "eyes": 0,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.5,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "victory": {
+        "description": "The victory ('Data acquired.'): the staff thrust up and the left fist pumped with an 'a-ha!' (0.3 s) while the crow spreads its wings; then the notebook comes out of his left hand and is held up to read the result back, with two pleased nods, put away, and the staff lowered by 2.0 s.",
+        "length": 2.0,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "notebook_l",
+          "crow*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.vic_cheer_c",
+            "ease": "easeOutBack",
+            "sound": "factionclash:hero.ambrose_nettlewick.eureka",
+            "face": {
+              "eyes": 3,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.55,
+            "pose": "amb.vic_cheer_c"
+          },
+          {
+            "t": 0.85,
+            "pose": "amb.vic_note",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.45,
+            "pose": "amb.vic_note",
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.65,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 2.0,
+            "pose": "@stance"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "neck": [
+                  6,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.3,
+              "shape": "pulse",
+              "window": [
+                0.95,
+                1.0,
+                1.55,
+                1.6
+              ]
+            }
+          }
+        ]
+      },
+      "taunt": {
+        "description": "The taunt ('Hold still, please.'): he leans in peering at the enemy over the rim of his glasses with the head tilted (0.3 s), then straightens and wags a raised forefinger at them, tutting, back on guard by 1.5 s.",
+        "length": 1.5,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_l",
+          "forearm_l",
+          "hand_l"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.taunt_peer",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 8,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.62,
+            "pose": "amb.taunt_peer"
+          },
+          {
+            "t": 0.8,
+            "pose": "amb.taunt_wag",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 9,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 1.2,
+            "pose": "amb.taunt_wag",
+            "face": {
+              "eyes": 9,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.5,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_l": [
+                  0,
+                  0,
+                  18
+                ]
+              },
+              "period": 0.2,
+              "window": [
+                0.8,
+                0.85,
+                1.15,
+                1.2
+              ]
+            }
+          }
+        ]
+      },
+      "last_stand": {
+        "description": "The last stand (cornered, or caught again within ten minutes): bent over with the staff planted and a hand on his knee, panting (to 0.6 s), then up straight, the glasses pushed up, the staff raised and a vial ready in the left hand with the jaw set ('Very well. One last experiment.'), on guard by 1.6 s.",
+        "length": 1.6,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 7,
+              "mouth": 2,
+              "cheeks": 2
+            }
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.ls_slump",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.6,
+            "pose": "amb.ls_slump"
+          },
+          {
+            "t": 0.85,
+            "pose": "amb.glasses",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 4,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.12,
+            "pose": "amb.ls_ready",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 4,
+              "mouth": 4
+            }
+          },
+          {
+            "t": 1.35,
+            "pose": "amb.ls_ready"
+          },
+          {
+            "t": 1.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "chest": [
+                  3,
+                  0,
+                  0
+                ],
+                "neck": [
+                  -2,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.25,
+              "shape": "pulse",
+              "window": [
+                0.1,
+                0.2,
+                0.55,
+                0.62
+              ]
+            }
+          }
+        ]
+      },
+      "escape": {
+        "description": "The escape, over the run (or the broom as he takes off), 0.6 s ('Experiment concluded! Result: I should leave. Don't touch my notes!'): the right hand clutches his hat to his head and he glances back over his shoulder, the left hand flapped back at the pursuer, then the arms back into the run. Upper body only.",
+        "length": 0.6,
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*"
+        ],
+        "plays_over": "move.run",
+        "settle_to": "move.run",
+        "planted": false,
+        "secondary": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance",
+            "face": {
+              "eyes": 6,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 0.14,
+            "pose": "amb.esc_clutch",
+            "ease": "easeOutCubic"
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.esc_wave",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 6,
+              "mouth": 2,
+              "cheeks": 2
+            }
+          },
+          {
+            "t": 0.44,
+            "pose": "amb.esc_wave"
+          },
+          {
+            "t": 0.5,
+            "face": "none"
+          },
+          {
+            "t": 0.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ]
+      },
+      "personal.1": {
+        "description": "Notebook scribble (an idle quirk, 3.0 s): the notebook comes out of his left hand and the pencil out of his right; he scribbles with his head bowed over the page (the scribble sound at 0.65 s), stops to tap the pencil on his chin with his eyes turned up, writes a last line with a little nod and puts both away.",
+        "length": 3.0,
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "notebook_l",
+          "pencil_r"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.35,
+            "pose": "amb.note_write",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 0.65,
+            "pose": "amb.note_write",
+            "sound": "factionclash:hero.ambrose_nettlewick.scribble"
+          },
+          {
+            "t": 1.3,
+            "pose": "amb.note_write"
+          },
+          {
+            "t": 1.5,
+            "pose": "amb.note_think",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 0,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.85,
+            "pose": "amb.note_think",
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.05,
+            "pose": "amb.note_write",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 8,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.45,
+            "pose": "amb.note_write"
+          },
+          {
+            "t": 2.6,
+            "face": "none"
+          },
+          {
+            "t": 3.0,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  10,
+                  0,
+                  10
+                ],
+                "forearm_r": [
+                  3,
+                  0,
+                  3
+                ]
+              },
+              "period": 0.16,
+              "shape": "circle",
+              "window": [
+                0.4,
+                0.5,
+                1.25,
+                1.35
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  10,
+                  0,
+                  10
+                ]
+              },
+              "period": 0.16,
+              "shape": "circle",
+              "window": [
+                2.05,
+                2.1,
+                2.35,
+                2.42
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_r": [
+                  8,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.18,
+              "shape": "pulse",
+              "window": [
+                1.52,
+                1.56,
+                1.8,
+                1.84
+              ]
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "neck": [
+                  5,
+                  0,
+                  0
+                ]
+              },
+              "period": 0.35,
+              "shape": "pulse",
+              "window": [
+                2.05,
+                2.1,
+                2.4,
+                2.45
+              ]
+            }
+          }
+        ]
+      },
+      "personal.2": {
+        "description": "Vial shake (an idle quirk, 2.6 s): a vial comes out of his left hand and is held up at eye level, squinted at through the glasses, shaken briskly by the ear (the slosh at 0.75 s), lifted toward the light with the head tipped back, then tucked away into the bandolier with a satisfied pat.",
+        "length": 2.6,
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "vial_l"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.35,
+            "pose": "amb.vial_look",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 8,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.7,
+            "pose": "amb.vial_look",
+            "face": {
+              "eyes": 1,
+              "mouth": 2
+            }
+          },
+          {
+            "t": 0.75,
+            "sound": "factionclash:hero.ambrose_nettlewick.vial_shake"
+          },
+          {
+            "t": 1.25,
+            "pose": "amb.vial_look",
+            "face": {
+              "eyes": 8,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 1.55,
+            "pose": "amb.vial_sky",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 6,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 1.85,
+            "pose": "amb.vial_sky",
+            "face": {
+              "eyes": 3,
+              "mouth": 1
+            }
+          },
+          {
+            "t": 2.15,
+            "pose": "amb.vial_stow",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 2.35,
+            "face": "none"
+          },
+          {
+            "t": 2.6,
+            "pose": "@stance",
+            "ease": "easeInOutSine"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "hand_l": [
+                  0,
+                  0,
+                  22
+                ],
+                "forearm_l": [
+                  0,
+                  8,
+                  0
+                ]
+              },
+              "period": 0.12,
+              "window": [
+                0.72,
+                0.76,
+                1.18,
+                1.24
+              ]
+            }
+          }
+        ]
+      },
+      "personal.3": {
+        "description": "The crow pecks his hat (an idle quirk, 3.0 s): the crow hops from his shoulder up onto the hat's brim and pecks the crown three times (the peck at 0.55 s); he turns his head up at it with a frown and hitches his shoulder to shoo it, the crow flaps off the brim, settles back on his shoulder, and he sighs with his eyes closed.",
+        "length": 3.0,
+        "settle_to": "move.idle",
+        "plays_over": "move.idle",
+        "bones": [
+          "waist",
+          "chest",
+          "neck",
+          "arm_*",
+          "forearm_*",
+          "hand_*",
+          "crow",
+          "crow_wing_*"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "@stance"
+          },
+          {
+            "t": 0.18,
+            "pose": "amb.peck_hop",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.32,
+            "pose": "amb.peck_up",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 0.5,
+            "pose": "amb.peck_up"
+          },
+          {
+            "t": 0.55,
+            "pose": "amb.peck_hit",
+            "ease": "easeInQuad",
+            "sound": "factionclash:hero.ambrose_nettlewick.crow_peck"
+          },
+          {
+            "t": 0.65,
+            "pose": "amb.peck_up",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 6,
+              "mouth": 0
+            }
+          },
+          {
+            "t": 0.75,
+            "pose": "amb.peck_hit",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 0.85,
+            "pose": "amb.peck_up",
+            "ease": "easeOutQuad",
+            "face": {
+              "eyes": 4,
+              "mouth": 5
+            }
+          },
+          {
+            "t": 0.95,
+            "pose": "amb.peck_hit",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 1.1,
+            "pose": "amb.peck_up",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 1.45,
+            "pose": "amb.peck_shoo",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 4,
+              "mouth": 3
+            }
+          },
+          {
+            "t": 1.7,
+            "pose": "amb.peck_shoo"
+          },
+          {
+            "t": 1.88,
+            "pose": "amb.peck_down",
+            "ease": "easeInOutSine"
+          },
+          {
+            "t": 2.05,
+            "pose": "@stance",
+            "ease": "easeInOutSine",
+            "face": {
+              "eyes": 2,
+              "mouth": 5
+            }
+          },
+          {
+            "t": 2.6,
+            "face": "none"
+          },
+          {
+            "t": 3.0,
+            "pose": "@stance"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "crow_wing_r": [
+                  0,
+                  0,
+                  30
+                ],
+                "crow_wing_l": [
+                  0,
+                  0,
+                  -30
+                ]
+              },
+              "period": 0.15,
+              "window": [
+                1.4,
+                1.45,
+                1.75,
+                1.85
+              ]
+            }
+          }
+        ]
+      },
+      "move.ride": {
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.6
+        },
+        "description": "Riding the broom side-saddle, a 2.0 s loop: a gentle bob with the broom (the mount bone rides under the root), the crossed ankles swinging idly, the free hand on the knee. His crow flaps along beside him, off his left shoulder, its wings beating four times a second and bobbing on the air.",
+        "length": 2,
+        "loop": true,
+        "ground": false,
+        "planted": false,
+        "contact": "mount",
+        "keys": [
+          {
+            "t": 0,
+            "pose": "amb.ride_seat"
+          },
+          {
+            "t": 2,
+            "pose": "amb.ride_seat"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "root": [
+                  0,
+                  0.6,
+                  0
+                ]
+              },
+              "period": 2,
+              "channel": "position"
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "shin_r": [
+                  10,
+                  0,
+                  0
+                ],
+                "shin_l": [
+                  -8,
+                  0,
+                  0
+                ],
+                "body": [
+                  0,
+                  0,
+                  2
+                ],
+                "neck": [
+                  0,
+                  0,
+                  -2
+                ]
+              },
+              "period": 2,
+              "phase": 0.25
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "crow_wing_r": [
+                  0,
+                  0,
+                  35
+                ],
+                "crow_wing_l": [
+                  0,
+                  0,
+                  -35
+                ]
+              },
+              "period": 0.25
+            }
+          },
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "crow": [
+                  0,
+                  0.6,
+                  0
+                ]
+              },
+              "period": 0.5,
+              "channel": "position"
+            }
+          }
+        ]
+      },
+      "move.takeoff": {
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.6,
+          "ramp": [
+            0.3,
+            0.55
+          ]
+        },
+        "description": "Take-off on the broom, 0.6 s, the tell: a crouch (0.15 s), a hop with the knees lifted and the body turning (0.3 s; the staff appears on the mount bone under him), settling side-saddle onto the shaft by 0.6 s. The server plays the take-off cue and Ambrose's broom take-off (SOUND.md 7). The crow lifts off his shoulder at the hop and takes its place beside him.",
+        "length": 0.6,
+        "settle_to": "move.ride",
+        "kind": "base",
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "land.give",
+            "face": "happy"
+          },
+          {
+            "t": 0.15,
+            "pose": "takeoff.crouch",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.3,
+            "pose": "amb.ride_hop",
+            "ease": "easeOutQuad",
+            "root": [
+              0,
+              2,
+              0
+            ],
+            "marker": "vfx:takeoff_dust"
+          },
+          {
+            "t": 0.48,
+            "pose": "amb.ride_seat",
+            "ease": "easeInOutSine",
+            "face": "none"
+          },
+          {
+            "t": 0.6,
+            "pose": "amb.ride_seat"
+          }
+        ],
+        "layers": [
+          {
+            "primitive": "oscillate",
+            "params": {
+              "bones": {
+                "crow_wing_r": [
+                  0,
+                  0,
+                  35
+                ],
+                "crow_wing_l": [
+                  0,
+                  0,
+                  -35
+                ]
+              },
+              "period": 0.25,
+              "window": [
+                0.2,
+                0.3,
+                0.45,
+                0.6
+              ]
+            }
+          }
+        ]
+      },
+      "move.fly_land": {
+        "wind": {
+          "dir": [
+            0,
+            0,
+            1
+          ],
+          "strength": 0.6,
+          "fade": [
+            0,
+            0.25
+          ]
+        },
+        "description": "Landing from the broom, 0.4 s: he slides off the shaft, the legs swinging down (0.15 s), the feet touch (0.25 s) and he stands (0.4 s); the engine then puts the staff back in his hand. The crow drops back onto his shoulder and folds its wings as he stands.",
+        "length": 0.4,
+        "settle_to": "move.idle",
+        "kind": "base",
+        "ground": false,
+        "planted": false,
+        "keys": [
+          {
+            "t": 0,
+            "pose": "amb.ride_seat"
+          },
+          {
+            "t": 0.15,
+            "pose": "amb.land_hop",
+            "ease": "easeInSine"
+          },
+          {
+            "t": 0.25,
+            "pose": "land.contact",
+            "ease": "easeInQuad"
+          },
+          {
+            "t": 0.32,
+            "pose": "land.give",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 0.4,
+            "pose": "stance.relaxed"
+          }
+        ]
+      },
+      "sec.loop": {
+        "description": "The crow's glances on the secondary controller, a 6.0 s loop: it looks about from his shoulder (to his face, out to the side, a curious tilt, down at the ground), a quick head-turn each time with a hold between. Keys only crow_head's rotation.",
+        "length": 6.0,
+        "loop": true,
+        "secondary": false,
+        "bones": [
+          "crow_head"
+        ],
+        "keys": [
+          {
+            "t": 0,
+            "pose": "amb.crow_h0"
+          },
+          {
+            "t": 0.9,
+            "pose": "amb.crow_h0"
+          },
+          {
+            "t": 1.05,
+            "pose": "amb.crow_h1",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 2.0,
+            "pose": "amb.crow_h1"
+          },
+          {
+            "t": 2.15,
+            "pose": "amb.crow_h2",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 3.1,
+            "pose": "amb.crow_h2"
+          },
+          {
+            "t": 3.25,
+            "pose": "amb.crow_h3",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 4.0,
+            "pose": "amb.crow_h3"
+          },
+          {
+            "t": 4.15,
+            "pose": "amb.crow_h4",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 5.1,
+            "pose": "amb.crow_h4"
+          },
+          {
+            "t": 5.25,
+            "pose": "amb.crow_h0",
+            "ease": "easeOutQuad"
+          },
+          {
+            "t": 6.0,
+            "pose": "amb.crow_h0"
+          }
+        ]
+      }
+    }
+  }
+}
