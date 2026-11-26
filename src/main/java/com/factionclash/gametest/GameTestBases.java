@@ -32,6 +32,8 @@ public final class GameTestBases {
     /** Test base ids start here, clear of real bases and of the older fakeBase ids (900000-909999). */
     private static final int FIRST_ID = 990100;
     private static final AtomicInteger NEXT = new AtomicInteger();
+    /** Whether this server has registered a test base yet: the bases a stopped run left behind are cleared before the first. */
+    private static final java.util.concurrent.atomic.AtomicBoolean PURGED = new java.util.concurrent.atomic.AtomicBoolean();
 
     private GameTestBases() {
     }
@@ -59,6 +61,9 @@ public final class GameTestBases {
     public static Handle register(GameTestHelper h, FactionType faction, int half, int radius, int timeoutTicks, BlockPos storageStand,
                                   BlockPos center) {
         CampaignData data = CampaignData.get(h.getLevel().getServer());
+        if (PURGED.compareAndSet(false, true)) {
+            purgeLeftovers(data);
+        }
         BaseState b = new BaseState();
         b.id = FIRST_ID + NEXT.getAndIncrement();
         b.faction = faction;
@@ -83,6 +88,27 @@ public final class GameTestBases {
             h.runAtTickTime(timeoutTicks - 2, handle::cleanup);
         }
         return handle;
+    }
+
+    /**
+     * The GameTest world ({@code run/world}) is kept from one run to the next, and a run stopped in the middle of a test (a
+     * timeout's kill) leaves that test's base in the campaign data. Before this run's first test base, every test base
+     * (an id from {@link #FIRST_ID}) still there is removed with its workplaces: none of this run's is registered yet, and
+     * a leftover was found by a test that looks a faction's settlement up (an operator's raid from the faction's first
+     * standing settlement, found in the review of the focused reconnaissance round, sent nobody from another run's base).
+     */
+    private static void purgeLeftovers(CampaignData data) {
+        List<Integer> stale = data.bases.keySet().stream().filter(id -> id >= FIRST_ID).toList();
+        for (int id : stale) {
+            BaseState b = data.bases.remove(id);
+            if (b != null) {
+                b.workplaces.forEach(data.workplaces::remove);
+            }
+        }
+        if (!stale.isEmpty()) {
+            com.factionclash.FactionClash.LOGGER.info("GameTest bases left by an earlier run removed: {}", stale);
+            data.setDirty();
+        }
     }
 
     /** A registered test base and what was added for it. */

@@ -862,18 +862,18 @@ public final class FactionDirector {
         // then the next ones placed: half a day before the raid interval ends (the first war's gate before any raid), or
         // urgently once the fight at home is over after a strike. The judgement below reads the recons they bring (R5)
         boolean ordersChanged = ReconOrders.settle(f, t);
-        ordersChanged |= !ReconOrders.place(f, home, t, party, interval, ReconRules.nextRaidAt(f.lastRaidAt, data.startedAt, interval),
-                lastAlarmAt(f, home, t)).isEmpty();
+        ordersChanged |= !ReconOrders.place(f, home, t, party, interval, data.startedAt, lastAlarmAt(f, home, t)).isEmpty();
         if (ordersChanged) {
             data.setDirty();
         }
         String orders = ReconOrders.line(f);
         councilLine(f.type, null, orders, t);
-        // a counter-attack may go out sooner (a quarter of the interval) - but only against a faction that struck us, below
-        if (t - f.lastRaidAt < interval / 4 || t - data.startedAt < interval) {
+        // a counter-attack may go out sooner (a quarter of the interval) - but only against a faction that struck us, below;
+        // the urgent recon order reads the same window (ReconRules.counterWindow: never before the first raid)
+        boolean intervalOver = ReconRules.intervalOver(t, f.lastRaidAt, data.startedAt, interval);
+        if (!intervalOver && !ReconRules.counterWindow(t, f.lastRaidAt, data.startedAt, interval)) {
             return;
         }
-        boolean intervalOver = t - f.lastRaidAt >= interval;
         if (party <= 0) {
             return;
         }
@@ -881,7 +881,8 @@ public final class FactionDirector {
         // focused recon its scouts brought home (the owner's rule, 2026-11-25): a good watch no older than half a day
         // (Intel.usable). No prior, no losses, no raid party's or passing look. The council plans against what the scout
         // counted and a reserve for what it could not see (Reserve.plan: half again the count; none at a lair or in a
-        // counter-attack), and chooses the target with the least plan, then the nearest. Inside the raid interval only a
+        // counter-attack), judges every target it may raid, and chooses one it would go against now before any it must
+        // wait on, then the least plan in our soldiers, then the nearest (Reserve.RANK). Inside the raid interval only a
         // counter-attack may go: at 3 to 2, only against a faction that struck us since our last raid, on a recon made since
         // its strike (ReconRules.answersStrike), and the target is chosen among those factions' settlements only (a weaker
         // bystander's base cannot stand in its way). Strength is weighed by arms and armour, not only heads.
@@ -900,10 +901,18 @@ public final class FactionDirector {
             f.sightings.prune(t, revive);
         }
         List<Sightings.Base> settlements = reportedSettlements(data, f);
-        BaseState target = null, waitingOn = null;
-        Reserve.Plan targetPlan = null;
-        Report targetReport = null, waitingReport = null;
-        double best = Double.MAX_VALUE, waitingScore = Double.MAX_VALUE;
+        // the party it would send (the best soldiers first), judged against every target's plan below
+        List<FactionNpc> picks = new ArrayList<>(draftable);
+        picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
+        double partySoldiers = picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
+        double partyHeroes = 0; // heroes go only by their own rules (leaders, behaviour.raids), which come with L4
+        double partyPower = com.factionclash.logic.hero.HeroRules.countedPower(partySoldiers, partyHeroes);
+        BaseState waitingOn = null;
+        Report waitingReport = null;
+        double waitingScore = Double.MAX_VALUE;
+        List<BaseState> judgedBases = new ArrayList<>();
+        List<Report> judgedReports = new ArrayList<>();
+        Reserve.Judged best = null;
         for (Report r : f.knowledge) {
             if (!r.base() || r.fallen || r.subject == null || !Diplomacy.hostile(f.type, r.subject)) {
                 continue;
@@ -934,14 +943,20 @@ public final class FactionDirector {
                 }
                 continue;
             }
-            double score = Reserve.score(plan, distance);
-            if (score < best) {
-                best = score;
-                target = b;
-                targetPlan = plan;
-                targetReport = r;
+            // every target is judged (the review of the focused reconnaissance round, finding 1): one the party would go
+            // against now before any it must wait on, then the least plan in our soldiers (Reserve.RANK)
+            boolean go = ReconRules.verdict(intervalOver, ReconRules.struckSince(struckAt, f.lastRaidAt), partyPower, plan.power(), plan.unit())
+                    != ReconRules.Verdict.WAIT;
+            Reserve.Judged j = Reserve.judge(judgedBases.size(), plan, distance, partySoldiers / party, !intervalOver, go);
+            judgedBases.add(b);
+            judgedReports.add(r);
+            if (best == null || Reserve.RANK.compare(j, best) < 0) {
+                best = j;
             }
         }
+        BaseState target = best == null ? null : judgedBases.get(best.key());
+        Reserve.Plan targetPlan = best == null ? null : best.plan();
+        Report targetReport = best == null ? null : judgedReports.get(best.key());
         if (target == null) {
             if (waitingOn != null) {
                 councilLine(f.type, String.format(java.util.Locale.ROOT, "day %.2f: waiting for a scout's report on %s base %d (%s: %s)",
@@ -952,11 +967,6 @@ public final class FactionDirector {
         }
         boolean lair = targetReport.kind == Report.Kind.LAIR;
         boolean struck = ReconRules.struckSince(f.struckAt(targetReport.subject), f.lastRaidAt);
-        List<FactionNpc> picks = new ArrayList<>(draftable);
-        picks.sort(Comparator.comparingInt((FactionNpc n) -> n.npcLevel()).thenComparingDouble(n -> n.getArmorValue()).reversed());
-        double partySoldiers = picks.subList(0, party).stream().mapToDouble(FactionDirector::power).sum();
-        double partyHeroes = 0; // heroes go only by their own rules (leaders, behaviour.raids), which come with L4
-        double partyPower = com.factionclash.logic.hero.HeroRules.countedPower(partySoldiers, partyHeroes);
         ReconRules.Verdict verdict = ReconRules.verdict(intervalOver, struck, partyPower, targetPlan.power(), targetPlan.unit());
         boolean go = verdict != ReconRules.Verdict.WAIT;
         // the same council with the heroes counted out: did their presence (or absence) decide it? (SLICE_PLAN 6.4)
@@ -1079,7 +1089,8 @@ public final class FactionDirector {
      * that stands, or one that is not the target of the raid under way.
      */
     public static void partySawRuins(CampaignData data, FactionState f, BaseState target, long now) {
-        if (f == null || target == null || !target.destroyed || f.raidTarget != target.id || f.raidIntel != null && f.raidIntel.fallen) {
+        if (f == null || target == null || !target.destroyed // truth: only ruins its party saw (its callers': the heart broken or its place seen)
+                || f.raidTarget != target.id || f.raidIntel != null && f.raidIntel.fallen) {
             return;
         }
         Report ruins = BaseWatch.ruins(target, now);

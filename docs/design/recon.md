@@ -3,8 +3,8 @@
 Design, 2026-11-25, reviewed the same day (section 13 lists what the review changed), updated the same day with the
 owner's answers to its questions (section 14 lists what they changed), and that update reviewed (section 15); the
 owner's answers of 2026-11-26 are section 16. Built on 2026-11-26 in tasks R1 to R7, R9 to R12 (section 11; the
-as-built notes are 3.8, 5.7, 5.8, 5.9 and 5.10, and where they and the design differ, the code is the truth); the live
-check, R8, is next. It replaces the estimate model of `docs/design/knowledge.md` section 1 (the prior, the losses seen
+as-built notes are 3.8, 5.7, 5.8, 5.9 and 5.10, and where they and the design differ, the code is the truth); two
+reviews of the build found eight faults, fixed the same day (section 17); the live check, R8, is next. It replaces the estimate model of `docs/design/knowledge.md` section 1 (the prior, the losses seen
 at home, every passing look).
 
 ## 0. The owner's decisions, and the design in brief
@@ -113,8 +113,9 @@ raids(): [raid out: unchanged, watchTarget keeps only ruins] return
          if party > 0 and (t >= nextRaidAt - RECON_LEAD or an urgent recon is due, section 6): ReconOrders.place(...)
          [interval / 4 gate] [data.startedAt + interval gate] [party <= 0]
          inside the interval with no faction that struck us since our last raid: return (no target, no line)
-         choose a target among reports with a USABLE focused recon (2.3), the least plan first (5.4); inside the
-           interval only among the settlements of factions that struck us since our last raid (5.4, 6);
+         judge every report with a USABLE focused recon (2.3) and choose one the party would go against now first,
+           then the least plan in our soldiers (5.4, as built since section 17); inside the interval only among the
+           settlements of factions that struck us since our last raid (5.4, 6);
            none: LAST_COUNCIL "waiting for a scout's report"
          go / wait on the plan, 5.5 (two thirds at the interval; 3 to 2 inside it, only against a faction that struck us, 6)
 ```
@@ -124,7 +125,9 @@ raids(): [raid out: unchanged, watchTarget keeps only ruins] return
 * **Interval nearly ripe:** `t >= nextRaidAt - RECON_LEAD`, where `nextRaidAt` is the end of the raid interval (the
   first war's gate, `data.startedAt + interval`, before any raid). `RECON_LEAD` = 12000 ticks, half a day.
 * **The enemy struck us** (urgent, section 6): enemy soldiers of a faction were seen at home since our last raid
-  (`struckBy[faction] > lastRaidAt`), the counter-attack window is open (`t >= lastRaidAt + interval / 4`), the base's
+  (`struckBy[faction] > lastRaidAt`), the counter-attack window is open (`t >= lastRaidAt + interval / 4`; as built,
+  `ReconRules.counterWindow`, the council's own gate: inside the interval and past the first war's gate, so never before
+  the faction's first raid, section 17), the base's
   alarm has been quiet for `NOTICE_MEMORY` (600 ticks: the fight is over, so the scout does not walk out through the
   attackers), and no good recon of that faction's nearest base was made since the strike. A strike seen while our own
   raid was out is acted on at the first pass after the raid's end, as long as the window is still open.
@@ -152,6 +155,7 @@ This is player-like: news reaches people where they are.
 | its scout reports with no recon of it (it retreated, or found no vantage within reach) | a failed attempt |
 | its scout goes MISSING, or is known or presumed dead | a failed attempt (lost) |
 | its scout is no longer a scout (retrained) | reopened; not a failure |
+| its scout is home holding no trip for it (its trip did not load, or a retraining away and back rebuilt its job; section 17) | given back at home (`ReconOrders.release`), open again; not a failure |
 | untaken while the target's report turned fresh by other means, or the target was seen in ruins | dropped |
 | untaken for `RECON_FRESH` | dropped; the next pass may place it again |
 
@@ -180,7 +184,7 @@ does not drift toward anything as it ages. Stale means "order a new recon", neve
 |---|---|
 | No scout alive | the existing need "no scout left" hires one; it takes the open order at home |
 | The only scout is away exploring | an order not taken within `RECON_WAIT` (6000) adds the need "a scout to watch the X settlement", while the base has fewer than `RECON_MAX_SCOUTS` (2) scouts. Decided: the owner agreed on 2026-11-25 ("ok", section 14) |
-| The recon scout dies (unseen) | the roll call reports it MISSING by its recon plan plus the grace (2.5). The order lapses as **lost** and the target backs off |
+| The recon scout dies (unseen) | the roll call reports it MISSING by its recon plan plus the grace (2.5). The order lapses as **lost** and the target backs off. Should the scout walk in later with a blind report, its sides count and the failure does not count twice (section 17) |
 | Scouts die every time at one target | the back-off doubles with each consecutive failure: 12000, 24000, then 48000 at most. Other targets are reconned first, and each loss costs one recruit at the most every half day |
 | A recon comes back blind | the target backs off `RECON_RETRY` (12000). Its next recon starts at the first side not yet tried (3.5), so after two trips all four sides have been tried |
 | A target blind on every side (trees, a hill, a wall too high for the 20-block cap) | it stays unjudged and backs off up to 48000 at a time: a council never launches on it. This is the owner's rule, not a fault; the live check counts the targets that never got a good recon (10.4) |
@@ -531,7 +535,9 @@ above differ, the code is the truth:
   from there if it had a good look, else the side is done.
 * **The watch.** A sample every 40 ticks from the stop height, the last at 1200 ticks; the report is
   `ReconWatch.recon` ("pillar N", "high ground", "ground"). A hit (any damage) or a block of its pillar gone ends it at
-  once: down block by block, then home in a retreat. An errand home (food, a tool) brings it down first too; so does
+  once: down block by block, then home in a retreat. An errand home (food, a tool) brings it down first too, and a
+  trip done at the target (its watch over, or on its way round the base) then goes to the station after the errand,
+  not back out to the corners (section 17); so does
   the trip's own bound (it turns home at its departure plus its plan less the walk home). Moved off its column it
   retreats and the blocks stay (it cannot be knocked off: `onScaffold`).
 * **A lair** is watched from the ground on the gap's axis (no pillar); a monster that makes it step aside ends that
@@ -614,7 +620,12 @@ would not know of it there; a hero the faction's own people saw elsewhere in the
 
 The decision keeps its form but reads the **plan** of 5.5, not the bare count. Among the targets with a usable report it
 takes the one with the least planned defence, then the nearest: choosing by the count alone could pick a base whose
-reserve then holds the council back while another base would go. Two thirds of the plan at the interval
+reserve then holds the council back while another base would go. As built since the review (section 17, finding 1) it
+judges **every** target it may raid and ranks them by `Reserve.RANK`: one its party would go against now before any it
+must wait on, then the fewest of our soldiers the plan needs (`Reserve.needed`, in the party's mean soldier), then the
+weaker plan, then the nearest; with none to go against it waits on the first, the one it is nearest to beating. Ranked
+by heads in each target's own soldiers and tested on the first only, a target in better gear than ours with fewer heads
+held the council back from another it could beat. Two thirds of the plan at the interval
 (`Intel.twoThirds`), `Intel.partySize` for the party. **Inside the interval** (after `interval / 4`), the 3 to 2 of
 `Intel.threeToTwo` applies only to a target whose faction struck us since our last raid (`struckBy` after `lastRaidAt`;
 section 6), against the counter-attack's own plan (section 6). Today `counter = !intervalOver && threeToTwo(...)` fires
@@ -988,7 +999,8 @@ truth:
   faction's reported settlement nearest to where each was seen, a watch's to the base watched; the bases by the
   reports' positions, `FactionDirector.reportedSettlements`); a lair gets none. `forceRaid` does the same. The target is
   chosen by `Reserve.score` (the plan in soldiers, then the distance), unit-tested so that a base with the smaller count
-  and the larger reserve seen away is not chosen over one whose plan is smaller.
+  and the larger reserve seen away is not chosen over one whose plan is smaller. (Replaced by `Reserve.RANK` and a
+  verdict on every candidate since the review, section 17.)
 * **The lines** use 5.4's form: the watch's heroes with the count, the reserve, then the heroes known only from
   sightings: "about 2 defenders (scout Edrin Cole, day 5) and a reserve of 3 (3 Stoneguard soldiers seen at our walls on
   day 4, not seen to fall) and Hinae Shirasuzu (seen at our walls on day 4)"; a hero seen falling, "(seen to fall at our
@@ -1312,7 +1324,7 @@ faction's own `FactionState.sightings`).
 | `Recon.THREAT_RANGE` | **16** | an enemy in sight this close: the scout on its pillar holds still and does not start down (3.5) |
 | `Recon.HOLD_MAX` | **1200** | the longest it waits on the pillar after its watch for an enemy to leave; inside `VANTAGE_TICKS` |
 | `Recon.QUIET_TICKS` | **600** (`NOTICE_MEMORY`) | an urgent order waits until the alarm has been quiet this long (the fight is over) |
-| `Recon.URGENT_GAP` | `interval / 4` (9000) | one urgent recon per enemy faction per counter-attack window |
+| `Recon.URGENT_GAP` | `interval / 4` (9000) | one urgent recon per enemy faction per counter-attack window (`ReconRules.counterWindow`, the council's gate: never before the faction's first raid, section 17) |
 | lair grid `reach` | **10** (the leash) | the monsters' ground, not the roofed hall |
 | `Reserve.SHARE` | **0.5** | 5.5: the planning margin the owner asked for. At a half, two thirds of the plan is the count head for head; the replay's 6 of 16 go (it stops three launches that lost every raider who set out and keeps both wins). The guard model alone needs 0.25 |
 | `Reserve.SHARE_LAIR` | **0** | 5.5: at 0.5 a party of 3 could not raid a lair of 5 (lairs start at 5); all three logged lair raids won without a loss; `lair_energy.md` changes lairs (question 2) |
@@ -1764,3 +1776,43 @@ What they changed:
 The round that built R1 to R12 kept the owner's earlier rules as given: "Its fine to keep a hard defence" (no defence
 tuning: the guards, walls and alarm are as they were) and the second scout for watching (the owner's "ok" of
 2026-11-25, built in R4b).
+
+## 17. The review of the build (2026-11-26): eight findings, and what the code does now
+
+Two read-only reviews of R1 to R12 (one on the owner's rule and the knowledge rules, one on the scout in the world)
+reported eight findings; two were the same fault. Each was checked against the code, given a test that failed first,
+fixed, and its fix sabotaged. Where this section and the sections above differ, this section and the code are the
+truth.
+
+| # | finding | real? | what the code does now | tests |
+|---|---|---|---|---|
+| 1 | The council ranked its targets by the plan's heads in each target's own soldiers (`Reserve.score`), judged only the first and waited on it, while another target it could beat stood by (a recon of 2 soldiers in better gear than ours before one of 4 bare ones; heroes' fractional heads before a nearer plan that needs a soldier less). Inside the interval the same among the strikers' settlements | yes (older than R5, but every plan goes through it now) | `FactionDirector.raids` judges every candidate (`ReconRules.verdict` on each plan) and keeps the first by `Reserve.RANK`: one its party goes against now, then the fewest of our soldiers needed (`Reserve.needed`), then the weaker plan, then the nearest; the waiting line is the first's when none goes (5.4) | `ReserveTest.aTargetThePartyCanBeatComesBeforeOneItMustWaitOn`, `theTargetIsChosenByItsPlanNotByItsCount`; GameTest `theCouncilRaidsATargetItCanBeatWhileAnotherMustWait` |
+| 2 | An order taken by a scout that lost its trip (its trip did not load, or a retraining away and back between two council passes rebuilt its job) never ended: the scout explored, its report never told the order, and the faction's ordinary order stayed full for good | yes | at home (the storehouse, or the station after it reports) a scout holding an order with no trip for it gives it back (`ReconOrders.release`: open again, as a retrained scout's, not a failure; an `FC_RECON order_end` line says REOPENED) and takes it again at once (`ScoutJob.nextOrder`) | GameTest `aScoutThatLostItsTripTakesItsOrderAgain` (retrained away and back, then a good recon) |
+| 3 | Urgent recon orders were placed before the faction's first raid (`lastRaidAt` 0 made the window open from tick 9000), when no counter-attack can come of them: the first war's gate ends the interval too | yes | one rule for the window, `ReconRules.counterWindow` (inside the interval since our last raid, past its first quarter and past the first war's gate), read by `urgentDue` and by the council's own gate (`ReconRules.intervalOver` or the window, exactly the old pair of conditions); before the first raid the striker's base is watched by the window's ordinary order | `ReconTest.theCounterAttackWindowIsTheCouncilsGate` and the urgent test; GameTest `noUrgentReconBeforeTheFirstRaid` |
+| 4, 8 | A scout given up as lost (its order ended LOST: one failure) that walked home later with a blind recon of the same trip counted a second failure, doubling the back-off for one attempt | yes (both reviews) | at the station a recon whose order has already ended (`ReconOrders.atStation` finds none: it lapsed as lost) is filed with `Report.reconAttemptCounted`; a blind one then adds the sides its trip tried and no failure (`Intel.mergeRecon(..., attemptCounted)`, `Intel.reconSides`), whenever its best look was; a good one replaces the file as ever | `ReconTest.aTripGivenUpAsLostThatComesHomeBlindCountsOnce`; GameTest `aScoutGivenUpAsLostCountsItsAttemptOnce` |
+| 5 | `KnowledgeIsolationTest` let any `// truth:` line in the council through uncounted, scanned only the council methods it listed (not the helpers they call) and never scanned `EnemySightings` | yes (today's code was clean) | the council scan covers `lastAlarmAt`, `partySawRuins` (its `destroyed` guard now carries the mark), `heroNames` and `councilLine`, and counts the marked lines exactly (7: the party's roll on the spot twice, its won check, the operators' truth in `LAST_COUNCIL`, `forceRaid`'s two, `partySawRuins`' guard); a new scan of `EnemySightings` forbids the enemy truths and a record's truth and requires a seeing check (a line of sight, the alarm's noticed, a lookout at home, the roll call's witnesses) within six lines before each `file(` or `carry(` but in `load` | the test itself; sabotaged three ways (below) |
+| 6 | After an errand home (food or a tool) from its pillar, or while walking round the base when done, a scout walked back out to the enemy base's corners before it reported: a round trip late, exposed, and with its expected return set again on leaving, liable to be reported missing alive | yes | `ScoutJob.beforeErrand` ends a trip that is done at the target (phase DONE, once on the ground): its corners dropped, home now (`goHome`), so after the errand it goes to the station and reports | GameTests `anErrandHomeFromThePillarEndsInTheReport`, `anErrandHomeOnTheWayRoundEndsInTheReport` |
+
+**The GameTest world.** Running the new tests beside the old ones showed that the GameTest world (`run/world`) is kept
+from one run to the next and that a run stopped in the middle of a test leaves that test's base in the campaign data:
+`anOperatorsRaidSaysWhatItRestsOn` failed when `forceRaid`'s "first standing settlement" of the faction was another
+run's. `GameTestBases` now removes every leftover test base (ids from 990100) before a run's first test base (twelve
+were there). No campaign code changed for it.
+
+**Sabotages.** Each broke the fixed rule in the tree, the named test failed, and the file was restored and compared
+with its backup.
+
+| # | the rule broken | caught by |
+|---|---|---|
+| 1 | the council ranks its targets by heads again (`Reserve.RANK` on `plan.heads()`) | GameTest `theCouncilRaidsATargetItCanBeatWhileAnotherMustWait` |
+| 2 | the same, the pure rule | `ReserveTest.aTargetThePartyCanBeatComesBeforeOneItMustWaitOn` |
+| 3 | a scout home with an order and no trip keeps it (`ReconOrders.release` gives nothing back) | GameTest `aScoutThatLostItsTripTakesItsOrderAgain` |
+| 4 | the urgent order ignores the council's window (`now >= lastRaidAt + interval / 4`: open from tick 9000 before any raid) | GameTest `noUrgentReconBeforeTheFirstRaid` |
+| 5 | the same, the pure rule | `ReconTest.anUrgentReconIsDueAfterAStrikeOnceTheFightIsOverAndOncePerQuarterInterval` |
+| 6 | a late blind recon of a lost trip counts a second failure (the station never sets `reconAttemptCounted`) | GameTest `aScoutGivenUpAsLostCountsItsAttemptOnce` ("failures 2") |
+| 7 | the merge ignores a counted attempt (`Intel.mergeRecon` always calls `reconFailed`) | `ReconTest.aTripGivenUpAsLostThatComesHomeBlindCountsOnce` |
+| 8 | after an errand a scout done at the target keeps its corners (`homeWithTheReport` never fires) | GameTests `anErrandHomeFromThePillarEndsInTheReport` and `anErrandHomeOnTheWayRoundEndsInTheReport` ("home on its errand it is still out on its trip, bound for the target's corners: OUTBOUND DONE, 1 corners left"). Missed at first: the tests looked at the scout's state only once it had eaten, and it eats on its way, by when it could already have walked the short way to the corner (in the 32 x 32 field the corner lies near home) and turned home. They now look from the moment it is home on its errand, and both fail |
+| 11 | a new engine read of the truth in the council, marked (`defencePower` of our own base, `// truth:`) | `KnowledgeIsolationTest.theWarCouncilJudgesAnEnemyOnlyByWhatItsPeopleSaw` (the exact count: 8 marked lines for 7). Its first run did not compile, which proves nothing; rerun with a line that compiles |
+| 12 | a truth read moved into a helper the council calls (`defencePower` inside `councilLine`) | the same test (an enemy truth in a council helper, unmarked) |
+| 13 | a sighting filed with no line of sight (`EnemySightings`' `hasLineOfSight` check dropped) | `KnowledgeIsolationTest.theSightingsLedgerHoldsOnlyWhatOurPeopleSaw` |
+

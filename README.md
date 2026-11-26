@@ -177,12 +177,15 @@ Players respawn at their faction's nearest surviving base when they have no bed.
   assume that what they saw is not the enemy mainforce", the owner's words) and plans against the count plus a
   **reserve**: half again the soldiers counted, or more when its own people saw more of that faction's soldiers away
   from home in the last half day (at its walls, met by a scout, seen leaving from the pillar), with the heroes the watch
-  saw or its people met. It picks the target with the smallest plan, then the nearest. The raid party is every soldier
+  saw or its people met. It judges every target it may raid and picks one its party can beat now before any it must
+  wait on, then the one that needs the fewest of its soldiers, then the nearest. The raid party is every soldier
   beyond a third of the garrison (at least `raidPartySize`), and it goes when it is at least two thirds of that plan,
   weighed by arms and armour (a soldier in diamond with a diamond sword counts almost three times one in leather with a
   stone sword): so a party goes against as many soldiers counted as it sends, in the same gear. Enemy soldiers seen
   falling at our walls lower nothing; they send a scout to the striker's base once the fight is over, and a **counter-
-  attack** may go sooner, at 3 to 2 on what that scout counted. Lairs are watched from the ground and get no reserve.
+  attack** may go sooner, at 3 to 2 on what that scout counted (only after the faction's first raid: before it the first
+  war's gate ends the interval too, and the scout is sent half a day before it like any other). Lairs are watched from
+  the ground and get no reserve.
   The launch line says what the plan rests on: "Launching a raid with 3 soldiers on the Grove Covenant settlement
   reported at 400, 67, 16, against about 4 defenders and Hinae Shirasuzu (scout Edrin Cole, day 5) and a reserve of 2
   (half again the 4 counted)". The reporting station shows the council's last plan, the open orders, each enemy base's
@@ -533,7 +536,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
 
 ## Testing
 
-* `./gradlew test` — 1168 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
+* `./gradlew test` — 1172 JUnit tests for the pure rules (a faction's fall: who has fallen, the stamp, a hero's fate (a hero
   presumed lost dies with its faction too); what
   a faction knows of an enemy base: only a scout's focused recon, good (8 of the 25 yard points and its middle, half a
   minute's watch) and fresh (half a day), the faces counted with no extrapolation, the plan of half again the count
@@ -605,7 +608,7 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   python3 has NumPy and Pillow, the art generator's `herogen build --check --all` and `herogen check --all`.
 * `./gradlew checkHeroes` — the hero file checker over `src/main/resources/data/factionclash/heroes` (part of
   `check`; the test rig's, Natsuho's and Hinae's definitions ship, `-PheroDir=<folder>` checks another folder).
-* `./gradlew runGameTestServer` — 458 GameTests on a real headless server, including **focused reconnaissance** (a
+* `./gradlew runGameTestServer` — 464 GameTests on a real headless server, including **focused reconnaissance** (a
   scout takes its council's recon order only at home, at the station or the storehouse, with its 22 dirt, dug from
   open ground at home when the storehouse has none; walks round
   to the gate side facing home, climbs on the axis at the standoff looking after each block, stops two above its first
@@ -635,7 +638,10 @@ the map legend has the village, pillager outpost and woodland mansion markers sc
   none; a branch miner keeps the four shards of an amethyst cluster its tunnel uncovers; the operators' view: the dump
   lists each known base's recon, the open orders, the strikes and the plan the council last judged by, the station
   tells the same in the faction's words with no truth in it, and the truth of a watched yard counts its soldiers
-  whatever is in sight), **what a faction knows**
+  whatever is in sight; the review of the build: a council raids a target its party can beat while another it cannot
+  no longer holds it back; a scout whose trip was lost to a retraining takes its order again; a scout given up as lost
+  that walks in blind counts its trip once; after an errand home a scout done at the target reports instead of walking
+  back out to its corners; no urgent recon before the faction's first raid), **what a faction knows**
   (ruins seen stay ruins when only the yard is seen again; a raid party turns home by its plan and home never gives up a raider still fighting, nor
   pulls one off its party; a party that broke its target's heart brings the ruins home;
   a base razed by another faction is a target until a scout sees its ruins, and a raider sees a fall only near it; a raid

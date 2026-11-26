@@ -782,8 +782,11 @@ A faction knows only what its people saw (`docs/design/missing_npcs.md`). One ru
   (`ORDERS_MAX`: one ordinary, one urgent), one a target; an order nobody takes is dropped after **12000**. An urgent
   order (after a strike: an enemy soldier seen at our walls, `FactionState.struckBy`) waits until the alarm has been
   quiet **600** ticks (`QUIET_TICKS`, the alarm's `NOTICE_MEMORY`), at most one per enemy faction per **interval / 4**
-  (9000 at the default 36000). A blind, empty-handed or lost recon backs its target off **12000**, doubling with each
-  failure in a row to **48000** at most (`RETRY_TICKS`, `RETRY_MAX_TICKS`). An order untaken for **6000** ticks
+  (9000 at the default 36000), and only while a counter-attack could go (`ReconRules.counterWindow`: from a quarter of
+  the interval after our last raid to the interval's end, past the first war's gate; never before the first raid). A
+  blind, empty-handed or lost recon backs its target off **12000**, doubling with each failure in a row to **48000** at
+  most (`RETRY_TICKS`, `RETRY_MAX_TICKS`); one trip counts once (a scout given up as lost that walks in with a blind
+  report adds its sides, not a second failure). An order untaken for **6000** ticks
   (`WAIT_TICKS`) wants a second scout while the base has fewer than **2** (`MAX_SCOUTS`).
 * A recon's vantage (PROPOSED, recon.md 3.3 to 3.7; `ReconRules`, `ReconVantage`): a settlement's band runs from the
   standoff **61** (`STANDOFF`, Chebyshev from the centre: no yard place within the guards' 48-block reach sees a pillar

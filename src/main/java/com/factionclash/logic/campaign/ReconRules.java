@@ -122,17 +122,37 @@ public final class ReconRules {
     }
 
     /**
-     * Whether an urgent recon of a striker's nearest reported base is due (recon.md 2.1 and 6): it struck us since our last
-     * raid, the counter-attack window is open (a quarter of the interval since our last raid), our alarm has been quiet
-     * {@link #QUIET_TICKS} ({@code alarmAt}: when it last noticed an intruder; 0: never), no urgent order went to that
-     * faction within a quarter of the interval ({@code lastUrgentAt}; 0: never), and no good recon of that base was made
-     * since the strike ({@code goodReconAt}: the kept good recon's time; 0: none). A strike seen while our own raid was out
-     * is acted on after the raid's end, since {@link #ordersNow} places nothing while it is out.
+     * Whether the raid interval is over at {@code now} (the council raids at the interval): past the first war's gate
+     * ({@code startedAt} plus the interval) and an interval since our last raid ({@link #nextRaidAt}).
      */
-    public static boolean urgentDue(long now, long struckAt, long lastRaidAt, long interval, long alarmAt, long lastUrgentAt,
-                                    long goodReconAt) {
+    public static boolean intervalOver(long now, long lastRaidAt, long startedAt, long interval) {
+        return now >= nextRaidAt(lastRaidAt, startedAt, interval);
+    }
+
+    /**
+     * Whether the counter-attack window is open at {@code now} (recon.md 6): inside the raid interval since our last raid,
+     * past its first quarter ({@link #urgentGap}), and past the first war's gate ({@code startedAt} plus the interval). The
+     * war council's gate and the urgent order's read this one rule. Before our first raid it is never open: the first
+     * war's gate ends the interval too, and the council raids there as at any interval's end (the review of the focused
+     * reconnaissance round, finding 3: an urgent recon ordered before it was spent for nothing).
+     */
+    public static boolean counterWindow(long now, long lastRaidAt, long startedAt, long interval) {
+        return now - lastRaidAt >= urgentGap(interval) && now - startedAt >= interval && !intervalOver(now, lastRaidAt, startedAt, interval);
+    }
+
+    /**
+     * Whether an urgent recon of a striker's nearest reported base is due (recon.md 2.1 and 6): it struck us since our last
+     * raid, the counter-attack window is open ({@link #counterWindow}: never before our first raid), our alarm has been
+     * quiet {@link #QUIET_TICKS} ({@code alarmAt}: when it last noticed an intruder; 0: never), no urgent order went to
+     * that faction within a quarter of the interval ({@code lastUrgentAt}; 0: never), and no good recon of that base was
+     * made since the strike ({@code goodReconAt}: the kept good recon's time; 0: none). A strike seen while our own raid
+     * was out is acted on after the raid's end, since {@link #ordersNow} places nothing while it is out. Outside the
+     * window the striker's base is watched by the ordinary orders of the window before the interval ends.
+     */
+    public static boolean urgentDue(long now, long struckAt, long lastRaidAt, long startedAt, long interval, long alarmAt,
+                                    long lastUrgentAt, long goodReconAt) {
         long gap = urgentGap(interval);
-        return struckSince(struckAt, lastRaidAt) && now >= lastRaidAt + gap && now - alarmAt >= QUIET_TICKS
+        return struckSince(struckAt, lastRaidAt) && counterWindow(now, lastRaidAt, startedAt, interval) && now - alarmAt >= QUIET_TICKS
                 && (lastUrgentAt <= 0 || now - lastUrgentAt >= gap) && goodReconAt <= struckAt;
     }
 

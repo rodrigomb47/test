@@ -175,6 +175,17 @@ public final class Intel {
      * tried. Ruins stay ruins.
      */
     public static ReconFile mergeRecon(ReconFile kept, Recon newer, int sidesTried) {
+        return mergeRecon(kept, newer, sidesTried, false);
+    }
+
+    /**
+     * As {@link #mergeRecon(ReconFile, Recon, int)}; {@code attemptCounted}: the attempt the recon ends was counted already
+     * (its order ended as lost before its scout came home: the roll call gave the scout up, then it walked in). A blind
+     * recon then adds the sides its trip tried and no failure ({@link #reconSides}): one trip, one failed attempt (the
+     * review of the focused reconnaissance round, findings 4 and 8: the back-off doubled for one attempt). A good one
+     * replaces the kept recon as ever.
+     */
+    public static ReconFile mergeRecon(ReconFile kept, Recon newer, int sidesTried, boolean attemptCounted) {
         if (kept == null) {
             kept = ReconFile.NONE;
         }
@@ -182,7 +193,7 @@ public final class Intel {
             return kept;
         }
         if (!newer.good()) {
-            return reconFailed(kept, newer.at(), sidesTried);
+            return attemptCounted ? reconSides(kept, newer.at(), sidesTried) : reconFailed(kept, newer.at(), sidesTried);
         }
         if (kept.recon() != null && newer.at() <= kept.recon().at()) {
             return kept;
@@ -204,6 +215,21 @@ public final class Intel {
             return kept;
         }
         return new ReconFile(kept.recon(), Math.max(kept.failedAt(), at), kept.failures() + 1, kept.sidesTried() | sidesTried, false);
+    }
+
+    /**
+     * The sides a trip tried, added with no failure counted (a blind recon whose attempt was counted when its order ended,
+     * {@link #mergeRecon(ReconFile, Recon, int, boolean)}). As for a failure, a trip no newer than the kept good recon (a
+     * late scout's) changes nothing: its sides were tried before that look.
+     */
+    public static ReconFile reconSides(ReconFile kept, long at, int sidesTried) {
+        if (kept == null) {
+            kept = ReconFile.NONE;
+        }
+        if (kept.fallen() || kept.recon() != null && at <= kept.recon().at()) {
+            return kept;
+        }
+        return new ReconFile(kept.recon(), kept.failedAt(), kept.failures(), kept.sidesTried() | sidesTried, false);
     }
 
     /** The base seen in ruins (recon.md 4): ruins for good, the recon dropped. */

@@ -130,6 +130,35 @@ class ReconTest {
         assertEquals(ReconFile.NONE, Intel.mergeRecon(null, null, 0));
     }
 
+    @Test
+    void aTripGivenUpAsLostThatComesHomeBlindCountsOnce() {
+        // the review of the focused reconnaissance round, findings 4 and 8: the order ends as lost at 30 000 (one failure),
+        // then its scout walks in with a blind recon of the same trip, its best look before or after the order's end
+        Recon good = recon(4, 12, true, 1200, 10_000);
+        ReconFile lost = Intel.reconFailed(Intel.mergeRecon(ReconFile.NONE, good, 0), 30_000, 0);
+        assertEquals(1, lost.failures());
+        for (long at : new long[]{25_000, 30_000, 31_000}) {
+            ReconFile late = Intel.mergeRecon(lost, recon(0, 3, false, 1200, at), Side.WEST.bit() | Side.EAST.bit(), true);
+            assertEquals(1, late.failures(), "one trip, one failed attempt (its best look at " + at + ")");
+            assertEquals(30_000, late.failedAt(), "the back-off runs from the order's end");
+            assertEquals(Side.WEST.bit() | Side.EAST.bit(), late.sidesTried(), "the sides its trip tried still count");
+            assertSame(good, late.recon());
+            assertEquals(ReconRules.backoffTicks(1), ReconRules.RETRY_TICKS);
+        }
+        // not counted already (its order still open at the station): a blind recon is a failure, as before
+        assertEquals(2, Intel.mergeRecon(lost, recon(0, 3, false, 1200, 31_000), 0, false).failures());
+        // a good late recon replaces the file whatever its order did
+        Recon later = recon(3, 15, true, 1200, 32_000);
+        assertSame(later, Intel.mergeRecon(lost, later, Side.WEST.bit(), true).recon());
+        assertEquals(0, Intel.mergeRecon(lost, later, Side.WEST.bit(), true).failures());
+        // a late trip no newer than the kept good recon adds nothing
+        ReconFile fresh = Intel.mergeRecon(ReconFile.NONE, recon(4, 12, true, 1200, 50_000), 0);
+        assertEquals(fresh, Intel.mergeRecon(fresh, recon(0, 3, false, 1200, 45_000), Side.NORTH.bit(), true));
+        assertEquals(fresh, Intel.reconSides(fresh, 45_000, Side.NORTH.bit()));
+        assertEquals(Side.NORTH.bit(), Intel.reconSides(fresh, 55_000, Side.NORTH.bit()).sidesTried());
+        assertEquals(Intel.reconRuins(), Intel.reconSides(Intel.reconRuins(), 55_000, Side.NORTH.bit()), "ruins stay ruins");
+    }
+
     // ---- 4. Orders ----
 
     @Test
@@ -210,19 +239,56 @@ class ReconTest {
     }
 
     @Test
+    void theCounterAttackWindowIsTheCouncilsGate() {
+        long start = 100_000, gate = start + INTERVAL;
+        // before any raid: the first war's gate ends the interval too, so there is no counter-attack window at all
+        for (long t = start; t < gate + 2 * INTERVAL; t += 500) {
+            assertFalse(ReconRules.counterWindow(t, 0, start, INTERVAL), "a window before the first raid at " + t);
+            assertEquals(t >= gate, ReconRules.intervalOver(t, 0, start, INTERVAL), "the first war's gate at " + t);
+        }
+        // after a raid: from a quarter of the interval to its end
+        long raid = gate + 5000;
+        assertFalse(ReconRules.counterWindow(raid + INTERVAL / 4 - 1, raid, start, INTERVAL));
+        assertTrue(ReconRules.counterWindow(raid + INTERVAL / 4, raid, start, INTERVAL));
+        assertTrue(ReconRules.counterWindow(raid + INTERVAL - 1, raid, start, INTERVAL));
+        assertFalse(ReconRules.counterWindow(raid + INTERVAL, raid, start, INTERVAL), "the interval is over: a raid, not a counter-attack");
+        assertTrue(ReconRules.intervalOver(raid + INTERVAL, raid, start, INTERVAL));
+        // an operator's raid before the first war's gate: no window before the gate
+        long early = start + 1000;
+        assertFalse(ReconRules.counterWindow(early + INTERVAL / 4, early, start, INTERVAL), "before the first war's gate");
+        // the council's gate: the window or the interval's end, exactly the old pair of conditions
+        for (long last : new long[]{0, start - 7000, start + 1000, gate + 5000}) {
+            for (long t = start; t < gate + 3 * INTERVAL; t += 250) {
+                boolean old = !(t - last < INTERVAL / 4 || t - start < INTERVAL);
+                assertEquals(old, ReconRules.intervalOver(t, last, start, INTERVAL) || ReconRules.counterWindow(t, last, start, INTERVAL),
+                        "the gate at " + t + " after a raid at " + last);
+                if (old) {
+                    assertEquals(t - last >= INTERVAL, ReconRules.intervalOver(t, last, start, INTERVAL), "the interval's end at " + t);
+                }
+            }
+        }
+    }
+
+    @Test
     void anUrgentReconIsDueAfterAStrikeOnceTheFightIsOverAndOncePerQuarterInterval() {
         long lastRaid = 100_000, struck = 105_000, now = lastRaid + INTERVAL / 4;
         assertEquals(9000, ReconRules.urgentGap(INTERVAL));
-        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, INTERVAL, struck, 0, 0));
-        assertFalse(ReconRules.urgentDue(now - 1, struck, lastRaid, INTERVAL, struck, 0, 0), "the counter-attack window is not open");
-        assertFalse(ReconRules.urgentDue(now, lastRaid - 1, lastRaid, INTERVAL, 0, 0, 0), "struck before our last raid");
-        assertFalse(ReconRules.urgentDue(now, 0, lastRaid, INTERVAL, 0, 0, 0), "never struck");
-        assertFalse(ReconRules.urgentDue(now, struck, lastRaid, INTERVAL, now - 599, 0, 0), "the alarm is not quiet yet");
-        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, INTERVAL, now - 600, 0, 0), "quiet for 600 ticks");
-        assertFalse(ReconRules.urgentDue(now, struck, lastRaid, INTERVAL, struck, now - 8999, 0), "an urgent order a moment ago");
-        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, INTERVAL, struck, now - 9000, 0), "a quarter interval since");
-        assertFalse(ReconRules.urgentDue(now, struck, lastRaid, INTERVAL, struck, 0, struck + 1), "a good recon since the strike");
-        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, INTERVAL, struck, 0, struck - 1), "a recon from before it");
+        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, 0, INTERVAL, struck, 0, 0));
+        assertFalse(ReconRules.urgentDue(now - 1, struck, lastRaid, 0, INTERVAL, struck, 0, 0), "the counter-attack window is not open");
+        assertFalse(ReconRules.urgentDue(now, lastRaid - 1, lastRaid, 0, INTERVAL, 0, 0, 0), "struck before our last raid");
+        assertFalse(ReconRules.urgentDue(now, 0, lastRaid, 0, INTERVAL, 0, 0, 0), "never struck");
+        assertFalse(ReconRules.urgentDue(now, struck, lastRaid, 0, INTERVAL, now - 599, 0, 0), "the alarm is not quiet yet");
+        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, 0, INTERVAL, now - 600, 0, 0), "quiet for 600 ticks");
+        assertFalse(ReconRules.urgentDue(now, struck, lastRaid, 0, INTERVAL, struck, now - 8999, 0), "an urgent order a moment ago");
+        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, 0, INTERVAL, struck, now - 9000, 0), "a quarter interval since");
+        assertFalse(ReconRules.urgentDue(now, struck, lastRaid, 0, INTERVAL, struck, 0, struck + 1), "a good recon since the strike");
+        assertTrue(ReconRules.urgentDue(now, struck, lastRaid, 0, INTERVAL, struck, 0, struck - 1), "a recon from before it");
+        // the review of the focused reconnaissance round, finding 3: the window is the council's own (counterWindow), so
+        // inside the interval only, past its first quarter and past the first war's gate; never before our first raid
+        assertFalse(ReconRules.urgentDue(lastRaid + INTERVAL, struck, lastRaid, 0, INTERVAL, struck, 0, 0), "the interval is over");
+        assertTrue(ReconRules.urgentDue(lastRaid + INTERVAL - 1, struck, lastRaid, 0, INTERVAL, struck, 0, 0), "the last tick of the window");
+        assertFalse(ReconRules.urgentDue(50_000, 20_000, 0, 0, INTERVAL, 20_000, 0, 0), "before our first raid");
+        assertFalse(ReconRules.urgentDue(now, struck, lastRaid, lastRaid, INTERVAL, struck, 0, 0), "before the first war's gate");
         // the target: no good recon since the strike, even a fresh one from before it
         assertTrue(ReconRules.urgentQualifies(judged(struck - 100), struck + 50, false, struck));
         assertFalse(ReconRules.urgentQualifies(judged(struck + 10), struck + 50, false, struck));

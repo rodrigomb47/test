@@ -1166,8 +1166,9 @@ python3 tools/rcon.py "stop"
   the report home and tells it first at the station; a worse look is a blind report, never "about 0". Only a good
   recon younger than half a day is an estimate; there is no prior, no passing look's count, no losses, no raid party's
   look. The plan is the count plus a reserve (half again, or the soldiers of that faction our people saw away when more;
-  the heroes known), none at a lair or in a counter-attack; the target is the least plan, then the nearest, at two
-  thirds; inside the interval only a counter-attack at 3 to 2 on a striker's settlement, on a recon since the strike.
+  the heroes known), none at a lair or in a counter-attack; every target is judged and the first by `Reserve.RANK` is
+  chosen (one its party goes against now, then the least plan in our soldiers, then the nearest), at two thirds;
+  inside the interval only a counter-attack at 3 to 2 on a striker's settlement, on a recon since the strike.
   The launch and waiting lines say what the plan rests on. The spyglass is forged by the blacksmith (2 copper ingots, 1
   amethyst shard a branch miner takes from a geode) and never needs a tech level. R6 (the operators): `/fc admin dump`
   lists each known base's recon, the orders, `struckBy`, the sightings and the council's last plan
@@ -1199,6 +1200,15 @@ python3 tools/rcon.py "stop"
   (entities not loaded yet) shows every garrison at 0 in warcheck's leak section. The tools' attacked and holds
   branches were also run on the GameTests' own `FC_RECON` lines (two scouts hurt on a pillar, two holds of 15 s, one
   indoor soldier the watch missed). A real live check (R8) is still to do.
+  **The review of the build** (2026-11-26, `docs/design/recon.md` 17): two read-only reviews found eight faults (two the
+  same), all real and fixed with a test that failed first and a sabotage each: the council judges every candidate
+  (`Reserve.RANK`, a verdict per plan) instead of testing only the one with the fewest heads; a scout home with an order
+  but no trip for it gives the order back and takes it again (`ReconOrders.release`); the urgent recon reads the
+  council's own counter-attack window (`ReconRules.counterWindow`, never before the first raid); a scout given up as lost
+  that walks in blind counts its trip once (`Report.reconAttemptCounted`); after an errand home a scout done at the
+  target reports instead of walking back to the corners; `KnowledgeIsolationTest` counts the council's `// truth:`
+  lines exactly (7), scans the helpers the council calls and the sightings ledger. `GameTestBases` clears the test
+  bases a stopped run left in the kept GameTest world (`run/world`). **1172 unit tests, 464 GameTests.**
 
 ## 6. Known open items and ideas (none blocking)
 

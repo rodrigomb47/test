@@ -92,10 +92,22 @@ class KnowledgeIsolationTest {
         assertTrue(marked <= 2, "more engine reads of the truth than the raid party's two: " + marked);
     }
 
-    /** The war council's methods in {@code FactionDirector} (knowledge review of 2026-11-19, known leak 1). */
+    /**
+     * The war council's methods in {@code FactionDirector} (knowledge review of 2026-11-19, known leak 1), with the helpers
+     * they call that read anything of the world (the review of the focused reconnaissance round: a truth read moved into a
+     * helper the scan did not list would have gone unseen).
+     */
     private static final String[] COUNCIL = {"private static void raids(", "static BaseState reportedBase(", "private static String waitingWhy(",
             "private static void watchTarget(", "static void deliverRaidIntel(", "public static String forceRaid(", "private static void launch(",
-            "static List<Sightings.Base> reportedSettlements("};
+            "static List<Sightings.Base> reportedSettlements(", "static long lastAlarmAt(", "public static void partySawRuins(",
+            "private static Map<String, String> heroNames(", "private static void councilLine("};
+    /**
+     * The council's lines that read the truth for the engine or the operators, each marked {@code // truth:}: in
+     * {@code raids} the party's own roll on the spot (two), its won check and the operators' truth in the {@code LAST_COUNCIL}
+     * line; in {@code forceRaid} the operator's standing base and its own home; in {@code partySawRuins} the ruins its
+     * party saw. A new marked line is a new truth the council reads, and this count says so.
+     */
+    private static final int COUNCIL_TRUTH_LINES = 7;
     /** What the council may never read of an enemy: its roster's defenders, its own soldier power, its heroes, the truth of a fall. */
     private static final String[] ENEMY_TRUTHS = {"defenders(", "defencePower(", "heroDefence(", "heroWarPower(", "lairMobs", "data.heroes",
             "HeroState", ".destroyed ", ".destroyed)", ".destroyed;", ".destroyed&", ".destroyed|"};
@@ -121,7 +133,7 @@ class KnowledgeIsolationTest {
     void theWarCouncilJudgesAnEnemyOnlyByWhatItsPeopleSaw() throws IOException {
         Path file = Path.of("src/main/java/com/factionclash/campaign/FactionDirector.java");
         String src = Files.readString(file);
-        List<String> found = new ArrayList<>();
+        List<String> found = new ArrayList<>(), marked = new ArrayList<>();
         int lines = 0;
         for (String head : COUNCIL) {
             int at = src.indexOf(head);
@@ -138,7 +150,11 @@ class KnowledgeIsolationTest {
             for (String line : src.substring(at, end).split("\\n")) {
                 lines++;
                 String code = line.contains("//") ? line.substring(0, line.indexOf("//")) : line;
-                if (line.trim().startsWith("*") || line.contains(ENGINE_MARK)) {
+                if (line.trim().startsWith("*")) {
+                    continue;
+                }
+                if (line.contains(ENGINE_MARK)) {
+                    marked.add(head + ": " + line.trim());
                     continue;
                 }
                 for (String t : ENEMY_TRUTHS) {
@@ -159,6 +175,68 @@ class KnowledgeIsolationTest {
         }
         assertTrue(lines > 150, "too little of the council scanned: " + lines);
         assertTrue(found.isEmpty(), "the war council reads what its people never saw: " + found);
+        assertEquals(COUNCIL_TRUTH_LINES, marked.size(), "the council's engine reads of the truth changed: " + marked);
+    }
+
+    /** A sightings ledger write: a sighting filed, or carried home by a scout. */
+    private static final java.util.regex.Pattern SIGHTING_WRITE = java.util.regex.Pattern.compile("\\.(file|carry)\\(");
+    /** What a sighting rests on: a line of sight, the alarm's noticed intruders, a lookout at home, or the roll call's witnesses. */
+    private static final String[] SEEN = {"hasLineOfSight(", "noticed", "seenFromHome(", "witnesses(", "RollCall.Witness "};
+
+    /**
+     * The sightings ledger the war council plans its reserve on ({@code campaign/EnemySightings}, recon.md 5.5, task R11)
+     * holds only what the faction's people saw: it never reads an enemy's roster, power or heroes' records, a base's true
+     * fall or a roster entry's truth, and every sighting it files or hands a scout to carry rests on a seeing check a few
+     * lines before (a line of sight, the alarm's noticed intruders, a lookout at home, the roll call's witnesses). Only
+     * {@code load}, which reads the ledger back from a save, files without one.
+     */
+    @Test
+    void theSightingsLedgerHoldsOnlyWhatOurPeopleSaw() throws IOException {
+        Path file = Path.of("src/main/java/com/factionclash/campaign/EnemySightings.java");
+        List<String> lines = Files.readAllLines(file);
+        List<String> found = new ArrayList<>();
+        int writes = 0, seen = 0;
+        boolean inLoad = false;
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            String code = line.contains("//") ? line.substring(0, line.indexOf("//")) : line;
+            if (line.trim().startsWith("*") || line.trim().startsWith("/**")) {
+                continue;
+            }
+            if (code.matches("\\s*(public |private |protected )?static .*\\(.*")) {
+                inLoad = code.contains(" load(");
+            }
+            for (String t : ENEMY_TRUTHS) {
+                if (code.contains(t)) {
+                    found.add((i + 1) + " reads " + t + ": " + line.trim());
+                }
+            }
+            if (RECORD_TRUTH.matcher(code).find()) {
+                found.add((i + 1) + " reads a record's truth: " + line.trim());
+            }
+            if (line.contains(ENGINE_MARK)) {
+                found.add((i + 1) + " reads a truth for the engine: " + line.trim());
+            }
+            if (!SIGHTING_WRITE.matcher(code).find() || inLoad) {
+                continue;
+            }
+            writes++;
+            boolean ok = false;
+            for (int k = Math.max(0, i - 6); k <= i && !ok; k++) {
+                for (String s : SEEN) {
+                    ok |= lines.get(k).contains(s);
+                }
+            }
+            if (ok) {
+                seen++;
+            } else {
+                found.add((i + 1) + " files a sighting nobody of ours saw: " + line.trim());
+            }
+        }
+        assertTrue(lines.size() > 150, "too little of the ledger scanned: " + lines.size());
+        assertTrue(writes >= 5, "the ledger's writes (at home, a fall at home, a fall seen away, a scout's look, a watch): " + writes);
+        assertEquals(writes, seen);
+        assertTrue(found.isEmpty(), "the sightings ledger holds what our people never saw: " + found);
     }
 
     /**

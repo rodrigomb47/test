@@ -201,6 +201,7 @@ public final class FactionState {
                 if (merged.base()) {
                     merged.reconFile(Report.fileRecon(old, r));
                 }
+                merged.reconAttemptCounted = false; // (a delivered report's mark, never the kept report's)
                 knowledge.set(i, merged);
                 return false;
             }
@@ -208,6 +209,7 @@ public final class FactionState {
         if (r.base()) {
             r.reconFile(Report.fileRecon(null, r));
         }
+        r.reconAttemptCounted = false;
         knowledge.add(r);
         while (knowledge.size() > MAX_REPORTS) {
             int drop = 0;

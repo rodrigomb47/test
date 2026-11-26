@@ -81,6 +81,12 @@ public final class Report {
     public int reconFailures;
     /** Kept report: the sides tried since the last good recon; delivered report: the sides its trip tried ({@link com.factionclash.logic.campaign.ReconRules.Side} bits). */
     public int reconSidesTried;
+    /**
+     * Delivered report only, never saved or copied: the attempt its recon ends was counted already, its order having ended
+     * as lost before its scout came home ({@link Intel#mergeRecon(Intel.ReconFile, Intel.Recon, int, boolean)}: a blind
+     * recon then adds its sides and no failure). {@link FactionState#addReport} clears it once filed.
+     */
+    public boolean reconAttemptCounted;
 
     public Report() {
     }
@@ -165,7 +171,7 @@ public final class Report {
             r.recon = newer.recon == null || older.recon != null && older.recon.at() > newer.recon.at() ? older.recon : newer.recon;
             r.reconSidesTried = older.reconSidesTried | newer.reconSidesTried;
         } else {
-            r.reconFile(Intel.mergeRecon(older.reconFile(), newer.recon, newer.reconSidesTried));
+            r.reconFile(Intel.mergeRecon(older.reconFile(), newer.recon, newer.reconSidesTried, newer.reconAttemptCounted));
         }
         return r;
     }
@@ -197,7 +203,8 @@ public final class Report {
         if (kept != null && kept.fallen || incoming.fallen) {
             return Intel.reconRuins();
         }
-        return Intel.mergeRecon(kept == null ? Intel.ReconFile.NONE : kept.reconFile(), incoming.recon, incoming.reconSidesTried);
+        return Intel.mergeRecon(kept == null ? Intel.ReconFile.NONE : kept.reconFile(), incoming.recon, incoming.reconSidesTried,
+                incoming.reconAttemptCounted);
     }
 
     public Report copy() {

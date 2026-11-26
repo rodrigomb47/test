@@ -322,12 +322,52 @@ class ReserveTest {
         assertEquals(7, a.soldiers());
         assertEquals(6, b.soldiers());
         assertTrue(a.counted() < b.counted(), "A has the smaller count");
-        assertTrue(Reserve.score(b, 200) < Reserve.score(a, 200), "the base with the larger plan was chosen: A " + Reserve.score(a, 200)
-                + ", B " + Reserve.score(b, 200));
-        // even when A is nearer: the plan first, then the distance
-        assertTrue(Reserve.score(b, 400) < Reserve.score(a, 150), "a nearer base with the larger plan was chosen");
+        // a party of 3 bare soldiers goes against neither (both need 4 of ours): the weaker plan first, even when A is nearer
+        Reserve.Judged ja = Reserve.judge(0, a, 150, 1.0, false, false), jb = Reserve.judge(1, b, 400, 1.0, false, false);
+        assertEquals(4, ja.needed());
+        assertEquals(4, jb.needed());
+        assertTrue(Reserve.RANK.compare(jb, ja) < 0, "a nearer base with the larger plan was chosen");
         // at the same plan, the nearer goes first
-        assertTrue(Reserve.score(plan(counted(4), List.of()), 150) < Reserve.score(b, 200), "at the same plan the nearer goes first");
+        assertTrue(Reserve.RANK.compare(Reserve.judge(2, plan(counted(4), List.of()), 150, 1.0, false, false), jb) < 0,
+                "at the same plan the nearer goes first");
+    }
+
+    // ---- The review of the focused reconnaissance round, finding 1: every target is judged ----
+
+    @Test
+    void aTargetThePartyCanBeatComesBeforeOneItMustWaitOn() {
+        // our party: 3 soldiers with iron swords (1.5 each). A counted 2 in better gear (2.55 each): plan 3 of them, two
+        // thirds is 2 of theirs, 5.1, past our 4.5. B counted 4 bare soldiers: plan 6, two thirds 4, within our 4.5
+        double ours = 1.5, party = 3 * ours;
+        Plan a = plan(counted(2, 1.7 * ours, Map.of(), Set.of()), List.of());
+        Plan b = plan(counted(4, 1.0, Map.of(), Set.of()), List.of());
+        assertTrue(a.heads() < b.heads(), "A has the fewer heads: " + a.heads() + " against " + b.heads());
+        boolean goA = ReconRules.verdict(true, false, party, a.power(), a.unit()) != ReconRules.Verdict.WAIT;
+        boolean goB = ReconRules.verdict(true, false, party, b.power(), b.unit()) != ReconRules.Verdict.WAIT;
+        assertFalse(goA, "three of ours do not match A's plan");
+        assertTrue(goB, "three of ours match B's plan");
+        Reserve.Judged ja = Reserve.judge(0, a, 150, ours, false, goA), jb = Reserve.judge(1, b, 300, ours, false, goB);
+        assertEquals(4, ja.needed(), "A needs 4 of ours");
+        assertEquals(3, jb.needed(), "B needs 3 of ours");
+        assertEquals(jb, java.util.stream.Stream.of(ja, jb).min(Reserve.RANK).orElseThrow(), "the council waited on A while it could beat B");
+        // a target it goes against comes first even when another needs fewer of ours (heroes in a party can make it so)
+        Reserve.Judged fewer = new Reserve.Judged(2, a, 50, 2, false);
+        assertTrue(Reserve.RANK.compare(jb, fewer) < 0, "a target it goes against before one it waits on");
+        // none it goes against: it waits on the one it is nearest to beating, then the weaker, then the nearest
+        Reserve.Judged far = new Reserve.Judged(3, b, 500, 5, false), near = new Reserve.Judged(4, b, 100, 5, false);
+        assertEquals(ja, java.util.stream.Stream.of(far, ja, near).min(Reserve.RANK).orElseThrow(), "the fewest of ours needed first");
+        assertEquals(near, java.util.stream.Stream.of(far, near).min(Reserve.RANK).orElseThrow(), "then the nearest");
+        // heroes make heads fractional: the old score (heads x 1000 + distance) put 4.5 heads at 50 blocks before 4.2 at
+        // 400, though the first needs 3 of ours and the second 2
+        Plan more = plan(counted(2, 1.0, Map.of("hinae", 1.5), Set.of()), List.of());
+        Plan less = plan(counted(2, 1.0, Map.of("yugen", 1.2), Set.of()), List.of());
+        assertEquals(4.5, more.heads(), EPS);
+        assertEquals(4.2, less.heads(), EPS);
+        assertTrue(more.heads() * 1000 + 50 < less.heads() * 1000 + 400, "the old score's order");
+        Reserve.Judged jm = Reserve.judge(5, more, 50, 1.0, false, false), jl = Reserve.judge(6, less, 400, 1.0, false, false);
+        assertEquals(3, jm.needed());
+        assertEquals(2, jl.needed());
+        assertTrue(Reserve.RANK.compare(jl, jm) < 0, "the plan needing fewer of ours first, though farther");
     }
 
     // ---- 15. The lines' sightings forms (recon.md 5.4, task R11) ----

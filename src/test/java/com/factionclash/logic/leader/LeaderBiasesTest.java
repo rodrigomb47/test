@@ -67,15 +67,19 @@ class LeaderBiasesTest {
         assertEquals(0.4, n.rangedShare(0.4), EPS);
         contains(config, "defineInRange(\"intervalTicks\", 1200", "FCConfig");
         assertEquals(1, n.recruitIntervalMultiplier(), EPS);
-        // FactionDirector.raids
-        contains(director, "t - data.startedAt < interval", "FactionDirector");
+        // FactionDirector.raids (since the review of the focused reconnaissance round its gate is ReconRules': the first
+        // war's gate an interval after the start, the counter-attack window from a quarter of the interval, which the
+        // urgent recon order reads too)
+        String rules = source("logic/campaign/ReconRules.java");
+        contains(director, "ReconRules.counterWindow(t, f.lastRaidAt, data.startedAt, interval)", "FactionDirector");
+        contains(rules, "now - startedAt >= interval", "ReconRules");
         assertEquals(LeaderBiases.TODAY_FIRST_RAID_INTERVALS, n.firstRaidIntervals(), EPS);
         assertEquals(36000, n.firstRaidTicks(36000));
-        contains(director, "t - f.lastRaidAt < interval / 4", "FactionDirector");
+        contains(rules, "now - lastRaidAt >= urgentGap(interval)", "ReconRules");
+        contains(rules, "return interval / 4;", "ReconRules");
         assertEquals(0.25, n.counterWindow(), EPS);
         // (since the focused reconnaissance's switch, task R5, the verdict on the plan is ReconRules.verdict: two thirds
         // at the interval, 3 to 2 inside it against a faction that struck us)
-        String rules = source("logic/campaign/ReconRules.java");
         contains(director, "ReconRules.verdict(intervalOver, struck, partyPower, targetPlan.power(), targetPlan.unit())", "FactionDirector");
         contains(rules, "return struckSinceLastRaid && Intel.threeToTwo(party, plan, unit)", "ReconRules");
         contains(source("logic/campaign/Intel.java"), "Math.round(Math.max(0, defence) / unit * 3 / 2)", "Intel");
@@ -93,9 +97,11 @@ class LeaderBiasesTest {
         }
         contains(director, "f.raiders.size() * 2 < f.raidParty", "FactionDirector");
         assertEquals(0.5, n.fallBackShare(), EPS);
-        // (since the sightings, task R11, the score is Reserve.score: the plan in soldiers, then the distance)
-        contains(director, "double score = Reserve.score(plan, distance);", "FactionDirector");
-        contains(source("logic/campaign/Reserve.java"), "return p.heads() * 1000.0 + distance;", "Reserve");
+        // (since the review of the focused reconnaissance round the council judges every target and ranks them by
+        // Reserve.RANK: one it would go against first, then the least plan in our soldiers, then the weaker, then the
+        // nearest; the leaders' cost, not read by the game yet, keeps the older weight and is rewritten on it with them)
+        contains(director, "Reserve.RANK.compare(j, best) < 0", "FactionDirector");
+        contains(source("logic/campaign/Reserve.java"), ".thenComparingInt(Judged::needed)", "Reserve");
         for (double d : new double[]{0, 3, 7.5}) {
             for (double dist : new double[]{0, 40, 250}) {
                 assertEquals(d * 1000 + dist, n.targetCost(d, dist, 0.6, false, true), 1e-9, "today's target cost");

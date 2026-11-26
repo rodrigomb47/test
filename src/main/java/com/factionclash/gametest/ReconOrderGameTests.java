@@ -443,4 +443,38 @@ public final class ReconOrderGameTests {
             throw e;
         }
     }
+    /**
+     * Review finding 3: before the faction's first raid no counter-attack can come of an urgent recon (the first war's gate
+     * ends the interval too, and the council raids at it as at any interval's end), so a strike is answered by the
+     * ordinary order of the window, not an urgent one. Our campaign has just started (the first war's gate a raid interval
+     * away) and the Grove Covenant struck us: once our alarm is quiet, past a quarter of the interval, no urgent order; at
+     * the first war's gate the window's ordinary order goes to the Grove's settlement instead.
+     */
+    @GameTest(template = "platform", timeoutTicks = 40, batch = "recon_orders_first_raid")
+    public static void noUrgentReconBeforeTheFirstRaid(GameTestHelper h) {
+        GameTestBases.Handle t = KnowledgeGameTests.base(h, 40);
+        FactionState f = fresh(t);
+        try {
+            long now = h.getLevel().getGameTime();
+            int interval = FCConfig.RAID_INTERVAL_TICKS.get();
+            long gap = ReconRules.urgentGap(interval);
+            t.assertTrue(interval - ReconRules.LEAD_TICKS > gap + ReconRules.QUIET_TICKS + 1000, "the raid interval is too short for this test");
+            t.data.startedAt = now; // the first war's gate a raid interval away
+            f.lastRaidAt = 0; // no raid yet
+            garrison(t);
+            Report grove = reported(t, f, Report.Kind.ENEMY_BASE, ENEMY, 200, now);
+            f.struck(ENEMY, now + 100);
+            long quiet = now + 100 + gap + ReconRules.QUIET_TICKS;
+            KnowledgeGameTests.raids(t, f, quiet);
+            t.assertTrue(f.reconOrders.isEmpty(), "an urgent order before the first raid, when no counter-attack can come of it: " + f.reconOrders);
+            KnowledgeGameTests.raids(t, f, now + interval - ReconRules.LEAD_TICKS);
+            ReconOrder o = orderOn(f, grove);
+            t.assertTrue(f.reconOrders.size() == 1 && o != null && !o.urgent, "the window's ordinary order on the striker's settlement: "
+                    + f.reconOrders);
+            t.succeed();
+        } catch (RuntimeException | Error e) {
+            t.cleanup();
+            throw e;
+        }
+    }
 }

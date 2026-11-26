@@ -67,6 +67,27 @@ public final class ReconOrders {
     }
 
     /**
+     * A scout at home that took an order but holds no trip for it gives the order back (the review of the focused
+     * reconnaissance round, finding 2): its trip did not load, or its job was rebuilt by a retraining away and back between
+     * two council passes. The order is open again, as when its scout is retrained ({@link ReconRules.Ending#REOPENED}, not
+     * a failed attempt), and any scout at home may take it, this one too, at once. Before, the order stayed taken for good:
+     * its scout explored, its report never told the order anything, and the faction's ordinary order stayed full. An order
+     * its scout already answered is left to the next council pass. Returns whether it gave one back.
+     */
+    public static boolean release(FactionState f, UUID scout, long now) {
+        ReconOrder o = takenBy(f, scout);
+        if (o == null || o.reported != ReconRules.ScoutReport.NONE) {
+            return false;
+        }
+        log(f, o, now, ReconRules.Ending.REOPENED); // the operators' log: as a retrained scout's order
+        o.scout = null;
+        o.takenAt = 0;
+        o.reported = ReconRules.ScoutReport.NONE;
+        o.reportedSides = 0;
+        return true;
+    }
+
+    /**
      * A scout tells at the station what it saw of the base it was ordered to watch (task R4b's {@code ScoutJob.report} calls
      * this before it delivers its reports): {@code brought} is its report of that base (null: none), with the recon its watch
      * gave and the sides its trip tried. A good recon, a blind one, or none of the target is the order's ending at the next
@@ -159,12 +180,14 @@ public final class ReconOrders {
      * census), and otherwise only when the interval is nearly ripe ({@code nextRaidAt}, {@link ReconRules#inWindow}) or an
      * urgent recon is due. Urgent: of each faction that struck us since our last raid, its reported settlement nearest our
      * base, once our alarm has been quiet a while ({@code alarmAt}: the last intruder it noticed or strike it saw), the
-     * counter-attack window is open, and no urgent order went to that faction within a quarter of the interval
+     * counter-attack window is open ({@link ReconRules#counterWindow}, from the campaign's start {@code startedAt}: never
+     * before our first raid), and no urgent order went to that faction within a quarter of the interval
      * ({@link ReconRules#urgentDue}). Ordinary, in the window only: a settlement or lair never judged, stale or only blind,
      * not backing off. One order a target, one urgent and one ordinary a faction ({@link ReconRules#next}). Returns the
      * orders placed.
      */
-    public static List<ReconOrder> place(FactionState f, BaseState home, long now, int party, long interval, long nextRaidAt, long alarmAt) {
+    public static List<ReconOrder> place(FactionState f, BaseState home, long now, int party, long interval, long startedAt, long alarmAt) {
+        long nextRaidAt = ReconRules.nextRaidAt(f.lastRaidAt, startedAt, interval);
         List<Report> bases = new ArrayList<>();
         for (Report r : f.knowledge) {
             if (r.base() && !r.fallen && r.subject != null && r.pos != null && Diplomacy.hostile(f.type, r.subject)) {
@@ -188,7 +211,7 @@ public final class ReconOrders {
                 continue; // none of its settlements is reported: the faction does not know where they live
             }
             Intel.Recon kept = bases.get(nearest).reconFile().recon();
-            if (ReconRules.urgentDue(now, strike.getValue(), f.lastRaidAt, interval, alarmAt, f.urgentOrderedAt(enemy),
+            if (ReconRules.urgentDue(now, strike.getValue(), f.lastRaidAt, startedAt, interval, alarmAt, f.urgentOrderedAt(enemy),
                     kept == null ? 0 : kept.at())) {
                 urgentFor[nearest] = enemy;
                 anyUrgent = true;

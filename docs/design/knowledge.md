@@ -48,7 +48,8 @@ task". In short:
   the enemy mainforce"). The council plans against the count plus a reserve, the larger of half again the count and the
   soldiers of that faction its own people saw away from that base in the last half day and did not see fall
   (`FactionState.sightings`), with the heroes the watch saw or its people know of; a lair and a counter-attack get no
-  share. It chooses the target with the least plan, then the nearest, and goes at two thirds of it.
+  share. It judges every target it may raid and chooses one its party would go against now first, then the least
+  plan in its own soldiers, then the nearest (`Reserve.RANK`, recon.md 17), and goes at two thirds of it.
 * **Strikes.** Enemy soldiers seen falling at our walls lower nothing: they record a strike (`FactionState.struckBy`),
   which orders an urgent recon of the striker's nearest reported settlement. Inside the raid interval the council
   judges only the settlements of factions that struck us, at 3 to 2, and only on a recon made since the strike.

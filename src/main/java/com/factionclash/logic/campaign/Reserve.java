@@ -82,7 +82,7 @@ public final class Reserve {
             return soldierPower <= 0 && heroPower > 0;
         }
 
-        /** The plan in soldiers: its power over its unit (the council chooses the target with the least). */
+        /** The plan in its own soldiers: its power over its unit. */
         public double heads() {
             return power / unit;
         }
@@ -273,14 +273,35 @@ public final class Reserve {
     }
 
     /**
-     * How the council ranks the targets it may judge (recon.md 5.4): the least plan in soldiers ({@link Plan#heads}: the
-     * count, the reserve and the heroes under the backbone), then the nearest ({@code distance}, blocks from home). Lower
-     * is chosen first. By the plan, not the bare count: a base with the smaller count and the larger reserve seen away
-     * from it could hold the council back while another base would go.
+     * A target the council judged this pass (recon.md 5.4): its plan, its distance from home in blocks, the fewest of our
+     * soldiers the plan needs ({@link #needed}, in the party's mean soldier) and whether the party goes against it now
+     * ({@code go}: the verdict, {@link ReconRules#verdict}). {@code key} is the caller's (which base it is).
      */
-    public static double score(Plan p, double distance) {
-        return p.heads() * 1000.0 + distance;
+    public record Judged(int key, Plan plan, double distance, int needed, boolean go) {
     }
+
+    /**
+     * A target judged for a party whose soldiers are of mean power {@code soldier}: the plan's {@link #needed} at the
+     * interval, or at 3 to 2 in a counter-attack ({@code counter}), with the verdict {@code go}.
+     */
+    public static Judged judge(int key, Plan p, double distance, double soldier, boolean counter, boolean go) {
+        return new Judged(key, p, distance, needed(p, soldier, counter), go);
+    }
+
+    /**
+     * How the council ranks the targets it judged (recon.md 5.4; the review of the focused reconnaissance round, finding
+     * 1): every target is judged, and one its party goes against now comes before any it must wait on; then the fewest of
+     * our soldiers the plan needs, then the weaker plan, then the nearest. The first is chosen. Before, the council ranked
+     * by the plan's heads in each target's own soldiers and judged only the first, so a target in better gear than ours
+     * with fewer heads held it back from another it could beat. With none to go against it waits on the first, the
+     * target it is nearest to beating. By the plan, not the bare count: a base with the smaller count and the larger
+     * reserve seen away from it needs the more soldiers.
+     */
+    public static final Comparator<Judged> RANK = Comparator.comparing((Judged j) -> !j.go())
+            .thenComparingInt(Judged::needed)
+            .thenComparingDouble(j -> j.plan().power())
+            .thenComparingDouble(Judged::distance)
+            .thenComparingInt(Judged::key);
 
     /** "A", "A and B", "A, B and C". */
     private static String names(List<String> names) {

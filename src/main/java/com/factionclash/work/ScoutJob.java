@@ -221,11 +221,15 @@ public class ScoutJob extends Job {
 
     /**
      * Before an errand home (food, a tool): down its lookout pillar first, block by block, until its feet are on the
-     * ground (the watch ends there, its report by the watch's rule); then home with what it saw.
+     * ground (the watch ends there, its report by the watch's rule); then home with what it saw. A trip done at the target
+     * (the watch over, or on its way round the base) ends there: after the errand it goes to the station and tells what
+     * it saw, not back out to the base's corners (the review of the focused reconnaissance round, finding 6: it walked a
+     * round trip back to the corner, late and exposed, and could be given up as missing on the way).
      */
     @Override
     protected boolean beforeErrand() {
         if (!reconAtColumn()) {
+            homeWithTheReport();
             return true;
         }
         if (recon.step != ReconTrip.Step.DOWN) {
@@ -241,7 +245,21 @@ public class ScoutJob extends Job {
         if (reconAtColumn()) {
             reconPillar(recon, t);
         }
-        return !reconAtColumn();
+        if (reconAtColumn()) {
+            return false;
+        }
+        homeWithTheReport();
+        return true;
+    }
+
+    /** Done at the target and still on its way out: home now, straight to the station after the errand. */
+    private void homeWithTheReport() {
+        if (recon != null && state == State.OUTBOUND && recon.phase == ReconTrip.Phase.DONE) {
+            if (recon.waypoints != null) {
+                recon.waypoints.clear();
+            }
+            goHome(recon);
+        }
     }
 
     /** At its column on the recon trip: a pillar begun and not yet taken down (on it, or still at its foot). */
@@ -407,7 +425,7 @@ public class ScoutJob extends Job {
             return;
         }
         if (recon == null) {
-            ReconOrder o = openOrder(b); // an open order wins over exploring (recon.md 2.1)
+            ReconOrder o = nextOrder(b); // an open order wins over exploring (recon.md 2.1)
             if (o != null) {
                 takeOrder(b, o);
             }
@@ -1146,11 +1164,23 @@ public class ScoutJob extends Job {
         retreating = false;
         evasions = 0;
         state = State.HOME;
-        ReconOrder o = openOrder(b); // an order the council gave while it was away is taken here, at the station
+        ReconOrder o = nextOrder(b); // an order the council gave while it was away is taken here, at the station
         if (o != null) {
             takeOrder(b, o);
         }
         waitFor(200);
+    }
+
+    /**
+     * The order it takes next at home ({@link #openOrder}), once an order it holds with no trip for it is given back
+     * ({@link ReconOrders#release}: its trip did not load, or a retraining away and back rebuilt its job): it takes that
+     * one again at once, unless an urgent one waits.
+     */
+    private ReconOrder nextOrder(BaseState b) {
+        if (recon == null && ReconOrders.release(data().faction(npc.getFaction()), npc.getUUID(), now())) {
+            data().setDirty();
+        }
+        return openOrder(b);
     }
 
     // ------------------------------------------------------------------ the recon trip (docs/design/recon.md, task R4b)
@@ -2005,11 +2035,14 @@ public class ScoutJob extends Job {
         recon = null;
         long now = now();
         Report brought = r.brought(npc.npcName(), now);
-        ReconOrders.atStation(f, npc.getUUID(), brought);
+        boolean ordered = ReconOrders.atStation(f, npc.getUUID(), brought);
         String line;
         if (brought != null && brought.recon != null) {
             brought.deliveredAt = now;
             brought.by = npc.npcName();
+            // no order left to tell: it ended as lost while the scout was away (the roll call gave it up), and that failure
+            // counted the trip once already (a blind recon adds its sides, not a second failure)
+            brought.reconAttemptCounted = !ordered;
             f.addReport(brought);
             line = reconLine(r, brought.recon);
         } else {
@@ -2213,6 +2246,16 @@ public class ScoutJob extends Job {
     /** The sides the recon trip tried so far (a mask of {@link Side} bits; 0 with no trip). */
     public int reconTried() {
         return recon == null ? 0 : recon.tried;
+    }
+
+    /** Why the recon trip's watch ended ("" while it has not, or with no trip), as its {@code FC_RECON watch_end} line says. */
+    public String reconWhy() {
+        return recon == null ? "" : recon.why;
+    }
+
+    /** The corners left on its way round the target after the watch (0 with none, or no trip). */
+    public int reconWaypointsLeft() {
+        return recon == null || recon.waypoints == null ? 0 : recon.waypoints.size();
     }
 
     /** "village, 2 pillager outposts": the new places on the map by kind. */

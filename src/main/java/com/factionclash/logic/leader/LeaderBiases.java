@@ -54,7 +54,11 @@ public final class LeaderBiases {
     public static final int TODAY_REPAIR_SCAN_BUDGET = 384;
     /** {@code TraderJob.TRIP_INTERVAL}. */
     public static final long TODAY_TRADER_TRIP_TICKS = 12000;
-    /** The raid target cost today: {@code defence x 1000 + distance}. */
+    /**
+     * The raid target cost before the review of the focused reconnaissance round: {@code defence x 1000 + distance}. The
+     * war council now judges every target and ranks them by {@code Reserve.RANK} (one it would go against first, then the
+     * least plan in its own soldiers, then the nearest); the leaders' cost is rewritten on that rule when they come.
+     */
     public static final double TODAY_DEFENCE_WEIGHT = 1000;
 
     // ------------------------------------------------------------------ the leader
