@@ -745,8 +745,8 @@ with Stoneguard, no operator command; `docs/design/recon.md` 18, screenshots in 
 * 18 watches from dirt pillars 11 to 20 high (and from the ground at a lair), all good, none of the watchers hurt or
   lost; 6 of 24 orders came home blind, mostly at lairs on the coast (water where a pillar would stand). Only the Grove
   Covenant found amethyst and forged a spyglass (day 3.7); it watched from the same columns as the others.
-* Seen there and left open: a new scout whose dirt search lay in its own faction's woodland set out with no dirt and
-  could not climb (recon.md 18).
+* Seen there and left open: a new scout whose one dirt search found no ground (most likely because it lay in its own
+  faction's woodland) set out with no dirt and could not climb (recon.md 18).
 
 **Deaths far from home: the roll call on a real server** (fresh campaign, same seed, seven days, Natsuho with Ember
 Legion and Hinae with Stoneguard; `docs/design/missing_npcs.md` 14, screenshots in `docs/screenshots/rollcall/`):

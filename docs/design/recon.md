@@ -515,7 +515,9 @@ above differ, the code is the truth:
   it takes dirt, then coarse dirt, from there, then digs the rest once a trip under `DirtDig`'s rules within its own
   base's home area (`RollCall.homeRadius`, outside every walls box plus 4), round a point 12 blocks outside its walls
   toward the target; it stops after 2 searches without ground or 2400 ticks (`ScoutJob.DIG_GIVE_UP_TICKS`) and sets
-  out with what it has. A lair needs no dirt.
+  out with what it has. (As built, a search that finds no patch at all ends the dig at once; a second search runs only
+  once the first patch's cells are used up or out of reach. The live check met it: section 18, "The dirtless trip".)
+  A lair needs no dirt.
 * **The way there, round and home.** To each side's axis just beyond the standoff, by the corners of the standoff's
   square when it comes from another side (`ReconRules.round`: one corner for a side next to it, two for the opposite
   side, round by the side facing home); and when it is done, round by those corners to the side facing home before it
@@ -1830,15 +1832,15 @@ planted spyglass. (The task named this section 16; 16 and 17 were taken by the o
 is 18.) Where this section and the sections above differ, this section reports what the code did.
 
 **Setup.** A new server folder (`/home/user/fcserver_recon`; the R6 headless run's folder was set aside), the mod jar
-built from a clean export of commit 71c1e0c (so another workflow's uncommitted hero art stayed out of it), seed 20261107,
-`fc start 256`, Natsuho Komezaki given to the Ember Legion and Hinae Shirasuzu to Stoneguard, the generated config equal
-to `docs/factionclash-common.toml`. `tools/days.sh` ran 8 sprints to day 8.08 (tick 193844); `tools/rolltrack.py` polled
-every 8 s (163 polls) in a restart loop, beside a side tracker that read the dump file for the copper, amethyst and
-spyglasses in each storehouse and every scout's hand; `tools/warcheck.py` read the record to tick 193844. The server
-was stopped cleanly (`save-all flush`, `stop`). The analysis scripts (the order and trip table from the `FC_RECON`
-lines, a world-copy reader for terrain and blocks) stayed in the round's scratchpad; every number they gave is here.
-Screenshots were taken afterwards in a labelled continuation (`docs/screenshots/recon/`, below), outside the measured
-window.
+built from a clean export of commit 71c1e0c (so another workflow's uncommitted hero art stayed out of it), seed
+20261107, `fc start 256`, Natsuho Komezaki given to the Ember Legion and Hinae Shirasuzu to Stoneguard, the generated
+config equal to `docs/factionclash-common.toml`. `tools/days.sh` ran 8 sprints to day 8.08 (tick 193844);
+`tools/rolltrack.py` polled every 8 s (163 polls) in a restart loop, beside a side tracker that read the dump file for
+the copper, amethyst and spyglasses in each storehouse and every scout's hand; `tools/warcheck.py` read the record to
+tick 193844. The server was stopped cleanly (`save-all flush`, `stop`). The analysis scripts (the order and trip table
+from the `FC_RECON` lines, a world-copy reader for terrain and blocks) stayed in the round's scratchpad; every number
+they gave is here. Screenshots were taken afterwards in a labelled continuation (`docs/screenshots/recon/`, below),
+outside the measured window.
 
 **The launches: every one rested on a focused recon.** Six launches, each on a usable recon (basis "recon"), none
 without one. The plan beside the truth in the target's walls at the launch poll:
@@ -1853,36 +1855,40 @@ without one. The plan beside the truth in the target's walls at the launch poll:
 | 6.72 | Ember → Stoneguard | day 6.64, pillar 20, 32% (1629) | an empty yard | ruins | 8 | "found in ruins", 0 dead |
 
 Every settlement launch's count equalled the soldiers in the box at its watch's end (the lair's 6 against 7); what
-changed between the watch and the launch was the target (four recruits at Grove; Natsuho back from fishing 74 blocks out, where she was at three of Ember's four
-watches: 4.21, 5.43 and 7.12). The seen-away term never raised a plan (0 launches); the sightings filed were 20 at home,
-1 in the field and 4 by watches, 12 of them marked fallen. Both launches on Stoneguard's ruins are 8's known case: the
-fall was unseen, so a recon of the ruins watched an empty yard and the party found the ruins.
+changed between the watch and the launch was the target (four recruits at Grove; Natsuho back from fishing 74 blocks
+out, where she was at three of Ember's four watches: 4.21, 5.43 and 7.12). The seen-away term never raised a plan (0
+launches); the sightings filed were 20 at home, 1 in the field and 4 by watches, 12 of them marked fallen. Both launches
+on Stoneguard's ruins are 8's known case: the fall was unseen, so a recon of the ruins watched an empty yard and the
+party found the ruins.
 
 **The war rate.** 6 launches in 8.03 days: 2 by day 5.18 and 6 by day 7.25, against the knowledge campaigns' 6 by day
-5.18 (the first) and 5 in 7.25 days (the second). The replay's 35 to 50% (5.4) did not hold as a count: 6 is 120% of
-the second campaign's 5. By kind, 1 was a lair, 2 were Stoneguard's ruins and 3 struck standing settlements (60% of
-the second campaign's 5, at the top of the prediction). The first launch came at day 4.09 (the knowledge campaigns' at
-3.1 and 3.9): no faction had six soldiers at home before day 3.5, so no council placed an order before then. Of the three
-raids on standing settlements one won (the emptied Stoneguard) and two lost every raider. No counter-attack: the one
-urgent order (Ember on Stoneguard after Stoneguard's strike at 5.6 to 5.8) waited for Ember to have a party again,
-was placed at 6.38, and its recon (6.64) found the ruins; Ember launched at its interval. Each faction's longest gap
-was its wait for its first launch: Tide 6.35 days (no party 61 polls, its plan larger than its party 29, a stale
-recon 22, never watched 8), Grove 5.96, Ember 5.04, Stoneguard 4.04.
+5.18 (the first) and 5 in 7.25 days (the second). The replay's 35 to 50% (5.4) did not hold as a count: 6 is 120% of the
+second campaign's 5. By kind, 1 was a lair, 2 were Stoneguard's ruins and 3 struck standing settlements. Like for like
+with the second campaign's 5 (1 lair and 4 settlements): 4 without the ruins (80%), or 3 settlements against 4 (75%);
+either way above the predicted 35 to 50%. The first launch came at day 4.09 (the knowledge campaigns' at 3.1 and 3.9):
+no faction had six soldiers at home before day 3.5, so no council placed an order before then. Of the three raids on
+standing settlements one won (the emptied Stoneguard) and two lost every raider. No counter-attack: the one urgent order
+(Ember on Stoneguard after Stoneguard's strike at 5.6 to 5.8) came at 6.38, when Ember had six soldiers at home again (1
+to 5 from 5.73 to 6.30; a party needs six at home, most likely what held it back), and its recon (6.64) found the ruins;
+Ember launched at its interval. Each faction's longest gap was its wait for its first launch: Tide 6.35 days (no party
+61 polls, its plan larger than its party 29, a stale recon 22, never watched 8), Grove 5.96, Ember 5.04, Stoneguard
+4.04.
 
 **The orders and the trips.** 24 orders (1 urgent), all taken, a median 34 s from the order to a scout taking it
 (longest 395 s); 18 ended DONE, 4 BLIND, 2 EMPTY_HANDED, 0 LOST, none dropped or reopened. From taking an order to its
-end 0.12 to 0.30 day (one 0.87: Ember's council settled it only after its raid came home); from leaving home to the
-watch's end 0.08 to 0.16 day. 30 sides were tried: 18 watches, all good, all a full minute (`why` "done"), 32 to 40%
-of the yard (15 at 30-39%, 3 at 40%), from pillars of 11 (Grove's west side), 13 and 20 (Ember's east), 18 and 20
-(Stoneguard's west) and from the ground at a lair; 12 sides given up (6 "no good look", 6 "no vantage"). The recon against the truth
-in the box at the last sample: 14 of 16 settlement recons exact, one 1 under (5 of 6), one 6 over (8 faces counted
-while Stoneguard's raid party left during the watch; 2 left in the box), mean -0.31; lairs 6 of 7 monsters in the box
-and 0 of 0. Hinae was seen in all seven watches of Stoneguard she was home for, Natsuho in the one of four she was home
-for. No scout was hurt on a pillar (no attack by a guard of the yard, none by a passer-by), no hold, no pillar block
-left; no scout was lost on a recon. Five scouts died on exploring trips (Stoneguard's Kael Grey, Grove's Ines Oakes and
-Elsa Pike, Ember's Tamsin Vale and Tamsin Pike), each reported missing, then presumed dead, each truly dead; four were
-replaced at once ("follow-up for missing scout"; Grove, with Ulric Oakes at home, hired none for Elsa Pike), and Grove hired a second scout for an order nobody took ("a scout to watch the
-Ember Legion settlement", day 4.86).
+end 0.12 to 0.30 day (one 0.87: Ember's council settled it only when it gave its lost raid up at 5.78, the launch plus
+0.70 day, since no raider came home to tell the raid's end); from leaving home to the watch's end 0.08 to 0.16 day. 30
+sides were tried: 18 watches, all good, all a full minute (`why` "done"), 32 to 40% of the yard (15 at 30-39%, 3 at
+40%), from pillars of 11 (Grove's west side), 13 and 20 (Ember's east), 18 and 20 (Stoneguard's west) and from the
+ground at a lair; 12 sides given up (6 "no good look", 6 "no vantage"). The recon against the truth in the box at the
+last sample: 14 of 16 settlement recons exact, one 1 under (5 of 6), one 6 over (8 faces counted while Stoneguard's raid
+party left during the watch; 2 left in the box), mean -0.31; lairs 6 of 7 monsters in the box and 0 of 0. Hinae was seen
+in all seven watches of Stoneguard she was home for, Natsuho in the one of four she was home for. No scout was hurt on a
+pillar (no attack by a guard of the yard, none by a passer-by), no hold, no pillar block left; no scout was lost on a
+recon. Five scouts died on exploring trips (Stoneguard's Kael Grey, Grove's Ines Oakes and Elsa Pike, Ember's Tamsin
+Vale and Tamsin Pike), each reported missing, then presumed dead, each truly dead; four were replaced at once
+("follow-up for missing scout"; Grove, with Ulric Oakes at home, hired none for Elsa Pike), and Grove hired a second
+scout for an order nobody took ("a scout to watch the Ember Legion settlement", day 4.86).
 
 **Blind recons, and why.** 6 of 24 orders came home blind or with nothing on every side tried (25%, over 10.4's one in
 five): 4 of the 6 lair orders and 2 of the 18 settlement orders (11%). The causes, from the `FC_RECON` lines and the
@@ -1891,31 +1897,35 @@ world copy at day 8 (the terrain then, not at the trip; trees cut since are not 
 | order | sides | cause |
 |---|---|---|
 | Tide on the lair at 272, -48 (3.55) | north: no good look from the ground; west: no vantage | a hill over the sight line (ground 2 blocks above it); the west band is open water |
-| Ember on the lair at 208, 240 (4.60, 6.38, 7.86) | east: no good look from the ground; north, south, west: no vantage | a hill (the ground just at the line); every other band is water |
+| Ember on the lair at 208, 240 (4.60, 7.86) | east: no good look from the ground; north, south, west: no vantage | a hill (the ground just at the line); the other bands are mostly water |
+| Ember on the same lair (6.38) | none tried | the scout never got there: "cornered by a zombie" on the way, home empty-handed |
 | Grove on Ember (4.58) | east and west: no good look, best 0 points **at height 0** | **no dirt**: the scout set out with none and could not climb a block (below) |
 | Grove on Ember (5.37) | north and south: no good look, climbed to the cap of 20, best 6 points at 16 | north: the walls and buildings over the line to the middle (the design's "needs 21 at 72"); south: leaves 6 blocks over the line |
 
-Every "no vantage" side in the run (Stoneguard's east band twice, the lairs' bands) was water: 300 of 300 columns of
-Stoneguard's east band, 242 to 247 of each lair band. Hills blinded only lair ground looks; trees one side, once.
+Every "no vantage" side in the run (Stoneguard's east band twice, the lairs' bands) was mostly water, in boxes drawn
+roughly over each band on the side's axis: 300 of 300 top blocks of Stoneguard's east band, 242 to 247 of 247 in three
+lair bands and 204 of 247 in the fourth (with 25 sand and 15 grass). Hills blinded only lair ground looks; trees one
+side, once.
 
 **The dirtless trip (a fault, reported, not fixed here).** Grove recruited Ulric Oakes at 4.861 as "a scout to watch the
-Ember Legion settlement"; he took the order at tick 116090 and set out 19 ticks later with 4 items and no dirt.
-`ScoutJob.prepareRecon` found no dirt in the storehouse (Grove's 11 were gone by 4.67), so it dug: one
-`DirtDig.Search` round a point 12 blocks outside the walls toward the target (493, 151, west of Grove), which found no
-patch, and `dig` ended at the first empty search and sent him out with what he had. On both sides his climb stopped at
-height 0 (`PillarClimb` stops with no blocks), the trip came home blind, the order counted a failure and both gate
-sides were filed as tried, so the next trip (5.37) took the north and south sides, blind at the cap; Grove had no usable
-recon of Ember from its first order (4.58) to 7.19. His next dig, toward Stoneguard (north-west, 5.00 to 5.05, the
-storehouse empty), gave him 22. The likely cause: the seed toward Ember sits in Grove's own woodland (its tree plot's
-origin is 496, 64, 144; on day 8 its 64 planted saplings span x 479 to 577, z 95 to 189), where the dig rules keep 3
-blocks round every planted sapling and stump, 1 round every grove-lattice point of the belt, the road strip and 2 round
-any wood; the column rules alone pass 280 columns there on day 8, so the woodland's reservations did the vetoing. Not
-fully confirmed (day 8's world, not 4.86's). Two things for the owner and the next task: section 3.8 says the scout
+Ember Legion settlement"; he took the order at tick 116090 and set out 19 ticks later (116109) with 4 items and no dirt.
+`ScoutJob.prepareRecon` found no dirt in the storehouse (Grove's 11 were gone by 4.67), so it dug: one `DirtDig.Search`
+round a point 12 blocks outside the walls toward the target (493, 151, west of Grove), which found no patch, and `dig`
+ended at the first empty search and sent him out with what he had. On both sides his climb stopped at height 0
+(`PillarClimb` stops with no blocks), the trip came home blind, the order counted a failure and both gate sides were
+filed as tried, so the next trip (5.37) took the north and south sides, blind at the cap; Grove had no usable recon of
+Ember from its first order (4.58) to 7.19. On his next trip, toward Stoneguard (north-west), he took the order at 120145
+and set out 1167 ticks later (121312) with 22 items: 18 more, with the storehouse's dirt at 0, so most likely dug (no
+poll caught a digging status). The most likely cause: the seed toward Ember sits in Grove's own woodland (its tree
+plot's origin is 496, 64, 144; on day 8 its 64 planted saplings span x 479 to 577, z 95 to 189), where the dig rules
+keep 3 blocks round every planted sapling and stump, 1 round every grove-lattice point of the belt, the road strip and 2
+round any wood; the column rules alone pass 280 columns there on day 8, so the woodland's reservations did the vetoing.
+Not fully confirmed (day 8's world, not 4.86's). Two things for the owner and the next task: section 3.8 says the scout
 "stops after 2 searches without ground", but the code stops after the first empty one (a second search round another
-point, or a seed outside the faction's own belt, would have found ground); and whether a side the scout could not climb
-at all should count as tried and as a failure is a rule question, not a silent fix. No code was changed: a GameTest for
-it would need a home area larger than `mobility_field` (the search reaches 24 blocks from its seed), onto the flat
-world outside the template.
+point, or a seed outside the faction's own belt, may have found ground, as the north-west one did); and whether a side
+the scout could not climb at all should count as tried and as a failure is a rule question, not a silent fix. No code
+was changed: a GameTest for it would need a home area larger than `mobility_field` (the search reaches 24 blocks from
+its seed), onto the flat world outside the template.
 
 **The spyglass (R12).** All four factions smelted copper ingots by day 0.74 to 0.96; only Grove found amethyst: its
 first shards and its first spyglass appeared in its storehouse at the same poll, day 3.65. Its scout
@@ -1926,14 +1936,16 @@ look could not: the good sides all had a column at the standoff (61), and the bl
 eyes: 4 of 18, all lairs (a lair is watched with the eyes whatever the scout carries).
 
 **Regressions.** Recruitment: 94 recruits (Ember 32, Grove 28, Stoneguard 17, Tide 17), losses replaced. Tick time per
-day: 5.00, 5.12, 5.70, 6.69, 7.39, 7.75, 7.27, 7.69 ms (R6's headless run: 5.11 to 9.21; the knowledge campaigns 5.8
-to 8.8): below R6's on each day but the last (+0.36). Stuck recoveries: 19 per NPC on average at day 8.18 (the second
+day: 5.00, 5.12, 5.70, 6.69, 7.39, 7.75, 7.27, 7.69 ms (R6's headless run: 5.11 to 9.21; the knowledge campaigns 5.8 to
+8.8): below R6's on each day but the last (+0.36). Stuck recoveries: 19 per NPC on average at day 8.18 (the second
 knowledge campaign: 14 at 7.27); the most, 542, a Grove miner whose branch tunnel at y=15 met an underground lake (2271
 water blocks and bubble columns in the box round it; "Walking to the tunnel face" from day 1.94 to 4.08, then free by
 itself): a mining matter, not reconnaissance. Woodcutters worked from their scaffolds ("Felling the oak from its
-scaffold"), the four felled 123 to 330 trees, none stood frozen. The server log holds no error or exception. Stoneguard's
-fall (6.117): all 27 of its roster died, three of its NPCs lay loaded and dead until 6.35 (HANDOFF section 6, the fall's
-item 8), Hinae was freed.
+scaffold"), the four felled 123 to 330 trees, none stood frozen. The server log holds no error or exception. Two of
+warcheck's flags were left uninvestigated (most likely the sparse polls, about 1000 ticks apart in a sprint): 8
+cave-survey lines with the explorer neither home nor bound for the station at the polls round them, and one far miner's
+expected return moved by 0.003 day while it was away. Stoneguard's fall (6.117): all 27 of its roster died, three of its
+NPCs lay loaded and dead until 6.35 (HANDOFF section 6, the fall's item 8), Hinae was freed.
 
 **What the check says.** The owner's rule held in a real war: every launch rested on a scout's focused watch, the
 counts matched the yard (14 of 16 exactly), and no blind or stale report let a council launch; no watcher was
